@@ -1,0 +1,39 @@
+# Supabase project configuration for the NuTri app.
+# Update `project_id` and URLs after provisioning the project in Supabase.
+project_id = "nutri-app"
+
+[api]
+schemas = ["public", "storage", "graphql_public"]
+reference_id = "nutri-app"
+studio_port = 54323
+port = 54321
+max_rows = 1000
+db_url = "env(SUPABASE_DB_URL)"
+anon_key = "env(EXPO_PUBLIC_SUPABASE_ANON_KEY)"
+service_role_key = "env(SUPABASE_SERVICE_ROLE_KEY)"
+rest_url = "https://YOUR_SUPABASE_PROJECT_REF.supabase.co/rest/v1"
+graphql_url = "https://YOUR_SUPABASE_PROJECT_REF.supabase.co/graphql/v1"
+realtime_url = "wss://YOUR_SUPABASE_PROJECT_REF.supabase.co/realtime/v1"
+storage_url = "https://YOUR_SUPABASE_PROJECT_REF.supabase.co/storage/v1"
+functions_url = "https://YOUR_SUPABASE_PROJECT_REF.supabase.co/functions/v1"
+
+[db]
+major_version = 15
+
+[studio]
+port = 54323
+
+[functions]
+ignore = ["supabase/functions/.*/__tests__/.*"]
+
+[functions.emails.confirm_signup]
+enabled = false
+
+[functions.emails.invite]
+enabled = false
+
+[functions.emails.magic_link]
+enabled = false
+
+[functions.emails.password_reset]
+enabled = false

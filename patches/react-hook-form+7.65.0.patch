@@ -1,0 +1,346 @@
+diff --git a/node_modules/react-hook-form/dist/controller.d.ts b/node_modules/react-hook-form/dist/controller.d.ts
+index 78c107d..cb3b392 100644
+--- a/node_modules/react-hook-form/dist/controller.d.ts
++++ b/node_modules/react-hook-form/dist/controller.d.ts
+@@ -1,4 +1,4 @@
+-import type { ControllerProps, FieldPath, FieldValues } from './types';
++import type { ControllerProps, FieldPath, FieldValues } from '../src/types';
+ /**
+  * Component based on `useController` hook to work with controlled component.
+  *
+diff --git a/node_modules/react-hook-form/dist/form.d.ts b/node_modules/react-hook-form/dist/form.d.ts
+index b95960a..be0475c 100644
+--- a/node_modules/react-hook-form/dist/form.d.ts
++++ b/node_modules/react-hook-form/dist/form.d.ts
+@@ -1,5 +1,5 @@
+ import React from 'react';
+-import type { FieldValues, FormProps } from './types';
++import type { FieldValues, FormProps } from '../src/types';
+ /**
+  * Form component to manage submission.
+  *
+diff --git a/node_modules/react-hook-form/dist/logic/appendErrors.d.ts b/node_modules/react-hook-form/dist/logic/appendErrors.d.ts
+index 632292f..94a4b6e 100644
+--- a/node_modules/react-hook-form/dist/logic/appendErrors.d.ts
++++ b/node_modules/react-hook-form/dist/logic/appendErrors.d.ts
+@@ -1,4 +1,4 @@
+-import type { InternalFieldErrors, InternalFieldName, ValidateResult } from '../types';
++import type { InternalFieldErrors, InternalFieldName, ValidateResult } from '../../src/types';
+ declare const _default: (name: InternalFieldName, validateAllFieldCriteria: boolean, errors: InternalFieldErrors, type: string, message: ValidateResult) => {};
+ export default _default;
+ //# sourceMappingURL=appendErrors.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/react-hook-form/dist/logic/createFormControl.d.ts b/node_modules/react-hook-form/dist/logic/createFormControl.d.ts
+index 6c7c256..b08a209 100644
+--- a/node_modules/react-hook-form/dist/logic/createFormControl.d.ts
++++ b/node_modules/react-hook-form/dist/logic/createFormControl.d.ts
+@@ -1,4 +1,4 @@
+-import type { FieldValues, UseFormProps, UseFormReturn } from '../types';
++import type { FieldValues, UseFormProps, UseFormReturn } from '../../src/types';
+ export declare function createFormControl<TFieldValues extends FieldValues = FieldValues, TContext = any, TTransformedValues = TFieldValues>(props?: UseFormProps<TFieldValues, TContext, TTransformedValues>): Omit<UseFormReturn<TFieldValues, TContext, TTransformedValues>, 'formState'> & {
+     formControl: Omit<UseFormReturn<TFieldValues, TContext, TTransformedValues>, 'formState'>;
+ };
+diff --git a/node_modules/react-hook-form/dist/logic/index.d.ts b/node_modules/react-hook-form/dist/logic/index.d.ts
+index 8d7e4f6..29c998c 100644
+--- a/node_modules/react-hook-form/dist/logic/index.d.ts
++++ b/node_modules/react-hook-form/dist/logic/index.d.ts
+@@ -1,4 +1,4 @@
+-import appendErrors from './appendErrors';
+-import { createFormControl } from './createFormControl';
++import appendErrors from '../../src/logic/appendErrors';
++import { createFormControl } from '../../src/logic/createFormControl';
+ export { appendErrors, createFormControl };
+ //# sourceMappingURL=index.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/react-hook-form/dist/types/controller.d.ts b/node_modules/react-hook-form/dist/types/controller.d.ts
+index 98ee339..832eb14 100644
+--- a/node_modules/react-hook-form/dist/types/controller.d.ts
++++ b/node_modules/react-hook-form/dist/types/controller.d.ts
+@@ -1,6 +1,6 @@
+ import type React from 'react';
+-import type { Control, FieldError, FieldPath, FieldPathValue, FieldValues, Noop, RefCallBack, UseFormStateReturn } from './';
+-import type { RegisterOptions } from './validator';
++import type { Control, FieldError, FieldPath, FieldPathValue, FieldValues, Noop, RefCallBack, UseFormStateReturn } from '../../src/types';
++import type { RegisterOptions } from '../../src/types/validator';
+ export type ControllerFieldState = {
+     invalid: boolean;
+     isTouched: boolean;
+diff --git a/node_modules/react-hook-form/dist/types/errors.d.ts b/node_modules/react-hook-form/dist/types/errors.d.ts
+index 25a32bd..9044309 100644
+--- a/node_modules/react-hook-form/dist/types/errors.d.ts
++++ b/node_modules/react-hook-form/dist/types/errors.d.ts
+@@ -1,6 +1,6 @@
+-import type { FieldValues, InternalFieldName, Ref } from './fields';
+-import type { BrowserNativeObject, IsAny, LiteralUnion, Merge } from './utils';
+-import type { RegisterOptions, ValidateResult } from './validator';
++import type { FieldValues, InternalFieldName, Ref } from '../../src/types/fields';
++import type { BrowserNativeObject, IsAny, LiteralUnion, Merge } from '../../src/types/utils';
++import type { RegisterOptions, ValidateResult } from '../../src/types/validator';
+ export type Message = string;
+ export type MultipleFieldErrors = {
+     [K in keyof RegisterOptions]?: ValidateResult;
+diff --git a/node_modules/react-hook-form/dist/types/fieldArray.d.ts b/node_modules/react-hook-form/dist/types/fieldArray.d.ts
+index b91c36e..1e4c0d4 100644
+--- a/node_modules/react-hook-form/dist/types/fieldArray.d.ts
++++ b/node_modules/react-hook-form/dist/types/fieldArray.d.ts
+@@ -1,7 +1,7 @@
+-import type { FieldValues } from './fields';
+-import type { Control } from './form';
+-import type { FieldArrayPath, FieldArrayPathValue } from './path';
+-import type { RegisterOptions, Validate } from './validator';
++import type { FieldValues } from '../../src/types/fields';
++import type { Control } from '../../src/types/form';
++import type { FieldArrayPath, FieldArrayPathValue } from '../../src/types/path';
++import type { RegisterOptions, Validate } from '../../src/types/validator';
+ export type UseFieldArrayProps<TFieldValues extends FieldValues = FieldValues, TFieldArrayName extends FieldArrayPath<TFieldValues> = FieldArrayPath<TFieldValues>, TKeyName extends string = 'id', TTransformedValues = TFieldValues> = {
+     name: TFieldArrayName;
+     keyName?: TKeyName;
+diff --git a/node_modules/react-hook-form/dist/types/fields.d.ts b/node_modules/react-hook-form/dist/types/fields.d.ts
+index 723fa4b..b48a08a 100644
+--- a/node_modules/react-hook-form/dist/types/fields.d.ts
++++ b/node_modules/react-hook-form/dist/types/fields.d.ts
+@@ -1,5 +1,5 @@
+-import type { IsFlatObject, Noop } from './utils';
+-import type { RegisterOptions } from './validator';
++import type { IsFlatObject, Noop } from '../../src/types/utils';
++import type { RegisterOptions } from '../../src/types/validator';
+ export type InternalFieldName = string;
+ export type FieldName<TFieldValues extends FieldValues> = IsFlatObject<TFieldValues> extends true ? Extract<keyof TFieldValues, string> : string;
+ export type CustomElement<TFieldValues extends FieldValues> = Partial<HTMLElement> & {
+diff --git a/node_modules/react-hook-form/dist/types/form.d.ts b/node_modules/react-hook-form/dist/types/form.d.ts
+index 4e72fd5..7b34930 100644
+--- a/node_modules/react-hook-form/dist/types/form.d.ts
++++ b/node_modules/react-hook-form/dist/types/form.d.ts
+@@ -1,14 +1,14 @@
+ import type React from 'react';
+-import type { VALIDATION_MODE } from '../constants';
+-import type { Subject, Subscription } from '../utils/createSubject';
+-import type { ErrorOption, FieldError, FieldErrors } from './errors';
+-import type { EventType } from './events';
+-import type { FieldArray } from './fieldArray';
+-import type { FieldName, FieldRefs, FieldValue, FieldValues, InternalFieldName } from './fields';
+-import type { FieldArrayPath, FieldPath, FieldPathValue, FieldPathValues } from './path';
+-import type { Resolver } from './resolvers';
+-import type { DeepMap, DeepPartial, Noop } from './utils';
+-import type { RegisterOptions } from './validator';
++import type { VALIDATION_MODE } from '../../src/constants';
++import type { Subject, Subscription } from '../../src/utils/createSubject';
++import type { ErrorOption, FieldError, FieldErrors } from '../../src/types/errors';
++import type { EventType } from '../../src/types/events';
++import type { FieldArray } from '../../src/types/fieldArray';
++import type { FieldName, FieldRefs, FieldValue, FieldValues, InternalFieldName } from '../../src/types/fields';
++import type { FieldArrayPath, FieldPath, FieldPathValue, FieldPathValues } from '../../src/types/path';
++import type { Resolver } from '../../src/types/resolvers';
++import type { DeepMap, DeepPartial, Noop } from '../../src/types/utils';
++import type { RegisterOptions } from '../../src/types/validator';
+ declare const $NestedValue: unique symbol;
+ /**
+  * @deprecated to be removed in the next major version
+diff --git a/node_modules/react-hook-form/dist/types/index.d.ts b/node_modules/react-hook-form/dist/types/index.d.ts
+index cadde42..bc938f5 100644
+--- a/node_modules/react-hook-form/dist/types/index.d.ts
++++ b/node_modules/react-hook-form/dist/types/index.d.ts
+@@ -1,11 +1,11 @@
+-export * from './controller';
+-export * from './errors';
+-export * from './events';
+-export * from './fieldArray';
+-export * from './fields';
+-export * from './form';
+-export * from './path';
+-export * from './resolvers';
+-export * from './utils';
+-export * from './validator';
++export * from '../../src/types/controller';
++export * from '../../src/types/errors';
++export * from '../../src/types/events';
++export * from '../../src/types/fieldArray';
++export * from '../../src/types/fields';
++export * from '../../src/types/form';
++export * from '../../src/types/path';
++export * from '../../src/types/resolvers';
++export * from '../../src/types/utils';
++export * from '../../src/types/validator';
+ //# sourceMappingURL=index.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/react-hook-form/dist/types/path/common.d.ts b/node_modules/react-hook-form/dist/types/path/common.d.ts
+index 88a79f2..3aad05c 100644
+--- a/node_modules/react-hook-form/dist/types/path/common.d.ts
++++ b/node_modules/react-hook-form/dist/types/path/common.d.ts
+@@ -1,4 +1,4 @@
+-import type { IsAny, IsNever } from '../utils';
++import type { IsAny, IsNever } from '../../../src/types/utils';
+ /**
+  * Type alias to `string` which describes a lodash-like path through an object.
+  * E.g. `'foo.bar.0.baz'`
+diff --git a/node_modules/react-hook-form/dist/types/path/eager.d.ts b/node_modules/react-hook-form/dist/types/path/eager.d.ts
+index e5aedd9..339b1bb 100644
+--- a/node_modules/react-hook-form/dist/types/path/eager.d.ts
++++ b/node_modules/react-hook-form/dist/types/path/eager.d.ts
+@@ -1,6 +1,6 @@
+-import type { FieldValues } from '../fields';
+-import type { BrowserNativeObject, IsAny, IsEqual, Primitive } from '../utils';
+-import type { ArrayKey, IsTuple, TupleKeys } from './common';
++import type { FieldValues } from '../../../src/types/fields';
++import type { BrowserNativeObject, IsAny, IsEqual, Primitive } from '../../../src/types/utils';
++import type { ArrayKey, IsTuple, TupleKeys } from '../../../src/types/path/common';
+ /**
+  * Helper function to break apart T1 and check if any are equal to T2
+  *
+diff --git a/node_modules/react-hook-form/dist/types/path/index.d.ts b/node_modules/react-hook-form/dist/types/path/index.d.ts
+index d739aaa..2957704 100644
+--- a/node_modules/react-hook-form/dist/types/path/index.d.ts
++++ b/node_modules/react-hook-form/dist/types/path/index.d.ts
+@@ -1,4 +1,4 @@
+ /** Re-export public API */
+-export { PathString } from './common';
+-export { ArrayPath, FieldArrayPath, FieldArrayPathByValue, FieldArrayPathValue, FieldPath, FieldPathByValue, FieldPathValue, FieldPathValues, Path, PathValue, } from './eager';
++export { PathString } from '../../../src/types/path/common';
++export { ArrayPath, FieldArrayPath, FieldArrayPathByValue, FieldArrayPathValue, FieldPath, FieldPathByValue, FieldPathValue, FieldPathValues, Path, PathValue, } from '../../../src/types/path/eager';
+ //# sourceMappingURL=index.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/react-hook-form/dist/types/resolvers.d.ts b/node_modules/react-hook-form/dist/types/resolvers.d.ts
+index 37ed9da..e895f92 100644
+--- a/node_modules/react-hook-form/dist/types/resolvers.d.ts
++++ b/node_modules/react-hook-form/dist/types/resolvers.d.ts
+@@ -1,6 +1,6 @@
+-import type { FieldErrors } from './errors';
+-import type { Field, FieldName, FieldValues, InternalFieldName } from './fields';
+-import type { CriteriaMode } from './form';
++import type { FieldErrors } from '../../src/types/errors';
++import type { Field, FieldName, FieldValues, InternalFieldName } from '../../src/types/fields';
++import type { CriteriaMode } from '../../src/types/form';
+ export type ResolverSuccess<TTransformedValues> = {
+     values: TTransformedValues;
+     errors: Record<string, never>;
+diff --git a/node_modules/react-hook-form/dist/types/utils.d.ts b/node_modules/react-hook-form/dist/types/utils.d.ts
+index 9d80706..2f16bae 100644
+--- a/node_modules/react-hook-form/dist/types/utils.d.ts
++++ b/node_modules/react-hook-form/dist/types/utils.d.ts
+@@ -1,4 +1,4 @@
+-import type { NestedValue } from './form';
++import type { NestedValue } from '../../src/types/form';
+ export type Noop = () => void;
+ interface File extends Blob {
+     readonly lastModified: number;
+diff --git a/node_modules/react-hook-form/dist/types/validator.d.ts b/node_modules/react-hook-form/dist/types/validator.d.ts
+index 989454e..fc5db86 100644
+--- a/node_modules/react-hook-form/dist/types/validator.d.ts
++++ b/node_modules/react-hook-form/dist/types/validator.d.ts
+@@ -1,7 +1,7 @@
+-import type { INPUT_VALIDATION_RULES } from '../constants';
+-import type { Message } from './errors';
+-import type { FieldValues } from './fields';
+-import type { FieldPath, FieldPathValue } from './path';
++import type { INPUT_VALIDATION_RULES } from '../../src/constants';
++import type { Message } from '../../src/types/errors';
++import type { FieldValues } from '../../src/types/fields';
++import type { FieldPath, FieldPathValue } from '../../src/types/path';
+ export type ValidationValue = boolean | number | string | RegExp;
+ export type ValidationRule<TValidationValue extends ValidationValue = ValidationValue> = TValidationValue | ValidationValueMessage<TValidationValue>;
+ export type ValidationValueMessage<TValidationValue extends ValidationValue = ValidationValue> = {
+diff --git a/node_modules/react-hook-form/dist/useController.d.ts b/node_modules/react-hook-form/dist/useController.d.ts
+index 8e7367e..b907e69 100644
+--- a/node_modules/react-hook-form/dist/useController.d.ts
++++ b/node_modules/react-hook-form/dist/useController.d.ts
+@@ -1,4 +1,4 @@
+-import type { FieldPath, FieldValues, UseControllerProps, UseControllerReturn } from './types';
++import type { FieldPath, FieldValues, UseControllerProps, UseControllerReturn } from '../src/types';
+ /**
+  * Custom hook to work with controlled component, this function provide you with both form and field level state. Re-render is isolated at the hook level.
+  *
+diff --git a/node_modules/react-hook-form/dist/useFieldArray.d.ts b/node_modules/react-hook-form/dist/useFieldArray.d.ts
+index feaf49e..f91570d 100644
+--- a/node_modules/react-hook-form/dist/useFieldArray.d.ts
++++ b/node_modules/react-hook-form/dist/useFieldArray.d.ts
+@@ -1,4 +1,4 @@
+-import type { FieldArrayPath, FieldValues, UseFieldArrayProps, UseFieldArrayReturn } from './types';
++import type { FieldArrayPath, FieldValues, UseFieldArrayProps, UseFieldArrayReturn } from '../src/types';
+ /**
+  * A custom hook that exposes convenient methods to perform operations with a list of dynamic inputs that need to be appended, updated, removed etc. • [Demo](https://codesandbox.io/s/react-hook-form-usefieldarray-ssugn) • [Video](https://youtu.be/4MrbfGSFY2A)
+  *
+diff --git a/node_modules/react-hook-form/dist/useForm.d.ts b/node_modules/react-hook-form/dist/useForm.d.ts
+index 34fdbe2..f60b988 100644
+--- a/node_modules/react-hook-form/dist/useForm.d.ts
++++ b/node_modules/react-hook-form/dist/useForm.d.ts
+@@ -1,4 +1,4 @@
+-import type { FieldValues, UseFormProps, UseFormReturn } from './types';
++import type { FieldValues, UseFormProps, UseFormReturn } from '../src/types';
+ /**
+  * Custom hook to manage the entire form.
+  *
+diff --git a/node_modules/react-hook-form/dist/useFormContext.d.ts b/node_modules/react-hook-form/dist/useFormContext.d.ts
+index 9582660..876fbb4 100644
+--- a/node_modules/react-hook-form/dist/useFormContext.d.ts
++++ b/node_modules/react-hook-form/dist/useFormContext.d.ts
+@@ -1,5 +1,5 @@
+ import React from 'react';
+-import type { FieldValues, FormProviderProps, UseFormReturn } from './types';
++import type { FieldValues, FormProviderProps, UseFormReturn } from '../src/types';
+ /**
+  * This custom hook allows you to access the form context. useFormContext is intended to be used in deeply nested structures, where it would become inconvenient to pass the context as a prop. To be used with {@link FormProvider}.
+  *
+diff --git a/node_modules/react-hook-form/dist/useFormState.d.ts b/node_modules/react-hook-form/dist/useFormState.d.ts
+index 766095d..c67b6a6 100644
+--- a/node_modules/react-hook-form/dist/useFormState.d.ts
++++ b/node_modules/react-hook-form/dist/useFormState.d.ts
+@@ -1,4 +1,4 @@
+-import type { FieldValues, UseFormStateProps, UseFormStateReturn } from './types';
++import type { FieldValues, UseFormStateProps, UseFormStateReturn } from '../src/types';
+ /**
+  * This custom hook allows you to subscribe to each form state, and isolate the re-render at the custom hook level. It has its scope in terms of form state subscription, so it would not affect other useFormState and useForm. Using this hook can reduce the re-render impact on large and complex form application.
+  *
+diff --git a/node_modules/react-hook-form/dist/useWatch.d.ts b/node_modules/react-hook-form/dist/useWatch.d.ts
+index b083703..4fa6124 100644
+--- a/node_modules/react-hook-form/dist/useWatch.d.ts
++++ b/node_modules/react-hook-form/dist/useWatch.d.ts
+@@ -1,4 +1,4 @@
+-import type { Control, DeepPartialSkipArrayKey, FieldPath, FieldPathValue, FieldPathValues, FieldValues } from './types';
++import type { Control, DeepPartialSkipArrayKey, FieldPath, FieldPathValue, FieldPathValues, FieldValues } from '../src/types';
+ /**
+  * Subscribe to the entire form values change and re-render at the hook level.
+  *
+diff --git a/node_modules/react-hook-form/dist/utils/createSubject.d.ts b/node_modules/react-hook-form/dist/utils/createSubject.d.ts
+index f4f12f9..f779778 100644
+--- a/node_modules/react-hook-form/dist/utils/createSubject.d.ts
++++ b/node_modules/react-hook-form/dist/utils/createSubject.d.ts
+@@ -1,4 +1,4 @@
+-import type { Noop } from '../types';
++import type { Noop } from '../../src/types';
+ export type Observer<T> = {
+     next: (value: T) => void;
+ };
+diff --git a/node_modules/react-hook-form/dist/utils/index.d.ts b/node_modules/react-hook-form/dist/utils/index.d.ts
+index ee8f68d..d60b906 100644
+--- a/node_modules/react-hook-form/dist/utils/index.d.ts
++++ b/node_modules/react-hook-form/dist/utils/index.d.ts
+@@ -1,4 +1,4 @@
+-import get from './get';
+-import set from './set';
++import get from '../../src/utils/get';
++import set from '../../src/utils/set';
+ export { get, set };
+ //# sourceMappingURL=index.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/react-hook-form/dist/utils/set.d.ts b/node_modules/react-hook-form/dist/utils/set.d.ts
+index 48b68e0..5d5ee9e 100644
+--- a/node_modules/react-hook-form/dist/utils/set.d.ts
++++ b/node_modules/react-hook-form/dist/utils/set.d.ts
+@@ -1,4 +1,4 @@
+-import type { FieldPath, FieldValues } from '../types';
++import type { FieldPath, FieldValues } from '../../src/types';
+ declare const _default: (object: FieldValues, path: FieldPath<FieldValues>, value?: unknown) => void;
+ export default _default;
+ //# sourceMappingURL=set.d.ts.map
+\ No newline at end of file
+diff --git a/node_modules/react-hook-form/dist/watch.d.ts b/node_modules/react-hook-form/dist/watch.d.ts
+index 212e777..e88316a 100644
+--- a/node_modules/react-hook-form/dist/watch.d.ts
++++ b/node_modules/react-hook-form/dist/watch.d.ts
+@@ -1,5 +1,5 @@
+ import { type ReactNode } from 'react';
+-import type { Control, FieldPath, FieldPathValue, FieldValues } from './types';
++import type { Control, FieldPath, FieldPathValue, FieldValues } from '../src/types';
+ type GetValues<TFieldValues extends FieldValues, TFieldNames extends readonly FieldPath<TFieldValues>[] = readonly []> = TFieldNames extends readonly [
+     infer Name extends FieldPath<TFieldValues>,
+     ...infer RestFieldNames

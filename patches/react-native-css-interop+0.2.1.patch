@@ -1,0 +1,25 @@
+diff --git a/node_modules/react-native-css-interop/dist/runtime/wrap-jsx.js b/node_modules/react-native-css-interop/dist/runtime/wrap-jsx.js
+index ef8c26e..c66b4d7 100644
+--- a/node_modules/react-native-css-interop/dist/runtime/wrap-jsx.js
++++ b/node_modules/react-native-css-interop/dist/runtime/wrap-jsx.js
+@@ -17,7 +17,7 @@ function wrapJSX(jsx) {
+         else {
+             type = api_1.interopComponents.get(type) ?? type;
+         }
+-        return jsx.call(jsx, type, props, ...rest);
++        return jsx(type, props, ...rest);
+     };
+ }
+ //# sourceMappingURL=wrap-jsx.js.map
+diff --git a/node_modules/react-native-css-interop/src/runtime/wrap-jsx.ts b/node_modules/react-native-css-interop/src/runtime/wrap-jsx.ts
+index 2e2996b..e0b5968 100644
+--- a/node_modules/react-native-css-interop/src/runtime/wrap-jsx.ts
++++ b/node_modules/react-native-css-interop/src/runtime/wrap-jsx.ts
+@@ -29,6 +29,6 @@ export default function wrapJSX(jsx: JSXFunction): JSXFunction {
+     }
+ 
+     // Call the original jsx function with the new type
+-    return jsx.call(jsx, type, props, ...rest);
++    return jsx(type, props, ...rest);
+   };
+ }
