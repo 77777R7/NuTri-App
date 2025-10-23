@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleProp, Text, ViewStyle } from 'react-native';
+import { Pressable, StyleProp, Text, TextStyle, ViewStyle } from 'react-native';
 import * as Haptics from 'expo-haptics';
 
 import { colors, radii } from '@/lib/theme';
@@ -9,10 +9,11 @@ type ButtonProps = {
   onPress: () => void;
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
   testID?: string;
 };
 
-export function PrimaryButton({ title, onPress, disabled, style, testID }: ButtonProps) {
+export function PrimaryButton({ title, onPress, disabled, style, textStyle, testID }: ButtonProps) {
   return (
     <Pressable
       testID={testID}
@@ -40,7 +41,7 @@ export function PrimaryButton({ title, onPress, disabled, style, testID }: Butto
       accessibilityRole="button"
       accessibilityLabel={title}
     >
-      <Text style={{ color: '#FFFFFF', fontSize: 17, fontWeight: '800' }}>{title}</Text>
+      <Text style={[{ color: '#FFFFFF', fontSize: 17, fontWeight: '800' }, textStyle]}>{title}</Text>
     </Pressable>
   );
 }

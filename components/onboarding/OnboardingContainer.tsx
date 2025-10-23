@@ -1,4 +1,4 @@
-import React, { type ReactNode } from 'react';
+import React, { useCallback, useMemo, type ReactNode } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useNavigation, type NavigationProp } from '@react-navigation/native';
@@ -6,6 +6,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, shadow } from '@/lib/theme';
 import { safeBack } from '@/lib/navigation/safeBack';
+import { StepSlide } from '@/components/animation/StepSlide';
+import { useTransitionDir } from '@/contexts/TransitionContext';
 import type { Href } from 'expo-router';
 
 import { ProgressBar } from './ProgressBar';
@@ -43,43 +45,55 @@ export const OnboardingContainer = ({
   disableNext,
   showBack = true,
   showSkip = false,
-  fallbackHref,
+  fallbackHref = '/onboarding/welcome',
 }: OnboardingContainerProps) => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp<ReactNavigation.RootParamList>>();
+  const { setDirection, consumeDirection } = useTransitionDir();
 
-  const handleNext = async () => {
+  const enterDir = useMemo(() => {
+    const direction = consumeDirection();
+    if (direction !== 'none') {
+      return direction;
+    }
+    return step > 1 ? 'forward' : 'none';
+  }, [consumeDirection, step]);
+
+  const handleNext = useCallback(async () => {
     if (disableNext) return;
     try {
       await Haptics.selectionAsync();
     } catch {
       // noop
     }
+    setDirection('forward');
     onNext?.();
-  };
+  }, [disableNext, onNext, setDirection]);
 
-  const handleBack = async () => {
+  const handleBack = useCallback(async () => {
     try {
       await Haptics.selectionAsync();
     } catch {
       // noop
     }
+    setDirection('back');
     if (onBack) {
       onBack();
       return;
     }
 
-    safeBack(navigation, { fallback: fallbackHref ?? '/onboarding/welcome' });
-  };
+    safeBack(navigation, { fallback: fallbackHref });
+  }, [fallbackHref, navigation, onBack, setDirection]);
 
-  const handleSkip = async () => {
+  const handleSkip = useCallback(async () => {
     try {
       await Haptics.selectionAsync();
     } catch {
       // noop
     }
+    setDirection('forward');
     onSkip?.();
-  };
+  }, [onSkip, setDirection]);
 
   return (
     <View style={[styles.root, { paddingTop: insets.top + 16, paddingBottom: Math.max(insets.bottom, 16) + 24 }]}>
@@ -92,7 +106,14 @@ export const OnboardingContainer = ({
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       </View>
 
-      <View style={styles.content}>{children}</View>
+      <StepSlide
+        direction={enterDir}
+        slideOnFirst
+        durationMs={360}
+        mountKey={`${step}-${enterDir}`}
+      >
+        <View style={styles.content}>{children}</View>
+      </StepSlide>
 
       <View style={styles.footer}>
         {showBack ? (

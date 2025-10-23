@@ -19,8 +19,14 @@ const OnboardingGate = () => {
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="welcome" options={{ gestureEnabled: false }} />
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        animation: 'none',
+        gestureEnabled: false,
+      }}
+    >
+      <Stack.Screen name="welcome" />
     </Stack>
   );
 };

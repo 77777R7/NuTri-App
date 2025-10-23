@@ -1,17 +1,18 @@
-console.log('✅ Start button rendered')
+import { StepSlide } from '@/components/animation/StepSlide';
+import { useTransitionDir } from '@/contexts/TransitionContext';
+
 // app/onboarding/welcome.tsx
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Animated, BackHandler, Dimensions, Easing, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 
-// ✅ 使用你们的 primitives，修复 Animated 类型问题
+// Use shared primitives to keep Animated typing predictable.
 import { Text, View } from '@/components/ui/nativewind-primitives';
 
-// ✅ 所有 import 均放在文件顶部（修复 import/first）
+// Keep imports at the top to satisfy linting.
 import AppHeader from '@/components/common/AppHeader';
-// 若 ProgressBar 是命名导出（通常如此），用命名导入；若是默认导出请改回默认写法
 import { ProgressBar } from '@/components/onboarding/ProgressBar';
 import { PrimaryButton } from '@/components/ui/Buttons';
 import { BrandGradient } from '@/components/BrandGradient';
@@ -26,6 +27,7 @@ export default function WelcomeScreen() {
   const router = useRouter();
   const { setProgress } = useOnboarding();
   const insets = useSafeAreaInsets();
+  const { setDirection, consumeDirection } = useTransitionDir();
 
   // entrance animations
   const progressSlide = useRef(new Animated.Value(-12)).current;
@@ -34,7 +36,7 @@ export default function WelcomeScreen() {
   const headlineTranslate = useRef(new Animated.Value(12)).current;
   const subOpacity = useRef(new Animated.Value(0)).current;
   const subTranslate = useRef(new Animated.Value(12)).current;
-  const badgeScale = useRef(new Animated.Value(0.85)).current;
+  const badgeScale = useRef(new Animated.Value(0.96)).current;
   const accentFade = useRef(new Animated.Value(0)).current;
   const accentScale = useRef(new Animated.Value(0.8)).current;
 
@@ -64,54 +66,40 @@ export default function WelcomeScreen() {
         }),
       ]),
       Animated.parallel([
-        Animated.timing(headlineOpacity, {
-          toValue: 1,
-          duration: 420,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-        Animated.timing(headlineTranslate, {
-          toValue: 0,
-          duration: 420,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ]),
-      Animated.parallel([
-        Animated.timing(subOpacity, {
-          toValue: 1,
-          duration: 420,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-        Animated.timing(subTranslate, {
-          toValue: 0,
-          duration: 420,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ]),
-      Animated.parallel([
-        Animated.sequence([
-          Animated.timing(badgeScale, {
+          Animated.timing(headlineOpacity, {
             toValue: 1,
             duration: 360,
-            easing: Easing.out(Easing.exp),
+            easing: Easing.bezier(0.16, 1, 0.3, 1),
             useNativeDriver: true,
           }),
-          Animated.timing(badgeScale, {
-            toValue: 0.97,
-            duration: 220,
-            easing: Easing.inOut(Easing.quad),
+          Animated.timing(headlineTranslate, {
+            toValue: 0,
+            duration: 360,
+            easing: Easing.bezier(0.16, 1, 0.3, 1),
             useNativeDriver: true,
           }),
-          Animated.timing(badgeScale, {
+      ]),
+      Animated.parallel([
+          Animated.timing(subOpacity, {
             toValue: 1,
-            duration: 240,
-            easing: Easing.out(Easing.quad),
+            duration: 360,
+            easing: Easing.bezier(0.16, 1, 0.3, 1),
             useNativeDriver: true,
           }),
-        ]),
+          Animated.timing(subTranslate, {
+            toValue: 0,
+            duration: 360,
+            easing: Easing.bezier(0.16, 1, 0.3, 1),
+            useNativeDriver: true,
+          }),
+      ]),
+      Animated.parallel([
+        Animated.timing(badgeScale, {
+          toValue: 1,
+          duration: 360,
+          easing: Easing.bezier(0.16, 1, 0.3, 1),
+          useNativeDriver: true,
+        }),
         Animated.parallel([
           Animated.timing(accentFade, {
             toValue: 1,
@@ -143,18 +131,24 @@ export default function WelcomeScreen() {
   const screenH = Dimensions.get('window').height;
   const isSmall = screenH < 740;
 
+  const enterDir = useMemo(() => {
+    const dir = consumeDirection();
+    return dir === 'none' ? 'forward' : dir;
+  }, [consumeDirection]);
+
   const onGetStarted = () => {
     setProgress(2);
+    setDirection('forward');
     router.push('/onboarding/profile');
   };
 
   return (
     <BrandGradient>
-      {/* 主内容 */}
-      <View style={{ flex: 1 }}>
-        {/* 背景点缀（放在独立容器，避免 Animated 指针事件类型噪音） */}
-        <View pointerEvents="none" style={StyleSheet.absoluteFillObject}>
-          <AnimView
+      <StepSlide direction={enterDir} mountKey={`welcome-${enterDir}`} slideOnFirst>
+        <View style={{ flex: 1 }}>
+          {/* Decorative background layers are isolated so Animated types stay quiet. */}
+          <View pointerEvents="none" style={StyleSheet.absoluteFillObject}>
+            <AnimView
             style={{
               position: 'absolute',
               top: -80,
@@ -162,7 +156,7 @@ export default function WelcomeScreen() {
               width: 220,
               height: 220,
               borderRadius: 110,
-              backgroundColor: 'rgba(16,185,129,0.12)',
+              backgroundColor: 'rgba(34,197,94,0.10)',
               opacity: accentFade,
               transform: [{ scale: accentScale }],
             }}
@@ -175,7 +169,7 @@ export default function WelcomeScreen() {
               width: 200,
               height: 200,
               borderRadius: 100,
-              backgroundColor: 'rgba(5,150,105,0.08)',
+              backgroundColor: 'rgba(16,185,129,0.08)',
               opacity: accentFade,
               transform: [
                 {
@@ -189,9 +183,9 @@ export default function WelcomeScreen() {
           />
         </View>
 
-        <AppHeader showBack title="Step 1 of 7" fallbackHref="/index" />
+        <AppHeader showBack title="Step 1 of 7" fallbackHref="/" />
 
-        {/* 进度条 */}
+        {/* Progress indicator */}
         <AnimView
           style={{
             paddingHorizontal: spacing.lg,
@@ -202,7 +196,7 @@ export default function WelcomeScreen() {
           <ProgressBar step={1} total={7} />
         </AnimView>
 
-        {/* 文案与徽章 */}
+        {/* Copy deck and centerpiece badge */}
         <View
           style={{
             flex: 1,
@@ -266,7 +260,7 @@ export default function WelcomeScreen() {
             </Text>
           </AnimView>
 
-          {/* 说明卡片 */}
+          {/* Overview card */}
           <AnimView
             style={{
               marginTop: spacing.xl,
@@ -337,7 +331,7 @@ export default function WelcomeScreen() {
         </View>
       </View>
 
-      {/* 浮动按钮层（与内容同级；覆盖全屏作为定位锚点） */}
+      {/* Floating action area anchored above the gradient */}
       <View pointerEvents="box-none" style={StyleSheet.absoluteFillObject}>
         <View
           pointerEvents="box-none"
@@ -345,8 +339,16 @@ export default function WelcomeScreen() {
             position: 'absolute',
             right: spacing.lg,
             bottom: insets.bottom + (isSmall ? spacing.lg : spacing.xl),
-            zIndex: 1000,
-            elevation: 12,
+            borderRadius: 20,
+            padding: 12,
+            backgroundColor: 'rgba(255,255,255,0.86)',
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: 'rgba(15,118,110,0.18)',
+            shadowColor: '#000',
+            shadowOpacity: 0.12,
+            shadowRadius: 16,
+            shadowOffset: { width: 0, height: 8 },
+            elevation: 8,
           }}
         >
           <PrimaryButton
@@ -354,16 +356,17 @@ export default function WelcomeScreen() {
             onPress={onGetStarted}
             style={{
               minWidth: 168,
-              paddingHorizontal: 24,
-              shadowColor: '#000',
-              shadowOpacity: 0.12,
-              shadowRadius: 10,
-              shadowOffset: { width: 0, height: 6 },
+              paddingHorizontal: 20,
+              backgroundColor: 'transparent',
+              shadowOpacity: 0,
+              elevation: 0,
             }}
+            textStyle={{ color: '#111827', fontWeight: '800' }}
             testID="welcome-start"
           />
         </View>
       </View>
+      </StepSlide>
     </BrandGradient>
   );
 }

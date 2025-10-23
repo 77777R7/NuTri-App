@@ -11,6 +11,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { OnboardingProvider } from '@/contexts/OnboardingContext';
+import { TransitionProvider } from '@/contexts/TransitionContext';
 import { ENV } from '@/lib/env';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
@@ -43,17 +44,19 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <AuthProvider>
           <OnboardingProvider>
-            <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-              <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="index" options={{ gestureEnabled: false }} />
-                <Stack.Screen name="onboarding" />
-                <Stack.Screen name="(auth)" />
-                <Stack.Screen name="(tabs)" />
-                <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal', headerShown: true }} />
-              </Stack>
-              <StatusBar style="auto" />
-              <Toast position="bottom" />
-            </ThemeProvider>
+            <TransitionProvider>
+              <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                <Stack screenOptions={{ headerShown: false }}>
+                  <Stack.Screen name="index" options={{ gestureEnabled: false }} />
+                  <Stack.Screen name="onboarding" />
+                  <Stack.Screen name="(auth)" />
+                  <Stack.Screen name="(tabs)" />
+                  <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal', headerShown: true }} />
+                </Stack>
+                <StatusBar style="auto" />
+                <Toast position="bottom" />
+              </ThemeProvider>
+            </TransitionProvider>
           </OnboardingProvider>
         </AuthProvider>
       </SafeAreaProvider>
