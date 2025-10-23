@@ -18,7 +18,11 @@ const OnboardingGate = () => {
     return <OnboardingSkeleton />;
   }
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="welcome" options={{ gestureEnabled: false }} />
+    </Stack>
+  );
 };
 
 export default function OnboardingLayout() {

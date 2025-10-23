@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm } from 'react-hook-form';
 
+import AppHeader from '@/components/common/AppHeader';
 import { OnboardingCard } from '@/components/onboarding/OnboardingCard';
 import { OnboardingContainer } from '@/components/onboarding/OnboardingContainer';
 import { useOnboarding } from '@/contexts/OnboardingContext';
@@ -94,42 +95,45 @@ const GoalsScreen = () => {
   }, [limitWarning, selectedGoals.length]);
 
   return (
-    <OnboardingContainer
-      step={6}
-      totalSteps={7}
-      title="What are your goals?"
-      subtitle="Choose up to three areas you want to focus on."
-      onBack={() => router.back()}
-      onNext={handleSubmit(onSubmit, handleError)}
-      disableNext={!isValid || isSubmitting}
-      nextLabel={isSubmitting ? 'Saving...' : 'Next'}
-    >
-      <View style={styles.list}>
-        <Controller
-          control={control}
-          name="goals"
-          render={({ field: { value, onChange } }) => (
-            <>
-              {GOAL_OPTIONS.map(option => {
-                const selected = value?.includes(option) ?? false;
-                return (
-                  <OnboardingCard
-                    key={option}
-                    label={option}
-                    selected={selected}
-                    onPress={() => onChange(toggleGoal(value ?? [], option))}
-                    accessibilityLabel={`${option}${selected ? ' selected' : ''}`}
-                  />
-                );
-              })}
-            </>
-          )}
-        />
-        <Text style={[styles.helper, selectedGoals.length === 0 && styles.helperError]}>
-          {limitWarning ?? `Select ${selectedGoals.length === 0 ? 'at least one' : 'up to three'} goals.`}
-        </Text>
-      </View>
-    </OnboardingContainer>
+    <>
+      <AppHeader title="Step 6 of 7" showBack />
+      <OnboardingContainer
+        step={6}
+        totalSteps={7}
+        title="What are your goals?"
+        subtitle="Choose up to three areas you want to focus on."
+        fallbackHref="/onboarding/welcome"
+        onNext={handleSubmit(onSubmit, handleError)}
+        disableNext={!isValid || isSubmitting}
+        nextLabel={isSubmitting ? 'Saving...' : 'Next'}
+      >
+        <View style={styles.list}>
+          <Controller
+            control={control}
+            name="goals"
+            render={({ field: { value, onChange } }) => (
+              <>
+                {GOAL_OPTIONS.map(option => {
+                  const selected = value?.includes(option) ?? false;
+                  return (
+                    <OnboardingCard
+                      key={option}
+                      label={option}
+                      selected={selected}
+                      onPress={() => onChange(toggleGoal(value ?? [], option))}
+                      accessibilityLabel={`${option}${selected ? ' selected' : ''}`}
+                    />
+                  );
+                })}
+              </>
+            )}
+          />
+          <Text style={[styles.helper, selectedGoals.length === 0 && styles.helperError]}>
+            {limitWarning ?? `Select ${selectedGoals.length === 0 ? 'at least one' : 'up to three'} goals.`}
+          </Text>
+        </View>
+      </OnboardingContainer>
+    </>
   );
 };
 

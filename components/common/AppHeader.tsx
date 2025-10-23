@@ -1,9 +1,11 @@
 import React from 'react';
-import { Pressable, Text, View } from 'react-native';
-import { useRouter, useNavigation, type Href } from 'expo-router';
+import type { NavigationProp } from '@react-navigation/native';
+import { useNavigation, type Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Pressable, Text, View } from '@/components/ui/nativewind-primitives';
 import { colors, spacing } from '@/lib/theme';
+import { safeBack } from '@/lib/navigation/safeBack';
 
 type AppHeaderProps = {
   title?: string;
@@ -14,15 +16,9 @@ type AppHeaderProps = {
 
 const DEFAULT_FALLBACK: Href = '/(auth)/gate';
 
-export default function AppHeader({
-  title,
-  showBack = true,
-  fallbackHref = DEFAULT_FALLBACK,
-  onBackPress,
-}: AppHeaderProps) {
+export default function AppHeader({ title, showBack = true, fallbackHref = DEFAULT_FALLBACK, onBackPress }: AppHeaderProps) {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<NavigationProp<ReactNavigation.RootParamList>>();
 
   const handleBack = () => {
     if (typeof onBackPress === 'function') {
@@ -30,12 +26,7 @@ export default function AppHeader({
       return;
     }
 
-    if (navigation?.canGoBack?.()) {
-      navigation.goBack();
-      return;
-    }
-
-    router.replace(fallbackHref);
+    safeBack(navigation, { fallback: fallbackHref });
   };
 
   return (

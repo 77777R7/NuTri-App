@@ -171,7 +171,7 @@ export default function SignupScreen() {
   return (
     <AuthShell
       showBack
-      onBack={() => router.back()}
+      fallbackHref="/(auth)/gate"
       title="Join NuTri today"
       subtitle="Create your account to personalise your supplement routine."
       contentOffsetTop={48}

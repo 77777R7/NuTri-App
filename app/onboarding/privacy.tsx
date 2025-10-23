@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm } from 'react-hook-form';
 
+import AppHeader from '@/components/common/AppHeader';
 import { OnboardingContainer } from '@/components/onboarding/OnboardingContainer';
 import { PermissionCard } from '@/components/onboarding/PermissionCard';
 import { useOnboarding } from '@/contexts/OnboardingContext';
@@ -59,7 +60,7 @@ const PrivacyScreen = () => {
         );
         console.log('🔒 Terms accepted; permissions selected', parsed);
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        router.push('/onboarding/trial-offer');
+        router.replace('/onboarding/trial-offer');
       } catch (error) {
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         console.error('Failed to save privacy selections', error);
@@ -73,74 +74,77 @@ const PrivacyScreen = () => {
   }, []);
 
   return (
-    <OnboardingContainer
-      step={7}
-      totalSteps={7}
-      title="Privacy & permissions"
-      subtitle="Review our terms and choose what app features you want to enable."
-      onBack={() => router.back()}
-      onNext={handleSubmit(onSubmit, handleError)}
-      disableNext={!isValid || isSubmitting}
-      nextLabel={isSubmitting ? 'Finishing...' : 'Finish Setup'}
-    >
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Required</Text>
-        <Controller
-          control={control}
-          name="agreed"
-          render={({ field: { value, onChange } }) => (
-            <PermissionCard
-              title="I agree to NuTri’s Terms & Privacy Policy"
-              description="This is required to continue using the app."
-              value={value}
-              required
-              onPress={() => onChange(!value)}
-            />
-          )}
-        />
-        {!isValid ? <Text style={styles.helperError}>You must accept the terms to proceed.</Text> : null}
-      </View>
+    <>
+      <AppHeader title="Step 7 of 7" showBack />
+      <OnboardingContainer
+        step={7}
+        totalSteps={7}
+        title="Privacy & permissions"
+        subtitle="Review our terms and choose what app features you want to enable."
+        fallbackHref="/onboarding/welcome"
+        onNext={handleSubmit(onSubmit, handleError)}
+        disableNext={!isValid || isSubmitting}
+        nextLabel={isSubmitting ? 'Finishing...' : 'Finish Setup'}
+      >
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Required</Text>
+          <Controller
+            control={control}
+            name="agreed"
+            render={({ field: { value, onChange } }) => (
+              <PermissionCard
+                title="I agree to NuTri’s Terms & Privacy Policy"
+                description="This is required to continue using the app."
+                value={value}
+                required
+                onPress={() => onChange(!value)}
+              />
+            )}
+          />
+          {!isValid ? <Text style={styles.helperError}>You must accept the terms to proceed.</Text> : null}
+        </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Optional permissions</Text>
-        <Controller
-          control={control}
-          name="camera"
-          render={({ field: { value, onChange } }) => (
-            <PermissionCard
-              title="Camera access"
-              description="Scan supplement labels to extract nutrition details faster."
-              value={value}
-              onPress={() => onChange(!value)}
-            />
-          )}
-        />
-        <Controller
-          control={control}
-          name="notifications"
-          render={({ field: { value, onChange } }) => (
-            <PermissionCard
-              title="Notifications"
-              description="Get reminders to take supplements and log progress."
-              value={value}
-              onPress={() => onChange(!value)}
-            />
-          )}
-        />
-        <Controller
-          control={control}
-          name="photos"
-          render={({ field: { value, onChange } }) => (
-            <PermissionCard
-              title="Photo library"
-              description="Attach photos of supplements or lab results for deeper insights."
-              value={value}
-              onPress={() => onChange(!value)}
-            />
-          )}
-        />
-      </View>
-    </OnboardingContainer>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Optional permissions</Text>
+          <Controller
+            control={control}
+            name="camera"
+            render={({ field: { value, onChange } }) => (
+              <PermissionCard
+                title="Camera access"
+                description="Scan supplement labels to extract nutrition details faster."
+                value={value}
+                onPress={() => onChange(!value)}
+              />
+            )}
+          />
+          <Controller
+            control={control}
+            name="notifications"
+            render={({ field: { value, onChange } }) => (
+              <PermissionCard
+                title="Notifications"
+                description="Get reminders to take supplements and log progress."
+                value={value}
+                onPress={() => onChange(!value)}
+              />
+            )}
+          />
+          <Controller
+            control={control}
+            name="photos"
+            render={({ field: { value, onChange } }) => (
+              <PermissionCard
+                title="Photo library"
+                description="Attach photos of supplements or lab results for deeper insights."
+                value={value}
+                onPress={() => onChange(!value)}
+              />
+            )}
+          />
+        </View>
+      </OnboardingContainer>
+    </>
   );
 };
 

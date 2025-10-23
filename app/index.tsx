@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, StyleSheet, Text as RNText } from 'react-native';
+import { Animated, BackHandler, Easing, StyleSheet, Text as RNText } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { useRouter, type Href } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
+import { useRouter, useRootNavigationState, type Href } from 'expo-router';
 
 import { BrandGradient } from '@/components/BrandGradient';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,7 +10,7 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 import { fetchUserProfile } from '@/lib/supabase/profile';
 import { supabase } from '@/lib/supabase';
 import { colors } from '@/lib/theme';
-import { Text, TouchableOpacity, View } from '@/components/ui/nativewind-primitives';
+import { ActivityIndicator, Text, TouchableOpacity, View } from '@/components/ui/nativewind-primitives';
 
 const AnimatedHeadline = Animated.createAnimatedComponent(RNText) as React.ComponentType<{
   children?: React.ReactNode;
@@ -46,6 +47,7 @@ const routeForProgress = (progress: number): Href => {
 
 export default function IntroScreen() {
   const router = useRouter();
+  const navReady = Boolean(useRootNavigationState()?.key);
   const { session, loading: authLoading } = useAuth();
   const { loading: onboardingLoading, onbCompleted, progress, trial, draftUpdatedAt } = useOnboarding();
   const fade = useRef(new Animated.Value(0)).current;
@@ -54,26 +56,55 @@ export default function IntroScreen() {
 
   const marketingActive = useMemo(() => !onboardingLoading && !onbCompleted && !authLoading && !session, [authLoading, onboardingLoading, onbCompleted, session]);
 
+  useFocusEffect(
+    useCallback(() => {
+      const onHardwareBackPress = () => true;
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onHardwareBackPress);
+
+      return () => {
+        subscription.remove();
+      };
+    }, []),
+  );
+
   useEffect(() => {
-    if (!onboardingLoading && !onbCompleted) {
-      if (progress >= 7 && trial.status !== 'not_started') {
-        router.replace('/(auth)/gate');
+    if (!navReady || authLoading || onboardingLoading) {
+      return;
+    }
+
+    if (!onbCompleted) {
+      if (session && progress >= 7 && trial.status !== 'not_started') {
+        router.replace('/(auth)/post-onboarding-upsert');
         return;
       }
+
+      if (progress >= 7) {
+        if (trial.status === 'not_started') {
+          router.replace('/onboarding/trial-offer');
+          return;
+        }
+
+        if (!session) {
+          router.replace('/(auth)/gate');
+          return;
+        }
+      }
+
       const target = routeForProgress(progress);
       router.replace(target);
+      return;
     }
-  }, [onboardingLoading, onbCompleted, progress, router, trial.status]);
+
+    if (session) {
+      router.replace('/(tabs)');
+      return;
+    }
+
+    router.replace('/(auth)/gate');
+  }, [authLoading, navReady, onboardingLoading, onbCompleted, progress, router, session, trial.status]);
 
   useEffect(() => {
-    if (onboardingLoading || authLoading) return;
-    if (onbCompleted && !session) {
-      router.replace('/(auth)/gate');
-    }
-  }, [authLoading, onboardingLoading, onbCompleted, router, session]);
-
-  useEffect(() => {
-    if (onboardingLoading || authLoading) return;
+    if (!navReady || onboardingLoading || authLoading) return;
     if (!session?.user?.id) return;
     if (!onbCompleted) return;
 
@@ -113,7 +144,7 @@ export default function IntroScreen() {
     return () => {
       cancelled = true;
     };
-  }, [authLoading, draftUpdatedAt, onboardingLoading, onbCompleted, router, session?.user?.id]);
+  }, [authLoading, draftUpdatedAt, navReady, onboardingLoading, onbCompleted, router, session?.user?.id]);
 
   useEffect(() => {
     if (!marketingActive) return;
@@ -158,8 +189,15 @@ export default function IntroScreen() {
     [router],
   );
 
-  if (onboardingLoading || authLoading) {
-    return null;
+  if (!navReady || onboardingLoading || authLoading) {
+    return (
+      <BrandGradient>
+        <StatusBar style="dark" />
+        <View style={styles.loading}>
+          <ActivityIndicator size="large" color={colors.brand} />
+        </View>
+      </BrandGradient>
+    );
   }
 
   if (onbCompleted) {
@@ -201,6 +239,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingVertical: 24,
+  },
+  loading: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   center: {
     flex: 1,

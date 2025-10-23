@@ -30,7 +30,7 @@ const TrialOfferScreen = () => {
 
       await setTrial(payload);
       console.log('🎁 Trial chosen', payload.status);
-      router.push('/(auth)/gate');
+      router.replace('/(auth)/gate');
     },
     [router, setTrial],
   );

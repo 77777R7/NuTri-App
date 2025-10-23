@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm } from 'react-hook-form';
 
+import AppHeader from '@/components/common/AppHeader';
 import { OnboardingCard } from '@/components/onboarding/OnboardingCard';
 import { OnboardingContainer } from '@/components/onboarding/OnboardingContainer';
 import { useOnboarding } from '@/contexts/OnboardingContext';
@@ -65,38 +66,41 @@ const ActivityScreen = () => {
   }, []);
 
   return (
-    <OnboardingContainer
-      step={4}
-      totalSteps={7}
-      title="How active are you?"
-      subtitle="Choose the level that best describes your weekly activity."
-      onBack={() => router.back()}
-      onNext={handleSubmit(onSubmit, handleError)}
-      disableNext={!isValid || isSubmitting}
-      nextLabel={isSubmitting ? 'Saving...' : 'Next'}
-    >
-      <View style={styles.list}>
-        <Controller
-          control={control}
-          name="activity"
-          render={({ field: { value, onChange } }) => (
-            <>
-              {ACTIVITY_LEVELS.map(level => (
-                <OnboardingCard
-                  key={level.value}
-                  label={level.label}
-                  description={level.description}
-                  selected={value === level.value}
-                  onPress={() => onChange(level.value)}
-                  accessibilityLabel={`${level.label}${value === level.value ? ' selected' : ''}`}
-                />
-              ))}
-            </>
-          )}
-        />
-        {!isValid ? <Text style={styles.helper}>Select the activity level that fits you best.</Text> : null}
-      </View>
-    </OnboardingContainer>
+    <>
+      <AppHeader title="Step 4 of 7" showBack />
+      <OnboardingContainer
+        step={4}
+        totalSteps={7}
+        title="How active are you?"
+        subtitle="Choose the level that best describes your weekly activity."
+        fallbackHref="/onboarding/welcome"
+        onNext={handleSubmit(onSubmit, handleError)}
+        disableNext={!isValid || isSubmitting}
+        nextLabel={isSubmitting ? 'Saving...' : 'Next'}
+      >
+        <View style={styles.list}>
+          <Controller
+            control={control}
+            name="activity"
+            render={({ field: { value, onChange } }) => (
+              <>
+                {ACTIVITY_LEVELS.map(level => (
+                  <OnboardingCard
+                    key={level.value}
+                    label={level.label}
+                    description={level.description}
+                    selected={value === level.value}
+                    onPress={() => onChange(level.value)}
+                    accessibilityLabel={`${level.label}${value === level.value ? ' selected' : ''}`}
+                  />
+                ))}
+              </>
+            )}
+          />
+          {!isValid ? <Text style={styles.helper}>Select the activity level that fits you best.</Text> : null}
+        </View>
+      </OnboardingContainer>
+    </>
   );
 };
 

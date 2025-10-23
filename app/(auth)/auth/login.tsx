@@ -178,7 +178,7 @@ export default function LoginScreen() {
   return (
     <AuthShell
       showBack
-      onBack={() => router.back()}
+      fallbackHref="/(auth)/gate"
       contentOffsetTop={72}
       topBarOffset={12}
       hero={

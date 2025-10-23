@@ -9,10 +9,13 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation, type NavigationProp } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { BrandGradient } from "@/components/BrandGradient";
 import { colors } from "@/lib/theme";
+import { safeBack } from "@/lib/navigation/safeBack";
+import type { Href } from "expo-router";
 
 type AuthShellProps = {
   title?: string;
@@ -24,6 +27,7 @@ type AuthShellProps = {
   onBack?: () => void;
   contentOffsetTop?: number;
   topBarOffset?: number;
+  fallbackHref?: Href;
 };
 
 /**
@@ -40,8 +44,19 @@ export function AuthShell({
   onBack,
   contentOffsetTop = 16,
   topBarOffset = 0,
+  fallbackHref,
 }: AuthShellProps) {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<NavigationProp<ReactNavigation.RootParamList>>();
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+      return;
+    }
+
+    safeBack(navigation, { fallback: fallbackHref ?? "/(auth)/gate" });
+  };
 
   return (
     <BrandGradient>
@@ -58,7 +73,7 @@ export function AuthShell({
           >
             {showBack ? (
               <TouchableOpacity
-                onPress={onBack}
+                onPress={handleBack}
                 style={styles.backButton}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 accessibilityRole="button"

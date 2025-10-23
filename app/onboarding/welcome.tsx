@@ -1,9 +1,10 @@
 console.log('✅ Start button rendered')
 // app/onboarding/welcome.tsx
-import React, { useEffect, useRef } from 'react';
-import { Animated, Dimensions, Easing, StyleSheet } from 'react-native';
+import React, { useCallback, useEffect, useRef } from 'react';
+import { Animated, BackHandler, Dimensions, Easing, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 
 // ✅ 使用你们的 primitives，修复 Animated 类型问题
 import { Text, View } from '@/components/ui/nativewind-primitives';
@@ -36,6 +37,15 @@ export default function WelcomeScreen() {
   const badgeScale = useRef(new Animated.Value(0.85)).current;
   const accentFade = useRef(new Animated.Value(0)).current;
   const accentScale = useRef(new Animated.Value(0.8)).current;
+
+  useFocusEffect(
+    useCallback(() => {
+      const onHardwareBackPress = () => true;
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onHardwareBackPress);
+
+      return () => subscription.remove();
+    }, []),
+  );
 
   useEffect(() => {
     Animated.sequence([
@@ -179,7 +189,7 @@ export default function WelcomeScreen() {
           />
         </View>
 
-        <AppHeader showBack title="Step 1 of 7" />
+        <AppHeader showBack title="Step 1 of 7" fallbackHref="/index" />
 
         {/* 进度条 */}
         <AnimView

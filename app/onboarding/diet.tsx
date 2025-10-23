@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm } from 'react-hook-form';
 
+import AppHeader from '@/components/common/AppHeader';
 import { OnboardingCard } from '@/components/onboarding/OnboardingCard';
 import { OnboardingContainer } from '@/components/onboarding/OnboardingContainer';
 import { useOnboarding } from '@/contexts/OnboardingContext';
@@ -81,42 +82,45 @@ const DietScreen = () => {
   }, []);
 
   return (
-    <OnboardingContainer
-      step={3}
-      totalSteps={7}
-      title="What’s your eating style?"
-      subtitle="Pick the dietary patterns that best match your current routine."
-      onBack={() => router.back()}
-      onNext={handleSubmit(onSubmit, handleError)}
-      disableNext={!isValid || isSubmitting}
-      nextLabel={isSubmitting ? 'Saving...' : 'Next'}
-    >
-      <View style={styles.list}>
-        <Controller
-          control={control}
-          name="diets"
-          render={({ field: { value, onChange } }) => (
-            <>
-              {DIET_OPTIONS.map(option => {
-                const selected = value?.includes(option) ?? false;
-                return (
-                  <OnboardingCard
-                    key={option}
-                    label={option}
-                    selected={selected}
-                    onPress={() => onChange(toggleDiet(value ?? [], option))}
-                    accessibilityLabel={`${option}${selected ? ' selected' : ''}`}
-                  />
-                );
-              })}
-            </>
-          )}
-        />
-        {!selectedDiets || selectedDiets.length === 0 ? (
-          <Text style={styles.helper}>Select at least one dietary preference.</Text>
-        ) : null}
-      </View>
-    </OnboardingContainer>
+    <>
+      <AppHeader title="Step 3 of 7" showBack />
+      <OnboardingContainer
+        step={3}
+        totalSteps={7}
+        title="What’s your eating style?"
+        subtitle="Pick the dietary patterns that best match your current routine."
+        fallbackHref="/onboarding/welcome"
+        onNext={handleSubmit(onSubmit, handleError)}
+        disableNext={!isValid || isSubmitting}
+        nextLabel={isSubmitting ? 'Saving...' : 'Next'}
+      >
+        <View style={styles.list}>
+          <Controller
+            control={control}
+            name="diets"
+            render={({ field: { value, onChange } }) => (
+              <>
+                {DIET_OPTIONS.map(option => {
+                  const selected = value?.includes(option) ?? false;
+                  return (
+                    <OnboardingCard
+                      key={option}
+                      label={option}
+                      selected={selected}
+                      onPress={() => onChange(toggleDiet(value ?? [], option))}
+                      accessibilityLabel={`${option}${selected ? ' selected' : ''}`}
+                    />
+                  );
+                })}
+              </>
+            )}
+          />
+          {!selectedDiets || selectedDiets.length === 0 ? (
+            <Text style={styles.helper}>Select at least one dietary preference.</Text>
+          ) : null}
+        </View>
+      </OnboardingContainer>
+    </>
   );
 };
 

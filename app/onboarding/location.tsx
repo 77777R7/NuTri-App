@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 
+import AppHeader from '@/components/common/AppHeader';
 import { FormInput } from '@/components/onboarding/FormInput';
 import { OnboardingContainer } from '@/components/onboarding/OnboardingContainer';
 import { PermissionCard } from '@/components/onboarding/PermissionCard';
@@ -121,37 +122,40 @@ const LocationScreen = () => {
   }, [proceedToGoals, saveDraft]);
 
   return (
-    <OnboardingContainer
-      step={5}
-      totalSteps={7}
-      title="Where are you based?"
-      subtitle="We use your location to tailor recommendations and account for seasonal changes."
-      onBack={() => router.back()}
-      onNext={handleSubmit(onSubmit)}
-      disableNext={isSubmitting}
-      showSkip
-      onSkip={handleSkip}
-    >
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Quick setup</Text>
-        <PermissionCard
-          title="Use current location"
-          description="Allow NuTri to detect your location automatically."
-          value={Boolean(permissionGranted && (country || city))}
-          loading={requestingLocation}
-          onPress={requestLocation}
-        />
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Or enter manually</Text>
-        <View style={styles.inputs}>
-          <FormInput control={control} name="country" label="Country" placeholder="Country" autoCapitalize="words" />
-          <FormInput control={control} name="city" label="City" placeholder="City" autoCapitalize="words" />
+    <>
+      <AppHeader title="Step 5 of 7" showBack />
+      <OnboardingContainer
+        step={5}
+        totalSteps={7}
+        title="Where are you based?"
+        subtitle="We use your location to tailor recommendations and account for seasonal changes."
+        fallbackHref="/onboarding/welcome"
+        onNext={handleSubmit(onSubmit)}
+        disableNext={isSubmitting}
+        showSkip
+        onSkip={handleSkip}
+      >
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Quick setup</Text>
+          <PermissionCard
+            title="Use current location"
+            description="Allow NuTri to detect your location automatically."
+            value={Boolean(permissionGranted && (country || city))}
+            loading={requestingLocation}
+            onPress={requestLocation}
+          />
         </View>
-        {!combinedLocation ? <Text style={styles.helper}>You can skip this step if you prefer not to share your location now.</Text> : null}
-      </View>
-    </OnboardingContainer>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Or enter manually</Text>
+          <View style={styles.inputs}>
+            <FormInput control={control} name="country" label="Country" placeholder="Country" autoCapitalize="words" />
+            <FormInput control={control} name="city" label="City" placeholder="City" autoCapitalize="words" />
+          </View>
+          {!combinedLocation ? <Text style={styles.helper}>You can skip this step if you prefer not to share your location now.</Text> : null}
+        </View>
+      </OnboardingContainer>
+    </>
   );
 };
 

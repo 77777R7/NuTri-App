@@ -1,9 +1,12 @@
 import React, { type ReactNode } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { useNavigation, type NavigationProp } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, shadow } from '@/lib/theme';
+import { safeBack } from '@/lib/navigation/safeBack';
+import type { Href } from 'expo-router';
 
 import { ProgressBar } from './ProgressBar';
 
@@ -22,6 +25,7 @@ type OnboardingContainerProps = {
   disableNext?: boolean;
   showBack?: boolean;
   showSkip?: boolean;
+  fallbackHref?: Href;
 };
 
 export const OnboardingContainer = ({
@@ -39,8 +43,10 @@ export const OnboardingContainer = ({
   disableNext,
   showBack = true,
   showSkip = false,
+  fallbackHref,
 }: OnboardingContainerProps) => {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<NavigationProp<ReactNavigation.RootParamList>>();
 
   const handleNext = async () => {
     if (disableNext) return;
@@ -58,7 +64,12 @@ export const OnboardingContainer = ({
     } catch {
       // noop
     }
-    onBack?.();
+    if (onBack) {
+      onBack();
+      return;
+    }
+
+    safeBack(navigation, { fallback: fallbackHref ?? '/onboarding/welcome' });
   };
 
   const handleSkip = async () => {
@@ -84,7 +95,7 @@ export const OnboardingContainer = ({
       <View style={styles.content}>{children}</View>
 
       <View style={styles.footer}>
-        {showBack && onBack ? (
+        {showBack ? (
           <TouchableOpacity style={styles.secondaryButton} onPress={handleBack}>
             <Text style={styles.secondaryButtonText}>{backLabel}</Text>
           </TouchableOpacity>
