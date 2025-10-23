@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
 export const profileSchema = z.object({
-  height: z.number().min(120).max(250),
-  weight: z.number().min(30).max(300),
-  age: z.number().min(13).max(120),
+  height: z.number().min(120).max(240),
+  weight: z.number().min(30).max(200),
+  age: z.number().min(13).max(100),
   gender: z.enum(['Male', 'Female', 'Other', 'Prefer not to say']),
 });
 

@@ -4,7 +4,7 @@ import { StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-na
 
 import { colors } from '@/lib/theme';
 
-type FormInputProps<TFieldValues = any> = {
+type FormInputProps = {
   control: any;
   name: any;
   label: string;
@@ -22,7 +22,7 @@ type FormInputProps<TFieldValues = any> = {
   inputMode?: TextInputProps['inputMode'];
 };
 
-export const FormInput = <TFieldValues = any>({
+export const FormInput = ({
   control,
   name,
   label,
@@ -38,7 +38,7 @@ export const FormInput = <TFieldValues = any>({
   parseValue,
   formatValue,
   inputMode,
-}: FormInputProps<TFieldValues>) => {
+}: FormInputProps) => {
   return (
     <Controller
       control={control}
