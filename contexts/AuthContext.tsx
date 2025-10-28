@@ -56,7 +56,6 @@ const buildRedirectUri = (path?: string, { forceProxy }: { forceProxy?: boolean 
     ...(normalizedPath ? { path: normalizedPath } : {}),
     scheme: DEEP_LINK_SCHEME,
     preferLocalhost: true,
-    useProxy: false,
   });
 };
 

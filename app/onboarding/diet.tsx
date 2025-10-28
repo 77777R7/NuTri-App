@@ -95,19 +95,19 @@ const DietScreen = () => {
         nextLabel={isSubmitting ? 'Saving...' : 'Next'}
       >
         <View style={styles.list}>
-          <Controller
+          <Controller<DietFormValues>
             control={control}
             name="diets"
-            render={({ field: { value, onChange } }) => (
+            render={({ field }: { field: DietFieldController }) => (
               <>
                 {DIET_OPTIONS.map(option => {
-                  const selected = value?.includes(option) ?? false;
+                  const selected = field.value?.includes(option) ?? false;
                   return (
                     <OnboardingCard
                       key={option}
                       label={option}
                       selected={selected}
-                      onPress={() => onChange(toggleDiet(value ?? [], option))}
+                      onPress={() => field.onChange(toggleDiet(field.value ?? [], option))}
                       accessibilityLabel={`${option}${selected ? ' selected' : ''}`}
                     />
                   );
@@ -136,3 +136,7 @@ const styles = StyleSheet.create({
 });
 
 export default DietScreen;
+type DietFieldController = {
+  value: DietFormValues['diets'];
+  onChange: (value: DietFormValues['diets']) => void;
+};

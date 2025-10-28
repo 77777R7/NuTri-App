@@ -5,6 +5,7 @@ import {
   Easing,
   Keyboard,
   KeyboardAvoidingView,
+  LayoutChangeEvent,
   Platform,
   ScrollView,
   StyleSheet,
@@ -189,7 +190,7 @@ export default function ProfileScreen() {
 
   const ageError = !ageInput
     ? 'Enter your age.'
-    : !Number.isFinite(ageNumber)
+    : ageNumber === undefined
       ? 'Enter a valid age.'
       : ageNumber < MIN_AGE || ageNumber > MAX_AGE
         ? `Age must be between ${MIN_AGE} and ${MAX_AGE}.`
@@ -350,7 +351,7 @@ export default function ProfileScreen() {
                         accessibilityRole="button"
                         accessibilityState={{ selected }}
                         accessibilityLabel={option}
-                        style={({ pressed }) => [
+                        style={({ pressed }: { pressed: boolean }) => [
                           styles.genderChip,
                           selected && styles.genderChipSelected,
                           pressed && styles.genderChipPressed,
@@ -445,7 +446,7 @@ const SegmentedUnitControl = ({ unit, onChange }: SegmentedUnitControlProps) => 
 
   return (
     <View
-      onLayout={event => setWidth(event.nativeEvent.layout.width)}
+      onLayout={(event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width)}
       style={styles.segmented}
       accessibilityRole="tablist"
       accessibilityLabel="Measurement units"

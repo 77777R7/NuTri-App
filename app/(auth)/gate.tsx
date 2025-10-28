@@ -1,29 +1,24 @@
 // app/(auth)/gate.tsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing } from 'react-native';
+import { Animated, Easing, StyleSheet, TouchableOpacity } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter, type Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-// primitives 作为宿主，避免 Animated 类型报错
 import { Text, View } from '@/components/ui/nativewind-primitives';
-import AppHeader from '@/components/common/AppHeader';
 import { BrandGradient } from '@/components/BrandGradient';
-import { PrimaryButton, SecondaryButton } from '@/components/ui/Buttons';
-
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { colors, spacing, type } from '@/lib/theme';
 
-// 用 primitives 包装 Animated 组件（只需要 Text 的动画）
 const AnimText = Animated.createAnimatedComponent(Text as any);
 
 const PHRASES = [
-  'Welcome to NuTri',
+  'NuTri ',
   'Let’s scan your supplement',
   'Let’s study your supplement',
   'Let’s optimize your health',
-  'Create an account to save your plan',
 ];
 
 export default function AuthGateScreen() {
@@ -32,61 +27,51 @@ export default function AuthGateScreen() {
   const { session, loading: authLoading } = useAuth();
   const { loading: onbLoading, onbCompleted, trial } = useOnboarding();
 
-  // 文字动效
   const fade = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(12)).current;
-  const subFade = useRef(new Animated.Value(0)).current;
-  const subTranslate = useRef(new Animated.Value(8)).current;
   const [index, setIndex] = useState(0);
 
   const canShowGate = useMemo(
     () => !onbLoading && onbCompleted && !authLoading && !session && trial?.status !== 'not_started',
-    [onbLoading, onbCompleted, authLoading, session, trial?.status]
+    [onbLoading, onbCompleted, authLoading, session, trial?.status],
   );
 
-  // 若未选择试用，回 Trial Offer（双保险）
   useEffect(() => {
     if (!onbLoading && onbCompleted && trial?.status === 'not_started') {
       router.replace('/onboarding/trial-offer');
     }
   }, [onbLoading, onbCompleted, trial?.status, router]);
 
-  // 已登录 → tabs（index 守卫也会处理，这里再兜底）
   useEffect(() => {
     if (!authLoading && session) {
       router.replace('/(tabs)');
     }
   }, [authLoading, session, router]);
 
-  // 文案轮播动画
   useEffect(() => {
     if (!canShowGate) return;
 
     const animateOnce = () => {
       fade.setValue(0);
-      translateY.setValue(12);
-      subFade.setValue(0);
-      subTranslate.setValue(8);
+      translateY.setValue(14);
 
       Animated.parallel([
-        Animated.timing(fade, { toValue: 1, duration: 520, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-        Animated.timing(translateY, { toValue: 0, duration: 520, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-        Animated.timing(subFade, { toValue: 1, delay: 100, duration: 420, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-        Animated.timing(subTranslate, { toValue: 0, delay: 100, duration: 420, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+        Animated.timing(fade, { toValue: 1, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+        Animated.timing(translateY, { toValue: 0, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
       ]).start();
     };
 
     animateOnce();
     const id = setInterval(() => {
-      setIndex((prev) => {
+      setIndex(prev => {
         const next = (prev + 1) % PHRASES.length;
         animateOnce();
         return next;
       });
-    }, 2200);
+    }, 2400);
 
     return () => clearInterval(id);
-  }, [canShowGate, fade, translateY, subFade, subTranslate]);
+  }, [canShowGate, fade, translateY]);
 
   const go = useCallback((path: Href) => router.push(path), [router]);
 
@@ -95,50 +80,114 @@ export default function AuthGateScreen() {
   return (
     <BrandGradient>
       <StatusBar style="dark" />
-      <AppHeader showBack title="Sign in to save" />
+      <View style={{ flex: 1, paddingHorizontal: spacing.lg, paddingTop: insets.top + spacing.lg }}>
+        <TouchableOpacity
+          onPress={async () => {
+            try {
+              await Haptics.selectionAsync();
+            } catch {}
+            router.replace('/base44/welcome' as Href);
+          }}
+          activeOpacity={0.8}
+          style={styles.backLink}
+        >
+          <Text style={styles.backLinkText}>← Back to welcome</Text>
+        </TouchableOpacity>
 
-      <View style={{ flex: 1, paddingHorizontal: spacing.lg }}>
-        {/* 居中动效文案 */}
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <AnimText
             style={[
-              type.h2 as any,
-              { color: colors.subtext, letterSpacing: 1, opacity: fade, transform: [{ translateY }] },
-            ]}
-          >
-            YOU’RE ALMOST THERE
-          </AnimText>
-
-          <AnimText
-            style={[
               type.h1 as any,
-              { textAlign: 'center', color: colors.text, marginTop: spacing.sm, opacity: fade, transform: [{ translateY }] },
+              { textAlign: 'center', color: colors.text, opacity: fade, transform: [{ translateY }] },
             ]}
           >
             {PHRASES[index]}
           </AnimText>
-
-          <AnimText
-            style={[
-              type.p as any,
-              {
-                textAlign: 'center',
-                marginTop: spacing.md,
-                opacity: subFade,
-                transform: [{ translateY: subTranslate }],
-              },
-            ]}
-          >
-            We use your profile to sync across devices and keep your supplement plan safe.
-          </AnimText>
         </View>
 
-        {/* 按钮区 */}
-        <View style={{ paddingBottom: insets.bottom + spacing.lg, gap: spacing.md }}>
-          <PrimaryButton title="Create account" onPress={() => go('/auth/signup')} testID="gate-signup" />
-          <SecondaryButton title="Log in" onPress={() => go('/auth/login')} testID="gate-login" />
+        <View style={{ paddingBottom: insets.bottom + spacing.lg + spacing.md, gap: spacing.md }}>
+          {/* Create account */}
+          <TouchableOpacity
+            onPress={async () => {
+              try {
+                await Haptics.selectionAsync();
+              } catch {}
+              go('/auth/signup' as Href);
+            }}
+            activeOpacity={0.9}
+            accessibilityRole="button"
+            accessibilityLabel="Create account"
+            testID="gate-create-account"
+            style={styles.pillPrimary}
+          >
+            <Text style={styles.pillPrimaryText}>Create account</Text>
+          </TouchableOpacity>
+
+          {/* Log in */}
+          <TouchableOpacity
+            onPress={async () => {
+              try {
+                await Haptics.selectionAsync();
+              } catch {}
+              go('/auth/login' as Href);
+            }}
+            activeOpacity={0.9}
+            accessibilityRole="button"
+            accessibilityLabel="Log in"
+            testID="gate-login"
+            style={styles.pillSecondary}
+          >
+            <Text style={styles.pillSecondaryText}>Log in</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </BrandGradient>
   );
 }
+const styles = StyleSheet.create({
+  pillPrimary: {
+    width: '100%',                // ✅ 关键：铺满父容器
+    borderRadius: 999,
+    backgroundColor: colors.brand,
+    paddingVertical: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
+  },
+  pillPrimaryText: {
+    color: colors.surface,
+    fontSize: 17,
+    fontWeight: '800',
+  },
+  pillSecondary: {
+    width: '100%',                // ✅ 关键：铺满父容器
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    paddingVertical: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  pillSecondaryText: {
+    color: colors.text,
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  backLink: {
+    alignSelf: 'flex-start',
+    paddingVertical: 8,
+  },
+  backLinkText: {
+    color: colors.subtext,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+});

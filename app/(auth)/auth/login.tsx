@@ -8,7 +8,7 @@ import * as AppleAuthentication from "expo-apple-authentication";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { SocialAuthPills } from "@/components/auth/SocialAuthPills";
 import { ActivityIndicator, Text, TextInput, TouchableOpacity, View } from "@/components/ui/nativewind-primitives";
-import { useAuth, getPostAuthDestination } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { getAuthErrorMessage } from "@/lib/errors";
 import { colors } from "@/lib/theme";
 import { testSupabase } from "@/lib/supabase";
@@ -50,18 +50,10 @@ export default function LoginScreen() {
 
   useEffect(() => {
     if (!loading && session) {
-      const destination = getPostAuthDestination(postAuthRedirect ?? redirectParam);
       setPostAuthRedirect(null);
-      router.replace(destination);
+      router.replace('/main');
     }
-  }, [
-    loading,
-    session,
-    redirectParam,
-    router,
-    postAuthRedirect,
-    setPostAuthRedirect,
-  ]);
+  }, [loading, session, router, setPostAuthRedirect]);
 
   useEffect(() => {
     if (error) {
@@ -164,9 +156,8 @@ export default function LoginScreen() {
     try {
       const success = await authenticateWithBiometrics();
       if (success) {
-        const destination = getPostAuthDestination(postAuthRedirect ?? redirectParam);
         setPostAuthRedirect(null);
-        router.replace(destination);
+        router.replace('/main');
       }
     } catch (err) {
       showInlineMessage(getAuthErrorMessage(err));
@@ -243,7 +234,12 @@ export default function LoginScreen() {
           <Text style={styles.linkPrimary}>Forgot password?</Text>
         </TouchableOpacity>
         {isBiometricEnabled ? (
-          <TouchableOpacity disabled={isBusy} onPress={onBiometric}>
+          <TouchableOpacity
+            disabled={isBusy}
+            onPress={() => {
+              void onBiometric();
+            }}
+          >
             <Text style={[styles.linkSecondary, isBusy && styles.faded]}>
               Use Face ID
             </Text>
@@ -254,7 +250,9 @@ export default function LoginScreen() {
       <TouchableOpacity
         activeOpacity={0.9}
         disabled={isBusy}
-        onPress={onEmailPassword}
+        onPress={() => {
+          void onEmailPassword();
+        }}
         style={[styles.primaryButton, isBusy && styles.disabled]}
       >
         {submitting ? (

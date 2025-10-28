@@ -31,7 +31,7 @@ export const ensureUserProfileTable = async (client: PublicClient) => {
       execute procedure public.set_updated_at();
   `;
 
-  const { error } = await client.rpc('exec_sql', { sql: ddl }).catch(async rpcError => {
+  const { error } = await (client.rpc as any)('exec_sql', { sql: ddl }).catch(async (rpcError: unknown) => {
     console.warn('[supabase] exec_sql rpc unavailable, attempting raw query', rpcError);
     return client.from('user_profiles').select('user_id').limit(1);
   });

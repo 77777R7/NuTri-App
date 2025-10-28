@@ -249,7 +249,15 @@ export default function LoginScreen() {
               <Text style={{ color: colors.brand, fontWeight: "500" }}>Forgot password?</Text>
             </TouchableOpacity>
             {isBiometricEnabled && (
-              <TouchableOpacity onPress={onBiometric} disabled={isBusy}>
+              <TouchableOpacity
+                onPress={() => {
+                  if (isBusy) {
+                    return;
+                  }
+                  void onBiometric();
+                }}
+                disabled={isBusy}
+              >
                 <Text
                   style={{
                     color: colors.brandDark,
@@ -265,7 +273,12 @@ export default function LoginScreen() {
 
           {/* Sign In */}
           <TouchableOpacity
-            onPress={onEmailPassword}
+            onPress={() => {
+              if (isBusy) {
+                return;
+              }
+              void onEmailPassword();
+            }}
             disabled={isBusy}
             style={{
               backgroundColor: "#4CD1B1",
@@ -293,7 +306,12 @@ export default function LoginScreen() {
           {/* Social Login */}
           <View className="w-full items-center space-y-3">
             <TouchableOpacity
-              onPress={onGoogle}
+              onPress={() => {
+                if (isBusy) {
+                  return;
+                }
+                void onGoogle();
+              }}
               disabled={isBusy}
               accessibilityRole="button"
               accessibilityLabel="Continue with Google"
@@ -316,13 +334,23 @@ export default function LoginScreen() {
                 buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
                 buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
                 cornerRadius={999}
-                onPress={isBusy ? undefined : onApple}
+                onPress={async () => {
+                  if (isBusy) {
+                    return;
+                  }
+                  await onApple();
+                }}
                 accessibilityLabel="Continue with Apple"
                 style={styles.appleButton}
               />
             ) : (
               <TouchableOpacity
-                onPress={onApple}
+                onPress={() => {
+                  if (isBusy || Platform.OS !== "ios") {
+                    return;
+                  }
+                  void onApple();
+                }}
                 disabled={isBusy || Platform.OS !== "ios"}
                 accessibilityRole="button"
                 accessibilityLabel="Continue with Apple"

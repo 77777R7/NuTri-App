@@ -5,7 +5,7 @@
     "jsx": "react-native",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"],
+      "@/*": ["*"],
       "expo-router": ["node_modules/expo-router/build/index.d.ts"],
       "expo-router/*": ["node_modules/expo-router/build/*"],
       "expo-router/src/*": ["node_modules/expo-router/build/*"]
@@ -18,5 +18,9 @@
     "expo-env.d.ts",
     "env.d.ts",
     "nativewind.d.ts"
+  ],
+  "exclude": [
+    "../legacy-web/**/*",
+    "../archive/**/*"
   ]
 }

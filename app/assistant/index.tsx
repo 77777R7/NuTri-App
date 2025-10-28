@@ -1,82 +1,106 @@
-import React, { useCallback, useState } from 'react';
+import React, { useState } from 'react';
 import { Platform } from 'react-native';
-import { Stack } from 'expo-router';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { apiClient } from '@/lib/api-client';
-import { useTranslation } from '@/lib/i18n';
-import { KeyboardAvoidingView, ScrollView, Text, TextInput, View } from '@/components/ui/nativewind-primitives';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ArrowLeft, Send, Sparkles } from 'lucide-react-native';
+import { router } from 'expo-router';
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from '@/components/ui/nativewind-primitives';
 
-export default function AssistantScreen() {
-  const { t } = useTranslation();
-  const [prompt, setPrompt] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [response, setResponse] = useState<string | null>(null);
+type Message = { role: 'user' | 'assistant'; content: string };
 
-  const handleAsk = useCallback(async () => {
-    if (!prompt.trim()) {
-      setError(t.assistantEnterPrompt);
-      return;
-    }
+export default function AIHelperPage() {
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      role: 'assistant',
+      content:
+        "Hi! I'm your supplement AI assistant. Ask me anything about supplements, ingredients, dosages, or health recommendations!",
+    },
+  ]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-    try {
-      setLoading(true);
-      setError(null);
-      setResponse(null);
-      const result = await apiClient.analyze({ text: prompt.trim() });
-      setResponse(JSON.stringify(result, null, 2));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t.assistantRequestFailed);
-    } finally {
-      setLoading(false);
-    }
-  }, [prompt, t]);
+  const handleSend = () => {
+    if (!input.trim() || isLoading) return;
+    const question = input.trim();
+    setInput('');
+    setMessages((prev) => [...prev, { role: 'user', content: question }]);
+    setIsLoading(true);
+    setTimeout(() => {
+      setMessages((prev) => [...prev, { role: 'assistant', content: '（演示回复）Thanks! We will connect the LLM later.' }]);
+      setIsLoading(false);
+    }, 600);
+  };
 
   return (
-    <>
-      <Stack.Screen options={{ title: t.quickActionAI }} />
-      <KeyboardAvoidingView
-        behavior={Platform.select({ ios: 'padding', android: undefined })}
-        className="flex-1 bg-background"
-      >
-        <ScrollView className="flex-1 px-5 pt-6" contentContainerStyle={{ paddingBottom: 120 }}>
-          <Card className="mb-5 gap-4">
-            <Text className="text-lg font-semibold text-gray-900 dark:text-white">{t.assistantTitle}</Text>
-            <Text className="text-sm text-muted">{t.assistantSubtitle}</Text>
-            <View className="mt-2 rounded-2xl border border-border bg-surface px-3 py-2">
-              <TextInput
-                value={prompt}
-                onChangeText={setPrompt}
-                placeholder={t.assistantPlaceholder}
-                placeholderTextColor="#94A3AB"
-                autoCapitalize="sentences"
-                multiline
-                numberOfLines={4}
-                className="text-base text-gray-900 dark:text-white"
-                onSubmitEditing={handleAsk}
-                returnKeyType="send"
-                blurOnSubmit
-              />
-            </View>
-            <Button label={loading ? t.loading : t.assistantSendCta} onPress={handleAsk} disabled={loading} />
-            {error ? <Text className="text-sm text-red-600 dark:text-red-300">{error}</Text> : null}
-          </Card>
-
-          <Card className="gap-3">
-            <Text className="text-base font-semibold text-gray-900 dark:text-white">{t.assistantResponseTitle}</Text>
-            {loading ? (
-              <View className="h-32 rounded-2xl bg-primary-100/60" />
-            ) : response ? (
-              <View className="rounded-2xl bg-surface px-4 py-3">
-                <Text className="font-mono text-sm text-gray-800 dark:text-gray-200">{response}</Text>
+    <SafeAreaView className="flex-1 bg-gray-50">
+      <KeyboardAvoidingView behavior={Platform.select({ ios: 'padding', android: undefined })} className="flex-1">
+        <View className="border-b border-gray-200 bg-white px-6 py-6">
+          <View className="flex-row items-center gap-4">
+            <Pressable
+              onPress={() => router.replace('/main')}
+              className="h-10 w-10 items-center justify-center rounded-full bg-gray-100"
+            >
+              <ArrowLeft size={20} color="#374151" />
+            </Pressable>
+            <View className="flex-1">
+              <View className="flex-row items-center">
+                <Sparkles size={24} color="#a855f7" />
+                <Text className="ml-2 text-2xl font-bold text-gray-900">AI Helper</Text>
               </View>
-            ) : (
-              <Text className="text-sm text-muted">{t.assistantIdleHint}</Text>
-            )}
-          </Card>
+              <Text className="text-sm text-gray-500">Ask me about supplements</Text>
+            </View>
+          </View>
+        </View>
+
+        <ScrollView className="flex-1 px-6 py-6">
+          {messages.map((message, index) => (
+            <View key={index} className={`mb-3 ${message.role === 'user' ? 'items-end' : 'items-start'}`}>
+              <View
+                className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                  message.role === 'user' ? 'bg-gray-900' : 'bg-white'
+                }`}
+              >
+                <Text className={`${message.role === 'user' ? 'text-white' : 'text-gray-900'} text-sm`}>
+                  {message.content}
+                </Text>
+              </View>
+            </View>
+          ))}
+          {isLoading ? (
+            <View className="items-start">
+              <View className="rounded-2xl border border-gray-100 bg-white px-4 py-3">
+                <ActivityIndicator />
+              </View>
+            </View>
+          ) : null}
         </ScrollView>
+
+        <View className="border-t border-gray-200 bg-white px-6 py-4">
+          <View className="flex-row items-center gap-3">
+            <TextInput
+              value={input}
+              onChangeText={setInput}
+              placeholder="Ask about supplements..."
+              className="flex-1 h-12 rounded-xl border border-gray-200 px-4"
+              editable={!isLoading}
+            />
+            <Pressable
+              onPress={handleSend}
+              disabled={isLoading || !input.trim()}
+              className="h-12 items-center justify-center rounded-xl bg-purple-600 px-4"
+            >
+              <Send size={20} color="#fff" />
+            </Pressable>
+          </View>
+        </View>
       </KeyboardAvoidingView>
-    </>
+    </SafeAreaView>
   );
 }
