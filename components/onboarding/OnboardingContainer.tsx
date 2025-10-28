@@ -1,13 +1,13 @@
-import { useNavigation, type NavigationProp } from '@react-navigation/native';
-import * as Haptics from 'expo-haptics';
 import React, { useCallback, useMemo, type ReactNode } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { useNavigation, type NavigationProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { colors, shadow } from '@/lib/theme';
+import { safeBack } from '@/lib/navigation/safeBack';
 import { StepSlide } from '@/components/animation/StepSlide';
 import { useTransitionDir } from '@/contexts/TransitionContext';
-import { safeBack } from '@/lib/navigation/safeBack';
-import { colors, shadow } from '@/lib/theme';
 import type { Href } from 'expo-router';
 
 import { ProgressBar } from './ProgressBar';
@@ -106,21 +106,14 @@ export const OnboardingContainer = ({
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       </View>
 
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom, 16) + 24 }]}
-        showsVerticalScrollIndicator={false}
-        bounces={false}
+      <StepSlide
+        direction={enterDir}
+        slideOnFirst
+        durationMs={360}
+        mountKey={`${step}-${enterDir}`}
       >
-        <StepSlide
-          direction={enterDir}
-          slideOnFirst
-          durationMs={360}
-          mountKey={`${step}-${enterDir}`}
-        >
-          <View style={styles.content}>{children}</View>
-        </StepSlide>
-      </ScrollView>
+        <View style={styles.content}>{children}</View>
+      </StepSlide>
 
       <View style={styles.footer}>
         {showBack ? (
@@ -174,15 +167,9 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     lineHeight: 22,
   },
-  scrollView: {
+  content: {
     flex: 1,
     marginTop: 24,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  content: {
-    minHeight: '100%',
   },
   footer: {
     flexDirection: 'row',

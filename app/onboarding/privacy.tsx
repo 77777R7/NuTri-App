@@ -88,16 +88,16 @@ const PrivacyScreen = () => {
       >
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Required</Text>
-          <Controller
+          <Controller<PrivacyFormValues>
             control={control}
             name="agreed"
-            render={({ field: { value, onChange } }) => (
+            render={({ field }: { field: BooleanFieldController }) => (
               <PermissionCard
                 title="I agree to NuTri’s Terms & Privacy Policy"
                 description="This is required to continue using the app."
-                value={value}
+                value={field.value}
                 required
-                onPress={() => onChange(!value)}
+                onPress={() => field.onChange(!field.value)}
               />
             )}
           />
@@ -106,39 +106,39 @@ const PrivacyScreen = () => {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Optional permissions</Text>
-          <Controller
+          <Controller<PrivacyFormValues>
             control={control}
             name="camera"
-            render={({ field: { value, onChange } }) => (
+            render={({ field }: { field: BooleanFieldController }) => (
               <PermissionCard
                 title="Camera access"
                 description="Scan supplement labels to extract nutrition details faster."
-                value={value}
-                onPress={() => onChange(!value)}
+                value={field.value}
+                onPress={() => field.onChange(!field.value)}
               />
             )}
           />
-          <Controller
+          <Controller<PrivacyFormValues>
             control={control}
             name="notifications"
-            render={({ field: { value, onChange } }) => (
+            render={({ field }: { field: BooleanFieldController }) => (
               <PermissionCard
                 title="Notifications"
                 description="Get reminders to take supplements and log progress."
-                value={value}
-                onPress={() => onChange(!value)}
+                value={field.value}
+                onPress={() => field.onChange(!field.value)}
               />
             )}
           />
-          <Controller
+          <Controller<PrivacyFormValues>
             control={control}
             name="photos"
-            render={({ field: { value, onChange } }) => (
+            render={({ field }: { field: BooleanFieldController }) => (
               <PermissionCard
                 title="Photo library"
                 description="Attach photos of supplements or lab results for deeper insights."
-                value={value}
-                onPress={() => onChange(!value)}
+                value={field.value}
+                onPress={() => field.onChange(!field.value)}
               />
             )}
           />
@@ -165,3 +165,7 @@ const styles = StyleSheet.create({
 });
 
 export default PrivacyScreen;
+type BooleanFieldController = {
+  value: boolean;
+  onChange: (value: boolean) => void;
+};

@@ -20,6 +20,11 @@ const ACTIVITY_LEVELS: { value: ActivityFormValues['activity']; label: string; d
   { value: 'athlete', label: 'Athlete', description: 'Competitive or elite training schedule' },
 ];
 
+type ActivityFieldController = {
+  value: ActivityFormValues['activity'];
+  onChange: (value: ActivityFormValues['activity']) => void;
+};
+
 const ActivityScreen = () => {
   const router = useRouter();
   const { draft, loading, saveDraft } = useOnboarding();
@@ -79,19 +84,19 @@ const ActivityScreen = () => {
         nextLabel={isSubmitting ? 'Saving...' : 'Next'}
       >
         <View style={styles.list}>
-          <Controller
+          <Controller<ActivityFormValues>
             control={control}
             name="activity"
-            render={({ field: { value, onChange } }) => (
+            render={({ field }: { field: ActivityFieldController }) => (
               <>
                 {ACTIVITY_LEVELS.map(level => (
                   <OnboardingCard
                     key={level.value}
                     label={level.label}
                     description={level.description}
-                    selected={value === level.value}
-                    onPress={() => onChange(level.value)}
-                    accessibilityLabel={`${level.label}${value === level.value ? ' selected' : ''}`}
+                    selected={field.value === level.value}
+                    onPress={() => field.onChange(level.value)}
+                    accessibilityLabel={`${level.label}${field.value === level.value ? ' selected' : ''}`}
                   />
                 ))}
               </>

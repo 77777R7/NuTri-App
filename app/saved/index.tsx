@@ -1,98 +1,285 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { Stack, router } from 'expo-router';
-import { Card } from '@/components/ui/card';
-import { SupplementItem } from '@/components/ui/supplement-item';
-import { apiClient, HomeDashboardResponse } from '@/lib/api-client';
-import { useTranslation } from '@/lib/i18n';
-import { useAuth } from '@/contexts/AuthContext';
-import { RefreshControl, ScrollView, Text, View } from '@/components/ui/nativewind-primitives';
+import React from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ArrowLeft, Heart } from 'lucide-react-native';
+import { router, type Href } from 'expo-router';
+import { Image } from '@/components/ui/nativewind-primitives';
 
-type SavedSupplements = NonNullable<HomeDashboardResponse['data']>['savedSupplements'];
+const categoryEmojis: Record<string, string> = {
+  vitamins: '💊',
+  minerals: '⚡',
+  probiotics: '🦠',
+  omega3: '🐟',
+  herbs: '🌿',
+  amino_acids: '🧬',
+  other: '📦',
+};
 
-export default function SavedScreen() {
-  const { t } = useTranslation();
-  const { token, loading: authLoading } = useAuth();
-  const [saved, setSaved] = useState<SavedSupplements>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [refreshing, setRefreshing] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(
-    async (opts: { silent?: boolean } = {}) => {
-      if (!opts.silent) {
-        setLoading(true);
-      }
-      try {
-        const response = await apiClient.homeDashboard({ token });
-        if (response.success && response.data) {
-          setSaved(response.data.savedSupplements);
-          setError(null);
-        } else {
-          setError(response.message ?? t.dashboardLoadError);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : t.dashboardLoadError);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [token, t],
-  );
-
-  useEffect(() => {
-    if (authLoading) return;
-    load();
-  }, [authLoading, load]);
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await load({ silent: true });
-    setRefreshing(false);
-  }, [load]);
+export default function FavouritePage() {
+  const supplements: any[] = [];
+  const isLoading = false;
 
   return (
-    <>
-      <Stack.Screen options={{ title: t.quickActionSaved }} />
-      <ScrollView
-        className="flex-1 bg-background px-5 pt-6"
-        contentContainerStyle={{ paddingBottom: 80 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#2CC2B3" />}
-      >
-        <Card className="mb-5 gap-4">
-          <Text className="text-lg font-semibold text-gray-900 dark:text-white">{t.savedVitaminsTitle}</Text>
-          <Text className="text-sm text-muted">{t.savedPageDescription}</Text>
-        </Card>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.replace('/main')} activeOpacity={0.85} style={styles.backButton}>
+            <ArrowLeft size={20} color="#374151" />
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>Favourite Supplements</Text>
+            <Text style={styles.subtitle}>{supplements.length} active supplements</Text>
+          </View>
+        </View>
 
-        {error ? (
-          <Card className="mb-4 border border-red-200 bg-red-50 dark:bg-red-900/20">
-            <Text className="text-sm font-medium text-red-700 dark:text-red-200">{error}</Text>
-          </Card>
-        ) : null}
-
-        <Card className="gap-4">
-          {loading ? (
-            <View className="gap-3">
-              {[0, 1, 2].map(index => (
-                <View key={index} className="h-16 rounded-2xl bg-primary-100/60" />
-              ))}
+        {isLoading ? (
+          <View style={styles.loaderList}>
+            {[0, 1, 2, 3].map(index => (
+              <View key={index} style={styles.skeletonCard}>
+                <View style={styles.skeletonRow}>
+                  <View style={styles.skeletonThumb} />
+                  <View style={styles.skeletonBody}>
+                    <View style={[styles.skeletonLine, { width: '75%' }]} />
+                    <View style={[styles.skeletonLine, { width: '55%', marginTop: 10 }]} />
+                  </View>
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : supplements.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <View style={styles.emptyIcon}>
+              <Heart size={44} color="#CBD5F5" />
             </View>
-          ) : saved.length === 0 ? (
-            <Text className="text-sm text-muted">{t.emptySavedVitamins}</Text>
-          ) : (
-            saved.map(item => (
-              <SupplementItem
-                key={item.id}
-                name={item.name}
-                description={item.brand}
-                dosage={item.category}
-                thumbnail={item.imageUrl ?? undefined}
-                onActionPress={() => router.push('/database')}
-                actionLabel={t.viewDetails}
-              />
-            ))
-          )}
-        </Card>
-      </ScrollView>
-    </>
+            <Text style={styles.emptyTitle}>No favourites yet</Text>
+            <Text style={styles.emptySubtitle}>
+              Start scanning supplements to add them to your favourites
+            </Text>
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={() => router.push('/(tabs)/scan')}
+              style={styles.emptyButton}
+            >
+              <Text style={styles.emptyButtonText}>Scan Your First</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.listContainer}>
+            {supplements.map((supplement, index) => (
+              <TouchableOpacity
+                key={supplement.id ?? index}
+                activeOpacity={0.9}
+                onPress={() => {
+                  if (!supplement.id) {
+                    return;
+                  }
+                  router.push(`/supplement?id=${supplement.id}` as Href);
+                }}
+              >
+                <View style={styles.itemCard}>
+                  <View style={styles.itemThumbnail}>
+                    {supplement.image_url ? (
+                      <Image source={{ uri: supplement.image_url }} style={styles.itemThumbnailImage} />
+                    ) : (
+                      <Text style={styles.itemThumbnailEmoji}>
+                        {categoryEmojis[supplement.category ?? ''] ?? '📦'}
+                      </Text>
+                    )}
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.itemTitle} numberOfLines={1}>
+                      {supplement.product_name}
+                    </Text>
+                    <Text style={styles.itemSubtitle} numberOfLines={1}>
+                      {supplement.brand}
+                    </Text>
+                    {supplement.created_date ? (
+                      <Text style={styles.itemMeta}>
+                        Added{' '}
+                        {new Date(supplement.created_date).toLocaleDateString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <Heart size={24} color="#ef4444" fill="#ef4444" />
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      </View>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+  },
+  container: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingVertical: 24,
+    maxWidth: 480,
+    width: '100%',
+    alignSelf: 'center',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    marginBottom: 32,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#111827',
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginTop: 4,
+  },
+  loaderList: {
+    gap: 14,
+  },
+  skeletonCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 16,
+    shadowColor: '#0f172a',
+    shadowOpacity: 0.06,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 5,
+  },
+  skeletonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  skeletonThumb: {
+    width: 56,
+    height: 56,
+    borderRadius: 14,
+    backgroundColor: '#E2E8F0',
+  },
+  skeletonBody: {
+    flex: 1,
+    gap: 8,
+  },
+  skeletonLine: {
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#E2E8F0',
+  },
+  emptyCard: {
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 28,
+    paddingHorizontal: 24,
+    paddingVertical: 36,
+    shadowColor: '#0f172a',
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 8,
+  },
+  emptyIcon: {
+    width: 96,
+    height: 96,
+    borderRadius: 32,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  emptyButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 18,
+    backgroundColor: '#111827',
+  },
+  emptyButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  listContainer: {
+    gap: 16,
+  },
+  itemCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 16,
+    shadowColor: '#0f172a',
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 6,
+  },
+  itemThumbnail: {
+    width: 56,
+    height: 56,
+    borderRadius: 14,
+    backgroundColor: '#F0FDF4',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  itemThumbnailImage: {
+    width: 56,
+    height: 56,
+    borderRadius: 14,
+  },
+  itemThumbnailEmoji: {
+    fontSize: 28,
+  },
+  itemTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  itemSubtitle: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  itemMeta: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    marginTop: 2,
+  },
+});

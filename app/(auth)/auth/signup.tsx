@@ -335,6 +335,15 @@ export default function SignupScreen() {
         onApple={handleAppleSignUp}
         onGoogle={handleGoogleSignUp}
       />
+
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={() => router.replace('/main')}
+        style={styles.testButton}
+        accessibilityLabel="Skip to main app (testing only)"
+      >
+        <Text style={styles.testButtonText}>Next (testing)</Text>
+      </TouchableOpacity>
     </AuthShell>
   );
 }
@@ -430,6 +439,22 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.textMuted,
     fontWeight: "500",
+  },
+  testButton: {
+    marginTop: 24,
+    paddingVertical: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.brand,
+    backgroundColor: "#F0FDF4",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  testButtonText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.brand,
+    textTransform: "uppercase",
   },
   footerText: {
     color: colors.textMuted,

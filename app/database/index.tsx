@@ -1,118 +1,128 @@
-import React, { useCallback, useState } from 'react';
-import { Platform } from 'react-native';
-import { Stack, router } from 'expo-router';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { SupplementItem } from '@/components/ui/supplement-item';
-import { apiClient, SearchResponse } from '@/lib/api-client';
-import { useTranslation } from '@/lib/i18n';
-import { KeyboardAvoidingView, ScrollView, Text, TextInput, View } from '@/components/ui/nativewind-primitives';
+import React, { useMemo, useState } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ArrowLeft, Search as SearchIcon } from 'lucide-react-native';
+import { router, type Href } from 'expo-router';
+import { Image, Pressable, ScrollView, Text, TextInput, View } from '@/components/ui/nativewind-primitives';
 
-type SearchResult = {
-  id: string;
-  name: string;
-  brand: string;
-  category: string;
-  imageUrl?: string | null;
-  score?: number;
+const categoryEmojis: Record<string, string> = {
+  vitamins: '💊',
+  minerals: '⚡',
+  probiotics: '🦠',
+  omega3: '🐟',
+  herbs: '🌿',
+  amino_acids: '🧬',
+  other: '📦',
 };
 
-export default function DatabaseScreen() {
-  const { t } = useTranslation();
-  const [query, setQuery] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [results, setResults] = useState<SearchResult[]>([]);
-  const [hasSearched, setHasSearched] = useState(false);
+const SAMPLE: any[] = [];
 
-  const handleSearch = useCallback(async () => {
-    if (!query.trim()) {
-      setError(t.databaseEnterQuery);
-      return;
-    }
+export default function SearchPage() {
+  const [searchQuery, setSearchQuery] = useState('');
 
-    try {
-      setLoading(true);
-      setError(null);
-      setHasSearched(true);
-      const response = await apiClient.search({ query: query.trim() });
-      const data: SearchResponse =
-        'success' in response && response.success ? response.data : (response as SearchResponse);
-      setResults(
-        Array.isArray(data?.supplements)
-          ? data.supplements.map((supplement) => ({
-              id: supplement.id ?? '',
-              name: supplement.name ?? t.unknownSupplement,
-              brand: supplement.brand ?? t.unknownBrand,
-              category: supplement.category ?? t.unknownCategory,
-              imageUrl: supplement.imageUrl,
-              score: supplement.relevanceScore,
-            }))
-          : [],
-      );
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t.databaseSearchFailed);
-    } finally {
-      setLoading(false);
-    }
-  }, [query, t]);
+  const filtered = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return SAMPLE;
+    return SAMPLE.filter(
+      (supplement) =>
+        supplement.product_name?.toLowerCase().includes(q) ||
+        supplement.brand?.toLowerCase().includes(q) ||
+        supplement.category?.toLowerCase().includes(q) ||
+        supplement.ingredients?.some((ing: any) => ing.name?.toLowerCase().includes(q)),
+    );
+  }, [searchQuery]);
 
   return (
-    <>
-      <Stack.Screen options={{ title: t.quickActionDatabase }} />
-      <KeyboardAvoidingView
-        behavior={Platform.select({ ios: 'padding', android: undefined })}
-        className="flex-1 bg-background"
-      >
-        <ScrollView className="flex-1 px-5 pt-6" contentContainerStyle={{ paddingBottom: 120 }}>
-          <Card className="mb-5 gap-4">
-            <Text className="text-lg font-semibold text-gray-900 dark:text-white">{t.databaseTitle}</Text>
-            <Text className="text-sm text-muted">{t.databaseSubtitle}</Text>
-            <View className="mt-2 rounded-2xl border border-border bg-surface px-3 py-2">
-              <TextInput
-                value={query}
-                onChangeText={setQuery}
-                placeholder={t.databasePlaceholder}
-                placeholderTextColor="#94A3AB"
-                autoCapitalize="none"
-                autoCorrect={false}
-                className="text-base text-gray-900 dark:text-white"
-                returnKeyType="search"
-                onSubmitEditing={handleSearch}
-              />
-            </View>
-            <Button label={loading ? t.loading : t.databaseSearchCta} onPress={handleSearch} disabled={loading} />
-            {error ? <Text className="text-sm text-red-600 dark:text-red-300">{error}</Text> : null}
-          </Card>
+    <SafeAreaView className="flex-1 bg-gray-50">
+      <View className="w-full max-w-xl self-center px-6 py-6">
+        <View className="mb-6 flex-row items-center gap-4">
+          <Pressable
+            onPress={() => router.replace('/main')}
+            className="h-10 w-10 items-center justify-center rounded-full bg-white shadow"
+          >
+            <ArrowLeft size={20} color="#374151" />
+          </Pressable>
+          <View className="flex-1">
+            <Text className="text-2xl font-bold text-gray-900">Search</Text>
+            <Text className="text-sm text-gray-500">Find your supplements</Text>
+          </View>
+        </View>
 
-          <Card className="gap-4">
-            <Text className="text-base font-semibold text-gray-900 dark:text-white">{t.databaseResultsTitle}</Text>
-            {loading ? (
-              <View className="gap-3">
-                {[0, 1, 2].map(index => (
-                  <View key={index} className="h-16 rounded-2xl bg-primary-100/60" />
-                ))}
-              </View>
-            ) : results.length === 0 ? (
-              <Text className="text-sm text-muted">
-                {hasSearched ? t.databaseNoResults : t.databaseIdleHint}
-              </Text>
-            ) : (
-              results.map(result => (
-                <SupplementItem
-                  key={result.id}
-                  name={result.name}
-                  description={`${result.brand}${result.score ? ` · ${Math.round(result.score * 100)}% match` : ''}`}
-                  dosage={result.category}
-                  thumbnail={result.imageUrl ?? undefined}
-                  onActionPress={() => router.push('/database')}
-                  actionLabel={t.viewDetails}
-                />
-              ))
-            )}
-          </Card>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </>
+        <View className="mb-6">
+          <View className="absolute left-4 top-1/2 -translate-y-1/2">
+            <SearchIcon size={20} color="#9ca3af" />
+          </View>
+          <TextInput
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Search by name, brand, or ingredient..."
+            className="h-14 rounded-2xl border border-gray-200 bg-white pl-12"
+          />
+        </View>
+
+        {!searchQuery ? (
+          <View className="items-center rounded-3xl bg-white p-12">
+            <View className="mb-4 h-20 w-20 items-center justify-center rounded-full bg-emerald-100">
+              <SearchIcon size={40} color="#059669" />
+            </View>
+            <Text className="mb-2 text-xl font-semibold text-gray-900">Search Your Supplements</Text>
+            <Text className="text-center text-gray-500">Start typing to find supplements by name, brand, or ingredient</Text>
+          </View>
+        ) : filtered.length === 0 ? (
+          <View className="items-center rounded-3xl bg-white p-12">
+            <View className="mb-4 h-20 w-20 items-center justify-center rounded-full bg-gray-100">
+              <SearchIcon size={40} color="#d1d5db" />
+            </View>
+            <Text className="mb-2 text-xl font-semibold text-gray-900">No results found</Text>
+            <Text className="text-center text-gray-500">Try searching with different keywords</Text>
+          </View>
+        ) : (
+          <ScrollView className="space-y-3">
+            {filtered.map((supplement, index) => (
+              <Pressable
+                key={supplement.id ?? index}
+                onPress={() => {
+                  if (!supplement.id) {
+                    return;
+                  }
+                  router.push(`/supplement?id=${supplement.id}` as Href);
+                }}
+              >
+                <View className="rounded-2xl bg-white p-4 shadow">
+                  <View className="flex-row items-center gap-3">
+                    <View className="h-14 w-14 items-center justify-center rounded-xl bg-emerald-50">
+                      {supplement.image_url ? (
+                        <Image source={{ uri: supplement.image_url }} className="h-14 w-14 rounded-xl" />
+                      ) : (
+                        <Text className="text-3xl">{categoryEmojis[supplement.category ?? ''] ?? '📦'}</Text>
+                      )}
+                    </View>
+                    <View className="flex-1">
+                      <Text className="font-semibold text-gray-900" numberOfLines={1}>
+                        {supplement.product_name}
+                      </Text>
+                      <Text className="text-sm text-gray-500" numberOfLines={1}>
+                        {supplement.brand}
+                      </Text>
+                      {supplement.created_date ? (
+                        <Text className="mt-1 text-xs text-gray-400">
+                          {new Date(supplement.created_date).toLocaleDateString(undefined, {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })}
+                        </Text>
+                      ) : null}
+                    </View>
+                    <View className="rounded-full bg-gray-100 px-3 py-1">
+                      <Text className="text-xs font-medium text-gray-600">{(supplement.category || '').replace(/_/g, ' ')}</Text>
+                    </View>
+                  </View>
+                </View>
+              </Pressable>
+            ))}
+          </ScrollView>
+        )}
+      </View>
+    </SafeAreaView>
   );
 }

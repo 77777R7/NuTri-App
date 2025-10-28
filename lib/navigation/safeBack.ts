@@ -25,7 +25,7 @@ export function safeBack(
     const pathname = usePathname?.() as string | undefined;
     if (pathname?.startsWith('/onboarding/')) {
       if (pathname === '/onboarding/welcome') {
-        router.replace('/index');
+        router.replace('/');
       } else {
         router.replace('/onboarding/welcome');
       }

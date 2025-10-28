@@ -7,6 +7,7 @@ import { useRouter, useRootNavigationState, type Href } from 'expo-router';
 import { BrandGradient } from '@/components/BrandGradient';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnboarding } from '@/contexts/OnboardingContext';
+import { loadCurrentProfile } from '@/lib/base44/profile';
 import { fetchUserProfile } from '@/lib/supabase/profile';
 import { supabase } from '@/lib/supabase';
 import { colors } from '@/lib/theme';
@@ -19,30 +20,19 @@ const AnimatedHeadline = Animated.createAnimatedComponent(RNText) as React.Compo
 
 const PHRASES = ['Welcome to NuTri', 'Let’s scan your supplement', 'Let’s study your supplement', 'Let’s optimize your health'];
 
-const routeForProgress = (progress: number): Href => {
-  if (progress <= 1) {
-    return '/onboarding/welcome';
-  }
-  if (progress === 2) {
-    return '/onboarding/profile';
-  }
-  if (progress === 3) {
-    return '/onboarding/diet';
-  }
-  if (progress === 4) {
-    return '/onboarding/activity';
-  }
-  if (progress === 5) {
-    return '/onboarding/location';
-  }
-  if (progress === 6) {
-    return '/onboarding/goals';
-  }
-  if (progress === 7) {
-    return '/onboarding/privacy';
-  }
+const BASE44_STEPS = [
+  '/base44/welcome',
+  '/base44/demographics',
+  '/base44/physical-stats',
+  '/base44/health-goals',
+  '/base44/dietary',
+  '/base44/experience',
+  '/base44/privacy',
+] as const;
 
-  return '/onboarding/profile';
+const routeForProgress = (progress: number): Href => {
+  const index = Math.max(0, Math.min(BASE44_STEPS.length - 1, Math.floor(progress) - 1));
+  return BASE44_STEPS[index] as Href;
 };
 
 export default function IntroScreen() {
@@ -72,22 +62,50 @@ export default function IntroScreen() {
       return;
     }
 
-    if (!onbCompleted) {
-      if (session && progress >= 7 && trial.status !== 'not_started') {
-        router.replace('/(auth)/post-onboarding-upsert');
-        return;
-      }
+    if (!session) {
+      let cancelled = false;
 
+      const routeGuestFlow = async () => {
+        try {
+          const profile = await loadCurrentProfile();
+          if (cancelled) return;
+
+          const completedSteps = profile?.completed_steps ?? 0;
+
+          if (completedSteps < BASE44_STEPS.length) {
+            router.replace('/base44/welcome' as Href);
+            return;
+          }
+
+          if (trial.status === 'not_started') {
+            router.replace('/onboarding/trial-offer');
+            return;
+          }
+
+          router.replace('/(auth)/gate');
+        } catch (error) {
+          if (cancelled) return;
+          console.warn('[base44] failed to resolve profile progress', error);
+          router.replace('/base44/welcome' as Href);
+        }
+      };
+
+      routeGuestFlow();
+
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    if (!onbCompleted) {
       if (progress >= 7) {
         if (trial.status === 'not_started') {
           router.replace('/onboarding/trial-offer');
           return;
         }
 
-        if (!session) {
-          router.replace('/(auth)/gate');
-          return;
-        }
+        router.replace('/(auth)/post-onboarding-upsert');
+        return;
       }
 
       const target = routeForProgress(progress);
@@ -95,12 +113,7 @@ export default function IntroScreen() {
       return;
     }
 
-    if (session) {
-      router.replace('/(tabs)');
-      return;
-    }
-
-    router.replace('/(auth)/gate');
+    router.replace('/(tabs)');
   }, [authLoading, navReady, onboardingLoading, onbCompleted, progress, router, session, trial.status]);
 
   useEffect(() => {
@@ -119,12 +132,17 @@ export default function IntroScreen() {
           console.warn('☁️ Fetch profile error', error);
         }
 
-        if (!data || data.onboarding_completed !== true) {
+        const profile = (data ?? null) as {
+          onboarding_completed?: boolean | null;
+          updated_at?: string | null;
+        } | null;
+
+        if (!profile || profile.onboarding_completed !== true) {
           router.replace('/(auth)/post-onboarding-upsert');
           return;
         }
 
-        const serverUpdatedAt = data.updated_at ? new Date(data.updated_at).getTime() : 0;
+        const serverUpdatedAt = profile.updated_at ? new Date(profile.updated_at).getTime() : 0;
         const localUpdatedAt = draftUpdatedAt ? new Date(draftUpdatedAt).getTime() : 0;
 
         if (localUpdatedAt > serverUpdatedAt) {

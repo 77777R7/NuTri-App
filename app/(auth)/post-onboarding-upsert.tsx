@@ -51,7 +51,16 @@ const PostOnboardingUpsertScreen = () => {
     };
 
     runUpsert();
-  }, [draft, markCompletedLocal, router, saveDraft, session?.user?.id, setProgress, trial]);
+  }, [
+    clearDraft,
+    draft,
+    markCompletedLocal,
+    router,
+    session?.user?.id,
+    setProgress,
+    setServerSyncedAt,
+    trial,
+  ]);
 
   const handleRetry = () => {
     setStatus('loading');

@@ -1,7 +1,3 @@
-import type { NavigationProp } from '@react-navigation/native';
-import { useNavigation } from '@react-navigation/native';
-import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
@@ -9,25 +5,30 @@ import {
   Easing,
   Keyboard,
   KeyboardAvoidingView,
+  LayoutChangeEvent,
   Platform,
-  View as RNView,
   ScrollView,
   StyleSheet,
   TextInput,
+  View as RNView,
 } from 'react-native';
+import type { NavigationProp } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { StaggerText } from '@/components/animation/StaggerText';
-import { StepSlide } from '@/components/animation/StepSlide';
-import { BrandGradient } from '@/components/BrandGradient';
 import AppHeader from '@/components/common/AppHeader';
+import { BrandGradient } from '@/components/BrandGradient';
 import { ProgressBar } from '@/components/onboarding/ProgressBar';
 import { PrimaryButton, SecondaryButton } from '@/components/ui/Buttons';
+import { StepSlide } from '@/components/animation/StepSlide';
+import { StaggerText } from '@/components/animation/StaggerText';
 import { Pressable, Text, View } from '@/components/ui/nativewind-primitives';
-import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useTransitionDir } from '@/contexts/TransitionContext';
-import { safeBack } from '@/lib/navigation/safeBack';
+import { useOnboarding } from '@/contexts/OnboardingContext';
 import { colors, radii, spacing, type } from '@/lib/theme';
+import { safeBack } from '@/lib/navigation/safeBack';
 
 type Unit = 'metric' | 'imperial';
 type GenderOption = 'Male' | 'Female' | 'Other' | 'Prefer not to say';
@@ -189,9 +190,9 @@ export default function ProfileScreen() {
 
   const ageError = !ageInput
     ? 'Enter your age.'
-    : !Number.isFinite(ageNumber)
+    : ageNumber === undefined
       ? 'Enter a valid age.'
-      : ageNumber !== undefined && (ageNumber < MIN_AGE || ageNumber > MAX_AGE)
+      : ageNumber < MIN_AGE || ageNumber > MAX_AGE
         ? `Age must be between ${MIN_AGE} and ${MAX_AGE}.`
         : null;
 
@@ -445,7 +446,7 @@ const SegmentedUnitControl = ({ unit, onChange }: SegmentedUnitControlProps) => 
 
   return (
     <View
-      onLayout={(event: { nativeEvent: { layout: { width: number } } }) => setWidth(event.nativeEvent.layout.width)}
+      onLayout={(event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width)}
       style={styles.segmented}
       accessibilityRole="tablist"
       accessibilityLabel="Measurement units"
@@ -684,7 +685,6 @@ const styles = StyleSheet.create({
   ctaHost: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'flex-end',
-    zIndex: 10,
   },
   ctaContainer: {
     position: 'absolute',
@@ -698,7 +698,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     elevation: 8,
     backgroundColor: 'transparent',
-    zIndex: 11,
   },
   ctaContent: {
     flexDirection: 'row',

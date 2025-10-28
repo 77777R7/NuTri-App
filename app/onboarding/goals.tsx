@@ -108,19 +108,19 @@ const GoalsScreen = () => {
         nextLabel={isSubmitting ? 'Saving...' : 'Next'}
       >
         <View style={styles.list}>
-          <Controller
+          <Controller<GoalsFormValues>
             control={control}
             name="goals"
-            render={({ field: { value, onChange } }) => (
+            render={({ field }: { field: GoalsFieldController }) => (
               <>
                 {GOAL_OPTIONS.map(option => {
-                  const selected = value?.includes(option) ?? false;
+                  const selected = field.value?.includes(option) ?? false;
                   return (
                     <OnboardingCard
                       key={option}
                       label={option}
                       selected={selected}
-                      onPress={() => onChange(toggleGoal(value ?? [], option))}
+                      onPress={() => field.onChange(toggleGoal(field.value ?? [], option))}
                       accessibilityLabel={`${option}${selected ? ' selected' : ''}`}
                     />
                   );
@@ -152,3 +152,7 @@ const styles = StyleSheet.create({
 });
 
 export default GoalsScreen;
+type GoalsFieldController = {
+  value: GoalsFormValues['goals'];
+  onChange: (value: GoalsFormValues['goals']) => void;
+};
