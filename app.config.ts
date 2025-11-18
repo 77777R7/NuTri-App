@@ -14,6 +14,10 @@ const API_BASE_URL =
   process.env.API_BASE_URL ??
   process.env.NEXT_PUBLIC_API_BASE_URL ??
   DEFAULT_DEV_API_BASE_URL;
+const SEARCH_API_BASE_URL =
+  process.env.EXPO_PUBLIC_SEARCH_API_BASE_URL ??
+  process.env.SEARCH_API_BASE_URL ??
+  API_BASE_URL;
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY =
   process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY ?? process.env.EXPO_PUBLIC_SUPABASE_SERVICE_ANON_KEY;
@@ -85,6 +89,7 @@ const createExpoConfig = ({ config }: ConfigContext): ExpoConfig => {
       supabaseAnonKey: SUPABASE_ANON_KEY,
       openAiApiKey: OPENAI_API_KEY,
       paddleOcrEndpoint: PADDLE_OCR_ENDPOINT,
+      searchApiBaseUrl: SEARCH_API_BASE_URL,
       sentryDsn: SENTRY_DSN,
       posthogApiKey: POSTHOG_API_KEY,
       eas: {

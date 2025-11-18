@@ -1,49 +1,97 @@
-import React, { useState } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useMemo, useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ArrowLeft, LogOut, User as UserIcon } from 'lucide-react-native';
 import { router } from 'expo-router';
-import { Pressable, Text, View } from '@/components/ui/nativewind-primitives';
+
+import { ResponsiveHeader } from '@/components/common/ResponsiveHeader';
+import { ResponsiveScreen } from '@/components/common/ResponsiveScreen';
+import type { DesignTokens } from '@/constants/designTokens';
+import { useResponsiveTokens } from '@/hooks/useResponsiveTokens';
 
 export default function ProfilePage() {
-  const [user] = useState<{ full_name: string; email: string }>({
-    full_name: 'User',
-    email: 'user@example.com',
-  });
+  const { tokens } = useResponsiveTokens();
+  const styles = useMemo(() => createStyles(tokens), [tokens]);
+  const [user] = useState<{ full_name: string; email: string }>(
+    () => ({
+      full_name: 'User',
+      email: 'user@example.com',
+    }),
+  );
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <View className="w-full max-w-xl self-center px-6 py-6">
-        <View className="mb-8 flex-row items-center gap-4">
-          <Pressable
-            onPress={() => router.replace('/main')}
-            className="h-10 w-10 items-center justify-center rounded-full bg-white shadow"
-          >
-            <ArrowLeft size={20} color="#374151" />
-          </Pressable>
-          <Text className="text-2xl font-bold text-gray-900">Profile</Text>
-        </View>
+    <ResponsiveScreen contentStyle={styles.screen}>
+      <ResponsiveHeader title="Profile" onBack={() => router.replace('/main')} />
 
-        <View className="space-y-4">
-          <View className="rounded-2xl bg-white p-6">
-            <View className="mb-6 flex-row items-center gap-4">
-              <View className="h-16 w-16 items-center justify-center rounded-full bg-emerald-500">
-                <UserIcon size={32} color="#fff" />
-              </View>
-              <View>
-                <Text className="text-xl font-bold text-gray-900">{user.full_name}</Text>
-                <Text className="text-sm text-gray-500">{user.email}</Text>
-              </View>
-            </View>
+      <View style={styles.card}>
+        <View style={styles.avatarRow}>
+          <View style={styles.avatarCircle}>
+            <UserIcon size={Math.round(tokens.typography.title.fontSize * 1.3)} color="#FFFFFF" />
           </View>
-
-          <Pressable className="h-14 w-full items-center justify-center rounded-2xl border border-gray-200">
-            <View className="flex-row items-center">
-              <LogOut size={20} color="#374151" />
-              <Text className="ml-2 text-gray-800">Sign Out</Text>
-            </View>
-          </Pressable>
+          <View style={styles.userTextGroup}>
+            <Text style={styles.userName}>{user.full_name}</Text>
+            <Text style={styles.userEmail}>{user.email}</Text>
+          </View>
         </View>
       </View>
-    </SafeAreaView>
+
+      <TouchableOpacity style={styles.signOutButton} activeOpacity={0.85}>
+        <LogOut size={tokens.components.iconButton.iconSize} color={tokens.colors.textPrimary} />
+        <Text style={styles.signOutText}>Sign Out</Text>
+      </TouchableOpacity>
+    </ResponsiveScreen>
   );
 }
+
+const createStyles = (tokens: DesignTokens) =>
+  StyleSheet.create({
+    screen: {
+      paddingVertical: tokens.spacing.xl,
+      gap: tokens.spacing.lg,
+    },
+    card: {
+      backgroundColor: tokens.colors.surface,
+      borderRadius: tokens.components.card.radius,
+      paddingHorizontal: tokens.components.card.paddingHorizontal,
+      paddingVertical: tokens.components.card.paddingVertical,
+      ...tokens.shadow.card,
+    },
+    avatarRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: tokens.spacing.md,
+    },
+    avatarCircle: {
+      width: Math.round(tokens.components.iconButton.size * 1.6),
+      height: Math.round(tokens.components.iconButton.size * 1.6),
+      borderRadius: Math.round(tokens.components.iconButton.size * 0.8),
+      backgroundColor: tokens.colors.accent,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    userTextGroup: {
+      gap: tokens.spacing.xs,
+    },
+    userName: {
+      color: tokens.colors.textPrimary,
+      ...tokens.typography.subtitle,
+    },
+    userEmail: {
+      color: tokens.colors.textMuted,
+      ...tokens.typography.bodySmall,
+    },
+    signOutButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: tokens.spacing.xs,
+      height: Math.round(tokens.components.iconButton.size * 1.2),
+      borderRadius: tokens.components.card.radius,
+      borderWidth: 1,
+      borderColor: tokens.colors.border,
+      backgroundColor: tokens.colors.surface,
+    },
+    signOutText: {
+      color: tokens.colors.textPrimary,
+      ...tokens.typography.body,
+    },
+  });

@@ -71,6 +71,7 @@ export default function StatsCards({ supplements = [], isLoading = false }: Prop
       <Text className="px-1 text-2xl font-bold text-gray-900">Favourite Supplements</Text>
       <View>
         <ScrollView
+          className="bg-transparent"
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}

@@ -341,7 +341,7 @@ export default function WelcomeScreen() {
             bottom: insets.bottom + (isSmall ? spacing.lg : spacing.xl),
             borderRadius: 20,
             padding: 12,
-            backgroundColor: 'rgba(255,255,255,0.86)',
+            backgroundColor: 'rgba(249,251,249,0.9)',
             borderWidth: StyleSheet.hairlineWidth,
             borderColor: 'rgba(15,118,110,0.18)',
             shadowColor: '#000',

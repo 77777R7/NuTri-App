@@ -147,7 +147,7 @@ export default function HomeScreen() {
 
   return (
     <View className="relative flex-1 bg-background">
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 140 }}>
+      <ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingBottom: 140 }}>
         <View className="px-5 pt-10">
           <View className="mb-6 gap-1">
             <Text className="text-sm font-medium uppercase tracking-wide text-muted">{t.todaysOverview}</Text>

@@ -107,7 +107,12 @@ export default function DemographicsScreen() {
         behavior={Platform.select({ ios: 'padding', android: undefined })}
         keyboardVerticalOffset={24}
       >
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" bounces={false}>
+        <ScrollView
+          style={styles.scrollContainer}
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          bounces={false}
+        >
           {loading ? (
             <View style={styles.loadingWrap}>
               <ActivityIndicator color={colors.brand} />
@@ -175,6 +180,10 @@ export default function DemographicsScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  scrollContainer: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+  },
   scroll: { paddingBottom: spacing.xl, gap: spacing.lg },
   loadingWrap: {
     flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: spacing.xl,

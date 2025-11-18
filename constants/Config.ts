@@ -2,6 +2,7 @@ import { ENV } from '@/lib/env';
 
 export const Config = {
   apiBaseUrl: ENV.apiBaseUrl,
+  searchApiBaseUrl: ENV.searchApiBaseUrl,
   supabase: {
     url: ENV.supabaseUrl,
     anonKey: ENV.supabaseAnonKey,

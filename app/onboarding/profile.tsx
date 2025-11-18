@@ -271,6 +271,7 @@ export default function ProfileScreen() {
           <View style={styles.root}>
             <AppHeader showBack title="Step 2 of 7" onBackPress={handleBack} fallbackHref="/onboarding/welcome" />
             <ScrollView
+              style={styles.scrollView}
               keyboardShouldPersistTaps="handled"
               contentContainerStyle={[styles.scrollContent, { paddingBottom: contentInsetBottom + 160 }]}
               showsVerticalScrollIndicator={false}
@@ -541,6 +542,10 @@ const CTAWrapper = ({ children, bottomOffset }: CTAWrapperProps) => {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+    backgroundColor: 'transparent',
   },
   scrollContent: {
     paddingHorizontal: spacing.lg,

@@ -87,6 +87,7 @@ export function AuthShell({
           </View>
 
           <ScrollView
+            style={styles.scrollView}
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={[
               styles.content,
@@ -126,6 +127,10 @@ const styles = StyleSheet.create({
   },
   root: {
     flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+    backgroundColor: 'transparent',
   },
   topBar: {
     height: 44,

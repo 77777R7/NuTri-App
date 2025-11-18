@@ -113,6 +113,9 @@ const envValues = {
   posthogApiKey: getEnvValue('posthogApiKey', { optional: true }),
 };
 
+const searchApiBaseUrlRaw = getEnvValue('searchApiBaseUrl', { optional: true });
+const searchApiBaseUrl = searchApiBaseUrlRaw ?? envValues.apiBaseUrl;
+
 const ensureValidUrl = (value: string | undefined | null, label: string, required: boolean, errors: string[], warnings: string[]) => {
   if (!value) {
     if (required) {
@@ -159,6 +162,7 @@ const validateEnv = () => {
   ensureMatches(envValues.supabaseAnonKey, 'EXPO_PUBLIC_SUPABASE_ANON_KEY', /^[-_A-Za-z0-9]{10,}\.?[-_A-Za-z0-9=]*\.?[-_A-Za-z0-9=]*$/, true, errors, warnings);
   ensureMatches(envValues.openAiApiKey, 'EXPO_PUBLIC_OPENAI_API_KEY', /^sk-[A-Za-z0-9]{20,}$/, false, errors, warnings);
   ensureValidUrl(envValues.apiBaseUrl, 'EXPO_PUBLIC_API_BASE_URL', true, errors, warnings);
+  ensureValidUrl(searchApiBaseUrl, 'EXPO_PUBLIC_SEARCH_API_BASE_URL', false, errors, warnings);
 
   ensureValidUrl(envValues.paddleOcrEndpoint, 'EXPO_PUBLIC_PADDLE_OCR_ENDPOINT', false, errors, warnings);
   ensureValidUrl(envValues.sentryDsn, 'SENTRY_DSN', false, errors, warnings);
@@ -186,5 +190,6 @@ export const ENV = {
   apiBaseUrl: envValues.apiBaseUrl as string,
   sentryDsn: envValues.sentryDsn ?? null,
   posthogApiKey: envValues.posthogApiKey ?? null,
+  searchApiBaseUrl: searchApiBaseUrl as string,
   validate: validateEnv,
 };
