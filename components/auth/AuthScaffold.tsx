@@ -68,6 +68,7 @@ export function AuthScaffold({
         style={{ flex: 1 }}
       >
         <ScrollView
+          style={{ flex: 1, backgroundColor: 'transparent' }}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{
             paddingBottom: insets.bottom + 48,

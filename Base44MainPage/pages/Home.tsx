@@ -66,7 +66,7 @@ export function HomePage({
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.weekRow}
-        style={{ marginBottom: 16 }}
+        style={styles.weekScroll}
       >
         {week.map((date, idx) => {
           const selected = isSelected(date);
@@ -179,7 +179,7 @@ export function HomePage({
   return (
     <SafeAreaView style={styles.root}>
       <ScrollView
-        style={{ flex: 1 }}
+        style={styles.mainScroll}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={isHomeTab ? undefined : styles.placeholderScroll}
       >
@@ -193,6 +193,10 @@ export function HomePage({
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#F9FAFB' },
+  mainScroll: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+  },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -231,6 +235,10 @@ const styles = StyleSheet.create({
   },
   streakText: { marginLeft: 6, fontWeight: '700', color: '#111827' },
   weekRow: { paddingHorizontal: 16 },
+  weekScroll: {
+    marginBottom: 16,
+    backgroundColor: 'transparent',
+  },
   dayPill: {
     width: 52,
     height: 66,

@@ -52,6 +52,7 @@ export function StatsCards({ supplements, onPressCard }: StatsCardsProps) {
           setIndex(nextIndex);
         }}
         scrollEventThrottle={16}
+        style={styles.scrollContainer}
       >
         {cards.map((item, i) => (
           <TouchableOpacity
@@ -96,6 +97,9 @@ export function StatsCards({ supplements, onPressCard }: StatsCardsProps) {
 }
 
 const styles = StyleSheet.create({
+  scrollContainer: {
+    backgroundColor: 'transparent',
+  },
   card: {
     backgroundColor: '#F9FAFB',
     borderRadius: 22,

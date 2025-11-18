@@ -129,7 +129,11 @@ export default function HealthGoalsScreen() {
         style={styles.flex}
         behavior={Platform.select({ ios: 'padding', android: undefined })}
       >
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          style={styles.scrollContainer}
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+        >
           {loading ? (
             <View style={styles.loadingWrap}>
               <ActivityIndicator color={colors.brand} />
@@ -195,6 +199,10 @@ export default function HealthGoalsScreen() {
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
+  },
+  scrollContainer: {
+    flex: 1,
+    backgroundColor: '#ffffff',
   },
   scroll: {
     paddingBottom: spacing.xl,

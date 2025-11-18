@@ -158,6 +158,7 @@ export default function LoginScreen() {
   return (
     <LinearGradient colors={["#E6F7F3", "#FFFFFF"]} style={{ flex: 1 }}>
       <ScrollView
+        style={{ flex: 1, backgroundColor: 'transparent' }}
         contentContainerStyle={{
           flexGrow: 1,
           justifyContent: "center",

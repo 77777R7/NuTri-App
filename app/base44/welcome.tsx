@@ -73,9 +73,12 @@ export default function WelcomeScreen() {
     >
       <StepSlide direction={enterDirection} slideOnFirst mountKey={`base44-welcome-${enterDirection}`}>
         <ScrollView
+          style={styles.scrollContainer}
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
           bounces={false}
+          alwaysBounceVertical={false}
+          overScrollMode="never"
         >
           <Animated.View style={[styles.hero, heroAnim]}>
             <PulseHalo size={112} color={colors.brand} />
@@ -122,6 +125,10 @@ export default function WelcomeScreen() {
 
 const styles = StyleSheet.create({
   root: {
+    flex: 1,
+    backgroundColor: '#F9FBF9',
+  },
+  scrollContainer: {
     flex: 1,
     backgroundColor: '#F9FBF9',
   },

@@ -33,6 +33,7 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({ selectedDate, onSe
 
   return (
     <ScrollView
+      className="bg-transparent"
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={{ paddingHorizontal: 12, gap: 10 }}

@@ -106,7 +106,7 @@ export default function ExperienceScreen() {
           <ActivityIndicator color={colors.brand} />
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.scroll}>
+        <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scroll}>
           <Animated.View style={fitnessAnim}>
             <NeumorphicCard>
               <View style={styles.sectionHeader}>
@@ -155,6 +155,10 @@ export default function ExperienceScreen() {
 }
 
 const styles = StyleSheet.create({
+  scrollContainer: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+  },
   scroll: {
     paddingBottom: spacing.xl,
     gap: spacing.lg,

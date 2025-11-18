@@ -11,7 +11,7 @@ import {
 } from '@/Base44MainPage';
 
 const ACTION_PATHS: Record<FloatingAction, Href> = {
-  scan: '/(tabs)/scan',
+  scan: '/scan',
   assistant: '/assistant',
   search: '/database',
 } as const;
