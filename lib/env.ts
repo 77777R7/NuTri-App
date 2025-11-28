@@ -32,10 +32,10 @@ const guessDevApiBaseUrl = (): string | undefined => {
     const port = process.env.EXPO_PUBLIC_API_PORT ?? process.env.API_PORT ?? '3000';
     const protocol =
       host === 'localhost' ||
-      host.startsWith('127.') ||
-      host.startsWith('10.') ||
-      host.startsWith('172.') ||
-      host.startsWith('192.168.')
+        host.startsWith('127.') ||
+        host.startsWith('10.') ||
+        host.startsWith('172.') ||
+        host.startsWith('192.168.')
         ? 'http'
         : url.protocol.replace(':', '') || 'https';
 
@@ -113,7 +113,10 @@ const envValues = {
   posthogApiKey: getEnvValue('posthogApiKey', { optional: true }),
 };
 
-const searchApiBaseUrlRaw = getEnvValue('searchApiBaseUrl', { optional: true });
+const fallbackSearchApiBaseUrl =
+  process.env.NODE_ENV !== 'production' ? 'http://localhost:3001' : undefined;
+
+const searchApiBaseUrlRaw = getEnvValue('searchApiBaseUrl', { optional: true, fallback: fallbackSearchApiBaseUrl });
 const searchApiBaseUrl = searchApiBaseUrlRaw ?? envValues.apiBaseUrl;
 
 const ensureValidUrl = (value: string | undefined | null, label: string, required: boolean, errors: string[], warnings: string[]) => {
