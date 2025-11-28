@@ -1,3 +1,6 @@
+import { analyzeBarcode } from '@/lib/search-agent';
+import type { BarcodeScanResult } from '@/lib/search-agent';
+
 const API_BASE = (process.env.EXPO_PUBLIC_API_BASE_URL?.replace(/\/$/, '') as string) || '';
 
 export const nutri = {
@@ -71,20 +74,14 @@ export const nutri = {
         return response.json();
       },
       async InvokeLLM({
-        prompt,
-        add_context_from_internet = true,
+        barcode,
       }: {
-        prompt: string;
-        add_context_from_internet?: boolean;
-      }) {
-        const response = await fetch(`${API_BASE}/api/analyze`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt, web: add_context_from_internet }),
-        });
-        if (!response.ok) throw new Error('LLM error');
-        const { text } = await response.json();
-        return text as string;
+        barcode: string;
+      }): Promise<BarcodeScanResult> {
+        if (!barcode || !barcode.trim()) {
+          throw new Error('barcode is required');
+        }
+        return analyzeBarcode(barcode.trim());
       },
     },
   },

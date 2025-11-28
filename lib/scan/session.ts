@@ -11,17 +11,18 @@ const generateId = () => {
 
 export type ScanSession =
   | {
-      id: string;
-      mode: 'barcode';
-      input: { barcode: string };
-      result: BarcodeScanResult;
-    }
+    id: string;
+    mode: 'barcode';
+    input: { barcode: string };
+    result?: BarcodeScanResult;
+    isLoading?: boolean;
+  }
   | {
-      id: string;
-      mode: 'label';
-      input: { imageUri: string };
-      result: LabelScanResult;
-    };
+    id: string;
+    mode: 'label';
+    input: { imageUri: string };
+    result: LabelScanResult;
+  };
 
 let currentSession: ScanSession | null = null;
 
