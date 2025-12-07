@@ -1,87 +1,121 @@
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ArrowLeft, FileText } from 'lucide-react-native';
+import { ArrowLeft, FileText, Loader2 } from 'lucide-react-native';
 import React, { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { BlurView } from 'expo-blur';
 
-import { AnalysisDashboard } from './AnalysisDashboard';
 import { ResponsiveScreen } from '@/components/common/ResponsiveScreen';
-import { GradientIndicator } from '@/components/ui/GradientIndicator';
-import type { DesignTokens } from '@/constants/designTokens';
+import { OrganicSpinner } from '@/components/ui/OrganicSpinner';
+import { ShinyText } from '@/components/ui/ShinyText';
 import { useResponsiveTokens } from '@/hooks/useResponsiveTokens';
-import type { SupplementMatch } from '@/lib/scan/service';
-import { submitBarcodeScan } from '@/lib/scan/service';
-import { consumeScanSession, setScanSession, type ScanSession } from '@/lib/scan/session';
+import { useStreamAnalysis } from '@/hooks/useStreamAnalysis';
+import { consumeScanSession, type ScanSession } from '@/lib/scan/session';
+import { AnalysisDashboard } from './AnalysisDashboard';
 
 export default function ScanResultScreen() {
   const { tokens } = useResponsiveTokens();
   const styles = useMemo(() => createStyles(tokens), [tokens]);
-  const [ready, setReady] = useState(false);
-  const [session, setLocalSession] = useState<ScanSession | null>(() => consumeScanSession());
+
+  // Get session to retrieve barcode
+  const [session] = useState<ScanSession | null>(() => consumeScanSession());
+  const barcode = session?.mode === 'barcode' ? session.input.barcode : '';
+
+  // 🚀 Use the Streaming Hook
+  const {
+    productInfo, efficacy, safety, usage, value, social, status, error
+  } = useStreamAnalysis(barcode);
 
   useEffect(() => {
     if (!session) {
       router.replace('/(tabs)/scan');
-      return;
-    }
-    setReady(true);
-
-    if (session.mode === 'barcode' && session.isLoading && session.input.barcode) {
-      const performScan = async () => {
-        try {
-          const result = await submitBarcodeScan(session.input.barcode);
-          setScanSession({ ...session, isLoading: false, result });
-          setLocalSession((prev: any) => ({ ...prev, isLoading: false, result }));
-        } catch (error) {
-          console.error('Scan failed', error);
-        }
-      };
-      performScan();
     }
   }, [session]);
 
   const handleBack = () => router.replace('/(tabs)/scan');
 
-  if (!ready || !session) return null;
+  if (!session) return null;
 
-  if (session.mode === 'barcode' && session.isLoading) {
-    return <AiLoadingView />;
-  }
-
-  const barcodeResult = session && session.mode === 'barcode' ? session.result : null;
-  const analysis = barcodeResult?.analysis ?? null;
-  const analysisSuccess = analysis && analysis.status === 'success' ? analysis : null;
-  const supplements: SupplementMatch[] = session && session.mode === 'label' ? session.result.supplements ?? [] : [];
-  const primarySupplement = supplements[0] ?? null;
-
-  if (!analysisSuccess) {
+  // 1. Error State
+  if (status === 'error') {
     return (
       <ResponsiveScreen contentStyle={styles.screen}>
         <Header onBack={handleBack} title="Scan Result" />
         <View style={styles.fallbackContainer}>
           <FileText size={48} color="#52525b" />
-          <Text style={styles.fallbackTitle}>
-            {primarySupplement?.name || barcodeResult?.items?.[0]?.title || 'No Match Found'}
-          </Text>
-          <Text style={styles.fallbackText}>
-            {primarySupplement?.description || barcodeResult?.items?.[0]?.snippet || 'Try scanning the label directly.'}
-          </Text>
+          <Text style={styles.fallbackTitle}>Not Found</Text>
+          <Text style={styles.fallbackText}>{error || 'We could not find this product.'}</Text>
         </View>
       </ResponsiveScreen>
     );
   }
 
+  // 2. Initial Loading (Before we even know the product name)
+  // This should be very fast (<1s)
+  if (!productInfo && status === 'loading') {
+    return (
+      <ResponsiveScreen contentStyle={styles.loadingContainer}>
+        <Loader2 size={48} color="#000" style={{ marginBottom: 16 }} />
+        <Text style={styles.loadingTitle}>Searching...</Text>
+      </ResponsiveScreen>
+    );
+  }
+
+  // 3. Fallback if somehow no product info but done (rare)
+  if (!productInfo && status === 'complete') {
+    return <View><Text>Unexpected empty result</Text></View>;
+  }
+
+  // 4. Construct the composite analysis object for the Dashboard
+  // The Dashboard will handle nulls/missing fields gracefully by showing defaults or skeletons
+  const compositeAnalysis = {
+    productInfo: productInfo,
+    efficacy: efficacy || {}, // Empty obj means "loading" inside dashboard components if checked
+    safety: safety || {},
+    usage: usage || {},
+    value: value || {},
+    social: social || {},
+    // Meta is tricky, we might compute it or mock it. 
+    // For now, let's pass a basic meta if efficacy exists to allow score calculation
+    meta: {
+      actualDoseMg: efficacy?.activeIngredients?.[0]?.amount ? parseFloat(efficacy.activeIngredients[0].amount) : 0,
+      // ... fill other meta requirements if needed or let computeScores handle defaults
+    },
+    status: 'success'
+  };
+
+  // Pass a loading flag so Dashboard knows stream is active
+  const isStreaming = status === 'streaming' || status === 'loading';
+
   return (
     <ResponsiveScreen contentStyle={styles.screen}>
       <StatusBar style="dark" />
-      <Header onBack={handleBack} title="Analysis Result" />
+      <Header onBack={handleBack} title="Analysis" />
 
-      <AnalysisDashboard analysis={analysisSuccess} />
+      {/* We render dashboard immediately. 
+        As 'efficacy', 'safety' etc. arrive, this component re-renders and fills in the blanks.
+      */}
+      <AnalysisDashboard analysis={compositeAnalysis} isStreaming={isStreaming} />
+
+      {/* Optional: A small global spinner in the corner if streaming */}
+      {isStreaming && (
+        <BlurView intensity={40} tint="dark" style={styles.streamingBadge}>
+          <OrganicSpinner size={24} color="rgba(255,255,255,0.9)" />
+          <View style={{ top: 3 }}>
+            <ShinyText
+              text="AI Analyzing"
+              speed={2}
+              style={{ ...styles.streamingText, color: '#FFFFFF' }}
+            />
+          </View>
+        </BlurView>
+      )}
     </ResponsiveScreen>
   );
 }
 
 function Header({ onBack, title }: { onBack: () => void, title: string }) {
+  // ... (Keep existing Header code) ...
   return (
     <View style={styles.header}>
       <TouchableOpacity style={styles.backButton} onPress={onBack} activeOpacity={0.7}>
@@ -93,38 +127,8 @@ function Header({ onBack, title }: { onBack: () => void, title: string }) {
   );
 }
 
-function AiLoadingView() {
-  const { tokens } = useResponsiveTokens();
-  const styles = useMemo(() => createStyles(tokens), [tokens]);
-  const [currentStep, setCurrentStep] = useState(0);
-  const steps = ["Identifying product...", "Analyzing ingredients...", "Checking safety data...", "Finalizing report..."];
-
-  useEffect(() => {
-    if (currentStep < steps.length - 1) {
-      const timeout = setTimeout(() => setCurrentStep(prev => prev + 1), 2000);
-      return () => clearTimeout(timeout);
-    }
-  }, [currentStep]);
-
-  return (
-    <ResponsiveScreen contentStyle={styles.loadingContainer}>
-      <View style={styles.loadingContent}>
-        <Text style={styles.loadingTitle}>NuTri AI</Text>
-        <Text style={styles.loadingSubtitle}>Analyzing your supplement</Text>
-        <View style={styles.stepList}>
-          {steps.map((step, index) => (
-            <View key={step} style={styles.stepRow}>
-              <GradientIndicator status={index < currentStep ? 'completed' : index === currentStep ? 'loading' : 'pending'} size={24} />
-              <Text style={[styles.stepText, (index <= currentStep) && styles.stepTextActive]}>{step}</Text>
-            </View>
-          ))}
-        </View>
-      </View>
-    </ResponsiveScreen>
-  );
-}
-
 const styles = StyleSheet.create({
+  // ... (Keep existing styles) ...
   screen: {
     flex: 1,
     backgroundColor: '#F2F2F7',
@@ -155,16 +159,37 @@ const styles = StyleSheet.create({
     color: '#000',
   },
   loadingContainer: { flex: 1, backgroundColor: '#F2F2F7', justifyContent: 'center', alignItems: 'center' },
-  loadingContent: { width: '100%', maxWidth: 320 },
-  loadingTitle: { fontSize: 32, fontWeight: 'bold', color: '#000', textAlign: 'center', marginBottom: 8 },
-  loadingSubtitle: { fontSize: 16, color: '#52525b', textAlign: 'center', marginBottom: 40 },
-  stepList: { gap: 20 },
-  stepRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  stepText: { fontSize: 16, color: '#a1a1aa' },
-  stepTextActive: { color: '#000', fontWeight: '600' },
+  loadingTitle: { fontSize: 18, fontWeight: '600', color: '#52525b' },
   fallbackContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
-  fallbackTitle: { fontSize: 24, fontWeight: 'bold', color: '#000', marginTop: 20, textAlign: 'center' },
+  fallbackTitle: { fontSize: 24, fontWeight: 'bold', color: '#000', marginTop: 20 },
   fallbackText: { fontSize: 16, color: '#52525b', marginTop: 10, textAlign: 'center' },
+
+  // New style for the floating badge
+  streamingBadge: {
+    position: 'absolute',
+    bottom: 40,
+    alignSelf: 'center',
+    overflow: 'hidden',
+    height: 48,
+    borderRadius: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    gap: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  streamingText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.9)',
+    letterSpacing: 0.5,
+    lineHeight: 16,
+  }
 });
 
-const createStyles = (tokens: DesignTokens) => styles;
+const createStyles = (tokens: any) => styles;

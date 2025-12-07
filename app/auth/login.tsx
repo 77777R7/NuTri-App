@@ -162,7 +162,7 @@ export default function LoginScreen() {
         contentContainerStyle={{
           flexGrow: 1,
           justifyContent: "center",
-          alignItems: "center",
+          alignItems: "stretch",
           paddingHorizontal: 24,
         }}
         keyboardShouldPersistTaps="handled"
@@ -180,7 +180,6 @@ export default function LoginScreen() {
         <View
           style={{
             width: "100%",
-            maxWidth: 380,
             backgroundColor: "white",
             borderRadius: 20,
             padding: 24,

@@ -1,4 +1,5 @@
 import 'react-native-reanimated';
+import '../global.css';
 import { useEffect } from 'react';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack, useRootNavigationState } from 'expo-router';

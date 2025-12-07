@@ -1,5 +1,5 @@
+import type { BarcodeScanResult } from '@/lib/search-agent';
 import { analyzeBarcode } from '@/lib/search-agent';
-import type { BarcodeAnalysis, BarcodeScanResult } from '@/lib/search-agent';
 import { supabase } from '@/lib/supabase';
 import type { Database } from '@/types/supabase';
 

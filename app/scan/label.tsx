@@ -1,16 +1,16 @@
+import { CameraView, useCameraPermissions, type CameraPictureOptions } from 'expo-camera';
+import * as ImagePicker from 'expo-image-picker';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { ArrowLeft, Camera, ImageIcon, RefreshCcw } from 'lucide-react-native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { ArrowLeft, Camera, ImageIcon, RefreshCcw } from 'lucide-react-native';
-import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CameraView, type CameraPictureOptions, useCameraPermissions } from 'expo-camera';
-import * as ImagePicker from 'expo-image-picker';
 
 import { ResponsiveScreen } from '@/components/common/ResponsiveScreen';
 import type { DesignTokens } from '@/constants/designTokens';
 import { useResponsiveTokens } from '@/hooks/useResponsiveTokens';
-import { ensureSessionId, setScanSession } from '@/lib/scan/session';
 import { submitLabelScan } from '@/lib/scan/service';
+import { ensureSessionId, setScanSession } from '@/lib/scan/session';
 
 type ScanStatus = 'idle' | 'preview' | 'processing' | 'error';
 

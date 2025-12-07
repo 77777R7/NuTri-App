@@ -13,27 +13,27 @@ import React, { useMemo, useState } from 'react';
 import {
     Modal,
     Pressable,
+    ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
     useWindowDimensions,
-    ScrollView,
+    View,
 } from 'react-native';
 import Animated, {
     Easing,
-    withTiming,
+    useAnimatedReaction,
     useAnimatedScrollHandler,
     useAnimatedStyle,
-    useAnimatedReaction,
     useSharedValue,
+    withTiming,
     type SharedValue,
 } from 'react-native-reanimated';
 
 import { InteractiveScoreRing } from '@/components/ui/InteractiveScoreRing';
 import { ContentSection } from '@/components/ui/ScoreDetailCard';
+import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { computeScores, SupplementMeta } from '../../lib/scoring';
-
 type Analysis = any;
 
 type TileType = 'overview' | 'science' | 'usage' | 'safety';
@@ -62,6 +62,7 @@ type TileConfig = {
     bestFor?: string;
     warning?: string;
     recommendation?: string;
+    loading?: boolean;
     content: React.ReactNode;
 };
 
@@ -85,7 +86,6 @@ const AnimatedTile: React.FC<{
         () => {
             if (layoutH.value === 0) return false;
             const viewTop = scrollY.value;
-            const viewBottom = scrollY.value + viewportHeight;
             const triggerLine = viewTop + viewportHeight * 0.7; // 70% down the screen
             const cardTop = layoutY.value;
             const cardBottom = layoutY.value + layoutH.value;
@@ -147,11 +147,33 @@ const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
     const labelColor = tile.labelColor || accentColor;
 
     const renderContent = () => {
+        if (tile.loading) {
+            return (
+                <View style={styles.tileSection}>
+                    <SkeletonLoader width="30%" height={12} style={{ marginBottom: 8 }} />
+                    <SkeletonLoader width="100%" height={16} style={{ marginBottom: 4 }} />
+                    <SkeletonLoader width="80%" height={16} style={{ marginBottom: 12 }} />
+                    <View style={{ gap: 8 }}>
+                        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                            <SkeletonLoader width={16} height={16} borderRadius={8} />
+                            <SkeletonLoader width="60%" height={14} />
+                        </View>
+                        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                            <SkeletonLoader width={16} height={16} borderRadius={8} />
+                            <SkeletonLoader width="50%" height={14} />
+                        </View>
+                    </View>
+                </View>
+            );
+        }
+
         switch (tile.type) {
             case 'overview':
                 return (
                     <View style={styles.tileSection}>
-                        <Text style={[styles.tileEyebrow, { color: labelColor }]}>{tile.eyebrow}</Text>
+                        <Text style={[styles.tileEyebrow, { color: labelColor }]} numberOfLines={1}>
+                            {tile.eyebrow}
+                        </Text>
                         {!!tile.summary && (
                             <Text style={[styles.tileSummary, { color: textColor }]} numberOfLines={2}>
                                 {tile.summary}
@@ -172,7 +194,9 @@ const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
             case 'science':
                 return (
                     <View style={styles.tileSection}>
-                        <Text style={[styles.tileEyebrow, { color: labelColor }]}>{tile.eyebrow}</Text>
+                        <Text style={[styles.tileEyebrow, { color: labelColor }]} numberOfLines={1}>
+                            {tile.eyebrow}
+                        </Text>
                         <View style={styles.mechList}>
                             {(tile.mechanisms || []).slice(0, 3).map((mechanism, idx) => (
                                 <View key={idx} style={styles.mechRow}>
@@ -206,7 +230,9 @@ const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
             case 'usage':
                 return (
                     <View style={styles.tileSection}>
-                        <Text style={[styles.tileEyebrow, { color: labelColor }]}>{tile.eyebrow}</Text>
+                        <Text style={[styles.tileEyebrow, { color: labelColor }]} numberOfLines={1}>
+                            {tile.eyebrow}
+                        </Text>
                         {!!tile.routineLine && (
                             <Text style={[styles.tileSummary, { color: textColor }]} numberOfLines={2}>
                                 {tile.routineLine}
@@ -226,7 +252,9 @@ const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
             default:
                 return (
                     <View style={styles.tileSection}>
-                        <Text style={[styles.tileEyebrow, { color: labelColor }]}>{tile.eyebrow}</Text>
+                        <Text style={[styles.tileEyebrow, { color: labelColor }]} numberOfLines={1}>
+                            {tile.eyebrow}
+                        </Text>
                         {!!tile.warning && (
                             <View style={[styles.warningPill, { backgroundColor: `${labelColor}18` }]}>
                                 <Text style={[styles.warningText, { color: labelColor }]} numberOfLines={3}>
@@ -248,15 +276,17 @@ const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
     };
 
     return (
-        <TouchableOpacity activeOpacity={0.85} onPress={onPress} style={[styles.tile, { backgroundColor }]}>
+        <TouchableOpacity activeOpacity={0.85} onPress={tile.loading ? undefined : onPress} style={[styles.tile, { backgroundColor }]}>
             <View style={styles.tileHeader}>
                 <View style={[styles.tileIconCircle, { backgroundColor: `${labelColor}15` }]}>
                     <Icon size={20} color={labelColor} />
                 </View>
                 <Text style={[styles.tileTitle, { color: textColor }]} numberOfLines={1}>{tile.title}</Text>
-                <View style={[styles.chevronBadge, { borderColor: `${labelColor}45`, backgroundColor: `${labelColor}12` }]}>
-                    <Text style={[styles.chevronSymbol, { color: labelColor }]}>{'>'}</Text>
-                </View>
+                {!tile.loading && (
+                    <View style={[styles.chevronBadge, { borderColor: `${labelColor}45`, backgroundColor: `${labelColor}12` }]}>
+                        <Text style={[styles.chevronSymbol, { color: labelColor }]}>{'>'}</Text>
+                    </View>
+                )}
             </View>
 
             {renderContent()}
@@ -297,7 +327,7 @@ const DashboardModal: React.FC<{
     );
 };
 
-export const AnalysisDashboard: React.FC<{ analysis: Analysis }> = ({ analysis }) => {
+export const AnalysisDashboard: React.FC<{ analysis: Analysis; isStreaming?: boolean }> = ({ analysis, isStreaming = false }) => {
     const [selectedTile, setSelectedTile] = useState<TileConfig | null>(null);
     const scrollY = useSharedValue(0);
     const scrollHandler = useAnimatedScrollHandler((event) => {
@@ -468,6 +498,11 @@ export const AnalysisDashboard: React.FC<{ analysis: Analysis }> = ({ analysis }
         return 'Monitor with existing medications if uncertain.';
     })();
 
+    const isEfficacyReady = !!efficacy.verdict || !isStreaming;
+    const isSafetyReady = !!safety.verdict || !isStreaming;
+    const isUsageReady = !!usage.summary || !isStreaming;
+    const isOverviewReady = !!value.analysis || !!efficacy.dosageAssessment?.text || !isStreaming;
+
     const tiles: TileConfig[] = [
         {
             id: 1,
@@ -482,6 +517,7 @@ export const AnalysisDashboard: React.FC<{ analysis: Analysis }> = ({ analysis }
             eyebrow: 'CORE BENEFITS',
             summary: overviewSummary,
             bullets: coreBenefits,
+            loading: !isOverviewReady,
             content: (
                 <View style={{ gap: 16 }}>
                     <Text style={styles.modalParagraph}>{overviewSummary}</Text>
@@ -542,6 +578,7 @@ export const AnalysisDashboard: React.FC<{ analysis: Analysis }> = ({ analysis }
             labelColor: '#0F172A',
             eyebrow: 'KEY MECHANISM',
             mechanisms: keyMechanisms,
+            loading: !isEfficacyReady,
             content: (
                 <View style={{ gap: 16 }}>
                     <Text style={styles.modalParagraphSmall}>{scienceSummary}</Text>
@@ -585,6 +622,7 @@ export const AnalysisDashboard: React.FC<{ analysis: Analysis }> = ({ analysis }
             eyebrow: 'DAILY ROUTINE',
             routineLine,
             bestFor,
+            loading: !isUsageReady,
             content: (
                 <View style={{ gap: 16 }}>
                     <View style={styles.modalUsageCard}>
@@ -622,6 +660,7 @@ export const AnalysisDashboard: React.FC<{ analysis: Analysis }> = ({ analysis }
             eyebrow: 'SAFETY NOTES',
             warning: warningLine,
             recommendation: recommendationLine,
+            loading: !isSafetyReady,
             content: (
                 <View style={{ gap: 16 }}>
                     <View style={styles.modalSafetyCard}>

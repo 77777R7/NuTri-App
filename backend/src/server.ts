@@ -2,13 +2,9 @@ import cors from "cors";
 import dotenv from "dotenv";
 import express, { Request, Response } from "express";
 
-import { enrichSupplementFromSearch } from "./deepseek.js";
+import { fetchAnalysisSection } from "./deepseek.js";
 import { constructFallbackQuery, scoreSearchQuality } from "./searchQuality.js";
-import type {
-  ErrorResponse,
-  SearchItem,
-  SearchResponse,
-} from "./types.js";
+import type { ErrorResponse, SearchItem, SearchResponse } from "./types.js";
 
 dotenv.config();
 
@@ -21,10 +17,10 @@ interface GoogleCseItem {
   snippet?: string;
   link?: string;
   pagemap?: {
-    cse_image?: Array<{ src?: string }>;
-    cse_thumbnail?: Array<{ src?: string }>;
-    imageobject?: Array<{ url?: string }>;
-    metatags?: Array<Record<string, unknown>>;
+    cse_image?: { src?: string }[];
+    cse_thumbnail?: { src?: string }[];
+    imageobject?: { url?: string }[];
+    metatags?: Record<string, unknown>[];
   };
 }
 
@@ -36,7 +32,7 @@ const pickImageFromPagemap = (pagemap: GoogleCseItem["pagemap"]): string | undef
   if (!pagemap) {
     return undefined;
   }
-  const candidates: Array<unknown> = [
+  const candidates: unknown[] = [
     pagemap.cse_image?.[0]?.src,
     pagemap.imageobject?.[0]?.url,
     pagemap.cse_thumbnail?.[0]?.src,
@@ -115,7 +111,6 @@ app.get("/api/search-by-barcode", async (req: Request, res: Response) => {
     console.log(`[Search] Barcode: ${barcode}, Score: ${qualityScore}`);
 
     let finalItems = initialItems;
-    let fallbackTriggered = false;
 
     // 3. Smart Fallback
     if (qualityScore < 60) {
@@ -151,7 +146,6 @@ app.get("/api/search-by-barcode", async (req: Request, res: Response) => {
 
           // Slice to limit
           finalItems = finalItems.slice(0, MAX_RESULTS);
-          fallbackTriggered = true;
         } catch (error) {
           console.warn("[Search] Fallback search failed", error);
         }
@@ -173,176 +167,100 @@ app.get("/api/search-by-barcode", async (req: Request, res: Response) => {
   }
 });
 
-import { supabase } from "./supabase.js";
+// 辅助函数：发送 SSE 事件
+const sendSSE = (res: any, type: string, data: any) => {
+  res.write(`event: ${type}\n`); // 關鍵：告訴前端這是什麼事件
+  res.write(`data: ${JSON.stringify(data)}\n\n`); // 數據不用再包一層 {type, data}
+};
 
-app.post("/api/enrich-supplement", async (req: Request, res: Response) => {
+app.post("/api/enrich-stream", async (req: Request, res: Response) => {
+  const { barcode } = req.body;
+  const apiKey = process.env.DEEPSEEK_API_KEY;
+  const model = process.env.DEEPSEEK_MODEL || "deepseek-chat";
+
+  // 1. 设置 SSE Headers
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+
   try {
-    const { barcode: barcodeRaw, items: itemsRaw } = req.body ?? {};
-    const barcode = typeof barcodeRaw === "string" ? barcodeRaw.trim() : "";
     if (!barcode) {
-      return res
-        .status(400)
-        .json({ error: "missing barcode in body" } satisfies ErrorResponse);
+      sendSSE(res, 'error', { message: 'No barcode provided' });
+      res.end();
+      return;
     }
 
-    // --- 1. Cache Read Strategy ---
-    // Check if we already have a valid analysis for this barcode
-    const { data: existingSupplement, error: fetchError } = await supabase
-      .from("supplements")
-      .select(`
-        id,
-        ai_analyses (
-          analysis_data,
-          created_at
-        )
-      `)
-      .eq("barcode", barcode)
-      .maybeSingle();
+    // 2. 阶段一：快速搜索 (Search Phase)
+    const apiKey = process.env.GOOGLE_CSE_API_KEY;
+    const cx = process.env.GOOGLE_CSE_CX;
 
-    if (!fetchError && existingSupplement && existingSupplement.ai_analyses?.length) {
-      // Sort by created_at desc to get latest
-      const analyses = existingSupplement.ai_analyses as Array<{ analysis_data: any; created_at: string }>;
-      analyses.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-      const latest = analyses[0];
-      if (latest && latest.analysis_data) {
-        console.log(`[Cache] Hit for barcode: ${barcode}`);
-        return res.json({
-          status: "ok",
-          barcode,
-          analysis: latest.analysis_data,
-        });
-      }
+    if (!apiKey || !cx) {
+      sendSSE(res, 'error', { message: 'Google CSE not configured' });
+      res.end();
+      return;
     }
 
-    console.log(`[Cache] Miss for barcode: ${barcode}, proceeding to live analysis`);
+    const query = `"${barcode}"`;
+    const initialItems = await performGoogleSearch(query, apiKey, cx);
 
-    if (!Array.isArray(itemsRaw) || !itemsRaw.length) {
-      return res
-        .status(400)
-        .json({ error: "items array is required" } satisfies ErrorResponse);
+    // 构造 Fallback 逻辑 (简单示意)
+    const finalItems = initialItems;
+
+    if (!finalItems.length) {
+      sendSSE(res, 'error', { message: 'Product not found' });
+      res.end();
+      return;
     }
 
-    const items: SearchItem[] = itemsRaw
-      .map((item): SearchItem | null => {
-        if (!item || typeof item !== "object") {
-          return null;
-        }
-        const record = item as Record<string, unknown>;
-        const title = typeof record.title === "string" ? record.title.trim() : "";
-        const link = typeof record.link === "string" ? record.link.trim() : "";
-        const snippet = typeof record.snippet === "string" ? record.snippet.trim() : "";
-        const image = typeof record.image === "string" ? record.image.trim() : undefined;
-        if (!title || !link) {
-          return null;
-        }
-        return {
-          title,
-          link,
-          snippet,
-          image,
-        };
-      })
-      .filter((item): item is SearchItem => item !== null)
-      .slice(0, MAX_RESULTS);
+    // 🚀 关键点：搜索一结束，立刻把产品图和标题推给前端
+    sendSSE(res, 'product_info', {
+      productInfo: {
+        brand: finalItems[0].title.split(' ')[0],
+        name: finalItems[0].title,
+        image: finalItems[0].image
+      },
+      sources: finalItems.map(i => ({ title: i.title, link: i.link }))
+    });
 
-    if (!items.length) {
-      return res
-        .status(400)
-        .json({ error: "no valid items provided" } satisfies ErrorResponse);
+    // 3. 阶段二：并行 AI 分析 (Parallel Phase)
+    const searchContext = finalItems.map((item, idx) =>
+      `[Source ${idx}] Title: ${item.title}\nSnippet: ${item.snippet}`
+    ).join("\n\n");
+
+    const deepseekKey = process.env.DEEPSEEK_API_KEY;
+    if (!deepseekKey) {
+      sendSSE(res, 'error', { message: 'DeepSeek API key missing' });
+      res.end();
+      return;
     }
 
-    // --- 2. Live Analysis ---
-    const analysis = await enrichSupplementFromSearch(barcode, items);
+    // 同时发射三枚火箭！
+    const taskEfficacy = fetchAnalysisSection('efficacy', searchContext, model, deepseekKey);
+    const taskSafety = fetchAnalysisSection('safety', searchContext, model, deepseekKey);
+    const taskUsage = fetchAnalysisSection('usage', searchContext, model, deepseekKey);
 
-    // --- 3. Cache Write Strategy ---
-    if (analysis.status === "success" && analysis.productInfo) {
-      // Run in background to not block response
-      (async () => {
-        try {
-          const brandName = analysis.productInfo?.brand || "Unknown Brand";
-          const productName = analysis.productInfo?.name || "Unknown Product";
-          const category = analysis.productInfo?.category || "Uncategorized";
-          const imageUrl = analysis.productInfo?.image || null;
+    // 谁先回来就推谁
+    taskEfficacy.then(data => sendSSE(res, 'result_efficacy', data));
+    taskSafety.then(data => sendSSE(res, 'result_safety', data));
+    taskUsage.then(data => sendSSE(res, 'result_usage', data));
 
-          // A. Ensure Brand exists
-          let brandId: string | null = null;
+    // 等待所有任务结束，关闭连接
+    await Promise.all([taskEfficacy, taskSafety, taskUsage]);
 
-          // Try to find brand
-          const { data: existingBrand } = await supabase
-            .from("brands")
-            .select("id")
-            .ilike("name", brandName)
-            .maybeSingle();
+    sendSSE(res, 'done', {});
+    res.end();
 
-          if (existingBrand) {
-            brandId = existingBrand.id;
-          } else {
-            // Create brand
-            const { data: newBrand, error: brandError } = await supabase
-              .from("brands")
-              .insert({ name: brandName, verified: false })
-              .select("id")
-              .single();
-
-            if (!brandError && newBrand) {
-              brandId = newBrand.id;
-            } else {
-              console.error("[Cache] Failed to create brand", brandError);
-            }
-          }
-
-          if (brandId) {
-            // B. Upsert Supplement
-            // We use upsert to handle race conditions or if it was created by another user
-            const { data: supplement, error: suppError } = await supabase
-              .from("supplements")
-              .upsert(
-                {
-                  barcode,
-                  name: productName,
-                  brand_id: brandId,
-                  category,
-                  image_url: imageUrl,
-                  verified: false,
-                },
-                { onConflict: "barcode" }
-              )
-              .select("id")
-              .single();
-
-            if (!suppError && supplement) {
-              // C. Insert Analysis
-              const { error: analysisError } = await supabase
-                .from("ai_analyses")
-                .insert({
-                  supplement_id: supplement.id,
-                  analysis_data: analysis,
-                });
-
-              if (analysisError) {
-                console.error("[Cache] Failed to save analysis", analysisError);
-              } else {
-                console.log(`[Cache] Saved analysis for ${barcode}`);
-              }
-            } else {
-              console.error("[Cache] Failed to upsert supplement", suppError);
-            }
-          }
-        } catch (err) {
-          console.error("[Cache] Background save failed", err);
-        }
-      })();
-    }
-
-    return res.json({ status: "ok", barcode, analysis });
-  } catch (error) {
-    console.error("/api/enrich-supplement error", error);
-    const detail =
-      error instanceof Error ? `${error.name}: ${error.message}` : String(error);
-    return res.status(502).json({ error: "llm_error", detail } satisfies ErrorResponse);
+  } catch (error: any) {
+    console.error("Stream Error:", error);
+    sendSSE(res, 'error', { message: error.message });
+    res.end();
   }
 });
+
+app.post("/api/enrich-supplement", async (req: Request, res: Response) => {
+  return res.status(410).json({ error: "endpoint_deprecated", message: "Use /api/enrich-stream instead" });
+});
+
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });

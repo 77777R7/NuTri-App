@@ -133,7 +133,7 @@ export interface AiSupplementAnalysisSuccess {
     tags: string[];
   };
   usage: UsageAssessment;
-  sources: Array<{ title: string; link: string }>;
+  sources: { title: string; link: string }[];
   disclaimer: string;
 }
 
