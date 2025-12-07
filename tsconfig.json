@@ -26,9 +26,11 @@
     ".expo/types/**/*.ts",
     "expo-env.d.ts",
     "env.d.ts",
-    "nativewind.d.ts"
+    "nativewind.d.ts",
+    "nativewind-env.d.ts"
   ],
   "exclude": [
+    "node_modules",
     "../legacy-web/**/*",
     "../archive/**/*",
     ".expo/types/**/*.ts"
