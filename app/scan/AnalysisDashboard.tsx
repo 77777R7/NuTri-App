@@ -33,7 +33,7 @@ import Animated, {
 import { InteractiveScoreRing } from '@/components/ui/InteractiveScoreRing';
 import { ContentSection } from '@/components/ui/ScoreDetailCard';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
-import { computeScores, SupplementMeta } from '../../lib/scoring';
+import { computeSmartScores, type AnalysisInput } from '../../lib/scoring';
 type Analysis = any;
 
 type TileType = 'overview' | 'science' | 'usage' | 'safety';
@@ -304,9 +304,16 @@ const DashboardModal: React.FC<{
     const accentColor = colorMap[tile.accentColor] || '#3B82F6';
 
     return (
-        <Modal transparent visible={visible} animationType="fade">
-            <Pressable style={styles.modalBackdrop} onPress={onClose}>
+        <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+            <View style={styles.modalBackdrop}>
+                {/* Tap backdrop to close */}
+                <Pressable style={styles.modalBackdropTouchable} onPress={onClose} />
+
+                {/* Bottom sheet container */}
                 <View style={styles.modalContainer}>
+                    {/* Handle bar */}
+                    <View style={styles.modalHandle} />
+
                     <TouchableOpacity style={styles.modalCloseBtn} onPress={onClose}>
                         <X size={20} color="#6B7280" />
                     </TouchableOpacity>
@@ -318,11 +325,16 @@ const DashboardModal: React.FC<{
                     <Text style={styles.modalTitle}>{tile.modalTitle}</Text>
                     <View style={[styles.modalDivider, { backgroundColor: accentColor }]} />
 
-                    <ScrollView style={styles.modalContent} contentContainerStyle={{ paddingBottom: 24 }}>
+                    <ScrollView
+                        style={styles.modalContent}
+                        contentContainerStyle={{ paddingBottom: 40 }}
+                        showsVerticalScrollIndicator={true}
+                        bounces={true}
+                    >
                         {tile.content}
                     </ScrollView>
                 </View>
-            </Pressable>
+            </View>
         </Modal>
     );
 };
@@ -342,55 +354,98 @@ export const AnalysisDashboard: React.FC<{ analysis: Analysis; isStreaming?: boo
     const value = analysis.value ?? {};
     const social = analysis.social ?? {};
 
-    // Compute scores in real-time if meta is available
+    // Check if all core AI analysis is complete before computing scores
+    const isFullyLoaded = useMemo(() => {
+        return (
+            typeof efficacy.score === 'number' &&
+            typeof safety.score === 'number' &&
+            typeof value.score === 'number'
+        );
+    }, [efficacy.score, safety.score, value.score]);
+
+    // Compute scores using new AI-driven scoring system
+    // Only compute when fully loaded, otherwise show loading state
     const scores = useMemo(() => {
-        if (analysis.meta) {
-            return computeScores(analysis.meta as SupplementMeta);
+        if (!isFullyLoaded) {
+            // Return loading state - will show skeleton
+            return {
+                effectiveness: 0,
+                safety: 0,
+                value: 0,
+                overall: 0,
+                label: 'Loading...',
+                details: {
+                    effectivenessFactors: [],
+                    safetyFactors: [],
+                    valueFactors: [],
+                },
+            };
         }
-        // Fallback to existing scores if no meta
-        const existingScores = analysis.scores ?? {};
-        const overall = typeof existingScores.overall === 'number'
-            ? existingScores.overall
-            : ((existingScores.effectiveness ?? 0) + (existingScores.safety ?? 0) + (existingScores.practicality ?? 0)) / 3;
 
-        return {
-            effectiveness: existingScores.effectiveness ?? 0,
-            safety: existingScores.safety ?? 0,
-            value: existingScores.practicality ?? existingScores.value ?? 0,
-            overall: overall,
-            label: 'optional' // default
+        const analysisInput: AnalysisInput = {
+            efficacy: {
+                score: efficacy.score,
+                primaryActive: efficacy.primaryActive ?? null,
+                ingredients: efficacy.ingredients ?? [],
+                overallAssessment: efficacy.overallAssessment,
+                marketingVsReality: efficacy.marketingVsReality,
+                coreBenefits: efficacy.coreBenefits ?? efficacy.benefits ?? [],
+            },
+            safety: {
+                score: safety.score,
+                ulWarnings: safety.ulWarnings ?? [],
+                allergens: safety.allergens ?? [],
+                interactions: safety.interactions ?? [],
+                redFlags: safety.redFlags ?? [],
+                consultDoctorIf: safety.consultDoctorIf ?? [],
+            },
+            value: {
+                score: value.score,
+                costPerServing: value.costPerServing ?? null,
+                alternatives: value.alternatives ?? [],
+            },
+            social: {
+                score: social.score,
+                summary: social.summary,
+            },
         };
-    }, [analysis]);
 
-    // Construct descriptions for InteractiveScoreRing
+        return computeSmartScores(analysisInput);
+    }, [efficacy, safety, value, social, isFullyLoaded]);
+
+    // Construct descriptions for InteractiveScoreRing with score factor explanations
     const descriptions: {
         effectiveness: ContentSection;
         safety: ContentSection;
         practicality: ContentSection;
-    } = {
+    } = useMemo(() => ({
         effectiveness: {
-            verdict: efficacy.verdict || 'Analysis based on active ingredients.',
-            highlights: efficacy.benefits || [],
-            warnings: [],
+            verdict: efficacy.verdict || 'Analyzing efficacy based on ingredients and evidence...',
+            // Use scoring factors as highlights to explain the score
+            highlights: isFullyLoaded
+                ? scores.details.effectivenessFactors.filter(f => f.startsWith('+'))
+                : [],
+            warnings: isFullyLoaded
+                ? scores.details.effectivenessFactors.filter(f => f.startsWith('-') || f.startsWith('−'))
+                : [],
         },
         safety: {
-            verdict: safety.verdict || 'Safety profile analyzed.',
-            highlights: [],
-            warnings: safety.redFlags || safety.risks || [],
+            verdict: safety.verdict || 'Analyzing safety profile...',
+            highlights: isFullyLoaded
+                ? scores.details.safetyFactors.filter(f => f.startsWith('+'))
+                : [],
+            warnings: isFullyLoaded
+                ? [...(safety.redFlags || []), ...scores.details.safetyFactors.filter(f => f.startsWith('-') || f.startsWith('−'))]
+                : [],
         },
         practicality: {
-            verdict: value.verdict || 'Value assessment.',
-            highlights: [value.analysis].filter(Boolean) as string[],
+            verdict: value.verdict || 'Analyzing value and practicality...',
+            highlights: isFullyLoaded
+                ? scores.details.valueFactors.filter(f => f.startsWith('+'))
+                : [],
             warnings: [],
         },
-    };
-
-    const overviewSummary =
-        value.analysis ||
-        efficacy.dosageAssessment?.text ||
-        value.verdict ||
-        social.summary ||
-        'Search results did not provide this information.';
+    }), [efficacy.verdict, safety.verdict, safety.redFlags, value.verdict, scores.details, isFullyLoaded]);
 
     const scienceSummary =
         efficacy.verdict ||
@@ -408,18 +463,96 @@ export const AnalysisDashboard: React.FC<{ analysis: Analysis; isStreaming?: boo
         (Array.isArray(safety.risks) && safety.risks[0]) ||
         'No major safety concerns were highlighted in public sources at standard doses.';
 
-    const meta = analysis.meta as SupplementMeta | undefined;
+    // Legacy meta is no longer used - scoring now comes from AI analysis directly
 
     const clampFill = (value?: number, fallback: number = 68) => {
         if (typeof value !== 'number' || Number.isNaN(value)) return fallback;
         return Math.min(100, Math.max(12, value));
     };
 
-    const formatMg = (value?: number) => (typeof value === 'number' ? `${value} mg` : undefined);
+    // Use primaryActive from efficacy if available
+    const primaryActive = efficacy?.primaryActive;
 
-    const coreBenefits = (Array.isArray(efficacy.benefits) && efficacy.benefits.length > 0
-        ? efficacy.benefits
-        : ['Enhanced clarity', 'Sustained energy']
+    // Format dosage with unit
+    const formatDose = (value?: number | null, unit?: string | null): string | null => {
+        if (typeof value !== 'number' || value === null) return null;
+        return `${value} ${unit || 'mg'}`;
+    };
+
+    // Format form text to be user-friendly (simplify long scientific names)
+    const formatFormShort = (): string | null => {
+        if (!primaryActive) return null;
+
+        if (primaryActive.form) {
+            const form = primaryActive.form.toLowerCase();
+            // Simplify common scientific terms to user-friendly versions
+            if (form.includes('haematococcus') || form.includes('algae')) {
+                return 'Algae-derived';
+            }
+            if (form.includes('methylcobalamin')) {
+                return 'Methylated form';
+            }
+            if (form.includes('citrate') || form.includes('glycinate') || form.includes('chelate')) {
+                return 'Chelated form';
+            }
+            if (form.includes('liposomal')) {
+                return 'Liposomal';
+            }
+            // Truncate if too long
+            if (primaryActive.form.length > 25) {
+                return primaryActive.form.slice(0, 22) + '...';
+            }
+            return primaryActive.form;
+        }
+
+        // Fallback to formQuality label
+        if (primaryActive.formQuality && primaryActive.formQuality !== 'unknown') {
+            const labelMap: Record<string, string> = {
+                high: 'High-quality',
+                medium: 'Standard',
+                low: 'Basic',
+            };
+            return labelMap[primaryActive.formQuality] || null;
+        }
+
+        return null;
+    };
+
+    // Pre-computed form label for overview
+    const formLabel = formatFormShort();
+
+    // Primary active dosage (from AI analysis)
+    const primaryDoseLabel = formatDose(primaryActive?.dosageValue, primaryActive?.dosageUnit);
+    const primaryName = primaryActive?.name || productInfo.primaryIngredient || productInfo.name;
+
+    // Build overview summary: prefer AI-generated, then structured fallback, then legacy
+    const overviewSummary = (() => {
+        // 1. Use new AI-generated overviewSummary if available
+        if (efficacy?.overviewSummary) {
+            return efficacy.overviewSummary;
+        }
+        // 2. Build from primaryActive (structured fallback)
+        if (primaryActive?.dosageValue != null && primaryActive?.name) {
+            const evidenceText = primaryActive.evidenceLevel && primaryActive.evidenceLevel !== 'none'
+                ? ` with ${primaryActive.evidenceLevel} evidence`
+                : '';
+            return `Provides ${primaryActive.dosageValue} ${primaryActive.dosageUnit || 'mg'} ${primaryActive.name}${evidenceText}. ${value.analysis || value.verdict || ''}`;
+        }
+        // 3. Legacy fallback
+        return value.analysis ||
+            efficacy.dosageAssessment?.text ||
+            value.verdict ||
+            social.summary ||
+            'Analysis based on available search results.';
+    })();
+
+    // Get core benefits from efficacy (new) or fallback to benefits array
+    const coreBenefits = (
+        Array.isArray(efficacy?.coreBenefits) && efficacy.coreBenefits.length > 0
+            ? efficacy.coreBenefits
+            : Array.isArray(efficacy?.benefits) && efficacy.benefits.length > 0
+                ? efficacy.benefits
+                : ['Enhanced clarity', 'Sustained energy']
     ).slice(0, 3);
 
     const bestFor = usage.bestFor || usage.target || usage.who || 'Professionals & students needing focus.';
@@ -435,53 +568,73 @@ export const AnalysisDashboard: React.FC<{ analysis: Analysis; isStreaming?: boo
         safety.verdict ||
         'Ideal for mid-day brain fog and sustained clarity.';
 
-    const doseMatchPercent =
-        meta?.actualDoseMg && meta?.refDoseMg
-            ? clampFill(Math.round((meta.actualDoseMg / meta.refDoseMg) * 100), 72)
-            : clampFill(undefined, 72);
+    // Calculate dose fill percentage based on primaryActive
+    const doseMatchPercent = (() => {
+        if (primaryActive?.dosageValue != null) {
+            const evidenceFillMap: Record<string, number> = {
+                'strong': 92,
+                'moderate': 75,
+                'weak': 55,
+                'none': 40,
+            };
+            return evidenceFillMap[primaryActive.evidenceLevel || 'none'] || 72;
+        }
+        return 72; // Default
+    })();
 
     const keyMechanisms: Mechanism[] = [
         {
-            name: meta?.primaryIngredient || productInfo.primaryIngredient || 'Primary Active',
-            amount: formatMg(meta?.actualDoseMg) || 'Clinically aligned dose',
+            name: primaryName || 'Primary Active',
+            amount: primaryDoseLabel || 'See label',
             fill: doseMatchPercent,
-        },
-        {
-            name: 'Reference Range',
-            amount: formatMg(meta?.refDoseMg) || 'Target range',
-            fill: clampFill(meta?.refDoseMg ? 98 : 64, 64),
         },
     ];
 
-    if (meta?.formBioRating) {
-        const bioMap: Record<NonNullable<SupplementMeta['formBioRating']>, number> = {
-            high: 92,
-            medium: 72,
-            low: 52,
+    // Add evidence level if available from primaryActive
+    if (primaryActive?.evidenceLevel && primaryActive.evidenceLevel !== 'none') {
+        const evidenceFillMap: Record<string, number> = {
+            'strong': 95,
+            'moderate': 72,
+            'weak': 50,
         };
         keyMechanisms.push({
-            name: 'Bioavailability',
-            amount: meta.formBioRating === 'high' ? 'High' : meta.formBioRating === 'medium' ? 'Medium' : 'Low',
-            fill: clampFill(bioMap[meta.formBioRating], 64),
+            name: 'Evidence Level',
+            amount: primaryActive.evidenceLevel.charAt(0).toUpperCase() + primaryActive.evidenceLevel.slice(1),
+            fill: evidenceFillMap[primaryActive.evidenceLevel] || 60,
         });
     }
 
+    // Add form quality if available
+    if (primaryActive?.formQuality && primaryActive.formQuality !== 'unknown') {
+        const formFillMap: Record<string, number> = {
+            'high': 92,
+            'medium': 72,
+            'low': 52,
+        };
+        keyMechanisms.push({
+            name: 'Form Quality',
+            amount: primaryActive.formQuality.charAt(0).toUpperCase() + primaryActive.formQuality.slice(1),
+            fill: formFillMap[primaryActive.formQuality] || 64,
+        });
+    } // formQuality already added from primaryActive above
+
+
     const evidenceLevelText = (() => {
-        switch (meta?.evidenceLevel) {
-            case 3: return 'Strong clinical evidence';
-            case 2: return 'Moderate evidence';
-            case 1: return 'Limited evidence';
-            case 0: default: return 'AI-reviewed evidence';
+        switch (primaryActive?.evidenceLevel) {
+            case 'strong': return 'Strong clinical evidence';
+            case 'moderate': return 'Moderate evidence';
+            case 'weak': return 'Limited evidence';
+            default: return 'AI-reviewed evidence';
         }
     })();
 
-    const bioavailabilityText = meta?.formBioRating
-        ? `Form bioavailability: ${meta.formBioRating}`
+    const bioavailabilityText = primaryActive?.formQuality && primaryActive.formQuality !== 'unknown'
+        ? `Form quality: ${primaryActive.formQuality.charAt(0).toUpperCase() + primaryActive.formQuality.slice(1)}`
         : 'Bioavailability estimated from label information.';
 
     const doseMatchCopy =
-        meta?.actualDoseMg && meta?.refDoseMg
-            ? `Dose at ${Math.round((meta.actualDoseMg / meta.refDoseMg) * 100)}% of reference (${meta.actualDoseMg}mg vs ${meta.refDoseMg}mg).`
+        primaryActive?.dosageValue != null
+            ? `Delivers ${primaryActive.dosageValue} ${primaryActive.dosageUnit || 'mg'} per serving.`
             : 'Dose compared against typical clinical ranges.';
 
     const timingCopy =
@@ -492,16 +645,17 @@ export const AnalysisDashboard: React.FC<{ analysis: Analysis; isStreaming?: boo
                 : 'Follow a consistent time each day; pair with breakfast for smoother energy.';
 
     const interactionCopy = (() => {
-        if (meta?.interactionLevel === 'high') return 'High interaction potential — consult a clinician.';
-        if (meta?.interactionLevel === 'moderate') return 'Moderate interaction potential with common medications.';
-        if (meta?.interactionLevel === 'low') return 'Low interaction potential reported.';
-        return 'Monitor with existing medications if uncertain.';
+        const interactionCount = safety.interactions?.length ?? 0;
+        if (interactionCount >= 3) return 'Multiple potential interactions — consult a clinician.';
+        if (interactionCount >= 1) return 'Some interaction potential with common medications.';
+        return 'Low interaction potential reported.';
     })();
 
     const isEfficacyReady = !!efficacy.verdict || !isStreaming;
     const isSafetyReady = !!safety.verdict || !isStreaming;
     const isUsageReady = !!usage.summary || !isStreaming;
-    const isOverviewReady = !!value.analysis || !!efficacy.dosageAssessment?.text || !isStreaming;
+    // Overview should wait for all AI analysis to complete to avoid partial/inconsistent display
+    const isOverviewReady = isFullyLoaded || !isStreaming;
 
     const tiles: TileConfig[] = [
         {
@@ -529,11 +683,16 @@ export const AnalysisDashboard: React.FC<{ analysis: Analysis; isStreaming?: boo
                             </Text>
                             <Text style={styles.modalOverviewLabel}>NuTri Score</Text>
                         </View>
-                        <View style={styles.modalOverviewCard}>
-                            <Activity size={20} color="#3B82F6" />
-                            <Text style={styles.modalOverviewNumber}>{productInfo.form || 'N/A'}</Text>
-                            <Text style={styles.modalOverviewLabel}>Form</Text>
-                        </View>
+                        {/* Form card - use simplified formLabel */}
+                        {formLabel && (
+                            <View style={styles.modalOverviewCard}>
+                                <Activity size={20} color="#3B82F6" />
+                                <Text style={styles.modalOverviewNumber} numberOfLines={1}>
+                                    {formLabel}
+                                </Text>
+                                <Text style={styles.modalOverviewLabel}>Form</Text>
+                            </View>
+                        )}
                     </View>
                     <View style={styles.modalCalloutCard}>
                         <Text style={styles.modalBulletTitle}>Core benefits</Text>
@@ -556,12 +715,6 @@ export const AnalysisDashboard: React.FC<{ analysis: Analysis; isStreaming?: boo
                                 <Text style={styles.modalTagValue}>{productInfo.category}</Text>
                             </View>
                         )}
-                        {meta?.dataCoverage != null && (
-                            <View style={styles.modalTag}>
-                                <Text style={styles.modalTagLabel}>Data Coverage</Text>
-                                <Text style={styles.modalTagValue}>{Math.round(meta.dataCoverage * 100)}%</Text>
-                            </View>
-                        )}
                     </View>
                 </View>
             ),
@@ -582,20 +735,77 @@ export const AnalysisDashboard: React.FC<{ analysis: Analysis; isStreaming?: boo
             content: (
                 <View style={{ gap: 16 }}>
                     <Text style={styles.modalParagraphSmall}>{scienceSummary}</Text>
-                    <View style={styles.modalCalloutCard}>
-                        <Text style={styles.modalBulletTitle}>Dose alignment</Text>
-                        <Text style={styles.modalParagraphSmall}>{doseMatchCopy}</Text>
-                        <Text style={styles.modalParagraphSmall}>{evidenceLevelText}</Text>
-                        <Text style={styles.modalParagraphSmall}>{bioavailabilityText}</Text>
-                    </View>
-                    <View>
-                        <Text style={styles.modalBulletTitle}>Key mechanisms</Text>
-                        {keyMechanisms.map((item, idx) => (
-                            <Text key={idx} style={styles.modalBulletItem}>
-                                • {item.name}: {item.amount}
-                            </Text>
-                        ))}
-                    </View>
+
+                    {/* NEW: Enhanced Ingredient Analysis */}
+                    {Array.isArray(efficacy.ingredients) && efficacy.ingredients.length > 0 && (
+                        <View style={styles.modalCalloutCard}>
+                            <Text style={styles.modalBulletTitle}>Ingredient Analysis</Text>
+                            {efficacy.ingredients.slice(0, 4).map((ingredient: any, idx: number) => (
+                                <View key={idx} style={{ marginTop: idx > 0 ? 12 : 4 }}>
+                                    <Text style={[styles.modalParagraphSmall, { fontWeight: '600' }]}>
+                                        {ingredient.name}
+                                        {ingredient.form && ` (${ingredient.form})`}
+                                    </Text>
+                                    {ingredient.formQuality && ingredient.formQuality !== 'unknown' && (
+                                        <Text style={styles.modalParagraphSmall}>
+                                            Form quality: {ingredient.formQuality.charAt(0).toUpperCase() + ingredient.formQuality.slice(1)}
+                                            {ingredient.formNote && ` — ${ingredient.formNote}`}
+                                        </Text>
+                                    )}
+                                    {ingredient.dosageValue && ingredient.dosageUnit && (
+                                        <Text style={styles.modalParagraphSmall}>
+                                            Dose: {ingredient.dosageValue} {ingredient.dosageUnit}
+                                            {ingredient.dosageAssessment && ingredient.dosageAssessment !== 'unknown' && (
+                                                ` (${ingredient.dosageAssessment})`
+                                            )}
+                                        </Text>
+                                    )}
+                                    {ingredient.evidenceLevel && ingredient.evidenceLevel !== 'none' && (
+                                        <Text style={styles.modalParagraphSmall}>
+                                            Evidence: {ingredient.evidenceLevel.charAt(0).toUpperCase() + ingredient.evidenceLevel.slice(1)}
+                                        </Text>
+                                    )}
+                                </View>
+                            ))}
+                        </View>
+                    )}
+
+                    {/* Marketing vs Reality - NEW */}
+                    {efficacy.marketingVsReality && (
+                        <View style={styles.modalCalloutCard}>
+                            <Text style={styles.modalBulletTitle}>Marketing vs Reality</Text>
+                            <Text style={styles.modalParagraphSmall}>{efficacy.marketingVsReality}</Text>
+                        </View>
+                    )}
+
+                    {/* Overall Assessment - NEW */}
+                    {efficacy.overallAssessment && (
+                        <View style={styles.modalCalloutCard}>
+                            <Text style={styles.modalBulletTitle}>Overall Assessment</Text>
+                            <Text style={styles.modalParagraphSmall}>{efficacy.overallAssessment}</Text>
+                        </View>
+                    )}
+
+                    {/* Fallback to legacy key mechanisms display */}
+                    {(!efficacy.ingredients || efficacy.ingredients.length === 0) && (
+                        <>
+                            <View style={styles.modalCalloutCard}>
+                                <Text style={styles.modalBulletTitle}>Dose alignment</Text>
+                                <Text style={styles.modalParagraphSmall}>{doseMatchCopy}</Text>
+                                <Text style={styles.modalParagraphSmall}>{evidenceLevelText}</Text>
+                                <Text style={styles.modalParagraphSmall}>{bioavailabilityText}</Text>
+                            </View>
+                            <View>
+                                <Text style={styles.modalBulletTitle}>Key mechanisms</Text>
+                                {keyMechanisms.map((item, idx) => (
+                                    <Text key={idx} style={styles.modalBulletItem}>
+                                        • {item.name}: {item.amount}
+                                    </Text>
+                                ))}
+                            </View>
+                        </>
+                    )}
+
                     {Array.isArray(efficacy.benefits) && efficacy.benefits.length > 0 && (
                         <View style={{ marginTop: 8 }}>
                             <Text style={styles.modalBulletTitle}>Commonly targeted benefits:</Text>
@@ -644,6 +854,13 @@ export const AnalysisDashboard: React.FC<{ analysis: Analysis; isStreaming?: boo
                             <Text style={styles.modalParagraphSmall}>Timing: {usage.timing}</Text>
                         )}
                     </View>
+
+                    {/* Medical Disclaimer */}
+                    <View style={styles.modalDisclaimerCard}>
+                        <Text style={styles.modalDisclaimerText}>
+                            This information is for educational purposes only. Consult a healthcare professional before use.
+                        </Text>
+                    </View>
                 </View>
             ),
         },
@@ -670,6 +887,20 @@ export const AnalysisDashboard: React.FC<{ analysis: Analysis; isStreaming?: boo
                             <Text style={styles.modalSafetyText}>{safetySummary}</Text>
                         </View>
                     </View>
+
+                    {/* NEW: UL Warnings */}
+                    {Array.isArray(safety.ulWarnings) && safety.ulWarnings.length > 0 && (
+                        <View style={styles.modalWarningCard}>
+                            <Text style={styles.modalWarningText}>⚠️ Upper Limit Warnings:</Text>
+                            {safety.ulWarnings.map((warning: any, idx: number) => (
+                                <Text key={idx} style={styles.modalWarningTextItem}>
+                                    • {warning.ingredient}: {warning.currentDose} (UL: {warning.ulLimit})
+                                    {warning.riskLevel === 'high' && ' — HIGH RISK'}
+                                </Text>
+                            ))}
+                        </View>
+                    )}
+
                     {Array.isArray(safety.redFlags) && safety.redFlags.length > 0 && (
                         <View style={styles.modalWarningCard}>
                             <Text style={styles.modalWarningText}>Red flags to watch:</Text>
@@ -680,18 +911,50 @@ export const AnalysisDashboard: React.FC<{ analysis: Analysis; isStreaming?: boo
                             ))}
                         </View>
                     )}
+
+                    {/* NEW: Allergens */}
+                    {Array.isArray(safety.allergens) && safety.allergens.length > 0 && (
+                        <View style={styles.modalCalloutCard}>
+                            <Text style={styles.modalBulletTitle}>Allergens Detected</Text>
+                            <Text style={styles.modalParagraphSmall}>
+                                {safety.allergens.join(', ')}
+                            </Text>
+                        </View>
+                    )}
+
+                    {/* NEW: Drug Interactions */}
+                    {Array.isArray(safety.interactions) && safety.interactions.length > 0 && (
+                        <View style={styles.modalCalloutCard}>
+                            <Text style={styles.modalBulletTitle}>Drug Interactions</Text>
+                            {safety.interactions.slice(0, 3).map((interaction: string, idx: number) => (
+                                <Text key={idx} style={styles.modalParagraphSmall}>• {interaction}</Text>
+                            ))}
+                        </View>
+                    )}
+
+                    {/* NEW: Consult Doctor If */}
+                    {Array.isArray(safety.consultDoctorIf) && safety.consultDoctorIf.length > 0 && (
+                        <View style={styles.modalCalloutCard}>
+                            <Text style={styles.modalBulletTitle}>Consult Doctor If</Text>
+                            {safety.consultDoctorIf.slice(0, 4).map((condition: string, idx: number) => (
+                                <Text key={idx} style={styles.modalParagraphSmall}>• {condition}</Text>
+                            ))}
+                        </View>
+                    )}
+
                     <View style={styles.modalCalloutCard}>
-                        <Text style={styles.modalBulletTitle}>Interactions</Text>
+                        <Text style={styles.modalBulletTitle}>General Notes</Text>
                         <Text style={styles.modalParagraphSmall}>{interactionCopy}</Text>
-                        {meta?.hasCommonAllergens && (
-                            <Text style={styles.modalParagraphSmall}>Contains common allergens — review label.</Text>
+                        {(safety.allergens?.length ?? 0) > 0 && (
+                            <Text style={styles.modalParagraphSmall}>Contains allergens — review label carefully.</Text>
                         )}
-                        {meta?.hasStrongStimulants && (
-                            <Text style={styles.modalParagraphSmall}>Includes strong stimulants — avoid late-day use.</Text>
-                        )}
-                        {meta?.thirdPartyTested && (
-                            <Text style={styles.modalParagraphSmall}>Third-party tested reported.</Text>
-                        )}
+                    </View>
+
+                    {/* Medical Disclaimer */}
+                    <View style={styles.modalDisclaimerCard}>
+                        <Text style={styles.modalDisclaimerText}>
+                            This information is for educational purposes only and is not a substitute for professional medical advice. Always consult with a qualified healthcare provider before starting any supplement regimen.
+                        </Text>
                     </View>
                 </View>
             ),
@@ -961,14 +1224,27 @@ const styles = StyleSheet.create({
     // Modal Styles
     modalBackdrop: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.4)',
+        backgroundColor: '#F2F2F7',  // Match main screen background
         justifyContent: 'flex-end',
+    },
+    modalBackdropTouchable: {
+        flex: 1,
+    },
+    modalHandle: {
+        width: 40,
+        height: 5,
+        backgroundColor: '#E5E7EB',
+        borderRadius: 3,
+        alignSelf: 'center',
+        marginBottom: 16,
     },
     modalContainer: {
         backgroundColor: '#FFFFFF',
         borderTopLeftRadius: 32,
         borderTopRightRadius: 32,
-        padding: 24,
+        paddingHorizontal: 24,
+        paddingTop: 12,
+        paddingBottom: 24,
         height: '85%',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: -4 },
@@ -1009,7 +1285,7 @@ const styles = StyleSheet.create({
         marginBottom: 24,
     },
     modalContent: {
-        flex: 1,
+        // No flex - let ScrollView handle scrolling when content exceeds modal height
     },
     modalParagraph: {
         fontSize: 16,
@@ -1138,5 +1414,20 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#B91C1C',
         marginBottom: 4,
+    },
+    modalDisclaimerCard: {
+        backgroundColor: '#F9FAFB',
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        marginTop: 8,
+    },
+    modalDisclaimerText: {
+        fontSize: 12,
+        color: '#6B7280',
+        lineHeight: 18,
+        textAlign: 'center',
+        fontStyle: 'italic',
     },
 });

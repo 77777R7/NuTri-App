@@ -19,12 +19,12 @@ type ScoreDetailCardProps = {
 export const ScoreDetailCard = ({
     category,
     score,
-    maxScore = 10,
+    maxScore = 100,  // Changed from 10 to 100 - scores are now in 0-100 range
     description,
     color,
 }: ScoreDetailCardProps) => {
     const Icon = category === 'effectiveness' ? Zap : category === 'safety' ? Shield : Activity;
-    const label = category === 'practicality' ? 'Practicality' : category.charAt(0).toUpperCase() + category.slice(1);
+    const label = category === 'practicality' ? 'Value' : category.charAt(0).toUpperCase() + category.slice(1);
 
     // Calculate progress percentage
     const progress = Math.min(Math.max(score / maxScore, 0), 1);
@@ -37,7 +37,7 @@ export const ScoreDetailCard = ({
                 </View>
                 <Text style={styles.title}>{label}</Text>
                 <View style={styles.scoreBadge}>
-                    <Text style={[styles.scoreValue, { color }]}>{score.toFixed(1)}</Text>
+                    <Text style={[styles.scoreValue, { color }]}>{Math.round(score)}</Text>
                     <Text style={styles.scoreMax}>/{maxScore}</Text>
                 </View>
             </View>
@@ -49,7 +49,7 @@ export const ScoreDetailCard = ({
 
             <View style={styles.content}>
                 {/* Verdict */}
-                <Text style={styles.verdict}>{description.verdict}</Text>
+                <Text style={styles.verdict} numberOfLines={3}>{description.verdict}</Text>
 
                 {/* Highlights */}
                 {description.highlights.length > 0 && (

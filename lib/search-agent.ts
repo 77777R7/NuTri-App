@@ -34,6 +34,11 @@ export type EnrichResponseError = {
   detail?: string;
 };
 
+const isEnrichResponseError = (value: unknown): value is EnrichResponseError => {
+  if (!value || typeof value !== 'object') return false;
+  return 'error' in value && typeof (value as any).error === 'string';
+};
+
 const getSearchApiBase = (): string => {
   const apiBase = Config.searchApiBaseUrl?.replace(/\/$/, '');
   if (!apiBase) {
@@ -45,11 +50,17 @@ const getSearchApiBase = (): string => {
 export const fetchSearchByBarcode = async (barcode: string): Promise<SearchResponse> => {
   const apiBase = getSearchApiBase();
   const response = await fetch(`${apiBase}/api/search-by-barcode?code=${encodeURIComponent(barcode)}`);
-  const payload = (await response.json()) as SearchResponse | EnrichResponseError;
+  const payload = (await response.json()) as unknown;
 
-  if (!response.ok || 'error' in payload) {
-    const detail = 'detail' in payload ? payload.detail : undefined;
-    throw new Error(detail || payload.error || 'Search backend error');
+  if (!response.ok) {
+    if (isEnrichResponseError(payload)) {
+      throw new Error(payload.detail || payload.error);
+    }
+    throw new Error('Search backend error');
+  }
+
+  if (isEnrichResponseError(payload)) {
+    throw new Error(payload.detail || payload.error || 'Search backend error');
   }
 
   return payload as SearchResponse;
@@ -68,13 +79,20 @@ export const fetchEnrichedSupplement = async (
     body: JSON.stringify({ barcode, items }),
   });
 
-  const payload = (await response.json()) as EnrichResponseOk | EnrichResponseError;
-  if (!response.ok || 'error' in payload) {
-    const detail = 'detail' in payload ? payload.detail : undefined;
-    throw new Error(detail || payload.error || 'LLM enrichment failed');
+  const payload = (await response.json()) as unknown;
+
+  if (!response.ok) {
+    if (isEnrichResponseError(payload)) {
+      throw new Error(payload.detail || payload.error);
+    }
+    throw new Error('LLM enrichment failed');
   }
 
-  return payload.analysis;
+  if (isEnrichResponseError(payload)) {
+    throw new Error(payload.detail || payload.error || 'LLM enrichment failed');
+  }
+
+  return (payload as EnrichResponseOk).analysis;
 };
 
 export type BarcodeScanResult =

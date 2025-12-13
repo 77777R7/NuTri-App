@@ -218,7 +218,8 @@ const Header = () => {
         className="w-12 h-12 rounded-2xl bg-white border border-slate-100 shadow-sm items-center justify-center relative"
         // 按下时的微缩放 (Framer Motion: whileTap={{ scale: 0.95 }})
         style={({ pressed }) => ({
-          transform: [{ scale: pressed ? 0.92 : 1 }]
+          transform: [{ scale: pressed ? 0.92 : 1 }],
+          borderCurve: 'continuous'
         })}
       >
         <Bell size={20} strokeWidth={2.5} color="#64748b" />
@@ -291,7 +292,10 @@ const DayItemComponent = ({ item, isSelected, onPress, index }: DayItemProps) =>
         transform: [{ scale: pressed ? 0.95 : 1 }]
       })}
     >
-      <View className={`w-12 h-20 rounded-[2rem] items-center justify-center gap-1.5 relative overflow-hidden ${isSelected ? '' : 'bg-white/50 border border-slate-100/50'}`}>
+      <View
+        className={`w-12 h-20 rounded-[2rem] items-center justify-center gap-1.5 relative overflow-hidden ${isSelected ? '' : 'bg-white/50 border border-slate-100/50'}`}
+        style={{ borderCurve: 'continuous' }}
+      >
         {/* 黑色背景层 */}
         <Animated.View
           style={[
@@ -338,7 +342,7 @@ const DateSelector = () => {
 
   return (
     <View className="w-full mb-2">
-      <Animated.View entering={FadeInUp.duration(500)} className="mb-6">
+      <Animated.View entering={FadeInUp.duration(500)} className="mb-4">
         <Text className="text-4xl font-black tracking-tight text-slate-900 mb-3 pt-2">NuTri</Text>
         <View className="flex-row justify-between items-center">
           <Text className="text-slate-500 font-semibold text-lg">Week Days</Text>
@@ -521,6 +525,7 @@ const ProgressCard = () => {
       // 替换 MotionView: 使用 entering 属性
       entering={FadeInUp.delay(300).duration(500).springify()}
       className="w-full bg-blue-800 rounded-[2rem] p-6 text-white relative overflow-hidden h-64"
+      style={{ borderCurve: 'continuous' }}
     >
       <View className="flex-1 justify-between relative z-10">
         <View className="flex-row items-center gap-2">
@@ -617,10 +622,11 @@ const ProgressCard = () => {
 
 const NutriChatCard = () => (
   <Animated.View
-    entering={FadeInRight.delay(400).springify().damping(14)}
+    entering={FadeInUp.delay(300).duration(500).springify()}
     className="bg-[#F8F4E3] rounded-[2rem] p-5 flex-1 flex-col justify-between h-48 relative overflow-hidden"
+    style={{ borderCurve: 'continuous' }}
   >
-    <View className="flex-row items-center gap-2 z-10">
+    <View className="flex-row items-center gap-1.5 z-10">
       <View className="w-8 h-8 rounded-full border border-slate-300/50 items-center justify-center bg-white">
         <Sparkles size={16} color="#f59e0b" />
       </View>
@@ -631,7 +637,7 @@ const NutriChatCard = () => (
 
     <View className="flex-1 justify-between z-10 mt-2 mb-1">
       <View className="self-start bg-white p-3 rounded-2xl shadow-sm border border-slate-200/50 max-w-[90%]">
-        <Text className="text-xs text-slate-600 font-medium leading-relaxed">
+        <Text className="text-xs text-slate-600 font-medium leading-5">
           Questions about your intake? I&apos;m here to help!
         </Text>
       </View>
@@ -650,8 +656,9 @@ const NutriChatCard = () => (
 
 const StreakCard = () => (
   <Animated.View
-    entering={FadeInRight.delay(500).springify().damping(14)}
+    entering={FadeInUp.delay(300).duration(500).springify()}
     className="bg-yellow-400 rounded-[2rem] p-6 flex-1 flex-col justify-between h-48 relative overflow-hidden"
+    style={{ borderCurve: 'continuous' }}
   >
     <View className="flex-row items-center justify-between z-10">
       <View className="flex-row items-center gap-2">
@@ -709,6 +716,7 @@ const RecentlyScanned = () => {
     <Animated.View
       entering={FadeInUp.delay(600).duration(500)}
       className="bg-blue-300 rounded-[2rem] p-6 pb-24"
+      style={{ borderCurve: 'continuous' }}
     >
       <View className="flex-row justify-between items-start mb-4">
         <View>
@@ -1208,7 +1216,7 @@ export default function MainScreen() {
       <View className="flex-1">
         <ScrollView
           className="flex-1"
-          contentContainerClassName="pt-6 pb-40 gap-6"
+          contentContainerClassName="pt-6 pb-40 gap-5"
           showsVerticalScrollIndicator={false}
         >
           {/* 顶部 Header + 日期，左右有留白 */}
@@ -1254,6 +1262,7 @@ const styles = StyleSheet.create({
     width: 160,
     height: 112,
     borderRadius: 32,
+    borderCurve: 'continuous',
     padding: 16,
     // gap 由父容器 View 处理，这里只负责阴影
     shadowColor: "#000",
@@ -1267,6 +1276,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.6)',
     borderRadius: 32,
+    borderCurve: 'continuous',
     zIndex: 1,
     pointerEvents: 'none',
   },
@@ -1289,6 +1299,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
+    borderCurve: 'continuous',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -1323,6 +1334,8 @@ const styles = StyleSheet.create({
     flex: 1,
     maxWidth: 380,
     marginRight: 16,
+    borderRadius: 100,
+    borderCurve: 'continuous',
     shadowColor: "#4b5563",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.12,
@@ -1331,6 +1344,7 @@ const styles = StyleSheet.create({
   },
   glassContainer: {
     borderRadius: 100,
+    borderCurve: 'continuous',
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.65)',
@@ -1360,10 +1374,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20, // px-5
     paddingVertical: 10, // py-2.5
     borderRadius: 22,
+    borderCurve: 'continuous',
   },
   tabItemIcon: {
     width: 44,
     borderRadius: 22,
+    borderCurve: 'continuous',
   },
   contentLayer: {
     zIndex: 10,
@@ -1382,11 +1398,14 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     zIndex: 1, // 在图标下方，仍可捕获手势
     pointerEvents: 'box-only',
+    borderRadius: 999,
+    borderCurve: 'continuous',
   },
   pillBase: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: '#FFFFFF', // 纯白胶囊
     borderRadius: 999,
+    borderCurve: 'continuous',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.6)', // 细白描边，贴近 web
     shadowColor: '#000',
@@ -1403,6 +1422,7 @@ const styles = StyleSheet.create({
     right: 8,
     height: 10,
     borderRadius: 10,
+    borderCurve: 'continuous',
     backgroundColor: 'rgba(255,255,255,0.45)',
     opacity: 0.75,
   }

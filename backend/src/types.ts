@@ -34,8 +34,8 @@ export type NutrientCategory = "water_soluble_vitamin" | "fat_soluble_vitamin" |
 
 export interface SupplementMeta {
   evidenceLevel: EvidenceLevel;
-  primaryIngredient?: string; // NEW: for nutrient category lookup
-  primaryCategory?: NutrientCategory; // NEW: Pre-calculated category
+  primaryIngredient?: string;
+  primaryCategory?: NutrientCategory;
   refDoseMg?: number;
   actualDoseMg?: number;
   formBioRating?: FormBioRating;
@@ -54,14 +54,14 @@ export interface SupplementMeta {
   timingConstraints?: "flexible" | "with_food" | "empty_stomach" | "complex" | "unknown";
   labelClarity?: "clear" | "somewhat_unclear" | "unclear" | "unknown";
   overlapLevel?: OverlapLevel;
-  dataCoverage?: number; // NEW: 0-1 confidence score
+  dataCoverage?: number;
 }
 
 export interface ScoreBreakdown {
-  effectiveness: number; // 0–10
-  safety: number; // 0–10
-  value: number; // 0–10
-  overall: number; // 0–100
+  effectiveness: number;
+  safety: number;
+  value: number;
+  overall: number;
   label: "strongly_recommended" | "optional" | "low_priority" | "not_recommended";
 }
 
@@ -75,7 +75,7 @@ export interface AiSupplementAnalysisBase {
 export interface UsageAssessment {
   summary: string;
   timing: string | null;
-  withFood: boolean | null; // true=with food, false=empty stomach, null=anytime
+  withFood: boolean | null;
   conflicts: string[];
   sourceType: "product_label" | "general_knowledge";
 }
@@ -86,7 +86,7 @@ export interface AiSupplementAnalysisSuccess {
   generatedAt: string;
   model: string;
   status: "success";
-  overallScore: number; // 0-5 weighted blend of category scores
+  overallScore: number;
   confidence: "low" | "medium" | "high";
   productInfo: {
     brand: string | null;
@@ -103,7 +103,6 @@ export interface AiSupplementAnalysisSuccess {
       text: string;
       isUnderDosed: boolean;
     };
-    // New structured content
     verdict?: string;
     highlights?: string[];
     warnings?: string[];
@@ -112,7 +111,6 @@ export interface AiSupplementAnalysisSuccess {
     score: RatingScore;
     verdict: string;
     analysis: string;
-    // New structured content
     highlights?: string[];
     warnings?: string[];
   };
@@ -121,7 +119,6 @@ export interface AiSupplementAnalysisSuccess {
     risks: string[];
     redFlags: string[];
     additivesInfo: string | null;
-    // New structured content
     verdict?: string;
     highlights?: string[];
     warnings?: string[];
@@ -154,3 +151,129 @@ export interface AiSupplementAnalysisFailure extends AiSupplementAnalysisBase {
 export type AiSupplementAnalysis =
   | AiSupplementAnalysisSuccess
   | AiSupplementAnalysisFailure;
+
+// ============================================================================
+// NEW: Deep Ingredient Analysis Types (for enhanced AI prompts)
+// ============================================================================
+
+/**
+ * Single ingredient analysis with chemical form and dosage evaluation
+ */
+export interface IngredientAnalysis {
+  name: string;
+  form: string | null;
+  formQuality: "high" | "medium" | "low" | "unknown";
+  formNote: string | null;
+  dosageValue: number | null;
+  dosageUnit: string | null;
+  recommendedMin: number | null;
+  recommendedMax: number | null;
+  recommendedUnit: string | null;
+  dosageAssessment: "adequate" | "underdosed" | "overdosed" | "unknown";
+  evidenceLevel: "strong" | "moderate" | "weak" | "none";
+  evidenceSummary: string | null;
+  rdaSource?: "NIH" | "EFSA" | "Health Canada" | "mixed" | null;
+  ulValue?: number | null;
+  ulUnit?: string | null;
+}
+
+/**
+ * Primary active ingredient information
+ */
+export interface PrimaryActive {
+  name: string;
+  form: string | null;
+  formQuality: "high" | "medium" | "low" | "unknown";
+  formNote: string | null;
+  dosageValue: number | null;
+  dosageUnit: string | null;
+  evidenceLevel: "strong" | "moderate" | "weak" | "none";
+  evidenceSummary: string | null;
+}
+
+/**
+ * Enhanced efficacy analysis with deep ingredient details
+ */
+export interface EfficacyAnalysisEnhanced {
+  score: number;
+  verdict: string;
+  primaryActive: PrimaryActive | null;
+  ingredients: IngredientAnalysis[];
+  overviewSummary: string | null;
+  coreBenefits: string[];
+  overallAssessment: string;
+  marketingVsReality: string;
+}
+
+/**
+ * UL warning for safety analysis
+ */
+export interface ULWarning {
+  ingredient: string;
+  currentDose: string;
+  ulLimit: string;
+  riskLevel: "moderate" | "high";
+}
+
+/**
+ * Enhanced safety analysis with UL warnings and interactions
+ */
+export interface SafetyAnalysisEnhanced {
+  score: number;
+  verdict: string;
+  risks: string[];
+  redFlags: string[];
+  ulWarnings: ULWarning[];
+  allergens: string[];
+  interactions: string[];
+  consultDoctorIf: string[];
+  recommendation: string;
+}
+
+/**
+ * Enhanced usage analysis with specific guidance
+ */
+export interface UsageAnalysisEnhanced {
+  usage: {
+    summary: string;
+    timing: string;
+    withFood: boolean | null;
+    frequency: string;
+    interactions: string[];
+  };
+  value: {
+    score: number;
+    verdict: string;
+    analysis: string;
+    costPerServing: number | null;
+    alternatives: string[];
+  };
+  social: {
+    score: number;
+    summary: string;
+  };
+}
+
+/**
+ * Brand extraction result from rule-based or AI extraction
+ */
+export interface BrandExtractionResult {
+  brand: string | null;
+  product: string | null;
+  category: string | null;
+  confidence: "high" | "medium" | "low";
+  score: number;
+  reason: string;
+  source: "rule" | "ai";
+}
+
+/**
+ * Source item with quality indicators
+ */
+export interface EnrichedSource {
+  title: string;
+  link: string;
+  domain: string;
+  isHighQuality: boolean;
+}
+

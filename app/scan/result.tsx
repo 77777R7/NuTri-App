@@ -1,9 +1,9 @@
+import { BlurView } from 'expo-blur';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ArrowLeft, FileText, Loader2 } from 'lucide-react-native';
+import { ArrowLeft, FileText } from 'lucide-react-native';
 import React, { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { BlurView } from 'expo-blur';
 
 import { ResponsiveScreen } from '@/components/common/ResponsiveScreen';
 import { OrganicSpinner } from '@/components/ui/OrganicSpinner';
@@ -50,16 +50,8 @@ export default function ScanResultScreen() {
     );
   }
 
-  // 2. Initial Loading (Before we even know the product name)
-  // This should be very fast (<1s)
-  if (!productInfo && status === 'loading') {
-    return (
-      <ResponsiveScreen contentStyle={styles.loadingContainer}>
-        <Loader2 size={48} color="#000" style={{ marginBottom: 16 }} />
-        <Text style={styles.loadingTitle}>Searching...</Text>
-      </ResponsiveScreen>
-    );
-  }
+  // 2. Removed intermediate "Searching..." screen - go directly to dashboard
+  // The AnalysisDashboard will show skeleton loading states for each section
 
   // 3. Fallback if somehow no product info but done (rare)
   if (!productInfo && status === 'complete') {
@@ -88,7 +80,10 @@ export default function ScanResultScreen() {
   const isStreaming = status === 'streaming' || status === 'loading';
 
   return (
-    <ResponsiveScreen contentStyle={styles.screen}>
+    <ResponsiveScreen
+      contentStyle={styles.screen}
+      style={{ backgroundColor: '#F2F2F7' }}  // Override SafeAreaView background
+    >
       <StatusBar style="dark" />
       <Header onBack={handleBack} title="Analysis" />
 

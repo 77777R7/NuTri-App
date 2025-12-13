@@ -1,14 +1,134 @@
 import { useEffect, useRef, useState } from 'react';
 import RNEventSource from 'react-native-sse';
 
-// Define the shape of our partial analysis
+import { Config } from '@/constants/Config';
+
+// ============================================================================
+// TYPES
+// ============================================================================
+
+// Brand extraction result from backend
+type BrandExtraction = {
+    brand: string | null;
+    product: string | null;
+    category: string | null;
+    confidence: 'high' | 'medium' | 'low';
+    source: 'rule' | 'ai';
+};
+
+// Enhanced source with quality indicators
+type EnrichedSource = {
+    title: string;
+    link: string;
+    domain?: string;
+    isHighQuality?: boolean;
+};
+
+// Product info from backend
+type ProductInfo = {
+    brand: string | null;
+    name: string | null;
+    category?: string | null;
+    image?: string | null;
+};
+
+// Ingredient analysis from enhanced efficacy
+type IngredientAnalysis = {
+    name: string;
+    form: string | null;
+    formQuality: 'high' | 'medium' | 'low' | 'unknown';
+    formNote: string | null;
+    dosageValue: number | null;
+    dosageUnit: string | null;
+    recommendedMin: number | null;
+    recommendedMax: number | null;
+    recommendedUnit: string | null;
+    dosageAssessment: 'adequate' | 'underdosed' | 'overdosed' | 'unknown';
+    evidenceLevel: 'strong' | 'moderate' | 'weak' | 'none';
+    evidenceSummary: string | null;
+};
+
+// Primary active ingredient
+type PrimaryActive = {
+    name: string;
+    form: string | null;
+    formQuality: 'high' | 'medium' | 'low' | 'unknown';
+    formNote: string | null;
+    dosageValue: number | null;
+    dosageUnit: string | null;
+    evidenceLevel: 'strong' | 'moderate' | 'weak' | 'none';
+    evidenceSummary: string | null;
+};
+
+// Enhanced efficacy analysis
+type EfficacyAnalysis = {
+    score: number;
+    verdict: string;
+    primaryActive?: PrimaryActive | null;
+    ingredients?: IngredientAnalysis[];
+    overviewSummary?: string | null;
+    coreBenefits?: string[];
+    overallAssessment?: string;
+    marketingVsReality?: string;
+    // Legacy fields for backward compatibility
+    benefits?: string[];
+    activeIngredients?: { name: string; amount: string }[];
+    mechanisms?: { name: string; amount: string; fill: number }[];
+};
+
+// UL Warning
+type ULWarning = {
+    ingredient: string;
+    currentDose: string;
+    ulLimit: string;
+    riskLevel: 'moderate' | 'high';
+};
+
+// Enhanced safety analysis
+type SafetyAnalysis = {
+    score: number;
+    verdict: string;
+    risks: string[];
+    redFlags: string[];
+    ulWarnings?: ULWarning[];
+    allergens?: string[];
+    interactions?: string[];
+    consultDoctorIf?: string[];
+    recommendation: string;
+};
+
+// Enhanced usage analysis
+type UsageAnalysis = {
+    summary: string;
+    timing: string;
+    withFood: boolean | null;
+    frequency?: string;
+    interactions?: string[];
+};
+
+type ValueAnalysis = {
+    score: number;
+    verdict: string;
+    analysis: string;
+    costPerServing?: number | null;
+    alternatives?: string[];
+};
+
+type SocialAnalysis = {
+    score: number;
+    summary: string;
+};
+
+// Main analysis state
 type AnalysisState = {
-    productInfo: any | null;
-    efficacy: any | null;
-    safety: any | null;
-    usage: any | null;
-    value: any | null;
-    social: any | null;
+    brandExtraction: BrandExtraction | null;
+    productInfo: ProductInfo | null;
+    sources: EnrichedSource[];
+    efficacy: EfficacyAnalysis | null;
+    safety: SafetyAnalysis | null;
+    usage: UsageAnalysis | null;
+    value: ValueAnalysis | null;
+    social: SocialAnalysis | null;
     meta: any | null;
     status: 'idle' | 'loading' | 'streaming' | 'complete' | 'error';
     error: string | null;
@@ -16,7 +136,9 @@ type AnalysisState = {
 
 export function useStreamAnalysis(barcode: string) {
     const [state, setState] = useState<AnalysisState>({
+        brandExtraction: null,
         productInfo: null,
+        sources: [],
         efficacy: null,
         safety: null,
         usage: null,
@@ -34,8 +156,7 @@ export function useStreamAnalysis(barcode: string) {
 
         setState(prev => ({ ...prev, status: 'loading', error: null }));
 
-        // Replace with your actual backend URL
-        const API_URL = 'http://192.168.1.68:3001';
+        const API_URL = (Config.searchApiBaseUrl || 'http://localhost:3001').replace(/\/$/, '');
 
         // Initialize SSE connection (POST method)
         const es = new RNEventSource(`${API_URL}/api/enrich-stream`, {
@@ -55,65 +176,97 @@ export function useStreamAnalysis(barcode: string) {
         });
 
         es.addEventListener('message', (event) => {
-            // Although we use custom events, standard message listener is good for debugging
-            // or if backend sends standard messages.
+            // Standard message listener for debugging
         });
 
-        // 1. Product Info (Immediate)
+        // NEW: Brand Extraction (comes before product_info)
+        es.addEventListener('brand_extracted' as any, (event: any) => {
+            try {
+                const data = JSON.parse(event.data) as BrandExtraction;
+                console.log('[SSE] Brand Extracted:', data);
+                setState(prev => ({
+                    ...prev,
+                    brandExtraction: data,
+                }));
+            } catch (e) {
+                console.error('[SSE] Failed to parse brand_extracted:', e);
+            }
+        });
+
+        // Product Info (enhanced with sources)
         es.addEventListener('product_info' as any, (event: any) => {
-            const data = JSON.parse(event.data);
-            console.log('[SSE] Received Product Info');
-            setState(prev => ({
-                ...prev,
-                productInfo: data.productInfo,
-                // If you need sources separately, store them too
-            }));
+            try {
+                const data = JSON.parse(event.data);
+                console.log('[SSE] Product Info:', data);
+                setState(prev => ({
+                    ...prev,
+                    productInfo: data.productInfo,
+                    sources: data.sources || [],
+                }));
+            } catch (e) {
+                console.error('[SSE] Failed to parse product_info:', e);
+            }
         });
 
-        // 2. Efficacy Result
+        // Efficacy Result (enhanced with ingredients)
         es.addEventListener('result_efficacy' as any, (event: any) => {
-            const data = JSON.parse(event.data);
-            console.log('[SSE] Received Efficacy');
-            setState(prev => ({ ...prev, efficacy: data }));
+            try {
+                const data = JSON.parse(event.data) as EfficacyAnalysis;
+                console.log('[SSE] Efficacy:', data);
+                setState(prev => ({ ...prev, efficacy: data }));
+            } catch (e) {
+                console.error('[SSE] Failed to parse result_efficacy:', e);
+            }
         });
 
-        // 3. Safety Result
+        // Safety Result (enhanced with UL warnings)
         es.addEventListener('result_safety' as any, (event: any) => {
-            const data = JSON.parse(event.data);
-            console.log('[SSE] Received Safety');
-            setState(prev => ({ ...prev, safety: data }));
+            try {
+                const data = JSON.parse(event.data) as SafetyAnalysis;
+                console.log('[SSE] Safety:', data);
+                setState(prev => ({ ...prev, safety: data }));
+            } catch (e) {
+                console.error('[SSE] Failed to parse result_safety:', e);
+            }
         });
 
-        // 4. Usage/Value Result
+        // Usage/Value Result (split into usage, value, social)
         es.addEventListener('result_usage' as any, (event: any) => {
-            const data = JSON.parse(event.data);
-            console.log('[SSE] Received Usage');
-            setState(prev => ({
-                ...prev,
-                usage: data.usage,
-                value: data.value,
-                social: data.social,
-            }));
+            try {
+                const data = JSON.parse(event.data);
+                console.log('[SSE] Usage:', data);
+                setState(prev => ({
+                    ...prev,
+                    usage: data.usage || null,
+                    value: data.value || null,
+                    social: data.social || null,
+                }));
+            } catch (e) {
+                console.error('[SSE] Failed to parse result_usage:', e);
+            }
         });
 
-        // 5. Completion
+        // Completion
         es.addEventListener('done' as any, () => {
             console.log('[SSE] Done');
             setState(prev => ({ ...prev, status: 'complete' }));
             es.close();
         });
 
-        // 6. Error
+        // Error
         es.addEventListener('error', (event: any) => {
             console.error('[SSE] Error:', event);
-            // Backend sends error events with type 'error' usually, 
-            // but connection errors also trigger this.
             if (event.type === 'error' && event.data) {
-                const errorData = JSON.parse(event.data);
-                setState(prev => ({ ...prev, status: 'error', error: errorData.message || 'Scan failed' }));
-            } else if (event.type === 'error') {
-                // Network error usually
-                // setState(prev => ({ ...prev, status: 'error', error: 'Connection failed' }));
+                try {
+                    const errorData = JSON.parse(event.data);
+                    setState(prev => ({
+                        ...prev,
+                        status: 'error',
+                        error: errorData.message || 'Scan failed'
+                    }));
+                } catch {
+                    setState(prev => ({ ...prev, status: 'error', error: 'Connection failed' }));
+                }
             }
             es.close();
         });
@@ -126,3 +279,9 @@ export function useStreamAnalysis(barcode: string) {
 
     return state;
 }
+
+// Export types for use in other components
+export type {
+    AnalysisState, BrandExtraction, EfficacyAnalysis, EnrichedSource, IngredientAnalysis, ProductInfo, SafetyAnalysis, SocialAnalysis, ULWarning, UsageAnalysis,
+    ValueAnalysis
+};

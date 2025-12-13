@@ -2,15 +2,22 @@ import cors from "cors";
 import dotenv from "dotenv";
 import express, { Request, Response } from "express";
 
-import { fetchAnalysisSection } from "./deepseek.js";
-import { constructFallbackQuery, scoreSearchQuality } from "./searchQuality.js";
+import { extractBrandProduct, extractBrandWithAI, type BrandExtractionResult } from "./brandExtractor.js";
+import { buildEnhancedContext, fetchAnalysisSection, prepareContextSources } from "./deepseek.js";
+import { buildBarcodeSearchQueries, normalizeBarcodeInput } from "./barcode.js";
+import { constructFallbackQuery, extractDomain, isHighQualityDomain, scoreSearchItem, scoreSearchQuality } from "./searchQuality.js";
 import type { ErrorResponse, SearchItem, SearchResponse } from "./types.js";
 
 dotenv.config();
 
 const GOOGLE_CSE_ENDPOINT = "https://customsearch.googleapis.com/customsearch/v1";
 const MAX_RESULTS = 5;
+const QUALITY_THRESHOLD = 60; // Score below this triggers fallback search
 const PORT = Number(process.env.PORT ?? 3001);
+
+// ============================================================================
+// GOOGLE CSE UTILITIES
+// ============================================================================
 
 interface GoogleCseItem {
   title?: string;
@@ -46,10 +53,6 @@ const pickImageFromPagemap = (pagemap: GoogleCseItem["pagemap"]): string | undef
   return match;
 };
 
-const app = express();
-app.use(cors());
-app.use(express.json({ limit: "1mb" }));
-
 const performGoogleSearch = async (
   query: string,
   apiKey: string,
@@ -61,6 +64,8 @@ const performGoogleSearch = async (
     q: query,
   });
   const url = `${GOOGLE_CSE_ENDPOINT}?${searchParams.toString()}`;
+
+  console.log(`[Search] Query: "${query}"`);
 
   const response = await fetch(url, { cache: "no-store" });
   if (!response.ok) {
@@ -84,15 +89,181 @@ const performGoogleSearch = async (
     .filter((item) => item.title && item.link);
 };
 
+const runSearchPlan = async (
+  queries: string[],
+  apiKey: string,
+  cx: string,
+  options: { barcode?: string } = {},
+): Promise<{ primary: SearchItem[]; secondary: SearchItem[]; merged: SearchItem[]; queriesTried: string[] }> => {
+  let primary: SearchItem[] = [];
+  const secondary: SearchItem[] = [];
+  const queriesTried: string[] = [];
+
+  for (const query of queries) {
+    try {
+      const items = await performGoogleSearch(query, apiKey, cx);
+      queriesTried.push(query);
+
+      if (!items.length) {
+        continue;
+      }
+
+      if (primary.length === 0) {
+        primary = items;
+      } else {
+        secondary.push(...items);
+      }
+
+      const merged = mergeAndDedupe(primary, secondary, { barcode: options.barcode });
+      const qualityScore = scoreSearchQuality(merged, { barcode: options.barcode });
+
+      if (merged.length >= MAX_RESULTS && qualityScore >= QUALITY_THRESHOLD) {
+        return { primary, secondary, merged, queriesTried };
+      }
+    } catch (error) {
+      queriesTried.push(query);
+      console.warn(`[Search] Query failed: "${query}"`, error);
+    }
+  }
+
+  return {
+    primary,
+    secondary,
+    merged: mergeAndDedupe(primary, secondary, { barcode: options.barcode }),
+    queriesTried,
+  };
+};
+
+// ============================================================================
+// SEARCH RESULT MERGING
+// ============================================================================
+
+/**
+ * Merge and deduplicate search results, prioritizing high-quality domains
+ */
+const TRACKING_QUERY_PARAM_PREFIXES = ["utm_"];
+const TRACKING_QUERY_PARAMS = new Set([
+  "gclid",
+  "fbclid",
+  "msclkid",
+  "yclid",
+  "mc_cid",
+  "mc_eid",
+  "spm",
+  "ref",
+]);
+
+const canonicalizeUrl = (rawUrl: string): string => {
+  try {
+    const url = new URL(rawUrl);
+    url.hash = "";
+    for (const key of [...url.searchParams.keys()]) {
+      if (TRACKING_QUERY_PARAM_PREFIXES.some((prefix) => key.startsWith(prefix)) || TRACKING_QUERY_PARAMS.has(key)) {
+        url.searchParams.delete(key);
+      }
+    }
+    return url.toString();
+  } catch {
+    return rawUrl;
+  }
+};
+
+function mergeAndDedupe(
+  primary: SearchItem[],
+  secondary: SearchItem[],
+  options: { barcode?: string } = {},
+): SearchItem[] {
+  const candidates = new Map<
+    string,
+    {
+      item: SearchItem;
+      score: number;
+      hasImage: boolean;
+      sourceRank: number;
+      insertionOrder: number;
+    }
+  >();
+
+  const addItem = (item: SearchItem, sourceRank: number, insertionOrder: number) => {
+    const key = canonicalizeUrl(item.link);
+    const score = scoreSearchItem(item, { barcode: options.barcode });
+    const hasImage = Boolean(item.image);
+    const existing = candidates.get(key);
+
+    if (!existing) {
+      candidates.set(key, { item, score, hasImage, sourceRank, insertionOrder });
+      return;
+    }
+
+    const shouldReplace =
+      score > existing.score ||
+      (score === existing.score && hasImage && !existing.hasImage) ||
+      (score === existing.score && hasImage === existing.hasImage && sourceRank < existing.sourceRank);
+
+    if (shouldReplace) {
+      candidates.set(key, {
+        item,
+        score,
+        hasImage,
+        sourceRank,
+        insertionOrder: Math.min(existing.insertionOrder, insertionOrder),
+      });
+    }
+  };
+
+  let insertionOrder = 0;
+  for (const item of primary) {
+    addItem(item, 0, insertionOrder++);
+  }
+  for (const item of secondary) {
+    addItem(item, 1, insertionOrder++);
+  }
+
+  return [...candidates.values()]
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      if (Number(b.hasImage) !== Number(a.hasImage)) return Number(b.hasImage) - Number(a.hasImage);
+      if (a.sourceRank !== b.sourceRank) return a.sourceRank - b.sourceRank;
+      return a.insertionOrder - b.insertionOrder;
+    })
+    .map((entry) => entry.item)
+    .slice(0, MAX_RESULTS);
+}
+
+// ============================================================================
+// EXPRESS APP
+// ============================================================================
+
+const app = express();
+app.use(cors());
+app.use(express.json({ limit: "1mb" }));
+
+// ============================================================================
+// SSE HELPER
+// ============================================================================
+
+const sendSSE = (res: Response, type: string, data: unknown) => {
+  res.write(`event: ${type}\n`);
+  res.write(`data: ${JSON.stringify(data)}\n\n`);
+};
+
+// ============================================================================
+// ENDPOINTS
+// ============================================================================
+
+/**
+ * Legacy endpoint for barcode search only (no AI analysis)
+ */
 app.get("/api/search-by-barcode", async (req: Request, res: Response) => {
   try {
     const barcodeRaw = req.query.code;
-    const barcode = typeof barcodeRaw === "string" ? barcodeRaw.trim() : "";
+    const barcodeInput = typeof barcodeRaw === "string" ? barcodeRaw : "";
+    const normalized = normalizeBarcodeInput(barcodeInput);
 
-    if (!barcode) {
+    if (!normalized) {
       return res
         .status(400)
-        .json({ error: "missing barcode 'code' query param" } satisfies ErrorResponse);
+        .json({ error: "invalid_barcode", detail: "Missing or invalid barcode 'code' query param" } satisfies ErrorResponse);
     }
 
     const apiKey = process.env.GOOGLE_CSE_API_KEY;
@@ -103,54 +274,46 @@ app.get("/api/search-by-barcode", async (req: Request, res: Response) => {
         .json({ error: "google_cse_env_not_set" } satisfies ErrorResponse);
     }
 
-    // 1. Initial Search (Barcode)
-    const initialItems = await performGoogleSearch(`UPC ${barcode} supplement`, apiKey, cx);
+    const barcode = normalized.code;
+    const queries = buildBarcodeSearchQueries(normalized);
+    const initial = await runSearchPlan(queries, apiKey, cx, { barcode });
+    const qualityScore = scoreSearchQuality(initial.merged, { barcode });
+    console.log(`[Search] Barcode: ${barcode}, Initial Score: ${qualityScore}, Queries: ${initial.queriesTried.length}`);
 
-    // 2. Quality Check
-    const qualityScore = scoreSearchQuality(initialItems);
-    console.log(`[Search] Barcode: ${barcode}, Score: ${qualityScore}`);
+    let finalPrimary = initial.primary;
+    let finalSecondary = [...initial.secondary];
+    let finalItems = initial.merged;
 
-    let finalItems = initialItems;
+    // Step 2: Fallback if quality is low
+    if (qualityScore < QUALITY_THRESHOLD && finalItems.length > 0) {
+      const extraction = extractBrandProduct(finalItems);
+      const fallbackQueries: string[] = [];
 
-    // 3. Smart Fallback
-    if (qualityScore < 60) {
-      const fallbackQuery = constructFallbackQuery(initialItems);
-      if (fallbackQuery) {
-        console.log(`[Search] Triggering fallback with query: "${fallbackQuery}"`);
+      if (extraction.brand && extraction.product) {
+        fallbackQueries.push(
+          `"${extraction.brand}" "${extraction.product}" "supplement facts"`,
+          `"${extraction.brand}" "${extraction.product}" ingredients "supplement facts"`,
+          `"${extraction.brand}" "${extraction.product}" "other ingredients"`,
+          `"${extraction.brand}" "${extraction.product}" "nutrition facts"`,
+          `"${extraction.brand}" "${extraction.product}" site:amazon.com "supplement facts"`,
+          `"${extraction.brand}" "${extraction.product}" site:iherb.com "supplement facts"`,
+        );
+      }
+
+      const titleFallback = constructFallbackQuery(finalItems);
+      if (titleFallback) {
+        fallbackQueries.push(titleFallback);
+      }
+
+      if (fallbackQueries.length > 0) {
+        console.log(`[Search] Fallback queries: ${fallbackQueries.length}`);
         try {
-          const fallbackItems = await performGoogleSearch(fallbackQuery, apiKey, cx);
-
-          // Merge Strategy:
-          // 1. Keep top 1 from initial search (best for cover image usually)
-          // 2. Prioritize fallback items (better text content)
-          // 3. Fill with remaining initial items
-
-          const topInitial = initialItems[0];
-          const remainingInitial = initialItems.slice(1);
-
-          // Combine: [Top Initial] + [Fallback Items] + [Remaining Initial]
-          // Note: If fallbackItems contains topInitial, dedupe will handle it.
-          const combined = [topInitial, ...fallbackItems, ...remainingInitial];
-
-          // Deduplicate by link
-          const seenLinks = new Set<string>();
-          finalItems = [];
-
-          for (const item of combined) {
-            if (!item) continue;
-            if (!seenLinks.has(item.link)) {
-              seenLinks.add(item.link);
-              finalItems.push(item);
-            }
-          }
-
-          // Slice to limit
-          finalItems = finalItems.slice(0, MAX_RESULTS);
+          const fallbackPlan = await runSearchPlan(fallbackQueries, apiKey, cx, { barcode });
+          finalSecondary = [...finalSecondary, ...fallbackPlan.primary, ...fallbackPlan.secondary];
+          finalItems = mergeAndDedupe(finalPrimary, finalSecondary, { barcode });
         } catch (error) {
           console.warn("[Search] Fallback search failed", error);
         }
-      } else {
-        console.log("[Search] Fallback query could not be constructed");
       }
     }
 
@@ -167,101 +330,202 @@ app.get("/api/search-by-barcode", async (req: Request, res: Response) => {
   }
 });
 
-// 辅助函数：发送 SSE 事件
-const sendSSE = (res: any, type: string, data: any) => {
-  res.write(`event: ${type}\n`); // 關鍵：告訴前端這是什麼事件
-  res.write(`data: ${JSON.stringify(data)}\n\n`); // 數據不用再包一層 {type, data}
-};
-
+/**
+ * Main streaming endpoint: Two-step search + AI analysis
+ */
 app.post("/api/enrich-stream", async (req: Request, res: Response) => {
-  const { barcode } = req.body;
-  const apiKey = process.env.DEEPSEEK_API_KEY;
+  const rawBarcode = typeof req.body?.barcode === "string" ? req.body.barcode : "";
+  const normalized = normalizeBarcodeInput(rawBarcode);
   const model = process.env.DEEPSEEK_MODEL || "deepseek-chat";
 
-  // 1. 设置 SSE Headers
+  // Set SSE Headers
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
 
   try {
-    if (!barcode) {
-      sendSSE(res, 'error', { message: 'No barcode provided' });
+    if (!normalized) {
+      sendSSE(res, "error", { message: "Invalid barcode provided" });
       res.end();
       return;
     }
+    const barcode = normalized.code;
 
-    // 2. 阶段一：快速搜索 (Search Phase)
-    const apiKey = process.env.GOOGLE_CSE_API_KEY;
+    const googleApiKey = process.env.GOOGLE_CSE_API_KEY;
     const cx = process.env.GOOGLE_CSE_CX;
+    const deepseekKey = process.env.DEEPSEEK_API_KEY;
 
-    if (!apiKey || !cx) {
-      sendSSE(res, 'error', { message: 'Google CSE not configured' });
+    if (!googleApiKey || !cx) {
+      sendSSE(res, "error", { message: "Google CSE not configured" });
       res.end();
       return;
     }
 
-    const query = `"${barcode}"`;
-    const initialItems = await performGoogleSearch(query, apiKey, cx);
-
-    // 构造 Fallback 逻辑 (简单示意)
-    const finalItems = initialItems;
-
-    if (!finalItems.length) {
-      sendSSE(res, 'error', { message: 'Product not found' });
+    if (!deepseekKey) {
+      sendSSE(res, "error", { message: "DeepSeek API key missing" });
       res.end();
       return;
     }
 
-    // 🚀 关键点：搜索一结束，立刻把产品图和标题推给前端
-    sendSSE(res, 'product_info', {
-      productInfo: {
-        brand: finalItems[0].title.split(' ')[0],
-        name: finalItems[0].title,
-        image: finalItems[0].image
-      },
-      sources: finalItems.map(i => ({ title: i.title, link: i.link }))
+    // =========================================================================
+    // STEP 1: Initial Barcode Search
+    // =========================================================================
+    console.log(`[Stream] Starting analysis for barcode: ${barcode}`);
+
+    const queries = buildBarcodeSearchQueries(normalized);
+    const initial = await runSearchPlan(queries, googleApiKey, cx, { barcode });
+    const initialItems = initial.merged;
+
+    if (!initialItems.length) {
+      sendSSE(res, "error", { message: "Product not found" });
+      res.end();
+      return;
+    }
+
+    // =========================================================================
+    // STEP 1.5: Brand/Product Extraction
+    // =========================================================================
+    let extraction: BrandExtractionResult = extractBrandProduct(initialItems);
+    console.log(`[Stream] Initial extraction:`, extraction);
+
+    // If confidence is low, use AI to extract brand/product
+    if (extraction.confidence === "low") {
+      console.log(`[Stream] Low confidence (${extraction.score}), using AI extraction`);
+      extraction = await extractBrandWithAI(initialItems, deepseekKey, model);
+      console.log(`[Stream] AI extraction result:`, extraction);
+    }
+
+    // Send brand extraction result to frontend
+    sendSSE(res, "brand_extracted", {
+      brand: extraction.brand,
+      product: extraction.product,
+      category: extraction.category,
+      confidence: extraction.confidence,
+      source: extraction.source,
     });
 
-    // 3. 阶段二：并行 AI 分析 (Parallel Phase)
-    const searchContext = finalItems.map((item, idx) =>
-      `[Source ${idx}] Title: ${item.title}\nSnippet: ${item.snippet}`
-    ).join("\n\n");
+    const brand = extraction.brand || "Unknown Brand";
+    const product = extraction.product || initialItems[0].title;
 
-    const deepseekKey = process.env.DEEPSEEK_API_KEY;
-    if (!deepseekKey) {
-      sendSSE(res, 'error', { message: 'DeepSeek API key missing' });
-      res.end();
-      return;
+    // Send product info immediately (user sees something fast)
+    sendSSE(res, "product_info", {
+      productInfo: {
+        brand: brand,
+        name: product,
+        category: extraction.category,
+        image: initialItems[0].image,
+      },
+      sources: initialItems.map((i) => ({
+        title: i.title,
+        link: i.link,
+        domain: extractDomain(i.link),
+        isHighQuality: isHighQualityDomain(i.link),
+      })),
+    });
+
+    // =========================================================================
+    // STEP 2: Detailed Search (for ingredient information)
+    // =========================================================================
+    let detailItems = initialItems;
+    const initialQuality = scoreSearchQuality(initialItems, { barcode });
+    console.log(`[Stream] Initial search quality: ${initialQuality}`);
+
+    // If quality is not good enough, do a second search focused on ingredients
+    if (initialQuality < QUALITY_THRESHOLD) {
+      const detailQueries: string[] = [];
+
+      if (extraction.brand && extraction.product) {
+        detailQueries.push(
+          `"${extraction.brand}" "${extraction.product}" "supplement facts"`,
+          `"${extraction.brand}" "${extraction.product}" ingredients "supplement facts"`,
+          `"${extraction.brand}" "${extraction.product}" "other ingredients"`,
+          `"${extraction.brand}" "${extraction.product}" "nutrition facts"`,
+          `"${extraction.brand}" "${extraction.product}" site:amazon.com "supplement facts"`,
+          `"${extraction.brand}" "${extraction.product}" site:iherb.com "supplement facts"`,
+        );
+      }
+
+      const titleFallback = constructFallbackQuery(initialItems);
+      if (titleFallback) {
+        detailQueries.push(titleFallback);
+      }
+
+      if (detailQueries.length > 0) {
+        console.log(`[Stream] Running detail search plan (${detailQueries.length} queries)`);
+        try {
+          const detailPlan = await runSearchPlan(detailQueries, googleApiKey, cx, { barcode });
+          const extraItems = [...detailPlan.primary, ...detailPlan.secondary];
+          detailItems = mergeAndDedupe(initialItems, extraItems, { barcode });
+          console.log(
+            `[Stream] Detail search quality: ${scoreSearchQuality(detailItems, { barcode })}`,
+          );
+        } catch (detailError) {
+          console.warn("[Stream] Detail search failed", detailError);
+        }
+      }
     }
 
-    // 同时发射三枚火箭！
-    const taskEfficacy = fetchAnalysisSection('efficacy', searchContext, model, deepseekKey);
-    const taskSafety = fetchAnalysisSection('safety', searchContext, model, deepseekKey);
-    const taskUsage = fetchAnalysisSection('usage', searchContext, model, deepseekKey);
+    console.log(`[Stream] Final items count: ${detailItems.length}`);
 
-    // 谁先回来就推谁
-    taskEfficacy.then(data => sendSSE(res, 'result_efficacy', data));
-    taskSafety.then(data => sendSSE(res, 'result_safety', data));
-    taskUsage.then(data => sendSSE(res, 'result_usage', data));
+    // =========================================================================
+    // STEP 3: Parallel AI Analysis
+    // =========================================================================
+    const sources = await prepareContextSources(detailItems);
+    const efficacyContext = buildEnhancedContext({ brand, product, barcode, sources }, "efficacy");
+    const safetyContext = buildEnhancedContext({ brand, product, barcode, sources }, "safety");
+    const usageContext = buildEnhancedContext({ brand, product, barcode, sources }, "usage");
 
-    // 等待所有任务结束，关闭连接
+    console.log(`[Stream] Starting parallel AI analysis...`);
+
+    // Fire all three analysis tasks in parallel
+    const taskEfficacy = fetchAnalysisSection("efficacy", efficacyContext, model, deepseekKey);
+    const taskSafety = fetchAnalysisSection("safety", safetyContext, model, deepseekKey);
+    const taskUsage = fetchAnalysisSection("usage", usageContext, model, deepseekKey);
+
+    // Send results as they complete (whoever finishes first gets sent first)
+    taskEfficacy.then((data) => {
+      console.log(`[Stream] Efficacy analysis complete`);
+      sendSSE(res, "result_efficacy", data);
+    });
+
+    taskSafety.then((data) => {
+      console.log(`[Stream] Safety analysis complete`);
+      sendSSE(res, "result_safety", data);
+    });
+
+    taskUsage.then((data) => {
+      console.log(`[Stream] Usage analysis complete`);
+      sendSSE(res, "result_usage", data);
+    });
+
+    // Wait for all tasks to complete
     await Promise.all([taskEfficacy, taskSafety, taskUsage]);
 
-    sendSSE(res, 'done', {});
+    console.log(`[Stream] All analysis complete for barcode: ${barcode}`);
+    sendSSE(res, "done", { barcode });
     res.end();
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Stream Error:", error);
-    sendSSE(res, 'error', { message: error.message });
+    const message = error instanceof Error ? error.message : "Unknown error";
+    sendSSE(res, "error", { message });
     res.end();
   }
 });
 
-app.post("/api/enrich-supplement", async (req: Request, res: Response) => {
-  return res.status(410).json({ error: "endpoint_deprecated", message: "Use /api/enrich-stream instead" });
+/**
+ * Deprecated endpoint
+ */
+app.post("/api/enrich-supplement", async (_req: Request, res: Response) => {
+  return res.status(410).json({
+    error: "endpoint_deprecated",
+    message: "Use /api/enrich-stream instead"
+  });
 });
 
-
+/**
+ * Health check
+ */
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
