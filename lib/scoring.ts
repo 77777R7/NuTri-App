@@ -1,263 +1,347 @@
-export type RatingScore = 0 | 1 | 2 | 3 | 4 | 5;
-export type EvidenceLevel = 0 | 1 | 2 | 3;
-export type FormBioRating = "high" | "medium" | "low";
-export type InteractionLevel = "low" | "moderate" | "high" | "unknown";
-export type OverlapLevel = "low" | "medium" | "high" | "unknown";
+/**
+ * NuTri Score v2.0 - AI-Driven Scoring System
+ * 
+ * This scoring system derives scores directly from AI analysis results,
+ * using structured data (primaryActive, ulWarnings, allergens) for adjustments.
+ */
 
-export type NutrientCategory = "water_soluble_vitamin" | "fat_soluble_vitamin" | "essential_mineral" | "other";
+// ============================================================================
+// TYPES
+// ============================================================================
 
-export interface SupplementMeta {
-    evidenceLevel: EvidenceLevel;
-    primaryIngredient?: string;
-    primaryCategory?: NutrientCategory;
-    refDoseMg?: number;
-    actualDoseMg?: number;
-    formBioRating?: FormBioRating;
-    coreActiveRatio?: number;
+export interface PrimaryActive {
+    name: string;
+    form: string | null;
+    formQuality: 'high' | 'medium' | 'low' | 'unknown';
+    formNote: string | null;
+    dosageValue: number | null;
+    dosageUnit: string | null;
+    evidenceLevel: 'strong' | 'moderate' | 'weak' | 'none';
+    evidenceSummary: string | null;
+}
 
-    ulRatio?: number;
-    interactionLevel?: InteractionLevel;
-    hasCommonAllergens?: boolean;
-    hasStrongStimulants?: boolean;
-    thirdPartyTested?: boolean;
+export interface IngredientAnalysis {
+    name: string;
+    dosageAssessment?: 'adequate' | 'underdosed' | 'overdosed' | 'unknown';
+    evidenceLevel?: 'strong' | 'moderate' | 'weak' | 'none';
+    formQuality?: 'high' | 'medium' | 'low' | 'unknown';
+}
 
-    price?: number;
-    currency?: string;
-    daysPerBottle?: number;
-    dosesPerDay?: number;
-    timingConstraints?: "flexible" | "with_food" | "empty_stomach" | "complex" | "unknown";
-    labelClarity?: "clear" | "somewhat_unclear" | "unclear" | "unknown";
-    overlapLevel?: OverlapLevel;
-    dataCoverage?: number;
+export interface EfficacyData {
+    score?: number;  // 0-10 from AI
+    primaryActive?: PrimaryActive | null;
+    ingredients?: IngredientAnalysis[];
+    overallAssessment?: string;
+    marketingVsReality?: string;
+    coreBenefits?: string[];
+}
+
+export interface ULWarning {
+    ingredient: string;
+    currentDose: string;
+    ulLimit: string;
+    riskLevel: 'moderate' | 'high';
+}
+
+export interface SafetyData {
+    score?: number;  // 0-10 from AI
+    ulWarnings?: ULWarning[];
+    allergens?: string[];
+    interactions?: string[];
+    redFlags?: string[];
+    consultDoctorIf?: string[];
+}
+
+export interface ValueData {
+    score?: number;  // 0-10 from AI
+    costPerServing?: number | null;
+    alternatives?: string[];
+}
+
+export interface SocialData {
+    score?: number;  // 0-5 from AI
+    summary?: string;
+}
+
+export interface AnalysisInput {
+    efficacy: EfficacyData;
+    safety: SafetyData;
+    value: ValueData;
+    social: SocialData;
 }
 
 export interface ScoreBreakdown {
-    effectiveness: number; // 0–100 (Scaled for UI)
-    safety: number; // 0–100
-    value: number; // 0–100
-    overall: number; // 0–100
-    label: "strongly_recommended" | "optional" | "low_priority" | "not_recommended";
+    effectiveness: number;  // 0-100
+    safety: number;         // 0-100
+    value: number;          // 0-100
+    overall: number;        // 0-100
+    label: string;
+    details: {
+        effectivenessFactors: string[];
+        safetyFactors: string[];
+        valueFactors: string[];
+    };
 }
+
+// ============================================================================
+// UTILITIES
+// ============================================================================
 
 const clamp = (value: number, min: number, max: number): number => {
     return Math.max(min, Math.min(max, value));
 };
 
-// --- Nutrient Category Logic ---
+// ============================================================================
+// EFFECTIVENESS SCORING (0-100)
+// ============================================================================
 
-interface DoseRule {
-    fullScoreRange: [number, number]; // [min, max] ratio for full score
-    softHighRange: [number, number];  // [min, max] ratio for soft penalty
-    hardHighCutoff: number;           // ratio above which hard penalty applies
-    tolerableUpperLimit?: number;     // ratio above which safety warning might be triggered
+function computeEffectiveness(efficacy: EfficacyData): { score: number; factors: string[] } {
+    const factors: string[] = [];
+
+    // Base: AI's assessment (50% weight, scaled to 0-50)
+    const aiScore = efficacy.score ?? 5;  // Default to 5/10 if missing
+    const baseScore = aiScore * 5;  // 0-50
+    factors.push(`AI assessment: ${aiScore}/10`);
+
+    // Evidence modifier (-10 to +15)
+    let evidenceMod = 0;
+    const evidenceLevel = efficacy.primaryActive?.evidenceLevel ?? 'none';
+    switch (evidenceLevel) {
+        case 'strong': evidenceMod = 15; factors.push('+15 Strong evidence'); break;
+        case 'moderate': evidenceMod = 8; factors.push('+8 Moderate evidence'); break;
+        case 'weak': evidenceMod = 0; factors.push('±0 Weak evidence'); break;
+        case 'none': evidenceMod = -10; factors.push('-10 No evidence'); break;
+    }
+
+    // Form quality modifier (-5 to +10)
+    let formMod = 0;
+    const formQuality = efficacy.primaryActive?.formQuality ?? 'unknown';
+    switch (formQuality) {
+        case 'high': formMod = 10; factors.push('+10 High-quality form'); break;
+        case 'medium': formMod = 3; factors.push('+3 Medium-quality form'); break;
+        case 'low': formMod = -5; factors.push('-5 Low-quality form'); break;
+        case 'unknown': formMod = 0; break;
+    }
+
+    // Dosage modifier (-15 to +5)
+    let doseMod = 0;
+    const ingredients = efficacy.ingredients ?? [];
+    if (ingredients.length > 0) {
+        const assessment = ingredients[0].dosageAssessment;
+        switch (assessment) {
+            case 'adequate': doseMod = 5; factors.push('+5 Adequate dosage'); break;
+            case 'underdosed': doseMod = -10; factors.push('-10 Underdosed'); break;
+            case 'overdosed': doseMod = -15; factors.push('-15 Overdosed'); break;
+        }
+    }
+
+    // Marketing reality check
+    let marketingPenalty = 0;
+    if (efficacy.marketingVsReality?.toLowerCase().includes('unsupported')) {
+        marketingPenalty = -8;
+        factors.push('-8 Unsupported claims');
+    }
+
+    // Core benefits bonus
+    let benefitsBonus = 0;
+    if ((efficacy.coreBenefits?.length ?? 0) >= 3) {
+        benefitsBonus = 5;
+        factors.push('+5 Clear benefits');
+    }
+
+    const total = clamp(baseScore + 25 + evidenceMod + formMod + doseMod + marketingPenalty + benefitsBonus, 0, 100);
+
+    return { score: Math.round(total), factors };
 }
 
-const DOSE_RULES: Record<NutrientCategory, DoseRule> = {
-    water_soluble_vitamin: {
-        fullScoreRange: [1.0, 2.0],    // 100%–200% RDA 满分
-        softHighRange: [2.0, 5.0],     // 200%–500% 缓慢降分
-        hardHighCutoff: 10.0,          // >1000% 开始重扣
-        tolerableUpperLimit: 15.0      // Very high tolerance
-    },
-    fat_soluble_vitamin: {
-        fullScoreRange: [0.8, 1.2],    // 80%–120% 严格
-        softHighRange: [1.2, 1.5],     // 120%–150% 勉强接受
-        hardHighCutoff: 1.5,
-        tolerableUpperLimit: 1.5       // Strict UL
-    },
-    essential_mineral: {
-        fullScoreRange: [0.8, 1.2],
-        softHighRange: [1.2, 1.5],
-        hardHighCutoff: 1.5,
-        tolerableUpperLimit: 1.2       // Strict UL for minerals
-    },
-    other: {
-        fullScoreRange: [0.5, 1.5],    // 很多草本没明显 RDA，只能宽松一点
-        softHighRange: [1.5, 2.0],
-        hardHighCutoff: 2.0
-    }
-};
+// ============================================================================
+// SAFETY SCORING (0-100)
+// ============================================================================
 
-// Helper to determine category if not provided in meta
-export const getNutrientCategory = (ingredientName?: string): NutrientCategory => {
-    if (!ingredientName) return "other";
-    const lower = ingredientName.toLowerCase();
+function computeSafety(safety: SafetyData): { score: number; factors: string[] } {
+    const factors: string[] = [];
 
-    if (lower.includes("vitamin c") || lower.includes("ascorbic") || lower.includes("vitamin b") || lower.includes("niacin") || lower.includes("thiamin") || lower.includes("riboflavin") || lower.includes("folate") || lower.includes("biotin")) {
-        return "water_soluble_vitamin";
-    }
-    if (lower.includes("vitamin a") || lower.includes("vitamin d") || lower.includes("vitamin e") || lower.includes("vitamin k")) {
-        return "fat_soluble_vitamin";
-    }
-    if (lower.includes("zinc") || lower.includes("iron") || lower.includes("magnesium") || lower.includes("calcium") || lower.includes("selenium") || lower.includes("copper")) {
-        return "essential_mineral";
-    }
-    return "other";
-};
+    // Base: AI's assessment (50% weight, scaled to 0-50)
+    const aiScore = safety.score ?? 7;  // Default to 7/10 if missing (conservative)
+    const baseScore = aiScore * 5;  // 0-50
+    factors.push(`AI assessment: ${aiScore}/10`);
 
-// Effectiveness in Real Life (E: 0–10)
-const scoreEffectiveness = (meta: SupplementMeta): number => {
-    // 1) Evidence (0–4)
-    let E_evidence = 0;
-    switch (meta.evidenceLevel) {
-        case 3: E_evidence = 4; break;
-        case 2: E_evidence = 3; break;
-        case 1: E_evidence = 2; break;
-        case 0: default: E_evidence = 0; break;
-    }
-
-    // 2) Dose match (0–3) - NEW LOGIC
-    let E_dose = 0;
-    if (meta.refDoseMg && meta.actualDoseMg && meta.refDoseMg > 0) {
-        const doseRatio = meta.actualDoseMg / meta.refDoseMg;
-        // Use pre-calculated category or fallback
-        const category = meta.primaryCategory ?? getNutrientCategory(meta.primaryIngredient);
-        const rule = DOSE_RULES[category];
-
-        if (doseRatio >= rule.fullScoreRange[0] && doseRatio <= rule.fullScoreRange[1]) {
-            E_dose = 3; // Full score
-        } else if (doseRatio >= rule.softHighRange[0] && doseRatio <= rule.softHighRange[1]) {
-            E_dose = 2; // Soft penalty for high dose
-        } else if (doseRatio > rule.hardHighCutoff) {
-            E_dose = 0; // Hard penalty for very high dose
-        } else if (doseRatio < rule.fullScoreRange[0] && doseRatio >= rule.fullScoreRange[0] * 0.5) {
-            E_dose = 1; // Under-dosed but present
+    // UL warnings penalty (-20 per high risk, -10 per moderate)
+    let ulPenalty = 0;
+    for (const w of safety.ulWarnings ?? []) {
+        if (w.riskLevel === 'high') {
+            ulPenalty -= 20;
+            factors.push(`-20 High UL risk: ${w.ingredient}`);
         } else {
-            E_dose = 0; // Way off
+            ulPenalty -= 10;
+            factors.push(`-10 Moderate UL: ${w.ingredient}`);
         }
+    }
+
+    // Allergen penalty (-5 if any)
+    const allergenCount = safety.allergens?.length ?? 0;
+    let allergenPenalty = 0;
+    if (allergenCount > 0) {
+        allergenPenalty = -5;
+        factors.push(`-5 Contains ${allergenCount} allergen(s)`);
+    }
+
+    // Interaction penalty (-8 per interaction, max -24)
+    const interactionCount = safety.interactions?.length ?? 0;
+    const interactionPenalty = Math.max(-24, -interactionCount * 8);
+    if (interactionCount > 0) {
+        factors.push(`${interactionPenalty} ${interactionCount} interaction(s)`);
+    }
+
+    // Red flags penalty (-15 per flag, max -30)
+    const redFlagCount = safety.redFlags?.length ?? 0;
+    const redFlagPenalty = Math.max(-30, -redFlagCount * 15);
+    if (redFlagCount > 0) {
+        factors.push(`${redFlagPenalty} ${redFlagCount} red flag(s)`);
+    }
+
+    // No issues bonus
+    if (ulPenalty === 0 && allergenPenalty === 0 && interactionPenalty === 0 && redFlagCount === 0) {
+        factors.push('+10 No safety concerns');
+    }
+
+    const noIssuesBonus = (ulPenalty === 0 && allergenPenalty === 0 && interactionPenalty === 0 && redFlagCount === 0) ? 10 : 0;
+
+    const total = clamp(baseScore + 40 + ulPenalty + allergenPenalty + interactionPenalty + redFlagPenalty + noIssuesBonus, 0, 100);
+
+    return { score: Math.round(total), factors };
+}
+
+// ============================================================================
+// VALUE SCORING (0-100)
+// ============================================================================
+
+function computeValue(value: ValueData, social: SocialData): { score: number; factors: string[] } {
+    const factors: string[] = [];
+
+    // Base: AI's assessment (60% weight, scaled to 0-60)
+    const aiScore = value.score ?? 5;  // Default to 5/10 if missing
+    const baseScore = aiScore * 6;  // 0-60
+    factors.push(`AI assessment: ${aiScore}/10`);
+
+    // Brand reputation from social (0-20)
+    const socialScore = social.score ?? 3;  // Default to 3/5
+    const brandScore = socialScore * 4;  // 0-20
+    if (socialScore >= 4) {
+        factors.push(`+${brandScore} Strong brand reputation`);
+    } else if (socialScore >= 3) {
+        factors.push(`+${brandScore} Good brand reputation`);
     } else {
-        // Missing dose info: Neutral score but will be weighted down by coverage
-        E_dose = 1.5;
+        factors.push(`+${brandScore} Limited brand data`);
     }
 
-    // 3) Form / bioavailability (0–2)
-    let E_form = 0;
-    if (meta.formBioRating === "high") E_form = 2;
-    else if (meta.formBioRating === "medium") E_form = 1;
-    else E_form = 0;
+    // Price data: neutral if missing, bonus if available and affordable
+    // No penalty for missing price data - supplement value depends on efficacy, not price availability
+    let priceBonus = 0;
+    if (value.costPerServing != null) {
+        // Has price data - give small bonus for transparency
+        if (value.costPerServing <= 0.30) {
+            priceBonus = 8;
+            factors.push(`+8 Affordable ($${value.costPerServing.toFixed(2)}/serving)`);
+        } else if (value.costPerServing <= 0.75) {
+            priceBonus = 5;
+            factors.push(`+5 Fair price ($${value.costPerServing.toFixed(2)}/serving)`);
+        } else {
+            priceBonus = 2;
+            factors.push(`+2 Premium price ($${value.costPerServing.toFixed(2)}/serving)`);
+        }
+    }
+    // No else clause - missing price = 0, not a penalty
 
-    // 4) Formula focus (0–1)
-    let E_focus = 0;
-    if (typeof meta.coreActiveRatio === "number" && meta.coreActiveRatio >= 0.7) E_focus = 1;
-
-    const E = clamp(E_evidence + E_dose + E_form + E_focus, 0, 10);
-    return E;
-};
-
-// Safety & Risk (S: 0–10)
-const scoreSafety = (meta: SupplementMeta): number => {
-    // 1) Dose vs UL (0–4)
-    let S_dose = 3;
-    if (typeof meta.ulRatio === "number") {
-        const r = meta.ulRatio;
-        if (r <= 0.5) S_dose = 4;
-        else if (r <= 0.8) S_dose = 3;
-        else if (r <= 1.0) S_dose = 2;
-        else if (r <= 1.2) S_dose = 1;
-        else S_dose = 0;
+    // Alternatives awareness - informational only, no penalty
+    const altCount = value.alternatives?.length ?? 0;
+    if (altCount > 0) {
+        factors.push(`ℹ️ ${altCount} alternative(s) mentioned`);
     }
 
-    // 2) Interactions (0–3)
-    let S_interactions = 2;
-    switch (meta.interactionLevel) {
-        case "low": S_interactions = 3; break;
-        case "moderate": S_interactions = 2; break;
-        case "high": S_interactions = 1; break;
-        case "unknown": default: S_interactions = 2; break;
+    // Increased base bonus from 10 to 20 to compensate for removed penalties
+    const total = clamp(baseScore + brandScore + 20 + priceBonus, 0, 100);
+
+    return { score: Math.round(total), factors };
+}
+
+// ============================================================================
+// OVERALL SCORING & LABEL
+// ============================================================================
+
+function computeOverallAndLabel(eff: number, saf: number, val: number): { score: number; label: string } {
+    // Weighted combination
+    const rawOverall = 0.40 * eff + 0.35 * saf + 0.25 * val;
+    const overall = Math.round(rawOverall);
+
+    // Label assignment with safety override
+    let label: string;
+
+    // Safety override: if safety is dangerously low, override label
+    if (saf < 40) {
+        label = '⚠️ Safety Concern';
+    } else if (overall >= 80) {
+        label = '✅ Strongly Recommended';
+    } else if (overall >= 65) {
+        label = '👍 Recommended';
+    } else if (overall >= 50) {
+        label = '🤔 Consider Carefully';
+    } else if (overall >= 35) {
+        label = '⚡ Limited Evidence';
+    } else {
+        label = '❌ Not Recommended';
     }
 
-    // 3) Allergens / stimulants (0–2)
-    let S_allergens = 2;
-    if (meta.hasCommonAllergens || meta.hasStrongStimulants) S_allergens = 1;
+    return { score: overall, label };
+}
 
-    // 4) Quality / testing (0–1)
-    const S_quality = meta.thirdPartyTested ? 1 : 0;
+// ============================================================================
+// MAIN EXPORT
+// ============================================================================
 
-    const S = clamp(S_dose + S_interactions + S_allergens + S_quality, 0, 10);
-    return S;
-};
+export function computeSmartScores(analysis: AnalysisInput): ScoreBreakdown {
+    const { efficacy, safety, value, social } = analysis;
 
-// Value & Practicality (V: 0–10)
-const scoreValue = (meta: SupplementMeta): number => {
-    // 1) Cost per month (0–4)
-    let V_cost = 2;
-    if (meta.price != null && meta.daysPerBottle && meta.daysPerBottle > 0) {
-        const pricePerDay = meta.price / meta.daysPerBottle;
-        const pricePerMonth = pricePerDay * 30;
+    const effResult = computeEffectiveness(efficacy);
+    const safResult = computeSafety(safety);
+    const valResult = computeValue(value, social);
 
-        if (pricePerMonth <= 10) V_cost = 4;
-        else if (pricePerMonth <= 20) V_cost = 3;
-        else if (pricePerMonth <= 35) V_cost = 2;
-        else if (pricePerMonth <= 50) V_cost = 1;
-        else V_cost = 0;
-    }
-
-    // 2) Overlap (0–2)
-    let V_overlap = 1;
-    switch (meta.overlapLevel) {
-        case "low": V_overlap = 2; break;
-        case "medium": V_overlap = 1; break;
-        case "high": V_overlap = 0; break;
-        case "unknown": default: V_overlap = 1; break;
-    }
-
-    // 3) Convenience (0–2)
-    let V_convenience = 1;
-    if (meta.dosesPerDay != null) {
-        if (meta.dosesPerDay <= 2) V_convenience = 2;
-        else if (meta.dosesPerDay <= 3) V_convenience = 1;
-        else V_convenience = 0;
-    }
-    if (meta.timingConstraints === "complex") V_convenience = Math.max(0, V_convenience - 1);
-
-    // 4) Duration / Clarity (0–2)
-    let V_duration = 1;
-    if (meta.daysPerBottle != null) {
-        if (meta.daysPerBottle >= 30) V_duration = 2;
-        else if (meta.daysPerBottle >= 15) V_duration = 1;
-        else V_duration = 0;
-    }
-    if (meta.labelClarity === "unclear") V_duration = Math.max(0, V_duration - 1);
-
-    const V = clamp(V_cost + V_overlap + V_convenience + V_duration, 0, 10);
-    return V;
-};
-
-export const computeScores = (meta: SupplementMeta): ScoreBreakdown => {
-    const rawEffectiveness = scoreEffectiveness(meta);
-    const rawSafety = scoreSafety(meta);
-    const rawValue = scoreValue(meta);
-
-    // Apply Coverage Logic
-    // Default coverage to 0.5 if missing (conservative)
-    const coverage = meta.dataCoverage ?? 0.5;
-
-    // Formula: final = raw * (0.7 + 0.3 * coverage)
-    // If coverage is 1.0, final = raw * 1.0
-    // If coverage is 0.0, final = raw * 0.7 (penalized but not zeroed)
-    const coverageFactor = 0.7 + (0.3 * coverage);
-
-    // Apply coverage factor ONLY to Effectiveness (as per user feedback)
-    const effectiveness = parseFloat((rawEffectiveness * coverageFactor).toFixed(1));
-
-    // Safety and Value remain raw for now (or could have their own specific coverage logic later)
-    const safety = parseFloat(rawSafety.toFixed(1));
-    const value = parseFloat(rawValue.toFixed(1));
-
-    const overall0to10 = 0.4 * effectiveness + 0.3 * safety + 0.3 * value;
-    const overall = Math.round(clamp(overall0to10, 0, 10) * 10);
-
-    let label: ScoreBreakdown["label"];
-    if (overall >= 80) label = "strongly_recommended";
-    else if (overall >= 60) label = "optional";
-    else if (overall >= 40) label = "low_priority";
-    else label = "not_recommended";
+    const { score: overall, label } = computeOverallAndLabel(
+        effResult.score,
+        safResult.score,
+        valResult.score
+    );
 
     return {
-        effectiveness: effectiveness * 10, // Convert to 0-100 scale for UI
-        safety: safety * 10,
-        value: value * 10,
+        effectiveness: effResult.score,
+        safety: safResult.score,
+        value: valResult.score,
         overall,
         label,
+        details: {
+            effectivenessFactors: effResult.factors,
+            safetyFactors: safResult.factors,
+            valueFactors: valResult.factors,
+        },
     };
-};
+}
+
+// Legacy export for compatibility (maps old SupplementMeta to new system)
+export type SupplementMeta = Record<string, unknown>;
+
+export function computeScores(meta: SupplementMeta): ScoreBreakdown {
+    // This is a compatibility shim - the new system doesn't use SupplementMeta
+    // Instead, we return default scores that will be overridden by computeSmartScores
+    return {
+        effectiveness: 50,
+        safety: 70,
+        value: 50,
+        overall: 55,
+        label: '🤔 Consider Carefully',
+        details: {
+            effectivenessFactors: ['Legacy scoring - no data'],
+            safetyFactors: ['Legacy scoring - no data'],
+            valueFactors: ['Legacy scoring - no data'],
+        },
+    };
+}

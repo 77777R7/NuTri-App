@@ -29,6 +29,23 @@ const SCAN_FRAME_WIDTH = width * 0.85;
 const SCAN_FRAME_HEIGHT = 200; // Fixed height for barcode shape
 const SCAN_FRAME_RADIUS = 16;
 
+const normalizeBarcodeCandidate = (raw: string): string | null => {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+
+  const sequences = trimmed.match(/\d{8,14}/g);
+  if (sequences && sequences.length > 0) {
+    return [...sequences].sort((a, b) => b.length - a.length)[0] ?? null;
+  }
+
+  const digitsOnly = trimmed.replace(/\D/g, '');
+  if (digitsOnly.length >= 8 && digitsOnly.length <= 14) {
+    return digitsOnly;
+  }
+
+  return null;
+};
+
 export default function BarcodeScanScreen() {
   const { tokens } = useResponsiveTokens();
   const insets = useSafeAreaInsets();
@@ -66,6 +83,16 @@ export default function BarcodeScanScreen() {
         return;
       }
 
+      const normalized = normalizeBarcodeCandidate(result.data);
+      if (!normalized) {
+        setStatus('error');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        setTimeout(() => {
+          setStatus('idle');
+        }, 1200);
+        return;
+      }
+
       processingRef.current = true;
       setStatus('processing'); // Temporarily processing before success
 
@@ -87,7 +114,7 @@ export default function BarcodeScanScreen() {
         setScanSession({
           id: ensureSessionId(),
           mode: 'barcode',
-          input: { barcode: result.data },
+          input: { barcode: normalized },
           isLoading: true,
         });
 
