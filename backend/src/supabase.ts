@@ -11,7 +11,16 @@ console.log('[Supabase] SUPABASE_URL exists:', !!process.env.SUPABASE_URL);
 console.log('[Supabase] SUPABASE_ANON_KEY exists:', !!process.env.SUPABASE_ANON_KEY);
 
 const supabaseUrl = process.env.SUPABASE_URL ?? '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_ANON_KEY ?? '';
+const isProduction = process.env.NODE_ENV === 'production';
+
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
+const anonKey = process.env.SUPABASE_ANON_KEY ?? '';
+
+if (isProduction && !serviceRoleKey) {
+    throw new Error('[Supabase] Missing SUPABASE_SERVICE_ROLE_KEY in production (refusing to fall back to SUPABASE_ANON_KEY).');
+}
+
+const supabaseKey = serviceRoleKey || anonKey;
 
 if (!supabaseUrl || !supabaseKey) {
     console.warn('[Supabase] Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY/SUPABASE_ANON_KEY');
