@@ -1,6 +1,7 @@
+import { randomUUID } from "node:crypto";
 import cors from "cors";
 import dotenv from "dotenv";
-import express, { Request, Response } from "express";
+import express, { NextFunction, Request, Response } from "express";
 
 import { extractBrandProduct, extractBrandWithAI, type BrandExtractionResult } from "./brandExtractor.js";
 import { buildEnhancedContext, fetchAnalysisSection, prepareContextSources } from "./deepseek.js";
@@ -237,6 +238,24 @@ function mergeAndDedupe(
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
+
+// Minimal request logging (no body / no secrets)
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const requestId = randomUUID();
+  res.setHeader("x-request-id", requestId);
+  const startedAt = process.hrtime.bigint();
+
+  res.on("finish", () => {
+    // Avoid noisy health check logs (Render pings this frequently).
+    if (req.path === "/health") return;
+
+    const durationMs = Number(process.hrtime.bigint() - startedAt) / 1e6;
+    const durationLabel = `${durationMs.toFixed(1)}ms`;
+    console.log(`[HTTP] ${res.statusCode} ${req.method} ${req.path} (${durationLabel}) id=${requestId}`);
+  });
+
+  next();
+});
 
 // ============================================================================
 // SSE HELPER
@@ -527,7 +546,42 @@ app.post("/api/enrich-supplement", async (_req: Request, res: Response) => {
  * Health check
  */
 app.get("/health", (_req: Request, res: Response) => {
-  res.json({ status: "ok" });
+  const googleCseConfigured = Boolean(process.env.GOOGLE_CSE_API_KEY && process.env.GOOGLE_CSE_CX);
+  const deepseekConfigured = Boolean(process.env.DEEPSEEK_API_KEY);
+
+  res.json({
+    status: "ok",
+    uptimeSec: Math.round(process.uptime()),
+    configured: {
+      googleCse: googleCseConfigured,
+      deepseek: deepseekConfigured,
+    },
+  });
+});
+
+// Minimal error logging (no secrets)
+app.use((error: unknown, req: Request, res: Response, _next: NextFunction) => {
+  const message = error instanceof Error ? error.message : String(error);
+  if (error instanceof Error) {
+    console.error(`[ERR] ${req.method} ${req.path}: ${message}\n${error.stack ?? ""}`);
+  } else {
+    console.error(`[ERR] ${req.method} ${req.path}: ${message}`);
+  }
+
+  if (res.headersSent) {
+    return;
+  }
+
+  res.status(500).json({ error: "internal_error" });
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("[UNHANDLED_REJECTION]", reason);
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("[UNCAUGHT_EXCEPTION]", err);
+  process.exit(1);
 });
 
 app.listen(PORT, () => {

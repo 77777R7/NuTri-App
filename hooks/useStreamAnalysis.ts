@@ -156,7 +156,7 @@ export function useStreamAnalysis(barcode: string) {
 
         setState(prev => ({ ...prev, status: 'loading', error: null }));
 
-        const API_URL = (Config.searchApiBaseUrl || 'http://localhost:3001').replace(/\/$/, '');
+        const API_URL = Config.searchApiBaseUrl.replace(/\/$/, '');
 
         // Initialize SSE connection (POST method)
         const es = new RNEventSource(`${API_URL}/api/enrich-stream`, {

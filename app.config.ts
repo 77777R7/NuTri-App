@@ -8,12 +8,10 @@ const SLUG = 'nutri-app';
 const SCHEME = 'nutri';
 const OWNER = 'nutri000';
 const BUNDLE_ID = 'com.nutri.app';
-const DEFAULT_DEV_API_BASE_URL = process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : undefined;
 const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL ??
   process.env.API_BASE_URL ??
-  process.env.NEXT_PUBLIC_API_BASE_URL ??
-  DEFAULT_DEV_API_BASE_URL;
+  process.env.NEXT_PUBLIC_API_BASE_URL;
 const SEARCH_API_BASE_URL =
   process.env.EXPO_PUBLIC_SEARCH_API_BASE_URL ??
   process.env.SEARCH_API_BASE_URL ??

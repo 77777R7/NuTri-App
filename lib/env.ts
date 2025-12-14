@@ -101,7 +101,7 @@ const getEnvValue = (key: string, options?: GetEnvValueOptions): string | undefi
 };
 
 const fallbackApiBaseUrl =
-  process.env.NODE_ENV !== 'production' ? guessDevApiBaseUrl() ?? 'http://localhost:3000' : undefined;
+  process.env.NODE_ENV !== 'production' ? guessDevApiBaseUrl() : undefined;
 
 const envValues = {
   supabaseUrl: getEnvValue('supabaseUrl'),
@@ -113,10 +113,7 @@ const envValues = {
   posthogApiKey: getEnvValue('posthogApiKey', { optional: true }),
 };
 
-const fallbackSearchApiBaseUrl =
-  process.env.NODE_ENV !== 'production' ? 'http://localhost:3001' : undefined;
-
-const searchApiBaseUrlRaw = getEnvValue('searchApiBaseUrl', { optional: true, fallback: fallbackSearchApiBaseUrl });
+const searchApiBaseUrlRaw = getEnvValue('searchApiBaseUrl', { optional: true });
 const searchApiBaseUrl = searchApiBaseUrlRaw ?? envValues.apiBaseUrl;
 
 const ensureValidUrl = (value: string | undefined | null, label: string, required: boolean, errors: string[], warnings: string[]) => {
