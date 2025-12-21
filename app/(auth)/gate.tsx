@@ -1,5 +1,5 @@
 // app/(auth)/gate.tsx
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, TouchableOpacity } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { StatusBar } from 'expo-status-bar';
@@ -9,7 +9,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, View } from '@/components/ui/nativewind-primitives';
 import { BrandGradient } from '@/components/BrandGradient';
 import { useAuth } from '@/contexts/AuthContext';
-import { useOnboarding } from '@/contexts/OnboardingContext';
 import { colors, spacing, type } from '@/lib/theme';
 
 const AnimText = Animated.createAnimatedComponent(Text as any);
@@ -25,22 +24,10 @@ export default function AuthGateScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { session, loading: authLoading } = useAuth();
-  const { loading: onbLoading, onbCompleted, trial } = useOnboarding();
 
   const fade = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(12)).current;
   const [index, setIndex] = useState(0);
-
-  const canShowGate = useMemo(
-    () => !onbLoading && onbCompleted && !authLoading && !session && trial?.status !== 'not_started',
-    [onbLoading, onbCompleted, authLoading, session, trial?.status],
-  );
-
-  useEffect(() => {
-    if (!onbLoading && onbCompleted && trial?.status === 'not_started') {
-      router.replace('/onboarding/trial-offer');
-    }
-  }, [onbLoading, onbCompleted, trial?.status, router]);
 
   useEffect(() => {
     if (!authLoading && session) {
@@ -49,7 +36,7 @@ export default function AuthGateScreen() {
   }, [authLoading, session, router]);
 
   useEffect(() => {
-    if (!canShowGate) return;
+    if (authLoading || session) return;
 
     const animateOnce = () => {
       fade.setValue(0);
@@ -71,11 +58,11 @@ export default function AuthGateScreen() {
     }, 2400);
 
     return () => clearInterval(id);
-  }, [canShowGate, fade, translateY]);
+  }, [authLoading, fade, session, translateY]);
 
   const go = useCallback((path: Href) => router.push(path), [router]);
 
-  if (onbLoading || authLoading || !canShowGate) return null;
+  if (authLoading || session) return null;
 
   return (
     <BrandGradient>

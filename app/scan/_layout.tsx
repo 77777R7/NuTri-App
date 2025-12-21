@@ -7,7 +7,8 @@ export default function ScanLayout() {
       screenOptions={{
         headerShown: false,
         animation: 'slide_from_right',
-        presentation: 'transparentModal',
+        presentation: 'card',
+        contentStyle: { backgroundColor: '#F2F2F7' },
       }}
     >
       <Stack.Screen name="index" />

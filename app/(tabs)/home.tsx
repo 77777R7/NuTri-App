@@ -103,13 +103,6 @@ export default function HomeScreen() {
   const quickActions = useMemo<QuickAction[]>(
     () => [
       {
-        label: t.quickActionSaved,
-        caption: t.quickActionSavedCaption,
-        icon: 'bookmark.fill',
-        accent: 'mint',
-        onPress: () => router.push('/saved'),
-      },
-      {
         label: t.quickActionScan,
         caption: t.quickActionScanCaption,
         icon: 'camera.viewfinder',

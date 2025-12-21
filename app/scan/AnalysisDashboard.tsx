@@ -9,7 +9,9 @@ import {
     X,
     Zap,
 } from 'lucide-react-native';
-import React, { useMemo, useState } from 'react';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
     Modal,
     Pressable,
@@ -19,6 +21,10 @@ import {
     TouchableOpacity,
     useWindowDimensions,
     View,
+    type DimensionValue,
+    type LayoutChangeEvent,
+    type StyleProp,
+    type ViewStyle,
 } from 'react-native';
 import Animated, {
     Easing,
@@ -30,9 +36,9 @@ import Animated, {
     type SharedValue,
 } from 'react-native-reanimated';
 
+import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { InteractiveScoreRing } from '@/components/ui/InteractiveScoreRing';
 import { ContentSection } from '@/components/ui/ScoreDetailCard';
-import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { computeSmartScores, type AnalysisInput } from '../../lib/scoring';
 type Analysis = any;
 
@@ -76,7 +82,9 @@ const AnimatedTile: React.FC<{
     onPress: () => void;
     scrollY: SharedValue<number>;
     viewportHeight: number;
-}> = ({ tile, onPress, scrollY, viewportHeight }) => {
+    tileWidth: DimensionValue;
+    style?: StyleProp<ViewStyle>;
+}> = ({ tile, onPress, scrollY, viewportHeight, tileWidth, style }) => {
     const layoutY = useSharedValue(0);
     const layoutH = useSharedValue(0);
     const visibleProgress = useSharedValue(0);
@@ -117,7 +125,7 @@ const AnimatedTile: React.FC<{
 
     return (
         <Animated.View
-            style={[{ width: '100%' }, animatedStyle]}
+            style={[{ width: tileWidth }, animatedStyle, style]}
             onLayout={(e) => {
                 layoutY.value = e.nativeEvent.layout.y;
                 layoutH.value = e.nativeEvent.layout.height;
@@ -137,31 +145,104 @@ const colorMap: Record<string, string> = {
     'text-sky-500': '#0EA5E9',
     'text-amber-500': '#F59E0B',
     'text-rose-500': '#F43F5E',
+    'text-zinc-700': '#3F3F46',
 };
+
+const TILE_HEIGHT = 252;
+
+function hexToRgb(hex: string) {
+    const normalized = hex.replace('#', '').trim();
+    const full =
+        normalized.length === 3
+            ? normalized
+                  .split('')
+                  .map((c) => c + c)
+                  .join('')
+            : normalized;
+
+    const int = parseInt(full, 16);
+    const r = (int >> 16) & 255;
+    const g = (int >> 8) & 255;
+    const b = int & 255;
+    return { r, g, b };
+}
+
+function luminance(hex: string) {
+    const { r, g, b } = hexToRgb(hex);
+    const srgb = [r, g, b].map((value) => {
+        const c = value / 255;
+        return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * srgb[0] + 0.7152 * srgb[1] + 0.0722 * srgb[2];
+}
+
+function withAlpha(hex: string, alpha01: number) {
+    const { r, g, b } = hexToRgb(hex);
+    return `rgba(${r}, ${g}, ${b}, ${alpha01})`;
+}
+
+function normalizeText(value?: string | null) {
+    return value?.replace(/\s+/g, ' ').trim() ?? '';
+}
+
+function ensurePeriod(value: string) {
+    return /[.!?]$/.test(value) ? value : `${value}.`;
+}
+
+function clampText(value?: string | null, maxChars: number = 100) {
+    const normalized = normalizeText(value);
+    if (!normalized) return '';
+    if (normalized.length <= maxChars) return normalized;
+    const sliced = normalized.slice(0, maxChars);
+    const lastSpace = sliced.lastIndexOf(' ');
+    const clipped = lastSpace > 40 ? sliced.slice(0, lastSpace) : sliced;
+    return clipped.trim();
+}
+
+function capitalizeSentences(value?: string | null) {
+    const normalized = normalizeText(value);
+    if (!normalized) return '';
+    return normalized.replace(/(^[a-z])|([.!?]\s+[a-z])/g, (match) => match.toUpperCase());
+}
 
 const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
     const Icon = tile.icon;
-    const accentColor = colorMap[tile.accentColor] || tile.accentColor || '#3B82F6';
-    const backgroundColor = tile.backgroundColor || '#FFFFFF';
-    const textColor = tile.textColor || '#0F172A';
-    const labelColor = tile.labelColor || accentColor;
+    const accent = colorMap[tile.accentColor] || tile.accentColor || '#3B82F6';
+    const base = tile.backgroundColor || '#FFFFFF';
+    const tColor = tile.textColor || '#0F172A';
+    const label = tile.labelColor || accent;
+
+    const isDarkBase = luminance(base) < 0.28;
+    const eyebrowColor =
+        tile.type === 'science' || tile.type === 'usage' || tile.type === 'safety'
+            ? 'rgba(15, 23, 42, 0.6)'
+            : tile.type === 'overview'
+              ? 'rgba(255, 255, 255, 0.7)'
+              : isDarkBase
+                ? 'rgba(255,255,255,0.7)'
+                : withAlpha(tColor, 0.6);
+
+    const viewPillTextColor =
+        tile.type === 'science'
+            ? '#ea580c'
+            : tile.type === 'overview'
+              ? '#FFFFFF'
+              : tile.type === 'usage'
+                ? '#000000'
+                : tile.type === 'safety'
+                  ? '#6B5B4D'
+                  : '#FFFFFF';
 
     const renderContent = () => {
         if (tile.loading) {
             return (
                 <View style={styles.tileSection}>
-                    <SkeletonLoader width="30%" height={12} style={{ marginBottom: 8 }} />
-                    <SkeletonLoader width="100%" height={16} style={{ marginBottom: 4 }} />
-                    <SkeletonLoader width="80%" height={16} style={{ marginBottom: 12 }} />
-                    <View style={{ gap: 8 }}>
-                        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-                            <SkeletonLoader width={16} height={16} borderRadius={8} />
-                            <SkeletonLoader width="60%" height={14} />
-                        </View>
-                        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-                            <SkeletonLoader width={16} height={16} borderRadius={8} />
-                            <SkeletonLoader width="50%" height={14} />
-                        </View>
+                    <SkeletonLoader width="30%" height={12} style={{ marginBottom: 4, borderCurve: 'continuous' }} />
+                    <SkeletonLoader width="100%" height={16} style={{ marginBottom: 2, borderCurve: 'continuous' }} />
+                    <SkeletonLoader width="80%" height={16} style={{ marginBottom: 8, borderCurve: 'continuous' }} />
+                    <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                        <SkeletonLoader width={16} height={16} borderRadius={999} style={{ borderCurve: 'continuous' }} />
+                        <SkeletonLoader width="60%" height={14} style={{ borderCurve: 'continuous' }} />
                     </View>
                 </View>
             );
@@ -171,19 +252,18 @@ const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
             case 'overview':
                 return (
                     <View style={styles.tileSection}>
-                        <Text style={[styles.tileEyebrow, { color: labelColor }]} numberOfLines={1}>
-                            {tile.eyebrow}
-                        </Text>
                         {!!tile.summary && (
-                            <Text style={[styles.tileSummary, { color: textColor }]} numberOfLines={2}>
+                            <Text style={[styles.tileSummary, { color: tColor }]} numberOfLines={3}>
                                 {tile.summary}
                             </Text>
                         )}
                         <View style={styles.tileBulletList}>
-                            {(tile.bullets || []).slice(0, 3).map((bullet, idx) => (
+                            {(tile.bullets || []).slice(0, 2).map((bullet, idx) => (
                                 <View key={idx} style={styles.tileBulletRow}>
-                                    <CheckCircle2 size={16} color={labelColor} />
-                                    <Text style={[styles.tileBulletText, { color: textColor }]} numberOfLines={3}>
+                                    <View style={styles.bulletIcon}>
+                                        <CheckCircle2 size={14} color={label} />
+                                    </View>
+                                    <Text style={[styles.tileBulletText, { color: tColor }]} numberOfLines={3}>
                                         {bullet}
                                     </Text>
                                 </View>
@@ -194,29 +274,23 @@ const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
             case 'science':
                 return (
                     <View style={styles.tileSection}>
-                        <Text style={[styles.tileEyebrow, { color: labelColor }]} numberOfLines={1}>
-                            {tile.eyebrow}
-                        </Text>
                         <View style={styles.mechList}>
                             {(tile.mechanisms || []).slice(0, 3).map((mechanism, idx) => (
                                 <View key={idx} style={styles.mechRow}>
                                     <View style={styles.mechHeader}>
-                                        <Text style={[styles.mechName, { color: textColor }]} numberOfLines={1}>
+                                        <Text style={[styles.mechName, { color: tColor }]} numberOfLines={1}>
                                             {mechanism.name}
                                         </Text>
-                                        <Text style={[styles.mechAmount, { color: labelColor }]} numberOfLines={1}>
+                                        <Text style={[styles.mechAmount, { color: label }]} numberOfLines={1}>
                                             {mechanism.amount}
                                         </Text>
                                     </View>
-                                    <View style={[styles.mechBar, { backgroundColor: `${labelColor}33` }]}>
-                                        {/*
-                                          * Clamp fill width so we never render NaN or overflows.
-                                          */}
+                                    <View style={[styles.mechBar, { backgroundColor: 'rgba(255,255,255,0.4)' }]}>
                                         <View
                                             style={[
                                                 styles.mechFill,
                                                 {
-                                                    backgroundColor: labelColor,
+                                                    backgroundColor: label,
                                                     width: `${Math.min(100, Math.max(12, mechanism.fill ?? 0))}%`
                                                 }
                                             ]}
@@ -230,18 +304,15 @@ const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
             case 'usage':
                 return (
                     <View style={styles.tileSection}>
-                        <Text style={[styles.tileEyebrow, { color: labelColor }]} numberOfLines={1}>
-                            {tile.eyebrow}
-                        </Text>
                         {!!tile.routineLine && (
-                            <Text style={[styles.tileSummary, { color: textColor }]} numberOfLines={2}>
+                            <Text style={[styles.tileSummary, { color: tColor }]} numberOfLines={2}>
                                 {tile.routineLine}
                             </Text>
                         )}
                         {!!tile.bestFor && (
-                            <View style={[styles.bestForCard, { backgroundColor: `${labelColor}14` }]}>
-                                <Text style={[styles.bestForLabel, { color: labelColor }]}>Best for:</Text>
-                                <Text style={[styles.bestForText, { color: textColor }]} numberOfLines={3}>
+                            <View style={[styles.bestForCard, { backgroundColor: withAlpha(label, 0.08) }]}>
+                                <Text style={[styles.bestForLabel, { color: label }]}>Best for:</Text>
+                                <Text style={[styles.bestForText, { color: tColor }]} numberOfLines={3}>
                                     {tile.bestFor}
                                 </Text>
                             </View>
@@ -252,20 +323,17 @@ const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
             default:
                 return (
                     <View style={styles.tileSection}>
-                        <Text style={[styles.tileEyebrow, { color: labelColor }]} numberOfLines={1}>
-                            {tile.eyebrow}
-                        </Text>
                         {!!tile.warning && (
-                            <View style={[styles.warningPill, { backgroundColor: `${labelColor}18` }]}>
-                                <Text style={[styles.warningText, { color: labelColor }]} numberOfLines={3}>
+                            <View style={[styles.warningPill, { backgroundColor: withAlpha(label, 0.12) }]}>
+                                <Text style={[styles.warningText, { color: label }]} numberOfLines={3}>
                                     {tile.warning}
                                 </Text>
                             </View>
                         )}
                         {!!tile.recommendation && (
                             <View style={styles.recommendationBlock}>
-                                <Text style={[styles.recommendationLabel, { color: labelColor }]}>RECOMMENDATION</Text>
-                                <Text style={[styles.recommendationText, { color: textColor }]}>
+                                <Text style={[styles.recommendationLabel, { color: label }]}>RECOMMENDATION</Text>
+                                <Text style={[styles.recommendationText, { color: tColor }]}>
                                     {tile.recommendation}
                                 </Text>
                             </View>
@@ -276,21 +344,74 @@ const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
     };
 
     return (
-        <TouchableOpacity activeOpacity={0.85} onPress={tile.loading ? undefined : onPress} style={[styles.tile, { backgroundColor }]}>
-            <View style={styles.tileHeader}>
-                <View style={[styles.tileIconCircle, { backgroundColor: `${labelColor}15` }]}>
-                    <Icon size={20} color={labelColor} />
-                </View>
-                <Text style={[styles.tileTitle, { color: textColor }]} numberOfLines={1}>{tile.title}</Text>
-                {!tile.loading && (
-                    <View style={[styles.chevronBadge, { borderColor: `${labelColor}45`, backgroundColor: `${labelColor}12` }]}>
-                        <Text style={[styles.chevronSymbol, { color: labelColor }]}>{'>'}</Text>
-                    </View>
-                )}
-            </View>
+        <View style={[styles.tileShadow, { backgroundColor: base }]}>
+            <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={tile.loading ? undefined : onPress}
+                style={[styles.tile, { backgroundColor: base }]}
+            >
+                <View style={styles.tileOuterPadding}>
+                    <BlurView intensity={24} tint="systemUltraThinMaterialLight" style={styles.tileGlass}>
+                        <View style={styles.tileHeaderRow}>
+                            <View style={styles.tileHeaderLeft}>
+                                <View style={styles.tileIconShadow}>
+                                    <View style={styles.tileIconContainer}>
+                                        <BlurView intensity={18} tint="systemUltraThinMaterialLight" style={StyleSheet.absoluteFillObject} />
+                                        <LinearGradient
+                                            pointerEvents="none"
+                                            colors={[
+                                                'rgba(255,255,255,0.55)',
+                                                'rgba(255,255,255,0.18)',
+                                                'rgba(255,255,255,0.28)',
+                                            ]}
+                                            locations={[0, 0.55, 1]}
+                                            start={{ x: 0, y: 0 }}
+                                            end={{ x: 1, y: 1 }}
+                                            style={StyleSheet.absoluteFillObject}
+                                        />
+                                        <Icon size={18} color={label} />
+                                    </View>
+                                </View>
 
-            {renderContent()}
-        </TouchableOpacity>
+                                <View style={styles.tileHeaderText}>
+                                    <Text style={[styles.tileEyebrow, { color: eyebrowColor }]} numberOfLines={1}>
+                                        {tile.eyebrow}
+                                    </Text>
+                                    <Text style={[styles.tileTitle, { color: tColor }]} numberOfLines={1}>
+                                        {tile.title}
+                                    </Text>
+                                </View>
+                            </View>
+
+                            {!tile.loading && (
+                                <View style={styles.viewPillShadow}>
+                                    <View style={styles.viewPill}>
+                                        <BlurView intensity={18} tint="systemUltraThinMaterialLight" style={StyleSheet.absoluteFillObject} />
+                                        <LinearGradient
+                                            pointerEvents="none"
+                                            colors={[
+                                                'rgba(255,255,255,0.42)',
+                                                'rgba(255,255,255,0.14)',
+                                                'rgba(255,255,255,0.24)',
+                                            ]}
+                                            locations={[0, 0.55, 1]}
+                                            start={{ x: 0, y: 0 }}
+                                            end={{ x: 1, y: 1 }}
+                                            style={StyleSheet.absoluteFillObject}
+                                        />
+                                        <Text style={[styles.viewPillText, { color: viewPillTextColor }]}>
+                                            View
+                                        </Text>
+                                    </View>
+                                </View>
+                            )}
+                        </View>
+
+                        {renderContent()}
+                    </BlurView>
+                </View>
+            </TouchableOpacity>
+        </View>
     );
 };
 
@@ -346,6 +467,15 @@ export const AnalysisDashboard: React.FC<{ analysis: Analysis; isStreaming?: boo
         scrollY.value = event.contentOffset.y;
     });
     const { height: viewportHeight } = useWindowDimensions();
+    const [tilesContainerW, setTilesContainerW] = useState(0);
+
+    const TILE_GAP = 12;
+    const tileWidth: DimensionValue = tilesContainerW > 0 ? tilesContainerW : '100%';
+
+    const onTilesGridLayout = useCallback((e: LayoutChangeEvent) => {
+        const nextWidth = e.nativeEvent.layout.width;
+        setTilesContainerW((prev) => (Math.abs(prev - nextWidth) < 1 ? prev : nextWidth));
+    }, []);
 
     const productInfo = analysis.productInfo ?? {};
     const efficacy = analysis.efficacy ?? {};
@@ -651,6 +781,59 @@ export const AnalysisDashboard: React.FC<{ analysis: Analysis; isStreaming?: boo
         return 'Low interaction potential reported.';
     })();
 
+    const benefitsPhrase = coreBenefits.slice(0, 2).join(', ');
+    const overviewCoverSummary = capitalizeSentences(
+        clampText(
+            [
+                primaryName
+                    ? ensurePeriod(`Focused on ${primaryName}${primaryDoseLabel ? ` ${primaryDoseLabel}` : ''}`)
+                    : '',
+                benefitsPhrase ? ensurePeriod(`Key benefits: ${benefitsPhrase}`) : '',
+            ]
+                .filter(Boolean)
+                .join(' '),
+            110
+        ) || clampText(overviewSummary, 110)
+    );
+
+    const usageCoverLine = capitalizeSentences(
+        clampText(
+            [
+                routineLine || usage.summary || 'Follow the label consistently each day',
+                timingCopy,
+            ]
+                .map((part) => normalizeText(part))
+                .filter(Boolean)
+                .map((part) => ensurePeriod(part))
+                .join(' '),
+            96
+        )
+    );
+    const bestForCover = capitalizeSentences(clampText(bestFor, 84));
+
+    const safetyCoverWarning = capitalizeSentences(
+        clampText(
+            ensurePeriod(
+                warningLine ||
+                    interactionCopy ||
+                    safetySummary ||
+                    'Review label warnings and consult a clinician if needed'
+            ),
+            96
+        )
+    );
+    const safetyCoverRecommendation = capitalizeSentences(
+        clampText(
+            ensurePeriod(recommendationLine || safetySummary || 'Follow label dosing and avoid late-day use'),
+            96
+        )
+    );
+
+    const overviewCoverBullets = coreBenefits
+        .slice(0, 2)
+        .map((benefit: string) => capitalizeSentences(benefit))
+        .filter(Boolean);
+
     const isEfficacyReady = !!efficacy.verdict || !isStreaming;
     const isSafetyReady = !!safety.verdict || !isStreaming;
     const isUsageReady = !!usage.summary || !isStreaming;
@@ -669,8 +852,8 @@ export const AnalysisDashboard: React.FC<{ analysis: Analysis; isStreaming?: boo
             textColor: '#F7FBFF',
             labelColor: '#D6E5FF',
             eyebrow: 'CORE BENEFITS',
-            summary: overviewSummary,
-            bullets: coreBenefits,
+            summary: overviewCoverSummary,
+            bullets: overviewCoverBullets,
             loading: !isOverviewReady,
             content: (
                 <View style={{ gap: 16 }}>
@@ -727,8 +910,8 @@ export const AnalysisDashboard: React.FC<{ analysis: Analysis; isStreaming?: boo
             icon: BarChart3,
             accentColor: 'text-amber-500',
             backgroundColor: '#F7C948',
-            textColor: '#0F172A',
-            labelColor: '#0F172A',
+            textColor: '#ea580c',
+            labelColor: '#ea580c',
             eyebrow: 'KEY MECHANISM',
             mechanisms: keyMechanisms,
             loading: !isEfficacyReady,
@@ -830,8 +1013,8 @@ export const AnalysisDashboard: React.FC<{ analysis: Analysis; isStreaming?: boo
             textColor: '#0B2545',
             labelColor: '#0B2545',
             eyebrow: 'DAILY ROUTINE',
-            routineLine,
-            bestFor,
+            routineLine: usageCoverLine,
+            bestFor: bestForCover,
             loading: !isUsageReady,
             content: (
                 <View style={{ gap: 16 }}>
@@ -875,8 +1058,8 @@ export const AnalysisDashboard: React.FC<{ analysis: Analysis; isStreaming?: boo
             textColor: '#2E2A25',
             labelColor: '#6B5B4B',
             eyebrow: 'SAFETY NOTES',
-            warning: warningLine,
-            recommendation: recommendationLine,
+            warning: safetyCoverWarning,
+            recommendation: safetyCoverRecommendation,
             loading: !isSafetyReady,
             content: (
                 <View style={{ gap: 16 }}>
@@ -967,6 +1150,7 @@ export const AnalysisDashboard: React.FC<{ analysis: Analysis; isStreaming?: boo
     return (
         <View style={styles.root}>
             <Animated.ScrollView
+                style={styles.scroll}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
                 scrollEventThrottle={16}
@@ -999,14 +1183,18 @@ export const AnalysisDashboard: React.FC<{ analysis: Analysis; isStreaming?: boo
                     <Text style={styles.tilesSubtitle}>Tap to view detailed analysis</Text>
                 </View>
 
-                <View style={styles.tilesGrid}>
-                    {tiles.map(tile => (
+                <View style={styles.tilesGrid} onLayout={onTilesGridLayout}>
+                    {tiles.map((tile) => (
                         <AnimatedTile
                             key={tile.id}
                             tile={tile}
                             onPress={() => setSelectedTile(tile)}
                             scrollY={scrollY}
                             viewportHeight={viewportHeight}
+                            tileWidth={tileWidth}
+                            style={{
+                                marginBottom: TILE_GAP,
+                            }}
                         />
                     ))}
                 </View>
@@ -1021,15 +1209,26 @@ const styles = StyleSheet.create({
     root: {
         flex: 1,
         backgroundColor: '#F2F2F7', // iOS System Gray 6
+        width: '100%',
+        alignSelf: 'stretch',
+    },
+    scroll: {
+        flex: 1,
+        backgroundColor: '#F2F2F7',
+        width: '100%',
+        alignSelf: 'stretch',
     },
     scrollContent: {
+        width: '100%',
+        alignSelf: 'stretch',
+        flexGrow: 1,
         paddingHorizontal: 16,
         paddingBottom: 40,
         paddingTop: 12,
     },
     headerSection: {
         marginBottom: 20,
-        paddingHorizontal: 4,
+        paddingHorizontal: 0,
     },
     headerEyebrow: {
         fontSize: 12,
@@ -1055,7 +1254,7 @@ const styles = StyleSheet.create({
     },
     tilesHeader: {
         marginBottom: 12,
-        paddingHorizontal: 4,
+        paddingHorizontal: 0,
     },
     tilesTitle: {
         fontSize: 18,
@@ -1068,70 +1267,134 @@ const styles = StyleSheet.create({
         marginTop: 2,
     },
     tilesGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 12,
-        justifyContent: 'space-between',
+        flexDirection: 'column',
+    },
+    tileShadow: {
+        width: '100%',
+        height: TILE_HEIGHT,
+        borderRadius: 32,
+        borderCurve: 'continuous',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.08,
+        shadowRadius: 30,
+        elevation: 6,
     },
     tile: {
         width: '100%',
         flexBasis: '100%',
-        backgroundColor: '#FFFFFF',
-        borderRadius: 22,
-        padding: 14,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.08,
-        shadowRadius: 12,
-        elevation: 4,
-        minHeight: 190,
+        height: TILE_HEIGHT,
+        minHeight: TILE_HEIGHT,
+        borderRadius: 32,
+        borderCurve: 'continuous',
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.05)',
     },
-    tileHeader: {
+    tileOuterPadding: {
+        flex: 1,
+        padding: 16,
+    },
+    tileGlass: {
+        flex: 1,
+        borderRadius: 22,
+        borderCurve: 'continuous',
+        padding: 16,
+        justifyContent: 'space-between',
+        backgroundColor: 'rgba(255,255,255,0.14)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.18)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.08,
+        shadowRadius: 32,
+        elevation: 3,
+        overflow: 'hidden',
+    },
+    tileHeaderRow: {
         flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 10,
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        gap: 12,
+    },
+    tileHeaderLeft: {
+        flex: 1,
+        minWidth: 0,
+        flexDirection: 'row',
+        alignItems: 'flex-start',
         gap: 10,
     },
-    tileIconCircle: {
+    tileIconShadow: {
+        borderRadius: 16,
+        borderCurve: 'continuous',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        elevation: 1,
+    },
+    tileIconContainer: {
         width: 36,
         height: 36,
-        borderRadius: 12,
+        borderRadius: 16,
+        borderCurve: 'continuous',
         alignItems: 'center',
         justifyContent: 'center',
+        overflow: 'hidden',
+        backgroundColor: 'rgba(255,255,255,0.25)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.4)',
+    },
+    tileHeaderText: {
+        flex: 1,
+        minWidth: 0,
+        paddingTop: 2,
     },
     tileTitle: {
-        flex: 1,
         fontSize: 15,
-        fontWeight: '700',
-        letterSpacing: -0.1,
-        minWidth: 0,
-        lineHeight: 20,
+        fontWeight: '800',
+        lineHeight: 18,
     },
-    chevronBadge: {
-        width: 28,
-        height: 28,
-        borderRadius: 10,
+    viewPillShadow: {
+        borderRadius: 999,
+        borderCurve: 'continuous',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        elevation: 2,
+    },
+    viewPill: {
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 999,
+        borderCurve: 'continuous',
+        overflow: 'hidden',
         borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.3)',
+        backgroundColor: 'rgba(255,255,255,0.2)',
         alignItems: 'center',
         justifyContent: 'center',
     },
-    chevronSymbol: {
-        fontSize: 15,
-        fontWeight: '800',
+    viewPillText: {
+        fontSize: 11,
+        fontWeight: '700',
+        letterSpacing: 0.4,
     },
     tileSection: {
         gap: 8,
-        marginTop: 6,
+        marginTop: 16,
         flexGrow: 1,
     },
     tileEyebrow: {
-        fontSize: 12,
+        fontSize: 10,
         fontWeight: '700',
-        letterSpacing: 0.4,
+        letterSpacing: 1,
         textTransform: 'uppercase',
+        marginBottom: 2,
     },
     tileSummary: {
-        fontSize: 14,
+        fontSize: 13,
         fontWeight: '600',
         lineHeight: 20,
         flexShrink: 1,
@@ -1141,12 +1404,15 @@ const styles = StyleSheet.create({
     },
     tileBulletRow: {
         flexDirection: 'row',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         gap: 8,
+    },
+    bulletIcon: {
+        marginTop: 2,
     },
     tileBulletText: {
         flex: 1,
-        fontSize: 14,
+        fontSize: 13,
         lineHeight: 18,
         fontWeight: '600',
         flexShrink: 1,
@@ -1165,60 +1431,64 @@ const styles = StyleSheet.create({
     },
     mechName: {
         flex: 1,
-        fontSize: 14,
+        fontSize: 13,
         fontWeight: '700',
-        letterSpacing: -0.1,
     },
     mechAmount: {
-        fontSize: 12,
-        fontWeight: '700',
+        fontSize: 11,
+        fontWeight: '800',
     },
     mechBar: {
-        height: 8,
-        borderRadius: 10,
+        height: 6,
+        borderRadius: 999,
+        borderCurve: 'continuous',
         overflow: 'hidden',
     },
     mechFill: {
         height: '100%',
-        borderRadius: 10,
+        borderRadius: 999,
+        borderCurve: 'continuous',
     },
     bestForCard: {
         marginTop: 6,
         padding: 12,
         borderRadius: 12,
+        borderCurve: 'continuous',
         gap: 4,
     },
     bestForLabel: {
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: '800',
-        letterSpacing: 0.3,
+        letterSpacing: 0.4,
     },
     bestForText: {
-        fontSize: 13,
-        lineHeight: 18,
+        marginTop: 4,
+        fontSize: 12,
+        lineHeight: 16,
         fontWeight: '600',
     },
     warningPill: {
         padding: 12,
         borderRadius: 12,
+        borderCurve: 'continuous',
     },
     warningText: {
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: '700',
-        lineHeight: 18,
+        lineHeight: 16,
     },
     recommendationBlock: {
         gap: 4,
         marginTop: 6,
     },
     recommendationLabel: {
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: '800',
-        letterSpacing: 0.4,
+        letterSpacing: 0.6,
     },
     recommendationText: {
-        fontSize: 13,
-        lineHeight: 18,
+        fontSize: 12,
+        lineHeight: 16,
         fontWeight: '600',
     },
     // Modal Styles

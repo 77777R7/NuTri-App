@@ -1,5 +1,5 @@
 import { BlurView } from 'expo-blur';
-import { router } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ArrowLeft, FileText } from 'lucide-react-native';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -82,8 +82,17 @@ export default function ScanResultScreen() {
   return (
     <ResponsiveScreen
       contentStyle={styles.screen}
-      style={{ backgroundColor: '#F2F2F7' }}  // Override SafeAreaView background
+      style={styles.safeArea}
     >
+      <Stack.Screen
+        options={{
+          title: 'Analysis',
+          headerShadowVisible: false,
+          headerStyle: { backgroundColor: '#F2F2F7' },
+          contentStyle: { backgroundColor: '#F2F2F7' },
+          presentation: 'card',
+        }}
+      />
       <StatusBar style="dark" />
       <Header onBack={handleBack} title="Analysis" />
 
@@ -127,14 +136,23 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: '#F2F2F7',
+    width: '100%',
+    alignSelf: 'stretch',
+    maxWidth: '100%',
+    paddingHorizontal: 0,
+  },
+  safeArea: {
+    backgroundColor: '#F2F2F7',
+    width: '100%',
+    alignSelf: 'stretch',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingTop: 16,
+    paddingBottom: 12,
     backgroundColor: '#F2F2F7',
     zIndex: 10,
   },

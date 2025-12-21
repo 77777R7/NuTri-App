@@ -31,7 +31,7 @@ export default function LabelScanScreen() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!cameraPermission) {
+    if (!cameraPermission || cameraPermission.status === 'undetermined') {
       requestCameraPermission().catch(() => undefined);
     }
   }, [cameraPermission, requestCameraPermission]);
@@ -119,19 +119,14 @@ export default function LabelScanScreen() {
     setErrorMessage(null);
   }, []);
 
-  if (!cameraPermission) {
+  const isCameraPermissionLoading = !cameraPermission || cameraPermission.status === 'undetermined';
+
+  if (isCameraPermissionLoading) {
     return (
-      <ResponsiveScreen contentStyle={styles.permissionScreen}>
+      <View style={styles.loadingScreen}>
         <Stack.Screen options={{ headerShown: false }} />
-        <View style={styles.permissionCard}>
-          <Camera size={32} color={tokens.colors.textPrimary} />
-          <Text style={styles.permissionTitle}>Camera access needed</Text>
-          <Text style={styles.permissionCopy}>Allow camera access to capture the nutrition label.</Text>
-          <TouchableOpacity style={styles.permissionButton} onPress={() => requestCameraPermission()}>
-            <Text style={styles.permissionButtonText}>Enable camera</Text>
-          </TouchableOpacity>
-        </View>
-      </ResponsiveScreen>
+        <ActivityIndicator size="large" color="#FFFFFF" />
+      </View>
     );
   }
 
@@ -211,6 +206,12 @@ const createStyles = (tokens: DesignTokens, topInset: number, bottomInset: numbe
   StyleSheet.create({
     container: {
       flex: 1,
+      backgroundColor: '#000',
+    },
+    loadingScreen: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
       backgroundColor: '#000',
     },
     camera: {

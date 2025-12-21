@@ -39,6 +39,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   FadeInUp,
   FadeInRight,
+  Easing,
   interpolateColor,
   Layout,
   runOnJS,
@@ -861,6 +862,9 @@ const BottomNav = () => {
   const pillRadius = useSharedValue(24);
   const dragStartX = useSharedValue(0);
   const pillScale = useSharedValue(1);
+  const navScaleX = useSharedValue(1);
+  const navScaleY = useSharedValue(1);
+  const navLift = useSharedValue(0);
 
   const initPillToActive = useCallback(() => {
     const meta = Object.values(layoutRef.current);
@@ -912,6 +916,9 @@ const BottomNav = () => {
   const pillGesture = useMemo(() => Gesture.Pan()
     .onStart(() => {
       dragStartX.value = pillX.value;
+      navScaleX.value = withTiming(1.02, { duration: 180, easing: Easing.out(Easing.cubic) });
+      navScaleY.value = withTiming(1.04, { duration: 180, easing: Easing.out(Easing.cubic) });
+      navLift.value = withTiming(1, { duration: 200, easing: Easing.out(Easing.cubic) });
       pillScale.value = withSpring(1.07, { damping: 14, stiffness: 260 });
       runOnJS(Haptics.selectionAsync)();
     })
@@ -945,6 +952,9 @@ const BottomNav = () => {
     .onEnd(() => {
       const metaList = tabMeta.value;
       if (!metaList.length) return;
+      navScaleX.value = withSpring(1, { damping: 14, stiffness: 180, mass: 0.9 });
+      navScaleY.value = withSpring(1, { damping: 14, stiffness: 180, mass: 0.9 });
+      navLift.value = withTiming(0, { duration: 240, easing: Easing.out(Easing.cubic) });
       pillScale.value = withSpring(1, { damping: 14, stiffness: 260 });
 
       const currentActive = activeId.value;
@@ -955,7 +965,22 @@ const BottomNav = () => {
       pillX.value = withSpring(target.x, { damping: 14, stiffness: 220, mass: 0.9 }, (finished) => {
         if (finished) runOnJS(setCurrentTab)(target.id as TabId);
       });
-    }), [activeId, dragStartX, pillScale, pillWidth, pillX, pillRadius, tabMeta]);
+    }), [activeId, dragStartX, navLift, navScaleX, navScaleY, pillScale, pillWidth, pillX, pillRadius, tabMeta]);
+
+  const navBarStyle = useAnimatedStyle(() => ({
+    transform: [{ scaleX: navScaleX.value }, { scaleY: navScaleY.value }],
+    shadowOpacity: 0.12 + navLift.value * 0.05,
+    shadowRadius: 18 + navLift.value * 6,
+    elevation: 8 + navLift.value * 3,
+  }));
+
+  const navHighlightStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(
+      navLift.value,
+      [0, 1],
+      ['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.18)']
+    ),
+  }));
 
   const pillStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: pillX.value }, { scale: pillScale.value }],
@@ -990,10 +1015,10 @@ const BottomNav = () => {
       >
 
         {/* 2. 左侧导航栏 (Glassmorphism Bar) */}
-        <View style={styles.outerWrapper}>
+        <Animated.View style={[styles.outerWrapper, navBarStyle]}>
           <View style={styles.glassContainer}>
             <BlurView intensity={30} tint="light" style={StyleSheet.absoluteFill} />
-            <View style={styles.bgOverlay} />
+            <Animated.View style={[styles.bgOverlay, navHighlightStyle]} />
 
             <View style={styles.tabsRow}>
               {/* Layer 1: 视觉胶囊（底层） */}
@@ -1040,7 +1065,7 @@ const BottomNav = () => {
               </GestureDetector>
             </View>
           </View>
-        </View>
+        </Animated.View>
 
         {/* 3. 右侧: 悬浮菜单 (1:1 还原区域) */}
         <View className="relative items-center justify-center">

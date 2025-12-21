@@ -37,24 +37,6 @@ export default function TabLayout() {
             ),
           }}
         />
-        <Tabs.Screen
-          name="progress"
-          options={{
-            title: 'Progress',
-            tabBarIcon: ({ color }: { color: string }) => (
-              <IconSymbol size={26} name="chart.line.uptrend.xyaxis" color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="user"
-          options={{
-            title: 'User',
-            tabBarIcon: ({ color }: { color: string }) => (
-              <IconSymbol size={26} name="person.crop.circle" color={color} />
-            ),
-          }}
-        />
       </Tabs>
     </ProtectedRoute>
   );

@@ -3,7 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { Stack, router } from 'expo-router';
 import { CameraOff, Check, Flashlight, X } from 'lucide-react-native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
   runOnJS,
   useAnimatedStyle,
@@ -23,7 +23,7 @@ const BARCODE_TYPES = SUPPORTED_TYPES as unknown as BarcodeType[];
 
 type ScanStatus = 'idle' | 'processing' | 'success' | 'error';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 // Apple Wallet style dimensions
 const SCAN_FRAME_WIDTH = width * 0.85;
 const SCAN_FRAME_HEIGHT = 200; // Fixed height for barcode shape
@@ -60,7 +60,7 @@ export default function BarcodeScanScreen() {
   const checkmarkOpacity = useSharedValue(0);
 
   useEffect(() => {
-    if (!permission) {
+    if (!permission || permission.status === 'undetermined') {
       requestPermission().catch(() => undefined);
     }
   }, [permission, requestPermission]);
@@ -71,7 +71,7 @@ export default function BarcodeScanScreen() {
     setStatus('idle');
     checkmarkScale.value = 0;
     checkmarkOpacity.value = 0;
-  }, []);
+  }, [checkmarkOpacity, checkmarkScale]);
 
   const navigateToResult = useCallback(() => {
     router.replace('/scan/result');
@@ -145,7 +145,18 @@ export default function BarcodeScanScreen() {
     opacity: checkmarkOpacity.value,
   }));
 
-  if (!permission || !permission.granted) {
+  const isPermissionLoading = !permission || permission.status === 'undetermined';
+
+  if (isPermissionLoading) {
+    return (
+      <View style={styles.loadingScreen}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <ActivityIndicator size="large" color="#FFFFFF" />
+      </View>
+    );
+  }
+
+  if (!permission.granted) {
     return (
       <ResponsiveScreen contentStyle={styles.permissionScreen}>
         <Stack.Screen options={{ headerShown: false }} />
@@ -230,6 +241,12 @@ const createStyles = (tokens: DesignTokens, topInset: number, bottomInset: numbe
   StyleSheet.create({
     container: {
       flex: 1,
+      backgroundColor: '#000',
+    },
+    loadingScreen: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
       backgroundColor: '#000',
     },
     camera: {
