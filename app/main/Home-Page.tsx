@@ -1,25 +1,42 @@
+import { MySupplementView } from '@/components/screens/SavedSupplementsScreen';
+import { useSavedSupplements } from '@/contexts/SavedSupplementsContext';
+import { useScanHistory } from '@/contexts/ScanHistoryContext';
+import { useTranslation } from '@/lib/i18n';
+import type { RoutinePreferences } from '@/types/saved-supplements';
+import type { ScanHistoryItem } from '@/types/scan-history';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import {
+  AudioWaveform,
   BarChart2,
+  Bed,
   Bell,
+  Bone,
+  Brain,
   Bookmark,
   Calendar as CalendarIcon,
   Check,
   CheckCircle2,
+  CircleFadingPlus,
+  Eye,
   Flame,
   Home,
+  HeartPulse,
   MoreHorizontal,
   Pill,
   Plus,
   ScanBarcode,
   ScanText,
   Send,
+  ShieldPlus,
   Sparkles,
   User,
+  Waves,
+  Zap,
 } from 'lucide-react-native';
-import * as Haptics from 'expo-haptics';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   NativeScrollEvent,
@@ -32,29 +49,28 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
+import MaskedView from '@react-native-masked-view/masked-view';
 
 // --- 核心动画库引入 ---
 import { AnimatePresence, MotiView } from 'moti';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import type { SharedValue } from 'react-native-reanimated';
 import Animated, {
-  FadeInUp,
-  FadeInRight,
   Easing,
+  FadeInRight,
+  FadeInUp,
   interpolateColor,
   Layout,
   runOnJS,
   runOnUI,
-  useDerivedValue,
   useAnimatedStyle,
+  useDerivedValue,
   useSharedValue,
   withSpring,
   withTiming,
   ZoomIn,
   ZoomOut
 } from 'react-native-reanimated';
-import type { SharedValue } from 'react-native-reanimated';
-import MaskedView from '@react-native-masked-view/masked-view';
-import { LinearGradient } from 'expo-linear-gradient';
 
 // --- 全局定义 ---
 
@@ -62,6 +78,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const AnimatedText = Animated.createAnimatedComponent(Text);
 const AnimatedView = Animated.createAnimatedComponent(View);
+const BOTTOM_INSET_TRIM = 0;
+const BOTTOM_FADE_EXTRA = 120;
+const NAV_HEIGHT = 64;
 
 // 类型定义
 type SupplementItem = {
@@ -70,6 +89,12 @@ type SupplementItem = {
   color: string;
   iconColor: string;
   iconBg: string;
+};
+
+type CategoryIcon = typeof ShieldPlus;
+type CategoryIconConfig = {
+  icon: CategoryIcon;
+  rotate?: string;
 };
 
 // 颜色转换辅助函数
@@ -82,6 +107,125 @@ const getIconColorHex = (className: string) => {
     'text-rose-700': '#be123c',
   };
   return map[className] || '#0f172a';
+};
+
+const normalizeCategoryKey = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '')
+    .trim();
+
+const CATEGORY_ICON_CONFIGS = {
+  immune: { icon: ShieldPlus },
+  sleep: { icon: Bed },
+  energy: { icon: Zap },
+  gut: { icon: AudioWaveform, rotate: '-90deg' },
+  heart: { icon: HeartPulse },
+  brain: { icon: Brain },
+  bone: { icon: Bone },
+  skin: { icon: CircleFadingPlus },
+  vision: { icon: Eye },
+  stress: { icon: Waves },
+  other: { icon: Pill },
+} as const;
+
+const CATEGORY_ALIASES: Record<string, keyof typeof CATEGORY_ICON_CONFIGS> = {
+  immunity: 'immune',
+  immune: 'immune',
+  immunesupport: 'immune',
+  immunitysupport: 'immune',
+  immuneboost: 'immune',
+  vitamins: 'immune',
+  sleep: 'sleep',
+  sleepsupport: 'sleep',
+  bettersleep: 'sleep',
+  energy: 'energy',
+  metabolism: 'energy',
+  energymetabolism: 'energy',
+  energyboost: 'energy',
+  aminoacids: 'energy',
+  digestion: 'gut',
+  digestive: 'gut',
+  digestivehealth: 'gut',
+  gut: 'gut',
+  guthealth: 'gut',
+  digestiongut: 'gut',
+  probiotic: 'gut',
+  probiotics: 'gut',
+  heart: 'heart',
+  cardio: 'heart',
+  cardiovascular: 'heart',
+  hearthealth: 'heart',
+  cardiovascularhealth: 'heart',
+  omega3: 'heart',
+  brain: 'brain',
+  focus: 'brain',
+  brainfocus: 'brain',
+  brainhealth: 'brain',
+  focussupport: 'brain',
+  joints: 'bone',
+  bones: 'bone',
+  jointsbones: 'bone',
+  bone: 'bone',
+  jointhealth: 'bone',
+  jointsupport: 'bone',
+  bonehealth: 'bone',
+  skin: 'skin',
+  hair: 'skin',
+  nails: 'skin',
+  skinhairnails: 'skin',
+  skinhairnail: 'skin',
+  vision: 'vision',
+  eye: 'vision',
+  eyehealth: 'vision',
+  stress: 'stress',
+  mood: 'stress',
+  stressmood: 'stress',
+  stressrelief: 'stress',
+  moodsupport: 'stress',
+  minerals: 'energy',
+  herbs: 'stress',
+  other: 'other',
+};
+
+const getCategoryIconConfig = (category: string | null | undefined, productName: string) => {
+  const normalizedCategory = normalizeCategoryKey(category ?? '');
+  const alias = CATEGORY_ALIASES[normalizedCategory];
+  if (alias) return CATEGORY_ICON_CONFIGS[alias];
+
+  const normalizedName = normalizeCategoryKey(productName);
+  if (normalizedName.includes('probiotic') || normalizedName.includes('gut') || normalizedName.includes('digest')) {
+    return CATEGORY_ICON_CONFIGS.gut;
+  }
+  if (normalizedName.includes('omega') || normalizedName.includes('fishoil') || normalizedName.includes('epa') || normalizedName.includes('dha')) {
+    return CATEGORY_ICON_CONFIGS.heart;
+  }
+  if (normalizedName.includes('sleep') || normalizedName.includes('melatonin')) {
+    return CATEGORY_ICON_CONFIGS.sleep;
+  }
+  if (normalizedName.includes('immune')) {
+    return CATEGORY_ICON_CONFIGS.immune;
+  }
+  if (normalizedName.includes('brain') || normalizedName.includes('focus') || normalizedName.includes('memory')) {
+    return CATEGORY_ICON_CONFIGS.brain;
+  }
+  if (normalizedName.includes('joint') || normalizedName.includes('bone')) {
+    return CATEGORY_ICON_CONFIGS.bone;
+  }
+  if (normalizedName.includes('skin') || normalizedName.includes('hair') || normalizedName.includes('nail') || normalizedName.includes('collagen')) {
+    return CATEGORY_ICON_CONFIGS.skin;
+  }
+  if (normalizedName.includes('vision') || normalizedName.includes('eye') || normalizedName.includes('lutein')) {
+    return CATEGORY_ICON_CONFIGS.vision;
+  }
+  if (normalizedName.includes('stress') || normalizedName.includes('mood') || normalizedName.includes('calm') || normalizedName.includes('relax')) {
+    return CATEGORY_ICON_CONFIGS.stress;
+  }
+  if (normalizedName.includes('energy') || normalizedName.includes('metabolism') || normalizedName.includes('b12')) {
+    return CATEGORY_ICON_CONFIGS.energy;
+  }
+
+  return CATEGORY_ICON_CONFIGS.other;
 };
 
 // -----------------------------------------------------
@@ -386,53 +530,41 @@ const INDICATOR_TRACK_WIDTH = 128;
 const INDICATOR_WIDTH = INDICATOR_TRACK_WIDTH / 3;
 const INDICATOR_MAX_LEFT = INDICATOR_TRACK_WIDTH - INDICATOR_WIDTH;
 
+const CHECKIN_THEMES = [
+  { color: 'bg-blue-100', iconColor: 'text-blue-700', iconBg: 'bg-blue-100/40' },
+  { color: 'bg-yellow-100', iconColor: 'text-yellow-700', iconBg: 'bg-yellow-100/40' },
+  { color: 'bg-purple-100', iconColor: 'text-purple-700', iconBg: 'bg-purple-100/40' },
+  { color: 'bg-emerald-100', iconColor: 'text-emerald-700', iconBg: 'bg-emerald-100/40' },
+  { color: 'bg-rose-100', iconColor: 'text-rose-700', iconBg: 'bg-rose-100/40' },
+];
+
 const SavedSupplements = () => {
+  const { t } = useTranslation();
+  const { savedSupplements } = useSavedSupplements();
   const [scrollProgress, setScrollProgress] = useState(0);
   const [checkedItems, setCheckedItems] = useState<string[]>([]);
 
-  const supplements: SupplementItem[] = [
-    {
-      name: 'Omega-3',
-      dose: '1000mg',
-      color: 'bg-blue-100',
-      iconColor: 'text-blue-700',
-      iconBg: 'bg-blue-100/40',
-    },
-    {
-      name: 'Vitamin D3',
-      dose: '2000IU',
-      color: 'bg-yellow-100',
-      iconColor: 'text-yellow-700',
-      iconBg: 'bg-yellow-100/40',
-    },
-    {
-      name: 'Magnesium',
-      dose: '400mg',
-      color: 'bg-purple-100',
-      iconColor: 'text-purple-700',
-      iconBg: 'bg-purple-100/40',
-    },
-    {
-      name: 'Protein',
-      dose: '30g',
-      color: 'bg-emerald-100',
-      iconColor: 'text-emerald-700',
-      iconBg: 'bg-emerald-100/40',
-    },
-    {
-      name: 'Iron',
-      dose: '65mg',
-      color: 'bg-rose-100',
-      iconColor: 'text-rose-700',
-      iconBg: 'bg-rose-100/40',
-    },
-  ];
+  const supplements: (SupplementItem & { id: string })[] = useMemo(() => {
+    const visible = savedSupplements
+      .filter(item => item.syncedToCheckIn)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
-  const handleCheckIn = (name: string) => {
-    if (checkedItems.includes(name)) {
-      setCheckedItems(checkedItems.filter(item => item !== name));
+    return visible.map((item, index) => {
+      const theme = CHECKIN_THEMES[index % CHECKIN_THEMES.length];
+      return {
+        id: item.id,
+        name: item.productName,
+        dose: item.dosageText,
+        ...theme,
+      };
+    });
+  }, [savedSupplements]);
+
+  const handleCheckIn = (id: string) => {
+    if (checkedItems.includes(id)) {
+      setCheckedItems(checkedItems.filter(item => item !== id));
     } else {
-      setCheckedItems([...checkedItems, name]);
+      setCheckedItems([...checkedItems, id]);
     }
   };
 
@@ -462,45 +594,56 @@ const SavedSupplements = () => {
         </Pressable>
       </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        decelerationRate="fast"
-        // Snap settings adjusted
-        snapToInterval={CARD_WIDTH + CARD_GAP}
-        snapToAlignment="center"
-        // 确保高度足够容纳卡片和阴影
-        style={{ marginHorizontal: -24, height: CARD_HEIGHT + 20 }}
-        contentContainerStyle={{
-          paddingHorizontal: 24,
-          paddingBottom: 8,
-          alignItems: 'center', // 垂直居中
-        }}
-      >
-        {supplements.map((item, index) => (
-          <View
-            key={item.name}
-            style={{
-              marginRight: index === supplements.length - 1 ? 0 : CARD_GAP,
+      {supplements.length === 0 ? (
+        <View style={styles.checkInEmpty}>
+          <BlurView intensity={28} tint="light" style={StyleSheet.absoluteFill} />
+          <View style={styles.checkInEmptyOverlay} />
+          <View style={styles.checkInEmptyContent}>
+            <Text style={styles.checkInEmptyTitle}>{t.checkInEmptyTitle}</Text>
+            <Text style={styles.checkInEmptyDescription}>{t.checkInEmptyDescription}</Text>
+          </View>
+        </View>
+      ) : (
+        <>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+            decelerationRate="fast"
+            snapToInterval={CARD_WIDTH + CARD_GAP}
+            snapToAlignment="center"
+            style={{ marginHorizontal: -24, height: CARD_HEIGHT + 20 }}
+            contentContainerStyle={{
+              paddingHorizontal: 24,
+              paddingBottom: 8,
+              alignItems: 'center',
             }}
           >
-            <SupplementCheckInCard
-              item={item}
-              isChecked={checkedItems.includes(item.name)}
-              onCheckIn={() => handleCheckIn(item.name)}
+            {supplements.map((item, index) => (
+              <View
+                key={item.id}
+                style={{
+                  marginRight: index === supplements.length - 1 ? 0 : CARD_GAP,
+                }}
+              >
+                <SupplementCheckInCard
+                  item={item}
+                  isChecked={checkedItems.includes(item.id)}
+                  onCheckIn={() => handleCheckIn(item.id)}
+                />
+              </View>
+            ))}
+          </ScrollView>
+
+          <View className="h-1.5 w-32 bg-slate-200/80 rounded-full mt-2 overflow-hidden relative self-center">
+            <AnimatedView
+              className="absolute top-0 left-0 h-full bg-slate-400 rounded-full"
+              style={{ width: INDICATOR_WIDTH, left: scrollProgress * INDICATOR_MAX_LEFT }}
             />
           </View>
-        ))}
-      </ScrollView>
-
-      <View className="h-1.5 w-32 bg-slate-200/80 rounded-full mt-2 overflow-hidden relative self-center">
-        <AnimatedView
-          className="absolute top-0 left-0 h-full bg-slate-400 rounded-full"
-          style={{ width: INDICATOR_WIDTH, left: scrollProgress * INDICATOR_MAX_LEFT }}
-        />
-      </View>
+        </>
+      )}
     </AnimatedView>
   );
 };
@@ -707,11 +850,53 @@ const StreakCard = () => (
 // -----------------------------------------------------
 
 const RecentlyScanned = () => {
-  const items = [
-    { name: 'Avocado Toast', calories: '280 Kcal', time: '10:42 AM', icon: '🥑' },
-    { name: 'Almond Milk', calories: '60 Kcal', time: '09:15 AM', icon: '🥛' },
-    { name: 'Blueberries', calories: '85 Kcal', time: '08:30 AM', icon: '🫐' },
-  ];
+  const { addSupplement, savedSupplements } = useSavedSupplements();
+  const { scans } = useScanHistory();
+  const { t } = useTranslation();
+  const [savingIds, setSavingIds] = useState<Record<string, boolean>>({});
+  const normalize = useCallback(
+    (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, '').trim(),
+    [],
+  );
+  const cleanProductName = useCallback((value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return value;
+    let next = trimmed.replace(/\s*[-–—]+$/g, '');
+    next = next.replace(
+      /\s*\d+(?:\.\d+)?\s*(?:ct|count|servings?|caps(?:ules)?|tabs?|tablets?|softgels?|gummies?|drops?|liquid)\b.*$/i,
+      '',
+    );
+    next = next.replace(/\s*[-–—]+$/g, '');
+    return next.trim() || trimmed;
+  }, []);
+  const buildKey = useCallback(
+    (productName: string, brandName: string) => `name:${normalize(brandName)}:${normalize(productName)}`,
+    [normalize],
+  );
+
+  const savedKeys = useMemo(
+    () => new Set(savedSupplements.map(item => buildKey(item.productName, item.brandName))),
+    [buildKey, savedSupplements],
+  );
+
+  const items = useMemo(() => scans.slice(0, 3), [scans]);
+
+  const handleSave = (item: ScanHistoryItem) => {
+    if (savingIds[item.id]) return;
+    if (savedKeys.has(buildKey(item.productName, item.brandName))) return;
+
+    setSavingIds(prev => ({ ...prev, [item.id]: true }));
+    addSupplement({
+      barcode: item.barcode ?? null,
+      productName: item.productName,
+      brandName: item.brandName,
+      dosageText: item.dosageText || item.category || '',
+    });
+
+    setTimeout(() => {
+      setSavingIds(prev => ({ ...prev, [item.id]: false }));
+    }, 240);
+  };
 
   return (
     <Animated.View
@@ -739,36 +924,92 @@ const RecentlyScanned = () => {
       </View>
 
       <View className="gap-2">
-        {items.map((item, index) => (
-          <Animated.View
-            key={item.name}
-            entering={FadeInRight.delay(700 + index * 100).springify()}
-            className="flex-row items-center justify-between p-3 rounded-2xl bg-white/20 border border-white/10"
-          >
-            <View className="flex-row items-center gap-3">
-              <View className="w-10 h-10 rounded-xl bg-white/40 items-center justify-center">
-                <Text className="text-xl">{item.icon}</Text>
-              </View>
-              <View>
-                <Text className="font-bold text-slate-900 text-sm">
-                  {item.name}
-                </Text>
-                <Text className="text-xs text-slate-700 font-medium">
-                  {item.time}
-                </Text>
-              </View>
-            </View>
+        {items.length === 0 ? (
+          <View className="rounded-2xl bg-white/20 border border-white/10 p-4">
+            <Text className="text-sm font-semibold text-slate-900">{t.emptyScans}</Text>
+          </View>
+        ) : (
+          items.map((item, index) => {
+            const isSaved = savedKeys.has(buildKey(item.productName, item.brandName));
+            const isSaving = savingIds[item.id];
+            const isActive = isSaved || isSaving;
+            const iconConfig = getCategoryIconConfig(item.category, item.productName || '');
+            const Icon = iconConfig.icon;
+            const iconStyle = iconConfig.rotate
+              ? { transform: [{ rotate: iconConfig.rotate }] }
+              : undefined;
 
-            <View className="flex-row items-center gap-2">
-              <Text className="font-bold text-slate-900 text-sm">
-                {item.calories}
-              </Text>
-              <View className="w-6 h-6 rounded-full bg-white/40 items-center justify-center">
-                <Plus size={12} color="#0f172a" />
-              </View>
-            </View>
-          </Animated.View>
-        ))}
+            return (
+              <Animated.View
+                key={item.id}
+                entering={FadeInRight.delay(700 + index * 100).springify()}
+                className="flex-row items-center justify-between p-3 rounded-2xl bg-white/20 border border-white/10"
+              >
+                <View style={{ width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
+                  <View style={[{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.40)', alignItems: 'center', justifyContent: 'center' }]}>
+                    <View style={iconStyle}>
+                      <Icon size={20} color="#0f172a" strokeWidth={2.2} />
+                    </View>
+                  </View>
+                </View>
+
+                <View style={{ flex: 1, minWidth: 0, paddingHorizontal: 12 }}>
+                  <Text
+                    className="font-bold text-slate-900 text-sm"
+                    numberOfLines={2}
+                    ellipsizeMode="tail"
+                  >
+                    {cleanProductName(item.productName || 'Unknown supplement')}
+                  </Text>
+                </View>
+
+                <Pressable
+                  onPress={() => handleSave(item)}
+                  disabled={isActive}
+                  style={({ pressed }) => [
+                    styles.recentActionPressable,
+                    { opacity: pressed ? 0.7 : 1 },
+                  ]}
+                >
+                  <MotiView
+                    style={styles.recentActionBubble}
+                    animate={{
+                      backgroundColor: isActive ? "rgba(16,185,129,0.85)" : "rgba(255,255,255,0.40)",
+                      borderColor: isActive ? "rgba(16,185,129,0.45)" : "rgba(255,255,255,0.30)",
+                      scale: isActive ? 1.04 : 1,
+                    }}
+                    transition={{ type: "spring", stiffness: 260, damping: 18, mass: 0.7 }}
+                  >
+                    <View pointerEvents="none" style={styles.recentActionIconWrap}>
+                      <MotiView
+                        style={styles.recentActionIcon}
+                        animate={{
+                          opacity: isActive ? 0 : 1,
+                          scale: isActive ? 0.6 : 1,
+                          rotate: isActive ? "-90deg" : "0deg",
+                        }}
+                        transition={{ type: "timing", duration: 160 }}
+                      >
+                        <Plus size={12} color="#0f172a" />
+                      </MotiView>
+                      <MotiView
+                        style={styles.recentActionIcon}
+                        animate={{
+                          opacity: isActive ? 1 : 0,
+                          scale: isActive ? 1 : 0.6,
+                          rotate: isActive ? "0deg" : "20deg",
+                        }}
+                        transition={{ type: "timing", duration: 160 }}
+                      >
+                        <Check size={12} color="#ffffff" />
+                      </MotiView>
+                    </View>
+                  </MotiView>
+                </Pressable>
+              </Animated.View>
+            );
+          })
+        )}
       </View>
     </Animated.View>
   );
@@ -778,7 +1019,7 @@ const RecentlyScanned = () => {
 // Refined Bottom Nav + 1:1 Floating Menu
 // -----------------------------------------------------
 
-type TabId = 'Home' | 'Progress' | 'Saved' | 'Profile';
+type TabId = 'home' | 'progress' | 'saved' | 'profile';
 type TabType = 'text' | 'icon';
 
 // --- 新增组件：独立处理动画的 TabItem ---
@@ -815,7 +1056,7 @@ const TabItem = ({
       style={[
         styles.tabItem,
         isText ? styles.tabItemText : styles.tabItemIcon,
-        item.id === 'Home' ? { marginRight: 'auto' } : {},
+        item.id === 'home' ? { marginRight: 'auto' } : {},
         { zIndex: 10 }
       ]}
     >
@@ -839,19 +1080,26 @@ const TabItem = ({
   );
 };
 
-const BottomNav = () => {
+const BottomNav = ({
+  currentTab,
+  onTabChange,
+}: {
+  currentTab: TabId;
+  onTabChange: (tab: TabId) => void;
+}) => {
   const insets = useSafeAreaInsets();
-  const [currentTab, setCurrentTab] = useState<TabId>('Home'); // 用于路由/业务
+  const bottomInset = Math.max(0, insets.bottom - BOTTOM_INSET_TRIM);
+  const bottomFadeHeight = Math.max(160, bottomInset + BOTTOM_FADE_EXTRA);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const activeId = useSharedValue<TabId>('Home'); // UI 高亮用
+  const activeId = useSharedValue<TabId>(currentTab); // UI 高亮用
 
   type TabItemConfig = { id: TabId; label: string; icon: any; type: TabType; activeColor?: string };
 
   const tabs: TabItemConfig[] = useMemo(() => ([
-    { id: 'Home', label: 'Home', icon: Home, type: 'text' },
-    { id: 'Progress', label: 'Progress', icon: BarChart2, type: 'icon', activeColor: '#6366f1' },
-    { id: 'Saved', label: 'Saved', icon: Bookmark, type: 'icon', activeColor: '#f97316' },
-    { id: 'Profile', label: 'Profile', icon: User, type: 'icon', activeColor: '#10b981' },
+    { id: 'home', label: 'Home', icon: Home, type: 'text' },
+    { id: 'progress', label: 'Progress', icon: BarChart2, type: 'icon', activeColor: '#6366f1' },
+    { id: 'saved', label: 'Saved', icon: Bookmark, type: 'icon', activeColor: '#f97316' },
+    { id: 'profile', label: 'Profile', icon: User, type: 'icon', activeColor: '#10b981' },
   ]), []);
 
   type TabLayout = { x: number; width: number; type: TabType; activeColor?: string };
@@ -906,9 +1154,7 @@ const BottomNav = () => {
       const radius = target.type === 'text' ? 24 : target.width / 2;
       pillWidth.value = withSpring(target.width, { damping: 14, stiffness: 220, mass: 0.9 });
       pillRadius.value = withSpring(radius, { damping: 14, stiffness: 220, mass: 0.9 });
-      pillX.value = withSpring(target.x, { damping: 14, stiffness: 220, mass: 0.9 }, (finished) => {
-        if (finished) runOnJS(setCurrentTab)(id);
-      });
+      pillX.value = withSpring(target.x, { damping: 14, stiffness: 220, mass: 0.9 });
     };
     runOnUI(worklet)(targetId);
   }, [activeId, pillRadius, pillWidth, pillX, tabMeta]);
@@ -960,18 +1206,14 @@ const BottomNav = () => {
       const currentActive = activeId.value;
       const target = metaList.find((m) => m.id === currentActive) || metaList[0];
       const radius = target.type === 'text' ? 24 : target.width / 2;
+      runOnJS(onTabChange)(target.id as TabId);
       pillWidth.value = withSpring(target.width, { damping: 14, stiffness: 220, mass: 0.9 });
       pillRadius.value = withSpring(radius, { damping: 14, stiffness: 220, mass: 0.9 });
-      pillX.value = withSpring(target.x, { damping: 14, stiffness: 220, mass: 0.9 }, (finished) => {
-        if (finished) runOnJS(setCurrentTab)(target.id as TabId);
-      });
-    }), [activeId, dragStartX, navLift, navScaleX, navScaleY, pillScale, pillWidth, pillX, pillRadius, tabMeta]);
+      pillX.value = withSpring(target.x, { damping: 14, stiffness: 220, mass: 0.9 });
+    }), [activeId, dragStartX, navLift, navScaleX, navScaleY, onTabChange, pillScale, pillWidth, pillX, pillRadius, tabMeta]);
 
   const navBarStyle = useAnimatedStyle(() => ({
     transform: [{ scaleX: navScaleX.value }, { scaleY: navScaleY.value }],
-    shadowOpacity: 0.12 + navLift.value * 0.05,
-    shadowRadius: 18 + navLift.value * 6,
-    elevation: 8 + navLift.value * 3,
   }));
 
   const navHighlightStyle = useAnimatedStyle(() => ({
@@ -1011,61 +1253,107 @@ const BottomNav = () => {
       {/* 底部导航区域容器 */}
       <View
         pointerEvents="box-none"
-        style={[styles.bottomBarContainer, { paddingBottom: insets.bottom }]}
+        style={[styles.bottomBarContainer, { paddingBottom: bottomInset }]}
       >
-
-        {/* 2. 左侧导航栏 (Glassmorphism Bar) */}
-        <Animated.View style={[styles.outerWrapper, navBarStyle]}>
-          <View style={styles.glassContainer}>
-            <BlurView intensity={30} tint="light" style={StyleSheet.absoluteFill} />
-            <Animated.View style={[styles.bgOverlay, navHighlightStyle]} />
-
-            <View style={styles.tabsRow}>
-              {/* Layer 1: 视觉胶囊（底层） */}
-              <Animated.View
-                style={[
-                  styles.pillContainer,
-                  pillStyle,
-                  { zIndex: 0 }
+        <View
+          pointerEvents="none"
+          style={[
+            styles.bottomFade,
+            {
+              left: -24,
+              right: -24,
+              bottom: -bottomInset,
+              height: bottomFadeHeight,
+            },
+          ]}
+        >
+          <MaskedView
+            style={StyleSheet.absoluteFill}
+            maskElement={
+              <LinearGradient
+                colors={[
+                  'rgba(0,0,0,0)',
+                  'rgba(0,0,0,0.2)',
+                  'rgba(0,0,0,0.7)',
+                  'rgba(0,0,0,1)',
                 ]}
-                pointerEvents="none"
-              >
-                <View style={styles.pillBase} />
-              </Animated.View>
+                locations={[0, 0.18, 0.62, 1]}
+                style={StyleSheet.absoluteFill}
+              />
+            }
+          >
+            <BlurView intensity={32} tint="light" style={StyleSheet.absoluteFill} />
+          </MaskedView>
+          <LinearGradient
+            colors={[
+              'rgba(242,243,247,0.00)',
+              'rgba(242,243,247,0.20)',
+              'rgba(242,243,247,0.60)',
+              'rgba(242,243,247,0.92)',
+              '#F2F3F7',
+            ]}
+            locations={[0, 0.22, 0.58, 0.84, 1]}
+            style={StyleSheet.absoluteFill}
+          />
+        </View>
+        {/* 2. 左侧导航栏 (Glassmorphism Bar) */}
+        <View style={styles.outerWrapper}>
+          <Animated.View style={[styles.navShadowWrap, navBarStyle]}>
+            <View style={styles.navPill}>
+              <BlurView intensity={22} tint="light" style={StyleSheet.absoluteFill} />
+              <View pointerEvents="none" style={styles.navPillGlassOverlay} />
+              <Animated.View style={[styles.navPillHighlight, navHighlightStyle]} />
 
-              {/* Layer 2: 图标/文字内容 */}
-              {tabs.map((tab) => (
-                <View
-                  key={tab.id}
-                  onLayout={onTabLayout(tab.id, tab.type, tab.activeColor)}
-                  style={tab.id === 'Home' ? { marginRight: 'auto' } : {}}
-                >
-                  <TabItem
-                    item={tab}
-                    activeTabId={activeId}
-                    onPress={() => snapToTab(tab.id)}
-                  />
-                </View>
-              ))}
-
-              {/* Layer 3: 幽灵胶囊（顶层捕获手势） */}
-              <GestureDetector gesture={pillGesture}>
+              <View style={styles.tabsRow}>
+                {/* Layer 1: 视觉胶囊（底层） */}
                 <Animated.View
                   style={[
                     styles.pillContainer,
                     pillStyle,
-                    {
-                      zIndex: 100,
-                      opacity: 0,
-                      backgroundColor: 'red'
-                    }
+                    { zIndex: 0 }
                   ]}
-                  pointerEvents="box-only"
-                />
-              </GestureDetector>
+                  pointerEvents="none"
+                >
+                  <View style={styles.pillBase} />
+                </Animated.View>
+
+                {/* Layer 2: 图标/文字内容 */}
+                {tabs.map((tab) => (
+                  <View
+                    key={tab.id}
+                    onLayout={onTabLayout(tab.id, tab.type, tab.activeColor)}
+                    style={tab.id === 'home' ? { marginRight: 'auto' } : {}}
+                  >
+                    <TabItem
+                      item={tab}
+                      activeTabId={activeId}
+                      onPress={() => {
+                        onTabChange(tab.id);
+                        snapToTab(tab.id);
+                      }}
+                    />
+                  </View>
+                ))}
+
+                {/* Layer 3: 幽灵胶囊（顶层捕获手势） */}
+                <GestureDetector gesture={pillGesture}>
+                  <Animated.View
+                    style={[
+                      styles.pillContainer,
+                      pillStyle,
+                      {
+                        zIndex: 100,
+                        opacity: 0,
+                        backgroundColor: 'red'
+                      }
+                    ]}
+                    pointerEvents="box-only"
+                  />
+                </GestureDetector>
+              </View>
             </View>
-          </View>
-        </Animated.View>
+          </Animated.View>
+        </View>
 
         {/* 3. 右侧: 悬浮菜单 (1:1 还原区域) */}
         <View className="relative items-center justify-center">
@@ -1100,38 +1388,22 @@ const BottomNav = () => {
           </AnimatePresence>
 
           {/* 主 FAB 按钮 */}
-          <Pressable onPress={() => {
-            Haptics.selectionAsync();
-            setIsMenuOpen(!isMenuOpen);
-          }}>
+          <Pressable
+            onPress={() => {
+              Haptics.selectionAsync();
+              setIsMenuOpen(!isMenuOpen);
+            }}
+            style={[styles.plusWrap, isMenuOpen ? styles.plusWrapOpen : styles.plusWrapClosed]}
+          >
+            {!isMenuOpen && <BlurView intensity={22} tint="light" style={StyleSheet.absoluteFill} />}
+            {!isMenuOpen && <View pointerEvents="none" style={styles.plusGlassOverlay} />}
+
             <MotiView
               animate={{ rotate: isMenuOpen ? '45deg' : '0deg' }}
               transition={{ type: 'timing', duration: 180 }}
-              className={`
-                w-16 h-16 rounded-full 
-                border border-white/60 
-                items-center justify-center 
-                shadow-2xl overflow-hidden z-50
-                ${isMenuOpen ? 'bg-slate-900' : 'bg-blue-400/30'}
-              `}
-              style={{
-                shadowColor: isMenuOpen ? "#0f172a" : "#60a5fa",
-                shadowOffset: { width: 0, height: 8 },
-                shadowOpacity: 0.3,
-                shadowRadius: 12,
-                elevation: 10
-              }}
+              style={styles.plusButton}
             >
-              {/* 只有在未打开时显示毛玻璃，打开变纯黑 */}
-              {!isMenuOpen && (
-                <BlurView intensity={60} tint="light" style={StyleSheet.absoluteFill} />
-              )}
-
-              <Plus
-                size={32}
-                strokeWidth={2.5}
-                color={isMenuOpen ? 'white' : '#0f172a'}
-              />
+              <Plus size={32} strokeWidth={2.5} color={isMenuOpen ? 'white' : '#0f172a'} />
             </MotiView>
           </Pressable>
         </View>
@@ -1192,87 +1464,129 @@ function FloatingMenuItem({ labelTop, labelBottom, Icon, delay, onPress }: any) 
 }
 
 // -----------------------------------------------------
-// Gradual Blur Component (True Gradient)
-// -----------------------------------------------------
-
-const GradualBlur = () => {
-  // 将模糊限制在导航栏下方：顶部透明，向下渐变
-  return (
-    <View
-      style={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: 180,
-        zIndex: 40,
-        pointerEvents: 'none',
-      }}
-    >
-      <MaskedView
-        style={StyleSheet.absoluteFill}
-        maskElement={
-          <LinearGradient
-            // 顶部透明，向下逐渐不透明，控制模糊只在导航栏以下
-            colors={['transparent', 'transparent', 'transparent', 'rgba(0,0,0,1)']}
-            locations={[0, 0.5, 0.7, 1]}
-            style={StyleSheet.absoluteFill}
-          />
-        }
-      >
-        <BlurView intensity={60} tint="light" style={StyleSheet.absoluteFill} />
-        <LinearGradient
-          colors={['transparent', 'rgba(255,255,255,0.4)']}
-          style={StyleSheet.absoluteFill}
-        />
-      </MaskedView>
-    </View>
-  );
-};
-
-// -----------------------------------------------------
 // Main Screen
 // -----------------------------------------------------
 
 export default function MainScreen() {
+  const [currentTab, setCurrentTab] = useState<TabId>('home');
+  const screenTab = useSharedValue<TabId>(currentTab);
+  const insets = useSafeAreaInsets();
+  const { savedSupplements, removeSupplements, updateRoutine } = useSavedSupplements();
+  const bottomInset = Math.max(0, insets.bottom - BOTTOM_INSET_TRIM);
+  const homeBottomPadding = NAV_HEIGHT + bottomInset + 24;
+
+  useEffect(() => {
+    screenTab.value = currentTab;
+  }, [currentTab, screenTab]);
+
+  const handleDeleteSelected = useCallback(
+    async (ids: string[]) => {
+      await removeSupplements(ids);
+    },
+    [removeSupplements],
+  );
+
+  const handleSaveRoutine = useCallback(
+    async (id: string, prefs: RoutinePreferences) => {
+      await updateRoutine(id, prefs);
+    },
+    [updateRoutine],
+  );
+
+  const fadeConfig = {
+    duration: 200,
+    easing: Easing.inOut(Easing.cubic),
+  };
+
+  const homeFadeStyle = useAnimatedStyle(() => ({
+    opacity: withTiming(screenTab.value === 'home' ? 1 : 0, fadeConfig),
+  }));
+  const savedFadeStyle = useAnimatedStyle(() => ({
+    opacity: withTiming(screenTab.value === 'saved' ? 1 : 0, fadeConfig),
+  }));
+  const progressFadeStyle = useAnimatedStyle(() => ({
+    opacity: withTiming(screenTab.value === 'progress' ? 1 : 0, fadeConfig),
+  }));
+  const profileFadeStyle = useAnimatedStyle(() => ({
+    opacity: withTiming(screenTab.value === 'profile' ? 1 : 0, fadeConfig),
+  }));
+
   return (
-    <SafeAreaView className="flex-1 bg-[#F2F3F7]">
+    <SafeAreaView
+      edges={['top', 'left', 'right']}
+      style={{ flex: 1, backgroundColor: '#F2F3F7' }}
+    >
       <StatusBar style="dark" />
       <View className="flex-1">
-        <ScrollView
-          className="flex-1"
-          contentContainerClassName="pt-6 pb-40 gap-5"
-          showsVerticalScrollIndicator={false}
-        >
-          {/* 顶部 Header + 日期，左右有留白 */}
-          <View className="px-6">
-            <Header />
-            <DateSelector />
-          </View>
+        <View style={styles.tabContainer}>
+          <Animated.View
+            style={[styles.tabScreen, homeFadeStyle]}
+            pointerEvents={currentTab === 'home' ? 'auto' : 'none'}
+          >
+            <ScrollView
+              className="flex-1"
+              contentContainerClassName="pt-6 gap-5"
+              contentContainerStyle={{ paddingBottom: homeBottomPadding }}
+              showsVerticalScrollIndicator={false}
+            >
+              {/* 顶部 Header + 日期，左右有留白 */}
+              <View className="px-6">
+                <Header />
+                <DateSelector />
+              </View>
 
-          {/* Daily Check-in，卡片贴边 */}
-          <View className="mt-2 px-6">
-            <SavedSupplements />
-          </View>
+              {/* Daily Check-in，卡片贴边 */}
+              <View className="mt-2 px-6">
+                <SavedSupplements />
+              </View>
 
-          {/* 中部三个卡片：Progress 全宽，Chat/Streak 两列 */}
-          <View className="mt-2 px-6 gap-4">
-            <ProgressCard />
-            <View className="flex-row gap-4">
-              <NutriChatCard />
-              <StreakCard />
+              {/* 中部三个卡片：Progress 全宽，Chat/Streak 两列 */}
+              <View className="mt-2 px-6 gap-4">
+                <ProgressCard />
+                <View className="flex-row gap-4">
+                  <NutriChatCard />
+                  <StreakCard />
+                </View>
+              </View>
+
+              {/* Recently Scanned */}
+              <View className="mt-4 px-6">
+                <RecentlyScanned />
+              </View>
+            </ScrollView>
+          </Animated.View>
+
+          <Animated.View
+            style={[styles.tabScreen, savedFadeStyle]}
+            pointerEvents={currentTab === 'saved' ? 'auto' : 'none'}
+          >
+            <MySupplementView
+              data={savedSupplements}
+              onDeleteSelected={handleDeleteSelected}
+              onSaveRoutine={handleSaveRoutine}
+            />
+          </Animated.View>
+
+          <Animated.View
+            style={[styles.tabScreen, progressFadeStyle]}
+            pointerEvents={currentTab === 'progress' ? 'auto' : 'none'}
+          >
+            <View style={styles.placeholderScreen}>
+              <Text style={styles.placeholderText}>Progress</Text>
             </View>
-          </View>
+          </Animated.View>
 
-          {/* Recently Scanned */}
-          <View className="mt-4 px-6">
-            <RecentlyScanned />
-          </View>
-        </ScrollView>
+          <Animated.View
+            style={[styles.tabScreen, profileFadeStyle]}
+            pointerEvents={currentTab === 'profile' ? 'auto' : 'none'}
+          >
+            <View style={styles.placeholderScreen}>
+              <Text style={styles.placeholderText}>Profile</Text>
+            </View>
+          </Animated.View>
+        </View>
 
-        <GradualBlur />
-
-        <BottomNav />
+        <BottomNav currentTab={currentTab} onTabChange={setCurrentTab} />
       </View>
     </SafeAreaView>
   );
@@ -1344,9 +1658,90 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     opacity: 0.9,
   },
+  checkInEmpty: {
+    overflow: 'hidden',
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    borderRadius: 24,
+    backgroundColor: '#CFE5FF',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.6)',
+    shadowColor: '#94a3b8',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  checkInEmptyOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+  },
+  checkInEmptyContent: {
+    position: 'relative',
+    zIndex: 1,
+  },
+  checkInEmptyTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0f172a',
+    textTransform: 'uppercase',
+  },
+  recentActionPressable: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recentActionBubble: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderCurve: 'continuous',
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  recentActionIconWrap: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recentActionIcon: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkInEmptyDescription: {
+    marginTop: 6,
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#94a3b8',
+  },
+  tabContainer: {
+    flex: 1,
+    position: 'relative',
+  },
+  tabScreen: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  tabHidden: {
+    display: 'none',
+  },
+  placeholderScreen: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  placeholderText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#94a3b8',
+  },
   bottomBarContainer: {
     position: 'absolute',
-    bottom: -16, // 进一步向下偏移
+    bottom: 0,
     left: 0,
     right: 0,
     paddingHorizontal: 24,
@@ -1359,25 +1754,67 @@ const styles = StyleSheet.create({
     flex: 1,
     maxWidth: 380,
     marginRight: 16,
-    borderRadius: 100,
-    borderCurve: 'continuous',
-    shadowColor: "#4b5563",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 18,
-    elevation: 8,
   },
-  glassContainer: {
-    borderRadius: 100,
+  navPill: {
+    height: 64,
+    borderRadius: 999,
     borderCurve: 'continuous',
     overflow: 'hidden',
+    backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.65)',
-    backgroundColor: 'rgba(255,255,255,0.28)', // 更透的毛玻璃底色
+    borderColor: 'rgba(255,255,255,0.55)',
+    justifyContent: 'center',
   },
-  bgOverlay: {
+  navShadowWrap: {
+    borderRadius: 999,
+    borderCurve: 'continuous',
+    backgroundColor: 'rgba(255,255,255,0.001)',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 18 },
+    elevation: 10,
+  },
+  navPillGlassOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255,255,255,0.12)', // 轻薄雾面层
+    backgroundColor: 'rgba(255,255,255,0.25)',
+  },
+  navPillHighlight: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  bottomFade: {
+    position: 'absolute',
+  },
+  plusWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    overflow: 'hidden',
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.55)',
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  plusWrapOpen: {
+    backgroundColor: '#0f172a',
+  },
+  plusWrapClosed: {
+    backgroundColor: 'transparent',
+  },
+  plusGlassOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(96,165,250,0.32)',
+  },
+  plusButton: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tabsRow: {
     flexDirection: 'row',
@@ -1433,11 +1870,6 @@ const styles = StyleSheet.create({
     borderCurve: 'continuous',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.6)', // 细白描边，贴近 web
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
     pointerEvents: 'none',
   },
   pillHighlight: {

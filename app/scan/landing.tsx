@@ -53,7 +53,7 @@ export default function ScanPage() {
       <ResponsiveHeader
         title="Scan Supplement"
         subtitle="Start with the barcode for the quickest match. Switch to label scan if the code isn’t available."
-        onBack={() => router.replace('/main')}
+        onBack={() => router.back()}
       />
 
       <View style={styles.actions}>

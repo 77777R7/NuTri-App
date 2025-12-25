@@ -125,7 +125,6 @@ const ensureValidUrl = (value: string | undefined | null, label: string, require
   }
 
   try {
-    // eslint-disable-next-line no-new
     new URL(value);
   } catch {
     const target = required ? errors : warnings;

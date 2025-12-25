@@ -67,6 +67,7 @@
     "@types/invariant": "^2.2.37",
     "@types/react": "~19.1.0",
     "babel-plugin-module-resolver": "^5.0.2",
+    "baseline-browser-mapping": "^2.9.11",
     "dotenv": "^16.4.5",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",

@@ -12,6 +12,8 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { OnboardingProvider } from '@/contexts/OnboardingContext';
+import { ScanHistoryProvider } from '@/contexts/ScanHistoryContext';
+import { SavedSupplementsProvider } from '@/contexts/SavedSupplementsContext';
 import { TransitionProvider } from '@/contexts/TransitionContext';
 import { ENV } from '@/lib/env';
 
@@ -44,20 +46,24 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <AuthProvider>
-          <OnboardingProvider>
-            <TransitionProvider>
-              <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-                <Stack screenOptions={{ headerShown: false }}>
-                  <Stack.Screen name="index" options={{ gestureEnabled: false }} />
-                  <Stack.Screen name="(auth)" />
-                  <Stack.Screen name="(tabs)" />
-                  <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal', headerShown: true }} />
-                </Stack>
-                <StatusBar style="auto" />
-                <Toast position="bottom" />
-              </ThemeProvider>
-            </TransitionProvider>
-          </OnboardingProvider>
+          <SavedSupplementsProvider>
+            <ScanHistoryProvider>
+              <OnboardingProvider>
+                <TransitionProvider>
+                  <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                    <Stack screenOptions={{ headerShown: false }}>
+                      <Stack.Screen name="index" options={{ gestureEnabled: false }} />
+                      <Stack.Screen name="(auth)" />
+                      <Stack.Screen name="(tabs)" />
+                      <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal', headerShown: true }} />
+                    </Stack>
+                    <StatusBar style="auto" />
+                    <Toast position="bottom" />
+                  </ThemeProvider>
+                </TransitionProvider>
+              </OnboardingProvider>
+            </ScanHistoryProvider>
+          </SavedSupplementsProvider>
         </AuthProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

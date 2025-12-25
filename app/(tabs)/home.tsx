@@ -12,6 +12,7 @@ import { SupplementItem } from '@/components/ui/supplement-item';
 import { apiClient, HomeDashboardResponse } from '@/lib/api-client';
 import { useTranslation } from '@/lib/i18n';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSavedSupplements } from '@/contexts/SavedSupplementsContext';
 
 const formatUploadTimestamp = (
   iso: string,
@@ -57,6 +58,7 @@ export default function HomeScreen() {
   const [dashboard, setDashboard] = useState<HomeDashboardResponse['data'] | null>(null);
   const [dashboardLoading, setDashboardLoading] = useState(true);
   const [dashboardError, setDashboardError] = useState<string | null>(null);
+  const { savedSupplements: localSavedSupplements } = useSavedSupplements();
 
   const displayName = user?.email?.split('@')[0] ?? 'NuTri Member';
 
@@ -107,7 +109,7 @@ export default function HomeScreen() {
         caption: t.quickActionScanCaption,
         icon: 'camera.viewfinder',
         accent: 'sky',
-        onPress: () => router.push('/(tabs)/scan'),
+        onPress: () => router.push('/scan'),
       },
       {
         label: t.quickActionDatabase,
@@ -130,6 +132,14 @@ export default function HomeScreen() {
   const savedSupplements = dashboard?.savedSupplements ?? [];
   const recentUploads = dashboard?.recentUploads ?? [];
   const overviewMetrics = dashboard?.overviewMetrics ?? [];
+
+  const dailyCheckInItems = useMemo(
+    () =>
+      [...localSavedSupplements]
+        .filter(item => item.syncedToCheckIn)
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+    [localSavedSupplements],
+  );
 
   const handleOpenActionSheet = () => setActionSheetOpen(true);
 
@@ -168,6 +178,25 @@ export default function HomeScreen() {
             <View className="mt-4 rounded-3xl bg-primary-50 px-4 py-3">
               <Text className="text-sm font-medium text-primary-600">{t.calendarEmptyState}</Text>
             </View>
+          </Card>
+
+          <Card className="mb-6 gap-4">
+            <SectionHeading title={t.dailyCheckInTitle} />
+            {dailyCheckInItems.length === 0 ? (
+              <View className="rounded-2xl bg-primary-50 px-4 py-3">
+                <Text className="text-sm font-semibold text-slate-500">{t.checkInEmptyTitle}</Text>
+                <Text className="mt-1 text-xs text-slate-400">{t.checkInEmptyDescription}</Text>
+              </View>
+            ) : (
+              dailyCheckInItems.map(item => (
+                <SupplementItem
+                  key={item.id}
+                  name={item.productName}
+                  description={item.brandName}
+                  dosage={item.dosageText}
+                />
+              ))
+            )}
           </Card>
 
           <Card className="mb-6">

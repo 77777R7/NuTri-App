@@ -2,12 +2,13 @@ import { BlurView } from 'expo-blur';
 import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ArrowLeft, FileText } from 'lucide-react-native';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { ResponsiveScreen } from '@/components/common/ResponsiveScreen';
 import { OrganicSpinner } from '@/components/ui/OrganicSpinner';
 import { ShinyText } from '@/components/ui/ShinyText';
+import { useScanHistory } from '@/contexts/ScanHistoryContext';
 import { useResponsiveTokens } from '@/hooks/useResponsiveTokens';
 import { useStreamAnalysis } from '@/hooks/useStreamAnalysis';
 import { consumeScanSession, type ScanSession } from '@/lib/scan/session';
@@ -16,6 +17,9 @@ import { AnalysisDashboard } from './AnalysisDashboard';
 export default function ScanResultScreen() {
   const { tokens } = useResponsiveTokens();
   const styles = useMemo(() => createStyles(tokens), [tokens]);
+  const { addScan } = useScanHistory();
+  const addedRef = useRef(false);
+  const lastDosageRef = useRef<string | null>(null);
 
   // Get session to retrieve barcode
   const [session] = useState<ScanSession | null>(() => consumeScanSession());
@@ -26,11 +30,108 @@ export default function ScanResultScreen() {
     productInfo, efficacy, safety, usage, value, social, status, error
   } = useStreamAnalysis(barcode);
 
+  const formatDose = (value?: number | string | null, unit?: string | null) => {
+    if (value == null) return null;
+    const cleanValue = typeof value === 'string' ? value.trim() : value;
+    if (cleanValue === '') return null;
+    const cleanUnit = unit?.trim() ?? '';
+    return cleanUnit ? `${cleanValue} ${cleanUnit}` : String(cleanValue);
+  };
+
+  const extractDoseFromText = (text?: string | null) => {
+    if (!text) return null;
+    const match = text.match(/(\d+(?:\.\d+)?)\s?(mcg|μg|ug|mg|g|iu|ml|oz)/i);
+    if (!match) return null;
+    const value = match[1];
+    const unitRaw = match[2].toLowerCase();
+    const unit = unitRaw === 'μg' || unitRaw === 'ug' ? 'mcg' : unitRaw;
+    return formatDose(value, unit);
+  };
+
   useEffect(() => {
     if (!session) {
       router.replace('/(tabs)/scan');
     }
   }, [session]);
+
+  useEffect(() => {
+    if (!session) return;
+
+    if (session.mode === 'label') {
+      if (addedRef.current) return;
+      const match = session.result.supplements?.[0];
+      if (!match) return;
+
+      const labelDose =
+        extractDoseFromText(match.name ?? null) ||
+        extractDoseFromText(match.category ?? null) ||
+        null;
+
+      addScan({
+        barcode: match.barcode ?? null,
+        productName: match.name ?? 'Unknown supplement',
+        brandName: match.brand?.name ?? 'Unknown brand',
+        dosageText: labelDose ?? '',
+        category: match.category ?? null,
+        imageUrl: match.image_url ?? null,
+      });
+      addedRef.current = true;
+      return;
+    }
+
+    if (status === 'error' || !productInfo) return;
+
+    const primaryDose = formatDose(
+      efficacy?.primaryActive?.dosageValue ?? null,
+      efficacy?.primaryActive?.dosageUnit ?? null,
+    );
+    const ingredientDose = (() => {
+      const firstWithDose = efficacy?.ingredients?.find(
+        (ingredient) => ingredient.dosageValue != null,
+      );
+      return formatDose(firstWithDose?.dosageValue ?? null, firstWithDose?.dosageUnit ?? null);
+    })();
+    const usageDose = (usage as { dosage?: string } | null)?.dosage ?? null;
+    const activeIngredientAmount = efficacy?.activeIngredients?.[0]?.amount ?? null;
+    const summaryDose =
+      extractDoseFromText((usage as { summary?: string } | null)?.summary ?? null) ??
+      extractDoseFromText(efficacy?.overviewSummary ?? null) ??
+      extractDoseFromText(efficacy?.dosageAssessment?.text ?? null);
+    const fallbackDose = productInfo.category ?? '';
+    const dosageText =
+      usageDose ??
+      primaryDose ??
+      ingredientDose ??
+      activeIngredientAmount ??
+      summaryDose ??
+      fallbackDose;
+
+    if (!addedRef.current) {
+      addScan({
+        barcode: barcode || null,
+        productName: productInfo.name ?? 'Unknown supplement',
+        brandName: productInfo.brand ?? 'Unknown brand',
+        dosageText,
+        category: productInfo.category ?? null,
+        imageUrl: productInfo.image ?? null,
+      });
+      addedRef.current = true;
+      lastDosageRef.current = dosageText || null;
+      return;
+    }
+
+    if (dosageText && dosageText !== lastDosageRef.current) {
+      addScan({
+        barcode: barcode || null,
+        productName: productInfo.name ?? 'Unknown supplement',
+        brandName: productInfo.brand ?? 'Unknown brand',
+        dosageText,
+        category: productInfo.category ?? null,
+        imageUrl: productInfo.image ?? null,
+      });
+      lastDosageRef.current = dosageText;
+    }
+  }, [addScan, barcode, efficacy, productInfo, session, status, usage]);
 
   const handleBack = () => router.replace('/(tabs)/scan');
 

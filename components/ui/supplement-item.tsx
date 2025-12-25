@@ -49,13 +49,15 @@ export const SupplementItem: React.FC<SupplementItemProps> = ({
         ) : null}
         {dosage ? <Text className="mt-0.5 text-xs text-primary-600">{dosage}</Text> : null}
       </View>
-      <Pressable
-        onPress={onActionPress}
-        className="ml-3 rounded-full bg-primary px-4 py-2 shadow-soft"
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      >
-        <Text className="text-xs font-semibold text-white">{actionLabel}</Text>
-      </Pressable>
+      {onActionPress ? (
+        <Pressable
+          onPress={onActionPress}
+          className="ml-3 rounded-full bg-primary px-4 py-2 shadow-soft"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Text className="text-xs font-semibold text-white">{actionLabel}</Text>
+        </Pressable>
+      ) : null}
     </Pressable>
   );
 };
