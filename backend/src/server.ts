@@ -1,13 +1,16 @@
-import { randomUUID } from "node:crypto";
 import cors from "cors";
 import dotenv from "dotenv";
 import express, { NextFunction, Request, Response } from "express";
+import { randomUUID } from "node:crypto";
 
+import { buildBarcodeSearchQueries, normalizeBarcodeInput } from "./barcode.js";
 import { extractBrandProduct, extractBrandWithAI, type BrandExtractionResult } from "./brandExtractor.js";
 import { buildEnhancedContext, fetchAnalysisSection, prepareContextSources } from "./deepseek.js";
-import { buildBarcodeSearchQueries, normalizeBarcodeInput } from "./barcode.js";
+import { extractIngredients, formatForDeepSeek, inferTableRows, needsConfirmation, validateIngredient, type LabelDraft } from "./labelAnalysis.js";
+import { getCachedResult, hasCompletedAnalysis, hasDraftOnly, setCachedResult, updateCachedAnalysis } from "./ocrCache.js";
 import { constructFallbackQuery, extractDomain, isHighQualityDomain, scoreSearchItem, scoreSearchQuality } from "./searchQuality.js";
-import type { ErrorResponse, SearchItem, SearchResponse } from "./types.js";
+import type { AiSupplementAnalysis, ErrorResponse, RatingScore, SearchItem, SearchResponse } from "./types.js";
+import { callVisionOcr } from "./visionOcr.js";
 
 dotenv.config();
 
@@ -236,8 +239,9 @@ function mergeAndDedupe(
 // ============================================================================
 
 const app = express();
+app.set("trust proxy", 1); // P1-2: Trust first proxy for correct client IP
 app.use(cors());
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: "10mb" })); // P0-2: Increased from 1mb for image base64
 
 // Minimal request logging (no body / no secrets)
 app.use((req: Request, res: Response, next: NextFunction) => {
@@ -529,6 +533,431 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
     const message = error instanceof Error ? error.message : "Unknown error";
     sendSSE(res, "error", { message });
     res.end();
+  }
+});
+
+// ============================================================================
+// RATE LIMITING FOR LABEL SCAN
+// ============================================================================
+
+interface RateLimitEntry {
+  count: number;
+  resetAt: number;
+}
+
+const rateLimitMinute = new Map<string, RateLimitEntry>();
+const rateLimitDay = new Map<string, RateLimitEntry>();
+
+const OCR_RATE_LIMIT_PER_MINUTE = Number(process.env.OCR_RATE_LIMIT_PER_MINUTE ?? 10);
+const OCR_RATE_LIMIT_PER_DAY = Number(process.env.OCR_RATE_LIMIT_PER_DAY ?? 50);
+
+function checkRateLimit(userId: string): { allowed: boolean; retryAfter?: number } {
+  const now = Date.now();
+  const minuteKey = `${userId}:minute`;
+  const dayKey = `${userId}:day`;
+
+  // Check minute limit
+  let minuteEntry = rateLimitMinute.get(minuteKey);
+  if (!minuteEntry || now > minuteEntry.resetAt) {
+    minuteEntry = { count: 0, resetAt: now + 60000 };
+    rateLimitMinute.set(minuteKey, minuteEntry);
+  }
+  if (minuteEntry.count >= OCR_RATE_LIMIT_PER_MINUTE) {
+    return { allowed: false, retryAfter: Math.ceil((minuteEntry.resetAt - now) / 1000) };
+  }
+
+  // Check day limit
+  let dayEntry = rateLimitDay.get(dayKey);
+  if (!dayEntry || now > dayEntry.resetAt) {
+    dayEntry = { count: 0, resetAt: now + 86400000 };
+    rateLimitDay.set(dayKey, dayEntry);
+  }
+  if (dayEntry.count >= OCR_RATE_LIMIT_PER_DAY) {
+    return { allowed: false, retryAfter: Math.ceil((dayEntry.resetAt - now) / 1000) };
+  }
+
+  // Increment counters
+  minuteEntry.count++;
+  dayEntry.count++;
+
+  return { allowed: true };
+}
+
+// P1-2: Cleanup expired rate limit entries every 10 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of rateLimitMinute) {
+    if (now > entry.resetAt) rateLimitMinute.delete(key);
+  }
+  for (const [key, entry] of rateLimitDay) {
+    if (now > entry.resetAt) rateLimitDay.delete(key);
+  }
+}, 10 * 60 * 1000);
+
+// ============================================================================
+// LABEL SCAN ENDPOINTS
+// ============================================================================
+
+interface AnalyzeLabelRequest {
+  imageBase64: string;
+  imageHash: string;
+  saveImage?: boolean;
+  deviceId?: string;
+}
+
+interface LabelAnalysisResponse {
+  status: "ok" | "needs_confirmation" | "failed";
+  draft?: LabelDraft;
+  analysis?: AiSupplementAnalysis | null;
+  message?: string;
+  suggestion?: string;
+  issues?: { type: string; message: string }[]; // P0-2: Return validation issues to frontend
+}
+
+/**
+ * POST /api/analyze-label
+ * Analyze a supplement label image using Vision OCR + DeepSeek
+ */
+app.post("/api/analyze-label", async (req: Request, res: Response) => {
+  try {
+    const body = req.body as AnalyzeLabelRequest;
+    const { imageBase64, imageHash, deviceId } = body;
+
+    // Validate input
+    if (!imageBase64 || !imageHash) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Missing required fields: imageBase64 and imageHash",
+      } satisfies LabelAnalysisResponse);
+    }
+
+    // Rate limiting
+    const userId = deviceId ?? req.ip ?? "anonymous";
+    const rateCheck = checkRateLimit(userId);
+    if (!rateCheck.allowed) {
+      res.setHeader("Retry-After", String(rateCheck.retryAfter ?? 60));
+      return res.status(429).json({
+        status: "failed",
+        message: "Rate limit exceeded. Please try again later.",
+        suggestion: `Wait ${rateCheck.retryAfter ?? 60} seconds before trying again.`,
+      } satisfies LabelAnalysisResponse);
+    }
+
+    // Check cache
+    const cached = await getCachedResult(imageHash);
+    if (cached) {
+      if (hasCompletedAnalysis(cached)) {
+        console.log(`[LabelScan] Cache hit with analysis for ${imageHash.slice(0, 8)}...`);
+        return res.json({
+          status: "ok",
+          draft: cached.parsedIngredients,
+          analysis: cached.analysis,
+        } satisfies LabelAnalysisResponse);
+      }
+      if (hasDraftOnly(cached)) {
+        console.log(`[LabelScan] Cache hit with draft only for ${imageHash.slice(0, 8)}...`);
+        return res.json({
+          status: "needs_confirmation",
+          draft: cached.parsedIngredients,
+        } satisfies LabelAnalysisResponse);
+      }
+    }
+
+    // Call Vision OCR
+    console.log(`[LabelScan] Calling Vision OCR for ${imageHash.slice(0, 8)}...`);
+    let visionResult;
+    try {
+      visionResult = await callVisionOcr({ imageBase64 });
+    } catch (visionError) {
+      console.error("[LabelScan] Vision OCR failed:", visionError);
+      return res.status(500).json({
+        status: "failed",
+        message: "OCR processing failed. Please try again.",
+        suggestion: "Try taking a clearer photo with better lighting and less glare.",
+      } satisfies LabelAnalysisResponse);
+    }
+
+    if (visionResult.tokens.length === 0) {
+      return res.json({
+        status: "failed",
+        message: "Could not detect any text in the image.",
+        suggestion: "Make sure the Supplement Facts label is clearly visible and in focus.",
+      } satisfies LabelAnalysisResponse);
+    }
+
+    // Post-processing: infer rows and extract ingredients
+    console.log(`[LabelScan] Processing ${visionResult.tokens.length} tokens...`);
+    const rows = inferTableRows(visionResult.tokens);
+    const draft = extractIngredients(rows);
+    console.log(`[LabelScan] Extracted ${draft.ingredients.length} ingredients, confidence: ${draft.confidenceScore.toFixed(2)}`);
+
+    // Cache the draft
+    // P0-5: Only store visionRaw in debug mode to save space and protect privacy
+    const shouldStoreVisionRaw = process.env.OCR_STORE_VISION_RAW === "true";
+    await setCachedResult(imageHash, {
+      visionRaw: shouldStoreVisionRaw ? visionResult.rawResponse : null,
+      parsedIngredients: draft,
+      confidence: draft.confidenceScore,
+    });
+
+    // Check if confirmation needed
+    if (needsConfirmation(draft)) {
+      console.log(`[LabelScan] Low confidence, requesting confirmation`);
+      return res.json({
+        status: "needs_confirmation",
+        draft,
+        message: "Please review the extracted ingredients.",
+      } satisfies LabelAnalysisResponse);
+    }
+
+    // High confidence: proceed with DeepSeek analysis
+    const deepseekKey = process.env.DEEPSEEK_API_KEY;
+    const model = process.env.DEEPSEEK_MODEL || "deepseek-chat";
+
+    if (!deepseekKey) {
+      return res.json({
+        status: "needs_confirmation",
+        draft,
+        message: "Analysis service unavailable. Please confirm ingredients manually.",
+      } satisfies LabelAnalysisResponse);
+    }
+
+    console.log(`[LabelScan] Running DeepSeek analysis...`);
+    const ingredientContext = formatForDeepSeek(draft);
+
+    // Build minimal context for label scan (no search results needed)
+    const labelContext = `PRODUCT INFORMATION (from OCR):
+${ingredientContext}
+
+TASK: Analyze this supplement based on the ingredient list above.
+Focus on: ingredient forms, dosage adequacy, evidence strength.
+If information is not available, use null instead of guessing.`;
+
+    // Run analysis sections in parallel
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [efficacyRaw, safetyRaw, usageRaw] = await Promise.all([
+      fetchAnalysisSection("efficacy", labelContext, model, deepseekKey),
+      fetchAnalysisSection("safety", labelContext, model, deepseekKey),
+      fetchAnalysisSection("usage", labelContext, model, deepseekKey),
+    ]);
+
+    // Type assertions for analysis results
+    const efficacy = efficacyRaw as { score?: number; verdict?: string; coreBenefits?: string[]; overallAssessment?: string } | null;
+    const safety = safetyRaw as { score?: number; verdict?: string; risks?: string[]; redFlags?: string[] } | null;
+    const usage = usageRaw as { usage?: { summary?: string; timing?: string; withFood?: boolean; interactions?: string[] }; value?: { score?: number; verdict?: string; analysis?: string }; social?: { score?: number; summary?: string } } | null;
+
+    // Construct analysis response (simplified for label scan)
+    const analysis: AiSupplementAnalysis = {
+      schemaVersion: 1,
+      barcode: `label:${imageHash.slice(0, 16)}`,
+      generatedAt: new Date().toISOString(),
+      model,
+      status: "success",
+      overallScore: efficacy?.score ?? 5,
+      confidence: draft.confidenceScore > 0.8 ? "high" : draft.confidenceScore > 0.5 ? "medium" : "low",
+      productInfo: {
+        brand: null,
+        name: "Label Scan Result",
+        category: "supplement",
+        image: null,
+      },
+      efficacy: {
+        score: (efficacy?.score ?? 5) as RatingScore,
+        benefits: efficacy?.coreBenefits ?? [],
+        dosageAssessment: {
+          text: efficacy?.overallAssessment ?? "Unable to assess dosage",
+          isUnderDosed: false,
+        },
+        verdict: efficacy?.verdict ?? undefined,
+        highlights: efficacy?.coreBenefits ?? undefined,
+        warnings: [],
+      },
+      value: {
+        score: (usage?.value?.score ?? 5) as RatingScore,
+        verdict: usage?.value?.verdict ?? "Value assessment unavailable",
+        analysis: usage?.value?.analysis ?? "Price data not available from label scan.",
+      },
+      safety: {
+        score: (safety?.score ?? 5) as RatingScore,
+        risks: safety?.risks ?? [],
+        redFlags: safety?.redFlags ?? [],
+        additivesInfo: null,
+        verdict: safety?.verdict ?? undefined,
+      },
+      social: {
+        score: (usage?.social?.score ?? 3) as RatingScore,
+        tier: "unknown",
+        summary: usage?.social?.summary ?? "Brand reputation unknown from label scan.",
+        tags: [],
+      },
+      usage: {
+        summary: usage?.usage?.summary ?? "Follow label directions",
+        timing: usage?.usage?.timing ?? null,
+        withFood: usage?.usage?.withFood ?? null,
+        conflicts: usage?.usage?.interactions ?? [],
+        sourceType: "product_label",
+      },
+      sources: [],
+      disclaimer: "This analysis is based on label information only. Not a substitute for medical advice.",
+    };
+
+    // Update cache with analysis
+    await updateCachedAnalysis(imageHash, analysis);
+
+    console.log(`[LabelScan] Analysis complete for ${imageHash.slice(0, 8)}...`);
+    return res.json({
+      status: "ok",
+      draft,
+      analysis,
+    } satisfies LabelAnalysisResponse);
+
+  } catch (error) {
+    console.error("[LabelScan] Unexpected error:", error);
+    return res.status(500).json({
+      status: "failed",
+      message: "An unexpected error occurred.",
+      suggestion: "Please try again. If the problem persists, try a different photo.",
+    } satisfies LabelAnalysisResponse);
+  }
+});
+
+/**
+ * POST /api/analyze-label/confirm
+ * Confirm edited ingredients and run DeepSeek analysis
+ */
+app.post("/api/analyze-label/confirm", async (req: Request, res: Response) => {
+  try {
+    const { imageHash, confirmedDraft } = req.body as {
+      imageHash: string;
+      confirmedDraft: LabelDraft;
+    };
+
+    if (!imageHash || !confirmedDraft) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Missing required fields: imageHash and confirmedDraft",
+      } satisfies LabelAnalysisResponse);
+    }
+
+    // P0-4: Validate confirmed ingredients before analysis
+    const validationIssues: { type: string; message: string }[] = [];
+    for (const ing of confirmedDraft.ingredients) {
+      const ingIssues = validateIngredient(ing);
+      validationIssues.push(...ingIssues);
+    }
+
+    const hasBlockingIssues = validationIssues.some(
+      (i) => i.type === 'unit_invalid' || i.type === 'value_anomaly'
+    );
+
+    if (hasBlockingIssues) {
+      // P0-2: Return 200 with needs_confirmation, not 400 (frontend treats 400 as system error)
+      return res.json({
+        status: "needs_confirmation",
+        draft: confirmedDraft,
+        message: "Some ingredients have validation issues. Please review and correct.",
+        issues: validationIssues, // Return specific issues so user knows what to fix
+      } satisfies LabelAnalysisResponse);
+    }
+
+    const deepseekKey = process.env.DEEPSEEK_API_KEY;
+    const model = process.env.DEEPSEEK_MODEL || "deepseek-chat";
+
+    if (!deepseekKey) {
+      return res.status(503).json({
+        status: "failed",
+        message: "Analysis service unavailable.",
+      } satisfies LabelAnalysisResponse);
+    }
+
+    console.log(`[LabelScan/Confirm] Running analysis for ${imageHash.slice(0, 8)}...`);
+    const ingredientContext = formatForDeepSeek(confirmedDraft);
+
+    const labelContext = `PRODUCT INFORMATION (user-confirmed from OCR):
+${ingredientContext}
+
+TASK: Analyze this supplement based on the confirmed ingredient list above.
+Focus on: ingredient forms, dosage adequacy, evidence strength.`;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [efficacyRaw, safetyRaw, usageRaw] = await Promise.all([
+      fetchAnalysisSection("efficacy", labelContext, model, deepseekKey),
+      fetchAnalysisSection("safety", labelContext, model, deepseekKey),
+      fetchAnalysisSection("usage", labelContext, model, deepseekKey),
+    ]);
+
+    const efficacy = efficacyRaw as { score?: number; verdict?: string; coreBenefits?: string[]; overallAssessment?: string } | null;
+    const safety = safetyRaw as { score?: number; verdict?: string; risks?: string[]; redFlags?: string[] } | null;
+    const usage = usageRaw as { usage?: { summary?: string; timing?: string; withFood?: boolean; interactions?: string[] }; value?: { score?: number; verdict?: string; analysis?: string }; social?: { score?: number; summary?: string } } | null;
+
+    const analysis: AiSupplementAnalysis = {
+      schemaVersion: 1,
+      barcode: `label:${imageHash.slice(0, 16)}`,
+      generatedAt: new Date().toISOString(),
+      model,
+      status: "success",
+      overallScore: efficacy?.score ?? 5,
+      confidence: "medium",
+      productInfo: {
+        brand: null,
+        name: "Label Scan Result", // P1-10: Consistent with main endpoint
+        category: "supplement",
+        image: null,
+      },
+      efficacy: {
+        score: (efficacy?.score ?? 5) as RatingScore,
+        benefits: efficacy?.coreBenefits ?? [],
+        dosageAssessment: {
+          text: efficacy?.overallAssessment ?? "Unable to assess dosage",
+          isUnderDosed: false,
+        },
+        verdict: efficacy?.verdict ?? undefined,
+      },
+      value: {
+        score: (usage?.value?.score ?? 5) as RatingScore,
+        verdict: usage?.value?.verdict ?? "Value assessment unavailable",
+        analysis: usage?.value?.analysis ?? "Price data not available.",
+      },
+      safety: {
+        score: (safety?.score ?? 5) as RatingScore,
+        risks: safety?.risks ?? [],
+        redFlags: safety?.redFlags ?? [],
+        additivesInfo: null,
+        verdict: safety?.verdict ?? undefined,
+      },
+      social: {
+        score: (usage?.social?.score ?? 3) as RatingScore,
+        tier: "unknown",
+        summary: usage?.social?.summary ?? "Brand reputation unknown.",
+        tags: [],
+      },
+      usage: {
+        summary: usage?.usage?.summary ?? "Follow label directions",
+        timing: usage?.usage?.timing ?? null,
+        withFood: usage?.usage?.withFood ?? null,
+        conflicts: usage?.usage?.interactions ?? [],
+        sourceType: "product_label",
+      },
+      sources: [],
+      disclaimer: "This analysis is based on user-confirmed label information. Not a substitute for medical advice.",
+    };
+
+    // P1-1: Use updateCachedAnalysis instead of setCachedResult to preserve created_at (TTL)
+    await updateCachedAnalysis(imageHash, analysis);
+
+    console.log(`[LabelScan/Confirm] Complete for ${imageHash.slice(0, 8)}...`);
+    return res.json({
+      status: "ok",
+      draft: confirmedDraft,
+      analysis,
+    } satisfies LabelAnalysisResponse);
+
+  } catch (error) {
+    console.error("[LabelScan/Confirm] Unexpected error:", error);
+    return res.status(500).json({
+      status: "failed",
+      message: "An unexpected error occurred.",
+    } satisfies LabelAnalysisResponse);
   }
 });
 

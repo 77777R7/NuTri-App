@@ -3,7 +3,7 @@ import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ArrowLeft, FileText } from 'lucide-react-native';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { ResponsiveScreen } from '@/components/common/ResponsiveScreen';
 import { OrganicSpinner } from '@/components/ui/OrganicSpinner';
@@ -12,6 +12,7 @@ import { useScanHistory } from '@/contexts/ScanHistoryContext';
 import { useResponsiveTokens } from '@/hooks/useResponsiveTokens';
 import { useStreamAnalysis } from '@/hooks/useStreamAnalysis';
 import { consumeScanSession, type ScanSession } from '@/lib/scan/session';
+import type { LabelDraft } from '@/backend/src/labelAnalysis';
 import { AnalysisDashboard } from './AnalysisDashboard';
 
 export default function ScanResultScreen() {
@@ -23,6 +24,8 @@ export default function ScanResultScreen() {
 
   // Get session to retrieve barcode
   const [session] = useState<ScanSession | null>(() => consumeScanSession());
+  const isLabel = session?.mode === 'label';
+  const labelResult = isLabel ? session.result : null;
   const barcode = session?.mode === 'barcode' ? session.input.barcode : '';
 
   // 🚀 Use the Streaming Hook
@@ -48,6 +51,24 @@ export default function ScanResultScreen() {
     return formatDose(value, unit);
   };
 
+  const formatDraftIngredient = (ingredient: LabelDraft['ingredients'][number]) => {
+    let line = ingredient.name;
+    if (ingredient.amount != null && ingredient.unit) {
+      line += `: ${ingredient.amount} ${ingredient.unit}`;
+    }
+    if (ingredient.dvPercent != null) {
+      line += ` (${ingredient.dvPercent}% DV)`;
+    }
+    return line;
+  };
+
+  const getDraftDose = (draft?: LabelDraft | null) => {
+    if (!draft?.ingredients?.length) return null;
+    const withDose = draft.ingredients.find((ingredient) => ingredient.amount != null && ingredient.unit);
+    if (!withDose) return null;
+    return `${withDose.amount} ${withDose.unit}`;
+  };
+
   useEffect(() => {
     if (!session) {
       router.replace('/(tabs)/scan');
@@ -59,21 +80,23 @@ export default function ScanResultScreen() {
 
     if (session.mode === 'label') {
       if (addedRef.current) return;
-      const match = session.result.supplements?.[0];
-      if (!match) return;
+      const analysis = session.result.analysis ?? null;
+      if (!analysis || analysis.status !== 'success') return;
 
+      const productInfo = analysis.productInfo ?? {};
       const labelDose =
-        extractDoseFromText(match.name ?? null) ||
-        extractDoseFromText(match.category ?? null) ||
+        getDraftDose(session.result.draft) ??
+        extractDoseFromText(productInfo.name ?? null) ??
+        extractDoseFromText(productInfo.category ?? null) ??
         null;
 
       addScan({
-        barcode: match.barcode ?? null,
-        productName: match.name ?? 'Unknown supplement',
-        brandName: match.brand?.name ?? 'Unknown brand',
+        barcode: analysis.barcode ?? null,
+        productName: productInfo.name ?? 'Label Scan Result',
+        brandName: productInfo.brand ?? 'Unknown brand',
         dosageText: labelDose ?? '',
-        category: match.category ?? null,
-        imageUrl: match.image_url ?? null,
+        category: productInfo.category ?? null,
+        imageUrl: productInfo.image ?? null,
       });
       addedRef.current = true;
       return;
@@ -136,6 +159,84 @@ export default function ScanResultScreen() {
   const handleBack = () => router.replace('/(tabs)/scan');
 
   if (!session) return null;
+
+  if (isLabel && labelResult) {
+    const draft = labelResult.draft ?? null;
+    const issues = labelResult.issues ?? draft?.issues ?? [];
+    const fallbackTitle = labelResult.status === 'failed' ? 'Scan Failed' : 'Review Required';
+    const fallbackMessage =
+      labelResult.message ??
+      (labelResult.status === 'failed'
+        ? 'We could not read the label.'
+        : 'Please review the extracted ingredients.');
+
+    return (
+      <ResponsiveScreen
+        contentStyle={styles.screen}
+        style={styles.safeArea}
+      >
+        <Stack.Screen
+          options={{
+            title: 'Analysis',
+            headerShadowVisible: false,
+            headerStyle: { backgroundColor: '#F2F2F7' },
+            contentStyle: { backgroundColor: '#F2F2F7' },
+            presentation: 'card',
+          }}
+        />
+        <StatusBar style="dark" />
+        <Header onBack={handleBack} title="Label Scan" />
+
+        {labelResult.status === 'ok' && labelResult.analysis ? (
+          <AnalysisDashboard analysis={labelResult.analysis as any} isStreaming={false} />
+        ) : (
+          <ScrollView contentContainerStyle={styles.labelFallbackContent}>
+            <View style={styles.labelFallbackHeader}>
+              <FileText size={48} color="#52525b" />
+              <Text style={styles.fallbackTitle}>{fallbackTitle}</Text>
+              <Text style={styles.fallbackText}>{fallbackMessage}</Text>
+              {labelResult.suggestion ? (
+                <Text style={styles.fallbackNote}>{labelResult.suggestion}</Text>
+              ) : null}
+            </View>
+
+            {draft ? (
+              <View style={styles.labelCard}>
+                <Text style={styles.labelCardTitle}>Extracted Ingredients</Text>
+                {draft.servingSize ? (
+                  <Text style={styles.labelMeta}>Serving Size: {draft.servingSize}</Text>
+                ) : null}
+                {draft.ingredients.length > 0 ? (
+                  <View style={styles.labelList}>
+                    {draft.ingredients.map((ingredient, index) => (
+                      <Text key={`${ingredient.name}-${index}`} style={styles.labelItem}>
+                        {formatDraftIngredient(ingredient)}
+                      </Text>
+                    ))}
+                  </View>
+                ) : (
+                  <Text style={styles.labelEmpty}>No ingredients detected.</Text>
+                )}
+              </View>
+            ) : null}
+
+            {issues.length > 0 ? (
+              <View style={styles.labelCard}>
+                <Text style={styles.labelCardTitle}>Issues Detected</Text>
+                <View style={styles.labelList}>
+                  {issues.map((issue, index) => (
+                    <Text key={`${issue.type}-${index}`} style={styles.labelItem}>
+                      {issue.message}
+                    </Text>
+                  ))}
+                </View>
+              </View>
+            ) : null}
+          </ScrollView>
+        )}
+      </ResponsiveScreen>
+    );
+  }
 
   // 1. Error State
   if (status === 'error') {
@@ -277,6 +378,22 @@ const styles = StyleSheet.create({
   fallbackContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
   fallbackTitle: { fontSize: 24, fontWeight: 'bold', color: '#000', marginTop: 20 },
   fallbackText: { fontSize: 16, color: '#52525b', marginTop: 10, textAlign: 'center' },
+  fallbackNote: { fontSize: 14, color: '#71717a', marginTop: 12, textAlign: 'center' },
+  labelFallbackContent: { padding: 24, paddingBottom: 40 },
+  labelFallbackHeader: { alignItems: 'center', paddingVertical: 24 },
+  labelCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 16,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#e4e4e7',
+  },
+  labelCardTitle: { fontSize: 16, fontWeight: '600', color: '#111827', marginBottom: 8 },
+  labelMeta: { fontSize: 13, color: '#6b7280', marginBottom: 12 },
+  labelList: { marginTop: 4 },
+  labelItem: { fontSize: 14, color: '#111827', marginBottom: 6, lineHeight: 20 },
+  labelEmpty: { fontSize: 14, color: '#6b7280' },
 
   // New style for the floating badge
   streamingBadge: {

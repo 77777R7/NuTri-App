@@ -28,6 +28,7 @@ export default function LabelScanScreen() {
   const cameraRef = useRef<CameraView | null>(null);
   const [status, setStatus] = useState<ScanStatus>('idle');
   const [previewUri, setPreviewUri] = useState<string | null>(null);
+  const [previewBase64, setPreviewBase64] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -55,11 +56,13 @@ export default function LabelScanScreen() {
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 1,
+      quality: 0.8,
+      base64: true,
     });
 
     if (!result.canceled && result.assets.length > 0) {
       setPreviewUri(result.assets[0].uri ?? null);
+      setPreviewBase64(result.assets[0].base64 ?? null);
       setStatus('preview');
       setErrorMessage(null);
     }
@@ -74,12 +77,14 @@ export default function LabelScanScreen() {
       setStatus('processing');
       setErrorMessage(null);
       const options: CameraPictureOptions = {
-        quality: 1,
+        quality: 0.8,
         skipProcessing: Platform.OS === 'android',
+        base64: true,
       };
       const photo = await cameraRef.current.takePictureAsync(options);
       if (photo?.uri) {
         setPreviewUri(photo.uri);
+        setPreviewBase64(photo.base64 ?? null);
         setStatus('preview');
       } else {
         throw new Error('No photo captured');
@@ -97,8 +102,13 @@ export default function LabelScanScreen() {
     }
 
     try {
+      if (!previewBase64) {
+        setErrorMessage('Image data was not available. Please try again.');
+        setStatus('error');
+        return;
+      }
       setStatus('processing');
-      const scanResult = await submitLabelScan(previewUri);
+      const scanResult = await submitLabelScan({ imageUri: previewUri, imageBase64: previewBase64 });
       setScanSession({
         id: ensureSessionId(),
         mode: 'label',
@@ -111,10 +121,11 @@ export default function LabelScanScreen() {
       setErrorMessage('We could not read the label. Try retaking the photo.');
       setStatus('error');
     }
-  }, [previewUri, status]);
+  }, [previewBase64, previewUri, status]);
 
   const handleRetry = useCallback(() => {
     setPreviewUri(null);
+    setPreviewBase64(null);
     setStatus('idle');
     setErrorMessage(null);
   }, []);
