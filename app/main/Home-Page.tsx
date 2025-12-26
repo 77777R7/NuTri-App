@@ -36,6 +36,7 @@ import {
   User,
   Waves,
   Zap,
+  type LucideIcon,
 } from 'lucide-react-native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -91,9 +92,8 @@ type SupplementItem = {
   iconBg: string;
 };
 
-type CategoryIcon = typeof ShieldPlus;
 type CategoryIconConfig = {
-  icon: CategoryIcon;
+  icon: LucideIcon;
   rotate?: string;
 };
 
@@ -127,7 +127,7 @@ const CATEGORY_ICON_CONFIGS = {
   vision: { icon: Eye },
   stress: { icon: Waves },
   other: { icon: Pill },
-} as const;
+} satisfies Record<string, CategoryIconConfig>;
 
 const CATEGORY_ALIASES: Record<string, keyof typeof CATEGORY_ICON_CONFIGS> = {
   immunity: 'immune',
@@ -188,7 +188,7 @@ const CATEGORY_ALIASES: Record<string, keyof typeof CATEGORY_ICON_CONFIGS> = {
   other: 'other',
 };
 
-const getCategoryIconConfig = (category: string | null | undefined, productName: string) => {
+const getCategoryIconConfig = (category: string | null | undefined, productName: string): CategoryIconConfig => {
   const normalizedCategory = normalizeCategoryKey(category ?? '');
   const alias = CATEGORY_ALIASES[normalizedCategory];
   if (alias) return CATEGORY_ICON_CONFIGS[alias];

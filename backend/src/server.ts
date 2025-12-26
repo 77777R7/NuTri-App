@@ -6,7 +6,7 @@ import { randomUUID } from "node:crypto";
 import { buildBarcodeSearchQueries, normalizeBarcodeInput } from "./barcode.js";
 import { extractBrandProduct, extractBrandWithAI, type BrandExtractionResult } from "./brandExtractor.js";
 import { buildEnhancedContext, fetchAnalysisSection, prepareContextSources } from "./deepseek.js";
-import { extractIngredients, formatForDeepSeek, inferTableRows, needsConfirmation, validateIngredient, type LabelDraft } from "./labelAnalysis.js";
+import { analyzeLabelDraft, formatForDeepSeek, needsConfirmation, validateIngredient, type LabelDraft } from "./labelAnalysis.js";
 import { getCachedResult, hasCompletedAnalysis, hasDraftOnly, setCachedResult, updateCachedAnalysis } from "./ocrCache.js";
 import { constructFallbackQuery, extractDomain, isHighQualityDomain, scoreSearchItem, scoreSearchQuality } from "./searchQuality.js";
 import type { AiSupplementAnalysis, ErrorResponse, RatingScore, SearchItem, SearchResponse } from "./types.js";
@@ -687,8 +687,7 @@ app.post("/api/analyze-label", async (req: Request, res: Response) => {
 
     // Post-processing: infer rows and extract ingredients
     console.log(`[LabelScan] Processing ${visionResult.tokens.length} tokens...`);
-    const rows = inferTableRows(visionResult.tokens);
-    const draft = extractIngredients(rows);
+    const draft = analyzeLabelDraft(visionResult.tokens, visionResult.fullText);
     console.log(`[LabelScan] Extracted ${draft.ingredients.length} ingredients, confidence: ${draft.confidenceScore.toFixed(2)}`);
 
     // Cache the draft
@@ -734,7 +733,6 @@ Focus on: ingredient forms, dosage adequacy, evidence strength.
 If information is not available, use null instead of guessing.`;
 
     // Run analysis sections in parallel
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [efficacyRaw, safetyRaw, usageRaw] = await Promise.all([
       fetchAnalysisSection("efficacy", labelContext, model, deepseekKey),
       fetchAnalysisSection("safety", labelContext, model, deepseekKey),
@@ -879,7 +877,6 @@ ${ingredientContext}
 TASK: Analyze this supplement based on the confirmed ingredient list above.
 Focus on: ingredient forms, dosage adequacy, evidence strength.`;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [efficacyRaw, safetyRaw, usageRaw] = await Promise.all([
       fetchAnalysisSection("efficacy", labelContext, model, deepseekKey),
       fetchAnalysisSection("safety", labelContext, model, deepseekKey),
