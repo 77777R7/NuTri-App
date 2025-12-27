@@ -73,8 +73,8 @@ export default function BarcodeScanScreen() {
     checkmarkOpacity.value = 0;
   }, [checkmarkOpacity, checkmarkScale]);
 
-  const navigateToResult = useCallback(() => {
-    router.replace('/scan/result');
+  const navigateToResult = useCallback((sessionId: string) => {
+    router.replace({ pathname: '/scan/result', params: { sessionId } });
   }, []);
 
   const handleBarcode = useCallback(
@@ -111,8 +111,9 @@ export default function BarcodeScanScreen() {
         checkmarkOpacity.value = withTiming(1, { duration: 200 });
 
         // Set session to loading and navigate
+        const sessionId = ensureSessionId();
         setScanSession({
-          id: ensureSessionId(),
+          id: sessionId,
           mode: 'barcode',
           input: { barcode: normalized },
           isLoading: true,
@@ -120,7 +121,7 @@ export default function BarcodeScanScreen() {
 
         // Delay navigation to let user see the checkmark
         setTimeout(() => {
-          runOnJS(navigateToResult)();
+          runOnJS(navigateToResult)(sessionId);
         }, 800);
 
       } catch (error) {

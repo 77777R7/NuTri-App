@@ -45,10 +45,15 @@ export async function submitLabelScan(input: {
   imageUri: string;
   imageBase64: string;
   deviceId?: string;
+  includeAnalysis?: boolean;
 }): Promise<LabelScanResult> {
   const apiBase = getSearchApiBase();
   const imageHash = computeImageHash(input.imageBase64);
-  const response = await fetch(`${apiBase}/api/analyze-label`, {
+  const includeAnalysis = input.includeAnalysis === true;
+  const endpoint = includeAnalysis
+    ? `${apiBase}/api/analyze-label?includeAnalysis=1`
+    : `${apiBase}/api/analyze-label`;
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -57,6 +62,7 @@ export async function submitLabelScan(input: {
       imageBase64: input.imageBase64,
       imageHash,
       deviceId: input.deviceId,
+      includeAnalysis,
     }),
   });
 
@@ -75,4 +81,36 @@ export async function submitLabelScan(input: {
     imageUri: input.imageUri,
     imageHash,
   };
+}
+
+export async function requestLabelAnalysis(input: {
+  imageHash: string;
+  imageBase64?: string;
+  deviceId?: string;
+}): Promise<AnalyzeLabelResponse> {
+  const apiBase = getSearchApiBase();
+  const response = await fetch(`${apiBase}/api/analyze-label?includeAnalysis=1`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      imageHash: input.imageHash,
+      imageBase64: input.imageBase64,
+      deviceId: input.deviceId,
+      includeAnalysis: true,
+    }),
+  });
+
+  const payload = (await response.json().catch(() => null)) as AnalyzeLabelResponse | null;
+  if (!response.ok) {
+    const message = payload?.message ?? `Analysis request failed (${response.status})`;
+    throw new Error(message);
+  }
+
+  if (!payload?.status) {
+    throw new Error('Invalid analysis response');
+  }
+
+  return payload;
 }

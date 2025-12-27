@@ -33,7 +33,7 @@ export interface ParsedIngredient {
 }
 
 export interface ValidationIssue {
-    type: 'unit_invalid' | 'value_anomaly' | 'missing_serving_size' | 'header_not_found' | 'low_coverage';
+    type: 'unit_invalid' | 'value_anomaly' | 'missing_serving_size' | 'header_not_found' | 'low_coverage' | 'incomplete_ingredients';
     message: string;
 }
 
@@ -43,6 +43,27 @@ export interface LabelDraft {
     parseCoverage: number;
     confidenceScore: number;
     issues: ValidationIssue[];
+}
+
+export interface DraftSummary {
+    ingredientsCount: number;
+    parseCoverage: number;
+    confidenceScore: number;
+    issues: ValidationIssue[];
+}
+
+export interface LabelAnalysisDiagnostics {
+    heuristics: {
+        tableLikely: boolean;
+        textLikely: boolean;
+        hasMedicinalSection: boolean;
+        hasEachContainsAnchor: boolean;
+        chosenPipeline: 'table' | 'text' | 'merge';
+    };
+    drafts: {
+        table: DraftSummary;
+        text: DraftSummary;
+    };
 }
 
 // ============================================================================
@@ -88,6 +109,9 @@ const SANITY_LIMITS: Record<string, { maxAmount: number; units: string[] }> = {
     'calcium': { maxAmount: 2000, units: ['mg'] },
     'zinc': { maxAmount: 100, units: ['mg'] },
 };
+
+const MIN_EXPECTED_MEDICINAL_CANDIDATES = 4;
+const MIN_PARSED_VALID_FOR_COMPLETENESS = 3;
 
 // ============================================================================
 // ROW/COLUMN INFERENCE
@@ -200,25 +224,57 @@ function createCell(tokens: Token[]): Cell {
 // INGREDIENT EXTRACTION
 // ============================================================================
 
-/**
- * Extract structured ingredients from rows
- */
-export function extractIngredients(rows: Row[]): LabelDraft {
-    const issues: ValidationIssue[] = [];
-    const ingredients: ParsedIngredient[] = [];
-    let servingSize: string | null = null;
+function averageTokenConfidence(tokens: Token[]): number {
+    if (!tokens.length) return 0.6;
+    const sum = tokens.reduce((total, token) => total + (token.confidence ?? 0), 0);
+    return sum / tokens.length;
+}
 
-    // Find header row and serving size
+function hasAmountCandidate(text: string): boolean {
+    const amountMatch = findAmountUnit(text);
+    return Boolean(amountMatch && amountMatch.unit !== '%');
+}
+
+function looksLikeIngredientName(text: string): boolean {
+    if (!text) return false;
+    if (isNonIngredientRow(text)) return false;
+    if (hasAmountCandidate(text)) return false;
+    const normalized = normalizeForMatch(text);
+    const letters = normalized.replace(/[^a-z]/g, '');
+    return letters.length >= 3;
+}
+
+function buildMergedIngredient(nameRow: Row, amountRow: Row): ParsedIngredient | null {
+    const nameRaw = nameRow.tokens.map((t) => t.text).join(' ').trim();
+    const amountRaw = amountRow.tokens.map((t) => t.text).join(' ').trim();
+    if (!nameRaw || !amountRaw) return null;
+    const amountMatch = findAmountUnit(amountRaw);
+    if (!amountMatch || amountMatch.unit === '%') return null;
+
+    let cleanedName = nameRaw.replace(/[†*‡§]/g, '').trim();
+    cleanedName = stripHeaderPrefixes(cleanedName);
+    if (cleanedName.length < 2) return null;
+
+    const dvPercent = amountRaw.includes('%')
+        ? (parseDvPercentFromTextLine(amountRaw) ?? parseDvPercentLoose(amountRaw))
+        : null;
+    const confidence = averageTokenConfidence([...nameRow.tokens, ...amountRow.tokens]);
+
+    return {
+        name: cleanedName,
+        amount: amountMatch.amount,
+        unit: amountMatch.unit,
+        dvPercent,
+        confidence,
+        rawLine: `${nameRaw} ${amountRaw}`.trim(),
+    };
+}
+
+function findHeaderRowIndex(rows: Row[]): number {
     let headerRowIndex = -1;
     for (let i = 0; i < rows.length; i++) {
         const rowText = rows[i].tokens.map((t) => t.text).join(' ').toLowerCase();
 
-        // Check for serving size
-        if (SERVING_SIZE_PATTERNS.some((p) => p.test(rowText))) {
-            servingSize = rows[i].tokens.map((t) => t.text).join(' ');
-        }
-
-        // P1: Stricter header detection to avoid footnotes (must have multiple cells and mix of keywords)
         const cells = inferTableColumns(rows[i]);
         const hasAmountLike = rowText.includes('amount') || rowText.includes('per serving');
         const hasDvLike = rowText.includes('%dv') || rowText.includes('daily value') || rowText.includes('dv');
@@ -226,10 +282,51 @@ export function extractIngredients(rows: Row[]): LabelDraft {
         if (headerRowIndex < 0 && cells.length >= 2 && hasDvLike && hasAmountLike) {
             headerRowIndex = i;
         } else if (headerRowIndex < 0 && HEADER_KEYWORDS.some((kw) => rowText.includes(kw)) && cells.length >= 3) {
-            // Fallback: if 3+ columns and keyword match, likely a header
             headerRowIndex = i;
         }
     }
+    return headerRowIndex;
+}
+
+function determineTableStartRow(rows: Row[], headerRowIndex: number): number {
+    let startRow = headerRowIndex >= 0 ? headerRowIndex + 1 : 0;
+    if (headerRowIndex < 0) {
+        const firstAmountRowIndex = rows.findIndex((row) => {
+            const rowText = row.tokens.map((t) => t.text).join(' ');
+            return !isNonIngredientRow(rowText) && hasAmountCandidate(rowText);
+        });
+        if (firstAmountRowIndex >= 0) {
+            startRow = firstAmountRowIndex;
+            if (firstAmountRowIndex > 0) {
+                const prevText = rows[firstAmountRowIndex - 1].tokens.map((t) => t.text).join(' ');
+                if (looksLikeIngredientName(prevText)) {
+                    startRow = firstAmountRowIndex - 1;
+                }
+            }
+        }
+    }
+    return startRow;
+}
+
+/**
+ * Extract structured ingredients from rows
+ */
+export function extractIngredients(rows: Row[]): LabelDraft {
+    const issues: ValidationIssue[] = [];
+    const ingredients: ParsedIngredient[] = [];
+    let servingSize: string | null = null;
+    let seenAnchorLanguage: 'en' | 'fr' | null = null;
+
+    // Find serving size
+    for (let i = 0; i < rows.length; i++) {
+        const rowText = rows[i].tokens.map((t) => t.text).join(' ').toLowerCase();
+
+        // Check for serving size
+        if (SERVING_SIZE_PATTERNS.some((p) => p.test(rowText))) {
+            servingSize = rows[i].tokens.map((t) => t.text).join(' ');
+        }
+    }
+    const headerRowIndex = findHeaderRowIndex(rows);
 
     if (!servingSize) {
         const pseudoLines = rows.map((row, index) => {
@@ -248,27 +345,58 @@ export function extractIngredients(rows: Row[]): LabelDraft {
         issues.push({ type: 'missing_serving_size', message: 'Serving size not found' });
     }
 
-    // Process rows after header (or from start if no header)
-    const startRow = headerRowIndex >= 0 ? headerRowIndex + 1 : 0;
+    // Process rows after header (or first amount line if no header)
+    const startRow = determineTableStartRow(rows, headerRowIndex);
     let parsedWithAmountUnit = 0;
     let ingredientLikeRows = 0;
 
     for (let i = startRow; i < rows.length; i++) {
-        const cells = inferTableColumns(rows[i]);
         const rowText = rows[i].tokens.map((t) => t.text).join(' ');
+        const normalizedRow = normalizeForMatch(rowText);
+        const anchorLanguage = detectAnchorLanguage(normalizedRow);
 
         // Skip if row looks like header/footer
         if (isNonIngredientRow(rowText)) continue;
 
-        ingredientLikeRows++;
-
-        const parsed = parseRowToIngredient(cells, rowText);
-        if (parsed) {
-            ingredients.push(parsed);
-            if (parsed.amount !== null && parsed.unit !== null) {
-                parsedWithAmountUnit++;
+        if (anchorLanguage) {
+            if (!seenAnchorLanguage) {
+                seenAnchorLanguage = anchorLanguage;
+            } else if (seenAnchorLanguage !== anchorLanguage && ingredients.length >= 2) {
+                break;
+            }
+            if (!hasAmountCandidate(rowText)) {
+                continue;
             }
         }
+
+        const hasAmount = hasAmountCandidate(rowText);
+
+        if (!hasAmount && headerRowIndex < 0 && i + 1 < rows.length) {
+            const nextRowText = rows[i + 1].tokens.map((t) => t.text).join(' ');
+            if (!isNonIngredientRow(nextRowText) && looksLikeIngredientName(rowText) && hasAmountCandidate(nextRowText)) {
+                const merged = buildMergedIngredient(rows[i], rows[i + 1]);
+                if (merged) {
+                    ingredients.push(merged);
+                    ingredientLikeRows++;
+                    parsedWithAmountUnit++;
+                    i += 1;
+                    continue;
+                }
+            }
+        }
+
+        if (!hasAmount) {
+            continue;
+        }
+
+        ingredientLikeRows++;
+
+        const cells = inferTableColumns(rows[i]);
+        const parsed = parseRowToIngredient(cells, rowText);
+        if (!parsed) continue;
+        if (parsed.amount === null || parsed.unit === null) continue;
+        ingredients.push(parsed);
+        parsedWithAmountUnit++;
     }
 
     // Calculate coverage
@@ -281,7 +409,8 @@ export function extractIngredients(rows: Row[]): LabelDraft {
         });
     }
 
-    if (headerRowIndex < 0 && ingredients.length > 0) {
+    const fullCoverage = parseCoverage >= 0.99 && parsedWithAmountUnit > 0;
+    if (headerRowIndex < 0 && ingredients.length > 0 && !fullCoverage) {
         issues.push({ type: 'header_not_found', message: 'Table header not detected, column mapping may be inaccurate' });
     }
 
@@ -306,6 +435,14 @@ export function extractIngredients(rows: Row[]): LabelDraft {
 function isNonIngredientRow(text: string): boolean {
     const lower = text.toLowerCase();
     const skipPatterns = [
+        /^supplement facts\b/i,
+        /^nutrition facts\b/i,
+        /^product facts\b/i,
+        /^serving\s*size\b/i,
+        /^servings?\s+per\b/i,
+        /^amount\s+per\s+serving\b/i,
+        /^%?\s*daily\s+value\b/i,
+        /^%?\s*valeur\s+quotidienne\b/i,
         /^other\s*ingredients/i,
         /^autres?\s*ingr[eé]dients/i,
         /^daily\s*value/i,
@@ -330,6 +467,83 @@ function isNonIngredientRow(text: string): boolean {
     return skipPatterns.some((p) => p.test(lower));
 }
 
+const CONTAINS_ANCHOR_PREFIX = /^(?:each|in each|per|dans\s+chaque|par|chaque)\b.*?(?:contains?|contient|renferme)\s*[:\-–—]?\s*/i;
+const CONTAINS_ANCHOR_UNIT_PREFIX = /^(?:each|in each|per|dans\s+chaque|par|chaque)\b\s+(?:capsules?|softgels?|tablets?|gummies?|caplets?|drops?|scoops?|packets?|sticks?|ml|gelules?|g[ée]lules?|comprim[ée]s?)\s*[:\-–—]?\s*/i;
+
+const NAME_PREFIX_PATTERNS: RegExp[] = [
+    /^(?:amount\s+per\s+serving|per\s+serving(?:\s+value)?|%?\s*daily\s+value|daily\s+value|serving\s+size|supplement facts|nutrition facts|product facts)\b[:\-–—]*\s*/i,
+    /^(?:valeur\s+quotidienne|par\s+portion|portion)\b[:\-–—]*\s*/i,
+];
+
+const HEADER_ONLY_NAMES = new Set([
+    'per serving',
+    'per serving value',
+    'amount',
+    'amount per serving',
+    'daily value',
+    '% daily value',
+    '% dv',
+    'dv',
+    'value',
+    'valeur quotidienne',
+    '% valeur quotidienne',
+    '% vq',
+    'vq',
+]);
+
+function stripHeaderPrefixes(name: string): string {
+    let cleaned = name.trim();
+    let changed = true;
+    while (changed) {
+        changed = false;
+        for (const pattern of NAME_PREFIX_PATTERNS) {
+            if (!pattern.test(cleaned)) continue;
+            const stripped = cleaned.replace(pattern, '').trim();
+            if (stripped !== cleaned) {
+                cleaned = stripped;
+                changed = true;
+            }
+        }
+    }
+    return cleaned;
+}
+
+function normalizeHeaderName(value: string): string {
+    return normalizeForMatch(value)
+        .replace(/[^a-z%]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function isHeaderOnlyName(value: string): boolean {
+    const normalized = normalizeHeaderName(value);
+    if (!normalized) return true;
+    return HEADER_ONLY_NAMES.has(normalized);
+}
+
+function inferNameFromAmountText(value: string): string | null {
+    if (!value) return null;
+    const amountMatch = findAmountUnit(value);
+    if (!amountMatch) return null;
+    let candidate = value.replace(amountMatch.raw, ' ');
+    candidate = candidate.replace(/\b\d{1,3}\s*%/g, ' ');
+    candidate = candidate.replace(/\b\d{1,3}\b\s*$/g, ' ');
+    candidate = candidate.replace(/[†*‡§]/g, ' ');
+    candidate = stripContainsAnchorPrefix(candidate);
+    candidate = stripHeaderPrefixes(candidate);
+    candidate = candidate.replace(/\s{2,}/g, ' ').trim();
+    if (!candidate || candidate.length < 2) return null;
+    if (isHeaderOnlyName(candidate)) return null;
+    return candidate;
+}
+
+function stripContainsAnchorPrefix(name: string): string {
+    return name
+        .replace(CONTAINS_ANCHOR_PREFIX, '')
+        .replace(CONTAINS_ANCHOR_UNIT_PREFIX, '')
+        .trim();
+}
+
 function parseRowToIngredient(cells: Cell[], rawLine: string): ParsedIngredient | null {
     if (cells.length === 0) return null;
 
@@ -342,7 +556,7 @@ function parseRowToIngredient(cells: Cell[], rawLine: string): ParsedIngredient 
         // 3+ columns: name | amount+unit | %DV
         name = cells[0].text;
         amountText = cells[1].text;
-        dvPercent = parseDvPercent(cells[2].text);
+        dvPercent = cells[2].text.includes('%') ? parseDvPercent(cells[2].text) : null;
         avgConfidence = cells.reduce((s, c) => s + c.confidence, 0) / cells.length;
     } else if (cells.length === 2) {
         // 2 columns: name | amount+unit (or name | %DV)
@@ -370,9 +584,40 @@ function parseRowToIngredient(cells: Cell[], rawLine: string): ParsedIngredient 
         avgConfidence = cells[0].confidence;
     }
 
+    if (cells.length >= 3) {
+        const strippedName = stripHeaderPrefixes(name);
+        const nameHeaderOnly = !strippedName || isHeaderOnlyName(strippedName);
+        if (nameHeaderOnly) {
+            const secondText = cells[1].text;
+            const thirdText = cells[2].text;
+            const secondLooksName = looksLikeIngredientName(secondText);
+            const secondHasAmount = hasAmountCandidate(secondText);
+            const thirdHasAmount = hasAmountCandidate(thirdText);
+            if (secondLooksName && !secondHasAmount && thirdHasAmount) {
+                name = secondText;
+                amountText = thirdText;
+                if (cells[3] && cells[3].text.includes('%')) {
+                    dvPercent = parseDvPercent(cells[3].text);
+                } else {
+                    dvPercent = null;
+                }
+                const usedCells = cells[3] ? [cells[1], cells[2], cells[3]] : [cells[1], cells[2]];
+                avgConfidence = usedCells.reduce((sum, cell) => sum + cell.confidence, 0) / usedCells.length;
+            }
+        }
+    }
+
     // Clean up name
     name = name.replace(/[†*‡§]/g, '').trim();
-    if (!name || name.length < 2) return null;
+    name = stripContainsAnchorPrefix(name);
+    name = stripHeaderPrefixes(name);
+    if (!name || name.length < 2 || isHeaderOnlyName(name)) {
+        const inferred = inferNameFromAmountText(amountText) ?? inferNameFromAmountText(rawLine);
+        if (inferred) {
+            name = inferred;
+        }
+    }
+    if (!name || name.length < 2 || isHeaderOnlyName(name)) return null;
 
     const { amount, unit } = parseAmountAndUnit(amountText);
 
@@ -548,6 +793,12 @@ function parseDvPercentFromTextLine(text: string): number | null {
     return null;
 }
 
+function parseDvPercentLoose(text: string): number | null {
+    const matches = Array.from(text.matchAll(/(\d{1,3})\s*%/g));
+    if (!matches.length) return null;
+    return parseInt(matches[matches.length - 1][1], 10);
+}
+
 // ============================================================================
 // TEXT PIPELINE (SECTION + LINE EXTRACTION)
 // ============================================================================
@@ -561,11 +812,29 @@ interface TextLine {
     yCenter: number;
 }
 
+const MEDICINAL_HEADER_EN_PATTERNS: RegExp[] = [
+    /medicinal ingredients?/i,
+];
+
+const MEDICINAL_HEADER_FR_PATTERNS: RegExp[] = [
+    /ingredients? medicinaux/i,
+];
+
+const EACH_CONTAINS_EN_PATTERNS: RegExp[] = [
+    /\b(each|in each)\s+(?:capsule|capsules|caplet|caplets|tablet|tablets|softgel|softgels|gummy|gummies|drops?)\b(?:\s+(?:contains?|contain))?\b/i,
+];
+
+const EACH_CONTAINS_FR_PATTERNS: RegExp[] = [
+    /\b(dans\s+chaque|chaque)\s+(?:gelule|gelules|capsule|capsules|comprime|comprimes|caplet|caplets|tablette|tablettes|softgel|softgels|gummy|gummies|gouttes?)\b(?:\s+(?:contient|renferme))?\b/i,
+];
+
+const MEDICINAL_HEADER_PATTERNS: RegExp[] = [...MEDICINAL_HEADER_EN_PATTERNS, ...MEDICINAL_HEADER_FR_PATTERNS];
+const EACH_CONTAINS_PATTERNS: RegExp[] = [...EACH_CONTAINS_EN_PATTERNS, ...EACH_CONTAINS_FR_PATTERNS];
+
+const MEDICINAL_ANCHOR_PATTERNS: RegExp[] = [...MEDICINAL_HEADER_PATTERNS, ...EACH_CONTAINS_PATTERNS];
+
 const TEXT_SECTION_PATTERNS: Record<SectionKey, RegExp[]> = {
-    medicinal: [
-        /medicinal ingredients?/i,
-        /ingredients? medicinaux/i,
-    ],
+    medicinal: MEDICINAL_ANCHOR_PATTERNS,
     nonMedicinal: [
         /non[-\s]?medicinal ingredients?/i,
         /ingredients? non[-\s]?medicinaux/i,
@@ -608,6 +877,47 @@ const TEXT_NOISE_PATTERNS: RegExp[] = [
     /\bstore\b/i,
     /\bsealed\b/i,
     /\bdo not use\b/i,
+    /\buses?\b/i,
+    /\busages?\b/i,
+    /\butilisation\b/i,
+    /\bindications?\b/i,
+    /\bdirections?\b/i,
+    /\bsuggested use\b/i,
+    /\bmode d['’]?emploi\b/i,
+    /\bposologie\b/i,
+];
+
+const TEXT_STOP_PATTERNS: RegExp[] = [
+    /\buses?\b/i,
+    /\busages?\b/i,
+    /\butilisation\b/i,
+    /\bindications?\b/i,
+    /directions?/i,
+    /suggested use/i,
+    /mode d['’]?emploi/i,
+    /posologie/i,
+    /warnings?/i,
+    /cautions?/i,
+    /keep out of reach/i,
+    /mise en garde/i,
+    /avertissement/i,
+    /other ingredients?/i,
+    /non[-\s]?medicinal ingredients?/i,
+    /ingredients? non[-\s]?medicinaux/i,
+    /store\b/i,
+    /conserver/i,
+    /\bnpn\b/i,
+    /\bdin\b/i,
+    /\blot\b/i,
+    /\bexp\b/i,
+    /\bexpiry\b/i,
+    /\bbest before\b/i,
+    /\bmeilleur avant\b/i,
+    /\b\d{3}[-\s]?\d{3}[-\s]?\d{4}\b/,
+    /\b(?:www\.)?\w+\.(com|ca|net|org)\b/i,
+    /\btrademark\b/i,
+    /\bregistered\b/i,
+    /\btm\b/i,
 ];
 
 const TEXT_DIRECTION_WORDS = new Set([
@@ -667,9 +977,39 @@ function normalizeForMatch(value: string): string {
         .toLowerCase();
 }
 
+function isEachContainsLine(normalized: string): boolean {
+    return EACH_CONTAINS_PATTERNS.some((pattern) => pattern.test(normalized));
+}
+
+function isEachContainsEnglish(normalized: string): boolean {
+    return EACH_CONTAINS_EN_PATTERNS.some((pattern) => pattern.test(normalized));
+}
+
+function isEachContainsFrench(normalized: string): boolean {
+    return EACH_CONTAINS_FR_PATTERNS.some((pattern) => pattern.test(normalized));
+}
+
+function detectAnchorLanguage(normalized: string): 'en' | 'fr' | null {
+    if (isEachContainsEnglish(normalized)) return 'en';
+    if (isEachContainsFrench(normalized)) return 'fr';
+    return null;
+}
+
+function isMedicinalHeaderLine(normalized: string): boolean {
+    return MEDICINAL_HEADER_PATTERNS.some((pattern) => pattern.test(normalized));
+}
+
+function isMedicinalHeaderEnglish(normalized: string): boolean {
+    return MEDICINAL_HEADER_EN_PATTERNS.some((pattern) => pattern.test(normalized));
+}
+
+function isMedicinalHeaderFrench(normalized: string): boolean {
+    return MEDICINAL_HEADER_FR_PATTERNS.some((pattern) => pattern.test(normalized));
+}
+
 function buildTextLines(tokens: Token[], fullText?: string, rows?: Row[]): TextLine[] {
-    if (shouldPreferFullText(tokens, fullText)) {
-        return (fullText ?? '')
+    if (fullText && fullText.trim().length > 0) {
+        return fullText
             .split(/\r?\n/)
             .map((raw, index) => ({
                 raw,
@@ -693,23 +1033,11 @@ function buildTextLines(tokens: Token[], fullText?: string, rows?: Row[]): TextL
         });
     }
 
-    if (fullText) {
-        return fullText
-            .split(/\r?\n/)
-            .map((raw, index) => ({
-                raw,
-                normalized: normalizeForMatch(raw),
-                tokens: [],
-                yCenter: index,
-            }))
-            .filter((line) => line.raw.trim().length > 0);
-    }
-
     return [];
 }
 
 function detectSections(lines: TextLine[]): { sections: Partial<Record<SectionKey, TextLine[]>>; hasMedicinal: boolean } {
-    const headerHits: { key: SectionKey; index: number }[] = [];
+    const headerHits: { key: SectionKey; index: number; includeHeaderLine?: boolean }[] = [];
     const firstHit: Partial<Record<SectionKey, number>> = {};
 
     lines.forEach((line, index) => {
@@ -723,7 +1051,8 @@ function detectSections(lines: TextLine[]): { sections: Partial<Record<SectionKe
             }
             if (matches) {
                 firstHit[key] = index;
-                headerHits.push({ key, index });
+                const includeHeaderLine = key === 'medicinal' && isEachContainsLine(line.normalized);
+                headerHits.push({ key, index, includeHeaderLine });
             }
         });
     });
@@ -733,7 +1062,7 @@ function detectSections(lines: TextLine[]): { sections: Partial<Record<SectionKe
 
     headerHits.forEach((hit, idx) => {
         const nextIndex = headerHits[idx + 1]?.index ?? lines.length;
-        const start = hit.index + 1;
+        const start = hit.index + (hit.includeHeaderLine ? 0 : 1);
         if (start >= nextIndex) return;
         sections[hit.key] = lines.slice(start, nextIndex);
     });
@@ -760,10 +1089,41 @@ function mergeSplitLines(lines: TextLine[]): TextLine[] {
         const nextStartsWithAmount = next ? /^\s*\d/.test(next.raw) : false;
         const currentIsHeader = (Object.keys(TEXT_SECTION_PATTERNS) as SectionKey[])
             .some((key) => TEXT_SECTION_PATTERNS[key].some((pattern) => pattern.test(current.normalized)));
+        const currentHasStop = findStopIndex(current.raw) !== null;
+        const nextHasStop = next ? findStopIndex(next.raw) !== null : false;
         const currentIsShort = current.raw.trim().length <= 40;
+        const currentIsAmountOnly = currentHasAmount && isAmountOnlyLine(current.raw);
+        const nextLooksLikeName = next ? isLikelyIngredientNameLine(next) : false;
 
-        if (!currentHasAmount && next && nextHasAmount && !currentIsHeader && (currentEndsWithJoin || nextStartsWithAmount || currentIsShort)) {
+        if (
+            !currentHasAmount
+            && next
+            && nextHasAmount
+            && !currentIsHeader
+            && !currentHasStop
+            && !nextHasStop
+            && (currentEndsWithJoin || nextStartsWithAmount || currentIsShort)
+        ) {
             const raw = `${current.raw} ${next.raw}`.trim();
+            merged.push({
+                raw,
+                normalized: normalizeForMatch(raw),
+                tokens: [...(current.tokens ?? []), ...(next?.tokens ?? [])],
+                yCenter: current.yCenter,
+            });
+            i += 1;
+            continue;
+        }
+
+        if (
+            currentIsAmountOnly
+            && next
+            && nextLooksLikeName
+            && !currentIsHeader
+            && !currentHasStop
+            && !nextHasStop
+        ) {
+            const raw = `${next.raw} ${current.raw}`.trim();
             merged.push({
                 raw,
                 normalized: normalizeForMatch(raw),
@@ -785,18 +1145,139 @@ function isNoiseLine(normalized: string): boolean {
     return TEXT_NOISE_PATTERNS.some((pattern) => pattern.test(normalized));
 }
 
+function isAmountOnlyLine(text: string): boolean {
+    const cleaned = text.trim();
+    if (!cleaned) return false;
+    const amountMatch = findAmountUnit(cleaned);
+    if (!amountMatch || amountMatch.unit === '%') return false;
+    const remainder = cleaned
+        .replace(amountMatch.raw, '')
+        .replace(/[()\s\-–—:]+/g, '')
+        .trim();
+    return remainder.length === 0;
+}
+
+function isLikelyIngredientNameLine(line: TextLine): boolean {
+    if (!line.raw.trim()) return false;
+    if (isNoiseLine(line.normalized)) return false;
+    const amountMatch = findAmountUnit(line.raw);
+    if (amountMatch && amountMatch.unit !== '%') return false;
+    const letters = line.normalized.replace(/[^a-z]/g, '');
+    return letters.length >= 3;
+}
+
+function findStopIndex(text: string): number | null {
+    let earliest: number | null = null;
+    for (const pattern of TEXT_STOP_PATTERNS) {
+        const index = text.search(pattern);
+        if (index >= 0 && (earliest === null || index < earliest)) {
+            earliest = index;
+        }
+    }
+    return earliest;
+}
+
+function trimLineAtStopPattern(line: TextLine): TextLine | null {
+    const stopIndex = findStopIndex(line.raw);
+    if (stopIndex === null) return line;
+    const trimmedRaw = line.raw.slice(0, stopIndex).trim();
+    if (!trimmedRaw) return null;
+    return {
+        ...line,
+        raw: trimmedRaw,
+        normalized: normalizeForMatch(trimmedRaw),
+    };
+}
+
+type AnchorType = 'medicinalHeader' | 'eachContains';
+
+function collectAnchorIndices(lines: TextLine[]): { index: number; type: AnchorType }[] {
+    const anchors: { index: number; type: AnchorType }[] = [];
+    lines.forEach((line, index) => {
+        if (isMedicinalHeaderLine(line.normalized)) {
+            anchors.push({ index, type: 'medicinalHeader' });
+        }
+        if (isEachContainsLine(line.normalized)) {
+            anchors.push({ index, type: 'eachContains' });
+        }
+    });
+    anchors.sort((a, b) => a.index - b.index);
+    return anchors;
+}
+
+function sliceLinesForIngredients(lines: TextLine[]): TextLine[] {
+    if (lines.length === 0) return [];
+
+    const anchors = collectAnchorIndices(lines);
+    const medicinalAnchors = anchors.filter((anchor) => anchor.type === 'medicinalHeader');
+    const eachAnchors = anchors.filter((anchor) => anchor.type === 'eachContains');
+
+    let startIndex = 0;
+    let endIndex = lines.length;
+
+    if (medicinalAnchors.length > 0) {
+        const primary = medicinalAnchors[0];
+        startIndex = primary.index;
+        const translation = medicinalAnchors.find((anchor) => anchor.index > primary.index);
+        if (translation) {
+            endIndex = translation.index;
+        } else {
+            const primaryLine = lines[primary.index]?.normalized ?? '';
+            const primaryIsEnglish = isMedicinalHeaderEnglish(primaryLine);
+            const primaryIsFrench = isMedicinalHeaderFrench(primaryLine);
+            if (primaryIsEnglish || primaryIsFrench) {
+                const oppositeEachAnchor = anchors.find((anchor) => {
+                    if (anchor.index <= primary.index || anchor.type !== 'eachContains') return false;
+                    const anchorLine = lines[anchor.index]?.normalized ?? '';
+                    return primaryIsEnglish ? isEachContainsFrench(anchorLine) : isEachContainsEnglish(anchorLine);
+                });
+                if (oppositeEachAnchor) {
+                    endIndex = oppositeEachAnchor.index;
+                }
+            }
+        }
+    } else if (eachAnchors.length > 0) {
+        const primary = eachAnchors[0];
+        startIndex = primary.index;
+        const translation = anchors.find((anchor) => anchor.index > primary.index);
+        if (translation) {
+            endIndex = translation.index;
+        }
+    }
+
+    for (let i = startIndex; i < endIndex; i++) {
+        const stopIndex = findStopIndex(lines[i].raw);
+        if (stopIndex !== null) {
+            const prefix = lines[i].raw.slice(0, stopIndex).trim();
+            endIndex = prefix ? i + 1 : i;
+            break;
+        }
+    }
+
+    return lines.slice(startIndex, endIndex);
+}
+
+function countCandidateAmountLines(lines: TextLine[]): number {
+    const targetLines = sliceLinesForIngredients(lines);
+    let count = 0;
+    for (const line of targetLines) {
+        const trimmed = trimLineAtStopPattern(line);
+        if (!trimmed || !trimmed.raw.trim()) continue;
+        if (isNoiseLine(trimmed.normalized)) continue;
+        const amount = findAmountUnit(trimmed.raw);
+        if (amount && amount.unit !== '%') {
+            count += 1;
+        }
+    }
+    return count;
+}
+
 function normalizeIngredientName(name: string): string {
     return normalizeForMatch(name)
         .replace(/[^a-z0-9]+/g, ' ')
         .trim();
 }
 
-function shouldPreferFullText(tokens: Token[], fullText?: string): boolean {
-    if (!fullText || fullText.trim().length < 30) return false;
-    if (tokens.length < 20) return true;
-    const avgConfidence = tokens.reduce((sum, token) => sum + (token.confidence ?? 0), 0) / tokens.length;
-    return avgConfidence < 0.55;
-}
 
 function stripDescriptors(name: string): string {
     const withoutParens = name.replace(/\([^)]*\)/g, ' ');
@@ -876,12 +1357,15 @@ function parseTextLineToIngredient(line: TextLine, context?: { isMedicinal: bool
 
     name = name
         .replace(/[†*‡§]/g, '')
-        .replace(/^(?:each|in each|per|dans\s+chaque|par|chaque)\b.*?(?:contains|contient)\s*[:\-–—]?\s*/i, '')
-        .replace(/^(?:each|in each|per|dans\s+chaque|par|chaque)\b\s+(?:capsules?|softgels?|tablets?|gummies?|caplets?|drops?|scoops?|packets?|sticks?|ml|gelules?|g[ée]lules?|comprim[ée]s?)\s*[:\-–—]?\s*/i, '')
+        .replace(CONTAINS_ANCHOR_PREFIX, '')
+        .replace(CONTAINS_ANCHOR_UNIT_PREFIX, '')
         .replace(/[:\-–—]+$/g, '')
         .replace(/^[:\-–—]+/g, '')
         .replace(/\s{2,}/g, ' ')
         .trim();
+
+    name = stripContainsAnchorPrefix(name);
+    name = stripHeaderPrefixes(name);
 
     if (!name || name.length < 2) return null;
 
@@ -932,13 +1416,15 @@ export function extractTextIngredients(
     const ingredients: ParsedIngredient[] = [];
 
     const lines = context?.lines ?? buildTextLines(tokens, fullText);
+    const hasEachContainsAnchor = detectEachContainsAnchor(lines, fullText);
     const sectionInfo = context?.sections && context?.hasMedicinal !== undefined
         ? { sections: context.sections, hasMedicinal: context.hasMedicinal }
         : detectSections(lines);
-    const { sections, hasMedicinal } = sectionInfo;
-    const medicinalLines = sections.medicinal ?? [];
-    const isMedicinalContext = Boolean(hasMedicinal && medicinalLines.length > 0);
-    const targetLines = isMedicinalContext ? medicinalLines : lines;
+    const { hasMedicinal } = sectionInfo;
+    const hasTableSignal = detectTableFeatures(lines, fullText);
+    const hasMedicinalSection = hasMedicinal || hasEachContainsAnchor;
+    const isMedicinalContext = hasMedicinalSection;
+    const targetLines = sliceLinesForIngredients(lines);
     const filteredLines = targetLines.filter((line) => line.raw.trim().length > 0);
     const mergedLines = mergeSplitLines(filteredLines);
 
@@ -951,16 +1437,17 @@ export function extractTextIngredients(
     let parsedWithAmountUnit = 0;
 
     for (const line of mergedLines) {
-        if (!line.raw.trim()) continue;
-        if (isNoiseLine(line.normalized)) continue;
+        const trimmedLine = trimLineAtStopPattern(line);
+        if (!trimmedLine || !trimmedLine.raw.trim()) continue;
+        if (isNoiseLine(trimmedLine.normalized)) continue;
 
-        const amountCandidate = findAmountUnit(line.raw);
+        const amountCandidate = findAmountUnit(trimmedLine.raw);
         const candidateHasAmount = Boolean(amountCandidate && amountCandidate.unit !== '%');
         if (candidateHasAmount) {
             ingredientLikeLines++;
         }
 
-        const parsed = parseTextLineToIngredient(line, { isMedicinal: isMedicinalContext });
+        const parsed = parseTextLineToIngredient(trimmedLine, { isMedicinal: isMedicinalContext });
         if (parsed) {
             ingredients.push(parsed);
             if (parsed.amount !== null && parsed.unit !== null) {
@@ -978,7 +1465,7 @@ export function extractTextIngredients(
         });
     }
 
-    if (!hasMedicinal && ingredients.length > 0) {
+    if (!hasMedicinalSection && ingredients.length > 0 && !hasTableSignal) {
         issues.push({ type: 'header_not_found', message: 'Medicinal ingredients section not detected' });
     }
 
@@ -1135,6 +1622,7 @@ function detectTableFeatures(lines: TextLine[], fullText?: string): boolean {
 function detectTextFeatures(lines: TextLine[], fullText?: string): boolean {
     const normalizedFull = fullText ? normalizeForMatch(fullText) : '';
     const strongKeywordHit = /medicinal ingredients|ingredients medicinaux|product facts/.test(normalizedFull);
+    const hasEachContainsAnchor = detectEachContainsAnchor(lines, fullText);
     const sectionHits = new Set<SectionKey>();
     lines.forEach((line) => {
         (Object.keys(TEXT_SECTION_PATTERNS) as SectionKey[]).forEach((key) => {
@@ -1148,14 +1636,98 @@ function detectTextFeatures(lines: TextLine[], fullText?: string): boolean {
         });
     });
 
+    if (hasEachContainsAnchor) return true;
     if (sectionHits.has('medicinal')) return true;
     if (strongKeywordHit) return true;
     return sectionHits.size >= 2;
 }
 
-export function analyzeLabelDraft(tokens: Token[], fullText?: string): LabelDraft {
+function detectEachContainsAnchor(lines: TextLine[], fullText?: string): boolean {
+    const normalizedFull = fullText ? normalizeForMatch(fullText) : '';
+    if (EACH_CONTAINS_PATTERNS.some((pattern) => pattern.test(normalizedFull))) {
+        return true;
+    }
+
+    return lines.some((line) => EACH_CONTAINS_PATTERNS.some((pattern) => pattern.test(line.normalized)));
+}
+
+function summarizeDraft(draft: LabelDraft): DraftSummary {
+    return {
+        ingredientsCount: draft.ingredients.length,
+        parseCoverage: draft.parseCoverage,
+        confidenceScore: draft.confidenceScore,
+        issues: draft.issues,
+    };
+}
+
+function scoreDraft(draft: LabelDraft): { score: number; valid: number; junkRatio: number; penalty: number } {
+    const valid = draft.ingredients.filter((ing) => ing.amount !== null && ing.unit !== null).length;
+    const dvOnly = draft.ingredients.filter((ing) => ing.amount === null && ing.dvPercent !== null).length;
+    const junk = Math.max(0, draft.ingredients.length - valid - dvOnly);
+    const junkRatio = draft.ingredients.length > 0 ? junk / draft.ingredients.length : 1;
+    const issuePenalty = draft.issues.reduce((total, issue) => {
+        switch (issue.type) {
+            case 'low_coverage':
+                return total + 2;
+            case 'header_not_found':
+                return total + 1;
+            case 'missing_serving_size':
+                return total + 0.5;
+            case 'unit_invalid':
+            case 'value_anomaly':
+            case 'incomplete_ingredients':
+                return total + 1;
+            default:
+                return total + 0.5;
+        }
+    }, 0);
+    const score = valid * 2 + draft.parseCoverage * 3 - issuePenalty;
+
+    return {
+        score,
+        valid,
+        junkRatio,
+        penalty: issuePenalty,
+    };
+}
+
+function computeTableRowMetrics(rows: Row[], headerRowIndex: number): { candidateRows: number; amountRows: number; junkRatio: number } {
+    const startRow = determineTableStartRow(rows, headerRowIndex);
+    let candidateRows = 0;
+    let amountRows = 0;
+
+    for (let i = startRow; i < rows.length; i++) {
+        const rowText = rows[i].tokens.map((t) => t.text).join(' ');
+        if (isNonIngredientRow(rowText)) continue;
+
+        const hasAmount = hasAmountCandidate(rowText);
+        if (!hasAmount && headerRowIndex < 0 && i + 1 < rows.length) {
+            const nextRowText = rows[i + 1].tokens.map((t) => t.text).join(' ');
+            if (!isNonIngredientRow(nextRowText) && looksLikeIngredientName(rowText) && hasAmountCandidate(nextRowText)) {
+                candidateRows++;
+                amountRows++;
+                i += 1;
+                continue;
+            }
+        }
+
+        candidateRows++;
+        if (hasAmount) {
+            amountRows++;
+        }
+    }
+
+    const junkRatio = candidateRows > 0 ? (candidateRows - amountRows) / candidateRows : 0;
+    return { candidateRows, amountRows, junkRatio };
+}
+
+export function analyzeLabelDraftWithDiagnostics(tokens: Token[], fullText?: string): {
+    draft: LabelDraft;
+    diagnostics: LabelAnalysisDiagnostics;
+} {
     const rows = inferTableRows(tokens);
     const textLines = buildTextLines(tokens, fullText, rows);
+    const headerRowIndex = findHeaderRowIndex(rows);
     const tableDraft = extractIngredients(rows);
     const sectionInfo = detectSections(textLines);
     const textDraft = extractTextIngredients(tokens, fullText, {
@@ -1166,15 +1738,110 @@ export function analyzeLabelDraft(tokens: Token[], fullText?: string): LabelDraf
 
     const tableLikely = detectTableFeatures(textLines, fullText);
     const textLikely = detectTextFeatures(textLines, fullText);
+    const hasEachContainsAnchor = detectEachContainsAnchor(textLines, fullText);
 
-    if (tableLikely && textLikely) {
-        return mergeDrafts(tableDraft, textDraft, sectionInfo.hasMedicinal);
+    const tableRowMetrics = computeTableRowMetrics(rows, headerRowIndex);
+    const tableJunkRatio = tableRowMetrics.junkRatio;
+    const tableScore = scoreDraft(tableDraft);
+    const textScore = scoreDraft(textDraft);
+    const tableValidCount = tableScore.valid;
+    const textValidCount = textScore.valid;
+    const tableGood = tableValidCount > 0 && tableDraft.parseCoverage >= 0.35 && tableJunkRatio <= 0.3;
+    const textGood = textValidCount > 0 && textDraft.parseCoverage >= 0.35;
+    const tableBadHeader = tableDraft.parseCoverage < 0.4
+        && tableDraft.issues.some((issue) => issue.type === 'header_not_found');
+    const tableCoverageAdvantage = tableDraft.parseCoverage - textDraft.parseCoverage;
+    const tableWinsByQuality = tableValidCount >= textValidCount + 1 || tableCoverageAdvantage >= 0.2;
+    const tableStrong = tableValidCount >= textValidCount + 1
+        || tableCoverageAdvantage >= 0.2
+        || (textValidCount === 0 && tableDraft.parseCoverage >= 0.7);
+
+    let draft: LabelDraft;
+    let chosenPipeline: 'table' | 'text' | 'merge';
+
+    if (tableLikely) {
+        if (!textLikely) {
+            draft = tableDraft;
+            chosenPipeline = 'table';
+        } else if (tableBadHeader && textGood) {
+            draft = textDraft;
+            chosenPipeline = 'text';
+        } else if (tableWinsByQuality) {
+            if (textGood && tableGood) {
+                draft = mergeDrafts(tableDraft, textDraft, sectionInfo.hasMedicinal || hasEachContainsAnchor);
+                chosenPipeline = 'merge';
+            } else {
+                draft = tableDraft;
+                chosenPipeline = 'table';
+            }
+        } else if (textGood && tableGood) {
+            draft = mergeDrafts(tableDraft, textDraft, sectionInfo.hasMedicinal || hasEachContainsAnchor);
+            chosenPipeline = 'merge';
+        } else if (textGood) {
+            draft = textDraft;
+            chosenPipeline = 'text';
+        } else {
+            const tableWins = tableScore.score >= textScore.score;
+            draft = tableWins ? tableDraft : textDraft;
+            chosenPipeline = tableWins ? 'table' : 'text';
+        }
+    } else if (textLikely) {
+        if (tableStrong && !tableBadHeader) {
+            if (textGood && tableGood) {
+                draft = mergeDrafts(tableDraft, textDraft, sectionInfo.hasMedicinal || hasEachContainsAnchor);
+                chosenPipeline = 'merge';
+            } else {
+                draft = tableDraft;
+                chosenPipeline = 'table';
+            }
+        } else {
+            draft = textDraft;
+            chosenPipeline = 'text';
+        }
+    } else {
+        const tableWins = tableScore.score >= textScore.score;
+        draft = tableWins ? tableDraft : textDraft;
+        chosenPipeline = tableWins ? 'table' : 'text';
     }
 
-    if (tableLikely) return tableDraft;
-    if (textLikely) return textDraft;
+    const hasMedicinalSignals = sectionInfo.hasMedicinal || hasEachContainsAnchor;
+    const candidateAmountLineCount = countCandidateAmountLines(textLines);
+    const finalValidCount = draft.ingredients.filter((ing) => ing.amount !== null && ing.unit !== null).length;
+    if (
+        hasMedicinalSignals
+        && candidateAmountLineCount >= MIN_EXPECTED_MEDICINAL_CANDIDATES
+        && finalValidCount < MIN_PARSED_VALID_FOR_COMPLETENESS
+    ) {
+        const existing = draft.issues.some((issue) => issue.type === 'incomplete_ingredients');
+        if (!existing) {
+            draft.issues.push({
+                type: 'incomplete_ingredients',
+                message: `Only ${finalValidCount} ingredients extracted from medicinal section`,
+            });
+            draft.confidenceScore = calculateConfidenceScore(draft.ingredients, draft.parseCoverage, draft.issues);
+        }
+    }
 
-    return tableDraft.confidenceScore >= textDraft.confidenceScore ? tableDraft : textDraft;
+    return {
+        draft,
+        diagnostics: {
+            heuristics: {
+                tableLikely,
+                textLikely,
+                hasMedicinalSection: sectionInfo.hasMedicinal || hasEachContainsAnchor,
+                hasEachContainsAnchor,
+                chosenPipeline,
+            },
+            drafts: {
+                table: summarizeDraft(tableDraft),
+                text: summarizeDraft(textDraft),
+            },
+        },
+    };
+}
+
+export function analyzeLabelDraft(tokens: Token[], fullText?: string): LabelDraft {
+    return analyzeLabelDraftWithDiagnostics(tokens, fullText).draft;
 }
 
 // ============================================================================
@@ -1235,6 +1902,7 @@ function calculateConfidenceScore(
         missing_serving_size: 0.15,
         header_not_found: 0.1,
         low_coverage: 0.2,
+        incomplete_ingredients: 0.2,
         unit_invalid: 0.1,
         value_anomaly: 0.15,
     };
@@ -1243,6 +1911,7 @@ function calculateConfidenceScore(
         missing_serving_size: 0,
         header_not_found: 0,
         low_coverage: 0,
+        incomplete_ingredients: 0,
         unit_invalid: 0,
         value_anomaly: 0,
     };
@@ -1274,6 +1943,7 @@ export function needsConfirmation(draft: LabelDraft): boolean {
     if (draft.confidenceScore < 0.7) return true;
     if (draft.parseCoverage < 0.7) return true;
     if (draft.issues.some((i) => i.type === 'missing_serving_size')) return true;
+    if (draft.issues.some((i) => i.type === 'incomplete_ingredients')) return true;
     if (draft.issues.some((i) => i.type === 'unit_invalid')) return true;
     if (draft.issues.some((i) => i.type === 'value_anomaly')) return true;
     return false;

@@ -4,6 +4,7 @@
  */
 
 import { ImageAnnotatorClient, protos } from '@google-cloud/vision';
+import { performance } from 'node:perf_hooks';
 
 // ============================================================================
 // TYPES
@@ -30,10 +31,35 @@ export interface VisionOcrInput {
     imageUrl?: string;
 }
 
+export interface VisionOcrOptions {
+    debug?: boolean;
+    languageHints?: string[];
+}
+
+export interface VisionOcrDiagnostics {
+    timing: {
+        decodeMs: number;
+        preprocessMs: number;
+        visionMs: number;
+        visionClientInitMs: number;
+    };
+    image: {
+        inputBytes: number | null;
+        inputMime: string | null;
+        inputWidth: number | null;
+        inputHeight: number | null;
+        preprocessedBytes: number | null;
+        preprocessedWidth: number | null;
+        preprocessedHeight: number | null;
+    };
+    languageHints: string[];
+}
+
 export interface VisionOcrResult {
     tokens: Token[];
     fullText: string;
     rawResponse?: protos.google.cloud.vision.v1.IAnnotateImageResponse;
+    diagnostics?: VisionOcrDiagnostics;
 }
 
 // ============================================================================
@@ -42,16 +68,18 @@ export interface VisionOcrResult {
 
 const VISION_TIMEOUT_MS = Number(process.env.VISION_TIMEOUT_MS ?? 10000);
 const MAX_RETRIES = 1;
+const DEFAULT_LANGUAGE_HINTS = ['en', 'fr'];
 
 // Initialize Vision client using Service Account
 // Expects GOOGLE_APPLICATION_CREDENTIALS env var or GOOGLE_VISION_SA_JSON
 let visionClient: ImageAnnotatorClient | null = null;
 
-function getVisionClient(): ImageAnnotatorClient {
+function getVisionClient(): { client: ImageAnnotatorClient; initMs: number } {
     if (visionClient) {
-        return visionClient;
+        return { client: visionClient, initMs: 0 };
     }
 
+    const initStart = performance.now();
     const saJson = process.env.GOOGLE_VISION_SA_JSON;
     if (saJson) {
         try {
@@ -66,7 +94,57 @@ function getVisionClient(): ImageAnnotatorClient {
         visionClient = new ImageAnnotatorClient();
     }
 
-    return visionClient;
+    const initMs = performance.now() - initStart;
+    return { client: visionClient, initMs };
+}
+
+function resolveLanguageHints(overrides?: string[]): string[] {
+    if (overrides && overrides.length > 0) {
+        return overrides;
+    }
+    const envValue = process.env.OCR_LANGUAGE_HINTS;
+    if (envValue) {
+        const hints = envValue
+            .split(',')
+            .map((hint) => hint.trim())
+            .filter(Boolean);
+        if (hints.length > 0) {
+            return hints;
+        }
+    }
+    return DEFAULT_LANGUAGE_HINTS;
+}
+
+function extractMimeFromDataUrl(value: string): string | null {
+    const match = value.match(/^data:([^;]+);base64,/);
+    return match ? match[1].toLowerCase() : null;
+}
+
+function sniffImageMime(buffer: Buffer): string | null {
+    if (buffer.length >= 2 && buffer[0] === 0xff && buffer[1] === 0xd8) {
+        return 'image/jpeg';
+    }
+    if (
+        buffer.length >= 8
+        && buffer[0] === 0x89
+        && buffer[1] === 0x50
+        && buffer[2] === 0x4e
+        && buffer[3] === 0x47
+        && buffer[4] === 0x0d
+        && buffer[5] === 0x0a
+        && buffer[6] === 0x1a
+        && buffer[7] === 0x0a
+    ) {
+        return 'image/png';
+    }
+    if (
+        buffer.length >= 12
+        && buffer.toString('ascii', 0, 4) === 'RIFF'
+        && buffer.toString('ascii', 8, 12) === 'WEBP'
+    ) {
+        return 'image/webp';
+    }
+    return null;
 }
 
 // ============================================================================
@@ -75,9 +153,13 @@ function getVisionClient(): ImageAnnotatorClient {
 
 async function callVisionWithTimeout(
     input: VisionOcrInput,
-    timeoutMs: number
-): Promise<protos.google.cloud.vision.v1.IAnnotateImageResponse> {
-    const client = getVisionClient();
+    timeoutMs: number,
+    options: VisionOcrOptions = {}
+): Promise<{
+    response: protos.google.cloud.vision.v1.IAnnotateImageResponse;
+    diagnostics: VisionOcrDiagnostics;
+}> {
+    const { client, initMs } = getVisionClient();
 
     // P0-1: Use batchAnnotateImages with gax timeout option
     // Helper methods (documentTextDetection) don't support gax options as second param
@@ -85,15 +167,48 @@ async function callVisionWithTimeout(
         requests: [{
             features: [{ type: 'DOCUMENT_TEXT_DETECTION' }],
             image: {},
+            imageContext: {},
         }],
+    };
+
+    const languageHints = resolveLanguageHints(options.languageHints);
+    if (languageHints.length > 0) {
+        request.requests![0].imageContext = { languageHints };
+    }
+
+    const diagnostics: VisionOcrDiagnostics = {
+        timing: {
+            decodeMs: 0,
+            preprocessMs: 0,
+            visionMs: 0,
+            visionClientInitMs: initMs,
+        },
+        image: {
+            inputBytes: null,
+            inputMime: null,
+            inputWidth: null,
+            inputHeight: null,
+            preprocessedBytes: null,
+            preprocessedWidth: null,
+            preprocessedHeight: null,
+        },
+        languageHints,
     };
 
     if (input.imageBase64) {
         // P0: Ensure content is Buffer (supports both base64 string and dataURL)
+        const decodeStart = performance.now();
         const raw = input.imageBase64.replace(/^data:.*;base64,/, '');
         const buffer = Buffer.from(raw, 'base64');
+        diagnostics.timing.decodeMs = performance.now() - decodeStart;
+        diagnostics.image.inputBytes = buffer.length;
+        diagnostics.image.preprocessedBytes = buffer.length;
+        diagnostics.image.inputMime = extractMimeFromDataUrl(input.imageBase64) ?? sniffImageMime(buffer);
+        diagnostics.timing.preprocessMs = 0;
         request.requests![0].image = { content: buffer };
     } else if (input.imageUrl) {
+        diagnostics.timing.decodeMs = 0;
+        diagnostics.timing.preprocessMs = 0;
         request.requests![0].image = { source: { imageUri: input.imageUrl } };
     } else {
         throw new Error('Either imageBase64 or imageUrl must be provided');
@@ -104,7 +219,9 @@ async function callVisionWithTimeout(
 
     // Promise.race as additional fallback
     const visionCall = async () => {
+        const visionStart = performance.now();
         const [response] = await client.batchAnnotateImages(request, gaxOptions);
+        diagnostics.timing.visionMs = performance.now() - visionStart;
         if (!response.responses || response.responses.length === 0) {
             throw new Error('Empty response from Vision API');
         }
@@ -115,19 +232,36 @@ async function callVisionWithTimeout(
         setTimeout(() => reject(new Error(`Vision OCR timeout after ${timeoutMs}ms`)), timeoutMs + 1000);
     });
 
-    return Promise.race([visionCall(), timeoutPromise]);
+    const response = await Promise.race([visionCall(), timeoutPromise]);
+    return { response, diagnostics };
 }
 
 /**
  * Call Google Vision DOCUMENT_TEXT_DETECTION with timeout and retry
  */
-export async function callVisionOcr(input: VisionOcrInput): Promise<VisionOcrResult> {
+export async function callVisionOcr(
+    input: VisionOcrInput,
+    options: VisionOcrOptions = {}
+): Promise<VisionOcrResult> {
     let lastError: Error | null = null;
+    let lastDiagnostics: VisionOcrDiagnostics | null = null;
 
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
         try {
-            const response = await callVisionWithTimeout(input, VISION_TIMEOUT_MS);
-            return parseVisionResponse(response);
+            const { response, diagnostics } = await callVisionWithTimeout(input, VISION_TIMEOUT_MS, options);
+            lastDiagnostics = diagnostics;
+            const result = parseVisionResponse(response);
+            const page = response.fullTextAnnotation?.pages?.[0];
+            if (page?.width && page?.height) {
+                diagnostics.image.inputWidth = page.width;
+                diagnostics.image.inputHeight = page.height;
+                diagnostics.image.preprocessedWidth = diagnostics.image.preprocessedWidth ?? page.width;
+                diagnostics.image.preprocessedHeight = diagnostics.image.preprocessedHeight ?? page.height;
+            }
+            return {
+                ...result,
+                diagnostics,
+            };
         } catch (error) {
             lastError = error instanceof Error ? error : new Error(String(error));
             const isRetryable =
@@ -146,6 +280,13 @@ export async function callVisionOcr(input: VisionOcrInput): Promise<VisionOcrRes
         }
     }
 
+    if (lastDiagnostics) {
+        console.warn('[Vision] Failed with diagnostics:', {
+            decodeMs: lastDiagnostics.timing.decodeMs,
+            preprocessMs: lastDiagnostics.timing.preprocessMs,
+            visionMs: lastDiagnostics.timing.visionMs,
+        });
+    }
     throw lastError ?? new Error('Vision OCR failed');
 }
 

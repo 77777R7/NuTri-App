@@ -109,7 +109,7 @@ export default function HomeScreen() {
         caption: t.quickActionScanCaption,
         icon: 'camera.viewfinder',
         accent: 'sky',
-        onPress: () => router.push('/scan'),
+        onPress: () => router.push('/scan/label'),
       },
       {
         label: t.quickActionDatabase,

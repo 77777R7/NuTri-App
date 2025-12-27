@@ -49,7 +49,7 @@ export default function RecentSupplements({ supplements = [], isLoading = false 
 
   if (!supplements.length) {
     return (
-      <Pressable onPress={() => router.push('/(tabs)/scan')}>
+      <Pressable onPress={() => router.push('/scan/label')}>
         <View className="items-center rounded-3xl border border-dashed border-gray-300 bg-white p-8">
           <View className="mb-4 h-16 w-16 items-center justify-center rounded-full bg-gray-100">
             <Text className="text-3xl">＋</Text>

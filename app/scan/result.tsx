@@ -1,8 +1,8 @@
 import { BlurView } from 'expo-blur';
-import { Stack, router } from 'expo-router';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ArrowLeft, FileText } from 'lucide-react-native';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { ResponsiveScreen } from '@/components/common/ResponsiveScreen';
@@ -12,6 +12,7 @@ import { useScanHistory } from '@/contexts/ScanHistoryContext';
 import { useResponsiveTokens } from '@/hooks/useResponsiveTokens';
 import { useStreamAnalysis } from '@/hooks/useStreamAnalysis';
 import { consumeScanSession, type ScanSession } from '@/lib/scan/session';
+import { requestLabelAnalysis } from '@/lib/scan/service';
 import type { LabelDraft } from '@/backend/src/labelAnalysis';
 import { AnalysisDashboard } from './AnalysisDashboard';
 
@@ -21,12 +22,19 @@ export default function ScanResultScreen() {
   const { addScan } = useScanHistory();
   const addedRef = useRef(false);
   const lastDosageRef = useRef<string | null>(null);
+  const analysisRequestedRef = useRef(false);
 
   // Get session to retrieve barcode
-  const [session] = useState<ScanSession | null>(() => consumeScanSession());
+  const params = useLocalSearchParams<{ sessionId?: string }>();
+  const [session, setSession] = useState<ScanSession | null>(null);
+  const [sessionResolved, setSessionResolved] = useState(false);
   const isLabel = session?.mode === 'label';
   const labelResult = isLabel ? session.result : null;
   const barcode = session?.mode === 'barcode' ? session.input.barcode : '';
+  const [labelAnalysis, setLabelAnalysis] = useState(labelResult?.analysis ?? null);
+  const [labelAnalysisLoading, setLabelAnalysisLoading] = useState(false);
+  const [labelAnalysisError, setLabelAnalysisError] = useState<string | null>(null);
+  const resolvedLabelAnalysis = labelAnalysis ?? labelResult?.analysis ?? null;
 
   // 🚀 Use the Streaming Hook
   const {
@@ -69,18 +77,61 @@ export default function ScanResultScreen() {
     return `${withDose.amount} ${withDose.unit}`;
   };
 
-  useEffect(() => {
-    if (!session) {
-      router.replace('/(tabs)/scan');
+  const handleGenerateAnalysis = useCallback(async () => {
+    if (!labelResult || labelAnalysisLoading) return;
+    setLabelAnalysisError(null);
+    setLabelAnalysisLoading(true);
+    try {
+      const response = await requestLabelAnalysis({
+        imageHash: labelResult.imageHash,
+        imageBase64: session?.mode === 'label' ? session.input.imageBase64 : undefined,
+      });
+      if (response.analysis) {
+        setLabelAnalysis(response.analysis);
+      } else {
+        setLabelAnalysisError(response.message ?? 'Analysis is not available yet.');
+      }
+    } catch (error) {
+      setLabelAnalysisError('Unable to generate analysis. Please try again.');
+    } finally {
+      setLabelAnalysisLoading(false);
     }
-  }, [session]);
+  }, [labelAnalysisLoading, labelResult]);
+
+  useEffect(() => {
+    if (!isLabel || !labelResult) return;
+    if (labelResult.status === 'failed') return;
+    if (resolvedLabelAnalysis || labelAnalysisLoading) return;
+    if (analysisRequestedRef.current) return;
+    analysisRequestedRef.current = true;
+    handleGenerateAnalysis();
+  }, [handleGenerateAnalysis, isLabel, labelAnalysisLoading, labelResult, resolvedLabelAnalysis]);
+
+  useEffect(() => {
+    const nextSession = consumeScanSession();
+    setSession(nextSession);
+    setSessionResolved(true);
+    analysisRequestedRef.current = false;
+    addedRef.current = false;
+    lastDosageRef.current = null;
+    setLabelAnalysis(null);
+    setLabelAnalysisError(null);
+    setLabelAnalysisLoading(false);
+  }, [params.sessionId]);
+
+  useEffect(() => {
+    if (!sessionResolved) return;
+    if (!session) {
+      router.replace('/scan/label');
+    }
+  }, [session, sessionResolved]);
 
   useEffect(() => {
     if (!session) return;
 
     if (session.mode === 'label') {
       if (addedRef.current) return;
-      const analysis = session.result.analysis ?? null;
+      const analysis = resolvedLabelAnalysis;
       if (!analysis || analysis.status !== 'success') return;
 
       const productInfo = analysis.productInfo ?? {};
@@ -154,15 +205,32 @@ export default function ScanResultScreen() {
       });
       lastDosageRef.current = dosageText;
     }
-  }, [addScan, barcode, efficacy, productInfo, session, status, usage]);
+  }, [addScan, barcode, efficacy, productInfo, resolvedLabelAnalysis, session, status, usage]);
 
-  const handleBack = () => router.replace('/(tabs)/scan');
+  const handleBack = () => {
+    if (session?.mode === 'barcode') {
+      router.replace('/scan/barcode');
+    } else {
+      router.replace('/scan/label');
+    }
+  };
 
   if (!session) return null;
 
   if (isLabel && labelResult) {
     const draft = labelResult.draft ?? null;
     const issues = labelResult.issues ?? draft?.issues ?? [];
+    const isFailed = labelResult.status === 'failed';
+    const needsReview = Boolean(
+      draft
+      && (draft.confidenceScore < 0.7
+        || draft.parseCoverage < 0.7
+        || issues.some((issue) => (
+          issue.type === 'unit_invalid'
+          || issue.type === 'value_anomaly'
+          || issue.type === 'incomplete_ingredients'
+        )))
+    );
     const fallbackTitle = labelResult.status === 'failed' ? 'Scan Failed' : 'Review Required';
     const fallbackMessage =
       labelResult.message ??
@@ -170,26 +238,24 @@ export default function ScanResultScreen() {
         ? 'We could not read the label.'
         : 'Please review the extracted ingredients.');
 
-    return (
-      <ResponsiveScreen
-        contentStyle={styles.screen}
-        style={styles.safeArea}
-      >
-        <Stack.Screen
-          options={{
-            title: 'Analysis',
-            headerShadowVisible: false,
-            headerStyle: { backgroundColor: '#F2F2F7' },
-            contentStyle: { backgroundColor: '#F2F2F7' },
-            presentation: 'card',
-          }}
-        />
-        <StatusBar style="dark" />
-        <Header onBack={handleBack} title="Label Scan" />
+    if (isFailed) {
+      return (
+        <ResponsiveScreen
+          contentStyle={styles.screen}
+          style={styles.safeArea}
+        >
+          <Stack.Screen
+            options={{
+              title: 'Analysis',
+              headerShadowVisible: false,
+              headerStyle: { backgroundColor: '#F2F2F7' },
+              contentStyle: { backgroundColor: '#F2F2F7' },
+              presentation: 'card',
+            }}
+          />
+          <StatusBar style="dark" />
+          <Header onBack={handleBack} title="Label Scan" />
 
-        {labelResult.status === 'ok' && labelResult.analysis ? (
-          <AnalysisDashboard analysis={labelResult.analysis as any} isStreaming={false} />
-        ) : (
           <ScrollView contentContainerStyle={styles.labelFallbackContent}>
             <View style={styles.labelFallbackHeader}>
               <FileText size={48} color="#52525b" />
@@ -233,7 +299,83 @@ export default function ScanResultScreen() {
               </View>
             ) : null}
           </ScrollView>
-        )}
+        </ResponsiveScreen>
+      );
+    }
+
+    const analysisFallback = {
+      productInfo: {
+        brand: null,
+        name: 'Label Scan Result',
+        category: 'supplement',
+        image: null,
+      },
+      efficacy: {},
+      safety: {},
+      usage: {},
+      value: {},
+      social: {},
+      meta: { actualDoseMg: 0 },
+      status: 'loading',
+    };
+    const analysisForDisplay = resolvedLabelAnalysis ?? analysisFallback;
+    const isLabelStreaming = !resolvedLabelAnalysis || labelAnalysisLoading;
+
+    return (
+      <ResponsiveScreen
+        contentStyle={styles.screen}
+        style={styles.safeArea}
+      >
+        <Stack.Screen
+          options={{
+            title: 'Analysis',
+            headerShadowVisible: false,
+            headerStyle: { backgroundColor: '#F2F2F7' },
+            contentStyle: { backgroundColor: '#F2F2F7' },
+            presentation: 'card',
+          }}
+        />
+        <StatusBar style="dark" />
+        <Header onBack={handleBack} title="Analysis" />
+
+        {needsReview ? (
+          <View style={styles.labelCard}>
+            <Text style={styles.labelCardTitle}>Review recommended</Text>
+            <Text style={styles.labelMeta}>
+              OCR confidence is low. You can still view AI analysis, but verify the extracted ingredients.
+            </Text>
+          </View>
+        ) : null}
+
+        <AnalysisDashboard analysis={analysisForDisplay as any} isStreaming={isLabelStreaming} />
+
+        {labelAnalysisError && !resolvedLabelAnalysis ? (
+          <View style={styles.labelCard}>
+            <Text style={styles.analysisErrorText}>{labelAnalysisError}</Text>
+            <TouchableOpacity
+              style={[styles.analysisButton, labelAnalysisLoading ? styles.analysisButtonDisabled : null]}
+              onPress={handleGenerateAnalysis}
+              disabled={labelAnalysisLoading}
+            >
+              <Text style={styles.analysisButtonText}>
+                {labelAnalysisLoading ? 'Analyzing...' : 'Try again'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
+        {isLabelStreaming && !labelAnalysisError ? (
+          <BlurView intensity={40} tint="dark" style={styles.streamingBadge}>
+            <OrganicSpinner size={24} color="rgba(255,255,255,0.9)" />
+            <View style={{ top: 3 }}>
+              <ShinyText
+                text="AI Analyzing"
+                speed={2}
+                style={{ ...styles.streamingText, color: '#FFFFFF' }}
+              />
+            </View>
+          </BlurView>
+        ) : null}
       </ResponsiveScreen>
     );
   }
@@ -394,6 +536,26 @@ const styles = StyleSheet.create({
   labelList: { marginTop: 4 },
   labelItem: { fontSize: 14, color: '#111827', marginBottom: 6, lineHeight: 20 },
   labelEmpty: { fontSize: 14, color: '#6b7280' },
+  analysisButton: {
+    marginTop: 8,
+    backgroundColor: '#111827',
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  analysisButtonDisabled: {
+    backgroundColor: '#6b7280',
+  },
+  analysisButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  analysisErrorText: {
+    marginTop: 8,
+    color: '#b91c1c',
+    fontSize: 13,
+  },
 
   // New style for the floating badge
   streamingBadge: {

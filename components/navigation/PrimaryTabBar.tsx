@@ -111,7 +111,7 @@ export const PrimaryTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }
         <Pressable
           onPress={() => {
             triggerHaptic();
-            router.push('/scan');
+            router.push('/scan/label');
           }}
           style={[styles.item, styles.plusSlot]}
           accessibilityRole="button"

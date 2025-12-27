@@ -20,7 +20,7 @@ export type ScanSession =
   | {
     id: string;
     mode: 'label';
-    input: { imageUri: string };
+    input: { imageUri: string; imageBase64?: string };
     result: LabelScanResult;
   };
 
