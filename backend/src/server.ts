@@ -10,7 +10,15 @@ import { buildEnhancedContext, fetchAnalysisSection, prepareContextSources } fro
 import { analyzeLabelDraft, analyzeLabelDraftWithDiagnostics, formatForDeepSeek, needsConfirmation, validateIngredient, type LabelAnalysisDiagnostics, type LabelDraft } from "./labelAnalysis.js";
 import { getCachedResult, hasCompletedAnalysis, hasDraftOnly, setCachedResult, updateCachedAnalysis } from "./ocrCache.js";
 import { constructFallbackQuery, extractDomain, isHighQualityDomain, scoreSearchItem, scoreSearchQuality } from "./searchQuality.js";
-import type { AiSupplementAnalysis, ErrorResponse, RatingScore, SearchItem, SearchResponse } from "./types.js";
+import type {
+  AiSupplementAnalysis,
+  ErrorResponse,
+  IngredientAnalysis,
+  PrimaryActive,
+  RatingScore,
+  SearchItem,
+  SearchResponse,
+} from "./types.js";
 import { callVisionOcr } from "./visionOcr.js";
 
 dotenv.config();
@@ -829,6 +837,95 @@ ${LABEL_SCAN_OUTPUT_RULES}`;
         : "Limited ingredient transparency";
   const transparencyAnalysis = transparencyNote;
 
+  const toFormQuality = (value?: string | null): IngredientAnalysis["formQuality"] => {
+    if (value === "high" || value === "medium" || value === "low" || value === "unknown") return value;
+    return "unknown";
+  };
+
+  const toEvidenceLevel = (value?: string | null): IngredientAnalysis["evidenceLevel"] => {
+    if (value === "strong" || value === "moderate" || value === "weak" || value === "none") return value;
+    return "none";
+  };
+
+  const toDosageAssessment = (value?: string | null): IngredientAnalysis["dosageAssessment"] => {
+    if (value === "adequate" || value === "underdosed" || value === "overdosed" || value === "unknown") return value;
+    return "unknown";
+  };
+
+  const normalizePrimaryActive = (active?: any): PrimaryActive | null => {
+    if (!active?.name) return null;
+    return {
+      name: String(active.name),
+      form: active.form ?? null,
+      formQuality: toFormQuality(active.formQuality),
+      formNote: active.formNote ?? null,
+      dosageValue: typeof active.dosageValue === "number" ? active.dosageValue : null,
+      dosageUnit: active.dosageUnit ?? null,
+      evidenceLevel: toEvidenceLevel(active.evidenceLevel),
+      evidenceSummary: active.evidenceSummary ?? null,
+    };
+  };
+
+  const normalizeIngredient = (ingredient?: any): IngredientAnalysis | null => {
+    if (!ingredient?.name) return null;
+    return {
+      name: String(ingredient.name),
+      form: ingredient.form ?? null,
+      formQuality: toFormQuality(ingredient.formQuality),
+      formNote: ingredient.formNote ?? null,
+      dosageValue: typeof ingredient.dosageValue === "number" ? ingredient.dosageValue : null,
+      dosageUnit: ingredient.dosageUnit ?? null,
+      recommendedMin: typeof ingredient.recommendedMin === "number" ? ingredient.recommendedMin : null,
+      recommendedMax: typeof ingredient.recommendedMax === "number" ? ingredient.recommendedMax : null,
+      recommendedUnit: ingredient.recommendedUnit ?? null,
+      dosageAssessment: toDosageAssessment(ingredient.dosageAssessment),
+      evidenceLevel: toEvidenceLevel(ingredient.evidenceLevel),
+      evidenceSummary: ingredient.evidenceSummary ?? null,
+      rdaSource: ingredient.rdaSource ?? null,
+      ulValue: typeof ingredient.ulValue === "number" ? ingredient.ulValue : null,
+      ulUnit: ingredient.ulUnit ?? null,
+    };
+  };
+
+  const labelPrimaryActive = labelPrimary
+    ? normalizePrimaryActive({
+        name: labelPrimary.name,
+        form: null,
+        formQuality: "unknown",
+        formNote: null,
+        dosageValue: labelPrimary.dosageValue,
+        dosageUnit: labelPrimary.dosageUnit,
+        evidenceLevel: "none",
+        evidenceSummary: "Not specified on label",
+      })
+    : normalizePrimaryActive(efficacy?.primaryActive);
+
+  const labelIngredients: IngredientAnalysis[] = labelActives.length
+    ? labelActives
+        .map((active) =>
+          normalizeIngredient({
+            name: active.name,
+            form: null,
+            formQuality: "unknown",
+            formNote: null,
+            dosageValue: active.dosageValue,
+            dosageUnit: active.dosageUnit,
+            recommendedMin: null,
+            recommendedMax: null,
+            recommendedUnit: null,
+            dosageAssessment: "unknown",
+            evidenceLevel: "none",
+            evidenceSummary: "Not specified on label",
+            rdaSource: null,
+            ulValue: null,
+            ulUnit: null,
+          })
+        )
+        .filter((item): item is IngredientAnalysis => Boolean(item))
+    : (Array.isArray(efficacy?.ingredients) ? efficacy.ingredients : [])
+        .map((ingredient: any) => normalizeIngredient(ingredient))
+        .filter((item): item is IngredientAnalysis => Boolean(item));
+
   const analysis: AiSupplementAnalysis = {
     schemaVersion: 1,
     barcode: `label:${imageHash.slice(0, 16)}`,
@@ -857,30 +954,8 @@ ${LABEL_SCAN_OUTPUT_RULES}`;
       overviewSummary: labelSummary,
       overallAssessment: efficacy?.overallAssessment ?? transparencyNote,
       marketingVsReality: "Label-only analysis; no price/brand verification.",
-      primaryActive: labelPrimary
-        ? {
-            name: labelPrimary.name,
-            form: null,
-            formQuality: "unknown",
-            formNote: null,
-            dosageValue: labelPrimary.dosageValue,
-            dosageUnit: labelPrimary.dosageUnit,
-            evidenceLevel: "none",
-            evidenceSummary: "Not specified on label",
-          }
-        : efficacy?.primaryActive,
-      ingredients: labelActives.length
-        ? labelActives.map((active) => ({
-            name: active.name,
-            dosageValue: active.dosageValue,
-            dosageUnit: active.dosageUnit,
-            dosageAssessment: "unknown",
-            evidenceLevel: "none",
-            formQuality: "unknown",
-          }))
-        : Array.isArray(efficacy?.ingredients) && efficacy.ingredients.length > 0
-          ? efficacy.ingredients
-          : [],
+      primaryActive: labelPrimaryActive,
+      ingredients: labelIngredients,
     },
     value: {
       score: transparencyScore as RatingScore,
