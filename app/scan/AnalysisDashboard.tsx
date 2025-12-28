@@ -500,7 +500,11 @@ export const AnalysisDashboard: React.FC<{
             typeof value.score === 'number'
         );
     }, [efficacy.score, safety.score, value.score]);
-    const effectiveScoreState: ScoreState = scoreState ?? (isFullyLoaded ? 'active' : 'loading');
+    const isLabelSource = sourceType === 'label_scan';
+    const effectiveScoreState: ScoreState = isLabelSource
+        ? (scoreState ?? (isFullyLoaded ? 'active' : 'loading'))
+        : (isFullyLoaded ? 'active' : 'loading');
+    const badgeTextSafe = isLabelSource ? scoreBadge : undefined;
 
     // Compute scores using new AI-driven scoring system
     // Only compute when fully loaded, otherwise show loading state
@@ -850,7 +854,7 @@ export const AnalysisDashboard: React.FC<{
     );
 
     const overviewCoverBullets = coreBenefits
-        .slice(0, 2)
+        .slice(0, 3)
         .map((benefit: string) => capitalizeSentences(benefit))
         .filter(Boolean);
 
@@ -1196,7 +1200,7 @@ export const AnalysisDashboard: React.FC<{
                             descriptions={descriptions}
                             display={displayOverrides}
                             muted={effectiveScoreState === 'muted'}
-                            badgeText={scoreBadge}
+                            badgeText={badgeTextSafe}
                             sourceType={sourceType}
                         />
                 </View>

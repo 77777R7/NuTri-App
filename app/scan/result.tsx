@@ -79,7 +79,14 @@ export default function ScanResultScreen() {
   const [labelAnalysisStatus, setLabelAnalysisStatus] = useState<LabelAnalysisStatus>(
     labelResult?.analysis ? 'complete' : labelResult?.analysisStatus ?? null
   );
+  const [evidenceExpanded, setEvidenceExpanded] = useState(false);
   const resolvedLabelAnalysis = labelAnalysis ?? labelResult?.analysis ?? null;
+  const labelDraft = labelResult?.draft ?? null;
+  const labelIssues = labelResult?.issues ?? labelDraft?.issues ?? [];
+  const labelQuality = isLabel ? getLabelDraftQuality(labelDraft, labelIssues) : null;
+  const needsReview = labelQuality?.reviewRecommended ?? false;
+  const ingredientsToShow = isLabel ? (labelDraft?.ingredients ?? []).filter(isLikelyIngredient) : [];
+  const labelNameCandidate = isLabel ? getMeaningfulIngredientName(labelDraft) : null;
 
   // 🚀 Use the Streaming Hook
   const {
@@ -156,14 +163,11 @@ export default function ScanResultScreen() {
     if (labelResult.status === 'failed') return;
     if (resolvedLabelAnalysis || labelAnalysisLoading) return;
     if (analysisRequestedRef.current) return;
-    const draft = labelResult.draft ?? null;
-    const issues = labelResult.issues ?? draft?.issues ?? [];
-    const labelQuality = getLabelDraftQuality(draft, issues);
-    const shouldAutoAnalyze = labelQuality.labelOnlyScoreEligible;
+    const shouldAutoAnalyze = labelQuality?.labelOnlyScoreEligible ?? false;
     if (!shouldAutoAnalyze) return;
     analysisRequestedRef.current = true;
     handleGenerateAnalysis();
-  }, [handleGenerateAnalysis, isLabel, labelAnalysisLoading, labelResult, resolvedLabelAnalysis]);
+  }, [handleGenerateAnalysis, isLabel, labelAnalysisLoading, labelResult, labelQuality, resolvedLabelAnalysis]);
 
   useEffect(() => {
     const nextSession = consumeScanSession();
@@ -175,9 +179,16 @@ export default function ScanResultScreen() {
     setLabelAnalysis(null);
     setLabelAnalysisError(null);
     setLabelAnalysisLoading(false);
+    setEvidenceExpanded(false);
     const nextLabelResult = nextSession?.mode === 'label' ? nextSession.result : null;
     setLabelAnalysisStatus(nextLabelResult?.analysis ? 'complete' : nextLabelResult?.analysisStatus ?? null);
   }, [params.sessionId]);
+
+  useEffect(() => {
+    if (needsReview) {
+      setEvidenceExpanded(true);
+    }
+  }, [needsReview]);
 
   useEffect(() => {
     if (!sessionResolved) return;
@@ -195,7 +206,7 @@ export default function ScanResultScreen() {
       if (!analysis || analysis.status !== 'success') return;
 
       const productInfo = analysis.productInfo ?? {};
-      const labelName = getMeaningfulIngredientName(session.result.draft) ?? 'Label Scan Result';
+      const labelName = 'Label Scan Result';
       const labelDose =
         getDraftDose(session.result.draft) ??
         extractDoseFromText(productInfo.name ?? null) ??
@@ -279,13 +290,12 @@ export default function ScanResultScreen() {
   if (!session) return null;
 
   if (isLabel && labelResult) {
-    const draft = labelResult.draft ?? null;
-    const issues = labelResult.issues ?? draft?.issues ?? [];
-    const labelProductName = getMeaningfulIngredientName(draft) ?? 'Label Scan Result';
-    const labelQuality = getLabelDraftQuality(draft, issues);
-    const ingredientsToShow = (draft?.ingredients ?? []).filter(isLikelyIngredient);
+    const draft = labelDraft;
+    const issues = labelIssues;
+    const labelProductName = 'Label Scan Result';
+    const quality = labelQuality ?? getLabelDraftQuality(draft, issues);
+    const evidenceSummary = `Label evidence: ${ingredientsToShow.length} ingredients • ${quality.extractionQuality} (${Math.round((draft?.confidenceScore ?? 0) * 100)}%)`;
     const isFailed = labelResult.status === 'failed';
-    const needsReview = labelQuality.reviewRecommended;
     const fallbackTitle = labelResult.status === 'failed' ? 'Scan Failed' : 'Review Required';
     const fallbackMessage =
       labelResult.message ??
@@ -384,8 +394,14 @@ export default function ScanResultScreen() {
     };
     const isLabelStreaming = labelAnalysisStatus === 'pending' || labelAnalysisLoading;
     const analysisComplete = resolvedLabelAnalysis?.status === 'success';
-    const scoreState: 'active' | 'muted' = analysisComplete && !labelQuality.mutedScore ? 'active' : 'muted';
+    const scoreState: 'active' | 'muted' = analysisComplete && !quality.mutedScore ? 'active' : 'muted';
     const showGenerateActions = !analysisComplete && !isLabelStreaming;
+
+    useEffect(() => {
+      if (needsReview) {
+        setEvidenceExpanded(true);
+      }
+    }, [needsReview]);
 
     return (
       <ResponsiveScreen
@@ -403,15 +419,6 @@ export default function ScanResultScreen() {
         />
         <StatusBar style="dark" />
         <Header onBack={handleBack} title="Analysis" />
-
-        {needsReview ? (
-          <View style={styles.labelCard}>
-            <Text style={styles.labelCardTitle}>Review recommended</Text>
-            <Text style={styles.labelMeta}>
-              Extraction quality is low. Please verify the label evidence before relying on AI analysis.
-            </Text>
-          </View>
-        ) : null}
 
         <AnalysisDashboard
           analysis={analysisWithLabelName as any}
@@ -460,40 +467,61 @@ export default function ScanResultScreen() {
         ) : null}
 
         <View style={styles.labelCard}>
-          <Text style={styles.labelCardTitle}>Label Evidence</Text>
-          <View style={styles.labelMetaGroup}>
-            <Text style={styles.labelMetaTight}>Product: {labelProductName}</Text>
-            {draft?.servingSize ? (
-              <Text style={styles.labelMetaTight}>Serving Size: {draft.servingSize}</Text>
-            ) : (
-              <Text style={styles.labelMetaTight}>Serving Size: Not detected</Text>
-            )}
-            <Text style={styles.labelMetaTight}>
-              Extraction Quality: {labelQuality.extractionQuality} ({Math.round((draft?.confidenceScore ?? 0) * 100)}%)
-            </Text>
-            <Text style={styles.labelMetaTight}>
-              Coverage: {Math.round((draft?.parseCoverage ?? 0) * 100)}% | {labelQuality.validCount} valid ingredients
-            </Text>
+          <View style={styles.evidenceHeader}>
+            <Text style={styles.labelCardTitle}>Label Evidence</Text>
+            <TouchableOpacity
+              onPress={() => setEvidenceExpanded((prev) => !prev)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.evidenceToggle}>
+                {evidenceExpanded ? 'Hide' : 'View'}
+              </Text>
+            </TouchableOpacity>
           </View>
-          {ingredientsToShow.length > 0 ? (
-            <View style={styles.labelList}>
-              {ingredientsToShow.map((ingredient, index) => (
-                <Text key={`${ingredient.name}-${index}`} style={styles.labelItem}>
-                  {formatDraftIngredient(ingredient)}
-                </Text>
-              ))}
-            </View>
-          ) : (
-            <Text style={styles.labelEmpty}>No ingredients detected.</Text>
-          )}
-          {issues.length > 0 ? (
-            <View style={styles.labelIssues}>
-              <Text style={styles.labelCardTitle}>Issues Detected</Text>
-              {issues.map((issue, index) => (
-                <Text key={`${issue.type}-${index}`} style={styles.labelItem}>
-                  {issue.message}
-                </Text>
-              ))}
+          <Text style={styles.evidenceSummary}>{evidenceSummary}</Text>
+          {needsReview ? (
+            <Text style={styles.evidenceWarning}>
+              Review recommended. Extraction quality is low; confirm evidence before relying on AI analysis.
+            </Text>
+          ) : null}
+          {evidenceExpanded ? (
+            <View style={styles.labelMetaGroup}>
+              <Text style={styles.labelMetaTight}>Product: {labelProductName}</Text>
+              {labelNameCandidate ? (
+                <Text style={styles.labelMetaTight}>Top ingredient: {labelNameCandidate}</Text>
+              ) : null}
+              {draft?.servingSize ? (
+                <Text style={styles.labelMetaTight}>Serving Size: {draft.servingSize}</Text>
+              ) : (
+                <Text style={styles.labelMetaTight}>Serving Size: Not detected</Text>
+              )}
+              <Text style={styles.labelMetaTight}>
+              Extraction Quality: {quality.extractionQuality} ({Math.round((draft?.confidenceScore ?? 0) * 100)}%)
+            </Text>
+            <Text style={styles.labelMetaTight}>
+              Coverage: {Math.round((draft?.parseCoverage ?? 0) * 100)}% | {quality.validCount} valid ingredients
+            </Text>
+              {ingredientsToShow.length > 0 ? (
+                <View style={styles.labelList}>
+                  {ingredientsToShow.map((ingredient, index) => (
+                    <Text key={`${ingredient.name}-${index}`} style={styles.labelItem}>
+                      {formatDraftIngredient(ingredient)}
+                    </Text>
+                  ))}
+                </View>
+              ) : (
+                <Text style={styles.labelEmpty}>No ingredients detected.</Text>
+              )}
+              {issues.length > 0 ? (
+                <View style={styles.labelIssues}>
+                  <Text style={styles.labelCardTitle}>Issues Detected</Text>
+                  {issues.map((issue, index) => (
+                    <Text key={`${issue.type}-${index}`} style={styles.labelItem}>
+                      {issue.message}
+                    </Text>
+                  ))}
+                </View>
+              ) : null}
             </View>
           ) : null}
         </View>
@@ -677,6 +705,27 @@ const styles = StyleSheet.create({
   labelItem: { fontSize: 14, color: '#111827', marginBottom: 6, lineHeight: 20 },
   labelEmpty: { fontSize: 14, color: '#6b7280' },
   labelIssues: { marginTop: 16 },
+  evidenceHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  evidenceToggle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#2563eb',
+  },
+  evidenceSummary: {
+    fontSize: 13,
+    color: '#6b7280',
+    marginBottom: 12,
+  },
+  evidenceWarning: {
+    fontSize: 12,
+    color: '#b91c1c',
+    marginBottom: 12,
+  },
   analysisButton: {
     marginTop: 8,
     backgroundColor: '#111827',
