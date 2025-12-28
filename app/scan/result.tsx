@@ -13,8 +13,50 @@ import { useResponsiveTokens } from '@/hooks/useResponsiveTokens';
 import { useStreamAnalysis } from '@/hooks/useStreamAnalysis';
 import { consumeScanSession, type ScanSession } from '@/lib/scan/session';
 import { requestLabelAnalysis } from '@/lib/scan/service';
+import { getBarcodeQuality, getLabelDraftQuality } from '@/lib/scan/quality';
 import type { LabelDraft } from '@/backend/src/labelAnalysis';
 import { AnalysisDashboard } from './AnalysisDashboard';
+
+type LabelAnalysisStatus = 'complete' | 'skipped' | 'pending' | 'unavailable' | 'failed' | null;
+
+const NAME_NOISE_PATTERNS: RegExp[] = [
+  /supplement facts/i,
+  /nutrition facts/i,
+  /serving size/i,
+  /\bamount\b/i,
+  /per serving/i,
+  /daily value/i,
+  /% ?dv/i,
+  /\bvalue\b/i,
+  /(medicinal|non-medicinal) ingredients/i,
+  /other ingredients/i,
+  /also contains/i,
+  /directions?/i,
+  /warnings?/i,
+  /caution/i,
+  /store/i,
+  /^(each|in each|chaque|dans chaque)\b.*\bcontains?\b/i,
+];
+
+const isNoiseIngredientName = (name?: string | null) => {
+  if (!name) return true;
+  const trimmed = name.trim();
+  if (!trimmed || trimmed.length < 2) return true;
+  return NAME_NOISE_PATTERNS.some((pattern) => pattern.test(trimmed));
+};
+
+const isLikelyIngredient = (ingredient: LabelDraft['ingredients'][number]) =>
+  (ingredient.amount != null && ingredient.unit) || ingredient.dvPercent != null;
+
+const getMeaningfulIngredientName = (draft?: LabelDraft | null) => {
+  if (!draft?.ingredients?.length) return null;
+  const withAmount = draft.ingredients.find(
+    (ingredient) => isLikelyIngredient(ingredient) && !isNoiseIngredientName(ingredient.name),
+  );
+  if (withAmount?.name) return withAmount.name;
+  const match = draft.ingredients.find((ingredient) => !isNoiseIngredientName(ingredient.name));
+  return match?.name ?? null;
+};
 
 export default function ScanResultScreen() {
   const { tokens } = useResponsiveTokens();
@@ -34,12 +76,16 @@ export default function ScanResultScreen() {
   const [labelAnalysis, setLabelAnalysis] = useState(labelResult?.analysis ?? null);
   const [labelAnalysisLoading, setLabelAnalysisLoading] = useState(false);
   const [labelAnalysisError, setLabelAnalysisError] = useState<string | null>(null);
+  const [labelAnalysisStatus, setLabelAnalysisStatus] = useState<LabelAnalysisStatus>(
+    labelResult?.analysis ? 'complete' : labelResult?.analysisStatus ?? null
+  );
   const resolvedLabelAnalysis = labelAnalysis ?? labelResult?.analysis ?? null;
 
   // 🚀 Use the Streaming Hook
   const {
     productInfo, efficacy, safety, usage, value, social, status, error
   } = useStreamAnalysis(barcode);
+  const barcodeQuality = useMemo(() => getBarcodeQuality({ status, error }), [error, status]);
 
   const formatDose = (value?: number | string | null, unit?: string | null) => {
     if (value == null) return null;
@@ -81,6 +127,7 @@ export default function ScanResultScreen() {
     if (!labelResult || labelAnalysisLoading) return;
     setLabelAnalysisError(null);
     setLabelAnalysisLoading(true);
+    setLabelAnalysisStatus('pending');
     try {
       const response = await requestLabelAnalysis({
         imageHash: labelResult.imageHash,
@@ -88,11 +135,17 @@ export default function ScanResultScreen() {
       });
       if (response.analysis) {
         setLabelAnalysis(response.analysis);
+        setLabelAnalysisStatus('complete');
       } else {
-        setLabelAnalysisError(response.message ?? 'Analysis is not available yet.');
+        const nextStatus = response.analysisStatus ?? 'skipped';
+        setLabelAnalysisStatus(nextStatus);
+        if (nextStatus === 'unavailable') {
+          setLabelAnalysisError(response.message ?? 'Analysis service unavailable.');
+        }
       }
     } catch (error) {
       setLabelAnalysisError('Unable to generate analysis. Please try again.');
+      setLabelAnalysisStatus('failed');
     } finally {
       setLabelAnalysisLoading(false);
     }
@@ -103,6 +156,11 @@ export default function ScanResultScreen() {
     if (labelResult.status === 'failed') return;
     if (resolvedLabelAnalysis || labelAnalysisLoading) return;
     if (analysisRequestedRef.current) return;
+    const draft = labelResult.draft ?? null;
+    const issues = labelResult.issues ?? draft?.issues ?? [];
+    const labelQuality = getLabelDraftQuality(draft, issues);
+    const shouldAutoAnalyze = labelQuality.labelOnlyScoreEligible;
+    if (!shouldAutoAnalyze) return;
     analysisRequestedRef.current = true;
     handleGenerateAnalysis();
   }, [handleGenerateAnalysis, isLabel, labelAnalysisLoading, labelResult, resolvedLabelAnalysis]);
@@ -117,6 +175,8 @@ export default function ScanResultScreen() {
     setLabelAnalysis(null);
     setLabelAnalysisError(null);
     setLabelAnalysisLoading(false);
+    const nextLabelResult = nextSession?.mode === 'label' ? nextSession.result : null;
+    setLabelAnalysisStatus(nextLabelResult?.analysis ? 'complete' : nextLabelResult?.analysisStatus ?? null);
   }, [params.sessionId]);
 
   useEffect(() => {
@@ -135,6 +195,7 @@ export default function ScanResultScreen() {
       if (!analysis || analysis.status !== 'success') return;
 
       const productInfo = analysis.productInfo ?? {};
+      const labelName = getMeaningfulIngredientName(session.result.draft) ?? 'Label Scan Result';
       const labelDose =
         getDraftDose(session.result.draft) ??
         extractDoseFromText(productInfo.name ?? null) ??
@@ -143,7 +204,7 @@ export default function ScanResultScreen() {
 
       addScan({
         barcode: analysis.barcode ?? null,
-        productName: productInfo.name ?? 'Label Scan Result',
+        productName: labelName,
         brandName: productInfo.brand ?? 'Unknown brand',
         dosageText: labelDose ?? '',
         category: productInfo.category ?? null,
@@ -220,17 +281,11 @@ export default function ScanResultScreen() {
   if (isLabel && labelResult) {
     const draft = labelResult.draft ?? null;
     const issues = labelResult.issues ?? draft?.issues ?? [];
+    const labelProductName = getMeaningfulIngredientName(draft) ?? 'Label Scan Result';
+    const labelQuality = getLabelDraftQuality(draft, issues);
+    const ingredientsToShow = (draft?.ingredients ?? []).filter(isLikelyIngredient);
     const isFailed = labelResult.status === 'failed';
-    const needsReview = Boolean(
-      draft
-      && (draft.confidenceScore < 0.7
-        || draft.parseCoverage < 0.7
-        || issues.some((issue) => (
-          issue.type === 'unit_invalid'
-          || issue.type === 'value_anomaly'
-          || issue.type === 'incomplete_ingredients'
-        )))
-    );
+    const needsReview = labelQuality.reviewRecommended;
     const fallbackTitle = labelResult.status === 'failed' ? 'Scan Failed' : 'Review Required';
     const fallbackMessage =
       labelResult.message ??
@@ -319,7 +374,18 @@ export default function ScanResultScreen() {
       status: 'loading',
     };
     const analysisForDisplay = resolvedLabelAnalysis ?? analysisFallback;
-    const isLabelStreaming = !resolvedLabelAnalysis || labelAnalysisLoading;
+    const analysisWithLabelName = {
+      ...analysisForDisplay,
+      productInfo: {
+        ...analysisForDisplay.productInfo,
+        name: labelProductName,
+        category: analysisForDisplay.productInfo?.category ?? 'supplement',
+      },
+    };
+    const isLabelStreaming = labelAnalysisStatus === 'pending' || labelAnalysisLoading;
+    const analysisComplete = resolvedLabelAnalysis?.status === 'success';
+    const scoreState: 'active' | 'muted' = analysisComplete && !labelQuality.mutedScore ? 'active' : 'muted';
+    const showGenerateActions = !analysisComplete && !isLabelStreaming;
 
     return (
       <ResponsiveScreen
@@ -342,27 +408,95 @@ export default function ScanResultScreen() {
           <View style={styles.labelCard}>
             <Text style={styles.labelCardTitle}>Review recommended</Text>
             <Text style={styles.labelMeta}>
-              OCR confidence is low. You can still view AI analysis, but verify the extracted ingredients.
+              Extraction quality is low. Please verify the label evidence before relying on AI analysis.
             </Text>
           </View>
         ) : null}
 
-        <AnalysisDashboard analysis={analysisForDisplay as any} isStreaming={isLabelStreaming} />
+        <AnalysisDashboard
+          analysis={analysisWithLabelName as any}
+          isStreaming={isLabelStreaming}
+          scoreBadge="Label-only estimate"
+          scoreState={scoreState}
+          sourceType="label_scan"
+        />
 
-        {labelAnalysisError && !resolvedLabelAnalysis ? (
+        {!analysisComplete ? (
           <View style={styles.labelCard}>
-            <Text style={styles.analysisErrorText}>{labelAnalysisError}</Text>
-            <TouchableOpacity
-              style={[styles.analysisButton, labelAnalysisLoading ? styles.analysisButtonDisabled : null]}
-              onPress={handleGenerateAnalysis}
-              disabled={labelAnalysisLoading}
-            >
-              <Text style={styles.analysisButtonText}>
-                {labelAnalysisLoading ? 'Analyzing...' : 'Try again'}
-              </Text>
-            </TouchableOpacity>
+            <Text style={styles.labelCardTitle}>AI Analysis</Text>
+            <Text style={styles.labelMeta}>
+              {labelAnalysisStatus === 'pending'
+                ? 'Analyzing label...'
+                : labelAnalysisStatus === 'unavailable'
+                  ? 'Analysis service is unavailable right now.'
+                  : 'Analysis is not generated yet.'}
+            </Text>
+            {labelAnalysisError ? (
+              <Text style={styles.analysisErrorText}>{labelAnalysisError}</Text>
+            ) : null}
+            {showGenerateActions ? (
+              <View style={styles.analysisActionRow}>
+                <TouchableOpacity
+                  style={[styles.analysisButton, labelAnalysisLoading ? styles.analysisButtonDisabled : null]}
+                  onPress={handleGenerateAnalysis}
+                  disabled={labelAnalysisLoading}
+                >
+                  <Text style={styles.analysisButtonText}>
+                    {needsReview ? 'Confirm & Generate' : 'Generate analysis'}
+                  </Text>
+                </TouchableOpacity>
+                {needsReview ? (
+                  <TouchableOpacity
+                    style={[styles.secondaryActionButton, labelAnalysisLoading ? styles.analysisButtonDisabled : null]}
+                    onPress={handleGenerateAnalysis}
+                    disabled={labelAnalysisLoading}
+                  >
+                    <Text style={styles.secondaryActionText}>Generate anyway</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+            ) : null}
           </View>
         ) : null}
+
+        <View style={styles.labelCard}>
+          <Text style={styles.labelCardTitle}>Label Evidence</Text>
+          <View style={styles.labelMetaGroup}>
+            <Text style={styles.labelMetaTight}>Product: {labelProductName}</Text>
+            {draft?.servingSize ? (
+              <Text style={styles.labelMetaTight}>Serving Size: {draft.servingSize}</Text>
+            ) : (
+              <Text style={styles.labelMetaTight}>Serving Size: Not detected</Text>
+            )}
+            <Text style={styles.labelMetaTight}>
+              Extraction Quality: {labelQuality.extractionQuality} ({Math.round((draft?.confidenceScore ?? 0) * 100)}%)
+            </Text>
+            <Text style={styles.labelMetaTight}>
+              Coverage: {Math.round((draft?.parseCoverage ?? 0) * 100)}% | {labelQuality.validCount} valid ingredients
+            </Text>
+          </View>
+          {ingredientsToShow.length > 0 ? (
+            <View style={styles.labelList}>
+              {ingredientsToShow.map((ingredient, index) => (
+                <Text key={`${ingredient.name}-${index}`} style={styles.labelItem}>
+                  {formatDraftIngredient(ingredient)}
+                </Text>
+              ))}
+            </View>
+          ) : (
+            <Text style={styles.labelEmpty}>No ingredients detected.</Text>
+          )}
+          {issues.length > 0 ? (
+            <View style={styles.labelIssues}>
+              <Text style={styles.labelCardTitle}>Issues Detected</Text>
+              {issues.map((issue, index) => (
+                <Text key={`${issue.type}-${index}`} style={styles.labelItem}>
+                  {issue.message}
+                </Text>
+              ))}
+            </View>
+          ) : null}
+        </View>
 
         {isLabelStreaming && !labelAnalysisError ? (
           <BlurView intensity={40} tint="dark" style={styles.streamingBadge}>
@@ -381,7 +515,7 @@ export default function ScanResultScreen() {
   }
 
   // 1. Error State
-  if (status === 'error') {
+  if (barcodeQuality.errorState) {
     return (
       <ResponsiveScreen contentStyle={styles.screen}>
         <Header onBack={handleBack} title="Scan Result" />
@@ -443,7 +577,11 @@ export default function ScanResultScreen() {
       {/* We render dashboard immediately. 
         As 'efficacy', 'safety' etc. arrive, this component re-renders and fills in the blanks.
       */}
-      <AnalysisDashboard analysis={compositeAnalysis} isStreaming={isStreaming} />
+      <AnalysisDashboard
+        analysis={compositeAnalysis}
+        isStreaming={isStreaming}
+        sourceType="barcode"
+      />
 
       {/* Optional: A small global spinner in the corner if streaming */}
       {isStreaming && (
@@ -533,18 +671,40 @@ const styles = StyleSheet.create({
   },
   labelCardTitle: { fontSize: 16, fontWeight: '600', color: '#111827', marginBottom: 8 },
   labelMeta: { fontSize: 13, color: '#6b7280', marginBottom: 12 },
+  labelMetaTight: { fontSize: 13, color: '#6b7280' },
+  labelMetaGroup: { gap: 4, marginBottom: 12 },
   labelList: { marginTop: 4 },
   labelItem: { fontSize: 14, color: '#111827', marginBottom: 6, lineHeight: 20 },
   labelEmpty: { fontSize: 14, color: '#6b7280' },
+  labelIssues: { marginTop: 16 },
   analysisButton: {
     marginTop: 8,
     backgroundColor: '#111827',
     paddingVertical: 12,
     borderRadius: 12,
     alignItems: 'center',
+    paddingHorizontal: 16,
+  },
+  analysisActionRow: {
+    marginTop: 8,
+    gap: 8,
+  },
+  secondaryActionButton: {
+    marginTop: 4,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#d4d4d8',
+    alignItems: 'center',
+  },
+  secondaryActionText: {
+    color: '#111827',
+    fontSize: 13,
+    fontWeight: '600',
   },
   analysisButtonDisabled: {
     backgroundColor: '#6b7280',
+    borderColor: '#6b7280',
   },
   analysisButtonText: {
     color: '#ffffff',

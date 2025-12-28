@@ -41,6 +41,8 @@ import { InteractiveScoreRing } from '@/components/ui/InteractiveScoreRing';
 import { ContentSection } from '@/components/ui/ScoreDetailCard';
 import { computeSmartScores, type AnalysisInput } from '../../lib/scoring';
 type Analysis = any;
+type ScoreState = 'active' | 'muted' | 'loading';
+type SourceType = 'barcode' | 'label_scan';
 
 type TileType = 'overview' | 'science' | 'usage' | 'safety';
 
@@ -460,7 +462,13 @@ const DashboardModal: React.FC<{
     );
 };
 
-export const AnalysisDashboard: React.FC<{ analysis: Analysis; isStreaming?: boolean }> = ({ analysis, isStreaming = false }) => {
+export const AnalysisDashboard: React.FC<{
+    analysis: Analysis;
+    isStreaming?: boolean;
+    scoreBadge?: string;
+    scoreState?: ScoreState;
+    sourceType?: SourceType;
+}> = ({ analysis, isStreaming = false, scoreBadge, scoreState, sourceType }) => {
     const [selectedTile, setSelectedTile] = useState<TileConfig | null>(null);
     const scrollY = useSharedValue(0);
     const scrollHandler = useAnimatedScrollHandler((event) => {
@@ -492,6 +500,7 @@ export const AnalysisDashboard: React.FC<{ analysis: Analysis; isStreaming?: boo
             typeof value.score === 'number'
         );
     }, [efficacy.score, safety.score, value.score]);
+    const effectiveScoreState: ScoreState = scoreState ?? (isFullyLoaded ? 'active' : 'loading');
 
     // Compute scores using new AI-driven scoring system
     // Only compute when fully loaded, otherwise show loading state
@@ -542,6 +551,17 @@ export const AnalysisDashboard: React.FC<{ analysis: Analysis; isStreaming?: boo
 
         return computeSmartScores(analysisInput);
     }, [efficacy, safety, value, social, isFullyLoaded]);
+    const displayOverrides = effectiveScoreState === 'muted'
+        ? { overall: '--', effectiveness: '--', safety: '--', value: '--' }
+        : undefined;
+    const ringScores = effectiveScoreState === 'muted'
+        ? { effectiveness: 0, safety: 0, value: 0, overall: 0 }
+        : scores;
+    const formatScoreText = (value: number, override?: string) => {
+        if (override) return override;
+        return Number.isFinite(value) ? `${Math.round(value)}/100` : 'AI';
+    };
+    const overviewScoreText = formatScoreText(scores.overall, displayOverrides?.overall);
 
     // Construct descriptions for InteractiveScoreRing with score factor explanations
     const descriptions: {
@@ -862,7 +882,7 @@ export const AnalysisDashboard: React.FC<{ analysis: Analysis; isStreaming?: boo
                         <View style={styles.modalOverviewCard}>
                             <TrendingUp size={20} color="#3B82F6" />
                             <Text style={styles.modalOverviewNumber}>
-                                {Number.isFinite(scores.overall) ? `${Math.round(scores.overall)}/100` : 'AI'}
+                                {overviewScoreText}
                             </Text>
                             <Text style={styles.modalOverviewLabel}>NuTri Score</Text>
                         </View>
@@ -1166,15 +1186,19 @@ export const AnalysisDashboard: React.FC<{ analysis: Analysis; isStreaming?: boo
 
                 {/* Score Ring Card */}
                 <View style={styles.scoreSection}>
-                    <InteractiveScoreRing
-                        scores={{
-                            effectiveness: scores.effectiveness,
-                            safety: scores.safety,
-                            value: scores.value,
-                            overall: scores.overall
-                        }}
-                        descriptions={descriptions}
-                    />
+                        <InteractiveScoreRing
+                            scores={{
+                                effectiveness: ringScores.effectiveness,
+                                safety: ringScores.safety,
+                                value: ringScores.value,
+                                overall: ringScores.overall
+                            }}
+                            descriptions={descriptions}
+                            display={displayOverrides}
+                            muted={effectiveScoreState === 'muted'}
+                            badgeText={scoreBadge}
+                            sourceType={sourceType}
+                        />
                 </View>
 
                 {/* Deep Categories */}
