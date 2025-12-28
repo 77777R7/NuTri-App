@@ -40,8 +40,9 @@ type InteractiveScoreRingProps = {
     sourceType?: 'barcode' | 'label_scan';
 };
 
-export const InteractiveScoreRing = ({ scores, descriptions, display, muted = false, badgeText }: InteractiveScoreRingProps) => {
+export const InteractiveScoreRing = ({ scores, descriptions, display, muted = false, badgeText, sourceType }: InteractiveScoreRingProps) => {
     const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+    const valueLabel = sourceType === 'label_scan' ? 'Formula Quality' : 'Value';
 
     // Dimensions
     const size = 150; // Compact ring size to leave room for legend text
@@ -100,7 +101,7 @@ export const InteractiveScoreRing = ({ scores, descriptions, display, muted = fa
             case 'safety':
                 return { score: scores.safety, desc: descriptions.safety, color: '#A6E533', title: 'Safety' };
             case 'practicality':
-                return { score: scores.value, desc: descriptions.practicality, color: '#00DBDD', title: 'Value' };
+                return { score: scores.value, desc: descriptions.practicality, color: '#00DBDD', title: valueLabel };
         }
     };
 
@@ -230,7 +231,9 @@ export const InteractiveScoreRing = ({ scores, descriptions, display, muted = fa
                         <TouchableOpacity style={styles.legendItem} onPress={() => handlePress('practicality')} activeOpacity={muted ? 1 : 0.7}>
                             <View style={[styles.legendIcon, { backgroundColor: muted ? '#d1d5db' : '#00DBDD' }]} />
                             <View style={styles.legendContent}>
-                                <Text style={[styles.legendTitle, muted ? styles.mutedTextStrong : null]} numberOfLines={1}>Value</Text>
+                                <Text style={[styles.legendTitle, muted ? styles.mutedTextStrong : null]} numberOfLines={1}>
+                                    {valueLabel}
+                                </Text>
                                 <Text style={styles.legendScore} numberOfLines={1}>{formatLegendScore(displayValue)}</Text>
                             </View>
                             {!muted && <ChevronRight size={16} color="#C7C7CC" />}
@@ -259,6 +262,7 @@ export const InteractiveScoreRing = ({ scores, descriptions, display, muted = fa
                             score={overlayData.score}
                             description={overlayData.desc}
                             color={overlayData.color}
+                            valueLabel={valueLabel}
                         />
                     </View>
                 </Animated.View>

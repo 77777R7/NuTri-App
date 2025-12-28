@@ -1,9 +1,20 @@
 import { CameraView, useCameraPermissions, type CameraPictureOptions } from 'expo-camera';
+import { BlurView } from 'expo-blur';
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft, Camera, Flashlight, ImageIcon, RefreshCcw } from 'lucide-react-native';
+import { ArrowLeft, Camera, Flashlight, ImageIcon, RefreshCcw, Crop } from 'lucide-react-native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Image,
+  PanResponder,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ResponsiveScreen } from '@/components/common/ResponsiveScreen';
@@ -34,6 +45,12 @@ export default function LabelScanScreen() {
   const [previewUri, setPreviewUri] = useState<string | null>(null);
   const [previewBase64, setPreviewBase64] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [cropMode, setCropMode] = useState(false);
+  const [cropFrame, setCropFrame] = useState({ width: 0, height: 0 });
+  const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
+  const [cropZoom, setCropZoom] = useState(1);
+  const [cropOffset, setCropOffset] = useState({ x: 0, y: 0 });
+  const cropStartRef = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     if (!cameraPermission || cameraPermission.status === 'undetermined') {
@@ -47,6 +64,18 @@ export default function LabelScanScreen() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
+
+  useEffect(() => {
+    if (!previewUri) {
+      setImageSize({ width: 0, height: 0 });
+      return;
+    }
+    Image.getSize(
+      previewUri,
+      (width, height) => setImageSize({ width, height }),
+      () => setImageSize({ width: 0, height: 0 }),
+    );
+  }, [previewUri]);
 
   const pickFromLibrary = useCallback(async () => {
     if (!galleryPermission?.granted) {
@@ -137,7 +166,95 @@ export default function LabelScanScreen() {
     setPreviewBase64(null);
     setStatus('idle');
     setErrorMessage(null);
+    setCropMode(false);
   }, []);
+
+  const cropDisplay = useMemo(() => {
+    if (!cropFrame.width || !cropFrame.height || !imageSize.width || !imageSize.height) {
+      return { width: 0, height: 0, scale: 1 };
+    }
+    const baseScale = Math.max(
+      cropFrame.width / imageSize.width,
+      cropFrame.height / imageSize.height,
+    );
+    const scale = baseScale * cropZoom;
+    return {
+      width: imageSize.width * scale,
+      height: imageSize.height * scale,
+      scale,
+    };
+  }, [cropFrame, cropZoom, imageSize]);
+
+  const clampCropOffset = useCallback(
+    (nextX: number, nextY: number) => {
+      const maxX = Math.max(0, (cropDisplay.width - cropFrame.width) / 2);
+      const maxY = Math.max(0, (cropDisplay.height - cropFrame.height) / 2);
+      return {
+        x: Math.min(maxX, Math.max(-maxX, nextX)),
+        y: Math.min(maxY, Math.max(-maxY, nextY)),
+      };
+    },
+    [cropDisplay.height, cropDisplay.width, cropFrame.height, cropFrame.width],
+  );
+
+  useEffect(() => {
+    if (!cropMode) return;
+    setCropZoom(1);
+    setCropOffset({ x: 0, y: 0 });
+  }, [cropMode, previewUri]);
+
+  useEffect(() => {
+    if (!cropMode) return;
+    setCropOffset((prev) => clampCropOffset(prev.x, prev.y));
+  }, [clampCropOffset, cropMode, cropDisplay.height, cropDisplay.width]);
+
+  const panResponder = useMemo(
+    () => PanResponder.create({
+      onStartShouldSetPanResponder: () => cropMode,
+      onMoveShouldSetPanResponder: () => cropMode,
+      onPanResponderGrant: () => {
+        cropStartRef.current = cropOffset;
+      },
+      onPanResponderMove: (_, gesture) => {
+        if (!cropMode) return;
+        const next = clampCropOffset(
+          cropStartRef.current.x + gesture.dx,
+          cropStartRef.current.y + gesture.dy,
+        );
+        setCropOffset(next);
+      },
+    }),
+    [clampCropOffset, cropMode, cropOffset],
+  );
+
+  const handleApplyCrop = useCallback(async () => {
+    if (!previewUri || !imageSize.width || !imageSize.height || !cropFrame.width || !cropFrame.height) {
+      setCropMode(false);
+      return;
+    }
+    try {
+      const scaledWidth = cropDisplay.width;
+      const scaledHeight = cropDisplay.height;
+      const left = (cropFrame.width - scaledWidth) / 2 + cropOffset.x;
+      const top = (cropFrame.height - scaledHeight) / 2 + cropOffset.y;
+      const originX = Math.max(0, Math.round(-left / cropDisplay.scale));
+      const originY = Math.max(0, Math.round(-top / cropDisplay.scale));
+      const width = Math.min(imageSize.width, Math.round(cropFrame.width / cropDisplay.scale));
+      const height = Math.min(imageSize.height, Math.round(cropFrame.height / cropDisplay.scale));
+      const result = await ImageManipulator.manipulateAsync(
+        previewUri,
+        [{ crop: { originX, originY, width, height } }],
+        { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG, base64: true },
+      );
+      setPreviewUri(result.uri);
+      setPreviewBase64(result.base64 ?? null);
+      setCropMode(false);
+    } catch (error) {
+      console.warn('[scan] crop failed', error);
+      setErrorMessage('Unable to crop photo. Please try again.');
+      setCropMode(false);
+    }
+  }, [cropDisplay, cropFrame.height, cropFrame.width, cropOffset.x, cropOffset.y, imageSize, previewUri]);
 
   const isCameraPermissionLoading = !cameraPermission || cameraPermission.status === 'undetermined';
   const isProcessing = status === 'processing';
@@ -174,14 +291,62 @@ export default function LabelScanScreen() {
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
       {previewUri ? (
-        <Image source={{ uri: previewUri }} style={styles.preview} resizeMode="contain" />
+        cropMode ? (
+          <View style={styles.cropContainer}>
+            <View
+              style={styles.cropFrame}
+              onLayout={(event) => {
+                const { width, height } = event.nativeEvent.layout;
+                if (width && height) {
+                  setCropFrame({ width, height });
+                }
+              }}
+              {...panResponder.panHandlers}
+            >
+              {cropDisplay.width > 0 ? (
+                <Image
+                  source={{ uri: previewUri }}
+                  style={[
+                    styles.cropImage,
+                    {
+                      width: cropDisplay.width,
+                      height: cropDisplay.height,
+                      left: (cropFrame.width - cropDisplay.width) / 2 + cropOffset.x,
+                      top: (cropFrame.height - cropDisplay.height) / 2 + cropOffset.y,
+                    },
+                  ]}
+                  resizeMode="cover"
+                />
+              ) : null}
+            </View>
+            <View style={styles.cropControls}>
+              <TouchableOpacity
+                style={styles.cropControlButton}
+                onPress={() => setCropZoom((prev) => Math.max(1, Math.round((prev - 0.2) * 10) / 10))}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.cropControlText}>-</Text>
+              </TouchableOpacity>
+              <Text style={styles.cropControlLabel}>Zoom</Text>
+              <TouchableOpacity
+                style={styles.cropControlButton}
+                onPress={() => setCropZoom((prev) => Math.min(3, Math.round((prev + 0.2) * 10) / 10))}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.cropControlText}>+</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <Image source={{ uri: previewUri }} style={styles.preview} resizeMode="contain" />
+        )
       ) : (
         <CameraView ref={cameraRef} style={styles.camera} facing="back" enableTorch={torchEnabled} />
       )}
 
       <SafeAreaView edges={['top']} style={styles.topOverlay}>
         <TouchableOpacity style={styles.iconButton} onPress={() => router.back()} activeOpacity={0.85}>
-          <ArrowLeft size={20} color={tokens.colors.surface} />
+          <ArrowLeft size={20} color="#0f172a" />
         </TouchableOpacity>
         <Text style={styles.titleText}>Text Scan</Text>
         <View style={styles.topSpacer} />
@@ -190,24 +355,56 @@ export default function LabelScanScreen() {
       <SafeAreaView edges={['bottom']} style={styles.bottomOverlay}>
         {previewUri ? (
           <View style={styles.previewPanel}>
-            <Text style={styles.previewTitle}>Review photo</Text>
+            <Text style={styles.previewTitle}>{cropMode ? 'Adjust crop' : 'Review photo'}</Text>
             <View style={styles.previewActions}>
-              <TouchableOpacity style={styles.secondaryButton} onPress={handleRetry} activeOpacity={0.85}>
-                <RefreshCcw size={16} color={tokens.colors.surface} />
-                <Text style={styles.secondaryText}>Retake</Text>
-              </TouchableOpacity>
               <TouchableOpacity
-                style={styles.primaryButton}
-                onPress={handleSubmit}
+                style={styles.secondaryButton}
+                onPress={cropMode ? () => setCropMode(false) : handleRetry}
                 activeOpacity={0.85}
-                disabled={isProcessing}
               >
-                {isProcessing ? (
-                  <ActivityIndicator color={tokens.colors.surface} />
-                ) : (
-                  <Text style={styles.primaryText}>Use this photo</Text>
-                )}
+                <BlurView intensity={35} tint="dark" style={StyleSheet.absoluteFillObject} />
+                <View style={styles.secondaryOverlay} />
+                <RefreshCcw size={16} color={tokens.colors.surface} />
+                <Text style={styles.secondaryText}>{cropMode ? 'Cancel' : 'Retake'}</Text>
               </TouchableOpacity>
+              {cropMode ? (
+                <TouchableOpacity
+                  style={styles.primaryButton}
+                  onPress={handleApplyCrop}
+                  activeOpacity={0.85}
+                >
+                  <BlurView intensity={40} tint="light" style={StyleSheet.absoluteFillObject} />
+                  <View style={styles.primaryOverlay} />
+                  <Text style={styles.primaryText}>Apply crop</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={styles.secondaryButton}
+                  onPress={() => setCropMode(true)}
+                  activeOpacity={0.85}
+                >
+                  <BlurView intensity={35} tint="dark" style={StyleSheet.absoluteFillObject} />
+                  <View style={styles.secondaryOverlay} />
+                  <Crop size={16} color={tokens.colors.surface} />
+                  <Text style={styles.secondaryText}>Crop</Text>
+                </TouchableOpacity>
+              )}
+              {!cropMode ? (
+                <TouchableOpacity
+                  style={styles.primaryButton}
+                  onPress={handleSubmit}
+                  activeOpacity={0.85}
+                  disabled={isProcessing}
+                >
+                  <BlurView intensity={40} tint="light" style={StyleSheet.absoluteFillObject} />
+                  <View style={styles.primaryOverlay} />
+                  {isProcessing ? (
+                    <ActivityIndicator color="#0f172a" />
+                  ) : (
+                    <Text style={styles.primaryText}>Use this photo</Text>
+                  )}
+                </TouchableOpacity>
+              ) : null}
             </View>
           </View>
         ) : (
@@ -274,36 +471,82 @@ const createStyles = (tokens: DesignTokens, topInset: number, bottomInset: numbe
       width: '100%',
       backgroundColor: '#000',
     },
+    cropContainer: {
+      flex: 1,
+      backgroundColor: '#000',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: tokens.spacing.md,
+    },
+    cropFrame: {
+      width: '86%',
+      aspectRatio: 3 / 4,
+      borderRadius: 18,
+      borderWidth: 2,
+      borderColor: 'rgba(255,255,255,0.7)',
+      overflow: 'hidden',
+      backgroundColor: '#000',
+    },
+    cropImage: {
+      position: 'absolute',
+    },
+    cropControls: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: tokens.spacing.md,
+    },
+    cropControlButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: 'rgba(255,255,255,0.12)',
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: 'rgba(255,255,255,0.4)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    cropControlText: {
+      color: '#FFFFFF',
+      fontSize: 20,
+      fontWeight: '600',
+    },
+    cropControlLabel: {
+      color: '#FFFFFF',
+      fontSize: 13,
+      fontWeight: '500',
+    },
     topOverlay: {
       position: 'absolute',
       top: 0,
       left: 0,
       right: 0,
-      paddingTop: topInset + tokens.spacing.md,
+      paddingTop: topInset + 2,
+      paddingBottom: 6,
       paddingHorizontal: tokens.spacing.lg,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
+      backgroundColor: 'rgba(0,0,0,0.85)',
     },
     bottomOverlay: {
       position: 'absolute',
       left: 0,
       right: 0,
       bottom: 0,
-      paddingBottom: bottomInset + tokens.spacing.lg,
+      paddingBottom: bottomInset + tokens.spacing.sm,
       paddingHorizontal: tokens.spacing.lg,
-      gap: tokens.spacing.md,
+      gap: tokens.spacing.sm,
       alignItems: 'center',
     },
     iconButton: {
       width: tokens.components.iconButton.size,
       height: tokens.components.iconButton.size,
       borderRadius: tokens.components.iconButton.radius,
-      backgroundColor: 'rgba(10,12,12,0.55)',
+      backgroundColor: '#FFFFFF',
       alignItems: 'center',
       justifyContent: 'center',
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: 'rgba(255,255,255,0.28)',
+      borderColor: 'rgba(255,255,255,0.6)',
     },
     titleText: {
       color: tokens.colors.surface,
@@ -364,31 +607,48 @@ const createStyles = (tokens: DesignTokens, topInset: number, bottomInset: numbe
     },
     previewActions: {
       flexDirection: 'row',
-      gap: tokens.spacing.md,
+      gap: tokens.spacing.sm,
+      justifyContent: 'center',
     },
     primaryButton: {
-      flex: 1,
-      paddingVertical: tokens.spacing.sm,
-      borderRadius: tokens.components.card.radius,
-      backgroundColor: tokens.colors.accent,
+      height: 44,
+      minWidth: 130,
+      maxWidth: 150,
+      paddingHorizontal: 16,
+      borderRadius: tokens.radius.full,
+      overflow: 'hidden',
+      backgroundColor: 'rgba(120,190,255,0.22)',
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: 'rgba(255,255,255,0.35)',
       alignItems: 'center',
       justifyContent: 'center',
     },
     primaryText: {
-      color: tokens.colors.surface,
+      color: '#0f172a',
       ...tokens.typography.subtitle,
     },
     secondaryButton: {
-      flex: 1,
-      paddingVertical: tokens.spacing.sm,
-      borderRadius: tokens.components.card.radius,
+      height: 44,
+      minWidth: 96,
+      maxWidth: 120,
+      paddingHorizontal: 14,
+      borderRadius: tokens.radius.full,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: 'rgba(255,255,255,0.4)',
-      backgroundColor: 'rgba(255,255,255,0.1)',
+      borderColor: 'rgba(255,255,255,0.35)',
+      backgroundColor: 'rgba(255,255,255,0.12)',
+      overflow: 'hidden',
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
       gap: tokens.spacing.xs,
+    },
+    primaryOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(135,195,255,0.35)',
+    },
+    secondaryOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(255,255,255,0.08)',
     },
     secondaryText: {
       color: tokens.colors.surface,

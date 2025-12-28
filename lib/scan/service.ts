@@ -12,7 +12,8 @@ export type LabelScanResult = {
   status: 'ok' | 'needs_confirmation' | 'failed';
   draft?: LabelDraft;
   analysis?: AiSupplementAnalysis | null;
-  analysisStatus?: 'complete' | 'skipped' | 'pending' | 'unavailable' | 'failed';
+  analysisStatus?: 'complete' | 'partial' | 'skipped' | 'pending' | 'unavailable' | 'failed';
+  analysisIssues?: string[];
   message?: string;
   suggestion?: string;
   issues?: { type: string; message: string }[];

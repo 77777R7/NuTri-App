@@ -19,12 +19,13 @@ const GOOGLE_CSE_ENDPOINT = "https://customsearch.googleapis.com/customsearch/v1
 const MAX_RESULTS = 5;
 const QUALITY_THRESHOLD = 60; // Score below this triggers fallback search
 const PORT = Number(process.env.PORT ?? 3001);
-const LABEL_SCAN_OUTPUT_RULES = `LABEL-SCAN OUTPUT RULES (apply to efficacy JSON only):
+const LABEL_SCAN_OUTPUT_RULES = `LABEL-SCAN OUTPUT RULES:
 1) overviewSummary must include serving unit (e.g., per softgel/caplet/serving) and 2-3 key ingredients with doses if present.
-2) coreBenefits must list 2-3 items in "Ingredient - dose per unit" format; if dose missing, say "dose not specified".
+2) coreBenefits must list 3 items in "Ingredient - dose per unit" format; if dose missing, say "dose not specified".
 3) overallAssessment must include a transparency note (e.g., proprietary blend or missing doses).
 4) marketingVsReality must mention "Label-only analysis; no price/brand verification".
-5) If data is missing, say "Not specified on label" instead of guessing.`;
+5) Do NOT mention price/cost; value should reflect formula transparency.
+6) If data is missing, say "Not specified on label" instead of guessing.`;
 
 // ============================================================================
 // GOOGLE CSE UTILITIES
@@ -612,13 +613,15 @@ interface AnalyzeLabelRequest {
   deviceId?: string;
   debug?: boolean;
   includeAnalysis?: boolean;
+  async?: boolean;
 }
 
 interface LabelAnalysisResponse {
   status: "ok" | "needs_confirmation" | "failed";
   draft?: LabelDraft;
   analysis?: AiSupplementAnalysis | null;
-  analysisStatus?: "complete" | "skipped" | "unavailable";
+  analysisStatus?: "complete" | "partial" | "pending" | "skipped" | "unavailable";
+  analysisIssues?: string[];
   message?: string;
   suggestion?: string;
   issues?: { type: string; message: string }[]; // P0-2: Return validation issues to frontend
@@ -704,6 +707,217 @@ function computeTokenStats(tokens: { confidence: number; height: number }[]): To
   };
 }
 
+const labelAnalysisInFlight = new Map<string, Promise<void>>();
+
+async function buildLabelScanAnalysis(options: {
+  draft: LabelDraft;
+  imageHash: string;
+  model: string;
+  apiKey: string;
+  contextLabel?: string;
+  disclaimer?: string;
+}): Promise<{ analysis: AiSupplementAnalysis; analysisIssues: string[]; analysisStatus: "complete" | "partial"; llmMs: number }> {
+  const { draft, imageHash, model, apiKey } = options;
+  const contextLabel = options.contextLabel ?? "from OCR";
+  const disclaimer =
+    options.disclaimer ?? "This analysis is based on label information only. Not a substitute for medical advice.";
+  const llmStart = performance.now();
+  const ingredientContext = formatForDeepSeek(draft);
+  const labelContext = `PRODUCT INFORMATION (${contextLabel}):
+${ingredientContext}
+
+TASK: Analyze this supplement based on the ingredient list above.
+Focus on: ingredient forms, dosage adequacy, evidence strength.
+If information is not available, use null instead of guessing.
+
+${LABEL_SCAN_OUTPUT_RULES}`;
+
+  const [efficacyRaw, safetyRaw, usageRaw] = await Promise.all([
+    fetchAnalysisSection("efficacy", labelContext, model, apiKey),
+    fetchAnalysisSection("safety", labelContext, model, apiKey),
+    fetchAnalysisSection("usage", labelContext, model, apiKey),
+  ]);
+
+  const efficacy = efficacyRaw as {
+    score?: number;
+    verdict?: string;
+    coreBenefits?: string[];
+    overallAssessment?: string;
+    overviewSummary?: string;
+    marketingVsReality?: string;
+    primaryActive?: {
+      name?: string;
+      form?: string | null;
+      formQuality?: string;
+      formNote?: string | null;
+      dosageValue?: number | null;
+      dosageUnit?: string | null;
+      evidenceLevel?: string;
+      evidenceSummary?: string | null;
+    };
+    ingredients?: {
+      name?: string;
+      dosageValue?: number | null;
+      dosageUnit?: string | null;
+      dosageAssessment?: string;
+      evidenceLevel?: string;
+      formQuality?: string;
+    }[];
+  } | null;
+  const safety = safetyRaw as { score?: number; verdict?: string; risks?: string[]; redFlags?: string[] } | null;
+  const usage = usageRaw as { usage?: { summary?: string; timing?: string; withFood?: boolean; interactions?: string[] }; value?: { score?: number; verdict?: string; analysis?: string }; social?: { score?: number; summary?: string } } | null;
+  const analysisIssues: string[] = [];
+  if (!efficacy) analysisIssues.push("efficacy_parse_failed");
+  if (!safety) analysisIssues.push("safety_parse_failed");
+  if (!usage) analysisIssues.push("usage_parse_failed");
+
+  const labelActives = (() => {
+    const results: { name: string; doseText: string; dosageValue: number | null; dosageUnit: string | null }[] = [];
+    const seen = new Set<string>();
+    for (const ing of draft.ingredients) {
+      const name = ing.name?.trim();
+      if (!name) continue;
+      const key = name.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const doseText =
+        ing.amount != null && ing.unit
+          ? `${ing.amount} ${ing.unit}`
+          : ing.dvPercent != null
+            ? `${ing.dvPercent}% DV`
+            : "dose not specified";
+      results.push({
+        name,
+        doseText,
+        dosageValue: ing.amount ?? null,
+        dosageUnit: ing.unit ?? null,
+      });
+      if (results.length >= 3) break;
+    }
+    return results;
+  })();
+
+  const labelPrimary = labelActives[0];
+  const labelCoreBenefits = labelActives.map((active) => `${active.name} - ${active.doseText}`);
+  const labelSummary = labelActives.length
+    ? `Label-only summary${draft.servingSize ? ` (${draft.servingSize})` : ''}: ${labelActives
+        .map((active) => `${active.name} ${active.doseText}`)
+        .join(', ')}.`
+    : "Label-only summary based on listed ingredients.";
+  const transparencyNote = draft.issues.some((issue) =>
+    ["incomplete_ingredients", "header_not_found", "non_ingredient_line_detected", "unit_boundary_suspect", "dose_inconsistency_or_claim"].includes(issue.type)
+  )
+    ? "Ingredient disclosure may be incomplete or require review."
+    : "Ingredient disclosure appears clear on the label.";
+
+  const transparencyScore = (() => {
+    const base = Math.round(4 + draft.confidenceScore * 6);
+    let penalty = 0;
+    if (draft.parseCoverage < 0.7) penalty += 2;
+    if (draft.issues.some((issue) => issue.type === "incomplete_ingredients")) penalty += 2;
+    if (draft.issues.some((issue) => issue.type === "non_ingredient_line_detected")) penalty += 2;
+    if (draft.issues.some((issue) => issue.type === "unit_boundary_suspect")) penalty += 2;
+    if (draft.issues.some((issue) => issue.type === "dose_inconsistency_or_claim")) penalty += 2;
+    const score = Math.max(1, Math.min(10, base - penalty));
+    return score;
+  })();
+  const transparencyVerdict =
+    transparencyScore >= 8
+      ? "Clear ingredient disclosure"
+      : transparencyScore >= 6
+        ? "Moderate ingredient transparency"
+        : "Limited ingredient transparency";
+  const transparencyAnalysis = transparencyNote;
+
+  const analysis: AiSupplementAnalysis = {
+    schemaVersion: 1,
+    barcode: `label:${imageHash.slice(0, 16)}`,
+    generatedAt: new Date().toISOString(),
+    model,
+    status: "success",
+    overallScore: efficacy?.score ?? 5,
+    confidence: draft.confidenceScore > 0.8 ? "high" : draft.confidenceScore > 0.5 ? "medium" : "low",
+    productInfo: {
+      brand: null,
+      name: "Label Scan Result",
+      category: "supplement",
+      image: null,
+    },
+    efficacy: {
+      score: (efficacy?.score ?? 5) as RatingScore,
+      benefits: labelCoreBenefits.length ? labelCoreBenefits : efficacy?.coreBenefits ?? [],
+      dosageAssessment: {
+        text: efficacy?.overallAssessment ?? transparencyNote,
+        isUnderDosed: false,
+      },
+      verdict: efficacy?.verdict ?? undefined,
+      highlights: labelCoreBenefits.length ? labelCoreBenefits : efficacy?.coreBenefits ?? undefined,
+      warnings: [],
+      coreBenefits: labelCoreBenefits.length ? labelCoreBenefits : efficacy?.coreBenefits ?? undefined,
+      overviewSummary: labelSummary,
+      overallAssessment: efficacy?.overallAssessment ?? transparencyNote,
+      marketingVsReality: "Label-only analysis; no price/brand verification.",
+      primaryActive: labelPrimary
+        ? {
+            name: labelPrimary.name,
+            form: null,
+            formQuality: "unknown",
+            formNote: null,
+            dosageValue: labelPrimary.dosageValue,
+            dosageUnit: labelPrimary.dosageUnit,
+            evidenceLevel: "none",
+            evidenceSummary: "Not specified on label",
+          }
+        : efficacy?.primaryActive,
+      ingredients: labelActives.length
+        ? labelActives.map((active) => ({
+            name: active.name,
+            dosageValue: active.dosageValue,
+            dosageUnit: active.dosageUnit,
+            dosageAssessment: "unknown",
+            evidenceLevel: "none",
+            formQuality: "unknown",
+          }))
+        : Array.isArray(efficacy?.ingredients) && efficacy.ingredients.length > 0
+          ? efficacy.ingredients
+          : [],
+    },
+    value: {
+      score: transparencyScore as RatingScore,
+      verdict: transparencyVerdict,
+      analysis: transparencyAnalysis,
+    },
+    safety: {
+      score: (safety?.score ?? 5) as RatingScore,
+      risks: safety?.risks ?? [],
+      redFlags: safety?.redFlags ?? [],
+      additivesInfo: null,
+      verdict: safety?.verdict ?? undefined,
+    },
+    social: {
+      score: (usage?.social?.score ?? 3) as RatingScore,
+      tier: "unknown",
+      summary: usage?.social?.summary ?? "Brand reputation unknown from label scan.",
+      tags: [],
+    },
+    usage: {
+      summary: usage?.usage?.summary ?? "Follow label directions",
+      timing: usage?.usage?.timing ?? null,
+      withFood: usage?.usage?.withFood ?? null,
+      conflicts: usage?.usage?.interactions ?? [],
+      sourceType: "product_label",
+    },
+    sources: [],
+    disclaimer,
+    analysisIssues: analysisIssues.length ? analysisIssues : undefined,
+  };
+
+  const analysisStatus = analysisIssues.length ? "partial" : "complete";
+  const llmMs = performance.now() - llmStart;
+
+  return { analysis, analysisIssues, analysisStatus, llmMs };
+}
+
 /**
  * POST /api/analyze-label
  * Analyze a supplement label image using Vision OCR + DeepSeek
@@ -731,6 +945,17 @@ app.post("/api/analyze-label", async (req: Request, res: Response) => {
       includeAnalysisBody
       || includeAnalysisQuery.some((value) => value === "true" || value === "1")
       || (typeof body.includeAnalysis === "undefined" && includeAnalysisQuery.length === 0 && Boolean(imageBase64));
+    const asyncQuery = Array.isArray(req.query.async)
+      ? req.query.async
+      : req.query.async
+        ? [String(req.query.async)]
+        : [];
+    const asyncBody =
+      typeof body.async === "string"
+        ? body.async === "true" || body.async === "1"
+        : body.async === true;
+    const asyncAnalysis =
+      asyncBody || asyncQuery.some((value) => value === "true" || value === "1");
 
     // Validate input
     if (!imageHash) {
@@ -764,11 +989,15 @@ app.post("/api/analyze-label", async (req: Request, res: Response) => {
     if (cached && !debugEnabled) {
       if (hasCompletedAnalysis(cached)) {
         console.log(`[LabelScan] Cache hit with analysis for ${imageHash.slice(0, 8)}...`);
+        const cachedAnalysisIssues =
+          (cached.analysis as { analysisIssues?: string[] } | null)?.analysisIssues ?? [];
+        const cachedAnalysisStatus = cachedAnalysisIssues.length ? "partial" : "complete";
         return res.json({
           status: "ok",
           draft: cached.parsedIngredients ?? undefined,
           analysis: cached.analysis,
-          analysisStatus: "complete",
+          analysisStatus: cachedAnalysisStatus,
+          analysisIssues: cachedAnalysisIssues.length ? cachedAnalysisIssues : undefined,
         } satisfies LabelAnalysisResponse);
       }
 
@@ -799,84 +1028,40 @@ app.post("/api/analyze-label", async (req: Request, res: Response) => {
           } satisfies LabelAnalysisResponse);
         }
 
+        if (asyncAnalysis) {
+          console.log(`[LabelScan] Deferring DeepSeek analysis for ${imageHash.slice(0, 8)}...`);
+          if (!labelAnalysisInFlight.has(imageHash)) {
+            const task = (async () => {
+              try {
+                const { analysis, llmMs } = await buildLabelScanAnalysis({
+                  draft: cachedDraft,
+                  imageHash,
+                  model,
+                  apiKey: deepseekKey,
+                });
+                await updateCachedAnalysis(imageHash, analysis);
+                console.log(`[LabelScan] Async analysis complete for ${imageHash.slice(0, 8)} in ${Math.round(llmMs)}ms...`);
+              } catch (error) {
+                console.error(`[LabelScan] Async analysis failed for ${imageHash.slice(0, 8)}:`, error);
+              }
+            })();
+            labelAnalysisInFlight.set(imageHash, task);
+            task.finally(() => labelAnalysisInFlight.delete(imageHash));
+          }
+          return res.json({
+            status: cachedStatus,
+            draft: cachedDraft,
+            analysisStatus: "pending",
+          } satisfies LabelAnalysisResponse);
+        }
+
         console.log(`[LabelScan] Running DeepSeek analysis from cache...`);
-        const llmStart = performance.now();
-        const ingredientContext = formatForDeepSeek(cachedDraft);
-
-        const labelContext = `PRODUCT INFORMATION (from OCR):
-${ingredientContext}
-
-TASK: Analyze this supplement based on the ingredient list above.
-Focus on: ingredient forms, dosage adequacy, evidence strength.
-If information is not available, use null instead of guessing.
-
-${LABEL_SCAN_OUTPUT_RULES}`;
-
-        const [efficacyRaw, safetyRaw, usageRaw] = await Promise.all([
-          fetchAnalysisSection("efficacy", labelContext, model, deepseekKey),
-          fetchAnalysisSection("safety", labelContext, model, deepseekKey),
-          fetchAnalysisSection("usage", labelContext, model, deepseekKey),
-        ]);
-
-        const efficacy = efficacyRaw as { score?: number; verdict?: string; coreBenefits?: string[]; overallAssessment?: string } | null;
-        const safety = safetyRaw as { score?: number; verdict?: string; risks?: string[]; redFlags?: string[] } | null;
-        const usage = usageRaw as { usage?: { summary?: string; timing?: string; withFood?: boolean; interactions?: string[] }; value?: { score?: number; verdict?: string; analysis?: string }; social?: { score?: number; summary?: string } } | null;
-
-        const analysis: AiSupplementAnalysis = {
-          schemaVersion: 1,
-          barcode: `label:${imageHash.slice(0, 16)}`,
-          generatedAt: new Date().toISOString(),
+        const { analysis, analysisIssues, analysisStatus, llmMs } = await buildLabelScanAnalysis({
+          draft: cachedDraft,
+          imageHash,
           model,
-          status: "success",
-          overallScore: efficacy?.score ?? 5,
-          confidence: cachedDraft.confidenceScore > 0.8 ? "high" : cachedDraft.confidenceScore > 0.5 ? "medium" : "low",
-          productInfo: {
-            brand: null,
-            name: "Label Scan Result",
-            category: "supplement",
-            image: null,
-          },
-          efficacy: {
-            score: (efficacy?.score ?? 5) as RatingScore,
-            benefits: efficacy?.coreBenefits ?? [],
-            dosageAssessment: {
-              text: efficacy?.overallAssessment ?? "Unable to assess dosage",
-              isUnderDosed: false,
-            },
-            verdict: efficacy?.verdict ?? undefined,
-            highlights: efficacy?.coreBenefits ?? undefined,
-            warnings: [],
-          },
-          value: {
-            score: (usage?.value?.score ?? 5) as RatingScore,
-            verdict: usage?.value?.verdict ?? "Value assessment unavailable",
-            analysis: usage?.value?.analysis ?? "Price data not available from label scan.",
-          },
-          safety: {
-            score: (safety?.score ?? 5) as RatingScore,
-            risks: safety?.risks ?? [],
-            redFlags: safety?.redFlags ?? [],
-            additivesInfo: null,
-            verdict: safety?.verdict ?? undefined,
-          },
-          social: {
-            score: (usage?.social?.score ?? 3) as RatingScore,
-            tier: "unknown",
-            summary: usage?.social?.summary ?? "Brand reputation unknown from label scan.",
-            tags: [],
-          },
-          usage: {
-            summary: usage?.usage?.summary ?? "Follow label directions",
-            timing: usage?.usage?.timing ?? null,
-            withFood: usage?.usage?.withFood ?? null,
-            conflicts: usage?.usage?.interactions ?? [],
-            sourceType: "product_label",
-          },
-          sources: [],
-          disclaimer: "This analysis is based on label information only. Not a substitute for medical advice.",
-        };
-
-        const llmMs = performance.now() - llmStart;
+          apiKey: deepseekKey,
+        });
         await updateCachedAnalysis(imageHash, analysis);
 
         console.log(`[LabelScan] Analysis complete for ${imageHash.slice(0, 8)} in ${Math.round(llmMs)}ms...`);
@@ -884,7 +1069,8 @@ ${LABEL_SCAN_OUTPUT_RULES}`;
           status: cachedStatus,
           draft: cachedDraft,
           analysis,
-          analysisStatus: "complete",
+          analysisStatus,
+          analysisIssues: analysisIssues.length ? analysisIssues : undefined,
         } satisfies LabelAnalysisResponse);
       }
     }
@@ -1023,88 +1209,44 @@ ${LABEL_SCAN_OUTPUT_RULES}`;
       } satisfies LabelAnalysisResponse);
     }
 
+    if (asyncAnalysis) {
+      console.log(`[LabelScan] Deferring DeepSeek analysis for ${imageHash.slice(0, 8)}...`);
+      if (!labelAnalysisInFlight.has(imageHash)) {
+        const task = (async () => {
+          try {
+            const { analysis, llmMs: asyncLlmMs } = await buildLabelScanAnalysis({
+              draft,
+              imageHash,
+              model,
+              apiKey: deepseekKey,
+            });
+            await updateCachedAnalysis(imageHash, analysis);
+            console.log(`[LabelScan] Async analysis complete for ${imageHash.slice(0, 8)} in ${Math.round(asyncLlmMs)}ms...`);
+          } catch (error) {
+            console.error(`[LabelScan] Async analysis failed for ${imageHash.slice(0, 8)}:`, error);
+          }
+        })();
+        labelAnalysisInFlight.set(imageHash, task);
+        task.finally(() => labelAnalysisInFlight.delete(imageHash));
+      }
+      return res.json({
+        status: needsReview ? "needs_confirmation" : "ok",
+        draft,
+        message: needsReview ? "Please review the extracted ingredients." : undefined,
+        debug: debugPayload,
+        analysisStatus: "pending",
+      } satisfies LabelAnalysisResponse);
+    }
+
     console.log(`[LabelScan] Running DeepSeek analysis...`);
-    const llmStart = performance.now();
-    const ingredientContext = formatForDeepSeek(draft);
-
-    // Build minimal context for label scan (no search results needed)
-    const labelContext = `PRODUCT INFORMATION (from OCR):
-${ingredientContext}
-
-TASK: Analyze this supplement based on the ingredient list above.
-Focus on: ingredient forms, dosage adequacy, evidence strength.
-If information is not available, use null instead of guessing.
-
-${LABEL_SCAN_OUTPUT_RULES}`;
-
-    // Run analysis sections in parallel
-    const [efficacyRaw, safetyRaw, usageRaw] = await Promise.all([
-      fetchAnalysisSection("efficacy", labelContext, model, deepseekKey),
-      fetchAnalysisSection("safety", labelContext, model, deepseekKey),
-      fetchAnalysisSection("usage", labelContext, model, deepseekKey),
-    ]);
-
-    // Type assertions for analysis results
-    const efficacy = efficacyRaw as { score?: number; verdict?: string; coreBenefits?: string[]; overallAssessment?: string } | null;
-    const safety = safetyRaw as { score?: number; verdict?: string; risks?: string[]; redFlags?: string[] } | null;
-    const usage = usageRaw as { usage?: { summary?: string; timing?: string; withFood?: boolean; interactions?: string[] }; value?: { score?: number; verdict?: string; analysis?: string }; social?: { score?: number; summary?: string } } | null;
-
-    // Construct analysis response (simplified for label scan)
-    const analysis: AiSupplementAnalysis = {
-      schemaVersion: 1,
-      barcode: `label:${imageHash.slice(0, 16)}`,
-      generatedAt: new Date().toISOString(),
+    const { analysis, analysisIssues, analysisStatus, llmMs: resolvedLlmMs } = await buildLabelScanAnalysis({
+      draft,
+      imageHash,
       model,
-      status: "success",
-      overallScore: efficacy?.score ?? 5,
-      confidence: draft.confidenceScore > 0.8 ? "high" : draft.confidenceScore > 0.5 ? "medium" : "low",
-      productInfo: {
-        brand: null,
-        name: "Label Scan Result",
-        category: "supplement",
-        image: null,
-      },
-      efficacy: {
-        score: (efficacy?.score ?? 5) as RatingScore,
-        benefits: efficacy?.coreBenefits ?? [],
-        dosageAssessment: {
-          text: efficacy?.overallAssessment ?? "Unable to assess dosage",
-          isUnderDosed: false,
-        },
-        verdict: efficacy?.verdict ?? undefined,
-        highlights: efficacy?.coreBenefits ?? undefined,
-        warnings: [],
-      },
-      value: {
-        score: (usage?.value?.score ?? 5) as RatingScore,
-        verdict: usage?.value?.verdict ?? "Value assessment unavailable",
-        analysis: usage?.value?.analysis ?? "Price data not available from label scan.",
-      },
-      safety: {
-        score: (safety?.score ?? 5) as RatingScore,
-        risks: safety?.risks ?? [],
-        redFlags: safety?.redFlags ?? [],
-        additivesInfo: null,
-        verdict: safety?.verdict ?? undefined,
-      },
-      social: {
-        score: (usage?.social?.score ?? 3) as RatingScore,
-        tier: "unknown",
-        summary: usage?.social?.summary ?? "Brand reputation unknown from label scan.",
-        tags: [],
-      },
-      usage: {
-        summary: usage?.usage?.summary ?? "Follow label directions",
-        timing: usage?.usage?.timing ?? null,
-        withFood: usage?.usage?.withFood ?? null,
-        conflicts: usage?.usage?.interactions ?? [],
-        sourceType: "product_label",
-      },
-      sources: [],
-      disclaimer: "This analysis is based on label information only. Not a substitute for medical advice.",
-    };
+      apiKey: deepseekKey,
+    });
 
-    llmMs = performance.now() - llmStart;
+    llmMs = resolvedLlmMs;
 
     // Update cache with analysis
     await updateCachedAnalysis(imageHash, analysis);
@@ -1117,7 +1259,8 @@ ${LABEL_SCAN_OUTPUT_RULES}`;
       analysis,
       message: needsReview ? "Please review the extracted ingredients." : undefined,
       debug: debugPayload,
-      analysisStatus: "complete",
+      analysisStatus,
+      analysisIssues: analysisIssues.length ? analysisIssues : undefined,
     } satisfies LabelAnalysisResponse);
 
   } catch (error) {
@@ -1180,77 +1323,14 @@ app.post("/api/analyze-label/confirm", async (req: Request, res: Response) => {
     }
 
     console.log(`[LabelScan/Confirm] Running analysis for ${imageHash.slice(0, 8)}...`);
-    const ingredientContext = formatForDeepSeek(confirmedDraft);
-
-    const labelContext = `PRODUCT INFORMATION (user-confirmed from OCR):
-${ingredientContext}
-
-TASK: Analyze this supplement based on the confirmed ingredient list above.
-Focus on: ingredient forms, dosage adequacy, evidence strength.
-
-${LABEL_SCAN_OUTPUT_RULES}`;
-
-    const [efficacyRaw, safetyRaw, usageRaw] = await Promise.all([
-      fetchAnalysisSection("efficacy", labelContext, model, deepseekKey),
-      fetchAnalysisSection("safety", labelContext, model, deepseekKey),
-      fetchAnalysisSection("usage", labelContext, model, deepseekKey),
-    ]);
-
-    const efficacy = efficacyRaw as { score?: number; verdict?: string; coreBenefits?: string[]; overallAssessment?: string } | null;
-    const safety = safetyRaw as { score?: number; verdict?: string; risks?: string[]; redFlags?: string[] } | null;
-    const usage = usageRaw as { usage?: { summary?: string; timing?: string; withFood?: boolean; interactions?: string[] }; value?: { score?: number; verdict?: string; analysis?: string }; social?: { score?: number; summary?: string } } | null;
-
-    const analysis: AiSupplementAnalysis = {
-      schemaVersion: 1,
-      barcode: `label:${imageHash.slice(0, 16)}`,
-      generatedAt: new Date().toISOString(),
+    const { analysis, analysisIssues, analysisStatus } = await buildLabelScanAnalysis({
+      draft: confirmedDraft,
+      imageHash,
       model,
-      status: "success",
-      overallScore: efficacy?.score ?? 5,
-      confidence: "medium",
-      productInfo: {
-        brand: null,
-        name: "Label Scan Result", // P1-10: Consistent with main endpoint
-        category: "supplement",
-        image: null,
-      },
-      efficacy: {
-        score: (efficacy?.score ?? 5) as RatingScore,
-        benefits: efficacy?.coreBenefits ?? [],
-        dosageAssessment: {
-          text: efficacy?.overallAssessment ?? "Unable to assess dosage",
-          isUnderDosed: false,
-        },
-        verdict: efficacy?.verdict ?? undefined,
-      },
-      value: {
-        score: (usage?.value?.score ?? 5) as RatingScore,
-        verdict: usage?.value?.verdict ?? "Value assessment unavailable",
-        analysis: usage?.value?.analysis ?? "Price data not available.",
-      },
-      safety: {
-        score: (safety?.score ?? 5) as RatingScore,
-        risks: safety?.risks ?? [],
-        redFlags: safety?.redFlags ?? [],
-        additivesInfo: null,
-        verdict: safety?.verdict ?? undefined,
-      },
-      social: {
-        score: (usage?.social?.score ?? 3) as RatingScore,
-        tier: "unknown",
-        summary: usage?.social?.summary ?? "Brand reputation unknown.",
-        tags: [],
-      },
-      usage: {
-        summary: usage?.usage?.summary ?? "Follow label directions",
-        timing: usage?.usage?.timing ?? null,
-        withFood: usage?.usage?.withFood ?? null,
-        conflicts: usage?.usage?.interactions ?? [],
-        sourceType: "product_label",
-      },
-      sources: [],
+      apiKey: deepseekKey,
+      contextLabel: "user-confirmed from OCR",
       disclaimer: "This analysis is based on user-confirmed label information. Not a substitute for medical advice.",
-    };
+    });
 
     // P1-1: Use updateCachedAnalysis instead of setCachedResult to preserve created_at (TTL)
     await updateCachedAnalysis(imageHash, analysis);
@@ -1260,6 +1340,8 @@ ${LABEL_SCAN_OUTPUT_RULES}`;
       status: "ok",
       draft: confirmedDraft,
       analysis,
+      analysisStatus,
+      analysisIssues: analysisIssues.length ? analysisIssues : undefined,
     } satisfies LabelAnalysisResponse);
 
   } catch (error) {

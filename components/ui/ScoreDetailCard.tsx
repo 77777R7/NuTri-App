@@ -14,6 +14,7 @@ type ScoreDetailCardProps = {
     maxScore?: number;
     description: ContentSection;
     color: string;
+    valueLabel?: string;
 };
 
 export const ScoreDetailCard = ({
@@ -22,9 +23,12 @@ export const ScoreDetailCard = ({
     maxScore = 100,  // Changed from 10 to 100 - scores are now in 0-100 range
     description,
     color,
+    valueLabel,
 }: ScoreDetailCardProps) => {
     const Icon = category === 'effectiveness' ? Zap : category === 'safety' ? Shield : Activity;
-    const label = category === 'practicality' ? 'Value' : category.charAt(0).toUpperCase() + category.slice(1);
+    const label = category === 'practicality'
+        ? (valueLabel || 'Value')
+        : category.charAt(0).toUpperCase() + category.slice(1);
 
     // Calculate progress percentage
     const progress = Math.min(Math.max(score / maxScore, 0), 1);

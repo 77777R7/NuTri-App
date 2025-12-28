@@ -39,6 +39,7 @@ import Animated, {
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { InteractiveScoreRing } from '@/components/ui/InteractiveScoreRing';
 import { ContentSection } from '@/components/ui/ScoreDetailCard';
+import type { LabelDraft } from '@/backend/src/labelAnalysis';
 import { computeSmartScores, type AnalysisInput } from '../../lib/scoring';
 type Analysis = any;
 type ScoreState = 'active' | 'muted' | 'loading';
@@ -65,6 +66,7 @@ type TileConfig = {
     eyebrow: string;
     summary?: string;
     bullets?: string[];
+    bulletLimit?: number;
     mechanisms?: Mechanism[];
     routineLine?: string;
     bestFor?: string;
@@ -201,6 +203,32 @@ function clampText(value?: string | null, maxChars: number = 100) {
     return clipped.trim();
 }
 
+const LABEL_NAME_NOISE_PATTERNS: RegExp[] = [
+    /supplement facts/i,
+    /nutrition facts/i,
+    /serving size/i,
+    /\bamount\b/i,
+    /per serving/i,
+    /daily value/i,
+    /% ?dv/i,
+    /\bvalue\b/i,
+    /(medicinal|non-medicinal) ingredients/i,
+    /other ingredients/i,
+    /also contains/i,
+    /directions?/i,
+    /warnings?/i,
+    /caution/i,
+    /store/i,
+    /^(each|in each|chaque|dans chaque)\b.*\bcontains?\b/i,
+];
+
+function isNoiseLabelIngredientName(name?: string | null) {
+    if (!name) return true;
+    const trimmed = name.trim();
+    if (!trimmed || trimmed.length < 2) return true;
+    return LABEL_NAME_NOISE_PATTERNS.some((pattern) => pattern.test(trimmed));
+}
+
 function capitalizeSentences(value?: string | null) {
     const normalized = normalizeText(value);
     if (!normalized) return '';
@@ -260,7 +288,7 @@ const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
                             </Text>
                         )}
                         <View style={styles.tileBulletList}>
-                            {(tile.bullets || []).slice(0, 2).map((bullet, idx) => (
+                            {(tile.bullets || []).slice(0, tile.bulletLimit ?? 2).map((bullet, idx) => (
                                 <View key={idx} style={styles.tileBulletRow}>
                                     <View style={styles.bulletIcon}>
                                         <CheckCircle2 size={14} color={label} />
@@ -468,7 +496,8 @@ export const AnalysisDashboard: React.FC<{
     scoreBadge?: string;
     scoreState?: ScoreState;
     sourceType?: SourceType;
-}> = ({ analysis, isStreaming = false, scoreBadge, scoreState, sourceType }) => {
+    labelDraft?: LabelDraft;
+}> = ({ analysis, isStreaming = false, scoreBadge, scoreState, sourceType, labelDraft }) => {
     const [selectedTile, setSelectedTile] = useState<TileConfig | null>(null);
     const scrollY = useSharedValue(0);
     const scrollHandler = useAnimatedScrollHandler((event) => {
@@ -501,6 +530,40 @@ export const AnalysisDashboard: React.FC<{
         );
     }, [efficacy.score, safety.score, value.score]);
     const isLabelSource = sourceType === 'label_scan';
+    const scrubLabelValueText = useCallback(
+        (text?: string | null) => {
+            if (!isLabelSource || !text) return text ?? '';
+            return /price|cost/i.test(text) ? '' : text;
+        },
+        [isLabelSource]
+    );
+    const labelActives = useMemo(() => {
+        if (!isLabelSource || !labelDraft) return [];
+        const seen = new Set<string>();
+        const results: { name: string; doseText: string; dosageValue: number | null; dosageUnit: string | null }[] = [];
+        for (const ing of labelDraft.ingredients ?? []) {
+            const name = ing.name?.trim();
+            if (!name) continue;
+            if (isNoiseLabelIngredientName(name)) continue;
+            const key = name.toLowerCase();
+            if (seen.has(key)) continue;
+            seen.add(key);
+            const doseText =
+                ing.amount != null && ing.unit
+                    ? `${ing.amount} ${ing.unit}`
+                    : ing.dvPercent != null
+                        ? `${ing.dvPercent}% DV`
+                        : 'dose not specified';
+            results.push({
+                name,
+                doseText,
+                dosageValue: ing.amount ?? null,
+                dosageUnit: ing.unit ?? null,
+            });
+            if (results.length >= 3) break;
+        }
+        return results;
+    }, [isLabelSource, labelDraft]);
     const effectiveScoreState: ScoreState = isLabelSource
         ? (scoreState ?? (isFullyLoaded ? 'active' : 'loading'))
         : (isFullyLoaded ? 'active' : 'loading');
@@ -593,18 +656,34 @@ export const AnalysisDashboard: React.FC<{
                 : [],
         },
         practicality: {
-            verdict: value.verdict || 'Analyzing value and practicality...',
+            verdict:
+                scrubLabelValueText(value.verdict) ||
+                (isLabelSource ? 'Analyzing formula quality...' : 'Analyzing value and practicality...'),
             highlights: isFullyLoaded
                 ? scores.details.valueFactors.filter(f => f.startsWith('+'))
                 : [],
             warnings: [],
         },
-    }), [efficacy.verdict, safety.verdict, safety.redFlags, value.verdict, scores.details, isFullyLoaded]);
+    }), [efficacy.verdict, safety.verdict, safety.redFlags, value.verdict, scores.details, isFullyLoaded, isLabelSource, scrubLabelValueText]);
 
-    const scienceSummary =
-        efficacy.verdict ||
-        (Array.isArray(efficacy.benefits) && efficacy.benefits[0]) ||
-        'Formula effectiveness has been analyzed based on typical clinical ranges.';
+    const labelActiveLines = labelActives.map((active) => `${active.name} - ${active.doseText}`);
+    const labelIssueCaution = labelDraft?.issues?.find((issue) =>
+        ['unit_invalid', 'value_anomaly', 'non_ingredient_line_detected', 'unit_boundary_suspect', 'dose_inconsistency_or_claim', 'incomplete_ingredients']
+            .includes(issue.type)
+    );
+    const labelCautionLine =
+        (Array.isArray(safety.redFlags) && safety.redFlags[0]) ||
+        (Array.isArray(safety.risks) && safety.risks[0]) ||
+        labelIssueCaution?.message ||
+        'Review interactions if taking other supplements or medications.';
+
+    const scienceSummary = isLabelSource && labelActiveLines.length
+        ? `Key actives: ${labelActiveLines.slice(0, 3).join('; ')}.`
+        : isLabelSource
+            ? 'Ingredients could not be confirmed from the label. Review evidence for accuracy.'
+            : efficacy.verdict ||
+                (Array.isArray(efficacy.benefits) && efficacy.benefits[0]) ||
+                'Formula effectiveness has been analyzed based on typical clinical ranges.';
 
     const usageSummary =
         usage.summary ||
@@ -680,10 +759,23 @@ export const AnalysisDashboard: React.FC<{
     const primaryName = primaryActive?.name || productInfo.primaryIngredient || productInfo.name;
 
     // Build overview summary: prefer AI-generated, then structured fallback, then legacy
+    const labelOverviewSummary = isLabelSource && labelActiveLines.length
+        ? `Label-only snapshot${labelDraft?.servingSize ? ` (${labelDraft.servingSize})` : ''}: ${labelActiveLines
+            .slice(0, 3)
+            .join(', ')}.`
+        : null;
     const overviewSummary = (() => {
+        if (labelOverviewSummary) {
+            return labelOverviewSummary;
+        }
         // 1. Use new AI-generated overviewSummary if available
         if (efficacy?.overviewSummary) {
             return efficacy.overviewSummary;
+        }
+        if (isLabelSource) {
+            return labelDraft?.servingSize
+                ? `Label-only summary (${labelDraft.servingSize}).`
+                : 'Label-only summary based on extracted ingredients.';
         }
         // 2. Build from primaryActive (structured fallback)
         if (primaryActive?.dosageValue != null && primaryActive?.name) {
@@ -701,12 +793,18 @@ export const AnalysisDashboard: React.FC<{
     })();
 
     // Get core benefits from efficacy (new) or fallback to benefits array
+    const labelFallbackBenefits = [
+        labelDraft?.servingSize ? `Serving size: ${labelDraft.servingSize}` : 'Serving size not detected',
+        'Ingredients extracted from label evidence',
+    ];
     const coreBenefits = (
-        Array.isArray(efficacy?.coreBenefits) && efficacy.coreBenefits.length > 0
-            ? efficacy.coreBenefits
-            : Array.isArray(efficacy?.benefits) && efficacy.benefits.length > 0
-                ? efficacy.benefits
-                : ['Enhanced clarity', 'Sustained energy']
+        isLabelSource
+            ? (labelActiveLines.length > 0 ? labelActiveLines : labelFallbackBenefits)
+            : Array.isArray(efficacy?.coreBenefits) && efficacy.coreBenefits.length > 0
+                ? efficacy.coreBenefits
+                : Array.isArray(efficacy?.benefits) && efficacy.benefits.length > 0
+                    ? efficacy.benefits
+                    : ['Enhanced clarity', 'Sustained energy']
     ).slice(0, 3);
 
     const bestFor = usage.bestFor || usage.target || usage.who || 'Professionals & students needing focus.';
@@ -736,7 +834,7 @@ export const AnalysisDashboard: React.FC<{
         return 72; // Default
     })();
 
-    const keyMechanisms: Mechanism[] = [
+    const baseMechanisms: Mechanism[] = [
         {
             name: primaryName || 'Primary Active',
             amount: primaryDoseLabel || 'See label',
@@ -751,7 +849,7 @@ export const AnalysisDashboard: React.FC<{
             'moderate': 72,
             'weak': 50,
         };
-        keyMechanisms.push({
+        baseMechanisms.push({
             name: 'Evidence Level',
             amount: primaryActive.evidenceLevel.charAt(0).toUpperCase() + primaryActive.evidenceLevel.slice(1),
             fill: evidenceFillMap[primaryActive.evidenceLevel] || 60,
@@ -765,12 +863,19 @@ export const AnalysisDashboard: React.FC<{
             'medium': 72,
             'low': 52,
         };
-        keyMechanisms.push({
+        baseMechanisms.push({
             name: 'Form Quality',
             amount: primaryActive.formQuality.charAt(0).toUpperCase() + primaryActive.formQuality.slice(1),
             fill: formFillMap[primaryActive.formQuality] || 64,
         });
     } // formQuality already added from primaryActive above
+
+    const labelMechanisms: Mechanism[] = labelActives.map((active, index) => ({
+        name: active.name,
+        amount: active.doseText,
+        fill: Math.max(48, 92 - index * 14),
+    }));
+    const keyMechanisms = isLabelSource && labelMechanisms.length ? labelMechanisms : baseMechanisms;
 
 
     const evidenceLevelText = (() => {
@@ -808,14 +913,16 @@ export const AnalysisDashboard: React.FC<{
     const benefitsPhrase = coreBenefits.slice(0, 2).join(', ');
     const overviewCoverSummary = capitalizeSentences(
         clampText(
-            [
-                primaryName
-                    ? ensurePeriod(`Focused on ${primaryName}${primaryDoseLabel ? ` ${primaryDoseLabel}` : ''}`)
-                    : '',
-                benefitsPhrase ? ensurePeriod(`Key benefits: ${benefitsPhrase}`) : '',
-            ]
-                .filter(Boolean)
-                .join(' '),
+            isLabelSource
+                ? (labelOverviewSummary || overviewSummary)
+                : [
+                    primaryName
+                        ? ensurePeriod(`Focused on ${primaryName}${primaryDoseLabel ? ` ${primaryDoseLabel}` : ''}`)
+                        : '',
+                    benefitsPhrase ? ensurePeriod(`Key benefits: ${benefitsPhrase}`) : '',
+                ]
+                    .filter(Boolean)
+                    .join(' '),
             110
         ) || clampText(overviewSummary, 110)
     );
@@ -853,8 +960,9 @@ export const AnalysisDashboard: React.FC<{
         )
     );
 
-    const overviewCoverBullets = coreBenefits
-        .slice(0, 3)
+    const overviewCoverBullets = (isLabelSource
+        ? [...coreBenefits.slice(0, 2), labelCautionLine]
+        : coreBenefits.slice(0, 3))
         .map((benefit: string) => capitalizeSentences(benefit))
         .filter(Boolean);
 
@@ -863,6 +971,72 @@ export const AnalysisDashboard: React.FC<{
     const isUsageReady = !!usage.summary || !isStreaming;
     // Overview should wait for all AI analysis to complete to avoid partial/inconsistent display
     const isOverviewReady = isFullyLoaded || !isStreaming;
+
+    const overviewContent = isLabelSource ? (
+        <View style={{ gap: 16 }}>
+            <View style={styles.modalCalloutCard}>
+                <Text style={styles.modalBulletTitle}>What it is</Text>
+                <Text style={styles.modalParagraphSmall}>{labelOverviewSummary ?? overviewSummary}</Text>
+            </View>
+            <View style={styles.modalCalloutCard}>
+                <Text style={styles.modalBulletTitle}>What stands out</Text>
+                {coreBenefits.slice(0, 3).map((benefit: string, idx: number) => (
+                    <Text key={idx} style={styles.modalBulletItem}>
+                        • {benefit}
+                    </Text>
+                ))}
+            </View>
+            <View style={styles.modalCalloutCard}>
+                <Text style={styles.modalBulletTitle}>Main caution</Text>
+                <Text style={styles.modalParagraphSmall}>{labelCautionLine}</Text>
+            </View>
+        </View>
+    ) : (
+        <View style={{ gap: 16 }}>
+            <Text style={styles.modalParagraph}>{overviewSummary}</Text>
+            <View style={styles.modalOverviewGrid}>
+                <View style={styles.modalOverviewCard}>
+                    <TrendingUp size={20} color="#3B82F6" />
+                    <Text style={styles.modalOverviewNumber}>
+                        {overviewScoreText}
+                    </Text>
+                    <Text style={styles.modalOverviewLabel}>NuTri Score</Text>
+                </View>
+                {/* Form card - use simplified formLabel */}
+                {formLabel && (
+                    <View style={styles.modalOverviewCard}>
+                        <Activity size={20} color="#3B82F6" />
+                        <Text style={styles.modalOverviewNumber} numberOfLines={1}>
+                            {formLabel}
+                        </Text>
+                        <Text style={styles.modalOverviewLabel}>Form</Text>
+                    </View>
+                )}
+            </View>
+            <View style={styles.modalCalloutCard}>
+                <Text style={styles.modalBulletTitle}>Core benefits</Text>
+                {coreBenefits.map((benefit: string, idx: number) => (
+                    <Text key={idx} style={styles.modalBulletItem}>
+                        • {benefit}
+                    </Text>
+                ))}
+            </View>
+            <View style={styles.modalTagRow}>
+                {productInfo.brand && (
+                    <View style={styles.modalTag}>
+                        <Text style={styles.modalTagLabel}>Brand</Text>
+                        <Text style={styles.modalTagValue}>{productInfo.brand}</Text>
+                    </View>
+                )}
+                {productInfo.category && (
+                    <View style={styles.modalTag}>
+                        <Text style={styles.modalTagLabel}>Category</Text>
+                        <Text style={styles.modalTagValue}>{productInfo.category}</Text>
+                    </View>
+                )}
+            </View>
+        </View>
+    );
 
     const tiles: TileConfig[] = [
         {
@@ -875,56 +1049,12 @@ export const AnalysisDashboard: React.FC<{
             backgroundColor: '#123CC5',
             textColor: '#F7FBFF',
             labelColor: '#D6E5FF',
-            eyebrow: 'CORE BENEFITS',
+            eyebrow: isLabelSource ? 'KEY INGREDIENTS' : 'CORE BENEFITS',
             summary: overviewCoverSummary,
             bullets: overviewCoverBullets,
+            bulletLimit: isLabelSource ? 3 : 2,
             loading: !isOverviewReady,
-            content: (
-                <View style={{ gap: 16 }}>
-                    <Text style={styles.modalParagraph}>{overviewSummary}</Text>
-                    <View style={styles.modalOverviewGrid}>
-                        <View style={styles.modalOverviewCard}>
-                            <TrendingUp size={20} color="#3B82F6" />
-                            <Text style={styles.modalOverviewNumber}>
-                                {overviewScoreText}
-                            </Text>
-                            <Text style={styles.modalOverviewLabel}>NuTri Score</Text>
-                        </View>
-                        {/* Form card - use simplified formLabel */}
-                        {formLabel && (
-                            <View style={styles.modalOverviewCard}>
-                                <Activity size={20} color="#3B82F6" />
-                                <Text style={styles.modalOverviewNumber} numberOfLines={1}>
-                                    {formLabel}
-                                </Text>
-                                <Text style={styles.modalOverviewLabel}>Form</Text>
-                            </View>
-                        )}
-                    </View>
-                    <View style={styles.modalCalloutCard}>
-                        <Text style={styles.modalBulletTitle}>Core benefits</Text>
-                        {coreBenefits.map((benefit: string, idx: number) => (
-                            <Text key={idx} style={styles.modalBulletItem}>
-                                • {benefit}
-                            </Text>
-                        ))}
-                    </View>
-                    <View style={styles.modalTagRow}>
-                        {productInfo.brand && (
-                            <View style={styles.modalTag}>
-                                <Text style={styles.modalTagLabel}>Brand</Text>
-                                <Text style={styles.modalTagValue}>{productInfo.brand}</Text>
-                            </View>
-                        )}
-                        {productInfo.category && (
-                            <View style={styles.modalTag}>
-                                <Text style={styles.modalTagLabel}>Category</Text>
-                                <Text style={styles.modalTagValue}>{productInfo.category}</Text>
-                            </View>
-                        )}
-                    </View>
-                </View>
-            ),
+            content: overviewContent,
         },
         {
             id: 2,
@@ -942,6 +1072,24 @@ export const AnalysisDashboard: React.FC<{
             content: (
                 <View style={{ gap: 16 }}>
                     <Text style={styles.modalParagraphSmall}>{scienceSummary}</Text>
+
+                    {isLabelSource && labelActiveLines.length > 0 && (
+                        <View style={styles.modalCalloutCard}>
+                            <Text style={styles.modalBulletTitle}>Key ingredients (label)</Text>
+                            {labelActiveLines.slice(0, 3).map((line, idx) => (
+                                <Text key={idx} style={styles.modalBulletItem}>
+                                    • {line}
+                                </Text>
+                            ))}
+                        </View>
+                    )}
+
+                    {isLabelSource && labelCautionLine && (
+                        <View style={styles.modalCalloutCard}>
+                            <Text style={styles.modalBulletTitle}>Main watchout</Text>
+                            <Text style={styles.modalParagraphSmall}>{labelCautionLine}</Text>
+                        </View>
+                    )}
 
                     {/* NEW: Enhanced Ingredient Analysis */}
                     {Array.isArray(efficacy.ingredients) && efficacy.ingredients.length > 0 && (

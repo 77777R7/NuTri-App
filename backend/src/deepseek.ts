@@ -52,7 +52,7 @@ OUTPUT JSON ONLY. NO MARKDOWN.
       "evidenceSummary": "Brief summary of research or null"
     }
   ],
-  "overviewSummary": "1-2 sentence product summary for a general user. Mention main ingredient, dose, evidence strength. If price unknown, say so briefly.",
+  "overviewSummary": "1-2 sentence product summary for a general user. Mention main ingredient, dose, evidence strength.",
   "coreBenefits": ["Benefit 1", "Benefit 2", "Benefit 3"],
   "overallAssessment": "Is this product effective? Why or why not?",
   "marketingVsReality": "What claims are supported vs unsupported?"
@@ -519,51 +519,7 @@ export async function fetchAnalysisSection(
       return parsed;
     }
 
-    // One retry: ask the model to repair its own output into strict JSON.
-    const candidate = extractJsonCandidate(content) ?? content;
-    console.warn(`[DeepSeek] Invalid JSON for ${section}, retrying repair`);
-
-    const repairResponse = await fetch("https://api.deepseek.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: model,
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are a strict JSON repair tool. Output ONLY valid JSON (no markdown, no comments).",
-          },
-          {
-            role: "user",
-            content: `Fix this into valid JSON only. Keep keys/structure the same:\n\n${candidate}`,
-          },
-        ],
-        temperature: 0,
-        stream: false,
-        max_tokens: Math.min(800, maxTokens),
-      }),
-    });
-
-    if (!repairResponse.ok) {
-      const errorText = await repairResponse.text();
-      console.error(`DeepSeek repair error: ${repairResponse.status}`, errorText);
-      return null;
-    }
-
-    const repairData = (await repairResponse.json()) as {
-      choices?: { message?: { content?: string } }[];
-    };
-    const repairContent = repairData.choices?.[0]?.message?.content || "{}";
-    const repaired = tryParseJsonLenient(repairContent);
-    if (repaired !== null) {
-      return repaired;
-    }
-
-    console.error(`[DeepSeek] JSON repair failed for ${section}`);
+    console.warn(`[DeepSeek] Invalid JSON for ${section}, skipping repair`);
     return null;
   } catch (error) {
     console.error(`Error fetching ${section}:`, error);

@@ -106,6 +106,12 @@ export interface AiSupplementAnalysisSuccess {
     verdict?: string;
     highlights?: string[];
     warnings?: string[];
+    primaryActive?: PrimaryActive | null;
+    ingredients?: IngredientAnalysis[];
+    overviewSummary?: string | null;
+    coreBenefits?: string[];
+    overallAssessment?: string;
+    marketingVsReality?: string;
   };
   value: {
     score: RatingScore;
@@ -132,6 +138,7 @@ export interface AiSupplementAnalysisSuccess {
   usage: UsageAssessment;
   sources: { title: string; link: string }[];
   disclaimer: string;
+  analysisIssues?: string[];
 }
 
 export interface AiSupplementAnalysisFailure extends AiSupplementAnalysisBase {
@@ -276,4 +283,3 @@ export interface EnrichedSource {
   domain: string;
   isHighQuality: boolean;
 }
-

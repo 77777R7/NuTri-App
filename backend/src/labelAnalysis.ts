@@ -33,7 +33,16 @@ export interface ParsedIngredient {
 }
 
 export interface ValidationIssue {
-    type: 'unit_invalid' | 'value_anomaly' | 'missing_serving_size' | 'header_not_found' | 'low_coverage' | 'incomplete_ingredients';
+    type:
+        | 'unit_invalid'
+        | 'value_anomaly'
+        | 'missing_serving_size'
+        | 'header_not_found'
+        | 'low_coverage'
+        | 'incomplete_ingredients'
+        | 'non_ingredient_line_detected'
+        | 'unit_boundary_suspect'
+        | 'dose_inconsistency_or_claim';
     message: string;
 }
 
@@ -419,6 +428,7 @@ export function extractIngredients(rows: Row[]): LabelDraft {
         const validation = validateIngredient(ing);
         issues.push(...validation);
     }
+    issues.push(...detectDoseInconsistency(ingredients));
 
     // Calculate overall confidence
     const confidenceScore = calculateConfidenceScore(ingredients, parseCoverage, issues);
@@ -960,6 +970,33 @@ const TEXT_DIRECTION_WORDS = new Set([
     'contient',
 ]);
 
+const NON_INGREDIENT_LINE_PATTERNS: RegExp[] = [
+    /\bconsult\b/,
+    /\bphysician\b/,
+    /\bpractitioner\b/,
+    /\bdirections?\b/,
+    /\bwarnings?\b/,
+    /\bcaution\b/,
+    /\bstore\b/,
+    /\bkeep out of reach\b/,
+    /\badults?\b/,
+    /\bposologie\b/,
+    /\bprendre\b/,
+    /\bcomparaison\b/,
+    /\bcompared\b/,
+    /\bcomparison\b/,
+];
+
+const DOSE_CLAIM_PATTERNS: RegExp[] = [
+    /\bonly\b/,
+    /\bcompared\b/,
+    /\bcomparison\b/,
+    /\bversus\b/,
+    /\bvs\.?\b/,
+    /\bmore than\b/,
+    /\bless than\b/,
+];
+
 const TEXT_SERVING_PATTERNS: RegExp[] = [
     /\bserving size\b/i,
     /\bper\s+([0-9]+)?\s*(capsule|softgel|tablet|gummy|caplet|scoop|packet|stick|drop|ml)\b/i,
@@ -968,6 +1005,27 @@ const TEXT_SERVING_PATTERNS: RegExp[] = [
     /\bpar\s+([0-9]+)?\s*(gelule|g[ée]lule|capsule|comprime|comprim[ée])\b/i,
     /\bchaque\s+([0-9]+)?\s*(gelule|g[ée]lule|capsule|comprime|comprim[ée])\b/i,
 ];
+
+function hasNonIngredientKeywords(rawLine: string): boolean {
+    const normalized = normalizeForMatch(rawLine);
+    return NON_INGREDIENT_LINE_PATTERNS.some((pattern) => pattern.test(normalized));
+}
+
+function hasDoseClaimKeywords(rawLine: string): boolean {
+    const normalized = normalizeForMatch(rawLine);
+    return DOSE_CLAIM_PATTERNS.some((pattern) => pattern.test(normalized));
+}
+
+function isUnitBoundarySuspect(ing: ParsedIngredient): boolean {
+    if (!ing.unit || ing.amount === null) return false;
+    const unitLower = ing.unit.toLowerCase();
+    if (unitLower !== 'g') return false;
+    const normalized = normalizeForMatch(ing.rawLine);
+    if (!normalized.includes('gelule')) return false;
+    if (/\b\d[\d,.]*\s*g\s*elule\b/.test(normalized)) return true;
+    if (/\b\d[\d,.]*\s*gelule\b/.test(normalized)) return true;
+    return false;
+}
 
 function normalizeForMatch(value: string): string {
     return value
@@ -1472,6 +1530,7 @@ export function extractTextIngredients(
     for (const ing of ingredients) {
         issues.push(...validateIngredient(ing));
     }
+    issues.push(...detectDoseInconsistency(ingredients));
 
     const confidenceScore = calculateConfidenceScore(ingredients, parseCoverage, issues);
 
@@ -1676,6 +1735,9 @@ function scoreDraft(draft: LabelDraft): { score: number; valid: number; junkRati
             case 'unit_invalid':
             case 'value_anomaly':
             case 'incomplete_ingredients':
+            case 'non_ingredient_line_detected':
+            case 'unit_boundary_suspect':
+            case 'dose_inconsistency_or_claim':
                 return total + 1;
             default:
                 return total + 0.5;
@@ -1854,6 +1916,27 @@ export function analyzeLabelDraft(tokens: Token[], fullText?: string): LabelDraf
 export function validateIngredient(ing: ParsedIngredient): ValidationIssue[] {
     const issues: ValidationIssue[] = [];
 
+    if (hasNonIngredientKeywords(ing.rawLine)) {
+        issues.push({
+            type: 'non_ingredient_line_detected',
+            message: `Line appears to be non-ingredient content: "${ing.rawLine.trim()}"`,
+        });
+    }
+
+    if (hasDoseClaimKeywords(ing.rawLine) && ing.amount !== null && ing.unit) {
+        issues.push({
+            type: 'dose_inconsistency_or_claim',
+            message: `Dose comparison/claim detected for ${ing.name}`,
+        });
+    }
+
+    if (isUnitBoundarySuspect(ing)) {
+        issues.push({
+            type: 'unit_boundary_suspect',
+            message: `Unit may be part of a word (e.g. gelule) for ${ing.name}`,
+        });
+    }
+
     // Check unit validity
     if (ing.unit && !VALID_UNITS.has(ing.unit.toLowerCase())) {
         issues.push({
@@ -1875,6 +1958,40 @@ export function validateIngredient(ing: ParsedIngredient): ValidationIssue[] {
                 }
                 break;
             }
+        }
+    }
+
+    return issues;
+}
+
+function detectDoseInconsistency(ingredients: ParsedIngredient[]): ValidationIssue[] {
+    const issues: ValidationIssue[] = [];
+    const buckets = new Map<string, { name: string; normalized: number }[]>();
+
+    for (const ing of ingredients) {
+        if (ing.amount === null || !ing.unit) continue;
+        const normalized = normalizeAmountForCompare(ing.amount, ing.unit, ing.name);
+        if (normalized === null) continue;
+        const key = getIngredientKeys(ing.name).core;
+        const list = buckets.get(key) ?? [];
+        list.push({ name: ing.name, normalized });
+        buckets.set(key, list);
+    }
+
+    for (const [key, entries] of buckets.entries()) {
+        if (entries.length < 2) continue;
+        const baseline = entries[0].normalized;
+        const displayName = entries[0].name || key;
+        const conflict = entries.some((entry) => {
+            const diff = Math.abs(entry.normalized - baseline);
+            const tolerance = Math.max(entry.normalized, baseline) * 0.15;
+            return diff > tolerance;
+        });
+        if (conflict) {
+            issues.push({
+                type: 'dose_inconsistency_or_claim',
+                message: `Conflicting doses detected for ${displayName}`,
+            });
         }
     }
 
@@ -1905,6 +2022,9 @@ function calculateConfidenceScore(
         incomplete_ingredients: 0.2,
         unit_invalid: 0.1,
         value_anomaly: 0.15,
+        non_ingredient_line_detected: 0.2,
+        unit_boundary_suspect: 0.2,
+        dose_inconsistency_or_claim: 0.15,
     };
 
     const issueCounts: Record<ValidationIssue['type'], number> = {
@@ -1914,6 +2034,9 @@ function calculateConfidenceScore(
         incomplete_ingredients: 0,
         unit_invalid: 0,
         value_anomaly: 0,
+        non_ingredient_line_detected: 0,
+        unit_boundary_suspect: 0,
+        dose_inconsistency_or_claim: 0,
     };
 
     for (const issue of issues) {
@@ -1946,6 +2069,9 @@ export function needsConfirmation(draft: LabelDraft): boolean {
     if (draft.issues.some((i) => i.type === 'incomplete_ingredients')) return true;
     if (draft.issues.some((i) => i.type === 'unit_invalid')) return true;
     if (draft.issues.some((i) => i.type === 'value_anomaly')) return true;
+    if (draft.issues.some((i) => i.type === 'non_ingredient_line_detected')) return true;
+    if (draft.issues.some((i) => i.type === 'unit_boundary_suspect')) return true;
+    if (draft.issues.some((i) => i.type === 'dose_inconsistency_or_claim')) return true;
     return false;
 }
 

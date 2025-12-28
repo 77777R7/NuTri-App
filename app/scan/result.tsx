@@ -17,7 +17,7 @@ import { getBarcodeQuality, getLabelDraftQuality } from '@/lib/scan/quality';
 import type { LabelDraft } from '@/backend/src/labelAnalysis';
 import { AnalysisDashboard } from './AnalysisDashboard';
 
-type LabelAnalysisStatus = 'complete' | 'skipped' | 'pending' | 'unavailable' | 'failed' | null;
+type LabelAnalysisStatus = 'complete' | 'partial' | 'skipped' | 'pending' | 'unavailable' | 'failed' | null;
 
 const NAME_NOISE_PATTERNS: RegExp[] = [
   /supplement facts/i,
@@ -43,6 +43,15 @@ const isNoiseIngredientName = (name?: string | null) => {
   const trimmed = name.trim();
   if (!trimmed || trimmed.length < 2) return true;
   return NAME_NOISE_PATTERNS.some((pattern) => pattern.test(trimmed));
+};
+
+const isPlaceholderLabelName = (name?: string | null) => {
+  if (!name) return true;
+  const trimmed = name.trim();
+  if (!trimmed) return true;
+  if (/^label scan result$/i.test(trimmed)) return true;
+  if (/^supplement$/i.test(trimmed)) return true;
+  return isNoiseIngredientName(trimmed);
 };
 
 const isLikelyIngredient = (ingredient: LabelDraft['ingredients'][number]) =>
@@ -77,7 +86,7 @@ export default function ScanResultScreen() {
   const [labelAnalysisLoading, setLabelAnalysisLoading] = useState(false);
   const [labelAnalysisError, setLabelAnalysisError] = useState<string | null>(null);
   const [labelAnalysisStatus, setLabelAnalysisStatus] = useState<LabelAnalysisStatus>(
-    labelResult?.analysis ? 'complete' : labelResult?.analysisStatus ?? null
+    labelResult?.analysisStatus ?? (labelResult?.analysis ? 'complete' : null)
   );
   const [evidenceExpanded, setEvidenceExpanded] = useState(false);
   const resolvedLabelAnalysis = labelAnalysis ?? labelResult?.analysis ?? null;
@@ -87,6 +96,10 @@ export default function ScanResultScreen() {
   const needsReview = labelQuality?.reviewRecommended ?? false;
   const ingredientsToShow = isLabel ? (labelDraft?.ingredients ?? []).filter(isLikelyIngredient) : [];
   const labelNameCandidate = isLabel ? getMeaningfulIngredientName(labelDraft) : null;
+  const analysisName = resolvedLabelAnalysis?.productInfo?.name ?? labelResult?.analysis?.productInfo?.name ?? null;
+  const labelProductName = isLabel
+    ? (!isPlaceholderLabelName(analysisName) ? analysisName : labelNameCandidate ?? 'Label Scan Result')
+    : 'Supplement';
 
   // 🚀 Use the Streaming Hook
   const {
@@ -142,7 +155,7 @@ export default function ScanResultScreen() {
       });
       if (response.analysis) {
         setLabelAnalysis(response.analysis);
-        setLabelAnalysisStatus('complete');
+        setLabelAnalysisStatus(response.analysisStatus ?? 'complete');
       } else {
         const nextStatus = response.analysisStatus ?? 'skipped';
         setLabelAnalysisStatus(nextStatus);
@@ -181,7 +194,7 @@ export default function ScanResultScreen() {
     setLabelAnalysisLoading(false);
     setEvidenceExpanded(false);
     const nextLabelResult = nextSession?.mode === 'label' ? nextSession.result : null;
-    setLabelAnalysisStatus(nextLabelResult?.analysis ? 'complete' : nextLabelResult?.analysisStatus ?? null);
+    setLabelAnalysisStatus(nextLabelResult?.analysisStatus ?? (nextLabelResult?.analysis ? 'complete' : null));
   }, [params.sessionId]);
 
   useEffect(() => {
@@ -206,7 +219,7 @@ export default function ScanResultScreen() {
       if (!analysis || analysis.status !== 'success') return;
 
       const productInfo = analysis.productInfo ?? {};
-      const labelName = 'Label Scan Result';
+      const labelName = labelProductName;
       const labelDose =
         getDraftDose(session.result.draft) ??
         extractDoseFromText(productInfo.name ?? null) ??
@@ -277,7 +290,7 @@ export default function ScanResultScreen() {
       });
       lastDosageRef.current = dosageText;
     }
-  }, [addScan, barcode, efficacy, productInfo, resolvedLabelAnalysis, session, status, usage]);
+  }, [addScan, barcode, efficacy, labelProductName, productInfo, resolvedLabelAnalysis, session, status, usage]);
 
   const handleBack = () => {
     if (session?.mode === 'barcode') {
@@ -292,7 +305,6 @@ export default function ScanResultScreen() {
   if (isLabel && labelResult) {
     const draft = labelDraft;
     const issues = labelIssues;
-    const labelProductName = 'Label Scan Result';
     const quality = labelQuality ?? getLabelDraftQuality(draft, issues);
     const evidenceSummary = `Label evidence: ${ingredientsToShow.length} ingredients • ${quality.extractionQuality} (${Math.round((draft?.confidenceScore ?? 0) * 100)}%)`;
     const isFailed = labelResult.status === 'failed';
@@ -393,15 +405,10 @@ export default function ScanResultScreen() {
       },
     };
     const isLabelStreaming = labelAnalysisStatus === 'pending' || labelAnalysisLoading;
-    const analysisComplete = resolvedLabelAnalysis?.status === 'success';
+    const analysisComplete =
+      resolvedLabelAnalysis?.status === 'success' && labelAnalysisStatus !== 'partial';
     const scoreState: 'active' | 'muted' = analysisComplete && !quality.mutedScore ? 'active' : 'muted';
     const showGenerateActions = !analysisComplete && !isLabelStreaming;
-
-    useEffect(() => {
-      if (needsReview) {
-        setEvidenceExpanded(true);
-      }
-    }, [needsReview]);
 
     return (
       <ResponsiveScreen
@@ -426,6 +433,7 @@ export default function ScanResultScreen() {
           scoreBadge="Label-only estimate"
           scoreState={scoreState}
           sourceType="label_scan"
+          labelDraft={labelDraft ?? undefined}
         />
 
         {!analysisComplete ? (
@@ -434,6 +442,8 @@ export default function ScanResultScreen() {
             <Text style={styles.labelMeta}>
               {labelAnalysisStatus === 'pending'
                 ? 'Analyzing label...'
+                : labelAnalysisStatus === 'partial'
+                  ? 'Analysis partially available. Some sections could not be generated.'
                 : labelAnalysisStatus === 'unavailable'
                   ? 'Analysis service is unavailable right now.'
                   : 'Analysis is not generated yet.'}
@@ -449,7 +459,11 @@ export default function ScanResultScreen() {
                   disabled={labelAnalysisLoading}
                 >
                   <Text style={styles.analysisButtonText}>
-                    {needsReview ? 'Confirm & Generate' : 'Generate analysis'}
+                    {labelAnalysisStatus === 'partial'
+                      ? 'Retry analysis'
+                      : needsReview
+                        ? 'Confirm & Generate'
+                        : 'Generate analysis'}
                   </Text>
                 </TouchableOpacity>
                 {needsReview ? (
