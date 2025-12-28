@@ -19,6 +19,12 @@ const GOOGLE_CSE_ENDPOINT = "https://customsearch.googleapis.com/customsearch/v1
 const MAX_RESULTS = 5;
 const QUALITY_THRESHOLD = 60; // Score below this triggers fallback search
 const PORT = Number(process.env.PORT ?? 3001);
+const LABEL_SCAN_OUTPUT_RULES = `LABEL-SCAN OUTPUT RULES (apply to efficacy JSON only):
+1) overviewSummary must include serving unit (e.g., per softgel/caplet/serving) and 2-3 key ingredients with doses if present.
+2) coreBenefits must list 2-3 items in "Ingredient - dose per unit" format; if dose missing, say "dose not specified".
+3) overallAssessment must include a transparency note (e.g., proprietary blend or missing doses).
+4) marketingVsReality must mention "Label-only analysis; no price/brand verification".
+5) If data is missing, say "Not specified on label" instead of guessing.`;
 
 // ============================================================================
 // GOOGLE CSE UTILITIES
@@ -802,7 +808,9 @@ ${ingredientContext}
 
 TASK: Analyze this supplement based on the ingredient list above.
 Focus on: ingredient forms, dosage adequacy, evidence strength.
-If information is not available, use null instead of guessing.`;
+If information is not available, use null instead of guessing.
+
+${LABEL_SCAN_OUTPUT_RULES}`;
 
         const [efficacyRaw, safetyRaw, usageRaw] = await Promise.all([
           fetchAnalysisSection("efficacy", labelContext, model, deepseekKey),
@@ -1025,7 +1033,9 @@ ${ingredientContext}
 
 TASK: Analyze this supplement based on the ingredient list above.
 Focus on: ingredient forms, dosage adequacy, evidence strength.
-If information is not available, use null instead of guessing.`;
+If information is not available, use null instead of guessing.
+
+${LABEL_SCAN_OUTPUT_RULES}`;
 
     // Run analysis sections in parallel
     const [efficacyRaw, safetyRaw, usageRaw] = await Promise.all([
@@ -1176,7 +1186,9 @@ app.post("/api/analyze-label/confirm", async (req: Request, res: Response) => {
 ${ingredientContext}
 
 TASK: Analyze this supplement based on the confirmed ingredient list above.
-Focus on: ingredient forms, dosage adequacy, evidence strength.`;
+Focus on: ingredient forms, dosage adequacy, evidence strength.
+
+${LABEL_SCAN_OUTPUT_RULES}`;
 
     const [efficacyRaw, safetyRaw, usageRaw] = await Promise.all([
       fetchAnalysisSection("efficacy", labelContext, model, deepseekKey),
