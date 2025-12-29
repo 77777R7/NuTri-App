@@ -22,6 +22,8 @@ type EnrichedSource = {
     link: string;
     domain?: string;
     isHighQuality?: boolean;
+    snippet?: string;
+    qualityScore?: number | null;
 };
 
 // Product info from backend

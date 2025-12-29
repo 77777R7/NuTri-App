@@ -459,6 +459,8 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
         link: i.link,
         domain: extractDomain(i.link),
         isHighQuality: isHighQualityDomain(i.link),
+        snippet: i.snippet,
+        qualityScore: scoreSearchItem(i, { barcode }),
       })),
     });
 
@@ -505,6 +507,23 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
     }
 
     console.log(`[Stream] Final items count: ${detailItems.length}`);
+
+    sendSSE(res, "product_info", {
+      productInfo: {
+        brand: brand,
+        name: product,
+        category: extraction.category,
+        image: initialItems[0]?.image ?? null,
+      },
+      sources: detailItems.map((item) => ({
+        title: item.title,
+        link: item.link,
+        domain: extractDomain(item.link),
+        isHighQuality: isHighQualityDomain(item.link),
+        snippet: item.snippet,
+        qualityScore: scoreSearchItem(item, { barcode }),
+      })),
+    });
 
     // =========================================================================
     // STEP 3: Parallel AI Analysis

@@ -16,175 +16,9 @@ import { requestLabelAnalysis } from '@/lib/scan/service';
 import { getBarcodeQuality, getLabelDraftQuality } from '@/lib/scan/quality';
 import type { LabelDraft } from '@/backend/src/labelAnalysis';
 import { AnalysisDashboard } from './AnalysisDashboard';
+import { buildLabelInsights } from './labelInsights';
 
 type LabelAnalysisStatus = 'complete' | 'partial' | 'skipped' | 'pending' | 'unavailable' | 'failed' | null;
-
-const NAME_NOISE_PATTERNS: RegExp[] = [
-  /supplement facts/i,
-  /nutrition facts/i,
-  /serving size/i,
-  /\bamount\b/i,
-  /per serving/i,
-  /daily value/i,
-  /% ?dv/i,
-  /\bvalue\b/i,
-  /(medicinal|non-medicinal) ingredients/i,
-  /other ingredients/i,
-  /also contains/i,
-  /directions?/i,
-  /warnings?/i,
-  /caution/i,
-  /store/i,
-  /^(each|in each|chaque|dans chaque)\b.*\bcontains?\b/i,
-];
-
-const isNoiseIngredientName = (name?: string | null) => {
-  if (!name) return true;
-  const trimmed = name.trim();
-  if (!trimmed || trimmed.length < 2) return true;
-  return NAME_NOISE_PATTERNS.some((pattern) => pattern.test(trimmed));
-};
-
-const normalizeIngredientName = (name: string) =>
-  name.toLowerCase().replace(/[^a-z0-9\s.-]/g, ' ').replace(/\s+/g, ' ').trim();
-
-const formatCompactNumber = (value: number) => {
-  const abs = Math.abs(value);
-  if (abs >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(1).replace(/\.0$/, '')}B`;
-  if (abs >= 1_000_000) return `${(value / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
-  if (abs >= 1_000) return `${(value / 1_000).toFixed(1).replace(/\.0$/, '')}K`;
-  if (Number.isInteger(value)) return String(value);
-  return value.toFixed(2).replace(/\.00$/, '').replace(/\.0$/, '');
-};
-
-const shortenIngredientName = (name: string) => {
-  const normalized = normalizeIngredientName(name);
-  if (/(epa|eicosapentaenoic)/i.test(normalized)) return 'EPA';
-  if (/(dha|docosahexaenoic)/i.test(normalized)) return 'DHA';
-  if (/omega[-\s]?3/i.test(normalized)) return 'Omega-3';
-  if (/fish oil/i.test(normalized)) return 'Fish Oil';
-  if (/probiotic/i.test(normalized)) return 'Probiotic';
-  if (/lactobacillus/i.test(normalized)) return 'Lactobacillus';
-  if (/bifidobacter/i.test(normalized)) return 'Bifidobacterium';
-  if (/(vitamin\s*d3|cholecalciferol|\bd3\b)/i.test(normalized)) return 'Vitamin D3';
-  if (/vitamin\s*d\b/i.test(normalized)) return 'Vitamin D';
-  if (/folate|folic\s*acid/i.test(normalized)) return 'Folate';
-  if (/biotin/i.test(normalized)) return 'Biotin';
-  if (/niacinamide|niacin/i.test(normalized)) return 'B3';
-  if (/thiamin/i.test(normalized)) return 'B1';
-  if (/riboflavin/i.test(normalized)) return 'B2';
-  if (/pantethine|pantothenic/i.test(normalized)) return 'B5';
-  if (/pyridox/i.test(normalized)) return 'B6';
-  if (/cobalamin/i.test(normalized)) return 'B12';
-  const vitaminMatch = normalized.match(/\bvitamin\s*([a-z]|\d{1,2})\b/);
-  if (vitaminMatch) {
-    return `Vitamin ${vitaminMatch[1].toUpperCase()}`;
-  }
-  const bMatch = normalized.match(/\bb\s*(\d{1,2})\b/);
-  if (bMatch) return `B${bMatch[1]}`;
-  const cleaned = name.replace(/\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();
-  const words = cleaned.split(' ').filter(Boolean);
-  return words.slice(0, 2).join(' ');
-};
-
-const isPlaceholderLabelName = (name?: string | null) => {
-  if (!name) return true;
-  const trimmed = name.trim();
-  if (!trimmed) return true;
-  if (/^label scan result$/i.test(trimmed)) return true;
-  if (/^supplement$/i.test(trimmed)) return true;
-  return isNoiseIngredientName(trimmed);
-};
-
-const isLikelyIngredient = (ingredient: LabelDraft['ingredients'][number]) =>
-  (ingredient.amount != null && ingredient.unit) || ingredient.dvPercent != null;
-
-const getLabelIngredientCandidates = (draft?: LabelDraft | null) => {
-  if (!draft?.ingredients?.length) return [];
-  return draft.ingredients
-    .filter((ingredient) => isLikelyIngredient(ingredient) && !isNoiseIngredientName(ingredient.name))
-    .map((ingredient) => ({
-      name: ingredient.name?.trim() ?? '',
-      normalized: normalizeIngredientName(ingredient.name ?? ''),
-      amount: ingredient.amount ?? null,
-      unit: ingredient.unit ?? null,
-    }))
-    .filter((ingredient) => ingredient.name);
-};
-
-const detectLabelProductType = (names: string[], count: number) => {
-  const bSignals = [
-    'b1',
-    'b2',
-    'b3',
-    'b5',
-    'b6',
-    'b7',
-    'b9',
-    'b12',
-    'thiamine',
-    'riboflavin',
-    'niacin',
-    'pantothen',
-    'pantethine',
-    'pyridox',
-    'biotin',
-    'folate',
-    'folic acid',
-    'cobalamin',
-  ];
-  const bHits = new Set<string>();
-  names.forEach((name) => {
-    bSignals.forEach((signal) => {
-      if (name.includes(signal)) bHits.add(signal);
-    });
-  });
-  if (bHits.size >= 5) return 'b_complex';
-  if (names.some((name) => name.includes('epa') || name.includes('dha') || name.includes('omega-3') || name.includes('fish oil'))) {
-    return 'omega3_fish_oil';
-  }
-  if (names.some((name) => name.includes('vitamin d') || name.includes('d3') || name.includes('cholecalciferol'))) {
-    return 'vitamin_d';
-  }
-  if (names.some((name) => name.includes('probiotic') || name.includes('lactobacillus') || name.includes('bifidobacter'))) {
-    return 'probiotic';
-  }
-  if (count <= 2) return 'single_active';
-  if (count >= 6) return 'multi_active_general';
-  return 'unknown';
-};
-
-const buildLabelProductName = (draft?: LabelDraft | null, analysisName?: string | null) => {
-  if (analysisName && !isPlaceholderLabelName(analysisName)) return analysisName;
-  const candidates = getLabelIngredientCandidates(draft);
-  const names = candidates.map((item) => item.normalized);
-  const type = detectLabelProductType(names, candidates.length);
-  if (type === 'b_complex') return `B-Complex (${candidates.length} actives)`;
-  if (type === 'omega3_fish_oil') return 'Omega-3 Fish Oil';
-  if (type === 'vitamin_d') return 'Vitamin D3';
-  if (type === 'probiotic') {
-    const cfu = candidates.find((candidate) => candidate.unit?.toLowerCase() === 'cfu');
-    if (cfu?.amount != null) return `Probiotic (${formatCompactNumber(cfu.amount)} CFU)`;
-    return 'Probiotic';
-  }
-  if (type === 'multi_active_general') return `Multi-Active (${candidates.length} actives)`;
-  if (type === 'single_active') {
-    const fallback = getMeaningfulIngredientName(draft);
-    return fallback ? shortenIngredientName(fallback) : 'Single Active';
-  }
-  const fallback = getMeaningfulIngredientName(draft);
-  return fallback ?? 'Label Scan Result';
-};
-
-const getMeaningfulIngredientName = (draft?: LabelDraft | null) => {
-  if (!draft?.ingredients?.length) return null;
-  const withAmount = draft.ingredients.find(
-    (ingredient) => isLikelyIngredient(ingredient) && !isNoiseIngredientName(ingredient.name),
-  );
-  if (withAmount?.name) return withAmount.name;
-  const match = draft.ingredients.find((ingredient) => !isNoiseIngredientName(ingredient.name));
-  return match?.name ?? null;
-};
 
 export default function ScanResultScreen() {
   const { tokens } = useResponsiveTokens();
@@ -210,17 +44,33 @@ export default function ScanResultScreen() {
   const [evidenceExpanded, setEvidenceExpanded] = useState(false);
   const resolvedLabelAnalysis = labelAnalysis ?? labelResult?.analysis ?? null;
   const labelDraft = labelResult?.draft ?? null;
-  const labelIssues = labelResult?.issues ?? labelDraft?.issues ?? [];
+  const labelIssues = useMemo(
+    () => labelResult?.issues ?? labelDraft?.issues ?? [],
+    [labelDraft?.issues, labelResult?.issues]
+  );
   const labelQuality = isLabel ? getLabelDraftQuality(labelDraft, labelIssues) : null;
   const needsReview = labelQuality?.reviewRecommended ?? false;
-  const ingredientsToShow = isLabel ? (labelDraft?.ingredients ?? []).filter(isLikelyIngredient) : [];
-  const labelNameCandidate = isLabel ? getMeaningfulIngredientName(labelDraft) : null;
   const analysisName = resolvedLabelAnalysis?.productInfo?.name ?? labelResult?.analysis?.productInfo?.name ?? null;
-  const labelProductName = isLabel ? buildLabelProductName(labelDraft, analysisName) : 'Supplement';
+  const labelInsights = useMemo(
+    () => (isLabel ? buildLabelInsights({ draft: labelDraft, issues: labelIssues, analysisName }) : null),
+    [analysisName, isLabel, labelDraft, labelIssues]
+  );
+  const ingredientsToShow = isLabel ? (labelInsights?.fullActives ?? []) : [];
+  const labelTopHighlight = isLabel ? (labelInsights?.highlights?.[0] ?? null) : null;
+  const labelProductName = isLabel ? (labelInsights?.productName ?? 'Label Scan Result') : 'Supplement';
 
   // 🚀 Use the Streaming Hook
   const {
-    productInfo, efficacy, safety, usage, value, social, status, error
+    productInfo,
+    efficacy,
+    safety,
+    usage,
+    value,
+    social,
+    status,
+    error,
+    sources,
+    brandExtraction,
   } = useStreamAnalysis(barcode);
   const barcodeQuality = useMemo(() => getBarcodeQuality({ status, error }), [error, status]);
 
@@ -440,7 +290,9 @@ export default function ScanResultScreen() {
     const draft = labelDraft;
     const issues = labelIssues;
     const quality = labelQuality ?? getLabelDraftQuality(draft, issues);
-    const evidenceSummary = `Label evidence: ${ingredientsToShow.length} ingredients • ${quality.extractionQuality} (${Math.round((draft?.confidenceScore ?? 0) * 100)}%)`;
+    const evidenceSummary = labelInsights
+      ? `Label evidence: ${labelInsights.metaLine}`
+      : `Label evidence: ${ingredientsToShow.length} ingredients • ${quality.extractionQuality} (${Math.round((draft?.confidenceScore ?? 0) * 100)}%)`;
     const isFailed = labelResult.status === 'failed';
     const fallbackTitle = labelResult.status === 'failed' ? 'Scan Failed' : 'Review Required';
     const fallbackMessage =
@@ -635,25 +487,33 @@ export default function ScanResultScreen() {
           {evidenceExpanded ? (
             <View style={styles.labelMetaGroup}>
               <Text style={styles.labelMetaTight}>Product: {labelProductName}</Text>
-              {labelNameCandidate ? (
-                <Text style={styles.labelMetaTight}>Top ingredient: {labelNameCandidate}</Text>
+              {labelTopHighlight ? (
+                <Text style={styles.labelMetaTight}>Top highlight: {labelTopHighlight}</Text>
               ) : null}
               {draft?.servingSize ? (
                 <Text style={styles.labelMetaTight}>Serving Size: {draft.servingSize}</Text>
               ) : (
                 <Text style={styles.labelMetaTight}>Serving Size: Not detected</Text>
               )}
-              <Text style={styles.labelMetaTight}>
+            <Text style={styles.labelMetaTight}>
               Extraction Quality: {quality.extractionQuality} ({Math.round((draft?.confidenceScore ?? 0) * 100)}%)
             </Text>
             <Text style={styles.labelMetaTight}>
               Coverage: {Math.round((draft?.parseCoverage ?? 0) * 100)}% | {quality.validCount} valid ingredients
             </Text>
+            {labelInsights ? (
+              <Text style={styles.labelMetaTight}>
+                Missing dose: {labelInsights.missingDoseCount} • Duplicates: {labelInsights.duplicateCount}
+              </Text>
+            ) : null}
+            {labelInsights?.hasProprietaryBlend ? (
+              <Text style={styles.labelMetaTight}>Proprietary blend detected</Text>
+            ) : null}
               {ingredientsToShow.length > 0 ? (
                 <View style={styles.labelList}>
                   {ingredientsToShow.map((ingredient, index) => (
                     <Text key={`${ingredient.name}-${index}`} style={styles.labelItem}>
-                      {formatDraftIngredient(ingredient)}
+                      {ingredient.name}: {ingredient.doseText}
                     </Text>
                   ))}
                 </View>
@@ -716,6 +576,8 @@ export default function ScanResultScreen() {
   // The Dashboard will handle nulls/missing fields gracefully by showing defaults or skeletons
   const compositeAnalysis = {
     productInfo: productInfo,
+    sources: sources || [],
+    brandExtraction: brandExtraction || null,
     efficacy: efficacy || {}, // Empty obj means "loading" inside dashboard components if checked
     safety: safety || {},
     usage: usage || {},
