@@ -47,6 +47,27 @@ type SourceType = 'barcode' | 'label_scan';
 
 type TileType = 'overview' | 'science' | 'usage' | 'safety';
 
+type LabelProductType =
+    | 'b_complex'
+    | 'omega3_fish_oil'
+    | 'vitamin_d'
+    | 'probiotic'
+    | 'single_active'
+    | 'multi_active_general'
+    | 'unknown';
+
+type LabelCandidate = {
+    name: string;
+    shortName: string;
+    normalized: string;
+    doseText: string;
+    amount: number | null;
+    unit: string | null;
+    dvPercent: number | null;
+    doseValueMg: number | null;
+    hasNumericDose: boolean;
+};
+
 type Mechanism = {
     name: string;
     amount: string;
@@ -65,8 +86,10 @@ type TileConfig = {
     labelColor?: string;
     eyebrow: string;
     summary?: string;
+    summaryLines?: number;
     bullets?: string[];
     bulletLimit?: number;
+    bulletLines?: number;
     mechanisms?: Mechanism[];
     routineLine?: string;
     bestFor?: string;
@@ -229,6 +252,188 @@ function isNoiseLabelIngredientName(name?: string | null) {
     return LABEL_NAME_NOISE_PATTERNS.some((pattern) => pattern.test(trimmed));
 }
 
+function normalizeIngredientName(name: string) {
+    return name.toLowerCase().replace(/[^a-z0-9\s.-]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function shortenIngredientName(name: string) {
+    const normalized = normalizeIngredientName(name);
+    if (/(epa|eicosapentaenoic)/i.test(normalized)) return 'EPA';
+    if (/(dha|docosahexaenoic)/i.test(normalized)) return 'DHA';
+    if (/omega[-\s]?3/i.test(normalized)) return 'Omega-3';
+    if (/fish oil/i.test(normalized)) return 'Fish Oil';
+    if (/probiotic/i.test(normalized)) return 'Probiotic';
+    if (/lactobacillus/i.test(normalized)) return 'Lactobacillus';
+    if (/bifidobacter/i.test(normalized)) return 'Bifidobacterium';
+    if (/(vitamin\s*d3|cholecalciferol|\bd3\b)/i.test(normalized)) return 'Vitamin D3';
+    if (/vitamin\s*d\b/i.test(normalized)) return 'Vitamin D';
+    if (/folate|folic\s*acid/i.test(normalized)) return 'Folate';
+    if (/biotin/i.test(normalized)) return 'Biotin';
+    if (/niacinamide|niacin/i.test(normalized)) return 'B3';
+    if (/thiamin/i.test(normalized)) return 'B1';
+    if (/riboflavin/i.test(normalized)) return 'B2';
+    if (/pantethine|pantothenic/i.test(normalized)) return 'B5';
+    if (/pyridox/i.test(normalized)) return 'B6';
+    if (/cobalamin/i.test(normalized)) return 'B12';
+    const vitaminMatch = normalized.match(/\bvitamin\s*([a-z]|\d{1,2})\b/);
+    if (vitaminMatch) {
+        return `Vitamin ${vitaminMatch[1].toUpperCase()}`;
+    }
+    const bMatch = normalized.match(/\bb\s*(\d{1,2})\b/);
+    if (bMatch) return `B${bMatch[1]}`;
+    const cleaned = name.replace(/\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();
+    const words = cleaned.split(' ').filter(Boolean);
+    return words.slice(0, 2).join(' ');
+}
+
+function formatCompactNumber(value: number) {
+    const abs = Math.abs(value);
+    if (abs >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(1).replace(/\.0$/, '')}B`;
+    if (abs >= 1_000_000) return `${(value / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
+    if (abs >= 1_000) return `${(value / 1_000).toFixed(1).replace(/\.0$/, '')}K`;
+    if (Number.isInteger(value)) return String(value);
+    return value.toFixed(2).replace(/\.00$/, '').replace(/\.0$/, '');
+}
+
+function formatDoseText(amount?: number | null, unit?: string | null, dvPercent?: number | null) {
+    if (amount != null && unit) {
+        const unitLower = unit.toLowerCase();
+        if (unitLower === 'cfu') {
+            return `${formatCompactNumber(amount)} CFU`;
+        }
+        const valueText = formatCompactNumber(amount);
+        const unitText = unitLower === 'iu' ? 'IU' : unit;
+        return `${valueText} ${unitText}`;
+    }
+    if (dvPercent != null) return `${dvPercent}% DV`;
+    return '';
+}
+
+function toDoseMg(amount?: number | null, unit?: string | null) {
+    if (amount == null || !unit) return null;
+    const unitLower = unit.toLowerCase();
+    if (unitLower === 'mg') return amount;
+    if (unitLower === 'mcg' || unitLower === 'ug' || unitLower === 'μg') return amount / 1000;
+    if (unitLower === 'g') return amount * 1000;
+    return null;
+}
+
+function getServingUnitLabel(servingSize?: string | null) {
+    if (!servingSize) return 'per serving';
+    const lower = servingSize.toLowerCase();
+    const perMatch = lower.match(/\bper\s+([a-z0-9]+(?:\s+[a-z0-9]+)?)/);
+    if (perMatch) return `per ${perMatch[1].trim()}`;
+    const unitMatch = lower.match(/\b(capsule|caplet|tablet|softgel|gummy|serving|sachet|scoop|drop)\b/);
+    if (unitMatch) return `per ${unitMatch[1]}`;
+    return 'per serving';
+}
+
+function getExtractionQualityLabel(confidenceScore?: number | null, parseCoverage?: number | null) {
+    const score = confidenceScore ?? 0;
+    const coverage = parseCoverage ?? 0;
+    const percent = Math.round(score * 100);
+    if (score >= 0.85 && coverage >= 0.85) return { label: 'High extraction', percent };
+    if (score >= 0.7 && coverage >= 0.7) return { label: 'Medium extraction', percent };
+    return { label: 'Low extraction', percent };
+}
+
+function detectLabelProductType(candidates: LabelCandidate[]): LabelProductType {
+    const normalized = candidates.map((c) => c.normalized);
+    const bSignals = [
+        'b1',
+        'b2',
+        'b3',
+        'b5',
+        'b6',
+        'b7',
+        'b9',
+        'b12',
+        'thiamine',
+        'riboflavin',
+        'niacin',
+        'pantothen',
+        'pantethine',
+        'pyridox',
+        'biotin',
+        'folate',
+        'folic acid',
+        'cobalamin',
+    ];
+    const bHits = new Set<string>();
+    normalized.forEach((name) => {
+        bSignals.forEach((signal) => {
+            if (name.includes(signal)) bHits.add(signal);
+        });
+    });
+    if (bHits.size >= 5) return 'b_complex';
+    if (normalized.some((name) => name.includes('epa') || name.includes('dha') || name.includes('omega-3') || name.includes('fish oil'))) {
+        return 'omega3_fish_oil';
+    }
+    if (normalized.some((name) => name.includes('vitamin d') || name.includes('d3') || name.includes('cholecalciferol'))) {
+        return 'vitamin_d';
+    }
+    if (normalized.some((name) => name.includes('probiotic') || name.includes('lactobacillus') || name.includes('bifidobacter'))) {
+        return 'probiotic';
+    }
+    if (candidates.length <= 2) return 'single_active';
+    if (candidates.length >= 6) return 'multi_active_general';
+    return 'unknown';
+}
+
+function scoreLabelCandidate(candidate: LabelCandidate, type: LabelProductType, maxDoseMg: number) {
+    const doseScore =
+        candidate.doseValueMg != null && maxDoseMg > 0
+            ? Math.min(1, candidate.doseValueMg / maxDoseMg)
+            : candidate.dvPercent != null
+                ? Math.min(1, candidate.dvPercent / 100)
+                : candidate.amount != null
+                    ? 0.5
+                    : 0.2;
+    const normalized = candidate.normalized;
+    const formScore = /(methyl|p-?5-?p|pantethine|chelate|glycinate|citrate|liposomal)/i.test(normalized) ? 0.2 : 0;
+    const riskScore = /(vitamin\s*a|vitamin\s*d|vitamin\s*e|vitamin\s*k|retinol|folate|folic|iron)/i.test(normalized)
+        ? 0.25
+        : 0;
+    const typeBoost =
+        type === 'b_complex' && /(b12|folate|folic|pyridox|methylcobalamin)/i.test(normalized)
+            ? 0.15
+            : type === 'omega3_fish_oil' && /(epa|dha)/i.test(normalized)
+                ? 0.15
+                : type === 'probiotic' && /(cfu|lactobacillus|bifidobacter)/i.test(normalized)
+                    ? 0.15
+                    : 0;
+    const confidenceWeight = candidate.hasNumericDose ? 1 : candidate.dvPercent != null ? 0.8 : 0.6;
+    return (doseScore + formScore + riskScore + typeBoost) * confidenceWeight;
+}
+
+function selectCoverActives(ranked: LabelCandidate[], totalCount: number) {
+    if (totalCount <= 3) return ranked.slice(0, totalCount);
+    if (totalCount <= 7) return ranked.slice(0, 3);
+    return ranked.slice(0, 2);
+}
+
+function collapseCoverFacts(lines: string[], maxLines: number) {
+    if (lines.length <= maxLines) return lines;
+    const first = lines[0];
+    const rest = lines.slice(1).join(' • ');
+    return [first, rest];
+}
+
+function extractFormSignals(candidates: LabelCandidate[]) {
+    const signals = new Set<string>();
+    candidates.forEach((candidate) => {
+        const name = candidate.normalized;
+        if (name.includes('methylcobalamin')) signals.add('Methylcobalamin (B12)');
+        if (name.includes('p-5-p') || name.includes('p5p') || name.includes('pyridoxal')) signals.add('P-5-P (B6)');
+        if (name.includes('pantethine')) signals.add('Pantethine (B5)');
+        if (name.includes('glycinate')) signals.add('Glycinate form');
+        if (name.includes('citrate')) signals.add('Citrate form');
+        if (name.includes('chelate')) signals.add('Chelated form');
+        if (name.includes('liposomal')) signals.add('Liposomal form');
+    });
+    return Array.from(signals);
+}
+
 function capitalizeSentences(value?: string | null) {
     const normalized = normalizeText(value);
     if (!normalized) return '';
@@ -283,7 +488,11 @@ const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
                 return (
                     <View style={styles.tileSection}>
                         {!!tile.summary && (
-                            <Text style={[styles.tileSummary, { color: tColor }]} numberOfLines={3}>
+                            <Text
+                                style={[styles.tileSummary, { color: tColor }]}
+                                numberOfLines={tile.summaryLines ?? 2}
+                                ellipsizeMode="tail"
+                            >
                                 {tile.summary}
                             </Text>
                         )}
@@ -293,7 +502,11 @@ const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
                                     <View style={styles.bulletIcon}>
                                         <CheckCircle2 size={14} color={label} />
                                     </View>
-                                    <Text style={[styles.tileBulletText, { color: tColor }]} numberOfLines={3}>
+                                    <Text
+                                        style={[styles.tileBulletText, { color: tColor }]}
+                                        numberOfLines={tile.bulletLines ?? 2}
+                                        ellipsizeMode="tail"
+                                    >
                                         {bullet}
                                     </Text>
                                 </View>
@@ -514,12 +727,12 @@ export const AnalysisDashboard: React.FC<{
         setTilesContainerW((prev) => (Math.abs(prev - nextWidth) < 1 ? prev : nextWidth));
     }, []);
 
-    const productInfo = analysis.productInfo ?? {};
-    const efficacy = analysis.efficacy ?? {};
-    const usage = analysis.usage ?? {};
-    const safety = analysis.safety ?? {};
-    const value = analysis.value ?? {};
-    const social = analysis.social ?? {};
+    const productInfo = useMemo(() => analysis.productInfo ?? {}, [analysis.productInfo]);
+    const efficacy = useMemo(() => analysis.efficacy ?? {}, [analysis.efficacy]);
+    const usage = useMemo(() => analysis.usage ?? {}, [analysis.usage]);
+    const safety = useMemo(() => analysis.safety ?? {}, [analysis.safety]);
+    const value = useMemo(() => analysis.value ?? {}, [analysis.value]);
+    const social = useMemo(() => analysis.social ?? {}, [analysis.social]);
 
     // Check if all core AI analysis is complete before computing scores
     const isFullyLoaded = useMemo(() => {
@@ -537,33 +750,111 @@ export const AnalysisDashboard: React.FC<{
         },
         [isLabelSource]
     );
-    const labelActives = useMemo(() => {
+    const labelCandidates = useMemo<LabelCandidate[]>(() => {
         if (!isLabelSource || !labelDraft) return [];
         const seen = new Set<string>();
-        const results: { name: string; doseText: string; dosageValue: number | null; dosageUnit: string | null }[] = [];
+        const results: LabelCandidate[] = [];
         for (const ing of labelDraft.ingredients ?? []) {
-            const name = ing.name?.trim();
-            if (!name) continue;
-            if (isNoiseLabelIngredientName(name)) continue;
-            const key = name.toLowerCase();
-            if (seen.has(key)) continue;
-            seen.add(key);
-            const doseText =
-                ing.amount != null && ing.unit
-                    ? `${ing.amount} ${ing.unit}`
-                    : ing.dvPercent != null
-                        ? `${ing.dvPercent}% DV`
-                        : 'dose not specified';
+            const rawName = ing.name?.trim();
+            if (!rawName) continue;
+            if (isNoiseLabelIngredientName(rawName)) continue;
+            const normalized = normalizeIngredientName(rawName);
+            if (seen.has(normalized)) continue;
+            seen.add(normalized);
+            const doseText = formatDoseText(ing.amount ?? null, ing.unit ?? null, ing.dvPercent ?? null);
+            const doseValueMg = toDoseMg(ing.amount ?? null, ing.unit ?? null);
             results.push({
-                name,
-                doseText,
-                dosageValue: ing.amount ?? null,
-                dosageUnit: ing.unit ?? null,
+                name: rawName,
+                shortName: shortenIngredientName(rawName),
+                normalized,
+                doseText: doseText || 'dose not specified',
+                amount: ing.amount ?? null,
+                unit: ing.unit ?? null,
+                dvPercent: ing.dvPercent ?? null,
+                doseValueMg,
+                hasNumericDose: ing.amount != null && !!ing.unit,
             });
-            if (results.length >= 3) break;
         }
         return results;
     }, [isLabelSource, labelDraft]);
+    const labelProductType = useMemo(() => detectLabelProductType(labelCandidates), [labelCandidates]);
+    const rankedLabelCandidates = useMemo(() => {
+        if (!labelCandidates.length) return [];
+        const maxDoseMg = Math.max(...labelCandidates.map((candidate) => candidate.doseValueMg ?? 0));
+        return [...labelCandidates].sort(
+            (a, b) =>
+                scoreLabelCandidate(b, labelProductType, maxDoseMg) -
+                scoreLabelCandidate(a, labelProductType, maxDoseMg)
+        );
+    }, [labelCandidates, labelProductType]);
+    const coverActives = useMemo(
+        () => selectCoverActives(rankedLabelCandidates, labelCandidates.length),
+        [rankedLabelCandidates, labelCandidates.length]
+    );
+    const labelActiveLines = useMemo(
+        () =>
+            rankedLabelCandidates.slice(0, 3).map((active) => {
+                const doseLabel = active.doseText !== 'dose not specified' ? active.doseText : '';
+                const line = doseLabel ? `${active.shortName} ${doseLabel}` : active.shortName;
+                return line.trim();
+            }),
+        [rankedLabelCandidates]
+    );
+    const labelCoverFacts = useMemo(() => {
+        const lines = coverActives.map((active) => {
+            const doseLabel = active.doseText !== 'dose not specified' ? active.doseText : '';
+            const line = doseLabel ? `${active.shortName} ${doseLabel}` : active.shortName;
+            return line.trim();
+        });
+        const extraCount = Math.max(0, labelCandidates.length - coverActives.length);
+        if (labelCandidates.length >= 8 && extraCount > 0 && lines.length >= 2) {
+            lines[1] = `${lines[1]} • +${extraCount} more`;
+        }
+        const collapsed = collapseCoverFacts(lines, 2);
+        return collapsed;
+    }, [coverActives, labelCandidates.length]);
+    const labelFormSignals = useMemo(() => extractFormSignals(labelCandidates), [labelCandidates]);
+    const labelMetaLine = useMemo(() => {
+        if (!isLabelSource) return '';
+        const activesLabel = labelCandidates.length > 0 ? `${labelCandidates.length} actives` : 'Label scan';
+        const servingUnit = getServingUnitLabel(labelDraft?.servingSize);
+        const extraction = getExtractionQualityLabel(labelDraft?.confidenceScore ?? 0, labelDraft?.parseCoverage ?? 0);
+        return `${activesLabel} • ${servingUnit} • ${extraction.label} ${extraction.percent}%`;
+    }, [isLabelSource, labelCandidates.length, labelDraft?.confidenceScore, labelDraft?.parseCoverage, labelDraft?.servingSize]);
+    const labelProfileLine = useMemo(() => {
+        if (!isLabelSource) return '';
+        const count = labelCandidates.length;
+        if (labelProductType === 'b_complex') return `B-complex formula with ${count} actives.`;
+        if (labelProductType === 'omega3_fish_oil') return 'Omega-3 profile focused on EPA and DHA.';
+        if (labelProductType === 'vitamin_d') return 'Vitamin D-focused single-active formula.';
+        if (labelProductType === 'probiotic') {
+            const cfuLine = coverActives.find((active) => active.unit?.toLowerCase() === 'cfu');
+            return cfuLine ? `Probiotic blend: ${cfuLine.shortName} ${cfuLine.doseText}.` : `Probiotic blend with ${count} actives.`;
+        }
+        if (labelProductType === 'single_active') {
+            const first = coverActives[0];
+            return first ? `Single-active formula centered on ${first.shortName}.` : 'Single-active formula from label evidence.';
+        }
+        if (labelProductType === 'multi_active_general') return `${count} active ingredients detected on the label.`;
+        return 'Label-only summary based on extracted ingredients.';
+    }, [isLabelSource, labelCandidates.length, labelProductType, coverActives]);
+    const labelCompletenessLine = useMemo(() => {
+        if (!isLabelSource) return '';
+        const missingDose = labelCandidates.filter((candidate) => !candidate.hasNumericDose && candidate.dvPercent == null)
+            .length;
+        if (labelCandidates.length === 0) return 'No actives detected.';
+        if (missingDose > 0) return `${labelCandidates.length} actives detected • ${missingDose} without dose`;
+        return `${labelCandidates.length} actives detected • doses listed`;
+    }, [isLabelSource, labelCandidates]);
+    const labelDetailFacts = useMemo(() => {
+        const lines = rankedLabelCandidates.slice(0, 3).map((active) => {
+            const doseLabel = active.doseText !== 'dose not specified' ? active.doseText : '';
+            const line = doseLabel ? `${active.name} ${doseLabel}` : active.name;
+            return line.trim();
+        });
+        if (lines.length) return lines;
+        return labelCoverFacts;
+    }, [rankedLabelCandidates, labelCoverFacts]);
     const effectiveScoreState: ScoreState = isLabelSource
         ? (scoreState ?? (isFullyLoaded ? 'active' : 'loading'))
         : (isFullyLoaded ? 'active' : 'loading');
@@ -666,7 +957,6 @@ export const AnalysisDashboard: React.FC<{
         },
     }), [efficacy.verdict, safety.verdict, safety.redFlags, value.verdict, scores.details, isFullyLoaded, isLabelSource, scrubLabelValueText]);
 
-    const labelActiveLines = labelActives.map((active) => `${active.name} - ${active.doseText}`);
     const labelIssueCaution = labelDraft?.issues?.find((issue) =>
         ['unit_invalid', 'value_anomaly', 'non_ingredient_line_detected', 'unit_boundary_suspect', 'dose_inconsistency_or_claim', 'incomplete_ingredients']
             .includes(issue.type)
@@ -677,13 +967,16 @@ export const AnalysisDashboard: React.FC<{
         labelIssueCaution?.message ||
         'Review interactions if taking other supplements or medications.';
 
-    const scienceSummary = isLabelSource && labelActiveLines.length
-        ? `Key actives: ${labelActiveLines.slice(0, 3).join('; ')}.`
-        : isLabelSource
-            ? 'Ingredients could not be confirmed from the label. Review evidence for accuracy.'
-            : efficacy.verdict ||
-                (Array.isArray(efficacy.benefits) && efficacy.benefits[0]) ||
-                'Formula effectiveness has been analyzed based on typical clinical ranges.';
+    const labelDoseHighlight = coverActives[0]
+        ? `Top dose: ${coverActives[0].shortName} ${coverActives[0].doseText}.`
+        : '';
+    const scienceSummary = isLabelSource
+        ? [labelProfileLine, labelDoseHighlight, labelCompletenessLine ? `${labelCompletenessLine}.` : '']
+              .filter(Boolean)
+              .join(' ')
+        : efficacy.verdict ||
+          (Array.isArray(efficacy.benefits) && efficacy.benefits[0]) ||
+          'Formula effectiveness has been analyzed based on typical clinical ranges.';
 
     const usageSummary =
         usage.summary ||
@@ -697,11 +990,6 @@ export const AnalysisDashboard: React.FC<{
         'No major safety concerns were highlighted in public sources at standard doses.';
 
     // Legacy meta is no longer used - scoring now comes from AI analysis directly
-
-    const clampFill = (value?: number, fallback: number = 68) => {
-        if (typeof value !== 'number' || Number.isNaN(value)) return fallback;
-        return Math.min(100, Math.max(12, value));
-    };
 
     // Use primaryActive from efficacy if available
     const primaryActive = efficacy?.primaryActive;
@@ -870,9 +1158,9 @@ export const AnalysisDashboard: React.FC<{
         });
     } // formQuality already added from primaryActive above
 
-    const labelMechanisms: Mechanism[] = labelActives.map((active, index) => ({
-        name: active.name,
-        amount: active.doseText,
+    const labelMechanisms: Mechanism[] = rankedLabelCandidates.slice(0, 3).map((active, index) => ({
+        name: active.shortName,
+        amount: active.doseText && active.doseText !== 'dose not specified' ? active.doseText : 'See label',
         fill: Math.max(48, 92 - index * 14),
     }));
     const keyMechanisms = isLabelSource && labelMechanisms.length ? labelMechanisms : baseMechanisms;
@@ -914,7 +1202,7 @@ export const AnalysisDashboard: React.FC<{
     const overviewCoverSummary = capitalizeSentences(
         clampText(
             isLabelSource
-                ? (labelOverviewSummary || overviewSummary)
+                ? labelMetaLine
                 : [
                     primaryName
                         ? ensurePeriod(`Focused on ${primaryName}${primaryDoseLabel ? ` ${primaryDoseLabel}` : ''}`)
@@ -961,7 +1249,7 @@ export const AnalysisDashboard: React.FC<{
     );
 
     const overviewCoverBullets = (isLabelSource
-        ? [...coreBenefits.slice(0, 2), labelCautionLine]
+        ? [...labelCoverFacts, labelCautionLine]
         : coreBenefits.slice(0, 3))
         .map((benefit: string) => capitalizeSentences(benefit))
         .filter(Boolean);
@@ -976,11 +1264,11 @@ export const AnalysisDashboard: React.FC<{
         <View style={{ gap: 16 }}>
             <View style={styles.modalCalloutCard}>
                 <Text style={styles.modalBulletTitle}>What it is</Text>
-                <Text style={styles.modalParagraphSmall}>{labelOverviewSummary ?? overviewSummary}</Text>
+                <Text style={styles.modalParagraphSmall}>{labelProfileLine || labelOverviewSummary || overviewSummary}</Text>
             </View>
             <View style={styles.modalCalloutCard}>
                 <Text style={styles.modalBulletTitle}>What stands out</Text>
-                {coreBenefits.slice(0, 3).map((benefit: string, idx: number) => (
+                {labelDetailFacts.slice(0, 3).map((benefit: string, idx: number) => (
                     <Text key={idx} style={styles.modalBulletItem}>
                         • {benefit}
                     </Text>
@@ -1051,8 +1339,10 @@ export const AnalysisDashboard: React.FC<{
             labelColor: '#D6E5FF',
             eyebrow: isLabelSource ? 'KEY INGREDIENTS' : 'CORE BENEFITS',
             summary: overviewCoverSummary,
+            summaryLines: isLabelSource ? 1 : 2,
             bullets: overviewCoverBullets,
             bulletLimit: isLabelSource ? 3 : 2,
+            bulletLines: isLabelSource ? 1 : 2,
             loading: !isOverviewReady,
             content: overviewContent,
         },
@@ -1073,12 +1363,33 @@ export const AnalysisDashboard: React.FC<{
                 <View style={{ gap: 16 }}>
                     <Text style={styles.modalParagraphSmall}>{scienceSummary}</Text>
 
-                    {isLabelSource && labelActiveLines.length > 0 && (
+                    {isLabelSource && labelProfileLine && (
                         <View style={styles.modalCalloutCard}>
-                            <Text style={styles.modalBulletTitle}>Key ingredients (label)</Text>
-                            {labelActiveLines.slice(0, 3).map((line, idx) => (
+                            <Text style={styles.modalBulletTitle}>Dose profile</Text>
+                            <Text style={styles.modalParagraphSmall}>{labelProfileLine}</Text>
+                            {labelCompletenessLine ? (
+                                <Text style={styles.modalParagraphSmall}>{labelCompletenessLine}</Text>
+                            ) : null}
+                        </View>
+                    )}
+
+                    {isLabelSource && labelDetailFacts.length > 0 && (
+                        <View style={styles.modalCalloutCard}>
+                            <Text style={styles.modalBulletTitle}>Dose highlights</Text>
+                            {labelDetailFacts.slice(0, 3).map((line, idx) => (
                                 <Text key={idx} style={styles.modalBulletItem}>
                                     • {line}
+                                </Text>
+                            ))}
+                        </View>
+                    )}
+
+                    {isLabelSource && labelFormSignals.length > 0 && (
+                        <View style={styles.modalCalloutCard}>
+                            <Text style={styles.modalBulletTitle}>Form signals</Text>
+                            {labelFormSignals.slice(0, 3).map((signal, idx) => (
+                                <Text key={idx} style={styles.modalBulletItem}>
+                                    • {signal}
                                 </Text>
                             ))}
                         </View>
@@ -1142,7 +1453,7 @@ export const AnalysisDashboard: React.FC<{
                     )}
 
                     {/* Fallback to legacy key mechanisms display */}
-                    {(!efficacy.ingredients || efficacy.ingredients.length === 0) && (
+                    {!isLabelSource && (!efficacy.ingredients || efficacy.ingredients.length === 0) && (
                         <>
                             <View style={styles.modalCalloutCard}>
                                 <Text style={styles.modalBulletTitle}>Dose alignment</Text>

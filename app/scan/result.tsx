@@ -45,6 +45,48 @@ const isNoiseIngredientName = (name?: string | null) => {
   return NAME_NOISE_PATTERNS.some((pattern) => pattern.test(trimmed));
 };
 
+const normalizeIngredientName = (name: string) =>
+  name.toLowerCase().replace(/[^a-z0-9\s.-]/g, ' ').replace(/\s+/g, ' ').trim();
+
+const formatCompactNumber = (value: number) => {
+  const abs = Math.abs(value);
+  if (abs >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(1).replace(/\.0$/, '')}B`;
+  if (abs >= 1_000_000) return `${(value / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
+  if (abs >= 1_000) return `${(value / 1_000).toFixed(1).replace(/\.0$/, '')}K`;
+  if (Number.isInteger(value)) return String(value);
+  return value.toFixed(2).replace(/\.00$/, '').replace(/\.0$/, '');
+};
+
+const shortenIngredientName = (name: string) => {
+  const normalized = normalizeIngredientName(name);
+  if (/(epa|eicosapentaenoic)/i.test(normalized)) return 'EPA';
+  if (/(dha|docosahexaenoic)/i.test(normalized)) return 'DHA';
+  if (/omega[-\s]?3/i.test(normalized)) return 'Omega-3';
+  if (/fish oil/i.test(normalized)) return 'Fish Oil';
+  if (/probiotic/i.test(normalized)) return 'Probiotic';
+  if (/lactobacillus/i.test(normalized)) return 'Lactobacillus';
+  if (/bifidobacter/i.test(normalized)) return 'Bifidobacterium';
+  if (/(vitamin\s*d3|cholecalciferol|\bd3\b)/i.test(normalized)) return 'Vitamin D3';
+  if (/vitamin\s*d\b/i.test(normalized)) return 'Vitamin D';
+  if (/folate|folic\s*acid/i.test(normalized)) return 'Folate';
+  if (/biotin/i.test(normalized)) return 'Biotin';
+  if (/niacinamide|niacin/i.test(normalized)) return 'B3';
+  if (/thiamin/i.test(normalized)) return 'B1';
+  if (/riboflavin/i.test(normalized)) return 'B2';
+  if (/pantethine|pantothenic/i.test(normalized)) return 'B5';
+  if (/pyridox/i.test(normalized)) return 'B6';
+  if (/cobalamin/i.test(normalized)) return 'B12';
+  const vitaminMatch = normalized.match(/\bvitamin\s*([a-z]|\d{1,2})\b/);
+  if (vitaminMatch) {
+    return `Vitamin ${vitaminMatch[1].toUpperCase()}`;
+  }
+  const bMatch = normalized.match(/\bb\s*(\d{1,2})\b/);
+  if (bMatch) return `B${bMatch[1]}`;
+  const cleaned = name.replace(/\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();
+  const words = cleaned.split(' ').filter(Boolean);
+  return words.slice(0, 2).join(' ');
+};
+
 const isPlaceholderLabelName = (name?: string | null) => {
   if (!name) return true;
   const trimmed = name.trim();
@@ -56,6 +98,83 @@ const isPlaceholderLabelName = (name?: string | null) => {
 
 const isLikelyIngredient = (ingredient: LabelDraft['ingredients'][number]) =>
   (ingredient.amount != null && ingredient.unit) || ingredient.dvPercent != null;
+
+const getLabelIngredientCandidates = (draft?: LabelDraft | null) => {
+  if (!draft?.ingredients?.length) return [];
+  return draft.ingredients
+    .filter((ingredient) => isLikelyIngredient(ingredient) && !isNoiseIngredientName(ingredient.name))
+    .map((ingredient) => ({
+      name: ingredient.name?.trim() ?? '',
+      normalized: normalizeIngredientName(ingredient.name ?? ''),
+      amount: ingredient.amount ?? null,
+      unit: ingredient.unit ?? null,
+    }))
+    .filter((ingredient) => ingredient.name);
+};
+
+const detectLabelProductType = (names: string[], count: number) => {
+  const bSignals = [
+    'b1',
+    'b2',
+    'b3',
+    'b5',
+    'b6',
+    'b7',
+    'b9',
+    'b12',
+    'thiamine',
+    'riboflavin',
+    'niacin',
+    'pantothen',
+    'pantethine',
+    'pyridox',
+    'biotin',
+    'folate',
+    'folic acid',
+    'cobalamin',
+  ];
+  const bHits = new Set<string>();
+  names.forEach((name) => {
+    bSignals.forEach((signal) => {
+      if (name.includes(signal)) bHits.add(signal);
+    });
+  });
+  if (bHits.size >= 5) return 'b_complex';
+  if (names.some((name) => name.includes('epa') || name.includes('dha') || name.includes('omega-3') || name.includes('fish oil'))) {
+    return 'omega3_fish_oil';
+  }
+  if (names.some((name) => name.includes('vitamin d') || name.includes('d3') || name.includes('cholecalciferol'))) {
+    return 'vitamin_d';
+  }
+  if (names.some((name) => name.includes('probiotic') || name.includes('lactobacillus') || name.includes('bifidobacter'))) {
+    return 'probiotic';
+  }
+  if (count <= 2) return 'single_active';
+  if (count >= 6) return 'multi_active_general';
+  return 'unknown';
+};
+
+const buildLabelProductName = (draft?: LabelDraft | null, analysisName?: string | null) => {
+  if (analysisName && !isPlaceholderLabelName(analysisName)) return analysisName;
+  const candidates = getLabelIngredientCandidates(draft);
+  const names = candidates.map((item) => item.normalized);
+  const type = detectLabelProductType(names, candidates.length);
+  if (type === 'b_complex') return `B-Complex (${candidates.length} actives)`;
+  if (type === 'omega3_fish_oil') return 'Omega-3 Fish Oil';
+  if (type === 'vitamin_d') return 'Vitamin D3';
+  if (type === 'probiotic') {
+    const cfu = candidates.find((candidate) => candidate.unit?.toLowerCase() === 'cfu');
+    if (cfu?.amount != null) return `Probiotic (${formatCompactNumber(cfu.amount)} CFU)`;
+    return 'Probiotic';
+  }
+  if (type === 'multi_active_general') return `Multi-Active (${candidates.length} actives)`;
+  if (type === 'single_active') {
+    const fallback = getMeaningfulIngredientName(draft);
+    return fallback ? shortenIngredientName(fallback) : 'Single Active';
+  }
+  const fallback = getMeaningfulIngredientName(draft);
+  return fallback ?? 'Label Scan Result';
+};
 
 const getMeaningfulIngredientName = (draft?: LabelDraft | null) => {
   if (!draft?.ingredients?.length) return null;
@@ -97,9 +216,7 @@ export default function ScanResultScreen() {
   const ingredientsToShow = isLabel ? (labelDraft?.ingredients ?? []).filter(isLikelyIngredient) : [];
   const labelNameCandidate = isLabel ? getMeaningfulIngredientName(labelDraft) : null;
   const analysisName = resolvedLabelAnalysis?.productInfo?.name ?? labelResult?.analysis?.productInfo?.name ?? null;
-  const labelProductName = isLabel
-    ? (!isPlaceholderLabelName(analysisName) ? analysisName : labelNameCandidate ?? 'Label Scan Result')
-    : 'Supplement';
+  const labelProductName = isLabel ? buildLabelProductName(labelDraft, analysisName) : 'Supplement';
 
   // 🚀 Use the Streaming Hook
   const {
@@ -107,23 +224,26 @@ export default function ScanResultScreen() {
   } = useStreamAnalysis(barcode);
   const barcodeQuality = useMemo(() => getBarcodeQuality({ status, error }), [error, status]);
 
-  const formatDose = (value?: number | string | null, unit?: string | null) => {
+  const formatDose = useCallback((value?: number | string | null, unit?: string | null) => {
     if (value == null) return null;
     const cleanValue = typeof value === 'string' ? value.trim() : value;
     if (cleanValue === '') return null;
     const cleanUnit = unit?.trim() ?? '';
     return cleanUnit ? `${cleanValue} ${cleanUnit}` : String(cleanValue);
-  };
+  }, []);
 
-  const extractDoseFromText = (text?: string | null) => {
-    if (!text) return null;
-    const match = text.match(/(\d+(?:\.\d+)?)\s?(mcg|μg|ug|mg|g|iu|ml|oz)/i);
-    if (!match) return null;
-    const value = match[1];
-    const unitRaw = match[2].toLowerCase();
-    const unit = unitRaw === 'μg' || unitRaw === 'ug' ? 'mcg' : unitRaw;
-    return formatDose(value, unit);
-  };
+  const extractDoseFromText = useCallback(
+    (text?: string | null) => {
+      if (!text) return null;
+      const match = text.match(/(\d+(?:\.\d+)?)\s?(mcg|μg|ug|mg|g|iu|ml|oz)/i);
+      if (!match) return null;
+      const value = match[1];
+      const unitRaw = match[2].toLowerCase();
+      const unit = unitRaw === 'μg' || unitRaw === 'ug' ? 'mcg' : unitRaw;
+      return formatDose(value, unit);
+    },
+    [formatDose]
+  );
 
   const formatDraftIngredient = (ingredient: LabelDraft['ingredients'][number]) => {
     let line = ingredient.name;
@@ -143,6 +263,8 @@ export default function ScanResultScreen() {
     return `${withDose.amount} ${withDose.unit}`;
   };
 
+  const labelImageBase64 = session?.mode === 'label' ? session.input.imageBase64 : undefined;
+
   const handleGenerateAnalysis = useCallback(async () => {
     if (!labelResult || labelAnalysisLoading) return;
     setLabelAnalysisError(null);
@@ -151,7 +273,7 @@ export default function ScanResultScreen() {
     try {
       const response = await requestLabelAnalysis({
         imageHash: labelResult.imageHash,
-        imageBase64: session?.mode === 'label' ? session.input.imageBase64 : undefined,
+        imageBase64: labelImageBase64,
       });
       if (response.analysis) {
         setLabelAnalysis(response.analysis);
@@ -163,13 +285,13 @@ export default function ScanResultScreen() {
           setLabelAnalysisError(response.message ?? 'Analysis service unavailable.');
         }
       }
-    } catch (error) {
+    } catch {
       setLabelAnalysisError('Unable to generate analysis. Please try again.');
       setLabelAnalysisStatus('failed');
     } finally {
       setLabelAnalysisLoading(false);
     }
-  }, [labelAnalysisLoading, labelResult]);
+  }, [labelAnalysisLoading, labelResult, labelImageBase64]);
 
   useEffect(() => {
     if (!isLabel || !labelResult) return;
@@ -255,7 +377,7 @@ export default function ScanResultScreen() {
     const summaryDose =
       extractDoseFromText((usage as { summary?: string } | null)?.summary ?? null) ??
       extractDoseFromText(efficacy?.overviewSummary ?? null) ??
-      extractDoseFromText(efficacy?.dosageAssessment?.text ?? null);
+      extractDoseFromText(efficacy?.overallAssessment ?? null);
     const fallbackDose = productInfo.category ?? '';
     const dosageText =
       usageDose ??
@@ -290,7 +412,19 @@ export default function ScanResultScreen() {
       });
       lastDosageRef.current = dosageText;
     }
-  }, [addScan, barcode, efficacy, labelProductName, productInfo, resolvedLabelAnalysis, session, status, usage]);
+  }, [
+    addScan,
+    barcode,
+    efficacy,
+    extractDoseFromText,
+    formatDose,
+    labelProductName,
+    productInfo,
+    resolvedLabelAnalysis,
+    session,
+    status,
+    usage,
+  ]);
 
   const handleBack = () => {
     if (session?.mode === 'barcode') {

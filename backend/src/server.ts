@@ -8,7 +8,7 @@ import { buildBarcodeSearchQueries, normalizeBarcodeInput } from "./barcode.js";
 import { extractBrandProduct, extractBrandWithAI, type BrandExtractionResult } from "./brandExtractor.js";
 import { buildEnhancedContext, fetchAnalysisSection, prepareContextSources } from "./deepseek.js";
 import { analyzeLabelDraft, analyzeLabelDraftWithDiagnostics, formatForDeepSeek, needsConfirmation, validateIngredient, type LabelAnalysisDiagnostics, type LabelDraft } from "./labelAnalysis.js";
-import { getCachedResult, hasCompletedAnalysis, hasDraftOnly, setCachedResult, updateCachedAnalysis } from "./ocrCache.js";
+import { getCachedResult, hasCompletedAnalysis, setCachedResult, updateCachedAnalysis } from "./ocrCache.js";
 import { constructFallbackQuery, extractDomain, isHighQualityDomain, scoreSearchItem, scoreSearchQuality } from "./searchQuality.js";
 import type {
   AiSupplementAnalysis,
