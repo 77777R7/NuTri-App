@@ -1199,11 +1199,13 @@ ${LABEL_SCAN_OUTPUT_RULES}`;
     return results;
   })();
 
-  const rawBenefits = Array.isArray(efficacy?.coreBenefits) && efficacy.coreBenefits.length
-    ? efficacy.coreBenefits
-    : Array.isArray(efficacy?.benefits)
-      ? efficacy.benefits
-      : [];
+  const legacyBenefits = (efficacy as { benefits?: unknown } | null)?.benefits;
+  const rawBenefits: string[] =
+    Array.isArray(efficacy?.coreBenefits) && efficacy.coreBenefits.length
+      ? efficacy.coreBenefits
+      : Array.isArray(legacyBenefits)
+        ? legacyBenefits.filter((benefit): benefit is string => typeof benefit === "string")
+        : [];
   const preferLabelBenefits =
     rawBenefits.length === 0 || rawBenefits.every((benefit) => !/\d/.test(benefit));
   const llmCoreBenefits = mergeList(
@@ -1500,7 +1502,7 @@ app.post("/api/analyze-label", async (req: Request, res: Response) => {
       console.error("[LabelScan] Vision OCR failed:", visionError);
       const snapshot = await buildAndCacheLabelSnapshot({
         status: "failed",
-        draft: null,
+        draft: undefined,
         analysis: null,
         message: "OCR processing failed. Please try again.",
         imageHash,
@@ -1564,7 +1566,7 @@ app.post("/api/analyze-label", async (req: Request, res: Response) => {
     if (tokenStats.tokenCount === 0 && fullText.trim().length === 0) {
       const snapshot = await buildAndCacheLabelSnapshot({
         status: "failed",
-        draft: null,
+        draft: undefined,
         analysis: null,
         message: "Could not detect any text in the image.",
         imageHash,

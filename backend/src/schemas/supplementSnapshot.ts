@@ -119,7 +119,7 @@ export const SupplementSnapshotSchema = z.object({
         programCode: z.string(),
         status: z.enum(['verified', 'claimed', 'unknown']),
         evidenceUrl: z.string().nullable(),
-        evidencePayloadSummary: z.record(z.unknown()).nullable(),
+        evidencePayloadSummary: z.record(z.string(), z.unknown()).nullable(),
         evidenceRef: z
           .object({
             hash: z.string(),
