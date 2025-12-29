@@ -10,6 +10,9 @@ import { buildEnhancedContext, fetchAnalysisSection, prepareContextSources } fro
 import { analyzeLabelDraft, analyzeLabelDraftWithDiagnostics, formatForDeepSeek, needsConfirmation, validateIngredient, type LabelAnalysisDiagnostics, type LabelDraft } from "./labelAnalysis.js";
 import { getCachedResult, hasCompletedAnalysis, setCachedResult, updateCachedAnalysis } from "./ocrCache.js";
 import { constructFallbackQuery, extractDomain, isHighQualityDomain, scoreSearchItem, scoreSearchQuality } from "./searchQuality.js";
+import { buildBarcodeSnapshot, buildLabelSnapshot, validateSnapshotOrFallback, type SnapshotAnalysisPayload } from "./snapshot.js";
+import { getSnapshotCache, storeSnapshotCache } from "./snapshotCache.js";
+import type { SupplementSnapshot } from "./schemas/supplementSnapshot.js";
 import type {
   AiSupplementAnalysis,
   ErrorResponse,
@@ -286,6 +289,63 @@ const sendSSE = (res: Response, type: string, data: unknown) => {
   res.write(`data: ${JSON.stringify(data)}\n\n`);
 };
 
+const buildValidatedLabelSnapshot = (input: {
+  status: "ok" | "needs_confirmation" | "failed";
+  draft?: LabelDraft;
+  analysis?: AiSupplementAnalysis | null;
+  message?: string;
+}): SupplementSnapshot => {
+  const candidate = buildLabelSnapshot({
+    status: input.status,
+    analysis: input.analysis ?? null,
+    draft: input.draft ?? null,
+    message: input.message,
+  });
+
+  return validateSnapshotOrFallback({
+    candidate,
+    fallback: {
+      source: "label",
+      barcodeRaw: null,
+      productInfo: {
+        brand: input.analysis?.status === "success" ? input.analysis.productInfo?.brand ?? null : null,
+        name: input.analysis?.status === "success" ? input.analysis.productInfo?.name ?? null : null,
+        category: input.analysis?.status === "success" ? input.analysis.productInfo?.category ?? null : null,
+        imageUrl: input.analysis?.status === "success" ? input.analysis.productInfo?.image ?? null : null,
+      },
+      createdAt: candidate.createdAt,
+    },
+  });
+};
+
+const buildBarcodeCacheKey = (barcode: string): string => {
+  const normalized = normalizeBarcodeInput(barcode);
+  return normalized ? normalized.code.padStart(14, "0") : barcode;
+};
+
+const buildAndCacheLabelSnapshot = async (input: {
+  status: "ok" | "needs_confirmation" | "failed";
+  draft?: LabelDraft;
+  analysis?: AiSupplementAnalysis | null;
+  message?: string;
+  imageHash: string;
+}): Promise<SupplementSnapshot> => {
+  const snapshot = buildValidatedLabelSnapshot({
+    status: input.status,
+    draft: input.draft,
+    analysis: input.analysis,
+    message: input.message,
+  });
+
+  await storeSnapshotCache({
+    key: input.imageHash,
+    source: "label",
+    snapshot,
+  });
+
+  return snapshot;
+};
+
 // ============================================================================
 // ENDPOINTS
 // ============================================================================
@@ -389,6 +449,96 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
       return;
     }
     const barcode = normalized.code;
+    const cacheKey = buildBarcodeCacheKey(barcode);
+
+    const cached = await getSnapshotCache({ key: cacheKey, source: "barcode" });
+    if (cached) {
+      console.log(`[Stream] Cache hit for barcode: ${barcode}`);
+      const { snapshot, analysisPayload } = cached;
+      if (analysisPayload?.brandExtraction) {
+        sendSSE(res, "brand_extracted", analysisPayload.brandExtraction);
+      }
+
+      const productInfo = analysisPayload?.productInfo ?? {
+        brand: snapshot.product.brand,
+        name: snapshot.product.name,
+        category: snapshot.product.category,
+        image: snapshot.product.imageUrl,
+      };
+
+      const sources = analysisPayload?.sources ?? snapshot.references.items.map((ref) => ({
+        title: ref.title,
+        link: ref.url,
+        domain: extractDomain(ref.url),
+        isHighQuality: false,
+      }));
+
+      sendSSE(res, "product_info", { productInfo, sources });
+
+      const fallbackScore = (value: number | undefined) =>
+        typeof value === "number" ? Math.round(value / 10) : 5;
+
+      const fallbackEfficacy = snapshot.scores
+        ? {
+          score: fallbackScore(snapshot.scores.effectiveness),
+          verdict: "Cached snapshot analysis.",
+          primaryActive: null,
+          ingredients: [],
+          overviewSummary: null,
+          coreBenefits: [],
+          overallAssessment: "",
+          marketingVsReality: "",
+        }
+        : null;
+
+      const fallbackSafety = snapshot.scores
+        ? {
+          score: fallbackScore(snapshot.scores.safety),
+          verdict: "Cached snapshot analysis.",
+          risks: [],
+          redFlags: [],
+          recommendation: "Cached snapshot analysis.",
+        }
+        : null;
+
+      const fallbackUsagePayload = snapshot.scores
+        ? {
+          usage: {
+            summary: "Cached snapshot analysis.",
+            timing: "",
+            withFood: null,
+            frequency: "",
+            interactions: [],
+          },
+          value: {
+            score: fallbackScore(snapshot.scores.value),
+            verdict: "Cached snapshot analysis.",
+            analysis: "Cached snapshot analysis.",
+            costPerServing: null,
+            alternatives: [],
+          },
+          social: {
+            score: 3,
+            summary: "Cached snapshot analysis.",
+          },
+        }
+        : null;
+
+      if (analysisPayload?.efficacy || fallbackEfficacy) {
+        sendSSE(res, "result_efficacy", analysisPayload?.efficacy ?? fallbackEfficacy);
+      }
+      if (analysisPayload?.safety || fallbackSafety) {
+        sendSSE(res, "result_safety", analysisPayload?.safety ?? fallbackSafety);
+      }
+      if (analysisPayload?.usagePayload || fallbackUsagePayload) {
+        sendSSE(res, "result_usage", analysisPayload?.usagePayload ?? fallbackUsagePayload);
+      }
+
+      sendSSE(res, "snapshot", snapshot);
+      sendSSE(res, "done", { barcode });
+      res.end();
+      return;
+    }
 
     const googleApiKey = process.env.GOOGLE_CSE_API_KEY;
     const cx = process.env.GOOGLE_CSE_CX;
@@ -459,8 +609,6 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
         link: i.link,
         domain: extractDomain(i.link),
         isHighQuality: isHighQualityDomain(i.link),
-        snippet: i.snippet,
-        qualityScore: scoreSearchItem(i, { barcode }),
       })),
     });
 
@@ -508,23 +656,6 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
 
     console.log(`[Stream] Final items count: ${detailItems.length}`);
 
-    sendSSE(res, "product_info", {
-      productInfo: {
-        brand: brand,
-        name: product,
-        category: extraction.category,
-        image: initialItems[0]?.image ?? null,
-      },
-      sources: detailItems.map((item) => ({
-        title: item.title,
-        link: item.link,
-        domain: extractDomain(item.link),
-        isHighQuality: isHighQualityDomain(item.link),
-        snippet: item.snippet,
-        qualityScore: scoreSearchItem(item, { barcode }),
-      })),
-    });
-
     // =========================================================================
     // STEP 3: Parallel AI Analysis
     // =========================================================================
@@ -557,8 +688,74 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
     });
 
     // Wait for all tasks to complete
-    await Promise.all([taskEfficacy, taskSafety, taskUsage]);
+    const [efficacyResult, safetyResult, usageResult] = await Promise.all([
+      taskEfficacy,
+      taskSafety,
+      taskUsage,
+    ]);
 
+    const analysisPayload: SnapshotAnalysisPayload = {
+      brandExtraction: {
+        brand: extraction.brand,
+        product: extraction.product,
+        category: extraction.category,
+        confidence: extraction.confidence,
+        source: extraction.source,
+      },
+      productInfo: {
+        brand,
+        name: product,
+        category: extraction.category ?? null,
+        image: detailItems[0]?.image ?? initialItems[0]?.image ?? null,
+      },
+      sources: detailItems.map((item) => ({
+        title: item.title,
+        link: item.link,
+        domain: extractDomain(item.link),
+        isHighQuality: isHighQualityDomain(item.link),
+      })),
+      efficacy: efficacyResult,
+      safety: safetyResult,
+      usagePayload: usageResult,
+    };
+
+    const snapshotCandidate = buildBarcodeSnapshot({
+      barcode,
+      productInfo: analysisPayload.productInfo ?? null,
+      sources: detailItems,
+      efficacy: efficacyResult ?? null,
+      safety: safetyResult ?? null,
+      usagePayload: usageResult ?? null,
+    });
+
+    const snapshot = validateSnapshotOrFallback({
+      candidate: snapshotCandidate,
+      fallback: {
+        source: "barcode",
+        barcodeRaw: barcode,
+        productInfo: {
+          brand,
+          name: product,
+          category: extraction.category ?? null,
+          imageUrl: detailItems[0]?.image ?? initialItems[0]?.image ?? null,
+        },
+        createdAt: snapshotCandidate.createdAt,
+      },
+    });
+
+    const expiresAt = snapshot.listings.items.length
+      ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+      : null;
+
+    await storeSnapshotCache({
+      key: cacheKey,
+      source: "barcode",
+      snapshot,
+      analysisPayload,
+      expiresAt,
+    });
+
+    sendSSE(res, "snapshot", snapshot);
     console.log(`[Stream] All analysis complete for barcode: ${barcode}`);
     sendSSE(res, "done", { barcode });
     res.end();
@@ -652,6 +849,7 @@ interface LabelAnalysisResponse {
   message?: string;
   suggestion?: string;
   issues?: { type: string; message: string }[]; // P0-2: Return validation issues to frontend
+  snapshot?: SupplementSnapshot;
   debug?: LabelAnalysisDebug;
 }
 
@@ -798,14 +996,34 @@ ${LABEL_SCAN_OUTPUT_RULES}`;
   if (!safety) analysisIssues.push("safety_parse_failed");
   if (!usage) analysisIssues.push("usage_parse_failed");
 
+  const normalizeNameKey = (value?: string | null) =>
+    value?.toLowerCase().replace(/[^a-z0-9]+/g, "").trim() ?? "";
+  const clampTextField = (value?: string | null) => (value && value.trim().length ? value.trim() : null);
+  const mergeList = (primary: string[] | undefined, fallback: string[], limit: number) => {
+    const results: string[] = [];
+    const seen = new Set<string>();
+    const add = (value?: string | null) => {
+      if (!value) return;
+      const trimmed = value.trim();
+      if (!trimmed) return;
+      const key = trimmed.toLowerCase();
+      if (seen.has(key)) return;
+      seen.add(key);
+      results.push(trimmed);
+    };
+    (primary ?? []).forEach(add);
+    fallback.forEach(add);
+    return results.slice(0, limit);
+  };
+
   const labelActives = (() => {
     const results: { name: string; doseText: string; dosageValue: number | null; dosageUnit: string | null }[] = [];
     const seen = new Set<string>();
     for (const ing of draft.ingredients) {
       const name = ing.name?.trim();
       if (!name) continue;
-      const key = name.toLowerCase();
-      if (seen.has(key)) continue;
+      const key = normalizeNameKey(name);
+      if (!key || seen.has(key)) continue;
       seen.add(key);
       const doseText =
         ing.amount != null && ing.unit
@@ -819,15 +1037,18 @@ ${LABEL_SCAN_OUTPUT_RULES}`;
         dosageValue: ing.amount ?? null,
         dosageUnit: ing.unit ?? null,
       });
-      if (results.length >= 3) break;
     }
     return results;
   })();
 
-  const labelPrimary = labelActives[0];
-  const labelCoreBenefits = labelActives.map((active) => `${active.name} - ${active.doseText}`);
-  const labelSummary = labelActives.length
-    ? `Label-only summary${draft.servingSize ? ` (${draft.servingSize})` : ''}: ${labelActives
+  const labelActivesSummary = labelActives.slice(0, 3);
+  const labelActivesForList = labelActives.slice(0, 8);
+  const labelActivesByKey = new Map(labelActives.map((active) => [normalizeNameKey(active.name), active]));
+
+  const labelPrimary = labelActivesSummary[0];
+  const labelCoreBenefits = labelActivesSummary.map((active) => `${active.name} - ${active.doseText}`);
+  const labelSummary = labelActivesSummary.length
+    ? `Label-only summary${draft.servingSize ? ` (${draft.servingSize})` : ''}: ${labelActivesSummary
         .map((active) => `${active.name} ${active.doseText}`)
         .join(', ')}.`
     : "Label-only summary based on listed ingredients.";
@@ -906,6 +1127,7 @@ ${LABEL_SCAN_OUTPUT_RULES}`;
     };
   };
 
+  const llmPrimaryActive = normalizePrimaryActive(efficacy?.primaryActive);
   const labelPrimaryActive = labelPrimary
     ? normalizePrimaryActive({
         name: labelPrimary.name,
@@ -917,33 +1139,94 @@ ${LABEL_SCAN_OUTPUT_RULES}`;
         evidenceLevel: "none",
         evidenceSummary: "Not specified on label",
       })
-    : normalizePrimaryActive(efficacy?.primaryActive);
+    : null;
+  const fillPrimaryFromLabel = (active: PrimaryActive | null) => {
+    if (!active?.name) return active;
+    const match = labelActivesByKey.get(normalizeNameKey(active.name));
+    if (!match) return active;
+    return {
+      ...active,
+      dosageValue: active.dosageValue ?? match.dosageValue ?? null,
+      dosageUnit: active.dosageUnit ?? match.dosageUnit ?? null,
+    };
+  };
+  const primaryActive = fillPrimaryFromLabel(llmPrimaryActive ?? labelPrimaryActive);
 
-  const labelIngredients: IngredientAnalysis[] = labelActives.length
-    ? labelActives
-        .map((active) =>
-          normalizeIngredient({
-            name: active.name,
-            form: null,
-            formQuality: "unknown",
-            formNote: null,
-            dosageValue: active.dosageValue,
-            dosageUnit: active.dosageUnit,
-            recommendedMin: null,
-            recommendedMax: null,
-            recommendedUnit: null,
-            dosageAssessment: "unknown",
-            evidenceLevel: "none",
-            evidenceSummary: "Not specified on label",
-            rdaSource: null,
-            ulValue: null,
-            ulUnit: null,
-          })
-        )
-        .filter((item): item is IngredientAnalysis => Boolean(item))
-    : (Array.isArray(efficacy?.ingredients) ? efficacy.ingredients : [])
-        .map((ingredient: any) => normalizeIngredient(ingredient))
-        .filter((item): item is IngredientAnalysis => Boolean(item));
+  const llmIngredients = (Array.isArray(efficacy?.ingredients) ? efficacy.ingredients : [])
+    .map((ingredient: any) => normalizeIngredient(ingredient))
+    .filter((item): item is IngredientAnalysis => Boolean(item));
+  const labelIngredientFallbacks = labelActivesForList
+    .map((active) =>
+      normalizeIngredient({
+        name: active.name,
+        form: null,
+        formQuality: "unknown",
+        formNote: null,
+        dosageValue: active.dosageValue,
+        dosageUnit: active.dosageUnit,
+        recommendedMin: null,
+        recommendedMax: null,
+        recommendedUnit: null,
+        dosageAssessment: "unknown",
+        evidenceLevel: "none",
+        evidenceSummary: "Not specified on label",
+        rdaSource: null,
+        ulValue: null,
+        ulUnit: null,
+      })
+    )
+    .filter((item): item is IngredientAnalysis => Boolean(item));
+  const applyLabelDose = (ingredient: IngredientAnalysis) => {
+    const match = labelActivesByKey.get(normalizeNameKey(ingredient.name));
+    if (!match) return ingredient;
+    return {
+      ...ingredient,
+      dosageValue: ingredient.dosageValue ?? match.dosageValue ?? null,
+      dosageUnit: ingredient.dosageUnit ?? match.dosageUnit ?? null,
+    };
+  };
+  const mergedIngredients = (() => {
+    const results: IngredientAnalysis[] = [];
+    const seen = new Set<string>();
+    const add = (ingredient: IngredientAnalysis) => {
+      const key = normalizeNameKey(ingredient.name);
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      results.push(ingredient);
+    };
+    llmIngredients.map(applyLabelDose).forEach(add);
+    labelIngredientFallbacks.forEach(add);
+    return results;
+  })();
+
+  const rawBenefits = Array.isArray(efficacy?.coreBenefits) && efficacy.coreBenefits.length
+    ? efficacy.coreBenefits
+    : Array.isArray(efficacy?.benefits)
+      ? efficacy.benefits
+      : [];
+  const preferLabelBenefits =
+    rawBenefits.length === 0 || rawBenefits.every((benefit) => !/\d/.test(benefit));
+  const llmCoreBenefits = mergeList(
+    preferLabelBenefits ? [...labelCoreBenefits, ...rawBenefits] : rawBenefits,
+    labelCoreBenefits,
+    3
+  );
+  const overviewSummary = (() => {
+    const llmSummary = clampTextField(efficacy?.overviewSummary);
+    if (!llmSummary) return labelSummary;
+    if (llmSummary.length >= 60) return llmSummary;
+    return labelSummary ? `${llmSummary} ${labelSummary}` : llmSummary;
+  })();
+  const overallAssessment = clampTextField(efficacy?.overallAssessment) ?? transparencyNote;
+  const marketingRequirement = "Label-only analysis; no price/brand verification.";
+  const marketingBase = clampTextField(efficacy?.marketingVsReality);
+  const marketingVsReality = marketingBase
+    ? (marketingBase.toLowerCase().includes("label-only analysis")
+        ? marketingBase
+        : `${marketingBase} ${marketingRequirement}`)
+    : marketingRequirement;
+  const valueVerdict = clampTextField(usage?.value?.verdict) ?? transparencyVerdict;
+  const valueAnalysis = clampTextField(usage?.value?.analysis) ?? transparencyAnalysis;
 
   const analysis: AiSupplementAnalysis = {
     schemaVersion: 1,
@@ -961,25 +1244,25 @@ ${LABEL_SCAN_OUTPUT_RULES}`;
     },
     efficacy: {
       score: (efficacy?.score ?? 5) as RatingScore,
-      benefits: labelCoreBenefits.length ? labelCoreBenefits : efficacy?.coreBenefits ?? [],
+      benefits: llmCoreBenefits,
       dosageAssessment: {
-        text: efficacy?.overallAssessment ?? transparencyNote,
+        text: overallAssessment,
         isUnderDosed: false,
       },
-      verdict: efficacy?.verdict ?? undefined,
-      highlights: labelCoreBenefits.length ? labelCoreBenefits : efficacy?.coreBenefits ?? undefined,
+      verdict: clampTextField(efficacy?.verdict) ?? undefined,
+      highlights: llmCoreBenefits.length ? llmCoreBenefits : undefined,
       warnings: [],
-      coreBenefits: labelCoreBenefits.length ? labelCoreBenefits : efficacy?.coreBenefits ?? undefined,
-      overviewSummary: labelSummary,
-      overallAssessment: efficacy?.overallAssessment ?? transparencyNote,
-      marketingVsReality: "Label-only analysis; no price/brand verification.",
-      primaryActive: labelPrimaryActive,
-      ingredients: labelIngredients,
+      coreBenefits: llmCoreBenefits.length ? llmCoreBenefits : undefined,
+      overviewSummary,
+      overallAssessment,
+      marketingVsReality,
+      primaryActive,
+      ingredients: mergedIngredients,
     },
     value: {
       score: transparencyScore as RatingScore,
-      verdict: transparencyVerdict,
-      analysis: transparencyAnalysis,
+      verdict: valueVerdict,
+      analysis: valueAnalysis,
     },
     safety: {
       score: (safety?.score ?? 5) as RatingScore,
@@ -1086,12 +1369,19 @@ app.post("/api/analyze-label", async (req: Request, res: Response) => {
         const cachedAnalysisIssues =
           (cached.analysis as { analysisIssues?: string[] } | null)?.analysisIssues ?? [];
         const cachedAnalysisStatus = cachedAnalysisIssues.length ? "partial" : "complete";
+        const snapshot = await buildAndCacheLabelSnapshot({
+          status: "ok",
+          draft: cached.parsedIngredients ?? null,
+          analysis: cached.analysis ?? null,
+          imageHash,
+        });
         return res.json({
           status: "ok",
           draft: cached.parsedIngredients ?? undefined,
           analysis: cached.analysis,
           analysisStatus: cachedAnalysisStatus,
           analysisIssues: cachedAnalysisIssues.length ? cachedAnalysisIssues : undefined,
+          snapshot,
         } satisfies LabelAnalysisResponse);
       }
 
@@ -1102,11 +1392,19 @@ app.post("/api/analyze-label", async (req: Request, res: Response) => {
 
         if (!includeAnalysis) {
           console.log(`[LabelScan] Cache hit with draft only for ${imageHash.slice(0, 8)}...`);
+          const snapshot = await buildAndCacheLabelSnapshot({
+            status: cachedStatus,
+            draft: cachedDraft,
+            analysis: null,
+            message: cachedNeedsConfirmation ? "Please review the extracted ingredients." : undefined,
+            imageHash,
+          });
           return res.json({
             status: cachedStatus,
             draft: cachedDraft,
             message: cachedNeedsConfirmation ? "Please review the extracted ingredients." : undefined,
             analysisStatus: "skipped",
+            snapshot,
           } satisfies LabelAnalysisResponse);
         }
 
@@ -1114,11 +1412,19 @@ app.post("/api/analyze-label", async (req: Request, res: Response) => {
         const model = process.env.DEEPSEEK_MODEL || "deepseek-chat";
 
         if (!deepseekKey) {
+          const snapshot = await buildAndCacheLabelSnapshot({
+            status: cachedStatus,
+            draft: cachedDraft,
+            analysis: null,
+            message: "Analysis service unavailable. Please try again later.",
+            imageHash,
+          });
           return res.json({
             status: cachedStatus,
             draft: cachedDraft,
             message: "Analysis service unavailable. Please try again later.",
             analysisStatus: "unavailable",
+            snapshot,
           } satisfies LabelAnalysisResponse);
         }
 
@@ -1142,10 +1448,18 @@ app.post("/api/analyze-label", async (req: Request, res: Response) => {
             labelAnalysisInFlight.set(imageHash, task);
             task.finally(() => labelAnalysisInFlight.delete(imageHash));
           }
+          const snapshot = await buildAndCacheLabelSnapshot({
+            status: cachedStatus,
+            draft: cachedDraft,
+            analysis: null,
+            message: cachedNeedsConfirmation ? "Please review the extracted ingredients." : undefined,
+            imageHash,
+          });
           return res.json({
             status: cachedStatus,
             draft: cachedDraft,
             analysisStatus: "pending",
+            snapshot,
           } satisfies LabelAnalysisResponse);
         }
 
@@ -1159,12 +1473,19 @@ app.post("/api/analyze-label", async (req: Request, res: Response) => {
         await updateCachedAnalysis(imageHash, analysis);
 
         console.log(`[LabelScan] Analysis complete for ${imageHash.slice(0, 8)} in ${Math.round(llmMs)}ms...`);
+        const snapshot = await buildAndCacheLabelSnapshot({
+          status: cachedStatus,
+          draft: cachedDraft,
+          analysis,
+          imageHash,
+        });
         return res.json({
           status: cachedStatus,
           draft: cachedDraft,
           analysis,
           analysisStatus,
           analysisIssues: analysisIssues.length ? analysisIssues : undefined,
+          snapshot,
         } satisfies LabelAnalysisResponse);
       }
     }
@@ -1177,10 +1498,18 @@ app.post("/api/analyze-label", async (req: Request, res: Response) => {
       visionResult = await callVisionOcr({ imageBase64 }, { debug: debugEnabled });
     } catch (visionError) {
       console.error("[LabelScan] Vision OCR failed:", visionError);
+      const snapshot = await buildAndCacheLabelSnapshot({
+        status: "failed",
+        draft: null,
+        analysis: null,
+        message: "OCR processing failed. Please try again.",
+        imageHash,
+      });
       return res.status(500).json({
         status: "failed",
         message: "OCR processing failed. Please try again.",
         suggestion: "Try taking a clearer photo with better lighting and less glare.",
+        snapshot,
       } satisfies LabelAnalysisResponse);
     }
 
@@ -1233,11 +1562,19 @@ app.post("/api/analyze-label", async (req: Request, res: Response) => {
     };
 
     if (tokenStats.tokenCount === 0 && fullText.trim().length === 0) {
+      const snapshot = await buildAndCacheLabelSnapshot({
+        status: "failed",
+        draft: null,
+        analysis: null,
+        message: "Could not detect any text in the image.",
+        imageHash,
+      });
       return res.json({
         status: "failed",
         message: "Could not detect any text in the image.",
         suggestion: "Make sure the Supplement Facts label is clearly visible and in focus.",
         debug: buildDebugPayload(null, null, null, requestBodyMs),
+        snapshot,
       } satisfies LabelAnalysisResponse);
     }
 
@@ -1271,21 +1608,36 @@ app.post("/api/analyze-label", async (req: Request, res: Response) => {
     // Check if confirmation needed
     if (needsReview && !includeAnalysis) {
       console.log(`[LabelScan] Low confidence, requesting confirmation`);
+      const snapshot = await buildAndCacheLabelSnapshot({
+        status: "needs_confirmation",
+        draft,
+        analysis: null,
+        message: "Please review the extracted ingredients.",
+        imageHash,
+      });
       return res.json({
         status: "needs_confirmation",
         draft,
         message: "Please review the extracted ingredients.",
         debug: debugPayload,
         analysisStatus: "skipped",
+        snapshot,
       } satisfies LabelAnalysisResponse);
     }
 
     if (!includeAnalysis) {
+      const snapshot = await buildAndCacheLabelSnapshot({
+        status: "ok",
+        draft,
+        analysis: null,
+        imageHash,
+      });
       return res.json({
         status: "ok",
         draft,
         debug: debugPayload,
         analysisStatus: "skipped",
+        snapshot,
       } satisfies LabelAnalysisResponse);
     }
 
@@ -1294,12 +1646,20 @@ app.post("/api/analyze-label", async (req: Request, res: Response) => {
     const model = process.env.DEEPSEEK_MODEL || "deepseek-chat";
 
     if (!deepseekKey) {
+      const snapshot = await buildAndCacheLabelSnapshot({
+        status: needsReview ? "needs_confirmation" : "ok",
+        draft,
+        analysis: null,
+        message: "Analysis service unavailable. Please try again later.",
+        imageHash,
+      });
       return res.json({
         status: needsReview ? "needs_confirmation" : "ok",
         draft,
         message: "Analysis service unavailable. Please try again later.",
         debug: debugPayload,
         analysisStatus: "unavailable",
+        snapshot,
       } satisfies LabelAnalysisResponse);
     }
 
@@ -1323,12 +1683,20 @@ app.post("/api/analyze-label", async (req: Request, res: Response) => {
         labelAnalysisInFlight.set(imageHash, task);
         task.finally(() => labelAnalysisInFlight.delete(imageHash));
       }
+      const snapshot = await buildAndCacheLabelSnapshot({
+        status: needsReview ? "needs_confirmation" : "ok",
+        draft,
+        analysis: null,
+        message: needsReview ? "Please review the extracted ingredients." : undefined,
+        imageHash,
+      });
       return res.json({
         status: needsReview ? "needs_confirmation" : "ok",
         draft,
         message: needsReview ? "Please review the extracted ingredients." : undefined,
         debug: debugPayload,
         analysisStatus: "pending",
+        snapshot,
       } satisfies LabelAnalysisResponse);
     }
 
@@ -1347,6 +1715,13 @@ app.post("/api/analyze-label", async (req: Request, res: Response) => {
     debugPayload = buildDebugPayload(postprocessMs, analysisDiagnostics, llmMs, requestBodyMs);
 
     console.log(`[LabelScan] Analysis complete for ${imageHash.slice(0, 8)}...`);
+    const snapshot = await buildAndCacheLabelSnapshot({
+      status: needsReview ? "needs_confirmation" : "ok",
+      draft,
+      analysis,
+      message: needsReview ? "Please review the extracted ingredients." : undefined,
+      imageHash,
+    });
     return res.json({
       status: needsReview ? "needs_confirmation" : "ok",
       draft,
@@ -1355,6 +1730,7 @@ app.post("/api/analyze-label", async (req: Request, res: Response) => {
       debug: debugPayload,
       analysisStatus,
       analysisIssues: analysisIssues.length ? analysisIssues : undefined,
+      snapshot,
     } satisfies LabelAnalysisResponse);
 
   } catch (error) {
@@ -1398,11 +1774,19 @@ app.post("/api/analyze-label/confirm", async (req: Request, res: Response) => {
 
     if (hasBlockingIssues) {
       // P0-2: Return 200 with needs_confirmation, not 400 (frontend treats 400 as system error)
+      const snapshot = await buildAndCacheLabelSnapshot({
+        status: "needs_confirmation",
+        draft: confirmedDraft,
+        analysis: null,
+        message: "Some ingredients have validation issues. Please review and correct.",
+        imageHash,
+      });
       return res.json({
         status: "needs_confirmation",
         draft: confirmedDraft,
         message: "Some ingredients have validation issues. Please review and correct.",
         issues: validationIssues, // Return specific issues so user knows what to fix
+        snapshot,
       } satisfies LabelAnalysisResponse);
     }
 
@@ -1410,9 +1794,17 @@ app.post("/api/analyze-label/confirm", async (req: Request, res: Response) => {
     const model = process.env.DEEPSEEK_MODEL || "deepseek-chat";
 
     if (!deepseekKey) {
+      const snapshot = await buildAndCacheLabelSnapshot({
+        status: "failed",
+        draft: confirmedDraft,
+        analysis: null,
+        message: "Analysis service unavailable.",
+        imageHash,
+      });
       return res.status(503).json({
         status: "failed",
         message: "Analysis service unavailable.",
+        snapshot,
       } satisfies LabelAnalysisResponse);
     }
 
@@ -1430,12 +1822,19 @@ app.post("/api/analyze-label/confirm", async (req: Request, res: Response) => {
     await updateCachedAnalysis(imageHash, analysis);
 
     console.log(`[LabelScan/Confirm] Complete for ${imageHash.slice(0, 8)}...`);
+    const snapshot = await buildAndCacheLabelSnapshot({
+      status: "ok",
+      draft: confirmedDraft,
+      analysis,
+      imageHash,
+    });
     return res.json({
       status: "ok",
       draft: confirmedDraft,
       analysis,
       analysisStatus,
       analysisIssues: analysisIssues.length ? analysisIssues : undefined,
+      snapshot,
     } satisfies LabelAnalysisResponse);
 
   } catch (error) {

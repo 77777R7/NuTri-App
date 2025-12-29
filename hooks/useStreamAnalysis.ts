@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import RNEventSource from 'react-native-sse';
 
 import { Config } from '@/constants/Config';
+import { buildBarcodeSnapshot } from '@/lib/snapshot';
+import type { SupplementSnapshot } from '@/types/supplementSnapshot';
 
 // ============================================================================
 // TYPES
@@ -22,8 +24,6 @@ type EnrichedSource = {
     link: string;
     domain?: string;
     isHighQuality?: boolean;
-    snippet?: string;
-    qualityScore?: number | null;
 };
 
 // Product info from backend
@@ -136,7 +136,11 @@ type AnalysisState = {
     error: string | null;
 };
 
-export function useStreamAnalysis(barcode: string) {
+type AnalysisStateWithSnapshot = AnalysisState & {
+    snapshot: SupplementSnapshot | null;
+};
+
+export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
     const [state, setState] = useState<AnalysisState>({
         brandExtraction: null,
         productInfo: null,
@@ -279,11 +283,26 @@ export function useStreamAnalysis(barcode: string) {
         };
     }, [barcode]);
 
-    return state;
+    const snapshot = useMemo(
+        () => buildBarcodeSnapshot({ barcode, analysis: state }),
+        [barcode, state],
+    );
+
+    return { ...state, snapshot };
 }
 
 // Export types for use in other components
 export type {
-    AnalysisState, BrandExtraction, EfficacyAnalysis, EnrichedSource, IngredientAnalysis, ProductInfo, SafetyAnalysis, SocialAnalysis, ULWarning, UsageAnalysis,
+    AnalysisState,
+    AnalysisStateWithSnapshot,
+    BrandExtraction,
+    EfficacyAnalysis,
+    EnrichedSource,
+    IngredientAnalysis,
+    ProductInfo,
+    SafetyAnalysis,
+    SocialAnalysis,
+    ULWarning,
+    UsageAnalysis,
     ValueAnalysis
 };

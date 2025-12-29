@@ -3,6 +3,8 @@ import { analyzeBarcode } from '@/lib/search-agent';
 import { Config } from '@/constants/Config';
 import type { AiSupplementAnalysis } from '@/backend/src/types';
 import type { LabelDraft } from '@/backend/src/labelAnalysis';
+import type { SupplementSnapshot } from '@/types/supplementSnapshot';
+import { buildLabelSnapshot } from '@/lib/snapshot';
 
 export type { BarcodeAnalysis, BarcodeScanResult } from '@/lib/search-agent';
 
@@ -17,6 +19,7 @@ export type LabelScanResult = {
   message?: string;
   suggestion?: string;
   issues?: { type: string; message: string }[];
+  snapshot?: SupplementSnapshot | null;
 };
 
 type AnalyzeLabelResponse = Omit<LabelScanResult, 'imageUri' | 'imageHash'>;
@@ -78,10 +81,18 @@ export async function submitLabelScan(input: {
     throw new Error('Invalid OCR response');
   }
 
+  const snapshot = payload.snapshot ?? buildLabelSnapshot({
+    status: payload.status,
+    analysis: payload.analysis ?? null,
+    draft: payload.draft ?? null,
+    message: payload.message,
+  });
+
   return {
     ...payload,
     imageUri: input.imageUri,
     imageHash,
+    snapshot,
   };
 }
 
@@ -114,5 +125,15 @@ export async function requestLabelAnalysis(input: {
     throw new Error('Invalid analysis response');
   }
 
-  return payload;
+  const snapshot = payload.snapshot ?? buildLabelSnapshot({
+    status: payload.status,
+    analysis: payload.analysis ?? null,
+    draft: payload.draft ?? null,
+    message: payload.message,
+  });
+
+  return {
+    ...payload,
+    snapshot,
+  };
 }

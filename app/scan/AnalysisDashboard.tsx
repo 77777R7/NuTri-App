@@ -39,10 +39,7 @@ import Animated, {
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { InteractiveScoreRing } from '@/components/ui/InteractiveScoreRing';
 import { ContentSection } from '@/components/ui/ScoreDetailCard';
-import type { LabelDraft } from '@/backend/src/labelAnalysis';
 import { computeSmartScores, type AnalysisInput } from '../../lib/scoring';
-import { buildBarcodeInsights } from './barcodeInsights';
-import { buildLabelInsights } from './labelInsights';
 type Analysis = any;
 type ScoreState = 'active' | 'muted' | 'loading';
 type SourceType = 'barcode' | 'label_scan';
@@ -498,8 +495,7 @@ export const AnalysisDashboard: React.FC<{
     scoreBadge?: string;
     scoreState?: ScoreState;
     sourceType?: SourceType;
-    labelDraft?: LabelDraft;
-}> = ({ analysis, isStreaming = false, scoreBadge, scoreState, sourceType, labelDraft }) => {
+}> = ({ analysis, isStreaming = false, scoreBadge, scoreState, sourceType }) => {
     const [selectedTile, setSelectedTile] = useState<TileConfig | null>(null);
     const scrollY = useSharedValue(0);
     const scrollHandler = useAnimatedScrollHandler((event) => {
@@ -532,74 +528,6 @@ export const AnalysisDashboard: React.FC<{
         );
     }, [efficacy.score, safety.score, value.score]);
     const isLabelSource = sourceType === 'label_scan';
-    const isBarcodeSource = sourceType === 'barcode';
-    const scrubLabelValueText = useCallback(
-        (text?: string | null) => {
-            if (!isLabelSource || !text) return text ?? '';
-            return /price|cost/i.test(text) ? '' : text;
-        },
-        [isLabelSource]
-    );
-    const sources = useMemo(() => analysis.sources ?? [], [analysis.sources]);
-    const brandExtraction = useMemo(() => analysis.brandExtraction ?? null, [analysis.brandExtraction]);
-    const labelInsights = useMemo(() => {
-        if (!isLabelSource) return null;
-        return buildLabelInsights({
-            draft: labelDraft ?? undefined,
-            issues: labelDraft?.issues ?? [],
-            analysisName: productInfo.name ?? null,
-        });
-    }, [isLabelSource, labelDraft, productInfo.name]);
-    const barcodeInsights = useMemo(() => {
-        if (!isBarcodeSource) return null;
-        return buildBarcodeInsights({
-            productInfo,
-            efficacy,
-            safety,
-            value,
-            sources,
-            brandExtraction,
-        });
-    }, [brandExtraction, efficacy, isBarcodeSource, productInfo, safety, sources, value]);
-    const labelMetaLine = labelInsights?.metaLine ?? 'Label scan';
-    const labelProfileLine = labelInsights?.profileLine ?? '';
-    const labelHighlights = labelInsights?.highlights ?? [];
-    const labelHighlightFooter = labelInsights?.highlightFooter;
-    const labelWatchout = labelInsights?.watchout;
-    const labelScienceBars = labelInsights?.scienceBars ?? [];
-    const labelScienceFooter = labelInsights?.scienceFooter;
-    const labelDetailFacts = labelInsights?.detailHighlights ?? [];
-    const labelFormSignals = labelInsights?.formSignals ?? [];
-    const labelFullActives = labelInsights?.fullActives ?? [];
-    const labelCompletenessLine = labelInsights?.completenessLine ?? '';
-    const barcodeMetaLine = barcodeInsights?.metaLine ?? '';
-    const barcodeProfileLine = barcodeInsights?.profileLine ?? '';
-    const barcodeHighlights = barcodeInsights?.coverFacts ?? [];
-    const barcodeHighlightFooter = barcodeInsights?.coverFooter;
-    const barcodeWatchout = barcodeInsights?.watchout;
-    const barcodeScienceBars = barcodeInsights?.scienceBars ?? [];
-    const barcodeScienceFooter = barcodeInsights?.scienceFooter;
-    const barcodeDetailFacts = barcodeInsights?.detailHighlights ?? [];
-    const barcodeFormSignals = barcodeInsights?.formSignals ?? [];
-    const barcodeFullActives = barcodeInsights?.fullActives ?? [];
-    const barcodeCompletenessLine = barcodeInsights?.completenessLine ?? '';
-    const barcodeEvidenceSummary = barcodeInsights?.evidenceSummary ?? '';
-    const barcodeEvidenceNotes = barcodeInsights?.evidenceNotes ?? [];
-    const barcodeSources = barcodeInsights?.evidenceSources ?? [];
-    const labelTransparencyNotes = useMemo(() => {
-        if (!labelInsights) return [] as string[];
-        const notes: string[] = [];
-        if (labelInsights.hasProprietaryBlend) {
-            notes.push('Proprietary blend detected (doses not fully disclosed).');
-        }
-        if (labelInsights.missingDoseCount > 0) {
-            notes.push(`${labelInsights.missingDoseCount} actives missing dose.`);
-        }
-        if (labelInsights.duplicateCount > 0) {
-            notes.push('Possible bilingual duplicates detected.');
-        }
-        return notes;
-    }, [labelInsights]);
     const effectiveScoreState: ScoreState = isLabelSource
         ? (scoreState ?? (isFullyLoaded ? 'active' : 'loading'))
         : (isFullyLoaded ? 'active' : 'loading');
@@ -692,39 +620,29 @@ export const AnalysisDashboard: React.FC<{
                 : [],
         },
         practicality: {
-            verdict:
-                scrubLabelValueText(value.verdict) ||
-                (isLabelSource ? 'Analyzing formula quality...' : 'Analyzing value and practicality...'),
+            verdict: value.verdict || 'Analyzing value and practicality...',
             highlights: isFullyLoaded
                 ? scores.details.valueFactors.filter(f => f.startsWith('+'))
                 : [],
             warnings: [],
         },
-    }), [efficacy.verdict, safety.verdict, safety.redFlags, value.verdict, scores.details, isFullyLoaded, isLabelSource, scrubLabelValueText]);
+    }), [efficacy.verdict, safety.verdict, safety.redFlags, value.verdict, scores.details, isFullyLoaded]);
 
-    const labelCautionLine = labelWatchout ?? '';
-    const scienceSummary = isLabelSource
-        ? [labelProfileLine, labelCompletenessLine ? `${labelCompletenessLine}.` : ''].filter(Boolean).join(' ')
-        : isBarcodeSource
-            ? [barcodeProfileLine, barcodeCompletenessLine ? `${barcodeCompletenessLine}.` : ''].filter(Boolean).join(' ')
-            : efficacy.verdict ||
-              (Array.isArray(efficacy.benefits) && efficacy.benefits[0]) ||
-              'Formula effectiveness has been analyzed based on typical clinical ranges.';
+    const scienceSummary =
+        efficacy.verdict ||
+        (Array.isArray(efficacy.benefits) && efficacy.benefits[0]) ||
+        'Formula effectiveness has been analyzed based on typical clinical ranges.';
 
-    const usageSummary = isLabelSource
-        ? usage.summary || 'Follow label directions for timing and duration.'
-        : usage.summary ||
-          usage.timing ||
-          'Follow label directions and keep timing consistent each day.';
+    const usageSummary =
+        usage.summary ||
+        usage.timing ||
+        'Follow label directions and keep timing consistent each day.';
 
-    const safetySummary = isLabelSource
-        ? safety.verdict ||
-          labelCautionLine ||
-          'Review label warnings for contraindications.'
-        : safety.verdict ||
-          (Array.isArray(safety.redFlags) && safety.redFlags[0]) ||
-          (Array.isArray(safety.risks) && safety.risks[0]) ||
-          'No major safety concerns were highlighted in public sources at standard doses.';
+    const safetySummary =
+        safety.verdict ||
+        (Array.isArray(safety.redFlags) && safety.redFlags[0]) ||
+        (Array.isArray(safety.risks) && safety.risks[0]) ||
+        'No major safety concerns were highlighted in public sources at standard doses.';
 
     // Legacy meta is no longer used - scoring now comes from AI analysis directly
 
@@ -785,12 +703,6 @@ export const AnalysisDashboard: React.FC<{
 
     // Build overview summary: prefer AI-generated, then structured fallback, then legacy
     const overviewSummary = (() => {
-        if (isLabelSource) {
-            return labelProfileLine || 'Label-only summary based on extracted ingredients.';
-        }
-        if (isBarcodeSource && barcodeProfileLine) {
-            return barcodeProfileLine;
-        }
         // 1. Use new AI-generated overviewSummary if available
         if (efficacy?.overviewSummary) {
             return efficacy.overviewSummary;
@@ -819,24 +731,18 @@ export const AnalysisDashboard: React.FC<{
                 : ['Enhanced clarity', 'Sustained energy']
     ).slice(0, 3);
 
-    const bestFor = isLabelSource
-        ? (usage.bestFor || usage.target || usage.who || '')
-        : usage.bestFor || usage.target || usage.who || 'Professionals & students needing focus.';
-    const routineLine = isLabelSource
-        ? (usage.dosage || usage.frequency || usage.timing || 'Follow label dose.')
-        : usage.dosage || usage.frequency || usage.timing || '2 caps with breakfast for steady effect.';
+    const bestFor = usage.bestFor || usage.target || usage.who || 'Professionals & students needing focus.';
+    const routineLine = usage.dosage || usage.frequency || usage.timing || '2 caps with breakfast for steady effect.';
 
-    const warningLine = isLabelSource
-        ? (labelWatchout || safetySummary)
-        : (Array.isArray(safety.redFlags) && safety.redFlags[0]) ||
-          (Array.isArray(safety.risks) && safety.risks[0]) ||
-          safetySummary;
+    const warningLine =
+        (Array.isArray(safety.redFlags) && safety.redFlags[0]) ||
+        (Array.isArray(safety.risks) && safety.risks[0]) ||
+        safetySummary;
 
-    const recommendationLine = isLabelSource
-        ? (safety.recommendation || safety.verdict || 'Review label warnings before use.')
-        : safety.recommendation ||
-          safety.verdict ||
-          'Ideal for mid-day brain fog and sustained clarity.';
+    const recommendationLine =
+        safety.recommendation ||
+        safety.verdict ||
+        'Ideal for mid-day brain fog and sustained clarity.';
 
     // Calculate dose fill percentage based on primaryActive
     const doseMatchPercent = (() => {
@@ -888,18 +794,8 @@ export const AnalysisDashboard: React.FC<{
         });
     } // formQuality already added from primaryActive above
 
-    const labelMechanisms: Mechanism[] = labelScienceBars;
-    const barcodeMechanisms: Mechanism[] = barcodeScienceBars;
-    const keyMechanisms = isLabelSource && labelMechanisms.length
-        ? labelMechanisms
-        : isBarcodeSource && barcodeMechanisms.length
-            ? barcodeMechanisms
-            : baseMechanisms;
-    const scienceFooterText = isLabelSource
-        ? labelScienceFooter
-        : isBarcodeSource
-            ? barcodeScienceFooter
-            : undefined;
+    const keyMechanisms = baseMechanisms;
+    const scienceFooterText = undefined;
 
 
     const evidenceLevelText = (() => {
@@ -920,17 +816,11 @@ export const AnalysisDashboard: React.FC<{
             ? `Delivers ${primaryActive.dosageValue} ${primaryActive.dosageUnit || 'mg'} per serving.`
             : 'Dose compared against typical clinical ranges.';
 
-    const timingCopy = isLabelSource
-        ? (usage.withFood === true
-            ? 'Take with food if tolerated.'
-            : usage.withFood === false
-                ? 'Can be taken without food if tolerated.'
-                : 'Follow label timing and directions.')
-        : usage.withFood === true
-            ? 'Take with food for better tolerance and absorption.'
-            : usage.withFood === false
-                ? 'Can be taken without food if stomach tolerates it.'
-                : 'Follow a consistent time each day; pair with breakfast for smoother energy.';
+    const timingCopy = usage.withFood === true
+        ? 'Take with food for better tolerance and absorption.'
+        : usage.withFood === false
+            ? 'Can be taken without food if stomach tolerates it.'
+            : 'Follow a consistent time each day; pair with breakfast for smoother energy.';
 
     const interactionCopy = (() => {
         const interactionCount = safety.interactions?.length ?? 0;
@@ -942,18 +832,14 @@ export const AnalysisDashboard: React.FC<{
     const benefitsPhrase = coreBenefits.slice(0, 2).join(', ');
     const overviewCoverSummary = capitalizeSentences(
         clampText(
-            isLabelSource
-                ? labelMetaLine
-                : isBarcodeSource
-                    ? (barcodeMetaLine || overviewSummary)
-                    : [
-                    primaryName
-                        ? ensurePeriod(`Focused on ${primaryName}${primaryDoseLabel ? ` ${primaryDoseLabel}` : ''}`)
-                        : '',
-                    benefitsPhrase ? ensurePeriod(`Key benefits: ${benefitsPhrase}`) : '',
-                ]
-                    .filter(Boolean)
-                    .join(' '),
+            [
+                primaryName
+                    ? ensurePeriod(`Focused on ${primaryName}${primaryDoseLabel ? ` ${primaryDoseLabel}` : ''}`)
+                    : '',
+                benefitsPhrase ? ensurePeriod(`Key benefits: ${benefitsPhrase}`) : '',
+            ]
+                .filter(Boolean)
+                .join(' '),
             110
         ) || clampText(overviewSummary, 110)
     );
@@ -991,18 +877,10 @@ export const AnalysisDashboard: React.FC<{
         )
     );
 
-    const overviewCoverBullets = (isLabelSource
-        ? (labelHighlights.length ? labelHighlights.slice(0, 2) : ['No actives detected'])
-        : isBarcodeSource
-            ? (barcodeHighlights.length ? barcodeHighlights.slice(0, 2) : ['No actives detected'])
-            : coreBenefits.slice(0, 3))
+    const overviewCoverBullets = coreBenefits.slice(0, 3)
         .map((benefit: string) => capitalizeSentences(benefit))
         .filter(Boolean);
-    const overviewFooterText = isLabelSource
-        ? (labelWatchout || labelHighlightFooter)
-        : isBarcodeSource
-            ? (barcodeWatchout || barcodeHighlightFooter)
-            : undefined;
+    const overviewFooterText = undefined;
 
     const isEfficacyReady = !!efficacy.verdict || !isStreaming;
     const isSafetyReady = !!safety.verdict || !isStreaming;
@@ -1010,32 +888,7 @@ export const AnalysisDashboard: React.FC<{
     // Overview should wait for all AI analysis to complete to avoid partial/inconsistent display
     const isOverviewReady = isFullyLoaded || !isStreaming;
 
-    const overviewContent = isLabelSource ? (
-        <View style={{ gap: 16 }}>
-            <View style={styles.modalCalloutCard}>
-                <Text style={styles.modalBulletTitle}>What it is</Text>
-                <Text style={styles.modalParagraphSmall}>{labelProfileLine || overviewSummary}</Text>
-            </View>
-            <View style={styles.modalCalloutCard}>
-                <Text style={styles.modalBulletTitle}>What stands out</Text>
-                {labelDetailFacts.length > 0 ? (
-                    labelDetailFacts.slice(0, 3).map((benefit: string, idx: number) => (
-                        <Text key={idx} style={styles.modalBulletItem}>
-                            • {benefit}
-                        </Text>
-                    ))
-                ) : (
-                    <Text style={styles.modalParagraphSmall}>No actives detected from the label.</Text>
-                )}
-            </View>
-            {labelWatchout ? (
-                <View style={styles.modalCalloutCard}>
-                    <Text style={styles.modalBulletTitle}>Main caution</Text>
-                    <Text style={styles.modalParagraphSmall}>{labelWatchout}</Text>
-                </View>
-            ) : null}
-        </View>
-    ) : (
+    const overviewContent = (
         <View style={{ gap: 16 }}>
             <Text style={styles.modalParagraph}>{overviewSummary}</Text>
             <View style={styles.modalOverviewGrid}>
@@ -1093,14 +946,14 @@ export const AnalysisDashboard: React.FC<{
             backgroundColor: '#123CC5',
             textColor: '#F7FBFF',
             labelColor: '#D6E5FF',
-            eyebrow: isLabelSource ? 'KEY INGREDIENTS' : 'CORE BENEFITS',
+            eyebrow: 'CORE BENEFITS',
             summary: overviewCoverSummary,
-            summaryLines: isLabelSource ? 1 : 2,
+            summaryLines: 2,
             bullets: overviewCoverBullets,
-            bulletLimit: isLabelSource ? 2 : 2,
-            bulletLines: isLabelSource ? 1 : 2,
+            bulletLimit: 2,
+            bulletLines: 2,
             footerText: overviewFooterText,
-            footerLines: isLabelSource ? 1 : 1,
+            footerLines: 1,
             loading: !isOverviewReady,
             content: overviewContent,
         },
@@ -1117,154 +970,11 @@ export const AnalysisDashboard: React.FC<{
             eyebrow: 'KEY MECHANISM',
             mechanisms: keyMechanisms,
             footerText: scienceFooterText,
-            footerLines: isLabelSource ? 1 : 1,
+            footerLines: 1,
             loading: !isEfficacyReady,
             content: (
                 <View style={{ gap: 16 }}>
                     <Text style={styles.modalParagraphSmall}>{scienceSummary}</Text>
-
-                    {isLabelSource && labelProfileLine && (
-                        <View style={styles.modalCalloutCard}>
-                            <Text style={styles.modalBulletTitle}>Dose profile</Text>
-                            <Text style={styles.modalParagraphSmall}>{labelProfileLine}</Text>
-                            {labelCompletenessLine ? (
-                                <Text style={styles.modalParagraphSmall}>{labelCompletenessLine}</Text>
-                            ) : null}
-                        </View>
-                    )}
-
-                    {isLabelSource && labelDetailFacts.length > 0 && (
-                        <View style={styles.modalCalloutCard}>
-                            <Text style={styles.modalBulletTitle}>Dose highlights</Text>
-                            {labelDetailFacts.slice(0, 3).map((line, idx) => (
-                                <Text key={idx} style={styles.modalBulletItem}>
-                                    • {line}
-                                </Text>
-                            ))}
-                        </View>
-                    )}
-
-                    {isLabelSource && labelFormSignals.length > 0 && (
-                        <View style={styles.modalCalloutCard}>
-                            <Text style={styles.modalBulletTitle}>Form signals</Text>
-                            {labelFormSignals.slice(0, 3).map((signal, idx) => (
-                                <Text key={idx} style={styles.modalBulletItem}>
-                                    • {signal}
-                                </Text>
-                            ))}
-                        </View>
-                    )}
-
-                    {isLabelSource && labelTransparencyNotes.length > 0 && (
-                        <View style={styles.modalCalloutCard}>
-                            <Text style={styles.modalBulletTitle}>Transparency</Text>
-                            {labelTransparencyNotes.map((note, idx) => (
-                                <Text key={idx} style={styles.modalParagraphSmall}>
-                                    • {note}
-                                </Text>
-                            ))}
-                        </View>
-                    )}
-
-                    {isLabelSource && labelFullActives.length > 0 && (
-                        <View style={styles.modalCalloutCard}>
-                            <Text style={styles.modalBulletTitle}>Full actives (label)</Text>
-                            <Text style={styles.modalParagraphSmall}>
-                                {labelInsights?.totalActives ?? labelFullActives.length} actives • {labelInsights?.missingDoseCount ?? 0} missing dose
-                            </Text>
-                            {labelFullActives.map((active, idx) => (
-                                <Text key={`${active.name}-${idx}`} style={styles.modalBulletItem}>
-                                    • {active.name}: {active.doseText}
-                                </Text>
-                            ))}
-                        </View>
-                    )}
-
-                    {isLabelSource && labelCautionLine && (
-                        <View style={styles.modalCalloutCard}>
-                            <Text style={styles.modalBulletTitle}>Main watchout</Text>
-                            <Text style={styles.modalParagraphSmall}>{labelCautionLine}</Text>
-                        </View>
-                    )}
-
-                    {isBarcodeSource && barcodeProfileLine && (
-                        <View style={styles.modalCalloutCard}>
-                            <Text style={styles.modalBulletTitle}>Evidence profile</Text>
-                            <Text style={styles.modalParagraphSmall}>{barcodeProfileLine}</Text>
-                            {barcodeCompletenessLine ? (
-                                <Text style={styles.modalParagraphSmall}>{barcodeCompletenessLine}</Text>
-                            ) : null}
-                            {barcodeEvidenceSummary ? (
-                                <Text style={styles.modalParagraphSmall}>{barcodeEvidenceSummary}</Text>
-                            ) : null}
-                        </View>
-                    )}
-
-                    {isBarcodeSource && barcodeDetailFacts.length > 0 && (
-                        <View style={styles.modalCalloutCard}>
-                            <Text style={styles.modalBulletTitle}>Dose highlights</Text>
-                            {barcodeDetailFacts.slice(0, 3).map((line, idx) => (
-                                <Text key={idx} style={styles.modalBulletItem}>
-                                    • {line}
-                                </Text>
-                            ))}
-                        </View>
-                    )}
-
-                    {isBarcodeSource && barcodeFormSignals.length > 0 && (
-                        <View style={styles.modalCalloutCard}>
-                            <Text style={styles.modalBulletTitle}>Form signals</Text>
-                            {barcodeFormSignals.slice(0, 3).map((signal, idx) => (
-                                <Text key={idx} style={styles.modalBulletItem}>
-                                    • {signal}
-                                </Text>
-                            ))}
-                        </View>
-                    )}
-
-                    {isBarcodeSource && barcodeEvidenceNotes.length > 0 && (
-                        <View style={styles.modalCalloutCard}>
-                            <Text style={styles.modalBulletTitle}>Evidence notes</Text>
-                            {barcodeEvidenceNotes.map((note, idx) => (
-                                <Text key={idx} style={styles.modalParagraphSmall}>
-                                    • {note}
-                                </Text>
-                            ))}
-                        </View>
-                    )}
-
-                    {isBarcodeSource && barcodeFullActives.length > 0 && (
-                        <View style={styles.modalCalloutCard}>
-                            <Text style={styles.modalBulletTitle}>Full actives (sources)</Text>
-                            <Text style={styles.modalParagraphSmall}>
-                                {barcodeInsights?.totalActives ?? barcodeFullActives.length} actives • {barcodeInsights?.missingDoseCount ?? 0} missing dose
-                            </Text>
-                            {barcodeFullActives.map((active, idx) => (
-                                <Text key={`${active.name}-${idx}`} style={styles.modalBulletItem}>
-                                    • {active.name}: {active.doseText}
-                                </Text>
-                            ))}
-                        </View>
-                    )}
-
-                    {isBarcodeSource && barcodeSources.length > 0 && (
-                        <View style={styles.modalCalloutCard}>
-                            <Text style={styles.modalBulletTitle}>Evidence sources</Text>
-                            {barcodeSources.slice(0, 6).map((source, idx) => (
-                                <Text key={`${source.link}-${idx}`} style={styles.modalParagraphSmall}>
-                                    • {source.domain ?? source.title}
-                                    {source.qualityScore != null ? ` (${Math.round(source.qualityScore)})` : ''}
-                                </Text>
-                            ))}
-                        </View>
-                    )}
-
-                    {isBarcodeSource && barcodeWatchout ? (
-                        <View style={styles.modalCalloutCard}>
-                            <Text style={styles.modalBulletTitle}>Main watchout</Text>
-                            <Text style={styles.modalParagraphSmall}>{barcodeWatchout}</Text>
-                        </View>
-                    ) : null}
 
                     {/* NEW: Enhanced Ingredient Analysis */}
                     {Array.isArray(efficacy.ingredients) && efficacy.ingredients.length > 0 && (
@@ -1317,7 +1027,7 @@ export const AnalysisDashboard: React.FC<{
                     )}
 
                     {/* Fallback to legacy key mechanisms display */}
-                    {!isLabelSource && (!efficacy.ingredients || efficacy.ingredients.length === 0) && (
+                    {(!efficacy.ingredients || efficacy.ingredients.length === 0) && (
                         <>
                             <View style={styles.modalCalloutCard}>
                                 <Text style={styles.modalBulletTitle}>Dose alignment</Text>
@@ -1491,14 +1201,8 @@ export const AnalysisDashboard: React.FC<{
         },
     ];
 
-    const productTitle = isLabelSource
-        ? (labelInsights?.productName ?? 'Label Scan Result')
-        : isBarcodeSource
-            ? (barcodeInsights?.productName ?? (productInfo.name || 'Supplement'))
-            : (productInfo.name || 'Supplement');
-    const productSubtitle = !isLabelSource
-        ? [productInfo.brand, productInfo.category].filter(Boolean).join(' • ')
-        : '';
+    const productTitle = productInfo.name || 'Supplement';
+    const productSubtitle = [productInfo.brand, productInfo.category].filter(Boolean).join(' • ');
 
     return (
         <View style={styles.root}>

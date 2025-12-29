@@ -19,6 +19,266 @@ import { AnalysisDashboard } from './AnalysisDashboard';
 import { buildLabelInsights } from './labelInsights';
 
 type LabelAnalysisStatus = 'complete' | 'partial' | 'skipped' | 'pending' | 'unavailable' | 'failed' | null;
+type LabelInsightsSnapshot = ReturnType<typeof buildLabelInsights> | null;
+
+type LabelIngredientEntry = {
+  name: string;
+  dosageValue: number | null;
+  dosageUnit: string | null;
+};
+
+const DV_UNIT = '% DV';
+
+function buildLabelIngredientEntries(
+  labelInsights: LabelInsightsSnapshot,
+  labelDraft: LabelDraft | null
+): LabelIngredientEntry[] {
+  const draftIngredients = labelDraft?.ingredients ?? [];
+  const draftByName = new Map<string, LabelDraft['ingredients'][number]>();
+  for (const ingredient of draftIngredients) {
+    const name = ingredient.name?.trim();
+    if (!name) continue;
+    const key = name.toLowerCase();
+    if (!draftByName.has(key)) {
+      draftByName.set(key, ingredient);
+    }
+  }
+
+  const entries: LabelIngredientEntry[] = [];
+  const seen = new Set<string>();
+  const addEntry = (name: string, ingredient?: LabelDraft['ingredients'][number]) => {
+    const key = name.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    const dosageValue = ingredient?.amount ?? ingredient?.dvPercent ?? null;
+    const dosageUnit = ingredient?.amount != null
+      ? ingredient?.unit ?? null
+      : ingredient?.dvPercent != null
+        ? DV_UNIT
+        : null;
+    entries.push({ name, dosageValue, dosageUnit });
+  };
+
+  if (labelInsights?.fullActives?.length) {
+    labelInsights.fullActives.forEach((active) => {
+      const name = active.name.trim();
+      addEntry(name, draftByName.get(name.toLowerCase()));
+    });
+  } else {
+    draftIngredients.forEach((ingredient) => {
+      const name = ingredient.name?.trim();
+      if (!name) return;
+      addEntry(name, ingredient);
+    });
+  }
+
+  return entries;
+}
+
+function buildLabelCoreBenefits(labelInsights: LabelInsightsSnapshot, entries: LabelIngredientEntry[]): string[] {
+  if (labelInsights?.highlights?.length) return labelInsights.highlights.slice(0, 3);
+  if (labelInsights?.detailHighlights?.length) return labelInsights.detailHighlights.slice(0, 3);
+  if (entries.length) {
+    return entries.slice(0, 3).map((entry) => {
+      if (entry.dosageValue != null && entry.dosageUnit) {
+        return `${entry.name} ${entry.dosageValue} ${entry.dosageUnit}`;
+      }
+      return entry.name;
+    });
+  }
+  if (labelInsights?.totalActives) {
+    return [`${labelInsights.totalActives} actives detected`];
+  }
+  return ['Label evidence captured'];
+}
+
+function buildLabelFallbackAnalysis(labelInsights: LabelInsightsSnapshot, labelDraft: LabelDraft | null) {
+  if (!labelInsights && !labelDraft) return null;
+
+  const entries = buildLabelIngredientEntries(labelInsights, labelDraft);
+  const primary = entries.find((entry) => entry.dosageValue != null && entry.dosageUnit) ?? entries[0] ?? null;
+  const coreBenefits = buildLabelCoreBenefits(labelInsights, entries);
+
+  const overviewParts = [
+    labelInsights?.profileLine,
+    labelInsights?.completenessLine,
+    labelInsights?.metaLine ? `Evidence: ${labelInsights.metaLine}` : null,
+  ].filter(Boolean);
+  const overviewSummary = overviewParts.join(' ').trim();
+
+  const verdict =
+    labelInsights?.metaLine
+      ? `Label evidence: ${labelInsights.metaLine}`
+      : labelInsights?.profileLine ||
+        (entries.length ? `Detected ${entries.length} actives from label evidence.` : 'Label evidence captured.');
+
+  const transparencyNote = labelInsights?.hasProprietaryBlend
+    ? 'Proprietary blend detected; doses may be incomplete.'
+    : labelInsights?.missingDoseCount
+      ? `${labelInsights.missingDoseCount} actives missing dose information.`
+      : labelInsights?.duplicateCount
+        ? 'Possible bilingual duplicates detected on label.'
+        : '';
+
+  const overallAssessment = labelInsights?.completenessLine
+    ? `Dose completeness: ${labelInsights.completenessLine}`
+    : '';
+
+  const usageSummary = labelDraft?.servingSize
+    ? `Serving size: ${labelDraft.servingSize}. Follow label directions.`
+    : 'Follow label directions for timing and duration.';
+  const usageDosage = labelDraft?.servingSize ? `Serving size: ${labelDraft.servingSize}` : undefined;
+
+  const safetyVerdict =
+    labelInsights?.watchout ||
+    (labelInsights?.missingDoseCount
+      ? `${labelInsights.missingDoseCount} actives missing dose; review label for completeness.`
+      : '');
+
+  const safetyFlags = safetyVerdict ? [safetyVerdict] : undefined;
+
+  return {
+    efficacy: {
+      verdict,
+      overviewSummary: overviewSummary || null,
+      coreBenefits,
+      benefits: coreBenefits,
+      primaryActive: primary
+        ? {
+            name: primary.name,
+            form: null,
+            formQuality: 'unknown',
+            formNote: null,
+            dosageValue: primary.dosageValue,
+            dosageUnit: primary.dosageUnit,
+            evidenceLevel: 'none',
+            evidenceSummary: null,
+          }
+        : null,
+      ingredients: entries.map((entry) => ({
+        name: entry.name,
+        form: null,
+        formQuality: 'unknown',
+        formNote: null,
+        dosageValue: entry.dosageValue,
+        dosageUnit: entry.dosageUnit,
+        dosageAssessment: 'unknown',
+        evidenceLevel: 'none',
+      })),
+      overallAssessment: overallAssessment || null,
+      marketingVsReality: transparencyNote || labelInsights?.watchout || null,
+    },
+    safety: {
+      verdict: safetyVerdict || null,
+      redFlags: safetyFlags,
+      risks: safetyFlags,
+    },
+    usage: {
+      summary: usageSummary,
+      dosage: usageDosage,
+      timing: null,
+      withFood: null,
+    },
+    value: {
+      verdict: transparencyNote || 'Formula quality estimated from label ingredients.',
+      analysis: labelInsights?.metaLine ? `Extraction detail: ${labelInsights.metaLine}.` : '',
+    },
+  };
+}
+
+function mergeLabelAnalysis(base: any, fallback: any, productName: string) {
+  if (!fallback) {
+    return {
+      ...base,
+      productInfo: {
+        ...(base?.productInfo ?? {}),
+        name: productName || base?.productInfo?.name || 'Supplement',
+        category: base?.productInfo?.category ?? 'supplement',
+      },
+    };
+  }
+
+  const pickText = (value?: string | null, fallbackValue?: string | null) => {
+    if (typeof value === 'string' && value.trim()) return value;
+    return fallbackValue ?? value ?? null;
+  };
+  const pickArray = <T,>(value?: T[] | null, fallbackValue?: T[]) => {
+    if (Array.isArray(value) && value.length) return value;
+    return fallbackValue;
+  };
+
+  const baseEfficacy = base?.efficacy ?? {};
+  const fallbackEfficacy = fallback?.efficacy ?? {};
+  const efficacy = {
+    ...fallbackEfficacy,
+    ...baseEfficacy,
+    verdict: pickText(baseEfficacy.verdict, fallbackEfficacy.verdict),
+    overviewSummary: pickText(baseEfficacy.overviewSummary, fallbackEfficacy.overviewSummary),
+    coreBenefits: pickArray(baseEfficacy.coreBenefits, fallbackEfficacy.coreBenefits),
+    benefits: pickArray(baseEfficacy.benefits, fallbackEfficacy.benefits),
+    ingredients: pickArray(baseEfficacy.ingredients, fallbackEfficacy.ingredients),
+    primaryActive: baseEfficacy.primaryActive ?? fallbackEfficacy.primaryActive ?? null,
+    overallAssessment: pickText(baseEfficacy.overallAssessment, fallbackEfficacy.overallAssessment),
+    marketingVsReality: pickText(baseEfficacy.marketingVsReality, fallbackEfficacy.marketingVsReality),
+  };
+
+  const baseSafety = base?.safety ?? {};
+  const fallbackSafety = fallback?.safety ?? {};
+  const safety = {
+    ...fallbackSafety,
+    ...baseSafety,
+    verdict: pickText(baseSafety.verdict, fallbackSafety.verdict),
+    redFlags: pickArray(baseSafety.redFlags, fallbackSafety.redFlags),
+    risks: pickArray(baseSafety.risks, fallbackSafety.risks),
+    recommendation: pickText(baseSafety.recommendation, fallbackSafety.recommendation),
+  };
+
+  const baseUsage = base?.usage ?? {};
+  const fallbackUsage = fallback?.usage ?? {};
+  const usage = {
+    ...fallbackUsage,
+    ...baseUsage,
+    summary: pickText(baseUsage.summary, fallbackUsage.summary),
+    dosage: pickText(baseUsage.dosage, fallbackUsage.dosage),
+    frequency: pickText(baseUsage.frequency, fallbackUsage.frequency),
+    timing: pickText(baseUsage.timing, fallbackUsage.timing),
+    bestFor: pickText(baseUsage.bestFor, fallbackUsage.bestFor),
+    target: pickText(baseUsage.target, fallbackUsage.target),
+    who: pickText(baseUsage.who, fallbackUsage.who),
+  };
+
+  const baseValue = base?.value ?? {};
+  const fallbackValue = fallback?.value ?? {};
+  const value = {
+    ...fallbackValue,
+    ...baseValue,
+    verdict: pickText(baseValue.verdict, fallbackValue.verdict),
+    analysis: pickText(baseValue.analysis, fallbackValue.analysis),
+  };
+
+  const baseSocial = base?.social ?? {};
+  const fallbackSocial = fallback?.social ?? {};
+  const social = {
+    ...fallbackSocial,
+    ...baseSocial,
+    summary: pickText(baseSocial.summary, fallbackSocial.summary),
+  };
+
+  return {
+    ...base,
+    productInfo: {
+      ...(fallback?.productInfo ?? {}),
+      ...(base?.productInfo ?? {}),
+      name: productName || base?.productInfo?.name || fallback?.productInfo?.name || 'Supplement',
+      category: base?.productInfo?.category ?? fallback?.productInfo?.category ?? 'supplement',
+    },
+    efficacy,
+    safety,
+    usage,
+    value,
+    social,
+  };
+}
 
 export default function ScanResultScreen() {
   const { tokens } = useResponsiveTokens();
@@ -61,16 +321,7 @@ export default function ScanResultScreen() {
 
   // 🚀 Use the Streaming Hook
   const {
-    productInfo,
-    efficacy,
-    safety,
-    usage,
-    value,
-    social,
-    status,
-    error,
-    sources,
-    brandExtraction,
+    productInfo, efficacy, safety, usage, value, social, status, error
   } = useStreamAnalysis(barcode);
   const barcodeQuality = useMemo(() => getBarcodeQuality({ status, error }), [error, status]);
 
@@ -382,14 +633,8 @@ export default function ScanResultScreen() {
       status: 'loading',
     };
     const analysisForDisplay = resolvedLabelAnalysis ?? analysisFallback;
-    const analysisWithLabelName = {
-      ...analysisForDisplay,
-      productInfo: {
-        ...analysisForDisplay.productInfo,
-        name: labelProductName,
-        category: analysisForDisplay.productInfo?.category ?? 'supplement',
-      },
-    };
+    const labelFallback = buildLabelFallbackAnalysis(labelInsights, labelDraft ?? null);
+    const analysisWithLabelName = mergeLabelAnalysis(analysisForDisplay, labelFallback, labelProductName);
     const isLabelStreaming = labelAnalysisStatus === 'pending' || labelAnalysisLoading;
     const analysisComplete =
       resolvedLabelAnalysis?.status === 'success' && labelAnalysisStatus !== 'partial';
@@ -419,7 +664,6 @@ export default function ScanResultScreen() {
           scoreBadge="Label-only estimate"
           scoreState={scoreState}
           sourceType="label_scan"
-          labelDraft={labelDraft ?? undefined}
         />
 
         {!analysisComplete ? (
@@ -576,8 +820,6 @@ export default function ScanResultScreen() {
   // The Dashboard will handle nulls/missing fields gracefully by showing defaults or skeletons
   const compositeAnalysis = {
     productInfo: productInfo,
-    sources: sources || [],
-    brandExtraction: brandExtraction || null,
     efficacy: efficacy || {}, // Empty obj means "loading" inside dashboard components if checked
     safety: safety || {},
     usage: usage || {},
