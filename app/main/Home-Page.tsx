@@ -1,6 +1,8 @@
-import { MySupplementView } from '@/components/screens/SavedSupplementsScreen';
+import ProgressScreen from '@/components/screens/ProgressScreen';
+import { MySupplementView } from '@/components/screens/MySupplement';
 import { useSavedSupplements } from '@/contexts/SavedSupplementsContext';
 import { useScanHistory } from '@/contexts/ScanHistoryContext';
+import { useScreenTokens } from '@/hooks/useScreenTokens';
 import { useTranslation } from '@/lib/i18n';
 import type { RoutinePreferences } from '@/types/saved-supplements';
 import type { ScanHistoryItem } from '@/types/scan-history';
@@ -13,7 +15,6 @@ import {
   AudioWaveform,
   BarChart2,
   Bed,
-  Bell,
   Bone,
   Brain,
   Bookmark,
@@ -70,15 +71,19 @@ import Animated, {
   withSpring,
   withTiming,
   ZoomIn,
-  ZoomOut
+  ZoomOut,
 } from 'react-native-reanimated';
-
-// --- 全局定义 ---
 
 // 创建支持动画的 Pressable
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const AnimatedText = Animated.createAnimatedComponent(Text);
 const AnimatedView = Animated.createAnimatedComponent(View);
+
+const SCREEN_BG = '#F2F3F7';
+const PAGE_X = 24;
+const SECTION_GAP = 24;
+const STACK_GAP = 16;
+
 const BOTTOM_INSET_TRIM = 0;
 const BOTTOM_FADE_EXTRA = 120;
 const NAV_HEIGHT = 64;
@@ -229,23 +234,21 @@ const getCategoryIconConfig = (category: string | null | undefined, productName:
 };
 
 // -----------------------------------------------------
-// 1. New Optimized Card Component (核心优化组件)
+// 1. Optimized Card Component
 // -----------------------------------------------------
 
 const SupplementCheckInCard = ({
   item,
   isChecked,
-  onCheckIn
+  onCheckIn,
 }: {
-  item: SupplementItem,
-  isChecked: boolean,
-  onCheckIn: () => void
+  item: SupplementItem;
+  isChecked: boolean;
+  onCheckIn: () => void;
 }) => {
-  // 动画共享值
   const progress = useSharedValue(isChecked ? 1 : 0);
   const scale = useSharedValue(1);
 
-  // 监听选中状态
   useEffect(() => {
     progress.value = withSpring(isChecked ? 1 : 0, {
       mass: 1,
@@ -254,23 +257,24 @@ const SupplementCheckInCard = ({
     });
   }, [isChecked, progress]);
 
-  // 按压交互
-  const handlePressIn = () => { scale.value = withSpring(0.96); };
-  const handlePressOut = () => { scale.value = withSpring(1); };
+  const handlePressIn = () => {
+    scale.value = withSpring(0.96);
+  };
+  const handlePressOut = () => {
+    scale.value = withSpring(1);
+  };
 
-  // 样式动画：缩放
   const containerStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
 
-  // 样式动画：按钮背景色和缩放
   const buttonAnimatedStyle = useAnimatedStyle(() => {
     const backgroundColor = interpolateColor(
       progress.value,
       [0, 1],
-      ['rgba(255, 255, 255, 0.5)', '#10b981']
+      ['rgba(255, 255, 255, 0.5)', '#10b981'],
     );
-    const scaleVal = 1 + (progress.value * 0.1);
+    const scaleVal = 1 + progress.value * 0.1;
     return {
       backgroundColor,
       transform: [{ scale: scaleVal }],
@@ -278,7 +282,6 @@ const SupplementCheckInCard = ({
     };
   });
 
-  // 样式动画：文字颜色
   const titleTextStyle = useAnimatedStyle(() => {
     const color = interpolateColor(progress.value, [0, 1], ['#0f172a', '#047857']);
     return { color };
@@ -289,7 +292,6 @@ const SupplementCheckInCard = ({
     return { color };
   });
 
-  // 样式动画：成功背景透明度
   const overlayStyle = useAnimatedStyle(() => ({
     opacity: progress.value,
   }));
@@ -300,23 +302,18 @@ const SupplementCheckInCard = ({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       style={[styles.cardContainer, containerStyle]}
-      // 保留 item.color 用于背景色 (Tailwind)
       className={`${item.color} relative overflow-hidden`}
     >
-      {/* 1. 磨砂玻璃背景 */}
       <BlurView intensity={20} tint="light" style={StyleSheet.absoluteFill} />
-
-      {/* 2. 边框层 */}
       <View style={styles.borderLayer} />
-
-      {/* 3. 成功时的绿色高亮背景 */}
       <Animated.View style={[styles.successOverlay, overlayStyle]} />
 
-      {/* 4. 内容层 */}
       <View style={styles.contentContainer}>
-        {/* Header Row */}
-        <View style={styles.headerRow}>
-          <View className={`w-9 h-9 rounded-full items-center justify-center ${item.iconBg} ${item.iconColor}`}>
+        <View style={styles.checkInCardHeaderRow}>
+          <View
+            className={`w-9 h-9 rounded-full items-center justify-center ${item.iconBg} ${item.iconColor}`}
+            style={{ borderCurve: 'continuous' }}
+          >
             <Pill size={16} strokeWidth={2.5} />
           </View>
 
@@ -333,7 +330,6 @@ const SupplementCheckInCard = ({
           </Animated.View>
         </View>
 
-        {/* Text Row */}
         <View style={styles.textRow}>
           <Animated.Text style={[styles.titleText, titleTextStyle]} numberOfLines={1}>
             {item.name}
@@ -348,38 +344,7 @@ const SupplementCheckInCard = ({
 };
 
 // -----------------------------------------------------
-// Header
-// -----------------------------------------------------
-
-const Header = () => {
-  return (
-    <Animated.View
-      className="w-full flex-row justify-end mb-4 px-6 pt-2"
-      entering={FadeInUp.duration(600).springify()} // 整体进场
-      layout={Layout.springify()}
-    >
-      <AnimatedPressable
-        onPress={() => { }}
-        className="w-12 h-12 rounded-2xl bg-white border border-slate-100 shadow-sm items-center justify-center relative"
-        // 按下时的微缩放 (Framer Motion: whileTap={{ scale: 0.95 }})
-        style={({ pressed }) => ({
-          transform: [{ scale: pressed ? 0.92 : 1 }],
-          borderCurve: 'continuous'
-        })}
-      >
-        <Bell size={20} strokeWidth={2.5} color="#64748b" />
-        {/* 红点呼吸动画 */}
-        <Animated.View
-          entering={ZoomIn.delay(500).springify()}
-          className="absolute top-3 right-3 w-2 h-2 rounded-full bg-rose-500 border-2 border-white"
-        />
-      </AnimatedPressable>
-    </Animated.View>
-  );
-};
-
-// -----------------------------------------------------
-// Date Selector
+// Weekday Selector
 // -----------------------------------------------------
 
 const days = [
@@ -396,12 +361,9 @@ type DayItemProps = {
   item: { day: string; date: number };
   isSelected: boolean;
   onPress: () => void;
-  index: number;
 };
 
-// 1. 使用 React.memo 包裹组件，并添加对比函数
-const DayItemComponent = ({ item, isSelected, onPress, index }: DayItemProps) => {
-  // 动画值：0 = 未选中, 1 = 选中
+const DayItemComponent = ({ item, isSelected, onPress }: DayItemProps) => {
   const progress = useSharedValue(isSelected ? 1 : 0);
 
   useEffect(() => {
@@ -409,17 +371,15 @@ const DayItemComponent = ({ item, isSelected, onPress, index }: DayItemProps) =>
       mass: 1,
       damping: 15,
       stiffness: 120,
-      overshootClamping: false, // 允许一点点回弹过冲，更自然
+      overshootClamping: false,
     });
   }, [isSelected, progress]);
 
-  // 背景缩放
   const bgStyle = useAnimatedStyle(() => ({
     opacity: progress.value,
     transform: [{ scale: progress.value }],
   }));
 
-  // 文字颜色插值
   const dayTextStyle = useAnimatedStyle(() => ({
     color: interpolateColor(progress.value, [0, 1], ['#94a3b8', '#94a3b8']),
   }));
@@ -431,37 +391,23 @@ const DayItemComponent = ({ item, isSelected, onPress, index }: DayItemProps) =>
   return (
     <AnimatedPressable
       onPress={onPress}
-      // 注意：这里移除了 entering 动画，因为在列表频繁交互时，entering 可能会引起冲突
-      // 如果你非常想要进场动画，可以在父组件整体做，或者只在组件 mount 时做一次
       style={({ pressed }) => ({
-        transform: [{ scale: pressed ? 0.95 : 1 }]
+        transform: [{ scale: pressed ? 0.95 : 1 }],
       })}
     >
-      <View
-        className={`w-12 h-20 rounded-[2rem] items-center justify-center gap-1.5 relative overflow-hidden ${isSelected ? '' : 'bg-white/50 border border-slate-100/50'}`}
-        style={{ borderCurve: 'continuous' }}
-      >
-        {/* 黑色背景层 */}
-        <Animated.View
-          style={[
-            { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#0f172a', borderRadius: 32 },
-            bgStyle
-          ]}
-        />
-        <AnimatedText style={[{ fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, zIndex: 10 }, dayTextStyle]}>
-          {item.day}
-        </AnimatedText>
-        <View className="items-center z-10">
-          <AnimatedText style={[{ fontSize: 20, fontWeight: '700', lineHeight: 20 }, dateTextStyle]}>
-            {item.date}
-          </AnimatedText>
-          {isSelected && (
+      <View style={[styles.dayItemBase, !isSelected && styles.dayItemInactive]}>
+        <Animated.View style={[styles.dayItemActiveBg, bgStyle]} />
+        <AnimatedText style={[styles.dayLabel, dayTextStyle]}>{item.day}</AnimatedText>
+
+        <View style={styles.dayDateWrap}>
+          <AnimatedText style={[styles.dayDate, dateTextStyle]}>{item.date}</AnimatedText>
+          {isSelected ? (
             <Animated.View
               entering={ZoomIn.duration(200)}
               exiting={ZoomOut.duration(200)}
-              className="w-1 h-1 bg-blue-400 rounded-full mt-1.5"
+              style={styles.dayDot}
             />
-          )}
+          ) : null}
         </View>
       </View>
     </AnimatedPressable>
@@ -469,15 +415,11 @@ const DayItemComponent = ({ item, isSelected, onPress, index }: DayItemProps) =>
 };
 
 const DayItem = React.memo(DayItemComponent, (prevProps, nextProps) => {
-  // --- 核心优化逻辑 ---
-  // 只有当 isSelected 发生变化时，才允许重新渲染。
-  // 即使父组件传递的 onPress 函数变了，只要选中状态没变，就不重绘。
   return prevProps.isSelected === nextProps.isSelected && prevProps.item.date === nextProps.item.date;
 });
-
 DayItem.displayName = 'DayItem';
 
-const DateSelector = () => {
+const WeekdaySelector = () => {
   const [selectedDate, setSelectedDate] = useState(14);
   const calendarOpacity = useSharedValue(1);
 
@@ -486,45 +428,38 @@ const DateSelector = () => {
   }));
 
   return (
-    <View className="w-full mb-2">
-      <Animated.View entering={FadeInUp.duration(500)} className="mb-4">
-        <Text className="text-4xl font-black tracking-tight text-slate-900 mb-3 pt-2">NuTri</Text>
-        <View className="flex-row justify-between items-center">
-          <Text className="text-slate-500 font-semibold text-lg">Week Days</Text>
-          <AnimatedPressable
-            onPressIn={() => (calendarOpacity.value = withTiming(0.5))}
-            onPressOut={() => (calendarOpacity.value = withTiming(1))}
-            style={[calendarStyle]}
-            className="p-1 rounded-md"
-          >
-            <CalendarIcon size={24} color="#0f172a" />
-          </AnimatedPressable>
-        </View>
-      </Animated.View>
+    <Animated.View entering={FadeInUp.duration(500)} style={styles.weekdayWrap}>
+      <View style={styles.weekHeaderRow}>
+        <Text style={styles.weekHeaderText}>Week Days</Text>
+        <AnimatedPressable
+          onPressIn={() => (calendarOpacity.value = withTiming(0.5))}
+          onPressOut={() => (calendarOpacity.value = withTiming(1))}
+          style={[styles.calendarBtn, calendarStyle]}
+        >
+          <CalendarIcon size={24} color="#0f172a" />
+        </AnimatedPressable>
+      </View>
 
-      <View className="flex-row justify-between items-center w-full gap-2">
-        {days.map((item, index) => (
+      <View style={styles.daysRow}>
+        {days.map(item => (
           <DayItem
             key={item.date}
             item={item}
-            index={index}
             isSelected={selectedDate === item.date}
-            // 这里我们传递一个新的函数引用，但因为上面的 memo 逻辑，
-            // 只有真正变成选中或变成未选中的两个组件会响应，其他5个会被拦截。
             onPress={() => setSelectedDate(item.date)}
           />
         ))}
       </View>
-    </View>
+    </Animated.View>
   );
 };
 
 // -----------------------------------------------------
-// Saved Supplements Container
+// Saved Supplements Container (Daily Check-in)
 // -----------------------------------------------------
 
 const CARD_WIDTH = 160;
-const CARD_HEIGHT = 112; // 调整为和新卡片高度一致
+const CARD_HEIGHT = 112;
 const CARD_GAP = 16;
 const INDICATOR_TRACK_WIDTH = 128;
 const INDICATOR_WIDTH = INDICATOR_TRACK_WIDTH / 3;
@@ -561,11 +496,7 @@ const SavedSupplements = () => {
   }, [savedSupplements]);
 
   const handleCheckIn = (id: string) => {
-    if (checkedItems.includes(id)) {
-      setCheckedItems(checkedItems.filter(item => item !== id));
-    } else {
-      setCheckedItems([...checkedItems, id]);
-    }
+    setCheckedItems(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]));
   };
 
   const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -581,16 +512,11 @@ const SavedSupplements = () => {
   };
 
   return (
-    <AnimatedView
-      entering={FadeInUp.delay(200).duration(500)}
-      className="flex flex-col gap-4 py-4"
-    >
-      <View className="flex-row justify-between items-end px-1">
-        <Text className="text-slate-600 font-medium text-lg">
-          Daily Check-in
-        </Text>
+    <Animated.View entering={FadeInUp.delay(200).duration(500)} style={styles.checkInWrap}>
+      <View style={styles.sectionTitleRow}>
+        <Text style={styles.sectionTitle}>Daily Check-in</Text>
         <Pressable>
-          <Text className="text-slate-400 text-sm font-medium">View All</Text>
+          <Text style={styles.sectionLink}>View All</Text>
         </Pressable>
       </View>
 
@@ -613,9 +539,9 @@ const SavedSupplements = () => {
             decelerationRate="fast"
             snapToInterval={CARD_WIDTH + CARD_GAP}
             snapToAlignment="center"
-            style={{ marginHorizontal: -24, height: CARD_HEIGHT + 20 }}
+            style={{ marginHorizontal: -PAGE_X, height: CARD_HEIGHT + 20 }}
             contentContainerStyle={{
-              paddingHorizontal: 24,
+              paddingHorizontal: PAGE_X,
               paddingBottom: 8,
               alignItems: 'center',
             }}
@@ -623,9 +549,7 @@ const SavedSupplements = () => {
             {supplements.map((item, index) => (
               <View
                 key={item.id}
-                style={{
-                  marginRight: index === supplements.length - 1 ? 0 : CARD_GAP,
-                }}
+                style={{ marginRight: index === supplements.length - 1 ? 0 : CARD_GAP }}
               >
                 <SupplementCheckInCard
                   item={item}
@@ -636,18 +560,19 @@ const SavedSupplements = () => {
             ))}
           </ScrollView>
 
-          <View className="h-1.5 w-32 bg-slate-200/80 rounded-full mt-2 overflow-hidden relative self-center">
+          <View style={styles.indicatorTrack}>
             <AnimatedView
-              className="absolute top-0 left-0 h-full bg-slate-400 rounded-full"
-              style={{ width: INDICATOR_WIDTH, left: scrollProgress * INDICATOR_MAX_LEFT }}
+              style={[
+                styles.indicatorThumb,
+                { width: INDICATOR_WIDTH, left: scrollProgress * INDICATOR_MAX_LEFT },
+              ]}
             />
           </View>
         </>
       )}
-    </AnimatedView>
+    </Animated.View>
   );
 };
-
 
 // -----------------------------------------------------
 // Progress / Chat / Streak cards
@@ -666,59 +591,49 @@ const ProgressCard = () => {
 
   return (
     <Animated.View
-      // 替换 MotionView: 使用 entering 属性
       entering={FadeInUp.delay(300).duration(500).springify()}
       className="w-full bg-blue-800 rounded-[2rem] p-6 text-white relative overflow-hidden h-64"
       style={{ borderCurve: 'continuous' }}
     >
       <View className="flex-1 justify-between relative z-10">
         <View className="flex-row items-center gap-2">
-          <View className="w-8 h-8 rounded-full border border-blue-400/30 items-center justify-center">
+          <View
+            className="w-8 h-8 rounded-full border border-blue-400/30 items-center justify-center"
+            style={{ borderCurve: 'continuous' }}
+          >
             <Pill size={16} color="#bfdbfe" />
           </View>
-          <Text className="text-blue-100 font-medium">
-            Today’s Supplement Progress
-          </Text>
+          <Text style={styles.cardMeta}>Today’s Supplement Progress</Text>
         </View>
 
         <View className="mt-auto mb-1">
-          <AnimatedText
-            // 替换 MotionText: 简单的进场动画
-            entering={FadeInUp.delay(500).springify()}
-            className="text-6xl font-bold tracking-tight text-white"
-          >
+          <AnimatedText entering={FadeInUp.delay(500).springify()} style={styles.progressBig}>
             60%
           </AnimatedText>
 
-          <View className="mt-2 gap-1">
+          <View style={{ marginTop: 8, gap: 6 }}>
             <View className="flex-row items-center gap-2">
               <CheckCircle2 size={16} color="#34d399" />
-              <Text className="text-blue-100 text-sm font-semibold">
-                Taken: 3 / 5
-              </Text>
+              <Text style={styles.progressTaken}>Taken: 3 / 5</Text>
             </View>
             <View className="flex-row items-center gap-2">
               <View className="w-4 h-4 items-center justify-center">
                 <View className="w-1.5 h-1.5 rounded-full bg-blue-400/50" />
               </View>
-              <Text className="text-blue-300 text-sm font-medium">
-                Remaining: 2
-              </Text>
+              <Text style={styles.progressRemain}>Remaining: 2</Text>
             </View>
           </View>
 
-          <Text className="text-blue-200/40 text-xs mt-3 font-medium uppercase tracking-wider">
-            {today}
-          </Text>
+          <Text style={styles.progressDate}>{today}</Text>
         </View>
       </View>
 
-      {/* 右下角圆环进度 */}
-      <View className="absolute right-6 bottom-6 bg-white text-slate-900 rounded-2xl p-4 w-32 shadow-xl shadow-blue-900/20">
+      <View
+        className="absolute right-6 bottom-6 bg-white text-slate-900 rounded-2xl p-4 w-32 shadow-xl shadow-blue-900/20"
+        style={{ borderCurve: 'continuous' }}
+      >
         <View className="flex-row items-center justify-between mb-2">
-          <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-            Goal
-          </Text>
+          <Text style={styles.goalLabel}>Goal</Text>
           <MoreHorizontal size={16} color="#cbd5f5" />
         </View>
 
@@ -750,13 +665,10 @@ const ProgressCard = () => {
               strokeDashoffset={circumference * (1 - progress)}
             />
           </Svg>
+
           <View className="absolute inset-0 items-center justify-center pt-1">
-            <Text className="text-3xl font-black text-slate-900 leading-none">
-              3
-            </Text>
-            <Text className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">
-              of 5
-            </Text>
+            <Text style={styles.goalValue}>3</Text>
+            <Text style={styles.goalSub}>of 5</Text>
           </View>
         </View>
       </View>
@@ -771,25 +683,28 @@ const NutriChatCard = () => (
     style={{ borderCurve: 'continuous' }}
   >
     <View className="flex-row items-center gap-1.5 z-10">
-      <View className="w-8 h-8 rounded-full border border-slate-300/50 items-center justify-center bg-white">
+      <View
+        className="w-8 h-8 rounded-full border border-slate-300/50 items-center justify-center bg-white"
+        style={{ borderCurve: 'continuous' }}
+      >
         <Sparkles size={16} color="#f59e0b" />
       </View>
-      <Text className="text-slate-700 font-bold text-sm tracking-wide">
-        NuTri Chat
-      </Text>
+      <Text style={styles.smallCardTitle}>NuTri Chat</Text>
     </View>
 
     <View className="flex-1 justify-between z-10 mt-2 mb-1">
-      <View className="self-start bg-white p-3 rounded-2xl shadow-sm border border-slate-200/50 max-w-[90%]">
-        <Text className="text-xs text-slate-600 font-medium leading-5">
-          Questions about your intake? I&apos;m here to help!
-        </Text>
+      <View
+        className="self-start bg-white p-3 rounded-2xl shadow-sm border border-slate-200/50 max-w-[90%]"
+        style={{ borderCurve: 'continuous' }}
+      >
+        <Text style={styles.chatBubbleText}>Questions about your intake? I&apos;m here to help!</Text>
       </View>
 
-      <View className="w-full h-9 bg-white/60 rounded-full border border-slate-200/60 flex-row items-center px-3 gap-2">
-        <Text className="text-[10px] text-slate-400 font-medium pl-1">
-          Ask AI anything...
-        </Text>
+      <View
+        className="w-full h-9 bg-white/60 rounded-full border border-slate-200/60 flex-row items-center px-3 gap-2"
+        style={{ borderCurve: 'continuous' }}
+      >
+        <Text style={styles.chatPlaceholder}>Ask AI anything...</Text>
         <View className="ml-auto w-6 h-6 rounded-full bg-slate-800 items-center justify-center">
           <Send size={12} color="#ffffff" />
         </View>
@@ -806,27 +721,24 @@ const StreakCard = () => (
   >
     <View className="flex-row items-center justify-between z-10">
       <View className="flex-row items-center gap-2">
-        <View className="w-8 h-8 rounded-full bg-orange-500/20 items-center justify-center">
+        <View
+          className="w-8 h-8 rounded-full bg-orange-500/20 items-center justify-center"
+          style={{ borderCurve: 'continuous' }}
+        >
           <Flame size={16} color="#ea580c" />
         </View>
-        <Text className="text-slate-900 font-bold text-sm tracking-wide">
-          Streak
-        </Text>
+        <Text style={styles.smallCardTitleDark}>Streak</Text>
       </View>
     </View>
 
     <View className="z-10 mt-auto flex-row justify-between items-end">
       <View>
         <View className="flex-row items-baseline gap-1">
-          <Text className="text-4xl font-black text-slate-900 tracking-tight">
-            6
-          </Text>
-          <Text className="text-lg font-bold text-slate-700">Days</Text>
+          <Text style={styles.streakValue}>6</Text>
+          <Text style={styles.streakUnit}>Days</Text>
         </View>
-        <View className="mt-1 bg-slate-900/10 px-2 py-1 rounded-lg">
-          <Text className="text-xs font-medium text-slate-700/80">
-            Goal: 30 Days
-          </Text>
+        <View className="mt-1 bg-slate-900/10 px-2 py-1 rounded-lg" style={{ borderCurve: 'continuous' }}>
+          <Text style={styles.streakGoal}>Goal: 30 Days</Text>
         </View>
       </View>
 
@@ -836,8 +748,7 @@ const StreakCard = () => (
             key={i}
             entering={FadeInUp.delay(600 + i * 100).springify()}
             style={{ height: `${h * 100}%` }}
-            className={`w-1.5 rounded-t-sm ${i === 6 ? 'bg-slate-900' : 'bg-slate-900/30'
-              }`}
+            className={`w-1.5 rounded-t-sm ${i === 6 ? 'bg-slate-900' : 'bg-slate-900/30'}`}
           />
         ))}
       </View>
@@ -854,10 +765,8 @@ const RecentlyScanned = () => {
   const { scans } = useScanHistory();
   const { t } = useTranslation();
   const [savingIds, setSavingIds] = useState<Record<string, boolean>>({});
-  const normalize = useCallback(
-    (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, '').trim(),
-    [],
-  );
+
+  const normalize = useCallback((value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, '').trim(), []);
   const cleanProductName = useCallback((value: string) => {
     const trimmed = value.trim();
     if (!trimmed) return value;
@@ -906,47 +815,43 @@ const RecentlyScanned = () => {
     >
       <View className="flex-row justify-between items-start mb-4">
         <View>
-          <Text className="text-xl font-bold text-slate-900">
-            Recently Scanned
-          </Text>
-          <Text className="text-slate-700 text-sm font-medium">Today</Text>
+          <Text style={styles.recentTitle}>Recently Scanned</Text>
+          <Text style={styles.recentSubtitle}>Today</Text>
         </View>
 
         <AnimatedPressable
-          onPress={() => { }}
+          onPress={() => {}}
           className="w-10 h-10 rounded-full border border-slate-700/10 items-center justify-center bg-white/20"
-          style={({ pressed }) => ({
-            transform: [{ scale: pressed ? 0.95 : 1 }]
-          })}
+          style={({ pressed }) => [{ transform: [{ scale: pressed ? 0.95 : 1 }] }, { borderCurve: 'continuous' }]}
         >
           <ScanBarcode size={20} color="#0f172a" />
         </AnimatedPressable>
       </View>
 
-      <View className="gap-2">
+      <View style={{ gap: 8 }}>
         {items.length === 0 ? (
-          <View className="rounded-2xl bg-white/20 border border-white/10 p-4">
-            <Text className="text-sm font-semibold text-slate-900">{t.emptyScans}</Text>
+          <View className="rounded-2xl bg-white/20 border border-white/10 p-4" style={{ borderCurve: 'continuous' }}>
+            <Text style={styles.recentEmpty}>{t.emptyScans}</Text>
           </View>
         ) : (
           items.map((item, index) => {
             const isSaved = savedKeys.has(buildKey(item.productName, item.brandName));
             const isSaving = savingIds[item.id];
             const isActive = isSaved || isSaving;
+
             const iconConfig = getCategoryIconConfig(item.category, item.productName || '');
             const Icon = iconConfig.icon;
-            const iconStyle = iconConfig.rotate
-              ? { transform: [{ rotate: iconConfig.rotate }] }
-              : undefined;
+            const iconStyle = iconConfig.rotate ? { transform: [{ rotate: iconConfig.rotate }] } : undefined;
 
             return (
               <Animated.View
                 key={item.id}
                 entering={FadeInRight.delay(700 + index * 100).springify()}
                 className="flex-row items-center justify-between p-3 rounded-2xl bg-white/20 border border-white/10"
+                style={{ borderCurve: 'continuous' }}
               >
-                <View style={{ width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
-                  <View style={[{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.40)', alignItems: 'center', justifyContent: 'center' }]}>
+                <View style={[styles.recentIconOuter, { borderCurve: 'continuous' as const }]}>
+                  <View style={[styles.recentIconInner, { borderCurve: 'continuous' as const }]}>
                     <View style={iconStyle}>
                       <Icon size={20} color="#0f172a" strokeWidth={2.2} />
                     </View>
@@ -954,11 +859,7 @@ const RecentlyScanned = () => {
                 </View>
 
                 <View style={{ flex: 1, minWidth: 0, paddingHorizontal: 12 }}>
-                  <Text
-                    className="font-bold text-slate-900 text-sm"
-                    numberOfLines={2}
-                    ellipsizeMode="tail"
-                  >
+                  <Text style={styles.recentItemTitle} numberOfLines={2} ellipsizeMode="tail">
                     {cleanProductName(item.productName || 'Unknown supplement')}
                   </Text>
                 </View>
@@ -974,11 +875,11 @@ const RecentlyScanned = () => {
                   <MotiView
                     style={styles.recentActionBubble}
                     animate={{
-                      backgroundColor: isActive ? "rgba(16,185,129,0.85)" : "rgba(255,255,255,0.40)",
-                      borderColor: isActive ? "rgba(16,185,129,0.45)" : "rgba(255,255,255,0.30)",
+                      backgroundColor: isActive ? 'rgba(16,185,129,0.85)' : 'rgba(255,255,255,0.40)',
+                      borderColor: isActive ? 'rgba(16,185,129,0.45)' : 'rgba(255,255,255,0.30)',
                       scale: isActive ? 1.04 : 1,
                     }}
-                    transition={{ type: "spring", stiffness: 260, damping: 18, mass: 0.7 }}
+                    transition={{ type: 'spring', stiffness: 260, damping: 18, mass: 0.7 }}
                   >
                     <View pointerEvents="none" style={styles.recentActionIconWrap}>
                       <MotiView
@@ -986,9 +887,9 @@ const RecentlyScanned = () => {
                         animate={{
                           opacity: isActive ? 0 : 1,
                           scale: isActive ? 0.6 : 1,
-                          rotate: isActive ? "-90deg" : "0deg",
+                          rotate: isActive ? '-90deg' : '0deg',
                         }}
-                        transition={{ type: "timing", duration: 160 }}
+                        transition={{ type: 'timing', duration: 160 }}
                       >
                         <Plus size={12} color="#0f172a" />
                       </MotiView>
@@ -997,9 +898,9 @@ const RecentlyScanned = () => {
                         animate={{
                           opacity: isActive ? 1 : 0,
                           scale: isActive ? 1 : 0.6,
-                          rotate: isActive ? "0deg" : "20deg",
+                          rotate: isActive ? '0deg' : '20deg',
                         }}
-                        transition={{ type: "timing", duration: 160 }}
+                        transition={{ type: 'timing', duration: 160 }}
                       >
                         <Check size={12} color="#ffffff" />
                       </MotiView>
@@ -1016,13 +917,12 @@ const RecentlyScanned = () => {
 };
 
 // -----------------------------------------------------
-// Refined Bottom Nav + 1:1 Floating Menu
+// Refined Bottom Nav + 1:1 Floating Menu (原样保留)
 // -----------------------------------------------------
 
 type TabId = 'home' | 'progress' | 'saved' | 'profile';
 type TabType = 'text' | 'icon';
 
-// --- 新增组件：独立处理动画的 TabItem ---
 const TabItem = ({
   item,
   activeTabId,
@@ -1035,7 +935,7 @@ const TabItem = ({
   const isText = item.type === 'text';
   const activeColor = item.activeColor || '#0f172a';
   const isActive = useDerivedValue(() =>
-    withTiming(activeTabId.value === item.id ? 1 : 0, { duration: 200 })
+    withTiming(activeTabId.value === item.id ? 1 : 0, { duration: 200 }),
   );
 
   const textStyle = useAnimatedStyle(() => ({
@@ -1057,14 +957,12 @@ const TabItem = ({
         styles.tabItem,
         isText ? styles.tabItemText : styles.tabItemIcon,
         item.id === 'home' ? { marginRight: 'auto' } : {},
-        { zIndex: 10 }
+        { zIndex: 10 },
       ]}
     >
       <View style={styles.contentLayer}>
         {isText ? (
-          <AnimatedText style={[styles.label, textStyle]}>
-            {item.label}
-          </AnimatedText>
+          <AnimatedText style={[styles.label, textStyle]}>{item.label}</AnimatedText>
         ) : (
           <View style={{ width: 22, height: 22, alignItems: 'center', justifyContent: 'center' }}>
             <AnimatedView style={[StyleSheet.absoluteFill, inactiveIconStyle]}>
@@ -1091,16 +989,19 @@ const BottomNav = ({
   const bottomInset = Math.max(0, insets.bottom - BOTTOM_INSET_TRIM);
   const bottomFadeHeight = Math.max(160, bottomInset + BOTTOM_FADE_EXTRA);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const activeId = useSharedValue<TabId>(currentTab); // UI 高亮用
+  const activeId = useSharedValue<TabId>(currentTab);
 
   type TabItemConfig = { id: TabId; label: string; icon: any; type: TabType; activeColor?: string };
 
-  const tabs: TabItemConfig[] = useMemo(() => ([
-    { id: 'home', label: 'Home', icon: Home, type: 'text' },
-    { id: 'progress', label: 'Progress', icon: BarChart2, type: 'icon', activeColor: '#6366f1' },
-    { id: 'saved', label: 'Saved', icon: Bookmark, type: 'icon', activeColor: '#f97316' },
-    { id: 'profile', label: 'Profile', icon: User, type: 'icon', activeColor: '#10b981' },
-  ]), []);
+  const tabs: TabItemConfig[] = useMemo(
+    () => [
+      { id: 'home', label: 'Home', icon: Home, type: 'text' },
+      { id: 'progress', label: 'Progress', icon: BarChart2, type: 'icon', activeColor: '#6366f1' },
+      { id: 'saved', label: 'Saved', icon: Bookmark, type: 'icon', activeColor: '#f97316' },
+      { id: 'profile', label: 'Profile', icon: User, type: 'icon', activeColor: '#10b981' },
+    ],
+    [],
+  );
 
   type TabLayout = { x: number; width: number; type: TabType; activeColor?: string };
   const layoutRef = useRef<Record<TabId, TabLayout>>({} as Record<TabId, TabLayout>);
@@ -1117,15 +1018,17 @@ const BottomNav = ({
   const initPillToActive = useCallback(() => {
     const meta = Object.values(layoutRef.current);
     if (meta.length !== tabs.length) return;
-    const arranged = tabs.map((t) => {
-      const l = layoutRef.current[t.id];
-      return l ? { ...l, id: t.id, center: l.x + l.width / 2 } : null;
-    }).filter(Boolean) as { id: TabId; x: number; width: number; center: number; type: TabType; activeColor?: string }[];
+    const arranged = tabs
+      .map(t => {
+        const l = layoutRef.current[t.id];
+        return l ? { ...l, id: t.id, center: l.x + l.width / 2 } : null;
+      })
+      .filter(Boolean) as { id: TabId; x: number; width: number; center: number; type: TabType; activeColor?: string }[];
 
     if (!arranged.length) return;
     tabMeta.value = arranged;
     activeId.value = currentTab;
-    const activeLayout = arranged.find((m) => m.id === currentTab);
+    const activeLayout = arranged.find(m => m.id === currentTab);
     if (activeLayout) {
       pillX.value = activeLayout.x;
       pillWidth.value = activeLayout.width;
@@ -1133,95 +1036,101 @@ const BottomNav = ({
     }
   }, [activeId, currentTab, pillRadius, pillWidth, pillX, tabMeta, tabs]);
 
-  const onTabLayout = useCallback((id: TabId, type: TabType, activeColor?: string) => (e: any) => {
-    const { x, width } = e.nativeEvent.layout;
-    layoutRef.current[id] = { x, width, type, activeColor };
-    if (Object.keys(layoutRef.current).length === tabs.length) {
-      initPillToActive();
-    }
-  }, [initPillToActive, tabs.length]);
-
-  const snapToTab = useCallback((targetId: TabId) => {
-    const worklet = (id: TabId) => {
-      'worklet';
-      const metaList = tabMeta.value;
-      if (!metaList.length) return;
-      const target = metaList.find((m) => m.id === id);
-      if (!target) return;
-
-      activeId.value = id; // UI 线程即时高亮
-
-      const radius = target.type === 'text' ? 24 : target.width / 2;
-      pillWidth.value = withSpring(target.width, { damping: 14, stiffness: 220, mass: 0.9 });
-      pillRadius.value = withSpring(radius, { damping: 14, stiffness: 220, mass: 0.9 });
-      pillX.value = withSpring(target.x, { damping: 14, stiffness: 220, mass: 0.9 });
-    };
-    runOnUI(worklet)(targetId);
-  }, [activeId, pillRadius, pillWidth, pillX, tabMeta]);
-
-  const pillGesture = useMemo(() => Gesture.Pan()
-    .onStart(() => {
-      dragStartX.value = pillX.value;
-      navScaleX.value = withTiming(1.02, { duration: 180, easing: Easing.out(Easing.cubic) });
-      navScaleY.value = withTiming(1.04, { duration: 180, easing: Easing.out(Easing.cubic) });
-      navLift.value = withTiming(1, { duration: 200, easing: Easing.out(Easing.cubic) });
-      pillScale.value = withSpring(1.07, { damping: 14, stiffness: 260 });
-      runOnJS(Haptics.selectionAsync)();
-    })
-    .onChange((event) => {
-      const metaList = tabMeta.value;
-      if (!metaList.length) return;
-      const first = metaList[0];
-      const last = metaList[metaList.length - 1];
-      const minX = first.x;
-      const maxX = last.x + last.width - pillWidth.value;
-      const nextX = Math.min(Math.max(dragStartX.value + event.translationX, minX), maxX);
-      pillX.value = nextX;
-
-      const center = nextX + pillWidth.value / 2;
-      let closest = metaList[0];
-      let minDist = Math.abs(center - closest.center);
-      for (let i = 1; i < metaList.length; i += 1) {
-        const candidate = metaList[i];
-        const dist = Math.abs(center - candidate.center);
-        if (dist < minDist) {
-          closest = candidate;
-          minDist = dist;
-        }
+  const onTabLayout = useCallback(
+    (id: TabId, type: TabType, activeColor?: string) => (e: any) => {
+      const { x, width } = e.nativeEvent.layout;
+      layoutRef.current[id] = { x, width, type, activeColor };
+      if (Object.keys(layoutRef.current).length === tabs.length) {
+        initPillToActive();
       }
+    },
+    [initPillToActive, tabs.length],
+  );
 
-      if (activeId.value !== closest.id) {
-        activeId.value = closest.id; // UI 线程立即高亮
-        runOnJS(Haptics.selectionAsync)();
-      }
-    })
-    .onEnd(() => {
-      const metaList = tabMeta.value;
-      if (!metaList.length) return;
-      navScaleX.value = withSpring(1, { damping: 14, stiffness: 180, mass: 0.9 });
-      navScaleY.value = withSpring(1, { damping: 14, stiffness: 180, mass: 0.9 });
-      navLift.value = withTiming(0, { duration: 240, easing: Easing.out(Easing.cubic) });
-      pillScale.value = withSpring(1, { damping: 14, stiffness: 260 });
+  const snapToTab = useCallback(
+    (targetId: TabId) => {
+      const worklet = (id: TabId) => {
+        'worklet';
+        const metaList = tabMeta.value;
+        if (!metaList.length) return;
+        const target = metaList.find(m => m.id === id);
+        if (!target) return;
 
-      const currentActive = activeId.value;
-      const target = metaList.find((m) => m.id === currentActive) || metaList[0];
-      const radius = target.type === 'text' ? 24 : target.width / 2;
-      runOnJS(onTabChange)(target.id as TabId);
-      pillWidth.value = withSpring(target.width, { damping: 14, stiffness: 220, mass: 0.9 });
-      pillRadius.value = withSpring(radius, { damping: 14, stiffness: 220, mass: 0.9 });
-      pillX.value = withSpring(target.x, { damping: 14, stiffness: 220, mass: 0.9 });
-    }), [activeId, dragStartX, navLift, navScaleX, navScaleY, onTabChange, pillScale, pillWidth, pillX, pillRadius, tabMeta]);
+        activeId.value = id;
+
+        const radius = target.type === 'text' ? 24 : target.width / 2;
+        pillWidth.value = withSpring(target.width, { damping: 14, stiffness: 220, mass: 0.9 });
+        pillRadius.value = withSpring(radius, { damping: 14, stiffness: 220, mass: 0.9 });
+        pillX.value = withSpring(target.x, { damping: 14, stiffness: 220, mass: 0.9 });
+      };
+      runOnUI(worklet)(targetId);
+    },
+    [activeId, pillRadius, pillWidth, pillX, tabMeta],
+  );
+
+  const pillGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .onStart(() => {
+          dragStartX.value = pillX.value;
+          navScaleX.value = withTiming(1.02, { duration: 180, easing: Easing.out(Easing.cubic) });
+          navScaleY.value = withTiming(1.04, { duration: 180, easing: Easing.out(Easing.cubic) });
+          navLift.value = withTiming(1, { duration: 200, easing: Easing.out(Easing.cubic) });
+          pillScale.value = withSpring(1.07, { damping: 14, stiffness: 260 });
+          runOnJS(Haptics.selectionAsync)();
+        })
+        .onChange(event => {
+          const metaList = tabMeta.value;
+          if (!metaList.length) return;
+          const first = metaList[0];
+          const last = metaList[metaList.length - 1];
+          const minX = first.x;
+          const maxX = last.x + last.width - pillWidth.value;
+          const nextX = Math.min(Math.max(dragStartX.value + event.translationX, minX), maxX);
+          pillX.value = nextX;
+
+          const center = nextX + pillWidth.value / 2;
+          let closest = metaList[0];
+          let minDist = Math.abs(center - closest.center);
+          for (let i = 1; i < metaList.length; i += 1) {
+            const candidate = metaList[i];
+            const dist = Math.abs(center - candidate.center);
+            if (dist < minDist) {
+              closest = candidate;
+              minDist = dist;
+            }
+          }
+
+          if (activeId.value !== closest.id) {
+            activeId.value = closest.id;
+            runOnJS(Haptics.selectionAsync)();
+          }
+        })
+        .onEnd(() => {
+          const metaList = tabMeta.value;
+          if (!metaList.length) return;
+          navScaleX.value = withSpring(1, { damping: 14, stiffness: 180, mass: 0.9 });
+          navScaleY.value = withSpring(1, { damping: 14, stiffness: 180, mass: 0.9 });
+          navLift.value = withTiming(0, { duration: 240, easing: Easing.out(Easing.cubic) });
+          pillScale.value = withSpring(1, { damping: 14, stiffness: 260 });
+
+          const currentActive = activeId.value;
+          const target = metaList.find(m => m.id === currentActive) || metaList[0];
+          const radius = target.type === 'text' ? 24 : target.width / 2;
+          runOnJS(onTabChange)(target.id as TabId);
+          pillWidth.value = withSpring(target.width, { damping: 14, stiffness: 220, mass: 0.9 });
+          pillRadius.value = withSpring(radius, { damping: 14, stiffness: 220, mass: 0.9 });
+          pillX.value = withSpring(target.x, { damping: 14, stiffness: 220, mass: 0.9 });
+        }),
+    [activeId, dragStartX, navLift, navScaleX, navScaleY, onTabChange, pillScale, pillWidth, pillX, pillRadius, tabMeta],
+  );
 
   const navBarStyle = useAnimatedStyle(() => ({
     transform: [{ scaleX: navScaleX.value }, { scaleY: navScaleY.value }],
   }));
 
   const navHighlightStyle = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(
-      navLift.value,
-      [0, 1],
-      ['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.18)']
-    ),
+    backgroundColor: interpolateColor(navLift.value, [0, 1], ['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.18)']),
   }));
 
   const pillStyle = useAnimatedStyle(() => ({
@@ -1232,7 +1141,6 @@ const BottomNav = ({
 
   return (
     <>
-      {/* 1. 全局遮罩层 (点击空白处关闭) */}
       <AnimatePresence>
         {isMenuOpen && (
           <MotiView
@@ -1242,7 +1150,6 @@ const BottomNav = ({
             transition={{ type: 'timing', duration: 200 }}
             style={[StyleSheet.absoluteFill, { zIndex: 40 }]}
           >
-            {/* 背景模糊层 */}
             <BlurView intensity={20} tint="light" style={StyleSheet.absoluteFill} />
             <View className="absolute inset-0 bg-white/10" />
             <Pressable style={StyleSheet.absoluteFill} onPress={() => setIsMenuOpen(false)} />
@@ -1250,11 +1157,7 @@ const BottomNav = ({
         )}
       </AnimatePresence>
 
-      {/* 底部导航区域容器 */}
-      <View
-        pointerEvents="box-none"
-        style={[styles.bottomBarContainer, { paddingBottom: bottomInset }]}
-      >
+      <View pointerEvents="box-none" style={[styles.bottomBarContainer, { paddingBottom: bottomInset }]}>
         <View
           pointerEvents="none"
           style={[
@@ -1271,12 +1174,7 @@ const BottomNav = ({
             style={StyleSheet.absoluteFill}
             maskElement={
               <LinearGradient
-                colors={[
-                  'rgba(0,0,0,0)',
-                  'rgba(0,0,0,0.2)',
-                  'rgba(0,0,0,0.7)',
-                  'rgba(0,0,0,1)',
-                ]}
+                colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.2)', 'rgba(0,0,0,0.7)', 'rgba(0,0,0,1)']}
                 locations={[0, 0.18, 0.62, 1]}
                 style={StyleSheet.absoluteFill}
               />
@@ -1284,6 +1182,7 @@ const BottomNav = ({
           >
             <BlurView intensity={32} tint="light" style={StyleSheet.absoluteFill} />
           </MaskedView>
+
           <LinearGradient
             colors={[
               'rgba(242,243,247,0.00)',
@@ -1296,7 +1195,7 @@ const BottomNav = ({
             style={StyleSheet.absoluteFill}
           />
         </View>
-        {/* 2. 左侧导航栏 (Glassmorphism Bar) */}
+
         <View style={styles.outerWrapper}>
           <Animated.View style={[styles.navShadowWrap, navBarStyle]}>
             <View style={styles.navPill}>
@@ -1305,25 +1204,12 @@ const BottomNav = ({
               <Animated.View style={[styles.navPillHighlight, navHighlightStyle]} />
 
               <View style={styles.tabsRow}>
-                {/* Layer 1: 视觉胶囊（底层） */}
-                <Animated.View
-                  style={[
-                    styles.pillContainer,
-                    pillStyle,
-                    { zIndex: 0 }
-                  ]}
-                  pointerEvents="none"
-                >
+                <Animated.View style={[styles.pillContainer, pillStyle, { zIndex: 0 }]} pointerEvents="none">
                   <View style={styles.pillBase} />
                 </Animated.View>
 
-                {/* Layer 2: 图标/文字内容 */}
-                {tabs.map((tab) => (
-                  <View
-                    key={tab.id}
-                    onLayout={onTabLayout(tab.id, tab.type, tab.activeColor)}
-                    style={tab.id === 'home' ? { marginRight: 'auto' } : {}}
-                  >
+                {tabs.map(tab => (
+                  <View key={tab.id} onLayout={onTabLayout(tab.id, tab.type, tab.activeColor)} style={tab.id === 'home' ? { marginRight: 'auto' } : {}}>
                     <TabItem
                       item={tab}
                       activeTabId={activeId}
@@ -1335,17 +1221,12 @@ const BottomNav = ({
                   </View>
                 ))}
 
-                {/* Layer 3: 幽灵胶囊（顶层捕获手势） */}
                 <GestureDetector gesture={pillGesture}>
                   <Animated.View
                     style={[
                       styles.pillContainer,
                       pillStyle,
-                      {
-                        zIndex: 100,
-                        opacity: 0,
-                        backgroundColor: 'red'
-                      }
+                      { zIndex: 100, opacity: 0, backgroundColor: 'red' },
                     ]}
                     pointerEvents="box-only"
                   />
@@ -1355,9 +1236,7 @@ const BottomNav = ({
           </Animated.View>
         </View>
 
-        {/* 3. 右侧: 悬浮菜单 (1:1 还原区域) */}
         <View className="relative items-center justify-center">
-
           <AnimatePresence>
             {isMenuOpen && (
               <MotiView
@@ -1366,7 +1245,6 @@ const BottomNav = ({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
               >
-                {/* Text Scan Option */}
                 <FloatingMenuItem
                   labelTop="Text"
                   labelBottom="Scan"
@@ -1374,8 +1252,6 @@ const BottomNav = ({
                   delay={100}
                   onPress={() => router.push('/scan/label')}
                 />
-
-                {/* Barcode Scan Option */}
                 <FloatingMenuItem
                   labelTop="Barcode"
                   labelBottom="Scan"
@@ -1387,7 +1263,6 @@ const BottomNav = ({
             )}
           </AnimatePresence>
 
-          {/* 主 FAB 按钮 */}
           <Pressable
             onPress={() => {
               Haptics.selectionAsync();
@@ -1412,48 +1287,41 @@ const BottomNav = ({
   );
 };
 
-// -----------------------------------------------------
-// Helper Component for Menu Items (Animation Logic)
-// -----------------------------------------------------
-
+// Menu Item
 function FloatingMenuItem({ labelTop, labelBottom, Icon, delay, onPress }: any) {
   return (
     <MotiView
       from={{ opacity: 0, translateY: 12, scale: 0.95 }}
       animate={{ opacity: 1, translateY: 0, scale: 1 }}
       exit={{ opacity: 0, translateY: 12, scale: 0.95 }}
-      transition={{
-        type: 'timing',
-        duration: 180,
-        delay
-      }}
+      transition={{ type: 'timing', duration: 180, delay }}
       className="flex-row items-center gap-4 justify-end"
     >
       <Pressable onPress={onPress} className="flex-row items-center gap-4">
-        {/* Label Box */}
         <View
           className="bg-white px-6 py-3 rounded-[1.5rem] border border-white flex-col items-center"
           style={{
-            shadowColor: "#cbd5e1",
+            borderCurve: 'continuous',
+            shadowColor: '#cbd5e1',
             shadowOffset: { width: 0, height: 10 },
             shadowOpacity: 0.3,
             shadowRadius: 10,
-            elevation: 5
+            elevation: 5,
           }}
         >
-          <Text className="text-sm font-black tracking-wide text-slate-900">{labelTop}</Text>
-          <Text className="text-sm font-bold text-slate-600">{labelBottom}</Text>
+          <Text style={styles.fabLabelTop}>{labelTop}</Text>
+          <Text style={styles.fabLabelBottom}>{labelBottom}</Text>
         </View>
 
-        {/* Icon Box */}
         <View
           className="w-16 h-16 rounded-[1.5rem] bg-white border border-white items-center justify-center"
           style={{
-            shadowColor: "#cbd5e1",
+            borderCurve: 'continuous',
+            shadowColor: '#cbd5e1',
             shadowOffset: { width: 0, height: 10 },
             shadowOpacity: 0.3,
             shadowRadius: 10,
-            elevation: 5
+            elevation: 5,
           }}
         >
           <Icon color="#334155" size={28} strokeWidth={2} />
@@ -1464,16 +1332,97 @@ function FloatingMenuItem({ labelTop, labelBottom, Icon, delay, onPress }: any) 
 }
 
 // -----------------------------------------------------
+// Home Tab (新布局骨架：对齐 MySupplement 风格 + 删除 bell)
+// -----------------------------------------------------
+
+const HomeTab = () => {
+  const tokens = useScreenTokens(NAV_HEIGHT);
+  const contentTopPadding = tokens.contentTopPadding;
+  const contentBottomPadding = tokens.contentBottomPadding;
+
+  return (
+    <View style={styles.screen}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentInsetAdjustmentBehavior="never"
+        scrollIndicatorInsets={{ top: contentTopPadding, bottom: contentBottomPadding }}
+        contentContainerStyle={[
+          styles.homeContent,
+          {
+            paddingTop: contentTopPadding,
+            paddingBottom: contentBottomPadding,
+            paddingHorizontal: tokens.pageX,
+          },
+        ]}
+      >
+        <View style={styles.screenHeaderRow}>
+          <Text style={[styles.h1, { fontSize: tokens.h1Size, lineHeight: tokens.h1Line }]} maxFontSizeMultiplier={1.2}>
+            NuTri
+          </Text>
+        </View>
+
+        <WeekdaySelector />
+
+        <View style={styles.sectionBlock}>
+          <SavedSupplements />
+        </View>
+
+        <View style={styles.sectionBlock}>
+          <View style={styles.stack16}>
+            <ProgressCard />
+            <View style={styles.row16}>
+              <NutriChatCard />
+              <StreakCard />
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.sectionBlock}>
+          <RecentlyScanned />
+        </View>
+      </ScrollView>
+    </View>
+  );
+};
+
+const ProfileTab = () => {
+  const tokens = useScreenTokens(NAV_HEIGHT);
+  const contentTopPadding = tokens.contentTopPadding;
+  const contentBottomPadding = tokens.contentBottomPadding;
+
+  return (
+    <View style={styles.screen}>
+      <ScrollView
+        contentInsetAdjustmentBehavior="never"
+        scrollIndicatorInsets={{ top: contentTopPadding, bottom: contentBottomPadding }}
+        contentContainerStyle={{
+          paddingTop: contentTopPadding,
+          paddingBottom: contentBottomPadding,
+          paddingHorizontal: tokens.pageX,
+        }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.screenHeaderRow}>
+          <Text style={[styles.h1, { fontSize: tokens.h1Size, lineHeight: tokens.h1Line }]} maxFontSizeMultiplier={1.2}>
+            Profile
+          </Text>
+        </View>
+        <View>
+          <Text style={styles.placeholderText}>Profile</Text>
+        </View>
+      </ScrollView>
+    </View>
+  );
+};
+
+// -----------------------------------------------------
 // Main Screen
 // -----------------------------------------------------
 
 export default function MainScreen() {
   const [currentTab, setCurrentTab] = useState<TabId>('home');
   const screenTab = useSharedValue<TabId>(currentTab);
-  const insets = useSafeAreaInsets();
   const { savedSupplements, removeSupplements, updateRoutine } = useSavedSupplements();
-  const bottomInset = Math.max(0, insets.bottom - BOTTOM_INSET_TRIM);
-  const homeBottomPadding = NAV_HEIGHT + bottomInset + 24;
 
   useEffect(() => {
     screenTab.value = currentTab;
@@ -1493,10 +1442,7 @@ export default function MainScreen() {
     [updateRoutine],
   );
 
-  const fadeConfig = {
-    duration: 200,
-    easing: Easing.inOut(Easing.cubic),
-  };
+  const fadeConfig = { duration: 200, easing: Easing.inOut(Easing.cubic) };
 
   const homeFadeStyle = useAnimatedStyle(() => ({
     opacity: withTiming(screenTab.value === 'home' ? 1 : 0, fadeConfig),
@@ -1513,53 +1459,17 @@ export default function MainScreen() {
 
   return (
     <SafeAreaView
-      edges={['top', 'left', 'right']}
-      style={{ flex: 1, backgroundColor: '#F2F3F7' }}
+      edges={['left', 'right']} // ✅ 只处理左右，top 交给各 Tab 自己用 insets.top 统一
+      style={{ flex: 1, backgroundColor: SCREEN_BG }}
     >
       <StatusBar style="dark" />
-      <View className="flex-1">
+      <View style={{ flex: 1 }}>
         <View style={styles.tabContainer}>
-          <Animated.View
-            style={[styles.tabScreen, homeFadeStyle]}
-            pointerEvents={currentTab === 'home' ? 'auto' : 'none'}
-          >
-            <ScrollView
-              className="flex-1"
-              contentContainerClassName="pt-6 gap-5"
-              contentContainerStyle={{ paddingBottom: homeBottomPadding }}
-              showsVerticalScrollIndicator={false}
-            >
-              {/* 顶部 Header + 日期，左右有留白 */}
-              <View className="px-6">
-                <Header />
-                <DateSelector />
-              </View>
-
-              {/* Daily Check-in，卡片贴边 */}
-              <View className="mt-2 px-6">
-                <SavedSupplements />
-              </View>
-
-              {/* 中部三个卡片：Progress 全宽，Chat/Streak 两列 */}
-              <View className="mt-2 px-6 gap-4">
-                <ProgressCard />
-                <View className="flex-row gap-4">
-                  <NutriChatCard />
-                  <StreakCard />
-                </View>
-              </View>
-
-              {/* Recently Scanned */}
-              <View className="mt-4 px-6">
-                <RecentlyScanned />
-              </View>
-            </ScrollView>
+          <Animated.View style={[styles.tabScreen, homeFadeStyle]} pointerEvents={currentTab === 'home' ? 'auto' : 'none'}>
+            <HomeTab />
           </Animated.View>
 
-          <Animated.View
-            style={[styles.tabScreen, savedFadeStyle]}
-            pointerEvents={currentTab === 'saved' ? 'auto' : 'none'}
-          >
+          <Animated.View style={[styles.tabScreen, savedFadeStyle]} pointerEvents={currentTab === 'saved' ? 'auto' : 'none'}>
             <MySupplementView
               data={savedSupplements}
               onDeleteSelected={handleDeleteSelected}
@@ -1567,22 +1477,12 @@ export default function MainScreen() {
             />
           </Animated.View>
 
-          <Animated.View
-            style={[styles.tabScreen, progressFadeStyle]}
-            pointerEvents={currentTab === 'progress' ? 'auto' : 'none'}
-          >
-            <View style={styles.placeholderScreen}>
-              <Text style={styles.placeholderText}>Progress</Text>
-            </View>
+          <Animated.View style={[styles.tabScreen, progressFadeStyle]} pointerEvents={currentTab === 'progress' ? 'auto' : 'none'}>
+            <ProgressScreen />
           </Animated.View>
 
-          <Animated.View
-            style={[styles.tabScreen, profileFadeStyle]}
-            pointerEvents={currentTab === 'profile' ? 'auto' : 'none'}
-          >
-            <View style={styles.placeholderScreen}>
-              <Text style={styles.placeholderText}>Profile</Text>
-            </View>
+          <Animated.View style={[styles.tabScreen, profileFadeStyle]} pointerEvents={currentTab === 'profile' ? 'auto' : 'none'}>
+            <ProfileTab />
           </Animated.View>
         </View>
 
@@ -1593,18 +1493,167 @@ export default function MainScreen() {
 }
 
 // -----------------------------------------------------
-// Styles for New Components
+// Styles
 // -----------------------------------------------------
 
 const styles = StyleSheet.create({
+  // ---- Screen skeleton ----
+  screen: {
+    flex: 1,
+    backgroundColor: SCREEN_BG,
+  },
+  homeContent: {},
+  screenHeaderRow: {
+    marginBottom: 14,
+  },
+  h1: {
+    fontWeight: '800',
+    color: '#0f172a',
+    letterSpacing: -0.2,
+    includeFontPadding: false,
+  },
+  sectionBlock: {
+    marginTop: SECTION_GAP,
+  },
+  stack16: {
+    gap: STACK_GAP,
+  },
+  row16: {
+    flexDirection: 'row',
+    gap: STACK_GAP,
+  },
+
+  // ---- Weekday selector ----
+  weekdayWrap: {
+    marginTop: 2,
+    marginBottom: 2,
+  },
+  weekHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 14,
+  },
+  weekHeaderText: {
+    fontSize: 18,
+    lineHeight: 22,
+    fontWeight: '700',
+    color: '#64748b',
+    includeFontPadding: false,
+  },
+  calendarBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 12,
+    borderCurve: 'continuous',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  daysRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  dayItemBase: {
+    width: 48,
+    height: 80,
+    borderRadius: 32,
+    borderCurve: 'continuous',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  dayItemInactive: {
+    backgroundColor: 'rgba(255,255,255,0.50)',
+    borderWidth: 1,
+    borderColor: 'rgba(241,245,249,0.75)',
+  },
+  dayItemActiveBg: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#0f172a',
+    borderRadius: 32,
+    borderCurve: 'continuous',
+  },
+  dayLabel: {
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+    includeFontPadding: false,
+    zIndex: 10,
+  },
+  dayDateWrap: {
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  dayDate: {
+    fontSize: 20,
+    lineHeight: 22,
+    fontWeight: '800',
+    includeFontPadding: false,
+  },
+  dayDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#60a5fa',
+    marginTop: 8,
+    borderCurve: 'continuous',
+  },
+
+  // ---- Daily check-in section ----
+  checkInWrap: {
+    gap: 14,
+  },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    lineHeight: 22,
+    fontWeight: '700',
+    color: '#475569',
+    includeFontPadding: false,
+  },
+  sectionLink: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '700',
+    color: '#94a3b8',
+    includeFontPadding: false,
+  },
+  indicatorTrack: {
+    height: 6,
+    width: INDICATOR_TRACK_WIDTH,
+    backgroundColor: 'rgba(226,232,240,0.80)',
+    borderRadius: 999,
+    borderCurve: 'continuous',
+    overflow: 'hidden',
+    alignSelf: 'center',
+    position: 'relative',
+    marginTop: 6,
+  },
+  indicatorThumb: {
+    position: 'absolute',
+    top: 0,
+    height: '100%',
+    backgroundColor: 'rgba(100,116,139,0.85)',
+    borderRadius: 999,
+    borderCurve: 'continuous',
+  },
+
+  // ---- Check-in card ----
   cardContainer: {
     width: 160,
     height: 112,
     borderRadius: 32,
     borderCurve: 'continuous',
     padding: 16,
-    // gap 由父容器 View 处理，这里只负责阴影
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -1629,7 +1678,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     zIndex: 10,
   },
-  headerRow: {
+  checkInCardHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
@@ -1642,7 +1691,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    // borderColor 由动画控制
   },
   textRow: {
     marginTop: 'auto',
@@ -1650,19 +1698,24 @@ const styles = StyleSheet.create({
   },
   titleText: {
     fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: -0.5,
+    lineHeight: 20,
+    fontWeight: '800',
+    letterSpacing: -0.4,
+    includeFontPadding: false,
   },
   subtitleText: {
     fontSize: 12,
-    fontWeight: '600',
+    lineHeight: 16,
+    fontWeight: '700',
     opacity: 0.9,
+    includeFontPadding: false,
   },
   checkInEmpty: {
     overflow: 'hidden',
     paddingVertical: 20,
     paddingHorizontal: 20,
     borderRadius: 24,
+    borderCurve: 'continuous',
     backgroundColor: '#CFE5FF',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.6)',
@@ -1682,9 +1735,188 @@ const styles = StyleSheet.create({
   },
   checkInEmptyTitle: {
     fontSize: 14,
-    fontWeight: '700',
+    lineHeight: 18,
+    fontWeight: '800',
     color: '#0f172a',
     textTransform: 'uppercase',
+    includeFontPadding: false,
+  },
+  checkInEmptyDescription: {
+    marginTop: 6,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '600',
+    color: '#94a3b8',
+    includeFontPadding: false,
+  },
+
+  // ---- Progress card text ----
+  cardMeta: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '700',
+    color: 'rgba(219,234,254,0.95)',
+    includeFontPadding: false,
+  },
+  progressBig: {
+    fontSize: 60,
+    lineHeight: 66,
+    fontWeight: '900',
+    color: '#ffffff',
+    letterSpacing: -1.2,
+    includeFontPadding: false,
+  },
+  progressTaken: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '800',
+    color: 'rgba(219,234,254,0.95)',
+    includeFontPadding: false,
+  },
+  progressRemain: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '700',
+    color: 'rgba(147,197,253,0.9)',
+    includeFontPadding: false,
+  },
+  progressDate: {
+    marginTop: 10,
+    fontSize: 11,
+    lineHeight: 16,
+    fontWeight: '800',
+    color: 'rgba(191,219,254,0.40)',
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+    includeFontPadding: false,
+  },
+  goalLabel: {
+    fontSize: 10,
+    lineHeight: 14,
+    fontWeight: '800',
+    color: '#94a3b8',
+    textTransform: 'uppercase',
+    letterSpacing: 1.4,
+    includeFontPadding: false,
+  },
+  goalValue: {
+    fontSize: 30,
+    lineHeight: 32,
+    fontWeight: '900',
+    color: '#0f172a',
+    includeFontPadding: false,
+  },
+  goalSub: {
+    fontSize: 9,
+    lineHeight: 12,
+    fontWeight: '800',
+    color: '#94a3b8',
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+    includeFontPadding: false,
+  },
+
+  smallCardTitle: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '800',
+    color: '#334155',
+    letterSpacing: 0.8,
+    includeFontPadding: false,
+    textTransform: 'uppercase',
+  },
+  smallCardTitleDark: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '800',
+    color: '#0f172a',
+    letterSpacing: 0.8,
+    includeFontPadding: false,
+    textTransform: 'uppercase',
+  },
+  chatBubbleText: {
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: '600',
+    color: '#475569',
+    includeFontPadding: false,
+  },
+  chatPlaceholder: {
+    fontSize: 10,
+    lineHeight: 14,
+    fontWeight: '700',
+    color: '#94a3b8',
+    includeFontPadding: false,
+  },
+  streakValue: {
+    fontSize: 36,
+    lineHeight: 40,
+    fontWeight: '900',
+    color: '#0f172a',
+    letterSpacing: -0.8,
+    includeFontPadding: false,
+  },
+  streakUnit: {
+    fontSize: 16,
+    lineHeight: 20,
+    fontWeight: '800',
+    color: '#475569',
+    includeFontPadding: false,
+  },
+  streakGoal: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '700',
+    color: 'rgba(51,65,85,0.80)',
+    includeFontPadding: false,
+  },
+
+  // ---- Recently scanned ----
+  recentTitle: {
+    fontSize: 20,
+    lineHeight: 24,
+    fontWeight: '900',
+    color: '#0f172a',
+    includeFontPadding: false,
+  },
+  recentSubtitle: {
+    marginTop: 2,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '700',
+    color: '#475569',
+    includeFontPadding: false,
+  },
+  recentEmpty: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: '700',
+    color: '#0f172a',
+    includeFontPadding: false,
+  },
+  recentIconOuter: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    borderCurve: 'continuous',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recentIconInner: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    borderCurve: 'continuous',
+    backgroundColor: 'rgba(255,255,255,0.40)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recentItemTitle: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '800',
+    color: '#0f172a',
+    includeFontPadding: false,
   },
   recentActionPressable: {
     width: 24,
@@ -1713,12 +1945,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkInEmptyDescription: {
-    marginTop: 6,
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#94a3b8',
-  },
+
+  // ---- Tabs container ----
   tabContainer: {
     flex: 1,
     position: 'relative',
@@ -1726,19 +1954,15 @@ const styles = StyleSheet.create({
   tabScreen: {
     ...StyleSheet.absoluteFillObject,
   },
-  tabHidden: {
-    display: 'none',
-  },
-  placeholderScreen: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   placeholderText: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 16,
+    lineHeight: 22,
+    fontWeight: '700',
     color: '#94a3b8',
+    includeFontPadding: false,
   },
+
+  // ---- Bottom nav ----
   bottomBarContainer: {
     position: 'absolute',
     bottom: 0,
@@ -1789,6 +2013,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
+    borderCurve: 'continuous',
     overflow: 'hidden',
     backgroundColor: 'transparent',
     borderWidth: 1,
@@ -1819,8 +2044,8 @@ const styles = StyleSheet.create({
   tabsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8, // 贴近 web: px-1
-    paddingVertical: 8, // 对称上下留白
+    paddingHorizontal: 8,
+    paddingVertical: 8,
     gap: 6,
     justifyContent: 'space-between',
     position: 'relative',
@@ -1829,12 +2054,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
-    height: 44, // 贴近 web w-11/h-11
+    height: 44,
     zIndex: 2,
   },
   tabItemText: {
-    paddingHorizontal: 20, // px-5
-    paddingVertical: 10, // py-2.5
+    paddingHorizontal: 20,
+    paddingVertical: 10,
     borderRadius: 22,
     borderCurve: 'continuous',
   },
@@ -1849,38 +2074,44 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 15,
-    fontWeight: '700',
+    lineHeight: 18,
+    fontWeight: '800',
     letterSpacing: 0.3,
+    includeFontPadding: false,
   },
   pillContainer: {
     position: 'absolute',
-    top: 8, // 与 tabsRow padding 对齐，垂直居中
+    top: 8,
     left: 0,
     height: 44,
     overflow: 'hidden',
-    zIndex: 1, // 在图标下方，仍可捕获手势
+    zIndex: 1,
     pointerEvents: 'box-only',
     borderRadius: 999,
     borderCurve: 'continuous',
   },
   pillBase: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#FFFFFF', // 纯白胶囊
+    backgroundColor: '#FFFFFF',
     borderRadius: 999,
     borderCurve: 'continuous',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.6)', // 细白描边，贴近 web
+    borderColor: 'rgba(255,255,255,0.6)',
     pointerEvents: 'none',
   },
-  pillHighlight: {
-    position: 'absolute',
-    top: 3,
-    left: 8,
-    right: 8,
-    height: 10,
-    borderRadius: 10,
-    borderCurve: 'continuous',
-    backgroundColor: 'rgba(255,255,255,0.45)',
-    opacity: 0.75,
-  }
+
+  // FAB label
+  fabLabelTop: {
+    fontSize: 14,
+    fontWeight: '900',
+    letterSpacing: 0.6,
+    color: '#0f172a',
+    includeFontPadding: false,
+  },
+  fabLabelBottom: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#475569',
+    includeFontPadding: false,
+  },
 });

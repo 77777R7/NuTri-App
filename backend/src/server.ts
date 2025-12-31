@@ -5,6 +5,9 @@ import { randomUUID } from "node:crypto";
 import { performance } from "node:perf_hooks";
 
 import { buildBarcodeSearchQueries, normalizeBarcodeInput } from "./barcode.js";
+import { resolveCatalogByBarcode } from "./catalogResolver.js";
+import { buildCatalogBarcodeSnapshot } from "./catalogSnapshot.js";
+import { logBarcodeScan } from "./scanLog.js";
 import { extractBrandProduct, extractBrandWithAI, type BrandExtractionResult } from "./brandExtractor.js";
 import { buildEnhancedContext, fetchAnalysisSection, prepareContextSources } from "./deepseek.js";
 import { analyzeLabelDraft, analyzeLabelDraftWithDiagnostics, formatForDeepSeek, needsConfirmation, validateIngredient, type LabelAnalysisDiagnostics, type LabelDraft } from "./labelAnalysis.js";
@@ -289,6 +292,18 @@ const sendSSE = (res: Response, type: string, data: unknown) => {
   res.write(`data: ${JSON.stringify(data)}\n\n`);
 };
 
+const barcodeEnrichInFlight = new Map<string, Promise<void>>();
+
+function createDeferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
 const buildValidatedLabelSnapshot = (input: {
   status: "ok" | "needs_confirmation" | "failed";
   draft?: LabelDraft;
@@ -436,6 +451,7 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
   const rawBarcode = typeof req.body?.barcode === "string" ? req.body.barcode : "";
   const normalized = normalizeBarcodeInput(rawBarcode);
   const model = process.env.DEEPSEEK_MODEL || "deepseek-chat";
+  let finishInFlight: ((error?: unknown) => void) | null = null;
 
   // Set SSE Headers
   res.setHeader("Content-Type", "text/event-stream");
@@ -450,9 +466,16 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
     }
     const barcode = normalized.code;
     const cacheKey = buildBarcodeCacheKey(barcode);
+    const barcodeGtin14 = normalized.code.padStart(14, "0");
 
-    const cached = await getSnapshotCache({ key: cacheKey, source: "barcode" });
-    if (cached) {
+    const startedAt = performance.now();
+    const requestId = String(res.getHeader("x-request-id") ?? "");
+    const deviceId = typeof req.body?.deviceId === "string" ? req.body.deviceId : null;
+
+    const emitCachedSnapshot = (cached: {
+      snapshot: SupplementSnapshot;
+      analysisPayload: SnapshotAnalysisPayload | null;
+    }) => {
       console.log(`[Stream] Cache hit for barcode: ${barcode}`);
       const { snapshot, analysisPayload } = cached;
       if (analysisPayload?.brandExtraction) {
@@ -535,6 +558,181 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
       }
 
       sendSSE(res, "snapshot", snapshot);
+    };
+
+    // 1) Catalog-first：overrides / DSLD
+    const catalog = await resolveCatalogByBarcode(normalized);
+
+    if (catalog) {
+      const gtin14 = catalog.barcodeGtin14;
+      const servedFromCatalog = catalog.resolvedFrom === "override" ? "override" : "dsld";
+      const servedFromCatalogCache = catalog.resolvedFrom === "override"
+        ? "override_snapshot_cache"
+        : "dsld_snapshot_cache";
+
+      // 1.1 如果你已有 snapshot（以前 Google 跑出来的），可直接复用分析结果，但用 Catalog 纠正品牌/品名
+      const cached = await getSnapshotCache({ key: gtin14, source: "barcode" });
+
+      if (cached) {
+        const { snapshot, analysisPayload } = cached;
+        const catalogCategory = catalog.category ?? catalog.categoryRaw ?? null;
+        const pickField = (...values: Array<string | null | undefined>) => {
+          for (const value of values) {
+            if (typeof value !== "string") continue;
+            const trimmed = value.trim();
+            if (trimmed.length > 0) return trimmed;
+          }
+          return null;
+        };
+        const finalProductInfo = {
+          brand: pickField(catalog.brand, analysisPayload?.productInfo?.brand, snapshot.product.brand),
+          name: pickField(catalog.productName, analysisPayload?.productInfo?.name, snapshot.product.name),
+          category: pickField(catalogCategory, analysisPayload?.productInfo?.category, snapshot.product.category),
+          image: pickField(catalog.imageUrl, analysisPayload?.productInfo?.image, snapshot.product.imageUrl),
+        };
+
+        // 用 Catalog 纠正身份字段（准确性第一）
+        snapshot.product.brand = finalProductInfo.brand;
+        snapshot.product.name = finalProductInfo.name;
+        snapshot.product.category = finalProductInfo.category;
+        snapshot.product.imageUrl = finalProductInfo.image;
+        snapshot.product.barcode.normalized = gtin14;
+        snapshot.product.barcode.normalizedFormat = "gtin14";
+        snapshot.regulatory.dsldLabelId = catalog.dsldLabelId
+          ? String(catalog.dsldLabelId)
+          : snapshot.regulatory.dsldLabelId;
+        if (analysisPayload) {
+          analysisPayload.productInfo = {
+            brand: finalProductInfo.brand,
+            name: finalProductInfo.name,
+            category: finalProductInfo.category,
+            image: finalProductInfo.image,
+          };
+        }
+
+        // SSE：品牌/产品
+        sendSSE(res, "brand_extracted", {
+          brand: catalog.brand,
+          product: catalog.productName,
+          category: catalog.category ?? catalog.categoryRaw ?? null,
+          confidence: "high",
+          source: "rule",
+        });
+
+        const sources =
+          analysisPayload?.sources ??
+          snapshot.references.items.map((ref) => ({
+            title: ref.title,
+            link: ref.url,
+            domain: extractDomain(ref.url),
+            isHighQuality: false,
+          }));
+
+        sendSSE(res, "product_info", { productInfo: finalProductInfo, sources });
+
+        if (analysisPayload?.efficacy) sendSSE(res, "result_efficacy", analysisPayload.efficacy);
+        if (analysisPayload?.safety) sendSSE(res, "result_safety", analysisPayload.safety);
+        if (analysisPayload?.usagePayload) sendSSE(res, "result_usage", analysisPayload.usagePayload);
+
+        sendSSE(res, "snapshot", snapshot);
+
+        await logBarcodeScan({
+          barcodeGtin14: gtin14,
+          barcodeRaw: rawBarcode,
+          checksumValid: normalized.isValidChecksum ?? null,
+          catalogHit: true,
+          servedFrom: servedFromCatalogCache,
+          dsldLabelId: catalog.dsldLabelId,
+          snapshotId: snapshot.snapshotId,
+          deviceId,
+          requestId,
+          timingTotalMs: Math.round(performance.now() - startedAt),
+          meta: { cacheKey, mode: "catalog_hit_with_snapshot" },
+        });
+
+        sendSSE(res, "done", { barcode });
+        res.end();
+        return;
+      }
+
+      // 1.2 Catalog 命中但没有 snapshot：直接生成一个“Catalog Snapshot”并可选写入 snapshots 做缓存
+      const catalogSnapshot = buildCatalogBarcodeSnapshot({
+        barcodeRaw: rawBarcode,
+        normalized,
+        catalog,
+      });
+
+      // 可选：把 Catalog snapshot 写进 snapshots，这样下次会直接命中 cache
+      await storeSnapshotCache({
+        key: gtin14,
+        source: "barcode",
+        snapshot: catalogSnapshot,
+        analysisPayload: {
+          productInfo: {
+            brand: catalog.brand,
+            name: catalog.productName,
+            category: catalog.category ?? catalog.categoryRaw ?? null,
+            image: catalog.imageUrl ?? null,
+          },
+          sources: [],
+        },
+        expiresAt: null, // Catalog 数据稳定，可以不设过期
+      });
+
+      sendSSE(res, "brand_extracted", {
+        brand: catalog.brand,
+        product: catalog.productName,
+        category: catalog.category ?? catalog.categoryRaw ?? null,
+        confidence: "high",
+        source: "rule",
+      });
+
+      sendSSE(res, "product_info", {
+        productInfo: {
+          brand: catalog.brand,
+          name: catalog.productName,
+          category: catalog.category ?? catalog.categoryRaw ?? null,
+          image: catalog.imageUrl ?? null,
+        },
+        sources: [],
+      });
+
+      sendSSE(res, "snapshot", catalogSnapshot);
+
+      await logBarcodeScan({
+        barcodeGtin14: gtin14,
+        barcodeRaw: rawBarcode,
+        checksumValid: normalized.isValidChecksum ?? null,
+        catalogHit: true,
+        servedFrom: servedFromCatalog,
+        dsldLabelId: catalog.dsldLabelId,
+        snapshotId: catalogSnapshot.snapshotId,
+        deviceId,
+        requestId,
+        timingTotalMs: Math.round(performance.now() - startedAt),
+        meta: { cacheKey, mode: "catalog_hit_no_snapshot" },
+      });
+
+      sendSSE(res, "done", { barcode });
+      res.end();
+      return;
+    }
+
+    const cached = await getSnapshotCache({ key: cacheKey, source: "barcode" });
+    if (cached) {
+      emitCachedSnapshot(cached);
+      await logBarcodeScan({
+        barcodeGtin14,
+        barcodeRaw: rawBarcode,
+        checksumValid: normalized.isValidChecksum ?? null,
+        catalogHit: false,
+        servedFrom: "snapshot_cache",
+        snapshotId: cached.snapshot.snapshotId,
+        deviceId,
+        requestId,
+        timingTotalMs: Math.round(performance.now() - startedAt),
+        meta: { cacheKey, mode: "snapshot_cache_hit" },
+      });
       sendSSE(res, "done", { barcode });
       res.end();
       return;
@@ -546,15 +744,89 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
 
     if (!googleApiKey || !cx) {
       sendSSE(res, "error", { message: "Google CSE not configured" });
+      await logBarcodeScan({
+        barcodeGtin14,
+        barcodeRaw: rawBarcode,
+        checksumValid: normalized.isValidChecksum ?? null,
+        catalogHit: false,
+        servedFrom: "error_config",
+        dsldLabelId: null,
+        snapshotId: null,
+        deviceId,
+        requestId,
+        timingTotalMs: Math.round(performance.now() - startedAt),
+        meta: { reason: "google_cse_env_not_set" },
+      });
       res.end();
       return;
     }
 
     if (!deepseekKey) {
       sendSSE(res, "error", { message: "DeepSeek API key missing" });
+      await logBarcodeScan({
+        barcodeGtin14,
+        barcodeRaw: rawBarcode,
+        checksumValid: normalized.isValidChecksum ?? null,
+        catalogHit: false,
+        servedFrom: "error_config",
+        dsldLabelId: null,
+        snapshotId: null,
+        deviceId,
+        requestId,
+        timingTotalMs: Math.round(performance.now() - startedAt),
+        meta: { reason: "deepseek_api_key_missing" },
+      });
       res.end();
       return;
     }
+
+    // In-flight dedup：同一 gtin14 同时被扫，只允许一个请求跑 Google/DeepSeek
+    const existing = barcodeEnrichInFlight.get(cacheKey);
+    if (existing) {
+      sendSSE(res, "status", { stage: "wait_inflight", message: "Another analysis is in progress. Waiting..." });
+      try {
+        await Promise.race([
+          existing,
+          new Promise<void>((_, rej) => setTimeout(() => rej(new Error("inflight_wait_timeout")), 30_000)),
+        ]);
+      } catch {}
+
+      const after = await getSnapshotCache({ key: cacheKey, source: "barcode" });
+      if (after) {
+        emitCachedSnapshot(after);
+        await logBarcodeScan({
+          barcodeGtin14,
+          barcodeRaw: rawBarcode,
+          checksumValid: normalized.isValidChecksum ?? null,
+          catalogHit: false,
+          servedFrom: "wait_inflight",
+          snapshotId: after.snapshot.snapshotId,
+          deviceId,
+          requestId,
+          timingTotalMs: Math.round(performance.now() - startedAt),
+          meta: { cacheKey, mode: "wait_inflight_hit" },
+        });
+        sendSSE(res, "done", { barcode });
+        res.end();
+        return;
+      }
+      // 如果等待后仍没有缓存（说明对方失败了），继续走你当前请求的 Google 流程
+    }
+
+    const deferred = createDeferred<void>();
+    let inFlightActive = true;
+    finishInFlight = (error?: unknown) => {
+      if (!inFlightActive) return;
+      inFlightActive = false;
+      if (error) {
+        deferred.reject(error);
+      } else {
+        deferred.resolve();
+      }
+      barcodeEnrichInFlight.delete(cacheKey);
+    };
+
+    barcodeEnrichInFlight.set(cacheKey, deferred.promise);
 
     // =========================================================================
     // STEP 1: Initial Barcode Search
@@ -563,10 +835,23 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
 
     const queries = buildBarcodeSearchQueries(normalized);
     const initial = await runSearchPlan(queries, googleApiKey, cx, { barcode });
-    const initialItems = initial.merged;
+    let initialItems = initial.merged;
 
     if (!initialItems.length) {
       sendSSE(res, "error", { message: "Product not found" });
+      await logBarcodeScan({
+        barcodeGtin14,
+        barcodeRaw: rawBarcode,
+        checksumValid: normalized.isValidChecksum ?? null,
+        catalogHit: false,
+        servedFrom: "error_not_found",
+        dsldLabelId: null,
+        snapshotId: null,
+        deviceId,
+        requestId,
+        timingTotalMs: Math.round(performance.now() - startedAt),
+      });
+      finishInFlight?.(new Error("product_not_found"));
       res.end();
       return;
     }
@@ -755,12 +1040,41 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
       expiresAt,
     });
 
+    finishInFlight?.();
+
     sendSSE(res, "snapshot", snapshot);
+
+    await logBarcodeScan({
+      barcodeGtin14,
+      barcodeRaw: rawBarcode,
+      checksumValid: normalized.isValidChecksum ?? null,
+      catalogHit: false,
+      servedFrom: "google_ai",
+      snapshotId: snapshot.snapshotId,
+      deviceId,
+      requestId,
+      timingTotalMs: Math.round(performance.now() - startedAt),
+      meta: {
+        queriesTried: initial.queriesTried,
+        initialQuality,
+        extraction: {
+          brand: extraction.brand,
+          product: extraction.product,
+          confidence: extraction.confidence,
+          source: extraction.source,
+          score: extraction.score,
+        },
+      },
+    });
+
     console.log(`[Stream] All analysis complete for barcode: ${barcode}`);
     sendSSE(res, "done", { barcode });
     res.end();
 
   } catch (error: unknown) {
+    if (finishInFlight) {
+      finishInFlight(error);
+    }
     console.error("Stream Error:", error);
     const message = error instanceof Error ? error.message : "Unknown error";
     sendSSE(res, "error", { message });

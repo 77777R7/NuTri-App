@@ -28,6 +28,7 @@ import { Easing } from "react-native-reanimated";
 
 import { useScanHistory } from "@/contexts/ScanHistoryContext";
 import { useSavedSupplements } from "@/contexts/SavedSupplementsContext";
+import { useScreenTokens } from "@/hooks/useScreenTokens";
 import type { RoutinePreferences, SavedSupplement } from "@/types/saved-supplements";
 
 type Props = {
@@ -115,7 +116,9 @@ const HOW_OPTIONS = [
   { value: "no_caffeine", label: "Avoid taking with coffee or tea" },
   { value: "split", label: "Split dose throughout the day" },
 ];
-const BOTTOM_INSET_TRIM = 10;
+
+const SCREEN_BG = "#F2F3F7";
+
 const NAV_HEIGHT = 64;
 
 function formatSelectValue(value?: string) {
@@ -226,9 +229,9 @@ const getShortProductName = (productName: string, brandName: string) => {
 
   const tokens = working
     .split(" ")
-    .map(token => token.replace(/[^\w-]+/g, ""))
+    .map((token) => token.replace(/[^\w-]+/g, ""))
     .filter(Boolean)
-    .filter(token => {
+    .filter((token) => {
       const lowered = token.toLowerCase();
       if (STOP_WORDS.has(lowered)) return false;
       if (/^\d+(\.\d+)?$/.test(lowered)) return false;
@@ -262,10 +265,9 @@ function AnchorSelect({
   options: { value: string; label: string }[];
   onChange: (v: string) => void;
 }) {
+  const insets = useSafeAreaInsets();
   const [open, setOpen] = useState(false);
-  const [anchor, setAnchor] = useState<{ x: number; y: number; w: number; h: number } | null>(
-    null,
-  );
+  const [anchor, setAnchor] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
   const triggerRef = useRef<any>(null);
 
   const screen = Dimensions.get("window");
@@ -285,33 +287,36 @@ function AnchorSelect({
 
   const top = useMemo(() => {
     if (!anchor) return 0;
+
+    const safeTop = insets.top + 12;
+    const safeBottom = insets.bottom + 12;
+
     const below = anchor.y + anchor.h + 8;
-    const overflow = below + dropdownH > screen.height - 16;
-    if (overflow) return Math.max(16, anchor.y - dropdownH - 8);
-    return below;
-  }, [anchor, dropdownH, screen.height]);
+    const overflow = below + dropdownH > screen.height - safeBottom;
+    if (overflow) return Math.max(safeTop, anchor.y - dropdownH - 8);
+    return Math.max(safeTop, below);
+  }, [anchor, dropdownH, insets.bottom, insets.top, screen.height]);
 
   return (
     <>
       <View ref={triggerRef} collapsable={false}>
-        <Pressable onPress={openSelect} style={styles.selectTrigger}>
-          <BlurView intensity={18} tint="light" style={StyleSheet.absoluteFillObject} />
-          <LinearGradient
-            colors={["rgba(255,255,255,0.62)", "rgba(255,255,255,0.32)"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={StyleSheet.absoluteFillObject}
-          />
-          <View style={styles.selectTriggerInner}>
-            <Text style={styles.selectTriggerText} numberOfLines={1}>
-              {label}
-            </Text>
-            <MotiView
-              animate={{ rotate: open ? "180deg" : "0deg" }}
-              transition={{ type: "timing", duration: 180 }}
-            >
-              <ChevronDown size={16} color="#0f172a" />
-            </MotiView>
+        <Pressable onPress={openSelect} style={styles.selectTriggerShadow}>
+          <View style={styles.selectTrigger}>
+            <BlurView intensity={18} tint="light" style={StyleSheet.absoluteFillObject} />
+            <LinearGradient
+              colors={["rgba(255,255,255,0.62)", "rgba(255,255,255,0.32)"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFillObject}
+            />
+            <View style={styles.selectTriggerInner}>
+              <Text style={styles.selectTriggerText} numberOfLines={1}>
+                {label}
+              </Text>
+              <MotiView animate={{ rotate: open ? "180deg" : "0deg" }} transition={{ type: "timing", duration: 180 }}>
+                <ChevronDown size={16} color="#0f172a" />
+              </MotiView>
+            </View>
           </View>
         </Pressable>
       </View>
@@ -320,37 +325,37 @@ function AnchorSelect({
         <Pressable style={styles.selectOverlay} onPress={close}>
           {anchor ? (
             <View style={[styles.selectDropdownWrap, { top, left: anchor.x, width: anchor.w }]}>
-              <Pressable style={styles.selectDropdownInner} onPress={() => { }}>
-                <BlurView intensity={22} tint="light" style={StyleSheet.absoluteFillObject} />
-                <View style={styles.selectDropdownGlass} />
-                <AnimatePresence>
-                  <MotiView
-                    from={{ opacity: 0, translateY: -10 }}
-                    animate={{ opacity: 1, translateY: 0 }}
-                    exit={{ opacity: 0, translateY: -10 }}
-                    transition={{ type: "timing", duration: 180 }}
-                  >
-                    {options.map((opt) => {
-                      const selected = opt.value === value;
-                      return (
-                        <Pressable
-                          key={opt.value}
-                          onPress={() => {
-                            onChange(opt.value);
-                            close();
-                          }}
-                          style={[styles.selectItem, selected && styles.selectItemActive]}
-                        >
-                          <View style={styles.selectCheckSlot}>
-                            {selected ? <Check size={16} color="#2563eb" /> : null}
-                          </View>
-                          <Text style={styles.selectItemText}>{opt.label}</Text>
-                        </Pressable>
-                      );
-                    })}
-                  </MotiView>
-                </AnimatePresence>
-              </Pressable>
+              <View style={styles.selectDropdownShadow}>
+                <Pressable style={styles.selectDropdownInner} onPress={() => {}}>
+                  <BlurView intensity={22} tint="light" style={StyleSheet.absoluteFillObject} />
+                  <View style={styles.selectDropdownGlass} />
+                  <AnimatePresence>
+                    <MotiView
+                      from={{ opacity: 0, translateY: -10 }}
+                      animate={{ opacity: 1, translateY: 0 }}
+                      exit={{ opacity: 0, translateY: -10 }}
+                      transition={{ type: "timing", duration: 180 }}
+                    >
+                      {options.map((opt) => {
+                        const selected = opt.value === value;
+                        return (
+                          <Pressable
+                            key={opt.value}
+                            onPress={() => {
+                              onChange(opt.value);
+                              close();
+                            }}
+                            style={[styles.selectItem, selected && styles.selectItemActive]}
+                          >
+                            <View style={styles.selectCheckSlot}>{selected ? <Check size={16} color="#2563eb" /> : null}</View>
+                            <Text style={styles.selectItemText}>{opt.label}</Text>
+                          </Pressable>
+                        );
+                      })}
+                    </MotiView>
+                  </AnimatePresence>
+                </Pressable>
+              </View>
             </View>
           ) : null}
         </Pressable>
@@ -390,9 +395,8 @@ const CollectionCard = React.memo(
     return (
       <MotiView
         style={[
-          styles.card,
+          styles.cardShell,
           {
-            backgroundColor: theme.bgHex,
             zIndex: expanded ? 999 : zIndex,
             elevation: expanded ? 999 : Math.max(1, zIndex + 1),
           },
@@ -406,101 +410,104 @@ const CollectionCard = React.memo(
         }}
         transition={{ type: "spring", stiffness: 380, damping: 30, mass: 0.8 }}
       >
-        <Pressable
-          onPress={() => {
-            if (selectionMode) onToggleSelect();
-            else onToggleExpand();
-          }}
-          style={styles.cardPressable}
-        >
-          <AnimatePresence>
-            {selectionMode && selected ? (
-              <MotiView
-                from={{ opacity: 0, scale: 0.86, translateY: -2 }}
-                animate={{ opacity: 1, scale: 1, translateY: 0 }}
-                exit={{ opacity: 0, scale: 0.92, translateY: -2 }}
-                transition={{ type: "spring", stiffness: 320, damping: 22 }}
-                style={styles.selectCheckBubble}
-              >
-                <BlurView intensity={14} tint="light" style={StyleSheet.absoluteFillObject} />
-                <LinearGradient
-                  colors={["rgba(255,255,255,0.45)", "rgba(255,255,255,0.20)"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={StyleSheet.absoluteFillObject}
-                />
-                <Check size={18} color={theme.textColor === "#ffffff" ? "#ffffff" : "#0f172a"} />
-              </MotiView>
-            ) : null}
-          </AnimatePresence>
+        <View style={[styles.cardFill, { backgroundColor: theme.bgHex }]}>
+          <Pressable
+            onPress={() => {
+              if (selectionMode) onToggleSelect();
+              else onToggleExpand();
+            }}
+            style={styles.cardPressable}
+          >
+            <AnimatePresence>
+              {selectionMode && selected ? (
+                <MotiView
+                  from={{ opacity: 0, scale: 0.86, translateY: -2 }}
+                  animate={{ opacity: 1, scale: 1, translateY: 0 }}
+                  exit={{ opacity: 0, scale: 0.92, translateY: -2 }}
+                  transition={{ type: "spring", stiffness: 320, damping: 22 }}
+                  style={styles.selectCheckBubble}
+                >
+                  <BlurView intensity={14} tint="light" style={StyleSheet.absoluteFillObject} />
+                  <LinearGradient
+                    colors={["rgba(255,255,255,0.45)", "rgba(255,255,255,0.20)"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={StyleSheet.absoluteFillObject}
+                  />
+                  <Check size={18} color={theme.textColor === "#ffffff" ? "#ffffff" : "#0f172a"} />
+                </MotiView>
+              ) : null}
+            </AnimatePresence>
 
-          <View style={styles.cardInner}>
-            <View style={styles.cardHeader}>
-              <Text style={[styles.cardTitle, { color: theme.textColor }]} numberOfLines={1} ellipsizeMode="clip">
-                {getShortProductName(item.productName, item.brandName)}
-              </Text>
+            <View style={styles.cardInner}>
+              <View style={styles.cardHeader}>
+                <Text style={[styles.cardTitle, { color: theme.textColor }]} numberOfLines={1} ellipsizeMode="clip">
+                  {getShortProductName(item.productName, item.brandName)}
+                </Text>
 
-              {selectionMode ? (
-                <View style={{ width: 24, height: 24 }} />
-              ) : theme.icon === "sun" ? (
-                <Sun size={24} color={theme.textColor} />
-              ) : (
-                <Moon size={24} color={theme.textColor} />
-              )}
-            </View>
+                {selectionMode ? (
+                  <View style={{ width: 24, height: 24 }} />
+                ) : theme.icon === "sun" ? (
+                  <Sun size={24} color={theme.textColor} />
+                ) : (
+                  <Moon size={24} color={theme.textColor} />
+                )}
+              </View>
 
-            <View style={styles.cardFooter}>
-              <View style={styles.tagRow}>
-                <View style={[styles.tagPill, { borderColor: theme.tagBorderColor }]}>
-                  <Text style={[styles.tagText, { color: theme.textColor }]} numberOfLines={1}>
-                    {item.brandName}
-                  </Text>
-                </View>
-                {item.dosageText?.trim() ? (
+              <View style={styles.cardFooter}>
+                <View style={styles.tagRow}>
                   <View style={[styles.tagPill, { borderColor: theme.tagBorderColor }]}>
                     <Text style={[styles.tagText, { color: theme.textColor }]} numberOfLines={1}>
-                      {item.dosageText}
+                      {item.brandName}
                     </Text>
                   </View>
-                ) : null}
-              </View>
-
-              <View style={styles.arrowWrap}>
-                <AnimatePresence>
-                  {showHalo ? (
-                    <MotiView
-                      from={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.96 }}
-                      transition={{ type: "spring", stiffness: 220, damping: 22 }}
-                      style={styles.arrowHalo}
-                    />
+                  {item.dosageText?.trim() ? (
+                    <View style={[styles.tagPill, { borderColor: theme.tagBorderColor }]}>
+                      <Text style={[styles.tagText, { color: theme.textColor }]} numberOfLines={1}>
+                        {item.dosageText}
+                      </Text>
+                    </View>
                   ) : null}
-                </AnimatePresence>
+                </View>
 
-                <Pressable
-                  onPress={onOpenDetail}
-                  disabled={selectionMode}
-                  style={[
-                    styles.arrowBtn,
-                    {
-                      backgroundColor: theme.arrowBg,
-                      opacity: selectionMode ? 0.35 : 1,
-                    },
-                  ]}
-                >
-                  <MotiView
-                    animate={{ rotate: detailOpen ? "-90deg" : "0deg" }}
-                    transition={{ type: "spring", stiffness: 260, damping: 18 }}
+                <View style={styles.arrowWrap}>
+                  <AnimatePresence>
+                    {showHalo ? (
+                      <MotiView
+                        from={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.96 }}
+                        transition={{ type: "spring", stiffness: 220, damping: 22 }}
+                        style={styles.arrowHalo}
+                      />
+                    ) : null}
+                  </AnimatePresence>
+
+                  <Pressable
+                    onPress={onOpenDetail}
+                    disabled={selectionMode}
+                    style={[
+                      styles.arrowBtn,
+                      {
+                        backgroundColor: theme.arrowBg,
+                        opacity: selectionMode ? 0.35 : 1,
+                      },
+                    ]}
                   >
-                    <ArrowRight size={20} color={theme.arrowColor} />
-                  </MotiView>
-                </Pressable>
+                    <MotiView
+                      animate={{ rotate: detailOpen ? "-90deg" : "0deg" }}
+                      transition={{ type: "spring", stiffness: 260, damping: 18 }}
+                    >
+                      <ArrowRight size={20} color={theme.arrowColor} />
+                    </MotiView>
+                  </Pressable>
+                </View>
               </View>
             </View>
-          </View>
-        </Pressable>
-        {selected ? <View pointerEvents="none" style={styles.selectedRing} /> : null}
+          </Pressable>
+
+          {selected ? <View pointerEvents="none" style={styles.selectedRing} /> : null}
+        </View>
       </MotiView>
     );
   },
@@ -582,28 +589,15 @@ function DetailSheet({
           transition={{ type: "timing", duration: 320, easing: Easing.out(Easing.cubic) }}
           style={styles.sheet}
         >
-          <Pressable onPress={onClose} style={styles.sheetClose}>
+          <Pressable onPress={onClose} style={[styles.sheetClose, { top: insets.top + 12 }]}>
             <X size={20} color="#ffffff" />
           </Pressable>
 
-          <ScrollView
-            style={{ flex: 1 }}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 170 }}
-          >
-            <View
-              style={[
-                styles.sheetHeader,
-                { backgroundColor: theme.bgHex, paddingTop: insets.top + 18 },
-              ]}
-            >
+          <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
+            <View style={[styles.sheetHeader, { backgroundColor: theme.bgHex, paddingTop: insets.top + 18 }]}>
               <View style={{ gap: 12 }}>
                 <View style={styles.sheetHeaderRow}>
-                  {theme.icon === "sun" ? (
-                    <Sun size={18} color={theme.textColor} />
-                  ) : (
-                    <Moon size={18} color={theme.textColor} />
-                  )}
+                  {theme.icon === "sun" ? <Sun size={18} color={theme.textColor} /> : <Moon size={18} color={theme.textColor} />}
                   <Text style={[styles.sheetHeaderLabel, { color: theme.textColor }]}>Collection Detail</Text>
                 </View>
 
@@ -626,7 +620,7 @@ function DetailSheet({
               </View>
             </View>
 
-            <View style={styles.sheetBody}>
+            <View style={[styles.sheetBody, { paddingBottom: 40 + insets.bottom }]}>
               <View style={{ gap: 12 }}>
                 <View style={styles.sectionHead}>
                   <Text style={styles.sectionTitle}>Overview</Text>
@@ -651,14 +645,12 @@ function DetailSheet({
                   </View>
 
                   <View style={styles.glassCenter}>
-                    <Text style={styles.glassText}>
-                      A quick summary based on label info and common usage.
-                    </Text>
+                    <Text style={styles.glassText}>A quick summary based on label info and common usage.</Text>
                   </View>
                 </View>
               </View>
 
-              <View style={{ marginTop: 18 }}>
+              <View style={{ marginTop: 24 }}>
                 <View style={styles.routineBlock}>
                   <View style={[StyleSheet.absoluteFillObject, { backgroundColor: theme.glassTint }]} />
                   <View style={styles.routineRing}>
@@ -680,102 +672,67 @@ function DetailSheet({
                   <View style={styles.routineContent}>
                     <Text style={styles.routineTitle}>Routine Preferences</Text>
 
-                    <View style={{ marginTop: 20, gap: 22 }}>
+                    <View style={{ marginTop: 16, gap: 20 }}>
                       <View style={{ gap: 12 }}>
                         <Text style={styles.fieldLabel}>When to take</Text>
-                        <AnchorSelect
-                          value={whenToTake}
-                          placeholder="Select timing"
-                          options={WHEN_OPTIONS}
-                          onChange={setWhenToTake}
-                        />
+                        <AnchorSelect value={whenToTake} placeholder="Select timing" options={WHEN_OPTIONS} onChange={setWhenToTake} />
                       </View>
 
                       <View style={{ gap: 12 }}>
                         <Text style={styles.fieldLabel}>How to take</Text>
-                        <AnchorSelect
-                          value={howToTake}
-                          placeholder="Select method"
-                          options={HOW_OPTIONS}
-                          onChange={setHowToTake}
-                        />
+                        <AnchorSelect value={howToTake} placeholder="Select method" options={HOW_OPTIONS} onChange={setHowToTake} />
                       </View>
                     </View>
 
                     <View style={styles.saveRow}>
-                      <Pressable onPress={handleSave}>
-                        <MotiView
-                          style={styles.saveBtn}
-                          animate={{
-                            backgroundColor:
-                              saveState === "saved"
-                                ? "rgba(34,197,94,0.18)"
-                                : "rgba(255,255,255,0.35)",
-                            borderColor:
-                              saveState === "saved"
-                                ? "rgba(34,197,94,0.55)"
-                                : "rgba(255,255,255,0.55)",
-                          }}
-                          transition={{ type: "timing", duration: 340 }}
-                        >
-                          <LinearGradient
-                            colors={
-                              saveState === "saved"
-                                ? [
-                                  "rgba(255,255,255,0.35)",
-                                  "rgba(34,197,94,0.18)",
-                                  "rgba(255,255,255,0.00)",
-                                ]
-                                : [
-                                  "rgba(255,255,255,0.60)",
-                                  "rgba(255,255,255,0.20)",
-                                  "rgba(255,255,255,0.00)",
-                                ]
-                            }
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                            style={StyleSheet.absoluteFillObject}
-                          />
-                          <View style={styles.saveInner}>
-                            <MotiView
-                              animate={
+                      <View style={styles.saveShadow}>
+                        <Pressable onPress={handleSave}>
+                          <MotiView
+                            style={styles.saveBtn}
+                            animate={{
+                              backgroundColor: saveState === "saved" ? "rgba(34,197,94,0.18)" : "rgba(255,255,255,0.35)",
+                              borderColor: saveState === "saved" ? "rgba(34,197,94,0.55)" : "rgba(255,255,255,0.55)",
+                            }}
+                            transition={{ type: "timing", duration: 340 }}
+                          >
+                            <LinearGradient
+                              colors={
                                 saveState === "saved"
-                                  ? { opacity: 0, translateY: -4, scale: 0.98 }
-                                  : { opacity: 1, translateY: 0, scale: 1 }
+                                  ? ["rgba(255,255,255,0.35)", "rgba(34,197,94,0.18)", "rgba(255,255,255,0.00)"]
+                                  : ["rgba(255,255,255,0.60)", "rgba(255,255,255,0.20)", "rgba(255,255,255,0.00)"]
                               }
-                              transition={{ type: "timing", duration: 280 }}
-                            >
-                              <Text style={styles.saveText}>Save</Text>
-                            </MotiView>
+                              start={{ x: 0, y: 0 }}
+                              end={{ x: 1, y: 1 }}
+                              style={StyleSheet.absoluteFillObject}
+                            />
 
-                            <MotiView
-                              style={styles.saveCheck}
-                              animate={
-                                saveState === "saved"
-                                  ? { opacity: 1, translateY: 0, scale: 1 }
-                                  : { opacity: 0, translateY: 6, scale: 0.96 }
-                              }
-                              transition={{ type: "timing", duration: 320, delay: saveState === "saved" ? 60 : 0 }}
-                            >
+                            <View style={styles.saveInner}>
                               <MotiView
-                                animate={
-                                  saveState === "saved"
-                                    ? { scale: [0.9, 1.06, 1], rotate: ["-2deg", "0deg"] }
-                                    : { scale: 1, rotate: "0deg" }
-                                }
-                                transition={{ type: "timing", duration: 340 }}
+                                animate={saveState === "saved" ? { opacity: 0, translateY: -4, scale: 0.98 } : { opacity: 1, translateY: 0, scale: 1 }}
+                                transition={{ type: "timing", duration: 280 }}
                               >
-                                <Check size={20} color="#059669" />
+                                <Text style={styles.saveText}>Save</Text>
                               </MotiView>
-                            </MotiView>
-                          </View>
-                        </MotiView>
-                      </Pressable>
+
+                              <MotiView
+                                style={styles.saveCheck}
+                                animate={saveState === "saved" ? { opacity: 1, translateY: 0, scale: 1 } : { opacity: 0, translateY: 6, scale: 0.96 }}
+                                transition={{ type: "timing", duration: 320, delay: saveState === "saved" ? 60 : 0 }}
+                              >
+                                <MotiView
+                                  animate={saveState === "saved" ? { scale: [0.9, 1.06, 1], rotate: ["-2deg", "0deg"] } : { scale: 1, rotate: "0deg" }}
+                                  transition={{ type: "timing", duration: 340 }}
+                                >
+                                  <Check size={20} color="#059669" />
+                                </MotiView>
+                              </MotiView>
+                            </View>
+                          </MotiView>
+                        </Pressable>
+                      </View>
                     </View>
 
-                    <Text style={styles.note}>
-                      Note: Always consult the product label for specific instructions.
-                    </Text>
+                    <Text style={styles.note}>Note: Always consult the product label for specific instructions.</Text>
                   </View>
                 </View>
               </View>
@@ -790,11 +747,13 @@ function DetailSheet({
 }
 
 export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Props) {
-  const insets = useSafeAreaInsets();
+  const tokens = useScreenTokens(NAV_HEIGHT);
   const { scans } = useScanHistory();
   const { updateSupplement } = useSavedSupplements();
-  const bottomInset = Math.max(0, insets.bottom - BOTTOM_INSET_TRIM);
-  const contentBottomPadding = NAV_HEIGHT + bottomInset + 24;
+
+  const contentBottomPadding = tokens.contentBottomPadding;
+  const contentTopPadding = tokens.contentTopPadding;
+
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
@@ -823,6 +782,7 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
 
       const dose = scan.dosageText?.trim();
       if (!dose) return;
+
       const normalizedDose = normalizeKey(dose);
       const normalizedCategory = scan.category ? normalizeKey(scan.category) : "";
       if (normalizedCategory && normalizedDose === normalizedCategory) return;
@@ -846,12 +806,11 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
       const current = item.dosageText?.trim() ?? "";
       const nameKey = getNameKey(item.productName, item.brandName);
       const brandNameKey = getBrandNameKey(item.productName, item.brandName);
+
       const scanDose =
         scanDoseLookup.byKey.get(getDedupeKey(item)) ||
         scanDoseLookup.byBrandNameKey.get(brandNameKey) ||
-        (!scanDoseLookup.conflictedNameKeys.has(nameKey)
-          ? scanDoseLookup.byNameKey.get(nameKey)
-          : undefined);
+        (!scanDoseLookup.conflictedNameKeys.has(nameKey) ? scanDoseLookup.byNameKey.get(nameKey) : undefined);
 
       return scanDose || current;
     },
@@ -873,6 +832,7 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
     resolvedData.forEach((item) => {
       const original = dataById.get(item.id);
       if (!original) return;
+
       const originalDose = original.dosageText?.trim() ?? "";
       const resolvedDose = item.dosageText?.trim() ?? "";
       if (!resolvedDose || resolvedDose === originalDose) return;
@@ -887,37 +847,21 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
     });
   }, [dataById, resolvedData, updateSupplement]);
 
-  const sorted = useMemo(() => {
-    return [...resolvedData].sort((a, b) => isoDesc(a.createdAt, b.createdAt));
-  }, [resolvedData]);
+  const sorted = useMemo(() => [...resolvedData].sort((a, b) => isoDesc(a.createdAt, b.createdAt)), [resolvedData]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return sorted;
-    return sorted.filter((s) => {
-      return (
-        s.productName.toLowerCase().includes(q) ||
-        s.brandName.toLowerCase().includes(q) ||
-        (s.dosageText ?? "").toLowerCase().includes(q)
-      );
-    });
+    return sorted.filter((s) => s.productName.toLowerCase().includes(q) || s.brandName.toLowerCase().includes(q) || (s.dosageText ?? "").toLowerCase().includes(q));
   }, [sorted, search]);
 
-  const cards = useMemo(() => {
-    return filtered.map((item, idx) => {
-      const theme = THEMES[idx % THEMES.length];
-      return { item, idx, theme };
-    });
-  }, [filtered]);
+  const cards = useMemo(() => filtered.map((item, idx) => ({ item, idx, theme: THEMES[idx % THEMES.length] })), [filtered]);
 
   const selectedCount = selectedIds.size;
-  const headerMode: "select" | "done" | "delete" =
-    !selectionMode ? "select" : selectedCount > 0 ? "delete" : "done";
-
-  const headerLabel =
-    headerMode === "select" ? "Select" : headerMode === "done" ? "Done" : `Delete (${selectedCount})`;
-
+  const headerMode: "select" | "done" | "delete" = !selectionMode ? "select" : selectedCount > 0 ? "delete" : "done";
+  const headerLabel = headerMode === "select" ? "Select" : headerMode === "done" ? "Done" : `Delete (${selectedCount})`;
   const headerIsDelete = headerMode === "delete";
+
   const handleHeaderLabelLayout = useCallback((event: LayoutChangeEvent) => {
     const next = Math.max(84, Math.ceil(event.nativeEvent.layout.width + 36));
     if (pillWidthRef.current === next) return;
@@ -942,9 +886,7 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
   const deleteSelected = useCallback(async () => {
     if (selectedIds.size === 0) return;
     const ids = Array.from(selectedIds);
-
     if (detailId && selectedIds.has(detailId)) setDetailId(null);
-
     await onDeleteSelected?.(ids);
     exitSelection();
   }, [detailId, exitSelection, onDeleteSelected, selectedIds]);
@@ -952,55 +894,44 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
   const openDetail = useCallback((id: string) => setDetailId(id), []);
   const closeDetail = useCallback(() => setDetailId(null), []);
 
-  const detailCard = useMemo(() => {
-    if (!detailId) return null;
-    return cards.find((c) => c.item.id === detailId) ?? null;
-  }, [detailId, cards]);
+  const detailCard = useMemo(() => (detailId ? cards.find((c) => c.item.id === detailId) ?? null : null), [detailId, cards]);
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top }]}>
-      <View
-        pointerEvents="none"
-        style={[styles.statusBarBlock, { height: insets.top, top: -insets.top }]}
-      />
+    <View style={styles.screen}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         removeClippedSubviews={false}
+        contentInsetAdjustmentBehavior="never"
+        scrollIndicatorInsets={{ top: contentTopPadding, bottom: contentBottomPadding }}
         style={{ overflow: "visible" }}
-        contentContainerStyle={{ paddingBottom: contentBottomPadding, overflow: "visible" }}
+        contentContainerStyle={{
+          paddingTop: contentTopPadding,
+          paddingBottom: contentBottomPadding,
+          paddingHorizontal: tokens.pageX,
+          overflow: "visible",
+        }}
       >
-        <View style={styles.headerRow}>
-          <Text style={styles.h1}>My Supplement</Text>
-
-          <MotiView
-            style={styles.headerPillMotion}
-            animate={{ width: pillWidth }}
-            transition={{ type: "timing", duration: 320 }}
+        <View style={[styles.headerRow, { marginBottom: tokens.sectionGap }]}>
+          <Text
+            style={[styles.h1, { fontSize: tokens.h1Size, lineHeight: tokens.h1Line }]}
+            numberOfLines={1}
+            maxFontSizeMultiplier={1.2}
           >
+            My Supplement
+          </Text>
+
+          <MotiView style={styles.headerPillMotion} animate={{ width: pillWidth }} transition={{ type: "timing", duration: 320 }}>
             <Pressable
               onPress={() => {
-                if (!selectionMode) {
-                  setSelectionMode(true);
-                  return;
-                }
-                if (headerMode === "delete") {
-                  deleteSelected();
-                  return;
-                }
+                if (!selectionMode) return setSelectionMode(true);
+                if (headerMode === "delete") return void deleteSelected();
                 exitSelection();
               }}
-              style={[
-                styles.headerPill,
-                { borderColor: headerIsDelete ? "rgba(239,68,68,0.55)" : "rgba(255,255,255,0.70)" },
-              ]}
+              style={[styles.headerPill, { borderColor: headerIsDelete ? "rgba(239,68,68,0.55)" : "rgba(255,255,255,0.70)" }]}
             >
               <BlurView intensity={18} tint="light" style={StyleSheet.absoluteFillObject} />
               <LinearGradient
-                colors={
-                  headerIsDelete
-                    ? ["rgba(255,255,255,0.56)", "rgba(255,255,255,0.24)"]
-                    : ["rgba(255,255,255,0.62)", "rgba(255,255,255,0.28)"]
-                }
+                colors={headerIsDelete ? ["rgba(255,255,255,0.56)", "rgba(255,255,255,0.24)"] : ["rgba(255,255,255,0.62)", "rgba(255,255,255,0.28)"]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={StyleSheet.absoluteFillObject}
@@ -1025,10 +956,7 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
                     exit={{ translateY: -10, opacity: 0, scale: 0.98 }}
                     transition={{ type: "timing", duration: 220 }}
                   >
-                    <Text
-                      onLayout={handleHeaderLabelLayout}
-                      style={[styles.headerPillText, headerIsDelete && { color: "#ef4444" }]}
-                    >
+                    <Text onLayout={handleHeaderLabelLayout} style={[styles.headerPillText, headerIsDelete && { color: "#ef4444" }]}>
                       {headerLabel}
                     </Text>
                   </MotiView>
@@ -1038,7 +966,7 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
           </MotiView>
         </View>
 
-        <View style={styles.searchWrap}>
+        <View style={[styles.searchWrap, { marginBottom: tokens.sectionGap }]}>
           <View style={styles.searchRow}>
             <View style={styles.searchPill}>
               <Search size={20} color="#94a3b8" />
@@ -1048,6 +976,7 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
                 placeholder="Search supplements..."
                 placeholderTextColor="#94a3b8"
                 style={styles.searchInput}
+                returnKeyType="search"
               />
             </View>
             <Pressable style={styles.filterBtn}>
@@ -1079,91 +1008,72 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
 
           {cards.length === 0 ? (
             <View style={{ paddingVertical: 90, alignItems: "center" }}>
-              <Text style={{ color: "#94a3b8" }}>No supplements found.</Text>
+              <Text style={{ color: "#94a3b8", includeFontPadding: false, lineHeight: 18 }}>No supplements found.</Text>
             </View>
           ) : null}
         </View>
       </ScrollView>
 
-      {detailCard ? (
-        <DetailSheet
-          item={detailCard.item}
-          theme={detailCard.theme}
-          onClose={closeDetail}
-          onSaveRoutine={onSaveRoutine}
-        />
-      ) : null}
+      {detailCard ? <DetailSheet item={detailCard.item} theme={detailCard.theme} onClose={closeDetail} onSaveRoutine={onSaveRoutine} /> : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: "#F2F3F7",
-  },
-  statusBarBlock: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: "#F2F3F7",
-    zIndex: 50,
-  },
+  screen: { flex: 1, backgroundColor: SCREEN_BG },
+
   headerRow: {
-    paddingHorizontal: 24,
-    marginTop: -4,
-    marginBottom: 22,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     gap: 14,
   },
   h1: {
-    fontSize: 36,
-    fontWeight: "500",
+    fontWeight: "800",
     color: "#0f172a",
     letterSpacing: -0.2,
+    includeFontPadding: false,
+    flex: 1,
+    minWidth: 0,
   },
-  headerPill: {
+
+  // Shadow outside, clipping inside
+  headerPillMotion: {
     height: 44,
-    paddingHorizontal: 18,
     borderRadius: 999,
-    overflow: "hidden",
-    borderWidth: 1,
+    borderCurve: "continuous",
     shadowColor: "#0f172a",
     shadowOpacity: 0.12,
     shadowRadius: 15,
     shadowOffset: { width: 0, height: 10 },
     elevation: 3,
+    flexShrink: 0,
   },
-  headerPillMotion: {
+  headerPill: {
     height: 44,
+    paddingHorizontal: 18,
+    borderRadius: 999,
+    borderCurve: "continuous",
+    overflow: "hidden",
+    borderWidth: 1,
   },
-  headerPillInner: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  headerPillInner: { flex: 1, alignItems: "center", justifyContent: "center" },
   headerPillText: {
     fontSize: 14,
-    fontWeight: "600",
+    lineHeight: 18,
+    fontWeight: "700",
     color: "#334155",
     textAlign: "center",
+    includeFontPadding: false,
   },
-  searchWrap: {
-    paddingHorizontal: 24,
-    marginBottom: 24,
-  },
-  searchRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-  },
+
+  searchWrap: {},
+  searchRow: { flexDirection: "row", alignItems: "center", gap: 14 },
   searchPill: {
     flex: 1,
     height: 54,
     borderRadius: 999,
+    borderCurve: "continuous",
     paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
@@ -1174,89 +1084,70 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 54,
     fontSize: 16,
+    lineHeight: 20,
+    fontWeight: "600",
     color: "#0f172a",
+    includeFontPadding: false,
   },
   filterBtn: {
     width: 54,
     height: 54,
     borderRadius: 999,
+    borderCurve: "continuous",
     backgroundColor: "#E4E7EB",
     alignItems: "center",
     justifyContent: "center",
   },
-  listWrap: {
-    paddingHorizontal: 16,
-    paddingBottom: 40,
-    overflow: "visible",
-  },
-  card: {
+
+  listWrap: { overflow: "visible" },
+
+  // Cards: shell负责 shadow，fill负责裁剪
+  cardShell: {
     borderRadius: 40,
-    paddingHorizontal: 24,
-    paddingTop: 28,
-    paddingBottom: 32,
-    overflow: "hidden",
+    borderCurve: "continuous",
     shadowColor: "#000",
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 10 },
     elevation: 6,
   },
+  cardFill: { borderRadius: 40, borderCurve: "continuous", overflow: "hidden" },
+  cardPressable: {
+    borderRadius: 40,
+    borderCurve: "continuous",
+    paddingHorizontal: 24,
+    paddingTop: 28,
+    paddingBottom: 32,
+  },
   selectedRing: {
     ...StyleSheet.absoluteFillObject,
     borderRadius: 40,
+    borderCurve: "continuous",
     borderWidth: 2,
     borderColor: "rgba(255,255,255,0.55)",
   },
-  cardPressable: {
-    borderRadius: 40,
-  },
-  cardInner: {
-    gap: 18,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: 12,
-  },
+
+  cardInner: { gap: 16 },
+  cardHeader: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 12 },
   cardTitle: {
     flex: 1,
     fontSize: 30,
-    fontWeight: "500",
+    lineHeight: 34,
+    fontWeight: "800",
     letterSpacing: -0.2,
+    includeFontPadding: false,
   },
-  cardFooter: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-    marginTop: 10,
-  },
-  tagRow: {
-    flexDirection: "row",
-    gap: 8,
-    flex: 1,
-  },
-  tagPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: 1,
-  },
-  tagText: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  arrowWrap: {
-    width: 56,
-    height: 56,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  cardFooter: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 12 },
+  tagRow: { flexDirection: "row", gap: 8, flex: 1 },
+  tagPill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, borderCurve: "continuous", borderWidth: 1 },
+  tagText: { fontSize: 12, lineHeight: 16, fontWeight: "600", includeFontPadding: false },
+
+  arrowWrap: { width: 56, height: 56, alignItems: "center", justifyContent: "center" },
   arrowHalo: {
     position: "absolute",
     width: 76,
     height: 76,
     borderRadius: 999,
+    borderCurve: "continuous",
     backgroundColor: "rgba(255,255,255,0.26)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.40)",
@@ -1266,13 +1157,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 10 },
     elevation: 10,
   },
-  arrowBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 999,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  arrowBtn: { width: 40, height: 40, borderRadius: 999, borderCurve: "continuous", alignItems: "center", justifyContent: "center" },
+
   selectCheckBubble: {
     position: "absolute",
     top: 18,
@@ -1280,6 +1166,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 999,
+    borderCurve: "continuous",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.55)",
     alignItems: "center",
@@ -1291,91 +1178,58 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 10 },
     zIndex: 3,
   },
-  selectTrigger: {
-    height: 64,
+
+  // AnchorSelect (shadow外层 + 裁剪内层)
+  selectTriggerShadow: {
     borderRadius: 999,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.65)",
+    borderCurve: "continuous",
     shadowColor: "#0f172a",
     shadowOpacity: 0.14,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 10 },
-    backgroundColor: "rgba(255,255,255,0.35)",
+    backgroundColor: "rgba(255,255,255,0.001)",
   },
-  selectTriggerInner: {
-    flex: 1,
-    paddingHorizontal: 24,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 10,
-  },
-  selectTriggerText: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#0f172a",
-  },
-  selectOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.12)",
-  },
-  selectDropdownWrap: {
-    position: "absolute",
-  },
-  selectDropdownInner: {
-    borderRadius: 16,
+  selectTrigger: {
+    height: 64,
+    borderRadius: 999,
+    borderCurve: "continuous",
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.40)",
+    borderColor: "rgba(255,255,255,0.65)",
+    backgroundColor: "rgba(255,255,255,0.35)",
+  },
+  selectTriggerInner: { flex: 1, paddingHorizontal: 24, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 },
+  selectTriggerText: { flex: 1, fontSize: 16, lineHeight: 20, fontWeight: "600", color: "#0f172a", includeFontPadding: false },
+
+  selectOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.12)" },
+  selectDropdownWrap: { position: "absolute" },
+  selectDropdownShadow: {
+    borderRadius: 16,
+    borderCurve: "continuous",
     shadowColor: "#0f172a",
     shadowOpacity: 0.18,
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 10 },
+    backgroundColor: "rgba(255,255,255,0.001)",
   },
-  selectDropdownGlass: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(255,255,255,0.90)",
-  },
-  selectItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    borderRadius: 12,
-    gap: 8,
-  },
-  selectItemActive: {
-    backgroundColor: "rgba(0,0,0,0.05)",
-  },
-  selectCheckSlot: {
-    width: 18,
-    alignItems: "center",
-  },
-  selectItemText: {
-    fontSize: 14,
-    color: "#334155",
-  },
-  detailOverlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.20)",
-  },
-  sheet: {
-    height: "92%",
-    backgroundColor: "#ffffff",
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
-    overflow: "hidden",
-  },
+  selectDropdownInner: { borderRadius: 16, borderCurve: "continuous", overflow: "hidden", borderWidth: 1, borderColor: "rgba(255,255,255,0.40)" },
+  selectDropdownGlass: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(255,255,255,0.90)" },
+
+  selectItem: { flexDirection: "row", alignItems: "center", paddingVertical: 10, paddingHorizontal: 8, borderRadius: 12, borderCurve: "continuous", gap: 8 },
+  selectItemActive: { backgroundColor: "rgba(0,0,0,0.05)" },
+  selectCheckSlot: { width: 18, alignItems: "center" },
+  selectItemText: { fontSize: 14, lineHeight: 18, fontWeight: "500", color: "#334155", includeFontPadding: false },
+
+  // Detail Sheet
+  detailOverlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.20)" },
+  sheet: { height: "92%", backgroundColor: "#ffffff", borderTopLeftRadius: 40, borderTopRightRadius: 40, borderCurve: "continuous", overflow: "hidden" },
   sheetClose: {
     position: "absolute",
-    top: 24,
     right: 24,
     width: 40,
     height: 40,
     borderRadius: 999,
+    borderCurve: "continuous",
     backgroundColor: "#000000",
     alignItems: "center",
     justifyContent: "center",
@@ -1385,174 +1239,38 @@ const styles = StyleSheet.create({
     shadowRadius: 15,
     shadowOffset: { width: 0, height: 10 },
   },
-  sheetHeader: {
-    paddingHorizontal: 32,
-    paddingBottom: 112,
-  },
-  sheetHeaderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    opacity: 0.85,
-  },
-  sheetHeaderLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    letterSpacing: 1.2,
-    textTransform: "uppercase",
-  },
-  sheetTitle: {
-    fontSize: 36,
-    fontWeight: "500",
-    letterSpacing: -0.2,
-  },
-  sheetTag: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: 1,
-  },
-  sheetTagText: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  sheetBody: {
-    marginTop: -80,
-    backgroundColor: "#ffffff",
-    borderTopLeftRadius: 48,
-    borderTopRightRadius: 48,
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 170,
-  },
-  sectionHead: {
-    paddingHorizontal: 8,
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#0f172a",
-  },
-  glassBlock: {
-    minHeight: 220,
-    borderRadius: 40,
-    overflow: "hidden",
-    position: "relative",
-  },
-  glassRing: {
-    position: "absolute",
-    top: 12,
-    left: 12,
-    right: 12,
-    bottom: 12,
-    borderRadius: 36,
-    overflow: "hidden",
-    backgroundColor: "rgba(255,255,255,0.20)",
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 2,
-  },
-  glassHighlightEdge: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: 36,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.35)",
-  },
-  glassRingBorder: {
-    ...StyleSheet.absoluteFillObject,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.30)",
-  },
-  glassCenter: {
-    minHeight: 220,
-    paddingHorizontal: 40,
-    paddingVertical: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  glassText: {
-    fontSize: 18,
-    fontWeight: "500",
-    color: "#334155",
-    textAlign: "center",
-    lineHeight: 28,
-  },
-  routineBlock: {
-    minHeight: 520,
-    borderRadius: 40,
-    overflow: "hidden",
-    position: "relative",
-  },
-  routineRing: {
-    position: "absolute",
-    top: 12,
-    left: 12,
-    right: 12,
-    bottom: 12,
-    borderRadius: 36,
-    overflow: "hidden",
-    backgroundColor: "rgba(255,255,255,0.20)",
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 2,
-  },
-  routineContent: {
-    paddingHorizontal: 32,
-    paddingTop: 40,
-    paddingBottom: 36,
-  },
-  routineTitle: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: "#334155",
-    letterSpacing: 1.0,
-    textTransform: "uppercase",
-  },
-  fieldLabel: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#475569",
-  },
-  saveRow: {
-    alignItems: "flex-end",
-    marginTop: 28,
-  },
-  saveBtn: {
-    height: 48,
-    paddingHorizontal: 26,
-    borderRadius: 999,
-    borderWidth: 1,
-    overflow: "hidden",
-    justifyContent: "center",
-    shadowColor: "#0f172a",
-    shadowOpacity: 0.18,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 10 },
-  },
-  saveInner: {
-    minWidth: 56,
-    height: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  saveText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "rgba(51,65,85,0.95)",
-  },
-  saveCheck: {
-    position: "absolute",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  note: {
-    marginTop: 36,
-    fontSize: 16,
-    color: "rgba(100,116,139,0.85)",
-  },
+
+  sheetHeader: { paddingHorizontal: 32, paddingBottom: 112 },
+  sheetHeaderRow: { flexDirection: "row", alignItems: "center", gap: 8, opacity: 0.85 },
+  sheetHeaderLabel: { fontSize: 12, lineHeight: 16, fontWeight: "700", letterSpacing: 1.2, textTransform: "uppercase", includeFontPadding: false },
+  sheetTitle: { fontSize: 36, lineHeight: 40, fontWeight: "800", letterSpacing: -0.2, includeFontPadding: false },
+
+  sheetTag: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, borderCurve: "continuous", borderWidth: 1 },
+  sheetTagText: { fontSize: 12, lineHeight: 16, fontWeight: "600", includeFontPadding: false },
+
+  sheetBody: { marginTop: -80, backgroundColor: "#ffffff", borderTopLeftRadius: 48, borderTopRightRadius: 48, borderCurve: "continuous", paddingHorizontal: 24, paddingTop: 24 },
+  sectionHead: { paddingHorizontal: 8, marginBottom: 12 },
+  sectionTitle: { fontSize: 20, lineHeight: 24, fontWeight: "800", color: "#0f172a", includeFontPadding: false },
+
+  glassBlock: { minHeight: 220, borderRadius: 40, borderCurve: "continuous", overflow: "hidden", position: "relative" },
+  glassRing: { position: "absolute", top: 12, left: 12, right: 12, bottom: 12, borderRadius: 36, borderCurve: "continuous", overflow: "hidden", backgroundColor: "rgba(255,255,255,0.20)", shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 18, shadowOffset: { width: 0, height: 10 }, elevation: 2 },
+  glassHighlightEdge: { ...StyleSheet.absoluteFillObject, borderRadius: 36, borderCurve: "continuous", borderWidth: 1, borderColor: "rgba(255,255,255,0.35)" },
+  glassRingBorder: { ...StyleSheet.absoluteFillObject, borderWidth: 1, borderColor: "rgba(255,255,255,0.30)" },
+  glassCenter: { minHeight: 220, paddingHorizontal: 40, paddingVertical: 40, alignItems: "center", justifyContent: "center" },
+  glassText: { fontSize: 18, lineHeight: 28, fontWeight: "600", color: "#334155", textAlign: "center", includeFontPadding: false },
+
+  routineBlock: { minHeight: 520, borderRadius: 40, borderCurve: "continuous", overflow: "hidden", position: "relative" },
+  routineRing: { position: "absolute", top: 12, left: 12, right: 12, bottom: 12, borderRadius: 36, borderCurve: "continuous", overflow: "hidden", backgroundColor: "rgba(255,255,255,0.20)", shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 18, shadowOffset: { width: 0, height: 10 }, elevation: 2 },
+  routineContent: { paddingHorizontal: 32, paddingTop: 40, paddingBottom: 28 },
+  routineTitle: { fontSize: 14, lineHeight: 18, fontWeight: "800", color: "#334155", letterSpacing: 1.0, textTransform: "uppercase", includeFontPadding: false },
+  fieldLabel: { fontSize: 16, lineHeight: 20, fontWeight: "600", color: "#475569", includeFontPadding: false },
+
+  saveRow: { alignItems: "flex-end", marginTop: 24 },
+  saveShadow: { borderRadius: 999, borderCurve: "continuous", shadowColor: "#0f172a", shadowOpacity: 0.18, shadowRadius: 18, shadowOffset: { width: 0, height: 10 }, backgroundColor: "rgba(255,255,255,0.001)" },
+  saveBtn: { height: 48, paddingHorizontal: 26, borderRadius: 999, borderCurve: "continuous", borderWidth: 1, overflow: "hidden", justifyContent: "center" },
+  saveInner: { minWidth: 56, height: 20, alignItems: "center", justifyContent: "center" },
+  saveText: { fontSize: 16, lineHeight: 20, fontWeight: "700", color: "rgba(51,65,85,0.95)", includeFontPadding: false },
+  saveCheck: { position: "absolute", alignItems: "center", justifyContent: "center" },
+
+  note: { marginTop: 24, fontSize: 16, lineHeight: 22, color: "rgba(100,116,139,0.85)", includeFontPadding: false },
 });
