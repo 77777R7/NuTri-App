@@ -3,6 +3,7 @@ import RNEventSource from 'react-native-sse';
 
 import { Config } from '@/constants/Config';
 import { buildBarcodeSnapshot } from '@/lib/snapshot';
+import { supabase } from '@/lib/supabase';
 import type { SupplementSnapshot } from '@/types/supplementSnapshot';
 
 // ============================================================================
@@ -163,123 +164,143 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
         setState(prev => ({ ...prev, status: 'loading', error: null }));
 
         const API_URL = Config.searchApiBaseUrl.replace(/\/$/, '');
+        let isActive = true;
 
-        // Initialize SSE connection (POST method)
-        const es = new RNEventSource(`${API_URL}/api/enrich-stream`, {
-            method: 'POST',
-            headers: {
+        const startStream = async () => {
+            const { data } = await supabase.auth.getSession();
+            const token = data.session?.access_token ?? null;
+            if (!isActive) return;
+
+            const headers: Record<string, string> = {
                 'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ barcode }),
-        });
-
-        eventSourceRef.current = es;
-
-        // Listeners
-        es.addEventListener('open', () => {
-            console.log('[SSE] Connection Opened');
-            setState(prev => ({ ...prev, status: 'streaming' }));
-        });
-
-        es.addEventListener('message', (event) => {
-            // Standard message listener for debugging
-        });
-
-        // NEW: Brand Extraction (comes before product_info)
-        es.addEventListener('brand_extracted' as any, (event: any) => {
-            try {
-                const data = JSON.parse(event.data) as BrandExtraction;
-                console.log('[SSE] Brand Extracted:', data);
-                setState(prev => ({
-                    ...prev,
-                    brandExtraction: data,
-                }));
-            } catch (e) {
-                console.error('[SSE] Failed to parse brand_extracted:', e);
+            };
+            if (token) {
+                headers.Authorization = `Bearer ${token}`;
             }
-        });
 
-        // Product Info (enhanced with sources)
-        es.addEventListener('product_info' as any, (event: any) => {
-            try {
-                const data = JSON.parse(event.data);
-                console.log('[SSE] Product Info:', data);
-                setState(prev => ({
-                    ...prev,
-                    productInfo: data.productInfo,
-                    sources: data.sources || [],
-                }));
-            } catch (e) {
-                console.error('[SSE] Failed to parse product_info:', e);
-            }
-        });
+            // Initialize SSE connection (POST method)
+            const es = new RNEventSource(`${API_URL}/api/enrich-stream`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ barcode }),
+            });
 
-        // Efficacy Result (enhanced with ingredients)
-        es.addEventListener('result_efficacy' as any, (event: any) => {
-            try {
-                const data = JSON.parse(event.data) as EfficacyAnalysis;
-                console.log('[SSE] Efficacy:', data);
-                setState(prev => ({ ...prev, efficacy: data }));
-            } catch (e) {
-                console.error('[SSE] Failed to parse result_efficacy:', e);
-            }
-        });
+            eventSourceRef.current = es;
 
-        // Safety Result (enhanced with UL warnings)
-        es.addEventListener('result_safety' as any, (event: any) => {
-            try {
-                const data = JSON.parse(event.data) as SafetyAnalysis;
-                console.log('[SSE] Safety:', data);
-                setState(prev => ({ ...prev, safety: data }));
-            } catch (e) {
-                console.error('[SSE] Failed to parse result_safety:', e);
-            }
-        });
+            // Listeners
+            es.addEventListener('open', () => {
+                console.log('[SSE] Connection Opened');
+                setState(prev => ({ ...prev, status: 'streaming' }));
+            });
 
-        // Usage/Value Result (split into usage, value, social)
-        es.addEventListener('result_usage' as any, (event: any) => {
-            try {
-                const data = JSON.parse(event.data);
-                console.log('[SSE] Usage:', data);
-                setState(prev => ({
-                    ...prev,
-                    usage: data.usage || null,
-                    value: data.value || null,
-                    social: data.social || null,
-                }));
-            } catch (e) {
-                console.error('[SSE] Failed to parse result_usage:', e);
-            }
-        });
+            es.addEventListener('message', (event) => {
+                // Standard message listener for debugging
+            });
 
-        // Completion
-        es.addEventListener('done' as any, () => {
-            console.log('[SSE] Done');
-            setState(prev => ({ ...prev, status: 'complete' }));
-            es.close();
-        });
-
-        // Error
-        es.addEventListener('error', (event: any) => {
-            console.error('[SSE] Error:', event);
-            if (event.type === 'error' && event.data) {
+            // NEW: Brand Extraction (comes before product_info)
+            es.addEventListener('brand_extracted' as any, (event: any) => {
                 try {
-                    const errorData = JSON.parse(event.data);
+                    const data = JSON.parse(event.data) as BrandExtraction;
+                    console.log('[SSE] Brand Extracted:', data);
                     setState(prev => ({
                         ...prev,
-                        status: 'error',
-                        error: errorData.message || 'Scan failed'
+                        brandExtraction: data,
                     }));
-                } catch {
-                    setState(prev => ({ ...prev, status: 'error', error: 'Connection failed' }));
+                } catch (e) {
+                    console.error('[SSE] Failed to parse brand_extracted:', e);
                 }
-            }
-            es.close();
+            });
+
+            // Product Info (enhanced with sources)
+            es.addEventListener('product_info' as any, (event: any) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    console.log('[SSE] Product Info:', data);
+                    setState(prev => ({
+                        ...prev,
+                        productInfo: data.productInfo,
+                        sources: data.sources || [],
+                    }));
+                } catch (e) {
+                    console.error('[SSE] Failed to parse product_info:', e);
+                }
+            });
+
+            // Efficacy Result (enhanced with ingredients)
+            es.addEventListener('result_efficacy' as any, (event: any) => {
+                try {
+                    const data = JSON.parse(event.data) as EfficacyAnalysis;
+                    console.log('[SSE] Efficacy:', data);
+                    setState(prev => ({ ...prev, efficacy: data }));
+                } catch (e) {
+                    console.error('[SSE] Failed to parse result_efficacy:', e);
+                }
+            });
+
+            // Safety Result (enhanced with UL warnings)
+            es.addEventListener('result_safety' as any, (event: any) => {
+                try {
+                    const data = JSON.parse(event.data) as SafetyAnalysis;
+                    console.log('[SSE] Safety:', data);
+                    setState(prev => ({ ...prev, safety: data }));
+                } catch (e) {
+                    console.error('[SSE] Failed to parse result_safety:', e);
+                }
+            });
+
+            // Usage/Value Result (split into usage, value, social)
+            es.addEventListener('result_usage' as any, (event: any) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    console.log('[SSE] Usage:', data);
+                    setState(prev => ({
+                        ...prev,
+                        usage: data.usage || null,
+                        value: data.value || null,
+                        social: data.social || null,
+                    }));
+                } catch (e) {
+                    console.error('[SSE] Failed to parse result_usage:', e);
+                }
+            });
+
+            // Completion
+            es.addEventListener('done' as any, () => {
+                console.log('[SSE] Done');
+                setState(prev => ({ ...prev, status: 'complete' }));
+                es.close();
+            });
+
+            // Error
+            es.addEventListener('error', (event: any) => {
+                console.error('[SSE] Error:', event);
+                if (event.type === 'error' && event.data) {
+                    try {
+                        const errorData = JSON.parse(event.data);
+                        setState(prev => ({
+                            ...prev,
+                            status: 'error',
+                            error: errorData.message || 'Scan failed'
+                        }));
+                    } catch {
+                        setState(prev => ({ ...prev, status: 'error', error: 'Connection failed' }));
+                    }
+                }
+                es.close();
+            });
+        };
+
+        startStream().catch((error) => {
+            console.warn('[SSE] Stream init failed', error);
+            setState(prev => ({ ...prev, status: 'error', error: 'Connection failed' }));
         });
 
         return () => {
-            es.removeAllEventListeners();
-            es.close();
+            isActive = false;
+            if (eventSourceRef.current) {
+                eventSourceRef.current.removeAllEventListeners();
+                eventSourceRef.current.close();
+            }
         };
     }, [barcode]);
 

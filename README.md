@@ -89,4 +89,4 @@ The generated TypeScript types (`types/supabase.ts`) keep Supabase client calls 
 
 - Run `ENV.validate()` manually (imported from `@/lib/env`) when debugging environment issues.
 - For physical device testing, ensure `EXPO_PUBLIC_API_BASE_URL` points to a tunnel-accessible URL (e.g., via `ngrok`).
-- After changing Supabase schema locally, regenerate types with `supabase gen types typescript --linked > types/supabase.ts`.
+- After changing Supabase schema locally, regenerate types with `npm run supabase:types` (set `PROJECT_ID` first).

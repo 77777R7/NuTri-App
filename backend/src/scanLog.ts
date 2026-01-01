@@ -1,6 +1,7 @@
 import { supabase } from "./supabase.js";
 import { CircuitBreaker, combineSignals, createTimeoutSignal, isAbortError } from "./resilience.js";
 import type { DeadlineBudget } from "./resilience.js";
+import { incrementMetric } from "./metrics.js";
 
 const RESILIENCE_BREAKER_WINDOW_MS = Number(process.env.RESILIENCE_BREAKER_WINDOW_MS ?? 30_000);
 const RESILIENCE_BREAKER_MIN_REQUESTS = Number(process.env.RESILIENCE_BREAKER_MIN_REQUESTS ?? 10);
@@ -45,6 +46,7 @@ export async function logBarcodeScan(input: {
   }
   const breaker = options.breaker ?? scanWriteBreaker;
   if (breaker && !breaker.canRequest()) {
+    incrementMetric("scanlog_write_breaker_open");
     return;
   }
 
@@ -76,11 +78,17 @@ export async function logBarcodeScan(input: {
     const aborted = Boolean(timeoutSignal.aborted || signal.aborted);
     if (!error) {
       breaker?.recordSuccess();
+      incrementMetric("scanlog_write_success");
     } else if (!aborted && !isAbortError(error)) {
       breaker?.recordFailure();
+    } else if (timeoutSignal.aborted) {
+      incrementMetric("scanlog_write_timeout");
     }
   } catch (err) {
     if (timeoutSignal.aborted || signal.aborted || isAbortError(err)) {
+      if (timeoutSignal.aborted) {
+        incrementMetric("scanlog_write_timeout");
+      }
       return;
     }
     breaker?.recordFailure();

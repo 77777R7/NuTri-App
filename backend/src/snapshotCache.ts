@@ -12,6 +12,7 @@ import {
   HttpError,
 } from './resilience.js';
 import type { DeadlineBudget, RetryOptions, Semaphore } from './resilience.js';
+import { incrementMetric } from './metrics.js';
 
 export type SnapshotCacheRecord = {
   snapshot: SupplementSnapshot;
@@ -240,6 +241,7 @@ export async function storeSnapshotCache(params: {
   }
   const breaker = options.breaker ?? snapshotWriteBreaker;
   if (breaker && !breaker.canRequest()) {
+    incrementMetric("snapshot_write_breaker_open");
     return;
   }
 
@@ -276,16 +278,22 @@ export async function storeSnapshotCache(params: {
   try {
     const { error } = await supabase
       .from('snapshots')
-      .upsert(record, { onConflict: 'id' })
+      .upsert(record, { onConflict: 'key,source' })
       .abortSignal(signal);
     const aborted = Boolean(timeoutSignal.aborted || signal.aborted);
     if (!error) {
       breaker?.recordSuccess();
+      incrementMetric("snapshot_write_success");
     } else if (!aborted && !isAbortError(error)) {
       breaker?.recordFailure();
+    } else if (timeoutSignal.aborted) {
+      incrementMetric("snapshot_write_timeout");
     }
   } catch (err) {
     if (timeoutSignal.aborted || signal.aborted || isAbortError(err)) {
+      if (timeoutSignal.aborted) {
+        incrementMetric("snapshot_write_timeout");
+      }
       return;
     }
     breaker?.recordFailure();

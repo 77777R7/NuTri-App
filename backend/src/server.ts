@@ -3,6 +3,8 @@ import dotenv from "dotenv";
 import express, { NextFunction, Request, Response } from "express";
 import { randomUUID } from "node:crypto";
 import { performance } from "node:perf_hooks";
+import * as Sentry from "@sentry/node";
+import { z } from "zod";
 
 import { buildBarcodeSearchQueries, normalizeBarcodeInput } from "./barcode.js";
 import { resolveCatalogByBarcode } from "./catalogResolver.js";
@@ -31,6 +33,7 @@ import { constructFallbackQuery, extractDomain, isHighQualityDomain, scoreSearch
 import { buildBarcodeSnapshot, buildLabelSnapshot, validateSnapshotOrFallback, type SnapshotAnalysisPayload } from "./snapshot.js";
 import { getSnapshotCache, storeSnapshotCache } from "./snapshotCache.js";
 import type { SupplementSnapshot } from "./schemas/supplementSnapshot.js";
+import { supabase } from "./supabase.js";
 import type {
   AiSupplementAnalysis,
   ErrorResponse,
@@ -41,8 +44,31 @@ import type {
   SearchResponse,
 } from "./types.js";
 import { callVisionOcr } from "./visionOcr.js";
+import { getMetricsSnapshot, incrementMetric, startMetricsFlush } from "./metrics.js";
 
 dotenv.config();
+
+const SENTRY_DSN = process.env.SENTRY_DSN ?? "";
+const SENTRY_ENVIRONMENT = process.env.SENTRY_ENVIRONMENT ?? process.env.NODE_ENV ?? "development";
+const SENTRY_ENABLED = SENTRY_DSN.length > 0;
+
+if (SENTRY_ENABLED) {
+  Sentry.init({
+    dsn: SENTRY_DSN,
+    environment: SENTRY_ENVIRONMENT,
+  });
+}
+
+const captureException = (error: unknown, context?: Record<string, unknown>) => {
+  if (!SENTRY_ENABLED) return;
+  if (context) {
+    Sentry.captureException(error, { extra: context });
+    return;
+  }
+  Sentry.captureException(error);
+};
+
+startMetricsFlush();
 
 const GOOGLE_CSE_ENDPOINT = "https://customsearch.googleapis.com/customsearch/v1";
 const MAX_RESULTS = 5;
@@ -61,6 +87,12 @@ const RESILIENCE_CATALOG_TIMEOUT_MS = Number(process.env.RESILIENCE_CATALOG_TIME
 const RESILIENCE_SNAPSHOT_TIMEOUT_MS = Number(process.env.RESILIENCE_SNAPSHOT_TIMEOUT_MS ?? 900);
 const RESILIENCE_GOOGLE_TIMEOUT_MS = Number(process.env.RESILIENCE_GOOGLE_TIMEOUT_MS ?? 2500);
 const RESILIENCE_DEEPSEEK_TIMEOUT_MS = Number(process.env.RESILIENCE_DEEPSEEK_TIMEOUT_MS ?? 10_000);
+const RESILIENCE_DEEPSEEK_BACKGROUND_BUDGET_MS = Number(
+  process.env.RESILIENCE_DEEPSEEK_BACKGROUND_BUDGET_MS ?? 12_000,
+);
+const RESILIENCE_DEEPSEEK_BACKGROUND_TIMEOUT_MS = Number(
+  process.env.RESILIENCE_DEEPSEEK_BACKGROUND_TIMEOUT_MS ?? 8_000,
+);
 const RESILIENCE_CONTEXT_FETCH_TIMEOUT_MS = Number(process.env.RESILIENCE_CONTEXT_FETCH_TIMEOUT_MS ?? 4500);
 const RESILIENCE_GOOGLE_QUEUE_TIMEOUT_MS = Number(process.env.RESILIENCE_GOOGLE_QUEUE_TIMEOUT_MS ?? 300);
 const RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS = Number(process.env.RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS ?? 300);
@@ -464,6 +496,57 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
+type AuthenticatedRequest = Request & {
+  user?: {
+    id: string;
+    email?: string | null;
+  };
+};
+
+const verifySupabaseToken = async (req: Request, res: Response, next: NextFunction) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res
+      .status(401)
+      .json({ error: "missing_authorization" } satisfies ErrorResponse);
+  }
+
+  const [scheme, token] = authHeader.split(" ");
+  if (scheme !== "Bearer" || !token) {
+    return res
+      .status(401)
+      .json({ error: "invalid_authorization" } satisfies ErrorResponse);
+  }
+
+  try {
+    const { data, error } = await supabase.auth.getUser(token);
+    if (error || !data.user) {
+      return res
+        .status(403)
+        .json({ error: "invalid_or_expired_token" } satisfies ErrorResponse);
+    }
+
+    (req as AuthenticatedRequest).user = data.user;
+    return next();
+  } catch (error) {
+    captureException(error, { route: "verifySupabaseToken" });
+    return res
+      .status(503)
+      .json({ error: "auth_unavailable" } satisfies ErrorResponse);
+  }
+};
+
+const parseRequestBody = <T>(schema: z.ZodType<T>, req: Request, res: Response): T | null => {
+  const parsed = schema.safeParse(req.body);
+  if (!parsed.success) {
+    res
+      .status(400)
+      .json({ error: "invalid_request", detail: parsed.error.message } satisfies ErrorResponse);
+    return null;
+  }
+  return parsed.data;
+};
+
 // ============================================================================
 // SSE HELPER
 // ============================================================================
@@ -509,6 +592,7 @@ const withTimeoutPromise = async <T>(
 };
 
 const barcodeEnrichInFlight = new Map<string, Promise<void>>();
+const barcodeEnrichBackground = new Map<string, Promise<void>>();
 
 function createDeferred<T>() {
   let resolve!: (value: T) => void;
@@ -519,6 +603,93 @@ function createDeferred<T>() {
   });
   return { promise, resolve, reject };
 }
+
+const queueBarcodeAnalysisCompletion = (params: {
+  cacheKey: string;
+  barcode: string;
+  detailItems: SearchItem[];
+  analysisContext: string;
+  analysisPayload: SnapshotAnalysisPayload;
+  snapshot: SupplementSnapshot;
+  expiresAt: string | null;
+  model: string;
+  deepseekKey: string;
+}): void => {
+  if (barcodeEnrichBackground.has(params.cacheKey)) {
+    return;
+  }
+  if (!deepseekBreaker.canRequest()) {
+    return;
+  }
+
+  const task = (async () => {
+    const backgroundBudget = new DeadlineBudget(Date.now() + RESILIENCE_DEEPSEEK_BACKGROUND_BUDGET_MS);
+    const backgroundResilience: DeepseekResilienceOptions = {
+      budget: backgroundBudget,
+      breaker: deepseekBreaker,
+      semaphore: deepseekSemaphore,
+      timeoutMs: RESILIENCE_DEEPSEEK_BACKGROUND_TIMEOUT_MS,
+      queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS,
+    };
+
+    const bundle = await fetchAnalysisBundle(
+      params.analysisContext,
+      params.model,
+      params.deepseekKey,
+      backgroundResilience,
+    );
+    if (!bundle) {
+      return;
+    }
+
+    const efficacyResult = bundle.efficacy ?? null;
+    const safetyResult = bundle.safety ?? null;
+    const usageResult = bundle.usagePayload ?? null;
+    if (!efficacyResult && !safetyResult && !usageResult) {
+      return;
+    }
+
+    const nextAnalysisPayload: SnapshotAnalysisPayload = {
+      ...params.analysisPayload,
+      efficacy: efficacyResult,
+      safety: safetyResult,
+      usagePayload: usageResult,
+    };
+
+    const analysisSnapshot = buildBarcodeSnapshot({
+      barcode: params.barcode,
+      productInfo: nextAnalysisPayload.productInfo ?? null,
+      sources: params.detailItems,
+      efficacy: efficacyResult,
+      safety: safetyResult,
+      usagePayload: usageResult,
+    });
+
+    const updatedSnapshot: SupplementSnapshot = {
+      ...params.snapshot,
+      status: analysisSnapshot.status,
+      scores: analysisSnapshot.scores,
+      references: analysisSnapshot.references,
+      updatedAt: new Date().toISOString(),
+    };
+
+    await storeSnapshotCache(
+      {
+        key: params.cacheKey,
+        source: "barcode",
+        snapshot: updatedSnapshot,
+        analysisPayload: nextAnalysisPayload,
+        expiresAt: params.expiresAt,
+      },
+      { budget: backgroundBudget },
+    );
+  })();
+
+  barcodeEnrichBackground.set(params.cacheKey, task);
+  task.finally(() => {
+    barcodeEnrichBackground.delete(params.cacheKey);
+  });
+};
 
 const buildValidatedLabelSnapshot = (input: {
   status: "ok" | "needs_confirmation" | "failed";
@@ -576,6 +747,13 @@ const buildAndCacheLabelSnapshot = async (input: {
 
   return snapshot;
 };
+
+const enrichStreamBodySchema = z
+  .object({
+    barcode: z.string().min(1),
+    deviceId: z.string().optional(),
+  })
+  .passthrough();
 
 // ============================================================================
 // ENDPOINTS
@@ -653,6 +831,7 @@ app.get("/api/search-by-barcode", async (req: Request, res: Response) => {
 
     return res.json({ status: "ok", barcode, items: finalItems } satisfies SearchResponse);
   } catch (error) {
+    captureException(error, { route: "/api/search-by-barcode" });
     console.error("/api/search-by-barcode unexpected error", error);
     const detail =
       error instanceof Error ? `${error.name}: ${error.message}` : String(error);
@@ -663,8 +842,12 @@ app.get("/api/search-by-barcode", async (req: Request, res: Response) => {
 /**
  * Main streaming endpoint: Two-step search + AI analysis
  */
-app.post("/api/enrich-stream", async (req: Request, res: Response) => {
-  const rawBarcode = typeof req.body?.barcode === "string" ? req.body.barcode : "";
+app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Response) => {
+  const parsedBody = parseRequestBody(enrichStreamBodySchema, req, res);
+  if (!parsedBody) {
+    return;
+  }
+  const rawBarcode = parsedBody.barcode;
   const normalized = normalizeBarcodeInput(rawBarcode);
   const model = process.env.DEEPSEEK_MODEL || "deepseek-chat";
   let finishInFlight: ((error?: unknown) => void) | null = null;
@@ -688,7 +871,7 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
     const budget = new DeadlineBudget(Date.now() + RESILIENCE_TOTAL_BUDGET_MS);
     const requestAbort = createRequestAbort(res);
     const requestId = String(res.getHeader("x-request-id") ?? "");
-    const deviceId = typeof req.body?.deviceId === "string" ? req.body.deviceId : null;
+    const deviceId = parsedBody.deviceId ?? null;
     const requestSignal = requestAbort.signal;
     const googleResilience: SearchResilienceOptions = {
       signal: requestSignal,
@@ -1406,6 +1589,11 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
         console.warn("[Stream] analysis bundle failed", error);
       }
     }
+    if (bundle) {
+      incrementMetric("deepseek_bundle_success");
+    } else if (!requestSignal.aborted) {
+      incrementMetric("deepseek_bundle_fail_degraded");
+    }
     const efficacyResult = bundle?.efficacy ?? null;
     const safetyResult = bundle?.safety ?? null;
     const usageResult = bundle?.usagePayload ?? null;
@@ -1487,6 +1675,20 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
     sendSSE(res, "done", { barcode });
     res.end();
 
+    if (!bundle && !requestSignal.aborted) {
+      queueBarcodeAnalysisCompletion({
+        cacheKey,
+        barcode,
+        detailItems,
+        analysisContext,
+        analysisPayload,
+        snapshot,
+        expiresAt,
+        model,
+        deepseekKey,
+      });
+    }
+
     const timingTotalMs = Math.round(performance.now() - startedAt);
     void logBarcodeScan({
       barcodeGtin14,
@@ -1517,6 +1719,7 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
     if (finishInFlight) {
       finishInFlight(error);
     }
+    captureException(error, { route: "/api/enrich-stream" });
     console.error("Stream Error:", error);
     const message = error instanceof Error ? error.message : "Unknown error";
     if (!res.writableEnded) {
@@ -1588,15 +1791,61 @@ setInterval(() => {
 // LABEL SCAN ENDPOINTS
 // ============================================================================
 
-interface AnalyzeLabelRequest {
-  imageBase64?: string;
-  imageHash: string;
-  saveImage?: boolean;
-  deviceId?: string;
-  debug?: boolean;
-  includeAnalysis?: boolean;
-  async?: boolean;
-}
+const validationIssueTypeSchema = z.enum([
+  "unit_invalid",
+  "value_anomaly",
+  "missing_serving_size",
+  "header_not_found",
+  "low_coverage",
+  "incomplete_ingredients",
+  "non_ingredient_line_detected",
+  "unit_boundary_suspect",
+  "dose_inconsistency_or_claim",
+]);
+
+const parsedIngredientSchema = z.object({
+  name: z.string(),
+  amount: z.number().nullable(),
+  unit: z.string().nullable(),
+  dvPercent: z.number().nullable(),
+  confidence: z.number(),
+  rawLine: z.string(),
+});
+
+const labelDraftSchema = z.object({
+  servingSize: z.string().nullable(),
+  ingredients: z.array(parsedIngredientSchema),
+  parseCoverage: z.number(),
+  confidenceScore: z.number(),
+  issues: z.array(
+    z.object({
+      type: validationIssueTypeSchema,
+      message: z.string(),
+    }),
+  ),
+});
+
+const analyzeLabelBodySchema = z
+  .object({
+    imageBase64: z.string().nullable().optional(),
+    imageHash: z.string().min(1),
+    saveImage: z.boolean().optional(),
+    deviceId: z.string().optional(),
+    debug: z.boolean().optional(),
+    includeAnalysis: z.union([z.boolean(), z.string()]).optional(),
+    async: z.union([z.boolean(), z.string()]).optional(),
+  })
+  .passthrough();
+
+const analyzeLabelConfirmBodySchema = z
+  .object({
+    imageHash: z.string().min(1),
+    confirmedDraft: labelDraftSchema,
+  })
+  .passthrough();
+
+type AnalyzeLabelRequest = z.infer<typeof analyzeLabelBodySchema>;
+type AnalyzeLabelConfirmRequest = z.infer<typeof analyzeLabelConfirmBodySchema>;
 
 interface LabelAnalysisResponse {
   status: "ok" | "needs_confirmation" | "failed";
@@ -1723,6 +1972,11 @@ ${LABEL_SCAN_OUTPUT_RULES}`;
     if (!isAbortError(error)) {
       console.warn("[LabelScan] analysis bundle failed", error);
     }
+  }
+  if (bundle) {
+    incrementMetric("deepseek_bundle_success");
+  } else if (!resilience?.signal?.aborted) {
+    incrementMetric("deepseek_bundle_fail_degraded");
   }
   const efficacyRaw = bundle?.efficacy ?? null;
   const safetyRaw = bundle?.safety ?? null;
@@ -2066,11 +2320,16 @@ ${LABEL_SCAN_OUTPUT_RULES}`;
  * POST /api/analyze-label
  * Analyze a supplement label image using Vision OCR + DeepSeek
  */
-app.post("/api/analyze-label", async (req: Request, res: Response) => {
+app.post("/api/analyze-label", verifySupabaseToken, async (req: Request, res: Response) => {
   try {
     const totalStart = performance.now();
-    const body = req.body as AnalyzeLabelRequest;
-    const { imageBase64, imageHash, deviceId } = body;
+    const parsedBody = parseRequestBody(analyzeLabelBodySchema, req, res);
+    if (!parsedBody) {
+      return;
+    }
+    const body: AnalyzeLabelRequest = parsedBody;
+    const imageBase64 = body.imageBase64 ?? undefined;
+    const { imageHash, deviceId } = body;
     const labelBudget = new DeadlineBudget(Date.now() + RESILIENCE_TOTAL_BUDGET_MS);
     const labelAbort = createRequestAbort(res);
     const labelDeepseekResilience: DeepseekResilienceOptions = {
@@ -2531,6 +2790,7 @@ app.post("/api/analyze-label", async (req: Request, res: Response) => {
     } satisfies LabelAnalysisResponse);
 
   } catch (error) {
+    captureException(error, { route: "/api/analyze-label" });
     console.error("[LabelScan] Unexpected error:", error);
     return res.status(500).json({
       status: "failed",
@@ -2544,12 +2804,13 @@ app.post("/api/analyze-label", async (req: Request, res: Response) => {
  * POST /api/analyze-label/confirm
  * Confirm edited ingredients and run DeepSeek analysis
  */
-app.post("/api/analyze-label/confirm", async (req: Request, res: Response) => {
+app.post("/api/analyze-label/confirm", verifySupabaseToken, async (req: Request, res: Response) => {
   try {
-    const { imageHash, confirmedDraft } = req.body as {
-      imageHash: string;
-      confirmedDraft: LabelDraft;
-    };
+    const parsedBody = parseRequestBody(analyzeLabelConfirmBodySchema, req, res);
+    if (!parsedBody) {
+      return;
+    }
+    const { imageHash, confirmedDraft } = parsedBody;
     const confirmBudget = new DeadlineBudget(Date.now() + RESILIENCE_TOTAL_BUDGET_MS);
     const confirmAbort = createRequestAbort(res);
     const confirmDeepseekResilience: DeepseekResilienceOptions = {
@@ -2646,6 +2907,7 @@ app.post("/api/analyze-label/confirm", async (req: Request, res: Response) => {
     } satisfies LabelAnalysisResponse);
 
   } catch (error) {
+    captureException(error, { route: "/api/analyze-label/confirm" });
     console.error("[LabelScan/Confirm] Unexpected error:", error);
     return res.status(500).json({
       status: "failed",
@@ -2662,6 +2924,13 @@ app.post("/api/enrich-supplement", async (_req: Request, res: Response) => {
     error: "endpoint_deprecated",
     message: "Use /api/enrich-stream instead"
   });
+});
+
+/**
+ * Internal metrics (lightweight counters)
+ */
+app.get("/internal/metrics", (_req: Request, res: Response) => {
+  res.json(getMetricsSnapshot());
 });
 
 /**
@@ -2684,6 +2953,7 @@ app.get("/health", (_req: Request, res: Response) => {
 // Minimal error logging (no secrets)
 app.use((error: unknown, req: Request, res: Response, _next: NextFunction) => {
   const message = error instanceof Error ? error.message : String(error);
+  captureException(error, { route: req.path, method: req.method });
   if (error instanceof Error) {
     console.error(`[ERR] ${req.method} ${req.path}: ${message}\n${error.stack ?? ""}`);
   } else {
@@ -2698,10 +2968,12 @@ app.use((error: unknown, req: Request, res: Response, _next: NextFunction) => {
 });
 
 process.on("unhandledRejection", (reason) => {
+  captureException(reason, { type: "unhandledRejection" });
   console.error("[UNHANDLED_REJECTION]", reason);
 });
 
 process.on("uncaughtException", (err) => {
+  captureException(err, { type: "uncaughtException" });
   console.error("[UNCAUGHT_EXCEPTION]", err);
   process.exit(1);
 });

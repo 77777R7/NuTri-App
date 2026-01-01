@@ -10,7 +10,8 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "postinstall": "patch-package",
-    "serve:backend": "cd backend && npx tsx src/server.ts"
+    "serve:backend": "cd backend && npx tsx src/server.ts",
+    "supabase:types": "supabase gen types typescript --project-id \"$PROJECT_ID\" > types/supabase.ts"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
