@@ -575,6 +575,15 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
 
       if (cached) {
         const { snapshot, analysisPayload } = cached;
+        const before = {
+          brand: snapshot.product.brand,
+          name: snapshot.product.name,
+          category: snapshot.product.category,
+          imageUrl: snapshot.product.imageUrl,
+          normalized: snapshot.product.barcode.normalized,
+          normalizedFormat: snapshot.product.barcode.normalizedFormat,
+          dsldLabelId: snapshot.regulatory.dsldLabelId,
+        };
         const catalogCategory = catalog.category ?? catalog.categoryRaw ?? null;
         const pickField = (...values: Array<string | null | undefined>) => {
           for (const value of values) {
@@ -601,6 +610,17 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
         snapshot.regulatory.dsldLabelId = catalog.dsldLabelId
           ? String(catalog.dsldLabelId)
           : snapshot.regulatory.dsldLabelId;
+        const changed =
+          before.brand !== snapshot.product.brand ||
+          before.name !== snapshot.product.name ||
+          before.category !== snapshot.product.category ||
+          before.imageUrl !== snapshot.product.imageUrl ||
+          before.normalized !== snapshot.product.barcode.normalized ||
+          before.normalizedFormat !== snapshot.product.barcode.normalizedFormat ||
+          before.dsldLabelId !== snapshot.regulatory.dsldLabelId;
+        if (changed) {
+          snapshot.updatedAt = new Date().toISOString();
+        }
         if (analysisPayload) {
           analysisPayload.productInfo = {
             brand: finalProductInfo.brand,
@@ -635,6 +655,16 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
         if (analysisPayload?.usagePayload) sendSSE(res, "result_usage", analysisPayload.usagePayload);
 
         sendSSE(res, "snapshot", snapshot);
+
+        if (changed) {
+          await storeSnapshotCache({
+            key: gtin14,
+            source: "barcode",
+            snapshot,
+            analysisPayload,
+            expiresAt: cached.expiresAt,
+          });
+        }
 
         await logBarcodeScan({
           barcodeGtin14: gtin14,

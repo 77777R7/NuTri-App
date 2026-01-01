@@ -394,7 +394,7 @@ export default function ProgressScreen() {
       const vitd = todayItems.find(item => item.id === 'vitd');
       const mag = todayItems.find(item => item.id === 'mag');
       return {
-        label: 'Consistency',
+        label: 'Streak',
         items: [
           { name: 'Vit D', val: vitd?.done ? 100 : 0 },
           { name: 'Mag', val: mag?.done ? 100 : 0 },
@@ -403,7 +403,7 @@ export default function ProgressScreen() {
     }
     if (range === '30d') {
       return {
-        label: 'Consistency',
+        label: 'Streak',
         items: [
           { name: 'Vit D', val: 88 },
           { name: 'Mag', val: 54 },
@@ -411,7 +411,7 @@ export default function ProgressScreen() {
       };
     }
     return {
-      label: 'Consistency',
+      label: 'Streak',
       items: [
         { name: 'Vit D', val: 92 },
         { name: 'Mag', val: 61 },
@@ -592,13 +592,13 @@ export default function ProgressScreen() {
           </Card>
         </View>
 
-        {/* Consistency + Reminders */}
+        {/* Streak + Plan */}
         <View style={[styles.row, styles.sectionSpacing, { marginTop: tokens.sectionGap }]}>
           <Card style={[styles.squareCard, styles.consistencyCard]}>
-            <ScalePressable accessibilityLabel="Consistency" onPress={() => setSheet('adherence')} style={styles.fill} scaleTo={0.95}>
+            <ScalePressable accessibilityLabel="Streak" onPress={() => setSheet('adherence')} style={styles.fill} scaleTo={0.95}>
               <View style={styles.squarePressable}>
                 <View style={styles.squareHeaderRow}>
-                  <Text style={styles.squareTitle} numberOfLines={1} ellipsizeMode="tail">Consistency</Text>
+                  <Text style={styles.squareTitle} numberOfLines={1} ellipsizeMode="tail">Streak</Text>
                   <View style={styles.squareIconWrap}>
                     <AlertCircle size={16} color="#0f172a" />
                   </View>
@@ -622,10 +622,10 @@ export default function ProgressScreen() {
           </Card>
 
           <Card style={[styles.squareCard, styles.remindersCard]}>
-            <ScalePressable accessibilityLabel="Reminders" onPress={() => setSheet('reminders')} style={styles.fill} scaleTo={0.95}>
+            <ScalePressable accessibilityLabel="Plan" onPress={() => setSheet('reminders')} style={styles.fill} scaleTo={0.95}>
               <View style={styles.squarePressable}>
                 <View style={styles.squareHeaderRow}>
-                  <Text style={styles.squareTitle} numberOfLines={1} ellipsizeMode="tail">Reminders</Text>
+                  <Text style={styles.squareTitle} numberOfLines={1} ellipsizeMode="tail">Plan</Text>
                   <View style={styles.squareIconWrap}>
                     <Clock size={16} color="#0f172a" />
                   </View>
@@ -736,9 +736,9 @@ export default function ProgressScreen() {
           sheet === 'today'
             ? 'Today details'
             : sheet === 'adherence'
-            ? 'Consistency'
+            ? 'Streak'
             : sheet === 'reminders'
-            ? 'Reminders & plan'
+            ? 'Plan'
             : sheet === 'trend'
             ? 'Trend'
             : sheet === 'achievements'
@@ -790,13 +790,13 @@ export default function ProgressScreen() {
               ))}
             </View>
 
-            <ScalePressable accessibilityLabel="Adjust reminders" onPress={() => setSheet('reminders')} style={styles.sheetActionButton} scaleTo={0.98}>
-              <Text style={styles.sheetActionText}>Adjust reminders</Text>
+            <ScalePressable accessibilityLabel="Adjust plan" onPress={() => setSheet('reminders')} style={styles.sheetActionButton} scaleTo={0.98}>
+              <Text style={styles.sheetActionText}>Adjust plan</Text>
             </ScalePressable>
           </View>
         ) : sheet === 'reminders' ? (
           <View>
-            <Text style={styles.sheetSectionTitle}>Today reminders</Text>
+            <Text style={styles.sheetSectionTitle}>Today plan</Text>
             <View style={styles.sheetList}>
               <View style={styles.sheetMetricCard}>
                 <Text style={styles.sheetRowTitle}>Mg · 9:00 PM</Text>

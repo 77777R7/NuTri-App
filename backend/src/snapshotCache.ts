@@ -6,6 +6,7 @@ import { validateSnapshotOrFallback } from './snapshot.js';
 export type SnapshotCacheRecord = {
   snapshot: SupplementSnapshot;
   analysisPayload: SnapshotAnalysisPayload | null;
+  expiresAt: string | null;
 };
 
 type SnapshotCacheRow = {
@@ -26,19 +27,31 @@ const isExpired = (expiresAt: string | null): boolean => {
   return expiresMs <= Date.now();
 };
 
+const isMissingUpdatedAtColumn = (error: { message?: string } | null): boolean => {
+  const message = error?.message?.toLowerCase();
+  if (!message) return false;
+  return message.includes('updated_at') && (message.includes('does not exist') || message.includes('schema cache'));
+};
+
 export async function getSnapshotCache(params: {
   key: string;
   source: string;
 }): Promise<SnapshotCacheRecord | null> {
   const { key, source } = params;
-  const { data, error } = await supabase
-    .from('snapshots')
-    .select('*')
-    .eq('key', key)
-    .eq('source', source)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const runSnapshotQuery = (orderColumn: 'updated_at' | 'created_at') =>
+    supabase
+      .from('snapshots')
+      .select('*')
+      .eq('key', key)
+      .eq('source', source)
+      .order(orderColumn, { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+  let { data, error } = await runSnapshotQuery('updated_at');
+  if (error && isMissingUpdatedAtColumn(error)) {
+    ({ data, error } = await runSnapshotQuery('created_at'));
+  }
 
   if (error || !data) {
     if (error) {
@@ -69,6 +82,7 @@ export async function getSnapshotCache(params: {
   return {
     snapshot,
     analysisPayload: row.analysis_json ?? null,
+    expiresAt: row.expires_at ?? null,
   };
 }
 
@@ -80,16 +94,29 @@ export async function storeSnapshotCache(params: {
   expiresAt?: string | null;
 }): Promise<void> {
   const { key, source, snapshot, analysisPayload, expiresAt } = params;
-  const record = {
+  const updatedAt = snapshot.updatedAt ?? new Date().toISOString();
+  const payloadSnapshot =
+    snapshot.updatedAt === updatedAt
+      ? snapshot
+      : {
+          ...snapshot,
+          updatedAt,
+        };
+  const record: Record<string, unknown> = {
     id: snapshot.snapshotId,
     key,
     source,
-    payload_json: snapshot,
-    analysis_json: analysisPayload ?? null,
-    expires_at: expiresAt ?? null,
+    payload_json: payloadSnapshot,
+    updated_at: updatedAt,
   };
+  if (analysisPayload !== undefined) {
+    record.analysis_json = analysisPayload;
+  }
+  if (expiresAt !== undefined) {
+    record.expires_at = expiresAt;
+  }
 
-  const { error } = await supabase.from('snapshots').insert(record);
+  const { error } = await supabase.from('snapshots').upsert(record, { onConflict: 'id' });
   if (error) {
     console.warn('[snapshot-cache] write failed', error.message);
   }

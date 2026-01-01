@@ -26,6 +26,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Easing } from "react-native-reanimated";
 
+import { AutoFitText } from "@/components/common/AutoFitText";
 import { useScanHistory } from "@/contexts/ScanHistoryContext";
 import { useSavedSupplements } from "@/contexts/SavedSupplementsContext";
 import { useScreenTokens } from "@/hooks/useScreenTokens";
@@ -370,6 +371,7 @@ const CollectionCard = React.memo(
     index,
     theme,
     zIndex,
+    stackOverlap,
     expanded,
     detailOpen,
     selectionMode,
@@ -382,6 +384,7 @@ const CollectionCard = React.memo(
     index: number;
     theme: Theme;
     zIndex: number;
+    stackOverlap: number;
     expanded: boolean;
     detailOpen: boolean;
     selectionMode: boolean;
@@ -403,7 +406,7 @@ const CollectionCard = React.memo(
         ]}
         animate={{
           scale: expanded ? 1.05 : 1,
-          marginTop: index === 0 ? 0 : selectionMode ? 16 : expanded ? 0 : -24,
+          marginTop: index === 0 ? 0 : selectionMode ? 16 : expanded ? 0 : -stackOverlap,
           marginBottom: expanded ? 16 : 0,
           translateY: expanded ? -10 : 0,
           shadowOpacity: selected ? 0.16 : expanded ? 0.12 : 0.0,
@@ -857,6 +860,11 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
 
   const cards = useMemo(() => filtered.map((item, idx) => ({ item, idx, theme: THEMES[idx % THEMES.length] })), [filtered]);
 
+  const baseOverlap = tokens.height < 760 ? 18 : 24;
+  const stackOverlap = selectionMode || expandedId ? 0 : baseOverlap;
+  const stackPadding = stackOverlap * Math.max(0, cards.length - 1);
+  const listBottomPadding = contentBottomPadding + stackPadding;
+
   const selectedCount = selectedIds.size;
   const headerMode: "select" | "done" | "delete" = !selectionMode ? "select" : selectedCount > 0 ? "delete" : "done";
   const headerLabel = headerMode === "select" ? "Select" : headerMode === "done" ? "Done" : `Delete (${selectedCount})`;
@@ -902,23 +910,25 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
         showsVerticalScrollIndicator={false}
         removeClippedSubviews={false}
         contentInsetAdjustmentBehavior="never"
-        scrollIndicatorInsets={{ top: contentTopPadding, bottom: contentBottomPadding }}
+        scrollIndicatorInsets={{ top: contentTopPadding, bottom: listBottomPadding }}
         style={{ overflow: "visible" }}
         contentContainerStyle={{
           paddingTop: contentTopPadding,
-          paddingBottom: contentBottomPadding,
+          paddingBottom: listBottomPadding,
           paddingHorizontal: tokens.pageX,
           overflow: "visible",
         }}
       >
         <View style={[styles.headerRow, { marginBottom: tokens.sectionGap }]}>
-          <Text
-            style={[styles.h1, { fontSize: tokens.h1Size, lineHeight: tokens.h1Line }]}
-            numberOfLines={1}
-            maxFontSizeMultiplier={1.2}
-          >
-            My Supplement
-          </Text>
+          <View style={styles.headerTitleWrap}>
+            <AutoFitText
+              text="My Saved"
+              baseFontSize={36}
+              baseLineHeight={40}
+              minFontSize={32}
+              style={styles.h1}
+            />
+          </View>
 
           <MotiView style={styles.headerPillMotion} animate={{ width: pillWidth }} transition={{ type: "timing", duration: 320 }}>
             <Pressable
@@ -993,6 +1003,7 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
               index={i}
               theme={theme}
               zIndex={i}
+              stackOverlap={stackOverlap}
               expanded={expandedId === item.id}
               detailOpen={detailId === item.id}
               selectionMode={selectionMode}
@@ -1027,6 +1038,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: 14,
+  },
+  headerTitleWrap: {
+    flex: 1,
+    minWidth: 0,
+    paddingRight: 12,
   },
   h1: {
     fontWeight: "800",
