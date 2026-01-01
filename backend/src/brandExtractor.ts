@@ -4,6 +4,8 @@
  * Uses rule-based extraction with AI fallback
  */
 
+import { HttpError, TimeoutError, combineSignals, createTimeoutSignal, isAbortError, isRetryableStatus, withRetry } from "./resilience.js";
+import type { CircuitBreaker, DeadlineBudget, RetryOptions, Semaphore } from "./resilience.js";
 import type { SearchItem } from "./types.js";
 
 // ============================================================================
@@ -434,7 +436,16 @@ function extractCategory(productName: string | null): string | null {
 export async function extractBrandWithAI(
     items: SearchItem[],
     apiKey: string,
-    model: string
+    model: string,
+    options: {
+        signal?: AbortSignal;
+        timeoutMs?: number;
+        queueTimeoutMs?: number;
+        budget?: DeadlineBudget;
+        breaker?: CircuitBreaker;
+        semaphore?: Semaphore;
+        retry?: Partial<RetryOptions>;
+    } = {}
 ): Promise<BrandExtractionResult> {
     const titles = items.slice(0, 3).map((item) => item.title).join("\n");
 
@@ -452,27 +463,82 @@ OUTPUT JSON ONLY. NO MARKDOWN:
   "category": "string or null"
 }`;
 
+    let release: (() => void) | null = null;
     try {
-        const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${apiKey}`,
-            },
-            body: JSON.stringify({
-                model,
-                messages: [
-                    { role: "system", content: "You are a product name parser. Output JSON only." },
-                    { role: "user", content: prompt },
-                ],
-                temperature: 0.1,
-                max_tokens: 200,
-            }),
-        });
-
-        if (!response.ok) {
-            throw new Error(`DeepSeek API error: ${response.status}`);
+        if (options.breaker && !options.breaker.canRequest()) {
+            return extractBrandProduct(items);
         }
+
+        const timeoutMs = options.timeoutMs ?? 3000;
+        const budgetedTimeout = options.budget ? options.budget.msFor(timeoutMs) : timeoutMs;
+        if (budgetedTimeout <= 0) {
+            return extractBrandProduct(items);
+        }
+
+        if (options.semaphore) {
+            try {
+                release = await options.semaphore.acquire({
+                    timeoutMs: options.queueTimeoutMs ?? 0,
+                    signal: options.signal,
+                });
+            } catch {
+                return extractBrandProduct(items);
+            }
+        }
+
+        const retryConfig: RetryOptions = {
+            maxAttempts: options.retry?.maxAttempts ?? 2,
+            baseDelayMs: options.retry?.baseDelayMs ?? 300,
+            maxDelayMs: options.retry?.maxDelayMs ?? 1200,
+            jitterRatio: options.retry?.jitterRatio ?? 0.4,
+            shouldRetry: (error) => {
+                if (error instanceof TimeoutError) return true;
+                if (error instanceof HttpError) return isRetryableStatus(error.status);
+                if (isAbortError(error)) return false;
+                return error instanceof TypeError;
+            },
+            signal: options.signal,
+            budget: options.budget,
+        };
+
+        const response = await withRetry(async () => {
+            const timeoutSignal = createTimeoutSignal(budgetedTimeout);
+            const { signal, cleanup } = combineSignals([options.signal, timeoutSignal]);
+            try {
+                const result = await fetch("https://api.deepseek.com/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model,
+                        messages: [
+                            { role: "system", content: "You are a product name parser. Output JSON only." },
+                            { role: "user", content: prompt },
+                        ],
+                        temperature: 0.1,
+                        max_tokens: 200,
+                    }),
+                    signal,
+                });
+
+                if (!result.ok) {
+                    throw new HttpError(result.status, `DeepSeek API error: ${result.status}`);
+                }
+
+                return result;
+            } catch (error) {
+                if (timeoutSignal.aborted && !options.signal?.aborted && isAbortError(error)) {
+                    throw new TimeoutError();
+                }
+                throw error;
+            } finally {
+                cleanup();
+            }
+        }, retryConfig);
+
+        options.breaker?.recordSuccess();
 
         const data = (await response.json()) as { choices?: { message?: { content?: string } }[] };
         const content = data.choices?.[0]?.message?.content || "{}";
@@ -489,6 +555,9 @@ OUTPUT JSON ONLY. NO MARKDOWN:
             source: "ai",
         };
     } catch (error) {
+        if (!isAbortError(error)) {
+            options.breaker?.recordFailure();
+        }
         console.error("AI brand extraction failed:", error);
 
         // Fallback to rule-based extraction
@@ -497,5 +566,7 @@ OUTPUT JSON ONLY. NO MARKDOWN:
             ...ruleResult,
             reason: `AI failed, fallback: ${ruleResult.reason}`,
         };
+    } finally {
+        release?.();
     }
 }

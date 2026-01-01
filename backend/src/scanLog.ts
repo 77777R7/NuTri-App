@@ -1,4 +1,28 @@
 import { supabase } from "./supabase.js";
+import { CircuitBreaker, combineSignals, createTimeoutSignal, isAbortError } from "./resilience.js";
+import type { DeadlineBudget } from "./resilience.js";
+
+const RESILIENCE_BREAKER_WINDOW_MS = Number(process.env.RESILIENCE_BREAKER_WINDOW_MS ?? 30_000);
+const RESILIENCE_BREAKER_MIN_REQUESTS = Number(process.env.RESILIENCE_BREAKER_MIN_REQUESTS ?? 10);
+const RESILIENCE_BREAKER_FAILURE_THRESHOLD = Number(process.env.RESILIENCE_BREAKER_FAILURE_THRESHOLD ?? 0.5);
+const RESILIENCE_BREAKER_OPEN_MS = Number(process.env.RESILIENCE_BREAKER_OPEN_MS ?? 60_000);
+const RESILIENCE_SUPABASE_WRITE_TIMEOUT_MS = Number(
+  process.env.RESILIENCE_SUPABASE_WRITE_TIMEOUT_MS ?? 1500,
+);
+
+const scanWriteBreaker = new CircuitBreaker({
+  windowMs: RESILIENCE_BREAKER_WINDOW_MS,
+  minRequests: RESILIENCE_BREAKER_MIN_REQUESTS,
+  failureThreshold: RESILIENCE_BREAKER_FAILURE_THRESHOLD,
+  openDurationMs: RESILIENCE_BREAKER_OPEN_MS,
+});
+
+type LogWriteOptions = {
+  signal?: AbortSignal;
+  timeoutMs?: number;
+  budget?: DeadlineBudget;
+  breaker?: CircuitBreaker;
+};
 
 export async function logBarcodeScan(input: {
   barcodeGtin14: string;
@@ -15,26 +39,52 @@ export async function logBarcodeScan(input: {
   timingTotalMs?: number | null;
 
   meta?: Record<string, unknown> | null;
-}): Promise<void> {
-  try {
-    const { error } = await supabase.from("barcode_scans").insert({
-      barcode_gtin14: input.barcodeGtin14,
-      barcode_raw: input.barcodeRaw,
-      checksum_valid: input.checksumValid,
-      catalog_hit: input.catalogHit,
-      served_from: input.servedFrom,
-      dsld_label_id: input.dsldLabelId ?? null,
-      snapshot_id: input.snapshotId ?? null,
-      device_id: input.deviceId ?? null,
-      request_id: input.requestId ?? null,
-      timing_total_ms: input.timingTotalMs ?? null,
-      meta: input.meta ?? null,
-    });
+}, options: LogWriteOptions = {}): Promise<void> {
+  if (options.signal?.aborted) {
+    return;
+  }
+  const breaker = options.breaker ?? scanWriteBreaker;
+  if (breaker && !breaker.canRequest()) {
+    return;
+  }
 
-    if (error) {
-      console.warn("[barcode_scans] insert failed:", error.message);
+  const baseTimeoutMs = options.timeoutMs ?? RESILIENCE_SUPABASE_WRITE_TIMEOUT_MS;
+  const budgetedTimeoutMs = options.budget ? options.budget.msFor(baseTimeoutMs) : baseTimeoutMs;
+  if (!Number.isFinite(budgetedTimeoutMs) || budgetedTimeoutMs <= 0) {
+    return;
+  }
+
+  const timeoutSignal = createTimeoutSignal(budgetedTimeoutMs);
+  const { signal, cleanup } = combineSignals([options.signal, timeoutSignal]);
+  try {
+    const { error } = await supabase
+      .from("barcode_scans")
+      .insert({
+        barcode_gtin14: input.barcodeGtin14,
+        barcode_raw: input.barcodeRaw,
+        checksum_valid: input.checksumValid,
+        catalog_hit: input.catalogHit,
+        served_from: input.servedFrom,
+        dsld_label_id: input.dsldLabelId ?? null,
+        snapshot_id: input.snapshotId ?? null,
+        device_id: input.deviceId ?? null,
+        request_id: input.requestId ?? null,
+        timing_total_ms: input.timingTotalMs ?? null,
+        meta: input.meta ?? null,
+      })
+      .abortSignal(signal);
+    const aborted = Boolean(timeoutSignal.aborted || signal.aborted);
+    if (!error) {
+      breaker?.recordSuccess();
+    } else if (!aborted && !isAbortError(error)) {
+      breaker?.recordFailure();
     }
-  } catch (e) {
-    console.warn("[barcode_scans] insert unexpected:", e);
+  } catch (err) {
+    if (timeoutSignal.aborted || signal.aborted || isAbortError(err)) {
+      return;
+    }
+    breaker?.recordFailure();
+  } finally {
+    cleanup();
   }
 }

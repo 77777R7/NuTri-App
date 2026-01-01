@@ -9,9 +9,24 @@ import { resolveCatalogByBarcode } from "./catalogResolver.js";
 import { buildCatalogBarcodeSnapshot } from "./catalogSnapshot.js";
 import { logBarcodeScan } from "./scanLog.js";
 import { extractBrandProduct, extractBrandWithAI, type BrandExtractionResult } from "./brandExtractor.js";
-import { buildEnhancedContext, fetchAnalysisSection, prepareContextSources } from "./deepseek.js";
+import { buildCombinedContext, fetchAnalysisBundle, prepareContextSources } from "./deepseek.js";
 import { analyzeLabelDraft, analyzeLabelDraftWithDiagnostics, formatForDeepSeek, needsConfirmation, validateIngredient, type LabelAnalysisDiagnostics, type LabelDraft } from "./labelAnalysis.js";
 import { getCachedResult, hasCompletedAnalysis, setCachedResult, updateCachedAnalysis } from "./ocrCache.js";
+import {
+  BulkheadTimeoutError,
+  CircuitBreaker,
+  DeadlineBudget,
+  HttpError,
+  Semaphore,
+  TimeoutError,
+  TtlCache,
+  combineSignals,
+  createTimeoutSignal,
+  isAbortError,
+  isRetryableStatus,
+  withRetry,
+} from "./resilience.js";
+import type { RetryOptions } from "./resilience.js";
 import { constructFallbackQuery, extractDomain, isHighQualityDomain, scoreSearchItem, scoreSearchQuality } from "./searchQuality.js";
 import { buildBarcodeSnapshot, buildLabelSnapshot, validateSnapshotOrFallback, type SnapshotAnalysisPayload } from "./snapshot.js";
 import { getSnapshotCache, storeSnapshotCache } from "./snapshotCache.js";
@@ -41,6 +56,60 @@ const LABEL_SCAN_OUTPUT_RULES = `LABEL-SCAN OUTPUT RULES:
 5) Do NOT mention price/cost; value should reflect formula transparency.
 6) If data is missing, say "Not specified on label" instead of guessing.`;
 
+const RESILIENCE_TOTAL_BUDGET_MS = Number(process.env.RESILIENCE_TOTAL_BUDGET_MS ?? 25_000);
+const RESILIENCE_CATALOG_TIMEOUT_MS = Number(process.env.RESILIENCE_CATALOG_TIMEOUT_MS ?? 900);
+const RESILIENCE_SNAPSHOT_TIMEOUT_MS = Number(process.env.RESILIENCE_SNAPSHOT_TIMEOUT_MS ?? 900);
+const RESILIENCE_GOOGLE_TIMEOUT_MS = Number(process.env.RESILIENCE_GOOGLE_TIMEOUT_MS ?? 2500);
+const RESILIENCE_DEEPSEEK_TIMEOUT_MS = Number(process.env.RESILIENCE_DEEPSEEK_TIMEOUT_MS ?? 10_000);
+const RESILIENCE_CONTEXT_FETCH_TIMEOUT_MS = Number(process.env.RESILIENCE_CONTEXT_FETCH_TIMEOUT_MS ?? 4500);
+const RESILIENCE_GOOGLE_QUEUE_TIMEOUT_MS = Number(process.env.RESILIENCE_GOOGLE_QUEUE_TIMEOUT_MS ?? 300);
+const RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS = Number(process.env.RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS ?? 300);
+const RESILIENCE_CONTEXT_FETCH_QUEUE_TIMEOUT_MS = Number(process.env.RESILIENCE_CONTEXT_FETCH_QUEUE_TIMEOUT_MS ?? 300);
+const RESILIENCE_GOOGLE_CONCURRENCY = Number(process.env.RESILIENCE_GOOGLE_CONCURRENCY ?? 3);
+const RESILIENCE_DEEPSEEK_CONCURRENCY = Number(process.env.RESILIENCE_DEEPSEEK_CONCURRENCY ?? 2);
+const RESILIENCE_CONTEXT_FETCH_CONCURRENCY = Number(process.env.RESILIENCE_CONTEXT_FETCH_CONCURRENCY ?? 4);
+const RESILIENCE_SUPABASE_READ_CONCURRENCY = Number(process.env.RESILIENCE_SUPABASE_READ_CONCURRENCY ?? 10);
+const RESILIENCE_BREAKER_WINDOW_MS = Number(process.env.RESILIENCE_BREAKER_WINDOW_MS ?? 30_000);
+const RESILIENCE_BREAKER_MIN_REQUESTS = Number(process.env.RESILIENCE_BREAKER_MIN_REQUESTS ?? 10);
+const RESILIENCE_BREAKER_FAILURE_THRESHOLD = Number(process.env.RESILIENCE_BREAKER_FAILURE_THRESHOLD ?? 0.5);
+const RESILIENCE_BREAKER_OPEN_MS = Number(process.env.RESILIENCE_BREAKER_OPEN_MS ?? 60_000);
+const RESILIENCE_NEGATIVE_NOT_FOUND_TTL_MS = Number(process.env.RESILIENCE_NEGATIVE_NOT_FOUND_TTL_MS ?? 15 * 60 * 1000);
+const RESILIENCE_SUPABASE_READ_QUEUE_TIMEOUT_MS = Number(
+  process.env.RESILIENCE_SUPABASE_READ_QUEUE_TIMEOUT_MS ?? 80,
+);
+
+const googleSemaphore = new Semaphore(RESILIENCE_GOOGLE_CONCURRENCY);
+const deepseekSemaphore = new Semaphore(RESILIENCE_DEEPSEEK_CONCURRENCY);
+const contextFetchSemaphore = new Semaphore(RESILIENCE_CONTEXT_FETCH_CONCURRENCY);
+const supabaseReadSemaphore = new Semaphore(RESILIENCE_SUPABASE_READ_CONCURRENCY);
+
+const googleBreaker = new CircuitBreaker({
+  windowMs: RESILIENCE_BREAKER_WINDOW_MS,
+  minRequests: RESILIENCE_BREAKER_MIN_REQUESTS,
+  failureThreshold: RESILIENCE_BREAKER_FAILURE_THRESHOLD,
+  openDurationMs: RESILIENCE_BREAKER_OPEN_MS,
+});
+const deepseekBreaker = new CircuitBreaker({
+  windowMs: RESILIENCE_BREAKER_WINDOW_MS,
+  minRequests: RESILIENCE_BREAKER_MIN_REQUESTS,
+  failureThreshold: RESILIENCE_BREAKER_FAILURE_THRESHOLD,
+  openDurationMs: RESILIENCE_BREAKER_OPEN_MS,
+});
+const contextFetchBreaker = new CircuitBreaker({
+  windowMs: RESILIENCE_BREAKER_WINDOW_MS,
+  minRequests: RESILIENCE_BREAKER_MIN_REQUESTS,
+  failureThreshold: RESILIENCE_BREAKER_FAILURE_THRESHOLD,
+  openDurationMs: RESILIENCE_BREAKER_OPEN_MS,
+});
+const supabaseReadBreaker = new CircuitBreaker({
+  windowMs: RESILIENCE_BREAKER_WINDOW_MS,
+  minRequests: RESILIENCE_BREAKER_MIN_REQUESTS,
+  failureThreshold: RESILIENCE_BREAKER_FAILURE_THRESHOLD,
+  openDurationMs: RESILIENCE_BREAKER_OPEN_MS,
+});
+
+const negativeBarcodeCache = new TtlCache<string, true>();
+
 // ============================================================================
 // GOOGLE CSE UTILITIES
 // ============================================================================
@@ -60,6 +129,26 @@ interface GoogleCseItem {
 interface GoogleCseResponse {
   items?: GoogleCseItem[];
 }
+
+type SearchResilienceOptions = {
+  signal?: AbortSignal;
+  timeoutMs?: number;
+  queueTimeoutMs?: number;
+  budget?: DeadlineBudget;
+  breaker?: CircuitBreaker;
+  semaphore?: Semaphore;
+  retry?: Partial<RetryOptions>;
+};
+
+type DeepseekResilienceOptions = {
+  signal?: AbortSignal;
+  timeoutMs?: number;
+  queueTimeoutMs?: number;
+  budget?: DeadlineBudget;
+  breaker?: CircuitBreaker;
+  semaphore?: Semaphore;
+  retry?: Partial<RetryOptions>;
+};
 
 const pickImageFromPagemap = (pagemap: GoogleCseItem["pagemap"]): string | undefined => {
   if (!pagemap) {
@@ -83,6 +172,7 @@ const performGoogleSearch = async (
   query: string,
   apiKey: string,
   cx: string,
+  options: SearchResilienceOptions = {},
 ): Promise<SearchItem[]> => {
   const searchParams = new URLSearchParams({
     key: apiKey,
@@ -93,14 +183,67 @@ const performGoogleSearch = async (
 
   console.log(`[Search] Query: "${query}"`);
 
-  const response = await fetch(url, { cache: "no-store" });
-  if (!response.ok) {
-    const detail = await response.text();
-    console.error("Google CSE returned non-OK status", {
-      status: response.status,
-      detail,
+  if (options.breaker && !options.breaker.canRequest()) {
+    throw new Error("google_breaker_open");
+  }
+
+  const timeoutMs = options.timeoutMs ?? RESILIENCE_GOOGLE_TIMEOUT_MS;
+  const budgetedTimeout = options.budget ? options.budget.msFor(timeoutMs) : timeoutMs;
+  if (budgetedTimeout <= 0) {
+    throw new TimeoutError("google_budget_exhausted");
+  }
+
+  let release: (() => void) | null = null;
+  if (options.semaphore) {
+    release = await options.semaphore.acquire({
+      timeoutMs: options.queueTimeoutMs ?? RESILIENCE_GOOGLE_QUEUE_TIMEOUT_MS,
+      signal: options.signal,
     });
-    throw new Error(`Google CSE error: ${response.status}`);
+  }
+
+  const retryConfig: RetryOptions = {
+    maxAttempts: options.retry?.maxAttempts ?? 2,
+    baseDelayMs: options.retry?.baseDelayMs ?? 300,
+    maxDelayMs: options.retry?.maxDelayMs ?? 1200,
+    jitterRatio: options.retry?.jitterRatio ?? 0.4,
+    shouldRetry: (error) => {
+      if (error instanceof TimeoutError) return true;
+      if (error instanceof HttpError) return isRetryableStatus(error.status);
+      if (isAbortError(error)) return false;
+      return error instanceof TypeError;
+    },
+    signal: options.signal,
+    budget: options.budget,
+  };
+
+  let response: globalThis.Response;
+  try {
+    response = await withRetry(async () => {
+      const timeoutSignal = createTimeoutSignal(budgetedTimeout);
+      const { signal, cleanup } = combineSignals([options.signal, timeoutSignal]);
+      try {
+        const result = await fetch(url, { cache: "no-store", signal });
+        if (!result.ok) {
+          throw new HttpError(result.status, `Google CSE error: ${result.status}`);
+        }
+        return result;
+      } catch (error) {
+        if (timeoutSignal.aborted && !options.signal?.aborted && isAbortError(error)) {
+          throw new TimeoutError("google_timeout");
+        }
+        throw error;
+      } finally {
+        cleanup();
+      }
+    }, retryConfig);
+    options.breaker?.recordSuccess();
+  } catch (error) {
+    if (!isAbortError(error)) {
+      options.breaker?.recordFailure();
+    }
+    throw error;
+  } finally {
+    release?.();
   }
 
   const data = (await response.json()) as GoogleCseResponse;
@@ -119,15 +262,33 @@ const runSearchPlan = async (
   queries: string[],
   apiKey: string,
   cx: string,
-  options: { barcode?: string } = {},
-): Promise<{ primary: SearchItem[]; secondary: SearchItem[]; merged: SearchItem[]; queriesTried: string[] }> => {
+  options: { barcode?: string; resilience?: SearchResilienceOptions } = {},
+): Promise<{
+  primary: SearchItem[];
+  secondary: SearchItem[];
+  merged: SearchItem[];
+  queriesTried: string[];
+  hardStop: boolean;
+  hadResponse: boolean;
+}> => {
   let primary: SearchItem[] = [];
   const secondary: SearchItem[] = [];
   const queriesTried: string[] = [];
+  let hardStop = false;
+  let hadResponse = false;
 
   for (const query of queries) {
+    if (options.resilience?.signal?.aborted) {
+      hardStop = true;
+      break;
+    }
+    if (options.resilience?.budget?.isExpired()) {
+      hardStop = true;
+      break;
+    }
     try {
-      const items = await performGoogleSearch(query, apiKey, cx);
+      const items = await performGoogleSearch(query, apiKey, cx, options.resilience);
+      hadResponse = true;
       queriesTried.push(query);
 
       if (!items.length) {
@@ -144,11 +305,29 @@ const runSearchPlan = async (
       const qualityScore = scoreSearchQuality(merged, { barcode: options.barcode });
 
       if (merged.length >= MAX_RESULTS && qualityScore >= QUALITY_THRESHOLD) {
-        return { primary, secondary, merged, queriesTried };
+        return {
+          primary,
+          secondary,
+          merged,
+          queriesTried,
+          hardStop,
+          hadResponse,
+        };
       }
     } catch (error) {
       queriesTried.push(query);
-      console.warn(`[Search] Query failed: "${query}"`, error);
+      if (!isAbortError(error)) {
+        console.warn(`[Search] Query failed: "${query}"`, error);
+      }
+      const shouldHardStop =
+        error instanceof BulkheadTimeoutError ||
+        (error instanceof TimeoutError && error.message.includes("budget")) ||
+        (error instanceof Error && error.message === "google_breaker_open") ||
+        isAbortError(error);
+      if (shouldHardStop) {
+        hardStop = true;
+        break;
+      }
     }
   }
 
@@ -157,6 +336,8 @@ const runSearchPlan = async (
     secondary,
     merged: mergeAndDedupe(primary, secondary, { barcode: options.barcode }),
     queriesTried,
+    hardStop,
+    hadResponse,
   };
 };
 
@@ -290,6 +471,41 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 const sendSSE = (res: Response, type: string, data: unknown) => {
   res.write(`event: ${type}\n`);
   res.write(`data: ${JSON.stringify(data)}\n\n`);
+};
+
+const createRequestAbort = (res: Response) => {
+  const controller = new AbortController();
+  res.on("close", () => controller.abort(new Error("client_disconnected")));
+  return controller;
+};
+
+const abortable = async <T>(promise: Promise<T>, signal?: AbortSignal): Promise<T> => {
+  if (!signal) return promise;
+  if (signal.aborted) {
+    throw signal.reason ?? new Error("aborted");
+  }
+  return new Promise<T>((resolve, reject) => {
+    const onAbort = () => reject(signal.reason ?? new Error("aborted"));
+    signal.addEventListener("abort", onAbort, { once: true });
+    promise
+      .then(resolve)
+      .catch(reject)
+      .finally(() => signal.removeEventListener("abort", onAbort));
+  });
+};
+
+const withTimeoutPromise = async <T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  signal?: AbortSignal,
+): Promise<T> => {
+  const timeoutSignal = createTimeoutSignal(timeoutMs);
+  const { signal: combined, cleanup } = combineSignals([signal, timeoutSignal]);
+  try {
+    return await abortable(promise, combined);
+  } finally {
+    cleanup();
+  }
 };
 
 const barcodeEnrichInFlight = new Map<string, Promise<void>>();
@@ -469,8 +685,52 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
     const barcodeGtin14 = normalized.code.padStart(14, "0");
 
     const startedAt = performance.now();
+    const budget = new DeadlineBudget(Date.now() + RESILIENCE_TOTAL_BUDGET_MS);
+    const requestAbort = createRequestAbort(res);
     const requestId = String(res.getHeader("x-request-id") ?? "");
     const deviceId = typeof req.body?.deviceId === "string" ? req.body.deviceId : null;
+    const requestSignal = requestAbort.signal;
+    const googleResilience: SearchResilienceOptions = {
+      signal: requestSignal,
+      budget,
+      breaker: googleBreaker,
+      semaphore: googleSemaphore,
+      timeoutMs: RESILIENCE_GOOGLE_TIMEOUT_MS,
+      queueTimeoutMs: RESILIENCE_GOOGLE_QUEUE_TIMEOUT_MS,
+    };
+    const deepseekResilience = {
+      signal: requestSignal,
+      budget,
+      breaker: deepseekBreaker,
+      semaphore: deepseekSemaphore,
+      timeoutMs: RESILIENCE_DEEPSEEK_TIMEOUT_MS,
+      queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS,
+    };
+    const supabaseReadResilience = {
+      signal: requestSignal,
+      budget,
+      breaker: supabaseReadBreaker,
+      semaphore: supabaseReadSemaphore,
+      queueTimeoutMs: RESILIENCE_SUPABASE_READ_QUEUE_TIMEOUT_MS,
+      retry: {
+        maxAttempts: 2,
+        baseDelayMs: 100,
+        maxDelayMs: 300,
+        jitterRatio: 0.3,
+      },
+    };
+    const brandAiResilience = {
+      ...deepseekResilience,
+      timeoutMs: Math.min(RESILIENCE_DEEPSEEK_TIMEOUT_MS, 3000),
+    };
+    const contextResilience = {
+      signal: requestSignal,
+      budget,
+      breaker: contextFetchBreaker,
+      semaphore: contextFetchSemaphore,
+      timeoutMs: RESILIENCE_CONTEXT_FETCH_TIMEOUT_MS,
+      queueTimeoutMs: RESILIENCE_CONTEXT_FETCH_QUEUE_TIMEOUT_MS,
+    };
 
     const emitCachedSnapshot = (cached: {
       snapshot: SupplementSnapshot;
@@ -560,8 +820,122 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
       sendSSE(res, "snapshot", snapshot);
     };
 
+    const catalogPromise = resolveCatalogByBarcode(normalized, {
+      ...supabaseReadResilience,
+      timeoutMs: RESILIENCE_CATALOG_TIMEOUT_MS,
+    });
+    const snapshotPromise = getSnapshotCache(
+      { key: cacheKey, source: "barcode" },
+      {
+        ...supabaseReadResilience,
+        timeoutMs: RESILIENCE_SNAPSHOT_TIMEOUT_MS,
+      },
+    );
+
+    const cachedFast = await snapshotPromise.catch(() => null);
+    if (cachedFast) {
+      emitCachedSnapshot(cachedFast);
+      sendSSE(res, "done", { barcode });
+      res.end();
+
+      const timingTotalMs = Math.round(performance.now() - startedAt);
+
+      void (async () => {
+        const catalog = await catalogPromise.catch(() => null);
+        if (catalog) {
+          const { snapshot, analysisPayload } = cachedFast;
+          const before = {
+            brand: snapshot.product.brand,
+            name: snapshot.product.name,
+            category: snapshot.product.category,
+            imageUrl: snapshot.product.imageUrl,
+            normalized: snapshot.product.barcode.normalized,
+            normalizedFormat: snapshot.product.barcode.normalizedFormat,
+            dsldLabelId: snapshot.regulatory.dsldLabelId,
+          };
+          const catalogCategory = catalog.category ?? catalog.categoryRaw ?? null;
+          const pickField = (...values: Array<string | null | undefined>) => {
+            for (const value of values) {
+              if (typeof value !== "string") continue;
+              const trimmed = value.trim();
+              if (trimmed.length > 0) return trimmed;
+            }
+            return null;
+          };
+          const finalProductInfo = {
+            brand: pickField(catalog.brand, analysisPayload?.productInfo?.brand, snapshot.product.brand),
+            name: pickField(catalog.productName, analysisPayload?.productInfo?.name, snapshot.product.name),
+            category: pickField(catalogCategory, analysisPayload?.productInfo?.category, snapshot.product.category),
+            image: pickField(catalog.imageUrl, analysisPayload?.productInfo?.image, snapshot.product.imageUrl),
+          };
+
+          snapshot.product.brand = finalProductInfo.brand;
+          snapshot.product.name = finalProductInfo.name;
+          snapshot.product.category = finalProductInfo.category;
+          snapshot.product.imageUrl = finalProductInfo.image;
+          snapshot.product.barcode.normalized = catalog.barcodeGtin14;
+          snapshot.product.barcode.normalizedFormat = "gtin14";
+          snapshot.regulatory.dsldLabelId = catalog.dsldLabelId
+            ? String(catalog.dsldLabelId)
+            : snapshot.regulatory.dsldLabelId;
+
+          const changed =
+            before.brand !== snapshot.product.brand ||
+            before.name !== snapshot.product.name ||
+            before.category !== snapshot.product.category ||
+            before.imageUrl !== snapshot.product.imageUrl ||
+            before.normalized !== snapshot.product.barcode.normalized ||
+            before.normalizedFormat !== snapshot.product.barcode.normalizedFormat ||
+            before.dsldLabelId !== snapshot.regulatory.dsldLabelId;
+          if (changed) {
+            snapshot.updatedAt = new Date().toISOString();
+          }
+          if (analysisPayload) {
+            analysisPayload.productInfo = {
+              brand: finalProductInfo.brand,
+              name: finalProductInfo.name,
+              category: finalProductInfo.category,
+              image: finalProductInfo.image,
+            };
+          }
+
+          if (changed) {
+            void storeSnapshotCache({
+              key: catalog.barcodeGtin14,
+              source: "barcode",
+              snapshot,
+              analysisPayload,
+              expiresAt: cachedFast.expiresAt,
+            });
+          }
+        }
+
+        const servedFrom = catalog
+          ? catalog.resolvedFrom === "override"
+            ? "override_snapshot_cache"
+            : "dsld_snapshot_cache"
+          : "snapshot_cache";
+
+        void logBarcodeScan({
+          barcodeGtin14,
+          barcodeRaw: rawBarcode,
+          checksumValid: normalized.isValidChecksum ?? null,
+          catalogHit: Boolean(catalog),
+          servedFrom,
+          dsldLabelId: catalog?.dsldLabelId ?? null,
+          snapshotId: cachedFast.snapshot.snapshotId,
+          deviceId,
+          requestId,
+          timingTotalMs,
+          meta: { cacheKey: barcodeGtin14, mode: "snapshot_cache_hit_fast" },
+        });
+      })();
+
+      return;
+    }
+
     // 1) Catalog-first：overrides / DSLD
-    const catalog = await resolveCatalogByBarcode(normalized);
+    const catalog = await catalogPromise.catch(() => null);
 
     if (catalog) {
       const gtin14 = catalog.barcodeGtin14;
@@ -571,7 +945,13 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
         : "dsld_snapshot_cache";
 
       // 1.1 如果你已有 snapshot（以前 Google 跑出来的），可直接复用分析结果，但用 Catalog 纠正品牌/品名
-      const cached = await getSnapshotCache({ key: gtin14, source: "barcode" });
+      const cached = await getSnapshotCache(
+        { key: gtin14, source: "barcode" },
+        {
+          ...supabaseReadResilience,
+          timeoutMs: RESILIENCE_SNAPSHOT_TIMEOUT_MS,
+        },
+      ).catch(() => null);
 
       if (cached) {
         const { snapshot, analysisPayload } = cached;
@@ -656,8 +1036,13 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
 
         sendSSE(res, "snapshot", snapshot);
 
+        sendSSE(res, "done", { barcode });
+        res.end();
+
+        const timingTotalMs = Math.round(performance.now() - startedAt);
+
         if (changed) {
-          await storeSnapshotCache({
+          void storeSnapshotCache({
             key: gtin14,
             source: "barcode",
             snapshot,
@@ -666,7 +1051,7 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
           });
         }
 
-        await logBarcodeScan({
+        void logBarcodeScan({
           barcodeGtin14: gtin14,
           barcodeRaw: rawBarcode,
           checksumValid: normalized.isValidChecksum ?? null,
@@ -676,12 +1061,10 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
           snapshotId: snapshot.snapshotId,
           deviceId,
           requestId,
-          timingTotalMs: Math.round(performance.now() - startedAt),
-          meta: { cacheKey, mode: "catalog_hit_with_snapshot" },
+          timingTotalMs,
+          meta: { cacheKey: gtin14, mode: "catalog_hit_with_snapshot" },
         });
 
-        sendSSE(res, "done", { barcode });
-        res.end();
         return;
       }
 
@@ -690,23 +1073,6 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
         barcodeRaw: rawBarcode,
         normalized,
         catalog,
-      });
-
-      // 可选：把 Catalog snapshot 写进 snapshots，这样下次会直接命中 cache
-      await storeSnapshotCache({
-        key: gtin14,
-        source: "barcode",
-        snapshot: catalogSnapshot,
-        analysisPayload: {
-          productInfo: {
-            brand: catalog.brand,
-            name: catalog.productName,
-            category: catalog.category ?? catalog.categoryRaw ?? null,
-            image: catalog.imageUrl ?? null,
-          },
-          sources: [],
-        },
-        expiresAt: null, // Catalog 数据稳定，可以不设过期
       });
 
       sendSSE(res, "brand_extracted", {
@@ -729,7 +1095,29 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
 
       sendSSE(res, "snapshot", catalogSnapshot);
 
-      await logBarcodeScan({
+      sendSSE(res, "done", { barcode });
+      res.end();
+
+      const timingTotalMs = Math.round(performance.now() - startedAt);
+
+      // 可选：把 Catalog snapshot 写进 snapshots，这样下次会直接命中 cache
+      void storeSnapshotCache({
+        key: gtin14,
+        source: "barcode",
+        snapshot: catalogSnapshot,
+        analysisPayload: {
+          productInfo: {
+            brand: catalog.brand,
+            name: catalog.productName,
+            category: catalog.category ?? catalog.categoryRaw ?? null,
+            image: catalog.imageUrl ?? null,
+          },
+          sources: [],
+        },
+        expiresAt: null, // Catalog 数据稳定，可以不设过期
+      });
+
+      void logBarcodeScan({
         barcodeGtin14: gtin14,
         barcodeRaw: rawBarcode,
         checksumValid: normalized.isValidChecksum ?? null,
@@ -739,32 +1127,10 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
         snapshotId: catalogSnapshot.snapshotId,
         deviceId,
         requestId,
-        timingTotalMs: Math.round(performance.now() - startedAt),
-        meta: { cacheKey, mode: "catalog_hit_no_snapshot" },
+        timingTotalMs,
+        meta: { cacheKey: gtin14, mode: "catalog_hit_no_snapshot" },
       });
 
-      sendSSE(res, "done", { barcode });
-      res.end();
-      return;
-    }
-
-    const cached = await getSnapshotCache({ key: cacheKey, source: "barcode" });
-    if (cached) {
-      emitCachedSnapshot(cached);
-      await logBarcodeScan({
-        barcodeGtin14,
-        barcodeRaw: rawBarcode,
-        checksumValid: normalized.isValidChecksum ?? null,
-        catalogHit: false,
-        servedFrom: "snapshot_cache",
-        snapshotId: cached.snapshot.snapshotId,
-        deviceId,
-        requestId,
-        timingTotalMs: Math.round(performance.now() - startedAt),
-        meta: { cacheKey, mode: "snapshot_cache_hit" },
-      });
-      sendSSE(res, "done", { barcode });
-      res.end();
       return;
     }
 
@@ -774,7 +1140,9 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
 
     if (!googleApiKey || !cx) {
       sendSSE(res, "error", { message: "Google CSE not configured" });
-      await logBarcodeScan({
+      res.end();
+      const timingTotalMs = Math.round(performance.now() - startedAt);
+      void logBarcodeScan({
         barcodeGtin14,
         barcodeRaw: rawBarcode,
         checksumValid: normalized.isValidChecksum ?? null,
@@ -784,16 +1152,17 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
         snapshotId: null,
         deviceId,
         requestId,
-        timingTotalMs: Math.round(performance.now() - startedAt),
+        timingTotalMs,
         meta: { reason: "google_cse_env_not_set" },
       });
-      res.end();
       return;
     }
 
     if (!deepseekKey) {
       sendSSE(res, "error", { message: "DeepSeek API key missing" });
-      await logBarcodeScan({
+      res.end();
+      const timingTotalMs = Math.round(performance.now() - startedAt);
+      void logBarcodeScan({
         barcodeGtin14,
         barcodeRaw: rawBarcode,
         checksumValid: normalized.isValidChecksum ?? null,
@@ -803,10 +1172,29 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
         snapshotId: null,
         deviceId,
         requestId,
-        timingTotalMs: Math.round(performance.now() - startedAt),
+        timingTotalMs,
         meta: { reason: "deepseek_api_key_missing" },
       });
+      return;
+    }
+
+    if (negativeBarcodeCache.has(cacheKey)) {
+      sendSSE(res, "error", { message: "Product not found" });
       res.end();
+      const timingTotalMs = Math.round(performance.now() - startedAt);
+      void logBarcodeScan({
+        barcodeGtin14,
+        barcodeRaw: rawBarcode,
+        checksumValid: normalized.isValidChecksum ?? null,
+        catalogHit: false,
+        servedFrom: "error_not_found",
+        dsldLabelId: null,
+        snapshotId: null,
+        deviceId,
+        requestId,
+        timingTotalMs,
+        meta: { reason: "negative_cache" },
+      });
       return;
     }
 
@@ -815,16 +1203,29 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
     if (existing) {
       sendSSE(res, "status", { stage: "wait_inflight", message: "Another analysis is in progress. Waiting..." });
       try {
-        await Promise.race([
-          existing,
-          new Promise<void>((_, rej) => setTimeout(() => rej(new Error("inflight_wait_timeout")), 30_000)),
-        ]);
+        const waitMs = budget.msFor(30_000);
+        if (waitMs > 0) {
+          await withTimeoutPromise(existing, waitMs, requestSignal);
+        }
       } catch {}
 
-      const after = await getSnapshotCache({ key: cacheKey, source: "barcode" });
+      if (requestSignal.aborted) {
+        return;
+      }
+
+      const after = await getSnapshotCache(
+        { key: cacheKey, source: "barcode" },
+        {
+          ...supabaseReadResilience,
+          timeoutMs: RESILIENCE_SNAPSHOT_TIMEOUT_MS,
+        },
+      ).catch(() => null);
       if (after) {
         emitCachedSnapshot(after);
-        await logBarcodeScan({
+        sendSSE(res, "done", { barcode });
+        res.end();
+        const timingTotalMs = Math.round(performance.now() - startedAt);
+        void logBarcodeScan({
           barcodeGtin14,
           barcodeRaw: rawBarcode,
           checksumValid: normalized.isValidChecksum ?? null,
@@ -833,14 +1234,16 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
           snapshotId: after.snapshot.snapshotId,
           deviceId,
           requestId,
-          timingTotalMs: Math.round(performance.now() - startedAt),
-          meta: { cacheKey, mode: "wait_inflight_hit" },
+          timingTotalMs,
+          meta: { cacheKey: barcodeGtin14, mode: "wait_inflight_hit" },
         });
-        sendSSE(res, "done", { barcode });
-        res.end();
         return;
       }
       // 如果等待后仍没有缓存（说明对方失败了），继续走你当前请求的 Google 流程
+    }
+
+    if (requestSignal.aborted) {
+      return;
     }
 
     const deferred = createDeferred<void>();
@@ -864,12 +1267,22 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
     console.log(`[Stream] Starting analysis for barcode: ${barcode}`);
 
     const queries = buildBarcodeSearchQueries(normalized);
-    const initial = await runSearchPlan(queries, googleApiKey, cx, { barcode });
+    const initial = await runSearchPlan(queries, googleApiKey, cx, { barcode, resilience: googleResilience });
     let initialItems = initial.merged;
+
+    if (requestSignal.aborted) {
+      finishInFlight?.(requestSignal.reason ?? new Error("client_disconnected"));
+      return;
+    }
 
     if (!initialItems.length) {
       sendSSE(res, "error", { message: "Product not found" });
-      await logBarcodeScan({
+      res.end();
+      if (!initial.hardStop && initial.hadResponse) {
+        negativeBarcodeCache.set(cacheKey, true, RESILIENCE_NEGATIVE_NOT_FOUND_TTL_MS);
+      }
+      const timingTotalMs = Math.round(performance.now() - startedAt);
+      void logBarcodeScan({
         barcodeGtin14,
         barcodeRaw: rawBarcode,
         checksumValid: normalized.isValidChecksum ?? null,
@@ -879,10 +1292,13 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
         snapshotId: null,
         deviceId,
         requestId,
-        timingTotalMs: Math.round(performance.now() - startedAt),
+        timingTotalMs,
+        meta: {
+          reason: initial.hardStop ? "search_unavailable" : "not_found",
+          queriesTried: initial.queriesTried,
+        },
       });
       finishInFlight?.(new Error("product_not_found"));
-      res.end();
       return;
     }
 
@@ -895,7 +1311,7 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
     // If confidence is low, use AI to extract brand/product
     if (extraction.confidence === "low") {
       console.log(`[Stream] Low confidence (${extraction.score}), using AI extraction`);
-      extraction = await extractBrandWithAI(initialItems, deepseekKey, model);
+      extraction = await extractBrandWithAI(initialItems, deepseekKey, model, brandAiResilience);
       console.log(`[Stream] AI extraction result:`, extraction);
     }
 
@@ -957,7 +1373,10 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
       if (detailQueries.length > 0) {
         console.log(`[Stream] Running detail search plan (${detailQueries.length} queries)`);
         try {
-          const detailPlan = await runSearchPlan(detailQueries, googleApiKey, cx, { barcode });
+          const detailPlan = await runSearchPlan(detailQueries, googleApiKey, cx, {
+            barcode,
+            resilience: googleResilience,
+          });
           const extraItems = [...detailPlan.primary, ...detailPlan.secondary];
           detailItems = mergeAndDedupe(initialItems, extraItems, { barcode });
           console.log(
@@ -972,42 +1391,30 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
     console.log(`[Stream] Final items count: ${detailItems.length}`);
 
     // =========================================================================
-    // STEP 3: Parallel AI Analysis
+    // STEP 3: AI Analysis
     // =========================================================================
-    const sources = await prepareContextSources(detailItems);
-    const efficacyContext = buildEnhancedContext({ brand, product, barcode, sources }, "efficacy");
-    const safetyContext = buildEnhancedContext({ brand, product, barcode, sources }, "safety");
-    const usageContext = buildEnhancedContext({ brand, product, barcode, sources }, "usage");
+    const sources = await prepareContextSources(detailItems, contextResilience);
+    const analysisContext = buildCombinedContext({ brand, product, barcode, sources });
 
-    console.log(`[Stream] Starting parallel AI analysis...`);
+    console.log(`[Stream] Starting AI analysis...`);
 
-    // Fire all three analysis tasks in parallel
-    const taskEfficacy = fetchAnalysisSection("efficacy", efficacyContext, model, deepseekKey);
-    const taskSafety = fetchAnalysisSection("safety", safetyContext, model, deepseekKey);
-    const taskUsage = fetchAnalysisSection("usage", usageContext, model, deepseekKey);
+    let bundle: Awaited<ReturnType<typeof fetchAnalysisBundle>> | null = null;
+    try {
+      bundle = await fetchAnalysisBundle(analysisContext, model, deepseekKey, deepseekResilience);
+    } catch (error) {
+      if (!isAbortError(error)) {
+        console.warn("[Stream] analysis bundle failed", error);
+      }
+    }
+    const efficacyResult = bundle?.efficacy ?? null;
+    const safetyResult = bundle?.safety ?? null;
+    const usageResult = bundle?.usagePayload ?? null;
 
-    // Send results as they complete (whoever finishes first gets sent first)
-    taskEfficacy.then((data) => {
-      console.log(`[Stream] Efficacy analysis complete`);
-      sendSSE(res, "result_efficacy", data);
-    });
-
-    taskSafety.then((data) => {
-      console.log(`[Stream] Safety analysis complete`);
-      sendSSE(res, "result_safety", data);
-    });
-
-    taskUsage.then((data) => {
-      console.log(`[Stream] Usage analysis complete`);
-      sendSSE(res, "result_usage", data);
-    });
-
-    // Wait for all tasks to complete
-    const [efficacyResult, safetyResult, usageResult] = await Promise.all([
-      taskEfficacy,
-      taskSafety,
-      taskUsage,
-    ]);
+    if (!requestSignal.aborted && !res.writableEnded) {
+      if (efficacyResult) sendSSE(res, "result_efficacy", efficacyResult);
+      if (safetyResult) sendSSE(res, "result_safety", safetyResult);
+      if (usageResult) sendSSE(res, "result_usage", usageResult);
+    }
 
     const analysisPayload: SnapshotAnalysisPayload = {
       brandExtraction: {
@@ -1062,19 +1469,26 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
       ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
       : null;
 
-    await storeSnapshotCache({
+    const storePromise = storeSnapshotCache({
       key: cacheKey,
       source: "barcode",
       snapshot,
       analysisPayload,
       expiresAt,
     });
+    storePromise.catch(() => {});
+    storePromise.finally(() => finishInFlight?.());
 
-    finishInFlight?.();
+    if (requestSignal.aborted || res.writableEnded) {
+      return;
+    }
 
     sendSSE(res, "snapshot", snapshot);
+    sendSSE(res, "done", { barcode });
+    res.end();
 
-    await logBarcodeScan({
+    const timingTotalMs = Math.round(performance.now() - startedAt);
+    void logBarcodeScan({
       barcodeGtin14,
       barcodeRaw: rawBarcode,
       checksumValid: normalized.isValidChecksum ?? null,
@@ -1083,7 +1497,7 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
       snapshotId: snapshot.snapshotId,
       deviceId,
       requestId,
-      timingTotalMs: Math.round(performance.now() - startedAt),
+      timingTotalMs,
       meta: {
         queriesTried: initial.queriesTried,
         initialQuality,
@@ -1098,8 +1512,6 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
     });
 
     console.log(`[Stream] All analysis complete for barcode: ${barcode}`);
-    sendSSE(res, "done", { barcode });
-    res.end();
 
   } catch (error: unknown) {
     if (finishInFlight) {
@@ -1107,8 +1519,10 @@ app.post("/api/enrich-stream", async (req: Request, res: Response) => {
     }
     console.error("Stream Error:", error);
     const message = error instanceof Error ? error.message : "Unknown error";
-    sendSSE(res, "error", { message });
-    res.end();
+    if (!res.writableEnded) {
+      sendSSE(res, "error", { message });
+      res.end();
+    }
   }
 });
 
@@ -1285,8 +1699,9 @@ async function buildLabelScanAnalysis(options: {
   apiKey: string;
   contextLabel?: string;
   disclaimer?: string;
+  resilience?: DeepseekResilienceOptions;
 }): Promise<{ analysis: AiSupplementAnalysis; analysisIssues: string[]; analysisStatus: "complete" | "partial"; llmMs: number }> {
-  const { draft, imageHash, model, apiKey } = options;
+  const { draft, imageHash, model, apiKey, resilience } = options;
   const contextLabel = options.contextLabel ?? "from OCR";
   const disclaimer =
     options.disclaimer ?? "This analysis is based on label information only. Not a substitute for medical advice.";
@@ -1301,11 +1716,17 @@ If information is not available, use null instead of guessing.
 
 ${LABEL_SCAN_OUTPUT_RULES}`;
 
-  const [efficacyRaw, safetyRaw, usageRaw] = await Promise.all([
-    fetchAnalysisSection("efficacy", labelContext, model, apiKey),
-    fetchAnalysisSection("safety", labelContext, model, apiKey),
-    fetchAnalysisSection("usage", labelContext, model, apiKey),
-  ]);
+  let bundle: Awaited<ReturnType<typeof fetchAnalysisBundle>> | null = null;
+  try {
+    bundle = await fetchAnalysisBundle(labelContext, model, apiKey, resilience);
+  } catch (error) {
+    if (!isAbortError(error)) {
+      console.warn("[LabelScan] analysis bundle failed", error);
+    }
+  }
+  const efficacyRaw = bundle?.efficacy ?? null;
+  const safetyRaw = bundle?.safety ?? null;
+  const usageRaw = bundle?.usagePayload ?? null;
 
   const efficacy = efficacyRaw as {
     score?: number;
@@ -1650,6 +2071,16 @@ app.post("/api/analyze-label", async (req: Request, res: Response) => {
     const totalStart = performance.now();
     const body = req.body as AnalyzeLabelRequest;
     const { imageBase64, imageHash, deviceId } = body;
+    const labelBudget = new DeadlineBudget(Date.now() + RESILIENCE_TOTAL_BUDGET_MS);
+    const labelAbort = createRequestAbort(res);
+    const labelDeepseekResilience: DeepseekResilienceOptions = {
+      signal: labelAbort.signal,
+      budget: labelBudget,
+      breaker: deepseekBreaker,
+      semaphore: deepseekSemaphore,
+      timeoutMs: RESILIENCE_DEEPSEEK_TIMEOUT_MS,
+      queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS,
+    };
     const debugEnabled =
       body.debug === true
       || (Array.isArray(req.query.debug)
@@ -1779,11 +2210,20 @@ app.post("/api/analyze-label", async (req: Request, res: Response) => {
           if (!labelAnalysisInFlight.has(imageHash)) {
             const task = (async () => {
               try {
+                const backgroundBudget = new DeadlineBudget(Date.now() + RESILIENCE_TOTAL_BUDGET_MS);
+                const backgroundResilience: DeepseekResilienceOptions = {
+                  budget: backgroundBudget,
+                  breaker: deepseekBreaker,
+                  semaphore: deepseekSemaphore,
+                  timeoutMs: RESILIENCE_DEEPSEEK_TIMEOUT_MS,
+                  queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS,
+                };
                 const { analysis, llmMs } = await buildLabelScanAnalysis({
                   draft: cachedDraft,
                   imageHash,
                   model,
                   apiKey: deepseekKey,
+                  resilience: backgroundResilience,
                 });
                 await updateCachedAnalysis(imageHash, analysis);
                 console.log(`[LabelScan] Async analysis complete for ${imageHash.slice(0, 8)} in ${Math.round(llmMs)}ms...`);
@@ -1815,6 +2255,7 @@ app.post("/api/analyze-label", async (req: Request, res: Response) => {
           imageHash,
           model,
           apiKey: deepseekKey,
+          resilience: labelDeepseekResilience,
         });
         await updateCachedAnalysis(imageHash, analysis);
 
@@ -2014,11 +2455,20 @@ app.post("/api/analyze-label", async (req: Request, res: Response) => {
       if (!labelAnalysisInFlight.has(imageHash)) {
         const task = (async () => {
           try {
+            const backgroundBudget = new DeadlineBudget(Date.now() + RESILIENCE_TOTAL_BUDGET_MS);
+            const backgroundResilience: DeepseekResilienceOptions = {
+              budget: backgroundBudget,
+              breaker: deepseekBreaker,
+              semaphore: deepseekSemaphore,
+              timeoutMs: RESILIENCE_DEEPSEEK_TIMEOUT_MS,
+              queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS,
+            };
             const { analysis, llmMs: asyncLlmMs } = await buildLabelScanAnalysis({
               draft,
               imageHash,
               model,
               apiKey: deepseekKey,
+              resilience: backgroundResilience,
             });
             await updateCachedAnalysis(imageHash, analysis);
             console.log(`[LabelScan] Async analysis complete for ${imageHash.slice(0, 8)} in ${Math.round(asyncLlmMs)}ms...`);
@@ -2052,6 +2502,7 @@ app.post("/api/analyze-label", async (req: Request, res: Response) => {
       imageHash,
       model,
       apiKey: deepseekKey,
+      resilience: labelDeepseekResilience,
     });
 
     llmMs = resolvedLlmMs;
@@ -2098,6 +2549,16 @@ app.post("/api/analyze-label/confirm", async (req: Request, res: Response) => {
     const { imageHash, confirmedDraft } = req.body as {
       imageHash: string;
       confirmedDraft: LabelDraft;
+    };
+    const confirmBudget = new DeadlineBudget(Date.now() + RESILIENCE_TOTAL_BUDGET_MS);
+    const confirmAbort = createRequestAbort(res);
+    const confirmDeepseekResilience: DeepseekResilienceOptions = {
+      signal: confirmAbort.signal,
+      budget: confirmBudget,
+      breaker: deepseekBreaker,
+      semaphore: deepseekSemaphore,
+      timeoutMs: RESILIENCE_DEEPSEEK_TIMEOUT_MS,
+      queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS,
     };
 
     if (!imageHash || !confirmedDraft) {
@@ -2162,6 +2623,7 @@ app.post("/api/analyze-label/confirm", async (req: Request, res: Response) => {
       apiKey: deepseekKey,
       contextLabel: "user-confirmed from OCR",
       disclaimer: "This analysis is based on user-confirmed label information. Not a substitute for medical advice.",
+      resilience: confirmDeepseekResilience,
     });
 
     // P1-1: Use updateCachedAnalysis instead of setCachedResult to preserve created_at (TTL)

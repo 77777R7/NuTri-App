@@ -1,5 +1,14 @@
 import { supabase } from "./supabase.js";
 import type { NormalizedBarcode } from "./barcode.js";
+import {
+  combineSignals,
+  createTimeoutSignal,
+  isAbortError,
+  isRetryableStatus,
+  withRetry,
+  HttpError,
+} from "./resilience.js";
+import type { CircuitBreaker, DeadlineBudget, RetryOptions, Semaphore } from "./resilience.js";
 
 export type CatalogResolved = {
   resolvedFrom: "override" | "dsld";
@@ -36,6 +45,23 @@ export type CatalogResolved = {
 
 const digitsOnly = (s: string) => s.replace(/\D/g, "");
 
+type ResilienceOptions = {
+  signal?: AbortSignal;
+  timeoutMs?: number;
+  budget?: DeadlineBudget;
+  semaphore?: Semaphore;
+  queueTimeoutMs?: number;
+  breaker?: CircuitBreaker;
+  retry?: Partial<RetryOptions>;
+};
+
+const shouldRetrySupabaseError = (error: { status?: number; message?: string } | null): boolean => {
+  if (!error) return false;
+  if (typeof error.status === "number") return isRetryableStatus(error.status);
+  const message = error.message?.toLowerCase() ?? "";
+  return message.includes("timeout") || message.includes("fetch") || message.includes("network");
+};
+
 export function toGtin14Variants(normalized: NormalizedBarcode): string[] {
   const set = new Set<string>();
   for (const v of normalized.variants) {
@@ -52,15 +78,116 @@ export function toGtin14Variants(normalized: NormalizedBarcode): string[] {
   return [...set];
 }
 
-export async function resolveCatalogByBarcode(normalized: NormalizedBarcode): Promise<CatalogResolved | null> {
+export async function resolveCatalogByBarcode(
+  normalized: NormalizedBarcode,
+  options: ResilienceOptions = {},
+): Promise<CatalogResolved | null> {
   const variants = toGtin14Variants(normalized);
 
-  const { data, error } = await supabase.rpc("resolve_catalog_by_variants", {
-    p_variants: variants,
-  });
+  if (options.signal?.aborted) {
+    return null;
+  }
+  if (options.breaker && !options.breaker.canRequest()) {
+    return null;
+  }
 
+  const timeoutMs = options.timeoutMs ?? (options.budget ? options.budget.msLeft() : undefined);
+  const budgetedTimeout =
+    typeof timeoutMs === "number" && options.budget ? options.budget.msFor(timeoutMs) : timeoutMs;
+  if (typeof budgetedTimeout === "number" && budgetedTimeout <= 0) {
+    return null;
+  }
+
+  const attemptResolve = async (): Promise<{
+    data: any;
+    error: { message?: string; status?: number } | null;
+    aborted: boolean;
+  }> => {
+    let release: (() => void) | null = null;
+    if (options.semaphore) {
+      try {
+        release = await options.semaphore.acquire({
+          timeoutMs: options.queueTimeoutMs ?? 0,
+          signal: options.signal,
+        });
+      } catch {
+        return { data: null, error: null, aborted: false };
+      }
+    }
+
+    const timeoutSignal =
+      typeof budgetedTimeout === "number" ? createTimeoutSignal(budgetedTimeout) : undefined;
+    const { signal, cleanup } = combineSignals([options.signal, timeoutSignal]);
+
+    try {
+      const { data, error } = await supabase
+        .rpc("resolve_catalog_by_variants", {
+          p_variants: variants,
+        })
+        .abortSignal(signal);
+
+      const aborted = Boolean(timeoutSignal?.aborted || signal.aborted);
+      if (error && options.retry && shouldRetrySupabaseError(error)) {
+        const rawStatus = (error as { status?: number }).status;
+        const status = typeof rawStatus === "number" ? rawStatus : 503;
+        throw new HttpError(status, error.message ?? "catalog_resolver_error");
+      }
+
+      if (!error) {
+        options.breaker?.recordSuccess();
+      } else if (!aborted && !isAbortError(error)) {
+        options.breaker?.recordFailure();
+      }
+
+      return { data, error, aborted };
+    } catch (err) {
+      if (timeoutSignal?.aborted || signal.aborted || isAbortError(err)) {
+        return { data: null, error: null, aborted: true };
+      }
+      options.breaker?.recordFailure();
+      throw err;
+    } finally {
+      cleanup();
+      release?.();
+    }
+  };
+
+  let result: {
+    data: any;
+    error: { message?: string; status?: number } | null;
+    aborted: boolean;
+  };
+
+  if (options.retry) {
+    const retryConfig: RetryOptions = {
+      maxAttempts: options.retry.maxAttempts ?? 2,
+      baseDelayMs: options.retry.baseDelayMs ?? 100,
+      maxDelayMs: options.retry.maxDelayMs ?? 300,
+      jitterRatio: options.retry.jitterRatio ?? 0.3,
+      shouldRetry: (error) => {
+        if (isAbortError(error)) return false;
+        if (error instanceof HttpError) return isRetryableStatus(error.status);
+        return false;
+      },
+      signal: options.signal,
+      budget: options.budget,
+    };
+
+    result = await withRetry(() => attemptResolve(), retryConfig).catch((error) => {
+      if (!isAbortError(error)) {
+        console.warn("[catalogResolver] rpc retry failed:", error);
+      }
+      return { data: null, error: null, aborted: false };
+    });
+  } else {
+    result = await attemptResolve();
+  }
+
+  const { data, error, aborted } = result;
   if (error) {
-    console.warn("[catalogResolver] rpc error:", error.message);
+    if (!aborted && !options.signal?.aborted) {
+      console.warn("[catalogResolver] rpc error:", error.message);
+    }
     return null;
   }
   if (!data || (Array.isArray(data) && data.length === 0)) return null;
