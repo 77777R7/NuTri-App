@@ -811,11 +811,6 @@ export default function ScanResultScreen() {
   // 2. Removed intermediate "Searching..." screen - go directly to dashboard
   // The AnalysisDashboard will show skeleton loading states for each section
 
-  // 3. Fallback if somehow no product info but done (rare)
-  if (!productInfo && status === 'complete') {
-    return <View><Text>Unexpected empty result</Text></View>;
-  }
-
   // 4. Construct the composite analysis object for the Dashboard
   // The Dashboard will handle nulls/missing fields gracefully by showing defaults or skeletons
   const compositeAnalysis = {

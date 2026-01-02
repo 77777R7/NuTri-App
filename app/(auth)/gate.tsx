@@ -31,7 +31,7 @@ export default function AuthGateScreen() {
 
   useEffect(() => {
     if (!authLoading && session) {
-      router.replace('/(tabs)');
+      router.replace('/main');
     }
   }, [authLoading, session, router]);
 

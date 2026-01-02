@@ -7,7 +7,8 @@ const NAME = 'NuTri';
 const SLUG = 'nutri-app';
 const SCHEME = 'nutri';
 const OWNER = 'nutri000';
-const BUNDLE_ID = 'com.nutri.app';
+const IOS_BUNDLE_ID = 'com.nutri-Nige.app';
+const ANDROID_PACKAGE = 'com.nutri.app';
 const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL ??
   process.env.API_BASE_URL ??
@@ -38,14 +39,15 @@ const createExpoConfig = ({ config }: ConfigContext): ExpoConfig => {
     newArchEnabled: true,
     ios: {
       supportsTablet: true,
-      bundleIdentifier: BUNDLE_ID,
+      bundleIdentifier: IOS_BUNDLE_ID,
+      usesAppleSignIn: true,
       infoPlist: {
         NSLocationWhenInUseUsageDescription: 'NuTri uses your approximate location to personalise supplement insights and seasonal guidance.',
       },
       ...config.ios,
     },
     android: {
-      package: BUNDLE_ID,
+      package: ANDROID_PACKAGE,
       adaptiveIcon: {
         backgroundColor: '#E6F4FE',
         foregroundImage: './assets/images/android-icon-foreground.png',

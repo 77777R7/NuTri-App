@@ -34,6 +34,8 @@ export async function logBarcodeScan(input: {
   servedFrom: string; // "override" | "dsld" | "snapshot_cache" | "google_ai" | "wait_inflight" | "error"
   dsldLabelId?: number | null;
   snapshotId?: string | null;
+  brandName?: string | null;
+  productName?: string | null;
 
   deviceId?: string | null;
   requestId?: string | null;
@@ -69,6 +71,8 @@ export async function logBarcodeScan(input: {
         served_from: input.servedFrom,
         dsld_label_id: input.dsldLabelId ?? null,
         snapshot_id: input.snapshotId ?? null,
+        brand_name: input.brandName ?? null,
+        product_name: input.productName ?? null,
         device_id: input.deviceId ?? null,
         request_id: input.requestId ?? null,
         timing_total_ms: input.timingTotalMs ?? null,

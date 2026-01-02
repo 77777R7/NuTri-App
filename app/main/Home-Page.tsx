@@ -62,7 +62,6 @@ import Animated, {
   FadeInRight,
   FadeInUp,
   interpolateColor,
-  Layout,
   runOnJS,
   runOnUI,
   useAnimatedStyle,

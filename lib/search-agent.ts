@@ -1,4 +1,5 @@
 import { Config } from '@/constants/Config';
+import { withAuthHeaders } from '@/lib/auth-token';
 import type {
   AiSupplementAnalysis,
   AiSupplementAnalysisSuccess,
@@ -49,7 +50,10 @@ const getSearchApiBase = (): string => {
 
 export const fetchSearchByBarcode = async (barcode: string): Promise<SearchResponse> => {
   const apiBase = getSearchApiBase();
-  const response = await fetch(`${apiBase}/api/search-by-barcode?code=${encodeURIComponent(barcode)}`);
+  const headers = await withAuthHeaders();
+  const response = await fetch(`${apiBase}/api/search-by-barcode?code=${encodeURIComponent(barcode)}`, {
+    headers,
+  });
   const payload = (await response.json()) as unknown;
 
   if (!response.ok) {
@@ -71,11 +75,10 @@ export const fetchEnrichedSupplement = async (
   items: BarcodeSearchItem[],
 ): Promise<BarcodeAnalysis> => {
   const apiBase = getSearchApiBase();
+  const headers = await withAuthHeaders({ 'Content-Type': 'application/json' });
   const response = await fetch(`${apiBase}/api/enrich-supplement`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers,
     body: JSON.stringify({ barcode, items }),
   });
 

@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import RNEventSource from 'react-native-sse';
 
 import { Config } from '@/constants/Config';
+import { withAuthHeaders } from '@/lib/auth-token';
 import { buildBarcodeSnapshot } from '@/lib/snapshot';
-import { supabase } from '@/lib/supabase';
 import type { SupplementSnapshot } from '@/types/supplementSnapshot';
 
 // ============================================================================
@@ -167,16 +167,8 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
         let isActive = true;
 
         const startStream = async () => {
-            const { data } = await supabase.auth.getSession();
-            const token = data.session?.access_token ?? null;
+            const headers = await withAuthHeaders({ 'Content-Type': 'application/json' });
             if (!isActive) return;
-
-            const headers: Record<string, string> = {
-                'Content-Type': 'application/json',
-            };
-            if (token) {
-                headers.Authorization = `Bearer ${token}`;
-            }
 
             // Initialize SSE connection (POST method)
             const es = new RNEventSource(`${API_URL}/api/enrich-stream`, {
@@ -261,6 +253,32 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
                     }));
                 } catch (e) {
                     console.error('[SSE] Failed to parse result_usage:', e);
+                }
+            });
+
+            // Snapshot payload (catalog or cached analysis)
+            es.addEventListener('snapshot' as any, (event: any) => {
+                try {
+                    const snapshot = JSON.parse(event.data) as SupplementSnapshot;
+                    const snapshotProduct = snapshot.product;
+                    const snapshotSources = snapshot.references?.items ?? [];
+                    setState(prev => ({
+                        ...prev,
+                        productInfo: {
+                            brand: prev.productInfo?.brand ?? snapshotProduct.brand ?? null,
+                            name: prev.productInfo?.name ?? snapshotProduct.name ?? null,
+                            category: prev.productInfo?.category ?? snapshotProduct.category ?? null,
+                            image: prev.productInfo?.image ?? snapshotProduct.imageUrl ?? null,
+                        },
+                        sources: prev.sources.length
+                            ? prev.sources
+                            : snapshotSources.map((ref) => ({
+                                title: ref.title,
+                                link: ref.url,
+                            })),
+                    }));
+                } catch (e) {
+                    console.error('[SSE] Failed to parse snapshot:', e);
                 }
             });
 

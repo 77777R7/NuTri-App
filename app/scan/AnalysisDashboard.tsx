@@ -39,6 +39,7 @@ import Animated, {
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { InteractiveScoreRing } from '@/components/ui/InteractiveScoreRing';
 import { ContentSection } from '@/components/ui/ScoreDetailCard';
+import { useTranslation } from '@/lib/i18n';
 import { computeSmartScores, type AnalysisInput } from '../../lib/scoring';
 type Analysis = any;
 type ScoreState = 'active' | 'muted' | 'loading';
@@ -46,10 +47,48 @@ type SourceType = 'barcode' | 'label_scan';
 
 type TileType = 'overview' | 'science' | 'usage' | 'safety';
 
+type CoverStatus = 'complete' | 'partial' | 'limited';
+
+type MissingReason =
+    | 'MISSING_PRIMARY_ACTIVE'
+    | 'MISSING_EVIDENCE_MAPPING'
+    | 'MISSING_FORM_QUALITY'
+    | 'MISSING_OVERVIEW_SUMMARY'
+    | 'MISSING_OVERVIEW_BENEFITS'
+    | 'MISSING_USAGE_GUIDANCE'
+    | 'MISSING_BEST_FOR'
+    | 'MISSING_SAFETY_WARNING'
+    | 'MISSING_SAFETY_TIP'
+    | 'MISSING_DOSE_RANGE';
+
+type SourceRef = {
+    type: 'pubmed' | 'cochrane' | 'ods' | 'label' | 'other';
+    id?: string;
+    url?: string;
+    title?: string;
+};
+
+type CoverLine = {
+    text: string;
+    isPlaceholder?: boolean;
+    showInfo?: boolean;
+    missingReason?: MissingReason;
+};
+
+type BulletItem = {
+    text: string;
+    isPlaceholder?: boolean;
+    showInfo?: boolean;
+    missingReason?: MissingReason;
+};
+
 type Mechanism = {
     name: string;
     amount: string;
     fill: number;
+    mode?: 'actual' | 'unknown';
+    showInfo?: boolean;
+    missingReason?: MissingReason;
 };
 
 type TileConfig = {
@@ -62,20 +101,28 @@ type TileConfig = {
     backgroundColor: string;
     textColor?: string;
     labelColor?: string;
+    viewLabel?: string;
     eyebrow: string;
-    summary?: string;
+    summary?: CoverLine;
     summaryLines?: number;
-    bullets?: string[];
+    bullets?: BulletItem[];
     bulletLimit?: number;
     bulletLines?: number;
     footerText?: string;
     footerLines?: number;
     mechanisms?: Mechanism[];
-    routineLine?: string;
-    bestFor?: string;
-    warning?: string;
-    recommendation?: string;
+    routineLine?: CoverLine;
+    bestFor?: CoverLine;
+    bestForLabel?: string;
+    warning?: CoverLine;
+    tip?: CoverLine;
+    tipLabel?: string;
     loading?: boolean;
+    dataStatus?: {
+        status: CoverStatus;
+        missingReasons: MissingReason[];
+        sources: SourceRef[];
+    };
     content: React.ReactNode;
 };
 
@@ -188,12 +235,53 @@ function withAlpha(hex: string, alpha01: number) {
     return `rgba(${r}, ${g}, ${b}, ${alpha01})`;
 }
 
+function inferSourceType(link?: string | null): SourceRef['type'] | null {
+    if (!link) return null;
+    const normalized = link.toLowerCase();
+    if (normalized.includes('pubmed') || normalized.includes('ncbi.nlm.nih.gov')) return 'pubmed';
+    if (normalized.includes('cochrane')) return 'cochrane';
+    if (normalized.includes('ods.od.nih.gov')) return 'ods';
+    return 'other';
+}
+
+function buildSourceRefs(
+    sources: { title?: string | null; link?: string | null }[],
+    sourceType?: SourceType
+): SourceRef[] {
+    const refs = new Map<string, SourceRef>();
+    if (sourceType === 'label_scan') {
+        refs.set('label', { type: 'label' });
+    }
+    sources.forEach((source) => {
+        const type = inferSourceType(source.link);
+        if (!type) return;
+        const key = `${type}:${source.link ?? ''}`;
+        if (refs.has(key)) return;
+        refs.set(key, {
+            type,
+            url: source.link ?? undefined,
+            title: source.title ?? undefined,
+        });
+    });
+    return Array.from(refs.values());
+}
+
+function computeCoverStatus(slotStates: boolean[]): CoverStatus {
+    const total = slotStates.length;
+    const filled = slotStates.filter(Boolean).length;
+    if (filled === 0) return 'limited';
+    if (filled === total) return 'complete';
+    return 'partial';
+}
+
 function normalizeText(value?: string | null) {
     return value?.replace(/\s+/g, ' ').trim() ?? '';
 }
 
 function ensurePeriod(value: string) {
-    return /[.!?]$/.test(value) ? value : `${value}.`;
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
 }
 
 function clampText(value?: string | null, maxChars: number = 100) {
@@ -240,6 +328,16 @@ const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
                   ? '#6B5B4D'
                   : '#FFFFFF';
 
+    const placeholderColor = withAlpha(tColor, 0.6);
+
+    const renderInfoBadge = (color: string) => (
+        <View style={[styles.infoBadge, { borderColor: withAlpha(color, 0.5), backgroundColor: withAlpha(color, 0.12) }]}>
+            <Text style={[styles.infoBadgeText, { color }]} numberOfLines={1}>
+                i
+            </Text>
+        </View>
+    );
+
     const footer = tile.footerText ? (
         <Text
             style={[styles.tileFooter, { color: tColor }]}
@@ -269,28 +367,40 @@ const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
             case 'overview':
                 return (
                     <View style={styles.tileSection}>
-                        {!!tile.summary && (
+                        {tile.summary && (
                             <Text
-                                style={[styles.tileSummary, { color: tColor }]}
+                                style={[
+                                    styles.tileSummary,
+                                    { color: tile.summary.isPlaceholder ? placeholderColor : tColor },
+                                ]}
                                 numberOfLines={tile.summaryLines ?? 2}
                                 ellipsizeMode="tail"
                             >
-                                {tile.summary}
+                                {tile.summary.text}
                             </Text>
                         )}
                         <View style={styles.tileBulletList}>
                             {(tile.bullets || []).slice(0, tile.bulletLimit ?? 2).map((bullet, idx) => (
                                 <View key={idx} style={styles.tileBulletRow}>
                                     <View style={styles.bulletIcon}>
-                                        <CheckCircle2 size={14} color={label} />
+                                        <CheckCircle2
+                                            size={14}
+                                            color={bullet.isPlaceholder ? withAlpha(label, 0.4) : label}
+                                        />
                                     </View>
-                                    <Text
-                                        style={[styles.tileBulletText, { color: tColor }]}
-                                        numberOfLines={tile.bulletLines ?? 2}
-                                        ellipsizeMode="tail"
-                                    >
-                                        {bullet}
-                                    </Text>
+                                    <View style={styles.inlineRow}>
+                                        <Text
+                                            style={[
+                                                styles.tileBulletText,
+                                                { color: bullet.isPlaceholder ? placeholderColor : tColor },
+                                            ]}
+                                            numberOfLines={tile.bulletLines ?? 2}
+                                            ellipsizeMode="tail"
+                                        >
+                                            {bullet.text}
+                                        </Text>
+                                        {bullet.showInfo ? renderInfoBadge(label) : null}
+                                    </View>
                                 </View>
                             ))}
                         </View>
@@ -304,20 +414,43 @@ const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
                             {(tile.mechanisms || []).slice(0, 3).map((mechanism, idx) => (
                                 <View key={idx} style={styles.mechRow}>
                                     <View style={styles.mechHeader}>
-                                        <Text style={[styles.mechName, { color: tColor }]} numberOfLines={1}>
+                                        <Text
+                                            style={[
+                                                styles.mechName,
+                                                { color: mechanism.mode === 'unknown' ? placeholderColor : tColor },
+                                            ]}
+                                            numberOfLines={1}
+                                        >
                                             {mechanism.name}
                                         </Text>
-                                        <Text style={[styles.mechAmount, { color: label }]} numberOfLines={1}>
-                                            {mechanism.amount}
-                                        </Text>
+                                        <View style={styles.mechAmountRow}>
+                                            <Text
+                                                style={[
+                                                    styles.mechAmount,
+                                                    {
+                                                        color: mechanism.mode === 'unknown' ? placeholderColor : label,
+                                                    },
+                                                ]}
+                                                numberOfLines={1}
+                                            >
+                                                {mechanism.amount}
+                                            </Text>
+                                            {mechanism.showInfo ? renderInfoBadge(label) : null}
+                                        </View>
                                     </View>
-                                    <View style={[styles.mechBar, { backgroundColor: 'rgba(255,255,255,0.4)' }]}>
+                                    <View
+                                        style={[
+                                            styles.mechBar,
+                                            mechanism.mode === 'unknown' ? styles.mechBarUnknown : null,
+                                        ]}
+                                    >
                                         <View
                                             style={[
                                                 styles.mechFill,
                                                 {
-                                                    backgroundColor: label,
-                                                    width: `${Math.min(100, Math.max(12, mechanism.fill ?? 0))}%`
+                                                    backgroundColor:
+                                                        mechanism.mode === 'unknown' ? 'rgba(148,163,184,0.4)' : label,
+                                                    width: `${Math.min(100, Math.max(12, mechanism.fill ?? 0))}%`,
                                                 }
                                             ]}
                                         />
@@ -331,16 +464,36 @@ const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
             case 'usage':
                 return (
                     <View style={styles.tileSection}>
-                        {!!tile.routineLine && (
-                            <Text style={[styles.tileSummary, { color: tColor }]} numberOfLines={2}>
-                                {tile.routineLine}
-                            </Text>
+                        {tile.routineLine && (
+                            <View style={styles.inlineRow}>
+                                <Text
+                                    style={[
+                                        styles.tileSummary,
+                                        { color: tile.routineLine.isPlaceholder ? placeholderColor : tColor },
+                                    ]}
+                                    numberOfLines={2}
+                                >
+                                    {tile.routineLine.text}
+                                </Text>
+                                {tile.routineLine.showInfo ? renderInfoBadge(label) : null}
+                            </View>
                         )}
-                        {!!tile.bestFor && (
+                        {tile.bestFor && (
                             <View style={[styles.bestForCard, { backgroundColor: withAlpha(label, 0.08) }]}>
-                                <Text style={[styles.bestForLabel, { color: label }]}>Best for:</Text>
-                                <Text style={[styles.bestForText, { color: tColor }]} numberOfLines={3}>
-                                    {tile.bestFor}
+                                <View style={styles.inlineRow}>
+                                    <Text style={[styles.bestForLabel, { color: label }]}>
+                                        {tile.bestForLabel ?? 'Best for'}:
+                                    </Text>
+                                    {tile.bestFor.showInfo ? renderInfoBadge(label) : null}
+                                </View>
+                                <Text
+                                    style={[
+                                        styles.bestForText,
+                                        { color: tile.bestFor.isPlaceholder ? placeholderColor : tColor },
+                                    ]}
+                                    numberOfLines={3}
+                                >
+                                    {tile.bestFor.text}
                                 </Text>
                             </View>
                         )}
@@ -351,18 +504,34 @@ const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
             default:
                 return (
                     <View style={styles.tileSection}>
-                        {!!tile.warning && (
+                        {tile.warning && (
                             <View style={[styles.warningPill, { backgroundColor: withAlpha(label, 0.12) }]}>
-                                <Text style={[styles.warningText, { color: label }]} numberOfLines={3}>
-                                    {tile.warning}
-                                </Text>
+                                <View style={styles.inlineRow}>
+                                    <Text
+                                        style={[
+                                            styles.warningText,
+                                            { color: tile.warning.isPlaceholder ? placeholderColor : label },
+                                        ]}
+                                        numberOfLines={3}
+                                    >
+                                        {tile.warning.text}
+                                    </Text>
+                                    {tile.warning.showInfo ? renderInfoBadge(label) : null}
+                                </View>
                             </View>
                         )}
-                        {!!tile.recommendation && (
-                            <View style={styles.recommendationBlock}>
-                                <Text style={[styles.recommendationLabel, { color: label }]}>RECOMMENDATION</Text>
-                                <Text style={[styles.recommendationText, { color: tColor }]}>
-                                    {tile.recommendation}
+                        {tile.tip && (
+                            <View style={styles.tipBlock}>
+                                <Text style={[styles.tipLabel, { color: label }]}>
+                                    {tile.tipLabel ?? 'TIP'}
+                                </Text>
+                                <Text
+                                    style={[
+                                        styles.tipText,
+                                        { color: tile.tip.isPlaceholder ? placeholderColor : tColor },
+                                    ]}
+                                >
+                                    {tile.tip.text}
                                 </Text>
                             </View>
                         )}
@@ -429,7 +598,7 @@ const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
                                             style={StyleSheet.absoluteFillObject}
                                         />
                                         <Text style={[styles.viewPillText, { color: viewPillTextColor }]}>
-                                            View
+                                            {tile.viewLabel ?? 'View'}
                                         </Text>
                                     </View>
                                 </View>
@@ -449,9 +618,66 @@ const DashboardModal: React.FC<{
     onClose: () => void;
     tile: TileConfig | null;
 }> = ({ visible, onClose, tile }) => {
+    const { t } = useTranslation();
     if (!tile) return null;
     const Icon = tile.icon;
     const accentColor = colorMap[tile.accentColor] || '#3B82F6';
+    const dataStatus = tile.dataStatus;
+
+    const statusLabel = (status: CoverStatus) => {
+        switch (status) {
+            case 'complete':
+                return t.analysisConfidenceComplete;
+            case 'partial':
+                return t.analysisConfidencePartial;
+            case 'limited':
+            default:
+                return t.analysisConfidenceLimited;
+        }
+    };
+
+    const reasonLabel = (reason: MissingReason) => {
+        switch (reason) {
+            case 'MISSING_PRIMARY_ACTIVE':
+                return t.analysisMissingPrimaryActive;
+            case 'MISSING_EVIDENCE_MAPPING':
+                return t.analysisMissingEvidenceMapping;
+            case 'MISSING_FORM_QUALITY':
+                return t.analysisMissingFormQuality;
+            case 'MISSING_OVERVIEW_SUMMARY':
+                return t.analysisMissingOverviewSummary;
+            case 'MISSING_OVERVIEW_BENEFITS':
+                return t.analysisMissingOverviewBenefits;
+            case 'MISSING_USAGE_GUIDANCE':
+                return t.analysisMissingUsageGuidance;
+            case 'MISSING_BEST_FOR':
+                return t.analysisMissingBestFor;
+            case 'MISSING_SAFETY_WARNING':
+                return t.analysisMissingSafetyWarning;
+            case 'MISSING_SAFETY_TIP':
+                return t.analysisMissingSafetyTip;
+            case 'MISSING_DOSE_RANGE':
+                return t.analysisMissingDoseRange;
+            default:
+                return t.analysisPlaceholderUnknown;
+        }
+    };
+
+    const sourceLabel = (source: SourceRef) => {
+        switch (source.type) {
+            case 'pubmed':
+                return t.analysisSourcePubMed;
+            case 'cochrane':
+                return t.analysisSourceCochrane;
+            case 'ods':
+                return t.analysisSourceOds;
+            case 'label':
+                return t.analysisSourceLabel;
+            case 'other':
+            default:
+                return t.analysisSourceOther;
+        }
+    };
 
     return (
         <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
@@ -482,6 +708,28 @@ const DashboardModal: React.FC<{
                         bounces={true}
                     >
                         {tile.content}
+                        {dataStatus && (
+                            <View style={styles.dataStatusCard}>
+                                <Text style={styles.dataStatusTitle}>
+                                    {t.analysisDataStatusTitle}: {statusLabel(dataStatus.status)}
+                                </Text>
+                                <Text style={styles.dataStatusLine}>
+                                    {t.analysisDataStatusMissing}:{' '}
+                                    {dataStatus.missingReasons.length > 0
+                                        ? dataStatus.missingReasons.map(reasonLabel).join(' • ')
+                                        : t.analysisDataStatusNone}
+                                </Text>
+                                <Text style={styles.dataStatusLine}>
+                                    {t.analysisDataStatusSources}:{' '}
+                                    {dataStatus.sources.length > 0
+                                        ? Array.from(
+                                            new Set(dataStatus.sources.map(sourceLabel))
+                                        ).join(' • ')
+                                        : t.analysisDataStatusNoSources}
+                                </Text>
+                                <Text style={styles.dataStatusNote}>{t.analysisIntegrityNote}</Text>
+                            </View>
+                        )}
                     </ScrollView>
                 </View>
             </View>
@@ -497,6 +745,7 @@ export const AnalysisDashboard: React.FC<{
     sourceType?: SourceType;
 }> = ({ analysis, isStreaming = false, scoreBadge, scoreState, sourceType }) => {
     const [selectedTile, setSelectedTile] = useState<TileConfig | null>(null);
+    const { t } = useTranslation();
     const scrollY = useSharedValue(0);
     const scrollHandler = useAnimatedScrollHandler((event) => {
         scrollY.value = event.contentOffset.y;
@@ -518,32 +767,73 @@ export const AnalysisDashboard: React.FC<{
     const safety = useMemo(() => analysis.safety ?? {}, [analysis.safety]);
     const value = useMemo(() => analysis.value ?? {}, [analysis.value]);
     const social = useMemo(() => analysis.social ?? {}, [analysis.social]);
+    const sourceRefs = useMemo(
+        () => buildSourceRefs(Array.isArray(analysis.sources) ? analysis.sources : [], sourceType),
+        [analysis.sources, sourceType]
+    );
 
-    // Check if all core AI analysis is complete before computing scores
-    const isFullyLoaded = useMemo(() => {
-        return (
-            typeof efficacy.score === 'number' &&
-            typeof safety.score === 'number' &&
-            typeof value.score === 'number'
-        );
-    }, [efficacy.score, safety.score, value.score]);
     const isLabelSource = sourceType === 'label_scan';
-    const effectiveScoreState: ScoreState = isLabelSource
-        ? (scoreState ?? (isFullyLoaded ? 'active' : 'loading'))
-        : (isFullyLoaded ? 'active' : 'loading');
     const badgeTextSafe = isLabelSource ? scoreBadge : undefined;
+    const scoreAvailability = useMemo(() => ({
+        effectiveness: typeof efficacy.score === 'number',
+        safety: typeof safety.score === 'number',
+        value: typeof value.score === 'number',
+    }), [efficacy.score, safety.score, value.score]);
+    const availableScoreCount =
+        (scoreAvailability.effectiveness ? 1 : 0) +
+        (scoreAvailability.safety ? 1 : 0) +
+        (scoreAvailability.value ? 1 : 0);
+    const derivedScoreConfidence: CoverStatus =
+        availableScoreCount === 0
+            ? 'limited'
+            : availableScoreCount === 3
+              ? 'complete'
+              : 'partial';
+    const scoreConfidence: CoverStatus =
+        scoreState === 'muted' || scoreState === 'loading' ? 'limited' : derivedScoreConfidence;
+    const provisionalScore = 50;
 
     // Compute scores using new AI-driven scoring system
-    // Only compute when fully loaded, otherwise show loading state
     const scores = useMemo(() => {
-        if (!isFullyLoaded) {
-            // Return loading state - will show skeleton
+        if (scoreConfidence === 'complete') {
+            const analysisInput: AnalysisInput = {
+                efficacy: {
+                    score: efficacy.score,
+                    primaryActive: efficacy.primaryActive ?? null,
+                    ingredients: efficacy.ingredients ?? [],
+                    overallAssessment: efficacy.overallAssessment,
+                    marketingVsReality: efficacy.marketingVsReality,
+                    coreBenefits: efficacy.coreBenefits ?? efficacy.benefits ?? [],
+                },
+                safety: {
+                    score: safety.score,
+                    ulWarnings: safety.ulWarnings ?? [],
+                    allergens: safety.allergens ?? [],
+                    interactions: safety.interactions ?? [],
+                    redFlags: safety.redFlags ?? [],
+                    consultDoctorIf: safety.consultDoctorIf ?? [],
+                },
+                value: {
+                    score: value.score,
+                    costPerServing: value.costPerServing ?? null,
+                    alternatives: value.alternatives ?? [],
+                },
+                social: {
+                    score: social.score,
+                    summary: social.summary,
+                },
+            };
+
+            return computeSmartScores(analysisInput);
+        }
+
+        if (availableScoreCount === 0 || scoreConfidence === 'limited') {
             return {
-                effectiveness: 0,
-                safety: 0,
-                value: 0,
-                overall: 0,
-                label: 'Loading...',
+                effectiveness: provisionalScore,
+                safety: provisionalScore,
+                value: provisionalScore,
+                overall: provisionalScore,
+                label: t.analysisProvisional,
                 details: {
                     effectivenessFactors: [],
                     safetyFactors: [],
@@ -552,47 +842,86 @@ export const AnalysisDashboard: React.FC<{
             };
         }
 
-        const analysisInput: AnalysisInput = {
-            efficacy: {
-                score: efficacy.score,
-                primaryActive: efficacy.primaryActive ?? null,
-                ingredients: efficacy.ingredients ?? [],
-                overallAssessment: efficacy.overallAssessment,
-                marketingVsReality: efficacy.marketingVsReality,
-                coreBenefits: efficacy.coreBenefits ?? efficacy.benefits ?? [],
-            },
-            safety: {
-                score: safety.score,
-                ulWarnings: safety.ulWarnings ?? [],
-                allergens: safety.allergens ?? [],
-                interactions: safety.interactions ?? [],
-                redFlags: safety.redFlags ?? [],
-                consultDoctorIf: safety.consultDoctorIf ?? [],
-            },
-            value: {
-                score: value.score,
-                costPerServing: value.costPerServing ?? null,
-                alternatives: value.alternatives ?? [],
-            },
-            social: {
-                score: social.score,
-                summary: social.summary,
+        const effectivenessScore = scoreAvailability.effectiveness
+            ? Math.round((efficacy.score ?? 0) * 10)
+            : provisionalScore;
+        const safetyScore = scoreAvailability.safety
+            ? Math.round((safety.score ?? 0) * 10)
+            : provisionalScore;
+        const valueScore = scoreAvailability.value
+            ? Math.round((value.score ?? 0) * 10)
+            : provisionalScore;
+        const weights = { effectiveness: 0.4, safety: 0.35, value: 0.25 };
+        let weightedSum = 0;
+        let totalWeight = 0;
+        if (scoreAvailability.effectiveness) {
+            weightedSum += effectivenessScore * weights.effectiveness;
+            totalWeight += weights.effectiveness;
+        }
+        if (scoreAvailability.safety) {
+            weightedSum += safetyScore * weights.safety;
+            totalWeight += weights.safety;
+        }
+        if (scoreAvailability.value) {
+            weightedSum += valueScore * weights.value;
+            totalWeight += weights.value;
+        }
+        const overallScore = totalWeight > 0 ? Math.round(weightedSum / totalWeight) : provisionalScore;
+
+        return {
+            effectiveness: effectivenessScore,
+            safety: safetyScore,
+            value: valueScore,
+            overall: overallScore,
+            label: t.analysisProvisional,
+            details: {
+                effectivenessFactors: [],
+                safetyFactors: [],
+                valueFactors: [],
             },
         };
-
-        return computeSmartScores(analysisInput);
-    }, [efficacy, safety, value, social, isFullyLoaded]);
-    const displayOverrides = effectiveScoreState === 'muted'
-        ? { overall: '--', effectiveness: '--', safety: '--', value: '--' }
-        : undefined;
-    const ringScores = effectiveScoreState === 'muted'
-        ? { effectiveness: 0, safety: 0, value: 0, overall: 0 }
-        : scores;
+    }, [
+        efficacy,
+        safety,
+        value,
+        social,
+        scoreConfidence,
+        scoreAvailability,
+        availableScoreCount,
+        t.analysisProvisional,
+    ]);
+    const unknownCategories = {
+        effectiveness: scoreConfidence === 'limited' || !scoreAvailability.effectiveness,
+        safety: scoreConfidence === 'limited' || !scoreAvailability.safety,
+        value: scoreConfidence === 'limited' || !scoreAvailability.value,
+    };
+    const displayOverrides = {
+        overall: scoreConfidence === 'limited' ? '~50' : undefined,
+        effectiveness: unknownCategories.effectiveness ? '~50' : undefined,
+        safety: unknownCategories.safety ? '~50' : undefined,
+        value: unknownCategories.value ? '~50' : undefined,
+    };
+    const ringScores = scores;
     const formatScoreText = (value: number, override?: string) => {
         if (override) return override;
         return Number.isFinite(value) ? `${Math.round(value)}/100` : 'AI';
     };
     const overviewScoreText = formatScoreText(scores.overall, displayOverrides?.overall);
+    const overviewScoreLabel =
+        scoreConfidence === 'complete'
+            ? t.analysisScoreLabel
+            : `${t.analysisScoreLabel} · ${t.analysisProvisional}`;
+    const scoreConfidenceLabel =
+        scoreConfidence === 'complete'
+            ? t.analysisConfidenceComplete
+            : scoreConfidence === 'partial'
+              ? t.analysisConfidencePartial
+              : t.analysisConfidenceLimited;
+    const scoreMetaLines = [
+        `${t.analysisConfidencePrefix}: ${scoreConfidenceLabel}`,
+        scoreConfidence === 'limited' ? `${t.analysisStatusPrefix}: ${t.analysisStatusInsufficient}` : null,
+        scoreConfidence !== 'complete' ? `${t.analysisProvisional} · ${t.analysisProvisionalNote}` : null,
+    ].filter(Boolean) as string[];
 
     // Construct descriptions for InteractiveScoreRing with score factor explanations
     const descriptions: {
@@ -603,30 +932,30 @@ export const AnalysisDashboard: React.FC<{
         effectiveness: {
             verdict: efficacy.verdict || 'Analyzing efficacy based on ingredients and evidence...',
             // Use scoring factors as highlights to explain the score
-            highlights: isFullyLoaded
+            highlights: scoreConfidence === 'complete'
                 ? scores.details.effectivenessFactors.filter(f => f.startsWith('+'))
                 : [],
-            warnings: isFullyLoaded
+            warnings: scoreConfidence === 'complete'
                 ? scores.details.effectivenessFactors.filter(f => f.startsWith('-') || f.startsWith('−'))
                 : [],
         },
         safety: {
             verdict: safety.verdict || 'Analyzing safety profile...',
-            highlights: isFullyLoaded
+            highlights: scoreConfidence === 'complete'
                 ? scores.details.safetyFactors.filter(f => f.startsWith('+'))
                 : [],
-            warnings: isFullyLoaded
+            warnings: scoreConfidence === 'complete'
                 ? [...(safety.redFlags || []), ...scores.details.safetyFactors.filter(f => f.startsWith('-') || f.startsWith('−'))]
                 : [],
         },
         practicality: {
             verdict: value.verdict || 'Analyzing value and practicality...',
-            highlights: isFullyLoaded
+            highlights: scoreConfidence === 'complete'
                 ? scores.details.valueFactors.filter(f => f.startsWith('+'))
                 : [],
             warnings: [],
         },
-    }), [efficacy.verdict, safety.verdict, safety.redFlags, value.verdict, scores.details, isFullyLoaded]);
+    }), [efficacy.verdict, safety.verdict, safety.redFlags, value.verdict, scores.details, scoreConfidence]);
 
     const scienceSummary =
         efficacy.verdict ||
@@ -636,13 +965,13 @@ export const AnalysisDashboard: React.FC<{
     const usageSummary =
         usage.summary ||
         usage.timing ||
-        'Follow label directions and keep timing consistent each day.';
+        t.analysisPlaceholderUsage;
 
     const safetySummary =
         safety.verdict ||
         (Array.isArray(safety.redFlags) && safety.redFlags[0]) ||
         (Array.isArray(safety.risks) && safety.risks[0]) ||
-        'No major safety concerns were highlighted in public sources at standard doses.';
+        t.analysisPlaceholderInsufficient;
 
     // Legacy meta is no longer used - scoring now comes from AI analysis directly
 
@@ -699,7 +1028,7 @@ export const AnalysisDashboard: React.FC<{
 
     // Primary active dosage (from AI analysis)
     const primaryDoseLabel = formatDose(primaryActive?.dosageValue, primaryActive?.dosageUnit);
-    const primaryName = primaryActive?.name || productInfo.primaryIngredient || productInfo.name;
+    const primaryName = primaryActive?.name || productInfo.primaryIngredient || '';
 
     // Build overview summary: prefer AI-generated, then structured fallback, then legacy
     const overviewSummary = (() => {
@@ -719,7 +1048,7 @@ export const AnalysisDashboard: React.FC<{
             efficacy.dosageAssessment?.text ||
             value.verdict ||
             social.summary ||
-            'Analysis based on available search results.';
+            '';
     })();
 
     // Get core benefits from efficacy (new) or fallback to benefits array
@@ -728,75 +1057,16 @@ export const AnalysisDashboard: React.FC<{
             ? efficacy.coreBenefits
             : Array.isArray(efficacy?.benefits) && efficacy.benefits.length > 0
                 ? efficacy.benefits
-                : ['Enhanced clarity', 'Sustained energy']
+                : []
     ).slice(0, 3);
 
-    const bestFor = usage.bestFor || usage.target || usage.who || 'Professionals & students needing focus.';
-    const routineLine = usage.dosage || usage.frequency || usage.timing || '2 caps with breakfast for steady effect.';
+    const bestFor = usage.bestFor || usage.target || usage.who || '';
+    const routineLine = usage.dosage || usage.frequency || usage.timing || '';
 
     const warningLine =
         (Array.isArray(safety.redFlags) && safety.redFlags[0]) ||
         (Array.isArray(safety.risks) && safety.risks[0]) ||
-        safetySummary;
-
-    const recommendationLine =
-        safety.recommendation ||
-        safety.verdict ||
-        'Ideal for mid-day brain fog and sustained clarity.';
-
-    // Calculate dose fill percentage based on primaryActive
-    const doseMatchPercent = (() => {
-        if (primaryActive?.dosageValue != null) {
-            const evidenceFillMap: Record<string, number> = {
-                'strong': 92,
-                'moderate': 75,
-                'weak': 55,
-                'none': 40,
-            };
-            return evidenceFillMap[primaryActive.evidenceLevel || 'none'] || 72;
-        }
-        return 72; // Default
-    })();
-
-    const baseMechanisms: Mechanism[] = [
-        {
-            name: primaryName || 'Primary Active',
-            amount: primaryDoseLabel || 'See label',
-            fill: doseMatchPercent,
-        },
-    ];
-
-    // Add evidence level if available from primaryActive
-    if (primaryActive?.evidenceLevel && primaryActive.evidenceLevel !== 'none') {
-        const evidenceFillMap: Record<string, number> = {
-            'strong': 95,
-            'moderate': 72,
-            'weak': 50,
-        };
-        baseMechanisms.push({
-            name: 'Evidence Level',
-            amount: primaryActive.evidenceLevel.charAt(0).toUpperCase() + primaryActive.evidenceLevel.slice(1),
-            fill: evidenceFillMap[primaryActive.evidenceLevel] || 60,
-        });
-    }
-
-    // Add form quality if available
-    if (primaryActive?.formQuality && primaryActive.formQuality !== 'unknown') {
-        const formFillMap: Record<string, number> = {
-            'high': 92,
-            'medium': 72,
-            'low': 52,
-        };
-        baseMechanisms.push({
-            name: 'Form Quality',
-            amount: primaryActive.formQuality.charAt(0).toUpperCase() + primaryActive.formQuality.slice(1),
-            fill: formFillMap[primaryActive.formQuality] || 64,
-        });
-    } // formQuality already added from primaryActive above
-
-    const keyMechanisms = baseMechanisms;
-    const scienceFooterText = undefined;
-
+        '';
 
     const evidenceLevelText = (() => {
         switch (primaryActive?.evidenceLevel) {
@@ -820,7 +1090,7 @@ export const AnalysisDashboard: React.FC<{
         ? 'Take with food for better tolerance and absorption.'
         : usage.withFood === false
             ? 'Can be taken without food if stomach tolerates it.'
-            : 'Follow a consistent time each day; pair with breakfast for smoother energy.';
+            : '';
 
     const interactionCopy = (() => {
         const interactionCount = safety.interactions?.length ?? 0;
@@ -829,8 +1099,20 @@ export const AnalysisDashboard: React.FC<{
         return 'Low interaction potential reported.';
     })();
 
+    const evidenceFillMap: Record<string, number> = {
+        strong: 95,
+        moderate: 72,
+        weak: 50,
+        none: 40,
+    };
+    const formFillMap: Record<string, number> = {
+        high: 92,
+        medium: 72,
+        low: 52,
+    };
+
     const benefitsPhrase = coreBenefits.slice(0, 2).join(', ');
-    const overviewCoverSummary = capitalizeSentences(
+    const overviewCoverSummaryText = capitalizeSentences(
         clampText(
             [
                 primaryName
@@ -847,7 +1129,7 @@ export const AnalysisDashboard: React.FC<{
     const usageCoverLine = capitalizeSentences(
         clampText(
             [
-                routineLine || usage.summary || 'Follow the label consistently each day',
+                routineLine || usage.summary || '',
                 timingCopy,
             ]
                 .map((part) => normalizeText(part))
@@ -861,43 +1143,200 @@ export const AnalysisDashboard: React.FC<{
 
     const safetyCoverWarning = capitalizeSentences(
         clampText(
-            ensurePeriod(
-                warningLine ||
-                    interactionCopy ||
-                    safetySummary ||
-                    'Review label warnings and consult a clinician if needed'
-            ),
-            96
-        )
-    );
-    const safetyCoverRecommendation = capitalizeSentences(
-        clampText(
-            ensurePeriod(recommendationLine || safetySummary || 'Follow label dosing and avoid late-day use'),
+            ensurePeriod(warningLine || ''),
             96
         )
     );
 
-    const overviewCoverBullets = coreBenefits.slice(0, 3)
-        .map((benefit: string) => capitalizeSentences(benefit))
-        .filter(Boolean);
-    const overviewFooterText = undefined;
+    const makePlaceholderLine = (text: string, reason?: MissingReason, showInfo?: boolean): CoverLine => ({
+        text,
+        isPlaceholder: true,
+        showInfo,
+        missingReason: reason,
+    });
 
-    const isEfficacyReady = !!efficacy.verdict || !isStreaming;
-    const isSafetyReady = !!safety.verdict || !isStreaming;
-    const isUsageReady = !!usage.summary || !isStreaming;
-    // Overview should wait for all AI analysis to complete to avoid partial/inconsistent display
-    const isOverviewReady = isFullyLoaded || !isStreaming;
+    const buildOverviewCover = () => {
+        const missingReasons = new Set<MissingReason>();
+        const summary = overviewCoverSummaryText
+            ? { text: overviewCoverSummaryText }
+            : makePlaceholderLine(t.analysisPlaceholderOverviewSummary, 'MISSING_OVERVIEW_SUMMARY');
+        if (summary.isPlaceholder) {
+            missingReasons.add('MISSING_OVERVIEW_SUMMARY');
+        }
+        const bullets: BulletItem[] = [];
+        const slotStates: boolean[] = [!summary.isPlaceholder];
+        for (let i = 0; i < 2; i += 1) {
+            const benefit = coreBenefits[i];
+            if (benefit) {
+                bullets.push({ text: capitalizeSentences(benefit) });
+                slotStates.push(true);
+            } else {
+                bullets.push({
+                    text: t.analysisPlaceholderNotEnoughInfo,
+                    isPlaceholder: true,
+                    missingReason: 'MISSING_OVERVIEW_BENEFITS',
+                });
+                missingReasons.add('MISSING_OVERVIEW_BENEFITS');
+                slotStates.push(false);
+            }
+        }
+
+        return {
+            summary,
+            bullets,
+            dataStatus: {
+                status: computeCoverStatus(slotStates),
+                missingReasons: Array.from(missingReasons),
+                sources: sourceRefs,
+            },
+        };
+    };
+
+    const buildScienceCover = () => {
+        const missingReasons = new Set<MissingReason>();
+        const primaryHasName = !!primaryName;
+        const primaryHasDose = !!primaryDoseLabel;
+        const primarySlotFilled = primaryHasName && primaryHasDose;
+        const primaryFill = primarySlotFilled
+            ? evidenceFillMap[primaryActive?.evidenceLevel || 'none'] || 72
+            : provisionalScore;
+        const primaryRow: Mechanism = {
+            name: primaryHasName ? primaryName : t.analysisPrimaryActiveLabel,
+            amount: primaryHasDose ? primaryDoseLabel : t.analysisPlaceholderSeeLabel,
+            fill: primarySlotFilled ? primaryFill : provisionalScore,
+            mode: primarySlotFilled ? 'actual' : 'unknown',
+            showInfo: !primaryHasName,
+            missingReason: !primaryHasName ? 'MISSING_PRIMARY_ACTIVE' : undefined,
+        };
+
+        const evidenceLevel = primaryActive?.evidenceLevel;
+        const evidenceHasData = typeof evidenceLevel === 'string';
+        const evidenceAmount = evidenceHasData
+            ? evidenceLevel === 'none'
+                ? t.analysisEvidenceNone
+                : capitalizeSentences(evidenceLevel)
+            : t.analysisPlaceholderNotRated;
+        const evidenceRow: Mechanism = {
+            name: t.analysisEvidenceLevelLabel,
+            amount: evidenceAmount,
+            fill: evidenceHasData ? evidenceFillMap[evidenceLevel || 'none'] || 60 : provisionalScore,
+            mode: evidenceHasData ? 'actual' : 'unknown',
+            showInfo: !evidenceHasData,
+            missingReason: !evidenceHasData ? 'MISSING_EVIDENCE_MAPPING' : undefined,
+        };
+
+        const formQuality = primaryActive?.formQuality;
+        const formHasData = !!formQuality && formQuality !== 'unknown';
+        const formRow: Mechanism = {
+            name: t.analysisFormQualityLabel,
+            amount: formHasData ? capitalizeSentences(formQuality) : t.analysisPlaceholderUnknown,
+            fill: formHasData ? formFillMap[formQuality as keyof typeof formFillMap] || 64 : provisionalScore,
+            mode: formHasData ? 'actual' : 'unknown',
+            showInfo: false,
+            missingReason: !formHasData ? 'MISSING_FORM_QUALITY' : undefined,
+        };
+
+        if (!primaryHasName) {
+            missingReasons.add('MISSING_PRIMARY_ACTIVE');
+        }
+        if (primaryHasName && !primaryHasDose) {
+            missingReasons.add('MISSING_DOSE_RANGE');
+        }
+        if (!evidenceHasData) {
+            missingReasons.add('MISSING_EVIDENCE_MAPPING');
+        }
+        if (!formHasData) {
+            missingReasons.add('MISSING_FORM_QUALITY');
+        }
+
+        return {
+            mechanisms: [primaryRow, evidenceRow, formRow],
+            dataStatus: {
+                status: computeCoverStatus([primarySlotFilled, evidenceHasData, formHasData]),
+                missingReasons: Array.from(missingReasons),
+                sources: sourceRefs,
+            },
+        };
+    };
+
+    const buildUsageCover = () => {
+        const missingReasons = new Set<MissingReason>();
+        const routineLine = usageCoverLine
+            ? { text: usageCoverLine }
+            : makePlaceholderLine(t.analysisPlaceholderUsage, 'MISSING_USAGE_GUIDANCE', true);
+        if (routineLine.isPlaceholder) {
+            missingReasons.add('MISSING_USAGE_GUIDANCE');
+        }
+        const bestForLine = bestForCover
+            ? { text: bestForCover }
+            : makePlaceholderLine(t.analysisPlaceholderBestFor, 'MISSING_BEST_FOR', true);
+        if (bestForLine.isPlaceholder) {
+            missingReasons.add('MISSING_BEST_FOR');
+        }
+
+        return {
+            routineLine,
+            bestFor: bestForLine,
+            dataStatus: {
+                status: computeCoverStatus([!routineLine.isPlaceholder, !bestForLine.isPlaceholder]),
+                missingReasons: Array.from(missingReasons),
+                sources: sourceRefs,
+            },
+        };
+    };
+
+    const buildSafetyCover = () => {
+        const missingReasons = new Set<MissingReason>();
+        const warningLine = safetyCoverWarning
+            ? { text: safetyCoverWarning }
+            : makePlaceholderLine(t.analysisPlaceholderSafetyWarning, 'MISSING_SAFETY_WARNING', true);
+        if (warningLine.isPlaceholder) {
+            missingReasons.add('MISSING_SAFETY_WARNING');
+        }
+        const tipLine = makePlaceholderLine(t.analysisPlaceholderSafetyTip, 'MISSING_SAFETY_TIP');
+        missingReasons.add('MISSING_SAFETY_TIP');
+
+        return {
+            warning: warningLine,
+            tip: tipLine,
+            dataStatus: {
+                status: computeCoverStatus([!warningLine.isPlaceholder, false]),
+                missingReasons: Array.from(missingReasons),
+                sources: sourceRefs,
+            },
+        };
+    };
+
+    const overviewCover = buildOverviewCover();
+    const scienceCover = buildScienceCover();
+    const usageCover = buildUsageCover();
+    const safetyCover = buildSafetyCover();
+
+    const overviewSummaryLine = overviewCover.summary;
+    const overviewBullets = overviewCover.bullets;
+    const overviewDataStatus = overviewCover.dataStatus;
+    const keyMechanisms = scienceCover.mechanisms;
+    const scienceDataStatus = scienceCover.dataStatus;
+    const usageLine = usageCover.routineLine;
+    const bestForLine = usageCover.bestFor;
+    const usageDataStatus = usageCover.dataStatus;
+    const safetyWarningLine = safetyCover.warning;
+    const safetyTipLine = safetyCover.tip;
+    const safetyDataStatus = safetyCover.dataStatus;
+    const scienceFooterText = undefined;
 
     const overviewContent = (
         <View style={{ gap: 16 }}>
-            <Text style={styles.modalParagraph}>{overviewSummary}</Text>
+            <Text style={styles.modalParagraph}>
+                {overviewSummary || t.analysisPlaceholderOverviewSummary}
+            </Text>
             <View style={styles.modalOverviewGrid}>
                 <View style={styles.modalOverviewCard}>
                     <TrendingUp size={20} color="#3B82F6" />
                     <Text style={styles.modalOverviewNumber}>
                         {overviewScoreText}
                     </Text>
-                    <Text style={styles.modalOverviewLabel}>NuTri Score</Text>
+                    <Text style={styles.modalOverviewLabel}>{overviewScoreLabel}</Text>
                 </View>
                 {/* Form card - use simplified formLabel */}
                 {formLabel && (
@@ -939,39 +1378,40 @@ export const AnalysisDashboard: React.FC<{
         {
             id: 1,
             type: 'overview',
-            title: 'Product Overview',
-            modalTitle: 'Product Overview',
+            title: t.analysisTileOverviewTitle,
+            modalTitle: t.analysisTileOverviewModalTitle,
             icon: Zap,
             accentColor: 'text-blue-500',
             backgroundColor: '#123CC5',
             textColor: '#F7FBFF',
             labelColor: '#D6E5FF',
-            eyebrow: 'CORE BENEFITS',
-            summary: overviewCoverSummary,
+            viewLabel: t.analysisView,
+            eyebrow: t.analysisEyebrowCoreBenefits,
+            summary: overviewSummaryLine,
             summaryLines: 2,
-            bullets: overviewCoverBullets,
+            bullets: overviewBullets,
             bulletLimit: 2,
             bulletLines: 2,
-            footerText: overviewFooterText,
             footerLines: 1,
-            loading: !isOverviewReady,
+            dataStatus: overviewDataStatus,
             content: overviewContent,
         },
         {
             id: 2,
             type: 'science',
-            title: 'Science & Ingredients',
-            modalTitle: 'Science Analysis',
+            title: t.analysisTileScienceTitle,
+            modalTitle: t.analysisTileScienceModalTitle,
             icon: BarChart3,
             accentColor: 'text-amber-500',
             backgroundColor: '#F7C948',
             textColor: '#ea580c',
             labelColor: '#ea580c',
-            eyebrow: 'KEY MECHANISM',
+            viewLabel: t.analysisView,
+            eyebrow: t.analysisEyebrowKeyMechanism,
             mechanisms: keyMechanisms,
             footerText: scienceFooterText,
             footerLines: 1,
-            loading: !isEfficacyReady,
+            dataStatus: scienceDataStatus,
             content: (
                 <View style={{ gap: 16 }}>
                     <Text style={styles.modalParagraphSmall}>{scienceSummary}</Text>
@@ -1062,17 +1502,19 @@ export const AnalysisDashboard: React.FC<{
         {
             id: 3,
             type: 'usage',
-            title: 'Practical Usage',
-            modalTitle: 'Usage Guide',
+            title: t.analysisTileUsageTitle,
+            modalTitle: t.analysisTileUsageModalTitle,
             icon: Clock,
             accentColor: 'text-sky-500',
             backgroundColor: '#8CCBFF',
             textColor: '#0B2545',
             labelColor: '#0B2545',
-            eyebrow: 'DAILY ROUTINE',
-            routineLine: usageCoverLine,
-            bestFor: bestForCover,
-            loading: !isUsageReady,
+            viewLabel: t.analysisView,
+            eyebrow: t.analysisEyebrowDailyRoutine,
+            routineLine: usageLine,
+            bestFor: bestForLine,
+            bestForLabel: t.analysisLabelBestFor,
+            dataStatus: usageDataStatus,
             content: (
                 <View style={{ gap: 16 }}>
                     <View style={styles.modalUsageCard}>
@@ -1107,17 +1549,19 @@ export const AnalysisDashboard: React.FC<{
         {
             id: 4,
             type: 'safety',
-            title: 'Safety & Recs',
-            modalTitle: 'Safety First',
+            title: t.analysisTileSafetyTitle,
+            modalTitle: t.analysisTileSafetyModalTitle,
             icon: Shield,
             accentColor: 'text-rose-500',
             backgroundColor: '#F1E7D8',
             textColor: '#2E2A25',
             labelColor: '#6B5B4B',
-            eyebrow: 'SAFETY NOTES',
-            warning: safetyCoverWarning,
-            recommendation: safetyCoverRecommendation,
-            loading: !isSafetyReady,
+            viewLabel: t.analysisView,
+            eyebrow: t.analysisEyebrowSafetyNotes,
+            warning: safetyWarningLine,
+            tip: safetyTipLine,
+            tipLabel: t.analysisLabelTip,
+            dataStatus: safetyDataStatus,
             content: (
                 <View style={{ gap: 16 }}>
                     <View style={styles.modalSafetyCard}>
@@ -1216,7 +1660,7 @@ export const AnalysisDashboard: React.FC<{
 
                 {/* Header Section */}
                 <View style={styles.headerSection}>
-                    <Text style={styles.headerEyebrow}>AI ANALYSIS</Text>
+                    <Text style={styles.headerEyebrow}>{t.analysisHeaderEyebrow}</Text>
                     <Text style={styles.headerTitle}>{productTitle}</Text>
                     {!!productSubtitle && <Text style={styles.headerSubtitle}>{productSubtitle}</Text>}
                 </View>
@@ -1232,7 +1676,15 @@ export const AnalysisDashboard: React.FC<{
                             }}
                             descriptions={descriptions}
                             display={displayOverrides}
-                            muted={effectiveScoreState === 'muted'}
+                            unknownCategories={unknownCategories}
+                            labels={{
+                                overall: t.analysisScoreLabel,
+                                effectiveness: t.analysisScoreEffectiveness,
+                                safety: t.analysisScoreSafety,
+                                value: sourceType === 'label_scan' ? t.analysisScoreFormulaQuality : t.analysisScoreValue,
+                                valueLabel: sourceType === 'label_scan' ? t.analysisScoreFormulaQuality : t.analysisScoreValue,
+                            }}
+                            metaLines={scoreMetaLines}
                             badgeText={badgeTextSafe}
                             sourceType={sourceType}
                         />
@@ -1240,8 +1692,8 @@ export const AnalysisDashboard: React.FC<{
 
                 {/* Deep Categories */}
                 <View style={styles.tilesHeader}>
-                    <Text style={styles.tilesTitle}>Deep Categories</Text>
-                    <Text style={styles.tilesSubtitle}>Tap to view detailed analysis</Text>
+                    <Text style={styles.tilesTitle}>{t.analysisDeepCategoriesTitle}</Text>
+                    <Text style={styles.tilesSubtitle}>{t.analysisDeepCategoriesSubtitle}</Text>
                 </View>
 
                 <View style={styles.tilesGrid} onLayout={onTilesGridLayout}>
@@ -1468,6 +1920,25 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         gap: 8,
     },
+    inlineRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        flex: 1,
+    },
+    infoBadge: {
+        minWidth: 16,
+        height: 16,
+        borderRadius: 8,
+        borderWidth: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    infoBadgeText: {
+        fontSize: 10,
+        fontWeight: '700',
+        lineHeight: 12,
+    },
     bulletIcon: {
         marginTop: 2,
     },
@@ -1497,6 +1968,11 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         gap: 8,
     },
+    mechAmountRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
     mechName: {
         flex: 1,
         fontSize: 13,
@@ -1511,6 +1987,13 @@ const styles = StyleSheet.create({
         borderRadius: 999,
         borderCurve: 'continuous',
         overflow: 'hidden',
+        backgroundColor: 'rgba(255,255,255,0.4)',
+    },
+    mechBarUnknown: {
+        backgroundColor: 'rgba(148,163,184,0.2)',
+        borderWidth: 1,
+        borderColor: 'rgba(148,163,184,0.5)',
+        borderStyle: 'dashed',
     },
     mechFill: {
         height: '100%',
@@ -1544,17 +2027,18 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: '700',
         lineHeight: 16,
+        flex: 1,
     },
-    recommendationBlock: {
+    tipBlock: {
         gap: 4,
         marginTop: 6,
     },
-    recommendationLabel: {
+    tipLabel: {
         fontSize: 11,
         fontWeight: '800',
         letterSpacing: 0.6,
     },
-    recommendationText: {
+    tipText: {
         fontSize: 12,
         lineHeight: 16,
         fontWeight: '600',
@@ -1767,5 +2251,30 @@ const styles = StyleSheet.create({
         lineHeight: 18,
         textAlign: 'center',
         fontStyle: 'italic',
+    },
+    dataStatusCard: {
+        marginTop: 20,
+        backgroundColor: '#F8FAFC',
+        borderRadius: 16,
+        padding: 14,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        gap: 6,
+    },
+    dataStatusTitle: {
+        fontSize: 13,
+        fontWeight: '700',
+        color: '#111827',
+    },
+    dataStatusLine: {
+        fontSize: 12,
+        color: '#4B5563',
+        lineHeight: 18,
+    },
+    dataStatusNote: {
+        fontSize: 11,
+        color: '#6B7280',
+        lineHeight: 16,
+        marginTop: 4,
     },
 });

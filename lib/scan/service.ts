@@ -5,7 +5,7 @@ import type { AiSupplementAnalysis } from '@/backend/src/types';
 import type { LabelDraft } from '@/backend/src/labelAnalysis';
 import type { SupplementSnapshot } from '@/types/supplementSnapshot';
 import { buildLabelSnapshot } from '@/lib/snapshot';
-import { supabase } from '@/lib/supabase';
+import { withAuthHeaders } from '@/lib/auth-token';
 
 export type { BarcodeAnalysis, BarcodeScanResult } from '@/lib/search-agent';
 
@@ -47,11 +47,6 @@ const computeImageHash = (base64: string): string => {
   return `${normalized}-${base64.length}`;
 };
 
-const getAccessToken = async (): Promise<string | null> => {
-  const { data } = await supabase.auth.getSession();
-  return data.session?.access_token ?? null;
-};
-
 export async function submitLabelScan(input: {
   imageUri: string;
   imageBase64: string;
@@ -64,13 +59,7 @@ export async function submitLabelScan(input: {
   const endpoint = includeAnalysis
     ? `${apiBase}/api/analyze-label?includeAnalysis=1`
     : `${apiBase}/api/analyze-label`;
-  const token = await getAccessToken();
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
+  const headers = await withAuthHeaders({ 'Content-Type': 'application/json' });
   const response = await fetch(endpoint, {
     method: 'POST',
     headers,
@@ -113,13 +102,7 @@ export async function requestLabelAnalysis(input: {
   deviceId?: string;
 }): Promise<AnalyzeLabelResponse> {
   const apiBase = getSearchApiBase();
-  const token = await getAccessToken();
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
+  const headers = await withAuthHeaders({ 'Content-Type': 'application/json' });
   const response = await fetch(`${apiBase}/api/analyze-label?includeAnalysis=1`, {
     method: 'POST',
     headers,

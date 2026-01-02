@@ -34,9 +34,11 @@ const RATE_LIMITS: Record<AuthRateLimitKey, { windowMs: number; max: number }> =
 };
 
 const BIOMETRIC_STORE_KEY = 'nutri_biometrics_enabled';
-const DEFAULT_REDIRECT: Href = '/(tabs)/home';
+const DEFAULT_REDIRECT: Href = '/main';
 const EXPO_PROJECT_NAME_FOR_PROXY = '@nutri000/nutri-app';
 const DEEP_LINK_SCHEME = 'nutri';
+const APPLE_ANDROID_CLIENT_ID = 'com.Howard.NuTri.App.auth';
+const APPLE_ANDROID_REDIRECT_URI = 'https://dlwlobgmjzcmpirwvetq.supabase.co/auth/v1/callback';
 
 const shouldUseProxy = () => {
   const ownership = Constants.appOwnership;
@@ -314,8 +316,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
       if (Platform.OS === 'android') {
         appleAuthAndroid.configure({
-          clientId: 'com.nutri.app.service', // Update with actual Service ID from Apple Developer console
-          redirectUri: buildRedirectUri(),
+          clientId: APPLE_ANDROID_CLIENT_ID,
+          redirectUri: APPLE_ANDROID_REDIRECT_URI,
           scope: appleAuthAndroid.Scope.ALL,
           responseType: appleAuthAndroid.ResponseType.ALL,
         });

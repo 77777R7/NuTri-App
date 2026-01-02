@@ -15,6 +15,7 @@ type ScoreDetailCardProps = {
     description: ContentSection;
     color: string;
     valueLabel?: string;
+    labelOverride?: string;
 };
 
 export const ScoreDetailCard = ({
@@ -24,11 +25,14 @@ export const ScoreDetailCard = ({
     description,
     color,
     valueLabel,
+    labelOverride,
 }: ScoreDetailCardProps) => {
     const Icon = category === 'effectiveness' ? Zap : category === 'safety' ? Shield : Activity;
-    const label = category === 'practicality'
-        ? (valueLabel || 'Value')
-        : category.charAt(0).toUpperCase() + category.slice(1);
+    const label = labelOverride || (
+        category === 'practicality'
+            ? (valueLabel || 'Value')
+            : category.charAt(0).toUpperCase() + category.slice(1)
+    );
 
     // Calculate progress percentage
     const progress = Math.min(Math.max(score / maxScore, 0), 1);

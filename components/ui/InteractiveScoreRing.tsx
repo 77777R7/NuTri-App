@@ -38,11 +38,41 @@ type InteractiveScoreRingProps = {
     muted?: boolean;
     badgeText?: string;
     sourceType?: 'barcode' | 'label_scan';
+    labels?: {
+        overall?: string;
+        effectiveness?: string;
+        safety?: string;
+        value?: string;
+        valueLabel?: string;
+    };
+    unknownCategories?: {
+        effectiveness?: boolean;
+        safety?: boolean;
+        value?: boolean;
+    };
+    metaLines?: string[];
 };
 
-export const InteractiveScoreRing = ({ scores, descriptions, display, muted = false, badgeText, sourceType }: InteractiveScoreRingProps) => {
+export const InteractiveScoreRing = ({
+    scores,
+    descriptions,
+    display,
+    muted = false,
+    badgeText,
+    sourceType,
+    labels,
+    unknownCategories,
+    metaLines,
+}: InteractiveScoreRingProps) => {
     const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-    const valueLabel = sourceType === 'label_scan' ? 'Formula Quality' : 'Value';
+    const valueLabel = labels?.valueLabel ?? (sourceType === 'label_scan' ? 'Formula Quality' : 'Value');
+    const overallLabel = labels?.overall ?? 'NUTRI SCORE';
+    const effectivenessLabel = labels?.effectiveness ?? 'Effectiveness';
+    const safetyLabel = labels?.safety ?? 'Safety';
+    const valueLegendLabel = labels?.value ?? valueLabel;
+    const unknownEffectiveness = unknownCategories?.effectiveness ?? false;
+    const unknownSafety = unknownCategories?.safety ?? false;
+    const unknownValue = unknownCategories?.value ?? false;
 
     // Dimensions
     const size = 150; // Compact ring size to leave room for legend text
@@ -69,10 +99,13 @@ export const InteractiveScoreRing = ({ scores, descriptions, display, muted = fa
             p3.value = 0;
             return;
         }
-        p1.value = withDelay(100, withTiming(scores.effectiveness / 100, { duration: 1500, easing: Easing.out(Easing.exp) }));
-        p2.value = withDelay(300, withTiming(scores.safety / 100, { duration: 1500, easing: Easing.out(Easing.exp) }));
-        p3.value = withDelay(500, withTiming(scores.value / 100, { duration: 1500, easing: Easing.out(Easing.exp) }));
-    }, [scores, muted]);
+        const target1 = unknownEffectiveness ? 0.5 : scores.effectiveness / 100;
+        const target2 = unknownSafety ? 0.5 : scores.safety / 100;
+        const target3 = unknownValue ? 0.5 : scores.value / 100;
+        p1.value = withDelay(100, withTiming(target1, { duration: 1500, easing: Easing.out(Easing.exp) }));
+        p2.value = withDelay(300, withTiming(target2, { duration: 1500, easing: Easing.out(Easing.exp) }));
+        p3.value = withDelay(500, withTiming(target3, { duration: 1500, easing: Easing.out(Easing.exp) }));
+    }, [scores, muted, unknownEffectiveness, unknownSafety, unknownValue]);
 
     const props1 = useAnimatedProps(() => ({
         strokeDashoffset: c1 * (1 - p1.value),
@@ -86,6 +119,9 @@ export const InteractiveScoreRing = ({ scores, descriptions, display, muted = fa
 
     const handlePress = (category: Category) => {
         if (muted) return;
+        if (category === 'effectiveness' && unknownEffectiveness) return;
+        if (category === 'safety' && unknownSafety) return;
+        if (category === 'practicality' && unknownValue) return;
         setSelectedCategory(category);
     };
 
@@ -97,9 +133,9 @@ export const InteractiveScoreRing = ({ scores, descriptions, display, muted = fa
         if (!selectedCategory) return null;
         switch (selectedCategory) {
             case 'effectiveness':
-                return { score: scores.effectiveness, desc: descriptions.effectiveness, color: '#FA114F', title: 'Effectiveness' };
+                return { score: scores.effectiveness, desc: descriptions.effectiveness, color: '#FA114F', title: effectivenessLabel };
             case 'safety':
-                return { score: scores.safety, desc: descriptions.safety, color: '#A6E533', title: 'Safety' };
+                return { score: scores.safety, desc: descriptions.safety, color: '#A6E533', title: safetyLabel };
             case 'practicality':
                 return { score: scores.value, desc: descriptions.practicality, color: '#00DBDD', title: valueLabel };
         }
@@ -112,15 +148,15 @@ export const InteractiveScoreRing = ({ scores, descriptions, display, muted = fa
     const displayValue = display?.value ?? `${Math.round(scores.value)}`;
     const overallIsDash = displayOverall === '--';
     const formatLegendScore = (value: string) => (value === '--' ? '--' : `${value}/100`);
-    const track1 = muted ? 'rgba(148,163,184,0.2)' : 'rgba(250, 17, 79, 0.15)';
-    const track2 = muted ? 'rgba(148,163,184,0.2)' : 'rgba(166, 229, 51, 0.2)';
-    const track3 = muted ? 'rgba(148,163,184,0.2)' : 'rgba(0, 219, 221, 0.15)';
-    const ring1 = muted ? '#d1d5db' : '#FA114F';
-    const ring1End = muted ? '#e5e7eb' : '#FF4F80';
-    const ring2 = muted ? '#d1d5db' : '#A6E533';
-    const ring2End = muted ? '#e5e7eb' : '#CFFF60';
-    const ring3 = muted ? '#d1d5db' : '#00DBDD';
-    const ring3End = muted ? '#e5e7eb' : '#50F0F2';
+    const track1 = muted || unknownEffectiveness ? 'rgba(148,163,184,0.2)' : 'rgba(250, 17, 79, 0.15)';
+    const track2 = muted || unknownSafety ? 'rgba(148,163,184,0.2)' : 'rgba(166, 229, 51, 0.2)';
+    const track3 = muted || unknownValue ? 'rgba(148,163,184,0.2)' : 'rgba(0, 219, 221, 0.15)';
+    const ring1 = muted || unknownEffectiveness ? '#d1d5db' : '#FA114F';
+    const ring1End = muted || unknownEffectiveness ? '#e5e7eb' : '#FF4F80';
+    const ring2 = muted || unknownSafety ? '#d1d5db' : '#A6E533';
+    const ring2End = muted || unknownSafety ? '#e5e7eb' : '#CFFF60';
+    const ring3 = muted || unknownValue ? '#d1d5db' : '#00DBDD';
+    const ring3End = muted || unknownValue ? '#e5e7eb' : '#50F0F2';
 
     return (
         <View style={styles.container}>
@@ -133,7 +169,7 @@ export const InteractiveScoreRing = ({ scores, descriptions, display, muted = fa
                     <View style={styles.badgeSpacer} />
                 )}
                 <View style={styles.overallScoreContainer}>
-                    <Text style={[styles.overallLabel, muted ? styles.mutedText : null]}>NUTRI SCORE</Text>
+                    <Text style={[styles.overallLabel, muted ? styles.mutedText : null]}>{overallLabel}</Text>
                     <Text style={[styles.overallValue, muted ? styles.mutedTextStrong : null]}>
                         {displayOverall}
                         {!overallIsDash && <Text style={styles.overallMax}>/100</Text>}
@@ -210,37 +246,69 @@ export const InteractiveScoreRing = ({ scores, descriptions, display, muted = fa
                 {/* Right Side: Legend */}
                 <View style={styles.legendContainer}>
                     <View style={styles.legendList}>
-                        <TouchableOpacity style={styles.legendItem} onPress={() => handlePress('effectiveness')} activeOpacity={muted ? 1 : 0.7}>
-                            <View style={[styles.legendIcon, { backgroundColor: muted ? '#d1d5db' : '#FA114F' }]} />
+                        <TouchableOpacity style={styles.legendItem} onPress={() => handlePress('effectiveness')} activeOpacity={muted || unknownEffectiveness ? 1 : 0.7}>
+                            <View style={[styles.legendIcon, { backgroundColor: muted || unknownEffectiveness ? '#d1d5db' : '#FA114F' }]} />
                             <View style={styles.legendContent}>
-                                <Text style={[styles.legendTitle, muted ? styles.mutedTextStrong : null]} numberOfLines={1}>Effectiveness</Text>
+                                <Text
+                                    style={[
+                                        styles.legendTitle,
+                                        muted || unknownEffectiveness ? styles.mutedTextStrong : null
+                                    ]}
+                                    numberOfLines={1}
+                                >
+                                    {effectivenessLabel}
+                                </Text>
                                 <Text style={styles.legendScore} numberOfLines={1}>{formatLegendScore(displayEffectiveness)}</Text>
                             </View>
-                            {!muted && <ChevronRight size={16} color="#C7C7CC" />}
+                            {!muted && !unknownEffectiveness && <ChevronRight size={16} color="#C7C7CC" />}
                         </TouchableOpacity>
 
-                        <TouchableOpacity style={styles.legendItem} onPress={() => handlePress('safety')} activeOpacity={muted ? 1 : 0.7}>
-                            <View style={[styles.legendIcon, { backgroundColor: muted ? '#d1d5db' : '#A6E533' }]} />
+                        <TouchableOpacity style={styles.legendItem} onPress={() => handlePress('safety')} activeOpacity={muted || unknownSafety ? 1 : 0.7}>
+                            <View style={[styles.legendIcon, { backgroundColor: muted || unknownSafety ? '#d1d5db' : '#A6E533' }]} />
                             <View style={styles.legendContent}>
-                                <Text style={[styles.legendTitle, muted ? styles.mutedTextStrong : null]} numberOfLines={1}>Safety</Text>
+                                <Text
+                                    style={[
+                                        styles.legendTitle,
+                                        muted || unknownSafety ? styles.mutedTextStrong : null
+                                    ]}
+                                    numberOfLines={1}
+                                >
+                                    {safetyLabel}
+                                </Text>
                                 <Text style={styles.legendScore} numberOfLines={1}>{formatLegendScore(displaySafety)}</Text>
                             </View>
-                            {!muted && <ChevronRight size={16} color="#C7C7CC" />}
+                            {!muted && !unknownSafety && <ChevronRight size={16} color="#C7C7CC" />}
                         </TouchableOpacity>
 
-                        <TouchableOpacity style={styles.legendItem} onPress={() => handlePress('practicality')} activeOpacity={muted ? 1 : 0.7}>
-                            <View style={[styles.legendIcon, { backgroundColor: muted ? '#d1d5db' : '#00DBDD' }]} />
+                        <TouchableOpacity style={styles.legendItem} onPress={() => handlePress('practicality')} activeOpacity={muted || unknownValue ? 1 : 0.7}>
+                            <View style={[styles.legendIcon, { backgroundColor: muted || unknownValue ? '#d1d5db' : '#00DBDD' }]} />
                             <View style={styles.legendContent}>
-                                <Text style={[styles.legendTitle, muted ? styles.mutedTextStrong : null]} numberOfLines={1}>
-                                    {valueLabel}
+                                <Text
+                                    style={[
+                                        styles.legendTitle,
+                                        muted || unknownValue ? styles.mutedTextStrong : null
+                                    ]}
+                                    numberOfLines={1}
+                                >
+                                    {valueLegendLabel}
                                 </Text>
                                 <Text style={styles.legendScore} numberOfLines={1}>{formatLegendScore(displayValue)}</Text>
                             </View>
-                            {!muted && <ChevronRight size={16} color="#C7C7CC" />}
+                            {!muted && !unknownValue && <ChevronRight size={16} color="#C7C7CC" />}
                         </TouchableOpacity>
                     </View>
                 </View>
             </View>
+
+            {metaLines && metaLines.length > 0 && (
+                <View style={styles.metaList}>
+                    {metaLines.map((line, index) => (
+                        <Text key={`${line}-${index}`} style={[styles.metaLine, muted ? styles.mutedTextStrong : null]}>
+                            {line}
+                        </Text>
+                    ))}
+                </View>
+            )}
 
             {/* Overlay Window */}
             {!muted && selectedCategory && overlayData && (
@@ -263,6 +331,7 @@ export const InteractiveScoreRing = ({ scores, descriptions, display, muted = fa
                             description={overlayData.desc}
                             color={overlayData.color}
                             valueLabel={valueLabel}
+                            labelOverride={overlayData.title}
                         />
                     </View>
                 </Animated.View>
@@ -381,6 +450,15 @@ const styles = StyleSheet.create({
         color: '#8E8E93',
         marginTop: 1,
         textAlign: 'right',
+    },
+    metaList: {
+        marginTop: 12,
+        gap: 4,
+    },
+    metaLine: {
+        fontSize: 12,
+        color: '#6B7280',
+        fontWeight: '600',
     },
     overlay: {
         ...StyleSheet.absoluteFillObject,

@@ -1,4 +1,5 @@
 import { ENV } from './env';
+import { getAccessToken } from './auth-token';
 
 export type AuthenticatedRequestOptions = RequestInit & { token?: string | null };
 
@@ -11,8 +12,9 @@ async function request<T>(path: string, options: AuthenticatedRequestOptions = {
   const url = buildUrl(path);
   const headers = new Headers(options.headers);
   headers.set('Content-Type', 'application/json');
-  if (options.token) {
-    headers.set('Authorization', `Bearer ${options.token}`);
+  const token = options.token ?? (await getAccessToken());
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
   }
 
   const response = await fetch(url, {

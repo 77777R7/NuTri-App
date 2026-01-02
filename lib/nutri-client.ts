@@ -1,42 +1,51 @@
 import { analyzeBarcode } from '@/lib/search-agent';
 import type { BarcodeScanResult } from '@/lib/search-agent';
+import { withAuthHeaders } from '@/lib/auth-token';
 
 const API_BASE = (process.env.EXPO_PUBLIC_API_BASE_URL?.replace(/\/$/, '') as string) || '';
 
 export const nutri = {
   auth: {
     async me() {
-      const response = await fetch(`${API_BASE}/api/me`, { credentials: 'include' as any });
+      const headers = await withAuthHeaders();
+      const response = await fetch(`${API_BASE}/api/me`, { credentials: 'include' as any, headers });
       if (!response.ok) throw new Error('Auth failed');
       return response.json();
     },
     async logout() {
+      const headers = await withAuthHeaders();
       await fetch(`${API_BASE}/api/logout`, {
         method: 'POST',
         credentials: 'include' as any,
+        headers,
       });
     },
   },
   entities: {
     Supplement: {
       async list(order = '-created_date') {
-        const response = await fetch(`${API_BASE}/api/supplements?order=${encodeURIComponent(order)}`);
+        const headers = await withAuthHeaders();
+        const response = await fetch(`${API_BASE}/api/supplements?order=${encodeURIComponent(order)}`, {
+          headers,
+        });
         if (!response.ok) throw new Error('Failed to list supplements');
         return response.json();
       },
       async filter(where: Record<string, unknown> = {}, order = '-created_date') {
+        const headers = await withAuthHeaders({ 'Content-Type': 'application/json' });
         const response = await fetch(`${API_BASE}/api/supplements/search`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({ where, order }),
         });
         if (!response.ok) throw new Error('Failed to filter');
         return response.json();
       },
       async create(data: Record<string, unknown>) {
+        const headers = await withAuthHeaders({ 'Content-Type': 'application/json' });
         const response = await fetch(`${API_BASE}/api/supplements`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify(data),
         });
         if (!response.ok) throw new Error('Create failed');
@@ -54,7 +63,8 @@ export const nutri = {
       async UploadFile({ file }: { file: any }) {
         const form = new FormData();
         form.append('file', file);
-        const response = await fetch(`${API_BASE}/api/upload`, { method: 'POST', body: form });
+        const headers = await withAuthHeaders();
+        const response = await fetch(`${API_BASE}/api/upload`, { method: 'POST', body: form, headers });
         if (!response.ok) throw new Error('Upload failed');
         return response.json();
       },
@@ -65,9 +75,10 @@ export const nutri = {
         file_url: string;
         json_schema: unknown;
       }) {
+        const headers = await withAuthHeaders({ 'Content-Type': 'application/json' });
         const response = await fetch(`${API_BASE}/api/scan`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({ file_url, json_schema }),
         });
         if (!response.ok) return { status: 'error' as const };

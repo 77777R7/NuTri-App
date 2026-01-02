@@ -7,7 +7,7 @@ import * as Sentry from "@sentry/node";
 import { z } from "zod";
 
 import { buildBarcodeSearchQueries, normalizeBarcodeInput } from "./barcode.js";
-import { resolveCatalogByBarcode } from "./catalogResolver.js";
+import { resolveCatalogByBarcode, type CatalogResolved } from "./catalogResolver.js";
 import { buildCatalogBarcodeSnapshot } from "./catalogSnapshot.js";
 import { logBarcodeScan } from "./scanLog.js";
 import { extractBrandProduct, extractBrandWithAI, type BrandExtractionResult } from "./brandExtractor.js";
@@ -673,7 +673,7 @@ const queueBarcodeAnalysisCompletion = (params: {
       updatedAt: new Date().toISOString(),
     };
 
-    await storeSnapshotCache(
+    void storeSnapshotCache(
       {
         key: params.cacheKey,
         source: "barcode",
@@ -739,7 +739,7 @@ const buildAndCacheLabelSnapshot = async (input: {
     message: input.message,
   });
 
-  await storeSnapshotCache({
+  void storeSnapshotCache({
     key: input.imageHash,
     source: "label",
     snapshot,
@@ -918,18 +918,29 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     const emitCachedSnapshot = (cached: {
       snapshot: SupplementSnapshot;
       analysisPayload: SnapshotAnalysisPayload | null;
-    }) => {
+    }, catalog?: CatalogResolved | null) => {
       console.log(`[Stream] Cache hit for barcode: ${barcode}`);
       const { snapshot, analysisPayload } = cached;
       if (analysisPayload?.brandExtraction) {
         sendSSE(res, "brand_extracted", analysisPayload.brandExtraction);
       }
 
-      const productInfo = analysisPayload?.productInfo ?? {
-        brand: snapshot.product.brand,
-        name: snapshot.product.name,
-        category: snapshot.product.category,
-        image: snapshot.product.imageUrl,
+      const pickField = (...values: (string | null | undefined)[]) => {
+        for (const value of values) {
+          if (typeof value !== "string") continue;
+          const trimmed = value.trim();
+          if (trimmed.length > 0) return trimmed;
+        }
+        return null;
+      };
+
+      const catalogCategory = catalog?.category ?? catalog?.categoryRaw ?? null;
+
+      const productInfo = {
+        brand: pickField(catalog?.brand, analysisPayload?.productInfo?.brand, snapshot.product.brand),
+        name: pickField(catalog?.productName, analysisPayload?.productInfo?.name, snapshot.product.name),
+        category: pickField(catalogCategory, analysisPayload?.productInfo?.category, snapshot.product.category),
+        image: pickField(catalog?.imageUrl, analysisPayload?.productInfo?.image, snapshot.product.imageUrl),
       };
 
       const sources = analysisPayload?.sources ?? snapshot.references.items.map((ref) => ({
@@ -1017,16 +1028,20 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
 
     const cachedFast = await snapshotPromise.catch(() => null);
     if (cachedFast) {
-      emitCachedSnapshot(cachedFast);
+      const hasProductName = Boolean(
+        cachedFast.analysisPayload?.productInfo?.name || cachedFast.snapshot.product.name,
+      );
+      const catalogFast = hasProductName ? null : await catalogPromise.catch(() => null);
+      emitCachedSnapshot(cachedFast, catalogFast);
       sendSSE(res, "done", { barcode });
       res.end();
 
       const timingTotalMs = Math.round(performance.now() - startedAt);
 
       void (async () => {
-        const catalog = await catalogPromise.catch(() => null);
+        const { snapshot, analysisPayload } = cachedFast;
+        const catalog = catalogFast ?? await catalogPromise.catch(() => null);
         if (catalog) {
-          const { snapshot, analysisPayload } = cachedFast;
           const before = {
             brand: snapshot.product.brand,
             name: snapshot.product.name,
@@ -1037,7 +1052,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
             dsldLabelId: snapshot.regulatory.dsldLabelId,
           };
           const catalogCategory = catalog.category ?? catalog.categoryRaw ?? null;
-          const pickField = (...values: Array<string | null | undefined>) => {
+          const pickField = (...values: (string | null | undefined)[]) => {
             for (const value of values) {
               if (typeof value !== "string") continue;
               const trimmed = value.trim();
@@ -1099,6 +1114,9 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
             : "dsld_snapshot_cache"
           : "snapshot_cache";
 
+        const brandName = snapshot.product.brand ?? analysisPayload?.productInfo?.brand ?? null;
+        const productName = snapshot.product.name ?? analysisPayload?.productInfo?.name ?? null;
+
         void logBarcodeScan({
           barcodeGtin14,
           barcodeRaw: rawBarcode,
@@ -1107,6 +1125,8 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           servedFrom,
           dsldLabelId: catalog?.dsldLabelId ?? null,
           snapshotId: cachedFast.snapshot.snapshotId,
+          brandName,
+          productName,
           deviceId,
           requestId,
           timingTotalMs,
@@ -1148,7 +1168,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           dsldLabelId: snapshot.regulatory.dsldLabelId,
         };
         const catalogCategory = catalog.category ?? catalog.categoryRaw ?? null;
-        const pickField = (...values: Array<string | null | undefined>) => {
+        const pickField = (...values: (string | null | undefined)[]) => {
           for (const value of values) {
             if (typeof value !== "string") continue;
             const trimmed = value.trim();
@@ -1234,6 +1254,9 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           });
         }
 
+        const brandName = snapshot.product.brand ?? analysisPayload?.productInfo?.brand ?? null;
+        const productName = snapshot.product.name ?? analysisPayload?.productInfo?.name ?? null;
+
         void logBarcodeScan({
           barcodeGtin14: gtin14,
           barcodeRaw: rawBarcode,
@@ -1242,6 +1265,8 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           servedFrom: servedFromCatalogCache,
           dsldLabelId: catalog.dsldLabelId,
           snapshotId: snapshot.snapshotId,
+          brandName,
+          productName,
           deviceId,
           requestId,
           timingTotalMs,
@@ -1300,6 +1325,9 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         expiresAt: null, // Catalog 数据稳定，可以不设过期
       });
 
+      const brandName = catalog.brand ?? null;
+      const productName = catalog.productName ?? null;
+
       void logBarcodeScan({
         barcodeGtin14: gtin14,
         barcodeRaw: rawBarcode,
@@ -1308,6 +1336,8 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         servedFrom: servedFromCatalog,
         dsldLabelId: catalog.dsldLabelId,
         snapshotId: catalogSnapshot.snapshotId,
+        brandName,
+        productName,
         deviceId,
         requestId,
         timingTotalMs,
@@ -1408,6 +1438,8 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         sendSSE(res, "done", { barcode });
         res.end();
         const timingTotalMs = Math.round(performance.now() - startedAt);
+        const brandName = after.snapshot.product.brand ?? after.analysisPayload?.productInfo?.brand ?? null;
+        const productName = after.snapshot.product.name ?? after.analysisPayload?.productInfo?.name ?? null;
         void logBarcodeScan({
           barcodeGtin14,
           barcodeRaw: rawBarcode,
@@ -1415,6 +1447,8 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           catalogHit: false,
           servedFrom: "wait_inflight",
           snapshotId: after.snapshot.snapshotId,
+          brandName,
+          productName,
           deviceId,
           requestId,
           timingTotalMs,
@@ -1657,23 +1691,13 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
       : null;
 
-    const storePromise = storeSnapshotCache({
-      key: cacheKey,
-      source: "barcode",
-      snapshot,
-      analysisPayload,
-      expiresAt,
-    });
-    storePromise.catch(() => {});
-    storePromise.finally(() => finishInFlight?.());
+    const canRespond = !requestSignal.aborted && !res.writableEnded;
 
-    if (requestSignal.aborted || res.writableEnded) {
-      return;
+    if (canRespond) {
+      sendSSE(res, "snapshot", snapshot);
+      sendSSE(res, "done", { barcode });
+      res.end();
     }
-
-    sendSSE(res, "snapshot", snapshot);
-    sendSSE(res, "done", { barcode });
-    res.end();
 
     if (!bundle && !requestSignal.aborted) {
       queueBarcodeAnalysisCompletion({
@@ -1689,7 +1713,18 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       });
     }
 
+    void storeSnapshotCache({
+      key: cacheKey,
+      source: "barcode",
+      snapshot,
+      analysisPayload,
+      expiresAt,
+    });
+    finishInFlight?.();
+
     const timingTotalMs = Math.round(performance.now() - startedAt);
+    const brandName = snapshot.product.brand ?? null;
+    const productName = snapshot.product.name ?? null;
     void logBarcodeScan({
       barcodeGtin14,
       barcodeRaw: rawBarcode,
@@ -1697,6 +1732,8 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       catalogHit: false,
       servedFrom: "google_ai",
       snapshotId: snapshot.snapshotId,
+      brandName,
+      productName,
       deviceId,
       requestId,
       timingTotalMs,
@@ -1845,7 +1882,6 @@ const analyzeLabelConfirmBodySchema = z
   .passthrough();
 
 type AnalyzeLabelRequest = z.infer<typeof analyzeLabelBodySchema>;
-type AnalyzeLabelConfirmRequest = z.infer<typeof analyzeLabelConfirmBodySchema>;
 
 interface LabelAnalysisResponse {
   status: "ok" | "needs_confirmation" | "failed";
