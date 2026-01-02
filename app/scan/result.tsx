@@ -321,7 +321,15 @@ export default function ScanResultScreen() {
 
   // 🚀 Use the Streaming Hook
   const {
-    productInfo, efficacy, safety, usage, value, social, status, error
+    productInfo,
+    efficacy,
+    safety,
+    usage,
+    value,
+    social,
+    status,
+    error,
+    analysisMeta,
   } = useStreamAnalysis(barcode);
   const barcodeQuality = useMemo(() => getBarcodeQuality({ status, error }), [error, status]);
 
@@ -823,8 +831,10 @@ export default function ScanResultScreen() {
     // Meta is tricky, we might compute it or mock it. 
     // For now, let's pass a basic meta if efficacy exists to allow score calculation
     meta: {
+      analysisStatus: analysisMeta?.status ?? null,
+      analysisVersion: analysisMeta?.version ?? null,
+      labelExtraction: analysisMeta?.labelExtraction ?? null,
       actualDoseMg: efficacy?.activeIngredients?.[0]?.amount ? parseFloat(efficacy.activeIngredients[0].amount) : 0,
-      // ... fill other meta requirements if needed or let computeScores handle defaults
     },
     status: 'success'
   };

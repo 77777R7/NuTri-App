@@ -6,6 +6,7 @@ export const EXCERPT_MAX_CHARS = 600 as const;
 const SnapshotStatusSchema = z.enum(['resolved', 'partial', 'unknown_product', 'error']);
 const SnapshotSourceSchema = z.enum(['barcode', 'label', 'mixed']);
 const SnapshotRegionSchema = z.enum(['US', 'CA', 'global']);
+const AnalysisStatusSchema = z.enum(['catalog_only', 'label_enriched', 'ai_enriched', 'complete']);
 
 const BarcodeNormalizedFormatSchema = z.enum(['gtin14', 'ean13', 'upca', 'unknown']);
 const NormalizedAmountUnitSchema = z.enum(['mg', 'mcg', 'g', 'iu', 'cfu', 'ml']);
@@ -21,6 +22,12 @@ const ReferenceItemSchema = z.object({
   retrievedAt: z.string(),
   hash: z.string(),
   evidenceFor: z.enum(['efficacy', 'safety', 'trust', 'regulatory', 'general']),
+});
+
+const LabelExtractionSchema = z.object({
+  source: z.enum(['dsld', 'label_scan', 'lnhpd', 'manual']),
+  fetchedAt: z.string().nullable(),
+  datasetVersion: z.string().nullable(),
 });
 
 export const SupplementSnapshotSchema = z.object({
@@ -158,6 +165,14 @@ export const SupplementSnapshotSchema = z.object({
   references: z.object({
     items: z.array(ReferenceItemSchema),
   }),
+  analysis: z
+    .object({
+      status: AnalysisStatusSchema.nullable(),
+      version: z.number().int().nullable(),
+      labelExtraction: LabelExtractionSchema.nullable(),
+    })
+    .nullable()
+    .optional(),
   scores: z
     .object({
       overall: z.number(),

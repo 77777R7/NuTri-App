@@ -123,6 +123,7 @@ const en = {
     analysisPlaceholderUnknown: 'Unknown',
     analysisPlaceholderNotRated: 'Not rated',
     analysisPlaceholderSeeLabel: 'See label',
+    analysisPlaceholderIncludedInBlend: 'Included in Blend',
     analysisPlaceholderNotEnoughInfo: 'Not enough info',
     analysisPlaceholderInsufficient: 'Insufficient data',
     analysisPlaceholderOverviewSummary: 'Insights pending. See label for details.',

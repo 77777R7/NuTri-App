@@ -142,6 +142,548 @@ const supabaseReadBreaker = new CircuitBreaker({
 
 const negativeBarcodeCache = new TtlCache<string, true>();
 
+const ANALYSIS_VERSION = Number(process.env.ANALYSIS_VERSION ?? 2);
+const CACHE_TTL_CATALOG_ONLY_MS = Number(
+  process.env.CACHE_TTL_CATALOG_ONLY_MS ?? 24 * 60 * 60 * 1000,
+);
+const CACHE_TTL_LABEL_ENRICHED_MS = Number(
+  process.env.CACHE_TTL_LABEL_ENRICHED_MS ?? 7 * 24 * 60 * 60 * 1000,
+);
+const CACHE_TTL_AI_ENRICHED_MS = Number(
+  process.env.CACHE_TTL_AI_ENRICHED_MS ?? 7 * 24 * 60 * 60 * 1000,
+);
+const CACHE_TTL_COMPLETE_MS = Number(
+  process.env.CACHE_TTL_COMPLETE_MS ?? 30 * 24 * 60 * 60 * 1000,
+);
+
+type AnalysisStatus = 'catalog_only' | 'label_enriched' | 'ai_enriched' | 'complete';
+
+type LabelExtractionMeta = {
+  source: 'dsld' | 'label_scan' | 'lnhpd' | 'manual';
+  fetchedAt: string | null;
+  datasetVersion: string | null;
+};
+
+type AnalysisMeta = {
+  status: AnalysisStatus;
+  version: number;
+  labelExtraction: LabelExtractionMeta | null;
+};
+
+type NormalizedAmountUnit = 'mg' | 'mcg' | 'g' | 'iu' | 'cfu' | 'ml';
+
+type DsldFacts = {
+  dsldLabelId: number;
+  servingSize: string | null;
+  servingsPerContainer: number | null;
+  actives: {
+    name: string;
+    amount: number | null;
+    unit: string | null;
+  }[];
+  inactive: string[];
+  proprietaryBlends: {
+    name: string;
+    totalAmount: number | null;
+    unit: string | null;
+    ingredients: string[] | null;
+  }[];
+  datasetVersion: string | null;
+  extractedAt: string | null;
+  dsldPdf: string | null;
+  dsldThumbnail: string | null;
+};
+
+const nowIso = () => new Date().toISOString();
+
+const normalizeUnitLabel = (unitRaw?: string | null): string | null => {
+  if (!unitRaw) return null;
+  const normalized = unitRaw.trim().toLowerCase();
+  if (!normalized) return null;
+  if (normalized.startsWith('mcg') || normalized.startsWith('ug') || normalized.startsWith('µg') || normalized.startsWith('μg')) {
+    return 'mcg';
+  }
+  if (normalized.startsWith('mg')) return 'mg';
+  if (normalized.startsWith('g')) return 'g';
+  if (normalized.startsWith('iu') || normalized.startsWith('i.u')) return 'iu';
+  if (normalized.startsWith('ml')) return 'ml';
+  if (normalized.includes('cfu') || normalized.includes('ufc')) return 'cfu';
+  if (normalized.startsWith('%')) return '%';
+  if (normalized.startsWith('cal')) return 'cal';
+  if (normalized.startsWith('kcal')) return 'kcal';
+  return normalized;
+};
+
+const normalizeAmountUnit = (unitRaw?: string | null): NormalizedAmountUnit | null => {
+  const normalized = normalizeUnitLabel(unitRaw);
+  if (normalized === 'mcg') return 'mcg';
+  if (normalized === 'mg') return 'mg';
+  if (normalized === 'g') return 'g';
+  if (normalized === 'iu') return 'iu';
+  if (normalized === 'ml') return 'ml';
+  if (normalized === 'cfu') return 'cfu';
+  return null;
+};
+
+const parseDelimitedList = (value: string | null | undefined): string[] => {
+  if (!value) return [];
+  return value
+    .split(/;|•/g)
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
+
+const parseActiveSummaryLine = (rawLine: string): { name: string; amount: number | null; unit: string | null } => {
+  const cleaned = rawLine.replace(/\{[^}]*\}/g, '').trim();
+  if (!cleaned) {
+    return { name: rawLine.trim(), amount: null, unit: null };
+  }
+
+  const npMatch = cleaned.match(/^(.*?)(?:\s+0+\s*(?:np|n\/p)|\s+(?:np|n\/p|not present))\s*$/i);
+  if (npMatch) {
+    const name = npMatch[1]?.trim() || cleaned;
+    return { name, amount: null, unit: 'np' };
+  }
+
+  const amountUnitMatch = cleaned.match(
+    /(.*?)(\d+(?:\.\d+)?)\s*(mcg|μg|µg|ug|mg|g|iu|ml|cfu|ufc|kcal|cal|calorie(?:s)?|%\s*dv|%dv|%)/i,
+  );
+  if (amountUnitMatch) {
+    const [, name, amountRaw, unitRaw] = amountUnitMatch;
+    const amount = Number(amountRaw);
+    const unitNormalized = normalizeUnitLabel(unitRaw);
+    return {
+      name: name.trim(),
+      amount: Number.isFinite(amount) ? amount : null,
+      unit: unitNormalized,
+    };
+  }
+
+  const numericMatch = cleaned.match(/(.*?)(\d+(?:\.\d+)?)$/);
+  if (numericMatch) {
+    const [, name, amountRaw] = numericMatch;
+    const amount = Number(amountRaw);
+    return {
+      name: name.trim(),
+      amount: Number.isFinite(amount) ? amount : null,
+      unit: null,
+    };
+  }
+
+  return { name: cleaned, amount: null, unit: null };
+};
+
+const buildAnalysisStatus = (params: {
+  hasLabelFacts: boolean;
+  hasAi: boolean;
+  dsldLabelId?: string | number | null;
+}): AnalysisStatus => {
+  const needsLabel = Boolean(params.dsldLabelId);
+  if (params.hasAi && (params.hasLabelFacts || !needsLabel)) return 'complete';
+  if (params.hasAi) return 'ai_enriched';
+  if (params.hasLabelFacts) return 'label_enriched';
+  return 'catalog_only';
+};
+
+const buildAnalysisMeta = (params: { status: AnalysisStatus; labelExtraction?: LabelExtractionMeta | null }): AnalysisMeta => ({
+  status: params.status,
+  version: ANALYSIS_VERSION,
+  labelExtraction: params.labelExtraction ?? null,
+});
+
+const computeExpiresAt = (status: AnalysisStatus): string => {
+  const ttlMs =
+    status === 'complete'
+      ? CACHE_TTL_COMPLETE_MS
+      : status === 'label_enriched'
+        ? CACHE_TTL_LABEL_ENRICHED_MS
+        : status === 'ai_enriched'
+          ? CACHE_TTL_AI_ENRICHED_MS
+          : CACHE_TTL_CATALOG_ONLY_MS;
+  return new Date(Date.now() + ttlMs).toISOString();
+};
+
+const isRpcMissing = (error: { code?: string; message?: string } | null): boolean => {
+  if (!error) return false;
+  if (error.code === 'PGRST202') return true;
+  return (error.message ?? '').toLowerCase().includes('could not find the function');
+};
+
+const buildDsldFactsFromMeta = (meta: {
+  dsld_label_id: number;
+  serving_size_raw: string | null;
+  servings_per_container: number | null;
+  active_ingredients_summary: string | null;
+  inactive_ingredients: string | null;
+  dsld_product_version_code: string | null;
+  dsld_pdf: string | null;
+  dsld_thumbnail: string | null;
+}): DsldFacts => {
+  const actives = parseDelimitedList(meta.active_ingredients_summary).map(parseActiveSummaryLine);
+  return {
+    dsldLabelId: meta.dsld_label_id,
+    servingSize: meta.serving_size_raw ?? null,
+    servingsPerContainer: meta.servings_per_container ?? null,
+    actives,
+    inactive: parseDelimitedList(meta.inactive_ingredients),
+    proprietaryBlends: [],
+    datasetVersion: meta.dsld_product_version_code ?? null,
+    extractedAt: nowIso(),
+    dsldPdf: meta.dsld_pdf ?? null,
+    dsldThumbnail: meta.dsld_thumbnail ?? null,
+  };
+};
+
+const isDsldFactsUsable = (facts?: Partial<DsldFacts> | null): boolean => {
+  if (!facts) return false;
+  const hasActives = Array.isArray(facts.actives) && facts.actives.length > 0;
+  const hasServing =
+    typeof facts.servingSize === 'string' && facts.servingSize.trim().length > 0 ||
+    typeof facts.servingsPerContainer === 'number';
+  const hasInactive = Array.isArray(facts.inactive) && facts.inactive.length > 0;
+  const hasBlends = Array.isArray(facts.proprietaryBlends) && facts.proprietaryBlends.length > 0;
+  return hasActives || hasServing || hasInactive || hasBlends;
+};
+
+const fetchDsldFactsByLabelId = async (
+  labelId: number,
+  signal?: AbortSignal,
+): Promise<DsldFacts | null> => {
+  if (signal?.aborted) return null;
+
+  let rpcResult: { data?: unknown; error?: { code?: string; message?: string } | null } | null = null;
+  try {
+    rpcResult = await supabase.rpc('resolve_dsld_facts_by_label_id', { p_label_id: labelId });
+  } catch (error) {
+    rpcResult = { error: error as { message?: string } };
+  }
+
+  if (rpcResult && 'error' in rpcResult && isRpcMissing(rpcResult.error ?? null)) {
+    // fall through to meta table
+  } else if (rpcResult && 'data' in rpcResult && rpcResult.data) {
+    const record = Array.isArray(rpcResult.data) ? rpcResult.data[0] : rpcResult.data;
+    if (record?.facts_json) {
+      const facts = record.facts_json as Partial<DsldFacts>;
+      if (isDsldFactsUsable(facts)) {
+        return {
+          dsldLabelId: record.dsld_label_id ?? labelId,
+          servingSize: facts.servingSize ?? null,
+          servingsPerContainer: facts.servingsPerContainer ?? null,
+          actives: Array.isArray(facts.actives) ? facts.actives : [],
+          inactive: Array.isArray(facts.inactive) ? facts.inactive : [],
+          proprietaryBlends: Array.isArray(facts.proprietaryBlends) ? facts.proprietaryBlends : [],
+          datasetVersion: record.dataset_version ?? facts.datasetVersion ?? null,
+          extractedAt: record.extracted_at ?? facts.extractedAt ?? nowIso(),
+          dsldPdf: (facts as { dsldPdf?: string | null }).dsldPdf ?? null,
+          dsldThumbnail: (facts as { dsldThumbnail?: string | null }).dsldThumbnail ?? null,
+        };
+      }
+    }
+  }
+
+  const { data: meta, error } = await supabase
+    .from('dsld_labels_meta')
+    .select(
+      'dsld_label_id,serving_size_raw,servings_per_container,active_ingredients_summary,inactive_ingredients,dsld_product_version_code,dsld_pdf,dsld_thumbnail',
+    )
+    .eq('dsld_label_id', labelId)
+    .maybeSingle();
+  if (error || !meta) {
+    return null;
+  }
+  return buildDsldFactsFromMeta(meta);
+};
+
+const fetchDsldFactsByBarcode = async (
+  barcodeGtin14: string,
+  signal?: AbortSignal,
+): Promise<DsldFacts | null> => {
+  if (signal?.aborted) return null;
+
+  let rpcResult: { data?: unknown; error?: { code?: string; message?: string } | null } | null = null;
+  try {
+    rpcResult = await supabase.rpc('resolve_dsld_facts_by_gtin14', { p_gtin14: barcodeGtin14 });
+  } catch (error) {
+    rpcResult = { error: error as { message?: string } };
+  }
+
+  if (rpcResult && 'error' in rpcResult && isRpcMissing(rpcResult.error ?? null)) {
+    // fall through to meta table
+  } else if (rpcResult && 'data' in rpcResult && rpcResult.data) {
+    const record = Array.isArray(rpcResult.data) ? rpcResult.data[0] : rpcResult.data;
+    if (record?.facts_json) {
+      const facts = record.facts_json as Partial<DsldFacts>;
+      if (isDsldFactsUsable(facts)) {
+        return {
+          dsldLabelId: record.dsld_label_id ?? Number(facts.dsldLabelId ?? 0),
+          servingSize: facts.servingSize ?? null,
+          servingsPerContainer: facts.servingsPerContainer ?? null,
+          actives: Array.isArray(facts.actives) ? facts.actives : [],
+          inactive: Array.isArray(facts.inactive) ? facts.inactive : [],
+          proprietaryBlends: Array.isArray(facts.proprietaryBlends) ? facts.proprietaryBlends : [],
+          datasetVersion: record.dataset_version ?? facts.datasetVersion ?? null,
+          extractedAt: record.extracted_at ?? facts.extractedAt ?? nowIso(),
+          dsldPdf: (facts as { dsldPdf?: string | null }).dsldPdf ?? null,
+          dsldThumbnail: (facts as { dsldThumbnail?: string | null }).dsldThumbnail ?? null,
+        };
+      }
+    }
+  }
+
+  const { data: meta, error } = await supabase
+    .from('dsld_labels_meta')
+    .select(
+      'dsld_label_id,serving_size_raw,servings_per_container,active_ingredients_summary,inactive_ingredients,dsld_product_version_code,dsld_pdf,dsld_thumbnail',
+    )
+    .eq('barcode_normalized_gtin14', barcodeGtin14)
+    .maybeSingle();
+  if (error || !meta) {
+    return null;
+  }
+  return buildDsldFactsFromMeta(meta);
+};
+
+const applyDsldFactsToSnapshot = (
+  snapshot: SupplementSnapshot,
+  facts: DsldFacts,
+): SupplementSnapshot => {
+  const actives = facts.actives.map((item) => {
+    const amountUnknown = item.amount == null;
+    return {
+      name: item.name,
+      ingredientId: null,
+      amount: item.amount ?? null,
+      amountUnit: item.unit ?? null,
+      amountUnitRaw: item.unit ?? null,
+      amountUnitNormalized: normalizeAmountUnit(item.unit),
+      dvPercent: null,
+      form: null,
+      isProprietaryBlend: false,
+      amountUnknown,
+      source: 'dsld' as const,
+      confidence: 1,
+    };
+  });
+
+  const inactive = facts.inactive.map((name) => ({
+    name,
+    ingredientId: null,
+    source: 'label' as const,
+  }));
+
+  const proprietaryBlends = facts.proprietaryBlends.map((blend) => ({
+    name: blend.name,
+    totalAmount: blend.totalAmount ?? null,
+    unit: blend.unit ?? null,
+    ingredients: blend.ingredients ?? null,
+  }));
+
+  const updated: SupplementSnapshot = {
+    ...snapshot,
+    label: {
+      ...snapshot.label,
+      servingSize: facts.servingSize ?? snapshot.label.servingSize,
+      servingsPerContainer: facts.servingsPerContainer ?? snapshot.label.servingsPerContainer,
+      servingsPerContainerText: facts.servingsPerContainer != null
+        ? String(facts.servingsPerContainer)
+        : snapshot.label.servingsPerContainerText,
+      actives: actives.length ? actives : snapshot.label.actives,
+      inactive: inactive.length ? inactive : snapshot.label.inactive,
+      proprietaryBlends: proprietaryBlends.length ? proprietaryBlends : snapshot.label.proprietaryBlends,
+    },
+    regulatory: {
+      ...snapshot.regulatory,
+      dsldLabelId: snapshot.regulatory.dsldLabelId ?? String(facts.dsldLabelId),
+    },
+  };
+
+  const referenceUrl = facts.dsldPdf ?? facts.dsldThumbnail ?? null;
+  if (referenceUrl) {
+    const existing = updated.references.items.some((item) => item.url === referenceUrl);
+    if (!existing) {
+      updated.references.items = [
+        ...updated.references.items,
+        {
+          id: `ref_dsld_${facts.dsldLabelId}_${Math.abs(referenceUrl.length)}`,
+          sourceType: 'DSLD',
+          title: 'DSLD Label',
+          url: referenceUrl,
+          excerpt: '',
+          retrievedAt: nowIso(),
+          hash: `${facts.dsldLabelId}_${referenceUrl.length}`,
+          evidenceFor: 'regulatory',
+        },
+      ];
+    }
+  }
+
+  return updated;
+};
+
+const mergeReferenceItems = (
+  base: SupplementSnapshot['references'],
+  incoming: SupplementSnapshot['references'],
+): SupplementSnapshot['references'] => {
+  const items: SupplementSnapshot['references']['items'] = [];
+  const seen = new Set<string>();
+  const add = (item: SupplementSnapshot['references']['items'][number]) => {
+    const key = item.url || item.id;
+    if (seen.has(key)) return;
+    seen.add(key);
+    items.push(item);
+  };
+  base.items.forEach(add);
+  incoming.items.forEach(add);
+  return { items };
+};
+
+const buildLabelOnlyAnalysis = (facts: DsldFacts) => {
+  const primary = facts.actives.find((item) => item.amount != null) ?? facts.actives[0] ?? null;
+  const primaryActive = primary
+    ? {
+      name: primary.name,
+      form: null,
+      formQuality: 'unknown',
+      formNote: null,
+      dosageValue: primary.amount ?? null,
+      dosageUnit: primary.unit ?? null,
+      evidenceLevel: 'none',
+      evidenceSummary: null,
+    }
+    : null;
+
+  const ingredients = facts.actives.map((item) => ({
+    name: item.name,
+    form: null,
+    formQuality: 'unknown',
+    formNote: null,
+    dosageValue: item.amount ?? null,
+    dosageUnit: item.unit ?? null,
+    dosageAssessment: 'unknown',
+    evidenceLevel: 'none',
+  }));
+
+  const coreBenefits = facts.actives.slice(0, 3).map((item) => {
+    if (item.amount != null && item.unit) {
+      return `${item.name} ${item.amount} ${item.unit}`;
+    }
+    return item.name;
+  });
+
+  const overviewSummary = coreBenefits.length
+    ? `Label facts captured: ${coreBenefits.join(', ')}.`
+    : 'Label facts captured.';
+
+  const efficacy = {
+    verdict: 'Label facts captured; evidence mapping not available yet.',
+    primaryActive,
+    ingredients,
+    overviewSummary,
+    coreBenefits,
+    overallAssessment: 'Label-only analysis; evidence mapping pending.',
+    marketingVsReality: 'Label-only analysis; no external evidence verification.',
+  };
+
+  const usageSummary = facts.servingSize
+    ? `Serving size: ${facts.servingSize}. Follow label directions.`
+    : 'Follow label directions.';
+
+  const usagePayload = {
+    usage: {
+      summary: usageSummary,
+      timing: '',
+      withFood: null,
+      frequency: '',
+      interactions: [],
+    },
+    value: {
+      verdict: 'Label-only analysis; formula transparency pending full review.',
+      analysis: 'Label-only analysis; no price or evidence verification.',
+      costPerServing: null,
+      alternatives: [],
+    },
+    social: {
+      summary: 'Label-only analysis.',
+    },
+  };
+
+  const safety = {
+    verdict: 'Refer to the product label for safety guidance.',
+    risks: [],
+    redFlags: [],
+    recommendation: 'Refer to the product label.',
+  };
+
+  return { efficacy, safety, usagePayload };
+};
+
+const hasLabelFacts = (snapshot: SupplementSnapshot): boolean => {
+  const label = snapshot.label;
+  if (label.actives.length > 0) return true;
+  if (label.inactive.length > 0) return true;
+  if (label.proprietaryBlends.length > 0) return true;
+  if (label.servingSize) return true;
+  return false;
+};
+
+const hasAiPayload = (analysisPayload?: SnapshotAnalysisPayload | null): boolean => {
+  if (!analysisPayload) return false;
+  const efficacyScore = (analysisPayload.efficacy as { score?: number | null } | undefined)?.score;
+  const safetyScore = (analysisPayload.safety as { score?: number | null } | undefined)?.score;
+  const valueScore = (analysisPayload.usagePayload as { value?: { score?: number | null } } | undefined)?.value?.score;
+  if (typeof efficacyScore === 'number') return true;
+  if (typeof safetyScore === 'number') return true;
+  if (typeof valueScore === 'number') return true;
+  return false;
+};
+
+const hasCoreAnalysis = (analysisPayload?: SnapshotAnalysisPayload | null): boolean => {
+  if (!analysisPayload) return false;
+  return Boolean(analysisPayload.efficacy && analysisPayload.safety && analysisPayload.usagePayload);
+};
+
+const resolveAnalysisMeta = (params: {
+  snapshot: SupplementSnapshot;
+  analysisPayload?: SnapshotAnalysisPayload | null;
+  catalog?: CatalogResolved | null;
+  labelExtraction?: LabelExtractionMeta | null;
+}): AnalysisMeta => {
+  const current = params.snapshot.analysis ?? params.analysisPayload?.analysis ?? null;
+  const dsldLabelId = params.catalog?.dsldLabelId ?? params.snapshot.regulatory.dsldLabelId ?? null;
+  const status = current?.status ?? buildAnalysisStatus({
+    hasLabelFacts: hasLabelFacts(params.snapshot),
+    hasAi: hasAiPayload(params.analysisPayload),
+    dsldLabelId,
+  });
+  return {
+    status,
+    version: current?.version ?? 0,
+    labelExtraction: current?.labelExtraction ?? params.labelExtraction ?? null,
+  };
+};
+
+const shouldReEnrich = (params: {
+  snapshot: SupplementSnapshot;
+  analysisPayload?: SnapshotAnalysisPayload | null;
+  catalog?: CatalogResolved | null;
+  aiAvailable: boolean;
+}): boolean => {
+  const meta = resolveAnalysisMeta(params);
+  if (meta.version < ANALYSIS_VERSION) return true;
+
+  const dsldLabelId = params.catalog?.dsldLabelId ?? params.snapshot.regulatory.dsldLabelId ?? null;
+  const needsLabel = Boolean(dsldLabelId) && !hasLabelFacts(params.snapshot);
+  if (needsLabel) return true;
+
+  if (!hasCoreAnalysis(params.analysisPayload)) return true;
+
+  if (params.aiAvailable && (meta.status === 'catalog_only' || meta.status === 'label_enriched')) {
+    return true;
+  }
+
+  return false;
+};
+
 // ============================================================================
 // GOOGLE CSE UTILITIES
 // ============================================================================
@@ -611,7 +1153,6 @@ const queueBarcodeAnalysisCompletion = (params: {
   analysisContext: string;
   analysisPayload: SnapshotAnalysisPayload;
   snapshot: SupplementSnapshot;
-  expiresAt: string | null;
   model: string;
   deepseekKey: string;
 }): void => {
@@ -665,13 +1206,33 @@ const queueBarcodeAnalysisCompletion = (params: {
       usagePayload: usageResult,
     });
 
+    const mergedReferences = mergeReferenceItems(
+      params.snapshot.references,
+      analysisSnapshot.references,
+    );
+
     const updatedSnapshot: SupplementSnapshot = {
       ...params.snapshot,
-      status: analysisSnapshot.status,
-      scores: analysisSnapshot.scores,
-      references: analysisSnapshot.references,
-      updatedAt: new Date().toISOString(),
+      status: analysisSnapshot.scores ? analysisSnapshot.status : params.snapshot.status,
+      scores: analysisSnapshot.scores ?? params.snapshot.scores,
+      references: mergedReferences,
+      updatedAt: nowIso(),
     };
+
+    const analysisStatus = buildAnalysisStatus({
+      hasLabelFacts: hasLabelFacts(updatedSnapshot),
+      hasAi: hasAiPayload(nextAnalysisPayload),
+      dsldLabelId: updatedSnapshot.regulatory.dsldLabelId ?? null,
+    });
+    const analysisMeta = buildAnalysisMeta({
+      status: analysisStatus,
+      labelExtraction:
+        nextAnalysisPayload.analysis?.labelExtraction ??
+        params.snapshot.analysis?.labelExtraction ??
+        null,
+    });
+    nextAnalysisPayload.analysis = analysisMeta;
+    updatedSnapshot.analysis = analysisMeta;
 
     void storeSnapshotCache(
       {
@@ -679,7 +1240,7 @@ const queueBarcodeAnalysisCompletion = (params: {
         source: "barcode",
         snapshot: updatedSnapshot,
         analysisPayload: nextAnalysisPayload,
-        expiresAt: params.expiresAt,
+        expiresAt: computeExpiresAt(analysisStatus),
       },
       { budget: backgroundBudget },
     );
@@ -851,6 +1412,9 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
   const normalized = normalizeBarcodeInput(rawBarcode);
   const model = process.env.DEEPSEEK_MODEL || "deepseek-chat";
   let finishInFlight: ((error?: unknown) => void) | null = null;
+  let catalogSnapshotForAi: SupplementSnapshot | null = null;
+  let catalogAnalysisPayloadForAi: SnapshotAnalysisPayload | null = null;
+  let catalogLabelExtractionForAi: LabelExtractionMeta | null = null;
 
   // Set SSE Headers
   res.setHeader("Content-Type", "text/event-stream");
@@ -952,6 +1516,19 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
 
       sendSSE(res, "product_info", { productInfo, sources });
 
+      const analysisMeta = resolveAnalysisMeta({ snapshot, analysisPayload, catalog });
+      const snapshotToSend: SupplementSnapshot = {
+        ...snapshot,
+        product: {
+          ...snapshot.product,
+          brand: productInfo.brand ?? snapshot.product.brand,
+          name: productInfo.name ?? snapshot.product.name,
+          category: productInfo.category ?? snapshot.product.category,
+          imageUrl: productInfo.image ?? snapshot.product.imageUrl,
+        },
+        analysis: snapshot.analysis ?? analysisMeta,
+      };
+
       const fallbackScore = (value: number | undefined) =>
         typeof value === "number" ? Math.round(value / 10) : 5;
 
@@ -1011,7 +1588,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         sendSSE(res, "result_usage", analysisPayload?.usagePayload ?? fallbackUsagePayload);
       }
 
-      sendSSE(res, "snapshot", snapshot);
+      sendSSE(res, "snapshot", snapshotToSend);
     };
 
     const catalogPromise = resolveCatalogByBarcode(normalized, {
@@ -1026,115 +1603,131 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       },
     );
 
+    const googleApiKey = process.env.GOOGLE_CSE_API_KEY ?? null;
+    const cx = process.env.GOOGLE_CSE_CX ?? null;
+    const deepseekKey = process.env.DEEPSEEK_API_KEY ?? null;
+    const aiAvailable = Boolean(googleApiKey && cx && deepseekKey);
+
     const cachedFast = await snapshotPromise.catch(() => null);
     if (cachedFast) {
       const hasProductName = Boolean(
         cachedFast.analysisPayload?.productInfo?.name || cachedFast.snapshot.product.name,
       );
-      const catalogFast = hasProductName ? null : await catalogPromise.catch(() => null);
+      const needsCatalogFast = !hasProductName || !cachedFast.snapshot.regulatory.dsldLabelId;
+      const catalogFast = needsCatalogFast ? await catalogPromise.catch(() => null) : null;
       emitCachedSnapshot(cachedFast, catalogFast);
-      sendSSE(res, "done", { barcode });
-      res.end();
 
-      const timingTotalMs = Math.round(performance.now() - startedAt);
+      const needsEnrichment = shouldReEnrich({
+        snapshot: cachedFast.snapshot,
+        analysisPayload: cachedFast.analysisPayload,
+        catalog: catalogFast,
+        aiAvailable,
+      });
 
-      void (async () => {
-        const { snapshot, analysisPayload } = cachedFast;
-        const catalog = catalogFast ?? await catalogPromise.catch(() => null);
-        if (catalog) {
-          const before = {
-            brand: snapshot.product.brand,
-            name: snapshot.product.name,
-            category: snapshot.product.category,
-            imageUrl: snapshot.product.imageUrl,
-            normalized: snapshot.product.barcode.normalized,
-            normalizedFormat: snapshot.product.barcode.normalizedFormat,
-            dsldLabelId: snapshot.regulatory.dsldLabelId,
-          };
-          const catalogCategory = catalog.category ?? catalog.categoryRaw ?? null;
-          const pickField = (...values: (string | null | undefined)[]) => {
-            for (const value of values) {
-              if (typeof value !== "string") continue;
-              const trimmed = value.trim();
-              if (trimmed.length > 0) return trimmed;
-            }
-            return null;
-          };
-          const finalProductInfo = {
-            brand: pickField(catalog.brand, analysisPayload?.productInfo?.brand, snapshot.product.brand),
-            name: pickField(catalog.productName, analysisPayload?.productInfo?.name, snapshot.product.name),
-            category: pickField(catalogCategory, analysisPayload?.productInfo?.category, snapshot.product.category),
-            image: pickField(catalog.imageUrl, analysisPayload?.productInfo?.image, snapshot.product.imageUrl),
-          };
+      if (!needsEnrichment) {
+        sendSSE(res, "done", { barcode });
+        res.end();
 
-          snapshot.product.brand = finalProductInfo.brand;
-          snapshot.product.name = finalProductInfo.name;
-          snapshot.product.category = finalProductInfo.category;
-          snapshot.product.imageUrl = finalProductInfo.image;
-          snapshot.product.barcode.normalized = catalog.barcodeGtin14;
-          snapshot.product.barcode.normalizedFormat = "gtin14";
-          snapshot.regulatory.dsldLabelId = catalog.dsldLabelId
-            ? String(catalog.dsldLabelId)
-            : snapshot.regulatory.dsldLabelId;
+        const timingTotalMs = Math.round(performance.now() - startedAt);
 
-          const changed =
-            before.brand !== snapshot.product.brand ||
-            before.name !== snapshot.product.name ||
-            before.category !== snapshot.product.category ||
-            before.imageUrl !== snapshot.product.imageUrl ||
-            before.normalized !== snapshot.product.barcode.normalized ||
-            before.normalizedFormat !== snapshot.product.barcode.normalizedFormat ||
-            before.dsldLabelId !== snapshot.regulatory.dsldLabelId;
-          if (changed) {
-            snapshot.updatedAt = new Date().toISOString();
-          }
-          if (analysisPayload) {
-            analysisPayload.productInfo = {
-              brand: finalProductInfo.brand,
-              name: finalProductInfo.name,
-              category: finalProductInfo.category,
-              image: finalProductInfo.image,
+        void (async () => {
+          const { snapshot, analysisPayload } = cachedFast;
+          const catalog = catalogFast ?? await catalogPromise.catch(() => null);
+          if (catalog) {
+            const before = {
+              brand: snapshot.product.brand,
+              name: snapshot.product.name,
+              category: snapshot.product.category,
+              imageUrl: snapshot.product.imageUrl,
+              normalized: snapshot.product.barcode.normalized,
+              normalizedFormat: snapshot.product.barcode.normalizedFormat,
+              dsldLabelId: snapshot.regulatory.dsldLabelId,
             };
+            const catalogCategory = catalog.category ?? catalog.categoryRaw ?? null;
+            const pickField = (...values: (string | null | undefined)[]) => {
+              for (const value of values) {
+                if (typeof value !== "string") continue;
+                const trimmed = value.trim();
+                if (trimmed.length > 0) return trimmed;
+              }
+              return null;
+            };
+            const finalProductInfo = {
+              brand: pickField(catalog.brand, analysisPayload?.productInfo?.brand, snapshot.product.brand),
+              name: pickField(catalog.productName, analysisPayload?.productInfo?.name, snapshot.product.name),
+              category: pickField(catalogCategory, analysisPayload?.productInfo?.category, snapshot.product.category),
+              image: pickField(catalog.imageUrl, analysisPayload?.productInfo?.image, snapshot.product.imageUrl),
+            };
+
+            snapshot.product.brand = finalProductInfo.brand;
+            snapshot.product.name = finalProductInfo.name;
+            snapshot.product.category = finalProductInfo.category;
+            snapshot.product.imageUrl = finalProductInfo.image;
+            snapshot.product.barcode.normalized = catalog.barcodeGtin14;
+            snapshot.product.barcode.normalizedFormat = "gtin14";
+            snapshot.regulatory.dsldLabelId = catalog.dsldLabelId
+              ? String(catalog.dsldLabelId)
+              : snapshot.regulatory.dsldLabelId;
+
+            const changed =
+              before.brand !== snapshot.product.brand ||
+              before.name !== snapshot.product.name ||
+              before.category !== snapshot.product.category ||
+              before.imageUrl !== snapshot.product.imageUrl ||
+              before.normalized !== snapshot.product.barcode.normalized ||
+              before.normalizedFormat !== snapshot.product.barcode.normalizedFormat ||
+              before.dsldLabelId !== snapshot.regulatory.dsldLabelId;
+            if (changed) {
+              snapshot.updatedAt = new Date().toISOString();
+            }
+            if (analysisPayload) {
+              analysisPayload.productInfo = {
+                brand: finalProductInfo.brand,
+                name: finalProductInfo.name,
+                category: finalProductInfo.category,
+                image: finalProductInfo.image,
+              };
+            }
+
+            if (changed) {
+              void storeSnapshotCache({
+                key: catalog.barcodeGtin14,
+                source: "barcode",
+                snapshot,
+                analysisPayload,
+                expiresAt: cachedFast.expiresAt,
+              });
+            }
           }
 
-          if (changed) {
-            void storeSnapshotCache({
-              key: catalog.barcodeGtin14,
-              source: "barcode",
-              snapshot,
-              analysisPayload,
-              expiresAt: cachedFast.expiresAt,
-            });
-          }
-        }
+          const servedFrom = catalog
+            ? catalog.resolvedFrom === "override"
+              ? "override_snapshot_cache"
+              : "dsld_snapshot_cache"
+            : "snapshot_cache";
 
-        const servedFrom = catalog
-          ? catalog.resolvedFrom === "override"
-            ? "override_snapshot_cache"
-            : "dsld_snapshot_cache"
-          : "snapshot_cache";
+          const brandName = snapshot.product.brand ?? analysisPayload?.productInfo?.brand ?? null;
+          const productName = snapshot.product.name ?? analysisPayload?.productInfo?.name ?? null;
 
-        const brandName = snapshot.product.brand ?? analysisPayload?.productInfo?.brand ?? null;
-        const productName = snapshot.product.name ?? analysisPayload?.productInfo?.name ?? null;
+          void logBarcodeScan({
+            barcodeGtin14,
+            barcodeRaw: rawBarcode,
+            checksumValid: normalized.isValidChecksum ?? null,
+            catalogHit: Boolean(catalog),
+            servedFrom,
+            dsldLabelId: catalog?.dsldLabelId ?? null,
+            snapshotId: cachedFast.snapshot.snapshotId,
+            brandName,
+            productName,
+            deviceId,
+            requestId,
+            timingTotalMs,
+            meta: { cacheKey: barcodeGtin14, mode: "snapshot_cache_hit_fast" },
+          });
+        })();
 
-        void logBarcodeScan({
-          barcodeGtin14,
-          barcodeRaw: rawBarcode,
-          checksumValid: normalized.isValidChecksum ?? null,
-          catalogHit: Boolean(catalog),
-          servedFrom,
-          dsldLabelId: catalog?.dsldLabelId ?? null,
-          snapshotId: cachedFast.snapshot.snapshotId,
-          brandName,
-          productName,
-          deviceId,
-          requestId,
-          timingTotalMs,
-          meta: { cacheKey: barcodeGtin14, mode: "snapshot_cache_hit_fast" },
-        });
-      })();
-
-      return;
+        return;
+      }
     }
 
     // 1) Catalog-first：overrides / DSLD
@@ -1147,141 +1740,114 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         ? "override_snapshot_cache"
         : "dsld_snapshot_cache";
 
-      // 1.1 如果你已有 snapshot（以前 Google 跑出来的），可直接复用分析结果，但用 Catalog 纠正品牌/品名
-      const cached = await getSnapshotCache(
-        { key: gtin14, source: "barcode" },
-        {
-          ...supabaseReadResilience,
-          timeoutMs: RESILIENCE_SNAPSHOT_TIMEOUT_MS,
-        },
-      ).catch(() => null);
-
-      if (cached) {
-        const { snapshot, analysisPayload } = cached;
-        const before = {
-          brand: snapshot.product.brand,
-          name: snapshot.product.name,
-          category: snapshot.product.category,
-          imageUrl: snapshot.product.imageUrl,
-          normalized: snapshot.product.barcode.normalized,
-          normalizedFormat: snapshot.product.barcode.normalizedFormat,
-          dsldLabelId: snapshot.regulatory.dsldLabelId,
-        };
-        const catalogCategory = catalog.category ?? catalog.categoryRaw ?? null;
-        const pickField = (...values: (string | null | undefined)[]) => {
-          for (const value of values) {
-            if (typeof value !== "string") continue;
-            const trimmed = value.trim();
-            if (trimmed.length > 0) return trimmed;
-          }
-          return null;
-        };
-        const finalProductInfo = {
-          brand: pickField(catalog.brand, analysisPayload?.productInfo?.brand, snapshot.product.brand),
-          name: pickField(catalog.productName, analysisPayload?.productInfo?.name, snapshot.product.name),
-          category: pickField(catalogCategory, analysisPayload?.productInfo?.category, snapshot.product.category),
-          image: pickField(catalog.imageUrl, analysisPayload?.productInfo?.image, snapshot.product.imageUrl),
-        };
-
-        // 用 Catalog 纠正身份字段（准确性第一）
-        snapshot.product.brand = finalProductInfo.brand;
-        snapshot.product.name = finalProductInfo.name;
-        snapshot.product.category = finalProductInfo.category;
-        snapshot.product.imageUrl = finalProductInfo.image;
-        snapshot.product.barcode.normalized = gtin14;
-        snapshot.product.barcode.normalizedFormat = "gtin14";
-        snapshot.regulatory.dsldLabelId = catalog.dsldLabelId
-          ? String(catalog.dsldLabelId)
-          : snapshot.regulatory.dsldLabelId;
-        const changed =
-          before.brand !== snapshot.product.brand ||
-          before.name !== snapshot.product.name ||
-          before.category !== snapshot.product.category ||
-          before.imageUrl !== snapshot.product.imageUrl ||
-          before.normalized !== snapshot.product.barcode.normalized ||
-          before.normalizedFormat !== snapshot.product.barcode.normalizedFormat ||
-          before.dsldLabelId !== snapshot.regulatory.dsldLabelId;
-        if (changed) {
-          snapshot.updatedAt = new Date().toISOString();
-        }
-        if (analysisPayload) {
-          analysisPayload.productInfo = {
-            brand: finalProductInfo.brand,
-            name: finalProductInfo.name,
-            category: finalProductInfo.category,
-            image: finalProductInfo.image,
-          };
-        }
-
-        // SSE：品牌/产品
-        sendSSE(res, "brand_extracted", {
-          brand: catalog.brand,
-          product: catalog.productName,
-          category: catalog.category ?? catalog.categoryRaw ?? null,
-          confidence: "high",
-          source: "rule",
-        });
-
-        const sources =
-          analysisPayload?.sources ??
-          snapshot.references.items.map((ref) => ({
-            title: ref.title,
-            link: ref.url,
-            domain: extractDomain(ref.url),
-            isHighQuality: false,
-          }));
-
-        sendSSE(res, "product_info", { productInfo: finalProductInfo, sources });
-
-        if (analysisPayload?.efficacy) sendSSE(res, "result_efficacy", analysisPayload.efficacy);
-        if (analysisPayload?.safety) sendSSE(res, "result_safety", analysisPayload.safety);
-        if (analysisPayload?.usagePayload) sendSSE(res, "result_usage", analysisPayload.usagePayload);
-
-        sendSSE(res, "snapshot", snapshot);
-
-        sendSSE(res, "done", { barcode });
-        res.end();
-
-        const timingTotalMs = Math.round(performance.now() - startedAt);
-
-        if (changed) {
-          void storeSnapshotCache({
-            key: gtin14,
-            source: "barcode",
-            snapshot,
-            analysisPayload,
-            expiresAt: cached.expiresAt,
-          });
-        }
-
-        const brandName = snapshot.product.brand ?? analysisPayload?.productInfo?.brand ?? null;
-        const productName = snapshot.product.name ?? analysisPayload?.productInfo?.name ?? null;
-
-        void logBarcodeScan({
-          barcodeGtin14: gtin14,
-          barcodeRaw: rawBarcode,
-          checksumValid: normalized.isValidChecksum ?? null,
-          catalogHit: true,
-          servedFrom: servedFromCatalogCache,
-          dsldLabelId: catalog.dsldLabelId,
-          snapshotId: snapshot.snapshotId,
-          brandName,
-          productName,
-          deviceId,
-          requestId,
-          timingTotalMs,
-          meta: { cacheKey: gtin14, mode: "catalog_hit_with_snapshot" },
-        });
-
-        return;
+      let cached = cachedFast;
+      if (!cached) {
+        cached = await getSnapshotCache(
+          { key: gtin14, source: "barcode" },
+          {
+            ...supabaseReadResilience,
+            timeoutMs: RESILIENCE_SNAPSHOT_TIMEOUT_MS,
+          },
+        ).catch(() => null);
       }
 
-      // 1.2 Catalog 命中但没有 snapshot：直接生成一个“Catalog Snapshot”并可选写入 snapshots 做缓存
-      const catalogSnapshot = buildCatalogBarcodeSnapshot({
+      let workingSnapshot = cached?.snapshot ?? buildCatalogBarcodeSnapshot({
         barcodeRaw: rawBarcode,
         normalized,
         catalog,
       });
+      let workingAnalysisPayload: SnapshotAnalysisPayload = cached?.analysisPayload ?? {};
+
+      const catalogCategory = catalog.category ?? catalog.categoryRaw ?? null;
+      const pickField = (...values: (string | null | undefined)[]) => {
+        for (const value of values) {
+          if (typeof value !== "string") continue;
+          const trimmed = value.trim();
+          if (trimmed.length > 0) return trimmed;
+        }
+        return null;
+      };
+      const finalProductInfo = {
+        brand: pickField(catalog.brand, workingAnalysisPayload.productInfo?.brand, workingSnapshot.product.brand),
+        name: pickField(catalog.productName, workingAnalysisPayload.productInfo?.name, workingSnapshot.product.name),
+        category: pickField(catalogCategory, workingAnalysisPayload.productInfo?.category, workingSnapshot.product.category),
+        image: pickField(catalog.imageUrl, workingAnalysisPayload.productInfo?.image, workingSnapshot.product.imageUrl),
+      };
+
+      workingSnapshot = {
+        ...workingSnapshot,
+        product: {
+          ...workingSnapshot.product,
+          brand: finalProductInfo.brand ?? workingSnapshot.product.brand,
+          name: finalProductInfo.name ?? workingSnapshot.product.name,
+          category: finalProductInfo.category ?? workingSnapshot.product.category,
+          imageUrl: finalProductInfo.image ?? workingSnapshot.product.imageUrl,
+          barcode: {
+            ...workingSnapshot.product.barcode,
+            normalized: gtin14,
+            normalizedFormat: "gtin14",
+          },
+        },
+        regulatory: {
+          ...workingSnapshot.regulatory,
+          dsldLabelId: catalog.dsldLabelId
+            ? String(catalog.dsldLabelId)
+            : workingSnapshot.regulatory.dsldLabelId,
+        },
+      };
+
+      let dsldFacts: DsldFacts | null = null;
+      if (catalog.dsldLabelId) {
+        dsldFacts = await fetchDsldFactsByLabelId(catalog.dsldLabelId, requestSignal);
+      }
+      if (!dsldFacts) {
+        dsldFacts = await fetchDsldFactsByBarcode(gtin14, requestSignal);
+      }
+      if (dsldFacts) {
+        workingSnapshot = applyDsldFactsToSnapshot(workingSnapshot, dsldFacts);
+      }
+
+      const labelExtraction: LabelExtractionMeta | null = dsldFacts
+        ? {
+          source: "dsld",
+          fetchedAt: dsldFacts.extractedAt ?? nowIso(),
+          datasetVersion: dsldFacts.datasetVersion ?? null,
+        }
+        : null;
+
+      if (dsldFacts && !hasAiPayload(workingAnalysisPayload)) {
+        const labelAnalysis = buildLabelOnlyAnalysis(dsldFacts);
+        workingAnalysisPayload = {
+          ...workingAnalysisPayload,
+          ...labelAnalysis,
+        };
+      }
+
+      const analysisStatus = buildAnalysisStatus({
+        hasLabelFacts: hasLabelFacts(workingSnapshot),
+        hasAi: hasAiPayload(workingAnalysisPayload),
+        dsldLabelId: catalog.dsldLabelId,
+      });
+      const analysisMeta = buildAnalysisMeta({ status: analysisStatus, labelExtraction });
+
+      workingSnapshot = {
+        ...workingSnapshot,
+        analysis: analysisMeta,
+        updatedAt: nowIso(),
+      };
+
+      const payloadSources = workingAnalysisPayload.sources ?? [];
+      workingAnalysisPayload = {
+        ...workingAnalysisPayload,
+        analysis: analysisMeta,
+        productInfo: {
+          brand: finalProductInfo.brand,
+          name: finalProductInfo.name,
+          category: finalProductInfo.category,
+          image: finalProductInfo.image,
+        },
+        sources: payloadSources,
+      };
 
       sendSSE(res, "brand_extracted", {
         brand: catalog.brand,
@@ -1291,123 +1857,144 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         source: "rule",
       });
 
-      sendSSE(res, "product_info", {
-        productInfo: {
-          brand: catalog.brand,
-          name: catalog.productName,
-          category: catalog.category ?? catalog.categoryRaw ?? null,
-          image: catalog.imageUrl ?? null,
-        },
-        sources: [],
-      });
+      const sources =
+        payloadSources.length > 0
+          ? payloadSources
+          : workingSnapshot.references.items.map((ref) => ({
+            title: ref.title,
+            link: ref.url,
+            domain: extractDomain(ref.url),
+            isHighQuality: false,
+          }));
 
-      sendSSE(res, "snapshot", catalogSnapshot);
+      sendSSE(res, "product_info", { productInfo: finalProductInfo, sources });
 
-      sendSSE(res, "done", { barcode });
-      res.end();
+      if (workingAnalysisPayload.efficacy) {
+        sendSSE(res, "result_efficacy", workingAnalysisPayload.efficacy);
+      }
+      if (workingAnalysisPayload.safety) {
+        sendSSE(res, "result_safety", workingAnalysisPayload.safety);
+      }
+      if (workingAnalysisPayload.usagePayload) {
+        sendSSE(res, "result_usage", workingAnalysisPayload.usagePayload);
+      }
 
-      const timingTotalMs = Math.round(performance.now() - startedAt);
+      sendSSE(res, "snapshot", workingSnapshot);
 
-      // 可选：把 Catalog snapshot 写进 snapshots，这样下次会直接命中 cache
+      const expiresAt = computeExpiresAt(analysisStatus);
       void storeSnapshotCache({
         key: gtin14,
         source: "barcode",
-        snapshot: catalogSnapshot,
-        analysisPayload: {
-          productInfo: {
-            brand: catalog.brand,
-            name: catalog.productName,
-            category: catalog.category ?? catalog.categoryRaw ?? null,
-            image: catalog.imageUrl ?? null,
-          },
-          sources: [],
-        },
-        expiresAt: null, // Catalog 数据稳定，可以不设过期
+        snapshot: workingSnapshot,
+        analysisPayload: workingAnalysisPayload,
+        expiresAt,
       });
 
-      const brandName = catalog.brand ?? null;
-      const productName = catalog.productName ?? null;
+      const timingTotalMs = Math.round(performance.now() - startedAt);
+      const brandName = finalProductInfo.brand ?? null;
+      const productName = finalProductInfo.name ?? null;
 
       void logBarcodeScan({
         barcodeGtin14: gtin14,
         barcodeRaw: rawBarcode,
         checksumValid: normalized.isValidChecksum ?? null,
         catalogHit: true,
-        servedFrom: servedFromCatalog,
+        servedFrom: cached ? servedFromCatalogCache : servedFromCatalog,
         dsldLabelId: catalog.dsldLabelId,
-        snapshotId: catalogSnapshot.snapshotId,
+        snapshotId: workingSnapshot.snapshotId,
         brandName,
         productName,
         deviceId,
         requestId,
         timingTotalMs,
-        meta: { cacheKey: gtin14, mode: "catalog_hit_no_snapshot" },
+        meta: { cacheKey: gtin14, mode: cached ? "catalog_hit_with_snapshot" : "catalog_hit_no_snapshot" },
       });
 
-      return;
+      catalogSnapshotForAi = workingSnapshot;
+      catalogAnalysisPayloadForAi = workingAnalysisPayload;
+      catalogLabelExtractionForAi = labelExtraction;
+
+      if (!aiAvailable || analysisStatus === "complete" || analysisStatus === "ai_enriched") {
+        sendSSE(res, "done", { barcode });
+        res.end();
+        return;
+      }
     }
 
-    const googleApiKey = process.env.GOOGLE_CSE_API_KEY;
-    const cx = process.env.GOOGLE_CSE_CX;
-    const deepseekKey = process.env.DEEPSEEK_API_KEY;
+    const aiRequired = !catalog;
 
     if (!googleApiKey || !cx) {
-      sendSSE(res, "error", { message: "Google CSE not configured" });
+      if (aiRequired) {
+        sendSSE(res, "error", { message: "Google CSE not configured" });
+        res.end();
+        const timingTotalMs = Math.round(performance.now() - startedAt);
+        void logBarcodeScan({
+          barcodeGtin14,
+          barcodeRaw: rawBarcode,
+          checksumValid: normalized.isValidChecksum ?? null,
+          catalogHit: false,
+          servedFrom: "error_config",
+          dsldLabelId: null,
+          snapshotId: null,
+          deviceId,
+          requestId,
+          timingTotalMs,
+          meta: { reason: "google_cse_env_not_set" },
+        });
+        return;
+      }
+      sendSSE(res, "done", { barcode });
       res.end();
-      const timingTotalMs = Math.round(performance.now() - startedAt);
-      void logBarcodeScan({
-        barcodeGtin14,
-        barcodeRaw: rawBarcode,
-        checksumValid: normalized.isValidChecksum ?? null,
-        catalogHit: false,
-        servedFrom: "error_config",
-        dsldLabelId: null,
-        snapshotId: null,
-        deviceId,
-        requestId,
-        timingTotalMs,
-        meta: { reason: "google_cse_env_not_set" },
-      });
       return;
     }
 
     if (!deepseekKey) {
-      sendSSE(res, "error", { message: "DeepSeek API key missing" });
+      if (aiRequired) {
+        sendSSE(res, "error", { message: "DeepSeek API key missing" });
+        res.end();
+        const timingTotalMs = Math.round(performance.now() - startedAt);
+        void logBarcodeScan({
+          barcodeGtin14,
+          barcodeRaw: rawBarcode,
+          checksumValid: normalized.isValidChecksum ?? null,
+          catalogHit: false,
+          servedFrom: "error_config",
+          dsldLabelId: null,
+          snapshotId: null,
+          deviceId,
+          requestId,
+          timingTotalMs,
+          meta: { reason: "deepseek_api_key_missing" },
+        });
+        return;
+      }
+      sendSSE(res, "done", { barcode });
       res.end();
-      const timingTotalMs = Math.round(performance.now() - startedAt);
-      void logBarcodeScan({
-        barcodeGtin14,
-        barcodeRaw: rawBarcode,
-        checksumValid: normalized.isValidChecksum ?? null,
-        catalogHit: false,
-        servedFrom: "error_config",
-        dsldLabelId: null,
-        snapshotId: null,
-        deviceId,
-        requestId,
-        timingTotalMs,
-        meta: { reason: "deepseek_api_key_missing" },
-      });
       return;
     }
 
     if (negativeBarcodeCache.has(cacheKey)) {
-      sendSSE(res, "error", { message: "Product not found" });
+      if (aiRequired) {
+        sendSSE(res, "error", { message: "Product not found" });
+        res.end();
+        const timingTotalMs = Math.round(performance.now() - startedAt);
+        void logBarcodeScan({
+          barcodeGtin14,
+          barcodeRaw: rawBarcode,
+          checksumValid: normalized.isValidChecksum ?? null,
+          catalogHit: false,
+          servedFrom: "error_not_found",
+          dsldLabelId: null,
+          snapshotId: null,
+          deviceId,
+          requestId,
+          timingTotalMs,
+          meta: { reason: "negative_cache" },
+        });
+        return;
+      }
+      sendSSE(res, "done", { barcode });
       res.end();
-      const timingTotalMs = Math.round(performance.now() - startedAt);
-      void logBarcodeScan({
-        barcodeGtin14,
-        barcodeRaw: rawBarcode,
-        checksumValid: normalized.isValidChecksum ?? null,
-        catalogHit: false,
-        servedFrom: "error_not_found",
-        dsldLabelId: null,
-        snapshotId: null,
-        deviceId,
-        requestId,
-        timingTotalMs,
-        meta: { reason: "negative_cache" },
-      });
       return;
     }
 
@@ -1493,29 +2080,36 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     }
 
     if (!initialItems.length) {
-      sendSSE(res, "error", { message: "Product not found" });
-      res.end();
-      if (!initial.hardStop && initial.hadResponse) {
-        negativeBarcodeCache.set(cacheKey, true, RESILIENCE_NEGATIVE_NOT_FOUND_TTL_MS);
+      if (aiRequired) {
+        sendSSE(res, "error", { message: "Product not found" });
+        res.end();
+        if (!initial.hardStop && initial.hadResponse) {
+          negativeBarcodeCache.set(cacheKey, true, RESILIENCE_NEGATIVE_NOT_FOUND_TTL_MS);
+        }
+        const timingTotalMs = Math.round(performance.now() - startedAt);
+        void logBarcodeScan({
+          barcodeGtin14,
+          barcodeRaw: rawBarcode,
+          checksumValid: normalized.isValidChecksum ?? null,
+          catalogHit: false,
+          servedFrom: "error_not_found",
+          dsldLabelId: null,
+          snapshotId: null,
+          deviceId,
+          requestId,
+          timingTotalMs,
+          meta: {
+            reason: initial.hardStop ? "search_unavailable" : "not_found",
+            queriesTried: initial.queriesTried,
+          },
+        });
+        finishInFlight?.(new Error("product_not_found"));
+        return;
       }
-      const timingTotalMs = Math.round(performance.now() - startedAt);
-      void logBarcodeScan({
-        barcodeGtin14,
-        barcodeRaw: rawBarcode,
-        checksumValid: normalized.isValidChecksum ?? null,
-        catalogHit: false,
-        servedFrom: "error_not_found",
-        dsldLabelId: null,
-        snapshotId: null,
-        deviceId,
-        requestId,
-        timingTotalMs,
-        meta: {
-          reason: initial.hardStop ? "search_unavailable" : "not_found",
-          queriesTried: initial.queriesTried,
-        },
-      });
-      finishInFlight?.(new Error("product_not_found"));
+
+      sendSSE(res, "done", { barcode });
+      res.end();
+      finishInFlight?.();
       return;
     }
 
@@ -1541,23 +2135,51 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       source: extraction.source,
     });
 
-    const brand = extraction.brand || "Unknown Brand";
-    const product = extraction.product || initialItems[0].title;
+    const catalogBrand = catalogSnapshotForAi?.product.brand ?? null;
+    const catalogProduct = catalogSnapshotForAi?.product.name ?? null;
+    const catalogCategory = catalogSnapshotForAi?.product.category ?? null;
+
+    const brand = catalogBrand || extraction.brand || "Unknown Brand";
+    const product = catalogProduct || extraction.product || initialItems[0].title;
 
     // Send product info immediately (user sees something fast)
+    const catalogImage = catalogSnapshotForAi?.product.imageUrl ?? null;
+    const initialSources = initialItems.map((item) => ({
+      title: item.title,
+      link: item.link,
+      domain: extractDomain(item.link),
+      isHighQuality: isHighQualityDomain(item.link),
+    }));
+    const catalogSources = catalogSnapshotForAi
+      ? catalogSnapshotForAi.references.items.map((ref) => ({
+          title: ref.title,
+          link: ref.url,
+          domain: extractDomain(ref.url),
+          isHighQuality: false,
+        }))
+      : [];
+    const mergedSources = (() => {
+      const seen = new Set<string>();
+      const combined: typeof initialSources = [];
+      const add = (source: (typeof initialSources)[number]) => {
+        if (!source.link) return;
+        if (seen.has(source.link)) return;
+        seen.add(source.link);
+        combined.push(source);
+      };
+      initialSources.forEach(add);
+      catalogSources.forEach(add);
+      return combined;
+    })();
+
     sendSSE(res, "product_info", {
       productInfo: {
         brand: brand,
         name: product,
-        category: extraction.category,
-        image: initialItems[0].image,
+        category: catalogCategory ?? extraction.category ?? null,
+        image: catalogImage ?? initialItems[0].image ?? null,
       },
-      sources: initialItems.map((i) => ({
-        title: i.title,
-        link: i.link,
-        domain: extractDomain(i.link),
-        isHighQuality: isHighQualityDomain(i.link),
-      })),
+      sources: mergedSources,
     });
 
     // =========================================================================
@@ -1638,7 +2260,37 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       if (usageResult) sendSSE(res, "result_usage", usageResult);
     }
 
-    const analysisPayload: SnapshotAnalysisPayload = {
+    const resolvedImage = catalogImage ?? detailItems[0]?.image ?? initialItems[0]?.image ?? null;
+    const resolvedCategory = catalogCategory ?? extraction.category ?? null;
+    const detailSources = detailItems.map((item) => ({
+      title: item.title,
+      link: item.link,
+      domain: extractDomain(item.link),
+      isHighQuality: isHighQualityDomain(item.link),
+    }));
+    const combinedSources = (() => {
+      if (!catalogSnapshotForAi) return detailSources;
+      const seen = new Set<string>();
+      const combined: typeof detailSources = [];
+      const add = (source: (typeof detailSources)[number]) => {
+        if (!source.link) return;
+        if (seen.has(source.link)) return;
+        seen.add(source.link);
+        combined.push(source);
+      };
+      detailSources.forEach(add);
+      catalogSnapshotForAi.references.items.forEach((ref) => {
+        add({
+          title: ref.title,
+          link: ref.url,
+          domain: extractDomain(ref.url),
+          isHighQuality: false,
+        });
+      });
+      return combined;
+    })();
+
+    const analysisPayloadDraft: SnapshotAnalysisPayload = {
       brandExtraction: {
         brand: extraction.brand,
         product: extraction.product,
@@ -1649,15 +2301,10 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       productInfo: {
         brand,
         name: product,
-        category: extraction.category ?? null,
-        image: detailItems[0]?.image ?? initialItems[0]?.image ?? null,
+        category: resolvedCategory,
+        image: resolvedImage,
       },
-      sources: detailItems.map((item) => ({
-        title: item.title,
-        link: item.link,
-        domain: extractDomain(item.link),
-        isHighQuality: isHighQualityDomain(item.link),
-      })),
+      sources: combinedSources,
       efficacy: efficacyResult,
       safety: safetyResult,
       usagePayload: usageResult,
@@ -1665,31 +2312,76 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
 
     const snapshotCandidate = buildBarcodeSnapshot({
       barcode,
-      productInfo: analysisPayload.productInfo ?? null,
+      productInfo: analysisPayloadDraft.productInfo ?? null,
       sources: detailItems,
       efficacy: efficacyResult ?? null,
       safety: safetyResult ?? null,
       usagePayload: usageResult ?? null,
     });
 
+    const pickField = (...values: (string | null | undefined)[]) => {
+      for (const value of values) {
+        if (typeof value !== "string") continue;
+        const trimmed = value.trim();
+        if (trimmed.length > 0) return trimmed;
+      }
+      return null;
+    };
+
+    const mergedCandidate = catalogSnapshotForAi
+      ? {
+          ...catalogSnapshotForAi,
+          product: {
+            ...catalogSnapshotForAi.product,
+            brand: pickField(catalogSnapshotForAi.product.brand, snapshotCandidate.product.brand),
+            name: pickField(catalogSnapshotForAi.product.name, snapshotCandidate.product.name),
+            category: pickField(catalogSnapshotForAi.product.category, snapshotCandidate.product.category),
+            imageUrl: pickField(catalogSnapshotForAi.product.imageUrl, snapshotCandidate.product.imageUrl),
+          },
+          references: mergeReferenceItems(catalogSnapshotForAi.references, snapshotCandidate.references),
+          scores: snapshotCandidate.scores ?? catalogSnapshotForAi.scores,
+          status: snapshotCandidate.scores ? snapshotCandidate.status : catalogSnapshotForAi.status,
+          updatedAt: nowIso(),
+        }
+      : snapshotCandidate;
+
     const snapshot = validateSnapshotOrFallback({
-      candidate: snapshotCandidate,
+      candidate: mergedCandidate,
       fallback: {
         source: "barcode",
         barcodeRaw: barcode,
         productInfo: {
           brand,
           name: product,
-          category: extraction.category ?? null,
-          imageUrl: detailItems[0]?.image ?? initialItems[0]?.image ?? null,
+          category: resolvedCategory,
+          imageUrl: resolvedImage,
         },
-        createdAt: snapshotCandidate.createdAt,
+        createdAt: mergedCandidate.createdAt,
       },
     });
 
-    const expiresAt = snapshot.listings.items.length
-      ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-      : null;
+    const analysisPayload: SnapshotAnalysisPayload = {
+      ...catalogAnalysisPayloadForAi,
+      ...analysisPayloadDraft,
+      efficacy: efficacyResult ?? catalogAnalysisPayloadForAi?.efficacy ?? null,
+      safety: safetyResult ?? catalogAnalysisPayloadForAi?.safety ?? null,
+      usagePayload: usageResult ?? catalogAnalysisPayloadForAi?.usagePayload ?? null,
+    };
+
+    const analysisStatus = buildAnalysisStatus({
+      hasLabelFacts: hasLabelFacts(snapshot),
+      hasAi: hasAiPayload(analysisPayload),
+      dsldLabelId: snapshot.regulatory.dsldLabelId ?? null,
+    });
+    const analysisMeta = buildAnalysisMeta({
+      status: analysisStatus,
+      labelExtraction: catalogLabelExtractionForAi ?? analysisPayload.analysis?.labelExtraction ?? null,
+    });
+    analysisPayload.analysis = analysisMeta;
+    snapshot.analysis = analysisMeta;
+    snapshot.updatedAt = nowIso();
+
+    const expiresAt = computeExpiresAt(analysisStatus);
 
     const canRespond = !requestSignal.aborted && !res.writableEnded;
 
@@ -1707,7 +2399,6 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         analysisContext,
         analysisPayload,
         snapshot,
-        expiresAt,
         model,
         deepseekKey,
       });

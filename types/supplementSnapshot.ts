@@ -4,6 +4,7 @@ export const EXCERPT_MAX_CHARS = 600 as const;
 export type SnapshotStatus = 'resolved' | 'partial' | 'unknown_product' | 'error';
 export type SnapshotSource = 'barcode' | 'label' | 'mixed';
 export type SnapshotRegion = 'US' | 'CA' | 'global';
+export type AnalysisStatus = 'catalog_only' | 'label_enriched' | 'ai_enriched' | 'complete';
 
 export type BarcodeNormalizedFormat = 'gtin14' | 'ean13' | 'upca' | 'unknown';
 
@@ -136,6 +137,15 @@ export type SupplementSnapshot = {
       evidenceFor: 'efficacy' | 'safety' | 'trust' | 'regulatory' | 'general';
     }>;
   };
+  analysis?: {
+    status: AnalysisStatus | null;
+    version: number | null;
+    labelExtraction: {
+      source: 'dsld' | 'label_scan' | 'lnhpd' | 'manual';
+      fetchedAt: string | null;
+      datasetVersion: string | null;
+    } | null;
+  } | null;
   scores?: {
     overall: number;
     effectiveness: number;

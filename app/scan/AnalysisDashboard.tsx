@@ -419,7 +419,8 @@ const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
                                                 styles.mechName,
                                                 { color: mechanism.mode === 'unknown' ? placeholderColor : tColor },
                                             ]}
-                                            numberOfLines={1}
+                                            numberOfLines={2}
+                                            ellipsizeMode="tail"
                                         >
                                             {mechanism.name}
                                         </Text>
@@ -771,14 +772,20 @@ export const AnalysisDashboard: React.FC<{
         () => buildSourceRefs(Array.isArray(analysis.sources) ? analysis.sources : [], sourceType),
         [analysis.sources, sourceType]
     );
+    const analysisMeta = useMemo(() => analysis.meta ?? null, [analysis.meta]);
+    const analysisStatus = (analysisMeta as { analysisStatus?: string | null; status?: string | null } | null)?.analysisStatus
+        ?? (analysisMeta as { status?: string | null } | null)?.status
+        ?? null;
 
     const isLabelSource = sourceType === 'label_scan';
     const badgeTextSafe = isLabelSource ? scoreBadge : undefined;
+    const requiresProvisional =
+        analysisStatus === 'catalog_only' || analysisStatus === 'label_enriched';
     const scoreAvailability = useMemo(() => ({
-        effectiveness: typeof efficacy.score === 'number',
-        safety: typeof safety.score === 'number',
-        value: typeof value.score === 'number',
-    }), [efficacy.score, safety.score, value.score]);
+        effectiveness: !requiresProvisional && typeof efficacy.score === 'number',
+        safety: !requiresProvisional && typeof safety.score === 'number',
+        value: !requiresProvisional && typeof value.score === 'number',
+    }), [efficacy.score, safety.score, value.score, requiresProvisional]);
     const availableScoreCount =
         (scoreAvailability.effectiveness ? 1 : 0) +
         (scoreAvailability.safety ? 1 : 0) +
@@ -978,10 +985,81 @@ export const AnalysisDashboard: React.FC<{
     // Use primaryActive from efficacy if available
     const primaryActive = efficacy?.primaryActive;
 
+    const formatScaledValue = (value: number, scale: number) => {
+        const scaled = value / scale;
+        const rounded = Math.round(scaled * 10) / 10;
+        return Number.isInteger(rounded) ? `${rounded}` : `${rounded}`;
+    };
+
+    const formatCfuValue = (value: number) => {
+        if (value >= 1e12) return `${formatScaledValue(value, 1e12)} Trillion CFU`;
+        if (value >= 1e9) return `${formatScaledValue(value, 1e9)} Billion CFU`;
+        if (value >= 1e6) return `${formatScaledValue(value, 1e6)} Million CFU`;
+        return `${Math.round(value)} CFU`;
+    };
+
+    const hasNumericDose = (value?: number | null) =>
+        typeof value === 'number' && Number.isFinite(value) && value > 0;
+
     // Format dosage with unit
     const formatDose = (value?: number | null, unit?: string | null): string | null => {
-        if (typeof value !== 'number' || value === null) return null;
+        const normalizedUnit = unit?.trim().toLowerCase();
+        if (normalizedUnit === 'np' || normalizedUnit === 'n/p' || normalizedUnit === 'not present') {
+            return t.analysisPlaceholderIncludedInBlend;
+        }
+        if (value === 0 && !normalizedUnit) {
+            return t.analysisPlaceholderIncludedInBlend;
+        }
+        if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+        if (normalizedUnit === 'cfu' || normalizedUnit === 'ufc') {
+            return formatCfuValue(value);
+        }
         return `${value} ${unit || 'mg'}`;
+    };
+
+    const normalizeIngredientKey = (value?: string | null) =>
+        value?.toLowerCase().replace(/[^a-z0-9]+/g, '').trim() ?? '';
+
+    const scoreIngredientDetail = (ingredient: any) => {
+        let score = 0;
+        if (typeof ingredient?.dosageValue === 'number') score += 4;
+        if (ingredient?.dosageUnit) score += 2;
+        if (ingredient?.form) score += 1;
+        if (ingredient?.formQuality && ingredient.formQuality !== 'unknown') score += 1;
+        if (ingredient?.evidenceLevel && ingredient.evidenceLevel !== 'none') score += 1;
+        return score;
+    };
+
+    const dedupeIngredients = (items: any[]) => {
+        const map = new Map<string, any>();
+        const ordered: any[] = [];
+        items.forEach((item) => {
+            const key = normalizeIngredientKey(typeof item?.name === 'string' ? item.name : '');
+            if (!key) return;
+            const existing = map.get(key);
+            if (!existing) {
+                map.set(key, item);
+                ordered.push(item);
+                return;
+            }
+            const existingHasDose = typeof existing?.dosageValue === 'number';
+            const nextHasDose = typeof item?.dosageValue === 'number';
+            if (existingHasDose && !nextHasDose) return;
+            if (!existingHasDose && nextHasDose) {
+                map.set(key, item);
+                const index = ordered.indexOf(existing);
+                if (index >= 0) ordered[index] = item;
+                return;
+            }
+            const existingScore = scoreIngredientDetail(existing);
+            const nextScore = scoreIngredientDetail(item);
+            if (nextScore > existingScore) {
+                map.set(key, item);
+                const index = ordered.indexOf(existing);
+                if (index >= 0) ordered[index] = item;
+            }
+        });
+        return ordered;
     };
 
     // Format form text to be user-friendly (simplify long scientific names)
@@ -1037,11 +1115,15 @@ export const AnalysisDashboard: React.FC<{
             return efficacy.overviewSummary;
         }
         // 2. Build from primaryActive (structured fallback)
-        if (primaryActive?.dosageValue != null && primaryActive?.name) {
+        if (hasNumericDose(primaryActive?.dosageValue) && primaryActive?.name) {
             const evidenceText = primaryActive.evidenceLevel && primaryActive.evidenceLevel !== 'none'
                 ? ` with ${primaryActive.evidenceLevel} evidence`
                 : '';
-            return `Provides ${primaryActive.dosageValue} ${primaryActive.dosageUnit || 'mg'} ${primaryActive.name}${evidenceText}. ${value.analysis || value.verdict || ''}`;
+            const doseText =
+                hasNumericDose(primaryActive.dosageValue) && primaryDoseLabel
+                    ? primaryDoseLabel
+                    : `${primaryActive.dosageValue} ${primaryActive.dosageUnit || 'mg'}`;
+            return `Provides ${doseText} ${primaryActive.name}${evidenceText}. ${value.analysis || value.verdict || ''}`;
         }
         // 3. Legacy fallback
         return value.analysis ||
@@ -1059,6 +1141,11 @@ export const AnalysisDashboard: React.FC<{
                 ? efficacy.benefits
                 : []
     ).slice(0, 3);
+
+    const scienceIngredients = useMemo(
+        () => (Array.isArray(efficacy.ingredients) ? dedupeIngredients(efficacy.ingredients) : []),
+        [efficacy.ingredients]
+    );
 
     const bestFor = usage.bestFor || usage.target || usage.who || '';
     const routineLine = usage.dosage || usage.frequency || usage.timing || '';
@@ -1082,8 +1169,8 @@ export const AnalysisDashboard: React.FC<{
         : 'Bioavailability estimated from label information.';
 
     const doseMatchCopy =
-        primaryActive?.dosageValue != null
-            ? `Delivers ${primaryActive.dosageValue} ${primaryActive.dosageUnit || 'mg'} per serving.`
+        hasNumericDose(primaryActive?.dosageValue) && primaryDoseLabel
+            ? `Delivers ${primaryDoseLabel} per serving.`
             : 'Dose compared against typical clinical ranges.';
 
     const timingCopy = usage.withFood === true
@@ -1116,7 +1203,13 @@ export const AnalysisDashboard: React.FC<{
         clampText(
             [
                 primaryName
-                    ? ensurePeriod(`Focused on ${primaryName}${primaryDoseLabel ? ` ${primaryDoseLabel}` : ''}`)
+                    ? ensurePeriod(
+                        `Focused on ${primaryName}${
+                            hasNumericDose(primaryActive?.dosageValue) && primaryDoseLabel
+                                ? ` ${primaryDoseLabel}`
+                                : ''
+                        }`
+                    )
                     : '',
                 benefitsPhrase ? ensurePeriod(`Key benefits: ${benefitsPhrase}`) : '',
             ]
@@ -1195,14 +1288,14 @@ export const AnalysisDashboard: React.FC<{
     const buildScienceCover = () => {
         const missingReasons = new Set<MissingReason>();
         const primaryHasName = !!primaryName;
-        const primaryHasDose = !!primaryDoseLabel;
+        const primaryHasDose = hasNumericDose(primaryActive?.dosageValue);
         const primarySlotFilled = primaryHasName && primaryHasDose;
         const primaryFill = primarySlotFilled
             ? evidenceFillMap[primaryActive?.evidenceLevel || 'none'] || 72
             : provisionalScore;
         const primaryRow: Mechanism = {
             name: primaryHasName ? primaryName : t.analysisPrimaryActiveLabel,
-            amount: primaryHasDose ? primaryDoseLabel : t.analysisPlaceholderSeeLabel,
+            amount: primaryDoseLabel ?? t.analysisPlaceholderSeeLabel,
             fill: primarySlotFilled ? primaryFill : provisionalScore,
             mode: primarySlotFilled ? 'actual' : 'unknown',
             showInfo: !primaryHasName,
@@ -1417,38 +1510,45 @@ export const AnalysisDashboard: React.FC<{
                     <Text style={styles.modalParagraphSmall}>{scienceSummary}</Text>
 
                     {/* NEW: Enhanced Ingredient Analysis */}
-                    {Array.isArray(efficacy.ingredients) && efficacy.ingredients.length > 0 && (
-                        <View style={styles.modalCalloutCard}>
-                            <Text style={styles.modalBulletTitle}>Ingredient Analysis</Text>
-                            {efficacy.ingredients.slice(0, 4).map((ingredient: any, idx: number) => (
-                                <View key={idx} style={{ marginTop: idx > 0 ? 12 : 4 }}>
-                                    <Text style={[styles.modalParagraphSmall, { fontWeight: '600' }]}>
-                                        {ingredient.name}
-                                        {ingredient.form && ` (${ingredient.form})`}
-                                    </Text>
-                                    {ingredient.formQuality && ingredient.formQuality !== 'unknown' && (
-                                        <Text style={styles.modalParagraphSmall}>
-                                            Form quality: {ingredient.formQuality.charAt(0).toUpperCase() + ingredient.formQuality.slice(1)}
-                                            {ingredient.formNote && ` — ${ingredient.formNote}`}
-                                        </Text>
-                                    )}
-                                    {ingredient.dosageValue && ingredient.dosageUnit && (
-                                        <Text style={styles.modalParagraphSmall}>
-                                            Dose: {ingredient.dosageValue} {ingredient.dosageUnit}
-                                            {ingredient.dosageAssessment && ingredient.dosageAssessment !== 'unknown' && (
-                                                ` (${ingredient.dosageAssessment})`
-                                            )}
-                                        </Text>
-                                    )}
-                                    {ingredient.evidenceLevel && ingredient.evidenceLevel !== 'none' && (
-                                        <Text style={styles.modalParagraphSmall}>
-                                            Evidence: {ingredient.evidenceLevel.charAt(0).toUpperCase() + ingredient.evidenceLevel.slice(1)}
-                                        </Text>
-                                    )}
+                            {scienceIngredients.length > 0 && (
+                                <View style={styles.modalCalloutCard}>
+                                    <Text style={styles.modalBulletTitle}>Ingredient Analysis</Text>
+                                    {scienceIngredients.slice(0, 4).map((ingredient: any, idx: number) => {
+                                        const doseLabel = formatDose(ingredient.dosageValue, ingredient.dosageUnit);
+                                        return (
+                                            <View key={idx} style={{ marginTop: idx > 0 ? 12 : 4 }}>
+                                                <Text
+                                                    style={[styles.modalParagraphSmall, { fontWeight: '600' }]}
+                                                    numberOfLines={2}
+                                                    ellipsizeMode="tail"
+                                                >
+                                                    {ingredient.name}
+                                                    {ingredient.form && ` (${ingredient.form})`}
+                                                </Text>
+                                                {ingredient.formQuality && ingredient.formQuality !== 'unknown' && (
+                                                    <Text style={styles.modalParagraphSmall}>
+                                                        Form quality: {ingredient.formQuality.charAt(0).toUpperCase() + ingredient.formQuality.slice(1)}
+                                                        {ingredient.formNote && ` — ${ingredient.formNote}`}
+                                                    </Text>
+                                                )}
+                                                {doseLabel && (
+                                                    <Text style={styles.modalParagraphSmall}>
+                                                        Dose: {doseLabel}
+                                                        {ingredient.dosageAssessment && ingredient.dosageAssessment !== 'unknown' && (
+                                                            ` (${ingredient.dosageAssessment})`
+                                                        )}
+                                                    </Text>
+                                                )}
+                                                {ingredient.evidenceLevel && ingredient.evidenceLevel !== 'none' && (
+                                                    <Text style={styles.modalParagraphSmall}>
+                                                        Evidence: {ingredient.evidenceLevel.charAt(0).toUpperCase() + ingredient.evidenceLevel.slice(1)}
+                                                    </Text>
+                                                )}
+                                            </View>
+                                        );
+                                    })}
                                 </View>
-                            ))}
-                        </View>
-                    )}
+                            )}
 
                     {/* Marketing vs Reality - NEW */}
                     {efficacy.marketingVsReality && (
@@ -1467,7 +1567,7 @@ export const AnalysisDashboard: React.FC<{
                     )}
 
                     {/* Fallback to legacy key mechanisms display */}
-                    {(!efficacy.ingredients || efficacy.ingredients.length === 0) && (
+                    {(scienceIngredients.length === 0) && (
                         <>
                             <View style={styles.modalCalloutCard}>
                                 <Text style={styles.modalBulletTitle}>Dose alignment</Text>

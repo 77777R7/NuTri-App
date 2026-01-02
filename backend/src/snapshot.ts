@@ -13,6 +13,15 @@ export type SnapshotStatus = 'resolved' | 'partial' | 'unknown_product' | 'error
 export type SnapshotSource = 'barcode' | 'label' | 'mixed';
 
 export type SnapshotAnalysisPayload = {
+  analysis?: {
+    status: 'catalog_only' | 'label_enriched' | 'ai_enriched' | 'complete' | null;
+    version: number | null;
+    labelExtraction?: {
+      source: 'dsld' | 'label_scan' | 'lnhpd' | 'manual';
+      fetchedAt: string | null;
+      datasetVersion: string | null;
+    } | null;
+  } | null;
   brandExtraction?: {
     brand: string | null;
     product: string | null;

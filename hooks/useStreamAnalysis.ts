@@ -65,7 +65,7 @@ type PrimaryActive = {
 
 // Enhanced efficacy analysis
 type EfficacyAnalysis = {
-    score: number;
+    score?: number | null;
     verdict: string;
     primaryActive?: PrimaryActive | null;
     ingredients?: IngredientAnalysis[];
@@ -89,7 +89,7 @@ type ULWarning = {
 
 // Enhanced safety analysis
 type SafetyAnalysis = {
-    score: number;
+    score?: number | null;
     verdict: string;
     risks: string[];
     redFlags: string[];
@@ -110,7 +110,7 @@ type UsageAnalysis = {
 };
 
 type ValueAnalysis = {
-    score: number;
+    score?: number | null;
     verdict: string;
     analysis: string;
     costPerServing?: number | null;
@@ -118,7 +118,7 @@ type ValueAnalysis = {
 };
 
 type SocialAnalysis = {
-    score: number;
+    score?: number | null;
     summary: string;
 };
 
@@ -133,6 +133,15 @@ type AnalysisState = {
     value: ValueAnalysis | null;
     social: SocialAnalysis | null;
     meta: any | null;
+    analysisMeta: {
+        status: 'catalog_only' | 'label_enriched' | 'ai_enriched' | 'complete' | null;
+        version: number | null;
+        labelExtraction: {
+            source: 'dsld' | 'label_scan' | 'lnhpd' | 'manual';
+            fetchedAt: string | null;
+            datasetVersion: string | null;
+        } | null;
+    } | null;
     status: 'idle' | 'loading' | 'streaming' | 'complete' | 'error';
     error: string | null;
 };
@@ -152,6 +161,7 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
         value: null,
         social: null,
         meta: null,
+        analysisMeta: null,
         status: 'idle',
         error: null,
     });
@@ -262,6 +272,13 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
                     const snapshot = JSON.parse(event.data) as SupplementSnapshot;
                     const snapshotProduct = snapshot.product;
                     const snapshotSources = snapshot.references?.items ?? [];
+                    const analysisMeta = snapshot.analysis
+                        ? {
+                            status: snapshot.analysis.status ?? null,
+                            version: snapshot.analysis.version ?? null,
+                            labelExtraction: snapshot.analysis.labelExtraction ?? null,
+                        }
+                        : null;
                     setState(prev => ({
                         ...prev,
                         productInfo: {
@@ -276,6 +293,7 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
                                 title: ref.title,
                                 link: ref.url,
                             })),
+                        analysisMeta: analysisMeta ?? prev.analysisMeta,
                     }));
                 } catch (e) {
                     console.error('[SSE] Failed to parse snapshot:', e);
