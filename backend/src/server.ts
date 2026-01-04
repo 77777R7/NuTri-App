@@ -174,6 +174,8 @@ type NormalizedAmountUnit = 'mg' | 'mcg' | 'g' | 'iu' | 'cfu' | 'ml';
 
 type DsldFacts = {
   dsldLabelId: number;
+  brandName: string | null;
+  productName: string | null;
   servingSize: string | null;
   servingsPerContainer: number | null;
   actives: {
@@ -194,24 +196,115 @@ type DsldFacts = {
   dsldThumbnail: string | null;
 };
 
+type LabelFacts = {
+  source: LabelExtractionMeta['source'];
+  brandName: string | null;
+  productName: string | null;
+  servingSize: string | null;
+  servingsPerContainer: number | null;
+  actives: {
+    name: string;
+    amount: number | null;
+    unit: string | null;
+  }[];
+  inactive: string[];
+  proprietaryBlends: {
+    name: string;
+    totalAmount: number | null;
+    unit: string | null;
+    ingredients: string[] | null;
+  }[];
+  purposes: string[];
+  doses: string[];
+  datasetVersion: string | null;
+  extractedAt: string | null;
+};
+
+type LnhpdFacts = {
+  lnhpdId: number;
+  brandName: string | null;
+  productName: string | null;
+  npn: string | null;
+  isOnMarket: boolean | null;
+  servingSize: string | null;
+  servingsPerContainer: number | null;
+  actives: {
+    name: string;
+    amount: number | null;
+    unit: string | null;
+  }[];
+  inactive: string[];
+  purposes: string[];
+  routes: string[];
+  doses: string[];
+  datasetVersion: string | null;
+  extractedAt: string | null;
+};
+
+type LnhpdFactsRecord = {
+  lnhpd_id: number | string | null;
+  facts_json: unknown;
+  dataset_version: string | null;
+  extracted_at: string | null;
+  brand_name: string | null;
+  product_name: string | null;
+  npn: string | null;
+  is_on_market: boolean | null;
+};
+
 const nowIso = () => new Date().toISOString();
 
 const normalizeUnitLabel = (unitRaw?: string | null): string | null => {
   if (!unitRaw) return null;
   const normalized = unitRaw.trim().toLowerCase();
   if (!normalized) return null;
-  if (normalized.startsWith('mcg') || normalized.startsWith('ug') || normalized.startsWith('µg') || normalized.startsWith('μg')) {
+  if (
+    normalized.startsWith('mcg') ||
+    normalized.startsWith('ug') ||
+    normalized.startsWith('µg') ||
+    normalized.startsWith('μg') ||
+    normalized.startsWith('microgram')
+  ) {
     return 'mcg';
   }
-  if (normalized.startsWith('mg')) return 'mg';
-  if (normalized.startsWith('g')) return 'g';
+  if (normalized.startsWith('mg') || normalized.startsWith('milligram')) return 'mg';
+  if (normalized.startsWith('g') || normalized.startsWith('gram')) return 'g';
   if (normalized.startsWith('iu') || normalized.startsWith('i.u')) return 'iu';
-  if (normalized.startsWith('ml')) return 'ml';
+  if (
+    normalized.startsWith('ml') ||
+    normalized.startsWith('milliliter') ||
+    normalized.startsWith('millilitre')
+  ) {
+    return 'ml';
+  }
   if (normalized.includes('cfu') || normalized.includes('ufc')) return 'cfu';
-  if (normalized.startsWith('%')) return '%';
-  if (normalized.startsWith('cal')) return 'cal';
   if (normalized.startsWith('kcal')) return 'kcal';
+  if (normalized.startsWith('cal')) return 'cal';
+  if (normalized.startsWith('%') || normalized.includes('percent')) return '%';
   return normalized;
+};
+
+const parseCfuMultiplier = (unitLower: string): number | null => {
+  if (!unitLower.includes('cfu') && !unitLower.includes('ufc')) return null;
+  if (unitLower.includes('trillion')) return 1_000_000_000_000;
+  if (unitLower.includes('billion')) return 1_000_000_000;
+  if (unitLower.includes('million')) return 1_000_000;
+  return 1;
+};
+
+const normalizeAmountAndUnit = (
+  amount: number | null,
+  unitRaw?: string | null,
+): { amount: number | null; unit: string | null } => {
+  if (!unitRaw) return { amount, unit: null };
+  const normalizedUnit = normalizeUnitLabel(unitRaw) ?? unitRaw.trim();
+  if (amount == null) return { amount, unit: normalizedUnit };
+  const unitLower = unitRaw.trim().toLowerCase();
+  const cfuMultiplier = parseCfuMultiplier(unitLower);
+  if (cfuMultiplier) {
+    return { amount: amount * cfuMultiplier, unit: 'cfu' };
+  }
+  return { amount, unit: normalizedUnit };
 };
 
 const normalizeAmountUnit = (unitRaw?: string | null): NormalizedAmountUnit | null => {
@@ -273,6 +366,145 @@ const parseActiveSummaryLine = (rawLine: string): { name: string; amount: number
   return { name: cleaned, amount: null, unit: null };
 };
 
+const normalizeMatchText = (value: string): string =>
+  value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+const scoreTextMatch = (needle?: string | null, haystack?: string | null): number => {
+  if (!needle || !haystack) return 0;
+  const normalizedNeedle = normalizeMatchText(needle);
+  const normalizedHaystack = normalizeMatchText(haystack);
+  if (!normalizedNeedle || !normalizedHaystack) return 0;
+  if (normalizedNeedle === normalizedHaystack) return 3;
+  if (normalizedHaystack.includes(normalizedNeedle) || normalizedNeedle.includes(normalizedHaystack)) return 2;
+  return 0;
+};
+
+const pickStringField = (record: Record<string, unknown>, keys: string[]): string | null => {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value !== 'string') continue;
+    const trimmed = value.trim();
+    if (trimmed) return trimmed;
+  }
+  return null;
+};
+
+const pickNameField = (record: Record<string, unknown>, keys: string[]): string | null => {
+  const direct = pickStringField(record, keys);
+  if (direct) return direct;
+  for (const [key, value] of Object.entries(record)) {
+    if (!key.toLowerCase().includes('name')) continue;
+    if (typeof value !== 'string') continue;
+    const trimmed = value.trim();
+    if (trimmed) return trimmed;
+  }
+  return null;
+};
+
+const parseNumber = (value: unknown): number | null => {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const parsed = Number(trimmed);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+};
+
+const pickNumberField = (record: Record<string, unknown>, keys: string[]): number | null => {
+  for (const key of keys) {
+    const parsed = parseNumber(record[key]);
+    if (parsed != null) return parsed;
+  }
+  return null;
+};
+
+const pickUnitField = (record: Record<string, unknown>, keys: string[]): string | null => {
+  const raw = pickStringField(record, keys);
+  return normalizeUnitLabel(raw) ?? raw;
+};
+
+const extractTextList = (payload: unknown, nameKeys: string[]): string[] => {
+  if (!Array.isArray(payload)) return [];
+  const seen = new Set<string>();
+  const output: string[] = [];
+  payload.forEach((item) => {
+    if (!item || typeof item !== 'object') return;
+    const name = pickNameField(item as Record<string, unknown>, nameKeys);
+    if (!name) return;
+    const normalized = normalizeMatchText(name);
+    if (!normalized || seen.has(normalized)) return;
+    seen.add(normalized);
+    output.push(name);
+  });
+  return output;
+};
+
+const extractLnhpdIngredients = (payload: unknown, options: {
+  nameKeys: string[];
+  amountKeys: string[];
+  unitKeys: string[];
+}): { name: string; amount: number | null; unit: string | null }[] => {
+  if (!Array.isArray(payload)) return [];
+  const map = new Map<string, { name: string; amount: number | null; unit: string | null }>();
+  payload.forEach((item) => {
+    if (!item || typeof item !== 'object') return;
+    const record = item as Record<string, unknown>;
+    const name = pickNameField(record, options.nameKeys);
+    if (!name) return;
+    const amount = pickNumberField(record, options.amountKeys);
+    const unitRaw = pickStringField(record, options.unitKeys);
+    const { amount: normalizedAmount, unit } = normalizeAmountAndUnit(amount, unitRaw);
+    const key = normalizeMatchText(name);
+    if (!key) return;
+    const existing = map.get(key);
+    const candidate = {
+      name,
+      amount: normalizedAmount ?? null,
+      unit: unit ?? null,
+    };
+    if (!existing) {
+      map.set(key, candidate);
+      return;
+    }
+    if (existing.amount == null && candidate.amount != null) {
+      map.set(key, candidate);
+    }
+  });
+  return Array.from(map.values());
+};
+
+const toLabelFactsFromDsld = (facts: DsldFacts): LabelFacts => ({
+  source: 'dsld',
+  brandName: facts.brandName ?? null,
+  productName: facts.productName ?? null,
+  servingSize: facts.servingSize ?? null,
+  servingsPerContainer: facts.servingsPerContainer ?? null,
+  actives: facts.actives ?? [],
+  inactive: facts.inactive ?? [],
+  proprietaryBlends: facts.proprietaryBlends ?? [],
+  purposes: [],
+  doses: [],
+  datasetVersion: facts.datasetVersion ?? null,
+  extractedAt: facts.extractedAt ?? null,
+});
+
+const toLabelFactsFromLnhpd = (facts: LnhpdFacts): LabelFacts => ({
+  source: 'lnhpd',
+  brandName: facts.brandName ?? null,
+  productName: facts.productName ?? null,
+  servingSize: facts.servingSize ?? null,
+  servingsPerContainer: facts.servingsPerContainer ?? null,
+  actives: facts.actives ?? [],
+  inactive: facts.inactive ?? [],
+  proprietaryBlends: [],
+  purposes: facts.purposes ?? [],
+  doses: facts.doses ?? [],
+  datasetVersion: facts.datasetVersion ?? null,
+  extractedAt: facts.extractedAt ?? null,
+});
+
 const buildAnalysisStatus = (params: {
   hasLabelFacts: boolean;
   hasAi: boolean;
@@ -311,6 +543,8 @@ const isRpcMissing = (error: { code?: string; message?: string } | null): boolea
 
 const buildDsldFactsFromMeta = (meta: {
   dsld_label_id: number;
+  brand: string | null;
+  product_name: string | null;
   serving_size_raw: string | null;
   servings_per_container: number | null;
   active_ingredients_summary: string | null;
@@ -322,6 +556,8 @@ const buildDsldFactsFromMeta = (meta: {
   const actives = parseDelimitedList(meta.active_ingredients_summary).map(parseActiveSummaryLine);
   return {
     dsldLabelId: meta.dsld_label_id,
+    brandName: meta.brand ?? null,
+    productName: meta.product_name ?? null,
     servingSize: meta.serving_size_raw ?? null,
     servingsPerContainer: meta.servings_per_container ?? null,
     actives,
@@ -367,6 +603,8 @@ const fetchDsldFactsByLabelId = async (
       if (isDsldFactsUsable(facts)) {
         return {
           dsldLabelId: record.dsld_label_id ?? labelId,
+          brandName: facts.brandName ?? null,
+          productName: facts.productName ?? null,
           servingSize: facts.servingSize ?? null,
           servingsPerContainer: facts.servingsPerContainer ?? null,
           actives: Array.isArray(facts.actives) ? facts.actives : [],
@@ -384,7 +622,7 @@ const fetchDsldFactsByLabelId = async (
   const { data: meta, error } = await supabase
     .from('dsld_labels_meta')
     .select(
-      'dsld_label_id,serving_size_raw,servings_per_container,active_ingredients_summary,inactive_ingredients,dsld_product_version_code,dsld_pdf,dsld_thumbnail',
+      'dsld_label_id,brand,product_name,serving_size_raw,servings_per_container,active_ingredients_summary,inactive_ingredients,dsld_product_version_code,dsld_pdf,dsld_thumbnail',
     )
     .eq('dsld_label_id', labelId)
     .maybeSingle();
@@ -416,6 +654,8 @@ const fetchDsldFactsByBarcode = async (
       if (isDsldFactsUsable(facts)) {
         return {
           dsldLabelId: record.dsld_label_id ?? Number(facts.dsldLabelId ?? 0),
+          brandName: facts.brandName ?? null,
+          productName: facts.productName ?? null,
           servingSize: facts.servingSize ?? null,
           servingsPerContainer: facts.servingsPerContainer ?? null,
           actives: Array.isArray(facts.actives) ? facts.actives : [],
@@ -433,7 +673,7 @@ const fetchDsldFactsByBarcode = async (
   const { data: meta, error } = await supabase
     .from('dsld_labels_meta')
     .select(
-      'dsld_label_id,serving_size_raw,servings_per_container,active_ingredients_summary,inactive_ingredients,dsld_product_version_code,dsld_pdf,dsld_thumbnail',
+      'dsld_label_id,brand,product_name,serving_size_raw,servings_per_container,active_ingredients_summary,inactive_ingredients,dsld_product_version_code,dsld_pdf,dsld_thumbnail',
     )
     .eq('barcode_normalized_gtin14', barcodeGtin14)
     .maybeSingle();
@@ -441,6 +681,155 @@ const fetchDsldFactsByBarcode = async (
     return null;
   }
   return buildDsldFactsFromMeta(meta);
+};
+
+const LNHPD_MEDICINAL_NAME_KEYS = [
+  'medicinal_ingredient_name',
+  'ingredient_name',
+  'medicinal_ingredient_name_en',
+  'ingredient_name_en',
+  'proper_name',
+  'substance_name',
+  'name',
+];
+
+const LNHPD_NON_MEDICINAL_NAME_KEYS = [
+  'nonmedicinal_ingredient_name',
+  'non_medicinal_ingredient_name',
+  'ingredient_name',
+  'name',
+];
+
+const LNHPD_AMOUNT_KEYS = [
+  'quantity',
+  'quantity_value',
+  'quantity_amount',
+  'strength',
+  'strength_value',
+  'amount',
+  'dose',
+  'dosage',
+];
+
+const LNHPD_UNIT_KEYS = [
+  'quantity_unit',
+  'quantity_unit_of_measure',
+  'unit',
+  'unit_of_measure',
+  'strength_unit',
+  'dose_unit',
+  'dosage_unit',
+];
+
+const LNHPD_PURPOSE_KEYS = ['purpose', 'purpose_name', 'purpose_name_en', 'purpose_text', 'name'];
+const LNHPD_ROUTE_KEYS = ['route', 'route_name', 'route_name_en', 'name'];
+const LNHPD_DOSE_KEYS = ['dose', 'dose_text', 'dosage', 'dose_description', 'quantity', 'quantity_text'];
+
+const parseBoolean = (value: unknown): boolean | null => {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'true') return true;
+    if (normalized === 'false') return false;
+  }
+  return null;
+};
+
+const buildLnhpdFactsFromRecord = (record: LnhpdFactsRecord): LnhpdFacts | null => {
+  const lnhpdId = parseNumber(record.lnhpd_id);
+  if (!lnhpdId || !record.facts_json || typeof record.facts_json !== 'object') return null;
+  const factsJson = record.facts_json as {
+    brandName?: string | null;
+    productName?: string | null;
+    npn?: string | null;
+    isOnMarket?: boolean | string | null;
+    medicinalIngredients?: unknown;
+    nonMedicinalIngredients?: unknown;
+    doses?: unknown;
+    purposes?: unknown;
+    routes?: unknown;
+  };
+
+  const actives = extractLnhpdIngredients(factsJson.medicinalIngredients, {
+    nameKeys: LNHPD_MEDICINAL_NAME_KEYS,
+    amountKeys: LNHPD_AMOUNT_KEYS,
+    unitKeys: LNHPD_UNIT_KEYS,
+  });
+  const inactive = extractTextList(factsJson.nonMedicinalIngredients, LNHPD_NON_MEDICINAL_NAME_KEYS);
+  const purposes = extractTextList(factsJson.purposes, LNHPD_PURPOSE_KEYS);
+  const routes = extractTextList(factsJson.routes, LNHPD_ROUTE_KEYS);
+  const doses = extractTextList(factsJson.doses, LNHPD_DOSE_KEYS);
+  const isOnMarket = record.is_on_market ?? parseBoolean(factsJson.isOnMarket);
+
+  return {
+    lnhpdId,
+    brandName: record.brand_name ?? factsJson.brandName ?? null,
+    productName: record.product_name ?? factsJson.productName ?? null,
+    npn: record.npn ?? factsJson.npn ?? null,
+    isOnMarket,
+    servingSize: null,
+    servingsPerContainer: null,
+    actives,
+    inactive,
+    purposes,
+    routes,
+    doses,
+    datasetVersion: record.dataset_version ?? null,
+    extractedAt: record.extracted_at ?? null,
+  };
+};
+
+const fetchLnhpdFactsByName = async (params: {
+  brand?: string | null;
+  product?: string | null;
+}): Promise<LnhpdFacts | null> => {
+  const brand = params.brand?.trim() ?? '';
+  const product = params.product?.trim() ?? '';
+  if (!brand && !product) return null;
+
+  const runQuery = async (table: string) => {
+    let query = supabase
+      .from(table)
+      .select('lnhpd_id,facts_json,dataset_version,extracted_at,brand_name,product_name,npn,is_on_market')
+      .limit(8);
+
+    if (product) {
+      query = query.ilike('product_name', `%${product}%`);
+    }
+    if (brand) {
+      query = query.ilike('brand_name', `%${brand}%`);
+    }
+    if (table === 'lnhpd_facts') {
+      query = query.eq('is_on_market', true);
+    }
+
+    const { data, error } = await query;
+    if (error || !data || data.length === 0) return null;
+    return data as LnhpdFactsRecord[];
+  };
+
+  let records = await runQuery('lnhpd_facts_complete');
+  if (!records) {
+    records = await runQuery('lnhpd_facts');
+  }
+  if (!records) return null;
+
+  let bestRecord: LnhpdFactsRecord | null = null;
+  let bestScore = -1;
+  for (const record of records) {
+    const score =
+      scoreTextMatch(product, record.product_name) * 2 +
+      scoreTextMatch(brand, record.brand_name);
+    if (score > bestScore) {
+      bestScore = score;
+      bestRecord = record;
+    }
+  }
+
+  if (!bestRecord) return null;
+  if (product && bestScore < 2) return null;
+
+  return buildLnhpdFactsFromRecord(bestRecord);
 };
 
 const applyDsldFactsToSnapshot = (
@@ -520,6 +909,63 @@ const applyDsldFactsToSnapshot = (
   return updated;
 };
 
+const applyLnhpdFactsToSnapshot = (
+  snapshot: SupplementSnapshot,
+  facts: LnhpdFacts,
+): SupplementSnapshot => {
+  const actives = facts.actives.map((item) => {
+    const amountUnknown = item.amount == null;
+    return {
+      name: item.name,
+      ingredientId: null,
+      amount: item.amount ?? null,
+      amountUnit: item.unit ?? null,
+      amountUnitRaw: item.unit ?? null,
+      amountUnitNormalized: normalizeAmountUnit(item.unit),
+      dvPercent: null,
+      form: null,
+      isProprietaryBlend: false,
+      amountUnknown,
+      source: 'lnhpd' as const,
+      confidence: 1,
+    };
+  });
+
+  const inactive = facts.inactive.map((name) => ({
+    name,
+    ingredientId: null,
+    source: 'label' as const,
+  }));
+
+  const updatedRegionTags = new Set(snapshot.regulatory.regionTags);
+  updatedRegionTags.add('CA');
+
+  const updated: SupplementSnapshot = {
+    ...snapshot,
+    product: {
+      ...snapshot.product,
+      brand: facts.brandName ?? snapshot.product.brand,
+      name: facts.productName ?? snapshot.product.name,
+    },
+    label: {
+      ...snapshot.label,
+      servingSize: facts.servingSize ?? snapshot.label.servingSize,
+      servingsPerContainer: facts.servingsPerContainer ?? snapshot.label.servingsPerContainer,
+      actives: actives.length ? actives : snapshot.label.actives,
+      inactive: inactive.length ? inactive : snapshot.label.inactive,
+    },
+    regulatory: {
+      ...snapshot.regulatory,
+      npn: facts.npn ?? snapshot.regulatory.npn,
+      npnStatus: facts.npn ? 'verified' : snapshot.regulatory.npnStatus ?? 'unknown',
+      regionTags: Array.from(updatedRegionTags),
+      lastCheckedAt: nowIso(),
+    },
+  };
+
+  return updated;
+};
+
 const mergeReferenceItems = (
   base: SupplementSnapshot['references'],
   incoming: SupplementSnapshot['references'],
@@ -537,7 +983,17 @@ const mergeReferenceItems = (
   return { items };
 };
 
-const buildLabelOnlyAnalysis = (facts: DsldFacts) => {
+const buildLabelOnlyAnalysis = (facts: LabelFacts) => {
+  const firstNonEmptyText = (...values: (string | null | undefined)[]) => {
+    for (const value of values) {
+      if (typeof value !== 'string') continue;
+      const trimmed = value.trim();
+      if (trimmed.length > 0) return trimmed;
+    }
+    return null;
+  };
+  const ensureSentence = (value: string) => (/[.!?]$/.test(value) ? value : `${value}.`);
+
   const primary = facts.actives.find((item) => item.amount != null) ?? facts.actives[0] ?? null;
   const primaryActive = primary
     ? {
@@ -563,12 +1019,16 @@ const buildLabelOnlyAnalysis = (facts: DsldFacts) => {
     evidenceLevel: 'none',
   }));
 
-  const coreBenefits = facts.actives.slice(0, 3).map((item) => {
-    if (item.amount != null && item.unit) {
-      return `${item.name} ${item.amount} ${item.unit}`;
-    }
-    return item.name;
-  });
+  const purposes = Array.isArray(facts.purposes) ? facts.purposes.filter(Boolean) : [];
+  const doses = Array.isArray(facts.doses) ? facts.doses.filter(Boolean) : [];
+  const coreBenefits = purposes.length
+    ? purposes.slice(0, 3)
+    : facts.actives.slice(0, 3).map((item) => {
+      if (item.amount != null && item.unit) {
+        return `${item.name} ${item.amount} ${item.unit}`;
+      }
+      return item.name;
+    });
 
   const overviewSummary = coreBenefits.length
     ? `Label facts captured: ${coreBenefits.join(', ')}.`
@@ -584,9 +1044,14 @@ const buildLabelOnlyAnalysis = (facts: DsldFacts) => {
     marketingVsReality: 'Label-only analysis; no external evidence verification.',
   };
 
-  const usageSummary = facts.servingSize
-    ? `Serving size: ${facts.servingSize}. Follow label directions.`
+  const servingSizeHint = facts.servingSize ? `Serving size: ${facts.servingSize}` : null;
+  const doseHint = firstNonEmptyText(doses[0] ?? null);
+  const usageSummaryBase = firstNonEmptyText(doseHint, servingSizeHint);
+  const usageSummary = usageSummaryBase
+    ? `${ensureSentence(usageSummaryBase)} Follow label directions.`
     : 'Follow label directions.';
+  const dosage = firstNonEmptyText(doseHint, servingSizeHint) ?? '';
+  const bestFor = firstNonEmptyText(purposes[0] ?? null) ?? '';
 
   const usagePayload = {
     usage: {
@@ -595,6 +1060,8 @@ const buildLabelOnlyAnalysis = (facts: DsldFacts) => {
       withFood: null,
       frequency: '',
       interactions: [],
+      dosage,
+      bestFor,
     },
     value: {
       verdict: 'Label-only analysis; formula transparency pending full review.',
@@ -617,6 +1084,141 @@ const buildLabelOnlyAnalysis = (facts: DsldFacts) => {
   return { efficacy, safety, usagePayload };
 };
 
+const pickNonEmptyText = (...values: (string | null | undefined)[]): string | null => {
+  for (const value of values) {
+    if (typeof value !== 'string') continue;
+    const trimmed = value.trim();
+    if (trimmed.length > 0) return trimmed;
+  }
+  return null;
+};
+
+const mergeEfficacyWithFallback = (current: unknown, fallback: unknown): unknown => {
+  if (!fallback) return current ?? null;
+  if (!current) return fallback;
+
+  const currentEfficacy = current as {
+    verdict?: string | null;
+    overviewSummary?: string | null;
+    coreBenefits?: string[] | null;
+    ingredients?: unknown[] | null;
+    primaryActive?: unknown | null;
+    overallAssessment?: string | null;
+    marketingVsReality?: string | null;
+  };
+  const fallbackEfficacy = fallback as typeof currentEfficacy;
+
+  return {
+    ...fallbackEfficacy,
+    ...currentEfficacy,
+    verdict: pickNonEmptyText(currentEfficacy.verdict, fallbackEfficacy.verdict),
+    overviewSummary: pickNonEmptyText(currentEfficacy.overviewSummary, fallbackEfficacy.overviewSummary),
+    coreBenefits:
+      Array.isArray(currentEfficacy.coreBenefits) && currentEfficacy.coreBenefits.length > 0
+        ? currentEfficacy.coreBenefits
+        : Array.isArray(fallbackEfficacy.coreBenefits)
+          ? fallbackEfficacy.coreBenefits
+          : [],
+    ingredients:
+      Array.isArray(currentEfficacy.ingredients) && currentEfficacy.ingredients.length > 0
+        ? currentEfficacy.ingredients
+        : Array.isArray(fallbackEfficacy.ingredients)
+          ? fallbackEfficacy.ingredients
+          : [],
+    primaryActive: currentEfficacy.primaryActive ?? fallbackEfficacy.primaryActive ?? null,
+    overallAssessment: pickNonEmptyText(currentEfficacy.overallAssessment, fallbackEfficacy.overallAssessment),
+    marketingVsReality: pickNonEmptyText(currentEfficacy.marketingVsReality, fallbackEfficacy.marketingVsReality),
+  };
+};
+
+const mergeUsagePayloadWithFallback = (current: unknown, fallback: unknown): unknown => {
+  if (!fallback) return current ?? null;
+  if (!current) return fallback;
+
+  const currentPayload = current as {
+    usage?: {
+      summary?: string | null;
+      timing?: string | null;
+      frequency?: string | null;
+      withFood?: boolean | null;
+      interactions?: string[] | null;
+      dosage?: string | null;
+      bestFor?: string | null;
+    };
+    value?: unknown;
+    social?: unknown;
+  };
+  const fallbackPayload = fallback as typeof currentPayload;
+
+  const currentUsage = currentPayload.usage ?? {};
+  const fallbackUsage = fallbackPayload.usage ?? {};
+  const mergedUsage = {
+    ...fallbackUsage,
+    ...currentUsage,
+    summary: pickNonEmptyText(currentUsage.summary, fallbackUsage.summary),
+    timing: pickNonEmptyText(currentUsage.timing, fallbackUsage.timing),
+    frequency: pickNonEmptyText(currentUsage.frequency, fallbackUsage.frequency),
+    dosage: pickNonEmptyText(currentUsage.dosage, fallbackUsage.dosage),
+    bestFor: pickNonEmptyText(currentUsage.bestFor, fallbackUsage.bestFor),
+    withFood: currentUsage.withFood ?? fallbackUsage.withFood ?? null,
+    interactions:
+      Array.isArray(currentUsage.interactions) && currentUsage.interactions.length > 0
+        ? currentUsage.interactions
+        : Array.isArray(fallbackUsage.interactions)
+          ? fallbackUsage.interactions
+          : [],
+  };
+
+  const mergedValue = currentPayload.value ?? fallbackPayload.value ?? null;
+  const mergedSocial = currentPayload.social ?? fallbackPayload.social ?? null;
+
+  return {
+    ...fallbackPayload,
+    ...currentPayload,
+    usage: mergedUsage,
+    value: mergedValue,
+    social: mergedSocial,
+  };
+};
+
+const mergeSafetyWithFallback = (current: unknown, fallback: unknown): unknown => {
+  if (!fallback) return current ?? null;
+  if (!current) return fallback;
+
+  const currentSafety = current as {
+    verdict?: string | null;
+    recommendation?: string | null;
+    risks?: string[] | null;
+    redFlags?: string[] | null;
+  };
+  const fallbackSafety = fallback as typeof currentSafety;
+
+  return {
+    ...fallbackSafety,
+    ...currentSafety,
+    verdict: pickNonEmptyText(currentSafety.verdict, fallbackSafety.verdict),
+    recommendation: pickNonEmptyText(currentSafety.recommendation, fallbackSafety.recommendation),
+    risks:
+      Array.isArray(currentSafety.risks) && currentSafety.risks.length > 0
+        ? currentSafety.risks
+        : fallbackSafety.risks ?? [],
+    redFlags:
+      Array.isArray(currentSafety.redFlags) && currentSafety.redFlags.length > 0
+        ? currentSafety.redFlags
+        : fallbackSafety.redFlags ?? [],
+  };
+};
+
+const mergeLabelFallbacks = (
+  analysisPayload: SnapshotAnalysisPayload,
+  labelAnalysis: ReturnType<typeof buildLabelOnlyAnalysis>,
+): SnapshotAnalysisPayload => ({
+  ...analysisPayload,
+  efficacy: mergeEfficacyWithFallback(analysisPayload.efficacy ?? null, labelAnalysis.efficacy),
+  usagePayload: mergeUsagePayloadWithFallback(analysisPayload.usagePayload ?? null, labelAnalysis.usagePayload),
+  safety: mergeSafetyWithFallback(analysisPayload.safety ?? null, labelAnalysis.safety),
+});
+
 const hasLabelFacts = (snapshot: SupplementSnapshot): boolean => {
   const label = snapshot.label;
   if (label.actives.length > 0) return true;
@@ -624,6 +1226,34 @@ const hasLabelFacts = (snapshot: SupplementSnapshot): boolean => {
   if (label.proprietaryBlends.length > 0) return true;
   if (label.servingSize) return true;
   return false;
+};
+
+const buildLabelFactsFromSnapshot = (snapshot: SupplementSnapshot): LabelFacts | null => {
+  if (!hasLabelFacts(snapshot)) return null;
+  const source = snapshot.analysis?.labelExtraction?.source ?? 'manual';
+  return {
+    source,
+    brandName: snapshot.product.brand ?? null,
+    productName: snapshot.product.name ?? null,
+    servingSize: snapshot.label.servingSize ?? null,
+    servingsPerContainer: snapshot.label.servingsPerContainer ?? null,
+    actives: snapshot.label.actives.map((item) => ({
+      name: item.name,
+      amount: item.amount ?? null,
+      unit: item.amountUnitNormalized ?? item.amountUnit ?? null,
+    })),
+    inactive: snapshot.label.inactive.map((item) => item.name),
+    proprietaryBlends: snapshot.label.proprietaryBlends.map((blend) => ({
+      name: blend.name,
+      totalAmount: blend.totalAmount ?? null,
+      unit: blend.unit ?? null,
+      ingredients: blend.ingredients ?? null,
+    })),
+    purposes: [],
+    doses: [],
+    datasetVersion: snapshot.analysis?.labelExtraction?.datasetVersion ?? null,
+    extractedAt: snapshot.analysis?.labelExtraction?.fetchedAt ?? null,
+  };
 };
 
 const hasAiPayload = (analysisPayload?: SnapshotAnalysisPayload | null): boolean => {
@@ -1190,20 +1820,33 @@ const queueBarcodeAnalysisCompletion = (params: {
       return;
     }
 
+    const efficacyMerged = mergeEfficacyWithFallback(
+      efficacyResult,
+      params.analysisPayload.efficacy ?? null,
+    );
+    const safetyMerged = mergeSafetyWithFallback(
+      safetyResult,
+      params.analysisPayload.safety ?? null,
+    );
+    const usageMerged = mergeUsagePayloadWithFallback(
+      usageResult,
+      params.analysisPayload.usagePayload ?? null,
+    );
+
     const nextAnalysisPayload: SnapshotAnalysisPayload = {
       ...params.analysisPayload,
-      efficacy: efficacyResult,
-      safety: safetyResult,
-      usagePayload: usageResult,
+      efficacy: efficacyMerged,
+      safety: safetyMerged,
+      usagePayload: usageMerged,
     };
 
     const analysisSnapshot = buildBarcodeSnapshot({
       barcode: params.barcode,
       productInfo: nextAnalysisPayload.productInfo ?? null,
       sources: params.detailItems,
-      efficacy: efficacyResult,
-      safety: safetyResult,
-      usagePayload: usageResult,
+      efficacy: efficacyMerged,
+      safety: safetyMerged,
+      usagePayload: usageMerged,
     });
 
     const mergedReferences = mergeReferenceItems(
@@ -1415,6 +2058,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
   let catalogSnapshotForAi: SupplementSnapshot | null = null;
   let catalogAnalysisPayloadForAi: SnapshotAnalysisPayload | null = null;
   let catalogLabelExtractionForAi: LabelExtractionMeta | null = null;
+  let catalogLabelFactsForAi: LabelFacts | null = null;
 
   // Set SSE Headers
   res.setHeader("Content-Type", "text/event-stream");
@@ -1485,8 +2129,20 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     }, catalog?: CatalogResolved | null) => {
       console.log(`[Stream] Cache hit for barcode: ${barcode}`);
       const { snapshot, analysisPayload } = cached;
-      if (analysisPayload?.brandExtraction) {
-        sendSSE(res, "brand_extracted", analysisPayload.brandExtraction);
+      let workingAnalysisPayload = analysisPayload ?? null;
+      const labelFacts = buildLabelFactsFromSnapshot(snapshot);
+      if (labelFacts) {
+        const labelAnalysis = buildLabelOnlyAnalysis(labelFacts);
+        if (!workingAnalysisPayload) {
+          workingAnalysisPayload = labelAnalysis;
+        } else if (!hasAiPayload(workingAnalysisPayload)) {
+          workingAnalysisPayload = { ...workingAnalysisPayload, ...labelAnalysis };
+        } else {
+          workingAnalysisPayload = mergeLabelFallbacks(workingAnalysisPayload, labelAnalysis);
+        }
+      }
+      if (workingAnalysisPayload?.brandExtraction) {
+        sendSSE(res, "brand_extracted", workingAnalysisPayload.brandExtraction);
       }
 
       const pickField = (...values: (string | null | undefined)[]) => {
@@ -1501,13 +2157,13 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       const catalogCategory = catalog?.category ?? catalog?.categoryRaw ?? null;
 
       const productInfo = {
-        brand: pickField(catalog?.brand, analysisPayload?.productInfo?.brand, snapshot.product.brand),
-        name: pickField(catalog?.productName, analysisPayload?.productInfo?.name, snapshot.product.name),
-        category: pickField(catalogCategory, analysisPayload?.productInfo?.category, snapshot.product.category),
-        image: pickField(catalog?.imageUrl, analysisPayload?.productInfo?.image, snapshot.product.imageUrl),
+        brand: pickField(catalog?.brand, workingAnalysisPayload?.productInfo?.brand, snapshot.product.brand),
+        name: pickField(catalog?.productName, workingAnalysisPayload?.productInfo?.name, snapshot.product.name),
+        category: pickField(catalogCategory, workingAnalysisPayload?.productInfo?.category, snapshot.product.category),
+        image: pickField(catalog?.imageUrl, workingAnalysisPayload?.productInfo?.image, snapshot.product.imageUrl),
       };
 
-      const sources = analysisPayload?.sources ?? snapshot.references.items.map((ref) => ({
+      const sources = workingAnalysisPayload?.sources ?? snapshot.references.items.map((ref) => ({
         title: ref.title,
         link: ref.url,
         domain: extractDomain(ref.url),
@@ -1516,7 +2172,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
 
       sendSSE(res, "product_info", { productInfo, sources });
 
-      const analysisMeta = resolveAnalysisMeta({ snapshot, analysisPayload, catalog });
+      const analysisMeta = resolveAnalysisMeta({ snapshot, analysisPayload: workingAnalysisPayload, catalog });
       const snapshotToSend: SupplementSnapshot = {
         ...snapshot,
         product: {
@@ -1578,14 +2234,14 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         }
         : null;
 
-      if (analysisPayload?.efficacy || fallbackEfficacy) {
-        sendSSE(res, "result_efficacy", analysisPayload?.efficacy ?? fallbackEfficacy);
+      if (workingAnalysisPayload?.efficacy || fallbackEfficacy) {
+        sendSSE(res, "result_efficacy", workingAnalysisPayload?.efficacy ?? fallbackEfficacy);
       }
-      if (analysisPayload?.safety || fallbackSafety) {
-        sendSSE(res, "result_safety", analysisPayload?.safety ?? fallbackSafety);
+      if (workingAnalysisPayload?.safety || fallbackSafety) {
+        sendSSE(res, "result_safety", workingAnalysisPayload?.safety ?? fallbackSafety);
       }
-      if (analysisPayload?.usagePayload || fallbackUsagePayload) {
-        sendSSE(res, "result_usage", analysisPayload?.usagePayload ?? fallbackUsagePayload);
+      if (workingAnalysisPayload?.usagePayload || fallbackUsagePayload) {
+        sendSSE(res, "result_usage", workingAnalysisPayload?.usagePayload ?? fallbackUsagePayload);
       }
 
       sendSSE(res, "snapshot", snapshotToSend);
@@ -1805,6 +2461,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       }
       if (dsldFacts) {
         workingSnapshot = applyDsldFactsToSnapshot(workingSnapshot, dsldFacts);
+        catalogLabelFactsForAi = toLabelFactsFromDsld(dsldFacts);
       }
 
       const labelExtraction: LabelExtractionMeta | null = dsldFacts
@@ -1815,12 +2472,16 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         }
         : null;
 
-      if (dsldFacts && !hasAiPayload(workingAnalysisPayload)) {
-        const labelAnalysis = buildLabelOnlyAnalysis(dsldFacts);
-        workingAnalysisPayload = {
-          ...workingAnalysisPayload,
-          ...labelAnalysis,
-        };
+      if (dsldFacts) {
+        const labelAnalysis = buildLabelOnlyAnalysis(toLabelFactsFromDsld(dsldFacts));
+        if (!hasAiPayload(workingAnalysisPayload)) {
+          workingAnalysisPayload = {
+            ...workingAnalysisPayload,
+            ...labelAnalysis,
+          };
+        } else {
+          workingAnalysisPayload = mergeLabelFallbacks(workingAnalysisPayload, labelAnalysis);
+        }
       }
 
       const analysisStatus = buildAnalysisStatus({
@@ -2135,6 +2796,85 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       source: extraction.source,
     });
 
+    if (!catalogSnapshotForAi && (extraction.brand || extraction.product)) {
+      const lnhpdFacts = await fetchLnhpdFactsByName({
+        brand: extraction.brand,
+        product: extraction.product,
+      });
+      if (lnhpdFacts) {
+        const lnhpdLabelFacts = toLabelFactsFromLnhpd(lnhpdFacts);
+        const labelExtraction: LabelExtractionMeta = {
+          source: "lnhpd",
+          fetchedAt: lnhpdFacts.extractedAt ?? nowIso(),
+          datasetVersion: lnhpdFacts.datasetVersion ?? null,
+        };
+        const lnhpdProductInfo = {
+          brand: lnhpdFacts.brandName ?? extraction.brand ?? null,
+          name: lnhpdFacts.productName ?? extraction.product ?? initialItems[0]?.title ?? null,
+          category: extraction.category ?? null,
+          image: initialItems[0]?.image ?? null,
+        };
+        const lnhpdSources = initialItems.map((item) => ({
+          title: item.title,
+          link: item.link,
+          domain: extractDomain(item.link),
+          isHighQuality: isHighQualityDomain(item.link),
+        }));
+        const labelAnalysis = buildLabelOnlyAnalysis(lnhpdLabelFacts);
+        const lnhpdAnalysisPayload: SnapshotAnalysisPayload = {
+          ...labelAnalysis,
+          brandExtraction: {
+            brand: extraction.brand,
+            product: extraction.product,
+            category: extraction.category,
+            confidence: extraction.confidence,
+            source: extraction.source,
+          },
+          productInfo: lnhpdProductInfo,
+          sources: lnhpdSources,
+        };
+
+        let lnhpdSnapshot = buildBarcodeSnapshot({
+          barcode,
+          productInfo: lnhpdProductInfo,
+          sources: initialItems,
+          efficacy: lnhpdAnalysisPayload.efficacy ?? null,
+          safety: lnhpdAnalysisPayload.safety ?? null,
+          usagePayload: lnhpdAnalysisPayload.usagePayload ?? null,
+        });
+        lnhpdSnapshot = applyLnhpdFactsToSnapshot(lnhpdSnapshot, lnhpdFacts);
+        const analysisStatus = buildAnalysisStatus({
+          hasLabelFacts: hasLabelFacts(lnhpdSnapshot),
+          hasAi: hasAiPayload(lnhpdAnalysisPayload),
+          dsldLabelId: null,
+        });
+        const analysisMeta = buildAnalysisMeta({ status: analysisStatus, labelExtraction });
+        lnhpdAnalysisPayload.analysis = analysisMeta;
+        lnhpdSnapshot.status = "resolved";
+        lnhpdSnapshot.analysis = analysisMeta;
+        lnhpdSnapshot.updatedAt = nowIso();
+
+        sendSSE(res, "result_efficacy", lnhpdAnalysisPayload.efficacy);
+        sendSSE(res, "result_safety", lnhpdAnalysisPayload.safety);
+        sendSSE(res, "result_usage", lnhpdAnalysisPayload.usagePayload);
+        sendSSE(res, "snapshot", lnhpdSnapshot);
+
+        const expiresAt = computeExpiresAt(analysisStatus);
+        void storeSnapshotCache({
+          key: cacheKey,
+          source: "barcode",
+          snapshot: lnhpdSnapshot,
+          analysisPayload: lnhpdAnalysisPayload,
+          expiresAt,
+        });
+
+        catalogSnapshotForAi = lnhpdSnapshot;
+        catalogAnalysisPayloadForAi = lnhpdAnalysisPayload;
+        catalogLabelExtractionForAi = labelExtraction;
+        catalogLabelFactsForAi = lnhpdLabelFacts;
+      }
+    }
+
     const catalogBrand = catalogSnapshotForAi?.product.brand ?? null;
     const catalogProduct = catalogSnapshotForAi?.product.name ?? null;
     const catalogCategory = catalogSnapshotForAi?.product.category ?? null;
@@ -2253,11 +2993,15 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     const efficacyResult = bundle?.efficacy ?? null;
     const safetyResult = bundle?.safety ?? null;
     const usageResult = bundle?.usagePayload ?? null;
+    const labelAnalysisForAi = catalogLabelFactsForAi ? buildLabelOnlyAnalysis(catalogLabelFactsForAi) : null;
+    const efficacyToSend = mergeEfficacyWithFallback(efficacyResult, labelAnalysisForAi?.efficacy);
+    const safetyToSend = mergeSafetyWithFallback(safetyResult, labelAnalysisForAi?.safety);
+    const usageToSend = mergeUsagePayloadWithFallback(usageResult, labelAnalysisForAi?.usagePayload);
 
     if (!requestSignal.aborted && !res.writableEnded) {
-      if (efficacyResult) sendSSE(res, "result_efficacy", efficacyResult);
-      if (safetyResult) sendSSE(res, "result_safety", safetyResult);
-      if (usageResult) sendSSE(res, "result_usage", usageResult);
+      if (efficacyToSend) sendSSE(res, "result_efficacy", efficacyToSend);
+      if (safetyToSend) sendSSE(res, "result_safety", safetyToSend);
+      if (usageToSend) sendSSE(res, "result_usage", usageToSend);
     }
 
     const resolvedImage = catalogImage ?? detailItems[0]?.image ?? initialItems[0]?.image ?? null;
@@ -2305,18 +3049,18 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         image: resolvedImage,
       },
       sources: combinedSources,
-      efficacy: efficacyResult,
-      safety: safetyResult,
-      usagePayload: usageResult,
+      efficacy: efficacyToSend,
+      safety: safetyToSend,
+      usagePayload: usageToSend,
     };
 
     const snapshotCandidate = buildBarcodeSnapshot({
       barcode,
       productInfo: analysisPayloadDraft.productInfo ?? null,
       sources: detailItems,
-      efficacy: efficacyResult ?? null,
-      safety: safetyResult ?? null,
-      usagePayload: usageResult ?? null,
+      efficacy: efficacyToSend ?? null,
+      safety: safetyToSend ?? null,
+      usagePayload: usageToSend ?? null,
     });
 
     const pickField = (...values: (string | null | undefined)[]) => {
@@ -2360,13 +3104,17 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       },
     });
 
-    const analysisPayload: SnapshotAnalysisPayload = {
+    let analysisPayload: SnapshotAnalysisPayload = {
       ...catalogAnalysisPayloadForAi,
       ...analysisPayloadDraft,
-      efficacy: efficacyResult ?? catalogAnalysisPayloadForAi?.efficacy ?? null,
-      safety: safetyResult ?? catalogAnalysisPayloadForAi?.safety ?? null,
-      usagePayload: usageResult ?? catalogAnalysisPayloadForAi?.usagePayload ?? null,
+      efficacy: efficacyToSend ?? catalogAnalysisPayloadForAi?.efficacy ?? null,
+      safety: safetyToSend ?? catalogAnalysisPayloadForAi?.safety ?? null,
+      usagePayload: usageToSend ?? catalogAnalysisPayloadForAi?.usagePayload ?? null,
     };
+    if (catalogLabelFactsForAi) {
+      const labelAnalysis = labelAnalysisForAi ?? buildLabelOnlyAnalysis(catalogLabelFactsForAi);
+      analysisPayload = mergeLabelFallbacks(analysisPayload, labelAnalysis);
+    }
 
     const analysisStatus = buildAnalysisStatus({
       hasLabelFacts: hasLabelFacts(snapshot),

@@ -1551,7 +1551,9 @@ const styles = StyleSheet.create({
   daysRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 8,
+    gap: 4,
+    marginHorizontal: -PAGE_X,
+    paddingHorizontal: 4,
   },
   dayItemBase: {
     width: 48,
@@ -1563,6 +1565,8 @@ const styles = StyleSheet.create({
     gap: 6,
     overflow: 'hidden',
     position: 'relative',
+    flexShrink: 1,
+    minWidth: 40,
   },
   dayItemInactive: {
     backgroundColor: 'rgba(255,255,255,0.50)',

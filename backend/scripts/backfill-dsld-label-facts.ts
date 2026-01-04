@@ -2,6 +2,8 @@ import { supabase } from '../src/supabase.js';
 
 type MetaRow = {
   dsld_label_id: number | string | null;
+  brand: string | null;
+  product_name: string | null;
   serving_size_raw: string | null;
   servings_per_container: number | string | null;
   active_ingredients_summary: string | null;
@@ -18,6 +20,8 @@ type FactActive = {
 };
 
 type FactsJson = {
+  brandName: string | null;
+  productName: string | null;
   servingSize: string | null;
   servingsPerContainer: number | null;
   actives: FactActive[];
@@ -36,6 +40,8 @@ type FactsJson = {
 type FactsRow = {
   dsld_label_id: number;
   facts_json: FactsJson;
+  brand_name: string | null;
+  product_name: string | null;
   dataset_version: string | null;
   extracted_at: string;
 };
@@ -131,6 +137,8 @@ const buildFactsJson = (row: MetaRow): FactsJson => {
   const servingsPerContainer = parseNumber(row.servings_per_container);
 
   return {
+    brandName: row.brand ?? null,
+    productName: row.product_name ?? null,
     servingSize: row.serving_size_raw ?? null,
     servingsPerContainer,
     actives,
@@ -162,7 +170,7 @@ const main = async () => {
     let query = supabase
       .from('dsld_labels_meta')
       .select(
-        'dsld_label_id,serving_size_raw,servings_per_container,active_ingredients_summary,inactive_ingredients,dsld_product_version_code,dsld_pdf,dsld_thumbnail',
+        'dsld_label_id,brand,product_name,serving_size_raw,servings_per_container,active_ingredients_summary,inactive_ingredients,dsld_product_version_code,dsld_pdf,dsld_thumbnail',
       )
       .order('dsld_label_id', { ascending: true });
 
@@ -186,6 +194,8 @@ const main = async () => {
         return {
           dsld_label_id: labelId,
           facts_json: buildFactsJson(row),
+          brand_name: row.brand ?? null,
+          product_name: row.product_name ?? null,
           dataset_version: row.dsld_product_version_code ?? null,
           extracted_at: extractedAt,
         };

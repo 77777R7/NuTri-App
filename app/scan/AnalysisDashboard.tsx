@@ -1147,12 +1147,40 @@ export const AnalysisDashboard: React.FC<{
         [efficacy.ingredients]
     );
 
-    const bestFor = usage.bestFor || usage.target || usage.who || '';
+    const formatBestForText = (value: string) => {
+        const normalized = normalizeText(value);
+        if (!normalized) return '';
+        if (/\d/.test(normalized)) return normalized;
+        const lower = normalized.toLowerCase();
+        if (
+            lower.startsWith('support') ||
+            lower.startsWith('supports') ||
+            lower.startsWith('help') ||
+            lower.startsWith('helps') ||
+            lower.startsWith('promote') ||
+            lower.startsWith('promotes') ||
+            lower.startsWith('for ')
+        ) {
+            return normalized;
+        }
+        return `Supports ${normalized}`;
+    };
+
+    const bestForFallback = (() => {
+        const benefitWithoutNumbers = coreBenefits.find((item) => item && !/\d/.test(item));
+        if (benefitWithoutNumbers) return formatBestForText(benefitWithoutNumbers);
+        if (productInfo.category) return normalizeText(productInfo.category);
+        const fallbackBenefit = coreBenefits[0];
+        return fallbackBenefit ? formatBestForText(fallbackBenefit) : '';
+    })();
+
+    const bestFor = usage.bestFor || usage.target || usage.who || bestForFallback;
     const routineLine = usage.dosage || usage.frequency || usage.timing || '';
 
     const warningLine =
         (Array.isArray(safety.redFlags) && safety.redFlags[0]) ||
         (Array.isArray(safety.risks) && safety.risks[0]) ||
+        (typeof safety.verdict === 'string' ? safety.verdict : '') ||
         '';
 
     const evidenceLevelText = (() => {
@@ -1386,14 +1414,19 @@ export const AnalysisDashboard: React.FC<{
         if (warningLine.isPlaceholder) {
             missingReasons.add('MISSING_SAFETY_WARNING');
         }
-        const tipLine = makePlaceholderLine(t.analysisPlaceholderSafetyTip, 'MISSING_SAFETY_TIP');
-        missingReasons.add('MISSING_SAFETY_TIP');
+        const tipText = normalizeText(typeof safety.recommendation === 'string' ? safety.recommendation : '');
+        const tipLine = tipText
+            ? { text: tipText }
+            : makePlaceholderLine(t.analysisPlaceholderSafetyTip, 'MISSING_SAFETY_TIP');
+        if (tipLine.isPlaceholder) {
+            missingReasons.add('MISSING_SAFETY_TIP');
+        }
 
         return {
             warning: warningLine,
             tip: tipLine,
             dataStatus: {
-                status: computeCoverStatus([!warningLine.isPlaceholder, false]),
+                status: computeCoverStatus([!warningLine.isPlaceholder, !tipLine.isPlaceholder]),
                 missingReasons: Array.from(missingReasons),
                 sources: sourceRefs,
             },
