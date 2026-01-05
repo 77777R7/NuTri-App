@@ -475,6 +475,171 @@ const extractLnhpdIngredients = (payload: unknown, options: {
   return Array.from(map.values());
 };
 
+const isNumericText = (value: string): boolean => /^[0-9\s.\-+/]+$/.test(value.trim());
+
+const formatDoseNumber = (value: number): string => {
+  const rounded = Math.round(value * 100) / 100;
+  return `${rounded}`;
+};
+
+const formatDoseRange = (min: number | null, max: number | null, unit: string | null): string | null => {
+  const minValue = min != null && Number.isFinite(min) && min > 0 ? min : null;
+  const maxValue = max != null && Number.isFinite(max) && max > 0 ? max : null;
+  if (minValue == null && maxValue == null) return null;
+  const suffix = unit ? ` ${unit}` : '';
+  if (minValue != null && maxValue != null) {
+    if (Math.abs(minValue - maxValue) < 0.0001) {
+      return `${formatDoseNumber(minValue)}${suffix}`;
+    }
+    return `${formatDoseNumber(minValue)}-${formatDoseNumber(maxValue)}${suffix}`;
+  }
+  const value = minValue ?? maxValue!;
+  return `${formatDoseNumber(value)}${suffix}`;
+};
+
+type FrequencyUnitStyle = 'adverb' | 'per' | 'raw';
+
+const normalizeFrequencyUnit = (
+  unitRaw?: string | null,
+): { unit: string; style: FrequencyUnitStyle } | null => {
+  if (!unitRaw) return null;
+  const trimmed = unitRaw.trim();
+  if (!trimmed) return null;
+  const lower = trimmed.toLowerCase();
+  if (lower.includes('tba')) return null;
+  if (lower.includes('daily')) return { unit: 'daily', style: 'adverb' };
+  if (lower.includes('weekly')) return { unit: 'weekly', style: 'adverb' };
+  if (lower.includes('monthly')) return { unit: 'monthly', style: 'adverb' };
+  if (lower.includes('hourly')) return { unit: 'hourly', style: 'adverb' };
+  if (lower.startsWith('per ')) {
+    const unit = trimmed.slice(4).trim();
+    return unit ? { unit, style: 'per' } : null;
+  }
+  if (lower.includes('day')) return { unit: 'day', style: 'per' };
+  if (lower.includes('week')) return { unit: 'week', style: 'per' };
+  if (lower.includes('month')) return { unit: 'month', style: 'per' };
+  if (lower.includes('hour')) return { unit: 'hour', style: 'per' };
+  if (lower.includes('minute')) return { unit: 'minute', style: 'per' };
+  return { unit: trimmed, style: 'raw' };
+};
+
+const formatFrequencyText = (
+  min: number | null,
+  max: number | null,
+  value: number | null,
+  unitRaw?: string | null,
+): string | null => {
+  const unit = normalizeFrequencyUnit(unitRaw);
+  const count = formatDoseRange(min, max, null) ?? formatDoseRange(value, null, null);
+  if (!unit && !count) return null;
+  if (!unit) return count;
+  if (!count) {
+    if (unit.style === 'adverb') return unit.unit;
+    if (unit.style === 'per') return `per ${unit.unit}`;
+    return unit.unit;
+  }
+  const isSingle = count === '1';
+  if (unit.style === 'adverb') {
+    return isSingle ? `once ${unit.unit}` : `${count} times ${unit.unit}`;
+  }
+  if (unit.style === 'per') {
+    return isSingle ? `once per ${unit.unit}` : `${count} times per ${unit.unit}`;
+  }
+  return `${count} ${unit.unit}`;
+};
+
+const normalizeAgeUnitLabel = (unitRaw?: string | null): string | null => {
+  if (!unitRaw) return null;
+  const trimmed = unitRaw.trim();
+  if (!trimmed) return null;
+  const lower = trimmed.toLowerCase();
+  if (lower.includes('year')) return 'years';
+  if (lower.includes('month')) return 'months';
+  if (lower.includes('week')) return 'weeks';
+  if (lower.includes('day')) return 'days';
+  return trimmed;
+};
+
+const pickDoseUnitField = (record: Record<string, unknown>, keys: string[]): string | null => {
+  const raw = pickStringField(record, keys);
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  const lower = trimmed.toLowerCase();
+  if ((lower.includes('cfu') || lower.includes('ufc')) && (lower.includes('billion') || lower.includes('million') || lower.includes('trillion'))) {
+    return trimmed;
+  }
+  return normalizeUnitLabel(trimmed) ?? trimmed;
+};
+
+const extractLnhpdDoses = (payload: unknown): string[] => {
+  const items = Array.isArray(payload) ? payload : payload ? [payload] : [];
+  if (items.length === 0) return [];
+  const seen = new Set<string>();
+  const output: string[] = [];
+  items.forEach((item) => {
+    let doseText: string | null = null;
+    if (typeof item === 'string') {
+      const trimmed = item.trim();
+      if (trimmed) doseText = trimmed;
+    } else if (item && typeof item === 'object') {
+      const record = item as Record<string, unknown>;
+      const textCandidate = pickStringField(record, LNHPD_DOSE_TEXT_KEYS);
+      const min = pickNumberField(record, LNHPD_DOSE_RANGE_MIN_KEYS);
+      const max = pickNumberField(record, LNHPD_DOSE_RANGE_MAX_KEYS);
+      const amount = pickNumberField(record, LNHPD_DOSE_AMOUNT_KEYS);
+      const unit = pickDoseUnitField(record, LNHPD_DOSE_UNIT_KEYS);
+      const quantityText = formatDoseRange(min, max, unit) ?? formatDoseRange(amount, null, unit);
+
+      const freqMin = pickNumberField(record, LNHPD_DOSE_FREQUENCY_MIN_KEYS);
+      const freqMax = pickNumberField(record, LNHPD_DOSE_FREQUENCY_MAX_KEYS);
+      const freqValue = pickNumberField(record, LNHPD_DOSE_FREQUENCY_KEYS);
+      const freqUnit = pickStringField(record, LNHPD_DOSE_FREQUENCY_UNIT_KEYS);
+      const frequencyText = formatFrequencyText(freqMin, freqMax, freqValue, freqUnit);
+
+      const population = pickStringField(record, LNHPD_DOSE_POPULATION_KEYS);
+      const ageMin = pickNumberField(record, LNHPD_DOSE_AGE_MIN_KEYS);
+      const ageMax = pickNumberField(record, LNHPD_DOSE_AGE_MAX_KEYS);
+      const ageValue = pickNumberField(record, LNHPD_DOSE_AGE_KEYS);
+      const ageUnit = normalizeAgeUnitLabel(pickStringField(record, LNHPD_DOSE_AGE_UNIT_KEYS));
+      const ageText =
+        formatDoseRange(ageMin, ageMax, ageUnit) ?? formatDoseRange(ageValue, null, ageUnit);
+      const populationText = population
+        ? ageText
+          ? `${population} (age ${ageText})`
+          : population
+        : ageText
+          ? `Age ${ageText}`
+          : null;
+
+      const detailText = [quantityText, frequencyText].filter(Boolean).join(', ');
+      const combinedText =
+        populationText
+          ? detailText
+            ? `${populationText}: ${detailText}`
+            : populationText
+          : detailText || null;
+
+      const hasContext = Boolean(populationText || frequencyText);
+      if (combinedText && (hasContext || !textCandidate)) {
+        doseText = combinedText;
+      } else {
+        doseText = textCandidate ?? combinedText;
+      }
+
+      if (!doseText && textCandidate && !isNumericText(textCandidate)) {
+        doseText = textCandidate;
+      }
+    }
+    if (!doseText) return;
+    const normalized = normalizeMatchText(doseText);
+    if (!normalized || seen.has(normalized)) return;
+    seen.add(normalized);
+    output.push(doseText);
+  });
+  return output;
+};
+
 const toLabelFactsFromDsld = (facts: DsldFacts): LabelFacts => ({
   source: 'dsld',
   brandName: facts.brandName ?? null,
@@ -723,7 +888,69 @@ const LNHPD_UNIT_KEYS = [
 
 const LNHPD_PURPOSE_KEYS = ['purpose', 'purpose_name', 'purpose_name_en', 'purpose_text', 'name'];
 const LNHPD_ROUTE_KEYS = ['route', 'route_name', 'route_name_en', 'name'];
-const LNHPD_DOSE_KEYS = ['dose', 'dose_text', 'dosage', 'dose_description', 'quantity', 'quantity_text'];
+const LNHPD_DOSE_TEXT_KEYS = ['dose_text', 'dosage', 'dose_description', 'dose', 'quantity_text'];
+const LNHPD_DOSE_AMOUNT_KEYS = [
+  'quantity',
+  'dose',
+  'dosage',
+  'quantity_value',
+  'dose_value',
+  'quantity_dose',
+];
+const LNHPD_DOSE_RANGE_MIN_KEYS = [
+  'quantity_minimum',
+  'dose_minimum',
+  'dosage_minimum',
+  'quantity_min',
+  'dose_min',
+  'quantity_dose_minimum',
+];
+const LNHPD_DOSE_RANGE_MAX_KEYS = [
+  'quantity_maximum',
+  'dose_maximum',
+  'dosage_maximum',
+  'quantity_max',
+  'dose_max',
+  'quantity_dose_maximum',
+];
+const LNHPD_DOSE_UNIT_KEYS = [
+  'quantity_unit_of_measure',
+  'dose_unit_of_measure',
+  'dosage_unit',
+  'unit',
+  'unit_of_measure',
+  'quantity_unit',
+  'uom_type_desc_quantity_dose',
+];
+const LNHPD_DOSE_FREQUENCY_KEYS = ['frequency', 'frequency_value'];
+const LNHPD_DOSE_FREQUENCY_MIN_KEYS = ['frequency_minimum', 'frequency_min'];
+const LNHPD_DOSE_FREQUENCY_MAX_KEYS = ['frequency_maximum', 'frequency_max'];
+const LNHPD_DOSE_FREQUENCY_UNIT_KEYS = ['uom_type_desc_frequency', 'frequency_unit', 'frequency_unit_of_measure'];
+const LNHPD_DOSE_POPULATION_KEYS = ['population_type_desc', 'population_type', 'population_desc'];
+const LNHPD_DOSE_AGE_MIN_KEYS = ['age_minimum', 'age_min'];
+const LNHPD_DOSE_AGE_MAX_KEYS = ['age_maximum', 'age_max'];
+const LNHPD_DOSE_AGE_KEYS = ['age'];
+const LNHPD_DOSE_AGE_UNIT_KEYS = ['uom_type_desc_age', 'age_unit', 'age_unit_of_measure'];
+const NPN_PATTERN = /\bNPN\b[\s#:\-]*([0-9]{8})\b/i;
+const NPN_COMPACT_PATTERN = /\bNPN([0-9]{8})\b/i;
+
+const extractNpnFromText = (value?: string | null): string | null => {
+  if (!value) return null;
+  const match = value.match(NPN_PATTERN);
+  if (match?.[1]) return match[1];
+  const compact = value.match(NPN_COMPACT_PATTERN);
+  return compact?.[1] ?? null;
+};
+
+const extractNpnFromItems = (items: SearchItem[]): string | null => {
+  for (const item of items) {
+    const fromSnippet = extractNpnFromText(item.snippet);
+    if (fromSnippet) return fromSnippet;
+    const fromTitle = extractNpnFromText(item.title);
+    if (fromTitle) return fromTitle;
+  }
+  return null;
+};
 
 const parseBoolean = (value: unknown): boolean | null => {
   if (typeof value === 'boolean') return value;
@@ -758,7 +985,7 @@ const buildLnhpdFactsFromRecord = (record: LnhpdFactsRecord): LnhpdFacts | null 
   const inactive = extractTextList(factsJson.nonMedicinalIngredients, LNHPD_NON_MEDICINAL_NAME_KEYS);
   const purposes = extractTextList(factsJson.purposes, LNHPD_PURPOSE_KEYS);
   const routes = extractTextList(factsJson.routes, LNHPD_ROUTE_KEYS);
-  const doses = extractTextList(factsJson.doses, LNHPD_DOSE_KEYS);
+  const doses = extractLnhpdDoses(factsJson.doses);
   const isOnMarket = record.is_on_market ?? parseBoolean(factsJson.isOnMarket);
 
   return {
@@ -777,6 +1004,32 @@ const buildLnhpdFactsFromRecord = (record: LnhpdFactsRecord): LnhpdFacts | null 
     datasetVersion: record.dataset_version ?? null,
     extractedAt: record.extracted_at ?? null,
   };
+};
+
+const fetchLnhpdFactsByNpn = async (npn?: string | null): Promise<LnhpdFacts | null> => {
+  const normalized = npn?.trim() ?? '';
+  if (!normalized) return null;
+
+  const runQuery = async (table: string) => {
+    let query = supabase
+      .from(table)
+      .select('lnhpd_id,facts_json,dataset_version,extracted_at,brand_name,product_name,npn,is_on_market')
+      .eq('npn', normalized)
+      .limit(1);
+
+    if (table === 'lnhpd_facts') {
+      query = query.eq('is_on_market', true);
+    }
+
+    const { data, error } = await query;
+    if (error || !data || data.length === 0) return null;
+    return data[0] as LnhpdFactsRecord;
+  };
+
+  const record = await runQuery('lnhpd_facts_complete') ?? await runQuery('lnhpd_facts');
+  if (!record) return null;
+
+  return buildLnhpdFactsFromRecord(record);
 };
 
 const fetchLnhpdFactsByName = async (params: {
@@ -2796,11 +3049,20 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       source: extraction.source,
     });
 
-    if (!catalogSnapshotForAi && (extraction.brand || extraction.product)) {
-      const lnhpdFacts = await fetchLnhpdFactsByName({
-        brand: extraction.brand,
-        product: extraction.product,
-      });
+    if (!catalogSnapshotForAi) {
+      const npnCandidate = extractNpnFromItems(initialItems);
+      let lnhpdFacts: LnhpdFacts | null = null;
+
+      if (npnCandidate) {
+        lnhpdFacts = await fetchLnhpdFactsByNpn(npnCandidate);
+      }
+      if (!lnhpdFacts && (extraction.brand || extraction.product)) {
+        lnhpdFacts = await fetchLnhpdFactsByName({
+          brand: extraction.brand,
+          product: extraction.product,
+        });
+      }
+
       if (lnhpdFacts) {
         const lnhpdLabelFacts = toLabelFactsFromLnhpd(lnhpdFacts);
         const labelExtraction: LabelExtractionMeta = {
