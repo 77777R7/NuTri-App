@@ -165,6 +165,7 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
         status: 'idle',
         error: null,
     });
+    const [serverSnapshot, setServerSnapshot] = useState<SupplementSnapshot | null>(null);
 
     const eventSourceRef = useRef<RNEventSource | null>(null);
 
@@ -172,6 +173,7 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
         if (!barcode) return;
 
         setState(prev => ({ ...prev, status: 'loading', error: null }));
+        setServerSnapshot(null);
 
         const API_URL = Config.searchApiBaseUrl.replace(/\/$/, '');
         let isActive = true;
@@ -278,7 +280,7 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
                             version: snapshot.analysis.version ?? null,
                             labelExtraction: snapshot.analysis.labelExtraction ?? null,
                         }
-                        : null;
+                            : null;
                     setState(prev => ({
                         ...prev,
                         productInfo: {
@@ -295,6 +297,7 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
                             })),
                         analysisMeta: analysisMeta ?? prev.analysisMeta,
                     }));
+                    setServerSnapshot(snapshot);
                 } catch (e) {
                     console.error('[SSE] Failed to parse snapshot:', e);
                 }
@@ -341,8 +344,8 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
     }, [barcode]);
 
     const snapshot = useMemo(
-        () => buildBarcodeSnapshot({ barcode, analysis: state }),
-        [barcode, state],
+        () => serverSnapshot ?? buildBarcodeSnapshot({ barcode, analysis: state }),
+        [barcode, serverSnapshot, state],
     );
 
     return { ...state, snapshot };

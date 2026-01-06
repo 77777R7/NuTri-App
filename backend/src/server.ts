@@ -14,6 +14,7 @@ import { extractBrandProduct, extractBrandWithAI, type BrandExtractionResult } f
 import { buildCombinedContext, fetchAnalysisBundle, prepareContextSources } from "./deepseek.js";
 import { analyzeLabelDraft, analyzeLabelDraftWithDiagnostics, formatForDeepSeek, needsConfirmation, validateIngredient, type LabelAnalysisDiagnostics, type LabelDraft } from "./labelAnalysis.js";
 import { getCachedResult, hasCompletedAnalysis, setCachedResult, updateCachedAnalysis } from "./ocrCache.js";
+import { upsertProductIngredientsFromDraft, upsertProductIngredientsFromLabelFacts } from "./productIngredients.js";
 import {
   BulkheadTimeoutError,
   CircuitBreaker,
@@ -30,6 +31,7 @@ import {
 } from "./resilience.js";
 import type { RetryOptions } from "./resilience.js";
 import { constructFallbackQuery, extractDomain, isHighQualityDomain, scoreSearchItem, scoreSearchQuality } from "./searchQuality.js";
+import { computeScoreBundleV4, V4_SCORE_VERSION } from "./scoring/v4ScoreEngine.js";
 import { buildBarcodeSnapshot, buildLabelSnapshot, validateSnapshotOrFallback, type SnapshotAnalysisPayload } from "./snapshot.js";
 import { getSnapshotCache, storeSnapshotCache } from "./snapshotCache.js";
 import type { SupplementSnapshot } from "./schemas/supplementSnapshot.js";
@@ -42,6 +44,11 @@ import type {
   RatingScore,
   SearchItem,
   SearchResponse,
+  ScoreBundleResponse,
+  ScoreBundleV4,
+  ScoreGoalFit,
+  ScoreHighlight,
+  ScoreFlag,
 } from "./types.js";
 import { callVisionOcr } from "./visionOcr.js";
 import { getMetricsSnapshot, incrementMetric, startMetricsFlush } from "./metrics.js";
@@ -2212,6 +2219,68 @@ const enrichStreamBodySchema = z
   })
   .passthrough();
 
+const scoreSourceSchema = z.enum(["dsld", "lnhpd", "ocr", "manual"]);
+
+const coerceScoreGoalFits = (value: unknown): ScoreGoalFit[] => {
+  if (!Array.isArray(value)) return [];
+  const output: ScoreGoalFit[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object") continue;
+    const goal = (item as { goal?: unknown }).goal;
+    const score = parseNumber((item as { score?: unknown }).score);
+    if (typeof goal !== "string" || score == null) continue;
+    const label = (item as { label?: unknown }).label;
+    output.push({
+      goal,
+      score,
+      label: typeof label === "string" ? label : undefined,
+    });
+  }
+  return output;
+};
+
+const coerceScoreFlags = (value: unknown): ScoreFlag[] => {
+  if (!Array.isArray(value)) return [];
+  const output: ScoreFlag[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object") continue;
+    const code = (item as { code?: unknown }).code;
+    const message = (item as { message?: unknown }).message;
+    if (typeof code !== "string" || typeof message !== "string") continue;
+    const severity = (item as { severity?: unknown }).severity;
+    output.push({
+      code,
+      message,
+      severity:
+        severity === "info" || severity === "warning" || severity === "risk"
+          ? severity
+          : undefined,
+    });
+  }
+  return output;
+};
+
+const coerceScoreHighlights = (value: unknown): ScoreHighlight[] => {
+  if (!Array.isArray(value)) return [];
+  const output: ScoreHighlight[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object") continue;
+    const message = (item as { message?: unknown }).message;
+    if (typeof message !== "string") continue;
+    const code = (item as { code?: unknown }).code;
+    output.push({
+      message,
+      code: typeof code === "string" ? code : undefined,
+    });
+  }
+  return output;
+};
+
+const coerceScoreExplain = (value: unknown): Record<string, unknown> | null => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+};
+
 // ============================================================================
 // ENDPOINTS
 // ============================================================================
@@ -2292,6 +2361,158 @@ app.get("/api/search-by-barcode", async (req: Request, res: Response) => {
     console.error("/api/search-by-barcode unexpected error", error);
     const detail =
       error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+    return res.status(500).json({ error: "unexpected_error", detail } satisfies ErrorResponse);
+  }
+});
+
+/**
+ * v4 score bundle (cached)
+ */
+app.get("/api/score/v4/:source/:id", verifySupabaseToken, async (req: Request, res: Response) => {
+  const sourceParsed = scoreSourceSchema.safeParse(req.params.source);
+  const sourceId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+
+  if (!sourceParsed.success || !sourceId) {
+    return res
+      .status(400)
+      .json({ error: "invalid_request", detail: "Invalid score source or id" } satisfies ErrorResponse);
+  }
+
+  const source = sourceParsed.data;
+
+  try {
+    const selectScoreColumns =
+      "source,source_id,canonical_source_id,score_version,overall_score,effectiveness_score,safety_score,integrity_score,confidence,best_fit_goals,flags_json,highlights_json,explain_json,inputs_hash,computed_at";
+    const fetchScoreRow = async () => {
+      const { data } = await supabase
+        .from("product_scores")
+        .select(selectScoreColumns)
+        .eq("source", source)
+        .eq("source_id", sourceId)
+        .maybeSingle();
+      if (data) return data;
+      const { data: canonical } = await supabase
+        .from("product_scores")
+        .select(selectScoreColumns)
+        .eq("source", source)
+        .eq("canonical_source_id", sourceId)
+        .order("computed_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return canonical ?? null;
+    };
+
+    const scoreRow = await fetchScoreRow();
+    const shouldCompute =
+      !scoreRow || scoreRow.score_version !== V4_SCORE_VERSION || !scoreRow.inputs_hash;
+    const computed = shouldCompute ? await computeScoreBundleV4({ source, sourceId }) : null;
+
+    if (computed) {
+      const { bundle, inputsHash, canonicalSourceId, sourceIdForWrite } = computed;
+      const scorePayload = {
+        source,
+        source_id: sourceIdForWrite,
+        canonical_source_id: canonicalSourceId,
+        score_version: V4_SCORE_VERSION,
+        overall_score: bundle.overallScore,
+        effectiveness_score: bundle.pillars.effectiveness,
+        safety_score: bundle.pillars.safety,
+        integrity_score: bundle.pillars.integrity,
+        confidence: bundle.confidence,
+        best_fit_goals: bundle.bestFitGoals,
+        flags_json: bundle.flags,
+        highlights_json: bundle.highlights,
+        explain_json: bundle.explain,
+        inputs_hash: inputsHash,
+        computed_at: bundle.provenance.computedAt,
+      };
+      const { error: upsertError } = await supabase
+        .from("product_scores")
+        .upsert(scorePayload, { onConflict: "source,source_id" });
+      if (upsertError) {
+        console.warn("[ScoreV4] Upsert failed", upsertError.message);
+      }
+      const response: ScoreBundleResponse = {
+        status: "ok",
+        source,
+        sourceId,
+        bundle,
+      };
+      return res.json(response);
+    }
+
+    if (scoreRow) {
+      const bundle: ScoreBundleV4 = {
+        overallScore: parseNumber(scoreRow.overall_score),
+        pillars: {
+          effectiveness: parseNumber(scoreRow.effectiveness_score),
+          safety: parseNumber(scoreRow.safety_score),
+          integrity: parseNumber(scoreRow.integrity_score),
+        },
+        confidence: parseNumber(scoreRow.confidence),
+        bestFitGoals: coerceScoreGoalFits(scoreRow.best_fit_goals),
+        flags: coerceScoreFlags(scoreRow.flags_json),
+        highlights: coerceScoreHighlights(scoreRow.highlights_json),
+        provenance: {
+          source,
+          sourceId,
+          canonicalSourceId: scoreRow.canonical_source_id ?? null,
+          scoreVersion: String(scoreRow.score_version),
+          computedAt: String(scoreRow.computed_at),
+          inputsHash: scoreRow.inputs_hash ?? null,
+          datasetVersion: null,
+          extractedAt: null,
+        },
+        explain: coerceScoreExplain(scoreRow.explain_json),
+      };
+
+      const response: ScoreBundleResponse = {
+        status: "ok",
+        source,
+        sourceId,
+        bundle,
+      };
+      return res.json(response);
+    }
+
+    const { data: ingredientRow, error: ingredientError } = await supabase
+      .from("product_ingredients")
+      .select("id")
+      .eq("source", source)
+      .eq("source_id", sourceId)
+      .limit(1)
+      .maybeSingle();
+
+    if (ingredientError) {
+      throw ingredientError;
+    }
+
+    let hasIngredients = Boolean(ingredientRow?.id);
+    if (!hasIngredients) {
+      const { data: canonicalIngredientRow, error: canonicalIngredientError } = await supabase
+        .from("product_ingredients")
+        .select("id")
+        .eq("source", source)
+        .eq("canonical_source_id", sourceId)
+        .limit(1)
+        .maybeSingle();
+      if (canonicalIngredientError) {
+        throw canonicalIngredientError;
+      }
+      hasIngredients = Boolean(canonicalIngredientRow?.id);
+    }
+
+    const status: ScoreBundleResponse["status"] = hasIngredients ? "pending" : "not_found";
+    const response: ScoreBundleResponse = {
+      status,
+      source,
+      sourceId,
+    };
+    return res.json(response);
+  } catch (error) {
+    captureException(error, { route: "/api/score/v4" });
+    console.error("/api/score/v4 unexpected error", error);
+    const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
     return res.status(500).json({ error: "unexpected_error", detail } satisfies ErrorResponse);
   }
 });
@@ -2712,9 +2933,20 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       if (!dsldFacts) {
         dsldFacts = await fetchDsldFactsByBarcode(gtin14, requestSignal);
       }
+      const dsldLabelFacts = dsldFacts ? toLabelFactsFromDsld(dsldFacts) : null;
       if (dsldFacts) {
         workingSnapshot = applyDsldFactsToSnapshot(workingSnapshot, dsldFacts);
-        catalogLabelFactsForAi = toLabelFactsFromDsld(dsldFacts);
+        catalogLabelFactsForAi = dsldLabelFacts;
+        if (dsldLabelFacts) {
+          void upsertProductIngredientsFromLabelFacts({
+            source: "dsld",
+            sourceId: String(dsldFacts.dsldLabelId),
+            canonicalSourceId: String(dsldFacts.dsldLabelId),
+            labelFacts: dsldLabelFacts,
+            basis: "label_serving",
+            parseConfidence: 1,
+          });
+        }
       }
 
       const labelExtraction: LabelExtractionMeta | null = dsldFacts
@@ -2725,8 +2957,8 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         }
         : null;
 
-      if (dsldFacts) {
-        const labelAnalysis = buildLabelOnlyAnalysis(toLabelFactsFromDsld(dsldFacts));
+      if (dsldLabelFacts) {
+        const labelAnalysis = buildLabelOnlyAnalysis(dsldLabelFacts);
         if (!hasAiPayload(workingAnalysisPayload)) {
           workingAnalysisPayload = {
             ...workingAnalysisPayload,
@@ -3065,6 +3297,16 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
 
       if (lnhpdFacts) {
         const lnhpdLabelFacts = toLabelFactsFromLnhpd(lnhpdFacts);
+        const lnhpdSourceId = lnhpdFacts.npn?.trim() || String(lnhpdFacts.lnhpdId);
+        const lnhpdCanonicalId = String(lnhpdFacts.lnhpdId);
+        void upsertProductIngredientsFromLabelFacts({
+          source: "lnhpd",
+          sourceId: lnhpdSourceId,
+          canonicalSourceId: lnhpdCanonicalId,
+          labelFacts: lnhpdLabelFacts,
+          basis: "label_serving",
+          parseConfidence: 1,
+        });
         const labelExtraction: LabelExtractionMeta = {
           source: "lnhpd",
           fetchedAt: lnhpdFacts.extractedAt ?? nowIso(),
@@ -4142,6 +4384,13 @@ app.post("/api/analyze-label", verifySupabaseToken, async (req: Request, res: Re
         const cachedAnalysisIssues =
           (cached.analysis as { analysisIssues?: string[] } | null)?.analysisIssues ?? [];
         const cachedAnalysisStatus = cachedAnalysisIssues.length ? "partial" : "complete";
+        if (cached.parsedIngredients) {
+          void upsertProductIngredientsFromDraft({
+            sourceId: imageHash,
+            draft: cached.parsedIngredients,
+            basis: "label_serving",
+          });
+        }
         const snapshot = await buildAndCacheLabelSnapshot({
           status: "ok",
           draft: cached.parsedIngredients ?? null,
@@ -4160,6 +4409,11 @@ app.post("/api/analyze-label", verifySupabaseToken, async (req: Request, res: Re
 
       if (cached.parsedIngredients) {
         const cachedDraft = cached.parsedIngredients;
+        void upsertProductIngredientsFromDraft({
+          sourceId: imageHash,
+          draft: cachedDraft,
+          basis: "label_serving",
+        });
         const cachedNeedsConfirmation = needsConfirmation(cachedDraft);
         const cachedStatus = cachedNeedsConfirmation ? "needs_confirmation" : "ok";
 
@@ -4386,6 +4640,11 @@ app.post("/api/analyze-label", verifySupabaseToken, async (req: Request, res: Re
       parsedIngredients: draft,
       confidence: draft.confidenceScore,
     });
+    void upsertProductIngredientsFromDraft({
+      sourceId: imageHash,
+      draft,
+      basis: "label_serving",
+    });
 
     const needsReview = needsConfirmation(draft);
     // Check if confirmation needed
@@ -4594,6 +4853,12 @@ app.post("/api/analyze-label/confirm", verifySupabaseToken, async (req: Request,
         snapshot,
       } satisfies LabelAnalysisResponse);
     }
+
+    void upsertProductIngredientsFromDraft({
+      sourceId: imageHash,
+      draft: confirmedDraft,
+      basis: "label_serving",
+    });
 
     const deepseekKey = process.env.DEEPSEEK_API_KEY;
     const model = process.env.DEEPSEEK_MODEL || "deepseek-chat";

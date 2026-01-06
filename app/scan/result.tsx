@@ -10,11 +10,14 @@ import { OrganicSpinner } from '@/components/ui/OrganicSpinner';
 import { ShinyText } from '@/components/ui/ShinyText';
 import { useScanHistory } from '@/contexts/ScanHistoryContext';
 import { useResponsiveTokens } from '@/hooks/useResponsiveTokens';
+import { useScoreBundleV4 } from '@/hooks/useScoreBundleV4';
 import { useStreamAnalysis } from '@/hooks/useStreamAnalysis';
 import { consumeScanSession, type ScanSession } from '@/lib/scan/session';
 import { requestLabelAnalysis } from '@/lib/scan/service';
 import { getBarcodeQuality, getLabelDraftQuality } from '@/lib/scan/quality';
+import { resolveScoreQueryFromSnapshot } from '@/lib/score-v4';
 import type { LabelDraft } from '@/backend/src/labelAnalysis';
+import type { ScoreBundleResponse } from '@/types/scoreBundle';
 import { AnalysisDashboard } from './AnalysisDashboard';
 import { buildLabelInsights } from './labelInsights';
 
@@ -330,8 +333,20 @@ export default function ScanResultScreen() {
     status,
     error,
     analysisMeta,
+    snapshot,
   } = useStreamAnalysis(barcode);
   const barcodeQuality = useMemo(() => getBarcodeQuality({ status, error }), [error, status]);
+  const scoreQuery = useMemo(() => resolveScoreQueryFromSnapshot(snapshot), [snapshot]);
+  const barcodeScoreState = useScoreBundleV4({
+    source: scoreQuery?.source ?? null,
+    sourceId: scoreQuery?.sourceId ?? null,
+    enabled: Boolean(scoreQuery) && !isLabel,
+  });
+  const labelScoreState = useScoreBundleV4({
+    source: isLabel ? "ocr" : null,
+    sourceId: isLabel ? labelResult?.imageHash ?? null : null,
+    enabled: Boolean(isLabel && labelResult?.imageHash),
+  });
 
   const formatDose = useCallback((value?: number | string | null, unit?: string | null) => {
     if (value == null) return null;
@@ -340,6 +355,65 @@ export default function ScanResultScreen() {
     const cleanUnit = unit?.trim() ?? '';
     return cleanUnit ? `${cleanValue} ${cleanUnit}` : String(cleanValue);
   }, []);
+
+  const formatScoreValue = (value: number | null | undefined) => {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return '--';
+    return `${Math.round(value)}`;
+  };
+
+  const formatConfidence = (value: number | null | undefined) => {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return '--';
+    return `${Math.round(value * 100)}%`;
+  };
+
+  const renderV4ScoreCard = (title: string, scoreState: { status: string; response: ScoreBundleResponse | null; error: string | null }) => {
+    if (scoreState.status === 'idle') return null;
+    const response = scoreState.response;
+    const isLoading = scoreState.status === 'loading';
+    const isError = scoreState.status === 'error';
+    const bundle = response?.status === 'ok' ? response.bundle : null;
+    const goalsText = bundle?.bestFitGoals?.length
+      ? bundle.bestFitGoals.map((goal) => `${goal.label ?? goal.goal} ${Math.round(goal.score)}`).join(' • ')
+      : 'No goal matches yet.';
+    const highlightsText = bundle?.highlights?.length
+      ? bundle.highlights.slice(0, 2).map((item) => item.message).join(' • ')
+      : 'No highlights yet.';
+    const flagsText = bundle?.flags?.length
+      ? bundle.flags.slice(0, 2).map((item) => item.message).join(' • ')
+      : null;
+
+    return (
+      <View style={styles.labelCard}>
+        <Text style={styles.labelCardTitle}>{title}</Text>
+        {isLoading ? (
+          <Text style={styles.labelMeta}>Loading v4 score...</Text>
+        ) : null}
+        {isError ? (
+          <Text style={styles.labelMeta}>Score unavailable: {scoreState.error ?? 'Unknown error'}</Text>
+        ) : null}
+        {response?.status === 'pending' ? (
+          <Text style={styles.labelMeta}>Score is being prepared. Check back shortly.</Text>
+        ) : null}
+        {response?.status === 'not_found' ? (
+          <Text style={styles.labelMeta}>Score not available for this product.</Text>
+        ) : null}
+        {bundle ? (
+          <View style={styles.labelMetaGroup}>
+            <Text style={styles.labelItem}>Overall Score: {formatScoreValue(bundle.overallScore)}</Text>
+            <Text style={styles.labelMetaTight}>
+              Effectiveness: {formatScoreValue(bundle.pillars.effectiveness)} • Safety: {formatScoreValue(bundle.pillars.safety)} • Integrity: {formatScoreValue(bundle.pillars.integrity)}
+            </Text>
+            <Text style={styles.labelMetaTight}>Confidence: {formatConfidence(bundle.confidence)}</Text>
+            <Text style={styles.labelMetaTight}>Best fit: {goalsText}</Text>
+            <Text style={styles.labelMetaTight}>Highlights: {highlightsText}</Text>
+            {flagsText ? (
+              <Text style={styles.labelMetaTight}>Flags: {flagsText}</Text>
+            ) : null}
+          </View>
+        ) : null}
+      </View>
+    );
+  };
 
   const extractDoseFromText = useCallback(
     (text?: string | null) => {
@@ -674,6 +748,8 @@ export default function ScanResultScreen() {
           sourceType="label_scan"
         />
 
+        {renderV4ScoreCard('NuTri V4 Score', labelScoreState)}
+
         {!analysisComplete ? (
           <View style={styles.labelCard}>
             <Text style={styles.labelCardTitle}>AI Analysis</Text>
@@ -867,6 +943,8 @@ export default function ScanResultScreen() {
         isStreaming={isStreaming}
         sourceType="barcode"
       />
+
+      {renderV4ScoreCard('NuTri V4 Score', barcodeScoreState)}
 
       {/* Optional: A small global spinner in the corner if streaming */}
       {isStreaming && (

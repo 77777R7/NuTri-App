@@ -32,6 +32,8 @@ export type OverlapLevel = "low" | "medium" | "high" | "unknown";
 
 export type NutrientCategory = "water_soluble_vitamin" | "fat_soluble_vitamin" | "essential_mineral" | "other";
 
+export type ScoreSource = "dsld" | "lnhpd" | "ocr" | "manual";
+
 export interface SupplementMeta {
   evidenceLevel: EvidenceLevel;
   primaryIngredient?: string;
@@ -64,6 +66,71 @@ export interface ScoreBreakdown {
   overall: number;
   label: "strongly_recommended" | "optional" | "low_priority" | "not_recommended";
 }
+
+export type ScoreGoalFit = {
+  goal: string;
+  score: number;
+  label?: string;
+};
+
+export type ScoreFlag = {
+  code: string;
+  message: string;
+  severity?: "info" | "warning" | "risk";
+};
+
+export type ScoreHighlight = {
+  code?: string;
+  message: string;
+};
+
+export type ScoreBundleV4 = {
+  overallScore: number | null;
+  pillars: {
+    effectiveness: number | null;
+    safety: number | null;
+    integrity: number | null;
+  };
+  confidence: number | null;
+  bestFitGoals: ScoreGoalFit[];
+  flags: ScoreFlag[];
+  highlights: ScoreHighlight[];
+  provenance: {
+    source: ScoreSource;
+    sourceId: string;
+    canonicalSourceId: string | null;
+    scoreVersion: string;
+    computedAt: string;
+    inputsHash: string | null;
+    datasetVersion: string | null;
+    extractedAt: string | null;
+  };
+  explain: Record<string, unknown> | null;
+};
+
+export interface ScoreBundleResponseOk {
+  status: "ok";
+  source: ScoreSource;
+  sourceId: string;
+  bundle: ScoreBundleV4;
+}
+
+export interface ScoreBundleResponsePending {
+  status: "pending";
+  source: ScoreSource;
+  sourceId: string;
+}
+
+export interface ScoreBundleResponseNotFound {
+  status: "not_found";
+  source: ScoreSource;
+  sourceId: string;
+}
+
+export type ScoreBundleResponse =
+  | ScoreBundleResponseOk
+  | ScoreBundleResponsePending
+  | ScoreBundleResponseNotFound;
 
 export interface AiSupplementAnalysisBase {
   schemaVersion: 1;
