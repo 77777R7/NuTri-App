@@ -17,7 +17,11 @@ type LabelFactsInput = {
 type IngredientLookup = {
   id: string;
   baseUnit: string | null;
+  matchMethod: 'exact' | 'synonym' | 'trgm' | 'manual' | null;
+  matchConfidence: number | null;
 };
+
+type UnitKind = 'mass' | 'volume' | 'iu' | 'cfu' | 'percent' | 'homeopathic' | 'unknown';
 
 type ProductIngredientRow = {
   source: 'dsld' | 'lnhpd' | 'ocr' | 'manual';
@@ -25,21 +29,48 @@ type ProductIngredientRow = {
   canonical_source_id: string | null;
   ingredient_id: string | null;
   name_raw: string;
+  name_key: string;
   amount: number | null;
   unit: string | null;
   unit_raw: string | null;
   amount_normalized: number | null;
   unit_normalized: string | null;
+  unit_kind: UnitKind | null;
   basis: Basis;
   is_active: boolean;
   is_proprietary_blend: boolean;
   amount_unknown: boolean;
   form_raw: string | null;
   parse_confidence: number | null;
+  match_method: IngredientLookup['matchMethod'];
+  match_confidence: number | null;
 };
 
 const normalizeNameKey = (value: string): string =>
   value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+const buildNameKey = (value: string): string => {
+  const normalized = normalizeNameKey(value);
+  if (normalized) return normalized;
+  return value.trim().toLowerCase();
+};
+
+const extractFormRaw = (nameRaw: string): string | null => {
+  const trimmed = nameRaw.trim();
+  if (!trimmed) return null;
+  const parenMatch = trimmed.match(/\((?:as|from)\s+([^)]+)\)/i);
+  if (parenMatch?.[1]) return parenMatch[1].trim();
+
+  const asMatch = trimmed.match(/\bas\s+([a-z0-9][a-z0-9\s\-\/+]+)$/i);
+  if (asMatch?.[1]) return asMatch[1].trim();
+
+  const formMatch = trimmed.match(
+    /\b(bisglycinate|glycinate|picolinate|citrate|gluconate|oxide|malate|taurate|orotate|threonate|phytosome|liposomal|liposome|novasol|meriva|longvida|chelate|chelates|sulfate|chloride|nitrate|aspartate|fumarate|carbonate|acetate|succinate|phosphate)\b/i,
+  );
+  if (formMatch) return formMatch[1].trim();
+
+  return null;
+};
 
 const normalizeUnitLabel = (unitRaw?: string | null): string | null => {
   if (!unitRaw) return null;
@@ -69,6 +100,50 @@ const normalizeUnitLabel = (unitRaw?: string | null): string | null => {
   if (normalized.startsWith('cal')) return 'cal';
   if (normalized.startsWith('%') || normalized.includes('percent')) return '%';
   return normalized;
+};
+
+const MASS_UNITS = new Set(['mcg', 'ug', 'mg', 'g']);
+const VOLUME_UNITS = new Set(['ml']);
+const IU_UNITS = new Set(['iu']);
+const CFU_UNITS = new Set(['cfu']);
+const HOMEOPATHIC_UNITS = new Set(['x', 'c', 'ch', 'd', 'dh', 'lm', 'mk', 'ck', 'mt']);
+
+const classifyUnitKind = (unitRaw?: string | null): UnitKind => {
+  if (!unitRaw) return 'unknown';
+  const normalized = normalizeUnitLabel(unitRaw) ?? unitRaw.trim().toLowerCase();
+  const unit = normalized.trim().toLowerCase();
+  if (!unit) return 'unknown';
+  if (unit.includes('%') || unit.includes('percent') || unit.includes('dv')) return 'percent';
+  if (HOMEOPATHIC_UNITS.has(unit)) return 'homeopathic';
+  if (MASS_UNITS.has(unit)) return 'mass';
+  if (VOLUME_UNITS.has(unit)) return 'volume';
+  if (IU_UNITS.has(unit)) return 'iu';
+  if (CFU_UNITS.has(unit)) return 'cfu';
+  return 'unknown';
+};
+
+const isDoseUnitKind = (unitKind: UnitKind): boolean =>
+  unitKind === 'mass' || unitKind === 'volume' || unitKind === 'iu' || unitKind === 'cfu';
+
+const clamp = (value: number, min: number, max: number): number =>
+  Math.max(min, Math.min(max, value));
+
+const computeRowParseConfidence = (
+  baseConfidence: number | null | undefined,
+  params: { amountMissing: boolean; unitKind: UnitKind; hasUnit: boolean },
+): number | null => {
+  if (typeof baseConfidence !== 'number' || !Number.isFinite(baseConfidence)) return null;
+  let score = baseConfidence;
+  if (params.amountMissing) score -= 0.15;
+  if (!params.hasUnit || !isDoseUnitKind(params.unitKind)) score -= 0.15;
+  if (params.unitKind === 'homeopathic') score -= 0.25;
+  return clamp(score, 0.05, 0.99);
+};
+
+const isRpcMissing = (error?: { code?: string; message?: string } | null): boolean => {
+  if (!error) return false;
+  if (error.code === 'PGRST202') return true;
+  return (error.message ?? '').toLowerCase().includes('could not find the function');
 };
 
 const parseCfuMultiplier = (unitLower: string): number | null => {
@@ -109,7 +184,12 @@ const resolveIngredientLookup = async (
       .ilike('name', name)
       .maybeSingle();
     if (!error && ingredient?.id) {
-      const lookup = { id: ingredient.id as string, baseUnit: ingredient.unit ?? null };
+      const lookup: IngredientLookup = {
+        id: ingredient.id as string,
+        baseUnit: ingredient.unit ?? null,
+        matchMethod: 'exact',
+        matchConfidence: 1,
+      };
       cache.set(key, lookup);
       return lookup;
     }
@@ -123,23 +203,57 @@ const resolveIngredientLookup = async (
       .select('ingredient_id')
       .ilike('synonym', name)
       .maybeSingle();
-    if (error || !synonym?.ingredient_id) {
+    if (!error && synonym?.ingredient_id) {
+      const { data: ingredient, error: ingredientError } = await supabase
+        .from('ingredients')
+        .select('id,unit')
+        .eq('id', synonym.ingredient_id)
+        .maybeSingle();
+      if (!ingredientError && ingredient?.id) {
+        const lookup: IngredientLookup = {
+          id: ingredient.id as string,
+          baseUnit: ingredient.unit ?? null,
+          matchMethod: 'synonym',
+          matchConfidence: 0.97,
+        };
+        cache.set(key, lookup);
+        return lookup;
+      }
+    }
+  } catch {
+    // Ignore lookup failures and fall through to fuzzy.
+  }
+
+  try {
+    const { data, error } = await supabase.rpc('resolve_ingredient_lookup', {
+      query_text: name,
+    });
+    if (error) {
+      if (!isRpcMissing(error)) {
+        console.warn('[ProductIngredients] Ingredient lookup RPC failed', error.message);
+      }
       cache.set(key, null);
       return null;
     }
-
-    const { data: ingredient, error: ingredientError } = await supabase
-      .from('ingredients')
-      .select('id,unit')
-      .eq('id', synonym.ingredient_id)
-      .maybeSingle();
-    if (!ingredientError && ingredient?.id) {
-      const lookup = { id: ingredient.id as string, baseUnit: ingredient.unit ?? null };
+    const row = Array.isArray(data) ? data[0] : data;
+    if (row?.ingredient_id) {
+      const matchConfidence =
+        typeof row.match_confidence === 'number'
+          ? row.match_confidence
+          : Number(row.match_confidence);
+      const lookup: IngredientLookup = {
+        id: row.ingredient_id as string,
+        baseUnit: row.base_unit ?? null,
+        matchMethod: row.match_method ?? 'trgm',
+        matchConfidence: Number.isFinite(matchConfidence) ? matchConfidence : null,
+      };
       cache.set(key, lookup);
       return lookup;
     }
-  } catch {
-    // Ignore lookup failures and return null.
+  } catch (error) {
+    if (error && typeof error === 'object' && 'message' in error) {
+      console.warn('[ProductIngredients] Ingredient lookup RPC error', (error as Error).message);
+    }
   }
 
   cache.set(key, null);
@@ -185,6 +299,8 @@ const hydrateRowsWithLookups = async (rows: ProductIngredientRow[]): Promise<voi
   for (const row of rows) {
     const lookup = await resolveIngredientLookup(row.name_raw, ingredientCache);
     row.ingredient_id = lookup?.id ?? null;
+    row.match_method = lookup?.matchMethod ?? null;
+    row.match_confidence = lookup?.matchConfidence ?? null;
 
     if (row.amount == null || !row.unit || !lookup?.baseUnit) {
       continue;
@@ -205,6 +321,11 @@ const hydrateRowsWithLookups = async (rows: ProductIngredientRow[]): Promise<voi
     if (factor != null) {
       row.amount_normalized = row.amount * factor;
       row.unit_normalized = lookup.baseUnit;
+    } else {
+      row.amount_unknown = true;
+      if (row.unit_kind && isDoseUnitKind(row.unit_kind)) {
+        row.unit_kind = 'unknown';
+      }
     }
   }
 };
@@ -212,15 +333,18 @@ const hydrateRowsWithLookups = async (rows: ProductIngredientRow[]): Promise<voi
 const dedupeProductIngredientRows = (rows: ProductIngredientRow[]): ProductIngredientRow[] => {
   const map = new Map<string, ProductIngredientRow>();
   for (const row of rows) {
-    const key = `${row.source}:${row.source_id}:${row.name_raw}`;
+    const nameKey = row.name_key || buildNameKey(row.name_raw);
+    const key = `${row.source}:${row.source_id}:${row.basis}:${nameKey}`;
     const existing = map.get(key);
     if (!existing) {
-      map.set(key, { ...row });
+      map.set(key, { ...row, name_key: nameKey });
       continue;
     }
     const merged: ProductIngredientRow = { ...existing };
     merged.canonical_source_id = existing.canonical_source_id ?? row.canonical_source_id ?? null;
     merged.ingredient_id = existing.ingredient_id ?? row.ingredient_id ?? null;
+    merged.name_key = existing.name_key || row.name_key || nameKey;
+    merged.unit_kind = existing.unit_kind ?? row.unit_kind ?? null;
     merged.form_raw = existing.form_raw ?? row.form_raw;
     merged.is_active = existing.is_active || row.is_active;
     merged.is_proprietary_blend = existing.is_proprietary_blend || row.is_proprietary_blend;
@@ -237,12 +361,24 @@ const dedupeProductIngredientRows = (rows: ProductIngredientRow[]): ProductIngre
 
     merged.amount_normalized = existing.amount_normalized ?? row.amount_normalized ?? null;
     merged.unit_normalized = existing.unit_normalized ?? row.unit_normalized ?? null;
-    merged.amount_unknown = merged.amount == null;
+    merged.amount_unknown = Boolean(
+      existing.amount_unknown || row.amount_unknown || merged.amount == null,
+    );
 
     const parseValues = [existing.parse_confidence, row.parse_confidence].filter(
       (value): value is number => typeof value === 'number',
     );
     merged.parse_confidence = parseValues.length ? Math.max(...parseValues) : null;
+
+    const existingMatch = existing.match_confidence ?? -1;
+    const nextMatch = row.match_confidence ?? -1;
+    if (nextMatch > existingMatch) {
+      merged.match_confidence = row.match_confidence ?? null;
+      merged.match_method = row.match_method ?? null;
+    } else {
+      merged.match_confidence = existing.match_confidence ?? null;
+      merged.match_method = existing.match_method ?? null;
+    }
 
     map.set(key, merged);
   }
@@ -256,7 +392,7 @@ const upsertProductIngredientRows = async (rows: ProductIngredientRow[]): Promis
     await hydrateRowsWithLookups(dedupedRows);
     const { error } = await supabase
       .from('product_ingredients')
-      .upsert(dedupedRows, { onConflict: 'source,source_id,name_raw' });
+      .upsert(dedupedRows, { onConflict: 'source,source_id,basis,name_key' });
     if (error) {
       console.warn('[ProductIngredients] Upsert failed', error.message);
     }
@@ -279,68 +415,107 @@ export async function upsertProductIngredientsFromLabelFacts(params: {
   params.labelFacts.actives.forEach((item) => {
     if (!item.name) return;
     const normalized = normalizeAmountAndUnit(item.amount ?? null, item.unit ?? null);
+    const unitKind = classifyUnitKind(item.unit ?? normalized.unit);
+    const amountMissing = normalized.amount == null;
+    const amountUnknown = amountMissing || !isDoseUnitKind(unitKind);
+    const nameKey = buildNameKey(item.name);
+    const formRaw = extractFormRaw(item.name);
     rows.push({
       source: params.source,
       source_id: params.sourceId,
       canonical_source_id: params.canonicalSourceId ?? null,
       ingredient_id: null,
       name_raw: item.name,
+      name_key: nameKey,
       amount: normalized.amount ?? null,
       unit: normalized.unit,
       unit_raw: item.unit ?? null,
       amount_normalized: null,
       unit_normalized: null,
+      unit_kind: unitKind,
       basis,
       is_active: true,
       is_proprietary_blend: false,
-      amount_unknown: normalized.amount == null,
-      form_raw: null,
-      parse_confidence: params.parseConfidence ?? null,
+      amount_unknown: amountUnknown,
+      form_raw: formRaw,
+      parse_confidence: computeRowParseConfidence(params.parseConfidence, {
+        amountMissing,
+        unitKind,
+        hasUnit: normalized.unit != null,
+      }),
+      match_method: null,
+      match_confidence: null,
     });
   });
 
   params.labelFacts.proprietaryBlends.forEach((blend) => {
     if (!blend.name) return;
     const normalized = normalizeAmountAndUnit(blend.totalAmount ?? null, blend.unit ?? null);
+    const unitKind = classifyUnitKind(blend.unit ?? normalized.unit);
+    const amountMissing = normalized.amount == null;
+    const amountUnknown = amountMissing || !isDoseUnitKind(unitKind);
+    const nameKey = buildNameKey(blend.name);
+    const formRaw = extractFormRaw(blend.name);
     rows.push({
       source: params.source,
       source_id: params.sourceId,
       canonical_source_id: params.canonicalSourceId ?? null,
       ingredient_id: null,
       name_raw: blend.name,
+      name_key: nameKey,
       amount: normalized.amount ?? null,
       unit: normalized.unit,
       unit_raw: blend.unit ?? null,
       amount_normalized: null,
       unit_normalized: null,
+      unit_kind: unitKind,
       basis,
       is_active: true,
       is_proprietary_blend: true,
-      amount_unknown: normalized.amount == null,
-      form_raw: null,
-      parse_confidence: params.parseConfidence ?? null,
+      amount_unknown: amountUnknown,
+      form_raw: formRaw,
+      parse_confidence: computeRowParseConfidence(params.parseConfidence, {
+        amountMissing,
+        unitKind,
+        hasUnit: normalized.unit != null,
+      }),
+      match_method: null,
+      match_confidence: null,
     });
   });
 
   params.labelFacts.inactive.forEach((name) => {
     if (!name) return;
+    const unitKind = classifyUnitKind(null);
+    const amountMissing = true;
+    const amountUnknown = true;
+    const nameKey = buildNameKey(name);
+    const formRaw = extractFormRaw(name);
     rows.push({
       source: params.source,
       source_id: params.sourceId,
       canonical_source_id: params.canonicalSourceId ?? null,
       ingredient_id: null,
       name_raw: name,
+      name_key: nameKey,
       amount: null,
       unit: null,
       unit_raw: null,
       amount_normalized: null,
       unit_normalized: null,
+      unit_kind: unitKind,
       basis,
       is_active: false,
       is_proprietary_blend: false,
-      amount_unknown: true,
-      form_raw: null,
-      parse_confidence: params.parseConfidence ?? null,
+      amount_unknown: amountUnknown,
+      form_raw: formRaw,
+      parse_confidence: computeRowParseConfidence(params.parseConfidence, {
+        amountMissing,
+        unitKind,
+        hasUnit: false,
+      }),
+      match_method: null,
+      match_confidence: null,
     });
   });
 
@@ -358,24 +533,34 @@ export async function upsertProductIngredientsFromDraft(params: {
       ingredient.amount ?? null,
       ingredient.unit ?? null,
     );
-    const amountUnknown = normalized.amount == null && ingredient.dvPercent == null;
+    const unitKind = classifyUnitKind(ingredient.unit ?? normalized.unit);
+    const nameKey = buildNameKey(ingredient.name);
+    const formRaw = extractFormRaw(ingredient.name);
+    const amountUnknown =
+      normalized.amount == null && ingredient.dvPercent == null
+        ? true
+        : !isDoseUnitKind(unitKind);
     return {
       source: 'ocr',
       source_id: params.sourceId,
       canonical_source_id: null,
       ingredient_id: null,
       name_raw: ingredient.name,
+      name_key: nameKey,
       amount: normalized.amount ?? null,
       unit: normalized.unit,
       unit_raw: ingredient.unit ?? null,
       amount_normalized: null,
       unit_normalized: null,
+      unit_kind: unitKind,
       basis,
       is_active: true,
       is_proprietary_blend: false,
       amount_unknown: amountUnknown,
-      form_raw: null,
+      form_raw: formRaw,
       parse_confidence: ingredient.confidence ?? params.draft.confidenceScore ?? null,
+      match_method: null,
+      match_confidence: null,
     };
   });
 

@@ -1,6 +1,6 @@
 import { supabase } from "../src/supabase.js";
 import { upsertProductIngredientsFromLabelFacts } from "../src/productIngredients.js";
-import { computeScoreBundleV4, V4_SCORE_VERSION } from "../src/scoring/v4ScoreEngine.js";
+import { computeScoreBundleV4, computeV4InputsHash, V4_SCORE_VERSION } from "../src/scoring/v4ScoreEngine.js";
 import type { ScoreBundleV4, ScoreSource } from "../src/types.js";
 
 type LabelFactsInput = {
@@ -342,7 +342,10 @@ const shouldSkipExistingScore = async (source: ScoreSource, sourceId: string): P
     .eq("source_id", sourceId)
     .maybeSingle();
   if (error || !data) return false;
-  return data.score_version === V4_SCORE_VERSION && Boolean(data.inputs_hash);
+  if (data.score_version !== V4_SCORE_VERSION || !data.inputs_hash) return false;
+  const currentHash = await computeV4InputsHash({ source, sourceId });
+  if (!currentHash) return false;
+  return data.inputs_hash === currentHash;
 };
 
 const batchSize = Math.max(1, Number(getArg("batch") ?? process.env.BACKFILL_BATCH_SIZE ?? "200"));
@@ -427,7 +430,7 @@ const backfillDsld = async () => {
           canonicalSourceId: sourceId,
           labelFacts,
           basis: "label_serving",
-          parseConfidence: 1,
+          parseConfidence: 0.9,
         });
         writtenIngredients += 1;
       }
@@ -539,7 +542,7 @@ const backfillLnhpd = async () => {
           canonicalSourceId,
           labelFacts,
           basis: "label_serving",
-          parseConfidence: 1,
+          parseConfidence: 0.95,
         });
         writtenIngredients += 1;
       }

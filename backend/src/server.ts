@@ -31,7 +31,7 @@ import {
 } from "./resilience.js";
 import type { RetryOptions } from "./resilience.js";
 import { constructFallbackQuery, extractDomain, isHighQualityDomain, scoreSearchItem, scoreSearchQuality } from "./searchQuality.js";
-import { computeScoreBundleV4, V4_SCORE_VERSION } from "./scoring/v4ScoreEngine.js";
+import { computeScoreBundleV4, computeV4InputsHash, V4_SCORE_VERSION } from "./scoring/v4ScoreEngine.js";
 import { buildBarcodeSnapshot, buildLabelSnapshot, validateSnapshotOrFallback, type SnapshotAnalysisPayload } from "./snapshot.js";
 import { getSnapshotCache, storeSnapshotCache } from "./snapshotCache.js";
 import type { SupplementSnapshot } from "./schemas/supplementSnapshot.js";
@@ -201,6 +201,7 @@ type DsldFacts = {
   extractedAt: string | null;
   dsldPdf: string | null;
   dsldThumbnail: string | null;
+  factsSource: 'label_facts' | 'meta_summary';
 };
 
 type LabelFacts = {
@@ -739,6 +740,7 @@ const buildDsldFactsFromMeta = (meta: {
     extractedAt: nowIso(),
     dsldPdf: meta.dsld_pdf ?? null,
     dsldThumbnail: meta.dsld_thumbnail ?? null,
+    factsSource: 'meta_summary',
   };
 };
 
@@ -786,6 +788,7 @@ const fetchDsldFactsByLabelId = async (
           extractedAt: record.extracted_at ?? facts.extractedAt ?? nowIso(),
           dsldPdf: (facts as { dsldPdf?: string | null }).dsldPdf ?? null,
           dsldThumbnail: (facts as { dsldThumbnail?: string | null }).dsldThumbnail ?? null,
+          factsSource: 'label_facts',
         };
       }
     }
@@ -837,6 +840,7 @@ const fetchDsldFactsByBarcode = async (
           extractedAt: record.extracted_at ?? facts.extractedAt ?? nowIso(),
           dsldPdf: (facts as { dsldPdf?: string | null }).dsldPdf ?? null,
           dsldThumbnail: (facts as { dsldThumbnail?: string | null }).dsldThumbnail ?? null,
+          factsSource: 'label_facts',
         };
       }
     }
@@ -2402,11 +2406,52 @@ app.get("/api/score/v4/:source/:id", verifySupabaseToken, async (req: Request, r
       return canonical ?? null;
     };
 
-    const scoreRow = await fetchScoreRow();
-    const shouldCompute =
-      !scoreRow || scoreRow.score_version !== V4_SCORE_VERSION || !scoreRow.inputs_hash;
-    const computed = shouldCompute ? await computeScoreBundleV4({ source, sourceId }) : null;
+    const [scoreRow, currentHash] = await Promise.all([
+      fetchScoreRow(),
+      computeV4InputsHash({ source, sourceId }),
+    ]);
+    const isCacheHit =
+      scoreRow &&
+      scoreRow.score_version === V4_SCORE_VERSION &&
+      Boolean(scoreRow.inputs_hash) &&
+      Boolean(currentHash) &&
+      scoreRow.inputs_hash === currentHash;
 
+    if (isCacheHit && scoreRow) {
+      const bundle: ScoreBundleV4 = {
+        overallScore: parseNumber(scoreRow.overall_score),
+        pillars: {
+          effectiveness: parseNumber(scoreRow.effectiveness_score),
+          safety: parseNumber(scoreRow.safety_score),
+          integrity: parseNumber(scoreRow.integrity_score),
+        },
+        confidence: parseNumber(scoreRow.confidence),
+        bestFitGoals: coerceScoreGoalFits(scoreRow.best_fit_goals),
+        flags: coerceScoreFlags(scoreRow.flags_json),
+        highlights: coerceScoreHighlights(scoreRow.highlights_json),
+        provenance: {
+          source,
+          sourceId,
+          canonicalSourceId: scoreRow.canonical_source_id ?? null,
+          scoreVersion: String(scoreRow.score_version),
+          computedAt: String(scoreRow.computed_at),
+          inputsHash: scoreRow.inputs_hash ?? null,
+          datasetVersion: null,
+          extractedAt: null,
+        },
+        explain: coerceScoreExplain(scoreRow.explain_json),
+      };
+
+      const response: ScoreBundleResponse = {
+        status: "ok",
+        source,
+        sourceId,
+        bundle,
+      };
+      return res.json(response);
+    }
+
+    const computed = await computeScoreBundleV4({ source, sourceId });
     if (computed) {
       const { bundle, inputsHash, canonicalSourceId, sourceIdForWrite } = computed;
       const scorePayload = {
@@ -2432,40 +2477,6 @@ app.get("/api/score/v4/:source/:id", verifySupabaseToken, async (req: Request, r
       if (upsertError) {
         console.warn("[ScoreV4] Upsert failed", upsertError.message);
       }
-      const response: ScoreBundleResponse = {
-        status: "ok",
-        source,
-        sourceId,
-        bundle,
-      };
-      return res.json(response);
-    }
-
-    if (scoreRow) {
-      const bundle: ScoreBundleV4 = {
-        overallScore: parseNumber(scoreRow.overall_score),
-        pillars: {
-          effectiveness: parseNumber(scoreRow.effectiveness_score),
-          safety: parseNumber(scoreRow.safety_score),
-          integrity: parseNumber(scoreRow.integrity_score),
-        },
-        confidence: parseNumber(scoreRow.confidence),
-        bestFitGoals: coerceScoreGoalFits(scoreRow.best_fit_goals),
-        flags: coerceScoreFlags(scoreRow.flags_json),
-        highlights: coerceScoreHighlights(scoreRow.highlights_json),
-        provenance: {
-          source,
-          sourceId,
-          canonicalSourceId: scoreRow.canonical_source_id ?? null,
-          scoreVersion: String(scoreRow.score_version),
-          computedAt: String(scoreRow.computed_at),
-          inputsHash: scoreRow.inputs_hash ?? null,
-          datasetVersion: null,
-          extractedAt: null,
-        },
-        explain: coerceScoreExplain(scoreRow.explain_json),
-      };
-
       const response: ScoreBundleResponse = {
         status: "ok",
         source,
@@ -2938,13 +2949,15 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         workingSnapshot = applyDsldFactsToSnapshot(workingSnapshot, dsldFacts);
         catalogLabelFactsForAi = dsldLabelFacts;
         if (dsldLabelFacts) {
+          const dsldBaseParseConfidence =
+            dsldFacts.factsSource === 'meta_summary' ? 0.75 : 0.9;
           void upsertProductIngredientsFromLabelFacts({
             source: "dsld",
             sourceId: String(dsldFacts.dsldLabelId),
             canonicalSourceId: String(dsldFacts.dsldLabelId),
             labelFacts: dsldLabelFacts,
             basis: "label_serving",
-            parseConfidence: 1,
+            parseConfidence: dsldBaseParseConfidence,
           });
         }
       }
@@ -3305,7 +3318,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           canonicalSourceId: lnhpdCanonicalId,
           labelFacts: lnhpdLabelFacts,
           basis: "label_serving",
-          parseConfidence: 1,
+          parseConfidence: 0.95,
         });
         const labelExtraction: LabelExtractionMeta = {
           source: "lnhpd",

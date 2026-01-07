@@ -3,17 +3,19 @@ import { createHash } from "node:crypto";
 import { supabase } from "../supabase.js";
 import type { ScoreBundleV4, ScoreFlag, ScoreGoalFit, ScoreHighlight, ScoreSource } from "../types.js";
 
-export const V4_SCORE_VERSION = "v4.0.0-alpha";
+export const V4_SCORE_VERSION = "v4.0.0-alpha.2";
 
 type ProductIngredientRow = {
   source_id: string;
   canonical_source_id: string | null;
   ingredient_id: string | null;
   name_raw: string;
+  name_key: string | null;
   amount: number | null;
   unit: string | null;
   amount_normalized: number | null;
   unit_normalized: string | null;
+  unit_kind: string | null;
   amount_unknown: boolean;
   is_active: boolean;
   is_proprietary_blend: boolean;
@@ -27,6 +29,70 @@ type IngredientMeta = {
   unit: string | null;
   rda_adult: number | null;
   ul_adult: number | null;
+  goals: string[] | null;
+};
+
+type IngredientEvidenceRow = {
+  id: string;
+  ingredient_id: string;
+  goal: string;
+  min_effective_dose: number | null;
+  optimal_dose_range: string | null;
+  evidence_grade: string | null;
+  audit_status: string | null;
+};
+
+type IngredientFormRow = {
+  id: string;
+  ingredient_id: string;
+  form_key: string;
+  form_label: string;
+  relative_factor: number | null;
+  confidence: number | null;
+  evidence_grade: string | null;
+  audit_status: string | null;
+};
+
+type IngredientFormAliasRow = {
+  id: string;
+  alias_text: string;
+  alias_norm: string;
+  form_key: string;
+  ingredient_id: string | null;
+  confidence: number | null;
+  audit_status: string | null;
+  source: string | null;
+};
+
+type FormSignal = {
+  ingredientId: string;
+  ingredientName: string;
+  candidateText: string;
+  formId: string;
+  formKey: string;
+  formLabel: string;
+  matchScore: number;
+  effectiveFactor: number;
+  confidence: number | null;
+  evidenceGrade: string | null;
+  auditStatus: string | null;
+  aliasText?: string | null;
+  aliasSource?: string | null;
+  aliasConfidence?: number | null;
+};
+
+type DailyMultiplierResult = {
+  multiplier: number;
+  source: string;
+  reliability: "reliable" | "default" | "unreliable";
+};
+
+type UlWarnings = {
+  high: string[];
+  moderate: string[];
+  basis: "per_day_adult";
+  dailyMultiplierUsed: number;
+  dailyMultiplierSource: string;
 };
 
 type ScoreComputationResult = {
@@ -134,27 +200,434 @@ const GOAL_DEFINITIONS: GoalDefinition[] = [
   },
 ];
 
+const GOAL_LABELS = new Map(GOAL_DEFINITIONS.map((goal) => [goal.id, goal.label]));
+
 const normalizeNameKey = (value: string): string =>
   value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+
+const normalizeGoalId = (value?: string | null): string =>
+  (value ?? "").trim().toLowerCase();
+
+const formatGoalLabel = (goalId: string): string => {
+  const label = GOAL_LABELS.get(goalId);
+  if (label) return label;
+  return goalId
+    .split(/[_\s]+/)
+    .filter(Boolean)
+    .map((token) => token.charAt(0).toUpperCase() + token.slice(1))
+    .join(" ");
+};
 
 const clamp = (value: number, min: number, max: number): number =>
   Math.max(min, Math.min(max, value));
 
 const roundScore = (value: number): number => Math.round(value * 100) / 100;
 
-const buildInputsHash = (rows: ProductIngredientRow[]): string => {
-  const payload = rows
-    .map((row) => ({
-      name: row.name_raw,
-      amount: row.amount,
-      unit: row.unit,
-      amountUnknown: row.amount_unknown,
-      active: row.is_active,
-      proprietaryBlend: row.is_proprietary_blend,
-      basis: row.basis,
-      form: row.form_raw,
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name));
+const RECOGNIZED_UNITS = new Set(["mcg", "ug", "mg", "g", "iu", "ml", "cfu"]);
+const DOSE_UNIT_KINDS = new Set(["mass", "volume", "iu", "cfu"]);
+const FORM_ALPHA = 0.85;
+const DEFAULT_DAILY_MULTIPLIER = 1;
+const DEFAULT_DAILY_CONFIDENCE_PENALTY = 0.95;
+const VERIFIED_AUDIT_STATUS = "verified";
+const MAX_AUDIT_ITEMS = 25;
+
+const isRecognizedUnit = (unit?: string | null, unitKind?: string | null): boolean => {
+  if (unitKind) return DOSE_UNIT_KINDS.has(unitKind);
+  if (!unit) return false;
+  return RECOGNIZED_UNITS.has(unit.trim().toLowerCase());
+};
+
+const normalizeAuditStatus = (value?: string | null): string =>
+  (value ?? "").trim().toLowerCase();
+
+const isVerifiedAudit = (value?: string | null): boolean =>
+  normalizeAuditStatus(value) === VERIFIED_AUDIT_STATUS;
+
+const normalizeFormText = (value?: string | null): string => {
+  if (!value) return "";
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+};
+
+const createSeedAlias = (
+  aliasText: string,
+  formKey: string,
+  confidence: number,
+): IngredientFormAliasRow => ({
+  id: `seed_${aliasText.toLowerCase().replace(/[^a-z0-9]+/g, "_")}_${formKey}`,
+  alias_text: aliasText,
+  alias_norm: normalizeFormText(aliasText),
+  form_key: formKey,
+  ingredient_id: null,
+  confidence,
+  audit_status: "derived",
+  source: "seed",
+});
+
+const BUILTIN_FORM_ALIASES: IngredientFormAliasRow[] = [
+  createSeedAlias("glycinate", "bisglycinate", 0.7),
+  createSeedAlias("bisglycinate", "bisglycinate", 0.8),
+  createSeedAlias("chelate", "bisglycinate", 0.6),
+  createSeedAlias("chelated", "bisglycinate", 0.6),
+  createSeedAlias("methylfolate", "5_mthf", 0.7),
+  createSeedAlias("5-mthf", "5_mthf", 0.8),
+  createSeedAlias("ethyl ester", "ethyl_ester", 0.7),
+  createSeedAlias("triglyceride", "triglyceride", 0.7),
+  createSeedAlias("phospholipid", "phospholipid", 0.7),
+  createSeedAlias("meriva", "phytosome", 0.7),
+  createSeedAlias("quercefit", "phytosome", 0.7),
+  createSeedAlias("novasol", "micellar", 0.7),
+  createSeedAlias("theracurmin", "micellar", 0.7),
+  createSeedAlias("longvida", "solid_lipid_particles", 0.7),
+  createSeedAlias("slcp", "solid_lipid_particles", 0.7),
+  createSeedAlias("emiq", "emiq", 0.8),
+  createSeedAlias("isoquercetin", "isoquercetin", 0.8),
+];
+
+const resolveGradeWeight = (grade?: string | null): number => {
+  const normalized = (grade ?? "").trim().toLowerCase();
+  if (!normalized) return 0.75;
+  if (["a", "strong", "high"].includes(normalized)) return 1.0;
+  if (["b", "moderate", "medium"].includes(normalized)) return 0.85;
+  if (["c", "weak", "low"].includes(normalized)) return 0.7;
+  if (["d", "none"].includes(normalized)) return 0.5;
+  return 0.75;
+};
+
+const parseNumericRange = (
+  rangeValue?: string | null,
+): { min: number | null; max: number | null } => {
+  if (!rangeValue) return { min: null, max: null };
+  const match = rangeValue.match(/^[\[\(]([^,]*),([^)\]]*)[\)\]]$/);
+  if (!match) return { min: null, max: null };
+  const minRaw = match[1]?.trim() ?? "";
+  const maxRaw = match[2]?.trim() ?? "";
+  const min = minRaw ? Number(minRaw) : null;
+  const max = maxRaw ? Number(maxRaw) : null;
+  return {
+    min: Number.isFinite(min) ? min : null,
+    max: Number.isFinite(max) ? max : null,
+  };
+};
+
+const resolveEvidenceWeight = (grade?: string | null, auditStatus?: string | null): number =>
+  isVerifiedAudit(auditStatus) ? resolveGradeWeight(grade) : 0;
+
+const computeDoseAdequacy = (params: {
+  amount: number | null;
+  unitMatches: boolean;
+  minDose: number | null;
+  optimalRange: { min: number | null; max: number | null };
+  evidenceWeight: number;
+}): number => {
+  const weight = params.evidenceWeight;
+  if (params.amount == null || !params.unitMatches) {
+    return clamp(0.25 * weight, 0, 1);
+  }
+  const minDose = params.minDose ?? params.optimalRange.min;
+  if (!minDose || minDose <= 0) {
+    return clamp(0.5 * weight, 0, 1);
+  }
+  const amount = params.amount;
+  let base = 0;
+  if (amount < minDose * 0.5) {
+    base = 0.2;
+  } else if (amount < minDose) {
+    base = 0.4;
+  } else if (params.optimalRange.min != null && params.optimalRange.max != null) {
+    if (amount >= params.optimalRange.min && amount <= params.optimalRange.max) {
+      base = 1.0;
+    } else if (amount > params.optimalRange.max && amount <= params.optimalRange.max * 1.5) {
+      base = 0.7;
+    } else {
+      base = 0.4;
+    }
+  } else if (amount <= minDose * 2) {
+    base = 0.9;
+  } else if (amount <= minDose * 3) {
+    base = 0.7;
+  } else {
+    base = 0.5;
+  }
+  return clamp(base * weight, 0, 1);
+};
+
+const DAILY_MULTIPLIER_SOURCE_DEFAULT = "default_no_dosing_info";
+const DAILY_MULTIPLIER_SOURCE_LNHPD = "lnhpd_doses";
+const DAILY_MULTIPLIER_SOURCE_LNHPD_UNRELIABLE = "lnhpd_doses_unreliable";
+
+const toNumber = (value: unknown): number | null => {
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const parsed = Number(trimmed);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+};
+
+const pickNumberField = (record: Record<string, unknown>, keys: string[]): number | null => {
+  for (const key of keys) {
+    if (!(key in record)) continue;
+    const value = toNumber(record[key]);
+    if (value != null) return value;
+  }
+  return null;
+};
+
+const pickStringField = (record: Record<string, unknown>, keys: string[]): string | null => {
+  for (const key of keys) {
+    if (!(key in record)) continue;
+    const value = record[key];
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (trimmed) return trimmed;
+    }
+  }
+  return null;
+};
+
+const averageRange = (min: number | null, max: number | null): number | null => {
+  if (min == null && max == null) return null;
+  if (min != null && max != null) return (min + max) / 2;
+  return min ?? max;
+};
+
+const isDailyFrequencyUnit = (value?: string | null): boolean => {
+  if (!value) return false;
+  const normalized = value.trim().toLowerCase();
+  return normalized.includes("day") || normalized.includes("daily");
+};
+
+const normalizeAgeUnit = (value?: string | null): string | null => {
+  if (!value) return null;
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return null;
+  if (normalized.includes("year")) return "years";
+  if (normalized.includes("month")) return "months";
+  if (normalized.includes("week")) return "weeks";
+  if (normalized.includes("day")) return "days";
+  return normalized;
+};
+
+const isAdultDoseRecord = (record: Record<string, unknown>): boolean => {
+  const population = pickStringField(record, [
+    "population_type_desc",
+    "population_type",
+    "population_desc",
+  ]);
+  if (population && population.toLowerCase().includes("adult")) {
+    return true;
+  }
+  const ageMin = pickNumberField(record, ["age_minimum", "age_min", "age"]);
+  if (ageMin != null && ageMin >= 18) {
+    const ageUnit = normalizeAgeUnit(
+      pickStringField(record, ["uom_type_desc_age", "age_unit", "age_unit_of_measure"]),
+    );
+    if (!ageUnit || ageUnit === "years") {
+      return true;
+    }
+  }
+  return false;
+};
+
+const computeDailyMultiplierFromLnhpdFacts = (factsJson: Record<string, unknown>): DailyMultiplierResult => {
+  const dosesRaw = factsJson.doses;
+  const doses = Array.isArray(dosesRaw) ? dosesRaw : dosesRaw ? [dosesRaw] : [];
+  if (!doses.length) {
+    return {
+      multiplier: DEFAULT_DAILY_MULTIPLIER,
+      source: DAILY_MULTIPLIER_SOURCE_DEFAULT,
+      reliability: "default",
+    };
+  }
+
+  const doseRecords = doses.filter((entry): entry is Record<string, unknown> => Boolean(entry && typeof entry === "object"));
+  const selected =
+    doseRecords.find((record) => isAdultDoseRecord(record)) ?? doseRecords[0] ?? null;
+  if (!selected) {
+    return {
+      multiplier: DEFAULT_DAILY_MULTIPLIER,
+      source: DAILY_MULTIPLIER_SOURCE_DEFAULT,
+      reliability: "default",
+    };
+  }
+
+  const frequency = pickNumberField(selected, ["frequency", "frequency_value"]);
+  const frequencyMin = pickNumberField(selected, ["frequency_minimum", "frequency_min"]);
+  const frequencyMax = pickNumberField(selected, ["frequency_maximum", "frequency_max"]);
+  const frequencyValue = frequency ?? averageRange(frequencyMin, frequencyMax);
+
+  const quantity = pickNumberField(selected, ["quantity_dose", "quantity", "dose", "dosage", "quantity_value", "dose_value"]);
+  const quantityMin = pickNumberField(selected, ["quantity_dose_minimum", "quantity_minimum", "dose_minimum", "quantity_min", "dose_min"]);
+  const quantityMax = pickNumberField(selected, ["quantity_dose_maximum", "quantity_maximum", "dose_maximum", "quantity_max", "dose_max"]);
+  const quantityValue = quantity ?? averageRange(quantityMin, quantityMax);
+
+  const frequencyUnit = pickStringField(selected, [
+    "uom_type_desc_frequency",
+    "frequency_unit",
+    "frequency_unit_of_measure",
+  ]);
+
+  if (!isDailyFrequencyUnit(frequencyUnit) || (frequencyValue == null && quantityValue == null)) {
+    return {
+      multiplier: DEFAULT_DAILY_MULTIPLIER,
+      source: DAILY_MULTIPLIER_SOURCE_LNHPD_UNRELIABLE,
+      reliability: "unreliable",
+    };
+  }
+
+  const multiplier = (frequencyValue ?? 1) * (quantityValue ?? 1);
+  return {
+    multiplier,
+    source: DAILY_MULTIPLIER_SOURCE_LNHPD,
+    reliability: "reliable",
+  };
+};
+
+const computeEffectiveFormFactor = (form: IngredientFormRow): number => {
+  if (!isVerifiedAudit(form.audit_status)) return 1;
+  const relative = Number(form.relative_factor ?? 1);
+  const confidence = Number(form.confidence ?? 0.5);
+  const weight = clamp(confidence, 0, 1) * resolveGradeWeight(form.evidence_grade);
+  const raw = 1 + (relative - 1) * weight * FORM_ALPHA;
+  const gradeWeight = resolveGradeWeight(form.evidence_grade);
+  const isEnhanced = gradeWeight >= 0.85;
+  const min = isEnhanced ? 0.7 : 0.75;
+  const max = isEnhanced ? 1.4 : 1.25;
+  return clamp(raw, min, max);
+};
+
+type FormMatchResult = {
+  form: IngredientFormRow;
+  matchScore: number;
+  effectiveFactor: number;
+  aliasMatch: IngredientFormAliasRow | null;
+};
+
+const computeAliasMatchScore = (
+  candidateNormalized: string,
+  candidateTokens: Set<string>,
+  alias: IngredientFormAliasRow,
+): number => {
+  const aliasNorm = normalizeFormText(alias.alias_norm || alias.alias_text);
+  if (!aliasNorm) return 0;
+  if (candidateNormalized === aliasNorm) return 1.0;
+  if (candidateNormalized.includes(aliasNorm)) return 0.9;
+  const aliasTokens = aliasNorm.split(/\s+/).filter(Boolean);
+  if (aliasTokens.length && aliasTokens.every((token) => candidateTokens.has(token))) {
+    return 0.8;
+  }
+  if (aliasTokens.some((token) => candidateTokens.has(token))) {
+    return 0.6;
+  }
+  return 0;
+};
+
+const selectBestFormMatch = (
+  candidate: string | null,
+  forms: IngredientFormRow[],
+  aliases: IngredientFormAliasRow[] | null,
+): FormMatchResult | null => {
+  if (!candidate || !forms.length) return null;
+  const candidateNormalized = normalizeFormText(candidate);
+  if (!candidateNormalized) return null;
+  const candidateTokens = new Set(candidateNormalized.split(/\s+/).filter(Boolean));
+
+  let best: FormMatchResult | null = null;
+
+  forms.forEach((form) => {
+    const keyNormalized = normalizeFormText(form.form_key);
+    const labelNormalized = normalizeFormText(form.form_label);
+    const keyTokens = keyNormalized.split(/\s+/).filter(Boolean);
+    const labelTokens = labelNormalized.split(/\s+/).filter(Boolean);
+    let baseScore = 0;
+    let aliasMatch: IngredientFormAliasRow | null = null;
+
+    if (keyNormalized && candidateNormalized.includes(keyNormalized)) {
+      baseScore = 1.0;
+    } else if (keyTokens.length && keyTokens.every((token) => candidateTokens.has(token))) {
+      baseScore = 0.9;
+    } else if (labelTokens.length && labelTokens.every((token) => candidateTokens.has(token))) {
+      baseScore = 0.8;
+    } else if (labelTokens.some((token) => candidateTokens.has(token))) {
+      baseScore = 0.6;
+    }
+
+    const aliasCandidates = aliases?.filter((alias) => alias.form_key === form.form_key) ?? [];
+    if (aliasCandidates.length) {
+      aliasCandidates.forEach((alias) => {
+        const aliasScoreBase = computeAliasMatchScore(candidateNormalized, candidateTokens, alias);
+        if (!aliasScoreBase) return;
+        const aliasConfidence = clamp(Number(alias.confidence ?? 0.6), 0, 1);
+        const aliasAuditWeight = isVerifiedAudit(alias.audit_status) ? 1 : 0.8;
+        const score = aliasScoreBase * aliasConfidence * aliasAuditWeight;
+        if (score > baseScore) {
+          baseScore = score;
+          aliasMatch = alias;
+        }
+      });
+    }
+
+    if (!baseScore) return;
+
+    const evidenceWeight = resolveEvidenceWeight(form.evidence_grade, form.audit_status);
+    const confidence = Number(form.confidence ?? 0.5);
+    const matchScore = baseScore * clamp(confidence, 0, 1) * evidenceWeight;
+    if (!best || matchScore > best.matchScore) {
+      best = {
+        form,
+        matchScore,
+        effectiveFactor: computeEffectiveFormFactor(form),
+        aliasMatch,
+      };
+    }
+  });
+
+  return best;
+};
+
+const buildInputsHash = (
+  rows: ProductIngredientRow[],
+  context?: { dailyMultiplier?: number; dailyMultiplierSource?: string; datasetVersion?: string | null },
+): string => {
+  const payload = {
+    rows: rows
+      .map((row) => ({
+        nameRaw: row.name_raw,
+        nameKey: row.name_key ?? normalizeNameKey(row.name_raw),
+        ingredientId: row.ingredient_id,
+        amount: row.amount,
+        unit: row.unit,
+        amountNormalized: row.amount_normalized,
+        unitNormalized: row.unit_normalized,
+        unitKind: row.unit_kind,
+        amountUnknown: row.amount_unknown,
+        parseConfidence: row.parse_confidence,
+        active: row.is_active,
+        proprietaryBlend: row.is_proprietary_blend,
+        basis: row.basis,
+        form: row.form_raw,
+      }))
+      .sort((a, b) => {
+        const nameKeyCompare = a.nameKey.localeCompare(b.nameKey);
+        if (nameKeyCompare !== 0) return nameKeyCompare;
+        const nameRawCompare = a.nameRaw.localeCompare(b.nameRaw);
+        if (nameRawCompare !== 0) return nameRawCompare;
+        const ingredientCompare = String(a.ingredientId ?? "").localeCompare(
+          String(b.ingredientId ?? ""),
+        );
+        if (ingredientCompare !== 0) return ingredientCompare;
+        const basisCompare = String(a.basis ?? "").localeCompare(String(b.basis ?? ""));
+        if (basisCompare !== 0) return basisCompare;
+        return String(a.form ?? "").localeCompare(String(b.form ?? ""));
+      }),
+    context: {
+      dailyMultiplier: context?.dailyMultiplier ?? null,
+      dailyMultiplierSource: context?.dailyMultiplierSource ?? null,
+      datasetVersion: context?.datasetVersion ?? null,
+    },
+  };
   const json = JSON.stringify(payload);
   return createHash("sha256").update(json).digest("hex");
 };
@@ -191,10 +664,47 @@ const resolveGoalMatches = (rows: ProductIngredientRow[]): ScoreGoalFit[] => {
     .slice(0, 3);
 };
 
+const KEYWORD_FALLBACK_WEIGHT = 0.6;
+
+const resolveBestFitGoals = (
+  rows: ProductIngredientRow[],
+  goalDoseAdequacy: Record<string, number>,
+): ScoreGoalFit[] => {
+  const mergedScores = new Map<string, number>();
+  Object.entries(goalDoseAdequacy).forEach(([goal, score]) => {
+    const normalized = normalizeGoalId(goal);
+    if (!normalized) return;
+    mergedScores.set(normalized, Math.round(clamp(score, 0, 1) * 100));
+  });
+
+  const fallbackRows = rows.filter((row) => row.is_active && !row.ingredient_id);
+  if (fallbackRows.length) {
+    const fallbackGoals = resolveGoalMatches(fallbackRows);
+    fallbackGoals.forEach((goalFit) => {
+      const normalized = normalizeGoalId(goalFit.goal);
+      if (!normalized) return;
+      const scaled = Math.round(goalFit.score * KEYWORD_FALLBACK_WEIGHT);
+      const existing = mergedScores.get(normalized);
+      mergedScores.set(normalized, existing == null ? scaled : Math.max(existing, scaled));
+    });
+  }
+
+  return Array.from(mergedScores.entries())
+    .map(([goal, score]) => ({
+      goal,
+      label: formatGoalLabel(goal),
+      score: Math.round(clamp(score, 0, 100)),
+    }))
+    .filter((goal) => goal.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3);
+};
+
 const computeUlWarnings = (
   rows: ProductIngredientRow[],
   ingredientMeta: Map<string, IngredientMeta>,
-): { high: string[]; moderate: string[] } => {
+  dailyMultiplier: DailyMultiplierResult,
+): UlWarnings => {
   const high: string[] = [];
   const moderate: string[] = [];
 
@@ -205,7 +715,9 @@ const computeUlWarnings = (
     const unit = row.unit_normalized ?? row.unit;
     const amount = row.amount_normalized ?? row.amount;
     if (!unit || amount == null || !meta.unit || unit !== meta.unit) return;
-    const ratio = amount / meta.ul_adult;
+    const multiplier = row.basis === "label_serving" ? dailyMultiplier.multiplier : 1;
+    const amountPerDay = amount * multiplier;
+    const ratio = amountPerDay / meta.ul_adult;
     if (!Number.isFinite(ratio)) return;
     if (ratio >= 1.2) {
       high.push(row.name_raw);
@@ -214,27 +726,66 @@ const computeUlWarnings = (
     }
   });
 
-  return { high, moderate };
+  return {
+    high,
+    moderate,
+    basis: "per_day_adult",
+    dailyMultiplierUsed: dailyMultiplier.multiplier,
+    dailyMultiplierSource: dailyMultiplier.source,
+  };
 };
 
 const computeConfidence = (
   coverage: number,
   avgParseConfidence: number,
+  matchRatio: number,
+  unitOkRatio: number,
   canonicalSourceId: string | null,
+  formCoverageRatio: number,
 ): number => {
-  const identityConfidence = canonicalSourceId ? 0.9 : 0.7;
-  const combined = 1 - (1 - coverage) * (1 - avgParseConfidence) * (1 - identityConfidence);
-  return clamp(combined, 0.1, 0.95);
+  const identityConfidence = canonicalSourceId ? 0.75 : 0.55;
+  const weighted =
+    0.05 +
+    0.25 * coverage +
+    0.2 * avgParseConfidence +
+    0.2 * matchRatio +
+    0.15 * unitOkRatio +
+    0.12 * identityConfidence +
+    0.08 * formCoverageRatio;
+  return clamp(weighted, 0.1, 0.95);
 };
 
-const computeScores = (rows: ProductIngredientRow[], canonicalSourceId: string | null) => {
+const computeScores = (
+  rows: ProductIngredientRow[],
+  canonicalSourceId: string | null,
+  ingredientMeta: Map<string, IngredientMeta>,
+  evidenceRows: IngredientEvidenceRow[],
+  formRows: IngredientFormRow[],
+  formAliases: IngredientFormAliasRow[],
+  dailyMultiplier: DailyMultiplierResult,
+) => {
   const activeRows = rows.filter((row) => row.is_active);
   const activeCount = activeRows.length;
-  const knownDoseCount = activeRows.filter(
-    (row) => !row.amount_unknown && row.amount != null,
-  ).length;
+  const isUnitOk = (row: ProductIngredientRow): boolean => {
+    if (!isRecognizedUnit(row.unit_normalized ?? row.unit, row.unit_kind)) return false;
+    if (!row.ingredient_id) return true;
+    const metaUnit = ingredientMeta.get(row.ingredient_id)?.unit ?? null;
+    if (!metaUnit) return true;
+    const unitValue = row.unit_normalized ?? row.unit;
+    return Boolean(unitValue && unitValue === metaUnit);
+  };
+  const knownDoseCount = activeRows.filter((row) => {
+    if (row.amount == null || row.amount_unknown) return false;
+    return isUnitOk(row);
+  }).length;
   const proprietaryBlendCount = activeRows.filter((row) => row.is_proprietary_blend).length;
   const coverage = activeCount ? knownDoseCount / activeCount : 0;
+  const matchCount = activeRows.filter((row) => Boolean(row.ingredient_id)).length;
+  const matchRatio = activeCount ? matchCount / activeCount : 0;
+  const unitOkCount = activeRows.filter((row) => isUnitOk(row)).length;
+  const unitOkRatio = activeCount ? unitOkCount / activeCount : 0;
+  const unknownUnitCount = activeRows.filter((row) => !isUnitOk(row)).length;
+  const unknownUnitRatio = activeCount ? unknownUnitCount / activeCount : 0;
 
   const parseValues = rows
     .map((row) => row.parse_confidence)
@@ -243,13 +794,201 @@ const computeScores = (rows: ProductIngredientRow[], canonicalSourceId: string |
     ? parseValues.reduce((sum, value) => sum + value, 0) / parseValues.length
     : 0.5;
 
-  const confidence = computeConfidence(coverage, avgParseConfidence, canonicalSourceId);
+  const formsByIngredient = new Map<string, IngredientFormRow[]>();
+  formRows.forEach((form) => {
+    if (!form.ingredient_id) return;
+    const bucket = formsByIngredient.get(form.ingredient_id) ?? [];
+    bucket.push(form);
+    formsByIngredient.set(form.ingredient_id, bucket);
+  });
+  const globalAliases = formAliases.filter((alias) => !alias.ingredient_id);
+  const aliasesByIngredient = new Map<string, IngredientFormAliasRow[]>();
+  formAliases.forEach((alias) => {
+    if (!alias.ingredient_id) return;
+    const bucket = aliasesByIngredient.get(alias.ingredient_id) ?? [];
+    bucket.push(alias);
+    aliasesByIngredient.set(alias.ingredient_id, bucket);
+  });
+
+  const formSignals: FormSignal[] = [];
+  const usedFormIds = new Set<string>();
+  const formMatches: Array<
+    | {
+        match: FormMatchResult;
+        candidateText: string;
+      }
+    | null
+  > = [];
+  let formMatchCount = 0;
+
+  activeRows.forEach((row) => {
+    if (!row.ingredient_id) {
+      formMatches.push(null);
+      return;
+    }
+    const forms = formsByIngredient.get(row.ingredient_id) ?? [];
+    if (!forms.length) {
+      formMatches.push(null);
+      return;
+    }
+    const aliases = [...globalAliases, ...(aliasesByIngredient.get(row.ingredient_id) ?? [])];
+    let candidateText = row.form_raw ?? row.name_raw;
+    let match = selectBestFormMatch(candidateText, forms, aliases);
+    if (!match && row.form_raw && row.name_raw && row.name_raw !== row.form_raw) {
+      candidateText = row.name_raw;
+      match = selectBestFormMatch(candidateText, forms, aliases);
+    }
+    if (!match) {
+      formMatches.push(null);
+      return;
+    }
+    formMatchCount += 1;
+    usedFormIds.add(match.form.id);
+    formSignals.push({
+      ingredientId: row.ingredient_id,
+      ingredientName: row.name_raw,
+      candidateText,
+      formId: match.form.id,
+      formKey: match.form.form_key,
+      formLabel: match.form.form_label,
+      matchScore: roundScore(match.matchScore),
+      effectiveFactor: roundScore(match.effectiveFactor),
+      confidence: match.form.confidence ?? null,
+      evidenceGrade: match.form.evidence_grade ?? null,
+      auditStatus: match.form.audit_status ?? null,
+      aliasText: match.aliasMatch?.alias_text ?? null,
+      aliasSource: match.aliasMatch?.source ?? null,
+      aliasConfidence: match.aliasMatch?.confidence ?? null,
+    });
+    formMatches.push({ match, candidateText });
+  });
+
+  const formCoverageRatio = activeCount ? formMatchCount / activeCount : 0;
+
+  const baseConfidence = computeConfidence(
+    coverage,
+    avgParseConfidence,
+    matchRatio,
+    unitOkRatio,
+    canonicalSourceId,
+    formCoverageRatio,
+  );
+  const confidencePenalty =
+    dailyMultiplier.source === DAILY_MULTIPLIER_SOURCE_LNHPD ? 1 : DEFAULT_DAILY_CONFIDENCE_PENALTY;
+  const confidence = clamp(baseConfidence * confidencePenalty, 0.1, 0.95);
+
+  const evidenceByIngredient = new Map<string, IngredientEvidenceRow[]>();
+  evidenceRows.forEach((row) => {
+    if (!row.ingredient_id) return;
+    const existing = evidenceByIngredient.get(row.ingredient_id) ?? [];
+    existing.push(row);
+    evidenceByIngredient.set(row.ingredient_id, existing);
+  });
+
+  const evidenceAvailableIds = new Set<string>();
+  const evidenceEligibleIds = new Set<string>();
+  const usedEvidenceIds = new Set<string>();
+  const ingredientGoalScores = new Map<string, { goal: string; score: number }>();
+  const ingredientGoalScoresRaw = new Map<string, { goal: string; score: number }>();
+
+  activeRows.forEach((row, index) => {
+    if (!row.ingredient_id) return;
+    const entries = evidenceByIngredient.get(row.ingredient_id);
+    if (!entries?.length) return;
+    evidenceAvailableIds.add(row.ingredient_id);
+    const meta = ingredientMeta.get(row.ingredient_id);
+    const metaUnit = meta?.unit ?? null;
+    const amountValue = row.amount_unknown ? null : row.amount_normalized ?? row.amount;
+    const unitValue = row.unit_normalized ?? row.unit;
+    const unitMatches = Boolean(metaUnit && unitValue && unitValue === metaUnit);
+    const rowMultiplier = row.basis === "label_serving" ? dailyMultiplier.multiplier : 1;
+    const dailyAmountValue = amountValue == null ? null : amountValue * rowMultiplier;
+    const doseEligible = dailyAmountValue != null && unitMatches;
+    const goalSet = new Set((meta?.goals ?? []).map(normalizeGoalId).filter(Boolean));
+    const formMatch = formMatches[index]?.match ?? null;
+    const formFactor = formMatch?.effectiveFactor ?? 1;
+    const adjustedAmount =
+      dailyAmountValue == null ? null : dailyAmountValue * formFactor;
+
+    entries.forEach((entry) => {
+      const goalId = normalizeGoalId(entry.goal);
+      if (!goalId) return;
+      if (goalSet.size && !goalSet.has(goalId)) return;
+      const evidenceWeight = resolveEvidenceWeight(entry.evidence_grade, entry.audit_status);
+      if (evidenceWeight <= 0 || !doseEligible) return;
+      const optimalRange = parseNumericRange(entry.optimal_dose_range);
+      const rawAdequacy = computeDoseAdequacy({
+        amount: dailyAmountValue,
+        unitMatches,
+        minDose: entry.min_effective_dose,
+        optimalRange,
+        evidenceWeight,
+      });
+      const adequacy = computeDoseAdequacy({
+        amount: adjustedAmount,
+        unitMatches,
+        minDose: entry.min_effective_dose,
+        optimalRange,
+        evidenceWeight,
+      });
+      const key = `${row.ingredient_id}:${goalId}`;
+      const existing = ingredientGoalScores.get(key);
+      if (!existing || adequacy > existing.score) {
+        ingredientGoalScores.set(key, { goal: goalId, score: adequacy });
+      }
+      const existingRaw = ingredientGoalScoresRaw.get(key);
+      if (!existingRaw || rawAdequacy > existingRaw.score) {
+        ingredientGoalScoresRaw.set(key, { goal: goalId, score: rawAdequacy });
+      }
+      if (entry.id) {
+        usedEvidenceIds.add(entry.id);
+      }
+      evidenceEligibleIds.add(row.ingredient_id);
+    });
+  });
+
+  const goalScoresMap = new Map<string, number[]>();
+  const goalScoresRawMap = new Map<string, number[]>();
+  ingredientGoalScores.forEach((entry) => {
+    const bucket = goalScoresMap.get(entry.goal) ?? [];
+    bucket.push(entry.score);
+    goalScoresMap.set(entry.goal, bucket);
+  });
+  ingredientGoalScoresRaw.forEach((entry) => {
+    const bucket = goalScoresRawMap.get(entry.goal) ?? [];
+    bucket.push(entry.score);
+    goalScoresRawMap.set(entry.goal, bucket);
+  });
+  const goalDoseAdequacy: Record<string, number> = {};
+  const goalDoseAdequacyRaw: Record<string, number> = {};
+  const goalScoreList: number[] = [];
+  const goalScoreListRaw: number[] = [];
+  goalScoresMap.forEach((scores, goal) => {
+    const avg = scores.reduce((sum, value) => sum + value, 0) / scores.length;
+    goalDoseAdequacy[goal] = avg;
+    goalScoreList.push(avg);
+  });
+  goalScoresRawMap.forEach((scores, goal) => {
+    const avg = scores.reduce((sum, value) => sum + value, 0) / scores.length;
+    goalDoseAdequacyRaw[goal] = avg;
+    goalScoreListRaw.push(avg);
+  });
+  const topGoalScores = goalScoreList.sort((a, b) => b - a).slice(0, 3);
+  const doseAdequacyAvg = topGoalScores.length
+    ? topGoalScores.reduce((sum, value) => sum + value, 0) / topGoalScores.length
+    : 0;
+  const topGoalScoresRaw = goalScoreListRaw.sort((a, b) => b - a).slice(0, 3);
+  const doseAdequacyRawAvg = topGoalScoresRaw.length
+    ? topGoalScoresRaw.reduce((sum, value) => sum + value, 0) / topGoalScoresRaw.length
+    : 0;
+  const evidenceCoverage = activeCount ? evidenceEligibleIds.size / activeCount : 0;
+  const evidenceAvailableRatio = activeCount ? evidenceAvailableIds.size / activeCount : 0;
 
   if (activeCount === 0) {
     return {
       effectiveness: 20,
       safetyBase: 60,
-      integrityBase: 35,
+      integrityBase: 25,
       confidence: clamp(confidence * 0.6, 0.1, 0.6),
       coverage,
       activeCount,
@@ -257,6 +996,21 @@ const computeScores = (rows: ProductIngredientRow[], canonicalSourceId: string |
       unknownRatio: 1,
       proprietaryBlendCount,
       avgParseConfidence,
+      matchRatio,
+      unitOkRatio,
+      formCoverageRatio,
+      unknownUnitCount,
+      unknownUnitRatio,
+      evidenceCoverage,
+      evidenceAvailableRatio,
+      doseAdequacyAvg,
+      doseAdequacyRawAvg,
+      goalDoseAdequacy,
+      goalDoseAdequacyRaw,
+      formSignals,
+      usedEvidenceIds: Array.from(usedEvidenceIds),
+      usedFormIds: Array.from(usedFormIds),
+      dailyMultiplier,
     };
   }
 
@@ -264,16 +1018,25 @@ const computeScores = (rows: ProductIngredientRow[], canonicalSourceId: string |
   const kitchenSinkPenalty = activeCount >= 10 && coverage < 0.4 ? 15 : 0;
   const proprietaryPenalty = proprietaryBlendCount > 0 ? 12 : 0;
 
-  const effectiveness = clamp(
-    45 + 35 * coverage + focusBonus - kitchenSinkPenalty - proprietaryPenalty,
-    0,
-    100,
-  );
+  const baseEffectiveness =
+    40 + 30 * coverage + focusBonus - kitchenSinkPenalty - proprietaryPenalty;
+  const evidenceBoost =
+    evidenceCoverage > 0 ? 30 * doseAdequacyAvg + 10 * evidenceCoverage : 0;
+  const effectiveness = clamp(baseEffectiveness + evidenceBoost, 0, 100);
 
   const unknownRatio = 1 - coverage;
   const safetyBase = 80 - unknownRatio * 25 - proprietaryBlendCount * 8;
-  const integrityBase =
-    60 + 25 * coverage + 10 * avgParseConfidence + (proprietaryBlendCount > 0 ? -12 : 8);
+  const integrityBase = clamp(
+    25 +
+      35 * coverage +
+      22 * matchRatio +
+      18 * unitOkRatio +
+      10 * formCoverageRatio -
+      proprietaryBlendCount * 12 -
+      unknownUnitRatio * 25,
+    0,
+    100,
+  );
 
   return {
     effectiveness: clamp(effectiveness, 0, 100),
@@ -286,6 +1049,21 @@ const computeScores = (rows: ProductIngredientRow[], canonicalSourceId: string |
     unknownRatio,
     proprietaryBlendCount,
     avgParseConfidence,
+    matchRatio,
+    unitOkRatio,
+    formCoverageRatio,
+    unknownUnitCount,
+    unknownUnitRatio,
+    evidenceCoverage,
+    evidenceAvailableRatio,
+    doseAdequacyAvg,
+    doseAdequacyRawAvg,
+    goalDoseAdequacy,
+    goalDoseAdequacyRaw,
+    formSignals,
+    usedEvidenceIds: Array.from(usedEvidenceIds),
+    usedFormIds: Array.from(usedFormIds),
+    dailyMultiplier,
   };
 };
 
@@ -293,7 +1071,7 @@ const buildFlags = (params: {
   coverage: number;
   activeCount: number;
   proprietaryBlendCount: number;
-  ulWarnings: { high: string[]; moderate: string[] };
+  ulWarnings: UlWarnings;
   avgParseConfidence: number;
 }): ScoreFlag[] => {
   const flags: ScoreFlag[] = [];
@@ -384,7 +1162,7 @@ const fetchIngredientMeta = async (rows: ProductIngredientRow[]): Promise<Map<st
 
   const { data, error } = await supabase
     .from("ingredients")
-    .select("id,unit,rda_adult,ul_adult")
+    .select("id,unit,rda_adult,ul_adult,goals")
     .in("id", ingredientIds);
   if (error || !data) return metaMap;
 
@@ -395,9 +1173,173 @@ const fetchIngredientMeta = async (rows: ProductIngredientRow[]): Promise<Map<st
       unit: row.unit ?? null,
       rda_adult: row.rda_adult ?? null,
       ul_adult: row.ul_adult ?? null,
+      goals: Array.isArray(row.goals) ? (row.goals as string[]) : null,
     });
   });
   return metaMap;
+};
+
+const fetchIngredientEvidence = async (
+  ingredientIds: string[],
+): Promise<IngredientEvidenceRow[]> => {
+  if (!ingredientIds.length) return [];
+  const { data, error } = await supabase
+    .from("ingredient_evidence")
+    .select("id,ingredient_id,goal,min_effective_dose,optimal_dose_range,evidence_grade,audit_status")
+    .in("ingredient_id", ingredientIds);
+  if (error || !data) return [];
+  return data as IngredientEvidenceRow[];
+};
+
+const fetchIngredientForms = async (
+  ingredientIds: string[],
+): Promise<IngredientFormRow[]> => {
+  if (!ingredientIds.length) return [];
+  const { data, error } = await supabase
+    .from("ingredient_forms")
+    .select("id,ingredient_id,form_key,form_label,relative_factor,confidence,evidence_grade,audit_status")
+    .in("ingredient_id", ingredientIds);
+  if (error || !data) return [];
+  return data as IngredientFormRow[];
+};
+
+const fetchEvidenceCitations = async (
+  evidenceIds: string[],
+): Promise<Map<string, string[]>> => {
+  const map = new Map<string, Set<string>>();
+  if (!evidenceIds.length) return new Map();
+  const { data, error } = await supabase
+    .from("ingredient_evidence_citations")
+    .select("evidence_id,citation_id")
+    .in("evidence_id", evidenceIds);
+  if (error || !data) return new Map();
+  data.forEach((row) => {
+    const evidenceId = row?.evidence_id as string | undefined;
+    const citationId = row?.citation_id as string | undefined;
+    if (!evidenceId || !citationId) return;
+    const bucket = map.get(evidenceId) ?? new Set<string>();
+    bucket.add(citationId);
+    map.set(evidenceId, bucket);
+  });
+  const result = new Map<string, string[]>();
+  map.forEach((value, key) => result.set(key, Array.from(value)));
+  return result;
+};
+
+const fetchFormCitations = async (
+  formIds: string[],
+): Promise<Map<string, string[]>> => {
+  const map = new Map<string, Set<string>>();
+  if (!formIds.length) return new Map();
+  const { data, error } = await supabase
+    .from("ingredient_form_citations")
+    .select("form_id,citation_id")
+    .in("form_id", formIds);
+  if (error || !data) return new Map();
+  data.forEach((row) => {
+    const formId = row?.form_id as string | undefined;
+    const citationId = row?.citation_id as string | undefined;
+    if (!formId || !citationId) return;
+    const bucket = map.get(formId) ?? new Set<string>();
+    bucket.add(citationId);
+    map.set(formId, bucket);
+  });
+  const result = new Map<string, string[]>();
+  map.forEach((value, key) => result.set(key, Array.from(value)));
+  return result;
+};
+
+const fetchIngredientFormAliases = async (
+  ingredientIds: string[],
+): Promise<IngredientFormAliasRow[]> => {
+  const aliasRows: IngredientFormAliasRow[] = [];
+  const { data: globalAliases } = await supabase
+    .from("ingredient_form_aliases")
+    .select("id,alias_text,alias_norm,form_key,ingredient_id,confidence,audit_status,source")
+    .is("ingredient_id", null);
+  if (Array.isArray(globalAliases)) {
+    aliasRows.push(...(globalAliases as IngredientFormAliasRow[]));
+  }
+  if (ingredientIds.length) {
+    const { data: scopedAliases } = await supabase
+      .from("ingredient_form_aliases")
+      .select("id,alias_text,alias_norm,form_key,ingredient_id,confidence,audit_status,source")
+      .in("ingredient_id", ingredientIds);
+    if (Array.isArray(scopedAliases)) {
+      aliasRows.push(...(scopedAliases as IngredientFormAliasRow[]));
+    }
+  }
+  return aliasRows;
+};
+
+const mergeFormAliases = (
+  dbAliases: IngredientFormAliasRow[],
+): IngredientFormAliasRow[] => {
+  const map = new Map<string, IngredientFormAliasRow>();
+  BUILTIN_FORM_ALIASES.forEach((alias) => {
+    const key = `${alias.alias_norm}:${alias.ingredient_id ?? "global"}:${alias.form_key}`;
+    map.set(key, alias);
+  });
+  dbAliases.forEach((alias) => {
+    const norm = alias.alias_norm || normalizeFormText(alias.alias_text);
+    const key = `${norm}:${alias.ingredient_id ?? "global"}:${alias.form_key}`;
+    map.set(key, { ...alias, alias_norm: norm });
+  });
+  return Array.from(map.values());
+};
+
+const fetchLnhpdFactsJson = async (lnhpdId: string): Promise<Record<string, unknown> | null> => {
+  if (!lnhpdId) return null;
+  const runQuery = async (table: string) => {
+    let query = supabase
+      .from(table)
+      .select("facts_json")
+      .eq("lnhpd_id", lnhpdId)
+      .limit(1);
+    if (table === "lnhpd_facts") {
+      query = query.eq("is_on_market", true);
+    }
+    const { data, error } = await query;
+    if (error || !data || data.length === 0) return null;
+    const facts = data[0]?.facts_json;
+    if (!facts || typeof facts !== "object") return null;
+    return facts as Record<string, unknown>;
+  };
+
+  const facts = (await runQuery("lnhpd_facts_complete")) ?? (await runQuery("lnhpd_facts"));
+  return facts ?? null;
+};
+
+const fetchDatasetVersion = async (): Promise<string | null> => {
+  const { data } = await supabase
+    .from("scoring_dataset_state")
+    .select("version")
+    .eq("key", "ingredient_dataset")
+    .maybeSingle();
+  const value = data?.version;
+  return typeof value === "string" && value.trim().length > 0 ? value : null;
+};
+
+const fetchDailyMultiplier = async (
+  source: ScoreSource,
+  sourceId: string,
+): Promise<DailyMultiplierResult> => {
+  if (source !== "lnhpd") {
+    return {
+      multiplier: DEFAULT_DAILY_MULTIPLIER,
+      source: DAILY_MULTIPLIER_SOURCE_DEFAULT,
+      reliability: "default",
+    };
+  }
+  const factsJson = await fetchLnhpdFactsJson(sourceId);
+  if (!factsJson) {
+    return {
+      multiplier: DEFAULT_DAILY_MULTIPLIER,
+      source: DAILY_MULTIPLIER_SOURCE_DEFAULT,
+      reliability: "default",
+    };
+  }
+  return computeDailyMultiplierFromLnhpdFacts(factsJson);
 };
 
 const fetchProductIngredients = async (
@@ -405,7 +1347,7 @@ const fetchProductIngredients = async (
   sourceId: string,
 ): Promise<{ rows: ProductIngredientRow[]; sourceIdForWrite: string; canonicalSourceId: string | null } | null> => {
   const selectColumns =
-    "source_id,canonical_source_id,ingredient_id,name_raw,amount,unit,amount_normalized,unit_normalized,amount_unknown,is_active,is_proprietary_blend,parse_confidence,basis,form_raw";
+    "source_id,canonical_source_id,ingredient_id,name_raw,name_key,amount,unit,amount_normalized,unit_normalized,unit_kind,amount_unknown,is_active,is_proprietary_blend,parse_confidence,basis,form_raw";
 
   const { data: directRows } = await supabase
     .from("product_ingredients")
@@ -442,10 +1384,190 @@ export async function computeScoreBundleV4(params: {
   if (!ingredientLookup) return null;
 
   const { rows, sourceIdForWrite, canonicalSourceId } = ingredientLookup;
-  const inputsHash = buildInputsHash(rows);
+  const [dailyMultiplier, datasetVersion] = await Promise.all([
+    fetchDailyMultiplier(params.source, params.sourceId),
+    fetchDatasetVersion(),
+  ]);
+  const inputsHash = buildInputsHash(rows, {
+    dailyMultiplier: dailyMultiplier.multiplier,
+    dailyMultiplierSource: dailyMultiplier.source,
+    datasetVersion,
+  });
   const ingredientMeta = await fetchIngredientMeta(rows);
-  const ulWarnings = computeUlWarnings(rows, ingredientMeta);
-  const metrics = computeScores(rows, canonicalSourceId);
+  const ingredientIds = Array.from(
+    new Set(rows.map((row) => row.ingredient_id).filter((id): id is string => Boolean(id))),
+  );
+  const [evidenceRows, formRows, formAliasRows] = await Promise.all([
+    fetchIngredientEvidence(ingredientIds),
+    fetchIngredientForms(ingredientIds),
+    fetchIngredientFormAliases(ingredientIds),
+  ]);
+  const mergedFormAliases = mergeFormAliases(formAliasRows);
+  const verifiedEvidenceRows = evidenceRows.filter((row) => isVerifiedAudit(row.audit_status));
+  const pendingEvidenceRows = evidenceRows.filter((row) => !isVerifiedAudit(row.audit_status));
+  const verifiedFormRows = formRows.filter((row) => isVerifiedAudit(row.audit_status));
+  const pendingFormRows = formRows.filter((row) => !isVerifiedAudit(row.audit_status));
+  const activeIngredientIds = new Set(
+    rows
+      .filter((row) => row.is_active && row.ingredient_id)
+      .map((row) => row.ingredient_id as string),
+  );
+  const verifiedEvidenceCount = verifiedEvidenceRows.filter((row) =>
+    activeIngredientIds.has(row.ingredient_id),
+  ).length;
+  const pendingEvidenceCount = pendingEvidenceRows.filter((row) =>
+    activeIngredientIds.has(row.ingredient_id),
+  ).length;
+  const verifiedFormCount = verifiedFormRows.filter((row) =>
+    activeIngredientIds.has(row.ingredient_id),
+  ).length;
+  const pendingFormCount = pendingFormRows.filter((row) =>
+    activeIngredientIds.has(row.ingredient_id),
+  ).length;
+  const ulWarnings = computeUlWarnings(rows, ingredientMeta, dailyMultiplier);
+  const metrics = computeScores(
+    rows,
+    canonicalSourceId,
+    ingredientMeta,
+    verifiedEvidenceRows,
+    verifiedFormRows,
+    mergedFormAliases,
+    dailyMultiplier,
+  );
+
+  const ingredientNameById = new Map<string, string>();
+  rows.forEach((row) => {
+    if (!row.is_active || !row.ingredient_id) return;
+    if (!ingredientNameById.has(row.ingredient_id)) {
+      ingredientNameById.set(row.ingredient_id, row.name_raw);
+    }
+  });
+
+  const pendingEvidenceIds = Array.from(
+    new Set(
+      pendingEvidenceRows
+        .filter((row) => activeIngredientIds.has(row.ingredient_id))
+        .map((row) => row.id),
+    ),
+  );
+  const pendingFormIds = Array.from(
+    new Set(
+      pendingFormRows
+        .filter((row) => activeIngredientIds.has(row.ingredient_id))
+        .map((row) => row.id),
+    ),
+  );
+
+  const [evidenceCitations, formCitations, pendingEvidenceCitations, pendingFormCitations] =
+    await Promise.all([
+    fetchEvidenceCitations(metrics.usedEvidenceIds),
+    fetchFormCitations(metrics.usedFormIds),
+    fetchEvidenceCitations(pendingEvidenceIds),
+    fetchFormCitations(pendingFormIds),
+  ]);
+  const evidenceReferenceIds = new Set<string>();
+  evidenceCitations.forEach((refs) => refs.forEach((ref) => evidenceReferenceIds.add(ref)));
+  const formReferenceIds = new Set<string>();
+  formCitations.forEach((refs) => refs.forEach((ref) => formReferenceIds.add(ref)));
+  const evidenceCitationMap = Object.fromEntries(Array.from(evidenceCitations.entries()));
+  const formCitationMap = Object.fromEntries(Array.from(formCitations.entries()));
+  const pendingEvidenceCitationMap = Object.fromEntries(
+    Array.from(pendingEvidenceCitations.entries()),
+  );
+  const pendingFormCitationMap = Object.fromEntries(
+    Array.from(pendingFormCitations.entries()),
+  );
+
+  const verifiedEvidence: Array<Record<string, unknown>> = [];
+  const skippedEvidence: Array<Record<string, unknown>> = [];
+  const verifiedForms: Array<Record<string, unknown>> = [];
+  const skippedForms: Array<Record<string, unknown>> = [];
+  let truncatedVerifiedEvidence = 0;
+  let truncatedSkippedEvidence = 0;
+  let truncatedVerifiedForms = 0;
+  let truncatedSkippedForms = 0;
+
+  metrics.usedEvidenceIds.forEach((evidenceId) => {
+    const row = verifiedEvidenceRows.find((entry) => entry.id === evidenceId);
+    if (!row) return;
+    const ingredientName = ingredientNameById.get(row.ingredient_id) ?? row.ingredient_id;
+    const refs = evidenceCitations.get(evidenceId) ?? [];
+    const item = {
+      ingredientId: row.ingredient_id,
+      ingredientName,
+      goal: row.goal,
+      evidenceGrade: row.evidence_grade,
+      auditStatus: row.audit_status,
+      minEffectiveDose: row.min_effective_dose,
+      optimalDoseRange: row.optimal_dose_range,
+      refIds: refs,
+    };
+    if (verifiedEvidence.length < MAX_AUDIT_ITEMS) {
+      verifiedEvidence.push(item);
+    } else {
+      truncatedVerifiedEvidence += 1;
+    }
+  });
+
+  pendingEvidenceRows.forEach((row) => {
+    if (!activeIngredientIds.has(row.ingredient_id)) return;
+    const ingredientName = ingredientNameById.get(row.ingredient_id) ?? row.ingredient_id;
+    const refs = pendingEvidenceCitations.get(row.id) ?? [];
+    const item = {
+      ingredientId: row.ingredient_id,
+      ingredientName,
+      goal: row.goal,
+      evidenceGrade: row.evidence_grade,
+      auditStatus: row.audit_status,
+      reason: "audit_status_not_verified",
+      refIds: refs,
+    };
+    if (skippedEvidence.length < MAX_AUDIT_ITEMS) {
+      skippedEvidence.push(item);
+    } else {
+      truncatedSkippedEvidence += 1;
+    }
+  });
+
+  metrics.formSignals.forEach((signal) => {
+    const refs = formCitations.get(signal.formId) ?? [];
+    const item = {
+      ingredientId: signal.ingredientId,
+      ingredientName: signal.ingredientName,
+      formKey: signal.formKey,
+      formLabel: signal.formLabel,
+      effectiveFactor: signal.effectiveFactor,
+      evidenceGrade: signal.evidenceGrade,
+      auditStatus: signal.auditStatus,
+      refIds: refs,
+    };
+    if (verifiedForms.length < MAX_AUDIT_ITEMS) {
+      verifiedForms.push(item);
+    } else {
+      truncatedVerifiedForms += 1;
+    }
+  });
+
+  pendingFormRows.forEach((row) => {
+    if (!activeIngredientIds.has(row.ingredient_id)) return;
+    const ingredientName = ingredientNameById.get(row.ingredient_id) ?? row.ingredient_id;
+    const refs = pendingFormCitations.get(row.id) ?? [];
+    const item = {
+      ingredientId: row.ingredient_id,
+      ingredientName,
+      formKey: row.form_key,
+      formLabel: row.form_label,
+      evidenceGrade: row.evidence_grade,
+      auditStatus: row.audit_status,
+      reason: "audit_status_not_verified",
+      refIds: refs,
+    };
+    if (skippedForms.length < MAX_AUDIT_ITEMS) {
+      skippedForms.push(item);
+    } else {
+      truncatedSkippedForms += 1;
+    }
+  });
 
   const safetyPenalty =
     ulWarnings.high.length * 15 + ulWarnings.moderate.length * 8;
@@ -456,6 +1578,9 @@ export async function computeScoreBundleV4(params: {
   const displayOverall =
     metrics.confidence * rawOverall + (1 - metrics.confidence) * 50;
   const basis = rows[0]?.basis ?? "label_serving";
+  const roundedGoalDoseAdequacy = Object.fromEntries(
+    Object.entries(metrics.goalDoseAdequacy).map(([goal, value]) => [goal, roundScore(value)]),
+  );
 
   const bundle: ScoreBundleV4 = {
     overallScore: roundScore(displayOverall),
@@ -465,7 +1590,7 @@ export async function computeScoreBundleV4(params: {
       integrity: roundScore(integrity),
     },
     confidence: roundScore(metrics.confidence),
-    bestFitGoals: resolveGoalMatches(rows),
+    bestFitGoals: resolveBestFitGoals(rows, metrics.goalDoseAdequacy),
     flags: buildFlags({
       coverage: metrics.coverage,
       activeCount: metrics.activeCount,
@@ -486,7 +1611,7 @@ export async function computeScoreBundleV4(params: {
       scoreVersion: V4_SCORE_VERSION,
       computedAt: new Date().toISOString(),
       inputsHash,
-      datasetVersion: null,
+      datasetVersion,
       extractedAt: null,
     },
     explain: {
@@ -497,9 +1622,48 @@ export async function computeScoreBundleV4(params: {
         proprietaryBlendCount: metrics.proprietaryBlendCount,
       },
       parseConfidence: roundScore(metrics.avgParseConfidence),
+      matchRatio: roundScore(metrics.matchRatio),
+      unitOkRatio: roundScore(metrics.unitOkRatio),
+      unknownUnitCount: metrics.unknownUnitCount,
+      evidence: {
+        coverageRatio: roundScore(metrics.evidenceCoverage),
+        availableRatio: roundScore(metrics.evidenceAvailableRatio),
+        doseAdequacy: roundScore(metrics.doseAdequacyRawAvg),
+        formAdjustedDoseAdequacy: roundScore(metrics.doseAdequacyAvg),
+        formCoverageRatio: roundScore(metrics.formCoverageRatio),
+        formSignals: metrics.formSignals,
+        goals: roundedGoalDoseAdequacy,
+        audit: {
+          verifiedEvidenceCount,
+          pendingEvidenceCount,
+          verifiedFormCount,
+          pendingFormCount,
+          verifiedEvidence,
+          skippedEvidence,
+          verifiedForms,
+          skippedForms,
+          truncated: {
+            verifiedEvidence: truncatedVerifiedEvidence,
+            skippedEvidence: truncatedSkippedEvidence,
+            verifiedForms: truncatedVerifiedForms,
+            skippedForms: truncatedSkippedForms,
+          },
+        },
+        citations: {
+          evidence: evidenceCitationMap,
+          forms: formCitationMap,
+          evidenceReferenceIds: Array.from(evidenceReferenceIds),
+          formReferenceIds: Array.from(formReferenceIds),
+        },
+      },
       ulWarnings,
       assumptions: {
         basis,
+        doseBasis: "per_day_adult",
+        dailyMultiplier: dailyMultiplier.multiplier,
+        dailyMultiplierSource: dailyMultiplier.source,
+        dailyMultiplierReliability: dailyMultiplier.reliability,
+        datasetVersion,
         notes: "Scores use label-derived doses when available; unknown doses reduce confidence.",
       },
     },
@@ -512,3 +1676,24 @@ export async function computeScoreBundleV4(params: {
     canonicalSourceId,
   };
 }
+
+export async function computeV4InputsHash(params: {
+  source: ScoreSource;
+  sourceId: string;
+}): Promise<string | null> {
+  const ingredientLookup = await fetchProductIngredients(params.source, params.sourceId);
+  if (!ingredientLookup) return null;
+  const [dailyMultiplier, datasetVersion] = await Promise.all([
+    fetchDailyMultiplier(params.source, params.sourceId),
+    fetchDatasetVersion(),
+  ]);
+  return buildInputsHash(ingredientLookup.rows, {
+    dailyMultiplier: dailyMultiplier.multiplier,
+    dailyMultiplierSource: dailyMultiplier.source,
+    datasetVersion,
+  });
+}
+
+export const __test__ = {
+  computeUlWarnings,
+};
