@@ -189,6 +189,7 @@ type DsldFacts = {
     name: string;
     amount: number | null;
     unit: string | null;
+    formRaw?: string | null;
   }[];
   inactive: string[];
   proprietaryBlends: {
@@ -214,6 +215,8 @@ type LabelFacts = {
     name: string;
     amount: number | null;
     unit: string | null;
+    formRaw?: string | null;
+    lnhpdMeta?: LnhpdIngredientMeta | null;
   }[];
   inactive: string[];
   proprietaryBlends: {
@@ -228,6 +231,17 @@ type LabelFacts = {
   extractedAt: string | null;
 };
 
+type LnhpdIngredientMeta = {
+  sourceMaterial?: string | null;
+  extractTypeDesc?: string | null;
+  ratioNumerator?: string | number | null;
+  ratioDenominator?: string | number | null;
+  potencyConstituent?: string | null;
+  potencyAmount?: string | number | null;
+  potencyUnit?: string | null;
+  driedHerbEquivalent?: string | number | null;
+};
+
 type LnhpdFacts = {
   lnhpdId: number;
   brandName: string | null;
@@ -240,6 +254,8 @@ type LnhpdFacts = {
     name: string;
     amount: number | null;
     unit: string | null;
+    formRaw?: string | null;
+    lnhpdMeta?: LnhpdIngredientMeta | null;
   }[];
   inactive: string[];
   purposes: string[];
@@ -428,9 +444,19 @@ const pickNumberField = (record: Record<string, unknown>, keys: string[]): numbe
   return null;
 };
 
-const pickUnitField = (record: Record<string, unknown>, keys: string[]): string | null => {
-  const raw = pickStringField(record, keys);
-  return normalizeUnitLabel(raw) ?? raw;
+const pickScalarField = (
+  record: Record<string, unknown>,
+  keys: string[],
+): string | number | null => {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (trimmed) return trimmed;
+    }
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+  }
+  return null;
 };
 
 const extractTextList = (payload: unknown, nameKeys: string[]): string[] => {
@@ -453,9 +479,9 @@ const extractLnhpdIngredients = (payload: unknown, options: {
   nameKeys: string[];
   amountKeys: string[];
   unitKeys: string[];
-}): { name: string; amount: number | null; unit: string | null }[] => {
+}): { name: string; amount: number | null; unit: string | null; lnhpdMeta?: LnhpdIngredientMeta | null }[] => {
   if (!Array.isArray(payload)) return [];
-  const map = new Map<string, { name: string; amount: number | null; unit: string | null }>();
+  const map = new Map<string, { name: string; amount: number | null; unit: string | null; lnhpdMeta?: LnhpdIngredientMeta | null }>();
   payload.forEach((item) => {
     if (!item || typeof item !== 'object') return;
     const record = item as Record<string, unknown>;
@@ -467,14 +493,48 @@ const extractLnhpdIngredients = (payload: unknown, options: {
     const key = normalizeMatchText(name);
     if (!key) return;
     const existing = map.get(key);
+    const lnhpdMeta: LnhpdIngredientMeta | null = (() => {
+      const sourceMaterial = pickStringField(record, LNHPD_SOURCE_MATERIAL_KEYS);
+      const extractTypeDesc = pickStringField(record, LNHPD_EXTRACT_TYPE_KEYS);
+      const ratioNumerator = pickScalarField(record, LNHPD_RATIO_NUMERATOR_KEYS);
+      const ratioDenominator = pickScalarField(record, LNHPD_RATIO_DENOMINATOR_KEYS);
+      const potencyConstituent = pickStringField(record, LNHPD_POTENCY_CONSTITUENT_KEYS);
+      const potencyAmount = pickScalarField(record, LNHPD_POTENCY_AMOUNT_KEYS);
+      const potencyUnit = pickStringField(record, LNHPD_POTENCY_UNIT_KEYS);
+      const driedHerbEquivalent = pickScalarField(record, LNHPD_DHE_KEYS);
+      const hasValue =
+        sourceMaterial ||
+        extractTypeDesc ||
+        ratioNumerator != null ||
+        ratioDenominator != null ||
+        potencyConstituent ||
+        potencyAmount != null ||
+        potencyUnit ||
+        driedHerbEquivalent != null;
+      if (!hasValue) return null;
+      return {
+        sourceMaterial,
+        extractTypeDesc,
+        ratioNumerator,
+        ratioDenominator,
+        potencyConstituent,
+        potencyAmount,
+        potencyUnit,
+        driedHerbEquivalent,
+      };
+    })();
     const candidate = {
       name,
       amount: normalizedAmount ?? null,
       unit: unit ?? null,
+      lnhpdMeta,
     };
     if (!existing) {
       map.set(key, candidate);
       return;
+    }
+    if (!existing.lnhpdMeta && candidate.lnhpdMeta) {
+      existing.lnhpdMeta = candidate.lnhpdMeta;
     }
     if (existing.amount == null && candidate.amount != null) {
       map.set(key, candidate);
@@ -897,6 +957,20 @@ const LNHPD_UNIT_KEYS = [
   'dosage_unit',
 ];
 
+const LNHPD_SOURCE_MATERIAL_KEYS = [
+  'source_material',
+  'source_material_desc',
+  'source_material_name',
+  'source_material_en',
+];
+const LNHPD_EXTRACT_TYPE_KEYS = ['extract_type_desc', 'extract_type', 'extract_type_en'];
+const LNHPD_RATIO_NUMERATOR_KEYS = ['ratio_numerator', 'ratio_numerator_value'];
+const LNHPD_RATIO_DENOMINATOR_KEYS = ['ratio_denominator', 'ratio_denominator_value'];
+const LNHPD_POTENCY_CONSTITUENT_KEYS = ['potency_constituent', 'potency_constituent_desc'];
+const LNHPD_POTENCY_AMOUNT_KEYS = ['potency_amount', 'potency_amount_value'];
+const LNHPD_POTENCY_UNIT_KEYS = ['potency_unit', 'potency_unit_of_measure', 'potency_uom'];
+const LNHPD_DHE_KEYS = ['dried_herb_equivalent', 'dried_herb_equivalent_value'];
+
 const LNHPD_PURPOSE_KEYS = ['purpose', 'purpose_name', 'purpose_name_en', 'purpose_text', 'name'];
 const LNHPD_ROUTE_KEYS = ['route', 'route_name', 'route_name_en', 'name'];
 const LNHPD_DOSE_TEXT_KEYS = ['dose_text', 'dosage', 'dose_description', 'dose', 'quantity_text'];
@@ -1133,6 +1207,11 @@ const applyDsldFactsToSnapshot = (
 
   const updated: SupplementSnapshot = {
     ...snapshot,
+    product: {
+      ...snapshot.product,
+      brand: facts.brandName ?? snapshot.product.brand,
+      name: facts.productName ?? snapshot.product.name,
+    },
     label: {
       ...snapshot.label,
       servingSize: facts.servingSize ?? snapshot.label.servingSize,
@@ -1259,6 +1338,12 @@ const buildLabelOnlyAnalysis = (facts: LabelFacts) => {
   const ensureSentence = (value: string) => (/[.!?]$/.test(value) ? value : `${value}.`);
 
   const primary = facts.actives.find((item) => item.amount != null) ?? facts.actives[0] ?? null;
+  const primaryDoseHint =
+    primary && primary.amount != null
+      ? primary.unit
+        ? `${primary.amount} ${primary.unit}`
+        : String(primary.amount)
+      : null;
   const primaryActive = primary
     ? {
       name: primary.name,
@@ -1310,11 +1395,15 @@ const buildLabelOnlyAnalysis = (facts: LabelFacts) => {
 
   const servingSizeHint = facts.servingSize ? `Serving size: ${facts.servingSize}` : null;
   const doseHint = firstNonEmptyText(doses[0] ?? null);
-  const usageSummaryBase = firstNonEmptyText(doseHint, servingSizeHint);
+  const usageSummaryBase = firstNonEmptyText(
+    doseHint,
+    servingSizeHint,
+    primaryDoseHint ? `Primary active: ${primaryDoseHint}` : null,
+  );
   const usageSummary = usageSummaryBase
     ? `${ensureSentence(usageSummaryBase)} Follow label directions.`
     : 'Follow label directions.';
-  const dosage = firstNonEmptyText(doseHint, servingSizeHint) ?? '';
+  const dosage = firstNonEmptyText(doseHint, primaryDoseHint, servingSizeHint) ?? '';
   const bestFor = firstNonEmptyText(purposes[0] ?? null) ?? '';
 
   const usagePayload = {
@@ -2908,7 +2997,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         }
         return null;
       };
-      const finalProductInfo = {
+      let finalProductInfo = {
         brand: pickField(catalog.brand, workingAnalysisPayload.productInfo?.brand, workingSnapshot.product.brand),
         name: pickField(catalog.productName, workingAnalysisPayload.productInfo?.name, workingSnapshot.product.name),
         category: pickField(catalogCategory, workingAnalysisPayload.productInfo?.category, workingSnapshot.product.category),
@@ -2981,6 +3070,35 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           workingAnalysisPayload = mergeLabelFallbacks(workingAnalysisPayload, labelAnalysis);
         }
       }
+
+      finalProductInfo = {
+        brand: pickField(workingSnapshot.product.brand, catalog.brand, workingAnalysisPayload.productInfo?.brand),
+        name: pickField(workingSnapshot.product.name, catalog.productName, workingAnalysisPayload.productInfo?.name),
+        category: pickField(catalogCategory, workingAnalysisPayload.productInfo?.category, workingSnapshot.product.category),
+        image: pickField(catalog.imageUrl, workingAnalysisPayload.productInfo?.image, workingSnapshot.product.imageUrl),
+      };
+
+      workingSnapshot = {
+        ...workingSnapshot,
+        product: {
+          ...workingSnapshot.product,
+          brand: finalProductInfo.brand ?? workingSnapshot.product.brand,
+          name: finalProductInfo.name ?? workingSnapshot.product.name,
+          category: finalProductInfo.category ?? workingSnapshot.product.category,
+          imageUrl: finalProductInfo.image ?? workingSnapshot.product.imageUrl,
+          barcode: {
+            ...workingSnapshot.product.barcode,
+            normalized: gtin14,
+            normalizedFormat: "gtin14",
+          },
+        },
+        regulatory: {
+          ...workingSnapshot.regulatory,
+          dsldLabelId: catalog.dsldLabelId
+            ? String(catalog.dsldLabelId)
+            : workingSnapshot.regulatory.dsldLabelId,
+        },
+      };
 
       const analysisStatus = buildAnalysisStatus({
         hasLabelFacts: hasLabelFacts(workingSnapshot),

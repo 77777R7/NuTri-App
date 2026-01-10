@@ -528,7 +528,6 @@ export default function ScanResultScreen() {
       const labelDose =
         getDraftDose(session.result.draft) ??
         extractDoseFromText(productInfo.name ?? null) ??
-        extractDoseFromText(productInfo.category ?? null) ??
         null;
 
       addScan({
@@ -561,14 +560,13 @@ export default function ScanResultScreen() {
       extractDoseFromText((usage as { summary?: string } | null)?.summary ?? null) ??
       extractDoseFromText(efficacy?.overviewSummary ?? null) ??
       extractDoseFromText(efficacy?.overallAssessment ?? null);
-    const fallbackDose = productInfo.category ?? '';
     const dosageText =
       usageDose ??
       primaryDose ??
       ingredientDose ??
       activeIngredientAmount ??
       summaryDose ??
-      fallbackDose;
+      '';
 
     if (!addedRef.current) {
       addScan({

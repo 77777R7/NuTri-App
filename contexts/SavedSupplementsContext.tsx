@@ -141,13 +141,19 @@ export const SavedSupplementsProvider = ({ children }: { children: React.ReactNo
         brands?: { name: string } | null;
       } | null;
 
+      const rawDosage = notes?.dosageText ?? '';
+      const normalizedDosage = rawDosage ? normalize(rawDosage) : '';
+      const normalizedCategory = supplement?.category ? normalize(supplement.category) : '';
+      const dosageText =
+        normalizedDosage && normalizedCategory && normalizedDosage === normalizedCategory ? '' : rawDosage;
+
       return {
         id: record.id,
         supplementId: record.supplement_id,
         barcode: supplement?.barcode ?? null,
         productName: supplement?.name ?? 'Unknown supplement',
         brandName: notes?.brandName ?? supplement?.brands?.name ?? 'Unknown brand',
-        dosageText: notes?.dosageText ?? supplement?.category ?? '',
+        dosageText,
         createdAt: record.saved_at ?? record.updated_at,
         updatedAt: record.updated_at ?? record.saved_at,
         syncedToCheckIn: notes?.syncedToCheckIn ?? true,

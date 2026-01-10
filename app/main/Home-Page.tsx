@@ -798,7 +798,7 @@ const RecentlyScanned = () => {
       barcode: item.barcode ?? null,
       productName: item.productName,
       brandName: item.brandName,
-      dosageText: item.dosageText || item.category || '',
+      dosageText: item.dosageText || '',
     });
 
     setTimeout(() => {

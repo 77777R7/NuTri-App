@@ -1,10 +1,18 @@
 import { supabase } from './supabase.js';
+import { extractErrorMeta, type RetryErrorMeta, withRetry } from './supabaseRetry.js';
 import type { LabelDraft } from './labelAnalysis.js';
+import { canonicalizeLnhpdFormTokens } from './formTaxonomy/lnhpdFormTokenMap.js';
 
 type Basis = 'label_serving' | 'recommended_daily' | 'assumed_daily';
 
 type LabelFactsInput = {
-  actives: { name: string; amount: number | null; unit: string | null }[];
+  actives: {
+    name: string;
+    amount: number | null;
+    unit: string | null;
+    formRaw?: string | null;
+    lnhpdMeta?: LnhpdIngredientMeta | null;
+  }[];
   inactive: string[];
   proprietaryBlends: {
     name: string;
@@ -19,6 +27,17 @@ type IngredientLookup = {
   baseUnit: string | null;
   matchMethod: 'exact' | 'synonym' | 'trgm' | 'manual' | null;
   matchConfidence: number | null;
+};
+
+type LnhpdIngredientMeta = {
+  sourceMaterial?: string | null;
+  extractTypeDesc?: string | null;
+  ratioNumerator?: string | number | null;
+  ratioDenominator?: string | number | null;
+  potencyConstituent?: string | null;
+  potencyAmount?: string | number | null;
+  potencyUnit?: string | null;
+  driedHerbEquivalent?: string | number | null;
 };
 
 type UnitKind = 'mass' | 'volume' | 'iu' | 'cfu' | 'percent' | 'homeopathic' | 'unknown';
@@ -46,6 +65,11 @@ type ProductIngredientRow = {
   match_confidence: number | null;
 };
 
+type UpsertResult = {
+  success: boolean;
+  error?: RetryErrorMeta | null;
+};
+
 const normalizeNameKey = (value: string): string =>
   value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 
@@ -55,21 +79,244 @@ const buildNameKey = (value: string): string => {
   return value.trim().toLowerCase();
 };
 
+const normalizeFormText = (value: string): string =>
+  value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+const normalizeFormToken = (value: string): string =>
+  value.toLowerCase().replace(/[^a-z0-9:%]+/g, ' ').trim();
+
+const FORM_RAW_TOKENS = [
+  'bisglycinate',
+  'diglycinate',
+  'di glycinate',
+  'glycinate',
+  'picolinate',
+  'citrate malate',
+  'citrate',
+  'malate',
+  'gluconate',
+  'sulfate',
+  'sulphate',
+  'chloride',
+  'carbonate',
+  'nitrate',
+  'phosphate',
+  'threonate',
+  'hcl',
+  'hydrochloride',
+  'ethyl ester',
+  'triglyceride',
+  'phospholipid',
+  'phosphatidylcholine',
+  'free fatty acid',
+  'free acid',
+  'liposomal',
+  'liposome',
+  'phytosome',
+  'micellar',
+  'micellized',
+  'emulsified',
+  'microencapsulated',
+  'micronized',
+  'solid lipid particles',
+  'solid lipid',
+  'monohydrate',
+  'dihydrate',
+  'anhydrous',
+  'enteric',
+  'delayed release',
+  'extended release',
+  'slow release',
+  'sustained release',
+  'beadlet',
+  'buffered',
+  'with piperine',
+  'magtein',
+  'optizinc',
+  'traacs',
+  'albion',
+  'ksm 66',
+  'sensoril',
+  'suntheanine',
+  'pharmagaba',
+  'carnosyn',
+  'egb 761',
+  'bacognize',
+  'shr5',
+  'silexan',
+  'meriva',
+  'quercefit',
+  'curqfen',
+  'bcm 95',
+  'cavacurmin',
+  'longvida',
+  'theracurmin',
+  'novasol',
+  'emiq',
+  'isoquercetin',
+  'rtg',
+  're esterified',
+  'reesterified',
+].map(normalizeFormText);
+
+const FORM_RAW_TOKENS_SORTED = [...FORM_RAW_TOKENS].sort((a, b) => b.length - a.length);
+
+const matchFormToken = (value: string): string | null => {
+  const normalized = normalizeFormText(value);
+  if (!normalized) return null;
+  for (const token of FORM_RAW_TOKENS_SORTED) {
+    if (token && normalized.includes(token)) return token;
+  }
+  return null;
+};
+
 const extractFormRaw = (nameRaw: string): string | null => {
   const trimmed = nameRaw.trim();
   if (!trimmed) return null;
+
   const parenMatch = trimmed.match(/\((?:as|from)\s+([^)]+)\)/i);
-  if (parenMatch?.[1]) return parenMatch[1].trim();
+  if (parenMatch?.[1]) {
+    const token = matchFormToken(parenMatch[1]);
+    if (token) return token;
+  }
 
-  const asMatch = trimmed.match(/\bas\s+([a-z0-9][a-z0-9\s\-\/+]+)$/i);
-  if (asMatch?.[1]) return asMatch[1].trim();
+  const asMatch = trimmed.match(/\b(?:as|from)\s+([a-z0-9][a-z0-9\s\-\/+]+)$/i);
+  if (asMatch?.[1]) {
+    const token = matchFormToken(asMatch[1]);
+    if (token) return token;
+  }
 
-  const formMatch = trimmed.match(
-    /\b(bisglycinate|glycinate|picolinate|citrate|gluconate|oxide|malate|taurate|orotate|threonate|phytosome|liposomal|liposome|novasol|meriva|longvida|chelate|chelates|sulfate|chloride|nitrate|aspartate|fumarate|carbonate|acetate|succinate|phosphate)\b/i,
-  );
-  if (formMatch) return formMatch[1].trim();
+  const token = matchFormToken(trimmed);
+  if (token) return token;
 
   return null;
+};
+
+const LNHPD_SOURCE_MATERIAL_BLOCKLIST = [
+  /\b(ethanol|ethyl alcohol|aqua|water|purified water|glycerin|glycerine)\b/,
+  /\b(rabbit|porcine|sus scrofa|bovine|bos taurus|ovine|capra hircus|oryctolagus cuniculus)\b/,
+  /\b(homeopathic|homeopathy|natrum muriaticum|kali muriaticum|apis mellifica|mercurius|arnica|nux vomica|coffea cruda|silicea)\b/,
+];
+
+const LNHPD_PLANT_PART_PATTERNS: Array<{ pattern: RegExp; token: string }> = [
+  { pattern: /\broot(s)?\b|\bradix\b/, token: 'root' },
+  { pattern: /\brhizome(s)?\b/, token: 'rhizome' },
+  { pattern: /\bseed(s)?\b|\bkernel\b/, token: 'seed' },
+  { pattern: /\bbark\b/, token: 'bark' },
+  { pattern: /\bleaf\b/, token: 'leaf' },
+  { pattern: /\bflower\b|\bflos\b/, token: 'flower' },
+  { pattern: /\baerial\b/, token: 'aerial' },
+  { pattern: /\bfruit\b/, token: 'fruit' },
+  { pattern: /\bberry\b/, token: 'berry' },
+  { pattern: /\bstem\b/, token: 'stem' },
+  { pattern: /\bbulb\b/, token: 'bulb' },
+  { pattern: /\btuber\b/, token: 'tuber' },
+  { pattern: /\bresin\b/, token: 'resin' },
+  { pattern: /\bpeel\b/, token: 'peel' },
+  { pattern: /\bshoot\b/, token: 'shoot' },
+  { pattern: /\btwig\b/, token: 'twig' },
+  { pattern: /\bwhole plant\b|\bwhole herb\b|\bwhole\b/, token: 'whole' },
+];
+
+const isNoiseToken = (value: string): boolean => {
+  const trimmed = value.trim();
+  if (!trimmed) return true;
+  if (trimmed.length <= 1) return true;
+  if (/^\d+$/.test(trimmed)) return true;
+  return false;
+};
+
+const shouldSkipSourceMaterial = (value?: string | null): boolean => {
+  if (!value) return false;
+  const normalized = normalizeFormToken(value);
+  if (!normalized) return false;
+  return LNHPD_SOURCE_MATERIAL_BLOCKLIST.some((pattern) => pattern.test(normalized));
+};
+
+const pickScalarToken = (value: string | number | null | undefined): string | null => {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? String(value) : null;
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    return trimmed;
+  }
+  return null;
+};
+
+const buildRatioToken = (
+  numerator?: string | number | null,
+  denominator?: string | number | null,
+): string | null => {
+  const num = pickScalarToken(numerator);
+  const den = pickScalarToken(denominator);
+  if (!num || !den) return null;
+  if (!/\d/.test(num) || !/\d/.test(den)) return null;
+  return `${num}:${den}`;
+};
+
+const buildPotencyAmountToken = (
+  amount?: string | number | null,
+  unit?: string | null,
+): string | null => {
+  const value = pickScalarToken(amount);
+  if (!value || !/\d/.test(value)) return null;
+  const normalizedUnit = normalizeUnitLabel(unit ?? '') ?? '';
+  if (!normalizedUnit) return null;
+  if (normalizedUnit === '%') return `${value}%`;
+  return `${value}${normalizedUnit}`;
+};
+
+const extractLnhpdFormRaw = (meta?: LnhpdIngredientMeta | null): string | null => {
+  if (!meta) return null;
+  if (shouldSkipSourceMaterial(meta.sourceMaterial ?? null)) return null;
+
+  const tokens: string[] = [];
+  const addToken = (token: string | null) => {
+    if (!token) return;
+    const normalized = normalizeFormToken(token);
+    if (!normalized || isNoiseToken(normalized)) return;
+    normalized.split(/\s+/).forEach((part) => {
+      if (!part || isNoiseToken(part)) return;
+      tokens.push(part);
+    });
+  };
+
+  if (meta.sourceMaterial) {
+    const normalizedMaterial = normalizeFormToken(meta.sourceMaterial);
+    if (normalizedMaterial) {
+      LNHPD_PLANT_PART_PATTERNS.forEach(({ pattern, token }) => {
+        if (pattern.test(normalizedMaterial)) addToken(token);
+      });
+    }
+  }
+
+  if (meta.extractTypeDesc) {
+    const normalizedExtract = normalizeFormToken(meta.extractTypeDesc);
+    if (normalizedExtract.includes('fresh')) addToken('fresh');
+    if (normalizedExtract.includes('dry')) addToken('dry');
+  }
+
+  const ratioToken = buildRatioToken(meta.ratioNumerator, meta.ratioDenominator);
+  if (ratioToken) {
+    addToken('extract');
+    addToken(ratioToken);
+  }
+
+  if (meta.potencyConstituent) {
+    addToken(meta.potencyConstituent);
+  }
+  const potencyToken = buildPotencyAmountToken(meta.potencyAmount, meta.potencyUnit ?? null);
+  if (potencyToken) addToken(potencyToken);
+
+  if (meta.driedHerbEquivalent != null) {
+    addToken('dhe');
+  }
+
+  const unique = Array.from(new Set(tokens));
+  const canonical = canonicalizeLnhpdFormTokens(unique);
+  return canonical.length ? canonical.join(' ') : null;
 };
 
 const normalizeUnitLabel = (unitRaw?: string | null): string | null => {
@@ -225,12 +472,15 @@ const resolveIngredientLookup = async (
   }
 
   try {
-    const { data, error } = await supabase.rpc('resolve_ingredient_lookup', {
-      query_text: name,
-    });
+    const { data, error } = await withRetry(() =>
+      supabase.rpc('resolve_ingredient_lookup', {
+        query_text: name,
+      }),
+    );
     if (error) {
       if (!isRpcMissing(error)) {
-        console.warn('[ProductIngredients] Ingredient lookup RPC failed', error.message);
+        const meta = extractErrorMeta(error);
+        console.warn('[ProductIngredients] Ingredient lookup RPC failed', meta);
       }
       cache.set(key, null);
       return null;
@@ -345,7 +595,7 @@ const dedupeProductIngredientRows = (rows: ProductIngredientRow[]): ProductIngre
     merged.ingredient_id = existing.ingredient_id ?? row.ingredient_id ?? null;
     merged.name_key = existing.name_key || row.name_key || nameKey;
     merged.unit_kind = existing.unit_kind ?? row.unit_kind ?? null;
-    merged.form_raw = existing.form_raw ?? row.form_raw;
+    merged.form_raw = row.form_raw ?? existing.form_raw;
     merged.is_active = existing.is_active || row.is_active;
     merged.is_proprietary_blend = existing.is_proprietary_blend || row.is_proprietary_blend;
 
@@ -385,20 +635,29 @@ const dedupeProductIngredientRows = (rows: ProductIngredientRow[]): ProductIngre
   return Array.from(map.values());
 };
 
-const upsertProductIngredientRows = async (rows: ProductIngredientRow[]): Promise<void> => {
+const upsertProductIngredientRows = async (
+  rows: ProductIngredientRow[],
+): Promise<UpsertResult> => {
   const dedupedRows = dedupeProductIngredientRows(rows);
-  if (!dedupedRows.length) return;
+  if (!dedupedRows.length) return { success: true };
   try {
     await hydrateRowsWithLookups(dedupedRows);
-    const { error } = await supabase
-      .from('product_ingredients')
-      .upsert(dedupedRows, { onConflict: 'source,source_id,basis,name_key' });
+    const { error, status, rayId } = await withRetry(() =>
+      supabase
+        .from('product_ingredients')
+        .upsert(dedupedRows, { onConflict: 'source,source_id,basis,name_key' }),
+    );
     if (error) {
-      console.warn('[ProductIngredients] Upsert failed', error.message);
+      const meta = extractErrorMeta(error, status, rayId);
+      console.warn('[ProductIngredients] Upsert failed', meta);
+      return { success: false, error: meta };
     }
   } catch (error) {
-    console.warn('[ProductIngredients] Upsert error', error);
+    const meta = extractErrorMeta(error);
+    console.warn('[ProductIngredients] Upsert error', meta);
+    return { success: false, error: meta };
   }
+  return { success: true };
 };
 
 export async function upsertProductIngredientsFromLabelFacts(params: {
@@ -408,7 +667,7 @@ export async function upsertProductIngredientsFromLabelFacts(params: {
   labelFacts: LabelFactsInput;
   basis?: Basis;
   parseConfidence?: number | null;
-}): Promise<void> {
+}): Promise<UpsertResult> {
   const basis = params.basis ?? 'label_serving';
   const rows: ProductIngredientRow[] = [];
 
@@ -419,7 +678,12 @@ export async function upsertProductIngredientsFromLabelFacts(params: {
     const amountMissing = normalized.amount == null;
     const amountUnknown = amountMissing || !isDoseUnitKind(unitKind);
     const nameKey = buildNameKey(item.name);
-    const formRaw = extractFormRaw(item.name);
+    const lnhpdFormRaw =
+      params.source === 'lnhpd' ? extractLnhpdFormRaw(item.lnhpdMeta ?? null) : null;
+    let formRaw = lnhpdFormRaw ?? item.formRaw ?? extractFormRaw(item.name);
+    if (params.source === 'lnhpd' && formRaw) {
+      formRaw = canonicalizeLnhpdFormTokens(formRaw.split(/\s+/)).join(' ');
+    }
     rows.push({
       source: params.source,
       source_id: params.sourceId,
@@ -519,7 +783,7 @@ export async function upsertProductIngredientsFromLabelFacts(params: {
     });
   });
 
-  await upsertProductIngredientRows(rows);
+  return upsertProductIngredientRows(rows);
 }
 
 export async function upsertProductIngredientsFromDraft(params: {

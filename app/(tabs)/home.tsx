@@ -49,6 +49,8 @@ const formatUploadTimestamp = (
   return `${dateFormatter.format(date)} · ${timeFormatter.format(date)}`;
 };
 
+const normalizeKey = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, '').trim();
+
 export default function HomeScreen() {
   const router = useRouter();
   const { t, locale } = useTranslation();
@@ -59,6 +61,16 @@ export default function HomeScreen() {
   const [dashboardLoading, setDashboardLoading] = useState(true);
   const [dashboardError, setDashboardError] = useState<string | null>(null);
   const { savedSupplements: localSavedSupplements } = useSavedSupplements();
+
+  const dosageLookup = useMemo(() => {
+    const map = new Map<string, string>();
+    localSavedSupplements.forEach(item => {
+      const dose = item.dosageText?.trim();
+      if (!dose) return;
+      map.set(`${normalizeKey(item.brandName)}:${normalizeKey(item.productName)}`, dose);
+    });
+    return map;
+  }, [localSavedSupplements]);
 
   const displayName = user?.email?.split('@')[0] ?? 'NuTri Member';
 
@@ -220,7 +232,7 @@ export default function HomeScreen() {
                   key={item.id}
                   name={item.name}
                   description={item.brand}
-                  dosage={item.category}
+                  dosage={dosageLookup.get(`${normalizeKey(item.brand)}:${normalizeKey(item.name)}`)}
                   thumbnail={item.imageUrl ?? undefined}
                   onActionPress={() => router.push('/database')}
                   actionLabel={t.viewDetails}

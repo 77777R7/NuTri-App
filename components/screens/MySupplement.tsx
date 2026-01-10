@@ -774,23 +774,33 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
     const byKey = new Map<string, string>();
     const byBrandNameKey = new Map<string, string>();
     const byNameKey = new Map<string, string>();
+    const categoryByKey = new Map<string, string>();
+    const categoryByBrandNameKey = new Map<string, string>();
+    const categoryByNameKey = new Map<string, string>();
     const nameKeySources = new Map<string, Set<string>>();
 
     scans.forEach((scan) => {
       const nameKey = getNameKey(scan.productName, scan.brandName);
       const brandNameKey = getBrandNameKey(scan.productName, scan.brandName);
+      const key = getDedupeKey(scan);
       const sources = nameKeySources.get(nameKey) ?? new Set<string>();
       sources.add(brandNameKey);
       nameKeySources.set(nameKey, sources);
+
+      const category = scan.category?.trim();
+      if (category) {
+        categoryByKey.set(key, category);
+        categoryByBrandNameKey.set(brandNameKey, category);
+        categoryByNameKey.set(nameKey, category);
+      }
 
       const dose = scan.dosageText?.trim();
       if (!dose) return;
 
       const normalizedDose = normalizeKey(dose);
-      const normalizedCategory = scan.category ? normalizeKey(scan.category) : "";
+      const normalizedCategory = category ? normalizeKey(category) : "";
       if (normalizedCategory && normalizedDose === normalizedCategory) return;
 
-      const key = getDedupeKey(scan);
       byKey.set(key, dose);
       byBrandNameKey.set(brandNameKey, dose);
       byNameKey.set(nameKey, dose);
@@ -801,7 +811,15 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
       if (sources.size > 1) conflictedNameKeys.add(nameKey);
     });
 
-    return { byKey, byBrandNameKey, byNameKey, conflictedNameKeys };
+    return {
+      byKey,
+      byBrandNameKey,
+      byNameKey,
+      conflictedNameKeys,
+      categoryByKey,
+      categoryByBrandNameKey,
+      categoryByNameKey,
+    };
   }, [scans]);
 
   const resolveDosageText = useCallback(
@@ -815,7 +833,18 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
         scanDoseLookup.byBrandNameKey.get(brandNameKey) ||
         (!scanDoseLookup.conflictedNameKeys.has(nameKey) ? scanDoseLookup.byNameKey.get(nameKey) : undefined);
 
-      return scanDose || current;
+      const category =
+        scanDoseLookup.categoryByKey.get(getDedupeKey(item)) ||
+        scanDoseLookup.categoryByBrandNameKey.get(brandNameKey) ||
+        (!scanDoseLookup.conflictedNameKeys.has(nameKey)
+          ? scanDoseLookup.categoryByNameKey.get(nameKey)
+          : undefined);
+
+      const normalizedCurrent = normalizeKey(current);
+      const normalizedCategory = category ? normalizeKey(category) : "";
+      const cleanedCurrent = normalizedCategory && normalizedCurrent === normalizedCategory ? "" : current;
+
+      return scanDose || cleanedCurrent;
     },
     [scanDoseLookup],
   );
@@ -838,7 +867,7 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
 
       const originalDose = original.dosageText?.trim() ?? "";
       const resolvedDose = item.dosageText?.trim() ?? "";
-      if (!resolvedDose || resolvedDose === originalDose) return;
+      if (resolvedDose === originalDose) return;
       if (updatedDosageRef.current.get(item.id) === resolvedDose) return;
 
       updatedDosageRef.current.set(item.id, resolvedDose);

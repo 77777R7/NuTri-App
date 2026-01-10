@@ -1,11 +1,12 @@
 import { createHash } from "node:crypto";
 
 import { supabase } from "../supabase.js";
+import type { DatasetCache } from "./v4DatasetCache.js";
 import type { ScoreBundleV4, ScoreFlag, ScoreGoalFit, ScoreHighlight, ScoreSource } from "../types.js";
 
-export const V4_SCORE_VERSION = "v4.0.0-alpha.2";
+export const V4_SCORE_VERSION = "v4.0.0-alpha.3";
 
-type ProductIngredientRow = {
+export type ProductIngredientRow = {
   source_id: string;
   canonical_source_id: string | null;
   ingredient_id: string | null;
@@ -24,7 +25,7 @@ type ProductIngredientRow = {
   form_raw: string | null;
 };
 
-type IngredientMeta = {
+export type IngredientMeta = {
   id: string;
   unit: string | null;
   rda_adult: number | null;
@@ -32,7 +33,7 @@ type IngredientMeta = {
   goals: string[] | null;
 };
 
-type IngredientEvidenceRow = {
+export type IngredientEvidenceRow = {
   id: string;
   ingredient_id: string;
   goal: string;
@@ -42,7 +43,7 @@ type IngredientEvidenceRow = {
   audit_status: string | null;
 };
 
-type IngredientFormRow = {
+export type IngredientFormRow = {
   id: string;
   ingredient_id: string;
   form_key: string;
@@ -53,7 +54,7 @@ type IngredientFormRow = {
   audit_status: string | null;
 };
 
-type IngredientFormAliasRow = {
+export type IngredientFormAliasRow = {
   id: string;
   alias_text: string;
   alias_norm: string;
@@ -81,10 +82,15 @@ type FormSignal = {
   aliasConfidence?: number | null;
 };
 
-type DailyMultiplierResult = {
+export type DailyMultiplierResult = {
   multiplier: number;
   source: string;
   reliability: "reliable" | "default" | "unreliable";
+  lnhpdIdUsedForDoseLookup?: string | null;
+  doseRowsFound?: number | null;
+  selectedDosePop?: string | null;
+  frequencyUnit?: string | null;
+  penaltyReason?: string | null;
 };
 
 type UlWarnings = {
@@ -228,8 +234,11 @@ const DOSE_UNIT_KINDS = new Set(["mass", "volume", "iu", "cfu"]);
 const FORM_ALPHA = 0.85;
 const DEFAULT_DAILY_MULTIPLIER = 1;
 const DEFAULT_DAILY_CONFIDENCE_PENALTY = 0.95;
+const NON_DAILY_CONFIDENCE_PENALTY = 0.92;
+const WEEKLY_CONFIDENCE_PENALTY = 0.93;
 const VERIFIED_AUDIT_STATUS = "verified";
 const MAX_AUDIT_ITEMS = 25;
+const MAX_FORM_SIGNALS = 20;
 
 const isRecognizedUnit = (unit?: string | null, unitKind?: string | null): boolean => {
   if (unitKind) return DOSE_UNIT_KINDS.has(unitKind);
@@ -263,25 +272,140 @@ const createSeedAlias = (
   source: "seed",
 });
 
-const BUILTIN_FORM_ALIASES: IngredientFormAliasRow[] = [
-  createSeedAlias("glycinate", "bisglycinate", 0.7),
-  createSeedAlias("bisglycinate", "bisglycinate", 0.8),
-  createSeedAlias("chelate", "bisglycinate", 0.6),
-  createSeedAlias("chelated", "bisglycinate", 0.6),
-  createSeedAlias("methylfolate", "5_mthf", 0.7),
-  createSeedAlias("5-mthf", "5_mthf", 0.8),
-  createSeedAlias("ethyl ester", "ethyl_ester", 0.7),
-  createSeedAlias("triglyceride", "triglyceride", 0.7),
-  createSeedAlias("phospholipid", "phospholipid", 0.7),
-  createSeedAlias("meriva", "phytosome", 0.7),
-  createSeedAlias("quercefit", "phytosome", 0.7),
-  createSeedAlias("novasol", "micellar", 0.7),
-  createSeedAlias("theracurmin", "micellar", 0.7),
-  createSeedAlias("longvida", "solid_lipid_particles", 0.7),
-  createSeedAlias("slcp", "solid_lipid_particles", 0.7),
-  createSeedAlias("emiq", "emiq", 0.8),
-  createSeedAlias("isoquercetin", "isoquercetin", 0.8),
+const BUILTIN_FORM_ALIAS_SEEDS: [string, string, number][] = [
+  ["glycinate", "glycinate", 0.7],
+  ["bisglycinate", "bisglycinate", 0.8],
+  ["bi-glycinate", "bisglycinate", 0.7],
+  ["di-glycinate", "bisglycinate", 0.7],
+  ["diglycinate", "bisglycinate", 0.7],
+  ["chelate", "bisglycinate", 0.6],
+  ["chelated", "bisglycinate", 0.6],
+  ["amino acid chelate", "bisglycinate", 0.6],
+  ["citrate", "citrate", 0.7],
+  ["tri-citrate", "citrate", 0.7],
+  ["citrate malate", "citrate_malate", 0.7],
+  ["malate", "malate", 0.7],
+  ["picolinate", "picolinate", 0.7],
+  ["gluconate", "gluconate", 0.7],
+  ["sulfate", "sulfate", 0.7],
+  ["sulphate", "sulfate", 0.7],
+  ["chloride", "chloride", 0.7],
+  ["carbonate", "carbonate", 0.7],
+  ["nitrate", "nitrate", 0.7],
+  ["phosphate", "phosphate", 0.7],
+  ["threonate", "l_threonate", 0.7],
+  ["l-threonate", "l_threonate", 0.7],
+  ["magtein", "l_threonate", 0.8],
+  ["hcl", "hcl", 0.7],
+  ["hydrochloride", "hcl", 0.7],
+  ["ferrous fumarate", "ferrous_fumarate", 0.8],
+  ["ferrous sulfate", "ferrous_sulfate", 0.8],
+  ["ferrous gluconate", "ferrous_gluconate", 0.8],
+  ["manganese bisglycinate", "manganese_bisglycinate", 0.8],
+  ["manganese gluconate", "manganese_gluconate", 0.8],
+  ["manganese sulfate", "manganese_sulfate", 0.8],
+  ["copper bisglycinate", "copper_bisglycinate", 0.8],
+  ["copper gluconate", "copper_gluconate", 0.8],
+  ["copper sulfate", "copper_sulfate", 0.8],
+  ["potassium chloride", "potassium_chloride", 0.8],
+  ["potassium citrate", "potassium_citrate", 0.8],
+  ["potassium gluconate", "potassium_gluconate", 0.8],
+  ["potassium iodide", "potassium_iodide", 0.8],
+  ["sodium iodide", "sodium_iodide", 0.8],
+  ["sodium ascorbate", "sodium_ascorbate", 0.8],
+  ["calcium ascorbate", "calcium_ascorbate", 0.8],
+  ["calcium pantothenate", "calcium_pantothenate", 0.8],
+  ["calcium fructoborate", "calcium_fructoborate", 0.8],
+  ["boron citrate", "boron_citrate", 0.8],
+  ["selenium yeast", "selenium_yeast", 0.8],
+  ["selenomethionine", "selenomethionine", 0.8],
+  ["selenite", "selenite", 0.8],
+  ["molybdenum chelate", "molybdenum_chelate", 0.8],
+  ["sodium molybdate", "sodium_molybdate", 0.8],
+  ["methylfolate", "methylfolate", 0.8],
+  ["5-mthf", "5_mthf", 0.8],
+  ["5 mthf", "5_mthf", 0.8],
+  ["folic acid", "folic_acid", 0.8],
+  ["folinic acid", "folinic_acid", 0.8],
+  ["cyanocobalamin", "cyanocobalamin", 0.8],
+  ["methylcobalamin", "methylcobalamin", 0.8],
+  ["adenosylcobalamin", "adenosylcobalamin", 0.8],
+  ["hydroxocobalamin", "hydroxocobalamin", 0.8],
+  ["p5p", "p5p", 0.8],
+  ["pyridoxine hcl", "pyridoxine_hcl", 0.8],
+  ["thiamine hcl", "thiamine_hcl", 0.8],
+  ["thiamine mononitrate", "thiamine_mononitrate", 0.8],
+  ["riboflavin 5 phosphate", "riboflavin_5_phosphate", 0.8],
+  ["riboflavin-5-phosphate", "riboflavin_5_phosphate", 0.8],
+  ["niacinamide", "niacinamide", 0.8],
+  ["nicotinic acid", "nicotinic_acid", 0.8],
+  ["nicotinamide riboside", "nicotinamide_riboside", 0.8],
+  ["inositol hexanicotinate", "inositol_hexanicotinate", 0.8],
+  ["d3", "d3_cholecalciferol", 0.7],
+  ["cholecalciferol", "d3_cholecalciferol", 0.8],
+  ["d2", "d2_ergocalciferol", 0.7],
+  ["ergocalciferol", "d2_ergocalciferol", 0.8],
+  ["retinyl palmitate", "retinyl_palmitate", 0.8],
+  ["retinyl acetate", "retinyl_acetate", 0.8],
+  ["beta carotene", "beta_carotene", 0.8],
+  ["ethyl ester", "ethyl_ester", 0.8],
+  ["triglyceride", "triglyceride", 0.8],
+  ["rTG", "triglyceride", 0.7],
+  ["rtg", "triglyceride", 0.7],
+  ["re-esterified triglyceride", "triglyceride", 0.7],
+  ["reesterified triglyceride", "triglyceride", 0.7],
+  ["phospholipid", "phospholipid", 0.8],
+  ["phospholipid complex", "phospholipid", 0.7],
+  ["free fatty acid", "free_fatty_acid", 0.7],
+  ["free acid", "free_acid", 0.7],
+  ["liposomal", "liposomal", 0.8],
+  ["liposome", "liposomal", 0.7],
+  ["phytosome", "phytosome", 0.8],
+  ["micellar", "micellar", 0.8],
+  ["micellized", "micellized", 0.8],
+  ["microencapsulated", "microencapsulated", 0.7],
+  ["micronized", "micronized", 0.7],
+  ["emulsified", "emulsified", 0.7],
+  ["beadlet", "beadlet", 0.7],
+  ["delayed release", "delayed_release", 0.7],
+  ["sustained release", "sustained_release", 0.7],
+  ["slow release", "slow_release", 0.7],
+  ["enteric", "enteric", 0.7],
+  ["buffered", "buffered", 0.7],
+  ["with piperine", "with_piperine", 0.7],
+  ["bioperine", "with_piperine", 0.7],
+  ["meriva", "phytosome", 0.7],
+  ["quercefit", "phytosome", 0.7],
+  ["curqfen", "phytosome", 0.6],
+  ["bcm-95", "essential_oils_complex", 0.6],
+  ["cavacurmin", "micellar", 0.6],
+  ["longvida", "solid_lipid_particles", 0.7],
+  ["slcp", "solid_lipid_particles", 0.7],
+  ["theracurmin", "micellar", 0.7],
+  ["novasol", "micellar", 0.7],
+  ["emiq", "emiq", 0.8],
+  ["isoquercetin", "isoquercetin", 0.8],
+  ["suntheanine", "suntheanine", 0.8],
+  ["pharmagaba", "pharmaGABA", 0.8],
+  ["sensoril", "sensoril", 0.8],
+  ["ksm-66", "branded", 0.6],
+  ["traacs", "branded", 0.6],
+  ["albion", "branded", 0.6],
+  ["optizinc", "branded", 0.6],
+  ["carnoSyn", "carnoSyn", 0.8],
+  ["carnosyn", "carnoSyn", 0.8],
+  ["egb 761", "egb761", 0.8],
+  ["bacognize", "bacognize", 0.8],
+  ["shr-5", "shr5", 0.8],
+  ["shr5", "shr5", 0.8],
+  ["silexan", "silexan", 0.8],
+  ["optiMSM", "optims_msm", 0.8],
+  ["optimsm", "optims_msm", 0.8],
 ];
+
+export const BUILTIN_FORM_ALIASES: IngredientFormAliasRow[] = BUILTIN_FORM_ALIAS_SEEDS.map(
+  ([aliasText, formKey, confidence]) => createSeedAlias(aliasText, formKey, confidence),
+);
 
 const resolveGradeWeight = (grade?: string | null): number => {
   const normalized = (grade ?? "").trim().toLowerCase();
@@ -352,15 +476,30 @@ const computeDoseAdequacy = (params: {
 };
 
 const DAILY_MULTIPLIER_SOURCE_DEFAULT = "default_no_dosing_info";
-const DAILY_MULTIPLIER_SOURCE_LNHPD = "lnhpd_doses";
-const DAILY_MULTIPLIER_SOURCE_LNHPD_UNRELIABLE = "lnhpd_doses_unreliable";
+const DAILY_MULTIPLIER_SOURCE_DEFAULT_MISSING = "default_missing_canonical";
+const DAILY_MULTIPLIER_SOURCE_DEFAULT_INVALID = "default_invalid_fields";
+const DAILY_MULTIPLIER_SOURCE_DEFAULT_NON_ADULT = "default_non_adult";
+const DAILY_MULTIPLIER_SOURCE_LNHPD = "lnhpd_dose";
+const DAILY_MULTIPLIER_SOURCE_LNHPD_WEEKLY = "lnhpd_weekly_dose";
+const DAILY_MULTIPLIER_SOURCE_NON_DAILY = "non_daily_frequency_unit";
+
+export const createDefaultDailyMultiplier = (): DailyMultiplierResult => ({
+  multiplier: DEFAULT_DAILY_MULTIPLIER,
+  source: DAILY_MULTIPLIER_SOURCE_DEFAULT,
+  reliability: "default",
+  lnhpdIdUsedForDoseLookup: null,
+  doseRowsFound: null,
+  selectedDosePop: null,
+  frequencyUnit: null,
+  penaltyReason: null,
+});
 
 const toNumber = (value: unknown): number | null => {
   if (typeof value === "number") return Number.isFinite(value) ? value : null;
   if (typeof value === "string") {
     const trimmed = value.trim();
     if (!trimmed) return null;
-    const parsed = Number(trimmed);
+    const parsed = Number.parseFloat(trimmed);
     return Number.isFinite(parsed) ? parsed : null;
   }
   return null;
@@ -393,10 +532,19 @@ const averageRange = (min: number | null, max: number | null): number | null => 
   return min ?? max;
 };
 
+const coercePositive = (value: number | null): number | null =>
+  value != null && Number.isFinite(value) && value > 0 ? value : null;
+
 const isDailyFrequencyUnit = (value?: string | null): boolean => {
   if (!value) return false;
   const normalized = value.trim().toLowerCase();
   return normalized.includes("day") || normalized.includes("daily");
+};
+
+const isWeeklyFrequencyUnit = (value?: string | null): boolean => {
+  if (!value) return false;
+  const normalized = value.trim().toLowerCase();
+  return normalized.includes("week");
 };
 
 const normalizeAgeUnit = (value?: string | null): string | null => {
@@ -410,15 +558,12 @@ const normalizeAgeUnit = (value?: string | null): string | null => {
   return normalized;
 };
 
+const pickDosePopulation = (record: Record<string, unknown>): string | null =>
+  pickStringField(record, ["population_type_desc", "population_type", "population_desc"]);
+
 const isAdultDoseRecord = (record: Record<string, unknown>): boolean => {
-  const population = pickStringField(record, [
-    "population_type_desc",
-    "population_type",
-    "population_desc",
-  ]);
-  if (population && population.toLowerCase().includes("adult")) {
-    return true;
-  }
+  const population = pickDosePopulation(record);
+  if (population && population.toLowerCase().includes("adult")) return true;
   const ageMin = pickNumberField(record, ["age_minimum", "age_min", "age"]);
   if (ageMin != null && ageMin >= 18) {
     const ageUnit = normalizeAgeUnit(
@@ -431,57 +576,121 @@ const isAdultDoseRecord = (record: Record<string, unknown>): boolean => {
   return false;
 };
 
-const computeDailyMultiplierFromLnhpdFacts = (factsJson: Record<string, unknown>): DailyMultiplierResult => {
+export const computeDailyMultiplierFromLnhpdFacts = (
+  factsJson: Record<string, unknown>,
+): DailyMultiplierResult => {
   const dosesRaw = factsJson.doses;
   const doses = Array.isArray(dosesRaw) ? dosesRaw : dosesRaw ? [dosesRaw] : [];
-  if (!doses.length) {
+  const doseRecords = doses.filter((entry): entry is Record<string, unknown> => Boolean(entry && typeof entry === "object"));
+  const doseRowsFound = doseRecords.length;
+  if (!doseRowsFound) {
     return {
       multiplier: DEFAULT_DAILY_MULTIPLIER,
       source: DAILY_MULTIPLIER_SOURCE_DEFAULT,
       reliability: "default",
+      doseRowsFound,
+      selectedDosePop: null,
+      frequencyUnit: null,
+      penaltyReason: "missing_dose_rows",
     };
   }
 
-  const doseRecords = doses.filter((entry): entry is Record<string, unknown> => Boolean(entry && typeof entry === "object"));
-  const selected =
-    doseRecords.find((record) => isAdultDoseRecord(record)) ?? doseRecords[0] ?? null;
+  const selectedByPopulation = doseRecords.find((record) => {
+    const population = pickDosePopulation(record);
+    return Boolean(population && population.toLowerCase().includes("adult"));
+  });
+  const selectedByAge = doseRecords.find((record) => isAdultDoseRecord(record));
+  const selected = selectedByPopulation ?? selectedByAge ?? null;
+  const selectedDosePop = selected ? pickDosePopulation(selected) : pickDosePopulation(doseRecords[0]);
   if (!selected) {
     return {
       multiplier: DEFAULT_DAILY_MULTIPLIER,
-      source: DAILY_MULTIPLIER_SOURCE_DEFAULT,
+      source: DAILY_MULTIPLIER_SOURCE_DEFAULT_NON_ADULT,
       reliability: "default",
+      doseRowsFound,
+      selectedDosePop,
+      frequencyUnit: null,
+      penaltyReason: "non_adult_population",
     };
   }
 
   const frequency = pickNumberField(selected, ["frequency", "frequency_value"]);
   const frequencyMin = pickNumberField(selected, ["frequency_minimum", "frequency_min"]);
   const frequencyMax = pickNumberField(selected, ["frequency_maximum", "frequency_max"]);
-  const frequencyValue = frequency ?? averageRange(frequencyMin, frequencyMax);
-
   const quantity = pickNumberField(selected, ["quantity_dose", "quantity", "dose", "dosage", "quantity_value", "dose_value"]);
   const quantityMin = pickNumberField(selected, ["quantity_dose_minimum", "quantity_minimum", "dose_minimum", "quantity_min", "dose_min"]);
   const quantityMax = pickNumberField(selected, ["quantity_dose_maximum", "quantity_maximum", "dose_maximum", "quantity_max", "dose_max"]);
-  const quantityValue = quantity ?? averageRange(quantityMin, quantityMax);
 
   const frequencyUnit = pickStringField(selected, [
     "uom_type_desc_frequency",
     "frequency_unit",
     "frequency_unit_of_measure",
   ]);
+  const frequencyUnitRaw = frequencyUnit ?? null;
 
-  if (!isDailyFrequencyUnit(frequencyUnit) || (frequencyValue == null && quantityValue == null)) {
+  if (isWeeklyFrequencyUnit(frequencyUnit)) {
+    const frequencyResolved =
+      coercePositive(frequency) ?? coercePositive(averageRange(frequencyMin, frequencyMax));
+    const quantityResolved =
+      coercePositive(quantity) ?? coercePositive(averageRange(quantityMin, quantityMax));
+    if (frequencyResolved == null || quantityResolved == null) {
+      return {
+        multiplier: DEFAULT_DAILY_MULTIPLIER,
+        source: DAILY_MULTIPLIER_SOURCE_DEFAULT_INVALID,
+        reliability: "unreliable",
+        doseRowsFound,
+        selectedDosePop,
+        frequencyUnit: frequencyUnitRaw,
+        penaltyReason: "invalid_dose_fields",
+      };
+    }
     return {
-      multiplier: DEFAULT_DAILY_MULTIPLIER,
-      source: DAILY_MULTIPLIER_SOURCE_LNHPD_UNRELIABLE,
+      multiplier: (frequencyResolved * quantityResolved) / 7,
+      source: DAILY_MULTIPLIER_SOURCE_LNHPD_WEEKLY,
       reliability: "unreliable",
+      doseRowsFound,
+      selectedDosePop,
+      frequencyUnit: frequencyUnitRaw,
+      penaltyReason: "weekly_converted",
     };
   }
 
-  const multiplier = (frequencyValue ?? 1) * (quantityValue ?? 1);
+  if (!isDailyFrequencyUnit(frequencyUnit)) {
+    return {
+      multiplier: DEFAULT_DAILY_MULTIPLIER,
+      source: DAILY_MULTIPLIER_SOURCE_NON_DAILY,
+      reliability: "unreliable",
+      doseRowsFound,
+      selectedDosePop,
+      frequencyUnit: frequencyUnitRaw,
+      penaltyReason: "non_daily_frequency_unit",
+    };
+  }
+
+  const frequencyResolved =
+    coercePositive(frequency) ?? coercePositive(averageRange(frequencyMin, frequencyMax));
+  const quantityResolved =
+    coercePositive(quantity) ?? coercePositive(averageRange(quantityMin, quantityMax));
+  const hasFullDose = frequencyResolved != null && quantityResolved != null;
+  if (!hasFullDose) {
+    return {
+      multiplier: DEFAULT_DAILY_MULTIPLIER,
+      source: DAILY_MULTIPLIER_SOURCE_DEFAULT_INVALID,
+      reliability: "unreliable",
+      doseRowsFound,
+      selectedDosePop,
+      frequencyUnit: frequencyUnitRaw,
+      penaltyReason: "invalid_dose_fields",
+    };
+  }
   return {
-    multiplier,
+    multiplier: frequencyResolved * quantityResolved,
     source: DAILY_MULTIPLIER_SOURCE_LNHPD,
     reliability: "reliable",
+    doseRowsFound,
+    selectedDosePop,
+    frequencyUnit: frequencyUnitRaw,
+    penaltyReason: null,
   };
 };
 
@@ -812,13 +1021,7 @@ const computeScores = (
 
   const formSignals: FormSignal[] = [];
   const usedFormIds = new Set<string>();
-  const formMatches: Array<
-    | {
-        match: FormMatchResult;
-        candidateText: string;
-      }
-    | null
-  > = [];
+  const formMatches: ({ match: FormMatchResult; candidateText: string } | null)[] = [];
   let formMatchCount = 0;
 
   activeRows.forEach((row) => {
@@ -873,8 +1076,14 @@ const computeScores = (
     canonicalSourceId,
     formCoverageRatio,
   );
-  const confidencePenalty =
-    dailyMultiplier.source === DAILY_MULTIPLIER_SOURCE_LNHPD ? 1 : DEFAULT_DAILY_CONFIDENCE_PENALTY;
+  let confidencePenalty = DEFAULT_DAILY_CONFIDENCE_PENALTY;
+  if (dailyMultiplier.source === DAILY_MULTIPLIER_SOURCE_LNHPD) {
+    confidencePenalty = 1;
+  } else if (dailyMultiplier.source === DAILY_MULTIPLIER_SOURCE_LNHPD_WEEKLY) {
+    confidencePenalty = WEEKLY_CONFIDENCE_PENALTY;
+  } else if (dailyMultiplier.source === DAILY_MULTIPLIER_SOURCE_NON_DAILY) {
+    confidencePenalty = NON_DAILY_CONFIDENCE_PENALTY;
+  }
   const confidence = clamp(baseConfidence * confidencePenalty, 0.1, 0.95);
 
   const evidenceByIngredient = new Map<string, IngredientEvidenceRow[]>();
@@ -943,7 +1152,9 @@ const computeScores = (
       if (entry.id) {
         usedEvidenceIds.add(entry.id);
       }
-      evidenceEligibleIds.add(row.ingredient_id);
+      if (row.ingredient_id) {
+        evidenceEligibleIds.add(row.ingredient_id);
+      }
     });
   });
 
@@ -1320,26 +1531,57 @@ const fetchDatasetVersion = async (): Promise<string | null> => {
   return typeof value === "string" && value.trim().length > 0 ? value : null;
 };
 
-const fetchDailyMultiplier = async (
-  source: ScoreSource,
-  sourceId: string,
-): Promise<DailyMultiplierResult> => {
-  if (source !== "lnhpd") {
+const fetchLnhpdDailyMultiplier = async (lnhpdId: string | null): Promise<DailyMultiplierResult> => {
+  if (!lnhpdId) {
     return {
       multiplier: DEFAULT_DAILY_MULTIPLIER,
-      source: DAILY_MULTIPLIER_SOURCE_DEFAULT,
+      source: DAILY_MULTIPLIER_SOURCE_DEFAULT_MISSING,
       reliability: "default",
+      lnhpdIdUsedForDoseLookup: null,
+      doseRowsFound: 0,
+      selectedDosePop: null,
+      frequencyUnit: null,
+      penaltyReason: "missing_canonical_id",
     };
   }
-  const factsJson = await fetchLnhpdFactsJson(sourceId);
+  const factsJson = await fetchLnhpdFactsJson(lnhpdId);
   if (!factsJson) {
     return {
       multiplier: DEFAULT_DAILY_MULTIPLIER,
       source: DAILY_MULTIPLIER_SOURCE_DEFAULT,
       reliability: "default",
+      lnhpdIdUsedForDoseLookup: lnhpdId,
+      doseRowsFound: 0,
+      selectedDosePop: null,
+      frequencyUnit: null,
+      penaltyReason: "missing_facts",
     };
   }
-  return computeDailyMultiplierFromLnhpdFacts(factsJson);
+  const computed = computeDailyMultiplierFromLnhpdFacts(factsJson);
+  return {
+    ...computed,
+    lnhpdIdUsedForDoseLookup: lnhpdId,
+  };
+};
+
+const fetchDailyMultiplier = async (params: {
+  source: ScoreSource;
+  sourceId: string;
+  canonicalSourceId: string | null;
+}): Promise<DailyMultiplierResult> => {
+  if (params.source !== "lnhpd") {
+    return {
+      multiplier: DEFAULT_DAILY_MULTIPLIER,
+      source: DAILY_MULTIPLIER_SOURCE_DEFAULT,
+      reliability: "default",
+      lnhpdIdUsedForDoseLookup: null,
+      doseRowsFound: null,
+      selectedDosePop: null,
+      frequencyUnit: null,
+      penaltyReason: null,
+    };
+  }
+  return fetchLnhpdDailyMultiplier(params.canonicalSourceId);
 };
 
 const fetchProductIngredients = async (
@@ -1376,39 +1618,47 @@ const fetchProductIngredients = async (
   return null;
 };
 
-export async function computeScoreBundleV4(params: {
+const buildCitationMapFromCache = (
+  ids: string[],
+  cacheMap: Map<string, string[]>,
+): Map<string, string[]> => {
+  const map = new Map<string, string[]>();
+  ids.forEach((id) => {
+    map.set(id, cacheMap.get(id) ?? []);
+  });
+  return map;
+};
+
+const buildScoreBundleV4FromData = async (params: {
+  rows: ProductIngredientRow[];
   source: ScoreSource;
   sourceId: string;
-}): Promise<ScoreComputationResult | null> {
-  const ingredientLookup = await fetchProductIngredients(params.source, params.sourceId);
-  if (!ingredientLookup) return null;
-
-  const { rows, sourceIdForWrite, canonicalSourceId } = ingredientLookup;
-  const [dailyMultiplier, datasetVersion] = await Promise.all([
-    fetchDailyMultiplier(params.source, params.sourceId),
-    fetchDatasetVersion(),
-  ]);
-  const inputsHash = buildInputsHash(rows, {
-    dailyMultiplier: dailyMultiplier.multiplier,
-    dailyMultiplierSource: dailyMultiplier.source,
-    datasetVersion,
+  sourceIdForWrite: string;
+  canonicalSourceId: string | null;
+  dailyMultiplier: DailyMultiplierResult;
+  datasetVersion: string | null;
+  ingredientMeta: Map<string, IngredientMeta>;
+  evidenceRows: IngredientEvidenceRow[];
+  formRows: IngredientFormRow[];
+  formAliasRows: IngredientFormAliasRow[];
+  evidenceCitationsById?: Map<string, string[]>;
+  formCitationsById?: Map<string, string[]>;
+}): Promise<ScoreComputationResult> => {
+  const inputsHash = buildInputsHash(params.rows, {
+    dailyMultiplier: params.dailyMultiplier.multiplier,
+    dailyMultiplierSource: params.dailyMultiplier.source,
+    datasetVersion: params.datasetVersion,
   });
-  const ingredientMeta = await fetchIngredientMeta(rows);
-  const ingredientIds = Array.from(
-    new Set(rows.map((row) => row.ingredient_id).filter((id): id is string => Boolean(id))),
+  const mergedFormAliases = mergeFormAliases(params.formAliasRows);
+  const verifiedEvidenceRows = params.evidenceRows.filter((row) => isVerifiedAudit(row.audit_status));
+  const pendingEvidenceRows = params.evidenceRows.filter((row) => !isVerifiedAudit(row.audit_status));
+  const verifiedFormRows = params.formRows.filter((row) => isVerifiedAudit(row.audit_status));
+  const pendingFormRows = params.formRows.filter((row) => !isVerifiedAudit(row.audit_status));
+  const verifiedEvidenceById = new Map(
+    verifiedEvidenceRows.map((row) => [row.id, row]),
   );
-  const [evidenceRows, formRows, formAliasRows] = await Promise.all([
-    fetchIngredientEvidence(ingredientIds),
-    fetchIngredientForms(ingredientIds),
-    fetchIngredientFormAliases(ingredientIds),
-  ]);
-  const mergedFormAliases = mergeFormAliases(formAliasRows);
-  const verifiedEvidenceRows = evidenceRows.filter((row) => isVerifiedAudit(row.audit_status));
-  const pendingEvidenceRows = evidenceRows.filter((row) => !isVerifiedAudit(row.audit_status));
-  const verifiedFormRows = formRows.filter((row) => isVerifiedAudit(row.audit_status));
-  const pendingFormRows = formRows.filter((row) => !isVerifiedAudit(row.audit_status));
   const activeIngredientIds = new Set(
-    rows
+    params.rows
       .filter((row) => row.is_active && row.ingredient_id)
       .map((row) => row.ingredient_id as string),
   );
@@ -1424,19 +1674,32 @@ export async function computeScoreBundleV4(params: {
   const pendingFormCount = pendingFormRows.filter((row) =>
     activeIngredientIds.has(row.ingredient_id),
   ).length;
-  const ulWarnings = computeUlWarnings(rows, ingredientMeta, dailyMultiplier);
+  const totalEvidenceAvailableIds = new Set(
+    params.evidenceRows
+      .filter((row) => activeIngredientIds.has(row.ingredient_id))
+      .map((row) => row.ingredient_id),
+  );
+  const totalEvidenceAvailableRatio = activeIngredientIds.size
+    ? totalEvidenceAvailableIds.size / activeIngredientIds.size
+    : 0;
+  const ulWarnings = computeUlWarnings(params.rows, params.ingredientMeta, params.dailyMultiplier);
   const metrics = computeScores(
-    rows,
-    canonicalSourceId,
-    ingredientMeta,
+    params.rows,
+    params.canonicalSourceId,
+    params.ingredientMeta,
     verifiedEvidenceRows,
     verifiedFormRows,
     mergedFormAliases,
-    dailyMultiplier,
+    params.dailyMultiplier,
   );
+  const formSignalsSorted = [...metrics.formSignals].sort(
+    (a, b) => b.matchScore - a.matchScore,
+  );
+  const formSignals = formSignalsSorted.slice(0, MAX_FORM_SIGNALS);
+  const formSignalsTruncatedCount = Math.max(0, formSignalsSorted.length - formSignals.length);
 
   const ingredientNameById = new Map<string, string>();
-  rows.forEach((row) => {
+  params.rows.forEach((row) => {
     if (!row.is_active || !row.ingredient_id) return;
     if (!ingredientNameById.has(row.ingredient_id)) {
       ingredientNameById.set(row.ingredient_id, row.name_raw);
@@ -1458,37 +1721,55 @@ export async function computeScoreBundleV4(params: {
     ),
   );
 
-  const [evidenceCitations, formCitations, pendingEvidenceCitations, pendingFormCitations] =
-    await Promise.all([
-    fetchEvidenceCitations(metrics.usedEvidenceIds),
-    fetchFormCitations(metrics.usedFormIds),
-    fetchEvidenceCitations(pendingEvidenceIds),
-    fetchFormCitations(pendingFormIds),
-  ]);
+  let evidenceCitations: Map<string, string[]>;
+  let formCitations: Map<string, string[]>;
+  let pendingEvidenceCitations: Map<string, string[]>;
+  let pendingFormCitations: Map<string, string[]>;
+
+  if (params.evidenceCitationsById && params.formCitationsById) {
+    evidenceCitations = buildCitationMapFromCache(
+      metrics.usedEvidenceIds,
+      params.evidenceCitationsById,
+    );
+    formCitations = buildCitationMapFromCache(
+      metrics.usedFormIds,
+      params.formCitationsById,
+    );
+    pendingEvidenceCitations = buildCitationMapFromCache(
+      pendingEvidenceIds,
+      params.evidenceCitationsById,
+    );
+    pendingFormCitations = buildCitationMapFromCache(
+      pendingFormIds,
+      params.formCitationsById,
+    );
+  } else {
+    [evidenceCitations, formCitations, pendingEvidenceCitations, pendingFormCitations] =
+      await Promise.all([
+        fetchEvidenceCitations(metrics.usedEvidenceIds),
+        fetchFormCitations(metrics.usedFormIds),
+        fetchEvidenceCitations(pendingEvidenceIds),
+        fetchFormCitations(pendingFormIds),
+      ]);
+  }
+
   const evidenceReferenceIds = new Set<string>();
   evidenceCitations.forEach((refs) => refs.forEach((ref) => evidenceReferenceIds.add(ref)));
   const formReferenceIds = new Set<string>();
   formCitations.forEach((refs) => refs.forEach((ref) => formReferenceIds.add(ref)));
   const evidenceCitationMap = Object.fromEntries(Array.from(evidenceCitations.entries()));
   const formCitationMap = Object.fromEntries(Array.from(formCitations.entries()));
-  const pendingEvidenceCitationMap = Object.fromEntries(
-    Array.from(pendingEvidenceCitations.entries()),
-  );
-  const pendingFormCitationMap = Object.fromEntries(
-    Array.from(pendingFormCitations.entries()),
-  );
-
-  const verifiedEvidence: Array<Record<string, unknown>> = [];
-  const skippedEvidence: Array<Record<string, unknown>> = [];
-  const verifiedForms: Array<Record<string, unknown>> = [];
-  const skippedForms: Array<Record<string, unknown>> = [];
+  const verifiedEvidence: Record<string, unknown>[] = [];
+  const skippedEvidence: Record<string, unknown>[] = [];
+  const verifiedForms: Record<string, unknown>[] = [];
+  const skippedForms: Record<string, unknown>[] = [];
   let truncatedVerifiedEvidence = 0;
   let truncatedSkippedEvidence = 0;
   let truncatedVerifiedForms = 0;
   let truncatedSkippedForms = 0;
 
   metrics.usedEvidenceIds.forEach((evidenceId) => {
-    const row = verifiedEvidenceRows.find((entry) => entry.id === evidenceId);
+    const row = verifiedEvidenceById.get(evidenceId);
     if (!row) return;
     const ingredientName = ingredientNameById.get(row.ingredient_id) ?? row.ingredient_id;
     const refs = evidenceCitations.get(evidenceId) ?? [];
@@ -1577,7 +1858,7 @@ export async function computeScoreBundleV4(params: {
   const rawOverall = 0.4 * metrics.effectiveness + 0.3 * safety + 0.3 * integrity;
   const displayOverall =
     metrics.confidence * rawOverall + (1 - metrics.confidence) * 50;
-  const basis = rows[0]?.basis ?? "label_serving";
+  const basis = params.rows[0]?.basis ?? "label_serving";
   const roundedGoalDoseAdequacy = Object.fromEntries(
     Object.entries(metrics.goalDoseAdequacy).map(([goal, value]) => [goal, roundScore(value)]),
   );
@@ -1590,7 +1871,7 @@ export async function computeScoreBundleV4(params: {
       integrity: roundScore(integrity),
     },
     confidence: roundScore(metrics.confidence),
-    bestFitGoals: resolveBestFitGoals(rows, metrics.goalDoseAdequacy),
+    bestFitGoals: resolveBestFitGoals(params.rows, metrics.goalDoseAdequacy),
     flags: buildFlags({
       coverage: metrics.coverage,
       activeCount: metrics.activeCount,
@@ -1607,11 +1888,11 @@ export async function computeScoreBundleV4(params: {
     provenance: {
       source: params.source,
       sourceId: params.sourceId,
-      canonicalSourceId,
+      canonicalSourceId: params.canonicalSourceId,
       scoreVersion: V4_SCORE_VERSION,
       computedAt: new Date().toISOString(),
       inputsHash,
-      datasetVersion,
+      datasetVersion: params.datasetVersion,
       extractedAt: null,
     },
     explain: {
@@ -1628,10 +1909,13 @@ export async function computeScoreBundleV4(params: {
       evidence: {
         coverageRatio: roundScore(metrics.evidenceCoverage),
         availableRatio: roundScore(metrics.evidenceAvailableRatio),
+        verifiedAvailableRatio: roundScore(metrics.evidenceAvailableRatio),
+        totalAvailableRatio: roundScore(totalEvidenceAvailableRatio),
         doseAdequacy: roundScore(metrics.doseAdequacyRawAvg),
         formAdjustedDoseAdequacy: roundScore(metrics.doseAdequacyAvg),
         formCoverageRatio: roundScore(metrics.formCoverageRatio),
-        formSignals: metrics.formSignals,
+        formSignals,
+        formSignalsTruncatedCount,
         goals: roundedGoalDoseAdequacy,
         audit: {
           verifiedEvidenceCount,
@@ -1660,10 +1944,19 @@ export async function computeScoreBundleV4(params: {
       assumptions: {
         basis,
         doseBasis: "per_day_adult",
-        dailyMultiplier: dailyMultiplier.multiplier,
-        dailyMultiplierSource: dailyMultiplier.source,
-        dailyMultiplierReliability: dailyMultiplier.reliability,
-        datasetVersion,
+        dailyMultiplier: params.dailyMultiplier.multiplier,
+        dailyMultiplierSource: params.dailyMultiplier.source,
+        dailyMultiplierReliability: params.dailyMultiplier.reliability,
+        ...(params.source === "lnhpd"
+          ? {
+              lnhpdIdUsedForDoseLookup: params.dailyMultiplier.lnhpdIdUsedForDoseLookup ?? null,
+              doseRowsFound: params.dailyMultiplier.doseRowsFound ?? null,
+              selectedDosePop: params.dailyMultiplier.selectedDosePop ?? null,
+              doseFrequencyUnit: params.dailyMultiplier.frequencyUnit ?? null,
+              dailyMultiplierPenaltyReason: params.dailyMultiplier.penaltyReason ?? null,
+            }
+          : {}),
+        datasetVersion: params.datasetVersion,
         notes: "Scores use label-derived doses when available; unknown doses reduce confidence.",
       },
     },
@@ -1672,10 +1965,104 @@ export async function computeScoreBundleV4(params: {
   return {
     bundle,
     inputsHash,
+    sourceIdForWrite: params.sourceIdForWrite,
+    canonicalSourceId: params.canonicalSourceId,
+  };
+};
+
+export async function computeScoreBundleV4(params: {
+  source: ScoreSource;
+  sourceId: string;
+}): Promise<ScoreComputationResult | null> {
+  const ingredientLookup = await fetchProductIngredients(params.source, params.sourceId);
+  if (!ingredientLookup) return null;
+
+  const { rows, sourceIdForWrite, canonicalSourceId } = ingredientLookup;
+  const [dailyMultiplier, datasetVersion] = await Promise.all([
+    fetchDailyMultiplier({
+      source: params.source,
+      sourceId: params.sourceId,
+      canonicalSourceId,
+    }),
+    fetchDatasetVersion(),
+  ]);
+  const ingredientMeta = await fetchIngredientMeta(rows);
+  const ingredientIds = Array.from(
+    new Set(rows.map((row) => row.ingredient_id).filter((id): id is string => Boolean(id))),
+  );
+  const [evidenceRows, formRows, formAliasRows] = await Promise.all([
+    fetchIngredientEvidence(ingredientIds),
+    fetchIngredientForms(ingredientIds),
+    fetchIngredientFormAliases(ingredientIds),
+  ]);
+
+  return buildScoreBundleV4FromData({
+    rows,
+    source: params.source,
+    sourceId: params.sourceId,
     sourceIdForWrite,
     canonicalSourceId,
-  };
+    dailyMultiplier,
+    datasetVersion,
+    ingredientMeta,
+    evidenceRows,
+    formRows,
+    formAliasRows,
+  });
 }
+
+export const computeScoreBundleV4Cached = async (params: {
+  rows: ProductIngredientRow[];
+  source: ScoreSource;
+  sourceId: string;
+  sourceIdForWrite?: string;
+  canonicalSourceId: string | null;
+  dailyMultiplier: DailyMultiplierResult;
+  cache: DatasetCache;
+}): Promise<ScoreComputationResult> => {
+  const ingredientIds = Array.from(
+    new Set(params.rows.map((row) => row.ingredient_id).filter((id): id is string => Boolean(id))),
+  );
+  const ingredientMeta = new Map<string, IngredientMeta>();
+  ingredientIds.forEach((id) => {
+    const meta = params.cache.ingredientMetaById.get(id);
+    if (meta) ingredientMeta.set(id, meta);
+  });
+
+  const evidenceRows: IngredientEvidenceRow[] = [];
+  const formRows: IngredientFormRow[] = [];
+  const formAliasRows: IngredientFormAliasRow[] = [...params.cache.globalFormAliases];
+
+  ingredientIds.forEach((id) => {
+    const evidence = params.cache.evidenceByIngredientId.get(id);
+    if (evidence?.length) evidenceRows.push(...evidence);
+    const forms = params.cache.formByIngredientId.get(id);
+    if (forms?.length) formRows.push(...forms);
+    const aliases = params.cache.aliasesByIngredientId.get(id);
+    if (aliases?.length) formAliasRows.push(...aliases);
+  });
+
+  return buildScoreBundleV4FromData({
+    rows: params.rows,
+    source: params.source,
+    sourceId: params.sourceId,
+    sourceIdForWrite: params.sourceIdForWrite ?? params.sourceId,
+    canonicalSourceId: params.canonicalSourceId,
+    dailyMultiplier: params.dailyMultiplier,
+    datasetVersion: params.cache.datasetVersion,
+    ingredientMeta,
+    evidenceRows,
+    formRows,
+    formAliasRows,
+    evidenceCitationsById: params.cache.evidenceCitationsById,
+    formCitationsById: params.cache.formCitationsById,
+  });
+};
+
+export const computeV4InputsHashFromRows = (
+  rows: ProductIngredientRow[],
+  context?: { dailyMultiplier?: number; dailyMultiplierSource?: string; datasetVersion?: string | null },
+): string => buildInputsHash(rows, context);
 
 export async function computeV4InputsHash(params: {
   source: ScoreSource;
@@ -1683,8 +2070,13 @@ export async function computeV4InputsHash(params: {
 }): Promise<string | null> {
   const ingredientLookup = await fetchProductIngredients(params.source, params.sourceId);
   if (!ingredientLookup) return null;
+  const canonicalSourceId = ingredientLookup.canonicalSourceId;
   const [dailyMultiplier, datasetVersion] = await Promise.all([
-    fetchDailyMultiplier(params.source, params.sourceId),
+    fetchDailyMultiplier({
+      source: params.source,
+      sourceId: params.sourceId,
+      canonicalSourceId,
+    }),
     fetchDatasetVersion(),
   ]);
   return buildInputsHash(ingredientLookup.rows, {

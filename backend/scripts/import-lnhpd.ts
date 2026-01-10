@@ -277,7 +277,7 @@ const importEndpoint = async (endpoint: EndpointConfig) => {
     );
     return;
   }
-  let nextUrl = buildUrl(endpoint.path, startPage);
+  let nextUrl: string | null = buildUrl(endpoint.path, startPage);
   let pageCount = 0;
   let totalInserted = 0;
   let pending: Record<string, unknown>[] = [];

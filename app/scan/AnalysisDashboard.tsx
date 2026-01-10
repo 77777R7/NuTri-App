@@ -1140,11 +1140,13 @@ export const AnalysisDashboard: React.FC<{
             : Array.isArray(efficacy?.benefits) && efficacy.benefits.length > 0
                 ? efficacy.benefits
                 : []
-    ).slice(0, 3);
+    )
+        .filter((benefit): benefit is string => typeof benefit === 'string' && benefit.trim().length > 0)
+        .slice(0, 3);
 
     const scienceIngredients = useMemo(
         () => (Array.isArray(efficacy.ingredients) ? dedupeIngredients(efficacy.ingredients) : []),
-        [efficacy.ingredients]
+        [dedupeIngredients, efficacy.ingredients]
     );
 
     const formatBestForText = (value: string) => {
