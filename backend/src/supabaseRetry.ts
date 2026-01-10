@@ -25,22 +25,29 @@ const extractStatus = (error: unknown, fallback?: number | null): number | null 
   return typeof candidate === "number" && Number.isFinite(candidate) ? candidate : null;
 };
 
+const getHeaderValue = (headers: unknown, key: string): string | null => {
+  if (!headers || typeof headers !== "object") return null;
+  const candidate = headers as { get?: (value: string) => string | null };
+  if (typeof candidate.get === "function") {
+    return candidate.get(key) ?? candidate.get(key.toLowerCase());
+  }
+  const record = headers as Record<string, string | undefined>;
+  const direct = record[key] ?? record[key.toLowerCase()] ?? record[key.toUpperCase()];
+  if (direct) return direct;
+  const lowerKey = key.toLowerCase();
+  for (const [headerKey, value] of Object.entries(record)) {
+    if (headerKey.toLowerCase() === lowerKey && value) return value;
+  }
+  return null;
+};
+
 const extractRayId = (error: unknown): string | null => {
   if (!error || typeof error !== "object") return null;
   const response =
     (error as { response?: { headers?: unknown } }).response ??
     (error as { cause?: { response?: { headers?: unknown } } }).cause?.response ??
     null;
-  const headers = response?.headers as
-    | { get?: (key: string) => string | null }
-    | Record<string, string>
-    | null
-    | undefined;
-  if (!headers) return null;
-  if (typeof headers.get === "function") {
-    return headers.get("cf-ray");
-  }
-  return headers["cf-ray"] ?? headers["CF-Ray"] ?? null;
+  return getHeaderValue(response?.headers, "cf-ray");
 };
 
 const isRetryableError = (error: unknown, status?: number | null): boolean => {
