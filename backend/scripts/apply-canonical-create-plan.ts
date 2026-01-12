@@ -151,7 +151,7 @@ const insertSynonyms = async (ingredientId: string, synonyms: string[], aliasTyp
 const buildRebackfillRunlist = async (
   source: string,
   nameKeys: string[],
-): Promise<Array<{ source: string; sourceId: string }>> => {
+): Promise<{ source: string; sourceId: string }[]> => {
   const uniqueKeys = Array.from(new Set(nameKeys.filter(Boolean)));
   const result = new Map<string, { source: string; sourceId: string }>();
   const chunkSize = 150;
@@ -182,7 +182,7 @@ const buildRebackfillRunlist = async (
 
 const writeRebackfillFile = async (
   filePath: string,
-  items: Array<{ source: string; sourceId: string }>,
+  items: { source: string; sourceId: string }[],
 ) => {
   if (!items.length) {
     await writeFile(filePath, "", "utf8");

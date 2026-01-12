@@ -1,0 +1,207 @@
+{
+  "source": "lnhpd",
+  "topN": 50,
+  "totalMismatches": 1311,
+  "tokens": [
+    {
+      "token": "chloride",
+      "count": 393
+    },
+    {
+      "token": "acetate",
+      "count": 348
+    },
+    {
+      "token": "citrate",
+      "count": 165
+    },
+    {
+      "token": "phosphate",
+      "count": 155
+    },
+    {
+      "token": "chelate",
+      "count": 78
+    },
+    {
+      "token": "acid",
+      "count": 75
+    },
+    {
+      "token": "ascorbic",
+      "count": 38
+    },
+    {
+      "token": "glycinate",
+      "count": 21
+    },
+    {
+      "token": "fruit",
+      "count": 19
+    },
+    {
+      "token": "piperine",
+      "count": 18
+    },
+    {
+      "token": "seed",
+      "count": 16
+    },
+    {
+      "token": "beta",
+      "count": 14
+    },
+    {
+      "token": "linolenic",
+      "count": 14
+    },
+    {
+      "token": "bisglycinate",
+      "count": 14
+    },
+    {
+      "token": "carotene",
+      "count": 13
+    },
+    {
+      "token": "gamma",
+      "count": 11
+    },
+    {
+      "token": "folic",
+      "count": 9
+    },
+    {
+      "token": "carbonate",
+      "count": 7
+    },
+    {
+      "token": "malate",
+      "count": 7
+    },
+    {
+      "token": "whole",
+      "count": 6
+    },
+    {
+      "token": "root",
+      "count": 6
+    },
+    {
+      "token": "hcl",
+      "count": 5
+    },
+    {
+      "token": "extract",
+      "count": 4
+    },
+    {
+      "token": "sulfate",
+      "count": 3
+    },
+    {
+      "token": "gla",
+      "count": 3
+    },
+    {
+      "token": "hydroxy",
+      "count": 3
+    },
+    {
+      "token": "protease",
+      "count": 3
+    },
+    {
+      "token": "nitrate",
+      "count": 3
+    },
+    {
+      "token": "alpha",
+      "count": 3
+    },
+    {
+      "token": "pyridoxine",
+      "count": 2
+    },
+    {
+      "token": "linoleic",
+      "count": 2
+    },
+    {
+      "token": "calcium",
+      "count": 2
+    },
+    {
+      "token": "ascorbate",
+      "count": 2
+    },
+    {
+      "token": "608fcc",
+      "count": 2
+    },
+    {
+      "token": "sapu",
+      "count": 2
+    },
+    {
+      "token": "decenoic",
+      "count": 2
+    },
+    {
+      "token": "mg",
+      "count": 2
+    },
+    {
+      "token": "iu",
+      "count": 2
+    },
+    {
+      "token": "pantothenic",
+      "count": 1
+    },
+    {
+      "token": "oleic",
+      "count": 1
+    },
+    {
+      "token": "omega9",
+      "count": 1
+    },
+    {
+      "token": "phospholipides",
+      "count": 1
+    },
+    {
+      "token": "de",
+      "count": 1
+    },
+    {
+      "token": "poisson",
+      "count": 1
+    },
+    {
+      "token": "inositol",
+      "count": 1
+    },
+    {
+      "token": "cyanocobalamin",
+      "count": 1
+    },
+    {
+      "token": "d3",
+      "count": 1
+    },
+    {
+      "token": "cholecalciferol",
+      "count": 1
+    },
+    {
+      "token": "eicosapentaenoic",
+      "count": 1
+    },
+    {
+      "token": "glucans",
+      "count": 1
+    }
+  ]
+}

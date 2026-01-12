@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-01-09T10:04:57.427Z",
+  "approvedCount": 17,
+  "plan": "/Users/howard07/NuTriApp/nutri-app/backend/output/ingredient-resolution/canonical_create_plan.json",
+  "canonicalKeyCollisions": [],
+  "synonymCollisions": [],
+  "missingCanonicalTargets": [],
+  "ok": true
+}

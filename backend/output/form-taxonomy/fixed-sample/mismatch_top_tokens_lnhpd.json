@@ -1,0 +1,207 @@
+{
+  "source": "lnhpd",
+  "topN": 50,
+  "totalMismatches": 62,
+  "tokens": [
+    {
+      "token": "acid",
+      "count": 41
+    },
+    {
+      "token": "seed",
+      "count": 33
+    },
+    {
+      "token": "linolenic",
+      "count": 24
+    },
+    {
+      "token": "alpha",
+      "count": 21
+    },
+    {
+      "token": "fatty",
+      "count": 17
+    },
+    {
+      "token": "acids",
+      "count": 17
+    },
+    {
+      "token": "free",
+      "count": 11
+    },
+    {
+      "token": "sterols",
+      "count": 11
+    },
+    {
+      "token": "esters",
+      "count": 9
+    },
+    {
+      "token": "and",
+      "count": 9
+    },
+    {
+      "token": "oleic",
+      "count": 7
+    },
+    {
+      "token": "linoleic",
+      "count": 6
+    },
+    {
+      "token": "fruit",
+      "count": 6
+    },
+    {
+      "token": "ala",
+      "count": 3
+    },
+    {
+      "token": "omega",
+      "count": 3
+    },
+    {
+      "token": "berry",
+      "count": 3
+    },
+    {
+      "token": "200mg",
+      "count": 3
+    },
+    {
+      "token": "2700mg",
+      "count": 2
+    },
+    {
+      "token": "70mg",
+      "count": 2
+    },
+    {
+      "token": "80mg",
+      "count": 2
+    },
+    {
+      "token": "sulfate",
+      "count": 2
+    },
+    {
+      "token": "beta",
+      "count": 2
+    },
+    {
+      "token": "extract",
+      "count": 2
+    },
+    {
+      "token": "dhe",
+      "count": 2
+    },
+    {
+      "token": "500mg",
+      "count": 2
+    },
+    {
+      "token": "145mg",
+      "count": 1
+    },
+    {
+      "token": "la",
+      "count": 1
+    },
+    {
+      "token": "gamolenic",
+      "count": 1
+    },
+    {
+      "token": "gla",
+      "count": 1
+    },
+    {
+      "token": "130mg",
+      "count": 1
+    },
+    {
+      "token": "omega6",
+      "count": 1
+    },
+    {
+      "token": "omega9",
+      "count": 1
+    },
+    {
+      "token": "73mg",
+      "count": 1
+    },
+    {
+      "token": "122mg",
+      "count": 1
+    },
+    {
+      "token": "153mg",
+      "count": 1
+    },
+    {
+      "token": "170mg",
+      "count": 1
+    },
+    {
+      "token": "212mg",
+      "count": 1
+    },
+    {
+      "token": "3mg",
+      "count": 1
+    },
+    {
+      "token": "with",
+      "count": 1
+    },
+    {
+      "token": "phytosterols",
+      "count": 1
+    },
+    {
+      "token": "bark",
+      "count": 1
+    },
+    {
+      "token": "sitosterol",
+      "count": 1
+    },
+    {
+      "token": "265mg",
+      "count": 1
+    },
+    {
+      "token": "gamma",
+      "count": 1
+    },
+    {
+      "token": "52mg",
+      "count": 1
+    },
+    {
+      "token": "ester",
+      "count": 1
+    },
+    {
+      "token": "liposteric",
+      "count": 1
+    },
+    {
+      "token": "containing",
+      "count": 1
+    },
+    {
+      "token": "7728mg",
+      "count": 1
+    },
+    {
+      "token": "6100mg",
+      "count": 1
+    }
+  ]
+}

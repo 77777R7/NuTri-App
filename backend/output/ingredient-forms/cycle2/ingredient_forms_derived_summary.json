@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-01-10T02:47:18.980Z",
+  "source": "lnhpd",
+  "plan": "output/ingredient-forms/missing-ingredient-forms-plan-lnhpd-fixed-sample-cycle2.json",
+  "appliedCount": 18,
+  "candidateCount": 18,
+  "rebackfillTargets": 477,
+  "rebackfillOutput": "output/ingredient-forms/cycle2/ingredient-forms-derived-rebackfill.jsonl"
+}

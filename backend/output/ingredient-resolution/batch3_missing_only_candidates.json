@@ -1,0 +1,232 @@
+{
+  "source": "lnhpd",
+  "timestamp": "2026-01-09T10:04:28.451Z",
+  "total": 15,
+  "candidates": [
+    {
+      "canonicalKey": "cinnamomum_aromaticum",
+      "canonicalName": "Cinnamomum aromaticum",
+      "normalized": "cinnamomum aromaticum",
+      "count": 3,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true,
+      "samples": [
+        "Cinnamomum aromaticum"
+      ]
+    },
+    {
+      "canonicalKey": "ligusticum_chuanxiong",
+      "canonicalName": "Ligusticum chuanxiong",
+      "normalized": "ligusticum chuanxiong",
+      "count": 3,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true,
+      "samples": [
+        "Ligusticum chuanxiong"
+      ]
+    },
+    {
+      "canonicalKey": "caulophyllum_thalictroides",
+      "canonicalName": "Caulophyllum thalictroides",
+      "normalized": "caulophyllum thalictroides",
+      "count": 2,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true,
+      "samples": [
+        "Caulophyllum thalictroides"
+      ]
+    },
+    {
+      "canonicalKey": "gentiana_lutea",
+      "canonicalName": "Gentiana lutea",
+      "normalized": "gentiana lutea",
+      "count": 2,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true,
+      "samples": [
+        "Gentiana lutea"
+      ]
+    },
+    {
+      "canonicalKey": "saposhnikovia_divaricata",
+      "canonicalName": "Saposhnikovia divaricata",
+      "normalized": "saposhnikovia divaricata",
+      "count": 2,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true,
+      "samples": [
+        "Saposhnikovia divaricata"
+      ]
+    },
+    {
+      "canonicalKey": "cucurbita_pepo",
+      "canonicalName": "Cucurbita pepo",
+      "normalized": "cucurbita pepo",
+      "count": 2,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true,
+      "samples": [
+        "Cucurbita pepo"
+      ]
+    },
+    {
+      "canonicalKey": "acorus_tatarinowii",
+      "canonicalName": "Acorus tatarinowii",
+      "normalized": "acorus tatarinowii",
+      "count": 2,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true,
+      "samples": [
+        "Acorus tatarinowii"
+      ]
+    },
+    {
+      "canonicalKey": "tussilago_farfara",
+      "canonicalName": "Tussilago farfara",
+      "normalized": "tussilago farfara",
+      "count": 2,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true,
+      "samples": [
+        "Tussilago farfara"
+      ]
+    },
+    {
+      "canonicalKey": "carlina_acaulis",
+      "canonicalName": "Carlina acaulis",
+      "normalized": "carlina acaulis",
+      "count": 2,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true,
+      "samples": [
+        "Carlina acaulis"
+      ]
+    },
+    {
+      "canonicalKey": "grindelia_camporum",
+      "canonicalName": "Grindelia camporum",
+      "normalized": "grindelia camporum",
+      "count": 2,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true,
+      "samples": [
+        "Grindelia camporum"
+      ]
+    },
+    {
+      "canonicalKey": "aucklandia_lappa",
+      "canonicalName": "Aucklandia lappa",
+      "normalized": "aucklandia lappa",
+      "count": 2,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true,
+      "samples": [
+        "Aucklandia lappa"
+      ]
+    },
+    {
+      "canonicalKey": "modified_citrus_pectin",
+      "canonicalName": "Modified citrus pectin",
+      "normalized": "modified citrus pectin",
+      "count": 2,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true,
+      "samples": [
+        "Modified citrus pectin"
+      ]
+    },
+    {
+      "canonicalKey": "rhododendron_chrysanthum",
+      "canonicalName": "Rhododendron chrysanthum",
+      "normalized": "rhododendron chrysanthum",
+      "count": 2,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true,
+      "samples": [
+        "Rhododendron chrysanthum"
+      ]
+    },
+    {
+      "canonicalKey": "salvia_miltiorrhiza",
+      "canonicalName": "Salvia miltiorrhiza",
+      "normalized": "salvia miltiorrhiza",
+      "count": 2,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true,
+      "samples": [
+        "Salvia miltiorrhiza"
+      ]
+    },
+    {
+      "canonicalKey": "platycodon_grandiflorum",
+      "canonicalName": "Platycodon grandiflorum",
+      "normalized": "platycodon grandiflorum",
+      "count": 2,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true,
+      "samples": [
+        "Platycodon grandiflorum"
+      ]
+    }
+  ]
+}

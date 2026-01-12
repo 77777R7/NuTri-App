@@ -1,7 +1,8 @@
 import { supabase } from './supabase.js';
 import { extractErrorMeta, type RetryErrorMeta, withRetry } from './supabaseRetry.js';
 import type { LabelDraft } from './labelAnalysis.js';
-import { canonicalizeLnhpdFormTokens } from './formTaxonomy/lnhpdFormTokenMap.js';
+// eslint-disable-next-line import/no-unresolved -- TS resolves .js specifiers to .ts sources in this project.
+import { canonicalizeLnhpdFormTokens, collectExplicitFormTokens } from './formTaxonomy/lnhpdFormTokenMap.js';
 
 type Basis = 'label_serving' | 'recommended_daily' | 'assumed_daily';
 
@@ -38,6 +39,8 @@ type LnhpdIngredientMeta = {
   potencyAmount?: string | number | null;
   potencyUnit?: string | null;
   driedHerbEquivalent?: string | number | null;
+  ingredientName?: string | null;
+  properName?: string | null;
 };
 
 type UnitKind = 'mass' | 'volume' | 'iu' | 'cfu' | 'percent' | 'homeopathic' | 'unknown';
@@ -198,7 +201,7 @@ const LNHPD_SOURCE_MATERIAL_BLOCKLIST = [
   /\b(homeopathic|homeopathy|natrum muriaticum|kali muriaticum|apis mellifica|mercurius|arnica|nux vomica|coffea cruda|silicea)\b/,
 ];
 
-const LNHPD_PLANT_PART_PATTERNS: Array<{ pattern: RegExp; token: string }> = [
+const LNHPD_PLANT_PART_PATTERNS: { pattern: RegExp; token: string }[] = [
   { pattern: /\broot(s)?\b|\bradix\b/, token: 'root' },
   { pattern: /\brhizome(s)?\b/, token: 'rhizome' },
   { pattern: /\bseed(s)?\b|\bkernel\b/, token: 'seed' },
@@ -317,6 +320,21 @@ const extractLnhpdFormRaw = (meta?: LnhpdIngredientMeta | null): string | null =
   const unique = Array.from(new Set(tokens));
   const canonical = canonicalizeLnhpdFormTokens(unique);
   return canonical.length ? canonical.join(' ') : null;
+};
+
+const extractLnhpdFallbackFormTokens = (
+  nameRaw: string,
+  meta?: LnhpdIngredientMeta | null,
+): string[] => {
+  const sources = [
+    nameRaw,
+    meta?.ingredientName ?? null,
+    meta?.properName ?? null,
+    meta?.sourceMaterial ?? null,
+  ].filter((value): value is string => Boolean(value && value.trim()));
+  if (!sources.length) return [];
+  if (meta?.sourceMaterial && shouldSkipSourceMaterial(meta.sourceMaterial)) return [];
+  return collectExplicitFormTokens(sources);
 };
 
 const normalizeUnitLabel = (unitRaw?: string | null): string | null => {
@@ -542,7 +560,10 @@ const resolveConversionFactor = async (
   }
 };
 
-const hydrateRowsWithLookups = async (rows: ProductIngredientRow[]): Promise<void> => {
+const hydrateRowsWithLookups = async (
+  rows: ProductIngredientRow[],
+  lnhpdMetaByNameKey?: Map<string, LnhpdIngredientMeta | null> | null,
+): Promise<void> => {
   const ingredientCache = new Map<string, IngredientLookup | null>();
   const conversionCache = new Map<string, number | null>();
 
@@ -551,6 +572,19 @@ const hydrateRowsWithLookups = async (rows: ProductIngredientRow[]): Promise<voi
     row.ingredient_id = lookup?.id ?? null;
     row.match_method = lookup?.matchMethod ?? null;
     row.match_confidence = lookup?.matchConfidence ?? null;
+
+    if (
+      row.source === 'lnhpd' &&
+      row.ingredient_id &&
+      (!row.form_raw || !row.form_raw.trim())
+    ) {
+      const nameKey = row.name_key || buildNameKey(row.name_raw);
+      const meta = lnhpdMetaByNameKey?.get(nameKey) ?? null;
+      const tokens = extractLnhpdFallbackFormTokens(row.name_raw, meta);
+      if (tokens.length) {
+        row.form_raw = tokens.join(' ');
+      }
+    }
 
     if (row.amount == null || !row.unit || !lookup?.baseUnit) {
       continue;
@@ -637,11 +671,12 @@ const dedupeProductIngredientRows = (rows: ProductIngredientRow[]): ProductIngre
 
 const upsertProductIngredientRows = async (
   rows: ProductIngredientRow[],
+  lnhpdMetaByNameKey?: Map<string, LnhpdIngredientMeta | null> | null,
 ): Promise<UpsertResult> => {
   const dedupedRows = dedupeProductIngredientRows(rows);
   if (!dedupedRows.length) return { success: true };
   try {
-    await hydrateRowsWithLookups(dedupedRows);
+    await hydrateRowsWithLookups(dedupedRows, lnhpdMetaByNameKey);
     const { error, status, rayId } = await withRetry(() =>
       supabase
         .from('product_ingredients')
@@ -670,6 +705,8 @@ export async function upsertProductIngredientsFromLabelFacts(params: {
 }): Promise<UpsertResult> {
   const basis = params.basis ?? 'label_serving';
   const rows: ProductIngredientRow[] = [];
+  const lnhpdMetaByNameKey =
+    params.source === 'lnhpd' ? new Map<string, LnhpdIngredientMeta | null>() : null;
 
   params.labelFacts.actives.forEach((item) => {
     if (!item.name) return;
@@ -710,6 +747,11 @@ export async function upsertProductIngredientsFromLabelFacts(params: {
       match_method: null,
       match_confidence: null,
     });
+    if (lnhpdMetaByNameKey && item.lnhpdMeta) {
+      if (!lnhpdMetaByNameKey.has(nameKey)) {
+        lnhpdMetaByNameKey.set(nameKey, item.lnhpdMeta);
+      }
+    }
   });
 
   params.labelFacts.proprietaryBlends.forEach((blend) => {
@@ -783,7 +825,7 @@ export async function upsertProductIngredientsFromLabelFacts(params: {
     });
   });
 
-  return upsertProductIngredientRows(rows);
+  return upsertProductIngredientRows(rows, lnhpdMetaByNameKey);
 }
 
 export async function upsertProductIngredientsFromDraft(params: {

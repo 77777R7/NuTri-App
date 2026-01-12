@@ -4,6 +4,7 @@ import { useNavigation, type Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Pressable, Text, View } from '@/components/ui/nativewind-primitives';
+import { AUTH_FALLBACK_PATH } from '@/lib/auth-mode';
 import { colors, spacing } from '@/lib/theme';
 import { safeBack } from '@/lib/navigation/safeBack';
 
@@ -14,7 +15,7 @@ type AppHeaderProps = {
   onBackPress?: () => void;
 };
 
-const DEFAULT_FALLBACK: Href = '/(auth)/gate';
+const DEFAULT_FALLBACK: Href = AUTH_FALLBACK_PATH as Href;
 
 export default function AppHeader({ title, showBack = true, fallbackHref = DEFAULT_FALLBACK, onBackPress }: AppHeaderProps) {
   const insets = useSafeAreaInsets();

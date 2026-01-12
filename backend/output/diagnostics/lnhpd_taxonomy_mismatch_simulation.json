@@ -1,0 +1,135 @@
+{
+  "source": "lnhpd",
+  "taxonomyMismatchCountBefore": 10,
+  "taxonomyMismatchCountAfter": 10,
+  "resolvedByStopwords": 0,
+  "stillMismatchTopTokens": [
+    {
+      "token": "extract",
+      "count": 3
+    },
+    {
+      "token": "berry",
+      "count": 2
+    },
+    {
+      "token": "peel",
+      "count": 2
+    },
+    {
+      "token": "total",
+      "count": 1
+    },
+    {
+      "token": "alkaloids",
+      "count": 1
+    },
+    {
+      "token": "ala",
+      "count": 1
+    },
+    {
+      "token": "isoflavones",
+      "count": 1
+    },
+    {
+      "token": "genistein",
+      "count": 1
+    },
+    {
+      "token": "daidzein",
+      "count": 1
+    },
+    {
+      "token": "formononetin",
+      "count": 1
+    },
+    {
+      "token": "biochanin",
+      "count": 1
+    },
+    {
+      "token": "root",
+      "count": 1
+    }
+  ],
+  "examplesResolved": [],
+  "examplesStillMismatch": [
+    {
+      "sourceId": "02238780",
+      "ingredientName": "Hydrastis canadensis",
+      "tokens": [
+        "extract",
+        "total",
+        "alkaloids"
+      ]
+    },
+    {
+      "sourceId": "80000702",
+      "ingredientName": "Mentha x piperita",
+      "tokens": [
+        "extract"
+      ]
+    },
+    {
+      "sourceId": "80002975",
+      "ingredientName": "Medicago sativa",
+      "tokens": [
+        "extract"
+      ]
+    },
+    {
+      "sourceId": "80003333",
+      "ingredientName": "Serenoa repens",
+      "tokens": [
+        "berry"
+      ]
+    },
+    {
+      "sourceId": "80003838",
+      "ingredientName": "Linum usitatissimum",
+      "tokens": [
+        "ala"
+      ]
+    },
+    {
+      "sourceId": "80010379",
+      "ingredientName": "Serenoa repens",
+      "tokens": [
+        "berry"
+      ]
+    },
+    {
+      "sourceId": "80015467",
+      "ingredientName": "Trifolium pratense",
+      "tokens": [
+        "isoflavones",
+        "genistein",
+        "daidzein",
+        "formononetin",
+        "biochanin"
+      ]
+    },
+    {
+      "sourceId": "80016191",
+      "ingredientName": "Arctium lappa",
+      "tokens": [
+        "root"
+      ]
+    },
+    {
+      "sourceId": "80017440",
+      "ingredientName": "Citrus bioflavonoids",
+      "tokens": [
+        "peel"
+      ]
+    },
+    {
+      "sourceId": "80018901",
+      "ingredientName": "Citrus Bioflavonoids",
+      "tokens": [
+        "peel"
+      ]
+    }
+  ]
+}

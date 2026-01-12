@@ -1,0 +1,21 @@
+{
+  "mode": "batch",
+  "source": "dsld",
+  "scoreVersion": "v4.0.0-alpha.3",
+  "startId": 73800,
+  "endId": null,
+  "limit": 1000,
+  "processed": 400,
+  "scores": 400,
+  "existing": 0,
+  "skipped": 0,
+  "failed": 0,
+  "ingredientUpsertFailed": 0,
+  "scoreUpsertFailed": 0,
+  "computeScoreFailed": 0,
+  "failuresFile": "output/backfill-orchestrator/failures.jsonl",
+  "failuresLines": 1,
+  "lastId": 74763,
+  "nextStart": 74764,
+  "elapsedMs": 751940
+}

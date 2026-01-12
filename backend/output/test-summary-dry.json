@@ -1,0 +1,20 @@
+{
+  "source": "dsld",
+  "scoreVersion": "v4.0.0-alpha.3",
+  "startId": 1,
+  "endId": 1000,
+  "limit": 200,
+  "processed": 200,
+  "scores": 0,
+  "existing": 200,
+  "skipped": 0,
+  "failed": 0,
+  "ingredientUpsertFailed": 0,
+  "scoreUpsertFailed": 0,
+  "computeScoreFailed": 0,
+  "failuresFile": "backfill-failures.jsonl",
+  "failuresLines": 0,
+  "lastId": 949,
+  "nextStart": 950,
+  "elapsedMs": 33180
+}

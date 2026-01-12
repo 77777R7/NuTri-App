@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-01-09T22:27:25.486Z",
+  "source": "lnhpd",
+  "plan": "output/ingredient-forms/missing-ingredient-forms-plan-lnhpd.json",
+  "appliedCount": 18,
+  "candidateCount": 18,
+  "rebackfillTargets": 811,
+  "rebackfillOutput": "output/ingredient-forms/ingredient-forms-derived-rebackfill.jsonl"
+}

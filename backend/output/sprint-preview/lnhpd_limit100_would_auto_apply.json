@@ -1,0 +1,290 @@
+[
+  {
+    "raw": "Vitis vinifera",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Vitis vinifera",
+        "normalized": "vitis vinifera",
+        "hasLatinBinomial": true
+      }
+    ],
+    "canonical": {
+      "ingredientId": "ceed2bb7-af73-4f1c-a94d-3490bf1cb339",
+      "ingredientName": "Grape Seed Extract"
+    },
+    "reason": "curated_latin_map:base",
+    "confidence": 0.98,
+    "margin": 0.98
+  },
+  {
+    "raw": "Silybum marianum",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Silybum marianum",
+        "normalized": "silybum marianum",
+        "hasLatinBinomial": true
+      }
+    ],
+    "canonical": {
+      "ingredientId": "4a9d7176-2c29-42b6-8e54-ef9c77a0ccb3",
+      "ingredientName": "Milk thistle"
+    },
+    "reason": "curated_latin_map:base",
+    "confidence": 0.98,
+    "margin": 0.98
+  },
+  {
+    "raw": "Glycyrrhiza uralensis",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Glycyrrhiza uralensis",
+        "normalized": "glycyrrhiza uralensis",
+        "hasLatinBinomial": true
+      }
+    ],
+    "canonical": {
+      "ingredientId": "591b9251-2850-4dad-b4b4-f907ff14f8a3",
+      "ingredientName": "DGL Licorice"
+    },
+    "reason": "curated_latin_map:base",
+    "confidence": 0.98,
+    "margin": 0.98
+  },
+  {
+    "raw": "Allium sativum",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Allium sativum",
+        "normalized": "allium sativum",
+        "hasLatinBinomial": true
+      }
+    ],
+    "canonical": {
+      "ingredientId": "b127ecd0-695a-4f87-a58d-be1bc04d552a",
+      "ingredientName": "Garlic Extract"
+    },
+    "reason": "curated_latin_map:base",
+    "confidence": 0.98,
+    "margin": 0.98
+  },
+  {
+    "raw": "Glycyrrhiza glabra",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Glycyrrhiza glabra",
+        "normalized": "glycyrrhiza glabra",
+        "hasLatinBinomial": true
+      }
+    ],
+    "canonical": {
+      "ingredientId": "591b9251-2850-4dad-b4b4-f907ff14f8a3",
+      "ingredientName": "DGL Licorice"
+    },
+    "reason": "curated_latin_map:base",
+    "confidence": 0.98,
+    "margin": 0.98
+  },
+  {
+    "raw": "Harpagophytum procumbens",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Harpagophytum procumbens",
+        "normalized": "harpagophytum procumbens",
+        "hasLatinBinomial": true
+      }
+    ],
+    "canonical": {
+      "ingredientId": "32470a22-8abc-4b6a-b677-481345d287ca",
+      "ingredientName": "Devil's Claw"
+    },
+    "reason": "curated_latin_map:base",
+    "confidence": 0.98,
+    "margin": 0.98
+  },
+  {
+    "raw": "Eleutherococcus senticosus",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Eleutherococcus senticosus",
+        "normalized": "eleutherococcus senticosus",
+        "hasLatinBinomial": true
+      }
+    ],
+    "canonical": {
+      "ingredientId": "0210506d-9d07-42ae-8c10-53d253b9ef1a",
+      "ingredientName": "Eleuthero"
+    },
+    "reason": "curated_latin_map:base",
+    "confidence": 0.98,
+    "margin": 0.98
+  },
+  {
+    "raw": "Withania somnifera",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Withania somnifera",
+        "normalized": "withania somnifera",
+        "hasLatinBinomial": true
+      }
+    ],
+    "canonical": {
+      "ingredientId": "a2033649-ae1b-4436-9e01-89c91f83c7bb",
+      "ingredientName": "Ashwagandha"
+    },
+    "reason": "curated_latin_map:base",
+    "confidence": 0.98,
+    "margin": 0.98
+  },
+  {
+    "raw": "Sambucus nigra",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Sambucus nigra",
+        "normalized": "sambucus nigra",
+        "hasLatinBinomial": true
+      }
+    ],
+    "canonical": {
+      "ingredientId": "9a9576ce-c9fa-4cbc-8349-5a4abf2c6859",
+      "ingredientName": "Elderberry"
+    },
+    "reason": "curated_latin_map:base",
+    "confidence": 0.98,
+    "margin": 0.98
+  },
+  {
+    "raw": "Camellia sinensis",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Camellia sinensis",
+        "normalized": "camellia sinensis",
+        "hasLatinBinomial": true
+      }
+    ],
+    "canonical": {
+      "ingredientId": "cd6e339b-2eff-4de7-8e3b-c3ea5b7eca13",
+      "ingredientName": "Green Tea Extract"
+    },
+    "reason": "curated_latin_map:base",
+    "confidence": 0.98,
+    "margin": 0.98
+  },
+  {
+    "raw": "Angelica sinensis",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Angelica sinensis",
+        "normalized": "angelica sinensis",
+        "hasLatinBinomial": true
+      }
+    ],
+    "canonical": {
+      "ingredientId": "ef42ad12-58fd-42d1-b7c1-9749eb5ae3b8",
+      "ingredientName": "Dong Quai"
+    },
+    "reason": "curated_latin_map:base",
+    "confidence": 0.98,
+    "margin": 0.98
+  },
+  {
+    "raw": "Zingiber officinale",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Zingiber officinale",
+        "normalized": "zingiber officinale",
+        "hasLatinBinomial": true
+      }
+    ],
+    "canonical": {
+      "ingredientId": "ff7b4e6c-52b8-4ac4-843d-bd3475dfa1fc",
+      "ingredientName": "Ginger Root"
+    },
+    "reason": "curated_latin_map:base",
+    "confidence": 0.98,
+    "margin": 0.98
+  },
+  {
+    "raw": "Passiflora incarnata",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Passiflora incarnata",
+        "normalized": "passiflora incarnata",
+        "hasLatinBinomial": true
+      }
+    ],
+    "canonical": {
+      "ingredientId": "3f12daa5-a343-4742-851b-c4313da5be77",
+      "ingredientName": "Passionflower"
+    },
+    "reason": "curated_latin_map:base",
+    "confidence": 0.98,
+    "margin": 0.98
+  },
+  {
+    "raw": "Ganoderma lucidum",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Ganoderma lucidum",
+        "normalized": "ganoderma lucidum",
+        "hasLatinBinomial": true
+      }
+    ],
+    "canonical": {
+      "ingredientId": "1b17edf5-2a9a-4aa7-baa3-ced8986a2a83",
+      "ingredientName": "Reishi Mushroom"
+    },
+    "reason": "curated_latin_map:base",
+    "confidence": 0.98,
+    "margin": 0.98
+  },
+  {
+    "raw": "Taraxacum officinale",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Taraxacum officinale",
+        "normalized": "taraxacum officinale",
+        "hasLatinBinomial": true
+      }
+    ],
+    "canonical": {
+      "ingredientId": "70501555-5158-42a6-a1c3-8845ca4acda6",
+      "ingredientName": "Dandelion Root"
+    },
+    "reason": "curated_latin_map:base",
+    "confidence": 0.98,
+    "margin": 0.98
+  },
+  {
+    "raw": "Valeriana officinalis",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Valeriana officinalis",
+        "normalized": "valeriana officinalis",
+        "hasLatinBinomial": true
+      }
+    ],
+    "canonical": {
+      "ingredientId": "e1bffb7a-f735-467e-a6dd-20a94b9cd240",
+      "ingredientName": "Valerian"
+    },
+    "reason": "curated_latin_map:base",
+    "confidence": 0.98,
+    "margin": 0.98
+  }
+]

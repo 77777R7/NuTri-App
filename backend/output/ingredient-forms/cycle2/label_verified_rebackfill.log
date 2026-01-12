@@ -1,0 +1,8 @@
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=all batch=100 concurrency=2 limit=none timeBudgetSeconds=none dryRun=false failuresFile=backfill-failures.jsonl failuresForce=true checkpointFile=none summaryJson=output/ingredient-forms/cycle2/label_verified_rebackfill_summary.json
+[backfill] retrying failures from output/ingredient-forms/cycle2/label-verified-forms-rebackfill.jsonl
+[backfill:failures] processed=459 ingredients=459 scores=459 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0

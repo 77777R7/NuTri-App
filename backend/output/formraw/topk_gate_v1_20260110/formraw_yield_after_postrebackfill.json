@@ -1,0 +1,1105 @@
+{
+  "source": "lnhpd",
+  "timestamp": "2026-01-12T11:29:38.844Z",
+  "sourceIdsFile": "output/formraw/topk_gate_v1_20260110/topk_formraw_missing_source_ids.json",
+  "sourceIdsCount": 10675,
+  "resolvedRows": 45564,
+  "missingFormRawRows": 19182,
+  "missingFormRawRatio": 0.42099025546484065,
+  "candidateFormRawRows": 345,
+  "candidateFormRawRatio": 0.007571767184619436,
+  "candidateWritableRows": 308,
+  "candidateWritableRatio": 0.006759722588008076,
+  "candidateTokenSources": {
+    "name_fields": 0,
+    "proper_name": 0,
+    "source_material": 345
+  },
+  "candidateCoverageByIngredient": [
+    {
+      "nutrient": "vitamin_c",
+      "count": 74
+    },
+    {
+      "nutrient": "magnesium",
+      "count": 45
+    },
+    {
+      "nutrient": "calcium",
+      "count": 43
+    },
+    {
+      "nutrient": "vitamin_b12",
+      "count": 25
+    },
+    {
+      "nutrient": "folate",
+      "count": 20
+    },
+    {
+      "nutrient": "zinc",
+      "count": 15
+    },
+    {
+      "nutrient": "vitamin_d",
+      "count": 10
+    },
+    {
+      "nutrient": "vitamin_b6",
+      "count": 2
+    }
+  ],
+  "missingByIngredientTop": [
+    {
+      "ingredientId": "f1fed518-473e-400e-bb7c-e8a39eaffbf1",
+      "ingredientName": "Pantothenic Acid",
+      "count": 1257
+    },
+    {
+      "ingredientId": "bf411789-19ce-4229-8edd-e667c314633d",
+      "ingredientName": "Biotin",
+      "count": 1232
+    },
+    {
+      "ingredientId": "46e83d43-dfbd-47cf-8e52-5d0957c99b8f",
+      "ingredientName": "Niacin",
+      "count": 1214
+    },
+    {
+      "ingredientId": "728985ca-daaf-4363-a703-487254ff3323",
+      "ingredientName": "Riboflavin",
+      "count": 1071
+    },
+    {
+      "ingredientId": "b856b851-973d-4fbf-b9c5-9ab29c480cd8",
+      "ingredientName": "Beta-Carotene",
+      "count": 869
+    },
+    {
+      "ingredientId": "7a5f2435-ffb1-4d78-8fba-3450597f0122",
+      "ingredientName": "Folate",
+      "count": 844
+    },
+    {
+      "ingredientId": "7d0c87b0-028f-4d38-964f-e98d74f1f9c6",
+      "ingredientName": "Lactobacillus",
+      "count": 794
+    },
+    {
+      "ingredientId": "36dbe17c-8c98-411c-91f8-4af1eede8260",
+      "ingredientName": "Vitamin C",
+      "count": 715
+    },
+    {
+      "ingredientId": "e5c4857a-fcd3-41d4-8c17-919877830dc0",
+      "ingredientName": "Selenium",
+      "count": 713
+    },
+    {
+      "ingredientId": "237f23b1-e1d5-4fca-872a-3e177df9d94d",
+      "ingredientName": "Thiamin",
+      "count": 689
+    },
+    {
+      "ingredientId": "4e04fd1a-7791-4807-a837-ee68cb26f5f8",
+      "ingredientName": "Iodine",
+      "count": 679
+    },
+    {
+      "ingredientId": "0d9dc765-811b-43af-b443-f4f8fde3cecd",
+      "ingredientName": "Vitamin A",
+      "count": 635
+    },
+    {
+      "ingredientId": "51d0cde5-e698-4503-9da1-8081c30a0a89",
+      "ingredientName": "Vitamin E",
+      "count": 519
+    },
+    {
+      "ingredientId": "da810830-6084-4899-9c5a-e655155ed470",
+      "ingredientName": "Vitamin B12",
+      "count": 497
+    },
+    {
+      "ingredientId": "e213c4cd-1fca-4c1f-8be9-53e72c20cecf",
+      "ingredientName": "Inositol",
+      "count": 446
+    },
+    {
+      "ingredientId": "8580f8a3-dcd4-4e03-8008-572b6466f621",
+      "ingredientName": "Bifidobacterium lactis",
+      "count": 408
+    },
+    {
+      "ingredientId": "945c991e-bf54-4786-8365-ece2369a5c95",
+      "ingredientName": "Iron",
+      "count": 369
+    },
+    {
+      "ingredientId": "408b36b3-ec94-4eb6-ae45-a49ab885dd63",
+      "ingredientName": "Magnesium",
+      "count": 331
+    },
+    {
+      "ingredientId": "78330a88-865f-4358-99f7-bcfe8303c4ae",
+      "ingredientName": "Calcium",
+      "count": 305
+    },
+    {
+      "ingredientId": "a5397e65-a76f-45b2-b40f-7bf705d9ada2",
+      "ingredientName": "Choline",
+      "count": 301
+    }
+  ],
+  "previewRows": [
+    {
+      "sourceId": "00491004",
+      "canonicalSourceId": "5559957",
+      "nameRaw": "Calcium",
+      "formRawBefore": null,
+      "matchedFields": [
+        "source_material"
+      ],
+      "tokensRawBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "carbonate"
+        ]
+      },
+      "tokensNormalizedBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "carbonate"
+        ]
+      },
+      "extractedTokens": [
+        "carbonate"
+      ],
+      "recognizedTokens": [
+        "carbonate"
+      ],
+      "winnerTokens": [
+        "carbonate"
+      ]
+    },
+    {
+      "sourceId": "01997793",
+      "canonicalSourceId": "5719077",
+      "nameRaw": "Vitamin C",
+      "formRawBefore": null,
+      "matchedFields": [
+        "source_material"
+      ],
+      "tokensRawBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "calcium_ascorbate"
+        ]
+      },
+      "tokensNormalizedBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "calcium_ascorbate"
+        ]
+      },
+      "extractedTokens": [
+        "calcium_ascorbate"
+      ],
+      "recognizedTokens": [
+        "calcium_ascorbate"
+      ],
+      "winnerTokens": [
+        "calcium_ascorbate"
+      ]
+    },
+    {
+      "sourceId": "02040891",
+      "canonicalSourceId": "4008498",
+      "nameRaw": "Calcium",
+      "formRawBefore": null,
+      "matchedFields": [
+        "source_material"
+      ],
+      "tokensRawBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "carbonate",
+          "malate",
+          "citrate",
+          "succinate"
+        ]
+      },
+      "tokensNormalizedBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "carbonate",
+          "malate",
+          "citrate",
+          "succinate"
+        ]
+      },
+      "extractedTokens": [
+        "carbonate",
+        "malate",
+        "citrate",
+        "succinate"
+      ],
+      "recognizedTokens": [
+        "carbonate",
+        "malate",
+        "citrate"
+      ],
+      "winnerTokens": [
+        "carbonate",
+        "malate",
+        "citrate"
+      ]
+    },
+    {
+      "sourceId": "02156407",
+      "canonicalSourceId": "4394169",
+      "nameRaw": "Iron",
+      "formRawBefore": null,
+      "matchedFields": [
+        "source_material"
+      ],
+      "tokensRawBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "chelate"
+        ]
+      },
+      "tokensNormalizedBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "chelate"
+        ]
+      },
+      "extractedTokens": [
+        "chelate"
+      ],
+      "recognizedTokens": [],
+      "winnerTokens": [
+        "chelate"
+      ]
+    },
+    {
+      "sourceId": "02229381",
+      "canonicalSourceId": "4932720",
+      "nameRaw": "Iron",
+      "formRawBefore": null,
+      "matchedFields": [
+        "source_material"
+      ],
+      "tokensRawBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "chelate"
+        ]
+      },
+      "tokensNormalizedBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "chelate"
+        ]
+      },
+      "extractedTokens": [
+        "chelate"
+      ],
+      "recognizedTokens": [],
+      "winnerTokens": [
+        "chelate"
+      ]
+    },
+    {
+      "sourceId": "02231156",
+      "canonicalSourceId": "5708352",
+      "nameRaw": "Copper",
+      "formRawBefore": null,
+      "matchedFields": [
+        "source_material"
+      ],
+      "tokensRawBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "sulfate"
+        ]
+      },
+      "tokensNormalizedBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "sulfate"
+        ]
+      },
+      "extractedTokens": [
+        "sulfate"
+      ],
+      "recognizedTokens": [
+        "sulfate"
+      ],
+      "winnerTokens": [
+        "sulfate"
+      ]
+    },
+    {
+      "sourceId": "02238332",
+      "canonicalSourceId": "5858931",
+      "nameRaw": "Riboflavin",
+      "formRawBefore": null,
+      "matchedFields": [
+        "source_material"
+      ],
+      "tokensRawBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "phosphate"
+        ]
+      },
+      "tokensNormalizedBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "phosphate"
+        ]
+      },
+      "extractedTokens": [
+        "phosphate"
+      ],
+      "recognizedTokens": [
+        "phosphate"
+      ],
+      "winnerTokens": [
+        "phosphate"
+      ]
+    },
+    {
+      "sourceId": "02239052",
+      "canonicalSourceId": "5867511",
+      "nameRaw": "Choline",
+      "formRawBefore": null,
+      "matchedFields": [
+        "source_material"
+      ],
+      "tokensRawBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "citrate"
+        ]
+      },
+      "tokensNormalizedBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "citrate"
+        ]
+      },
+      "extractedTokens": [
+        "citrate"
+      ],
+      "recognizedTokens": [
+        "citrate"
+      ],
+      "winnerTokens": [
+        "citrate"
+      ]
+    },
+    {
+      "sourceId": "02241141",
+      "canonicalSourceId": "5234229",
+      "nameRaw": "Vitamin C",
+      "formRawBefore": null,
+      "matchedFields": [
+        "source_material"
+      ],
+      "tokensRawBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "ascorbic_acid"
+        ]
+      },
+      "tokensNormalizedBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "ascorbic_acid"
+        ]
+      },
+      "extractedTokens": [
+        "ascorbic_acid"
+      ],
+      "recognizedTokens": [
+        "ascorbic_acid"
+      ],
+      "winnerTokens": [
+        "ascorbic_acid"
+      ]
+    },
+    {
+      "sourceId": "02242355",
+      "canonicalSourceId": "5867433",
+      "nameRaw": "Zinc",
+      "formRawBefore": null,
+      "matchedFields": [
+        "source_material"
+      ],
+      "tokensRawBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "malate",
+          "citrate",
+          "succinate"
+        ]
+      },
+      "tokensNormalizedBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "malate",
+          "citrate",
+          "succinate"
+        ]
+      },
+      "extractedTokens": [
+        "malate",
+        "citrate",
+        "succinate"
+      ],
+      "recognizedTokens": [
+        "malate",
+        "citrate"
+      ],
+      "winnerTokens": [
+        "malate",
+        "citrate"
+      ]
+    },
+    {
+      "sourceId": "02244311",
+      "canonicalSourceId": "5550012",
+      "nameRaw": "Vitamin C",
+      "formRawBefore": null,
+      "matchedFields": [
+        "source_material"
+      ],
+      "tokensRawBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "calcium_ascorbate"
+        ]
+      },
+      "tokensNormalizedBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "calcium_ascorbate"
+        ]
+      },
+      "extractedTokens": [
+        "calcium_ascorbate"
+      ],
+      "recognizedTokens": [
+        "calcium_ascorbate"
+      ],
+      "winnerTokens": [
+        "calcium_ascorbate"
+      ]
+    },
+    {
+      "sourceId": "02244715",
+      "canonicalSourceId": "5613114",
+      "nameRaw": "Vitamin D",
+      "formRawBefore": null,
+      "matchedFields": [
+        "source_material"
+      ],
+      "tokensRawBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "d3_cholecalciferol"
+        ]
+      },
+      "tokensNormalizedBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "d3_cholecalciferol"
+        ]
+      },
+      "extractedTokens": [
+        "d3_cholecalciferol"
+      ],
+      "recognizedTokens": [
+        "d3_cholecalciferol"
+      ],
+      "winnerTokens": [
+        "d3_cholecalciferol"
+      ]
+    },
+    {
+      "sourceId": "02244851",
+      "canonicalSourceId": "4226976",
+      "nameRaw": "Calcium",
+      "formRawBefore": null,
+      "matchedFields": [
+        "source_material"
+      ],
+      "tokensRawBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "chelate",
+          "phosphate",
+          "carbonate",
+          "calcium_ascorbate"
+        ]
+      },
+      "tokensNormalizedBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "chelate",
+          "phosphate",
+          "carbonate",
+          "calcium_ascorbate"
+        ]
+      },
+      "extractedTokens": [
+        "chelate",
+        "phosphate",
+        "carbonate",
+        "calcium_ascorbate"
+      ],
+      "recognizedTokens": [
+        "phosphate",
+        "carbonate",
+        "calcium_ascorbate"
+      ],
+      "winnerTokens": [
+        "phosphate",
+        "carbonate",
+        "calcium_ascorbate"
+      ]
+    },
+    {
+      "sourceId": "80000498",
+      "canonicalSourceId": "4066179",
+      "nameRaw": "Zinc",
+      "formRawBefore": null,
+      "matchedFields": [
+        "source_material"
+      ],
+      "tokensRawBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "bisglycinate"
+        ]
+      },
+      "tokensNormalizedBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "bisglycinate"
+        ]
+      },
+      "extractedTokens": [
+        "bisglycinate"
+      ],
+      "recognizedTokens": [
+        "bisglycinate"
+      ],
+      "winnerTokens": [
+        "bisglycinate"
+      ]
+    },
+    {
+      "sourceId": "80002042",
+      "canonicalSourceId": "4295889",
+      "nameRaw": "Calcium",
+      "formRawBefore": null,
+      "matchedFields": [
+        "source_material"
+      ],
+      "tokensRawBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "malate",
+          "succinate",
+          "citrate",
+          "carbonate"
+        ]
+      },
+      "tokensNormalizedBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "malate",
+          "succinate",
+          "citrate",
+          "carbonate"
+        ]
+      },
+      "extractedTokens": [
+        "malate",
+        "succinate",
+        "citrate",
+        "carbonate"
+      ],
+      "recognizedTokens": [
+        "malate",
+        "citrate",
+        "carbonate"
+      ],
+      "winnerTokens": [
+        "malate",
+        "citrate",
+        "carbonate"
+      ]
+    },
+    {
+      "sourceId": "80003512",
+      "canonicalSourceId": "4135209",
+      "nameRaw": "Magnesium",
+      "formRawBefore": null,
+      "matchedFields": [
+        "source_material"
+      ],
+      "tokensRawBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "malate",
+          "oxide"
+        ]
+      },
+      "tokensNormalizedBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "malate",
+          "oxide"
+        ]
+      },
+      "extractedTokens": [
+        "malate",
+        "oxide"
+      ],
+      "recognizedTokens": [
+        "malate",
+        "oxide"
+      ],
+      "winnerTokens": [
+        "malate",
+        "oxide"
+      ]
+    },
+    {
+      "sourceId": "80005685",
+      "canonicalSourceId": "5049642",
+      "nameRaw": "Calcium",
+      "formRawBefore": null,
+      "matchedFields": [
+        "source_material"
+      ],
+      "tokensRawBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "gluconate"
+        ]
+      },
+      "tokensNormalizedBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "gluconate"
+        ]
+      },
+      "extractedTokens": [
+        "gluconate"
+      ],
+      "recognizedTokens": [
+        "gluconate"
+      ],
+      "winnerTokens": [
+        "gluconate"
+      ]
+    },
+    {
+      "sourceId": "80007626",
+      "canonicalSourceId": "5302557",
+      "nameRaw": "Magnesium",
+      "formRawBefore": null,
+      "matchedFields": [
+        "source_material"
+      ],
+      "tokensRawBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "oxide"
+        ]
+      },
+      "tokensNormalizedBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "oxide"
+        ]
+      },
+      "extractedTokens": [
+        "oxide"
+      ],
+      "recognizedTokens": [
+        "oxide"
+      ],
+      "winnerTokens": [
+        "oxide"
+      ]
+    },
+    {
+      "sourceId": "80007657",
+      "canonicalSourceId": "4225923",
+      "nameRaw": "Calcium",
+      "formRawBefore": null,
+      "matchedFields": [
+        "source_material"
+      ],
+      "tokensRawBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "calcium_ascorbate"
+        ]
+      },
+      "tokensNormalizedBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "calcium_ascorbate"
+        ]
+      },
+      "extractedTokens": [
+        "calcium_ascorbate"
+      ],
+      "recognizedTokens": [
+        "calcium_ascorbate"
+      ],
+      "winnerTokens": [
+        "calcium_ascorbate"
+      ]
+    },
+    {
+      "sourceId": "80008037",
+      "canonicalSourceId": "3995940",
+      "nameRaw": "Calcium",
+      "formRawBefore": null,
+      "matchedFields": [
+        "source_material"
+      ],
+      "tokensRawBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "citrate",
+          "succinate",
+          "carbonate",
+          "malate"
+        ]
+      },
+      "tokensNormalizedBySource": {
+        "name_fields": [],
+        "proper_name": [],
+        "source_material": [
+          "citrate",
+          "succinate",
+          "carbonate",
+          "malate"
+        ]
+      },
+      "extractedTokens": [
+        "citrate",
+        "succinate",
+        "carbonate",
+        "malate"
+      ],
+      "recognizedTokens": [
+        "citrate",
+        "carbonate",
+        "malate"
+      ],
+      "winnerTokens": [
+        "citrate",
+        "carbonate",
+        "malate"
+      ]
+    }
+  ],
+  "snapshotOutput": "output/formraw/topk_gate_v1_20260110/formraw_yield_snapshot_after_postrebackfill.json",
+  "compareSnapshot": "output/formraw/topk_gate_v1_20260110/formraw_yield_snapshot.json",
+  "snapshotRows": 19182,
+  "formRawUpdatedCount": 17863,
+  "updatedByIngredientTop": [
+    {
+      "ingredientId": "36dbe17c-8c98-411c-91f8-4af1eede8260",
+      "ingredientName": "Vitamin C",
+      "count": 2067
+    },
+    {
+      "ingredientId": "ae8cd1dd-d703-4bf4-94aa-67d9f895ef10",
+      "ingredientName": "Vitamin D",
+      "count": 1826
+    },
+    {
+      "ingredientId": "8966262a-b021-48e7-8c41-0a7f9231be1b",
+      "ingredientName": "Vitamin B6",
+      "count": 1608
+    },
+    {
+      "ingredientId": "0261854b-4e6f-47d1-a8c0-801f33c98462",
+      "ingredientName": "Zinc",
+      "count": 1421
+    },
+    {
+      "ingredientId": "78330a88-865f-4358-99f7-bcfe8303c4ae",
+      "ingredientName": "Calcium",
+      "count": 1416
+    },
+    {
+      "ingredientId": "408b36b3-ec94-4eb6-ae45-a49ab885dd63",
+      "ingredientName": "Magnesium",
+      "count": 1394
+    },
+    {
+      "ingredientId": "da810830-6084-4899-9c5a-e655155ed470",
+      "ingredientName": "Vitamin B12",
+      "count": 1348
+    },
+    {
+      "ingredientId": "51d0cde5-e698-4503-9da1-8081c30a0a89",
+      "ingredientName": "Vitamin E",
+      "count": 951
+    },
+    {
+      "ingredientId": "c32e5455-7570-4a44-85e4-e3e657ca7e19",
+      "ingredientName": "Copper",
+      "count": 813
+    },
+    {
+      "ingredientId": "f1668aeb-8779-4366-a01d-b152984f13a0",
+      "ingredientName": "Manganese",
+      "count": 737
+    },
+    {
+      "ingredientId": "9884d6d2-f6bb-4be8-8db3-8d523cd053c5",
+      "ingredientName": "Chromium",
+      "count": 708
+    },
+    {
+      "ingredientId": "7a5f2435-ffb1-4d78-8fba-3450597f0122",
+      "ingredientName": "Folate",
+      "count": 664
+    },
+    {
+      "ingredientId": "237f23b1-e1d5-4fca-872a-3e177df9d94d",
+      "ingredientName": "Thiamin",
+      "count": 616
+    },
+    {
+      "ingredientId": "f2f982bd-43eb-485b-8521-4cacf740b1e5",
+      "ingredientName": "Potassium",
+      "count": 463
+    },
+    {
+      "ingredientId": "e5c4857a-fcd3-41d4-8c17-919877830dc0",
+      "ingredientName": "Selenium",
+      "count": 338
+    },
+    {
+      "ingredientId": "0d9dc765-811b-43af-b443-f4f8fde3cecd",
+      "ingredientName": "Vitamin A",
+      "count": 279
+    },
+    {
+      "ingredientId": "b5267215-5e3d-4c35-a5f9-fa053813a0ab",
+      "ingredientName": "Molybdenum",
+      "count": 271
+    },
+    {
+      "ingredientId": "728985ca-daaf-4363-a703-487254ff3323",
+      "ingredientName": "Riboflavin",
+      "count": 235
+    },
+    {
+      "ingredientId": "945c991e-bf54-4786-8365-ece2369a5c95",
+      "ingredientName": "Iron",
+      "count": 228
+    },
+    {
+      "ingredientId": "435a4715-9767-42c2-a1d4-924f22694257",
+      "ingredientName": "Boron",
+      "count": 226
+    }
+  ],
+  "sampleUpdatedRows": [
+    {
+      "sourceId": "00122823",
+      "ingredientId": "51d0cde5-e698-4503-9da1-8081c30a0a89",
+      "nameRaw": "Vitamin E",
+      "formRawBefore": null,
+      "formRawAfter": "acetate"
+    },
+    {
+      "sourceId": "00122831",
+      "ingredientId": "51d0cde5-e698-4503-9da1-8081c30a0a89",
+      "nameRaw": "Vitamin E",
+      "formRawBefore": null,
+      "formRawAfter": "acetate"
+    },
+    {
+      "sourceId": "00123803",
+      "ingredientId": "8966262a-b021-48e7-8c41-0a7f9231be1b",
+      "nameRaw": "Vitamin B6",
+      "formRawBefore": null,
+      "formRawAfter": "pyridoxine_hcl chloride"
+    },
+    {
+      "sourceId": "00162515",
+      "ingredientId": "36dbe17c-8c98-411c-91f8-4af1eede8260",
+      "nameRaw": "Vitamin C",
+      "formRawBefore": null,
+      "formRawAfter": "ascorbic_acid"
+    },
+    {
+      "sourceId": "00200573",
+      "ingredientId": "51d0cde5-e698-4503-9da1-8081c30a0a89",
+      "nameRaw": "Vitamin E",
+      "formRawBefore": null,
+      "formRawAfter": "acetate"
+    },
+    {
+      "sourceId": "00200735",
+      "ingredientId": "ae8cd1dd-d703-4bf4-94aa-67d9f895ef10",
+      "nameRaw": "Vitamin D",
+      "formRawBefore": null,
+      "formRawAfter": "d2_ergocalciferol"
+    },
+    {
+      "sourceId": "00200964",
+      "ingredientId": "da810830-6084-4899-9c5a-e655155ed470",
+      "nameRaw": "Vitamin B12",
+      "formRawBefore": null,
+      "formRawAfter": "cyanocobalamin"
+    },
+    {
+      "sourceId": "00200964",
+      "ingredientId": "237f23b1-e1d5-4fca-872a-3e177df9d94d",
+      "nameRaw": "Thiamine",
+      "formRawBefore": null,
+      "formRawAfter": "chloride"
+    },
+    {
+      "sourceId": "00266086",
+      "ingredientId": "36dbe17c-8c98-411c-91f8-4af1eede8260",
+      "nameRaw": "Vitamin C",
+      "formRawBefore": null,
+      "formRawAfter": "ascorbic_acid"
+    },
+    {
+      "sourceId": "00274259",
+      "ingredientId": "51d0cde5-e698-4503-9da1-8081c30a0a89",
+      "nameRaw": "Vitamin E",
+      "formRawBefore": null,
+      "formRawAfter": "acetate"
+    },
+    {
+      "sourceId": "00275700",
+      "ingredientId": "da810830-6084-4899-9c5a-e655155ed470",
+      "nameRaw": "Vitamin B12",
+      "formRawBefore": null,
+      "formRawAfter": "cyanocobalamin"
+    },
+    {
+      "sourceId": "00305235",
+      "ingredientId": "36dbe17c-8c98-411c-91f8-4af1eede8260",
+      "nameRaw": "Vitamin C",
+      "formRawBefore": null,
+      "formRawAfter": "ascorbic_acid"
+    },
+    {
+      "sourceId": "00328529",
+      "ingredientId": "36dbe17c-8c98-411c-91f8-4af1eede8260",
+      "nameRaw": "Vitamin C",
+      "formRawBefore": null,
+      "formRawAfter": "ascorbic_acid"
+    },
+    {
+      "sourceId": "00331015",
+      "ingredientId": "da810830-6084-4899-9c5a-e655155ed470",
+      "nameRaw": "Vitamin B12",
+      "formRawBefore": null,
+      "formRawAfter": "methylcobalamin"
+    },
+    {
+      "sourceId": "00334049",
+      "ingredientId": "c32e5455-7570-4a44-85e4-e3e657ca7e19",
+      "nameRaw": "Copper",
+      "formRawBefore": null,
+      "formRawAfter": "bisglycinate"
+    },
+    {
+      "sourceId": "00341207",
+      "ingredientId": "36dbe17c-8c98-411c-91f8-4af1eede8260",
+      "nameRaw": "Vitamin C",
+      "formRawBefore": null,
+      "formRawAfter": "ascorbic_acid"
+    },
+    {
+      "sourceId": "00362034",
+      "ingredientId": "8966262a-b021-48e7-8c41-0a7f9231be1b",
+      "nameRaw": "Vitamin B6",
+      "formRawBefore": null,
+      "formRawAfter": "pyridoxine_hcl chloride"
+    },
+    {
+      "sourceId": "00369721",
+      "ingredientId": "da810830-6084-4899-9c5a-e655155ed470",
+      "nameRaw": "Vitamin B12",
+      "formRawBefore": null,
+      "formRawAfter": "cyanocobalamin"
+    },
+    {
+      "sourceId": "00406988",
+      "ingredientId": "da810830-6084-4899-9c5a-e655155ed470",
+      "nameRaw": "Vitamin B12",
+      "formRawBefore": null,
+      "formRawAfter": "cyanocobalamin"
+    },
+    {
+      "sourceId": "00411418",
+      "ingredientId": "ae8cd1dd-d703-4bf4-94aa-67d9f895ef10",
+      "nameRaw": "Vitamin D3",
+      "formRawBefore": null,
+      "formRawAfter": "d3_cholecalciferol"
+    }
+  ]
+}

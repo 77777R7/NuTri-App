@@ -1,0 +1,182 @@
+{
+  "generatedAt": "2026-01-09T08:46:16.445Z",
+  "total": 22,
+  "candidates": [
+    {
+      "canonicalKey": "dioscorea_villosa",
+      "canonicalName": "Dioscorea villosa",
+      "normalized": "dioscorea villosa",
+      "count": 6,
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg"
+    },
+    {
+      "canonicalKey": "pinellia_ternata",
+      "canonicalName": "Pinellia ternata",
+      "normalized": "pinellia ternata",
+      "count": 4,
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg"
+    },
+    {
+      "canonicalKey": "phellodendron_chinense",
+      "canonicalName": "Phellodendron chinense",
+      "normalized": "phellodendron chinense",
+      "count": 4,
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg"
+    },
+    {
+      "canonicalKey": "terminalia_chebula",
+      "canonicalName": "Terminalia chebula",
+      "normalized": "terminalia chebula",
+      "count": 4,
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg"
+    },
+    {
+      "canonicalKey": "4_aminobenzoic_acid",
+      "canonicalName": "4-Aminobenzoic acid",
+      "normalized": "4 aminobenzoic acid",
+      "count": 4,
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg"
+    },
+    {
+      "canonicalKey": "hamamelis_virginiana",
+      "canonicalName": "Hamamelis virginiana",
+      "normalized": "hamamelis virginiana",
+      "count": 3,
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg"
+    },
+    {
+      "canonicalKey": "scrophularia_nodosa",
+      "canonicalName": "Scrophularia nodosa",
+      "normalized": "scrophularia nodosa",
+      "count": 3,
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg"
+    },
+    {
+      "canonicalKey": "tanacetum_parthenium",
+      "canonicalName": "Tanacetum parthenium",
+      "normalized": "tanacetum parthenium",
+      "count": 3,
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg"
+    },
+    {
+      "canonicalKey": "juniperus_communis",
+      "canonicalName": "Juniperus communis",
+      "normalized": "juniperus communis",
+      "count": 3,
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg"
+    },
+    {
+      "canonicalKey": "ophiopogon_japonicus",
+      "canonicalName": "Ophiopogon japonicus",
+      "normalized": "ophiopogon japonicus",
+      "count": 3,
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg"
+    },
+    {
+      "canonicalKey": "alisma_plantago_aquatica",
+      "canonicalName": "Alisma plantago-aquatica",
+      "normalized": "alisma plantago aquatica",
+      "count": 3,
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg"
+    },
+    {
+      "canonicalKey": "sanguinaria_canadensis",
+      "canonicalName": "Sanguinaria canadensis",
+      "normalized": "sanguinaria canadensis",
+      "count": 3,
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg"
+    },
+    {
+      "canonicalKey": "thymus_vulgaris",
+      "canonicalName": "Thymus vulgaris",
+      "normalized": "thymus vulgaris",
+      "count": 3,
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg"
+    },
+    {
+      "canonicalKey": "berberis_vulgaris",
+      "canonicalName": "Berberis vulgaris",
+      "normalized": "berberis vulgaris",
+      "count": 3,
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg"
+    },
+    {
+      "canonicalKey": "cimicifuga_racemosa",
+      "canonicalName": "Cimicifuga racemosa",
+      "normalized": "cimicifuga racemosa",
+      "count": 3,
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg"
+    },
+    {
+      "canonicalKey": "commiphora_myrrha",
+      "canonicalName": "Commiphora myrrha",
+      "normalized": "commiphora myrrha",
+      "count": 3,
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg"
+    },
+    {
+      "canonicalKey": "lepidium_meyenii",
+      "canonicalName": "Lepidium meyenii",
+      "normalized": "lepidium meyenii",
+      "count": 3,
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg"
+    },
+    {
+      "canonicalKey": "nepeta_cataria",
+      "canonicalName": "Nepeta cataria",
+      "normalized": "nepeta cataria",
+      "count": 3,
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg"
+    },
+    {
+      "canonicalKey": "capsicum_annuum",
+      "canonicalName": "Capsicum annuum",
+      "normalized": "capsicum annuum",
+      "count": 3,
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg"
+    },
+    {
+      "canonicalKey": "oenothera_biennis",
+      "canonicalName": "Oenothera biennis",
+      "normalized": "oenothera biennis",
+      "count": 3,
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg"
+    },
+    {
+      "canonicalKey": "para_aminobenzoic_acid",
+      "canonicalName": "para-Aminobenzoic acid",
+      "normalized": "para aminobenzoic acid",
+      "count": 3,
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg"
+    },
+    {
+      "canonicalKey": "pogostemon_cablin",
+      "canonicalName": "Pogostemon cablin",
+      "normalized": "pogostemon cablin",
+      "count": 3,
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg"
+    }
+  ]
+}

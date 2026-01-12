@@ -1,0 +1,28 @@
+{
+  "source": "lnhpd",
+  "timestamp": "2026-01-12T11:27:06.067Z",
+  "sampleSize": 10675,
+  "activeRows": 25347,
+  "resolvedRows": 20406,
+  "counts": {
+    "activeRows": 25347,
+    "ingredientIdMissing": 4941,
+    "ingredientFormsMissing": 536,
+    "formRawMissing": 8625,
+    "taxonomyMismatch": 1311,
+    "formRawNoMatch": 2043,
+    "matched": 8227
+  },
+  "ratios": {
+    "ingredientIdMissing": 0.1949,
+    "taxonomyMismatchAmongResolved": 0.0642,
+    "taxonomyMismatchAmongActive": 0.0517,
+    "formRawMissingAmongResolved": 0.4227,
+    "formRawNoMatchAmongResolved": 0.1001
+  },
+  "options": {
+    "limit": null,
+    "topN": 50,
+    "sourceIdsFile": "output/formraw/topk_gate_v1_20260110/topk_formraw_missing_source_ids.json"
+  }
+}

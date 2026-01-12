@@ -1,0 +1,149 @@
+[
+  {
+    "source": "lnhpd",
+    "raw": "Ganoderma lucidum",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Ganoderma lucidum",
+        "normalized": "ganoderma lucidum",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "1b17edf5-2a9a-4aa7-baa3-ced8986a2a83",
+    "ingredientName": "Reishi Mushroom",
+    "confidence": 0.98,
+    "margin": 0.98,
+    "reasons": [
+      "curated_latin_map:base",
+      "synonym_exact:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Eleutherococcus senticosus",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Eleutherococcus senticosus",
+        "normalized": "eleutherococcus senticosus",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "0210506d-9d07-42ae-8c10-53d253b9ef1a",
+    "ingredientName": "Eleuthero",
+    "confidence": 0.98,
+    "margin": 0.98,
+    "reasons": [
+      "curated_latin_map:base",
+      "synonym_exact:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Panax quinquefolius",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Panax quinquefolius",
+        "normalized": "panax quinquefolius",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "a24967f9-af2a-4957-ae97-8a320190020c",
+    "ingredientName": "American Ginseng",
+    "confidence": 0.98,
+    "margin": 0.98,
+    "reasons": [
+      "curated_latin_map:base",
+      "synonym_exact:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Valeriana officinalis",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Valeriana officinalis",
+        "normalized": "valeriana officinalis",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "e1bffb7a-f735-467e-a6dd-20a94b9cd240",
+    "ingredientName": "Valerian",
+    "confidence": 0.98,
+    "margin": 0.98,
+    "reasons": [
+      "curated_latin_map:base",
+      "synonym_exact:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Camellia sinensis",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Camellia sinensis",
+        "normalized": "camellia sinensis",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "cd6e339b-2eff-4de7-8e3b-c3ea5b7eca13",
+    "ingredientName": "Green Tea Extract",
+    "confidence": 0.98,
+    "margin": 0.98,
+    "reasons": [
+      "curated_latin_map:base",
+      "synonym_exact:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Angelica sinensis",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Angelica sinensis",
+        "normalized": "angelica sinensis",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "ef42ad12-58fd-42d1-b7c1-9749eb5ae3b8",
+    "ingredientName": "Dong Quai",
+    "confidence": 0.98,
+    "margin": 0.98,
+    "reasons": [
+      "curated_latin_map:base",
+      "synonym_exact:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Passiflora incarnata",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Passiflora incarnata",
+        "normalized": "passiflora incarnata",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "3f12daa5-a343-4742-851b-c4313da5be77",
+    "ingredientName": "Passionflower",
+    "confidence": 0.98,
+    "margin": 0.98,
+    "reasons": [
+      "curated_latin_map:base",
+      "synonym_exact:base",
+      "synonym_fuzzy:base"
+    ]
+  }
+]

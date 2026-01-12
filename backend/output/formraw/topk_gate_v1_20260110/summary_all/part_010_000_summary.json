@@ -1,0 +1,14 @@
+{
+  "mode": "failures-input",
+  "failuresInput": "output/formraw/topk_gate_v1_20260110/chunks_v2_small/part_010_000.jsonl",
+  "scoreVersion": "v4.0.0-alpha.3",
+  "processed": 250,
+  "scores": 250,
+  "failed": 0,
+  "ingredientUpsertFailed": 0,
+  "scoreUpsertFailed": 0,
+  "computeScoreFailed": 0,
+  "failuresFile": "backfill-failures.jsonl",
+  "failuresLines": 1,
+  "elapsedMs": 493481
+}

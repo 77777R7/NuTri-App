@@ -1,0 +1,28 @@
+{
+  "source": "lnhpd",
+  "timestamp": "2026-01-11T07:48:21.158Z",
+  "sampleSize": 10675,
+  "activeRows": 25332,
+  "resolvedRows": 20392,
+  "counts": {
+    "activeRows": 25332,
+    "ingredientIdMissing": 4940,
+    "ingredientFormsMissing": 537,
+    "formRawMissing": 16734,
+    "taxonomyMismatch": 76,
+    "formRawNoMatch": 1909,
+    "matched": 1473
+  },
+  "ratios": {
+    "ingredientIdMissing": 0.195,
+    "taxonomyMismatchAmongResolved": 0.0037,
+    "taxonomyMismatchAmongActive": 0.003,
+    "formRawMissingAmongResolved": 0.8206,
+    "formRawNoMatchAmongResolved": 0.0936
+  },
+  "options": {
+    "limit": null,
+    "topN": 50,
+    "sourceIdsFile": "/Users/howard07/NuTriApp/nutri-app/backend/output/formraw/topk_gate_v1_20260110/topk_formraw_missing_source_ids.json"
+  }
+}

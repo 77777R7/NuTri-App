@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { BrandGradient } from '@/components/BrandGradient';
 import { ThemedText } from '@/components/themed-text';
 import { useOnboarding } from '@/contexts/OnboardingContext';
+import { AUTH_FALLBACK_PATH } from '@/lib/auth-mode';
 import { colors } from '@/lib/theme';
 
 const TrialOfferScreen = () => {
@@ -30,7 +31,7 @@ const TrialOfferScreen = () => {
 
       await setTrial(payload);
       console.log('🎁 Trial chosen', payload.status);
-      router.replace('/(auth)/gate');
+      router.replace(AUTH_FALLBACK_PATH);
     },
     [router, setTrial],
   );

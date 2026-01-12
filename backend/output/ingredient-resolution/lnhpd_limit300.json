@@ -1,0 +1,3702 @@
+{
+  "summary": {
+    "source": "lnhpd",
+    "timestamp": "2026-01-09T04:17:40.119Z",
+    "apply": false,
+    "synonymsAdded": 0,
+    "queued": 290,
+    "skipped": 0,
+    "filteredNonScoring": 2,
+    "specialQueued": 5,
+    "wouldAutoApplyCount": 3,
+    "queuedCount": 290,
+    "topBlockReasons": [
+      {
+        "reason": "canonical_missing",
+        "count": 223
+      },
+      {
+        "reason": "no_candidates",
+        "count": 62
+      },
+      {
+        "reason": "requires_tokens",
+        "count": 4
+      },
+      {
+        "reason": "special_handling_homeopathy",
+        "count": 4
+      },
+      {
+        "reason": "non_scoring_solvent",
+        "count": 2
+      },
+      {
+        "reason": "low_confidence",
+        "count": 1
+      },
+      {
+        "reason": "special_handling_enzyme",
+        "count": 1
+      }
+    ],
+    "confidenceQuantiles": {
+      "p50": 0.98,
+      "p90": 0.98,
+      "p95": 0.98
+    },
+    "marginQuantiles": {
+      "p50": 0.98,
+      "p90": 0.98,
+      "p95": 0.98
+    },
+    "unresolvedTopTokens": [
+      {
+        "token": "2",
+        "count": 41
+      },
+      {
+        "token": "3",
+        "count": 36
+      },
+      {
+        "token": "oil",
+        "count": 34
+      },
+      {
+        "token": "n",
+        "count": 30
+      },
+      {
+        "token": "fish",
+        "count": 28
+      },
+      {
+        "token": "4",
+        "count": 28
+      },
+      {
+        "token": "d",
+        "count": 23
+      },
+      {
+        "token": "acid",
+        "count": 21
+      },
+      {
+        "token": "inositol",
+        "count": 19
+      },
+      {
+        "token": "glycyrrhiza",
+        "count": 17
+      },
+      {
+        "token": "amino",
+        "count": 15
+      },
+      {
+        "token": "beta",
+        "count": 15
+      },
+      {
+        "token": "vitis",
+        "count": 14
+      },
+      {
+        "token": "vinifera",
+        "count": 14
+      },
+      {
+        "token": "oryctolagus",
+        "count": 14
+      },
+      {
+        "token": "cuniculus",
+        "count": 14
+      },
+      {
+        "token": "citrus",
+        "count": 14
+      },
+      {
+        "token": "5",
+        "count": 14
+      },
+      {
+        "token": "canadensis",
+        "count": 13
+      },
+      {
+        "token": "deoxy",
+        "count": 13
+      },
+      {
+        "token": "glabra",
+        "count": 11
+      },
+      {
+        "token": "mentha",
+        "count": 11
+      },
+      {
+        "token": "1",
+        "count": 11
+      },
+      {
+        "token": "linum",
+        "count": 10
+      },
+      {
+        "token": "usitatissimum",
+        "count": 10
+      },
+      {
+        "token": "bioflavonoids",
+        "count": 9
+      },
+      {
+        "token": "sativa",
+        "count": 9
+      },
+      {
+        "token": "dioscorea",
+        "count": 9
+      },
+      {
+        "token": "plantago",
+        "count": 9
+      },
+      {
+        "token": "metallicum",
+        "count": 9
+      }
+    ],
+    "noCandidatesTopTokens": [
+      {
+        "token": "2",
+        "count": 41
+      },
+      {
+        "token": "3",
+        "count": 35
+      },
+      {
+        "token": "n",
+        "count": 30
+      },
+      {
+        "token": "4",
+        "count": 24
+      },
+      {
+        "token": "d",
+        "count": 23
+      },
+      {
+        "token": "amino",
+        "count": 15
+      },
+      {
+        "token": "beta",
+        "count": 15
+      },
+      {
+        "token": "5",
+        "count": 14
+      },
+      {
+        "token": "deoxy",
+        "count": 13
+      },
+      {
+        "token": "1",
+        "count": 11
+      },
+      {
+        "token": "vanadium",
+        "count": 8
+      },
+      {
+        "token": "x",
+        "count": 8
+      },
+      {
+        "token": "pyridinecarboxamide",
+        "count": 7
+      },
+      {
+        "token": "7",
+        "count": 7
+      },
+      {
+        "token": "menthol",
+        "count": 7
+      },
+      {
+        "token": "mentha",
+        "count": 6
+      },
+      {
+        "token": "piperita",
+        "count": 6
+      },
+      {
+        "token": "inositol",
+        "count": 6
+      },
+      {
+        "token": "pentahydroxyflavone",
+        "count": 6
+      },
+      {
+        "token": "methyl",
+        "count": 6
+      },
+      {
+        "token": "carboxy",
+        "count": 5
+      },
+      {
+        "token": "trimethylmethanaminium",
+        "count": 5
+      },
+      {
+        "token": "chloride",
+        "count": 5
+      },
+      {
+        "token": "glucose",
+        "count": 5
+      },
+      {
+        "token": "sulfate",
+        "count": 5
+      },
+      {
+        "token": "glucan",
+        "count": 5
+      },
+      {
+        "token": "glucanohydrolase",
+        "count": 5
+      },
+      {
+        "token": "silicon",
+        "count": 5
+      },
+      {
+        "token": "o",
+        "count": 5
+      },
+      {
+        "token": "acid",
+        "count": 5
+      },
+      {
+        "token": "myo",
+        "count": 4
+      },
+      {
+        "token": "glucopyranose",
+        "count": 4
+      },
+      {
+        "token": "poly",
+        "count": 4
+      },
+      {
+        "token": "aceltyl",
+        "count": 4
+      },
+      {
+        "token": "glucopyranurosyl",
+        "count": 4
+      },
+      {
+        "token": "sulfonyl",
+        "count": 4
+      },
+      {
+        "token": "galactose",
+        "count": 4
+      },
+      {
+        "token": "ubiquinone",
+        "count": 4
+      },
+      {
+        "token": "phosphorus",
+        "count": 4
+      },
+      {
+        "token": "nickel",
+        "count": 4
+      },
+      {
+        "token": "lecithin",
+        "count": 4
+      },
+      {
+        "token": "whey",
+        "count": 4
+      },
+      {
+        "token": "protein",
+        "count": 4
+      },
+      {
+        "token": "isolate",
+        "count": 4
+      },
+      {
+        "token": "6",
+        "count": 4
+      },
+      {
+        "token": "l",
+        "count": 4
+      },
+      {
+        "token": "hydroxy",
+        "count": 3
+      },
+      {
+        "token": "trimethylethanaminium",
+        "count": 3
+      },
+      {
+        "token": "bryonia",
+        "count": 3
+      },
+      {
+        "token": "cyclohexadiene",
+        "count": 3
+      }
+    ],
+    "previewOutput": "output/ingredient-resolution/lnhpd_limit300.json",
+    "previewItemsWritten": 100
+  },
+  "items": [
+    {
+      "source": "lnhpd",
+      "raw": "Fish oil",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Fish oil",
+          "normalized": "fish oil",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": {
+        "ingredientId": "ca582a97-cad4-4944-98d4-59ba64bfe4fd",
+        "ingredientName": "Omega-3",
+        "confidence": 0.85,
+        "reason": "curated_common:base"
+      },
+      "top2Candidate": null,
+      "margin": 0.85,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "low_confidence",
+      "missingCanonicalTargets": [],
+      "requiresTokenMisses": [],
+      "candidates": [
+        {
+          "ingredientId": "ca582a97-cad4-4944-98d4-59ba64bfe4fd",
+          "ingredientName": "Omega-3",
+          "confidence": 0.85,
+          "reasons": [
+            "curated_common:base"
+          ]
+        }
+      ],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": 0.85,
+        "margin": 0.85,
+        "blockedBy": [
+          "low_confidence"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Vitis vinifera",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Vitis vinifera",
+          "normalized": "vitis vinifera",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "requires_tokens",
+      "missingCanonicalTargets": [],
+      "requiresTokenMisses": [
+        {
+          "key": "vitis vinifera",
+          "target": "Grape Seed Extract",
+          "requiredTokens": [
+            "seed",
+            "seeds"
+          ],
+          "variantLabel": "base"
+        }
+      ],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "requires_tokens"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Oryctolagus cuniculus",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Oryctolagus cuniculus",
+          "normalized": "oryctolagus cuniculus",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "rabbit",
+          "ingredientName": "Rabbit",
+          "reason": "curated_latin_map"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Inositol",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Inositol",
+          "normalized": "inositol",
+          "hasLatinBinomial": false
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "inositol",
+          "ingredientName": "Inositol",
+          "reason": "curated_common"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Linum usitatissimum",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Linum usitatissimum",
+          "normalized": "linum usitatissimum",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "flaxseed",
+          "ingredientName": "flaxseed",
+          "reason": "curated_latin_map"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Glycyrrhiza glabra",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Glycyrrhiza glabra",
+          "normalized": "glycyrrhiza glabra",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "requires_tokens",
+      "missingCanonicalTargets": [],
+      "requiresTokenMisses": [
+        {
+          "key": "glycyrrhiza glabra",
+          "target": "DGL Licorice",
+          "requiredTokens": [
+            "dgl",
+            "deglycyrrhizinated",
+            "deglycyrrhizinized"
+          ],
+          "variantLabel": "base"
+        }
+      ],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "requires_tokens"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Vanadium",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Vanadium",
+          "normalized": "vanadium",
+          "hasLatinBinomial": false
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "no_candidates",
+      "missingCanonicalTargets": [],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "no_candidates"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Glycyrrhiza uralensis",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Glycyrrhiza uralensis",
+          "normalized": "glycyrrhiza uralensis",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "requires_tokens",
+      "missingCanonicalTargets": [],
+      "requiresTokenMisses": [
+        {
+          "key": "glycyrrhiza uralensis",
+          "target": "DGL Licorice",
+          "requiredTokens": [
+            "dgl",
+            "deglycyrrhizinated",
+            "deglycyrrhizinized"
+          ],
+          "variantLabel": "base"
+        }
+      ],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "requires_tokens"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Coenzyme Q10",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Coenzyme Q10",
+          "normalized": "coenzyme q10",
+          "hasLatinBinomial": false
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "coenzyme q10",
+          "ingredientName": "Coenzyme Q10",
+          "reason": "curated_common"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Hydrastis canadensis",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Hydrastis canadensis",
+          "normalized": "hydrastis canadensis",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "goldenseal",
+          "ingredientName": "Goldenseal",
+          "reason": "curated_latin_map"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Arnica montana",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Arnica montana",
+          "normalized": "arnica montana",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "arnica",
+          "ingredientName": "Arnica",
+          "reason": "curated_latin_map"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Phosphore",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Phosphore",
+          "normalized": "phosphore",
+          "hasLatinBinomial": false
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "phosphorus",
+          "ingredientName": "Phosphorus",
+          "reason": "curated_common"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Sus scrofa",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Sus scrofa",
+          "normalized": "sus scrofa",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "porcine",
+          "ingredientName": "Porcine",
+          "reason": "curated_latin_map"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Salicylic acid",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Salicylic acid",
+          "normalized": "salicylic acid",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "salicylic acid",
+          "ingredientName": "Salicylic Acid",
+          "reason": "curated_common"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "3-Pyridinecarboxamide",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "3-Pyridinecarboxamide",
+          "normalized": "3 pyridinecarboxamide",
+          "hasLatinBinomial": false
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "no_candidates",
+      "missingCanonicalTargets": [],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "no_candidates"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Citrus Bioflavonoids",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Citrus Bioflavonoids",
+          "normalized": "citrus bioflavonoids",
+          "hasLatinBinomial": false
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "citrus bioflavonoids",
+          "ingredientName": "Citrus Bioflavonoids",
+          "reason": "curated_common"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Medicago sativa",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Medicago sativa",
+          "normalized": "medicago sativa",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "alfalfa",
+          "ingredientName": "Alfalfa",
+          "reason": "curated_latin_map"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Dioscorea oppositifolia",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Dioscorea oppositifolia",
+          "normalized": "dioscorea oppositifolia",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "wild yam",
+          "ingredientName": "Wild Yam",
+          "reason": "curated_latin_map"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Trifolium pratense",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Trifolium pratense",
+          "normalized": "trifolium pratense",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "trifolium pratense",
+          "ingredientName": "Trifolium pratense",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Silicea",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Silicea",
+          "normalized": "silicea",
+          "hasLatinBinomial": false
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "silica",
+          "ingredientName": "Silica",
+          "reason": "curated_common"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Eucalyptus globulus",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Eucalyptus globulus",
+          "normalized": "eucalyptus globulus",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "eucalyptus",
+          "ingredientName": "Eucalyptus",
+          "reason": "curated_latin_map"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Mentha x piperita",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Mentha x piperita",
+          "normalized": "mentha x piperita",
+          "hasLatinBinomial": false
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "no_candidates",
+      "missingCanonicalTargets": [],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "no_candidates"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "1-Carboxy-N,N,N-trimethylmethanaminium chloride",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "1-Carboxy-N N N-trimethylmethanaminium chloride",
+          "normalized": "1 carboxy n n n trimethylmethanaminium chloride",
+          "hasLatinBinomial": false
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "no_candidates",
+      "missingCanonicalTargets": [],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "no_candidates"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Serenoa repens",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Serenoa repens",
+          "normalized": "serenoa repens",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "serenoa repens",
+          "ingredientName": "Serenoa repens",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Atractylodes macrocephala",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Atractylodes macrocephala",
+          "normalized": "atractylodes macrocephala",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "atractylodes macrocephala",
+          "ingredientName": "Atractylodes macrocephala",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Sodium fluoride",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Sodium fluoride",
+          "normalized": "sodium fluoride",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "sodium fluoride",
+          "ingredientName": "Sodium fluoride",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "2-amino-2-deoxy-D-glucose sulfate",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "2-amino-2-deoxy-D-glucose sulfate",
+          "normalized": "2 amino 2 deoxy d glucose sulfate",
+          "hasLatinBinomial": false
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "no_candidates",
+      "missingCanonicalTargets": [],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "no_candidates"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "4-(1,3;1,4)-beta-D-Glucan 4-glucanohydrolase",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "4- -beta-D-Glucan 4-glucanohydrolase",
+          "normalized": "4 beta d glucan 4 glucanohydrolase",
+          "hasLatinBinomial": false
+        },
+        {
+          "label": "paren",
+          "raw": "1,3;1,4",
+          "normalized": "1 3 1 4",
+          "hasLatinBinomial": false
+        },
+        {
+          "label": "merged",
+          "raw": "4- -beta-D-Glucan 4-glucanohydrolase 1,3;1,4",
+          "normalized": "4 beta d glucan 4 glucanohydrolase 1 3 1 4",
+          "hasLatinBinomial": false
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "no_candidates",
+      "missingCanonicalTargets": [],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "no_candidates"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Silicon",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Silicon",
+          "normalized": "silicon",
+          "hasLatinBinomial": false
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "no_candidates",
+      "missingCanonicalTargets": [],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "no_candidates"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Codonopsis pilosula",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Codonopsis pilosula",
+          "normalized": "codonopsis pilosula",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "codonopsis pilosula",
+          "ingredientName": "Codonopsis pilosula",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Equisetum arvense",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Equisetum arvense",
+          "normalized": "equisetum arvense",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "equisetum arvense",
+          "ingredientName": "Equisetum arvense",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Paeonia lactiflora",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Paeonia lactiflora",
+          "normalized": "paeonia lactiflora",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "paeonia lactiflora",
+          "ingredientName": "Paeonia lactiflora",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Myo-Inositol",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Myo-Inositol",
+          "normalized": "myo inositol",
+          "hasLatinBinomial": false
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "no_candidates",
+      "missingCanonicalTargets": [],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "no_candidates"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Poria cocos",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Poria cocos",
+          "normalized": "poria cocos",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "poria cocos",
+          "ingredientName": "Poria cocos",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Pinellia ternata",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Pinellia ternata",
+          "normalized": "pinellia ternata",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "pinellia ternata",
+          "ingredientName": "Pinellia ternata",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "3,3',4',5,7-pentahydroxyflavone",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "3 3' 4' 5 7-pentahydroxyflavone",
+          "normalized": "3 3 4 5 7 pentahydroxyflavone",
+          "hasLatinBinomial": false
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "no_candidates",
+      "missingCanonicalTargets": [],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "no_candidates"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "2-amino-2-deoxy-beta-D-glucopyranose",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "2-amino-2-deoxy-beta-D-glucopyranose",
+          "normalized": "2 amino 2 deoxy beta d glucopyranose",
+          "hasLatinBinomial": false
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "no_candidates",
+      "missingCanonicalTargets": [],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "no_candidates"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Daucus carota",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Daucus carota",
+          "normalized": "daucus carota",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "daucus carota",
+          "ingredientName": "Daucus carota",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Poly-(1->3)-N-aceltyl-2-amino-2-deoxy-3-O-beta-D-glucopyranurosyl-4-(or 6-)sulfonyl-D-galactose",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Poly- -N-aceltyl-2-amino-2-deoxy-3-O-beta-D-glucopyranurosyl-4- sulfonyl-D-galactose",
+          "normalized": "poly n aceltyl 2 amino 2 deoxy 3 o beta d glucopyranurosyl 4 sulfonyl d galactose",
+          "hasLatinBinomial": false
+        },
+        {
+          "label": "paren",
+          "raw": "1->3 or 6-",
+          "normalized": "1 3 or 6",
+          "hasLatinBinomial": false
+        },
+        {
+          "label": "merged",
+          "raw": "Poly- -N-aceltyl-2-amino-2-deoxy-3-O-beta-D-glucopyranurosyl-4- sulfonyl-D-galactose 1->3 or 6-",
+          "normalized": "poly n aceltyl 2 amino 2 deoxy 3 o beta d glucopyranurosyl 4 sulfonyl d galactose 1 3 or 6",
+          "hasLatinBinomial": false
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "no_candidates",
+      "missingCanonicalTargets": [],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "no_candidates"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Ubiquinone",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Ubiquinone",
+          "normalized": "ubiquinone",
+          "hasLatinBinomial": false
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "no_candidates",
+      "missingCanonicalTargets": [],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "no_candidates"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Phosphorus",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Phosphorus",
+          "normalized": "phosphorus",
+          "hasLatinBinomial": false
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "no_candidates",
+      "missingCanonicalTargets": [],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "no_candidates"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Nickel",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Nickel",
+          "normalized": "nickel",
+          "hasLatinBinomial": false
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "no_candidates",
+      "missingCanonicalTargets": [],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "no_candidates"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Plantago major",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Plantago major",
+          "normalized": "plantago major",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "plantago major",
+          "ingredientName": "Plantago major",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Rheum palmatum",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Rheum palmatum",
+          "normalized": "rheum palmatum",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "rheum palmatum",
+          "ingredientName": "Rheum palmatum",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Arctium lappa",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Arctium lappa",
+          "normalized": "arctium lappa",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "arctium lappa",
+          "ingredientName": "Arctium lappa",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Ferrum phosphoricum",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Ferrum phosphoricum",
+          "normalized": "ferrum phosphoricum",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "ferrum phosphoricum",
+          "ingredientName": "Ferrum phosphoricum",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Rehmannia glutinosa",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Rehmannia glutinosa",
+          "normalized": "rehmannia glutinosa",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "rehmannia glutinosa",
+          "ingredientName": "Rehmannia glutinosa",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Menthol",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Menthol",
+          "normalized": "menthol",
+          "hasLatinBinomial": false
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "no_candidates",
+      "missingCanonicalTargets": [],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "no_candidates"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Lecithin",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Lecithin",
+          "normalized": "lecithin",
+          "hasLatinBinomial": false
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "no_candidates",
+      "missingCanonicalTargets": [],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "no_candidates"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Whey Protein Isolate",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Whey Protein Isolate",
+          "normalized": "whey protein isolate",
+          "hasLatinBinomial": false
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "no_candidates",
+      "missingCanonicalTargets": [],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "no_candidates"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Natrium chloratum",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Natrium chloratum",
+          "normalized": "natrium chloratum",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "natrium chloratum",
+          "ingredientName": "Natrium chloratum",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "4-Aminobenzoic acid",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "4-Aminobenzoic acid",
+          "normalized": "4 aminobenzoic acid",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "4 aminobenzoic acid",
+          "ingredientName": "4-Aminobenzoic acid",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Hamamelis virginiana",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Hamamelis virginiana",
+          "normalized": "hamamelis virginiana",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "hamamelis virginiana",
+          "ingredientName": "Hamamelis virginiana",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Scrophularia nodosa",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Scrophularia nodosa",
+          "normalized": "scrophularia nodosa",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "scrophularia nodosa",
+          "ingredientName": "Scrophularia nodosa",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Phytolacca decandra",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Phytolacca decandra",
+          "normalized": "phytolacca decandra",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "phytolacca decandra",
+          "ingredientName": "Phytolacca decandra",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Euterpe oleracea",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Euterpe oleracea",
+          "normalized": "euterpe oleracea",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "euterpe oleracea",
+          "ingredientName": "Euterpe oleracea",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Olea europaea",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Olea europaea",
+          "normalized": "olea europaea",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "olea europaea",
+          "ingredientName": "Olea europaea",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Ziziphus jujuba",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Ziziphus jujuba",
+          "normalized": "ziziphus jujuba",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "ziziphus jujuba",
+          "ingredientName": "Ziziphus jujuba",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "2-Hydroxy-N,N,N-trimethylethanaminium",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "2-Hydroxy-N N N-trimethylethanaminium",
+          "normalized": "2 hydroxy n n n trimethylethanaminium",
+          "hasLatinBinomial": false
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "no_candidates",
+      "missingCanonicalTargets": [],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "no_candidates"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Cynara scolymus",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Cynara scolymus",
+          "normalized": "cynara scolymus",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "cynara scolymus",
+          "ingredientName": "Cynara scolymus",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Actaea racemosa",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Actaea racemosa",
+          "normalized": "actaea racemosa",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "actaea racemosa",
+          "ingredientName": "Actaea racemosa",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Piper nigrum",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Piper nigrum",
+          "normalized": "piper nigrum",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "black pepper",
+          "ingredientName": "black pepper",
+          "reason": "curated_latin_map"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Phellodendron chinense",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Phellodendron chinense",
+          "normalized": "phellodendron chinense",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "phellodendron chinense",
+          "ingredientName": "Phellodendron chinense",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Juniperus communis",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Juniperus communis",
+          "normalized": "juniperus communis",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "juniperus communis",
+          "ingredientName": "Juniperus communis",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Plantago ovata",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Plantago ovata",
+          "normalized": "plantago ovata",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "plantago ovata",
+          "ingredientName": "Plantago ovata",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Avena sativa",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Avena sativa",
+          "normalized": "avena sativa",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "avena sativa",
+          "ingredientName": "Avena sativa",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Bryonia",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Bryonia",
+          "normalized": "bryonia",
+          "hasLatinBinomial": false
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "no_candidates",
+      "missingCanonicalTargets": [],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "no_candidates"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Paullinia cupana",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Paullinia cupana",
+          "normalized": "paullinia cupana",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "paullinia cupana",
+          "ingredientName": "Paullinia cupana",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Nux vomica",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Nux vomica",
+          "normalized": "nux vomica",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "nux vomica",
+          "ingredientName": "Nux vomica",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Ophiopogon japonicus",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Ophiopogon japonicus",
+          "normalized": "ophiopogon japonicus",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "ophiopogon japonicus",
+          "ingredientName": "Ophiopogon japonicus",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Solanum lycopersicum",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Solanum lycopersicum",
+          "normalized": "solanum lycopersicum",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "solanum lycopersicum",
+          "ingredientName": "Solanum lycopersicum",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Aconitum napellus",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Aconitum napellus",
+          "normalized": "aconitum napellus",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "aconitum napellus",
+          "ingredientName": "Aconitum napellus",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Dioscorea villosa",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Dioscorea villosa",
+          "normalized": "dioscorea villosa",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "dioscorea villosa",
+          "ingredientName": "Dioscorea villosa",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Citrus aurantium",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Citrus aurantium",
+          "normalized": "citrus aurantium",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "bitter orange",
+          "ingredientName": "bitter orange",
+          "reason": "curated_latin_map"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Sanguinaria canadensis",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Sanguinaria canadensis",
+          "normalized": "sanguinaria canadensis",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "sanguinaria canadensis",
+          "ingredientName": "Sanguinaria canadensis",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "2,5-Cyclohexadiene-1,4-dione, 2-[(2E,6E,10E,14E,18E,22E,26E,30E,34E)-3,7,11,15,19,23,27,31,35,39-decamethyl-2,6,10,14,18,22,26,30,34,38-tetracontadecaenyl]-5,6-dimethoxy-3-methyl",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "2 5-Cyclohexadiene-1 4-dione  2- -5 6-dimethoxy-3-methyl",
+          "normalized": "2 5 cyclohexadiene 1 4 dione 2 5 6 dimethoxy 3 methyl",
+          "hasLatinBinomial": false
+        },
+        {
+          "label": "paren",
+          "raw": "2E,6E,10E,14E,18E,22E,26E,30E,34E (2E,6E,10E,14E,18E,22E,26E,30E,34E)-3,7,11,15,19,23,27,31,35,39-decamethyl-2,6,10,14,18,22,26,30,34,38-tetracontadecaenyl",
+          "normalized": "2e 6e 10e 14e 18e 22e 26e 30e 34e 2e 6e 10e 14e 18e 22e 26e 30e 34e 3 7 11 15 19 23 27 31 35 39 decamethyl 2 6 10 14 18 22 26 30 34 38 tetracontadecaenyl",
+          "hasLatinBinomial": false
+        },
+        {
+          "label": "merged",
+          "raw": "2 5-Cyclohexadiene-1 4-dione  2- -5 6-dimethoxy-3-methyl 2E,6E,10E,14E,18E,22E,26E,30E,34E (2E,6E,10E,14E,18E,22E,26E,30E,34E)-3,7,11,15,19,23,27,31,35,39-decamethyl-2,6,10,14,18,22,26,30,34,38-tetracontadecaenyl",
+          "normalized": "2 5 cyclohexadiene 1 4 dione 2 5 6 dimethoxy 3 methyl 2e 6e 10e 14e 18e 22e 26e 30e 34e 2e 6e 10e 14e 18e 22e 26e 30e 34e 3 7 11 15 19 23 27 31 35 39 decamethyl 2 6 10 14 18 22 26 30 34 38 tetracontadecaenyl",
+          "hasLatinBinomial": false
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "no_candidates",
+      "missingCanonicalTargets": [],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "no_candidates"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Aloe barbadensis",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Aloe barbadensis",
+          "normalized": "aloe barbadensis",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "aloe barbadensis",
+          "ingredientName": "Aloe barbadensis",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Thymus vulgaris",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Thymus vulgaris",
+          "normalized": "thymus vulgaris",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "thymus vulgaris",
+          "ingredientName": "Thymus vulgaris",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Berberis vulgaris",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Berberis vulgaris",
+          "normalized": "berberis vulgaris",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "berberis vulgaris",
+          "ingredientName": "Berberis vulgaris",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Carica papaya",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Carica papaya",
+          "normalized": "carica papaya",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "carica papaya",
+          "ingredientName": "Carica papaya",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Lycopersicon esculentum",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Lycopersicon esculentum",
+          "normalized": "lycopersicon esculentum",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "lycopersicon esculentum",
+          "ingredientName": "Lycopersicon esculentum",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Cimicifuga racemosa",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Cimicifuga racemosa",
+          "normalized": "cimicifuga racemosa",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "cimicifuga racemosa",
+          "ingredientName": "Cimicifuga racemosa",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Commiphora myrrha",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Commiphora myrrha",
+          "normalized": "commiphora myrrha",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "commiphora myrrha",
+          "ingredientName": "Commiphora myrrha",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Belladonna",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Belladonna",
+          "normalized": "belladonna",
+          "hasLatinBinomial": false
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "no_candidates",
+      "missingCanonicalTargets": [],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "no_candidates"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Lepidium meyenii",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Lepidium meyenii",
+          "normalized": "lepidium meyenii",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "lepidium meyenii",
+          "ingredientName": "Lepidium meyenii",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Terminalia chebula",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Terminalia chebula",
+          "normalized": "terminalia chebula",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "terminalia chebula",
+          "ingredientName": "Terminalia chebula",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Zincum metallicum",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Zincum metallicum",
+          "normalized": "zincum metallicum",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "zincum metallicum",
+          "ingredientName": "Zincum metallicum",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Coffea cruda",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Coffea cruda",
+          "normalized": "coffea cruda",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "coffea cruda",
+          "ingredientName": "Coffea cruda",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Mentha haplocalyx",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Mentha haplocalyx",
+          "normalized": "mentha haplocalyx",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "mentha haplocalyx",
+          "ingredientName": "Mentha haplocalyx",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Phosphoricum acidum",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Phosphoricum acidum",
+          "normalized": "phosphoricum acidum",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "phosphoricum acidum",
+          "ingredientName": "Phosphoricum acidum",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Seal oil",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Seal oil",
+          "normalized": "seal oil",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "seal oil",
+          "ingredientName": "Seal oil",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Capsicum annuum",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Capsicum annuum",
+          "normalized": "capsicum annuum",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "capsicum annuum",
+          "ingredientName": "Capsicum annuum",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Oenothera biennis",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Oenothera biennis",
+          "normalized": "oenothera biennis",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "oenothera biennis",
+          "ingredientName": "Oenothera biennis",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "l-Menthol",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "l-Menthol",
+          "normalized": "l menthol",
+          "hasLatinBinomial": false
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "no_candidates",
+      "missingCanonicalTargets": [],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "no_candidates"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Pogostemon cablin",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Pogostemon cablin",
+          "normalized": "pogostemon cablin",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "pogostemon cablin",
+          "ingredientName": "Pogostemon cablin",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Bioflavonoids",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Bioflavonoids",
+          "normalized": "bioflavonoids",
+          "hasLatinBinomial": false
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "no_candidates",
+      "missingCanonicalTargets": [],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "no_candidates"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Argentum metallicum",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Argentum metallicum",
+          "normalized": "argentum metallicum",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "argentum metallicum",
+          "ingredientName": "Argentum metallicum",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Caulophyllum thalictroides",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Caulophyllum thalictroides",
+          "normalized": "caulophyllum thalictroides",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "caulophyllum thalictroides",
+          "ingredientName": "Caulophyllum thalictroides",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Gentiana lutea",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Gentiana lutea",
+          "normalized": "gentiana lutea",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "gentiana lutea",
+          "ingredientName": "Gentiana lutea",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    },
+    {
+      "source": "lnhpd",
+      "raw": "Saposhnikovia divaricata",
+      "normalizedVariants": [
+        {
+          "label": "base",
+          "raw": "Saposhnikovia divaricata",
+          "normalized": "saposhnikovia divaricata",
+          "hasLatinBinomial": true
+        }
+      ],
+      "top1Candidate": null,
+      "top2Candidate": null,
+      "margin": 0,
+      "wouldAutoApply": false,
+      "whyNotAutoApply": "canonical_missing",
+      "missingCanonicalTargets": [
+        {
+          "normalized": "saposhnikovia divaricata",
+          "ingredientName": "Saposhnikovia divaricata",
+          "reason": "latin_binomial_unmapped"
+        }
+      ],
+      "requiresTokenMisses": [],
+      "candidates": [],
+      "decision": {
+        "wouldAutoApply": false,
+        "topConfidence": null,
+        "margin": 0,
+        "blockedBy": [
+          "canonical_missing"
+        ]
+      }
+    }
+  ]
+}

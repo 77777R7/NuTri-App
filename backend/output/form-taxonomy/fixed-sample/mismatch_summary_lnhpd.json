@@ -1,0 +1,28 @@
+{
+  "source": "lnhpd",
+  "timestamp": "2026-01-09T20:20:30.856Z",
+  "sampleSize": 1000,
+  "activeRows": 2115,
+  "resolvedRows": 1609,
+  "counts": {
+    "activeRows": 2115,
+    "ingredientIdMissing": 506,
+    "ingredientFormsMissing": 877,
+    "formRawMissing": 800,
+    "taxonomyMismatch": 62,
+    "formRawNoMatch": 113,
+    "matched": 96
+  },
+  "ratios": {
+    "ingredientIdMissing": 0.2392,
+    "taxonomyMismatchAmongResolved": 0.0385,
+    "taxonomyMismatchAmongActive": 0.0293,
+    "formRawMissingAmongResolved": 0.4972,
+    "formRawNoMatchAmongResolved": 0.0702
+  },
+  "options": {
+    "limit": null,
+    "topN": 50,
+    "sourceIdsFile": "output/diagnostics/lnhpd_sample_ids.json"
+  }
+}

@@ -12,6 +12,7 @@ import { getStepConfig } from '@/lib/base44/routes';
 import { loadCurrentProfile, upsertProfile } from '@/lib/base44/profile';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useFadeSlideIn } from '@/hooks/useFadeSlideIn';
+import { AUTH_FALLBACK_PATH } from '@/lib/auth-mode';
 
 export default function PrivacyScreen() {
   const router = useRouter();
@@ -65,7 +66,7 @@ export default function PrivacyScreen() {
       });
       await markCompletedLocal();
 
-      router.replace('/(auth)/gate');
+      router.replace(AUTH_FALLBACK_PATH);
     } catch (error) {
       console.warn('[base44] failed to save consents', error);
     } finally {

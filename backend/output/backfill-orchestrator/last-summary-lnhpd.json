@@ -1,0 +1,21 @@
+{
+  "mode": "batch",
+  "source": "lnhpd",
+  "scoreVersion": "v4.0.0-alpha.3",
+  "startId": 19540561,
+  "endId": null,
+  "limit": 1000,
+  "processed": 600,
+  "scores": 600,
+  "existing": 0,
+  "skipped": 0,
+  "failed": 0,
+  "ingredientUpsertFailed": 0,
+  "scoreUpsertFailed": 0,
+  "computeScoreFailed": 0,
+  "failuresFile": "output/backfill-orchestrator/failures.jsonl",
+  "failuresLines": 1,
+  "lastId": 19789809,
+  "nextStart": 19789810,
+  "elapsedMs": 858113
+}

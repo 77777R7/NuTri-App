@@ -2,6 +2,7 @@ import React, { PropsWithChildren, useEffect } from 'react';
 import { SplashScreen, usePathname, useRouter } from 'expo-router';
 
 import { getPostAuthDestination, useAuth } from '@/contexts/AuthContext';
+import { AUTH_DISABLED } from '@/lib/auth-mode';
 
 export const ProtectedRoute: React.FC<PropsWithChildren> = ({ children }) => {
   const { session, loading, setPostAuthRedirect } = useAuth();
@@ -22,7 +23,7 @@ export const ProtectedRoute: React.FC<PropsWithChildren> = ({ children }) => {
   }, [loading]);
 
   useEffect(() => {
-    if (!loading && !session) {
+    if (!loading && !session && !AUTH_DISABLED) {
       const destination = getPostAuthDestination(pathname);
       setPostAuthRedirect(String(destination));
 
@@ -35,6 +36,10 @@ export const ProtectedRoute: React.FC<PropsWithChildren> = ({ children }) => {
     }
   }, [loading, session, pathname, router, setPostAuthRedirect]);
 
+  if (AUTH_DISABLED) {
+    return <>{children}</>;
+  }
+
   if (loading || !session) {
     return null;
   }
@@ -43,4 +48,3 @@ export const ProtectedRoute: React.FC<PropsWithChildren> = ({ children }) => {
 };
 
 export default ProtectedRoute;
-

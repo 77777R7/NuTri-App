@@ -1272,8 +1272,8 @@ const applyResolution = async (source: ScoreSource, entries: TopEntry[]) => {
   const margins: number[] = [];
   const confidences: number[] = [];
   let wouldAutoApplyCount = 0;
-  const previewItems: Array<Record<string, unknown>> = [];
-  const autoApplyItems: Array<Record<string, unknown>> = [];
+  const previewItems: Record<string, unknown>[] = [];
+  const autoApplyItems: Record<string, unknown>[] = [];
   const noCandidateTokens = new Map<string, number>();
   const noCandidateSemanticTokens = new Map<string, number>();
   let filteredNonScoring = 0;

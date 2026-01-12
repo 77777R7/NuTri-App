@@ -1,0 +1,15 @@
+{
+  "timestamp": "2026-01-12T20:56:51.813Z",
+  "lnhpdStart": 19845424,
+  "limit": 200,
+  "lnhpdTable": "lnhpd_facts_complete",
+  "lnhpdIdsCount": 200,
+  "sourceIdsCount": 200,
+  "lnhpdIdsFile": "output/orchestrator/20260112_canary_formraw_passed/canary_lnhpd_ids_200.json",
+  "sourceIdsFile": "output/orchestrator/20260112_canary_formraw_passed/canary_lnhpd_source_ids_200.json",
+  "formRawCountsBefore": {
+    "totalRows": 1000,
+    "formRawEmpty": 795,
+    "formRawNonEmpty": 205
+  }
+}

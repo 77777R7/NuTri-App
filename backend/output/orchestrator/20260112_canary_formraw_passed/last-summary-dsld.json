@@ -1,0 +1,21 @@
+{
+  "mode": "batch",
+  "source": "dsld",
+  "scoreVersion": "v4.0.0-alpha.3",
+  "startId": 74764,
+  "endId": null,
+  "limit": 200,
+  "processed": 100,
+  "scores": 19,
+  "existing": 81,
+  "skipped": 0,
+  "failed": 0,
+  "ingredientUpsertFailed": 0,
+  "scoreUpsertFailed": 0,
+  "computeScoreFailed": 0,
+  "failuresFile": "output/orchestrator/20260112_canary_formraw_passed/failures.jsonl",
+  "failuresLines": 0,
+  "lastId": 74970,
+  "nextStart": 74971,
+  "elapsedMs": 195717
+}

@@ -1,0 +1,151 @@
+{
+  "source": "lnhpd",
+  "topN": 50,
+  "totalMismatches": 48,
+  "tokens": [
+    {
+      "token": "acid",
+      "count": 30
+    },
+    {
+      "token": "seed",
+      "count": 22
+    },
+    {
+      "token": "linolenic",
+      "count": 16
+    },
+    {
+      "token": "alpha",
+      "count": 15
+    },
+    {
+      "token": "fatty",
+      "count": 13
+    },
+    {
+      "token": "acids",
+      "count": 13
+    },
+    {
+      "token": "free",
+      "count": 9
+    },
+    {
+      "token": "sterols",
+      "count": 9
+    },
+    {
+      "token": "esters",
+      "count": 8
+    },
+    {
+      "token": "oleic",
+      "count": 6
+    },
+    {
+      "token": "fruit",
+      "count": 5
+    },
+    {
+      "token": "linoleic",
+      "count": 4
+    },
+    {
+      "token": "extract",
+      "count": 2
+    },
+    {
+      "token": "omega",
+      "count": 2
+    },
+    {
+      "token": "ala",
+      "count": 2
+    },
+    {
+      "token": "beta",
+      "count": 2
+    },
+    {
+      "token": "sulfate",
+      "count": 2
+    },
+    {
+      "token": "pantothenic",
+      "count": 1
+    },
+    {
+      "token": "of",
+      "count": 1
+    },
+    {
+      "token": "d3",
+      "count": 1
+    },
+    {
+      "token": "dilution",
+      "count": 1
+    },
+    {
+      "token": "ester",
+      "count": 1
+    },
+    {
+      "token": "liposteric",
+      "count": 1
+    },
+    {
+      "token": "containing",
+      "count": 1
+    },
+    {
+      "token": "cis",
+      "count": 1
+    },
+    {
+      "token": "lenoleic",
+      "count": 1
+    },
+    {
+      "token": "carotene",
+      "count": 1
+    },
+    {
+      "token": "dry",
+      "count": 1
+    },
+    {
+      "token": "linol",
+      "count": 1
+    },
+    {
+      "token": "ique",
+      "count": 1
+    },
+    {
+      "token": "berry",
+      "count": 1
+    },
+    {
+      "token": "phytosterols",
+      "count": 1
+    },
+    {
+      "token": "bark",
+      "count": 1
+    },
+    {
+      "token": "sitosterol",
+      "count": 1
+    },
+    {
+      "token": "gamma",
+      "count": 1
+    },
+    {
+      "token": "hcl",
+      "count": 1
+    }
+  ]
+}

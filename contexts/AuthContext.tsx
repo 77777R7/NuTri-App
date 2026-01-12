@@ -21,6 +21,7 @@ import { appleAuth, appleAuthAndroid } from '@invertase/react-native-apple-authe
 import { supabase } from '@/lib/supabase';
 import { getAuthErrorMessage, RateLimitError } from '@/lib/errors';
 import { parseAuthRedirectParams } from '@/lib/auth-session';
+import { AUTH_DISABLED } from '@/lib/auth-mode';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -107,6 +108,7 @@ const assertWithinRateLimit = (store: Map<AuthRateLimitKey, number[]>, key: Auth
 };
 
 export function AuthProvider({ children }: PropsWithChildren) {
+  const authDisabled = AUTH_DISABLED;
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -122,6 +124,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, []);
 
   useEffect(() => {
+    if (authDisabled) {
+      handleSessionChange(null);
+      setIsBiometricEnabled(false);
+      setLoading(false);
+      return;
+    }
+
     let isMounted = true;
 
     const bootstrap = async () => {
@@ -181,7 +190,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       isMounted = false;
       subscription.subscription.unsubscribe();
     };
-  }, [handleSessionChange]);
+  }, [authDisabled, handleSessionChange]);
 
   const withRateLimit = useCallback(
     async <T,>(key: AuthRateLimitKey, action: () => Promise<T>) => {
@@ -202,6 +211,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   const signInWithPassword = useCallback(
     async (email: string, password: string) => {
+      if (authDisabled) {
+        return;
+      }
       await withRateLimit('password', async () => {
         const { data, error: authError } = await supabase.auth.signInWithPassword({
           email,
@@ -219,11 +231,14 @@ export function AuthProvider({ children }: PropsWithChildren) {
         handleSessionChange(data.session);
       });
     },
-    [handleSessionChange, withRateLimit],
+    [authDisabled, handleSessionChange, withRateLimit],
   );
 
   const signUpWithPassword = useCallback(
     async (email: string, password: string) => {
+      if (authDisabled) {
+        return;
+      }
       await withRateLimit('signup', async () => {
         const { data, error: authError } = await supabase.auth.signUp({
           email,
@@ -239,10 +254,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
         }
       });
     },
-    [handleSessionChange, withRateLimit],
+    [authDisabled, handleSessionChange, withRateLimit],
   );
 
   const requestPasswordReset = useCallback(async (email: string) => {
+    if (authDisabled) {
+      return;
+    }
     await withRateLimit('recovery', async () => {
       const redirectTo = buildRedirectUri('auth/login');
 
@@ -254,9 +272,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
         throw resetError;
       }
     });
-  }, [withRateLimit]);
+  }, [authDisabled, withRateLimit]);
 
   const signInWithGoogle = useCallback(async () => {
+    if (authDisabled) {
+      return;
+    }
     await withRateLimit('oauth', async () => {
       const redirectUri = buildRedirectUri('auth-callback', { forceProxy: true });
       console.log('[auth] redirectUri =>', redirectUri);
@@ -287,9 +308,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
       await handleAuthSessionResult(result);
     });
-  }, [withRateLimit]);
+  }, [authDisabled, withRateLimit]);
 
   const signInWithApple = useCallback(async () => {
+    if (authDisabled) {
+      return;
+    }
     await withRateLimit('oauth', async () => {
       if (Platform.OS === 'ios') {
         const appleResponse = await appleAuth.performRequest({
@@ -343,15 +367,23 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
       throw new Error('Apple Sign-In is not supported on this platform.');
     });
-  }, [withRateLimit]);
+  }, [authDisabled, withRateLimit]);
 
   const signOut = useCallback(async () => {
+    if (authDisabled) {
+      handleSessionChange(null);
+      setPostAuthRedirect(null);
+      return;
+    }
     await supabase.auth.signOut();
     handleSessionChange(null);
     setPostAuthRedirect(null);
-  }, [handleSessionChange]);
+  }, [authDisabled, handleSessionChange]);
 
   const enableBiometrics = useCallback(async () => {
+    if (authDisabled) {
+      return;
+    }
     const hasHardware = await LocalAuthentication.hasHardwareAsync();
     if (!hasHardware) {
       throw new Error('Biometric authentication is not available on this device.');
@@ -372,14 +404,21 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
     await SecureStore.setItemAsync(BIOMETRIC_STORE_KEY, 'true');
     setIsBiometricEnabled(true);
-  }, []);
+  }, [authDisabled]);
 
   const disableBiometrics = useCallback(async () => {
+    if (authDisabled) {
+      setIsBiometricEnabled(false);
+      return;
+    }
     await SecureStore.deleteItemAsync(BIOMETRIC_STORE_KEY);
     setIsBiometricEnabled(false);
-  }, []);
+  }, [authDisabled]);
 
   const authenticateWithBiometrics = useCallback(async () => {
+    if (authDisabled) {
+      return false;
+    }
     if (!isBiometricEnabled) {
       return false;
     }
@@ -403,7 +442,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
     handleSessionChange(data.session);
     return true;
-  }, [handleSessionChange, isBiometricEnabled]);
+  }, [authDisabled, handleSessionChange, isBiometricEnabled]);
 
   const contextValue = useMemo<AuthContextValue>(
     () => ({

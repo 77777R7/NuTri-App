@@ -1,0 +1,27 @@
+{
+  "source": "lnhpd",
+  "topN": 20,
+  "totalMismatches": 15,
+  "tokens": [
+    {
+      "token": "chloride",
+      "count": 5
+    },
+    {
+      "token": "acetate",
+      "count": 5
+    },
+    {
+      "token": "phosphate",
+      "count": 2
+    },
+    {
+      "token": "citrate",
+      "count": 2
+    },
+    {
+      "token": "chelate",
+      "count": 1
+    }
+  ]
+}

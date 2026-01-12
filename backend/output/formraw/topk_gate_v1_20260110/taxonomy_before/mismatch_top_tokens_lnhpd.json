@@ -1,0 +1,199 @@
+{
+  "source": "lnhpd",
+  "topN": 50,
+  "totalMismatches": 76,
+  "tokens": [
+    {
+      "token": "acid",
+      "count": 28
+    },
+    {
+      "token": "fruit",
+      "count": 19
+    },
+    {
+      "token": "piperine",
+      "count": 18
+    },
+    {
+      "token": "seed",
+      "count": 16
+    },
+    {
+      "token": "beta",
+      "count": 14
+    },
+    {
+      "token": "linolenic",
+      "count": 14
+    },
+    {
+      "token": "carotene",
+      "count": 13
+    },
+    {
+      "token": "gamma",
+      "count": 11
+    },
+    {
+      "token": "whole",
+      "count": 6
+    },
+    {
+      "token": "root",
+      "count": 6
+    },
+    {
+      "token": "chloride",
+      "count": 5
+    },
+    {
+      "token": "extract",
+      "count": 4
+    },
+    {
+      "token": "hcl",
+      "count": 3
+    },
+    {
+      "token": "gla",
+      "count": 3
+    },
+    {
+      "token": "hydroxy",
+      "count": 3
+    },
+    {
+      "token": "protease",
+      "count": 3
+    },
+    {
+      "token": "nitrate",
+      "count": 3
+    },
+    {
+      "token": "alpha",
+      "count": 3
+    },
+    {
+      "token": "linoleic",
+      "count": 2
+    },
+    {
+      "token": "608fcc",
+      "count": 2
+    },
+    {
+      "token": "sapu",
+      "count": 2
+    },
+    {
+      "token": "decenoic",
+      "count": 2
+    },
+    {
+      "token": "mg",
+      "count": 2
+    },
+    {
+      "token": "iu",
+      "count": 2
+    },
+    {
+      "token": "pantothenic",
+      "count": 1
+    },
+    {
+      "token": "oleic",
+      "count": 1
+    },
+    {
+      "token": "omega9",
+      "count": 1
+    },
+    {
+      "token": "phospholipides",
+      "count": 1
+    },
+    {
+      "token": "de",
+      "count": 1
+    },
+    {
+      "token": "poisson",
+      "count": 1
+    },
+    {
+      "token": "inositol",
+      "count": 1
+    },
+    {
+      "token": "eicosapentaenoic",
+      "count": 1
+    },
+    {
+      "token": "glucans",
+      "count": 1
+    },
+    {
+      "token": "trans",
+      "count": 1
+    },
+    {
+      "token": "delta",
+      "count": 1
+    },
+    {
+      "token": "decanoid",
+      "count": 1
+    },
+    {
+      "token": "had",
+      "count": 1
+    },
+    {
+      "token": "nlt",
+      "count": 1
+    },
+    {
+      "token": "aspartic",
+      "count": 1
+    },
+    {
+      "token": "citrate",
+      "count": 1
+    },
+    {
+      "token": "esterified",
+      "count": 1
+    },
+    {
+      "token": "astaxanthin",
+      "count": 1
+    },
+    {
+      "token": "sap",
+      "count": 1
+    },
+    {
+      "token": "bark",
+      "count": 1
+    },
+    {
+      "token": "arjunolic",
+      "count": 1
+    },
+    {
+      "token": "carnosic",
+      "count": 1
+    },
+    {
+      "token": "dry",
+      "count": 1
+    },
+    {
+      "token": "nitrates",
+      "count": 1
+    }
+  ]
+}

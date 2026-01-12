@@ -1,0 +1,5496 @@
+{
+  "source": "lnhpd",
+  "timestamp": "2026-01-09T09:56:36.853Z",
+  "total": 392,
+  "candidates": [
+    {
+      "ingredientName": "Phosphorus",
+      "normalized": "phosphorus",
+      "count": 15,
+      "samples": [
+        "Phosphore",
+        "Phosphorus"
+      ],
+      "reasons": [
+        "curated_common"
+      ],
+      "estimatedCategory": "mineral",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": false
+    },
+    {
+      "ingredientName": "Vanadium",
+      "normalized": "vanadium",
+      "count": 11,
+      "samples": [
+        "Vanadium"
+      ],
+      "reasons": [
+        "curated_common"
+      ],
+      "estimatedCategory": null,
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": false
+    },
+    {
+      "ingredientName": "Sodium fluoride",
+      "normalized": "sodium fluoride",
+      "count": 7,
+      "samples": [
+        "Sodium fluoride"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Silica",
+      "normalized": "silica",
+      "count": 6,
+      "samples": [
+        "Silicea"
+      ],
+      "reasons": [
+        "curated_common"
+      ],
+      "estimatedCategory": null,
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": false
+    },
+    {
+      "ingredientName": "Silicon",
+      "normalized": "silicon",
+      "count": 6,
+      "samples": [
+        "Silicon"
+      ],
+      "reasons": [
+        "curated_common"
+      ],
+      "estimatedCategory": null,
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": false
+    },
+    {
+      "ingredientName": "Citrus reticulata",
+      "normalized": "citrus reticulata",
+      "count": 5,
+      "samples": [
+        "Citrus reticulata"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Natrium chloratum",
+      "normalized": "natrium chloratum",
+      "count": 5,
+      "samples": [
+        "Natrium chloratum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Raphanus sativus",
+      "normalized": "raphanus sativus",
+      "count": 4,
+      "samples": [
+        "Raphanus sativus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Nickel",
+      "normalized": "nickel",
+      "count": 4,
+      "samples": [
+        "Nickel"
+      ],
+      "reasons": [
+        "curated_common"
+      ],
+      "estimatedCategory": null,
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": false
+    },
+    {
+      "ingredientName": "Zincum metallicum",
+      "normalized": "zincum metallicum",
+      "count": 4,
+      "samples": [
+        "Zincum metallicum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Ferrum phosphoricum",
+      "normalized": "ferrum phosphoricum",
+      "count": 4,
+      "samples": [
+        "Ferrum phosphoricum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Lycopodium clavatum",
+      "normalized": "lycopodium clavatum",
+      "count": 4,
+      "samples": [
+        "Lycopodium clavatum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Coffea cruda",
+      "normalized": "coffea cruda",
+      "count": 4,
+      "samples": [
+        "Coffea cruda"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Seal oil",
+      "normalized": "seal oil",
+      "count": 4,
+      "samples": [
+        "Seal oil"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "lipid",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Euterpe oleracea",
+      "normalized": "euterpe oleracea",
+      "count": 3,
+      "samples": [
+        "Euterpe oleracea"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Nux vomica",
+      "normalized": "nux vomica",
+      "count": 3,
+      "samples": [
+        "Nux vomica"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Solanum lycopersicum",
+      "normalized": "solanum lycopersicum",
+      "count": 3,
+      "samples": [
+        "Solanum lycopersicum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Aconitum napellus",
+      "normalized": "aconitum napellus",
+      "count": 3,
+      "samples": [
+        "Aconitum napellus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Carica papaya",
+      "normalized": "carica papaya",
+      "count": 3,
+      "samples": [
+        "Carica papaya"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Mangifera indica",
+      "normalized": "mangifera indica",
+      "count": 3,
+      "samples": [
+        "Mangifera indica"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Lycopersicon esculentum",
+      "normalized": "lycopersicon esculentum",
+      "count": 3,
+      "samples": [
+        "Lycopersicon esculentum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Cimicifuga racemosa",
+      "normalized": "cimicifuga racemosa",
+      "count": 3,
+      "samples": [
+        "Cimicifuga racemosa"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Zea mays",
+      "normalized": "zea mays",
+      "count": 3,
+      "samples": [
+        "Zea mays"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Cinnamomum aromaticum",
+      "normalized": "cinnamomum aromaticum",
+      "count": 3,
+      "samples": [
+        "Cinnamomum aromaticum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Phosphoricum acidum",
+      "normalized": "phosphoricum acidum",
+      "count": 3,
+      "samples": [
+        "Phosphoricum acidum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Ligusticum chuanxiong",
+      "normalized": "ligusticum chuanxiong",
+      "count": 3,
+      "samples": [
+        "Ligusticum chuanxiong"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "4-alpha-D-Glucan glucohydrolase",
+      "normalized": "4 alpha d glucan glucohydrolase",
+      "count": 3,
+      "samples": [
+        "4-alpha-D-Glucan glucohydrolase"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Whey Protein Concentrate",
+      "normalized": "whey protein concentrate",
+      "count": 3,
+      "samples": [
+        "Whey Protein Concentrate"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "protein",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": false
+    },
+    {
+      "ingredientName": "Carbo vegetabilis",
+      "normalized": "carbo vegetabilis",
+      "count": 3,
+      "samples": [
+        "Carbo vegetabilis"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Argentum metallicum",
+      "normalized": "argentum metallicum",
+      "count": 2,
+      "samples": [
+        "Argentum metallicum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Caulophyllum thalictroides",
+      "normalized": "caulophyllum thalictroides",
+      "count": 2,
+      "samples": [
+        "Caulophyllum thalictroides"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Gentiana lutea",
+      "normalized": "gentiana lutea",
+      "count": 2,
+      "samples": [
+        "Gentiana lutea"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Saposhnikovia divaricata",
+      "normalized": "saposhnikovia divaricata",
+      "count": 2,
+      "samples": [
+        "Saposhnikovia divaricata"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Sticta pulmonaria",
+      "normalized": "sticta pulmonaria",
+      "count": 2,
+      "samples": [
+        "Sticta pulmonaria"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Cucurbita pepo",
+      "normalized": "cucurbita pepo",
+      "count": 2,
+      "samples": [
+        "Cucurbita pepo"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Acorus tatarinowii",
+      "normalized": "acorus tatarinowii",
+      "count": 2,
+      "samples": [
+        "Acorus tatarinowii"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Thuja occidentalis",
+      "normalized": "thuja occidentalis",
+      "count": 2,
+      "samples": [
+        "Thuja occidentalis"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Tussilago farfara",
+      "normalized": "tussilago farfara",
+      "count": 2,
+      "samples": [
+        "Tussilago farfara"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Carlina acaulis",
+      "normalized": "carlina acaulis",
+      "count": 2,
+      "samples": [
+        "Carlina acaulis"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Grindelia camporum",
+      "normalized": "grindelia camporum",
+      "count": 2,
+      "samples": [
+        "Grindelia camporum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Aucklandia lappa",
+      "normalized": "aucklandia lappa",
+      "count": 2,
+      "samples": [
+        "Aucklandia lappa"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Fragaria x ananassa",
+      "normalized": "fragaria x ananassa",
+      "count": 2,
+      "samples": [
+        "Fragaria x ananassa"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Arsenicum album",
+      "normalized": "arsenicum album",
+      "count": 2,
+      "samples": [
+        "Arsenicum album"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Conium maculatum",
+      "normalized": "conium maculatum",
+      "count": 2,
+      "samples": [
+        "Conium maculatum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Modified citrus pectin",
+      "normalized": "modified citrus pectin",
+      "count": 2,
+      "samples": [
+        "Modified citrus pectin"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Rhododendron chrysanthum",
+      "normalized": "rhododendron chrysanthum",
+      "count": 2,
+      "samples": [
+        "Rhododendron chrysanthum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Salvia miltiorrhiza",
+      "normalized": "salvia miltiorrhiza",
+      "count": 2,
+      "samples": [
+        "Salvia miltiorrhiza"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Platycodon grandiflorum",
+      "normalized": "platycodon grandiflorum",
+      "count": 2,
+      "samples": [
+        "Platycodon grandiflorum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Apium graveolens var. dulce",
+      "normalized": "apium graveolens var dulce",
+      "count": 2,
+      "samples": [
+        "Apium graveolens var. dulce"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Chrysanthemum morifolium",
+      "normalized": "chrysanthemum morifolium",
+      "count": 2,
+      "samples": [
+        "Chrysanthemum morifolium"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Alisma orientale",
+      "normalized": "alisma orientale",
+      "count": 2,
+      "samples": [
+        "Alisma orientale"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Scutellaria Baicalensis",
+      "normalized": "scutellaria baicalensis",
+      "count": 2,
+      "samples": [
+        "Scutellaria Baicalensis"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Galium aparine",
+      "normalized": "galium aparine",
+      "count": 2,
+      "samples": [
+        "Galium aparine"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Origanum vulgare",
+      "normalized": "origanum vulgare",
+      "count": 2,
+      "samples": [
+        "Origanum vulgare"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "fennel",
+      "normalized": "fennel",
+      "count": 2,
+      "samples": [
+        "Foeniculum vulgare"
+      ],
+      "reasons": [
+        "curated_latin_map"
+      ],
+      "estimatedCategory": null,
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": false
+    },
+    {
+      "ingredientName": "Fragaria vesca",
+      "normalized": "fragaria vesca",
+      "count": 2,
+      "samples": [
+        "Fragaria vesca"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Spongia tosta",
+      "normalized": "spongia tosta",
+      "count": 2,
+      "samples": [
+        "Spongia tosta"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Asclepias tuberosa",
+      "normalized": "asclepias tuberosa",
+      "count": 2,
+      "samples": [
+        "Asclepias tuberosa"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Spinacia oleracea",
+      "normalized": "spinacia oleracea",
+      "count": 2,
+      "samples": [
+        "Spinacia oleracea"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Ligustrum lucidum",
+      "normalized": "ligustrum lucidum",
+      "count": 2,
+      "samples": [
+        "Ligustrum lucidum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Rumex crispus",
+      "normalized": "rumex crispus",
+      "count": 2,
+      "samples": [
+        "Rumex crispus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Polygonum multiflorum",
+      "normalized": "polygonum multiflorum",
+      "count": 2,
+      "samples": [
+        "Polygonum multiflorum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "4-alpha-D-Glucan glucanohydrolase",
+      "normalized": "4 alpha d glucan glucanohydrolase",
+      "count": 2,
+      "samples": [
+        "4-alpha-D-Glucan glucanohydrolase"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Paeonia veitchii",
+      "normalized": "paeonia veitchii",
+      "count": 2,
+      "samples": [
+        "Paeonia veitchii"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Cnicus benedictus",
+      "normalized": "cnicus benedictus",
+      "count": 2,
+      "samples": [
+        "Cnicus benedictus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Cassia acutifolia",
+      "normalized": "cassia acutifolia",
+      "count": 2,
+      "samples": [
+        "Cassia acutifolia"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Piperine",
+      "normalized": "piperine",
+      "count": 2,
+      "samples": [
+        "Piperine"
+      ],
+      "reasons": [
+        "curated_common"
+      ],
+      "estimatedCategory": null,
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": false
+    },
+    {
+      "ingredientName": "Ligusticum sinense cv. chuanxiong",
+      "normalized": "ligusticum sinense cv chuanxiong",
+      "count": 2,
+      "samples": [
+        "Ligusticum sinense cv. chuanxiong"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Triticum aestivum",
+      "normalized": "triticum aestivum",
+      "count": 2,
+      "samples": [
+        "Triticum aestivum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Lappa major",
+      "normalized": "lappa major",
+      "count": 2,
+      "samples": [
+        "Lappa major"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Ananas comosus var. comosus",
+      "normalized": "ananas comosus var comosus",
+      "count": 2,
+      "samples": [
+        "Ananas comosus var. comosus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Rhamnus Purshianus",
+      "normalized": "rhamnus purshianus",
+      "count": 2,
+      "samples": [
+        "Rhamnus Purshianus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Saussurea costus",
+      "normalized": "saussurea costus",
+      "count": 2,
+      "samples": [
+        "Saussurea costus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Calcarea fluorica",
+      "normalized": "calcarea fluorica",
+      "count": 2,
+      "samples": [
+        "Calcarea fluorica"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Ilex aquifolium",
+      "normalized": "ilex aquifolium",
+      "count": 2,
+      "samples": [
+        "Ilex aquifolium"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Mercurius solubilis Hahnemanni",
+      "normalized": "mercurius solubilis hahnemanni",
+      "count": 2,
+      "samples": [
+        "Mercurius solubilis Hahnemanni"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Senna alexandrina",
+      "normalized": "senna alexandrina",
+      "count": 2,
+      "samples": [
+        "Senna alexandrina"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Lavandula angustifolia",
+      "normalized": "lavandula angustifolia",
+      "count": 2,
+      "samples": [
+        "Lavandula angustifolia"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Verbascum thapsus",
+      "normalized": "verbascum thapsus",
+      "count": 2,
+      "samples": [
+        "Verbascum thapsus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Frangula purshiana",
+      "normalized": "frangula purshiana",
+      "count": 2,
+      "samples": [
+        "Frangula purshiana"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Petroselinum crispum",
+      "normalized": "petroselinum crispum",
+      "count": 2,
+      "samples": [
+        "Petroselinum crispum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Soy protein isolate",
+      "normalized": "soy protein isolate",
+      "count": 2,
+      "samples": [
+        "Soy protein isolate"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Cod liver oil",
+      "normalized": "cod liver oil",
+      "count": 2,
+      "samples": [
+        "Cod liver oil"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "lipid",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Cassia angustifolia",
+      "normalized": "cassia angustifolia",
+      "count": 2,
+      "samples": [
+        "Cassia angustifolia"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Aurum metallicum",
+      "normalized": "aurum metallicum",
+      "count": 2,
+      "samples": [
+        "Aurum metallicum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Marrubium vulgare",
+      "normalized": "marrubium vulgare",
+      "count": 2,
+      "samples": [
+        "Marrubium vulgare"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Lonicera japonica",
+      "normalized": "lonicera japonica",
+      "count": 2,
+      "samples": [
+        "Lonicera japonica"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Equus asinus",
+      "normalized": "equus asinus",
+      "count": 2,
+      "samples": [
+        "Equus asinus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Ficus carica",
+      "normalized": "ficus carica",
+      "count": 2,
+      "samples": [
+        "Ficus carica"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Andrographis paniculata",
+      "normalized": "andrographis paniculata",
+      "count": 2,
+      "samples": [
+        "Andrographis paniculata"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Eupolyphaga sinensis",
+      "normalized": "eupolyphaga sinensis",
+      "count": 2,
+      "samples": [
+        "Eupolyphaga sinensis"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Drynaria fortunei",
+      "normalized": "drynaria fortunei",
+      "count": 2,
+      "samples": [
+        "Drynaria fortunei"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Cornus sanguinea",
+      "normalized": "cornus sanguinea",
+      "count": 2,
+      "samples": [
+        "Cornus sanguinea"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Cornus officinalis",
+      "normalized": "cornus officinalis",
+      "count": 2,
+      "samples": [
+        "Cornus officinalis"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Beta vulgaris",
+      "normalized": "beta vulgaris",
+      "count": 2,
+      "samples": [
+        "Beta vulgaris"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Calcarea sulphurica",
+      "normalized": "calcarea sulphurica",
+      "count": 1,
+      "samples": [
+        "Calcarea sulphurica"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Glandula suprarenalis suis",
+      "normalized": "glandula suprarenalis suis",
+      "count": 1,
+      "samples": [
+        "Glandula suprarenalis suis"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Baptisia tinctoria",
+      "normalized": "baptisia tinctoria",
+      "count": 1,
+      "samples": [
+        "Baptisia tinctoria"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Lactobacillus delbrueckii subsp. bulgaricus",
+      "normalized": "lactobacillus delbrueckii subsp bulgaricus",
+      "count": 1,
+      "samples": [
+        "Lactobacillus delbrueckii subsp. bulgaricus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "probiotic",
+      "estimatedBaseUnit": "cfu",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Tree hydrangea",
+      "normalized": "tree hydrangea",
+      "count": 1,
+      "samples": [
+        "Tree hydrangea"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Nicotinic acid",
+      "normalized": "nicotinic acid",
+      "count": 1,
+      "samples": [
+        "Nicotinic acid"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Malpighia punicifolia linne",
+      "normalized": "malpighia punicifolia linne",
+      "count": 1,
+      "samples": [
+        "Malpighia punicifolia linne"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Stibium metallicum",
+      "normalized": "stibium metallicum",
+      "count": 1,
+      "samples": [
+        "Stibium metallicum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Strychnos nux-vomica",
+      "normalized": "strychnos nux vomica",
+      "count": 1,
+      "samples": [
+        "Strychnos nux-vomica"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Lilium tigrinum",
+      "normalized": "lilium tigrinum",
+      "count": 1,
+      "samples": [
+        "Lilium tigrinum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Pinus silvestris",
+      "normalized": "pinus silvestris",
+      "count": 1,
+      "samples": [
+        "Pinus silvestris"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Eriobotrya japonica",
+      "normalized": "eriobotrya japonica",
+      "count": 1,
+      "samples": [
+        "Eriobotrya japonica"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Abies alba",
+      "normalized": "abies alba",
+      "count": 1,
+      "samples": [
+        "Abies alba"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Lamium album",
+      "normalized": "lamium album",
+      "count": 1,
+      "samples": [
+        "Lamium album"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Magnesia phosphorica",
+      "normalized": "magnesia phosphorica",
+      "count": 1,
+      "samples": [
+        "Magnesia phosphorica"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Arisaema erubescens",
+      "normalized": "arisaema erubescens",
+      "count": 1,
+      "samples": [
+        "Arisaema erubescens"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Bromus ramosus-flos",
+      "normalized": "bromus ramosus flos",
+      "count": 1,
+      "samples": [
+        "Bromus ramosus-flos"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Cervus elaphus canadensis",
+      "normalized": "cervus elaphus canadensis",
+      "count": 1,
+      "samples": [
+        "Cervus elaphus canadensis"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Fumaricum acidum",
+      "normalized": "fumaricum acidum",
+      "count": 1,
+      "samples": [
+        "Fumaricum acidum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Benzoicum Acidum",
+      "normalized": "benzoicum acidum",
+      "count": 1,
+      "samples": [
+        "Benzoicum Acidum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Ascophyllum nodosum",
+      "normalized": "ascophyllum nodosum",
+      "count": 1,
+      "samples": [
+        "Ascophyllum nodosum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Euphorbia lathyris",
+      "normalized": "euphorbia lathyris",
+      "count": 1,
+      "samples": [
+        "Euphorbia lathyris"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Cinnamomum zeylanicum",
+      "normalized": "cinnamomum zeylanicum",
+      "count": 1,
+      "samples": [
+        "Cinnamomum zeylanicum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Malpighia glabra",
+      "normalized": "malpighia glabra",
+      "count": 1,
+      "samples": [
+        "Malpighia glabra"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Mercurius sulphuricus",
+      "normalized": "mercurius sulphuricus",
+      "count": 1,
+      "samples": [
+        "Mercurius sulphuricus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Juglans regia",
+      "normalized": "juglans regia",
+      "count": 1,
+      "samples": [
+        "Juglans regia"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Zanthoxylum americanum",
+      "normalized": "zanthoxylum americanum",
+      "count": 1,
+      "samples": [
+        "Zanthoxylum americanum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Cynara cardunculus",
+      "normalized": "cynara cardunculus",
+      "count": 1,
+      "samples": [
+        "Cynara cardunculus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Rhus glabra",
+      "normalized": "rhus glabra",
+      "count": 1,
+      "samples": [
+        "Rhus glabra"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "3-Pyridinecarboxylic acid",
+      "normalized": "3 pyridinecarboxylic acid",
+      "count": 1,
+      "samples": [
+        "3-Pyridinecarboxylic acid"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Mandragora officinarum",
+      "normalized": "mandragora officinarum",
+      "count": 1,
+      "samples": [
+        "Mandragora officinarum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Bonplandia trifoliata",
+      "normalized": "bonplandia trifoliata",
+      "count": 1,
+      "samples": [
+        "Bonplandia trifoliata"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Solanum nigrum",
+      "normalized": "solanum nigrum",
+      "count": 1,
+      "samples": [
+        "Solanum nigrum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Arundo mauritanica",
+      "normalized": "arundo mauritanica",
+      "count": 1,
+      "samples": [
+        "Arundo mauritanica"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Palmaria palmata",
+      "normalized": "palmaria palmata",
+      "count": 1,
+      "samples": [
+        "Palmaria palmata"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Turnera diffusa var. aphrodisiaca",
+      "normalized": "turnera diffusa var aphrodisiaca",
+      "count": 1,
+      "samples": [
+        "Turnera diffusa var. aphrodisiaca"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Anemarrhena asphodeloides",
+      "normalized": "anemarrhena asphodeloides",
+      "count": 1,
+      "samples": [
+        "Anemarrhena asphodeloides"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Rubia tinctorum",
+      "normalized": "rubia tinctorum",
+      "count": 1,
+      "samples": [
+        "Rubia tinctorum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Massa pinelliae fermentata",
+      "normalized": "massa pinelliae fermentata",
+      "count": 1,
+      "samples": [
+        "Massa pinelliae fermentata"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Anogeissus latifolia",
+      "normalized": "anogeissus latifolia",
+      "count": 1,
+      "samples": [
+        "Anogeissus latifolia"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Prunus persica",
+      "normalized": "prunus persica",
+      "count": 1,
+      "samples": [
+        "Prunus persica"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Collinsonia canadensis",
+      "normalized": "collinsonia canadensis",
+      "count": 1,
+      "samples": [
+        "Collinsonia canadensis"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Magnesia carbonica",
+      "normalized": "magnesia carbonica",
+      "count": 1,
+      "samples": [
+        "Magnesia carbonica"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Gmelina arborea",
+      "normalized": "gmelina arborea",
+      "count": 1,
+      "samples": [
+        "Gmelina arborea"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Pancreas suis",
+      "normalized": "pancreas suis",
+      "count": 1,
+      "samples": [
+        "Pancreas suis"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Vetiveria zizanioides",
+      "normalized": "vetiveria zizanioides",
+      "count": 1,
+      "samples": [
+        "Vetiveria zizanioides"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Ledebouriella seseloides",
+      "normalized": "ledebouriella seseloides",
+      "count": 1,
+      "samples": [
+        "Ledebouriella seseloides"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Platinum metallicum",
+      "normalized": "platinum metallicum",
+      "count": 1,
+      "samples": [
+        "Platinum metallicum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Dimorphandra mollis",
+      "normalized": "dimorphandra mollis",
+      "count": 1,
+      "samples": [
+        "Dimorphandra mollis"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Manganum phosphoricum",
+      "normalized": "manganum phosphoricum",
+      "count": 1,
+      "samples": [
+        "Manganum phosphoricum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Porphyra Umbilicalis",
+      "normalized": "porphyra umbilicalis",
+      "count": 1,
+      "samples": [
+        "Porphyra Umbilicalis"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Amomum villosum",
+      "normalized": "amomum villosum",
+      "count": 1,
+      "samples": [
+        "Amomum villosum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Equisetum hyemale",
+      "normalized": "equisetum hyemale",
+      "count": 1,
+      "samples": [
+        "Equisetum hyemale"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Sophora tonkinensis",
+      "normalized": "sophora tonkinensis",
+      "count": 1,
+      "samples": [
+        "Sophora tonkinensis"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Anthemis nobilis",
+      "normalized": "anthemis nobilis",
+      "count": 1,
+      "samples": [
+        "Anthemis nobilis"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Quercus robur-flos",
+      "normalized": "quercus robur flos",
+      "count": 1,
+      "samples": [
+        "Quercus robur-flos"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Nelumbo nucifera",
+      "normalized": "nelumbo nucifera",
+      "count": 1,
+      "samples": [
+        "Nelumbo nucifera"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Helonias dioica",
+      "normalized": "helonias dioica",
+      "count": 1,
+      "samples": [
+        "Helonias dioica"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Radix Rehmanniae Glutinosae Conquitae",
+      "normalized": "radix rehmanniae glutinosae conquitae",
+      "count": 1,
+      "samples": [
+        "Radix Rehmanniae Glutinosae Conquitae"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Euphorbium officinarum",
+      "normalized": "euphorbium officinarum",
+      "count": 1,
+      "samples": [
+        "Euphorbium officinarum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Isatis indigotica",
+      "normalized": "isatis indigotica",
+      "count": 1,
+      "samples": [
+        "Isatis indigotica"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Mahonia Aquifolia",
+      "normalized": "mahonia aquifolia",
+      "count": 1,
+      "samples": [
+        "Mahonia Aquifolia"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Abies balsamea",
+      "normalized": "abies balsamea",
+      "count": 1,
+      "samples": [
+        "Abies balsamea"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Pyrus Malus",
+      "normalized": "pyrus malus",
+      "count": 1,
+      "samples": [
+        "Pyrus Malus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Streptococcus salivarius subsp. thermophilus",
+      "normalized": "streptococcus salivarius subsp thermophilus",
+      "count": 1,
+      "samples": [
+        "Streptococcus salivarius subsp. thermophilus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "China pubescens",
+      "normalized": "china pubescens",
+      "count": 1,
+      "samples": [
+        "China pubescens"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Chlorophytum arundinaceum",
+      "normalized": "chlorophytum arundinaceum",
+      "count": 1,
+      "samples": [
+        "Chlorophytum arundinaceum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Typhonium flagelliforme",
+      "normalized": "typhonium flagelliforme",
+      "count": 1,
+      "samples": [
+        "Typhonium flagelliforme"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Sodium chloride",
+      "normalized": "sodium chloride",
+      "count": 1,
+      "samples": [
+        "Sodium chloride"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Filipendula ulmaria",
+      "normalized": "filipendula ulmaria",
+      "count": 1,
+      "samples": [
+        "Filipendula ulmaria"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Ceanothus americanus",
+      "normalized": "ceanothus americanus",
+      "count": 1,
+      "samples": [
+        "Ceanothus americanus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Lilium brownii",
+      "normalized": "lilium brownii",
+      "count": 1,
+      "samples": [
+        "Lilium brownii"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Ferrosoferric phosphate",
+      "normalized": "ferrosoferric phosphate",
+      "count": 1,
+      "samples": [
+        "Ferrosoferric phosphate"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Apomorphinum hydrochloricum",
+      "normalized": "apomorphinum hydrochloricum",
+      "count": 1,
+      "samples": [
+        "Apomorphinum hydrochloricum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Antimonii sulphidum",
+      "normalized": "antimonii sulphidum",
+      "count": 1,
+      "samples": [
+        "Antimonii sulphidum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Bismuthum Subnitricum",
+      "normalized": "bismuthum subnitricum",
+      "count": 1,
+      "samples": [
+        "Bismuthum Subnitricum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "anise",
+      "normalized": "anise",
+      "count": 1,
+      "samples": [
+        "Pimpinella anisum"
+      ],
+      "reasons": [
+        "curated_latin_map"
+      ],
+      "estimatedCategory": null,
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": false
+    },
+    {
+      "ingredientName": "Pyrus Communis",
+      "normalized": "pyrus communis",
+      "count": 1,
+      "samples": [
+        "Pyrus Communis"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Holarrhena antidysenterica",
+      "normalized": "holarrhena antidysenterica",
+      "count": 1,
+      "samples": [
+        "Holarrhena antidysenterica"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Turnera aphrodisiaca",
+      "normalized": "turnera aphrodisiaca",
+      "count": 1,
+      "samples": [
+        "Turnera aphrodisiaca"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Hibiscus rosa-sinensis",
+      "normalized": "hibiscus rosa sinensis",
+      "count": 1,
+      "samples": [
+        "Hibiscus rosa-sinensis"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Quisqualis indica",
+      "normalized": "quisqualis indica",
+      "count": 1,
+      "samples": [
+        "Quisqualis indica"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Grifola frondosa",
+      "normalized": "grifola frondosa",
+      "count": 1,
+      "samples": [
+        "Grifola frondosa"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Rubus allegheniensis",
+      "normalized": "rubus allegheniensis",
+      "count": 1,
+      "samples": [
+        "Rubus allegheniensis"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Prunus amygdalus",
+      "normalized": "prunus amygdalus",
+      "count": 1,
+      "samples": [
+        "Prunus amygdalus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Humulus lupulus",
+      "normalized": "humulus lupulus",
+      "count": 1,
+      "samples": [
+        "Humulus lupulus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Dimethyl sulfone",
+      "normalized": "dimethyl sulfone",
+      "count": 1,
+      "samples": [
+        "Dimethyl sulfone"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Rosa canina",
+      "normalized": "rosa canina",
+      "count": 1,
+      "samples": [
+        "Rosa canina"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Carthamus tinctorius",
+      "normalized": "carthamus tinctorius",
+      "count": 1,
+      "samples": [
+        "Carthamus tinctorius"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Solidago odora",
+      "normalized": "solidago odora",
+      "count": 1,
+      "samples": [
+        "Solidago odora"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Linum usitatissimum L. subsp. sativa",
+      "normalized": "linum usitatissimum l subsp sativa",
+      "count": 1,
+      "samples": [
+        "Linum usitatissimum L. subsp. sativa"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Ulmus fulva",
+      "normalized": "ulmus fulva",
+      "count": 1,
+      "samples": [
+        "Ulmus fulva"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Stemona sessilifolia",
+      "normalized": "stemona sessilifolia",
+      "count": 1,
+      "samples": [
+        "Stemona sessilifolia"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Cerasus vulgaris",
+      "normalized": "cerasus vulgaris",
+      "count": 1,
+      "samples": [
+        "Cerasus vulgaris"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Ophiocordyceps sinensis",
+      "normalized": "ophiocordyceps sinensis",
+      "count": 1,
+      "samples": [
+        "Ophiocordyceps sinensis"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Brassica oleracea var. capitata",
+      "normalized": "brassica oleracea var capitata",
+      "count": 1,
+      "samples": [
+        "Brassica oleracea var. capitata"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Camphor",
+      "normalized": "camphor",
+      "count": 1,
+      "samples": [
+        "Camphor"
+      ],
+      "reasons": [
+        "curated_common"
+      ],
+      "estimatedCategory": null,
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": false
+    },
+    {
+      "ingredientName": "Achillea millefolium",
+      "normalized": "achillea millefolium",
+      "count": 1,
+      "samples": [
+        "Achillea millefolium"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Cynomorium songaricum",
+      "normalized": "cynomorium songaricum",
+      "count": 1,
+      "samples": [
+        "Cynomorium songaricum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Thymus serpyllum",
+      "normalized": "thymus serpyllum",
+      "count": 1,
+      "samples": [
+        "Thymus serpyllum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Delphinium staphisagria",
+      "normalized": "delphinium staphisagria",
+      "count": 1,
+      "samples": [
+        "Delphinium staphisagria"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Plantago lanceolata",
+      "normalized": "plantago lanceolata",
+      "count": 1,
+      "samples": [
+        "Plantago lanceolata"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Titanium dioxide",
+      "normalized": "titanium dioxide",
+      "count": 1,
+      "samples": [
+        "Titanium dioxide"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Ledebouriella divaricata",
+      "normalized": "ledebouriella divaricata",
+      "count": 1,
+      "samples": [
+        "Ledebouriella divaricata"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Foeniculum vulgare. subsp. vulgare var. dulce",
+      "normalized": "foeniculum vulgare subsp vulgare var dulce",
+      "count": 1,
+      "samples": [
+        "Foeniculum vulgare. subsp. vulgare var. dulce"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Salix alba",
+      "normalized": "salix alba",
+      "count": 1,
+      "samples": [
+        "Salix alba"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Azadirachta indica",
+      "normalized": "azadirachta indica",
+      "count": 1,
+      "samples": [
+        "Azadirachta indica"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Cinchona pubescens",
+      "normalized": "cinchona pubescens",
+      "count": 1,
+      "samples": [
+        "Cinchona pubescens"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Cadmium sulphuricum",
+      "normalized": "cadmium sulphuricum",
+      "count": 1,
+      "samples": [
+        "Cadmium sulphuricum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Gypsum fibrosum",
+      "normalized": "gypsum fibrosum",
+      "count": 1,
+      "samples": [
+        "Gypsum fibrosum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Tinospora cordifolia",
+      "normalized": "tinospora cordifolia",
+      "count": 1,
+      "samples": [
+        "Tinospora cordifolia"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Plantago asiatica",
+      "normalized": "plantago asiatica",
+      "count": 1,
+      "samples": [
+        "Plantago asiatica"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Undenatured whey protein fraction",
+      "normalized": "undenatured whey protein fraction",
+      "count": 1,
+      "samples": [
+        "Undenatured whey protein fraction"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Lapis albus",
+      "normalized": "lapis albus",
+      "count": 1,
+      "samples": [
+        "Lapis albus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Ammonium carbonicum",
+      "normalized": "ammonium carbonicum",
+      "count": 1,
+      "samples": [
+        "Ammonium carbonicum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Tilia tomentosa",
+      "normalized": "tilia tomentosa",
+      "count": 1,
+      "samples": [
+        "Tilia tomentosa"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Cucurbitea peponis",
+      "normalized": "cucurbitea peponis",
+      "count": 1,
+      "samples": [
+        "Cucurbitea peponis"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Gallus gallus",
+      "normalized": "gallus gallus",
+      "count": 1,
+      "samples": [
+        "Gallus gallus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Forsythia suspensa",
+      "normalized": "forsythia suspensa",
+      "count": 1,
+      "samples": [
+        "Forsythia suspensa"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Arthrospira platensis",
+      "normalized": "arthrospira platensis",
+      "count": 1,
+      "samples": [
+        "Arthrospira platensis"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Candida parapsilosis",
+      "normalized": "candida parapsilosis",
+      "count": 1,
+      "samples": [
+        "Candida parapsilosis"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Ananas comosus",
+      "normalized": "ananas comosus",
+      "count": 1,
+      "samples": [
+        "Ananas comosus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Lobelia inflata",
+      "normalized": "lobelia inflata",
+      "count": 1,
+      "samples": [
+        "Lobelia inflata"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Rhamnus frangula",
+      "normalized": "rhamnus frangula",
+      "count": 1,
+      "samples": [
+        "Rhamnus frangula"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Eucalypti folium",
+      "normalized": "eucalypti folium",
+      "count": 1,
+      "samples": [
+        "Eucalypti folium"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Zincum oxydatum",
+      "normalized": "zincum oxydatum",
+      "count": 1,
+      "samples": [
+        "Zincum oxydatum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Thallium metallicum",
+      "normalized": "thallium metallicum",
+      "count": 1,
+      "samples": [
+        "Thallium metallicum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Berberis aristata",
+      "normalized": "berberis aristata",
+      "count": 1,
+      "samples": [
+        "Berberis aristata"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Natrium sulfuricum",
+      "normalized": "natrium sulfuricum",
+      "count": 1,
+      "samples": [
+        "Natrium sulfuricum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Pelargonium graveolens",
+      "normalized": "pelargonium graveolens",
+      "count": 1,
+      "samples": [
+        "Pelargonium graveolens"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Lycium chinense",
+      "normalized": "lycium chinense",
+      "count": 1,
+      "samples": [
+        "Lycium chinense"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Naja tripudians",
+      "normalized": "naja tripudians",
+      "count": 1,
+      "samples": [
+        "Naja tripudians"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Gaultheriae aetheroleum",
+      "normalized": "gaultheriae aetheroleum",
+      "count": 1,
+      "samples": [
+        "Gaultheriae aetheroleum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Melaleuca quinquenervia",
+      "normalized": "melaleuca quinquenervia",
+      "count": 1,
+      "samples": [
+        "Melaleuca quinquenervia"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Lonicera nigra",
+      "normalized": "lonicera nigra",
+      "count": 1,
+      "samples": [
+        "Lonicera nigra"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Chamaelirium luteum",
+      "normalized": "chamaelirium luteum",
+      "count": 1,
+      "samples": [
+        "Chamaelirium luteum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Myrtus communis",
+      "normalized": "myrtus communis",
+      "count": 1,
+      "samples": [
+        "Myrtus communis"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Solegnathus hardwickii",
+      "normalized": "solegnathus hardwickii",
+      "count": 1,
+      "samples": [
+        "Solegnathus hardwickii"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Gardenia jasminoides",
+      "normalized": "gardenia jasminoides",
+      "count": 1,
+      "samples": [
+        "Gardenia jasminoides"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Semiaquilegia adoxoides",
+      "normalized": "semiaquilegia adoxoides",
+      "count": 1,
+      "samples": [
+        "Semiaquilegia adoxoides"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Gekko gecko",
+      "normalized": "gekko gecko",
+      "count": 1,
+      "samples": [
+        "Gekko gecko"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Kali bichromicum",
+      "normalized": "kali bichromicum",
+      "count": 1,
+      "samples": [
+        "Kali bichromicum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Secale cornutum",
+      "normalized": "secale cornutum",
+      "count": 1,
+      "samples": [
+        "Secale cornutum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Vaccinium corymbosum",
+      "normalized": "vaccinium corymbosum",
+      "count": 1,
+      "samples": [
+        "Vaccinium corymbosum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Kalium phosphoricum",
+      "normalized": "kalium phosphoricum",
+      "count": 1,
+      "samples": [
+        "Kalium phosphoricum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Hydrated calcium sulfate",
+      "normalized": "hydrated calcium sulfate",
+      "count": 1,
+      "samples": [
+        "Hydrated calcium sulfate"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Whey protein hydrolysate",
+      "normalized": "whey protein hydrolysate",
+      "count": 1,
+      "samples": [
+        "Whey protein hydrolysate"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Lachesis mutus",
+      "normalized": "lachesis mutus",
+      "count": 1,
+      "samples": [
+        "Lachesis mutus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Natrum sulphuricum",
+      "normalized": "natrum sulphuricum",
+      "count": 1,
+      "samples": [
+        "Natrum sulphuricum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Sesamum indicum",
+      "normalized": "sesamum indicum",
+      "count": 1,
+      "samples": [
+        "Sesamum indicum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Phyllanthus emblica",
+      "normalized": "phyllanthus emblica",
+      "count": 1,
+      "samples": [
+        "Phyllanthus emblica"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Pinus pinaster",
+      "normalized": "pinus pinaster",
+      "count": 1,
+      "samples": [
+        "Pinus pinaster"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Euryale ferox",
+      "normalized": "euryale ferox",
+      "count": 1,
+      "samples": [
+        "Euryale ferox"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Stannum iodatum",
+      "normalized": "stannum iodatum",
+      "count": 1,
+      "samples": [
+        "Stannum iodatum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Hieracium pilosella",
+      "normalized": "hieracium pilosella",
+      "count": 1,
+      "samples": [
+        "Hieracium pilosella"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Wolfiporia extensa",
+      "normalized": "wolfiporia extensa",
+      "count": 1,
+      "samples": [
+        "Wolfiporia extensa"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Poly(1-4-a-D-galacturonide)glycanohydrolase",
+      "normalized": "poly 1 4 a d galacturonide glycanohydrolase",
+      "count": 1,
+      "samples": [
+        "Poly(1-4-a-D-galacturonide)glycanohydrolase"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": null,
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": false
+    },
+    {
+      "ingredientName": "Stannous fluoride",
+      "normalized": "stannous fluoride",
+      "count": 1,
+      "samples": [
+        "Stannous fluoride"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Citric acid",
+      "normalized": "citric acid",
+      "count": 1,
+      "samples": [
+        "Citric acid"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Cyperus rotundus",
+      "normalized": "cyperus rotundus",
+      "count": 1,
+      "samples": [
+        "Cyperus rotundus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Agnus castus",
+      "normalized": "agnus castus",
+      "count": 1,
+      "samples": [
+        "Agnus castus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Symplocos racemosa",
+      "normalized": "symplocos racemosa",
+      "count": 1,
+      "samples": [
+        "Symplocos racemosa"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Saraca indica",
+      "normalized": "saraca indica",
+      "count": 1,
+      "samples": [
+        "Saraca indica"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Lycopus virginicus",
+      "normalized": "lycopus virginicus",
+      "count": 1,
+      "samples": [
+        "Lycopus virginicus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Aluminum hydroxide",
+      "normalized": "aluminum hydroxide",
+      "count": 1,
+      "samples": [
+        "Aluminum hydroxide"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Urtica urens",
+      "normalized": "urtica urens",
+      "count": 1,
+      "samples": [
+        "Urtica urens"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Chamaemelum nobile",
+      "normalized": "chamaemelum nobile",
+      "count": 1,
+      "samples": [
+        "Chamaemelum nobile"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Sphaeranthus indicus",
+      "normalized": "sphaeranthus indicus",
+      "count": 1,
+      "samples": [
+        "Sphaeranthus indicus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Brassica oleracea var. botrytis",
+      "normalized": "brassica oleracea var botrytis",
+      "count": 1,
+      "samples": [
+        "Brassica oleracea var. botrytis"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Rhus toxicodendron",
+      "normalized": "rhus toxicodendron",
+      "count": 1,
+      "samples": [
+        "Rhus toxicodendron"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Ruscus aculeatus",
+      "normalized": "ruscus aculeatus",
+      "count": 1,
+      "samples": [
+        "Ruscus aculeatus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Porphyra laciniata",
+      "normalized": "porphyra laciniata",
+      "count": 1,
+      "samples": [
+        "Porphyra laciniata"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Mixed Tocopherols concentrate",
+      "normalized": "mixed tocopherols concentrate",
+      "count": 1,
+      "samples": [
+        "Mixed Tocopherols concentrate"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Carbonic acid calcium salt",
+      "normalized": "carbonic acid calcium salt",
+      "count": 1,
+      "samples": [
+        "Carbonic acid calcium salt"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Bambusa vulgaris",
+      "normalized": "bambusa vulgaris",
+      "count": 1,
+      "samples": [
+        "Bambusa vulgaris"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Corydalis yanhusuo",
+      "normalized": "corydalis yanhusuo",
+      "count": 1,
+      "samples": [
+        "Corydalis yanhusuo"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Petroselinum sativum",
+      "normalized": "petroselinum sativum",
+      "count": 1,
+      "samples": [
+        "Petroselinum sativum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Menispermum dauricum",
+      "normalized": "menispermum dauricum",
+      "count": 1,
+      "samples": [
+        "Menispermum dauricum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Picraena excelsa",
+      "normalized": "picraena excelsa",
+      "count": 1,
+      "samples": [
+        "Picraena excelsa"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Laminaria digitata",
+      "normalized": "laminaria digitata",
+      "count": 1,
+      "samples": [
+        "Laminaria digitata"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Cascara sagrada",
+      "normalized": "cascara sagrada",
+      "count": 1,
+      "samples": [
+        "Cascara sagrada"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Bidens pilosa",
+      "normalized": "bidens pilosa",
+      "count": 1,
+      "samples": [
+        "Bidens pilosa"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Artemisia scoparia",
+      "normalized": "artemisia scoparia",
+      "count": 1,
+      "samples": [
+        "Artemisia scoparia"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Elettaria cardamomum var. cardamomum",
+      "normalized": "elettaria cardamomum var cardamomum",
+      "count": 1,
+      "samples": [
+        "Elettaria cardamomum var. cardamomum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Cyclamen europaeum",
+      "normalized": "cyclamen europaeum",
+      "count": 1,
+      "samples": [
+        "Cyclamen europaeum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Sulphur iodatum",
+      "normalized": "sulphur iodatum",
+      "count": 1,
+      "samples": [
+        "Sulphur iodatum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Ocimum tenuiflorum",
+      "normalized": "ocimum tenuiflorum",
+      "count": 1,
+      "samples": [
+        "Ocimum tenuiflorum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Ulmus rubra",
+      "normalized": "ulmus rubra",
+      "count": 1,
+      "samples": [
+        "Ulmus rubra"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Capsicum frutescens",
+      "normalized": "capsicum frutescens",
+      "count": 1,
+      "samples": [
+        "Capsicum frutescens"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Leonurus cardiaca",
+      "normalized": "leonurus cardiaca",
+      "count": 1,
+      "samples": [
+        "Leonurus cardiaca"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Castanea sativa",
+      "normalized": "castanea sativa",
+      "count": 1,
+      "samples": [
+        "Castanea sativa"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Bellis perennis",
+      "normalized": "bellis perennis",
+      "count": 1,
+      "samples": [
+        "Bellis perennis"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Ascorbic acid",
+      "normalized": "ascorbic acid",
+      "count": 1,
+      "samples": [
+        "Ascorbic acid"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Chelidonium majus",
+      "normalized": "chelidonium majus",
+      "count": 1,
+      "samples": [
+        "Chelidonium majus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Calcarea carbonica",
+      "normalized": "calcarea carbonica",
+      "count": 1,
+      "samples": [
+        "Calcarea carbonica"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Gelsemium sempervirens",
+      "normalized": "gelsemium sempervirens",
+      "count": 1,
+      "samples": [
+        "Gelsemium sempervirens"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Arctostaphylos uva-ursi",
+      "normalized": "arctostaphylos uva ursi",
+      "count": 1,
+      "samples": [
+        "Arctostaphylos uva-ursi"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Ligusticum chuanxiong Hort",
+      "normalized": "ligusticum chuanxiong hort",
+      "count": 1,
+      "samples": [
+        "Ligusticum chuanxiong Hort"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Picria fel-terrae",
+      "normalized": "picria fel terrae",
+      "count": 1,
+      "samples": [
+        "Picria fel-terrae"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Carbamide peroxide",
+      "normalized": "carbamide peroxide",
+      "count": 1,
+      "samples": [
+        "Carbamide peroxide"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Ziziphus spinosa",
+      "normalized": "ziziphus spinosa",
+      "count": 1,
+      "samples": [
+        "Ziziphus spinosa"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Citrus limon",
+      "normalized": "citrus limon",
+      "count": 1,
+      "samples": [
+        "Citrus limon"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Sequoia gigantea",
+      "normalized": "sequoia gigantea",
+      "count": 1,
+      "samples": [
+        "Sequoia gigantea"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Polygala tenuifolia",
+      "normalized": "polygala tenuifolia",
+      "count": 1,
+      "samples": [
+        "Polygala tenuifolia"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Bee pollen",
+      "normalized": "bee pollen",
+      "count": 1,
+      "samples": [
+        "Bee pollen"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Lactuca virosa",
+      "normalized": "lactuca virosa",
+      "count": 1,
+      "samples": [
+        "Lactuca virosa"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Schizochytrium spp.",
+      "normalized": "schizochytrium spp",
+      "count": 1,
+      "samples": [
+        "Schizochytrium spp."
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Tagetes erecta",
+      "normalized": "tagetes erecta",
+      "count": 1,
+      "samples": [
+        "Tagetes erecta"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Pteria martensii",
+      "normalized": "pteria martensii",
+      "count": 1,
+      "samples": [
+        "Pteria martensii"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Fritillaria thunbergii",
+      "normalized": "fritillaria thunbergii",
+      "count": 1,
+      "samples": [
+        "Fritillaria thunbergii"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Rubus idaeus",
+      "normalized": "rubus idaeus",
+      "count": 1,
+      "samples": [
+        "Rubus idaeus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "alpha-D-Galactoside galactohydrolase",
+      "normalized": "alpha d galactoside galactohydrolase",
+      "count": 1,
+      "samples": [
+        "alpha-D-Galactoside galactohydrolase"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Citrus medica",
+      "normalized": "citrus medica",
+      "count": 1,
+      "samples": [
+        "Citrus medica"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Malva verticillata",
+      "normalized": "malva verticillata",
+      "count": 1,
+      "samples": [
+        "Malva verticillata"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Platycodon grandiflorus",
+      "normalized": "platycodon grandiflorus",
+      "count": 1,
+      "samples": [
+        "Platycodon grandiflorus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Punica granatum",
+      "normalized": "punica granatum",
+      "count": 1,
+      "samples": [
+        "Punica granatum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Green jasper",
+      "normalized": "green jasper",
+      "count": 1,
+      "samples": [
+        "Green jasper"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Tarentula hispana",
+      "normalized": "tarentula hispana",
+      "count": 1,
+      "samples": [
+        "Tarentula hispana"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Crab apple",
+      "normalized": "crab apple",
+      "count": 1,
+      "samples": [
+        "Crab apple"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Paeonia anomala subsp. veitchii",
+      "normalized": "paeonia anomala subsp veitchii",
+      "count": 1,
+      "samples": [
+        "Paeonia anomala subsp. veitchii"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Mitchella repens",
+      "normalized": "mitchella repens",
+      "count": 1,
+      "samples": [
+        "Mitchella repens"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Fritillaria cirrhosa",
+      "normalized": "fritillaria cirrhosa",
+      "count": 1,
+      "samples": [
+        "Fritillaria cirrhosa"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Schizonepeta tenuifolia",
+      "normalized": "schizonepeta tenuifolia",
+      "count": 1,
+      "samples": [
+        "Schizonepeta tenuifolia"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Bulbus Fritillariae Cirrhosae",
+      "normalized": "bulbus fritillariae cirrhosae",
+      "count": 1,
+      "samples": [
+        "Bulbus Fritillariae Cirrhosae"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Populus tremula-flos",
+      "normalized": "populus tremula flos",
+      "count": 1,
+      "samples": [
+        "Populus tremula-flos"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Teucrium marum",
+      "normalized": "teucrium marum",
+      "count": 1,
+      "samples": [
+        "Teucrium marum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Aurum chloratum",
+      "normalized": "aurum chloratum",
+      "count": 1,
+      "samples": [
+        "Aurum chloratum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Cocculus indicus",
+      "normalized": "cocculus indicus",
+      "count": 1,
+      "samples": [
+        "Cocculus indicus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Carduus marianus",
+      "normalized": "carduus marianus",
+      "count": 1,
+      "samples": [
+        "Carduus marianus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "White phosphorus",
+      "normalized": "white phosphorus",
+      "count": 1,
+      "samples": [
+        "White phosphorus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Turnera diffusa",
+      "normalized": "turnera diffusa",
+      "count": 1,
+      "samples": [
+        "Turnera diffusa"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Disodium pyrophosphate",
+      "normalized": "disodium pyrophosphate",
+      "count": 1,
+      "samples": [
+        "Disodium pyrophosphate"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Halibut liver oil",
+      "normalized": "halibut liver oil",
+      "count": 1,
+      "samples": [
+        "Halibut liver oil"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "lipid",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Taxillus sutchuenensis",
+      "normalized": "taxillus sutchuenensis",
+      "count": 1,
+      "samples": [
+        "Taxillus sutchuenensis"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Kali sulphuricum",
+      "normalized": "kali sulphuricum",
+      "count": 1,
+      "samples": [
+        "Kali sulphuricum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Aluminum chloride",
+      "normalized": "aluminum chloride",
+      "count": 1,
+      "samples": [
+        "Aluminum chloride"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Hedera helix",
+      "normalized": "hedera helix",
+      "count": 1,
+      "samples": [
+        "Hedera helix"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Calendula",
+      "normalized": "calendula",
+      "count": 1,
+      "samples": [
+        "Calendula officinalis"
+      ],
+      "reasons": [
+        "curated_latin_map"
+      ],
+      "estimatedCategory": null,
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": false
+    },
+    {
+      "ingredientName": "Carbo animalis",
+      "normalized": "carbo animalis",
+      "count": 1,
+      "samples": [
+        "Carbo animalis"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Succinicum acidum",
+      "normalized": "succinicum acidum",
+      "count": 1,
+      "samples": [
+        "Succinicum acidum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Brassica oleracea",
+      "normalized": "brassica oleracea",
+      "count": 1,
+      "samples": [
+        "Brassica oleracea"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Combretum raimbaultii",
+      "normalized": "combretum raimbaultii",
+      "count": 1,
+      "samples": [
+        "Combretum raimbaultii"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Alpinia calcarata",
+      "normalized": "alpinia calcarata",
+      "count": 1,
+      "samples": [
+        "Alpinia calcarata"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Geranium wilfordii",
+      "normalized": "geranium wilfordii",
+      "count": 1,
+      "samples": [
+        "Geranium wilfordii"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Eupatorium perfoliatum",
+      "normalized": "eupatorium perfoliatum",
+      "count": 1,
+      "samples": [
+        "Eupatorium perfoliatum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Leonurus heterophyllus",
+      "normalized": "leonurus heterophyllus",
+      "count": 1,
+      "samples": [
+        "Leonurus heterophyllus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Cuprum metallicum",
+      "normalized": "cuprum metallicum",
+      "count": 1,
+      "samples": [
+        "Cuprum metallicum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Dolichos lablab",
+      "normalized": "dolichos lablab",
+      "count": 1,
+      "samples": [
+        "Dolichos lablab"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Asparagus cochinchinensis",
+      "normalized": "asparagus cochinchinensis",
+      "count": 1,
+      "samples": [
+        "Asparagus cochinchinensis"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Kalium bichromicum",
+      "normalized": "kalium bichromicum",
+      "count": 1,
+      "samples": [
+        "Kalium bichromicum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Syzygium jambolanum",
+      "normalized": "syzygium jambolanum",
+      "count": 1,
+      "samples": [
+        "Syzygium jambolanum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Ribes nigrum",
+      "normalized": "ribes nigrum",
+      "count": 1,
+      "samples": [
+        "Ribes nigrum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "2-Propenoic acid, 2-methyl-, polymer with diethenylbenzene, compd. with 3-((2S)-1-methyl-2-pyrrolinidinyl)pyridine",
+      "normalized": "2 propenoic acid 2 methyl polymer with diethenylbenzene compd with 3 2s 1 methyl 2 pyrrolinidinyl pyridine",
+      "count": 1,
+      "samples": [
+        "2-Propenoic acid, 2-methyl-, polymer with diethenylbenzene, compd. with 3-((2S)-1-methyl-2-pyrrolinidinyl)pyridine"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Areca catechu",
+      "normalized": "areca catechu",
+      "count": 1,
+      "samples": [
+        "Areca catechu"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Hippocastanum vulgare Gaertn.",
+      "normalized": "hippocastanum vulgare gaertn",
+      "count": 1,
+      "samples": [
+        "Hippocastanum vulgare Gaertn."
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Matricaria recutita",
+      "normalized": "matricaria recutita",
+      "count": 1,
+      "samples": [
+        "Matricaria recutita"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Aurum iodatum",
+      "normalized": "aurum iodatum",
+      "count": 1,
+      "samples": [
+        "Aurum iodatum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Scutellaria lateriflora",
+      "normalized": "scutellaria lateriflora",
+      "count": 1,
+      "samples": [
+        "Scutellaria lateriflora"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Ammoniacum gummi",
+      "normalized": "ammoniacum gummi",
+      "count": 1,
+      "samples": [
+        "Ammoniacum gummi"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Euphrasia officinalis",
+      "normalized": "euphrasia officinalis",
+      "count": 1,
+      "samples": [
+        "Euphrasia officinalis"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Rhamnus purshiana",
+      "normalized": "rhamnus purshiana",
+      "count": 1,
+      "samples": [
+        "Rhamnus purshiana"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Hyriopsis cumingii",
+      "normalized": "hyriopsis cumingii",
+      "count": 1,
+      "samples": [
+        "Hyriopsis cumingii"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Ilex paraguariensis",
+      "normalized": "ilex paraguariensis",
+      "count": 1,
+      "samples": [
+        "Ilex paraguariensis"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Rosmarinus officinalis",
+      "normalized": "rosmarinus officinalis",
+      "count": 1,
+      "samples": [
+        "Rosmarinus officinalis"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Agaricus muscarius",
+      "normalized": "agaricus muscarius",
+      "count": 1,
+      "samples": [
+        "Agaricus muscarius"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Calcarea silicica",
+      "normalized": "calcarea silicica",
+      "count": 1,
+      "samples": [
+        "Calcarea silicica"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Natrii sulfas exsiccatus",
+      "normalized": "natrii sulfas exsiccatus",
+      "count": 1,
+      "samples": [
+        "Natrii sulfas exsiccatus"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "(3alpha,16alpha)-Eburnamenine-14-carboxylic acid ethyl ester",
+      "normalized": "3alpha 16alpha eburnamenine 14 carboxylic acid ethyl ester",
+      "count": 1,
+      "samples": [
+        "(3alpha,16alpha)-Eburnamenine-14-carboxylic acid ethyl ester"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "compound",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": false
+    },
+    {
+      "ingredientName": "Aralia nudicaulis",
+      "normalized": "aralia nudicaulis",
+      "count": 1,
+      "samples": [
+        "Aralia nudicaulis"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Hydrogen peroxide",
+      "normalized": "hydrogen peroxide",
+      "count": 1,
+      "samples": [
+        "Hydrogen peroxide"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Eclipta alba",
+      "normalized": "eclipta alba",
+      "count": 1,
+      "samples": [
+        "Eclipta alba"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Juglans nigra",
+      "normalized": "juglans nigra",
+      "count": 1,
+      "samples": [
+        "Juglans nigra"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "(2S)-2,6-Diaminohexanoic acid",
+      "normalized": "2s 2 6 diaminohexanoic acid",
+      "count": 1,
+      "samples": [
+        "(2S)-2,6-Diaminohexanoic acid"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Opuntia ficus-Indica",
+      "normalized": "opuntia ficus indica",
+      "count": 1,
+      "samples": [
+        "Opuntia ficus-Indica"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Collagen type II",
+      "normalized": "collagen type ii",
+      "count": 1,
+      "samples": [
+        "Collagen type II"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Tilia cordata",
+      "normalized": "tilia cordata",
+      "count": 1,
+      "samples": [
+        "Tilia cordata"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Artemisia Annua",
+      "normalized": "artemisia annua",
+      "count": 1,
+      "samples": [
+        "Artemisia Annua"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Ferula assafoetida",
+      "normalized": "ferula assafoetida",
+      "count": 1,
+      "samples": [
+        "Ferula assafoetida"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Chenopodium quinoa",
+      "normalized": "chenopodium quinoa",
+      "count": 1,
+      "samples": [
+        "Chenopodium quinoa"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Stevia rebaudiana",
+      "normalized": "stevia rebaudiana",
+      "count": 1,
+      "samples": [
+        "Stevia rebaudiana"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Cuprum arsenicosum",
+      "normalized": "cuprum arsenicosum",
+      "count": 1,
+      "samples": [
+        "Cuprum arsenicosum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Lophatherum gracile",
+      "normalized": "lophatherum gracile",
+      "count": 1,
+      "samples": [
+        "Lophatherum gracile"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Fallopia multiflora",
+      "normalized": "fallopia multiflora",
+      "count": 1,
+      "samples": [
+        "Fallopia multiflora"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Citrus limonum",
+      "normalized": "citrus limonum",
+      "count": 1,
+      "samples": [
+        "Citrus limonum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Magnesia muriatica",
+      "normalized": "magnesia muriatica",
+      "count": 1,
+      "samples": [
+        "Magnesia muriatica"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Scilla maritima",
+      "normalized": "scilla maritima",
+      "count": 1,
+      "samples": [
+        "Scilla maritima"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Trichosanthes kirilowii",
+      "normalized": "trichosanthes kirilowii",
+      "count": 1,
+      "samples": [
+        "Trichosanthes kirilowii"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Kali phosphoricum",
+      "normalized": "kali phosphoricum",
+      "count": 1,
+      "samples": [
+        "Kali phosphoricum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Lithothamnion corallioides",
+      "normalized": "lithothamnion corallioides",
+      "count": 1,
+      "samples": [
+        "Lithothamnion corallioides"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Sodium monofluorophosphate",
+      "normalized": "sodium monofluorophosphate",
+      "count": 1,
+      "samples": [
+        "Sodium monofluorophosphate"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Barosma betulina",
+      "normalized": "barosma betulina",
+      "count": 1,
+      "samples": [
+        "Barosma betulina"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Polygonum chinense",
+      "normalized": "polygonum chinense",
+      "count": 1,
+      "samples": [
+        "Polygonum chinense"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Chionanthus virginica",
+      "normalized": "chionanthus virginica",
+      "count": 1,
+      "samples": [
+        "Chionanthus virginica"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Eriodictyon californicum",
+      "normalized": "eriodictyon californicum",
+      "count": 1,
+      "samples": [
+        "Eriodictyon californicum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Syzygium cumini",
+      "normalized": "syzygium cumini",
+      "count": 1,
+      "samples": [
+        "Syzygium cumini"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Ovis aries",
+      "normalized": "ovis aries",
+      "count": 1,
+      "samples": [
+        "Ovis aries"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    },
+    {
+      "ingredientName": "Pinus montana",
+      "normalized": "pinus montana",
+      "count": 1,
+      "samples": [
+        "Pinus montana"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "estimatedCategory": "botanical",
+      "estimatedBaseUnit": "mg",
+      "latinBinomial": true
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "mode": "batch",
+  "source": "lnhpd",
+  "scoreVersion": "v4.0.0-alpha.3",
+  "startId": 19845424,
+  "endId": null,
+  "limit": 200,
+  "processed": 200,
+  "scores": 100,
+  "existing": 100,
+  "skipped": 0,
+  "failed": 0,
+  "ingredientUpsertFailed": 0,
+  "scoreUpsertFailed": 0,
+  "computeScoreFailed": 0,
+  "failuresFile": "output/orchestrator/20260112_canary_formraw_passed/canary_failures_20260112_lnhpd_200.jsonl",
+  "failuresLines": 0,
+  "lastId": 19918587,
+  "nextStart": 19918588,
+  "elapsedMs": 331283
+}

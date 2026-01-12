@@ -1,0 +1,999 @@
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] done processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] done processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] done processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=6 processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] done processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] done processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=6 processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] done processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=6 processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] done processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=6 processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] done processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] done processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=6 processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] done processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] done processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=6 processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] done processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] done processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=6 processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] done processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] done processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=6 processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] done processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=6 processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] done processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=6 processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] done processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=6 processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] done processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] done processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=6 processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] done processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] done processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] done processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] done processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=3 processed=300 ingredients=297 scores=297 existing=0 skipped=3 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=4 processed=400 ingredients=397 scores=397 existing=0 skipped=3 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=5 processed=500 ingredients=497 scores=497 existing=0 skipped=3 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] done processed=500 ingredients=497 scores=497 existing=0 skipped=3 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] done processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] done processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=6 processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] done processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=6 processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=7 processed=700 ingredients=700 scores=700 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] done processed=700 ingredients=700 scores=700 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=6 processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=7 processed=700 ingredients=700 scores=700 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] done processed=700 ingredients=700 scores=700 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] done processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] done processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=2 processed=200 ingredients=199 scores=199 existing=0 skipped=1 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=3 processed=300 ingredients=299 scores=299 existing=0 skipped=1 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=4 processed=400 ingredients=399 scores=399 existing=0 skipped=1 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] done processed=400 ingredients=399 scores=399 existing=0 skipped=1 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] done processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=6 processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] done processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] done processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] done processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] done processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] done processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] done processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] done processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] done processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] done processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=6 processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] done processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] done processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] done processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] done processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] done processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] done processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] done processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] done processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] done processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=6 processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] done processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:lnhpd] done processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[backfill:dsld] done processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=0 failuresBytes=0
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[ProductIngredients] Upsert failed {
+  status: 400,
+  code: '22003',
+  message: 'numeric field overflow',
+  rayId: null
+}
+[backfill:lnhpd] batch=1 processed=100 ingredients=99 scores=99 existing=0 skipped=0 failed=1 ingredientUpsertFailed=1 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=2 processed=200 ingredients=199 scores=199 existing=0 skipped=0 failed=1 ingredientUpsertFailed=1 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=3 processed=300 ingredients=299 scores=299 existing=0 skipped=0 failed=1 ingredientUpsertFailed=1 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=4 processed=400 ingredients=399 scores=399 existing=0 skipped=0 failed=1 ingredientUpsertFailed=1 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=5 processed=500 ingredients=499 scores=499 existing=0 skipped=0 failed=1 ingredientUpsertFailed=1 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] done processed=500 ingredients=499 scores=499 existing=0 skipped=0 failed=1 ingredientUpsertFailed=1 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=all batch=100 concurrency=2 limit=none timeBudgetSeconds=none dryRun=false failuresFile=backfill-failures.jsonl failuresForce=false checkpointFile=none summaryJson=none
+[backfill] retrying failures from output/backfill-orchestrator/failures.jsonl
+[ProductIngredients] Upsert failed {
+  status: 400,
+  code: '22003',
+  message: 'numeric field overflow',
+  rayId: null
+}
+[backfill:failures] processed=1 ingredients=0 scores=0 existing=0 skipped=0 failed=1 ingredientUpsertFailed=1 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] done processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] done processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] done processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] done processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] done processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] done processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] done processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] done processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] done processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] done processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] done processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] done processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] done processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=6 processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=7 processed=700 ingredients=700 scores=700 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] done processed=700 ingredients=700 scores=700 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] done processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=6 processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] done processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] done processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] done processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] done processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] done processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=6 processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] done processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=6 processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=7 processed=700 ingredients=700 scores=700 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=8 processed=800 ingredients=800 scores=800 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] done processed=800 ingredients=800 scores=800 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] done processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=5 processed=500 ingredients=500 scores=500 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] batch=6 processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:lnhpd] done processed=600 ingredients=600 scores=600 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=dsld batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-dsld.json
+[backfill:dsld] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=2 processed=200 ingredients=200 scores=200 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=3 processed=300 ingredients=300 scores=300 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] batch=4 processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[backfill:dsld] done processed=400 ingredients=400 scores=400 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+[backfill] source=lnhpd batch=100 concurrency=2 limit=1000 timeBudgetSeconds=720 dryRun=false failuresFile=output/backfill-orchestrator/failures.jsonl failuresForce=false checkpointFile=output/backfill-orchestrator/checkpoints.json summaryJson=output/backfill-orchestrator/last-summary-lnhpd.json
+[backfill:lnhpd] batch=1 processed=100 ingredients=100 scores=100 existing=0 skipped=0 failed=0 ingredientUpsertFailed=0 scoreUpsertFailed=0 computeScoreFailed=0 failuresLines=1 failuresBytes=208

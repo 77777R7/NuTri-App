@@ -1,0 +1,114 @@
+{
+  "source": "lnhpd",
+  "timestamp": "2026-01-11T22:29:31.257Z",
+  "sourceIdsFile": "output/formraw/topk_gate_v1_20260110/topk_formraw_missing_source_ids.json",
+  "sourceIdsCount": 10675,
+  "resolvedRows": 45564,
+  "missingFormRawRows": 37047,
+  "missingFormRawRatio": 0.8130761127205689,
+  "missingByIngredientTop": [
+    {
+      "ingredientId": "36dbe17c-8c98-411c-91f8-4af1eede8260",
+      "ingredientName": "Vitamin C",
+      "count": 2782
+    },
+    {
+      "ingredientId": "ae8cd1dd-d703-4bf4-94aa-67d9f895ef10",
+      "ingredientName": "Vitamin D",
+      "count": 2032
+    },
+    {
+      "ingredientId": "da810830-6084-4899-9c5a-e655155ed470",
+      "ingredientName": "Vitamin B12",
+      "count": 1845
+    },
+    {
+      "ingredientId": "8966262a-b021-48e7-8c41-0a7f9231be1b",
+      "ingredientName": "Vitamin B6",
+      "count": 1835
+    },
+    {
+      "ingredientId": "408b36b3-ec94-4eb6-ae45-a49ab885dd63",
+      "ingredientName": "Magnesium",
+      "count": 1725
+    },
+    {
+      "ingredientId": "78330a88-865f-4358-99f7-bcfe8303c4ae",
+      "ingredientName": "Calcium",
+      "count": 1721
+    },
+    {
+      "ingredientId": "0261854b-4e6f-47d1-a8c0-801f33c98462",
+      "ingredientName": "Zinc",
+      "count": 1646
+    },
+    {
+      "ingredientId": "7a5f2435-ffb1-4d78-8fba-3450597f0122",
+      "ingredientName": "Folate",
+      "count": 1508
+    },
+    {
+      "ingredientId": "51d0cde5-e698-4503-9da1-8081c30a0a89",
+      "ingredientName": "Vitamin E",
+      "count": 1470
+    },
+    {
+      "ingredientId": "728985ca-daaf-4363-a703-487254ff3323",
+      "ingredientName": "Riboflavin",
+      "count": 1307
+    },
+    {
+      "ingredientId": "237f23b1-e1d5-4fca-872a-3e177df9d94d",
+      "ingredientName": "Thiamin",
+      "count": 1305
+    },
+    {
+      "ingredientId": "f1fed518-473e-400e-bb7c-e8a39eaffbf1",
+      "ingredientName": "Pantothenic Acid",
+      "count": 1257
+    },
+    {
+      "ingredientId": "bf411789-19ce-4229-8edd-e667c314633d",
+      "ingredientName": "Biotin",
+      "count": 1232
+    },
+    {
+      "ingredientId": "46e83d43-dfbd-47cf-8e52-5d0957c99b8f",
+      "ingredientName": "Niacin",
+      "count": 1217
+    },
+    {
+      "ingredientId": "e5c4857a-fcd3-41d4-8c17-919877830dc0",
+      "ingredientName": "Selenium",
+      "count": 1051
+    },
+    {
+      "ingredientId": "9884d6d2-f6bb-4be8-8db3-8d523cd053c5",
+      "ingredientName": "Chromium",
+      "count": 975
+    },
+    {
+      "ingredientId": "0d9dc765-811b-43af-b443-f4f8fde3cecd",
+      "ingredientName": "Vitamin A",
+      "count": 913
+    },
+    {
+      "ingredientId": "c32e5455-7570-4a44-85e4-e3e657ca7e19",
+      "ingredientName": "Copper",
+      "count": 904
+    },
+    {
+      "ingredientId": "b856b851-973d-4fbf-b9c5-9ab29c480cd8",
+      "ingredientName": "Beta-Carotene",
+      "count": 869
+    },
+    {
+      "ingredientId": "f1668aeb-8779-4366-a01d-b152984f13a0",
+      "ingredientName": "Manganese",
+      "count": 841
+    }
+  ],
+  "snapshotOutput": "output/formraw/topk_gate_v1_20260110/formraw_yield_snapshot.json",
+  "compareSnapshot": null,
+  "snapshotRows": 37047
+}

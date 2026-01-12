@@ -9,6 +9,7 @@ import { AuthShell } from "@/components/auth/AuthShell";
 import { SocialAuthPills } from "@/components/auth/SocialAuthPills";
 import { ActivityIndicator, Text, TextInput, TouchableOpacity, View } from "@/components/ui/nativewind-primitives";
 import { useAuth } from "@/contexts/AuthContext";
+import { AUTH_FALLBACK_PATH } from "@/lib/auth-mode";
 import { getAuthErrorMessage } from "@/lib/errors";
 import { colors } from "@/lib/theme";
 import { testSupabase } from "@/lib/supabase";
@@ -169,7 +170,7 @@ export default function LoginScreen() {
   return (
     <AuthShell
       showBack
-      fallbackHref="/(auth)/gate"
+      fallbackHref={AUTH_FALLBACK_PATH}
       contentOffsetTop={72}
       topBarOffset={12}
       hero={

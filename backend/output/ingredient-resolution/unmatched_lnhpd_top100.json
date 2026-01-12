@@ -1,0 +1,1605 @@
+[
+  {
+    "source": "lnhpd",
+    "name_key": "fish oil",
+    "normalized_key": "fish oil",
+    "count": 25,
+    "samples": [
+      "Fish oil"
+    ],
+    "normalized_samples": [
+      "fish oil"
+    ],
+    "original_name_keys": [
+      "fish oil"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "vitis vinifera",
+    "normalized_key": "vitis vinifera",
+    "count": 14,
+    "samples": [
+      "Vitis vinifera",
+      "Vitis Vinifera"
+    ],
+    "normalized_samples": [
+      "vitis vinifera"
+    ],
+    "original_name_keys": [
+      "vitis vinifera"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "oryctolagus cuniculus",
+    "normalized_key": "oryctolagus cuniculus",
+    "count": 12,
+    "samples": [
+      "Oryctolagus cuniculus"
+    ],
+    "normalized_samples": [
+      "oryctolagus cuniculus"
+    ],
+    "original_name_keys": [
+      "oryctolagus cuniculus"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "inositol",
+    "normalized_key": "inositol",
+    "count": 11,
+    "samples": [
+      "Inositol"
+    ],
+    "normalized_samples": [
+      "inositol"
+    ],
+    "original_name_keys": [
+      "inositol"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "silybum marianum",
+    "normalized_key": "silybum marianum",
+    "count": 10,
+    "samples": [
+      "Silybum marianum"
+    ],
+    "normalized_samples": [
+      "silybum marianum"
+    ],
+    "original_name_keys": [
+      "silybum marianum"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "linum usitatissimum",
+    "normalized_key": "linum usitatissimum",
+    "count": 10,
+    "samples": [
+      "Linum usitatissimum"
+    ],
+    "normalized_samples": [
+      "linum usitatissimum"
+    ],
+    "original_name_keys": [
+      "linum usitatissimum"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "glycyrrhiza uralensis",
+    "normalized_key": "glycyrrhiza uralensis",
+    "count": 8,
+    "samples": [
+      "Glycyrrhiza uralensis"
+    ],
+    "normalized_samples": [
+      "glycyrrhiza uralensis"
+    ],
+    "original_name_keys": [
+      "glycyrrhiza uralensis"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "allium sativum",
+    "normalized_key": "allium sativum",
+    "count": 8,
+    "samples": [
+      "Allium sativum",
+      "Allium Sativum"
+    ],
+    "normalized_samples": [
+      "allium sativum"
+    ],
+    "original_name_keys": [
+      "allium sativum"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "glycyrrhiza glabra",
+    "normalized_key": "glycyrrhiza glabra",
+    "count": 8,
+    "samples": [
+      "Glycyrrhiza glabra"
+    ],
+    "normalized_samples": [
+      "glycyrrhiza glabra"
+    ],
+    "original_name_keys": [
+      "glycyrrhiza glabra"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "harpagophytum procumbens",
+    "normalized_key": "harpagophytum procumbens",
+    "count": 8,
+    "samples": [
+      "Harpagophytum procumbens"
+    ],
+    "normalized_samples": [
+      "harpagophytum procumbens"
+    ],
+    "original_name_keys": [
+      "harpagophytum procumbens"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "eleutherococcus senticosus",
+    "normalized_key": "eleutherococcus senticosus",
+    "count": 8,
+    "samples": [
+      "Eleutherococcus senticosus"
+    ],
+    "normalized_samples": [
+      "eleutherococcus senticosus"
+    ],
+    "original_name_keys": [
+      "eleutherococcus senticosus"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "arnica montana",
+    "normalized_key": "arnica montana",
+    "count": 7,
+    "samples": [
+      "Arnica montana"
+    ],
+    "normalized_samples": [
+      "arnica montana"
+    ],
+    "original_name_keys": [
+      "arnica montana"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "sus scrofa",
+    "normalized_key": "sus scrofa",
+    "count": 7,
+    "samples": [
+      "Sus scrofa"
+    ],
+    "normalized_samples": [
+      "sus scrofa"
+    ],
+    "original_name_keys": [
+      "sus scrofa"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "salicylic acid",
+    "normalized_key": "salicylic acid",
+    "count": 7,
+    "samples": [
+      "Salicylic acid"
+    ],
+    "normalized_samples": [
+      "salicylic acid"
+    ],
+    "original_name_keys": [
+      "salicylic acid"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "coenzyme q10",
+    "normalized_key": "coenzyme q10",
+    "count": 7,
+    "samples": [
+      "Coenzyme Q10"
+    ],
+    "normalized_samples": [
+      "coenzyme q10"
+    ],
+    "original_name_keys": [
+      "coenzyme q10"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "withania somnifera",
+    "normalized_key": "withania somnifera",
+    "count": 7,
+    "samples": [
+      "Withania somnifera"
+    ],
+    "normalized_samples": [
+      "withania somnifera"
+    ],
+    "original_name_keys": [
+      "withania somnifera"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "hydrastis canadensis",
+    "normalized_key": "hydrastis canadensis",
+    "count": 7,
+    "samples": [
+      "Hydrastis canadensis"
+    ],
+    "normalized_samples": [
+      "hydrastis canadensis"
+    ],
+    "original_name_keys": [
+      "hydrastis canadensis"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "phosphore",
+    "normalized_key": "phosphore",
+    "count": 6,
+    "samples": [
+      "Phosphore"
+    ],
+    "normalized_samples": [
+      "phosphore"
+    ],
+    "original_name_keys": [
+      "phosphore"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "dioscorea oppositifolia",
+    "normalized_key": "dioscorea oppositifolia",
+    "count": 6,
+    "samples": [
+      "Dioscorea oppositifolia"
+    ],
+    "normalized_samples": [
+      "dioscorea oppositifolia"
+    ],
+    "original_name_keys": [
+      "dioscorea oppositifolia"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "silicea",
+    "normalized_key": "silicea",
+    "count": 6,
+    "samples": [
+      "Silicea"
+    ],
+    "normalized_samples": [
+      "silicea"
+    ],
+    "original_name_keys": [
+      "silicea"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "eucalyptus globulus",
+    "normalized_key": "eucalyptus globulus",
+    "count": 6,
+    "samples": [
+      "Eucalyptus globulus"
+    ],
+    "normalized_samples": [
+      "eucalyptus globulus"
+    ],
+    "original_name_keys": [
+      "eucalyptus globulus"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "citrus bioflavonoids",
+    "normalized_key": "citrus bioflavonoids",
+    "count": 6,
+    "samples": [
+      "Citrus Bioflavonoids",
+      "Citrus bioflavonoids"
+    ],
+    "normalized_samples": [
+      "citrus bioflavonoids"
+    ],
+    "original_name_keys": [
+      "citrus bioflavonoids"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "medicago sativa",
+    "normalized_key": "medicago sativa",
+    "count": 5,
+    "samples": [
+      "Medicago sativa"
+    ],
+    "normalized_samples": [
+      "medicago sativa"
+    ],
+    "original_name_keys": [
+      "medicago sativa"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "sambucus nigra",
+    "normalized_key": "sambucus nigra",
+    "count": 5,
+    "samples": [
+      "Sambucus nigra"
+    ],
+    "normalized_samples": [
+      "sambucus nigra"
+    ],
+    "original_name_keys": [
+      "sambucus nigra"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "1 carboxy n n n trimethylmethanaminium chloride",
+    "normalized_key": "1 carboxy n n n trimethylmethanaminium chloride",
+    "count": 5,
+    "samples": [
+      "1-Carboxy-N,N,N-trimethylmethanaminium chloride"
+    ],
+    "normalized_samples": [
+      "1 carboxy n n n trimethylmethanaminium chloride"
+    ],
+    "original_name_keys": [
+      "1 carboxy n n n trimethylmethanaminium chloride"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "camellia sinensis",
+    "normalized_key": "camellia sinensis",
+    "count": 5,
+    "samples": [
+      "Camellia sinensis"
+    ],
+    "normalized_samples": [
+      "camellia sinensis"
+    ],
+    "original_name_keys": [
+      "camellia sinensis"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "vanadium",
+    "normalized_key": "vanadium",
+    "count": 5,
+    "samples": [
+      "Vanadium"
+    ],
+    "normalized_samples": [
+      "vanadium"
+    ],
+    "original_name_keys": [
+      "vanadium"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "angelica sinensis",
+    "normalized_key": "angelica sinensis",
+    "count": 5,
+    "samples": [
+      "Angelica sinensis"
+    ],
+    "normalized_samples": [
+      "angelica sinensis"
+    ],
+    "original_name_keys": [
+      "angelica sinensis"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "zingiber officinale",
+    "normalized_key": "zingiber officinale",
+    "count": 5,
+    "samples": [
+      "Zingiber officinale"
+    ],
+    "normalized_samples": [
+      "zingiber officinale"
+    ],
+    "original_name_keys": [
+      "zingiber officinale"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "calendula officinalis",
+    "normalized_key": "calendula officinalis",
+    "count": 5,
+    "samples": [
+      "Calendula officinalis"
+    ],
+    "normalized_samples": [
+      "calendula officinalis"
+    ],
+    "original_name_keys": [
+      "calendula officinalis"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "atractylodes macrocephala",
+    "normalized_key": "atractylodes macrocephala",
+    "count": 5,
+    "samples": [
+      "Atractylodes macrocephala"
+    ],
+    "normalized_samples": [
+      "atractylodes macrocephala"
+    ],
+    "original_name_keys": [
+      "atractylodes macrocephala"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "angelica dahurica",
+    "normalized_key": "angelica dahurica",
+    "count": 5,
+    "samples": [
+      "Angelica dahurica"
+    ],
+    "normalized_samples": [
+      "angelica dahurica"
+    ],
+    "original_name_keys": [
+      "angelica dahurica"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "2 amino 2 deoxy d glucose sulfate",
+    "normalized_key": "2 amino 2 deoxy d glucose sulfate",
+    "count": 5,
+    "samples": [
+      "2-amino-2-deoxy-D-glucose sulfate"
+    ],
+    "normalized_samples": [
+      "2 amino 2 deoxy d glucose sulfate"
+    ],
+    "original_name_keys": [
+      "2 amino 2 deoxy d glucose sulfate"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "4 beta d glucan 4 glucanohydrolase",
+    "normalized_key": "4 beta d glucan 4 glucanohydrolase",
+    "count": 5,
+    "samples": [
+      "4-(1,3;1,4)-beta-D-Glucan 4-glucanohydrolase"
+    ],
+    "normalized_samples": [
+      "4 beta d glucan 4 glucanohydrolase"
+    ],
+    "original_name_keys": [
+      "4 1 3 1 4 beta d glucan 4 glucanohydrolase"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "mentha x piperita",
+    "normalized_key": "mentha x piperita",
+    "count": 5,
+    "samples": [
+      "Mentha x piperita"
+    ],
+    "normalized_samples": [
+      "mentha x piperita"
+    ],
+    "original_name_keys": [
+      "mentha x piperita"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "althaea officinalis",
+    "normalized_key": "althaea officinalis",
+    "count": 5,
+    "samples": [
+      "Althaea officinalis"
+    ],
+    "normalized_samples": [
+      "althaea officinalis"
+    ],
+    "original_name_keys": [
+      "althaea officinalis"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "silicon",
+    "normalized_key": "silicon",
+    "count": 5,
+    "samples": [
+      "Silicon"
+    ],
+    "normalized_samples": [
+      "silicon"
+    ],
+    "original_name_keys": [
+      "silicon"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "passiflora incarnata",
+    "normalized_key": "passiflora incarnata",
+    "count": 5,
+    "samples": [
+      "Passiflora incarnata"
+    ],
+    "normalized_samples": [
+      "passiflora incarnata"
+    ],
+    "original_name_keys": [
+      "passiflora incarnata"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "equisetum arvense",
+    "normalized_key": "equisetum arvense",
+    "count": 5,
+    "samples": [
+      "Equisetum arvense"
+    ],
+    "normalized_samples": [
+      "equisetum arvense"
+    ],
+    "original_name_keys": [
+      "equisetum arvense"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "ganoderma lucidum",
+    "normalized_key": "ganoderma lucidum",
+    "count": 5,
+    "samples": [
+      "Ganoderma lucidum"
+    ],
+    "normalized_samples": [
+      "ganoderma lucidum"
+    ],
+    "original_name_keys": [
+      "ganoderma lucidum"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "poria cocos",
+    "normalized_key": "poria cocos",
+    "count": 4,
+    "samples": [
+      "Poria cocos"
+    ],
+    "normalized_samples": [
+      "poria cocos"
+    ],
+    "original_name_keys": [
+      "poria cocos"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "pinellia ternata",
+    "normalized_key": "pinellia ternata",
+    "count": 4,
+    "samples": [
+      "Pinellia ternata"
+    ],
+    "normalized_samples": [
+      "pinellia ternata"
+    ],
+    "original_name_keys": [
+      "pinellia ternata"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "kali muriaticum",
+    "normalized_key": "kali muriaticum",
+    "count": 4,
+    "samples": [
+      "Kali muriaticum"
+    ],
+    "normalized_samples": [
+      "kali muriaticum"
+    ],
+    "original_name_keys": [
+      "kali muriaticum"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "taraxacum officinale",
+    "normalized_key": "taraxacum officinale",
+    "count": 4,
+    "samples": [
+      "Taraxacum officinale"
+    ],
+    "normalized_samples": [
+      "taraxacum officinale"
+    ],
+    "original_name_keys": [
+      "taraxacum officinale"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "sodium fluoride",
+    "normalized_key": "sodium fluoride",
+    "count": 4,
+    "samples": [
+      "Sodium fluoride"
+    ],
+    "normalized_samples": [
+      "sodium fluoride"
+    ],
+    "original_name_keys": [
+      "sodium fluoride"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "trifolium pratense",
+    "normalized_key": "trifolium pratense",
+    "count": 4,
+    "samples": [
+      "Trifolium pratense"
+    ],
+    "normalized_samples": [
+      "trifolium pratense"
+    ],
+    "original_name_keys": [
+      "trifolium pratense"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "ubiquinone",
+    "normalized_key": "ubiquinone",
+    "count": 4,
+    "samples": [
+      "Ubiquinone"
+    ],
+    "normalized_samples": [
+      "ubiquinone"
+    ],
+    "original_name_keys": [
+      "ubiquinone"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "3 pyridinecarboxamide",
+    "normalized_key": "3 pyridinecarboxamide",
+    "count": 4,
+    "samples": [
+      "3-Pyridinecarboxamide"
+    ],
+    "normalized_samples": [
+      "3 pyridinecarboxamide"
+    ],
+    "original_name_keys": [
+      "3 pyridinecarboxamide"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "plantago major",
+    "normalized_key": "plantago major",
+    "count": 4,
+    "samples": [
+      "Plantago major"
+    ],
+    "normalized_samples": [
+      "plantago major"
+    ],
+    "original_name_keys": [
+      "plantago major"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "codonopsis pilosula",
+    "normalized_key": "codonopsis pilosula",
+    "count": 4,
+    "samples": [
+      "Codonopsis pilosula"
+    ],
+    "normalized_samples": [
+      "codonopsis pilosula"
+    ],
+    "original_name_keys": [
+      "codonopsis pilosula"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "arctium lappa",
+    "normalized_key": "arctium lappa",
+    "count": 4,
+    "samples": [
+      "Arctium lappa"
+    ],
+    "normalized_samples": [
+      "arctium lappa"
+    ],
+    "original_name_keys": [
+      "arctium lappa"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "paeonia lactiflora",
+    "normalized_key": "paeonia lactiflora",
+    "count": 4,
+    "samples": [
+      "Paeonia lactiflora"
+    ],
+    "normalized_samples": [
+      "paeonia lactiflora"
+    ],
+    "original_name_keys": [
+      "paeonia lactiflora"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "lecithin",
+    "normalized_key": "lecithin",
+    "count": 4,
+    "samples": [
+      "Lecithin"
+    ],
+    "normalized_samples": [
+      "lecithin"
+    ],
+    "original_name_keys": [
+      "lecithin"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "whey protein isolate",
+    "normalized_key": "whey protein isolate",
+    "count": 4,
+    "samples": [
+      "Whey Protein Isolate"
+    ],
+    "normalized_samples": [
+      "whey protein isolate"
+    ],
+    "original_name_keys": [
+      "whey protein isolate"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "valeriana officinalis",
+    "normalized_key": "valeriana officinalis",
+    "count": 4,
+    "samples": [
+      "Valeriana officinalis"
+    ],
+    "normalized_samples": [
+      "valeriana officinalis"
+    ],
+    "original_name_keys": [
+      "valeriana officinalis"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "4 aminobenzoic acid",
+    "normalized_key": "4 aminobenzoic acid",
+    "count": 4,
+    "samples": [
+      "4-Aminobenzoic acid"
+    ],
+    "normalized_samples": [
+      "4 aminobenzoic acid"
+    ],
+    "original_name_keys": [
+      "4 aminobenzoic acid"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "myo inositol",
+    "normalized_key": "myo inositol",
+    "count": 3,
+    "samples": [
+      "Myo-Inositol"
+    ],
+    "normalized_samples": [
+      "myo inositol"
+    ],
+    "original_name_keys": [
+      "myo inositol"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "hamamelis virginiana",
+    "normalized_key": "hamamelis virginiana",
+    "count": 3,
+    "samples": [
+      "Hamamelis virginiana"
+    ],
+    "normalized_samples": [
+      "hamamelis virginiana"
+    ],
+    "original_name_keys": [
+      "hamamelis virginiana"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "natrum muriaticum",
+    "normalized_key": "natrum muriaticum",
+    "count": 3,
+    "samples": [
+      "Natrum muriaticum"
+    ],
+    "normalized_samples": [
+      "natrum muriaticum"
+    ],
+    "original_name_keys": [
+      "natrum muriaticum"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "apis mellifica",
+    "normalized_key": "apis mellifica",
+    "count": 3,
+    "samples": [
+      "Apis mellifica"
+    ],
+    "normalized_samples": [
+      "apis mellifica"
+    ],
+    "original_name_keys": [
+      "apis mellifica"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "phytolacca decandra",
+    "normalized_key": "phytolacca decandra",
+    "count": 3,
+    "samples": [
+      "Phytolacca decandra"
+    ],
+    "normalized_samples": [
+      "phytolacca decandra"
+    ],
+    "original_name_keys": [
+      "phytolacca decandra"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "olea europaea",
+    "normalized_key": "olea europaea",
+    "count": 3,
+    "samples": [
+      "Olea europaea"
+    ],
+    "normalized_samples": [
+      "olea europaea"
+    ],
+    "original_name_keys": [
+      "olea europaea"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "ziziphus jujuba",
+    "normalized_key": "ziziphus jujuba",
+    "count": 3,
+    "samples": [
+      "Ziziphus jujuba"
+    ],
+    "normalized_samples": [
+      "ziziphus jujuba"
+    ],
+    "original_name_keys": [
+      "ziziphus jujuba"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "serenoa repens",
+    "normalized_key": "serenoa repens",
+    "count": 3,
+    "samples": [
+      "Serenoa repens"
+    ],
+    "normalized_samples": [
+      "serenoa repens"
+    ],
+    "original_name_keys": [
+      "serenoa repens"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "2 hydroxy n n n trimethylethanaminium",
+    "normalized_key": "2 hydroxy n n n trimethylethanaminium",
+    "count": 3,
+    "samples": [
+      "2-Hydroxy-N,N,N-trimethylethanaminium"
+    ],
+    "normalized_samples": [
+      "2 hydroxy n n n trimethylethanaminium"
+    ],
+    "original_name_keys": [
+      "2 hydroxy n n n trimethylethanaminium"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "cynara scolymus",
+    "normalized_key": "cynara scolymus",
+    "count": 3,
+    "samples": [
+      "Cynara scolymus"
+    ],
+    "normalized_samples": [
+      "cynara scolymus"
+    ],
+    "original_name_keys": [
+      "cynara scolymus"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "2 amino 2 deoxy beta d glucopyranose",
+    "normalized_key": "2 amino 2 deoxy beta d glucopyranose",
+    "count": 3,
+    "samples": [
+      "2-amino-2-deoxy-beta-D-glucopyranose"
+    ],
+    "normalized_samples": [
+      "2 amino 2 deoxy beta d glucopyranose"
+    ],
+    "original_name_keys": [
+      "2 amino 2 deoxy beta d glucopyranose"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "melissa officinalis",
+    "normalized_key": "melissa officinalis",
+    "count": 3,
+    "samples": [
+      "Melissa officinalis"
+    ],
+    "normalized_samples": [
+      "melissa officinalis"
+    ],
+    "original_name_keys": [
+      "melissa officinalis"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "daucus carota",
+    "normalized_key": "daucus carota",
+    "count": 3,
+    "samples": [
+      "Daucus carota"
+    ],
+    "normalized_samples": [
+      "daucus carota"
+    ],
+    "original_name_keys": [
+      "daucus carota"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "piper nigrum",
+    "normalized_key": "piper nigrum",
+    "count": 3,
+    "samples": [
+      "Piper nigrum"
+    ],
+    "normalized_samples": [
+      "piper nigrum"
+    ],
+    "original_name_keys": [
+      "piper nigrum"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "phellodendron chinense",
+    "normalized_key": "phellodendron chinense",
+    "count": 3,
+    "samples": [
+      "Phellodendron chinense"
+    ],
+    "normalized_samples": [
+      "phellodendron chinense"
+    ],
+    "original_name_keys": [
+      "phellodendron chinense"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "juniperus communis",
+    "normalized_key": "juniperus communis",
+    "count": 3,
+    "samples": [
+      "Juniperus communis"
+    ],
+    "normalized_samples": [
+      "juniperus communis"
+    ],
+    "original_name_keys": [
+      "juniperus communis"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "plantago ovata",
+    "normalized_key": "plantago ovata",
+    "count": 3,
+    "samples": [
+      "Plantago ovata"
+    ],
+    "normalized_samples": [
+      "plantago ovata"
+    ],
+    "original_name_keys": [
+      "plantago ovata"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "bryonia",
+    "normalized_key": "bryonia",
+    "count": 3,
+    "samples": [
+      "Bryonia"
+    ],
+    "normalized_samples": [
+      "bryonia"
+    ],
+    "original_name_keys": [
+      "bryonia"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "paullinia cupana",
+    "normalized_key": "paullinia cupana",
+    "count": 3,
+    "samples": [
+      "Paullinia cupana"
+    ],
+    "normalized_samples": [
+      "paullinia cupana"
+    ],
+    "original_name_keys": [
+      "paullinia cupana"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "nux vomica",
+    "normalized_key": "nux vomica",
+    "count": 3,
+    "samples": [
+      "Nux vomica"
+    ],
+    "normalized_samples": [
+      "nux vomica"
+    ],
+    "original_name_keys": [
+      "nux vomica"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "borago officinalis",
+    "normalized_key": "borago officinalis",
+    "count": 3,
+    "samples": [
+      "Borago officinalis"
+    ],
+    "normalized_samples": [
+      "borago officinalis"
+    ],
+    "original_name_keys": [
+      "borago officinalis"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "ophiopogon japonicus",
+    "normalized_key": "ophiopogon japonicus",
+    "count": 3,
+    "samples": [
+      "Ophiopogon japonicus"
+    ],
+    "normalized_samples": [
+      "ophiopogon japonicus"
+    ],
+    "original_name_keys": [
+      "ophiopogon japonicus"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "poly n aceltyl 2 amino 2 deoxy 3 o beta d glucopyranurosyl 4 sulfonyl d galactose",
+    "normalized_key": "poly n aceltyl 2 amino 2 deoxy 3 o beta d glucopyranurosyl 4 sulfonyl d galactose",
+    "count": 3,
+    "samples": [
+      "Poly-(1->3)-N-aceltyl-2-amino-2-deoxy-3-O-beta-D-glucopyranurosyl-4-(or 6-)sulfonyl-D-galactose"
+    ],
+    "normalized_samples": [
+      "poly n aceltyl 2 amino 2 deoxy 3 o beta d glucopyranurosyl 4 sulfonyl d galactose"
+    ],
+    "original_name_keys": [
+      "poly 1 3 n aceltyl 2 amino 2 deoxy 3 o beta d glucopyranurosyl 4 or 6 sulfonyl d galactose"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "ethyl alcohol",
+    "normalized_key": "ethyl alcohol",
+    "count": 3,
+    "samples": [
+      "Ethyl alcohol"
+    ],
+    "normalized_samples": [
+      "ethyl alcohol"
+    ],
+    "original_name_keys": [
+      "ethyl alcohol"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "triacylglycerol lipase",
+    "normalized_key": "triacylglycerol lipase",
+    "count": 3,
+    "samples": [
+      "Triacylglycerol lipase"
+    ],
+    "normalized_samples": [
+      "triacylglycerol lipase"
+    ],
+    "original_name_keys": [
+      "triacylglycerol lipase"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "phosphorus",
+    "normalized_key": "phosphorus",
+    "count": 3,
+    "samples": [
+      "Phosphorus"
+    ],
+    "normalized_samples": [
+      "phosphorus"
+    ],
+    "original_name_keys": [
+      "phosphorus"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "solanum lycopersicum",
+    "normalized_key": "solanum lycopersicum",
+    "count": 3,
+    "samples": [
+      "Solanum lycopersicum"
+    ],
+    "normalized_samples": [
+      "solanum lycopersicum"
+    ],
+    "original_name_keys": [
+      "solanum lycopersicum"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "citrus aurantium",
+    "normalized_key": "citrus aurantium",
+    "count": 3,
+    "samples": [
+      "Citrus aurantium"
+    ],
+    "normalized_samples": [
+      "citrus aurantium"
+    ],
+    "original_name_keys": [
+      "citrus aurantium"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "nickel",
+    "normalized_key": "nickel",
+    "count": 3,
+    "samples": [
+      "Nickel"
+    ],
+    "normalized_samples": [
+      "nickel"
+    ],
+    "original_name_keys": [
+      "nickel"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "hydrolyzed collagen",
+    "normalized_key": "hydrolyzed collagen",
+    "count": 3,
+    "samples": [
+      "Hydrolyzed collagen"
+    ],
+    "normalized_samples": [
+      "hydrolyzed collagen"
+    ],
+    "original_name_keys": [
+      "hydrolyzed collagen"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "sanguinaria canadensis",
+    "normalized_key": "sanguinaria canadensis",
+    "count": 3,
+    "samples": [
+      "Sanguinaria canadensis"
+    ],
+    "normalized_samples": [
+      "sanguinaria canadensis"
+    ],
+    "original_name_keys": [
+      "sanguinaria canadensis"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "aloe barbadensis",
+    "normalized_key": "aloe barbadensis",
+    "count": 3,
+    "samples": [
+      "Aloe barbadensis"
+    ],
+    "normalized_samples": [
+      "aloe barbadensis"
+    ],
+    "original_name_keys": [
+      "aloe barbadensis"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "thymus vulgaris",
+    "normalized_key": "thymus vulgaris",
+    "count": 3,
+    "samples": [
+      "Thymus vulgaris"
+    ],
+    "normalized_samples": [
+      "thymus vulgaris"
+    ],
+    "original_name_keys": [
+      "thymus vulgaris"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "berberis vulgaris",
+    "normalized_key": "berberis vulgaris",
+    "count": 3,
+    "samples": [
+      "Berberis vulgaris"
+    ],
+    "normalized_samples": [
+      "berberis vulgaris"
+    ],
+    "original_name_keys": [
+      "berberis vulgaris"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "mercurius corrosivus",
+    "normalized_key": "mercurius corrosivus",
+    "count": 3,
+    "samples": [
+      "Mercurius corrosivus"
+    ],
+    "normalized_samples": [
+      "mercurius corrosivus"
+    ],
+    "original_name_keys": [
+      "mercurius corrosivus"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "carica papaya",
+    "normalized_key": "carica papaya",
+    "count": 3,
+    "samples": [
+      "Carica papaya"
+    ],
+    "normalized_samples": [
+      "carica papaya"
+    ],
+    "original_name_keys": [
+      "carica papaya"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "rheum palmatum",
+    "normalized_key": "rheum palmatum",
+    "count": 3,
+    "samples": [
+      "Rheum palmatum"
+    ],
+    "normalized_samples": [
+      "rheum palmatum"
+    ],
+    "original_name_keys": [
+      "rheum palmatum"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "lycopersicon esculentum",
+    "normalized_key": "lycopersicon esculentum",
+    "count": 3,
+    "samples": [
+      "Lycopersicon esculentum"
+    ],
+    "normalized_samples": [
+      "lycopersicon esculentum"
+    ],
+    "original_name_keys": [
+      "lycopersicon esculentum"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "commiphora myrrha",
+    "normalized_key": "commiphora myrrha",
+    "count": 3,
+    "samples": [
+      "Commiphora myrrha"
+    ],
+    "normalized_samples": [
+      "commiphora myrrha"
+    ],
+    "original_name_keys": [
+      "commiphora myrrha"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "belladonna",
+    "normalized_key": "belladonna",
+    "count": 3,
+    "samples": [
+      "Belladonna"
+    ],
+    "normalized_samples": [
+      "belladonna"
+    ],
+    "original_name_keys": [
+      "belladonna"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "lepidium meyenii",
+    "normalized_key": "lepidium meyenii",
+    "count": 3,
+    "samples": [
+      "Lepidium meyenii"
+    ],
+    "normalized_samples": [
+      "lepidium meyenii"
+    ],
+    "original_name_keys": [
+      "lepidium meyenii"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "terminalia chebula",
+    "normalized_key": "terminalia chebula",
+    "count": 3,
+    "samples": [
+      "Terminalia chebula"
+    ],
+    "normalized_samples": [
+      "terminalia chebula"
+    ],
+    "original_name_keys": [
+      "terminalia chebula"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "rosmarinus officinalis",
+    "normalized_key": "rosmarinus officinalis",
+    "count": 3,
+    "samples": [
+      "Rosmarinus officinalis"
+    ],
+    "normalized_samples": [
+      "rosmarinus officinalis"
+    ],
+    "original_name_keys": [
+      "rosmarinus officinalis"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "natrium chloratum",
+    "normalized_key": "natrium chloratum",
+    "count": 3,
+    "samples": [
+      "Natrium chloratum"
+    ],
+    "normalized_samples": [
+      "natrium chloratum"
+    ],
+    "original_name_keys": [
+      "natrium chloratum"
+    ],
+    "latin_binomial": true
+  }
+]

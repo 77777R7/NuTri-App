@@ -17,6 +17,7 @@ import {
   View,
 } from "@/components/ui/nativewind-primitives";
 import { useAuth } from "@/contexts/AuthContext";
+import { AUTH_FALLBACK_PATH } from "@/lib/auth-mode";
 import { getAuthErrorMessage } from "@/lib/errors";
 import { colors } from "@/lib/theme";
 
@@ -171,7 +172,7 @@ export default function SignupScreen() {
   return (
     <AuthShell
       showBack
-      fallbackHref="/(auth)/gate"
+      fallbackHref={AUTH_FALLBACK_PATH}
       title="Join NuTri today"
       subtitle="Create your account to personalise your supplement routine."
       contentOffsetTop={48}

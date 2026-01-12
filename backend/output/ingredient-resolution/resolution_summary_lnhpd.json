@@ -1,0 +1,588 @@
+{
+  "source": "lnhpd",
+  "timestamp": "2026-01-09T09:56:36.853Z",
+  "apply": false,
+  "synonymsAdded": 0,
+  "queued": 500,
+  "skipped": 0,
+  "filteredNonScoring": 6,
+  "specialQueued": 42,
+  "wouldAutoApplyCount": 40,
+  "queuedCount": 500,
+  "topBlockReasons": [
+    {
+      "reason": "canonical_missing",
+      "count": 393
+    },
+    {
+      "reason": "true_no_candidates",
+      "count": 56
+    },
+    {
+      "reason": "chemical_fragment",
+      "count": 40
+    },
+    {
+      "reason": "special_handling_homeopathy",
+      "count": 39
+    },
+    {
+      "reason": "low_confidence",
+      "count": 6
+    },
+    {
+      "reason": "requires_tokens",
+      "count": 5
+    },
+    {
+      "reason": "non_scoring_solvent",
+      "count": 4
+    },
+    {
+      "reason": "special_handling_enzyme",
+      "count": 3
+    },
+    {
+      "reason": "non_scoring_animal_source",
+      "count": 2
+    }
+  ],
+  "confidenceQuantiles": {
+    "p50": 0.96,
+    "p90": 0.98,
+    "p95": 0.98
+  },
+  "marginQuantiles": {
+    "p50": 0.96,
+    "p90": 0.98,
+    "p95": 0.98
+  },
+  "unresolvedTopTokens": [
+    {
+      "token": "2",
+      "count": 59
+    },
+    {
+      "token": "oil",
+      "count": 48
+    },
+    {
+      "token": "3",
+      "count": 48
+    },
+    {
+      "token": "n",
+      "count": 39
+    },
+    {
+      "token": "4",
+      "count": 39
+    },
+    {
+      "token": "fish",
+      "count": 38
+    },
+    {
+      "token": "d",
+      "count": 35
+    },
+    {
+      "token": "acid",
+      "count": 23
+    },
+    {
+      "token": "glycyrrhiza",
+      "count": 21
+    },
+    {
+      "token": "5",
+      "count": 21
+    },
+    {
+      "token": "1",
+      "count": 20
+    },
+    {
+      "token": "amino",
+      "count": 20
+    },
+    {
+      "token": "beta",
+      "count": 19
+    },
+    {
+      "token": "vitis",
+      "count": 17
+    },
+    {
+      "token": "vinifera",
+      "count": 17
+    },
+    {
+      "token": "deoxy",
+      "count": 15
+    },
+    {
+      "token": "citrus",
+      "count": 15
+    },
+    {
+      "token": "glabra",
+      "count": 12
+    },
+    {
+      "token": "metallicum",
+      "count": 12
+    },
+    {
+      "token": "vanadium",
+      "count": 11
+    },
+    {
+      "token": "uralensis",
+      "count": 11
+    },
+    {
+      "token": "sodium",
+      "count": 11
+    },
+    {
+      "token": "glucan",
+      "count": 11
+    },
+    {
+      "token": "7",
+      "count": 11
+    },
+    {
+      "token": "protein",
+      "count": 11
+    },
+    {
+      "token": "fluoride",
+      "count": 10
+    },
+    {
+      "token": "phosphoricum",
+      "count": 10
+    },
+    {
+      "token": "methyl",
+      "count": 10
+    },
+    {
+      "token": "var",
+      "count": 10
+    },
+    {
+      "token": "vulgare",
+      "count": 10
+    }
+  ],
+  "noCandidatesTopTokens": [
+    {
+      "token": "sulfur",
+      "count": 2
+    },
+    {
+      "token": "fluoride",
+      "count": 2
+    },
+    {
+      "token": "acetamide",
+      "count": 2
+    },
+    {
+      "token": "staphylococcinum",
+      "count": 2
+    },
+    {
+      "token": "sodium",
+      "count": 2
+    },
+    {
+      "token": "sulfate",
+      "count": 2
+    },
+    {
+      "token": "shark",
+      "count": 2
+    },
+    {
+      "token": "oil",
+      "count": 2
+    },
+    {
+      "token": "coriolus",
+      "count": 1
+    },
+    {
+      "token": "versicolor",
+      "count": 1
+    },
+    {
+      "token": "trimethylethanolamine",
+      "count": 1
+    },
+    {
+      "token": "sulphur",
+      "count": 1
+    },
+    {
+      "token": "viola",
+      "count": 1
+    },
+    {
+      "token": "tricolor",
+      "count": 1
+    },
+    {
+      "token": "liver",
+      "count": 1
+    },
+    {
+      "token": "inositol",
+      "count": 1
+    },
+    {
+      "token": "nicotinate",
+      "count": 1
+    },
+    {
+      "token": "cyanocobalamin",
+      "count": 1
+    },
+    {
+      "token": "cartilage",
+      "count": 1
+    },
+    {
+      "token": "gelatin",
+      "count": 1
+    },
+    {
+      "token": "dl",
+      "count": 1
+    },
+    {
+      "token": "camphor",
+      "count": 1
+    },
+    {
+      "token": "maltodextrin",
+      "count": 1
+    },
+    {
+      "token": "apatite",
+      "count": 1
+    },
+    {
+      "token": "proanthocyanidins",
+      "count": 1
+    },
+    {
+      "token": "thymol",
+      "count": 1
+    },
+    {
+      "token": "eucalyptol",
+      "count": 1
+    },
+    {
+      "token": "pectin",
+      "count": 1
+    },
+    {
+      "token": "petroleum",
+      "count": 1
+    },
+    {
+      "token": "lepidolite",
+      "count": 1
+    },
+    {
+      "token": "benzyl",
+      "count": 1
+    },
+    {
+      "token": "alcohol",
+      "count": 1
+    },
+    {
+      "token": "erythrite",
+      "count": 1
+    },
+    {
+      "token": "thymus",
+      "count": 1
+    },
+    {
+      "token": "silver",
+      "count": 1
+    },
+    {
+      "token": "urea",
+      "count": 1
+    },
+    {
+      "token": "smilax",
+      "count": 1
+    },
+    {
+      "token": "cholecalciferol",
+      "count": 1
+    },
+    {
+      "token": "myrrh",
+      "count": 1
+    },
+    {
+      "token": "acerola",
+      "count": 1
+    },
+    {
+      "token": "concentrate",
+      "count": 1
+    },
+    {
+      "token": "marjolaine",
+      "count": 1
+    },
+    {
+      "token": "octacosanol",
+      "count": 1
+    },
+    {
+      "token": "triticum",
+      "count": 1
+    },
+    {
+      "token": "vulgare",
+      "count": 1
+    },
+    {
+      "token": "plantain",
+      "count": 1
+    },
+    {
+      "token": "beta",
+      "count": 1
+    },
+    {
+      "token": "sitosterol",
+      "count": 1
+    },
+    {
+      "token": "ammonia",
+      "count": 1
+    },
+    {
+      "token": "crude",
+      "count": 1
+    }
+  ],
+  "noCandidatesTopTokensSemantic": [
+    {
+      "token": "sulfur",
+      "count": 2
+    },
+    {
+      "token": "fluoride",
+      "count": 2
+    },
+    {
+      "token": "acetamide",
+      "count": 2
+    },
+    {
+      "token": "staphylococcinum",
+      "count": 2
+    },
+    {
+      "token": "sodium",
+      "count": 2
+    },
+    {
+      "token": "shark",
+      "count": 2
+    },
+    {
+      "token": "coriolus",
+      "count": 1
+    },
+    {
+      "token": "versicolor",
+      "count": 1
+    },
+    {
+      "token": "trimethylethanolamine",
+      "count": 1
+    },
+    {
+      "token": "sulphur",
+      "count": 1
+    },
+    {
+      "token": "viola",
+      "count": 1
+    },
+    {
+      "token": "tricolor",
+      "count": 1
+    },
+    {
+      "token": "liver",
+      "count": 1
+    },
+    {
+      "token": "inositol",
+      "count": 1
+    },
+    {
+      "token": "cyanocobalamin",
+      "count": 1
+    },
+    {
+      "token": "cartilage",
+      "count": 1
+    },
+    {
+      "token": "gelatin",
+      "count": 1
+    },
+    {
+      "token": "camphor",
+      "count": 1
+    },
+    {
+      "token": "maltodextrin",
+      "count": 1
+    },
+    {
+      "token": "apatite",
+      "count": 1
+    },
+    {
+      "token": "proanthocyanidins",
+      "count": 1
+    },
+    {
+      "token": "thymol",
+      "count": 1
+    },
+    {
+      "token": "eucalyptol",
+      "count": 1
+    },
+    {
+      "token": "pectin",
+      "count": 1
+    },
+    {
+      "token": "petroleum",
+      "count": 1
+    },
+    {
+      "token": "lepidolite",
+      "count": 1
+    },
+    {
+      "token": "benzyl",
+      "count": 1
+    },
+    {
+      "token": "alcohol",
+      "count": 1
+    },
+    {
+      "token": "erythrite",
+      "count": 1
+    },
+    {
+      "token": "thymus",
+      "count": 1
+    },
+    {
+      "token": "silver",
+      "count": 1
+    },
+    {
+      "token": "urea",
+      "count": 1
+    },
+    {
+      "token": "smilax",
+      "count": 1
+    },
+    {
+      "token": "cholecalciferol",
+      "count": 1
+    },
+    {
+      "token": "myrrh",
+      "count": 1
+    },
+    {
+      "token": "acerola",
+      "count": 1
+    },
+    {
+      "token": "marjolaine",
+      "count": 1
+    },
+    {
+      "token": "octacosanol",
+      "count": 1
+    },
+    {
+      "token": "triticum",
+      "count": 1
+    },
+    {
+      "token": "vulgare",
+      "count": 1
+    },
+    {
+      "token": "plantain",
+      "count": 1
+    },
+    {
+      "token": "sitosterol",
+      "count": 1
+    },
+    {
+      "token": "ammonia",
+      "count": 1
+    },
+    {
+      "token": "crude",
+      "count": 1
+    },
+    {
+      "token": "methylglycine",
+      "count": 1
+    },
+    {
+      "token": "monohydrate",
+      "count": 1
+    },
+    {
+      "token": "psorinum",
+      "count": 1
+    },
+    {
+      "token": "rhodonite",
+      "count": 1
+    },
+    {
+      "token": "poria",
+      "count": 1
+    },
+    {
+      "token": "hydroxy",
+      "count": 1
+    }
+  ],
+  "previewOutput": null,
+  "previewItemsWritten": 0
+}

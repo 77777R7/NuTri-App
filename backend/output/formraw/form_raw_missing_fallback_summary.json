@@ -1,0 +1,14 @@
+{
+  "mode": "failures-input",
+  "failuresInput": "output/formraw/formraw_rebackfill_lnhpd_mismatch_fallback.jsonl",
+  "scoreVersion": "v4.0.0-alpha.3",
+  "processed": 135,
+  "scores": 135,
+  "failed": 0,
+  "ingredientUpsertFailed": 0,
+  "scoreUpsertFailed": 0,
+  "computeScoreFailed": 0,
+  "failuresFile": "backfill-failures.jsonl",
+  "failuresLines": 0,
+  "elapsedMs": 136032
+}

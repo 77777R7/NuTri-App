@@ -64,7 +64,7 @@ const run = async () => {
     .filter(Boolean);
 
   const synonymTargets = new Map<string, string>();
-  const missingCanonicalTargets: Array<Record<string, unknown>> = [];
+  const missingCanonicalTargets: Record<string, unknown>[] = [];
   if (synonymOnlyKeys.length) {
     const { data, error } = await supabase
       .from("ingredients")
@@ -101,7 +101,7 @@ const run = async () => {
     });
   });
 
-  const canonicalKeyCollisions: Array<Record<string, unknown>> = [];
+  const canonicalKeyCollisions: Record<string, unknown>[] = [];
   if (createKeys.length) {
     const { data, error } = await supabase
       .from("ingredients")
@@ -120,7 +120,7 @@ const run = async () => {
     });
   }
 
-  const synonymCollisions: Array<Record<string, unknown>> = [];
+  const synonymCollisions: Record<string, unknown>[] = [];
   const synonymValues = Array.from(approvedSynonyms.keys());
   for (const batch of chunk(synonymValues, 200)) {
     if (!batch.length) continue;

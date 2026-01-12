@@ -1,0 +1,3714 @@
+{
+  "source": "lnhpd",
+  "sampleSize": 1000,
+  "zeroCoverageCount": 341,
+  "mismatchCount": 135,
+  "mismatchSubtypeCounts": {
+    "form_raw_missing": 125,
+    "taxonomy_mismatch": 10
+  },
+  "topIngredientsBySubtype": {
+    "form_raw_missing": [
+      {
+        "ingredientName": "Coenzyme Q10",
+        "count": 58
+      },
+      {
+        "ingredientName": "Ubidecarenone",
+        "count": 12
+      },
+      {
+        "ingredientName": "Ubiquinone",
+        "count": 11
+      },
+      {
+        "ingredientName": "Plantago ovata",
+        "count": 6
+      },
+      {
+        "ingredientName": "Medicago sativa",
+        "count": 5
+      },
+      {
+        "ingredientName": "Vitamin C",
+        "count": 5
+      },
+      {
+        "ingredientName": "Arctium lappa",
+        "count": 5
+      },
+      {
+        "ingredientName": "Linum usitatissimum",
+        "count": 3
+      },
+      {
+        "ingredientName": "Citrus Bioflavonoids",
+        "count": 3
+      },
+      {
+        "ingredientName": "Equisetum arvense",
+        "count": 3
+      },
+      {
+        "ingredientName": "Serenoa repens",
+        "count": 3
+      },
+      {
+        "ingredientName": "Hydrastis canadensis",
+        "count": 3
+      },
+      {
+        "ingredientName": "Vitamin E",
+        "count": 2
+      },
+      {
+        "ingredientName": "Citrus bioflavonoids",
+        "count": 2
+      },
+      {
+        "ingredientName": "Eucalyptus globulus",
+        "count": 2
+      },
+      {
+        "ingredientName": "Actaea racemosa",
+        "count": 2
+      },
+      {
+        "ingredientName": "Cimicifuga racemosa",
+        "count": 1
+      },
+      {
+        "ingredientName": "Olea europaea",
+        "count": 1
+      },
+      {
+        "ingredientName": "Atractylodes macrocephala",
+        "count": 1
+      },
+      {
+        "ingredientName": "Codonopsis pilosula",
+        "count": 1
+      }
+    ],
+    "taxonomy_mismatch": [
+      {
+        "ingredientName": "Serenoa repens",
+        "count": 2
+      },
+      {
+        "ingredientName": "Mentha x piperita",
+        "count": 1
+      },
+      {
+        "ingredientName": "Trifolium pratense",
+        "count": 1
+      },
+      {
+        "ingredientName": "Arctium lappa",
+        "count": 1
+      },
+      {
+        "ingredientName": "Citrus bioflavonoids",
+        "count": 1
+      },
+      {
+        "ingredientName": "Citrus Bioflavonoids",
+        "count": 1
+      },
+      {
+        "ingredientName": "Hydrastis canadensis",
+        "count": 1
+      },
+      {
+        "ingredientName": "Medicago sativa",
+        "count": 1
+      },
+      {
+        "ingredientName": "Linum usitatissimum",
+        "count": 1
+      }
+    ]
+  },
+  "examples": [
+    {
+      "sourceId": "02247034",
+      "ingredientName": "Plantago ovata",
+      "resolvedIngredientId": "a2f82a8c-fa6f-4984-b9bf-81cd2775eb17",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "seed"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80000702",
+      "ingredientName": "Mentha x piperita",
+      "resolvedIngredientId": "a5e15640-b9b7-4923-a8b8-9b98ed535c11",
+      "mismatchSubtype": "taxonomy_mismatch",
+      "formRaw": "extract",
+      "formRawTokens": [
+        "extract"
+      ],
+      "verifiedFormKeys": [
+        "leaf"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80000703",
+      "ingredientName": "Medicago sativa",
+      "resolvedIngredientId": "8d7af787-cf70-46d2-9b25-6c08d6766290",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole_plant"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80000845",
+      "ingredientName": "Vitamin E",
+      "resolvedIngredientId": "51d0cde5-e698-4503-9da1-8081c30a0a89",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "d_alpha",
+        "dl_alpha"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80000845",
+      "ingredientName": "Ubiquinone",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80000857",
+      "ingredientName": "Ubiquinone",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80006303",
+      "ingredientName": "Ubidecarenone",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80006384",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80006451",
+      "ingredientName": "Ubiquinone",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80006588",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80006599",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80006609",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80006859",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80007007",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80007093",
+      "ingredientName": "Ubidecarenone",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80007219",
+      "ingredientName": "Ubiquinone",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80007245",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80007261",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80007336",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80007534",
+      "ingredientName": "Ubidecarenone",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80008044",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80008399",
+      "ingredientName": "Vitamin C",
+      "resolvedIngredientId": "36dbe17c-8c98-411c-91f8-4af1eede8260",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "ascorbic_acid",
+        "calcium_ascorbate",
+        "sodium_ascorbate"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80008684",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80009194",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80009245",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80009339",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80009449",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80009477",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80009553",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80010379",
+      "ingredientName": "Serenoa repens",
+      "resolvedIngredientId": "9a223158-e7bc-49d9-a147-4df95414da48",
+      "mismatchSubtype": "taxonomy_mismatch",
+      "formRaw": "berry",
+      "formRawTokens": [
+        "berry"
+      ],
+      "verifiedFormKeys": [
+        "fruit_extract"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80010437",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80011267",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80011276",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80012588",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80012730",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80013051",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80013263",
+      "ingredientName": "Ubidecarenone",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80014399",
+      "ingredientName": "Vitamin C",
+      "resolvedIngredientId": "36dbe17c-8c98-411c-91f8-4af1eede8260",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "ascorbic_acid",
+        "calcium_ascorbate",
+        "sodium_ascorbate"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80014402",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80014477",
+      "ingredientName": "Linum usitatissimum",
+      "resolvedIngredientId": "44a42475-38d9-4c87-9cfb-a007a78e4fdd",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "seed"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80014723",
+      "ingredientName": "Plantago ovata",
+      "resolvedIngredientId": "a2f82a8c-fa6f-4984-b9bf-81cd2775eb17",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "seed"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80014969",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80015144",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80015426",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80015466",
+      "ingredientName": "Citrus bioflavonoids",
+      "resolvedIngredientId": "581a887e-0e05-432d-aad0-5357c1a33a64",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "fruit"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80015467",
+      "ingredientName": "Trifolium pratense",
+      "resolvedIngredientId": "a277fa7a-7a95-4140-9365-ba2578381081",
+      "mismatchSubtype": "taxonomy_mismatch",
+      "formRaw": "isoflavones genistein daidzein formononetin biochanin",
+      "formRawTokens": [
+        "isoflavones",
+        "genistein",
+        "daidzein",
+        "formononetin",
+        "biochanin"
+      ],
+      "verifiedFormKeys": [
+        "flower"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80016191",
+      "ingredientName": "Arctium lappa",
+      "resolvedIngredientId": "e59ab98a-647b-4e26-b8e6-18d0fa08dd6e",
+      "mismatchSubtype": "taxonomy_mismatch",
+      "formRaw": "root",
+      "formRawTokens": [
+        "root"
+      ],
+      "verifiedFormKeys": [
+        "extract"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80017440",
+      "ingredientName": "Citrus bioflavonoids",
+      "resolvedIngredientId": "581a887e-0e05-432d-aad0-5357c1a33a64",
+      "mismatchSubtype": "taxonomy_mismatch",
+      "formRaw": "peel",
+      "formRawTokens": [
+        "peel"
+      ],
+      "verifiedFormKeys": [
+        "fruit"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80017758",
+      "ingredientName": "Vitamin C",
+      "resolvedIngredientId": "36dbe17c-8c98-411c-91f8-4af1eede8260",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "ascorbic_acid",
+        "calcium_ascorbate",
+        "sodium_ascorbate"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80017758",
+      "ingredientName": "Citrus Bioflavonoids",
+      "resolvedIngredientId": "581a887e-0e05-432d-aad0-5357c1a33a64",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "fruit"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80018079",
+      "ingredientName": "Ubidecarenone",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80018152",
+      "ingredientName": "Medicago sativa",
+      "resolvedIngredientId": "8d7af787-cf70-46d2-9b25-6c08d6766290",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole_plant"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80018188",
+      "ingredientName": "Medicago sativa",
+      "resolvedIngredientId": "8d7af787-cf70-46d2-9b25-6c08d6766290",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole_plant"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80018901",
+      "ingredientName": "Citrus Bioflavonoids",
+      "resolvedIngredientId": "581a887e-0e05-432d-aad0-5357c1a33a64",
+      "mismatchSubtype": "taxonomy_mismatch",
+      "formRaw": "peel",
+      "formRawTokens": [
+        "peel"
+      ],
+      "verifiedFormKeys": [
+        "fruit"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80019069",
+      "ingredientName": "Equisetum arvense",
+      "resolvedIngredientId": "5cbdb06d-f36d-4aa7-b8f8-457a9bd013fa",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "stem"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80019143",
+      "ingredientName": "Vitamin C",
+      "resolvedIngredientId": "36dbe17c-8c98-411c-91f8-4af1eede8260",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "ascorbic_acid",
+        "calcium_ascorbate",
+        "sodium_ascorbate"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80019143",
+      "ingredientName": "Citrus bioflavonoids",
+      "resolvedIngredientId": "581a887e-0e05-432d-aad0-5357c1a33a64",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "fruit"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80019362",
+      "ingredientName": "Eucalyptus globulus",
+      "resolvedIngredientId": "88490139-e496-450f-9454-be4aae1455bb",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "leaf"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80019386",
+      "ingredientName": "Eucalyptus globulus",
+      "resolvedIngredientId": "88490139-e496-450f-9454-be4aae1455bb",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "leaf"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80019892",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80019896",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80019898",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80019901",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80020681",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80020689",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80021205",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80021348",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80021350",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80021400",
+      "ingredientName": "Ubidecarenone",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80021444",
+      "ingredientName": "Plantago ovata",
+      "resolvedIngredientId": "a2f82a8c-fa6f-4984-b9bf-81cd2775eb17",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "seed"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "00141240",
+      "ingredientName": "Citrus Bioflavonoids",
+      "resolvedIngredientId": "581a887e-0e05-432d-aad0-5357c1a33a64",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "fruit"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "00401846",
+      "ingredientName": "Citrus Bioflavonoids",
+      "resolvedIngredientId": "581a887e-0e05-432d-aad0-5357c1a33a64",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "fruit"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "02176955",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "02218127",
+      "ingredientName": "Ubiquinone",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "02231900",
+      "ingredientName": "Ubidecarenone",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "02237056",
+      "ingredientName": "Plantago ovata",
+      "resolvedIngredientId": "a2f82a8c-fa6f-4984-b9bf-81cd2775eb17",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "seed"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "02237057",
+      "ingredientName": "Plantago ovata",
+      "resolvedIngredientId": "a2f82a8c-fa6f-4984-b9bf-81cd2775eb17",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "seed"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "02237311",
+      "ingredientName": "Vitamin C",
+      "resolvedIngredientId": "36dbe17c-8c98-411c-91f8-4af1eede8260",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "ascorbic_acid",
+        "calcium_ascorbate",
+        "sodium_ascorbate"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "02237434",
+      "ingredientName": "Ubiquinone",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "02237434",
+      "ingredientName": "Vitamin E",
+      "resolvedIngredientId": "51d0cde5-e698-4503-9da1-8081c30a0a89",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "d_alpha",
+        "dl_alpha"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "02237471",
+      "ingredientName": "Equisetum arvense",
+      "resolvedIngredientId": "5cbdb06d-f36d-4aa7-b8f8-457a9bd013fa",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "stem"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "02238258",
+      "ingredientName": "Ubidecarenone",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "02238780",
+      "ingredientName": "Hydrastis canadensis",
+      "resolvedIngredientId": "08239caa-ef8b-40ad-981b-9da28ab10343",
+      "mismatchSubtype": "taxonomy_mismatch",
+      "formRaw": "extract total alkaloids",
+      "formRawTokens": [
+        "extract",
+        "total",
+        "alkaloids"
+      ],
+      "verifiedFormKeys": [
+        "root"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "02240792",
+      "ingredientName": "Ubiquinone",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "02243442",
+      "ingredientName": "Ubiquinone",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "02244583",
+      "ingredientName": "Ubidecarenone",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80001005",
+      "ingredientName": "Plantago ovata",
+      "resolvedIngredientId": "a2f82a8c-fa6f-4984-b9bf-81cd2775eb17",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "seed"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80001172",
+      "ingredientName": "Serenoa repens",
+      "resolvedIngredientId": "9a223158-e7bc-49d9-a147-4df95414da48",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "fruit_extract"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80001748",
+      "ingredientName": "Equisetum arvense",
+      "resolvedIngredientId": "5cbdb06d-f36d-4aa7-b8f8-457a9bd013fa",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "stem"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80002148",
+      "ingredientName": "Linum usitatissimum",
+      "resolvedIngredientId": "44a42475-38d9-4c87-9cfb-a007a78e4fdd",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "seed"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80002304",
+      "ingredientName": "Ubiquinone",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80002676",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80002917",
+      "ingredientName": "Serenoa repens",
+      "resolvedIngredientId": "9a223158-e7bc-49d9-a147-4df95414da48",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "fruit_extract"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80002931",
+      "ingredientName": "Actaea racemosa",
+      "resolvedIngredientId": "d01bb66c-a1f6-45ef-a9bf-e693b0cbe422",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "root"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80002975",
+      "ingredientName": "Medicago sativa",
+      "resolvedIngredientId": "8d7af787-cf70-46d2-9b25-6c08d6766290",
+      "mismatchSubtype": "taxonomy_mismatch",
+      "formRaw": "extract",
+      "formRawTokens": [
+        "extract"
+      ],
+      "verifiedFormKeys": [
+        "whole_plant"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80002993",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80003062",
+      "ingredientName": "Arctium lappa",
+      "resolvedIngredientId": "e59ab98a-647b-4e26-b8e6-18d0fa08dd6e",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "extract"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80003115",
+      "ingredientName": "Hydrastis canadensis",
+      "resolvedIngredientId": "08239caa-ef8b-40ad-981b-9da28ab10343",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "root"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80003218",
+      "ingredientName": "Arctium lappa",
+      "resolvedIngredientId": "e59ab98a-647b-4e26-b8e6-18d0fa08dd6e",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "extract"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80003333",
+      "ingredientName": "Serenoa repens",
+      "resolvedIngredientId": "9a223158-e7bc-49d9-a147-4df95414da48",
+      "mismatchSubtype": "taxonomy_mismatch",
+      "formRaw": "berry",
+      "formRawTokens": [
+        "berry"
+      ],
+      "verifiedFormKeys": [
+        "fruit_extract"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80003426",
+      "ingredientName": "Ubiquinone",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80003604",
+      "ingredientName": "Actaea racemosa",
+      "resolvedIngredientId": "d01bb66c-a1f6-45ef-a9bf-e693b0cbe422",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "root"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80003608",
+      "ingredientName": "Ubiquinone",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80003838",
+      "ingredientName": "Linum usitatissimum",
+      "resolvedIngredientId": "44a42475-38d9-4c87-9cfb-a007a78e4fdd",
+      "mismatchSubtype": "taxonomy_mismatch",
+      "formRaw": "ala",
+      "formRawTokens": [
+        "ala"
+      ],
+      "verifiedFormKeys": [
+        "seed"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80004094",
+      "ingredientName": "Arctium lappa",
+      "resolvedIngredientId": "e59ab98a-647b-4e26-b8e6-18d0fa08dd6e",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "extract"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80004097",
+      "ingredientName": "Hydrastis canadensis",
+      "resolvedIngredientId": "08239caa-ef8b-40ad-981b-9da28ab10343",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "root"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80004230",
+      "ingredientName": "Medicago sativa",
+      "resolvedIngredientId": "8d7af787-cf70-46d2-9b25-6c08d6766290",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole_plant"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80004241",
+      "ingredientName": "Arctium lappa",
+      "resolvedIngredientId": "e59ab98a-647b-4e26-b8e6-18d0fa08dd6e",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "extract"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80004493",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80004926",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80004987",
+      "ingredientName": "Cimicifuga racemosa",
+      "resolvedIngredientId": "d01bb66c-a1f6-45ef-a9bf-e693b0cbe422",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "root"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80005106",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80005165",
+      "ingredientName": "Ubidecarenone",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80005202",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80005229",
+      "ingredientName": "Serenoa repens",
+      "resolvedIngredientId": "9a223158-e7bc-49d9-a147-4df95414da48",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "fruit_extract"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80005257",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80005399",
+      "ingredientName": "Ubidecarenone",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80005415",
+      "ingredientName": "Olea europaea",
+      "resolvedIngredientId": "51e04da1-6ad9-41cc-b524-b22f39fa42d3",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "extract"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80005506",
+      "ingredientName": "Medicago sativa",
+      "resolvedIngredientId": "8d7af787-cf70-46d2-9b25-6c08d6766290",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole_plant"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80005571",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80005583",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80005597",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80005601",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80005806",
+      "ingredientName": "Ubidecarenone",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80005905",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80005931",
+      "ingredientName": "Arctium lappa",
+      "resolvedIngredientId": "e59ab98a-647b-4e26-b8e6-18d0fa08dd6e",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "extract"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80005950",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80005956",
+      "ingredientName": "Hydrastis canadensis",
+      "resolvedIngredientId": "08239caa-ef8b-40ad-981b-9da28ab10343",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "root"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80005984",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80006002",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80006013",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80006056",
+      "ingredientName": "Linum usitatissimum",
+      "resolvedIngredientId": "44a42475-38d9-4c87-9cfb-a007a78e4fdd",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "seed"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80006057",
+      "ingredientName": "Atractylodes macrocephala",
+      "resolvedIngredientId": "7dadc32a-3830-404f-9b7c-e4c5b4b7735e",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "root_extract"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80006057",
+      "ingredientName": "Codonopsis pilosula",
+      "resolvedIngredientId": "02b7490b-e37f-4229-a613-340e08e82ea6",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "root"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80006057",
+      "ingredientName": "Rehmannia glutinosa",
+      "resolvedIngredientId": "ab90d0e6-cec8-404f-8784-38cd4206854e",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "root_extract"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80006057",
+      "ingredientName": "Ligusticum chuanxiong",
+      "resolvedIngredientId": "40952ad5-50d6-4184-8537-fbfb4071b100",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "root_extract"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80006101",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80006114",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80006169",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80006221",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80006257",
+      "ingredientName": "Coenzyme Q10",
+      "resolvedIngredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "whole"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    },
+    {
+      "sourceId": "80011486",
+      "ingredientName": "Menthol",
+      "resolvedIngredientId": "30d8df54-76ee-4238-a6fd-1374ffb63272",
+      "mismatchSubtype": "form_raw_missing",
+      "formRaw": null,
+      "formRawTokens": [],
+      "verifiedFormKeys": [
+        "leaf"
+      ],
+      "verifiedAliasesSample": [
+        "glycinate",
+        "bisglycinate",
+        "chelate",
+        "chelated",
+        "methylfolate",
+        "5 mthf",
+        "ethyl ester",
+        "triglyceride",
+        "phospholipid",
+        "meriva"
+      ]
+    }
+  ],
+  "mismatchSourceIds": [
+    "02247034",
+    "80000702",
+    "80000703",
+    "80000845",
+    "80000857",
+    "80006303",
+    "80006384",
+    "80006451",
+    "80006588",
+    "80006599",
+    "80006609",
+    "80006859",
+    "80007007",
+    "80007093",
+    "80007219",
+    "80007245",
+    "80007261",
+    "80007336",
+    "80007534",
+    "80008044",
+    "80008399",
+    "80008684",
+    "80009194",
+    "80009245",
+    "80009339",
+    "80009449",
+    "80009477",
+    "80009553",
+    "80010379",
+    "80010437",
+    "80011267",
+    "80011276",
+    "80012588",
+    "80012730",
+    "80013051",
+    "80013263",
+    "80014399",
+    "80014402",
+    "80014477",
+    "80014723",
+    "80014969",
+    "80015144",
+    "80015426",
+    "80015466",
+    "80015467",
+    "80016191",
+    "80017440",
+    "80017758",
+    "80018079",
+    "80018152",
+    "80018188",
+    "80018901",
+    "80019069",
+    "80019143",
+    "80019362",
+    "80019386",
+    "80019892",
+    "80019896",
+    "80019898",
+    "80019901",
+    "80020681",
+    "80020689",
+    "80021205",
+    "80021348",
+    "80021350",
+    "80021400",
+    "80021444",
+    "00141240",
+    "00401846",
+    "02176955",
+    "02218127",
+    "02231900",
+    "02237056",
+    "02237057",
+    "02237311",
+    "02237434",
+    "02237471",
+    "02238258",
+    "02238780",
+    "02240792",
+    "02243442",
+    "02244583",
+    "80001005",
+    "80001172",
+    "80001748",
+    "80002148",
+    "80002304",
+    "80002676",
+    "80002917",
+    "80002931",
+    "80002975",
+    "80002993",
+    "80003062",
+    "80003115",
+    "80003218",
+    "80003333",
+    "80003426",
+    "80003604",
+    "80003608",
+    "80003838",
+    "80004094",
+    "80004097",
+    "80004230",
+    "80004241",
+    "80004493",
+    "80004926",
+    "80004987",
+    "80005106",
+    "80005165",
+    "80005202",
+    "80005229",
+    "80005257",
+    "80005399",
+    "80005415",
+    "80005506",
+    "80005571",
+    "80005583",
+    "80005597",
+    "80005601",
+    "80005806",
+    "80005905",
+    "80005931",
+    "80005950",
+    "80005956",
+    "80005984",
+    "80006002",
+    "80006013",
+    "80006056",
+    "80006057",
+    "80006101",
+    "80006114",
+    "80006169",
+    "80006221",
+    "80006257",
+    "80011486"
+  ],
+  "taxonomyMismatchSourceIds": [
+    "80000702",
+    "80010379",
+    "80015467",
+    "80016191",
+    "80017440",
+    "80018901",
+    "02238780",
+    "80002975",
+    "80003333",
+    "80003838"
+  ],
+  "formRawMissingSourceIds": [
+    "02247034",
+    "80000703",
+    "80000845",
+    "80000857",
+    "80006303",
+    "80006384",
+    "80006451",
+    "80006588",
+    "80006599",
+    "80006609",
+    "80006859",
+    "80007007",
+    "80007093",
+    "80007219",
+    "80007245",
+    "80007261",
+    "80007336",
+    "80007534",
+    "80008044",
+    "80008399",
+    "80008684",
+    "80009194",
+    "80009245",
+    "80009339",
+    "80009449",
+    "80009477",
+    "80009553",
+    "80010437",
+    "80011267",
+    "80011276",
+    "80012588",
+    "80012730",
+    "80013051",
+    "80013263",
+    "80014399",
+    "80014402",
+    "80014477",
+    "80014723",
+    "80014969",
+    "80015144",
+    "80015426",
+    "80015466",
+    "80017758",
+    "80018079",
+    "80018152",
+    "80018188",
+    "80019069",
+    "80019143",
+    "80019362",
+    "80019386",
+    "80019892",
+    "80019896",
+    "80019898",
+    "80019901",
+    "80020681",
+    "80020689",
+    "80021205",
+    "80021348",
+    "80021350",
+    "80021400",
+    "80021444",
+    "00141240",
+    "00401846",
+    "02176955",
+    "02218127",
+    "02231900",
+    "02237056",
+    "02237057",
+    "02237311",
+    "02237434",
+    "02237471",
+    "02238258",
+    "02240792",
+    "02243442",
+    "02244583",
+    "80001005",
+    "80001172",
+    "80001748",
+    "80002148",
+    "80002304",
+    "80002676",
+    "80002917",
+    "80002931",
+    "80002993",
+    "80003062",
+    "80003115",
+    "80003218",
+    "80003426",
+    "80003604",
+    "80003608",
+    "80004094",
+    "80004097",
+    "80004230",
+    "80004241",
+    "80004493",
+    "80004926",
+    "80004987",
+    "80005106",
+    "80005165",
+    "80005202",
+    "80005229",
+    "80005257",
+    "80005399",
+    "80005415",
+    "80005506",
+    "80005571",
+    "80005583",
+    "80005597",
+    "80005601",
+    "80005806",
+    "80005905",
+    "80005931",
+    "80005950",
+    "80005956",
+    "80005984",
+    "80006002",
+    "80006013",
+    "80006056",
+    "80006057",
+    "80006101",
+    "80006114",
+    "80006169",
+    "80006221",
+    "80006257",
+    "80011486"
+  ]
+}

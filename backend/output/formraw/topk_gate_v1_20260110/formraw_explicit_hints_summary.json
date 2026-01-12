@@ -1,0 +1,176 @@
+{
+  "mode": "formraw_explicit_hint",
+  "output": "output/formraw/topk_gate_v1_20260110/formraw_explicit_hints.jsonl",
+  "limit": 5000,
+  "totalFetched": 42267,
+  "cursor": null,
+  "sourceIdsFile": "output/formraw/topk_gate_v1_20260110/topk_formraw_missing_source_ids.json",
+  "uniqueSourceIds": 7516,
+  "runlistLines": 7516,
+  "candidateFormRawRows": 20831,
+  "topHintTokens": [
+    {
+      "token": "acid",
+      "count": 1514
+    },
+    {
+      "token": "ascorbic",
+      "count": 1159
+    },
+    {
+      "token": "citrate",
+      "count": 962
+    },
+    {
+      "token": "carbonate",
+      "count": 740
+    },
+    {
+      "token": "d3",
+      "count": 663
+    },
+    {
+      "token": "cholecalciferol",
+      "count": 663
+    },
+    {
+      "token": "chloride",
+      "count": 655
+    },
+    {
+      "token": "phosphate",
+      "count": 478
+    },
+    {
+      "token": "ascorbate",
+      "count": 392
+    },
+    {
+      "token": "chelate",
+      "count": 371
+    },
+    {
+      "token": "folic",
+      "count": 355
+    },
+    {
+      "token": "acetate",
+      "count": 343
+    },
+    {
+      "token": "gluconate",
+      "count": 281
+    },
+    {
+      "token": "pyridoxine",
+      "count": 271
+    },
+    {
+      "token": "hcl",
+      "count": 271
+    },
+    {
+      "token": "calcium",
+      "count": 268
+    },
+    {
+      "token": "paren",
+      "count": 268
+    },
+    {
+      "token": "oxide",
+      "count": 258
+    },
+    {
+      "token": "cyanocobalamin",
+      "count": 240
+    },
+    {
+      "token": "methylcobalamin",
+      "count": 180
+    }
+  ],
+  "topIngredients": [
+    {
+      "ingredientId": "78330a88-865f-4358-99f7-bcfe8303c4ae",
+      "count": 1328
+    },
+    {
+      "ingredientId": "36dbe17c-8c98-411c-91f8-4af1eede8260",
+      "count": 1312
+    },
+    {
+      "ingredientId": "ae8cd1dd-d703-4bf4-94aa-67d9f895ef10",
+      "count": 688
+    },
+    {
+      "ingredientId": "408b36b3-ec94-4eb6-ae45-a49ab885dd63",
+      "count": 593
+    },
+    {
+      "ingredientId": "da810830-6084-4899-9c5a-e655155ed470",
+      "count": 423
+    },
+    {
+      "ingredientId": "8966262a-b021-48e7-8c41-0a7f9231be1b",
+      "count": 388
+    },
+    {
+      "ingredientId": "9884d6d2-f6bb-4be8-8db3-8d523cd053c5",
+      "count": 363
+    },
+    {
+      "ingredientId": "7a5f2435-ffb1-4d78-8fba-3450597f0122",
+      "count": 344
+    },
+    {
+      "ingredientId": "c32e5455-7570-4a44-85e4-e3e657ca7e19",
+      "count": 299
+    },
+    {
+      "ingredientId": "0261854b-4e6f-47d1-a8c0-801f33c98462",
+      "count": 284
+    },
+    {
+      "ingredientId": "435a4715-9767-42c2-a1d4-924f22694257",
+      "count": 213
+    },
+    {
+      "ingredientId": "51d0cde5-e698-4503-9da1-8081c30a0a89",
+      "count": 199
+    },
+    {
+      "ingredientId": "b856b851-973d-4fbf-b9c5-9ab29c480cd8",
+      "count": 189
+    },
+    {
+      "ingredientId": "237f23b1-e1d5-4fca-872a-3e177df9d94d",
+      "count": 158
+    },
+    {
+      "ingredientId": "73b6fcaa-111e-47c0-9eea-f24e7fa7c41b",
+      "count": 108
+    },
+    {
+      "ingredientId": "728985ca-daaf-4363-a703-487254ff3323",
+      "count": 79
+    },
+    {
+      "ingredientId": "945c991e-bf54-4786-8365-ece2369a5c95",
+      "count": 76
+    },
+    {
+      "ingredientId": "f1668aeb-8779-4366-a01d-b152984f13a0",
+      "count": 72
+    },
+    {
+      "ingredientId": "0d9dc765-811b-43af-b443-f4f8fde3cecd",
+      "count": 66
+    },
+    {
+      "ingredientId": "157a99b5-2315-42b3-af4b-11e4b0e03d44",
+      "count": 61
+    }
+  ],
+  "timestamp": "2026-01-12T03:46:25.745Z"
+}

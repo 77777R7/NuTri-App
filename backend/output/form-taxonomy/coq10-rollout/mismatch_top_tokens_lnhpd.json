@@ -1,0 +1,67 @@
+{
+  "source": "lnhpd",
+  "topN": 50,
+  "totalMismatches": 9,
+  "tokens": [
+    {
+      "token": "acid",
+      "count": 6
+    },
+    {
+      "token": "whole",
+      "count": 4
+    },
+    {
+      "token": "seed",
+      "count": 2
+    },
+    {
+      "token": "beta",
+      "count": 1
+    },
+    {
+      "token": "carotene",
+      "count": 1
+    },
+    {
+      "token": "docosahexaenoic",
+      "count": 1
+    },
+    {
+      "token": "linoleic",
+      "count": 1
+    },
+    {
+      "token": "elcosapentaenoic",
+      "count": 1
+    },
+    {
+      "token": "hydroxycitric",
+      "count": 1
+    },
+    {
+      "token": "oleic",
+      "count": 1
+    },
+    {
+      "token": "chloride",
+      "count": 1
+    },
+    {
+      "token": "esterified",
+      "count": 1
+    },
+    {
+      "token": "astaxanthin",
+      "count": 1
+    },
+    {
+      "token": "omega",
+      "count": 1
+    },
+    {
+      "token": "fatty",
+      "count": 1
+    }
+  ]
+}

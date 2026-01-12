@@ -1,0 +1,1502 @@
+{
+  "source": "lnhpd",
+  "timestamp": "2026-01-09T08:07:49.456Z",
+  "total": 59,
+  "candidates": [
+    {
+      "canonicalName": "Inositol",
+      "canonicalKey": "inositol",
+      "category": null,
+      "baseUnit": "mg",
+      "synonyms": [
+        "Inositol",
+        "Myo-Inositol"
+      ],
+      "rawSamples": [
+        "Inositol",
+        "Myo-Inositol"
+      ],
+      "count": 17,
+      "reasons": [
+        "curated_common"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Coenzyme Q10",
+      "canonicalKey": "coenzyme_q10",
+      "category": "enzyme",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Coenzyme Q10",
+        "Ubiquinone",
+        "Ubidecarenone"
+      ],
+      "rawSamples": [
+        "Coenzyme Q10",
+        "Ubiquinone",
+        "Ubidecarenone"
+      ],
+      "count": 13,
+      "reasons": [
+        "curated_common"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Phosphorus",
+      "canonicalKey": "phosphorus",
+      "category": "mineral",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Phosphore",
+        "Phosphorus"
+      ],
+      "rawSamples": [
+        "Phosphore",
+        "Phosphorus"
+      ],
+      "count": 11,
+      "reasons": [
+        "curated_common"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "flaxseed",
+      "canonicalKey": "flaxseed",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Linum usitatissimum"
+      ],
+      "rawSamples": [
+        "Linum usitatissimum"
+      ],
+      "count": 10,
+      "reasons": [
+        "curated_latin_map"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Citrus Bioflavonoids",
+      "canonicalKey": "citrus_bioflavonoids",
+      "category": null,
+      "baseUnit": "mg",
+      "synonyms": [
+        "Citrus Bioflavonoids",
+        "Bioflavonoids"
+      ],
+      "rawSamples": [
+        "Citrus Bioflavonoids",
+        "Bioflavonoids"
+      ],
+      "count": 9,
+      "reasons": [
+        "curated_common"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Vanadium",
+      "canonicalKey": "vanadium",
+      "category": null,
+      "baseUnit": "mg",
+      "synonyms": [
+        "Vanadium"
+      ],
+      "rawSamples": [
+        "Vanadium"
+      ],
+      "count": 8,
+      "reasons": [
+        "curated_common"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Goldenseal",
+      "canonicalKey": "goldenseal",
+      "category": null,
+      "baseUnit": "mg",
+      "synonyms": [
+        "Hydrastis canadensis"
+      ],
+      "rawSamples": [
+        "Hydrastis canadensis"
+      ],
+      "count": 8,
+      "reasons": [
+        "curated_latin_map"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Salicylic Acid",
+      "canonicalKey": "salicylic_acid",
+      "category": "compound",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Salicylic acid"
+      ],
+      "rawSamples": [
+        "Salicylic acid"
+      ],
+      "count": 7,
+      "reasons": [
+        "curated_common"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Alfalfa",
+      "canonicalKey": "alfalfa",
+      "category": null,
+      "baseUnit": "mg",
+      "synonyms": [
+        "Medicago sativa"
+      ],
+      "rawSamples": [
+        "Medicago sativa"
+      ],
+      "count": 6,
+      "reasons": [
+        "curated_latin_map"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Wild Yam",
+      "canonicalKey": "wild_yam",
+      "category": null,
+      "baseUnit": "mg",
+      "synonyms": [
+        "Dioscorea oppositifolia"
+      ],
+      "rawSamples": [
+        "Dioscorea oppositifolia"
+      ],
+      "count": 6,
+      "reasons": [
+        "curated_latin_map"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Trifolium pratense",
+      "canonicalKey": "trifolium_pratense",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Trifolium pratense"
+      ],
+      "rawSamples": [
+        "Trifolium pratense"
+      ],
+      "count": 6,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Silica",
+      "canonicalKey": "silica",
+      "category": null,
+      "baseUnit": "mg",
+      "synonyms": [
+        "Silicea"
+      ],
+      "rawSamples": [
+        "Silicea"
+      ],
+      "count": 6,
+      "reasons": [
+        "curated_common"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Eucalyptus",
+      "canonicalKey": "eucalyptus",
+      "category": null,
+      "baseUnit": "mg",
+      "synonyms": [
+        "Eucalyptus globulus"
+      ],
+      "rawSamples": [
+        "Eucalyptus globulus"
+      ],
+      "count": 6,
+      "reasons": [
+        "curated_latin_map"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Mentha piperita",
+      "canonicalKey": "mentha_x_piperita",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Mentha x piperita",
+        "Peppermint",
+        "Mentha piperita"
+      ],
+      "rawSamples": [
+        "Mentha x piperita",
+        "Peppermint",
+        "Mentha piperita"
+      ],
+      "count": 6,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Serenoa repens",
+      "canonicalKey": "serenoa_repens",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Serenoa repens"
+      ],
+      "rawSamples": [
+        "Serenoa repens"
+      ],
+      "count": 5,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Atractylodes macrocephala",
+      "canonicalKey": "atractylodes_macrocephala",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Atractylodes macrocephala"
+      ],
+      "rawSamples": [
+        "Atractylodes macrocephala"
+      ],
+      "count": 5,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Sodium fluoride",
+      "canonicalKey": "sodium_fluoride",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Sodium fluoride"
+      ],
+      "rawSamples": [
+        "Sodium fluoride"
+      ],
+      "count": 5,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Silicon",
+      "canonicalKey": "silicon",
+      "category": null,
+      "baseUnit": "mg",
+      "synonyms": [
+        "Silicon"
+      ],
+      "rawSamples": [
+        "Silicon"
+      ],
+      "count": 5,
+      "reasons": [
+        "curated_common"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Codonopsis pilosula",
+      "canonicalKey": "codonopsis_pilosula",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Codonopsis pilosula"
+      ],
+      "rawSamples": [
+        "Codonopsis pilosula"
+      ],
+      "count": 5,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Equisetum arvense",
+      "canonicalKey": "equisetum_arvense",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Equisetum arvense"
+      ],
+      "rawSamples": [
+        "Equisetum arvense"
+      ],
+      "count": 5,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Paeonia lactiflora",
+      "canonicalKey": "paeonia_lactiflora",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Paeonia lactiflora"
+      ],
+      "rawSamples": [
+        "Paeonia lactiflora"
+      ],
+      "count": 5,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Poria cocos",
+      "canonicalKey": "poria_cocos",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Poria cocos"
+      ],
+      "rawSamples": [
+        "Poria cocos"
+      ],
+      "count": 4,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Pinellia ternata",
+      "canonicalKey": "pinellia_ternata",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Pinellia ternata"
+      ],
+      "rawSamples": [
+        "Pinellia ternata"
+      ],
+      "count": 4,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Daucus carota",
+      "canonicalKey": "daucus_carota",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Daucus carota"
+      ],
+      "rawSamples": [
+        "Daucus carota"
+      ],
+      "count": 4,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Nickel",
+      "canonicalKey": "nickel",
+      "category": null,
+      "baseUnit": "mg",
+      "synonyms": [
+        "Nickel"
+      ],
+      "rawSamples": [
+        "Nickel"
+      ],
+      "count": 4,
+      "reasons": [
+        "curated_common"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Plantago major",
+      "canonicalKey": "plantago_major",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Plantago major"
+      ],
+      "rawSamples": [
+        "Plantago major"
+      ],
+      "count": 4,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Rheum palmatum",
+      "canonicalKey": "rheum_palmatum",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Rheum palmatum"
+      ],
+      "rawSamples": [
+        "Rheum palmatum"
+      ],
+      "count": 4,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Arctium lappa",
+      "canonicalKey": "arctium_lappa",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Arctium lappa"
+      ],
+      "rawSamples": [
+        "Arctium lappa"
+      ],
+      "count": 4,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Ferrum phosphoricum",
+      "canonicalKey": "ferrum_phosphoricum",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Ferrum phosphoricum"
+      ],
+      "rawSamples": [
+        "Ferrum phosphoricum"
+      ],
+      "count": 4,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Rehmannia glutinosa",
+      "canonicalKey": "rehmannia_glutinosa",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Rehmannia glutinosa"
+      ],
+      "rawSamples": [
+        "Rehmannia glutinosa"
+      ],
+      "count": 4,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Menthol",
+      "canonicalKey": "menthol",
+      "category": null,
+      "baseUnit": "mg",
+      "synonyms": [
+        "Menthol"
+      ],
+      "rawSamples": [
+        "Menthol"
+      ],
+      "count": 4,
+      "reasons": [
+        "curated_common"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Lecithin",
+      "canonicalKey": "lecithin",
+      "category": null,
+      "baseUnit": "mg",
+      "synonyms": [
+        "Lecithin"
+      ],
+      "rawSamples": [
+        "Lecithin"
+      ],
+      "count": 4,
+      "reasons": [
+        "curated_common"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Natrium chloratum",
+      "canonicalKey": "natrium_chloratum",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Natrium chloratum"
+      ],
+      "rawSamples": [
+        "Natrium chloratum"
+      ],
+      "count": 4,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "4-Aminobenzoic acid",
+      "canonicalKey": "4_aminobenzoic_acid",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "4-Aminobenzoic acid"
+      ],
+      "rawSamples": [
+        "4-Aminobenzoic acid"
+      ],
+      "count": 4,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Hamamelis virginiana",
+      "canonicalKey": "hamamelis_virginiana",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Hamamelis virginiana"
+      ],
+      "rawSamples": [
+        "Hamamelis virginiana"
+      ],
+      "count": 3,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Scrophularia nodosa",
+      "canonicalKey": "scrophularia_nodosa",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Scrophularia nodosa"
+      ],
+      "rawSamples": [
+        "Scrophularia nodosa"
+      ],
+      "count": 3,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Phytolacca decandra",
+      "canonicalKey": "phytolacca_decandra",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Phytolacca decandra"
+      ],
+      "rawSamples": [
+        "Phytolacca decandra"
+      ],
+      "count": 3,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Euterpe oleracea",
+      "canonicalKey": "euterpe_oleracea",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Euterpe oleracea"
+      ],
+      "rawSamples": [
+        "Euterpe oleracea"
+      ],
+      "count": 3,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Olea europaea",
+      "canonicalKey": "olea_europaea",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Olea europaea"
+      ],
+      "rawSamples": [
+        "Olea europaea"
+      ],
+      "count": 3,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Ziziphus jujuba",
+      "canonicalKey": "ziziphus_jujuba",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Ziziphus jujuba"
+      ],
+      "rawSamples": [
+        "Ziziphus jujuba"
+      ],
+      "count": 3,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Cynara scolymus",
+      "canonicalKey": "cynara_scolymus",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Cynara scolymus"
+      ],
+      "rawSamples": [
+        "Cynara scolymus"
+      ],
+      "count": 3,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Actaea racemosa",
+      "canonicalKey": "actaea_racemosa",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Actaea racemosa",
+        "Cimicifuga racemosa"
+      ],
+      "rawSamples": [
+        "Actaea racemosa",
+        "Cimicifuga racemosa"
+      ],
+      "count": 3,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": true,
+      "action": "synonym_only"
+    },
+    {
+      "canonicalName": "black pepper",
+      "canonicalKey": "black_pepper",
+      "category": null,
+      "baseUnit": "mg",
+      "synonyms": [
+        "Piper nigrum"
+      ],
+      "rawSamples": [
+        "Piper nigrum"
+      ],
+      "count": 3,
+      "reasons": [
+        "curated_latin_map"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Phellodendron chinense",
+      "canonicalKey": "phellodendron_chinense",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Phellodendron chinense"
+      ],
+      "rawSamples": [
+        "Phellodendron chinense"
+      ],
+      "count": 3,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Juniperus communis",
+      "canonicalKey": "juniperus_communis",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Juniperus communis"
+      ],
+      "rawSamples": [
+        "Juniperus communis"
+      ],
+      "count": 3,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Plantago ovata",
+      "canonicalKey": "plantago_ovata",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Plantago ovata"
+      ],
+      "rawSamples": [
+        "Plantago ovata"
+      ],
+      "count": 3,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Avena sativa",
+      "canonicalKey": "avena_sativa",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Avena sativa"
+      ],
+      "rawSamples": [
+        "Avena sativa"
+      ],
+      "count": 3,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Paullinia cupana",
+      "canonicalKey": "paullinia_cupana",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Paullinia cupana"
+      ],
+      "rawSamples": [
+        "Paullinia cupana"
+      ],
+      "count": 3,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Nux vomica",
+      "canonicalKey": "nux_vomica",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Nux vomica"
+      ],
+      "rawSamples": [
+        "Nux vomica"
+      ],
+      "count": 3,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Ophiopogon japonicus",
+      "canonicalKey": "ophiopogon_japonicus",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Ophiopogon japonicus"
+      ],
+      "rawSamples": [
+        "Ophiopogon japonicus"
+      ],
+      "count": 3,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Aloe barbadensis",
+      "canonicalKey": "aloe_vera",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Aloe barbadensis"
+      ],
+      "rawSamples": [
+        "Aloe barbadensis"
+      ],
+      "count": 0,
+      "reasons": [
+        "synonym_only"
+      ],
+      "excludeReasons": [],
+      "approved": true,
+      "action": "synonym_only"
+    },
+    {
+      "canonicalName": "Tanacetum parthenium",
+      "canonicalKey": "tanacetum_parthenium",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Tanacetum parthenium"
+      ],
+      "rawSamples": [
+        "Tanacetum parthenium"
+      ],
+      "count": 3,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Thymus vulgaris",
+      "canonicalKey": "thymus_vulgaris",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Thymus vulgaris"
+      ],
+      "rawSamples": [
+        "Thymus vulgaris"
+      ],
+      "count": 3,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Berberis vulgaris",
+      "canonicalKey": "berberis_vulgaris",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Berberis vulgaris"
+      ],
+      "rawSamples": [
+        "Berberis vulgaris"
+      ],
+      "count": 3,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Commiphora myrrha",
+      "canonicalKey": "commiphora_myrrha",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Commiphora myrrha"
+      ],
+      "rawSamples": [
+        "Commiphora myrrha"
+      ],
+      "count": 3,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Lepidium meyenii",
+      "canonicalKey": "lepidium_meyenii",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Lepidium meyenii"
+      ],
+      "rawSamples": [
+        "Lepidium meyenii"
+      ],
+      "count": 3,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Capsicum annuum",
+      "canonicalKey": "capsicum_annuum",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Capsicum annuum"
+      ],
+      "rawSamples": [
+        "Capsicum annuum"
+      ],
+      "count": 3,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Oenothera biennis",
+      "canonicalKey": "oenothera_biennis",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Oenothera biennis"
+      ],
+      "rawSamples": [
+        "Oenothera biennis"
+      ],
+      "count": 3,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Terminalia chebula",
+      "canonicalKey": "terminalia_chebula",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Terminalia chebula"
+      ],
+      "rawSamples": [
+        "Terminalia chebula"
+      ],
+      "count": 4,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Dioscorea villosa",
+      "canonicalKey": "dioscorea_villosa",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Dioscorea villosa"
+      ],
+      "rawSamples": [
+        "Dioscorea villosa"
+      ],
+      "count": 6,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Alisma plantago-aquatica",
+      "canonicalKey": "alisma_plantago_aquatica",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Alisma plantago-aquatica"
+      ],
+      "rawSamples": [
+        "Alisma plantago-aquatica"
+      ],
+      "count": 3,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Sanguinaria canadensis",
+      "canonicalKey": "sanguinaria_canadensis",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Sanguinaria canadensis"
+      ],
+      "rawSamples": [
+        "Sanguinaria canadensis"
+      ],
+      "count": 3,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Nepeta cataria",
+      "canonicalKey": "nepeta_cataria",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Nepeta cataria"
+      ],
+      "rawSamples": [
+        "Nepeta cataria"
+      ],
+      "count": 3,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Mentha haplocalyx",
+      "canonicalKey": "mentha_haplocalyx",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Mentha haplocalyx"
+      ],
+      "rawSamples": [
+        "Mentha haplocalyx"
+      ],
+      "count": 3,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Pogostemon cablin",
+      "canonicalKey": "pogostemon_cablin",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Pogostemon cablin"
+      ],
+      "rawSamples": [
+        "Pogostemon cablin"
+      ],
+      "count": 3,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "bitter orange",
+      "canonicalKey": "bitter_orange",
+      "category": null,
+      "baseUnit": "mg",
+      "synonyms": [
+        "Citrus aurantium",
+        "bitter orange"
+      ],
+      "rawSamples": [
+        "Citrus aurantium"
+      ],
+      "count": 3,
+      "reasons": [
+        "curated_latin_map"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "para-Aminobenzoic acid",
+      "canonicalKey": "para_aminobenzoic_acid",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "para-Aminobenzoic acid"
+      ],
+      "rawSamples": [
+        "para-Aminobenzoic acid"
+      ],
+      "count": 3,
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": false
+    },
+    {
+      "canonicalName": "Cinnamomum aromaticum",
+      "canonicalKey": "cinnamomum_aromaticum",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Cinnamomum aromaticum"
+      ],
+      "rawSamples": [
+        "Cinnamomum aromaticum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": true,
+      "action": "create"
+    },
+    {
+      "canonicalName": "Ligusticum chuanxiong",
+      "canonicalKey": "ligusticum_chuanxiong",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Ligusticum chuanxiong"
+      ],
+      "rawSamples": [
+        "Ligusticum chuanxiong"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": true,
+      "action": "create"
+    },
+    {
+      "canonicalName": "Caulophyllum thalictroides",
+      "canonicalKey": "caulophyllum_thalictroides",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Caulophyllum thalictroides"
+      ],
+      "rawSamples": [
+        "Caulophyllum thalictroides"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": true,
+      "action": "create"
+    },
+    {
+      "canonicalName": "Gentiana lutea",
+      "canonicalKey": "gentiana_lutea",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Gentiana lutea"
+      ],
+      "rawSamples": [
+        "Gentiana lutea"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": true,
+      "action": "create"
+    },
+    {
+      "canonicalName": "Saposhnikovia divaricata",
+      "canonicalKey": "saposhnikovia_divaricata",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Saposhnikovia divaricata"
+      ],
+      "rawSamples": [
+        "Saposhnikovia divaricata"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": true,
+      "action": "create"
+    },
+    {
+      "canonicalName": "Cucurbita pepo",
+      "canonicalKey": "cucurbita_pepo",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Cucurbita pepo"
+      ],
+      "rawSamples": [
+        "Cucurbita pepo"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": true,
+      "action": "create"
+    },
+    {
+      "canonicalName": "Acorus tatarinowii",
+      "canonicalKey": "acorus_tatarinowii",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Acorus tatarinowii"
+      ],
+      "rawSamples": [
+        "Acorus tatarinowii"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": true,
+      "action": "create"
+    },
+    {
+      "canonicalName": "Tussilago farfara",
+      "canonicalKey": "tussilago_farfara",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Tussilago farfara"
+      ],
+      "rawSamples": [
+        "Tussilago farfara"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": true,
+      "action": "create"
+    },
+    {
+      "canonicalName": "Carlina acaulis",
+      "canonicalKey": "carlina_acaulis",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Carlina acaulis"
+      ],
+      "rawSamples": [
+        "Carlina acaulis"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": true,
+      "action": "create"
+    },
+    {
+      "canonicalName": "Grindelia camporum",
+      "canonicalKey": "grindelia_camporum",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Grindelia camporum"
+      ],
+      "rawSamples": [
+        "Grindelia camporum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": true,
+      "action": "create"
+    },
+    {
+      "canonicalName": "Aucklandia lappa",
+      "canonicalKey": "aucklandia_lappa",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Aucklandia lappa"
+      ],
+      "rawSamples": [
+        "Aucklandia lappa"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": true,
+      "action": "create"
+    },
+    {
+      "canonicalName": "Modified citrus pectin",
+      "canonicalKey": "modified_citrus_pectin",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Modified citrus pectin"
+      ],
+      "rawSamples": [
+        "Modified citrus pectin"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": true,
+      "action": "create"
+    },
+    {
+      "canonicalName": "Rhododendron chrysanthum",
+      "canonicalKey": "rhododendron_chrysanthum",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Rhododendron chrysanthum"
+      ],
+      "rawSamples": [
+        "Rhododendron chrysanthum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": true,
+      "action": "create"
+    },
+    {
+      "canonicalName": "Salvia miltiorrhiza",
+      "canonicalKey": "salvia_miltiorrhiza",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Salvia miltiorrhiza"
+      ],
+      "rawSamples": [
+        "Salvia miltiorrhiza"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": true,
+      "action": "create"
+    },
+    {
+      "canonicalName": "Platycodon grandiflorum",
+      "canonicalKey": "platycodon_grandiflorum",
+      "category": "botanical",
+      "baseUnit": "mg",
+      "synonyms": [
+        "Platycodon grandiflorum"
+      ],
+      "rawSamples": [
+        "Platycodon grandiflorum"
+      ],
+      "reasons": [
+        "latin_binomial_unmapped"
+      ],
+      "excludeReasons": [],
+      "approved": true,
+      "action": "create"
+    }
+  ]
+}

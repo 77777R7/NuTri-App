@@ -1,0 +1,8 @@
+{
+  "timestamp": "2026-01-10T00:07:36.456Z",
+  "source": "lnhpd",
+  "derivedChecked": 18,
+  "promoted": 17,
+  "rebackfillTargets": 855,
+  "rebackfillOutput": "output/ingredient-forms/label_verified_forms_rebackfill.jsonl"
+}

@@ -45,6 +45,18 @@ type CoverageSnapshot = {
   sourceIds: string[];
   zeroCoverageCount: number;
   zeroCoverageRatio: number;
+  global?: {
+    counts: CoverageSnapshot["counts"];
+    ratios: CoverageSnapshot["ratios"];
+    topTokens: { token: string; count: number }[];
+  };
+  zeroCoverage?: {
+    count: number;
+    ratio: number;
+    counts: CoverageSnapshot["counts"];
+    ratios: CoverageSnapshot["ratios"];
+    topTokens: { token: string; count: number }[];
+  };
   counts: {
     activeRows: number;
     rowsWithIngredientId: number;
@@ -67,17 +79,27 @@ type CoverageSnapshot = {
     formRawNoMatch: number;
     matched: number;
   };
-  topTokens: Array<{ token: string; count: number }>;
+  topTokens: { token: string; count: number }[];
   definitions: {
+    global: string;
+    zeroCoverage: string;
     formRawMissing: string;
   };
+};
+
+type CoverageRatioDeltas = CoverageSnapshot["ratios"];
+
+type CoverageDeltas = CoverageRatioDeltas & {
+  zeroCoverageRatio: number;
+  global: CoverageRatioDeltas;
+  zeroCoverage: CoverageRatioDeltas;
 };
 
 type CoverageComparison = {
   baseline: CoverageSnapshot;
   current: CoverageSnapshot;
   idMismatchCount: number;
-  deltas: Record<string, number>;
+  deltas: CoverageDeltas;
   interpretation: string;
 };
 
@@ -239,85 +261,48 @@ const fetchAliases = async (ingredientIds: string[]): Promise<FormAliasRow[]> =>
   return rows;
 };
 
-const buildSnapshot = async (
-  source: ScoreSource,
-  sourceIds: string[],
-): Promise<CoverageSnapshot> => {
-  const scores = await fetchScoresByIds(source, sourceIds);
-  const scoreMap = new Map(scores.map((row) => [row.source_id, row]));
-  const zeroCoverageIds = sourceIds.filter((sourceId) => {
-    const row = scoreMap.get(sourceId);
-    const ratio = row?.explain_json?.evidence?.formCoverageRatio;
-    return typeof ratio === "number" && ratio <= 0;
-  });
+type FormStats = {
+  counts: CoverageSnapshot["counts"];
+  ratios: CoverageSnapshot["ratios"];
+  topTokens: { token: string; count: number }[];
+};
 
-  if (!zeroCoverageIds.length) {
-    return {
-      source,
-      timestamp: new Date().toISOString(),
-      sampleSize: sourceIds.length,
-      sourceIds,
-      zeroCoverageCount: 0,
-      zeroCoverageRatio: 0,
-      counts: {
-        activeRows: 0,
-        rowsWithIngredientId: 0,
-        ingredientIdMissing: 0,
-        ingredientFormsMissingAny: 0,
-        ingredientFormsMissingVerified: 0,
-        formRawMissing: 0,
-        taxonomyMismatch: 0,
-        formRawNoMatch: 0,
-        matched: 0,
-      },
-      ratios: {
-        ingredientIdMissing: 0,
-        ingredientIdResolved: 0,
-        ingredientFormsMissingAny: 0,
-        ingredientFormsMissingVerified: 0,
-        formRawMissing: 0,
-        formRawMissingAmongResolved: 0,
-        taxonomyMismatch: 0,
-        formRawNoMatch: 0,
-        matched: 0,
-      },
-      topTokens: [],
-      definitions: {
-        formRawMissing:
-          "formRawMissing counts active rows with ingredient_id present and no form_raw; ratio divides by activeRows in zeroCoverage subset.",
-      },
-    };
-  }
+const emptyStats = (): FormStats => ({
+  counts: {
+    activeRows: 0,
+    rowsWithIngredientId: 0,
+    ingredientIdMissing: 0,
+    ingredientFormsMissingAny: 0,
+    ingredientFormsMissingVerified: 0,
+    formRawMissing: 0,
+    taxonomyMismatch: 0,
+    formRawNoMatch: 0,
+    matched: 0,
+  },
+  ratios: {
+    ingredientIdMissing: 0,
+    ingredientIdResolved: 0,
+    ingredientFormsMissingAny: 0,
+    ingredientFormsMissingVerified: 0,
+    formRawMissing: 0,
+    formRawMissingAmongResolved: 0,
+    taxonomyMismatch: 0,
+    formRawNoMatch: 0,
+    matched: 0,
+  },
+  topTokens: [],
+});
 
-  const ingredients = await fetchIngredients(source, zeroCoverageIds);
-  const activeRows = ingredients.filter((row) => row.is_active);
-  const ingredientIds = Array.from(
-    new Set(activeRows.map((row) => row.ingredient_id).filter((id): id is string => Boolean(id))),
-  );
-  const [forms, aliases] = await Promise.all([
-    fetchIngredientForms(ingredientIds),
-    fetchAliases(ingredientIds),
-  ]);
-
-  const formsByIngredient = new Map<string, IngredientFormRow[]>();
-  forms.forEach((row) => {
-    const bucket = formsByIngredient.get(row.ingredient_id) ?? [];
-    bucket.push(row);
-    formsByIngredient.set(row.ingredient_id, bucket);
-  });
-
-  const globalAliases = aliases.filter((alias) => !alias.ingredient_id);
-  const aliasesByIngredient = new Map<string, FormAliasRow[]>();
-  aliases.forEach((alias) => {
-    if (!alias.ingredient_id) return;
-    const bucket = aliasesByIngredient.get(alias.ingredient_id) ?? [];
-    bucket.push(alias);
-    aliasesByIngredient.set(alias.ingredient_id, bucket);
-  });
-
+const buildFormStats = (params: {
+  activeRows: ProductIngredientRow[];
+  formsByIngredient: Map<string, IngredientFormRow[]>;
+  globalAliases: FormAliasRow[];
+  aliasesByIngredient: Map<string, FormAliasRow[]>;
+}): FormStats => {
   const tokenCounts = new Map<string, number>();
   const counts = {
-    activeRows: activeRows.length,
+    activeRows: params.activeRows.length,
+    rowsWithIngredientId: 0,
     ingredientIdMissing: 0,
     ingredientFormsMissingAny: 0,
     ingredientFormsMissingVerified: 0,
@@ -327,13 +312,14 @@ const buildSnapshot = async (
     matched: 0,
   };
 
-  activeRows.forEach((row) => {
+  params.activeRows.forEach((row) => {
     if (!row.ingredient_id) {
       counts.ingredientIdMissing += 1;
       return;
     }
+    counts.rowsWithIngredientId += 1;
 
-    const formsForIngredient = formsByIngredient.get(row.ingredient_id) ?? [];
+    const formsForIngredient = params.formsByIngredient.get(row.ingredient_id) ?? [];
     const verifiedForms = formsForIngredient.filter(
       (form) => (form.audit_status ?? "").toLowerCase() === "verified",
     );
@@ -353,8 +339,8 @@ const buildSnapshot = async (
     if (!candidateNormalized) return;
 
     const aliasList = [
-      ...globalAliases,
-      ...(aliasesByIngredient.get(row.ingredient_id) ?? []),
+      ...params.globalAliases,
+      ...(params.aliasesByIngredient.get(row.ingredient_id) ?? []),
     ];
 
     const matchedForms = formsForIngredient.some((form) =>
@@ -389,14 +375,13 @@ const buildSnapshot = async (
   });
 
   const denominator = counts.activeRows || 1;
-  const rowsWithIngredientId = Math.max(0, counts.activeRows - counts.ingredientIdMissing);
-  const formRawMissingAmongResolved = rowsWithIngredientId
-    ? counts.formRawMissing / rowsWithIngredientId
+  const formRawMissingAmongResolved = counts.rowsWithIngredientId
+    ? counts.formRawMissing / counts.rowsWithIngredientId
     : 0;
 
   const ratios = {
     ingredientIdMissing: Number((counts.ingredientIdMissing / denominator).toFixed(4)),
-    ingredientIdResolved: Number((rowsWithIngredientId / denominator).toFixed(4)),
+    ingredientIdResolved: Number((counts.rowsWithIngredientId / denominator).toFixed(4)),
     ingredientFormsMissingAny: Number(
       (counts.ingredientFormsMissingAny / denominator).toFixed(4),
     ),
@@ -415,6 +400,72 @@ const buildSnapshot = async (
     .slice(0, 30)
     .map(([token, count]) => ({ token, count }));
 
+  return { counts, ratios, topTokens };
+};
+
+const buildSnapshot = async (
+  source: ScoreSource,
+  sourceIds: string[],
+): Promise<CoverageSnapshot> => {
+  const scores = await fetchScoresByIds(source, sourceIds);
+  const scoreMap = new Map(scores.map((row) => [row.source_id, row]));
+  const zeroCoverageIds = sourceIds.filter((sourceId) => {
+    const row = scoreMap.get(sourceId);
+    const ratio = row?.explain_json?.evidence?.formCoverageRatio;
+    return typeof ratio === "number" && ratio <= 0;
+  });
+
+  const ingredients = await fetchIngredients(source, sourceIds);
+  const globalActiveRows = ingredients.filter((row) => row.is_active);
+  const ingredientIds = Array.from(
+    new Set(
+      globalActiveRows
+        .map((row) => row.ingredient_id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  );
+  const [forms, aliases] = await Promise.all([
+    fetchIngredientForms(ingredientIds),
+    fetchAliases(ingredientIds),
+  ]);
+
+  const formsByIngredient = new Map<string, IngredientFormRow[]>();
+  forms.forEach((row) => {
+    const bucket = formsByIngredient.get(row.ingredient_id) ?? [];
+    bucket.push(row);
+    formsByIngredient.set(row.ingredient_id, bucket);
+  });
+
+  const globalAliases = aliases.filter((alias) => !alias.ingredient_id);
+  const aliasesByIngredient = new Map<string, FormAliasRow[]>();
+  aliases.forEach((alias) => {
+    if (!alias.ingredient_id) return;
+    const bucket = aliasesByIngredient.get(alias.ingredient_id) ?? [];
+    bucket.push(alias);
+    aliasesByIngredient.set(alias.ingredient_id, bucket);
+  });
+
+  const globalStats = buildFormStats({
+    activeRows: globalActiveRows,
+    formsByIngredient,
+    globalAliases,
+    aliasesByIngredient,
+  });
+
+  const zeroCoverageSet = new Set(zeroCoverageIds);
+  const zeroCoverageActiveRows = ingredients.filter(
+    (row) => row.is_active && zeroCoverageSet.has(row.source_id),
+  );
+  const zeroCoverageStats =
+    zeroCoverageIds.length > 0
+      ? buildFormStats({
+          activeRows: zeroCoverageActiveRows,
+          formsByIngredient,
+          globalAliases,
+          aliasesByIngredient,
+        })
+      : emptyStats();
+
   return {
     source,
     timestamp: new Date().toISOString(),
@@ -422,15 +473,28 @@ const buildSnapshot = async (
     sourceIds,
     zeroCoverageCount: zeroCoverageIds.length,
     zeroCoverageRatio: Number((zeroCoverageIds.length / sourceIds.length).toFixed(4)),
-    counts: {
-      ...counts,
-      rowsWithIngredientId,
+    global: {
+      counts: globalStats.counts,
+      ratios: globalStats.ratios,
+      topTokens: globalStats.topTokens,
     },
-    ratios,
-    topTokens,
+    zeroCoverage: {
+      count: zeroCoverageIds.length,
+      ratio: Number((zeroCoverageIds.length / sourceIds.length).toFixed(4)),
+      counts: zeroCoverageStats.counts,
+      ratios: zeroCoverageStats.ratios,
+      topTokens: zeroCoverageStats.topTokens,
+    },
+    counts: zeroCoverageStats.counts,
+    ratios: zeroCoverageStats.ratios,
+    topTokens: zeroCoverageStats.topTokens,
     definitions: {
+      global:
+        "global counts/ratios are computed over all active rows in the sampled sourceIds.",
+      zeroCoverage:
+        "zeroCoverage counts/ratios are computed over active rows for products with formCoverageRatio <= 0.",
       formRawMissing:
-        "formRawMissing counts active rows with ingredient_id present and no form_raw; ratio divides by activeRows in zeroCoverage subset.",
+        "formRawMissing counts active rows with ingredient_id present and no form_raw.",
     },
   };
 };
@@ -445,20 +509,68 @@ const buildComparison = (baseline: CoverageSnapshot, current: CoverageSnapshot):
   currentIds.forEach((id) => {
     if (!baselineIds.has(id)) idMismatchCount += 1;
   });
-  const deltas: Record<string, number> = {
-    zeroCoverageRatio: Number((current.zeroCoverageRatio - baseline.zeroCoverageRatio).toFixed(4)),
-    ingredientIdMissing: Number((current.ratios.ingredientIdMissing - baseline.ratios.ingredientIdMissing).toFixed(4)),
-    ingredientIdResolved: Number((current.ratios.ingredientIdResolved - baseline.ratios.ingredientIdResolved).toFixed(4)),
+  const baselineZero = baseline.zeroCoverage?.ratios ?? baseline.ratios;
+  const currentZero = current.zeroCoverage?.ratios ?? current.ratios;
+  const baselineGlobal = baseline.global?.ratios ?? baseline.ratios;
+  const currentGlobal = current.global?.ratios ?? current.ratios;
+
+  const zeroCoverageDeltas: CoverageRatioDeltas = {
+    ingredientIdMissing: Number(
+      (currentZero.ingredientIdMissing - baselineZero.ingredientIdMissing).toFixed(4),
+    ),
+    ingredientIdResolved: Number(
+      (currentZero.ingredientIdResolved - baselineZero.ingredientIdResolved).toFixed(4),
+    ),
     ingredientFormsMissingAny: Number(
-      (current.ratios.ingredientFormsMissingAny - baseline.ratios.ingredientFormsMissingAny).toFixed(4),
+      (currentZero.ingredientFormsMissingAny - baselineZero.ingredientFormsMissingAny).toFixed(4),
     ),
     ingredientFormsMissingVerified: Number(
-      (current.ratios.ingredientFormsMissingVerified - baseline.ratios.ingredientFormsMissingVerified).toFixed(4),
+      (currentZero.ingredientFormsMissingVerified -
+        baselineZero.ingredientFormsMissingVerified).toFixed(4),
     ),
-    formRawMissing: Number((current.ratios.formRawMissing - baseline.ratios.formRawMissing).toFixed(4)),
+    formRawMissing: Number((currentZero.formRawMissing - baselineZero.formRawMissing).toFixed(4)),
     formRawMissingAmongResolved: Number(
-      (current.ratios.formRawMissingAmongResolved - baseline.ratios.formRawMissingAmongResolved).toFixed(4),
+      (currentZero.formRawMissingAmongResolved -
+        baselineZero.formRawMissingAmongResolved).toFixed(4),
     ),
+    taxonomyMismatch: Number(
+      (currentZero.taxonomyMismatch - baselineZero.taxonomyMismatch).toFixed(4),
+    ),
+    formRawNoMatch: Number((currentZero.formRawNoMatch - baselineZero.formRawNoMatch).toFixed(4)),
+    matched: Number((currentZero.matched - baselineZero.matched).toFixed(4)),
+  };
+
+  const globalDeltas: CoverageRatioDeltas = {
+    ingredientIdMissing: Number(
+      (currentGlobal.ingredientIdMissing - baselineGlobal.ingredientIdMissing).toFixed(4),
+    ),
+    ingredientIdResolved: Number(
+      (currentGlobal.ingredientIdResolved - baselineGlobal.ingredientIdResolved).toFixed(4),
+    ),
+    ingredientFormsMissingAny: Number(
+      (currentGlobal.ingredientFormsMissingAny - baselineGlobal.ingredientFormsMissingAny).toFixed(4),
+    ),
+    ingredientFormsMissingVerified: Number(
+      (currentGlobal.ingredientFormsMissingVerified -
+        baselineGlobal.ingredientFormsMissingVerified).toFixed(4),
+    ),
+    formRawMissing: Number((currentGlobal.formRawMissing - baselineGlobal.formRawMissing).toFixed(4)),
+    formRawMissingAmongResolved: Number(
+      (currentGlobal.formRawMissingAmongResolved -
+        baselineGlobal.formRawMissingAmongResolved).toFixed(4),
+    ),
+    taxonomyMismatch: Number(
+      (currentGlobal.taxonomyMismatch - baselineGlobal.taxonomyMismatch).toFixed(4),
+    ),
+    formRawNoMatch: Number((currentGlobal.formRawNoMatch - baselineGlobal.formRawNoMatch).toFixed(4)),
+    matched: Number((currentGlobal.matched - baselineGlobal.matched).toFixed(4)),
+  };
+
+  const deltas: CoverageDeltas = {
+    zeroCoverageRatio: Number((current.zeroCoverageRatio - baseline.zeroCoverageRatio).toFixed(4)),
+    ...zeroCoverageDeltas,
+    global: globalDeltas,
+    zeroCoverage: zeroCoverageDeltas,
   };
 
   let interpretation = "No significant ratio shift detected.";

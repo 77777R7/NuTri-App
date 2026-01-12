@@ -738,6 +738,60 @@ const DashboardModal: React.FC<{
     );
 };
 
+type IngredientDetail = {
+    name?: string | null;
+    dosageValue?: number | null;
+    dosageUnit?: string | null;
+    form?: string | null;
+    formQuality?: string | null;
+    evidenceLevel?: string | null;
+};
+
+const normalizeIngredientKey = (value?: string | null): string =>
+    value?.toLowerCase().replace(/[^a-z0-9]+/g, '').trim() ?? '';
+
+const scoreIngredientDetail = (ingredient: IngredientDetail): number => {
+    let score = 0;
+    if (typeof ingredient?.dosageValue === 'number') score += 4;
+    if (ingredient?.dosageUnit) score += 2;
+    if (ingredient?.form) score += 1;
+    if (ingredient?.formQuality && ingredient.formQuality !== 'unknown') score += 1;
+    if (ingredient?.evidenceLevel && ingredient.evidenceLevel !== 'none') score += 1;
+    return score;
+};
+
+const dedupeIngredients = (items: IngredientDetail[]): IngredientDetail[] => {
+    const map = new Map<string, IngredientDetail>();
+    const ordered: IngredientDetail[] = [];
+    items.forEach((item) => {
+        const key = normalizeIngredientKey(typeof item?.name === 'string' ? item.name : '');
+        if (!key) return;
+        const existing = map.get(key);
+        if (!existing) {
+            map.set(key, item);
+            ordered.push(item);
+            return;
+        }
+        const existingHasDose = typeof existing?.dosageValue === 'number';
+        const nextHasDose = typeof item?.dosageValue === 'number';
+        if (existingHasDose && !nextHasDose) return;
+        if (!existingHasDose && nextHasDose) {
+            map.set(key, item);
+            const index = ordered.indexOf(existing);
+            if (index >= 0) ordered[index] = item;
+            return;
+        }
+        const existingScore = scoreIngredientDetail(existing);
+        const nextScore = scoreIngredientDetail(item);
+        if (nextScore > existingScore) {
+            map.set(key, item);
+            const index = ordered.indexOf(existing);
+            if (index >= 0) ordered[index] = item;
+        }
+    });
+    return ordered;
+};
+
 export const AnalysisDashboard: React.FC<{
     analysis: Analysis;
     isStreaming?: boolean;
@@ -1017,51 +1071,6 @@ export const AnalysisDashboard: React.FC<{
         return `${value} ${unit || 'mg'}`;
     };
 
-    const normalizeIngredientKey = (value?: string | null) =>
-        value?.toLowerCase().replace(/[^a-z0-9]+/g, '').trim() ?? '';
-
-    const scoreIngredientDetail = (ingredient: any) => {
-        let score = 0;
-        if (typeof ingredient?.dosageValue === 'number') score += 4;
-        if (ingredient?.dosageUnit) score += 2;
-        if (ingredient?.form) score += 1;
-        if (ingredient?.formQuality && ingredient.formQuality !== 'unknown') score += 1;
-        if (ingredient?.evidenceLevel && ingredient.evidenceLevel !== 'none') score += 1;
-        return score;
-    };
-
-    const dedupeIngredients = (items: any[]) => {
-        const map = new Map<string, any>();
-        const ordered: any[] = [];
-        items.forEach((item) => {
-            const key = normalizeIngredientKey(typeof item?.name === 'string' ? item.name : '');
-            if (!key) return;
-            const existing = map.get(key);
-            if (!existing) {
-                map.set(key, item);
-                ordered.push(item);
-                return;
-            }
-            const existingHasDose = typeof existing?.dosageValue === 'number';
-            const nextHasDose = typeof item?.dosageValue === 'number';
-            if (existingHasDose && !nextHasDose) return;
-            if (!existingHasDose && nextHasDose) {
-                map.set(key, item);
-                const index = ordered.indexOf(existing);
-                if (index >= 0) ordered[index] = item;
-                return;
-            }
-            const existingScore = scoreIngredientDetail(existing);
-            const nextScore = scoreIngredientDetail(item);
-            if (nextScore > existingScore) {
-                map.set(key, item);
-                const index = ordered.indexOf(existing);
-                if (index >= 0) ordered[index] = item;
-            }
-        });
-        return ordered;
-    };
-
     // Format form text to be user-friendly (simplify long scientific names)
     const formatFormShort = (): string | null => {
         if (!primaryActive) return null;
@@ -1134,19 +1143,24 @@ export const AnalysisDashboard: React.FC<{
     })();
 
     // Get core benefits from efficacy (new) or fallback to benefits array
-    const coreBenefits = (
+    const rawBenefits: unknown[] =
         Array.isArray(efficacy?.coreBenefits) && efficacy.coreBenefits.length > 0
             ? efficacy.coreBenefits
             : Array.isArray(efficacy?.benefits) && efficacy.benefits.length > 0
                 ? efficacy.benefits
-                : []
-    )
-        .filter((benefit): benefit is string => typeof benefit === 'string' && benefit.trim().length > 0)
+                : [];
+    const coreBenefits = rawBenefits
+        .filter((benefit: unknown): benefit is string =>
+            typeof benefit === 'string' && benefit.trim().length > 0,
+        )
         .slice(0, 3);
 
     const scienceIngredients = useMemo(
-        () => (Array.isArray(efficacy.ingredients) ? dedupeIngredients(efficacy.ingredients) : []),
-        [dedupeIngredients, efficacy.ingredients]
+        () =>
+            Array.isArray(efficacy.ingredients)
+                ? dedupeIngredients(efficacy.ingredients as IngredientDetail[])
+                : [],
+        [efficacy.ingredients]
     );
 
     const formatBestForText = (value: string) => {
@@ -1169,7 +1183,7 @@ export const AnalysisDashboard: React.FC<{
     };
 
     const bestForFallback = (() => {
-        const benefitWithoutNumbers = coreBenefits.find((item) => item && !/\d/.test(item));
+        const benefitWithoutNumbers = coreBenefits.find((item: string) => !/\d/.test(item));
         if (benefitWithoutNumbers) return formatBestForText(benefitWithoutNumbers);
         if (productInfo.category) return normalizeText(productInfo.category);
         const fallbackBenefit = coreBenefits[0];

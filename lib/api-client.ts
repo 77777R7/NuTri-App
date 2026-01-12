@@ -1,5 +1,6 @@
 import { ENV } from './env';
 import { getAccessToken } from './auth-token';
+import { AUTH_DISABLED } from './auth-mode';
 
 export type AuthenticatedRequestOptions = RequestInit & { token?: string | null };
 
@@ -12,6 +13,9 @@ async function request<T>(path: string, options: AuthenticatedRequestOptions = {
   const url = buildUrl(path);
   const headers = new Headers(options.headers);
   headers.set('Content-Type', 'application/json');
+  if (AUTH_DISABLED) {
+    headers.set('X-Auth-Disabled', '1');
+  }
   const token = options.token ?? (await getAccessToken());
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
@@ -110,30 +114,30 @@ export type ProfileResponse = {
 export type HomeDashboardResponse = {
   success: boolean;
   data?: {
-    savedSupplements: Array<{
+    savedSupplements: {
       id: string;
       name: string;
       brand: string;
       category: string;
       imageUrl?: string | null;
       addedAt: string;
-    }>;
-    recentUploads: Array<{
+    }[];
+    recentUploads: {
       id: string;
       createdAt: string;
       status: 'ready' | 'processing';
       title: string;
       brand?: string | null;
       imageUrl?: string | null;
-    }>;
-    overviewMetrics: Array<{
+    }[];
+    overviewMetrics: {
       key: string;
       label: string;
       current: number;
       target: number;
       progress: number;
       summary: string;
-    }>;
+    }[];
   };
   message?: string;
 };

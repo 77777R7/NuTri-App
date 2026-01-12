@@ -1,0 +1,130 @@
+{
+  "source": "dsld",
+  "timestamp": "2026-01-09T01:09:02.247Z",
+  "apply": false,
+  "synonymsAdded": 0,
+  "queued": 198,
+  "skipped": 2,
+  "unresolvedTopTokens": [
+    {
+      "token": "vitamin",
+      "count": 85
+    },
+    {
+      "token": "sodium",
+      "count": 59
+    },
+    {
+      "token": "blend",
+      "count": 39
+    },
+    {
+      "token": "acid",
+      "count": 38
+    },
+    {
+      "token": "folic",
+      "count": 21
+    },
+    {
+      "token": "proprietary",
+      "count": 20
+    },
+    {
+      "token": "extract",
+      "count": 19
+    },
+    {
+      "token": "b6",
+      "count": 17
+    },
+    {
+      "token": "c",
+      "count": 17
+    },
+    {
+      "token": "phosphorus",
+      "count": 13
+    },
+    {
+      "token": "magnesium",
+      "count": 13
+    },
+    {
+      "token": "a",
+      "count": 13
+    },
+    {
+      "token": "d",
+      "count": 13
+    },
+    {
+      "token": "niacin",
+      "count": 11
+    },
+    {
+      "token": "iron",
+      "count": 11
+    },
+    {
+      "token": "riboflavin",
+      "count": 11
+    },
+    {
+      "token": "pantothenic",
+      "count": 11
+    },
+    {
+      "token": "calcium",
+      "count": 11
+    },
+    {
+      "token": "amino",
+      "count": 10
+    },
+    {
+      "token": "matrix",
+      "count": 10
+    },
+    {
+      "token": "sugar",
+      "count": 9
+    },
+    {
+      "token": "thiamine",
+      "count": 9
+    },
+    {
+      "token": "e",
+      "count": 9
+    },
+    {
+      "token": "biotin",
+      "count": 8
+    },
+    {
+      "token": "zinc",
+      "count": 8
+    },
+    {
+      "token": "copper",
+      "count": 8
+    },
+    {
+      "token": "oil",
+      "count": 8
+    },
+    {
+      "token": "complex",
+      "count": 8
+    },
+    {
+      "token": "folate",
+      "count": 7
+    },
+    {
+      "token": "b12",
+      "count": 7
+    }
+  ]
+}

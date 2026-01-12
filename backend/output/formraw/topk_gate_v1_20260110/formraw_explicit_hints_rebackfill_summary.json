@@ -1,0 +1,11 @@
+{
+  "processed": 7516,
+  "scores": 7516,
+  "failed": 0,
+  "ingredientUpsertFailed": 0,
+  "scoreUpsertFailed": 0,
+  "computeScoreFailed": 0,
+  "failuresLines": 1,
+  "elapsedMs": 14699490,
+  "parts": 38
+}

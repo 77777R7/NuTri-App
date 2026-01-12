@@ -1,0 +1,146 @@
+{
+  "mode": "topk_formraw_missing",
+  "output": "/Users/howard07/NuTriApp/nutri-app/backend/output/formraw/topk_gate_v1_20260110/topk_formraw_missing.jsonl",
+  "topK": 20,
+  "minCount": 10,
+  "limit": 20000,
+  "restrictedToSourceIdsFile": null,
+  "scan": {
+    "formRawMissingScanned": 51865,
+    "formRawMissingTruncated": false,
+    "zeroCoverageScanned": 23614,
+    "scoreScanRows": 33933,
+    "scoreScanTruncated": false
+  },
+  "selectedIngredientCount": 20,
+  "excludedIngredientCount": 6,
+  "totalRunlistLines": 10675,
+  "uniqueSourceIds": 10675,
+  "sourceIdsOutput": "/Users/howard07/NuTriApp/nutri-app/backend/output/formraw/topk_gate_v1_20260110/topk_formraw_missing_source_ids.json",
+  "timestamp": "2026-01-11T07:47:15.452Z",
+  "notes": [
+    "filters: NON_SCORING / SPECIAL_HANDLING applied"
+  ],
+  "topIngredients": [
+    {
+      "ingredientId": "36dbe17c-8c98-411c-91f8-4af1eede8260",
+      "canonicalKey": "vitamin_c",
+      "name": "Vitamin C",
+      "count": 3447
+    },
+    {
+      "ingredientId": "ae8cd1dd-d703-4bf4-94aa-67d9f895ef10",
+      "canonicalKey": "vitamin_d",
+      "name": "Vitamin D",
+      "count": 2392
+    },
+    {
+      "ingredientId": "8966262a-b021-48e7-8c41-0a7f9231be1b",
+      "canonicalKey": "vitamin_b6",
+      "name": "Vitamin B6",
+      "count": 2209
+    },
+    {
+      "ingredientId": "da810830-6084-4899-9c5a-e655155ed470",
+      "canonicalKey": "vitamin_b12",
+      "name": "Vitamin B12",
+      "count": 2206
+    },
+    {
+      "ingredientId": "0261854b-4e6f-47d1-a8c0-801f33c98462",
+      "canonicalKey": "zinc",
+      "name": "Zinc",
+      "count": 2190
+    },
+    {
+      "ingredientId": "408b36b3-ec94-4eb6-ae45-a49ab885dd63",
+      "canonicalKey": "magnesium",
+      "name": "Magnesium",
+      "count": 2044
+    },
+    {
+      "ingredientId": "78330a88-865f-4358-99f7-bcfe8303c4ae",
+      "canonicalKey": "calcium",
+      "name": "Calcium",
+      "count": 1992
+    },
+    {
+      "ingredientId": "7a5f2435-ffb1-4d78-8fba-3450597f0122",
+      "canonicalKey": "folate",
+      "name": "Folate",
+      "count": 1790
+    },
+    {
+      "ingredientId": "51d0cde5-e698-4503-9da1-8081c30a0a89",
+      "canonicalKey": "vitamin_e",
+      "name": "Vitamin E",
+      "count": 1784
+    },
+    {
+      "ingredientId": "7d0c87b0-028f-4d38-964f-e98d74f1f9c6",
+      "canonicalKey": "lactobacillus",
+      "name": "Lactobacillus",
+      "count": 1774
+    },
+    {
+      "ingredientId": "728985ca-daaf-4363-a703-487254ff3323",
+      "canonicalKey": "riboflavin",
+      "name": "Riboflavin",
+      "count": 1563
+    },
+    {
+      "ingredientId": "237f23b1-e1d5-4fca-872a-3e177df9d94d",
+      "canonicalKey": "thiamin",
+      "name": "Thiamin",
+      "count": 1551
+    },
+    {
+      "ingredientId": "f1fed518-473e-400e-bb7c-e8a39eaffbf1",
+      "canonicalKey": "pantothenic_acid",
+      "name": "Pantothenic Acid",
+      "count": 1485
+    },
+    {
+      "ingredientId": "46e83d43-dfbd-47cf-8e52-5d0957c99b8f",
+      "canonicalKey": "niacin",
+      "name": "Niacin",
+      "count": 1468
+    },
+    {
+      "ingredientId": "bf411789-19ce-4229-8edd-e667c314633d",
+      "canonicalKey": "biotin",
+      "name": "Biotin",
+      "count": 1441
+    },
+    {
+      "ingredientId": "e5c4857a-fcd3-41d4-8c17-919877830dc0",
+      "canonicalKey": "selenium",
+      "name": "Selenium",
+      "count": 1252
+    },
+    {
+      "ingredientId": "9884d6d2-f6bb-4be8-8db3-8d523cd053c5",
+      "canonicalKey": "chromium",
+      "name": "Chromium",
+      "count": 1158
+    },
+    {
+      "ingredientId": "b856b851-973d-4fbf-b9c5-9ab29c480cd8",
+      "canonicalKey": "beta_carotene",
+      "name": "Beta-Carotene",
+      "count": 1137
+    },
+    {
+      "ingredientId": "0d9dc765-811b-43af-b443-f4f8fde3cecd",
+      "canonicalKey": "vitamin_a",
+      "name": "Vitamin A",
+      "count": 1087
+    },
+    {
+      "ingredientId": "c32e5455-7570-4a44-85e4-e3e657ca7e19",
+      "canonicalKey": "copper",
+      "name": "Copper",
+      "count": 1076
+    }
+  ]
+}

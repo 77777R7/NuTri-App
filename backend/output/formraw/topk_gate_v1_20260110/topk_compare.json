@@ -1,0 +1,3571 @@
+{
+  "before": {
+    "zeroCoverageCount": 2011,
+    "summary": {
+      "total": 2011,
+      "counts": {
+        "mismatch": 683,
+        "unit_missing": 190,
+        "ingredient_id_missing": 830,
+        "missingVerified": 308
+      },
+      "ratios": {
+        "mismatch": 0.3396,
+        "unit_missing": 0.0945,
+        "ingredient_id_missing": 0.4127,
+        "missingVerified": 0.1532
+      },
+      "top20": [
+        {
+          "sourceId": "80074010",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 21,
+            "unitMissing": 3,
+            "unitMismatch": 3,
+            "missingVerified": 21,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "alpha-L-arabinofuranoside arabinofuranohydrolase",
+            "Beta-fructofuranosidase",
+            "Triacylglycerol acylhydrolase",
+            "Malt diastase",
+            "Papain",
+            "Poly(1-4-a-D-galacturonide)glycanohydrolase",
+            "myo-Inositol-hexakisphosphate 3-phosphohydrolase",
+            "Protease",
+            "Dipeptidyl-peptidase IV",
+            "Rosa roxburghii"
+          ]
+        },
+        {
+          "sourceId": "80077621",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 21,
+            "unitMissing": 3,
+            "unitMismatch": 2,
+            "missingVerified": 21,
+            "mismatch": 2
+          },
+          "ingredientNames": [
+            "Camellia sinensis (L.) Kuntze",
+            "Hordeum vulgare",
+            "Palmaria palmata",
+            "Vaccinium myrtillus L. (Ericaceae)",
+            "Rosa roxburghii",
+            "Protease",
+            "Malt diastase",
+            "Papain",
+            "Lecithin",
+            "Medicago sativa L. (Fabaceae)"
+          ]
+        },
+        {
+          "sourceId": "80077629",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 21,
+            "unitMissing": 4,
+            "unitMismatch": 1,
+            "missingVerified": 21,
+            "mismatch": 2
+          },
+          "ingredientNames": [
+            "Protease",
+            "Malt diastase",
+            "Triacylglycerol acylhydrolase",
+            "Beta-D-galactoside galactohydrolase",
+            "alpha-L-arabinofuranoside arabinofuranohydrolase",
+            "Hordeum vulgare",
+            "Oryza sativa",
+            "Royal jelly",
+            "Vitis vinifera L.",
+            "4-alpha-D-Glucan glucanohydrolase"
+          ]
+        },
+        {
+          "sourceId": "80074279",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 21,
+            "unitMissing": 3,
+            "unitMismatch": 2,
+            "missingVerified": 20,
+            "mismatch": 2
+          },
+          "ingredientNames": [
+            "Lactobacillus plantarum",
+            "Bifidobacterium longum",
+            "Lactobacillus helveticus",
+            "Streptococcus salivarius subsp. thermophilus",
+            "Lactobacillus rhamnosus",
+            "Bee pollen",
+            "Ginkgo biloba L.",
+            "Camellia sinensis (L.) Kuntze",
+            "Vitis vinifera L.",
+            "Royal jelly"
+          ]
+        },
+        {
+          "sourceId": "80077656",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 20,
+            "unitMissing": 4,
+            "unitMismatch": 1,
+            "missingVerified": 21,
+            "mismatch": 2
+          },
+          "ingredientNames": [
+            "Lactobacillus rhamnosus",
+            "Rosa roxburghii",
+            "Dipeptidyl-peptidase IV",
+            "Protease",
+            "myo-Inositol-hexakisphosphate 3-phosphohydrolase",
+            "Papain",
+            "Beta-D-galactoside galactohydrolase",
+            "Beta-fructofuranosidase",
+            "4-alpha-D-Glucan glucohydrolase",
+            "4-(1,3;1,4)-beta-D-Glucan 4-glucanohydrolase"
+          ]
+        },
+        {
+          "sourceId": "80088527",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 20,
+            "unitMissing": 2,
+            "unitMismatch": 2,
+            "missingVerified": 11,
+            "mismatch": 6
+          },
+          "ingredientNames": [
+            "Malpighia glabra",
+            "Chlorella pyrenoidosa",
+            "Free Plant Sterols",
+            "Eleutherococcus senticosus",
+            "Folate",
+            "Vaccinium macrocarpon",
+            "Vitamin B6",
+            "Porphyra yezoensis",
+            "Vitamin B12",
+            "Glycyrrhiza glabra"
+          ]
+        },
+        {
+          "sourceId": "80088852",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 20,
+            "unitMissing": 2,
+            "unitMismatch": 2,
+            "missingVerified": 11,
+            "mismatch": 6
+          },
+          "ingredientNames": [
+            "Camellia sinensis",
+            "Malpighia glabra",
+            "Medicago sativa L. (Fabaceae)",
+            "Aloe vera",
+            "Astragalus membranaceus",
+            "Hordeum vulgare",
+            "Beta vulgaris",
+            "Vaccinium uliginosum",
+            "Brassica oleracea var. italica",
+            "Daucus carota"
+          ]
+        },
+        {
+          "sourceId": "80079280",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 1,
+            "unitMissing": 12,
+            "unitMismatch": 11,
+            "missingVerified": 12,
+            "mismatch": 0
+          },
+          "ingredientNames": [
+            "Lactobacillus gasseri",
+            "Lactobacillus rhamnosus",
+            "Lactobacillus casei",
+            "Lactobacillus reuteri",
+            "Bifidobacterium longum subsp. infantis",
+            "Lactobacillus plantarum",
+            "Bifidobacterium animalis subsp. lactis",
+            "Lactobacillus paracasei",
+            "Bifidobacterium breve",
+            "Lactobacillus acidophilus"
+          ]
+        },
+        {
+          "sourceId": "80074112",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 18,
+            "unitMissing": 4,
+            "unitMismatch": 4,
+            "missingVerified": 6,
+            "mismatch": 2
+          },
+          "ingredientNames": [
+            "beta-D-fructofuranoside fructohydrolase",
+            "Bacillus coagulans",
+            "Eucommia ulmoides",
+            "Cnicus benedictus",
+            "Chlorella vulgaris",
+            "Ascophyllum nodosum",
+            "4-(1,3;1,4)-beta-D-Glucan 4-glucanohydrolase",
+            "1,3-beta-D-xylan xylanohydrolase",
+            "alpha-D-Galactoside galactohydrolase",
+            "Triacylglycerol lipase"
+          ]
+        },
+        {
+          "sourceId": "80059069",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 10,
+            "unitMissing": 2,
+            "unitMismatch": 1,
+            "missingVerified": 17,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "(3R,3'R,6'R)-beta,epsilon-Carotene-3,3'-diol",
+            "Acacia nilotica",
+            "(1E,6E)-1,7-Bis(4-hydroxy-3-methoxyphenyl)-1,6-heptadiene-3,5-dione",
+            "Mucuna pruriens",
+            "Camellia sinensis",
+            "Reynoutria japonica",
+            "Withania somnifera",
+            "Rubus idaeus",
+            "Lepidium meyenii",
+            "Beta-carotene"
+          ]
+        },
+        {
+          "sourceId": "80063457",
+          "canonicalSourceId": null,
+          "primaryReason": "unit_missing",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 10,
+            "unitMismatch": 10,
+            "missingVerified": 10,
+            "mismatch": 0
+          },
+          "ingredientNames": [
+            "Lactobacillus acidophilus",
+            "Bifidobacterium breve",
+            "Lactobacillus plantarum",
+            "Lactobacillus casei",
+            "Lactobacillus fermentum",
+            "Lactobacillus rhamnosus",
+            "Bifidobacterium animalis subsp. Lactis",
+            "Bifidobacterium longum subsp. longum",
+            "Bifidobacterium bifidum",
+            "Lactobacillus reuteri"
+          ]
+        },
+        {
+          "sourceId": "80038291",
+          "canonicalSourceId": null,
+          "primaryReason": "unit_missing",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 8,
+            "unitMismatch": 8,
+            "missingVerified": 10,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "L-Proline",
+            "L-Histidine",
+            "L-Arginine",
+            "L-Glycine",
+            "L-Tyrosine",
+            "L-valine",
+            "Taurine",
+            "L-leucine",
+            "Vitamin B6",
+            "L-Alanine"
+          ]
+        },
+        {
+          "sourceId": "80066788",
+          "canonicalSourceId": null,
+          "primaryReason": "unit_missing",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 8,
+            "unitMismatch": 8,
+            "missingVerified": 10,
+            "mismatch": 0
+          },
+          "ingredientNames": [
+            "Lactobacillus rhamnosus",
+            "Lacticaseibacillus paracasei",
+            "Bifidobacterium bifidum",
+            "Bifidobacterium longum subsp. longum",
+            "Lactobacillus gasseri",
+            "Lactobacillus reuteri",
+            "Lactobacillus plantarum",
+            "Lactobacillus paracasei",
+            "Lactobacillus acidophilus",
+            "Vaccinium macrocarpon"
+          ]
+        },
+        {
+          "sourceId": "80067071",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 12,
+            "unitMissing": 1,
+            "unitMismatch": 1,
+            "missingVerified": 8,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Stem bromelain",
+            "alpha-D-Galactoside galactohydrolase",
+            "Astragalus membranaceus",
+            "Serratiopeptidase",
+            "Royal jelly",
+            "Triacylglycerol acylhydrolase",
+            "Beta-D-galactoside galactohydrolase",
+            "D-Pantothenic acid",
+            "Ascorbic acid",
+            "Spirulina platensis"
+          ]
+        },
+        {
+          "sourceId": "80067074",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 12,
+            "unitMissing": 1,
+            "unitMismatch": 1,
+            "missingVerified": 8,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "alpha-L-arabinofuranoside arabinofuranohydrolase",
+            "Malt diastase",
+            "Beta-D-galactoside galactohydrolase",
+            "Triacylglycerol acylhydrolase",
+            "Poly(1-4-a-D-galacturonide)glycanohydrolase",
+            "Ascorbic acid",
+            "alpha-D-Galactoside galactohydrolase",
+            "Serratiopeptidase",
+            "Bacterial Protease",
+            "4-(1,3;1,4)-beta-D-Glucan 4-glucanohydrolase"
+          ]
+        },
+        {
+          "sourceId": "80047093",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 10,
+            "unitMissing": 4,
+            "unitMismatch": 4,
+            "missingVerified": 2,
+            "mismatch": 2
+          },
+          "ingredientNames": [
+            "Allium cepa",
+            "Arctium lappa",
+            "Sulphuricum acidum",
+            "Strontium carbonate",
+            "Agropyron repens",
+            "Allium sativum",
+            "Argentum metallicum",
+            "Strychninum arsenicicum",
+            "Selenium metallicum",
+            "Sus scrofa"
+          ]
+        },
+        {
+          "sourceId": "80050520",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 11,
+            "unitMissing": 1,
+            "unitMismatch": 1,
+            "missingVerified": 9,
+            "mismatch": 0
+          },
+          "ingredientNames": [
+            "Lactobacillus acidophilus",
+            "Lactobacillus gasseri",
+            "Lactobacillus paracasei",
+            "(1-4)-alpha-D-galacturonan glycanohydrolase",
+            "1,3-beta-D-xylan xylanohydrolase",
+            "Malt diastase",
+            "Beta-D-galactoside galactohydrolase",
+            "Triacylglycerol lipase",
+            "alpha-D-Galactoside galactohydrolase",
+            "4-(1,3;1,4)-beta-D-Glucan 4-glucanohydrolase"
+          ]
+        },
+        {
+          "sourceId": "80064057",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 5,
+            "unitMissing": 4,
+            "unitMismatch": 4,
+            "missingVerified": 5,
+            "mismatch": 4
+          },
+          "ingredientNames": [
+            "N-(aminoiminomethyl)-N-methylglycine",
+            "Niacin",
+            "1,3,7-Trimethylxanthine",
+            "Beta-aminopropionic acid",
+            "2-Aminoethane sulfonic acid",
+            "L-isoleucine",
+            "L-Valine",
+            "Vitamin B6",
+            "L-Tyrosine",
+            "Vitamin B12"
+          ]
+        },
+        {
+          "sourceId": "80074651",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 13,
+            "unitMissing": 1,
+            "unitMismatch": 1,
+            "missingVerified": 6,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Beta-D-galactoside galactohydrolase",
+            "Triacylglycerol acylhydrolase",
+            "Malt diastase",
+            "Poly(1,4-alpha-D-galacturonide) glycanohydrolase",
+            "Protease",
+            "Stem bromelain",
+            "Tabebuia heptaphylla",
+            "Taraxacum officinale",
+            "Vitamin B12",
+            "alpha-D-Galactoside galactohydrolase"
+          ]
+        },
+        {
+          "sourceId": "80057990",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 6,
+            "unitMissing": 2,
+            "unitMismatch": 2,
+            "missingVerified": 7,
+            "mismatch": 4
+          },
+          "ingredientNames": [
+            "Vitamin B12",
+            "Vitamin B6",
+            "2-(Dimethylamino)ethanol",
+            "3-Pyridinecarboxamide",
+            "Salix alba",
+            "Eleutherococcus senticosus",
+            "Folate",
+            "Phosphatidylserine",
+            "[5R-(5alpha,9beta,11E)]-5-Amino-11-ethylidene-5,6,9,10-tetrahydro-7-methyl-5,9-methanocycloocta[b]pyridin-2(1H)-one",
+            "Ginkgo biloba"
+          ]
+        }
+      ],
+      "top20ByReason": {
+        "ingredient_id_missing": [
+          {
+            "sourceId": "00232599",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 1,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 0
+            },
+            "ingredientNames": [
+              "Streptococcus salivarius subsp. thermophilus",
+              "Lactobacillus rhamnosus"
+            ]
+          },
+          {
+            "sourceId": "00362034",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 1,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vinegar",
+              "Vitamin B6"
+            ]
+          },
+          {
+            "sourceId": "00369721",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 1,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 2
+            },
+            "ingredientNames": [
+              "Yeast extract",
+              "Vitamin B12",
+              "Vitamin B1",
+              "Scullcap"
+            ]
+          },
+          {
+            "sourceId": "00424315",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 1,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin B2",
+              "Lecithin",
+              "Dolomite"
+            ]
+          },
+          {
+            "sourceId": "00443115",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 1,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Sodium hydrogen carbonate",
+              "Magnesii hydroxidum"
+            ]
+          },
+          {
+            "sourceId": "00453463",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 2,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Rosa canina",
+              "Vitamin C",
+              "(2S)-7-[[6-O-(6-Deoxy-alpha-L-mannopyranosyl)-beta-D-glucopyranosyl]oxy]-2,3-dihydro-5-hydroxy-2-(3-hydroxy-4-methoxyphenyl)-4H-1-benzopyran-4-one"
+            ]
+          },
+          {
+            "sourceId": "00498815",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 1,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 2
+            },
+            "ingredientNames": [
+              "Vitamin B6",
+              "Pantothenic acid",
+              "(2-Hydroxyethyl)trimethylammonium-L-(+)-tartrate salt (1:1)"
+            ]
+          },
+          {
+            "sourceId": "02015323",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 1,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Citrus sinensis",
+              "Vitamin C",
+              "Malpighia glabra"
+            ]
+          },
+          {
+            "sourceId": "02096870",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 1,
+              "unitMissing": 1,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Helianthus annuus",
+              "Borago officinalis",
+              "Vitamin E"
+            ]
+          },
+          {
+            "sourceId": "02211718",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 2,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "(6Z,9Z,12Z)-6,9,12-Octadecatrienoic acid",
+              "Vitamin E",
+              "(Z,Z,)-9,12-Octadecadienoic acid"
+            ]
+          },
+          {
+            "sourceId": "02240716",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 1,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Selenium",
+              "Zinc gluconate"
+            ]
+          },
+          {
+            "sourceId": "80002053",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 1,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitis vinifera",
+              "Vitamin C"
+            ]
+          },
+          {
+            "sourceId": "80003581",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 1,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 2
+            },
+            "ingredientNames": [
+              "(2S)-2-Amino-5-{[amino(imino)methyl]amino}pentanoic acid",
+              "Vitamin E",
+              "Melissa officinalis",
+              "Vitamin C"
+            ]
+          },
+          {
+            "sourceId": "80003768",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 1,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Fish oil",
+              "Vitamin E"
+            ]
+          },
+          {
+            "sourceId": "80004478",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 2,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin C",
+              "Echinacea angustifolia",
+              "Vitis Vinifera",
+              "Lentinus Edodes"
+            ]
+          },
+          {
+            "sourceId": "80004647",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 3,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin C",
+              "Fagopyrum esculentum",
+              "Vitis vinifera",
+              "Citrus Grandis peel extract",
+              "Rosa canina"
+            ]
+          },
+          {
+            "sourceId": "80004664",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 1,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Multi-anthocyanidins",
+              "Vitamin C"
+            ]
+          },
+          {
+            "sourceId": "80004840",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 2,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 3
+            },
+            "ingredientNames": [
+              "Allium ursinum",
+              "Vitamin B6",
+              "Vitamin B12",
+              "Trimethylglycine anhydrous",
+              "Avena sativa"
+            ]
+          },
+          {
+            "sourceId": "80005967",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 1,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Fish oil",
+              "Vitamin C"
+            ]
+          },
+          {
+            "sourceId": "80006271",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 2,
+              "unitMissing": 2,
+              "unitMismatch": 2,
+              "missingVerified": 0,
+              "mismatch": 2
+            },
+            "ingredientNames": [
+              "Selenium",
+              "Sterculia acuminata",
+              "Zincum metallicum",
+              "Medicago sativa"
+            ]
+          }
+        ],
+        "unit_missing": [
+          {
+            "sourceId": "00141054",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin E"
+            ]
+          },
+          {
+            "sourceId": "00619469",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin C"
+            ]
+          },
+          {
+            "sourceId": "00623113",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 1,
+              "mismatch": 0
+            },
+            "ingredientNames": [
+              "Beta-carotene"
+            ]
+          },
+          {
+            "sourceId": "00647039",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Folate"
+            ]
+          },
+          {
+            "sourceId": "00685828",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Folate"
+            ]
+          },
+          {
+            "sourceId": "00697036",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin E"
+            ]
+          },
+          {
+            "sourceId": "00880760",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Selenium"
+            ]
+          },
+          {
+            "sourceId": "01904388",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 1,
+              "mismatch": 0
+            },
+            "ingredientNames": [
+              "Beta-carotene"
+            ]
+          },
+          {
+            "sourceId": "01923455",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Folate"
+            ]
+          },
+          {
+            "sourceId": "01927906",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 1,
+              "mismatch": 0
+            },
+            "ingredientNames": [
+              "Lactobacillus rhamnosus"
+            ]
+          },
+          {
+            "sourceId": "02164108",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 1,
+              "mismatch": 0
+            },
+            "ingredientNames": [
+              "Beta-carotene"
+            ]
+          },
+          {
+            "sourceId": "02177269",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 0,
+              "mismatch": 3
+            },
+            "ingredientNames": [
+              "Vitamin B12",
+              "Vitamin B6",
+              "Folate"
+            ]
+          },
+          {
+            "sourceId": "02227045",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 1,
+              "mismatch": 0
+            },
+            "ingredientNames": [
+              "Beta-carotene"
+            ]
+          },
+          {
+            "sourceId": "02236747",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Folate"
+            ]
+          },
+          {
+            "sourceId": "02242871",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Selenium Sulfide"
+            ]
+          },
+          {
+            "sourceId": "80001926",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 3,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Amylase",
+              "Ornithine",
+              "Protease I",
+              "Vitamin C"
+            ]
+          },
+          {
+            "sourceId": "80002376",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin E"
+            ]
+          },
+          {
+            "sourceId": "80002390",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 1,
+              "mismatch": 0
+            },
+            "ingredientNames": [
+              "Beta-carotene"
+            ]
+          },
+          {
+            "sourceId": "80002619",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Selenium Sulfide"
+            ]
+          },
+          {
+            "sourceId": "80002652",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Selenium Sulfide"
+            ]
+          }
+        ],
+        "missingVerified": [
+          {
+            "sourceId": "00242241",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin C",
+              "Fenugreek"
+            ]
+          },
+          {
+            "sourceId": "00718432",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 2,
+              "mismatch": 2
+            },
+            "ingredientNames": [
+              "para-Aminobenzoic acid",
+              "Vitamin B12",
+              "Inositol",
+              "Niacin"
+            ]
+          },
+          {
+            "sourceId": "00824070",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin E",
+              "Linoleic Acid"
+            ]
+          },
+          {
+            "sourceId": "02230390",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin B12",
+              "Inositol"
+            ]
+          },
+          {
+            "sourceId": "80002706",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 0
+            },
+            "ingredientNames": [
+              "Lactobacillus rhamnosus"
+            ]
+          },
+          {
+            "sourceId": "80004696",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Allium sativum",
+              "Folate"
+            ]
+          },
+          {
+            "sourceId": "80004860",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin C",
+              "Glucosamine hydrochloride"
+            ]
+          },
+          {
+            "sourceId": "80005780",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vaccinium myrtillus",
+              "Vitamin C"
+            ]
+          },
+          {
+            "sourceId": "80006063",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin C",
+              "Astragalus membranaceus"
+            ]
+          },
+          {
+            "sourceId": "80006624",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Borago officinalis",
+              "Vitamin E"
+            ]
+          },
+          {
+            "sourceId": "80006698",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Evening primrose oil",
+              "Vitamin E"
+            ]
+          },
+          {
+            "sourceId": "80007353",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Withania somnifera",
+              "Selenium"
+            ]
+          },
+          {
+            "sourceId": "80011200",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 2,
+              "mismatch": 0
+            },
+            "ingredientNames": [
+              "Bifidobacterium bifidum",
+              "Lactobacillus acidophilus"
+            ]
+          },
+          {
+            "sourceId": "80011335",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 0
+            },
+            "ingredientNames": [
+              "Lactobacillus acidophilus"
+            ]
+          },
+          {
+            "sourceId": "80011341",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 0
+            },
+            "ingredientNames": [
+              "Lactobacillus rhamnosus GG"
+            ]
+          },
+          {
+            "sourceId": "80011343",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 2,
+              "mismatch": 0
+            },
+            "ingredientNames": [
+              "Bifidobacterium longum",
+              "Lactobacillus acidophilus"
+            ]
+          },
+          {
+            "sourceId": "80011352",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 0
+            },
+            "ingredientNames": [
+              "Lactobacillus rhamnosus"
+            ]
+          },
+          {
+            "sourceId": "80011353",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 2,
+              "mismatch": 0
+            },
+            "ingredientNames": [
+              "Lactobacillus rhamnosus",
+              "Lactobacillus acidophilus"
+            ]
+          },
+          {
+            "sourceId": "80011762",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 0
+            },
+            "ingredientNames": [
+              "Lactobacillus acidophilus"
+            ]
+          },
+          {
+            "sourceId": "80011771",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 2,
+              "mismatch": 0
+            },
+            "ingredientNames": [
+              "Bifidobacterium bifidum",
+              "Lactobacillus rhamnosus"
+            ]
+          }
+        ],
+        "mismatch": [
+          {
+            "sourceId": "00122645",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin B6"
+            ]
+          },
+          {
+            "sourceId": "00122823",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin E"
+            ]
+          },
+          {
+            "sourceId": "00122831",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin E"
+            ]
+          },
+          {
+            "sourceId": "00162515",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin C"
+            ]
+          },
+          {
+            "sourceId": "00182966",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin E"
+            ]
+          },
+          {
+            "sourceId": "00200573",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin E"
+            ]
+          },
+          {
+            "sourceId": "00266086",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin C"
+            ]
+          },
+          {
+            "sourceId": "00274259",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin E"
+            ]
+          },
+          {
+            "sourceId": "00322997",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin C"
+            ]
+          },
+          {
+            "sourceId": "00328529",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin C"
+            ]
+          },
+          {
+            "sourceId": "00331015",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin B12"
+            ]
+          },
+          {
+            "sourceId": "00341207",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin C"
+            ]
+          },
+          {
+            "sourceId": "00389080",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin C"
+            ]
+          },
+          {
+            "sourceId": "00406988",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin B12"
+            ]
+          },
+          {
+            "sourceId": "00425729",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin C"
+            ]
+          },
+          {
+            "sourceId": "00438855",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin E"
+            ]
+          },
+          {
+            "sourceId": "00473626",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin E"
+            ]
+          },
+          {
+            "sourceId": "00484563",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Niacin"
+            ]
+          },
+          {
+            "sourceId": "00484628",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin C"
+            ]
+          },
+          {
+            "sourceId": "00503924",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin E"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "after": {
+    "zeroCoverageCount": 1174,
+    "summary": {
+      "total": 1174,
+      "counts": {
+        "mismatch": 395,
+        "unit_missing": 135,
+        "ingredient_id_missing": 339,
+        "missingVerified": 305
+      },
+      "ratios": {
+        "mismatch": 0.3365,
+        "unit_missing": 0.115,
+        "ingredient_id_missing": 0.2888,
+        "missingVerified": 0.2598
+      },
+      "top20": [
+        {
+          "sourceId": "80077621",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 21,
+            "unitMissing": 3,
+            "unitMismatch": 2,
+            "missingVerified": 21,
+            "mismatch": 2
+          },
+          "ingredientNames": [
+            "Papain",
+            "Lecithin",
+            "Medicago sativa L. (Fabaceae)",
+            "Triticum aestivum",
+            "Spirulina platensis",
+            "Lactobacillus rhamnosus",
+            "alpha-L-arabinofuranoside arabinofuranohydrolase",
+            "Triacylglycerol acylhydrolase",
+            "Beta-fructofuranosidase",
+            "Bee pollen"
+          ]
+        },
+        {
+          "sourceId": "80077629",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 21,
+            "unitMissing": 4,
+            "unitMismatch": 1,
+            "missingVerified": 21,
+            "mismatch": 2
+          },
+          "ingredientNames": [
+            "Poly(1,4-alpha-D-galacturonide) glycanohydrolase",
+            "Lactobacillus delbrueckii subsp. bulgaricus",
+            "Eleutherococcus senticosus",
+            "Medicago sativa L. (Fabaceae)",
+            "Palmaria palmata",
+            "Vaccinium myrtillus L. (Ericaceae)",
+            "Lactobacillus casei",
+            "Bee pollen",
+            "Rosa roxburghii",
+            "Dipeptidyl-peptidase IV"
+          ]
+        },
+        {
+          "sourceId": "80077656",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 20,
+            "unitMissing": 4,
+            "unitMismatch": 1,
+            "missingVerified": 21,
+            "mismatch": 2
+          },
+          "ingredientNames": [
+            "Rosa roxburghii",
+            "Dipeptidyl-peptidase IV",
+            "Protease",
+            "alpha-D-Galactoside galactohydrolase",
+            "Triticum aestivum",
+            "Lecithin",
+            "Palmaria palmata",
+            "Streptococcus salivarius subsp. thermophilus",
+            "Lactobacillus helveticus",
+            "Malt diastase"
+          ]
+        },
+        {
+          "sourceId": "80057057",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 1,
+            "unitMissing": 10,
+            "unitMismatch": 10,
+            "missingVerified": 14,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "L-Threonine",
+            "L-Histidine",
+            "L-isoleucine",
+            "L-Alanine",
+            "L-Glutamine",
+            "(S)-2-amino-3-methylbutanoic acid",
+            "L-Lysine",
+            "L-Methionine",
+            "L-Arginine",
+            "Aminoacetic acid"
+          ]
+        },
+        {
+          "sourceId": "80069781",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 3,
+            "unitMissing": 8,
+            "unitMismatch": 8,
+            "missingVerified": 12,
+            "mismatch": 2
+          },
+          "ingredientNames": [
+            "Lactoferrin",
+            "L-Leucine",
+            "L-Lysine",
+            "L-Valine",
+            "Conjugated linoleic acid",
+            "1,3,7-Trimethylxanthine",
+            "Green coffee bean extract",
+            "Aminoacetic acid",
+            "L-Threonine",
+            "L-isoleucine"
+          ]
+        },
+        {
+          "sourceId": "80059069",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 10,
+            "unitMissing": 2,
+            "unitMismatch": 1,
+            "missingVerified": 17,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "(3R,3'R,6'R)-beta,epsilon-Carotene-3,3'-diol",
+            "Acacia nilotica",
+            "(1E,6E)-1,7-Bis(4-hydroxy-3-methoxyphenyl)-1,6-heptadiene-3,5-dione",
+            "Camellia sinensis",
+            "Reynoutria japonica",
+            "Withania somnifera",
+            "Rubus idaeus",
+            "Lepidium meyenii",
+            "Beta-carotene",
+            "Boswellia serrata"
+          ]
+        },
+        {
+          "sourceId": "80052564",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 16,
+            "unitMissing": 1,
+            "unitMismatch": 1,
+            "missingVerified": 10,
+            "mismatch": 0
+          },
+          "ingredientNames": [
+            "DL-alpha-Lipoic acid",
+            "Triacylglycerol lipase",
+            "Malt diastase",
+            "1,3-beta-D-xylan xylanohydrolase",
+            "4-(1,3;1,4)-beta-D-Glucan 4-glucanohydrolase",
+            "4-alpha-D-Glucan glucanohydrolase",
+            "Poly(1-4-a-D-galacturonide)glycanohydrolase",
+            "Dipeptidyl aminopeptidase IV",
+            "Lactobacillus gasseri",
+            "Fungal protease"
+          ]
+        },
+        {
+          "sourceId": "80066788",
+          "canonicalSourceId": null,
+          "primaryReason": "unit_missing",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 8,
+            "unitMismatch": 8,
+            "missingVerified": 10,
+            "mismatch": 0
+          },
+          "ingredientNames": [
+            "Lactobacillus rhamnosus",
+            "Lacticaseibacillus paracasei",
+            "Bifidobacterium bifidum",
+            "Bifidobacterium longum subsp. longum",
+            "Lactobacillus gasseri",
+            "Lactobacillus reuteri",
+            "Lactobacillus plantarum",
+            "Lactobacillus paracasei",
+            "Lactobacillus acidophilus",
+            "Vaccinium macrocarpon"
+          ]
+        },
+        {
+          "sourceId": "80067071",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 12,
+            "unitMissing": 1,
+            "unitMismatch": 1,
+            "missingVerified": 8,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Stem bromelain",
+            "alpha-D-Galactoside galactohydrolase",
+            "Astragalus membranaceus",
+            "Serratiopeptidase",
+            "Royal jelly",
+            "Triacylglycerol acylhydrolase",
+            "Beta-D-galactoside galactohydrolase",
+            "D-Pantothenic acid",
+            "Ascorbic acid",
+            "Spirulina platensis"
+          ]
+        },
+        {
+          "sourceId": "80067074",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 12,
+            "unitMissing": 1,
+            "unitMismatch": 1,
+            "missingVerified": 8,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Beta-D-galactoside galactohydrolase",
+            "Triacylglycerol acylhydrolase",
+            "Poly(1-4-a-D-galacturonide)glycanohydrolase",
+            "Ascorbic acid",
+            "alpha-D-Galactoside galactohydrolase",
+            "Serratiopeptidase",
+            "Bacterial Protease",
+            "4-(1,3;1,4)-beta-D-Glucan 4-glucanohydrolase",
+            "myo-Inositol-hexakisphosphate 3-phosphohydrolase",
+            "Beta-fructofuranosidase"
+          ]
+        },
+        {
+          "sourceId": "80076492",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 13,
+            "unitMissing": 1,
+            "unitMismatch": 1,
+            "missingVerified": 7,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "4-alpha-D-Glucan glucohydrolase",
+            "Spirulina platensis",
+            "alpha-D-Galactoside galactohydrolase",
+            "4-alpha-D-Glucan glucanohydrolase",
+            "Stem bromelain",
+            "4-(1,3;1,4)-beta-D-Glucan 4-glucanohydrolase",
+            "alpha-L-arabinofuranoside arabinofuranohydrolase",
+            "Beta-D-galactoside galactohydrolase",
+            "Triacylglycerol acylhydrolase",
+            "Malt diastase"
+          ]
+        },
+        {
+          "sourceId": "80039404",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 10,
+            "unitMissing": 3,
+            "unitMismatch": 2,
+            "missingVerified": 7,
+            "mismatch": 0
+          },
+          "ingredientNames": [
+            "4-(1,3;1,4)-beta-D-Glucan 4-glucanohydrolase",
+            "Lecithin",
+            "Glycyrrhiza glabra",
+            "Papain",
+            "Bifidobacterium breve",
+            "Malt diastase",
+            "4-alpha-D-Glucan glucanohydrolase",
+            "Ginkgo biloba",
+            "Palmaria palmata",
+            "myo-Inositol-hexakisphosphate 3-phosphohydrolase"
+          ]
+        },
+        {
+          "sourceId": "80050520",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 11,
+            "unitMissing": 1,
+            "unitMismatch": 1,
+            "missingVerified": 9,
+            "mismatch": 0
+          },
+          "ingredientNames": [
+            "Lactobacillus acidophilus",
+            "Lactobacillus gasseri",
+            "Lactobacillus paracasei",
+            "(1-4)-alpha-D-galacturonan glycanohydrolase",
+            "Fungal protease",
+            "Lactobacillus salivarius",
+            "1,3-beta-D-xylan xylanohydrolase",
+            "Malt diastase",
+            "Beta-D-galactoside galactohydrolase",
+            "Triacylglycerol lipase"
+          ]
+        },
+        {
+          "sourceId": "80057719",
+          "canonicalSourceId": null,
+          "primaryReason": "unit_missing",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 7,
+            "unitMismatch": 7,
+            "missingVerified": 7,
+            "mismatch": 0
+          },
+          "ingredientNames": [
+            "Bifidobacterium breve",
+            "Lactobacillus casei",
+            "Bifidobacterium bifidum",
+            "Lactobacillus rhamnosus",
+            "Bifidobacterium longum subsp. infantis",
+            "Bifidobacterium animalis subsp. lactis",
+            "Lactobacillus acidophilus"
+          ]
+        },
+        {
+          "sourceId": "80057990",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 6,
+            "unitMissing": 2,
+            "unitMismatch": 2,
+            "missingVerified": 7,
+            "mismatch": 4
+          },
+          "ingredientNames": [
+            "Vitamin B12",
+            "Vitamin B6",
+            "2-(Dimethylamino)ethanol",
+            "3-Pyridinecarboxamide",
+            "Salix alba",
+            "Eleutherococcus senticosus",
+            "Folate",
+            "Phosphatidylserine",
+            "[5R-(5alpha,9beta,11E)]-5-Amino-11-ethylidene-5,6,9,10-tetrahydro-7-methyl-5,9-methanocycloocta[b]pyridin-2(1H)-one",
+            "Ginkgo biloba"
+          ]
+        },
+        {
+          "sourceId": "80050738",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 5,
+            "unitMissing": 4,
+            "unitMismatch": 2,
+            "missingVerified": 7,
+            "mismatch": 2
+          },
+          "ingredientNames": [
+            "Senegalia catechu",
+            "L(+)-Ornithine alpha-ketoglutarate",
+            "Rhodiola rosea",
+            "3,4,5-Trihydroxybenzoic acid",
+            "L-Arginine",
+            "DL-alpha-Lipoic acid",
+            "Ginkgo biloba",
+            "Scutellaria baicalensis",
+            "Withania somnifera",
+            "Camellia sinensis"
+          ]
+        },
+        {
+          "sourceId": "80009137",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 3,
+            "unitMissing": 3,
+            "unitMismatch": 3,
+            "missingVerified": 10,
+            "mismatch": 0
+          },
+          "ingredientNames": [
+            "Eleutherococcus senticosus",
+            "Glycine max",
+            "Ginkgo biloba",
+            "Glycyrrhiza uralensis",
+            "Royal jelly",
+            "Lacticaseibacillus casei",
+            "Lacticaseibacillus rhamnosus",
+            "Chlorella vulgaris",
+            "Lactobacillus helveticus",
+            "Hordeum vulgare"
+          ]
+        },
+        {
+          "sourceId": "80039275",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 7,
+            "unitMissing": 2,
+            "unitMismatch": 2,
+            "missingVerified": 8,
+            "mismatch": 0
+          },
+          "ingredientNames": [
+            "Vitis Vinifera",
+            "Serratiopeptidase",
+            "Glycyrrhiza glabra",
+            "Streptococcus salivarius subsp. thermophilus",
+            "myo-Inositol-hexakisphosphate 3-phosphohydrolase",
+            "Papain",
+            "Malt diastase",
+            "Ginkgo biloba",
+            "Lactobacillus delbrueckii subsp. bulgaricus",
+            "Triacylglycerol acylhydrolase"
+          ]
+        },
+        {
+          "sourceId": "80051616",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 5,
+            "unitMissing": 3,
+            "unitMismatch": 2,
+            "missingVerified": 7,
+            "mismatch": 2
+          },
+          "ingredientNames": [
+            "Ginkgo biloba",
+            "Rhodiola rosea",
+            "Camellia sinensis",
+            "Withania somnifera",
+            "3-Pyridinecarboxamide",
+            "Niacin",
+            "Vitamin B6",
+            "Ophiocordyceps sinensis",
+            "DL-alpha-Lipoic acid",
+            "L-Arginine"
+          ]
+        },
+        {
+          "sourceId": "80067248",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 8,
+            "unitMissing": 3,
+            "unitMismatch": 3,
+            "missingVerified": 5,
+            "mismatch": 0
+          },
+          "ingredientNames": [
+            "beta-galactosidase",
+            "1-Carboxy-N,N,N-trimethylmethanaminium chloride",
+            "Zingiber officinale",
+            "Fungal protease",
+            "4-(1,3;1,4)-beta-D-Glucan 4-glucanohydrolase",
+            "Lactobacillus acidophilus",
+            "beta-D-fructofuranoside fructohydrolase",
+            "Pancreatic Enzymes",
+            "Papain",
+            "4-alpha-D-Glucan glucanohydrolase"
+          ]
+        }
+      ],
+      "top20ByReason": {
+        "ingredient_id_missing": [
+          {
+            "sourceId": "00232599",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 1,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 0
+            },
+            "ingredientNames": [
+              "Streptococcus salivarius subsp. thermophilus",
+              "Lactobacillus rhamnosus"
+            ]
+          },
+          {
+            "sourceId": "00424315",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 1,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin B2",
+              "Lecithin",
+              "Dolomite"
+            ]
+          },
+          {
+            "sourceId": "00443115",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 1,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Sodium hydrogen carbonate",
+              "Magnesii hydroxidum"
+            ]
+          },
+          {
+            "sourceId": "02096870",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 1,
+              "unitMissing": 1,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Helianthus annuus",
+              "Borago officinalis",
+              "Vitamin E"
+            ]
+          },
+          {
+            "sourceId": "02211718",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 2,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "(6Z,9Z,12Z)-6,9,12-Octadecatrienoic acid",
+              "Vitamin E",
+              "(Z,Z,)-9,12-Octadecadienoic acid"
+            ]
+          },
+          {
+            "sourceId": "02240716",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 1,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Selenium",
+              "Zinc gluconate"
+            ]
+          },
+          {
+            "sourceId": "02247778",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 2,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 1,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Sodium",
+              "Chlorine",
+              "Phosphorus",
+              "Pantothenic acid"
+            ]
+          },
+          {
+            "sourceId": "80000817",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 1,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 2
+            },
+            "ingredientNames": [
+              "(S)-alpha-Amino-4-hydroxybenzenepropanoic acid",
+              "Vitamin C",
+              "Vitamin B6"
+            ]
+          },
+          {
+            "sourceId": "80000884",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 1,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Fish oil",
+              "Vitamin E"
+            ]
+          },
+          {
+            "sourceId": "80000890",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 1,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin B6",
+              "N-[2-(5-Methoxyindol-3-yl) ethyl] acetamide"
+            ]
+          },
+          {
+            "sourceId": "80001088",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 1,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 1,
+              "mismatch": 3
+            },
+            "ingredientNames": [
+              "All-trans-lycopene",
+              "Vitamin E",
+              "Prunus africana",
+              "Serenoa repens",
+              "Cucurbita pepo"
+            ]
+          },
+          {
+            "sourceId": "80001374",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 2,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Fish oil",
+              "Vitamin E",
+              "Eicosapentaenoic acid"
+            ]
+          },
+          {
+            "sourceId": "80002053",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 1,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin C",
+              "Vitis vinifera"
+            ]
+          },
+          {
+            "sourceId": "80006271",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 2,
+              "unitMissing": 2,
+              "unitMismatch": 2,
+              "missingVerified": 0,
+              "mismatch": 2
+            },
+            "ingredientNames": [
+              "Selenium",
+              "Sterculia acuminata",
+              "Zincum metallicum",
+              "Medicago sativa"
+            ]
+          },
+          {
+            "sourceId": "80006330",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 1,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "1, 2-dithiolane-3R, S-pentanoic acid",
+              "Vitamin C"
+            ]
+          },
+          {
+            "sourceId": "80007332",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 3,
+              "unitMissing": 4,
+              "unitMismatch": 4,
+              "missingVerified": 3,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Calcarea fluorica",
+              "Hypericum perforatum",
+              "Phytolacca decandra",
+              "Stillingia sylvatica",
+              "Selenium metallicum",
+              "Symphytum officinale",
+              "Thymus serpyllum"
+            ]
+          },
+          {
+            "sourceId": "80007524",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 4,
+              "unitMissing": 2,
+              "unitMismatch": 2,
+              "missingVerified": 1,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Selenium metallicum",
+              "Echinacea angustifolia",
+              "Viola Tricolor",
+              "Nux vomica",
+              "Thuja occidentalis",
+              "Pulsatilla"
+            ]
+          },
+          {
+            "sourceId": "80007537",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 7,
+              "unitMissing": 2,
+              "unitMismatch": 2,
+              "missingVerified": 1,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Anas barbariae",
+              "Pyrogenium",
+              "Olive",
+              "Influenzinum",
+              "Crotalus horridus",
+              "Ginkgo biloba",
+              "Crab apple",
+              "Bryonia alba",
+              "Selenium metallicum"
+            ]
+          },
+          {
+            "sourceId": "80007792",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 1,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin E",
+              "Fish oil"
+            ]
+          },
+          {
+            "sourceId": "80008908",
+            "canonicalSourceId": null,
+            "primaryReason": "ingredient_id_missing",
+            "counts": {
+              "ingredientIdMissing": 1,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "N-acetyl-5-methoxytryptamine",
+              "Vitamin B6"
+            ]
+          }
+        ],
+        "unit_missing": [
+          {
+            "sourceId": "00141054",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin E"
+            ]
+          },
+          {
+            "sourceId": "00623113",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 1,
+              "mismatch": 0
+            },
+            "ingredientNames": [
+              "Beta-carotene"
+            ]
+          },
+          {
+            "sourceId": "00685828",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Folate"
+            ]
+          },
+          {
+            "sourceId": "00697036",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin E"
+            ]
+          },
+          {
+            "sourceId": "00880760",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Selenium"
+            ]
+          },
+          {
+            "sourceId": "01904388",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 1,
+              "mismatch": 0
+            },
+            "ingredientNames": [
+              "Beta-carotene"
+            ]
+          },
+          {
+            "sourceId": "01923455",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Folate"
+            ]
+          },
+          {
+            "sourceId": "01927906",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 1,
+              "mismatch": 0
+            },
+            "ingredientNames": [
+              "Lactobacillus rhamnosus"
+            ]
+          },
+          {
+            "sourceId": "02164108",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 1,
+              "mismatch": 0
+            },
+            "ingredientNames": [
+              "Beta-carotene"
+            ]
+          },
+          {
+            "sourceId": "02227045",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 1,
+              "mismatch": 0
+            },
+            "ingredientNames": [
+              "Beta-carotene"
+            ]
+          },
+          {
+            "sourceId": "02242871",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Selenium Sulfide"
+            ]
+          },
+          {
+            "sourceId": "02244539",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Folate"
+            ]
+          },
+          {
+            "sourceId": "02244540",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 1,
+              "mismatch": 0
+            },
+            "ingredientNames": [
+              "Beta-carotene"
+            ]
+          },
+          {
+            "sourceId": "02244737",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 2,
+              "unitMismatch": 2,
+              "missingVerified": 2,
+              "mismatch": 0
+            },
+            "ingredientNames": [
+              "Lactobacillus casei",
+              "Lactobacillus acidophilus"
+            ]
+          },
+          {
+            "sourceId": "02246182",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Folate"
+            ]
+          },
+          {
+            "sourceId": "80000274",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Folate"
+            ]
+          },
+          {
+            "sourceId": "80001449",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 0,
+              "mismatch": 3
+            },
+            "ingredientNames": [
+              "Vitamin B12",
+              "Niacin",
+              "Vitamin B1"
+            ]
+          },
+          {
+            "sourceId": "80001926",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 3,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Amylase",
+              "Ornithine",
+              "Protease I",
+              "Vitamin C"
+            ]
+          },
+          {
+            "sourceId": "80002376",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin E"
+            ]
+          },
+          {
+            "sourceId": "80002390",
+            "canonicalSourceId": null,
+            "primaryReason": "unit_missing",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 1,
+              "unitMismatch": 1,
+              "missingVerified": 1,
+              "mismatch": 0
+            },
+            "ingredientNames": [
+              "Beta-carotene"
+            ]
+          }
+        ],
+        "missingVerified": [
+          {
+            "sourceId": "00242241",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin C",
+              "Fenugreek"
+            ]
+          },
+          {
+            "sourceId": "00718432",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 2,
+              "mismatch": 2
+            },
+            "ingredientNames": [
+              "para-Aminobenzoic acid",
+              "Vitamin B12",
+              "Inositol",
+              "Niacin"
+            ]
+          },
+          {
+            "sourceId": "00824070",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin E",
+              "Linoleic Acid"
+            ]
+          },
+          {
+            "sourceId": "02243526",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Niacin",
+              "Inositol"
+            ]
+          },
+          {
+            "sourceId": "02246509",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin B6",
+              "Folic Acid"
+            ]
+          },
+          {
+            "sourceId": "80001375",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 2
+            },
+            "ingredientNames": [
+              "Linum usitatissimum L. subsp. sativa",
+              "Vitamin E",
+              "Borago officinalis"
+            ]
+          },
+          {
+            "sourceId": "80005780",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vaccinium myrtillus",
+              "Vitamin C"
+            ]
+          },
+          {
+            "sourceId": "80006063",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin C",
+              "Astragalus membranaceus"
+            ]
+          },
+          {
+            "sourceId": "80006624",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Borago officinalis",
+              "Vitamin E"
+            ]
+          },
+          {
+            "sourceId": "80006698",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Evening primrose oil",
+              "Vitamin E"
+            ]
+          },
+          {
+            "sourceId": "80007353",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Withania somnifera",
+              "Selenium"
+            ]
+          },
+          {
+            "sourceId": "80007891",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 2,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin B6",
+              "Camellia sinensis",
+              "Zingiber officinale"
+            ]
+          },
+          {
+            "sourceId": "80008923",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 2,
+              "mismatch": 0
+            },
+            "ingredientNames": [
+              "Alpha-beta-carotene-13, 13'-diol",
+              "Alpha-beta-carotene-3, 3'-diol"
+            ]
+          },
+          {
+            "sourceId": "80009902",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "L-Tyrosine",
+              "Selenium"
+            ]
+          },
+          {
+            "sourceId": "80011200",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 2,
+              "mismatch": 0
+            },
+            "ingredientNames": [
+              "Bifidobacterium bifidum",
+              "Lactobacillus acidophilus"
+            ]
+          },
+          {
+            "sourceId": "80011335",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 0
+            },
+            "ingredientNames": [
+              "Lactobacillus acidophilus"
+            ]
+          },
+          {
+            "sourceId": "80011341",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 0
+            },
+            "ingredientNames": [
+              "Lactobacillus rhamnosus GG"
+            ]
+          },
+          {
+            "sourceId": "80011343",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 2,
+              "mismatch": 0
+            },
+            "ingredientNames": [
+              "Bifidobacterium longum",
+              "Lactobacillus acidophilus"
+            ]
+          },
+          {
+            "sourceId": "80011352",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 1,
+              "mismatch": 0
+            },
+            "ingredientNames": [
+              "Lactobacillus rhamnosus"
+            ]
+          },
+          {
+            "sourceId": "80011353",
+            "canonicalSourceId": null,
+            "primaryReason": "missingVerified",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 2,
+              "mismatch": 0
+            },
+            "ingredientNames": [
+              "Lactobacillus rhamnosus",
+              "Lactobacillus acidophilus"
+            ]
+          }
+        ],
+        "mismatch": [
+          {
+            "sourceId": "00122645",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin B6"
+            ]
+          },
+          {
+            "sourceId": "00122823",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin E"
+            ]
+          },
+          {
+            "sourceId": "00122831",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin E"
+            ]
+          },
+          {
+            "sourceId": "00182966",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin E"
+            ]
+          },
+          {
+            "sourceId": "00200573",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin E"
+            ]
+          },
+          {
+            "sourceId": "00274259",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin E"
+            ]
+          },
+          {
+            "sourceId": "00322997",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin C"
+            ]
+          },
+          {
+            "sourceId": "00389080",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin C"
+            ]
+          },
+          {
+            "sourceId": "00425729",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin C"
+            ]
+          },
+          {
+            "sourceId": "00438855",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin E"
+            ]
+          },
+          {
+            "sourceId": "00473626",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin E"
+            ]
+          },
+          {
+            "sourceId": "00484563",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Niacin"
+            ]
+          },
+          {
+            "sourceId": "00503924",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin E"
+            ]
+          },
+          {
+            "sourceId": "00506451",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin E"
+            ]
+          },
+          {
+            "sourceId": "00529028",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin C"
+            ]
+          },
+          {
+            "sourceId": "00547670",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Pantothenic acid"
+            ]
+          },
+          {
+            "sourceId": "00557811",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin C"
+            ]
+          },
+          {
+            "sourceId": "00557838",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin C"
+            ]
+          },
+          {
+            "sourceId": "00585351",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin E"
+            ]
+          },
+          {
+            "sourceId": "00622990",
+            "canonicalSourceId": null,
+            "primaryReason": "mismatch",
+            "counts": {
+              "ingredientIdMissing": 0,
+              "unitMissing": 0,
+              "unitMismatch": 0,
+              "missingVerified": 0,
+              "mismatch": 1
+            },
+            "ingredientNames": [
+              "Vitamin E"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "delta": {
+    "zeroCoverageCount": -837,
+    "counts": {
+      "mismatch": -288,
+      "unit_missing": -55,
+      "ingredient_id_missing": -491,
+      "missingVerified": -3
+    },
+    "ratios": {
+      "mismatch": -0.0031,
+      "unit_missing": 0.0205,
+      "ingredient_id_missing": -0.1239,
+      "missingVerified": 0.1066
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "source": "lnhpd",
+  "timestamp": "2026-01-09T22:06:10.795Z",
+  "sampleSize": 45,
+  "activeRows": 120,
+  "resolvedRows": 92,
+  "counts": {
+    "activeRows": 120,
+    "ingredientIdMissing": 28,
+    "ingredientFormsMissing": 49,
+    "formRawMissing": 33,
+    "taxonomyMismatch": 48,
+    "formRawNoMatch": 1,
+    "matched": 5
+  },
+  "ratios": {
+    "ingredientIdMissing": 0.2333,
+    "taxonomyMismatchAmongResolved": 0.5217,
+    "taxonomyMismatchAmongActive": 0.4,
+    "formRawMissingAmongResolved": 0.3587,
+    "formRawNoMatchAmongResolved": 0.0109
+  },
+  "options": {
+    "limit": null,
+    "topN": 50,
+    "sourceIdsFile": "output/form-taxonomy/mismatch_examples_source_ids.json"
+  }
+}

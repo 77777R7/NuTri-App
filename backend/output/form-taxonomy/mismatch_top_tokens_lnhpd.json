@@ -1,0 +1,207 @@
+{
+  "source": "lnhpd",
+  "topN": 50,
+  "totalMismatches": 50,
+  "tokens": [
+    {
+      "token": "acid",
+      "count": 30
+    },
+    {
+      "token": "seed",
+      "count": 22
+    },
+    {
+      "token": "linolenic",
+      "count": 16
+    },
+    {
+      "token": "alpha",
+      "count": 15
+    },
+    {
+      "token": "fatty",
+      "count": 13
+    },
+    {
+      "token": "acids",
+      "count": 13
+    },
+    {
+      "token": "free",
+      "count": 9
+    },
+    {
+      "token": "sterols",
+      "count": 9
+    },
+    {
+      "token": "esters",
+      "count": 8
+    },
+    {
+      "token": "and",
+      "count": 8
+    },
+    {
+      "token": "oleic",
+      "count": 6
+    },
+    {
+      "token": "fruit",
+      "count": 5
+    },
+    {
+      "token": "linoleic",
+      "count": 4
+    },
+    {
+      "token": "hydrochloride",
+      "count": 3
+    },
+    {
+      "token": "500mg",
+      "count": 2
+    },
+    {
+      "token": "extract",
+      "count": 2
+    },
+    {
+      "token": "dhe",
+      "count": 2
+    },
+    {
+      "token": "700mg",
+      "count": 2
+    },
+    {
+      "token": "omega",
+      "count": 2
+    },
+    {
+      "token": "ala",
+      "count": 2
+    },
+    {
+      "token": "beta",
+      "count": 2
+    },
+    {
+      "token": "150mg",
+      "count": 2
+    },
+    {
+      "token": "sulfate",
+      "count": 2
+    },
+    {
+      "token": "pantothenic",
+      "count": 1
+    },
+    {
+      "token": "10g",
+      "count": 1
+    },
+    {
+      "token": "of",
+      "count": 1
+    },
+    {
+      "token": "d3",
+      "count": 1
+    },
+    {
+      "token": "dilution",
+      "count": 1
+    },
+    {
+      "token": "1g",
+      "count": 1
+    },
+    {
+      "token": "ester",
+      "count": 1
+    },
+    {
+      "token": "liposteric",
+      "count": 1
+    },
+    {
+      "token": "containing",
+      "count": 1
+    },
+    {
+      "token": "7728mg",
+      "count": 1
+    },
+    {
+      "token": "6100mg",
+      "count": 1
+    },
+    {
+      "token": "cis",
+      "count": 1
+    },
+    {
+      "token": "719mg",
+      "count": 1
+    },
+    {
+      "token": "780mg",
+      "count": 1
+    },
+    {
+      "token": "51mg",
+      "count": 1
+    },
+    {
+      "token": "70mg",
+      "count": 1
+    },
+    {
+      "token": "lenoleic",
+      "count": 1
+    },
+    {
+      "token": "carotene",
+      "count": 1
+    },
+    {
+      "token": "2750iu",
+      "count": 1
+    },
+    {
+      "token": "200mg",
+      "count": 1
+    },
+    {
+      "token": "dry",
+      "count": 1
+    },
+    {
+      "token": "linol",
+      "count": 1
+    },
+    {
+      "token": "ique",
+      "count": 1
+    },
+    {
+      "token": "600mg",
+      "count": 1
+    },
+    {
+      "token": "130mg",
+      "count": 1
+    },
+    {
+      "token": "122mg",
+      "count": 1
+    },
+    {
+      "token": "153mg",
+      "count": 1
+    }
+  ]
+}

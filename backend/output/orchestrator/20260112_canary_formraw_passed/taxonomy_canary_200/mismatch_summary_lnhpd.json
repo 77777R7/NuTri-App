@@ -1,0 +1,28 @@
+{
+  "source": "lnhpd",
+  "timestamp": "2026-01-12T21:02:43.922Z",
+  "sampleSize": 200,
+  "activeRows": 259,
+  "resolvedRows": 223,
+  "counts": {
+    "activeRows": 259,
+    "ingredientIdMissing": 36,
+    "ingredientFormsMissing": 4,
+    "formRawMissing": 107,
+    "taxonomyMismatch": 15,
+    "formRawNoMatch": 11,
+    "matched": 90
+  },
+  "ratios": {
+    "ingredientIdMissing": 0.139,
+    "taxonomyMismatchAmongResolved": 0.0673,
+    "taxonomyMismatchAmongActive": 0.0579,
+    "formRawMissingAmongResolved": 0.4798,
+    "formRawNoMatchAmongResolved": 0.0493
+  },
+  "options": {
+    "limit": null,
+    "topN": 20,
+    "sourceIdsFile": "output/orchestrator/20260112_canary_formraw_passed/canary_lnhpd_source_ids_200.json"
+  }
+}

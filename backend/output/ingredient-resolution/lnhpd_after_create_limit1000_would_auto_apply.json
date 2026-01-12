@@ -1,0 +1,763 @@
+[
+  {
+    "source": "lnhpd",
+    "raw": "Mentha x piperita",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Mentha x piperita",
+        "normalized": "mentha x piperita",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "a5e15640-b9b7-4923-a8b8-9b98ed535c11",
+    "ingredientName": "Mentha x piperita",
+    "confidence": 0.96,
+    "margin": 0.96,
+    "reasons": [
+      "ingredient_exact:base",
+      "synonym_exact:base",
+      "ingredient_fuzzy:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Medicago sativa",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Medicago sativa",
+        "normalized": "medicago sativa",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "8d7af787-cf70-46d2-9b25-6c08d6766290",
+    "ingredientName": "Alfalfa",
+    "confidence": 0.98,
+    "margin": 0.98,
+    "reasons": [
+      "curated_latin_map:base",
+      "synonym_exact:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Citrus Bioflavonoids",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Citrus Bioflavonoids",
+        "normalized": "citrus bioflavonoids",
+        "hasLatinBinomial": false
+      }
+    ],
+    "ingredientId": "581a887e-0e05-432d-aad0-5357c1a33a64",
+    "ingredientName": "Citrus Bioflavonoids",
+    "confidence": 0.96,
+    "margin": 0.96,
+    "reasons": [
+      "curated_common:base",
+      "ingredient_exact:base",
+      "synonym_exact:base",
+      "ingredient_fuzzy:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Inositol",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Inositol",
+        "normalized": "inositol",
+        "hasLatinBinomial": false
+      }
+    ],
+    "ingredientId": "e213c4cd-1fca-4c1f-8be9-53e72c20cecf",
+    "ingredientName": "Inositol",
+    "confidence": 0.96,
+    "margin": 0.96,
+    "reasons": [
+      "curated_common:base",
+      "ingredient_exact:base",
+      "synonym_exact:base",
+      "ingredient_fuzzy:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Paullinia cupana",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Paullinia cupana",
+        "normalized": "paullinia cupana",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "7d9a6156-9ae4-4ab8-9383-3f1895b9139f",
+    "ingredientName": "Paullinia cupana",
+    "confidence": 0.96,
+    "margin": 0.96,
+    "reasons": [
+      "ingredient_exact:base",
+      "synonym_exact:base",
+      "ingredient_fuzzy:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Coenzyme Q10",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Coenzyme Q10",
+        "normalized": "coenzyme q10",
+        "hasLatinBinomial": false
+      }
+    ],
+    "ingredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
+    "ingredientName": "Coenzyme Q10",
+    "confidence": 0.96,
+    "margin": 0.96,
+    "reasons": [
+      "curated_common:base",
+      "ingredient_exact:base",
+      "synonym_exact:base",
+      "ingredient_fuzzy:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Paeonia lactiflora",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Paeonia lactiflora",
+        "normalized": "paeonia lactiflora",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "82f29686-a50a-4b72-845a-7167cda04195",
+    "ingredientName": "Paeonia lactiflora",
+    "confidence": 0.96,
+    "margin": 0.96,
+    "reasons": [
+      "ingredient_exact:base",
+      "synonym_exact:base",
+      "ingredient_fuzzy:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Serenoa repens",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Serenoa repens",
+        "normalized": "serenoa repens",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "9a223158-e7bc-49d9-a147-4df95414da48",
+    "ingredientName": "Serenoa repens",
+    "confidence": 0.96,
+    "margin": 0.96,
+    "reasons": [
+      "ingredient_exact:base",
+      "synonym_exact:base",
+      "ingredient_fuzzy:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Linum usitatissimum",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Linum usitatissimum",
+        "normalized": "linum usitatissimum",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "44a42475-38d9-4c87-9cfb-a007a78e4fdd",
+    "ingredientName": "flaxseed",
+    "confidence": 0.98,
+    "margin": 0.98,
+    "reasons": [
+      "curated_latin_map:base",
+      "synonym_exact:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Trifolium pratense",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Trifolium pratense",
+        "normalized": "trifolium pratense",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "a277fa7a-7a95-4140-9365-ba2578381081",
+    "ingredientName": "Trifolium pratense",
+    "confidence": 0.96,
+    "margin": 0.96,
+    "reasons": [
+      "ingredient_exact:base",
+      "synonym_exact:base",
+      "ingredient_fuzzy:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Dioscorea oppositifolia",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Dioscorea oppositifolia",
+        "normalized": "dioscorea oppositifolia",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "f8d3d07f-1359-4591-ba86-de61f09e6683",
+    "ingredientName": "Wild Yam",
+    "confidence": 0.98,
+    "margin": 0.98,
+    "reasons": [
+      "curated_latin_map:base",
+      "synonym_exact:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Hydrastis canadensis",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Hydrastis canadensis",
+        "normalized": "hydrastis canadensis",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "08239caa-ef8b-40ad-981b-9da28ab10343",
+    "ingredientName": "Goldenseal",
+    "confidence": 0.98,
+    "margin": 0.98,
+    "reasons": [
+      "curated_latin_map:base",
+      "synonym_exact:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Atractylodes macrocephala",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Atractylodes macrocephala",
+        "normalized": "atractylodes macrocephala",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "7dadc32a-3830-404f-9b7c-e4c5b4b7735e",
+    "ingredientName": "Atractylodes macrocephala",
+    "confidence": 0.96,
+    "margin": 0.96,
+    "reasons": [
+      "ingredient_exact:base",
+      "synonym_exact:base",
+      "ingredient_fuzzy:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Daucus carota",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Daucus carota",
+        "normalized": "daucus carota",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "fe68cddb-5ed3-4170-a55c-b9cc05251c6e",
+    "ingredientName": "Daucus carota",
+    "confidence": 0.96,
+    "margin": 0.96,
+    "reasons": [
+      "ingredient_exact:base",
+      "synonym_exact:base",
+      "ingredient_fuzzy:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Eucalyptus globulus",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Eucalyptus globulus",
+        "normalized": "eucalyptus globulus",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "88490139-e496-450f-9454-be4aae1455bb",
+    "ingredientName": "Eucalyptus",
+    "confidence": 0.98,
+    "margin": 0.98,
+    "reasons": [
+      "curated_latin_map:base",
+      "synonym_exact:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Rehmannia glutinosa",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Rehmannia glutinosa",
+        "normalized": "rehmannia glutinosa",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "ab90d0e6-cec8-404f-8784-38cd4206854e",
+    "ingredientName": "Rehmannia glutinosa",
+    "confidence": 0.96,
+    "margin": 0.96,
+    "reasons": [
+      "ingredient_exact:base",
+      "synonym_exact:base",
+      "ingredient_fuzzy:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Piper nigrum",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Piper nigrum",
+        "normalized": "piper nigrum",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "80bfad4c-7920-489e-af7e-6070b0fa1b62",
+    "ingredientName": "black pepper",
+    "confidence": 0.98,
+    "margin": 0.98,
+    "reasons": [
+      "curated_latin_map:base",
+      "synonym_exact:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Myo-Inositol",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Myo-Inositol",
+        "normalized": "myo inositol",
+        "hasLatinBinomial": false
+      }
+    ],
+    "ingredientId": "e213c4cd-1fca-4c1f-8be9-53e72c20cecf",
+    "ingredientName": "Inositol",
+    "confidence": 0.93575,
+    "margin": 0.93575,
+    "reasons": [
+      "curated_common:base",
+      "synonym_exact:base",
+      "synonym_fuzzy:base",
+      "ingredient_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Equisetum arvense",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Equisetum arvense",
+        "normalized": "equisetum arvense",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "5cbdb06d-f36d-4aa7-b8f8-457a9bd013fa",
+    "ingredientName": "Equisetum arvense",
+    "confidence": 0.96,
+    "margin": 0.96,
+    "reasons": [
+      "ingredient_exact:base",
+      "synonym_exact:base",
+      "ingredient_fuzzy:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Lecithin",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Lecithin",
+        "normalized": "lecithin",
+        "hasLatinBinomial": false
+      }
+    ],
+    "ingredientId": "11b68cf0-5ebd-434c-b7c1-f33db6272ca2",
+    "ingredientName": "Lecithin",
+    "confidence": 0.96,
+    "margin": 0.96,
+    "reasons": [
+      "curated_common:base",
+      "ingredient_exact:base",
+      "synonym_exact:base",
+      "ingredient_fuzzy:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Camellia sinensis",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Camellia sinensis",
+        "normalized": "camellia sinensis",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "cd6e339b-2eff-4de7-8e3b-c3ea5b7eca13",
+    "ingredientName": "Green Tea Extract",
+    "confidence": 0.98,
+    "margin": 0.98,
+    "reasons": [
+      "curated_latin_map:base",
+      "synonym_exact:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Bioflavonoids",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Bioflavonoids",
+        "normalized": "bioflavonoids",
+        "hasLatinBinomial": false
+      }
+    ],
+    "ingredientId": "581a887e-0e05-432d-aad0-5357c1a33a64",
+    "ingredientName": "Citrus Bioflavonoids",
+    "confidence": 0.93575,
+    "margin": 0.93575,
+    "reasons": [
+      "curated_common:base",
+      "synonym_exact:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Olea europaea",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Olea europaea",
+        "normalized": "olea europaea",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "51e04da1-6ad9-41cc-b524-b22f39fa42d3",
+    "ingredientName": "Olea europaea",
+    "confidence": 0.96,
+    "margin": 0.96,
+    "reasons": [
+      "ingredient_exact:base",
+      "synonym_exact:base",
+      "ingredient_fuzzy:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Cynara scolymus",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Cynara scolymus",
+        "normalized": "cynara scolymus",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "aa96efc2-cf10-4927-ad64-30a36c5f493f",
+    "ingredientName": "Cynara scolymus",
+    "confidence": 0.96,
+    "margin": 0.96,
+    "reasons": [
+      "ingredient_exact:base",
+      "synonym_exact:base",
+      "ingredient_fuzzy:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Rheum palmatum",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Rheum palmatum",
+        "normalized": "rheum palmatum",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "3b8d120b-713f-41ad-8d49-6d38bd7b821f",
+    "ingredientName": "Rheum palmatum",
+    "confidence": 0.96,
+    "margin": 0.96,
+    "reasons": [
+      "ingredient_exact:base",
+      "synonym_exact:base",
+      "ingredient_fuzzy:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Plantago major",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Plantago major",
+        "normalized": "plantago major",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "4c9bcf38-6e25-416c-aa7f-5287619686f3",
+    "ingredientName": "Plantago major",
+    "confidence": 0.96,
+    "margin": 0.96,
+    "reasons": [
+      "ingredient_exact:base",
+      "synonym_exact:base",
+      "ingredient_fuzzy:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Avena sativa",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Avena sativa",
+        "normalized": "avena sativa",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "add7bc5a-54da-477a-81af-cf0daedc802e",
+    "ingredientName": "Avena sativa",
+    "confidence": 0.96,
+    "margin": 0.96,
+    "reasons": [
+      "ingredient_exact:base",
+      "synonym_exact:base",
+      "ingredient_fuzzy:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Plantago ovata",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Plantago ovata",
+        "normalized": "plantago ovata",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "a2f82a8c-fa6f-4984-b9bf-81cd2775eb17",
+    "ingredientName": "Plantago ovata",
+    "confidence": 0.96,
+    "margin": 0.96,
+    "reasons": [
+      "ingredient_exact:base",
+      "synonym_exact:base",
+      "ingredient_fuzzy:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Arctium lappa",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Arctium lappa",
+        "normalized": "arctium lappa",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "e59ab98a-647b-4e26-b8e6-18d0fa08dd6e",
+    "ingredientName": "Arctium lappa",
+    "confidence": 0.96,
+    "margin": 0.96,
+    "reasons": [
+      "ingredient_exact:base",
+      "synonym_exact:base",
+      "ingredient_fuzzy:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Actaea racemosa",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Actaea racemosa",
+        "normalized": "actaea racemosa",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "d01bb66c-a1f6-45ef-a9bf-e693b0cbe422",
+    "ingredientName": "Actaea racemosa",
+    "confidence": 0.96,
+    "margin": 0.96,
+    "reasons": [
+      "ingredient_exact:base",
+      "synonym_exact:base",
+      "ingredient_fuzzy:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Sambucus nigra",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Sambucus nigra",
+        "normalized": "sambucus nigra",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "9a9576ce-c9fa-4cbc-8349-5a4abf2c6859",
+    "ingredientName": "Elderberry",
+    "confidence": 0.98,
+    "margin": 0.98,
+    "reasons": [
+      "curated_latin_map:base",
+      "synonym_exact:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Allium sativum",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Allium sativum",
+        "normalized": "allium sativum",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "b127ecd0-695a-4f87-a58d-be1bc04d552a",
+    "ingredientName": "Garlic Extract",
+    "confidence": 0.98,
+    "margin": 0.98,
+    "reasons": [
+      "curated_latin_map:base",
+      "synonym_exact:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Angelica sinensis",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Angelica sinensis",
+        "normalized": "angelica sinensis",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "ef42ad12-58fd-42d1-b7c1-9749eb5ae3b8",
+    "ingredientName": "Dong Quai",
+    "confidence": 0.98,
+    "margin": 0.98,
+    "reasons": [
+      "curated_latin_map:base",
+      "synonym_exact:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Silybum marianum",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Silybum marianum",
+        "normalized": "silybum marianum",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "4a9d7176-2c29-42b6-8e54-ef9c77a0ccb3",
+    "ingredientName": "Milk thistle",
+    "confidence": 0.98,
+    "margin": 0.98,
+    "reasons": [
+      "curated_latin_map:base",
+      "synonym_exact:base",
+      "synonym_fuzzy:base"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "raw": "Passiflora incarnata",
+    "normalizedVariants": [
+      {
+        "label": "base",
+        "raw": "Passiflora incarnata",
+        "normalized": "passiflora incarnata",
+        "hasLatinBinomial": true
+      }
+    ],
+    "ingredientId": "3f12daa5-a343-4742-851b-c4313da5be77",
+    "ingredientName": "Passionflower",
+    "confidence": 0.98,
+    "margin": 0.98,
+    "reasons": [
+      "curated_latin_map:base",
+      "synonym_exact:base",
+      "synonym_fuzzy:base"
+    ]
+  }
+]

@@ -1,0 +1,62 @@
+{
+  "before": {
+    "zeroCoverageCount": 2011,
+    "mismatchCount": 683,
+    "counts": {
+      "mismatch": 683,
+      "unit_missing": 190,
+      "ingredient_id_missing": 830,
+      "missingVerified": 308
+    }
+  },
+  "after": {
+    "zeroCoverageCount": 1174,
+    "mismatchCount": 395,
+    "counts": {
+      "mismatch": 395,
+      "unit_missing": 135,
+      "ingredient_id_missing": 339,
+      "missingVerified": 305
+    }
+  },
+  "deltas": {
+    "mismatchDeltaRatio": 0.4216691068814056,
+    "zeroCoverageDeltaRatio": 0.41621084037792144,
+    "formRawMissingDeltaRatio": null
+  },
+  "taxonomy": {
+    "before": null,
+    "after": {
+      "ingredientIdMissing": 0.1949,
+      "taxonomyMismatchAmongResolved": 0.0642,
+      "taxonomyMismatchAmongActive": 0.0517,
+      "formRawMissingAmongResolved": 0.4227,
+      "formRawNoMatchAmongResolved": 0.1001
+    }
+  },
+  "runlist": {
+    "runlistLines": 10675,
+    "runlistSummary": "output/formraw/topk_gate_v1_20260110/topk_formraw_missing_summary.json",
+    "uniqueSourceIds": 10675,
+    "cohortIdsFile": "output/formraw/topk_gate_v1_20260110/topk_formraw_missing_source_ids.json",
+    "outOfScopeCount": 0
+  },
+  "backfill": {
+    "processed": 7516,
+    "scores": 7516,
+    "failed": 0,
+    "ingredientUpsertFailed": 0,
+    "scoreUpsertFailed": 0,
+    "computeScoreFailed": 0
+  },
+  "gates": {
+    "failuresOk": true,
+    "taxonomyMismatchOk": true,
+    "improvementOk": true,
+    "runlistLinesOk": true,
+    "uniqueSourceIdsOk": true,
+    "runlistSubsetOk": true,
+    "pass": true,
+    "reasons": []
+  }
+}

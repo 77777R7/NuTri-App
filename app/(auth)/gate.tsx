@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, View } from '@/components/ui/nativewind-primitives';
 import { BrandGradient } from '@/components/BrandGradient';
 import { useAuth } from '@/contexts/AuthContext';
+import { AUTH_DISABLED } from '@/lib/auth-mode';
 import { colors, spacing, type } from '@/lib/theme';
 
 const AnimText = Animated.createAnimatedComponent(Text as any);
@@ -30,13 +31,17 @@ export default function AuthGateScreen() {
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
+    if (AUTH_DISABLED) {
+      router.replace('/main');
+      return;
+    }
     if (!authLoading && session) {
       router.replace('/main');
     }
   }, [authLoading, session, router]);
 
   useEffect(() => {
-    if (authLoading || session) return;
+    if (AUTH_DISABLED || authLoading || session) return;
 
     const animateOnce = () => {
       fade.setValue(0);
@@ -62,7 +67,7 @@ export default function AuthGateScreen() {
 
   const go = useCallback((path: Href) => router.push(path), [router]);
 
-  if (authLoading || session) return null;
+  if (AUTH_DISABLED || authLoading || session) return null;
 
   return (
     <BrandGradient>

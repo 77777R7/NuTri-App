@@ -1,0 +1,6422 @@
+{
+  "source": "lnhpd",
+  "timestamp": "2026-01-10T09:22:51.604Z",
+  "sampleSize": 1000,
+  "zeroCoverageCount": 287,
+  "summary": {
+    "total": 287,
+    "counts": {
+      "mismatch": 63,
+      "unit_missing": 55,
+      "ingredient_id_missing": 122,
+      "missingVerified": 44,
+      "unknown": 3
+    },
+    "ratios": {
+      "mismatch": 0.2195,
+      "unit_missing": 0.1916,
+      "ingredient_id_missing": 0.4251,
+      "missingVerified": 0.1533,
+      "unknown": 0.0105
+    },
+    "top20": [
+      {
+        "sourceId": "80016134",
+        "canonicalSourceId": null,
+        "primaryReason": "ingredient_id_missing",
+        "counts": {
+          "ingredientIdMissing": 12,
+          "unitMissing": 0,
+          "unitMismatch": 0,
+          "missingVerified": 8,
+          "mismatch": 0
+        },
+        "ingredientNames": [
+          "Vitis vinifera",
+          "Ananas comosus",
+          "Brassica oleracea var. italica",
+          "Petroselinum crispum",
+          "Spinacia oleracea",
+          "Vaccinium angustifolium",
+          "Lactobacillus casei",
+          "Sambucus nigra",
+          "Lactobacillus rhamnosus",
+          "Vaccinium myrtillus"
+        ]
+      },
+      {
+        "sourceId": "80002639",
+        "canonicalSourceId": null,
+        "primaryReason": "ingredient_id_missing",
+        "counts": {
+          "ingredientIdMissing": 9,
+          "unitMissing": 3,
+          "unitMismatch": 3,
+          "missingVerified": 2,
+          "mismatch": 1
+        },
+        "ingredientNames": [
+          "Lilium tigrinum",
+          "Hydrastis canadensis",
+          "Turnera diffusa var. aphrodisiaca",
+          "Convallaria majalis",
+          "Naja tripudians",
+          "Helonias dioica",
+          "Agnus castus",
+          "Ambra grisea",
+          "Cinchona officinalis",
+          "Crocus sativus"
+        ]
+      },
+      {
+        "sourceId": "80039448",
+        "canonicalSourceId": null,
+        "primaryReason": "ingredient_id_missing",
+        "counts": {
+          "ingredientIdMissing": 2,
+          "unitMissing": 5,
+          "unitMismatch": 5,
+          "missingVerified": 5,
+          "mismatch": 0
+        },
+        "ingredientNames": [
+          "Matricaria chamomilla",
+          "Panax ginseng",
+          "Thymus vulgaris",
+          "Panax quinquefolius",
+          "Trigonella foenum-graecum",
+          "Mentha Viridis",
+          "Rosmarinus officinalis"
+        ]
+      },
+      {
+        "sourceId": "80010572",
+        "canonicalSourceId": null,
+        "primaryReason": "ingredient_id_missing",
+        "counts": {
+          "ingredientIdMissing": 5,
+          "unitMissing": 0,
+          "unitMismatch": 0,
+          "missingVerified": 10,
+          "mismatch": 1
+        },
+        "ingredientNames": [
+          "Oryza sativa",
+          "Eleutherococcus senticosus",
+          "Lecithin",
+          "Silybum marianum",
+          "Arthrospira platensis",
+          "Lactiplantibacillus plantarum",
+          "Bifidobacterium longum",
+          "Lacticaseibacillus casei",
+          "Bifidobacterium breve",
+          "Camellia sinensis"
+        ]
+      },
+      {
+        "sourceId": "80018004",
+        "canonicalSourceId": null,
+        "primaryReason": "ingredient_id_missing",
+        "counts": {
+          "ingredientIdMissing": 5,
+          "unitMissing": 3,
+          "unitMismatch": 3,
+          "missingVerified": 2,
+          "mismatch": 0
+        },
+        "ingredientNames": [
+          "Chlorine",
+          "Silicea",
+          "Nitricum acidum",
+          "Pulsatilla nigricans",
+          "Fucus vesiculosus",
+          "Arsenicum album",
+          "Symphytum officinale",
+          "Medicago sativa"
+        ]
+      },
+      {
+        "sourceId": "80007537",
+        "canonicalSourceId": null,
+        "primaryReason": "ingredient_id_missing",
+        "counts": {
+          "ingredientIdMissing": 7,
+          "unitMissing": 2,
+          "unitMismatch": 2,
+          "missingVerified": 1,
+          "mismatch": 1
+        },
+        "ingredientNames": [
+          "Influenzinum",
+          "Crotalus horridus",
+          "Anas barbariae",
+          "Pyrogenium",
+          "Olive",
+          "Ginkgo biloba",
+          "Crab apple",
+          "Bryonia alba",
+          "Selenium metallicum"
+        ]
+      },
+      {
+        "sourceId": "80004056",
+        "canonicalSourceId": null,
+        "primaryReason": "ingredient_id_missing",
+        "counts": {
+          "ingredientIdMissing": 3,
+          "unitMissing": 3,
+          "unitMismatch": 3,
+          "missingVerified": 2,
+          "mismatch": 1
+        },
+        "ingredientNames": [
+          "Echinacea angustifolia",
+          "Calcarea carbonica",
+          "Hydrastis canadensis",
+          "Hamamelis virginiana",
+          "Lachesis mutus",
+          "Silicea"
+        ]
+      },
+      {
+        "sourceId": "80009133",
+        "canonicalSourceId": null,
+        "primaryReason": "ingredient_id_missing",
+        "counts": {
+          "ingredientIdMissing": 2,
+          "unitMissing": 0,
+          "unitMismatch": 0,
+          "missingVerified": 9,
+          "mismatch": 1
+        },
+        "ingredientNames": [
+          "Eleutherococcus senticosus",
+          "Lecithin",
+          "Silybum marianum",
+          "Oryza sativa",
+          "Ginkgo biloba",
+          "Bifidobacterium bifidum",
+          "Lacticaseibacillus rhamnosus",
+          "Malus domestica",
+          "Camellia sinensis",
+          "Beta vulgaris"
+        ]
+      },
+      {
+        "sourceId": "02232465",
+        "canonicalSourceId": null,
+        "primaryReason": "ingredient_id_missing",
+        "counts": {
+          "ingredientIdMissing": 9,
+          "unitMissing": 1,
+          "unitMismatch": 1,
+          "missingVerified": 1,
+          "mismatch": 0
+        },
+        "ingredientNames": [
+          "Cuprum metallicum",
+          "Kalmia latifolia",
+          "Hypericum perforatum",
+          "Gnaphalium polycephalum",
+          "Apis mellifica",
+          "Aconitum napellus",
+          "Sarcolacticum acidum",
+          "Kalium phosphoricum",
+          "Ruta graveolens",
+          "Arnica montana"
+        ]
+      },
+      {
+        "sourceId": "80008079",
+        "canonicalSourceId": null,
+        "primaryReason": "ingredient_id_missing",
+        "counts": {
+          "ingredientIdMissing": 7,
+          "unitMissing": 0,
+          "unitMismatch": 0,
+          "missingVerified": 2,
+          "mismatch": 1
+        },
+        "ingredientNames": [
+          "Ziziphus jujuba",
+          "Cuscuta chinensis",
+          "Chrysanthemum morifolium",
+          "Angelica sinensis",
+          "Scutellaria baicalensis",
+          "Cynanchum atratum",
+          "Hyriopsis cumingii",
+          "Lycium chinense",
+          "Chinemys reevesii",
+          "Anemarrhena asphodeloides"
+        ]
+      },
+      {
+        "sourceId": "80005490",
+        "canonicalSourceId": null,
+        "primaryReason": "ingredient_id_missing",
+        "counts": {
+          "ingredientIdMissing": 4,
+          "unitMissing": 2,
+          "unitMismatch": 2,
+          "missingVerified": 2,
+          "mismatch": 0
+        },
+        "ingredientNames": [
+          "Allium cepa",
+          "Arsenicum album",
+          "Eupatorium perfoliatum",
+          "Bryonia alba",
+          "Ferrum phosphoricum",
+          "Chamomilla"
+        ]
+      },
+      {
+        "sourceId": "80012618",
+        "canonicalSourceId": null,
+        "primaryReason": "ingredient_id_missing",
+        "counts": {
+          "ingredientIdMissing": 4,
+          "unitMissing": 1,
+          "unitMismatch": 1,
+          "missingVerified": 2,
+          "mismatch": 1
+        },
+        "ingredientNames": [
+          "Daucus carota",
+          "Vitamin E",
+          "Brassica oleracea",
+          "Brassica rapa",
+          "Carica papaya",
+          "Vitis vinifera",
+          "Camellia sinensis"
+        ]
+      },
+      {
+        "sourceId": "80015155",
+        "canonicalSourceId": null,
+        "primaryReason": "ingredient_id_missing",
+        "counts": {
+          "ingredientIdMissing": 1,
+          "unitMissing": 3,
+          "unitMismatch": 3,
+          "missingVerified": 2,
+          "mismatch": 0
+        },
+        "ingredientNames": [
+          "Mentha arvensis",
+          "Taraxacum officinale",
+          "Nepeta cataria",
+          "Arctium lappa"
+        ]
+      },
+      {
+        "sourceId": "80021066",
+        "canonicalSourceId": null,
+        "primaryReason": "ingredient_id_missing",
+        "counts": {
+          "ingredientIdMissing": 3,
+          "unitMissing": 2,
+          "unitMismatch": 2,
+          "missingVerified": 1,
+          "mismatch": 1
+        },
+        "ingredientNames": [
+          "Chamomilla vulgaris",
+          "Cicuta virosa",
+          "Avena sativa",
+          "Hyoscyamus niger",
+          "Sumbulus moschatus"
+        ]
+      },
+      {
+        "sourceId": "00892629",
+        "canonicalSourceId": null,
+        "primaryReason": "ingredient_id_missing",
+        "counts": {
+          "ingredientIdMissing": 3,
+          "unitMissing": 2,
+          "unitMismatch": 2,
+          "missingVerified": 1,
+          "mismatch": 1
+        },
+        "ingredientNames": [
+          "Crataegus laevigata",
+          "Coffea cruda",
+          "Tilia argentea",
+          "Avena sativa",
+          "Sumbul"
+        ]
+      },
+      {
+        "sourceId": "80004730",
+        "canonicalSourceId": null,
+        "primaryReason": "unit_missing",
+        "counts": {
+          "ingredientIdMissing": 0,
+          "unitMissing": 3,
+          "unitMismatch": 3,
+          "missingVerified": 3,
+          "mismatch": 0
+        },
+        "ingredientNames": [
+          "Oenothera biennis",
+          "Lecithin",
+          "Borago officinalis"
+        ]
+      },
+      {
+        "sourceId": "80006097",
+        "canonicalSourceId": null,
+        "primaryReason": "unit_missing",
+        "counts": {
+          "ingredientIdMissing": 0,
+          "unitMissing": 3,
+          "unitMismatch": 3,
+          "missingVerified": 2,
+          "mismatch": 1
+        },
+        "ingredientNames": [
+          "Matricaria chamomilla",
+          "Plantago major",
+          "Hypericum perforatum"
+        ]
+      },
+      {
+        "sourceId": "80030681",
+        "canonicalSourceId": null,
+        "primaryReason": "ingredient_id_missing",
+        "counts": {
+          "ingredientIdMissing": 9,
+          "unitMissing": 0,
+          "unitMismatch": 0,
+          "missingVerified": 0,
+          "mismatch": 0
+        },
+        "ingredientNames": [
+          "Plumbum aceticum",
+          "Arnica montana",
+          "Cuprum sulphuricum",
+          "Acidum arsenicosum",
+          "Raphanus sativus var. niger",
+          "Stibium sulfuratum nigrum",
+          "Camphora",
+          "Aurum chloratum",
+          "Mercurius solubilis Hahnemanni"
+        ]
+      },
+      {
+        "sourceId": "80039055",
+        "canonicalSourceId": null,
+        "primaryReason": "ingredient_id_missing",
+        "counts": {
+          "ingredientIdMissing": 5,
+          "unitMissing": 1,
+          "unitMismatch": 1,
+          "missingVerified": 1,
+          "mismatch": 1
+        },
+        "ingredientNames": [
+          "1,3,7-Trimethylxanthine",
+          "Turnera diffusa",
+          "Ilex paraguariensis",
+          "Pimpinella anisum",
+          "Niacin",
+          "Ficus carica",
+          "L-ornithine alphaketoglutarate"
+        ]
+      },
+      {
+        "sourceId": "80015100",
+        "canonicalSourceId": null,
+        "primaryReason": "ingredient_id_missing",
+        "counts": {
+          "ingredientIdMissing": 3,
+          "unitMissing": 2,
+          "unitMismatch": 2,
+          "missingVerified": 1,
+          "mismatch": 0
+        },
+        "ingredientNames": [
+          "Teucrium marum",
+          "Belladonna",
+          "Histaminum hydrochloricum",
+          "Hydrastis canadensis",
+          "Ephedra vulgaris"
+        ]
+      }
+    ],
+    "top20ByReason": {
+      "ingredient_id_missing": [
+        {
+          "sourceId": "80001088",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 1,
+            "unitMissing": 1,
+            "unitMismatch": 1,
+            "missingVerified": 1,
+            "mismatch": 3
+          },
+          "ingredientNames": [
+            "Cucurbita pepo",
+            "Prunus africana",
+            "All-trans-lycopene",
+            "Vitamin E",
+            "Serenoa repens"
+          ]
+        },
+        {
+          "sourceId": "80001263",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 1,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 0,
+            "mismatch": 2
+          },
+          "ingredientNames": [
+            "Cinnamomum cassia",
+            "Aconitum carmichaelii",
+            "Dioscorea oppositifolia"
+          ]
+        },
+        {
+          "sourceId": "80001383",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 1,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 1,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Dioscorea oppositifolia",
+            "Anemarrhena asphodeloides",
+            "Phellodendron amurense"
+          ]
+        },
+        {
+          "sourceId": "80001536",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 1,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Carbonic acid calcium salt",
+            "Plantago ovata"
+          ]
+        },
+        {
+          "sourceId": "80001537",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 1,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 2,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Codonopsis pilosula",
+            "Angelica sinensis",
+            "Acorus gramineus",
+            "Scrophularia ningpoensis"
+          ]
+        },
+        {
+          "sourceId": "80002639",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 9,
+            "unitMissing": 3,
+            "unitMismatch": 3,
+            "missingVerified": 2,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Lilium tigrinum",
+            "Hydrastis canadensis",
+            "Turnera diffusa var. aphrodisiaca",
+            "Convallaria majalis",
+            "Naja tripudians",
+            "Helonias dioica",
+            "Agnus castus",
+            "Ambra grisea",
+            "Cinchona officinalis",
+            "Crocus sativus"
+          ]
+        },
+        {
+          "sourceId": "80003839",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 1,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 1,
+            "mismatch": 0
+          },
+          "ingredientNames": [
+            "Lecithin",
+            "Fish oil"
+          ]
+        },
+        {
+          "sourceId": "80003906",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 1,
+            "unitMissing": 2,
+            "unitMismatch": 0,
+            "missingVerified": 1,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Linum usitatissimum",
+            "Fish oil",
+            "Borago officinalis"
+          ]
+        },
+        {
+          "sourceId": "80004033",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 1,
+            "unitMissing": 1,
+            "unitMismatch": 0,
+            "missingVerified": 1,
+            "mismatch": 2
+          },
+          "ingredientNames": [
+            "Fish oil",
+            "Borago officinalis",
+            "Linum usitatissimum L. subsp. sativa",
+            "Olea europaea"
+          ]
+        },
+        {
+          "sourceId": "80004056",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 3,
+            "unitMissing": 3,
+            "unitMismatch": 3,
+            "missingVerified": 2,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Echinacea angustifolia",
+            "Calcarea carbonica",
+            "Hydrastis canadensis",
+            "Hamamelis virginiana",
+            "Lachesis mutus",
+            "Silicea"
+          ]
+        },
+        {
+          "sourceId": "80004155",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 1,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 3,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Salvia miltiorrhiza",
+            "Acorus tatarinowii",
+            "Rehmannia glutinosa",
+            "Cuscuta chinensis",
+            "Ligustrum lucidum"
+          ]
+        },
+        {
+          "sourceId": "80006292",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 4,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 1,
+            "mismatch": 2
+          },
+          "ingredientNames": [
+            "Paeonia lactiflora",
+            "Epimedium brevicornum Maxim",
+            "Taxillus chinensis",
+            "Salvia miltiorrhiza",
+            "Cervus nippon",
+            "Poria cocos",
+            "Uncaria rhynchophylla"
+          ]
+        },
+        {
+          "sourceId": "80006349",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 2,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Poria cocos",
+            "Glycyrrhiza uralensis",
+            "Platycladus orientalis"
+          ]
+        },
+        {
+          "sourceId": "80006658",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 1,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 2,
+            "mismatch": 0
+          },
+          "ingredientNames": [
+            "Inositol",
+            "Zingiber officinale",
+            "Alpha-Lactalbumin"
+          ]
+        },
+        {
+          "sourceId": "80007397",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 1,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Plantago ovata",
+            "Rhamnus purshiana"
+          ]
+        },
+        {
+          "sourceId": "80007879",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 1,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 1,
+            "mismatch": 2
+          },
+          "ingredientNames": [
+            "1,2-dithiolane-3-pentanoic acid",
+            "Coenzyme Q10",
+            "Vaccinium myrtillus",
+            "Vitamin C"
+          ]
+        },
+        {
+          "sourceId": "80008079",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 7,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 2,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Ziziphus jujuba",
+            "Cuscuta chinensis",
+            "Chrysanthemum morifolium",
+            "Angelica sinensis",
+            "Scutellaria baicalensis",
+            "Cynanchum atratum",
+            "Hyriopsis cumingii",
+            "Lycium chinense",
+            "Chinemys reevesii",
+            "Anemarrhena asphodeloides"
+          ]
+        },
+        {
+          "sourceId": "80008598",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 2,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 2,
+            "mismatch": 0
+          },
+          "ingredientNames": [
+            "Brassica rapa",
+            "Larix laricina",
+            "Allium sativum",
+            "Daucus carota"
+          ]
+        },
+        {
+          "sourceId": "80008717",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 1,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 1,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Poria cocos",
+            "Astragalus membranaceus",
+            "Glycyrrhiza glabra"
+          ]
+        },
+        {
+          "sourceId": "80009133",
+          "canonicalSourceId": null,
+          "primaryReason": "ingredient_id_missing",
+          "counts": {
+            "ingredientIdMissing": 2,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 9,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Eleutherococcus senticosus",
+            "Lecithin",
+            "Silybum marianum",
+            "Oryza sativa",
+            "Ginkgo biloba",
+            "Bifidobacterium bifidum",
+            "Lacticaseibacillus rhamnosus",
+            "Malus domestica",
+            "Camellia sinensis",
+            "Beta vulgaris"
+          ]
+        }
+      ],
+      "unit_missing": [
+        {
+          "sourceId": "02247362",
+          "canonicalSourceId": null,
+          "primaryReason": "unit_missing",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 1,
+            "unitMismatch": 1,
+            "missingVerified": 0,
+            "mismatch": 3
+          },
+          "ingredientNames": [
+            "Ubiquinone",
+            "Vitamin B12",
+            "Vitamin E"
+          ]
+        },
+        {
+          "sourceId": "02248819",
+          "canonicalSourceId": null,
+          "primaryReason": "unit_missing",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 1,
+            "unitMismatch": 1,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Plantago ovata"
+          ]
+        },
+        {
+          "sourceId": "80000008",
+          "canonicalSourceId": null,
+          "primaryReason": "unit_missing",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 1,
+            "unitMismatch": 0,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Serenoa repens"
+          ]
+        },
+        {
+          "sourceId": "80000355",
+          "canonicalSourceId": null,
+          "primaryReason": "unit_missing",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 1,
+            "unitMismatch": 1,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Mentha x piperita"
+          ]
+        },
+        {
+          "sourceId": "80000380",
+          "canonicalSourceId": null,
+          "primaryReason": "unit_missing",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 1,
+            "unitMismatch": 0,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Serenoa repens"
+          ]
+        },
+        {
+          "sourceId": "80000614",
+          "canonicalSourceId": null,
+          "primaryReason": "unit_missing",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 1,
+            "unitMismatch": 1,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Medicago sativa"
+          ]
+        },
+        {
+          "sourceId": "80000933",
+          "canonicalSourceId": null,
+          "primaryReason": "unit_missing",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 1,
+            "unitMismatch": 1,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Medicago sativa"
+          ]
+        },
+        {
+          "sourceId": "80001130",
+          "canonicalSourceId": null,
+          "primaryReason": "unit_missing",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 1,
+            "unitMismatch": 1,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Hydrastis canadensis"
+          ]
+        },
+        {
+          "sourceId": "80001174",
+          "canonicalSourceId": null,
+          "primaryReason": "unit_missing",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 1,
+            "unitMismatch": 1,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Hydrastis canadensis"
+          ]
+        },
+        {
+          "sourceId": "80001984",
+          "canonicalSourceId": null,
+          "primaryReason": "unit_missing",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 1,
+            "unitMismatch": 1,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Linum usitatissimum"
+          ]
+        },
+        {
+          "sourceId": "80002418",
+          "canonicalSourceId": null,
+          "primaryReason": "unit_missing",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 1,
+            "unitMismatch": 0,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Linum usitatissimum"
+          ]
+        },
+        {
+          "sourceId": "80003206",
+          "canonicalSourceId": null,
+          "primaryReason": "unit_missing",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 1,
+            "unitMismatch": 0,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Linum usitatissimum"
+          ]
+        },
+        {
+          "sourceId": "80003418",
+          "canonicalSourceId": null,
+          "primaryReason": "unit_missing",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 1,
+            "unitMismatch": 1,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Hydrastis canadensis"
+          ]
+        },
+        {
+          "sourceId": "80003457",
+          "canonicalSourceId": null,
+          "primaryReason": "unit_missing",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 1,
+            "unitMismatch": 1,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Plantago ovata"
+          ]
+        },
+        {
+          "sourceId": "80003629",
+          "canonicalSourceId": null,
+          "primaryReason": "unit_missing",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 1,
+            "unitMismatch": 1,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Avena sativa"
+          ]
+        },
+        {
+          "sourceId": "80003832",
+          "canonicalSourceId": null,
+          "primaryReason": "unit_missing",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 1,
+            "unitMismatch": 1,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Medicago sativa"
+          ]
+        },
+        {
+          "sourceId": "80003833",
+          "canonicalSourceId": null,
+          "primaryReason": "unit_missing",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 1,
+            "unitMismatch": 1,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Medicago sativa"
+          ]
+        },
+        {
+          "sourceId": "80003909",
+          "canonicalSourceId": null,
+          "primaryReason": "unit_missing",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 1,
+            "unitMismatch": 0,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Linum usitatissimum"
+          ]
+        },
+        {
+          "sourceId": "80007343",
+          "canonicalSourceId": null,
+          "primaryReason": "unit_missing",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 1,
+            "unitMismatch": 1,
+            "missingVerified": 1,
+            "mismatch": 0
+          },
+          "ingredientNames": [
+            "Daucus carota"
+          ]
+        },
+        {
+          "sourceId": "80007855",
+          "canonicalSourceId": null,
+          "primaryReason": "unit_missing",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 1,
+            "unitMismatch": 1,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Avena sativa"
+          ]
+        }
+      ],
+      "missingVerified": [
+        {
+          "sourceId": "80002271",
+          "canonicalSourceId": null,
+          "primaryReason": "missingVerified",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 1,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Cornus officinalis",
+            "Rehmannia glutinosa"
+          ]
+        },
+        {
+          "sourceId": "80003422",
+          "canonicalSourceId": null,
+          "primaryReason": "missingVerified",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 2,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Matricaria recutita",
+            "Mentha x piperita",
+            "Rosmarinus officinalis"
+          ]
+        },
+        {
+          "sourceId": "80003988",
+          "canonicalSourceId": null,
+          "primaryReason": "missingVerified",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 1,
+            "mismatch": 0
+          },
+          "ingredientNames": [
+            "Lecithin"
+          ]
+        },
+        {
+          "sourceId": "80004010",
+          "canonicalSourceId": null,
+          "primaryReason": "missingVerified",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 1,
+            "mismatch": 0
+          },
+          "ingredientNames": [
+            "Lecithin"
+          ]
+        },
+        {
+          "sourceId": "80004037",
+          "canonicalSourceId": null,
+          "primaryReason": "missingVerified",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 1,
+            "mismatch": 0
+          },
+          "ingredientNames": [
+            "Lecithin"
+          ]
+        },
+        {
+          "sourceId": "80006342",
+          "canonicalSourceId": null,
+          "primaryReason": "missingVerified",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 1,
+            "mismatch": 0
+          },
+          "ingredientNames": [
+            "Lecithin"
+          ]
+        },
+        {
+          "sourceId": "80006530",
+          "canonicalSourceId": null,
+          "primaryReason": "missingVerified",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 1,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Lecithin",
+            "Olea europaea"
+          ]
+        },
+        {
+          "sourceId": "80006539",
+          "canonicalSourceId": null,
+          "primaryReason": "missingVerified",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 1,
+            "mismatch": 0
+          },
+          "ingredientNames": [
+            "Lecithin"
+          ]
+        },
+        {
+          "sourceId": "80007144",
+          "canonicalSourceId": null,
+          "primaryReason": "missingVerified",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 1,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Cynara scolymus",
+            "Taraxacum officinale"
+          ]
+        },
+        {
+          "sourceId": "80007387",
+          "canonicalSourceId": null,
+          "primaryReason": "missingVerified",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 1,
+            "mismatch": 0
+          },
+          "ingredientNames": [
+            "Lecithin"
+          ]
+        },
+        {
+          "sourceId": "80008603",
+          "canonicalSourceId": null,
+          "primaryReason": "missingVerified",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 1,
+            "mismatch": 2
+          },
+          "ingredientNames": [
+            "Serenoa repens",
+            "Pygeum africanum",
+            "Vitamin B6"
+          ]
+        },
+        {
+          "sourceId": "80010933",
+          "canonicalSourceId": null,
+          "primaryReason": "missingVerified",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 1,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Taraxacum officinale",
+            "Arctium lappa"
+          ]
+        },
+        {
+          "sourceId": "80011055",
+          "canonicalSourceId": null,
+          "primaryReason": "missingVerified",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 1,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Crataegus oxyacantha",
+            "Coenzyme Q10"
+          ]
+        },
+        {
+          "sourceId": "80013357",
+          "canonicalSourceId": null,
+          "primaryReason": "missingVerified",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 1,
+            "mismatch": 0
+          },
+          "ingredientNames": [
+            "Borago officinalis",
+            "Linum usitatissimum"
+          ]
+        },
+        {
+          "sourceId": "80014761",
+          "canonicalSourceId": null,
+          "primaryReason": "missingVerified",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 1,
+            "mismatch": 2
+          },
+          "ingredientNames": [
+            "Alpha lipoic acid",
+            "Vitamin E",
+            "Coenzyme Q10"
+          ]
+        },
+        {
+          "sourceId": "80014841",
+          "canonicalSourceId": null,
+          "primaryReason": "missingVerified",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 1,
+            "mismatch": 0
+          },
+          "ingredientNames": [
+            "Rehmannia glutinosa",
+            "Phellodendron chinense"
+          ]
+        },
+        {
+          "sourceId": "80016396",
+          "canonicalSourceId": null,
+          "primaryReason": "missingVerified",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 1,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Niacin",
+            "Inositol"
+          ]
+        },
+        {
+          "sourceId": "80017428",
+          "canonicalSourceId": null,
+          "primaryReason": "missingVerified",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 1,
+            "mismatch": 0
+          },
+          "ingredientNames": [
+            "Lecithin"
+          ]
+        },
+        {
+          "sourceId": "80017438",
+          "canonicalSourceId": null,
+          "primaryReason": "missingVerified",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 1,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Citrus extract",
+            "Medicago sativa"
+          ]
+        },
+        {
+          "sourceId": "80017472",
+          "canonicalSourceId": null,
+          "primaryReason": "missingVerified",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 1,
+            "mismatch": 0
+          },
+          "ingredientNames": [
+            "Lecithin"
+          ]
+        }
+      ],
+      "mismatch": [
+        {
+          "sourceId": "02247034",
+          "canonicalSourceId": null,
+          "primaryReason": "mismatch",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Plantago ovata"
+          ]
+        },
+        {
+          "sourceId": "80000002",
+          "canonicalSourceId": null,
+          "primaryReason": "mismatch",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Serenoa repens"
+          ]
+        },
+        {
+          "sourceId": "80000630",
+          "canonicalSourceId": null,
+          "primaryReason": "mismatch",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Serenoa repens"
+          ]
+        },
+        {
+          "sourceId": "80000702",
+          "canonicalSourceId": null,
+          "primaryReason": "mismatch",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Mentha x piperita"
+          ]
+        },
+        {
+          "sourceId": "80000703",
+          "canonicalSourceId": null,
+          "primaryReason": "mismatch",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Medicago sativa"
+          ]
+        },
+        {
+          "sourceId": "80000931",
+          "canonicalSourceId": null,
+          "primaryReason": "mismatch",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Serenoa repens"
+          ]
+        },
+        {
+          "sourceId": "80000960",
+          "canonicalSourceId": null,
+          "primaryReason": "mismatch",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Serenoa repens"
+          ]
+        },
+        {
+          "sourceId": "80001005",
+          "canonicalSourceId": null,
+          "primaryReason": "mismatch",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Plantago ovata"
+          ]
+        },
+        {
+          "sourceId": "80001172",
+          "canonicalSourceId": null,
+          "primaryReason": "mismatch",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Serenoa repens"
+          ]
+        },
+        {
+          "sourceId": "80001235",
+          "canonicalSourceId": null,
+          "primaryReason": "mismatch",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Serenoa repens"
+          ]
+        },
+        {
+          "sourceId": "80001342",
+          "canonicalSourceId": null,
+          "primaryReason": "mismatch",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Serenoa repens"
+          ]
+        },
+        {
+          "sourceId": "80001748",
+          "canonicalSourceId": null,
+          "primaryReason": "mismatch",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Equisetum arvense"
+          ]
+        },
+        {
+          "sourceId": "80002148",
+          "canonicalSourceId": null,
+          "primaryReason": "mismatch",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Linum usitatissimum"
+          ]
+        },
+        {
+          "sourceId": "80002917",
+          "canonicalSourceId": null,
+          "primaryReason": "mismatch",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Serenoa repens"
+          ]
+        },
+        {
+          "sourceId": "80002931",
+          "canonicalSourceId": null,
+          "primaryReason": "mismatch",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Actaea racemosa"
+          ]
+        },
+        {
+          "sourceId": "80002975",
+          "canonicalSourceId": null,
+          "primaryReason": "mismatch",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Medicago sativa"
+          ]
+        },
+        {
+          "sourceId": "80003062",
+          "canonicalSourceId": null,
+          "primaryReason": "mismatch",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Arctium lappa"
+          ]
+        },
+        {
+          "sourceId": "80003115",
+          "canonicalSourceId": null,
+          "primaryReason": "mismatch",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Hydrastis canadensis"
+          ]
+        },
+        {
+          "sourceId": "80003218",
+          "canonicalSourceId": null,
+          "primaryReason": "mismatch",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Arctium lappa"
+          ]
+        },
+        {
+          "sourceId": "80003333",
+          "canonicalSourceId": null,
+          "primaryReason": "mismatch",
+          "counts": {
+            "ingredientIdMissing": 0,
+            "unitMissing": 0,
+            "unitMismatch": 0,
+            "missingVerified": 0,
+            "mismatch": 1
+          },
+          "ingredientNames": [
+            "Serenoa repens"
+          ]
+        }
+      ]
+    }
+  },
+  "products": [
+    {
+      "sourceId": "02247034",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Plantago ovata"
+      ]
+    },
+    {
+      "sourceId": "02247362",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 3
+      },
+      "ingredientNames": [
+        "Ubiquinone",
+        "Vitamin B12",
+        "Vitamin E"
+      ]
+    },
+    {
+      "sourceId": "02248819",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Plantago ovata"
+      ]
+    },
+    {
+      "sourceId": "80000002",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Serenoa repens"
+      ]
+    },
+    {
+      "sourceId": "80000008",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Serenoa repens"
+      ]
+    },
+    {
+      "sourceId": "80000355",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Mentha x piperita"
+      ]
+    },
+    {
+      "sourceId": "80000380",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Serenoa repens"
+      ]
+    },
+    {
+      "sourceId": "80000614",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Medicago sativa"
+      ]
+    },
+    {
+      "sourceId": "80000630",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Serenoa repens"
+      ]
+    },
+    {
+      "sourceId": "80000702",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Mentha x piperita"
+      ]
+    },
+    {
+      "sourceId": "80000703",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Medicago sativa"
+      ]
+    },
+    {
+      "sourceId": "80000931",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Serenoa repens"
+      ]
+    },
+    {
+      "sourceId": "80000933",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Medicago sativa"
+      ]
+    },
+    {
+      "sourceId": "80000960",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Serenoa repens"
+      ]
+    },
+    {
+      "sourceId": "80001005",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Plantago ovata"
+      ]
+    },
+    {
+      "sourceId": "80001088",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 1,
+        "mismatch": 3
+      },
+      "ingredientNames": [
+        "Cucurbita pepo",
+        "Prunus africana",
+        "All-trans-lycopene",
+        "Vitamin E",
+        "Serenoa repens"
+      ]
+    },
+    {
+      "sourceId": "80001130",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Hydrastis canadensis"
+      ]
+    },
+    {
+      "sourceId": "80001172",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Serenoa repens"
+      ]
+    },
+    {
+      "sourceId": "80001174",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Hydrastis canadensis"
+      ]
+    },
+    {
+      "sourceId": "80001235",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Serenoa repens"
+      ]
+    },
+    {
+      "sourceId": "80001263",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 2
+      },
+      "ingredientNames": [
+        "Cinnamomum cassia",
+        "Aconitum carmichaelii",
+        "Dioscorea oppositifolia"
+      ]
+    },
+    {
+      "sourceId": "80001342",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Serenoa repens"
+      ]
+    },
+    {
+      "sourceId": "80001383",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Dioscorea oppositifolia",
+        "Anemarrhena asphodeloides",
+        "Phellodendron amurense"
+      ]
+    },
+    {
+      "sourceId": "80001536",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Carbonic acid calcium salt",
+        "Plantago ovata"
+      ]
+    },
+    {
+      "sourceId": "80001537",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 2,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Codonopsis pilosula",
+        "Angelica sinensis",
+        "Acorus gramineus",
+        "Scrophularia ningpoensis"
+      ]
+    },
+    {
+      "sourceId": "80001748",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Equisetum arvense"
+      ]
+    },
+    {
+      "sourceId": "80001984",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Linum usitatissimum"
+      ]
+    },
+    {
+      "sourceId": "80002148",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Linum usitatissimum"
+      ]
+    },
+    {
+      "sourceId": "80002271",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Cornus officinalis",
+        "Rehmannia glutinosa"
+      ]
+    },
+    {
+      "sourceId": "80002418",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Linum usitatissimum"
+      ]
+    },
+    {
+      "sourceId": "80002639",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 9,
+        "unitMissing": 3,
+        "unitMismatch": 3,
+        "missingVerified": 2,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Lilium tigrinum",
+        "Hydrastis canadensis",
+        "Turnera diffusa var. aphrodisiaca",
+        "Convallaria majalis",
+        "Naja tripudians",
+        "Helonias dioica",
+        "Agnus castus",
+        "Ambra grisea",
+        "Cinchona officinalis",
+        "Crocus sativus"
+      ]
+    },
+    {
+      "sourceId": "80002917",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Serenoa repens"
+      ]
+    },
+    {
+      "sourceId": "80002931",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Actaea racemosa"
+      ]
+    },
+    {
+      "sourceId": "80002975",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Medicago sativa"
+      ]
+    },
+    {
+      "sourceId": "80003062",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Arctium lappa"
+      ]
+    },
+    {
+      "sourceId": "80003115",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Hydrastis canadensis"
+      ]
+    },
+    {
+      "sourceId": "80003206",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Linum usitatissimum"
+      ]
+    },
+    {
+      "sourceId": "80003218",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Arctium lappa"
+      ]
+    },
+    {
+      "sourceId": "80003333",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Serenoa repens"
+      ]
+    },
+    {
+      "sourceId": "80003418",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Hydrastis canadensis"
+      ]
+    },
+    {
+      "sourceId": "80003422",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 2,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Matricaria recutita",
+        "Mentha x piperita",
+        "Rosmarinus officinalis"
+      ]
+    },
+    {
+      "sourceId": "80003457",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Plantago ovata"
+      ]
+    },
+    {
+      "sourceId": "80003604",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Actaea racemosa"
+      ]
+    },
+    {
+      "sourceId": "80003629",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Avena sativa"
+      ]
+    },
+    {
+      "sourceId": "80003718",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Linum usitatissimum"
+      ]
+    },
+    {
+      "sourceId": "80003832",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Medicago sativa"
+      ]
+    },
+    {
+      "sourceId": "80003833",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Medicago sativa"
+      ]
+    },
+    {
+      "sourceId": "80003838",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Linum usitatissimum"
+      ]
+    },
+    {
+      "sourceId": "80003839",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Lecithin",
+        "Fish oil"
+      ]
+    },
+    {
+      "sourceId": "80003906",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 2,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Linum usitatissimum",
+        "Fish oil",
+        "Borago officinalis"
+      ]
+    },
+    {
+      "sourceId": "80003909",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Linum usitatissimum"
+      ]
+    },
+    {
+      "sourceId": "80003988",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Lecithin"
+      ]
+    },
+    {
+      "sourceId": "80004010",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Lecithin"
+      ]
+    },
+    {
+      "sourceId": "80004033",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 1,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 2
+      },
+      "ingredientNames": [
+        "Fish oil",
+        "Borago officinalis",
+        "Linum usitatissimum L. subsp. sativa",
+        "Olea europaea"
+      ]
+    },
+    {
+      "sourceId": "80004037",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Lecithin"
+      ]
+    },
+    {
+      "sourceId": "80004056",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 3,
+        "unitMissing": 3,
+        "unitMismatch": 3,
+        "missingVerified": 2,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Echinacea angustifolia",
+        "Calcarea carbonica",
+        "Hydrastis canadensis",
+        "Hamamelis virginiana",
+        "Lachesis mutus",
+        "Silicea"
+      ]
+    },
+    {
+      "sourceId": "80004094",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Arctium lappa"
+      ]
+    },
+    {
+      "sourceId": "80004097",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Hydrastis canadensis"
+      ]
+    },
+    {
+      "sourceId": "80004155",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 3,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Salvia miltiorrhiza",
+        "Acorus tatarinowii",
+        "Rehmannia glutinosa",
+        "Cuscuta chinensis",
+        "Ligustrum lucidum"
+      ]
+    },
+    {
+      "sourceId": "80004230",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Medicago sativa"
+      ]
+    },
+    {
+      "sourceId": "80006292",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 4,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 2
+      },
+      "ingredientNames": [
+        "Paeonia lactiflora",
+        "Epimedium brevicornum Maxim",
+        "Taxillus chinensis",
+        "Salvia miltiorrhiza",
+        "Cervus nippon",
+        "Poria cocos",
+        "Uncaria rhynchophylla"
+      ]
+    },
+    {
+      "sourceId": "80006342",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Lecithin"
+      ]
+    },
+    {
+      "sourceId": "80006349",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 2,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Poria cocos",
+        "Glycyrrhiza uralensis",
+        "Platycladus orientalis"
+      ]
+    },
+    {
+      "sourceId": "80006530",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Lecithin",
+        "Olea europaea"
+      ]
+    },
+    {
+      "sourceId": "80006539",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Lecithin"
+      ]
+    },
+    {
+      "sourceId": "80006658",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 2,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Inositol",
+        "Zingiber officinale",
+        "Alpha-Lactalbumin"
+      ]
+    },
+    {
+      "sourceId": "80007144",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Cynara scolymus",
+        "Taraxacum officinale"
+      ]
+    },
+    {
+      "sourceId": "80007343",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Daucus carota"
+      ]
+    },
+    {
+      "sourceId": "80007387",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Lecithin"
+      ]
+    },
+    {
+      "sourceId": "80007397",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Plantago ovata",
+        "Rhamnus purshiana"
+      ]
+    },
+    {
+      "sourceId": "80007855",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Avena sativa"
+      ]
+    },
+    {
+      "sourceId": "80007879",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 2
+      },
+      "ingredientNames": [
+        "1,2-dithiolane-3-pentanoic acid",
+        "Coenzyme Q10",
+        "Vaccinium myrtillus",
+        "Vitamin C"
+      ]
+    },
+    {
+      "sourceId": "80007926",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 2,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Piper nigrum",
+        "Beta-carotene"
+      ]
+    },
+    {
+      "sourceId": "80008079",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 7,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 2,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Ziziphus jujuba",
+        "Cuscuta chinensis",
+        "Chrysanthemum morifolium",
+        "Angelica sinensis",
+        "Scutellaria baicalensis",
+        "Cynanchum atratum",
+        "Hyriopsis cumingii",
+        "Lycium chinense",
+        "Chinemys reevesii",
+        "Anemarrhena asphodeloides"
+      ]
+    },
+    {
+      "sourceId": "80008399",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 2
+      },
+      "ingredientNames": [
+        "Citrus Bioflavonoids",
+        "Vitamin C"
+      ]
+    },
+    {
+      "sourceId": "80008598",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 2,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 2,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Brassica rapa",
+        "Larix laricina",
+        "Allium sativum",
+        "Daucus carota"
+      ]
+    },
+    {
+      "sourceId": "80008603",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 2
+      },
+      "ingredientNames": [
+        "Serenoa repens",
+        "Pygeum africanum",
+        "Vitamin B6"
+      ]
+    },
+    {
+      "sourceId": "80008652",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Olea europaea"
+      ]
+    },
+    {
+      "sourceId": "80008717",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Poria cocos",
+        "Astragalus membranaceus",
+        "Glycyrrhiza glabra"
+      ]
+    },
+    {
+      "sourceId": "80009133",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 2,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 9,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Eleutherococcus senticosus",
+        "Lecithin",
+        "Silybum marianum",
+        "Oryza sativa",
+        "Ginkgo biloba",
+        "Bifidobacterium bifidum",
+        "Lacticaseibacillus rhamnosus",
+        "Malus domestica",
+        "Camellia sinensis",
+        "Beta vulgaris"
+      ]
+    },
+    {
+      "sourceId": "80009863",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 6,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Evolvulus alsinoides",
+        "Piper nigrum",
+        "Carum copticum",
+        "Cuminum cyminum",
+        "Solanum xanthocarpum",
+        "Hedyotis corymbosa",
+        "Coriandrum sativum"
+      ]
+    },
+    {
+      "sourceId": "80010108",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Plantago major"
+      ]
+    },
+    {
+      "sourceId": "80010284",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Alfalfa"
+      ]
+    },
+    {
+      "sourceId": "80010379",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Serenoa repens"
+      ]
+    },
+    {
+      "sourceId": "80010451",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Coenzyme Q10",
+        "Fish oil"
+      ]
+    },
+    {
+      "sourceId": "80010456",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Fish oil",
+        "Lecithin"
+      ]
+    },
+    {
+      "sourceId": "80010470",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Fish oil",
+        "Lecithin"
+      ]
+    },
+    {
+      "sourceId": "80010572",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 5,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 10,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Oryza sativa",
+        "Eleutherococcus senticosus",
+        "Lecithin",
+        "Silybum marianum",
+        "Arthrospira platensis",
+        "Lactiplantibacillus plantarum",
+        "Bifidobacterium longum",
+        "Lacticaseibacillus casei",
+        "Bifidobacterium breve",
+        "Camellia sinensis"
+      ]
+    },
+    {
+      "sourceId": "80010933",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Taraxacum officinale",
+        "Arctium lappa"
+      ]
+    },
+    {
+      "sourceId": "80011024",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 3,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Lycopodium clavatum",
+        "Achillea millefolium",
+        "Argentum metallicum",
+        "Equisetum arvense"
+      ]
+    },
+    {
+      "sourceId": "80011043",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Fish oil",
+        "Olea europaea"
+      ]
+    },
+    {
+      "sourceId": "80011055",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Crataegus oxyacantha",
+        "Coenzyme Q10"
+      ]
+    },
+    {
+      "sourceId": "80011063",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Lecithin",
+        "Fish oil"
+      ]
+    },
+    {
+      "sourceId": "80011305",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Eucalyptus globulus"
+      ]
+    },
+    {
+      "sourceId": "80011498",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 1,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Inositol",
+        "Vitamin E"
+      ]
+    },
+    {
+      "sourceId": "80011549",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 2,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Atropa belladonna",
+        "Hydrangea arborescens",
+        "Serenoa repens"
+      ]
+    },
+    {
+      "sourceId": "80011709",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 2
+      },
+      "ingredientNames": [
+        "Poria cocos",
+        "Magnetitum",
+        "Bupleurum chinense"
+      ]
+    },
+    {
+      "sourceId": "80011946",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Lycopersicon esculentum",
+        "Linum usitatissimum"
+      ]
+    },
+    {
+      "sourceId": "80012618",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 4,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 2,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Daucus carota",
+        "Vitamin E",
+        "Brassica oleracea",
+        "Brassica rapa",
+        "Carica papaya",
+        "Vitis vinifera",
+        "Camellia sinensis"
+      ]
+    },
+    {
+      "sourceId": "80013228",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Equisetum arvense",
+        "Verbascum thapsus"
+      ]
+    },
+    {
+      "sourceId": "80013276",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Plantago ovata"
+      ]
+    },
+    {
+      "sourceId": "80013357",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Borago officinalis",
+        "Linum usitatissimum"
+      ]
+    },
+    {
+      "sourceId": "80013410",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Vitis vinifera",
+        "Coenzyme Q10"
+      ]
+    },
+    {
+      "sourceId": "80013743",
+      "canonicalSourceId": null,
+      "primaryReason": "unknown",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Eucalyptus globulus"
+      ]
+    },
+    {
+      "sourceId": "80014399",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 2
+      },
+      "ingredientNames": [
+        "Vitamin C",
+        "Citrus Bioflavonoids"
+      ]
+    },
+    {
+      "sourceId": "80014477",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Linum usitatissimum"
+      ]
+    },
+    {
+      "sourceId": "80014495",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Plantago major"
+      ]
+    },
+    {
+      "sourceId": "80014723",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Plantago ovata"
+      ]
+    },
+    {
+      "sourceId": "80014759",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Olea europaea"
+      ]
+    },
+    {
+      "sourceId": "80014761",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 2
+      },
+      "ingredientNames": [
+        "Alpha lipoic acid",
+        "Vitamin E",
+        "Coenzyme Q10"
+      ]
+    },
+    {
+      "sourceId": "80014841",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Rehmannia glutinosa",
+        "Phellodendron chinense"
+      ]
+    },
+    {
+      "sourceId": "80014897",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Medicago sativa"
+      ]
+    },
+    {
+      "sourceId": "80015100",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 3,
+        "unitMissing": 2,
+        "unitMismatch": 2,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Teucrium marum",
+        "Belladonna",
+        "Histaminum hydrochloricum",
+        "Hydrastis canadensis",
+        "Ephedra vulgaris"
+      ]
+    },
+    {
+      "sourceId": "80015155",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 3,
+        "unitMismatch": 3,
+        "missingVerified": 2,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Mentha arvensis",
+        "Taraxacum officinale",
+        "Nepeta cataria",
+        "Arctium lappa"
+      ]
+    },
+    {
+      "sourceId": "80015158",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 2,
+        "unitMismatch": 2,
+        "missingVerified": 0,
+        "mismatch": 2
+      },
+      "ingredientNames": [
+        "Eucalyptus globulus",
+        "Menthol"
+      ]
+    },
+    {
+      "sourceId": "80015282",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 2,
+        "unitMismatch": 2,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Filipendula ulmaria",
+        "Echinacea angustifolia",
+        "Hydrastis canadensis"
+      ]
+    },
+    {
+      "sourceId": "80015404",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Poria cocos",
+        "Paeonia suffruticosa"
+      ]
+    },
+    {
+      "sourceId": "80015466",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Citrus bioflavonoids"
+      ]
+    },
+    {
+      "sourceId": "80015467",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Trifolium pratense"
+      ]
+    },
+    {
+      "sourceId": "80015584",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Plantago ovata"
+      ]
+    },
+    {
+      "sourceId": "80015768",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Avena sativa"
+      ]
+    },
+    {
+      "sourceId": "80015932",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Avena sativa"
+      ]
+    },
+    {
+      "sourceId": "80016051",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Aconitum carmichaelii",
+        "Cornus officinalis",
+        "Poria cocos",
+        "Rehmannia glutinosa"
+      ]
+    },
+    {
+      "sourceId": "80016134",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 12,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 8,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Vitis vinifera",
+        "Ananas comosus",
+        "Brassica oleracea var. italica",
+        "Petroselinum crispum",
+        "Spinacia oleracea",
+        "Vaccinium angustifolium",
+        "Lactobacillus casei",
+        "Sambucus nigra",
+        "Lactobacillus rhamnosus",
+        "Vaccinium myrtillus"
+      ]
+    },
+    {
+      "sourceId": "80016191",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Arctium lappa"
+      ]
+    },
+    {
+      "sourceId": "80016252",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Plantago ovata",
+        "Pectin"
+      ]
+    },
+    {
+      "sourceId": "80016396",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Niacin",
+        "Inositol"
+      ]
+    },
+    {
+      "sourceId": "80017428",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Lecithin"
+      ]
+    },
+    {
+      "sourceId": "80017438",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Citrus extract",
+        "Medicago sativa"
+      ]
+    },
+    {
+      "sourceId": "80017440",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Citrus bioflavonoids"
+      ]
+    },
+    {
+      "sourceId": "80017472",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Lecithin"
+      ]
+    },
+    {
+      "sourceId": "80017553",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Lecithin"
+      ]
+    },
+    {
+      "sourceId": "80017645",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Hydrastis canadensis"
+      ]
+    },
+    {
+      "sourceId": "80017758",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 2
+      },
+      "ingredientNames": [
+        "Vitamin C",
+        "Citrus Bioflavonoids"
+      ]
+    },
+    {
+      "sourceId": "80018004",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 5,
+        "unitMissing": 3,
+        "unitMismatch": 3,
+        "missingVerified": 2,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Chlorine",
+        "Silicea",
+        "Nitricum acidum",
+        "Pulsatilla nigricans",
+        "Fucus vesiculosus",
+        "Arsenicum album",
+        "Symphytum officinale",
+        "Medicago sativa"
+      ]
+    },
+    {
+      "sourceId": "80018152",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Medicago sativa"
+      ]
+    },
+    {
+      "sourceId": "80018188",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Medicago sativa"
+      ]
+    },
+    {
+      "sourceId": "80018356",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Medicago sativa"
+      ]
+    },
+    {
+      "sourceId": "80018645",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Ascorbic acid",
+        "Citrus Bioflavonoids"
+      ]
+    },
+    {
+      "sourceId": "80018730",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Lecithin"
+      ]
+    },
+    {
+      "sourceId": "80018849",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 2,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Citrus bioflavonoids",
+        "Ascorbic acid",
+        "Rosa canina"
+      ]
+    },
+    {
+      "sourceId": "80018901",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Citrus Bioflavonoids"
+      ]
+    },
+    {
+      "sourceId": "80018911",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Ascorbic acid",
+        "Bioflavonoids"
+      ]
+    },
+    {
+      "sourceId": "80019063",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Eucalyptus globulus",
+        "Echinacea purpurea",
+        "5-methyl-2-propan-2-yl-cyclohexan-1-ol"
+      ]
+    },
+    {
+      "sourceId": "80019064",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Ulmus rubra",
+        "Avena sativa"
+      ]
+    },
+    {
+      "sourceId": "80019069",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Equisetum arvense"
+      ]
+    },
+    {
+      "sourceId": "80019143",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 2
+      },
+      "ingredientNames": [
+        "Vitamin C",
+        "Citrus bioflavonoids"
+      ]
+    },
+    {
+      "sourceId": "80019192",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 3,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Glycyrrhiza glabra",
+        "Lonicera japonica",
+        "Lophatherum gracile",
+        "Arctium lappa"
+      ]
+    },
+    {
+      "sourceId": "80019285",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 3,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Capsicum Annuum",
+        "Althaea officinalis",
+        "Serenoa repens",
+        "Juniperus communis"
+      ]
+    },
+    {
+      "sourceId": "80019297",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Olea europaea"
+      ]
+    },
+    {
+      "sourceId": "80019362",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Eucalyptus globulus"
+      ]
+    },
+    {
+      "sourceId": "80019386",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Eucalyptus globulus"
+      ]
+    },
+    {
+      "sourceId": "80019848",
+      "canonicalSourceId": null,
+      "primaryReason": "unknown",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Poria cocos"
+      ]
+    },
+    {
+      "sourceId": "80019867",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Lecithin"
+      ]
+    },
+    {
+      "sourceId": "80020054",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 2,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Panax ginseng",
+        "Paullinia cupana"
+      ]
+    },
+    {
+      "sourceId": "80020924",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Lecithin"
+      ]
+    },
+    {
+      "sourceId": "80021066",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 3,
+        "unitMissing": 2,
+        "unitMismatch": 2,
+        "missingVerified": 1,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Chamomilla vulgaris",
+        "Cicuta virosa",
+        "Avena sativa",
+        "Hyoscyamus niger",
+        "Sumbulus moschatus"
+      ]
+    },
+    {
+      "sourceId": "80021206",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Plantago ovata"
+      ]
+    },
+    {
+      "sourceId": "80021266",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Lecithin"
+      ]
+    },
+    {
+      "sourceId": "80021391",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Plantago ovata"
+      ]
+    },
+    {
+      "sourceId": "80021444",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Plantago ovata"
+      ]
+    },
+    {
+      "sourceId": "80021656",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Seal oil",
+        "Coenzyme Q10"
+      ]
+    },
+    {
+      "sourceId": "80021659",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Lecithin"
+      ]
+    },
+    {
+      "sourceId": "80021705",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 2,
+        "mismatch": 2
+      },
+      "ingredientNames": [
+        "Ocimum gratissimum",
+        "Boswellia carteri",
+        "Eucalyptus globulus",
+        "Commiphora myrrha",
+        "Cinnamomum cassia"
+      ]
+    },
+    {
+      "sourceId": "80021727",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Coenzyme Q10"
+      ]
+    },
+    {
+      "sourceId": "80021800",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Plantago ovata"
+      ]
+    },
+    {
+      "sourceId": "00141240",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Citrus Bioflavonoids"
+      ]
+    },
+    {
+      "sourceId": "00401846",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Citrus Bioflavonoids"
+      ]
+    },
+    {
+      "sourceId": "00424315",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Dolomite",
+        "Vitamin B2",
+        "Lecithin"
+      ]
+    },
+    {
+      "sourceId": "00444065",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Daucus carota",
+        "Cynodon dactylon"
+      ]
+    },
+    {
+      "sourceId": "00444073",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 3,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Valeriana officinalis",
+        "Glycyrrhiza glabra",
+        "Ruta graveolens",
+        "Tilia argentea"
+      ]
+    },
+    {
+      "sourceId": "00461555",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Aluminum chloride"
+      ]
+    },
+    {
+      "sourceId": "00580783",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Plantago ovata"
+      ]
+    },
+    {
+      "sourceId": "00718432",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 2,
+        "mismatch": 2
+      },
+      "ingredientNames": [
+        "Niacin",
+        "para-Aminobenzoic acid",
+        "Vitamin B12",
+        "Inositol"
+      ]
+    },
+    {
+      "sourceId": "00766801",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Sepia"
+      ]
+    },
+    {
+      "sourceId": "00779695",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 2,
+        "unitMismatch": 2,
+        "missingVerified": 0,
+        "mismatch": 2
+      },
+      "ingredientNames": [
+        "Menthol",
+        "Thymol",
+        "Eucalyptus globulus"
+      ]
+    },
+    {
+      "sourceId": "00887811",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 5,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Natrum muriaticum",
+        "Calcarea fluorica",
+        "Natrum sulfuricum",
+        "Calcarea sulphurica",
+        "Calcarea phosphorica"
+      ]
+    },
+    {
+      "sourceId": "00892629",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 3,
+        "unitMissing": 2,
+        "unitMismatch": 2,
+        "missingVerified": 1,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Crataegus laevigata",
+        "Coffea cruda",
+        "Tilia argentea",
+        "Avena sativa",
+        "Sumbul"
+      ]
+    },
+    {
+      "sourceId": "01936530",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Inositol"
+      ]
+    },
+    {
+      "sourceId": "02174782",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Plantago ovata"
+      ]
+    },
+    {
+      "sourceId": "02174812",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Plantago ovata"
+      ]
+    },
+    {
+      "sourceId": "02205173",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Lecithin"
+      ]
+    },
+    {
+      "sourceId": "02230390",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Vitamin B12",
+        "Inositol"
+      ]
+    },
+    {
+      "sourceId": "02232465",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 9,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Cuprum metallicum",
+        "Kalmia latifolia",
+        "Hypericum perforatum",
+        "Gnaphalium polycephalum",
+        "Apis mellifica",
+        "Aconitum napellus",
+        "Sarcolacticum acidum",
+        "Kalium phosphoricum",
+        "Ruta graveolens",
+        "Arnica montana"
+      ]
+    },
+    {
+      "sourceId": "02233486",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 5,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Bryonia",
+        "Eucalyptus globulus",
+        "Eupatorium perfoliatum",
+        "Gelsemium sempervirens",
+        "Sabadilla",
+        "Ferrum phosphoricum"
+      ]
+    },
+    {
+      "sourceId": "02236749",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 2,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Polygala tenuifolia",
+        "Gardenia jasminoides",
+        "Poria cocos"
+      ]
+    },
+    {
+      "sourceId": "02237056",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Plantago ovata"
+      ]
+    },
+    {
+      "sourceId": "02237057",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Plantago ovata"
+      ]
+    },
+    {
+      "sourceId": "02237105",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Sennoside A&B"
+      ]
+    },
+    {
+      "sourceId": "02237311",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 2
+      },
+      "ingredientNames": [
+        "Citrus Bioflavonoids",
+        "Vitamin C"
+      ]
+    },
+    {
+      "sourceId": "02237471",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Equisetum arvense"
+      ]
+    },
+    {
+      "sourceId": "02238780",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Hydrastis canadensis"
+      ]
+    },
+    {
+      "sourceId": "02240873",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "5-methyl-2-(1-methylethyl)phenol",
+        "Eucalyptus globulus"
+      ]
+    },
+    {
+      "sourceId": "02241338",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Camphor",
+        "Menthol"
+      ]
+    },
+    {
+      "sourceId": "02241410",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 2,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Taraxacum officinale",
+        "Bromelain",
+        "Medicago sativa"
+      ]
+    },
+    {
+      "sourceId": "02243206",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Vitamin B12",
+        "Myo-Inositol"
+      ]
+    },
+    {
+      "sourceId": "02243526",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Niacin",
+        "Inositol"
+      ]
+    },
+    {
+      "sourceId": "02244738",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Inositol"
+      ]
+    },
+    {
+      "sourceId": "80000048",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "(2S)-2-Amino-5-{[amino(imino)methyl]amino}pentanoic acid"
+      ]
+    },
+    {
+      "sourceId": "80000184",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "2-Amino-2-deoxy-beta-D-glucopyranose"
+      ]
+    },
+    {
+      "sourceId": "80001288",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Poly-(1-3)-N-acetyl-2-amino-2-deoxy-3-0-B-D-glucopyranurosy-4-(and 6-)sulfonyl-D-galactose"
+      ]
+    },
+    {
+      "sourceId": "80002026",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 3,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Disodium pyrophosphate",
+        "Tetrasodium pyrophosphate",
+        "Sodium fluoride"
+      ]
+    },
+    {
+      "sourceId": "80002855",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "White phosphorus"
+      ]
+    },
+    {
+      "sourceId": "80002951",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 6,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Argentum nitricum",
+        "Arsenicum album",
+        "Carbo vegetabilis",
+        "Nux vomica",
+        "Pulsatilla",
+        "Stibium sulfuratum nigrum"
+      ]
+    },
+    {
+      "sourceId": "80002957",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Eleutherococcus senticosus"
+      ]
+    },
+    {
+      "sourceId": "80004241",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Arctium lappa"
+      ]
+    },
+    {
+      "sourceId": "80004263",
+      "canonicalSourceId": null,
+      "primaryReason": "unknown",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Hydrastis canadensis"
+      ]
+    },
+    {
+      "sourceId": "80004332",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Linum usitatissimum"
+      ]
+    },
+    {
+      "sourceId": "80004572",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Lecithin"
+      ]
+    },
+    {
+      "sourceId": "80004730",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 3,
+        "unitMismatch": 3,
+        "missingVerified": 3,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Oenothera biennis",
+        "Lecithin",
+        "Borago officinalis"
+      ]
+    },
+    {
+      "sourceId": "80004785",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 1,
+        "mismatch": 2
+      },
+      "ingredientNames": [
+        "Olea europaea",
+        "Rosmarinus officinalis",
+        "Curcuma longa"
+      ]
+    },
+    {
+      "sourceId": "80004840",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 2,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 3
+      },
+      "ingredientNames": [
+        "Avena sativa",
+        "Allium ursinum",
+        "Vitamin B6",
+        "Vitamin B12",
+        "Trimethylglycine anhydrous"
+      ]
+    },
+    {
+      "sourceId": "80004985",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Hydrastis canadensis"
+      ]
+    },
+    {
+      "sourceId": "80004987",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Cimicifuga racemosa"
+      ]
+    },
+    {
+      "sourceId": "80005121",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 2,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Commiphora myrrha",
+        "Fritillaria thunbergii",
+        "Citrus reticulata"
+      ]
+    },
+    {
+      "sourceId": "80005229",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Serenoa repens"
+      ]
+    },
+    {
+      "sourceId": "80005351",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Sepia officinalis"
+      ]
+    },
+    {
+      "sourceId": "80005372",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Populus tremula-flos"
+      ]
+    },
+    {
+      "sourceId": "80005415",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Olea europaea"
+      ]
+    },
+    {
+      "sourceId": "80005490",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 4,
+        "unitMissing": 2,
+        "unitMismatch": 2,
+        "missingVerified": 2,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Allium cepa",
+        "Arsenicum album",
+        "Eupatorium perfoliatum",
+        "Bryonia alba",
+        "Ferrum phosphoricum",
+        "Chamomilla"
+      ]
+    },
+    {
+      "sourceId": "80005506",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Medicago sativa"
+      ]
+    },
+    {
+      "sourceId": "80005727",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Plantago ovata"
+      ]
+    },
+    {
+      "sourceId": "80005825",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Rheum palmatum",
+        "Cassia senna"
+      ]
+    },
+    {
+      "sourceId": "80005929",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Lecithin"
+      ]
+    },
+    {
+      "sourceId": "80005931",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Arctium lappa"
+      ]
+    },
+    {
+      "sourceId": "80005951",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Halibut liver oil"
+      ]
+    },
+    {
+      "sourceId": "80005956",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Hydrastis canadensis"
+      ]
+    },
+    {
+      "sourceId": "80006056",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Linum usitatissimum"
+      ]
+    },
+    {
+      "sourceId": "80006057",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 4
+      },
+      "ingredientNames": [
+        "Atractylodes macrocephala",
+        "Codonopsis pilosula",
+        "Rehmannia glutinosa",
+        "Ligusticum chuanxiong"
+      ]
+    },
+    {
+      "sourceId": "80006096",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Lecithin"
+      ]
+    },
+    {
+      "sourceId": "80006097",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 3,
+        "unitMismatch": 3,
+        "missingVerified": 2,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Matricaria chamomilla",
+        "Plantago major",
+        "Hypericum perforatum"
+      ]
+    },
+    {
+      "sourceId": "80006099",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 2,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 3
+      },
+      "ingredientNames": [
+        "Codonopsis pilosula",
+        "Ziziphus spinosa",
+        "Biota Orientalis",
+        "Polygala tenuifolia",
+        "Ligusticum chuanxiong"
+      ]
+    },
+    {
+      "sourceId": "80006102",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 4,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 2,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Salvia miltiorrhiza",
+        "Paeonia lactiflora",
+        "Glycyrrhiza uralensis",
+        "Cyperus rotundus",
+        "Astragalus membranaceus",
+        "Stellaria dichotoma",
+        "Trionyx sinensis"
+      ]
+    },
+    {
+      "sourceId": "80006132",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Poria cocos",
+        "Achyranthes bidentata"
+      ]
+    },
+    {
+      "sourceId": "80006150",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 1,
+        "mismatch": 2
+      },
+      "ingredientNames": [
+        "Coenzyme Q10",
+        "Beta-carotene",
+        "Vitamin E"
+      ]
+    },
+    {
+      "sourceId": "80006270",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 3,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Pyrogenium",
+        "Ferrum phosphoricum",
+        "Belladonna",
+        "Capsicum Annuum"
+      ]
+    },
+    {
+      "sourceId": "80006271",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 2,
+        "unitMissing": 2,
+        "unitMismatch": 2,
+        "missingVerified": 0,
+        "mismatch": 2
+      },
+      "ingredientNames": [
+        "Selenium",
+        "Sterculia acuminata",
+        "Zincum metallicum",
+        "Medicago sativa"
+      ]
+    },
+    {
+      "sourceId": "80007537",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 7,
+        "unitMissing": 2,
+        "unitMismatch": 2,
+        "missingVerified": 1,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Influenzinum",
+        "Crotalus horridus",
+        "Anas barbariae",
+        "Pyrogenium",
+        "Olive",
+        "Ginkgo biloba",
+        "Crab apple",
+        "Bryonia alba",
+        "Selenium metallicum"
+      ]
+    },
+    {
+      "sourceId": "80007550",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 7,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Calcarea sulphurica",
+        "Baptisia tinctoria",
+        "Mezereum",
+        "Asclepias tuberosa",
+        "Arsenicum album",
+        "Thuja occidentalis",
+        "Ranunculus bulbosus"
+      ]
+    },
+    {
+      "sourceId": "80008212",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Psorinum"
+      ]
+    },
+    {
+      "sourceId": "80009287",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 2,
+        "unitMismatch": 2,
+        "missingVerified": 2,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Verbena officinalis",
+        "Valeriana officinalis",
+        "Lactuca virosa"
+      ]
+    },
+    {
+      "sourceId": "80009526",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Fish oil"
+      ]
+    },
+    {
+      "sourceId": "80010188",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Rhododendron chrysanthum"
+      ]
+    },
+    {
+      "sourceId": "80010810",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Aconitum napellus"
+      ]
+    },
+    {
+      "sourceId": "80011057",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Ilex aquifolium"
+      ]
+    },
+    {
+      "sourceId": "80011173",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Capsicum annuum"
+      ]
+    },
+    {
+      "sourceId": "80011446",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Carduus marianus"
+      ]
+    },
+    {
+      "sourceId": "80011486",
+      "canonicalSourceId": null,
+      "primaryReason": "mismatch",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Menthol"
+      ]
+    },
+    {
+      "sourceId": "80011490",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Andrographis paniculata"
+      ]
+    },
+    {
+      "sourceId": "80011988",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Oryctolagus cuniculus"
+      ]
+    },
+    {
+      "sourceId": "80012123",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 2,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Harpagophytum procumbens",
+        "Cervus elaphus",
+        "Poly-(1->3)-N-aceltyl-2-amino-2-deoxy-3-O-beta-D-glucopyranurosyl-4-(or 6-)sulfonyl-D-galactose"
+      ]
+    },
+    {
+      "sourceId": "80012784",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Rhodonite"
+      ]
+    },
+    {
+      "sourceId": "80013835",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Ganoderma lucidum"
+      ]
+    },
+    {
+      "sourceId": "80014059",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Green jasper"
+      ]
+    },
+    {
+      "sourceId": "80014202",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Oryctolagus cuniculus"
+      ]
+    },
+    {
+      "sourceId": "80015366",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Tarentula hispana"
+      ]
+    },
+    {
+      "sourceId": "80015432",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Ganoderma lucidum"
+      ]
+    },
+    {
+      "sourceId": "80015619",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 3,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Glycyrrhiza glabra",
+        "Sapindus mukorossi",
+        "Scutellaria baicalensis"
+      ]
+    },
+    {
+      "sourceId": "80015717",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Calendula officinalis",
+        "Aurum metallicum"
+      ]
+    },
+    {
+      "sourceId": "80016112",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 2,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Ruscus aculeatus",
+        "Cassia acutifolia"
+      ]
+    },
+    {
+      "sourceId": "80016724",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 5,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Mitchella repens",
+        "Cnicus benedictus",
+        "Viburnum opulus",
+        "Chamaelirium luteum",
+        "Rubus strigosus"
+      ]
+    },
+    {
+      "sourceId": "80017480",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 1,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Calcium 2-oxopropanoate",
+        "Camellia sinensis"
+      ]
+    },
+    {
+      "sourceId": "80019837",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Eleutherococcus senticosus"
+      ]
+    },
+    {
+      "sourceId": "80020982",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Turnera diffusa"
+      ]
+    },
+    {
+      "sourceId": "80021327",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Ethyl alcohol"
+      ]
+    },
+    {
+      "sourceId": "80021652",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 2,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 2,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Astragalus membranaceus",
+        "Epimedium grandiflorum",
+        "Curculigo orchioides",
+        "Cuscuta chinensis",
+        "Taxillus sutchuenensis"
+      ]
+    },
+    {
+      "sourceId": "80022817",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Sodium fluoride"
+      ]
+    },
+    {
+      "sourceId": "80022883",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Melissa officinalis"
+      ]
+    },
+    {
+      "sourceId": "80028322",
+      "canonicalSourceId": null,
+      "primaryReason": "missingVerified",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 2,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Althaea officinalis",
+        "Aloe ferox"
+      ]
+    },
+    {
+      "sourceId": "80028804",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Myo-Inositol"
+      ]
+    },
+    {
+      "sourceId": "80029185",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 5,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Acidum arsenicosum",
+        "Mercurius solubilis Hahnemanni",
+        "Kalium nitricum",
+        "Zincum metallicum",
+        "Cuprum sulphuricum"
+      ]
+    },
+    {
+      "sourceId": "80029579",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "5-Hydroxy-2-(3-hydroxy-4-methoxyphenyl)-7-(O6-alpha-L-rhamnopyranosyl-beta-D-glucopyranosyloxy)chromen-4-one"
+      ]
+    },
+    {
+      "sourceId": "80030681",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 9,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Plumbum aceticum",
+        "Arnica montana",
+        "Cuprum sulphuricum",
+        "Acidum arsenicosum",
+        "Raphanus sativus var. niger",
+        "Stibium sulfuratum nigrum",
+        "Camphora",
+        "Aurum chloratum",
+        "Mercurius solubilis Hahnemanni"
+      ]
+    },
+    {
+      "sourceId": "80031764",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Punica granatum"
+      ]
+    },
+    {
+      "sourceId": "80033101",
+      "canonicalSourceId": null,
+      "primaryReason": "unit_missing",
+      "counts": {
+        "ingredientIdMissing": 0,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Hydrolyzed Collagen Type I"
+      ]
+    },
+    {
+      "sourceId": "80033133",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 5,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 2,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "beta-D-fructofuranoside fructohydrolase",
+        "Triacylglycerol lipase",
+        "1,3-beta-D-xylan xylanohydrolase",
+        "Bacterial Protease",
+        "alpha-D-Galactoside galactohydrolase",
+        "Protease",
+        "1,4-alpha-D-Glucan glucohydrolase"
+      ]
+    },
+    {
+      "sourceId": "80033194",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Vitamin E",
+        "Origanum vulgare"
+      ]
+    },
+    {
+      "sourceId": "80034689",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 1,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "1-[(2E,4E)-5-(1,3-Benzodioxol-5-yl)-1-oxo-2,4-pentadienyl]piperidine"
+      ]
+    },
+    {
+      "sourceId": "80035560",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 3,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "Arctostaphylos uva-ursi",
+        "Malva verticillata",
+        "Ononis spinosa",
+        "Equisetum arvense"
+      ]
+    },
+    {
+      "sourceId": "80035663",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 3,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "myo-Inositol-hexakisphosphate 3-phosphohydrolase",
+        "4-(1,3;1,4)-beta-D-Glucan 4-glucanohydrolase",
+        "Hydrogen-peroxide:hydrogen-peroxide oxidoreductase"
+      ]
+    },
+    {
+      "sourceId": "80036587",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 2,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 0,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "3,3',4',5,7-pentahydroxyflavone",
+        "Urtica dioica"
+      ]
+    },
+    {
+      "sourceId": "80036892",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 2,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Glycyrrhiza glabra",
+        "Passiflora incarnata",
+        "Ulmus rubra"
+      ]
+    },
+    {
+      "sourceId": "80037869",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 4,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 1,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Ledum palustre",
+        "Hedera helix",
+        "Betula pendula e foliis",
+        "Acidum sulfuricum",
+        "Melilotus officinalis"
+      ]
+    },
+    {
+      "sourceId": "80038310",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 2,
+        "unitMissing": 2,
+        "unitMismatch": 2,
+        "missingVerified": 2,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Pelargonium graveolens",
+        "Citrus sinensis",
+        "Vetiveria zizanioides",
+        "Myrtus communis"
+      ]
+    },
+    {
+      "sourceId": "80039055",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 5,
+        "unitMissing": 1,
+        "unitMismatch": 1,
+        "missingVerified": 1,
+        "mismatch": 1
+      },
+      "ingredientNames": [
+        "1,3,7-Trimethylxanthine",
+        "Turnera diffusa",
+        "Ilex paraguariensis",
+        "Pimpinella anisum",
+        "Niacin",
+        "Ficus carica",
+        "L-ornithine alphaketoglutarate"
+      ]
+    },
+    {
+      "sourceId": "80039308",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 2,
+        "unitMissing": 0,
+        "unitMismatch": 0,
+        "missingVerified": 3,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "(3R,3'R,6'R)-beta,epsilon-Carotene-3,3'-diol",
+        "3,3',4',5,7-Pentahydroxyflavone",
+        "3,3',4',5,7-Pentahydroxyflavone-3-rutinoside",
+        "Euphrasia officinalis",
+        "Daucus carota"
+      ]
+    },
+    {
+      "sourceId": "80039448",
+      "canonicalSourceId": null,
+      "primaryReason": "ingredient_id_missing",
+      "counts": {
+        "ingredientIdMissing": 2,
+        "unitMissing": 5,
+        "unitMismatch": 5,
+        "missingVerified": 5,
+        "mismatch": 0
+      },
+      "ingredientNames": [
+        "Matricaria chamomilla",
+        "Panax ginseng",
+        "Thymus vulgaris",
+        "Panax quinquefolius",
+        "Trigonella foenum-graecum",
+        "Mentha Viridis",
+        "Rosmarinus officinalis"
+      ]
+    }
+  ],
+  "definitions": {
+    "ingredient_id_missing": "At least one active row missing ingredient_id.",
+    "unit_missing": "At least one active row missing a recognizable unit.",
+    "unit_mismatch": "At least one active row with unit not matching canonical unit.",
+    "missingVerified": "Active rows have no verified forms for their ingredient_id.",
+    "mismatch": "Form raw missing or does not match verified forms/aliases.",
+    "primaryReason": "Primary reason is assigned by precedence: ingredient_id_missing > unit_missing > unit_mismatch > missingVerified > mismatch."
+  }
+}

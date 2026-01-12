@@ -1,0 +1,1 @@
+{"timestamp":"2026-01-10T15:38:10.015Z","source":"lnhpd","sourceId":"80070465","canonicalSourceId":"8639397","stage":"product_ingredients_upsert","status":400,"rayId":null,"message":"numeric field overflow"}

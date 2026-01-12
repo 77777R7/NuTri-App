@@ -1,0 +1,28 @@
+{
+  "source": "lnhpd",
+  "timestamp": "2026-01-09T22:05:54.054Z",
+  "sampleSize": 1000,
+  "activeRows": 1750,
+  "resolvedRows": 1424,
+  "counts": {
+    "activeRows": 1750,
+    "ingredientIdMissing": 326,
+    "ingredientFormsMissing": 483,
+    "formRawMissing": 981,
+    "taxonomyMismatch": 9,
+    "formRawNoMatch": 99,
+    "matched": 58
+  },
+  "ratios": {
+    "ingredientIdMissing": 0.1863,
+    "taxonomyMismatchAmongResolved": 0.0063,
+    "taxonomyMismatchAmongActive": 0.0051,
+    "formRawMissingAmongResolved": 0.6889,
+    "formRawNoMatchAmongResolved": 0.0695
+  },
+  "options": {
+    "limit": 1000,
+    "topN": 50,
+    "sourceIdsFile": null
+  }
+}

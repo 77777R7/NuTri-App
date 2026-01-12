@@ -1,0 +1,503 @@
+{
+  "summary": {
+    "source": "lnhpd",
+    "sampleSize": 1000,
+    "activeRows": 1609,
+    "missingIngredientFormsCount": 47,
+    "missingIngredientFormsRatio": 0.3534,
+    "generatedAt": "2026-01-09T23:22:45.733Z"
+  },
+  "topMissing": [
+    {
+      "ingredientId": "e213c4cd-1fca-4c1f-8be9-53e72c20cecf",
+      "canonicalKey": "inositol",
+      "ingredientName": "Inositol",
+      "category": null,
+      "unit": "mg",
+      "count": 81,
+      "nameSamples": [
+        "Inositol",
+        "Myo-Inositol"
+      ],
+      "formTokenSamples": [],
+      "recommendedFormKey": null,
+      "recommendedFormLabel": null
+    },
+    {
+      "ingredientId": "add7bc5a-54da-477a-81af-cf0daedc802e",
+      "canonicalKey": "avena_sativa",
+      "ingredientName": "Avena sativa",
+      "category": "botanical",
+      "unit": "mg",
+      "count": 17,
+      "nameSamples": [
+        "Avena sativa",
+        "Oryza sativa"
+      ],
+      "formTokenSamples": [
+        {
+          "token": "root",
+          "count": 3
+        },
+        {
+          "token": "seed",
+          "count": 3
+        },
+        {
+          "token": "whole plant extract",
+          "count": 2
+        }
+      ],
+      "recommendedFormKey": "root",
+      "recommendedFormLabel": "Root"
+    },
+    {
+      "ingredientId": "f8d3d07f-1359-4591-ba86-de61f09e6683",
+      "canonicalKey": "wild_yam",
+      "ingredientName": "Wild Yam",
+      "category": null,
+      "unit": "mg",
+      "count": 16,
+      "nameSamples": [
+        "Dioscorea oppositifolia"
+      ],
+      "formTokenSamples": [
+        {
+          "token": "root",
+          "count": 11
+        },
+        {
+          "token": "extract",
+          "count": 3
+        },
+        {
+          "token": "root extract",
+          "count": 2
+        }
+      ],
+      "recommendedFormKey": "root",
+      "recommendedFormLabel": "Root"
+    },
+    {
+      "ingredientId": "aa96efc2-cf10-4927-ad64-30a36c5f493f",
+      "canonicalKey": "cynara_scolymus",
+      "ingredientName": "Cynara scolymus",
+      "category": "botanical",
+      "unit": "mg",
+      "count": 15,
+      "nameSamples": [
+        "Cynara scolymus"
+      ],
+      "formTokenSamples": [
+        {
+          "token": "leaf extract",
+          "count": 7
+        },
+        {
+          "token": "leaf",
+          "count": 4
+        },
+        {
+          "token": "leaf extract cynarin",
+          "count": 3
+        }
+      ],
+      "recommendedFormKey": "leaf_extract",
+      "recommendedFormLabel": "Leaf Extract"
+    },
+    {
+      "ingredientId": "581a887e-0e05-432d-aad0-5357c1a33a64",
+      "canonicalKey": "citrus_bioflavonoids",
+      "ingredientName": "Citrus Bioflavonoids",
+      "category": null,
+      "unit": "mg",
+      "count": 14,
+      "nameSamples": [
+        "Citrus Bioflavonoids",
+        "Citrus bioflavonoids",
+        "Bioflavonoids"
+      ],
+      "formTokenSamples": [
+        {
+          "token": "fruit",
+          "count": 4
+        },
+        {
+          "token": "extract",
+          "count": 1
+        },
+        {
+          "token": "seed",
+          "count": 1
+        }
+      ],
+      "recommendedFormKey": "fruit",
+      "recommendedFormLabel": "Fruit"
+    },
+    {
+      "ingredientId": "5cbdb06d-f36d-4aa7-b8f8-457a9bd013fa",
+      "canonicalKey": "equisetum_arvense",
+      "ingredientName": "Equisetum arvense",
+      "category": "botanical",
+      "unit": "mg",
+      "count": 14,
+      "nameSamples": [
+        "Equisetum arvense"
+      ],
+      "formTokenSamples": [
+        {
+          "token": "stem",
+          "count": 8
+        },
+        {
+          "token": "whole plant extract silica",
+          "count": 1
+        },
+        {
+          "token": "shoot",
+          "count": 1
+        }
+      ],
+      "recommendedFormKey": "stem",
+      "recommendedFormLabel": "Stem"
+    },
+    {
+      "ingredientId": "8fce42c8-6fbe-4d97-8162-33ea14ec2afa",
+      "canonicalKey": "ziziphus_jujuba",
+      "ingredientName": "Ziziphus jujuba",
+      "category": "botanical",
+      "unit": "mg",
+      "count": 13,
+      "nameSamples": [
+        "Ziziphus jujuba"
+      ],
+      "formTokenSamples": [
+        {
+          "token": "fruit extract",
+          "count": 6
+        },
+        {
+          "token": "seed",
+          "count": 4
+        },
+        {
+          "token": "fruit",
+          "count": 1
+        }
+      ],
+      "recommendedFormKey": "fruit_extract",
+      "recommendedFormLabel": "Fruit Extract"
+    },
+    {
+      "ingredientId": "4feba9cd-c7af-4237-965f-887597d219f2",
+      "canonicalKey": "cinnamomum_aromaticum",
+      "ingredientName": "Cinnamomum aromaticum",
+      "category": "botanical",
+      "unit": "mg",
+      "count": 12,
+      "nameSamples": [
+        "Cinnamomum cassia",
+        "Cinnamomum verum",
+        "Cinnamomum aromaticum"
+      ],
+      "formTokenSamples": [
+        {
+          "token": "bark",
+          "count": 3
+        },
+        {
+          "token": "bark extract",
+          "count": 2
+        },
+        {
+          "token": "extract",
+          "count": 2
+        }
+      ],
+      "recommendedFormKey": "bark",
+      "recommendedFormLabel": "Bark"
+    },
+    {
+      "ingredientId": "a277fa7a-7a95-4140-9365-ba2578381081",
+      "canonicalKey": "trifolium_pratense",
+      "ingredientName": "Trifolium pratense",
+      "category": "botanical",
+      "unit": "mg",
+      "count": 11,
+      "nameSamples": [
+        "Trifolium pratense"
+      ],
+      "formTokenSamples": [
+        {
+          "token": "flower",
+          "count": 5
+        },
+        {
+          "token": "flower extract",
+          "count": 2
+        },
+        {
+          "token": "flower total isoflavones",
+          "count": 1
+        }
+      ],
+      "recommendedFormKey": "flower",
+      "recommendedFormLabel": "Flower"
+    },
+    {
+      "ingredientId": "3b8d120b-713f-41ad-8d49-6d38bd7b821f",
+      "canonicalKey": "rheum_palmatum",
+      "ingredientName": "Rheum palmatum",
+      "category": "botanical",
+      "unit": "mg",
+      "count": 10,
+      "nameSamples": [
+        "Rheum palmatum"
+      ],
+      "formTokenSamples": [
+        {
+          "token": "root",
+          "count": 8
+        },
+        {
+          "token": "root extract",
+          "count": 1
+        }
+      ],
+      "recommendedFormKey": "root",
+      "recommendedFormLabel": "Root"
+    },
+    {
+      "ingredientId": "51e04da1-6ad9-41cc-b524-b22f39fa42d3",
+      "canonicalKey": "olea_europaea",
+      "ingredientName": "Olea europaea",
+      "category": "botanical",
+      "unit": "mg",
+      "count": 10,
+      "nameSamples": [
+        "Olea europaea"
+      ],
+      "formTokenSamples": [
+        {
+          "token": "extract",
+          "count": 2
+        },
+        {
+          "token": "linoleic acid",
+          "count": 1
+        },
+        {
+          "token": "leaf oleuropein",
+          "count": 1
+        }
+      ],
+      "recommendedFormKey": "extract",
+      "recommendedFormLabel": "Extract"
+    },
+    {
+      "ingredientId": "5b16c416-6e4e-494a-92f4-c30d1c5cfa39",
+      "canonicalKey": "pinellia_ternata",
+      "ingredientName": "Pinellia ternata",
+      "category": "botanical",
+      "unit": "mg",
+      "count": 9,
+      "nameSamples": [
+        "Pinellia ternata"
+      ],
+      "formTokenSamples": [
+        {
+          "token": "root extract",
+          "count": 5
+        },
+        {
+          "token": "root",
+          "count": 4
+        }
+      ],
+      "recommendedFormKey": "root_extract",
+      "recommendedFormLabel": "Root Extract"
+    },
+    {
+      "ingredientId": "597b96ca-86ad-40d7-8484-60a4c5162460",
+      "canonicalKey": "para_aminobenzoic_acid",
+      "ingredientName": "para-Aminobenzoic acid",
+      "category": "botanical",
+      "unit": "mg",
+      "count": 8,
+      "nameSamples": [
+        "para-Aminobenzoic Acid",
+        "para-Aminobenzoic acid",
+        "4-Aminobenzoic acid"
+      ],
+      "formTokenSamples": [],
+      "recommendedFormKey": null,
+      "recommendedFormLabel": null
+    },
+    {
+      "ingredientId": "14d53744-556b-4b6b-b240-a05258e6a164",
+      "canonicalKey": "mentha_haplocalyx",
+      "ingredientName": "Mentha haplocalyx",
+      "category": "botanical",
+      "unit": "mg",
+      "count": 8,
+      "nameSamples": [
+        "Mentha haplocalyx"
+      ],
+      "formTokenSamples": [
+        {
+          "token": "extract",
+          "count": 2
+        },
+        {
+          "token": "whole plant extract",
+          "count": 2
+        },
+        {
+          "token": "stem",
+          "count": 2
+        }
+      ],
+      "recommendedFormKey": "extract",
+      "recommendedFormLabel": "Extract"
+    },
+    {
+      "ingredientId": "42242ab0-2c1e-4442-8160-662ca1430ac5",
+      "canonicalKey": "platycodon_grandiflorum",
+      "ingredientName": "Platycodon grandiflorum",
+      "category": "botanical",
+      "unit": "mg",
+      "count": 7,
+      "nameSamples": [
+        "Platycodon grandiflorus",
+        "Platycodon grandiflorum"
+      ],
+      "formTokenSamples": [
+        {
+          "token": "root",
+          "count": 4
+        },
+        {
+          "token": "root extract",
+          "count": 3
+        }
+      ],
+      "recommendedFormKey": "root",
+      "recommendedFormLabel": "Root"
+    },
+    {
+      "ingredientId": "a8602846-db37-41b8-b64e-6f943d5c6718",
+      "canonicalKey": "bitter_orange",
+      "ingredientName": "bitter orange",
+      "category": null,
+      "unit": "mg",
+      "count": 7,
+      "nameSamples": [
+        "Citrus aurantium"
+      ],
+      "formTokenSamples": [
+        {
+          "token": "fruit extract",
+          "count": 4
+        },
+        {
+          "token": "fruit",
+          "count": 2
+        },
+        {
+          "token": "peel",
+          "count": 1
+        }
+      ],
+      "recommendedFormKey": "fruit_extract",
+      "recommendedFormLabel": "Fruit Extract"
+    },
+    {
+      "ingredientId": "4c9bcf38-6e25-416c-aa7f-5287619686f3",
+      "canonicalKey": "plantago_major",
+      "ingredientName": "Plantago major",
+      "category": "botanical",
+      "unit": "mg",
+      "count": 5,
+      "nameSamples": [
+        "Plantago major"
+      ],
+      "formTokenSamples": [
+        {
+          "token": "leaf",
+          "count": 2
+        },
+        {
+          "token": "leaf extract",
+          "count": 2
+        }
+      ],
+      "recommendedFormKey": "leaf",
+      "recommendedFormLabel": "Leaf"
+    },
+    {
+      "ingredientId": "9c4c62b5-6c19-447b-b9b0-062c427ca0d6",
+      "canonicalKey": "cucurbita_pepo",
+      "ingredientName": "Cucurbita pepo",
+      "category": "botanical",
+      "unit": "mg",
+      "count": 5,
+      "nameSamples": [
+        "Cucurbita pepo"
+      ],
+      "formTokenSamples": [
+        {
+          "token": "seed",
+          "count": 4
+        }
+      ],
+      "recommendedFormKey": "seed",
+      "recommendedFormLabel": "Seed"
+    },
+    {
+      "ingredientId": "559f6305-a271-41fb-8531-3e4806c7bec9",
+      "canonicalKey": "ophiopogon_japonicus",
+      "ingredientName": "Ophiopogon japonicus",
+      "category": "botanical",
+      "unit": "mg",
+      "count": 4,
+      "nameSamples": [
+        "Ophiopogon japonicus"
+      ],
+      "formTokenSamples": [
+        {
+          "token": "root",
+          "count": 3
+        },
+        {
+          "token": "root extract",
+          "count": 1
+        }
+      ],
+      "recommendedFormKey": "root",
+      "recommendedFormLabel": "Root"
+    },
+    {
+      "ingredientId": "a8a81358-710d-4051-b1ed-448541381252",
+      "canonicalKey": "commiphora_myrrha",
+      "ingredientName": "Commiphora myrrha",
+      "category": "botanical",
+      "unit": "mg",
+      "count": 4,
+      "nameSamples": [
+        "Commiphora myrrha"
+      ],
+      "formTokenSamples": [
+        {
+          "token": "resin",
+          "count": 3
+        },
+        {
+          "token": "bark resin",
+          "count": 1
+        }
+      ],
+      "recommendedFormKey": "resin",
+      "recommendedFormLabel": "Resin"
+    }
+  ]
+}

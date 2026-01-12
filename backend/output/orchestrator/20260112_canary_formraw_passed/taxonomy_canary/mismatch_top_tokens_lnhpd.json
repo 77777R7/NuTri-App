@@ -1,0 +1,51 @@
+{
+  "source": "lnhpd",
+  "topN": 20,
+  "totalMismatches": 20,
+  "tokens": [
+    {
+      "token": "chloride",
+      "count": 7
+    },
+    {
+      "token": "acetate",
+      "count": 6
+    },
+    {
+      "token": "phosphate",
+      "count": 2
+    },
+    {
+      "token": "citrate",
+      "count": 2
+    },
+    {
+      "token": "acid",
+      "count": 2
+    },
+    {
+      "token": "chelate",
+      "count": 1
+    },
+    {
+      "token": "whole",
+      "count": 1
+    },
+    {
+      "token": "eicosapentaenoic",
+      "count": 1
+    },
+    {
+      "token": "ascorbic",
+      "count": 1
+    },
+    {
+      "token": "calcium",
+      "count": 1
+    },
+    {
+      "token": "ascorbate",
+      "count": 1
+    }
+  ]
+}

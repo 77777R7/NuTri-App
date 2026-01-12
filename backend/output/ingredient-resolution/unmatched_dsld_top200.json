@@ -1,0 +1,3208 @@
+[
+  {
+    "source": "dsld",
+    "name_key": "sodium",
+    "normalized_key": "sodium",
+    "count": 59,
+    "samples": [
+      "Sodium"
+    ],
+    "normalized_samples": [
+      "sodium"
+    ],
+    "original_name_keys": [
+      "sodium"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "folic acid",
+    "normalized_key": "folic acid",
+    "count": 21,
+    "samples": [
+      "Folic Acid"
+    ],
+    "normalized_samples": [
+      "folic acid"
+    ],
+    "original_name_keys": [
+      "folic acid"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "vitamin b6",
+    "normalized_key": "vitamin b6",
+    "count": 17,
+    "samples": [
+      "Vitamin B6"
+    ],
+    "normalized_samples": [
+      "vitamin b6"
+    ],
+    "original_name_keys": [
+      "vitamin b6"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "vitamin c",
+    "normalized_key": "vitamin c",
+    "count": 15,
+    "samples": [
+      "Vitamin C"
+    ],
+    "normalized_samples": [
+      "vitamin c"
+    ],
+    "original_name_keys": [
+      "vitamin c"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "phosphorus",
+    "normalized_key": "phosphorus",
+    "count": 13,
+    "samples": [
+      "Phosphorus"
+    ],
+    "normalized_samples": [
+      "phosphorus"
+    ],
+    "original_name_keys": [
+      "phosphorus"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "magnesium",
+    "normalized_key": "magnesium",
+    "count": 13,
+    "samples": [
+      "Magnesium"
+    ],
+    "normalized_samples": [
+      "magnesium"
+    ],
+    "original_name_keys": [
+      "magnesium"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "vitamin a",
+    "normalized_key": "vitamin a",
+    "count": 13,
+    "samples": [
+      "Vitamin A"
+    ],
+    "normalized_samples": [
+      "vitamin a"
+    ],
+    "original_name_keys": [
+      "vitamin a"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "proprietary blend",
+    "normalized_key": "proprietary blend",
+    "count": 12,
+    "samples": [
+      "Proprietary Blend",
+      "Proprietary Blend (Non-Nutrient/Non-Botanical)"
+    ],
+    "normalized_samples": [
+      "proprietary blend"
+    ],
+    "original_name_keys": [
+      "proprietary blend",
+      "proprietary blend non nutrient non botanical"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "vitamin d",
+    "normalized_key": "vitamin d",
+    "count": 12,
+    "samples": [
+      "Vitamin D"
+    ],
+    "normalized_samples": [
+      "vitamin d"
+    ],
+    "original_name_keys": [
+      "vitamin d"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "niacin",
+    "normalized_key": "niacin",
+    "count": 11,
+    "samples": [
+      "Niacin"
+    ],
+    "normalized_samples": [
+      "niacin"
+    ],
+    "original_name_keys": [
+      "niacin"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "iron",
+    "normalized_key": "iron",
+    "count": 11,
+    "samples": [
+      "Iron"
+    ],
+    "normalized_samples": [
+      "iron"
+    ],
+    "original_name_keys": [
+      "iron"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "riboflavin",
+    "normalized_key": "riboflavin",
+    "count": 11,
+    "samples": [
+      "Riboflavin"
+    ],
+    "normalized_samples": [
+      "riboflavin"
+    ],
+    "original_name_keys": [
+      "riboflavin"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "pantothenic acid",
+    "normalized_key": "pantothenic acid",
+    "count": 11,
+    "samples": [
+      "Pantothenic Acid"
+    ],
+    "normalized_samples": [
+      "pantothenic acid"
+    ],
+    "original_name_keys": [
+      "pantothenic acid"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "calcium",
+    "normalized_key": "calcium",
+    "count": 11,
+    "samples": [
+      "Calcium"
+    ],
+    "normalized_samples": [
+      "calcium"
+    ],
+    "original_name_keys": [
+      "calcium"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "sugar",
+    "normalized_key": "sugar",
+    "count": 9,
+    "samples": [
+      "Sugar"
+    ],
+    "normalized_samples": [
+      "sugar"
+    ],
+    "original_name_keys": [
+      "sugar"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "thiamine",
+    "normalized_key": "thiamine",
+    "count": 9,
+    "samples": [
+      "Thiamine"
+    ],
+    "normalized_samples": [
+      "thiamine"
+    ],
+    "original_name_keys": [
+      "thiamine"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "vitamin e",
+    "normalized_key": "vitamin e",
+    "count": 9,
+    "samples": [
+      "Vitamin E"
+    ],
+    "normalized_samples": [
+      "vitamin e"
+    ],
+    "original_name_keys": [
+      "vitamin e"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "biotin",
+    "normalized_key": "biotin",
+    "count": 8,
+    "samples": [
+      "Biotin"
+    ],
+    "normalized_samples": [
+      "biotin"
+    ],
+    "original_name_keys": [
+      "biotin"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "zinc",
+    "normalized_key": "zinc",
+    "count": 8,
+    "samples": [
+      "Zinc"
+    ],
+    "normalized_samples": [
+      "zinc"
+    ],
+    "original_name_keys": [
+      "zinc"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "copper",
+    "normalized_key": "copper",
+    "count": 8,
+    "samples": [
+      "Copper"
+    ],
+    "normalized_samples": [
+      "copper"
+    ],
+    "original_name_keys": [
+      "copper"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "folate",
+    "normalized_key": "folate",
+    "count": 7,
+    "samples": [
+      "Folate"
+    ],
+    "normalized_samples": [
+      "folate"
+    ],
+    "original_name_keys": [
+      "folate"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "vitamin b12",
+    "normalized_key": "vitamin b12",
+    "count": 7,
+    "samples": [
+      "Vitamin B12"
+    ],
+    "normalized_samples": [
+      "vitamin b12"
+    ],
+    "original_name_keys": [
+      "vitamin b12"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "potassium",
+    "normalized_key": "potassium",
+    "count": 7,
+    "samples": [
+      "Potassium"
+    ],
+    "normalized_samples": [
+      "potassium"
+    ],
+    "original_name_keys": [
+      "potassium"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "selenium",
+    "normalized_key": "selenium",
+    "count": 6,
+    "samples": [
+      "Selenium"
+    ],
+    "normalized_samples": [
+      "selenium"
+    ],
+    "original_name_keys": [
+      "selenium"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "molybdenum",
+    "normalized_key": "molybdenum",
+    "count": 5,
+    "samples": [
+      "Molybdenum"
+    ],
+    "normalized_samples": [
+      "molybdenum"
+    ],
+    "original_name_keys": [
+      "molybdenum"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "iodine",
+    "normalized_key": "iodine",
+    "count": 5,
+    "samples": [
+      "Iodine"
+    ],
+    "normalized_samples": [
+      "iodine"
+    ],
+    "original_name_keys": [
+      "iodine"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "manganese",
+    "normalized_key": "manganese",
+    "count": 5,
+    "samples": [
+      "Manganese"
+    ],
+    "normalized_samples": [
+      "manganese"
+    ],
+    "original_name_keys": [
+      "manganese"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "chromium",
+    "normalized_key": "chromium",
+    "count": 5,
+    "samples": [
+      "Chromium"
+    ],
+    "normalized_samples": [
+      "chromium"
+    ],
+    "original_name_keys": [
+      "chromium"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "inositol",
+    "normalized_key": "inositol",
+    "count": 4,
+    "samples": [
+      "Inositol"
+    ],
+    "normalized_samples": [
+      "inositol"
+    ],
+    "original_name_keys": [
+      "inositol"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "vitamin d3",
+    "normalized_key": "vitamin d3",
+    "count": 4,
+    "samples": [
+      "Vitamin D3"
+    ],
+    "normalized_samples": [
+      "vitamin d3"
+    ],
+    "original_name_keys": [
+      "vitamin d3"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "boron",
+    "normalized_key": "boron",
+    "count": 4,
+    "samples": [
+      "Boron"
+    ],
+    "normalized_samples": [
+      "boron"
+    ],
+    "original_name_keys": [
+      "boron"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "vanadium",
+    "normalized_key": "vanadium",
+    "count": 3,
+    "samples": [
+      "Vanadium"
+    ],
+    "normalized_samples": [
+      "vanadium"
+    ],
+    "original_name_keys": [
+      "vanadium"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "black pepper fruit extract",
+    "normalized_key": "black pepper fruit extract",
+    "count": 3,
+    "samples": [
+      "Black Pepper fruit extract"
+    ],
+    "normalized_samples": [
+      "black pepper fruit extract"
+    ],
+    "original_name_keys": [
+      "black pepper fruit extract"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "dsld",
+    "name_key": "fish oil",
+    "normalized_key": "fish oil",
+    "count": 3,
+    "samples": [
+      "Fish Oil"
+    ],
+    "normalized_samples": [
+      "fish oil"
+    ],
+    "original_name_keys": [
+      "fish oil"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "silicon",
+    "normalized_key": "silicon",
+    "count": 3,
+    "samples": [
+      "Silicon"
+    ],
+    "normalized_samples": [
+      "silicon"
+    ],
+    "original_name_keys": [
+      "silicon"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "medium chain triglycerides",
+    "normalized_key": "medium chain triglycerides",
+    "count": 3,
+    "samples": [
+      "Medium Chain Triglycerides",
+      "Medium-Chain Triglycerides"
+    ],
+    "normalized_samples": [
+      "medium chain triglycerides"
+    ],
+    "original_name_keys": [
+      "medium chain triglycerides"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "coenzyme q10",
+    "normalized_key": "coenzyme q10",
+    "count": 3,
+    "samples": [
+      "Coenzyme Q10"
+    ],
+    "normalized_samples": [
+      "coenzyme q10"
+    ],
+    "original_name_keys": [
+      "coenzyme q10"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "citrulline malate",
+    "normalized_key": "citrulline malate",
+    "count": 3,
+    "samples": [
+      "Citrulline Malate"
+    ],
+    "normalized_samples": [
+      "citrulline malate"
+    ],
+    "original_name_keys": [
+      "citrulline malate"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "choline",
+    "normalized_key": "choline",
+    "count": 3,
+    "samples": [
+      "Choline"
+    ],
+    "normalized_samples": [
+      "choline"
+    ],
+    "original_name_keys": [
+      "choline"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "branched chain amino acids",
+    "normalized_key": "branched chain amino acids",
+    "count": 2,
+    "samples": [
+      "Branched-Chain Amino Acids"
+    ],
+    "normalized_samples": [
+      "branched chain amino acids"
+    ],
+    "original_name_keys": [
+      "branched chain amino acids"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "carbohydrates",
+    "normalized_key": "carbohydrates",
+    "count": 2,
+    "samples": [
+      "Carbohydrates"
+    ],
+    "normalized_samples": [
+      "carbohydrates"
+    ],
+    "original_name_keys": [
+      "carbohydrates"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "organic flaxseed oil",
+    "normalized_key": "organic flaxseed oil",
+    "count": 2,
+    "samples": [
+      "Organic Flaxseed Oil",
+      "organic Flaxseed Oil"
+    ],
+    "normalized_samples": [
+      "organic flaxseed oil"
+    ],
+    "original_name_keys": [
+      "organic flaxseed oil"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "citrus bioflavonoids",
+    "normalized_key": "citrus bioflavonoids",
+    "count": 2,
+    "samples": [
+      "Citrus Bioflavonoids"
+    ],
+    "normalized_samples": [
+      "citrus bioflavonoids"
+    ],
+    "original_name_keys": [
+      "citrus bioflavonoids"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "bladderwrack",
+    "normalized_key": "bladderwrack",
+    "count": 2,
+    "samples": [
+      "Bladderwrack"
+    ],
+    "normalized_samples": [
+      "bladderwrack"
+    ],
+    "original_name_keys": [
+      "bladderwrack"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "superoxide dismutase",
+    "normalized_key": "superoxide dismutase",
+    "count": 2,
+    "samples": [
+      "Superoxide Dismutase"
+    ],
+    "normalized_samples": [
+      "superoxide dismutase"
+    ],
+    "original_name_keys": [
+      "superoxide dismutase"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "raspberry ketones",
+    "normalized_key": "raspberry ketones",
+    "count": 2,
+    "samples": [
+      "Raspberry Ketones"
+    ],
+    "normalized_samples": [
+      "raspberry ketones"
+    ],
+    "original_name_keys": [
+      "raspberry ketones"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "polyunsaturated fat",
+    "normalized_key": "polyunsaturated fat",
+    "count": 2,
+    "samples": [
+      "Polyunsaturated Fat"
+    ],
+    "normalized_samples": [
+      "polyunsaturated fat"
+    ],
+    "original_name_keys": [
+      "polyunsaturated fat"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "gotu kola",
+    "normalized_key": "gotu kola",
+    "count": 2,
+    "samples": [
+      "Gotu Kola"
+    ],
+    "normalized_samples": [
+      "gotu kola"
+    ],
+    "original_name_keys": [
+      "gotu kola"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "strength matrix",
+    "normalized_key": "strength matrix",
+    "count": 2,
+    "samples": [
+      "Strength Matrix"
+    ],
+    "normalized_samples": [
+      "strength matrix"
+    ],
+    "original_name_keys": [
+      "strength matrix"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "stevia",
+    "normalized_key": "stevia",
+    "count": 2,
+    "samples": [
+      "Stevia"
+    ],
+    "normalized_samples": [
+      "stevia"
+    ],
+    "original_name_keys": [
+      "stevia"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "flax",
+    "normalized_key": "flax",
+    "count": 2,
+    "samples": [
+      "Flax"
+    ],
+    "normalized_samples": [
+      "flax"
+    ],
+    "original_name_keys": [
+      "flax"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "hydrolyzed collagen",
+    "normalized_key": "hydrolyzed collagen",
+    "count": 2,
+    "samples": [
+      "Hydrolyzed collagen",
+      "hydrolyzed Collagen"
+    ],
+    "normalized_samples": [
+      "hydrolyzed collagen"
+    ],
+    "original_name_keys": [
+      "hydrolyzed collagen"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "dsld",
+    "name_key": "alpha galactosidase",
+    "normalized_key": "alpha galactosidase",
+    "count": 2,
+    "samples": [
+      "Alpha-Galactosidase"
+    ],
+    "normalized_samples": [
+      "alpha galactosidase"
+    ],
+    "original_name_keys": [
+      "alpha galactosidase"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "phytosterols",
+    "normalized_key": "phytosterols",
+    "count": 2,
+    "samples": [
+      "Phytosterols"
+    ],
+    "normalized_samples": [
+      "phytosterols"
+    ],
+    "original_name_keys": [
+      "phytosterols"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "whey protein isolate",
+    "normalized_key": "whey protein isolate",
+    "count": 2,
+    "samples": [
+      "Whey Protein isolate"
+    ],
+    "normalized_samples": [
+      "whey protein isolate"
+    ],
+    "original_name_keys": [
+      "whey protein isolate"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "dsld",
+    "name_key": "soy isoflavones",
+    "normalized_key": "soy isoflavones",
+    "count": 2,
+    "samples": [
+      "Soy Isoflavones"
+    ],
+    "normalized_samples": [
+      "soy isoflavones"
+    ],
+    "original_name_keys": [
+      "soy isoflavones"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "creatine monohydrate",
+    "normalized_key": "creatine monohydrate",
+    "count": 2,
+    "samples": [
+      "Creatine Monohydrate"
+    ],
+    "normalized_samples": [
+      "creatine monohydrate"
+    ],
+    "original_name_keys": [
+      "creatine monohydrate"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "vitamin c 0",
+    "normalized_key": "vitamin c 0",
+    "count": 2,
+    "samples": [
+      "Vitamin C 0"
+    ],
+    "normalized_samples": [
+      "vitamin c 0"
+    ],
+    "original_name_keys": [
+      "vitamin c 0"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "burdock",
+    "normalized_key": "burdock",
+    "count": 2,
+    "samples": [
+      "Burdock"
+    ],
+    "normalized_samples": [
+      "burdock"
+    ],
+    "original_name_keys": [
+      "burdock"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "agmatine sulfate",
+    "normalized_key": "agmatine sulfate",
+    "count": 2,
+    "samples": [
+      "Agmatine Sulfate"
+    ],
+    "normalized_samples": [
+      "agmatine sulfate"
+    ],
+    "original_name_keys": [
+      "agmatine sulfate"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "stevia leaf extract",
+    "normalized_key": "stevia leaf extract",
+    "count": 2,
+    "samples": [
+      "Stevia leaf extract"
+    ],
+    "normalized_samples": [
+      "stevia leaf extract"
+    ],
+    "original_name_keys": [
+      "stevia leaf extract"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "dsld",
+    "name_key": "silica",
+    "normalized_key": "silica",
+    "count": 2,
+    "samples": [
+      "Silica"
+    ],
+    "normalized_samples": [
+      "silica"
+    ],
+    "original_name_keys": [
+      "silica"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "vitamin b1",
+    "normalized_key": "vitamin b1",
+    "count": 2,
+    "samples": [
+      "Vitamin B1"
+    ],
+    "normalized_samples": [
+      "vitamin b1"
+    ],
+    "original_name_keys": [
+      "vitamin b1"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "vitamin b5",
+    "normalized_key": "vitamin b5",
+    "count": 2,
+    "samples": [
+      "Vitamin B5"
+    ],
+    "normalized_samples": [
+      "vitamin b5"
+    ],
+    "original_name_keys": [
+      "vitamin b5"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "vitamin b2",
+    "normalized_key": "vitamin b2",
+    "count": 2,
+    "samples": [
+      "Vitamin B2"
+    ],
+    "normalized_samples": [
+      "vitamin b2"
+    ],
+    "original_name_keys": [
+      "vitamin b2"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "caffeine matrix",
+    "normalized_key": "caffeine matrix",
+    "count": 2,
+    "samples": [
+      "Caffeine Matrix"
+    ],
+    "normalized_samples": [
+      "caffeine matrix"
+    ],
+    "original_name_keys": [
+      "caffeine matrix"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "arginine alpha ketoglutarate",
+    "normalized_key": "arginine alpha ketoglutarate",
+    "count": 2,
+    "samples": [
+      "Arginine Alpha-Ketoglutarate",
+      "Arginine Alpha Ketoglutarate"
+    ],
+    "normalized_samples": [
+      "arginine alpha ketoglutarate"
+    ],
+    "original_name_keys": [
+      "arginine alpha ketoglutarate"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "choline bitartrate",
+    "normalized_key": "choline bitartrate",
+    "count": 2,
+    "samples": [
+      "Choline Bitartrate"
+    ],
+    "normalized_samples": [
+      "choline bitartrate"
+    ],
+    "original_name_keys": [
+      "choline bitartrate"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "zeaxanthin",
+    "normalized_key": "zeaxanthin",
+    "count": 2,
+    "samples": [
+      "Zeaxanthin"
+    ],
+    "normalized_samples": [
+      "zeaxanthin"
+    ],
+    "original_name_keys": [
+      "zeaxanthin"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "lactobacillus acidophilus",
+    "normalized_key": "lactobacillus acidophilus",
+    "count": 2,
+    "samples": [
+      "Lactobacillus acidophilus"
+    ],
+    "normalized_samples": [
+      "lactobacillus acidophilus"
+    ],
+    "original_name_keys": [
+      "lactobacillus acidophilus"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "dsld",
+    "name_key": "chloride",
+    "normalized_key": "chloride",
+    "count": 2,
+    "samples": [
+      "Chloride"
+    ],
+    "normalized_samples": [
+      "chloride"
+    ],
+    "original_name_keys": [
+      "chloride"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "l valine",
+    "normalized_key": "l valine",
+    "count": 2,
+    "samples": [
+      "L-Valine"
+    ],
+    "normalized_samples": [
+      "l valine"
+    ],
+    "original_name_keys": [
+      "l valine"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "vmax endurance complex",
+    "normalized_key": "vmax endurance complex",
+    "count": 1,
+    "samples": [
+      "VMax Endurance Complex"
+    ],
+    "normalized_samples": [
+      "vmax endurance complex"
+    ],
+    "original_name_keys": [
+      "vmax endurance complex"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "phospholipids",
+    "normalized_key": "phospholipids",
+    "count": 1,
+    "samples": [
+      "Phospholipids"
+    ],
+    "normalized_samples": [
+      "phospholipids"
+    ],
+    "original_name_keys": [
+      "phospholipids"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "strength endurance volumize",
+    "normalized_key": "strength endurance volumize",
+    "count": 1,
+    "samples": [
+      "STRENGTH/ENDURANCE/VOLUMIZE:"
+    ],
+    "normalized_samples": [
+      "strength endurance volumize"
+    ],
+    "original_name_keys": [
+      "strength endurance volumize"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "electric energy blend",
+    "normalized_key": "electric energy blend",
+    "count": 1,
+    "samples": [
+      "Electric Energy Blend"
+    ],
+    "normalized_samples": [
+      "electric energy blend"
+    ],
+    "original_name_keys": [
+      "electric energy blend"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "sweet wormwood extract",
+    "normalized_key": "sweet wormwood extract",
+    "count": 1,
+    "samples": [
+      "Sweet Wormwood (Artemisia annua) extract"
+    ],
+    "normalized_samples": [
+      "sweet wormwood extract"
+    ],
+    "original_name_keys": [
+      "sweet wormwood artemisia annua extract"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "dsld",
+    "name_key": "mental focus matrix",
+    "normalized_key": "mental focus matrix",
+    "count": 1,
+    "samples": [
+      "Mental Focus Matrix"
+    ],
+    "normalized_samples": [
+      "mental focus matrix"
+    ],
+    "original_name_keys": [
+      "mental focus matrix"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "phyto nutrient antioxidant blend",
+    "normalized_key": "phyto nutrient antioxidant blend",
+    "count": 1,
+    "samples": [
+      "Phyto Nutrient Antioxidant Blend"
+    ],
+    "normalized_samples": [
+      "phyto nutrient antioxidant blend"
+    ],
+    "original_name_keys": [
+      "phyto nutrient antioxidant blend"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "biopqq",
+    "normalized_key": "biopqq",
+    "count": 1,
+    "samples": [
+      "BioPQQ"
+    ],
+    "normalized_samples": [
+      "biopqq"
+    ],
+    "original_name_keys": [
+      "biopqq"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "aquamin tg",
+    "normalized_key": "aquamin tg",
+    "count": 1,
+    "samples": [
+      "Aquamin TG"
+    ],
+    "normalized_samples": [
+      "aquamin tg"
+    ],
+    "original_name_keys": [
+      "aquamin tg"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "nutraflora scfos",
+    "normalized_key": "nutraflora scfos",
+    "count": 1,
+    "samples": [
+      "NutraFlora scFOS"
+    ],
+    "normalized_samples": [
+      "nutraflora scfos"
+    ],
+    "original_name_keys": [
+      "nutraflora scfos"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "ubiquinol",
+    "normalized_key": "ubiquinol",
+    "count": 1,
+    "samples": [
+      "Ubiquinol"
+    ],
+    "normalized_samples": [
+      "ubiquinol"
+    ],
+    "original_name_keys": [
+      "ubiquinol"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "amino matrix",
+    "normalized_key": "amino matrix",
+    "count": 1,
+    "samples": [
+      "Amino Matrix"
+    ],
+    "normalized_samples": [
+      "amino matrix"
+    ],
+    "original_name_keys": [
+      "amino matrix"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "nopal oputina cactus",
+    "normalized_key": "nopal oputina cactus",
+    "count": 1,
+    "samples": [
+      "Nopal Oputina Cactus"
+    ],
+    "normalized_samples": [
+      "nopal oputina cactus"
+    ],
+    "original_name_keys": [
+      "nopal oputina cactus"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "terminalia chebula extract",
+    "normalized_key": "terminalia chebula extract",
+    "count": 1,
+    "samples": [
+      "Terminalia Chebula (Fruit) Extract"
+    ],
+    "normalized_samples": [
+      "terminalia chebula extract"
+    ],
+    "original_name_keys": [
+      "terminalia chebula fruit extract"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "glycocarn glycine propionyl l carnitine hydrochloride",
+    "normalized_key": "glycocarn glycine propionyl l carnitine hydrochloride",
+    "count": 1,
+    "samples": [
+      "GlycoCarn Glycine Propionyl-L-Carnitine Hydrochloride"
+    ],
+    "normalized_samples": [
+      "glycocarn glycine propionyl l carnitine hydrochloride"
+    ],
+    "original_name_keys": [
+      "glycocarn glycine propionyl l carnitine hydrochloride"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "california poppy",
+    "normalized_key": "california poppy",
+    "count": 1,
+    "samples": [
+      "California Poppy"
+    ],
+    "normalized_samples": [
+      "california poppy"
+    ],
+    "original_name_keys": [
+      "california poppy"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "6 7 dihydroxybergamottin",
+    "normalized_key": "6 7 dihydroxybergamottin",
+    "count": 1,
+    "samples": [
+      "6,7-Dihydroxybergamottin"
+    ],
+    "normalized_samples": [
+      "6 7 dihydroxybergamottin"
+    ],
+    "original_name_keys": [
+      "6 7 dihydroxybergamottin"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "digezyme",
+    "normalized_key": "digezyme",
+    "count": 1,
+    "samples": [
+      "DigeZyme(R)"
+    ],
+    "normalized_samples": [
+      "digezyme"
+    ],
+    "original_name_keys": [
+      "digezyme r"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "bee pollen",
+    "normalized_key": "bee pollen",
+    "count": 1,
+    "samples": [
+      "Bee Pollen"
+    ],
+    "normalized_samples": [
+      "bee pollen"
+    ],
+    "original_name_keys": [
+      "bee pollen"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "c4 extreme energy blend",
+    "normalized_key": "c4 extreme energy blend",
+    "count": 1,
+    "samples": [
+      "C4 Extreme Energy Blend"
+    ],
+    "normalized_samples": [
+      "c4 extreme energy blend"
+    ],
+    "original_name_keys": [
+      "c4 extreme energy blend"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "energy matrix",
+    "normalized_key": "energy matrix",
+    "count": 1,
+    "samples": [
+      "Energy Matrix"
+    ],
+    "normalized_samples": [
+      "energy matrix"
+    ],
+    "original_name_keys": [
+      "energy matrix"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "co enzyme q 10",
+    "normalized_key": "co enzyme q 10",
+    "count": 1,
+    "samples": [
+      "Co-Enzyme Q-10"
+    ],
+    "normalized_samples": [
+      "co enzyme q 10"
+    ],
+    "original_name_keys": [
+      "co enzyme q 10"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "rose hip",
+    "normalized_key": "rose hip",
+    "count": 1,
+    "samples": [
+      "Rose Hip"
+    ],
+    "normalized_samples": [
+      "rose hip"
+    ],
+    "original_name_keys": [
+      "rose hip"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "kyo dophilus",
+    "normalized_key": "kyo dophilus",
+    "count": 1,
+    "samples": [
+      "Kyo-Dophilus"
+    ],
+    "normalized_samples": [
+      "kyo dophilus"
+    ],
+    "original_name_keys": [
+      "kyo dophilus"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "ingredients",
+    "normalized_key": "ingredients",
+    "count": 1,
+    "samples": [
+      "Ingredients"
+    ],
+    "normalized_samples": [
+      "ingredients"
+    ],
+    "original_name_keys": [
+      "ingredients"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "omega 9 fatty acids",
+    "normalized_key": "omega 9 fatty acids",
+    "count": 1,
+    "samples": [
+      "Omega-9 Fatty Acids"
+    ],
+    "normalized_samples": [
+      "omega 9 fatty acids"
+    ],
+    "original_name_keys": [
+      "omega 9 fatty acids"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "relora magnolia bark extract and phellodendron bark extract blend 250",
+    "normalized_key": "relora magnolia bark extract and phellodendron bark extract blend 250",
+    "count": 1,
+    "samples": [
+      "Relora Magnolia bark extract (Magnolia officinalis) and Phellodendron bark extract Blend (Phellodendron amurense) 250"
+    ],
+    "normalized_samples": [
+      "relora magnolia bark extract and phellodendron bark extract blend 250"
+    ],
+    "original_name_keys": [
+      "relora magnolia bark extract magnolia officinalis and phellodendron bark extract blend phellodendron amurense 250"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "dsld",
+    "name_key": "chromemate cm 100m",
+    "normalized_key": "chromemate cm 100m",
+    "count": 1,
+    "samples": [
+      "ChromeMate CM-100M"
+    ],
+    "normalized_samples": [
+      "chromemate cm 100m"
+    ],
+    "original_name_keys": [
+      "chromemate cm 100m"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "barley grass",
+    "normalized_key": "barley grass",
+    "count": 1,
+    "samples": [
+      "Barley Grass"
+    ],
+    "normalized_samples": [
+      "barley grass"
+    ],
+    "original_name_keys": [
+      "barley grass"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "citrus aurantium fruit extract",
+    "normalized_key": "citrus aurantium fruit extract",
+    "count": 1,
+    "samples": [
+      "Citrus aurantium fruit extract"
+    ],
+    "normalized_samples": [
+      "citrus aurantium fruit extract"
+    ],
+    "original_name_keys": [
+      "citrus aurantium fruit extract"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "dsld",
+    "name_key": "convolvulus pluricaulis",
+    "normalized_key": "convolvulus pluricaulis",
+    "count": 1,
+    "samples": [
+      "Convolvulus pluricaulis"
+    ],
+    "normalized_samples": [
+      "convolvulus pluricaulis"
+    ],
+    "original_name_keys": [
+      "convolvulus pluricaulis"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "dsld",
+    "name_key": "gla activation complex",
+    "normalized_key": "gla activation complex",
+    "count": 1,
+    "samples": [
+      "GLA Activation Complex"
+    ],
+    "normalized_samples": [
+      "gla activation complex"
+    ],
+    "original_name_keys": [
+      "gla activation complex"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "rosemary extract",
+    "normalized_key": "rosemary extract",
+    "count": 1,
+    "samples": [
+      "Rosemary (herb) extract"
+    ],
+    "normalized_samples": [
+      "rosemary extract"
+    ],
+    "original_name_keys": [
+      "rosemary herb extract"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "siphonochilus aethiopicus",
+    "normalized_key": "siphonochilus aethiopicus",
+    "count": 1,
+    "samples": [
+      "Siphonochilus aethiopicus"
+    ],
+    "normalized_samples": [
+      "siphonochilus aethiopicus"
+    ],
+    "original_name_keys": [
+      "siphonochilus aethiopicus"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "dsld",
+    "name_key": "black currant fruit 4 1 extract",
+    "normalized_key": "black currant fruit 4 1 extract",
+    "count": 1,
+    "samples": [
+      "Black Currant fruit 4:1 extract"
+    ],
+    "normalized_samples": [
+      "black currant fruit 4 1 extract"
+    ],
+    "original_name_keys": [
+      "black currant fruit 4 1 extract"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "dsld",
+    "name_key": "beet powder",
+    "normalized_key": "beet powder",
+    "count": 1,
+    "samples": [
+      "Beet powder"
+    ],
+    "normalized_samples": [
+      "beet powder"
+    ],
+    "original_name_keys": [
+      "beet powder"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "dsld",
+    "name_key": "pomegranate blend",
+    "normalized_key": "pomegranate blend",
+    "count": 1,
+    "samples": [
+      "Pomegranate Blend"
+    ],
+    "normalized_samples": [
+      "pomegranate blend"
+    ],
+    "original_name_keys": [
+      "pomegranate blend"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "amino acids",
+    "normalized_key": "amino acids",
+    "count": 1,
+    "samples": [
+      "Amino Acids"
+    ],
+    "normalized_samples": [
+      "amino acids"
+    ],
+    "original_name_keys": [
+      "amino acids"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "coenzyme q 10",
+    "normalized_key": "coenzyme q 10",
+    "count": 1,
+    "samples": [
+      "Coenzyme Q-10"
+    ],
+    "normalized_samples": [
+      "coenzyme q 10"
+    ],
+    "original_name_keys": [
+      "coenzyme q 10"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "amino acid accelerator blend",
+    "normalized_key": "amino acid accelerator blend",
+    "count": 1,
+    "samples": [
+      "Amino Acid Accelerator Blend"
+    ],
+    "normalized_samples": [
+      "amino acid accelerator blend"
+    ],
+    "original_name_keys": [
+      "amino acid accelerator blend"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "lutigold extra blend",
+    "normalized_key": "lutigold extra blend",
+    "count": 1,
+    "samples": [
+      "Lutigold(TM) Extra Blend"
+    ],
+    "normalized_samples": [
+      "lutigold extra blend"
+    ],
+    "original_name_keys": [
+      "lutigold tm extra blend"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "natural fish oil concentrate",
+    "normalized_key": "natural fish oil concentrate",
+    "count": 1,
+    "samples": [
+      "natural Fish Oil concentrate"
+    ],
+    "normalized_samples": [
+      "natural fish oil concentrate"
+    ],
+    "original_name_keys": [
+      "natural fish oil concentrate"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "dsld",
+    "name_key": "tocomin full spectrum natural tocotrienol tocopherol complex",
+    "normalized_key": "tocomin full spectrum natural tocotrienol tocopherol complex",
+    "count": 1,
+    "samples": [
+      "Tocomin Full-Spectrum Natural Tocotrienol/Tocopherol Complex"
+    ],
+    "normalized_samples": [
+      "tocomin full spectrum natural tocotrienol tocopherol complex"
+    ],
+    "original_name_keys": [
+      "tocomin full spectrum natural tocotrienol tocopherol complex"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "alpha amino complex",
+    "normalized_key": "alpha amino complex",
+    "count": 1,
+    "samples": [
+      "Alpha-Amino Complex"
+    ],
+    "normalized_samples": [
+      "alpha amino complex"
+    ],
+    "original_name_keys": [
+      "alpha amino complex"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "thermogenic mushroom blend",
+    "normalized_key": "thermogenic mushroom blend",
+    "count": 1,
+    "samples": [
+      "Thermogenic Mushroom Blend"
+    ],
+    "normalized_samples": [
+      "thermogenic mushroom blend"
+    ],
+    "original_name_keys": [
+      "thermogenic mushroom blend"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "rose hips",
+    "normalized_key": "rose hips",
+    "count": 1,
+    "samples": [
+      "Rose Hips"
+    ],
+    "normalized_samples": [
+      "rose hips"
+    ],
+    "original_name_keys": [
+      "rose hips"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "kre alkalyn buffered creatine",
+    "normalized_key": "kre alkalyn buffered creatine",
+    "count": 1,
+    "samples": [
+      "Kre-Alkalyn(R) Buffered Creatine"
+    ],
+    "normalized_samples": [
+      "kre alkalyn buffered creatine"
+    ],
+    "original_name_keys": [
+      "kre alkalyn r buffered creatine"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "maltitol",
+    "normalized_key": "maltitol",
+    "count": 1,
+    "samples": [
+      "Maltitol"
+    ],
+    "normalized_samples": [
+      "maltitol"
+    ],
+    "original_name_keys": [
+      "maltitol"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "cellmass 2 0 proprietary blend",
+    "normalized_key": "cellmass 2 0 proprietary blend",
+    "count": 1,
+    "samples": [
+      "Cellmass 2.0 Proprietary Blend"
+    ],
+    "normalized_samples": [
+      "cellmass 2 0 proprietary blend"
+    ],
+    "original_name_keys": [
+      "cellmass 2 0 proprietary blend"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "serrazimes 20000 units",
+    "normalized_key": "serrazimes 20000 units",
+    "count": 1,
+    "samples": [
+      "Serrazimes(R) 20000 Units"
+    ],
+    "normalized_samples": [
+      "serrazimes 20000 units"
+    ],
+    "original_name_keys": [
+      "serrazimes r 20000 units"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "digestive enzyme blend",
+    "normalized_key": "digestive enzyme blend",
+    "count": 1,
+    "samples": [
+      "Digestive Enzyme Blend"
+    ],
+    "normalized_samples": [
+      "digestive enzyme blend"
+    ],
+    "original_name_keys": [
+      "digestive enzyme blend"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "soy lecithin",
+    "normalized_key": "soy lecithin",
+    "count": 1,
+    "samples": [
+      "Soy Lecithin"
+    ],
+    "normalized_samples": [
+      "soy lecithin"
+    ],
+    "original_name_keys": [
+      "soy lecithin"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "senna extract",
+    "normalized_key": "senna extract",
+    "count": 1,
+    "samples": [
+      "Senna (Cassia angustifolia) extract"
+    ],
+    "normalized_samples": [
+      "senna extract"
+    ],
+    "original_name_keys": [
+      "senna cassia angustifolia extract"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "dsld",
+    "name_key": "gain fast specialized amino acid complex",
+    "normalized_key": "gain fast specialized amino acid complex",
+    "count": 1,
+    "samples": [
+      "Gain Fast Specialized Amino Acid Complex"
+    ],
+    "normalized_samples": [
+      "gain fast specialized amino acid complex"
+    ],
+    "original_name_keys": [
+      "gain fast specialized amino acid complex"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "deodorized garlic",
+    "normalized_key": "deodorized garlic",
+    "count": 1,
+    "samples": [
+      "deodorized Garlic"
+    ],
+    "normalized_samples": [
+      "deodorized garlic"
+    ],
+    "original_name_keys": [
+      "deodorized garlic"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "citrus bioflavonoid concentrate",
+    "normalized_key": "citrus bioflavonoid concentrate",
+    "count": 1,
+    "samples": [
+      "Citrus Bioflavonoid Concentrate"
+    ],
+    "normalized_samples": [
+      "citrus bioflavonoid concentrate"
+    ],
+    "original_name_keys": [
+      "citrus bioflavonoid concentrate"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "agaricus blazei mushroom extract",
+    "normalized_key": "agaricus blazei mushroom extract",
+    "count": 1,
+    "samples": [
+      "Agaricus blazei mushroom extract"
+    ],
+    "normalized_samples": [
+      "agaricus blazei mushroom extract"
+    ],
+    "original_name_keys": [
+      "agaricus blazei mushroom extract"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "dsld",
+    "name_key": "dulse",
+    "normalized_key": "dulse",
+    "count": 1,
+    "samples": [
+      "Dulse"
+    ],
+    "normalized_samples": [
+      "dulse"
+    ],
+    "original_name_keys": [
+      "dulse"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "green beet powder",
+    "normalized_key": "green beet powder",
+    "count": 1,
+    "samples": [
+      "Green Beet powder"
+    ],
+    "normalized_samples": [
+      "green beet powder"
+    ],
+    "original_name_keys": [
+      "green beet powder"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "dsld",
+    "name_key": "free form amino acids proprietary blend",
+    "normalized_key": "free form amino acids proprietary blend",
+    "count": 1,
+    "samples": [
+      "Free Form Amino Acids Proprietary Blend"
+    ],
+    "normalized_samples": [
+      "free form amino acids proprietary blend"
+    ],
+    "original_name_keys": [
+      "free form amino acids proprietary blend"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "eleutherococcus senticosus",
+    "normalized_key": "eleutherococcus senticosus",
+    "count": 1,
+    "samples": [
+      "Eleutherococcus senticosus"
+    ],
+    "normalized_samples": [
+      "eleutherococcus senticosus"
+    ],
+    "original_name_keys": [
+      "eleutherococcus senticosus"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "dsld",
+    "name_key": "natural wuyi wulong tea",
+    "normalized_key": "natural wuyi wulong tea",
+    "count": 1,
+    "samples": [
+      "Natural Wuyi Wulong Tea"
+    ],
+    "normalized_samples": [
+      "natural wuyi wulong tea"
+    ],
+    "original_name_keys": [
+      "natural wuyi wulong tea"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "birch",
+    "normalized_key": "birch",
+    "count": 1,
+    "samples": [
+      "Birch"
+    ],
+    "normalized_samples": [
+      "birch"
+    ],
+    "original_name_keys": [
+      "birch"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "proprietary prebiotic blend",
+    "normalized_key": "proprietary prebiotic blend",
+    "count": 1,
+    "samples": [
+      "Proprietary Prebiotic Blend"
+    ],
+    "normalized_samples": [
+      "proprietary prebiotic blend"
+    ],
+    "original_name_keys": [
+      "proprietary prebiotic blend"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "preforpro",
+    "normalized_key": "preforpro",
+    "count": 1,
+    "samples": [
+      "PreforPro"
+    ],
+    "normalized_samples": [
+      "preforpro"
+    ],
+    "original_name_keys": [
+      "preforpro"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "pau d arco inner bark extract",
+    "normalized_key": "pau d arco inner bark extract",
+    "count": 1,
+    "samples": [
+      "Pau d'Arco inner bark (Handroanthus impetiginosus) extract"
+    ],
+    "normalized_samples": [
+      "pau d arco inner bark extract"
+    ],
+    "original_name_keys": [
+      "pau d arco inner bark handroanthus impetiginosus extract"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "dsld",
+    "name_key": "para aminobenzoic acid",
+    "normalized_key": "para aminobenzoic acid",
+    "count": 1,
+    "samples": [
+      "Para-Aminobenzoic Acid"
+    ],
+    "normalized_samples": [
+      "para aminobenzoic acid"
+    ],
+    "original_name_keys": [
+      "para aminobenzoic acid"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "volt performance matrix",
+    "normalized_key": "volt performance matrix",
+    "count": 1,
+    "samples": [
+      "Volt(TM) Performance Matrix"
+    ],
+    "normalized_samples": [
+      "volt performance matrix"
+    ],
+    "original_name_keys": [
+      "volt tm performance matrix"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "proprietary cellular longevity complex",
+    "normalized_key": "proprietary cellular longevity complex",
+    "count": 1,
+    "samples": [
+      "Proprietary Cellular Longevity Complex"
+    ],
+    "normalized_samples": [
+      "proprietary cellular longevity complex"
+    ],
+    "original_name_keys": [
+      "proprietary cellular longevity complex"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "sodzyme proprietary phytoenzyme blend",
+    "normalized_key": "sodzyme proprietary phytoenzyme blend",
+    "count": 1,
+    "samples": [
+      "SODzyme Proprietary Phytoenzyme Blend"
+    ],
+    "normalized_samples": [
+      "sodzyme proprietary phytoenzyme blend"
+    ],
+    "original_name_keys": [
+      "sodzyme proprietary phytoenzyme blend"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "healthy sleep blend",
+    "normalized_key": "healthy sleep blend",
+    "count": 1,
+    "samples": [
+      "Healthy Sleep Blend"
+    ],
+    "normalized_samples": [
+      "healthy sleep blend"
+    ],
+    "original_name_keys": [
+      "healthy sleep blend"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "recovery infusion",
+    "normalized_key": "recovery infusion",
+    "count": 1,
+    "samples": [
+      "Recovery Infusion"
+    ],
+    "normalized_samples": [
+      "recovery infusion"
+    ],
+    "original_name_keys": [
+      "recovery infusion"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "enzyme blend",
+    "normalized_key": "enzyme blend",
+    "count": 1,
+    "samples": [
+      "Enzyme Blend"
+    ],
+    "normalized_samples": [
+      "enzyme blend"
+    ],
+    "original_name_keys": [
+      "enzyme blend"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "greens blend",
+    "normalized_key": "greens blend",
+    "count": 1,
+    "samples": [
+      "Greens Blend (Herb/Botanical)"
+    ],
+    "normalized_samples": [
+      "greens blend"
+    ],
+    "original_name_keys": [
+      "greens blend herb botanical"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "cod liver oil",
+    "normalized_key": "cod liver oil",
+    "count": 1,
+    "samples": [
+      "Cod liver oil"
+    ],
+    "normalized_samples": [
+      "cod liver oil"
+    ],
+    "original_name_keys": [
+      "cod liver oil"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "dsld",
+    "name_key": "enzopharm plus",
+    "normalized_key": "enzopharm plus",
+    "count": 1,
+    "samples": [
+      "Enzopharm(R) Plus"
+    ],
+    "normalized_samples": [
+      "enzopharm plus"
+    ],
+    "original_name_keys": [
+      "enzopharm r plus"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "antioxidant complex",
+    "normalized_key": "antioxidant complex",
+    "count": 1,
+    "samples": [
+      "Antioxidant Complex"
+    ],
+    "normalized_samples": [
+      "antioxidant complex"
+    ],
+    "original_name_keys": [
+      "antioxidant complex"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "liver",
+    "normalized_key": "liver",
+    "count": 1,
+    "samples": [
+      "Liver"
+    ],
+    "normalized_samples": [
+      "liver"
+    ],
+    "original_name_keys": [
+      "liver"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "maximum vasodilation matrix",
+    "normalized_key": "maximum vasodilation matrix",
+    "count": 1,
+    "samples": [
+      "Maximum Vasodilation Matrix"
+    ],
+    "normalized_samples": [
+      "maximum vasodilation matrix"
+    ],
+    "original_name_keys": [
+      "maximum vasodilation matrix"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "yohimbe extract",
+    "normalized_key": "yohimbe extract",
+    "count": 1,
+    "samples": [
+      "Yohimbe extract"
+    ],
+    "normalized_samples": [
+      "yohimbe extract"
+    ],
+    "original_name_keys": [
+      "yohimbe extract"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "dsld",
+    "name_key": "celery",
+    "normalized_key": "celery",
+    "count": 1,
+    "samples": [
+      "Celery"
+    ],
+    "normalized_samples": [
+      "celery"
+    ],
+    "original_name_keys": [
+      "celery"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "total tocopherols",
+    "normalized_key": "total tocopherols",
+    "count": 1,
+    "samples": [
+      "Total Tocopherols"
+    ],
+    "normalized_samples": [
+      "total tocopherols"
+    ],
+    "original_name_keys": [
+      "total tocopherols"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "mixed carotenoid blend",
+    "normalized_key": "mixed carotenoid blend",
+    "count": 1,
+    "samples": [
+      "Mixed Carotenoid Blend"
+    ],
+    "normalized_samples": [
+      "mixed carotenoid blend"
+    ],
+    "original_name_keys": [
+      "mixed carotenoid blend"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "mixed carotenoids",
+    "normalized_key": "mixed carotenoids",
+    "count": 1,
+    "samples": [
+      "Mixed Carotenoids"
+    ],
+    "normalized_samples": [
+      "mixed carotenoids"
+    ],
+    "original_name_keys": [
+      "mixed carotenoids"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "gamma oryzanol",
+    "normalized_key": "gamma oryzanol",
+    "count": 1,
+    "samples": [
+      "Gamma Oryzanol"
+    ],
+    "normalized_samples": [
+      "gamma oryzanol"
+    ],
+    "original_name_keys": [
+      "gamma oryzanol"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "trace elements",
+    "normalized_key": "trace elements",
+    "count": 1,
+    "samples": [
+      "Trace Elements"
+    ],
+    "normalized_samples": [
+      "trace elements"
+    ],
+    "original_name_keys": [
+      "trace elements"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "microcrystalline hydroxyapatite",
+    "normalized_key": "microcrystalline hydroxyapatite",
+    "count": 1,
+    "samples": [
+      "Microcrystalline Hydroxyapatite"
+    ],
+    "normalized_samples": [
+      "microcrystalline hydroxyapatite"
+    ],
+    "original_name_keys": [
+      "microcrystalline hydroxyapatite"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "betapower",
+    "normalized_key": "betapower",
+    "count": 1,
+    "samples": [
+      "BetaPower"
+    ],
+    "normalized_samples": [
+      "betapower"
+    ],
+    "original_name_keys": [
+      "betapower"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "hydration performance blend",
+    "normalized_key": "hydration performance blend",
+    "count": 1,
+    "samples": [
+      "Hydration & Performance Blend (Non-Nutrient/Non-Botanical)"
+    ],
+    "normalized_samples": [
+      "hydration performance blend"
+    ],
+    "original_name_keys": [
+      "hydration performance blend non nutrient non botanical"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "proprietary organic blend",
+    "normalized_key": "proprietary organic blend",
+    "count": 1,
+    "samples": [
+      "Proprietary Organic Blend"
+    ],
+    "normalized_samples": [
+      "proprietary organic blend"
+    ],
+    "original_name_keys": [
+      "proprietary organic blend"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "maitake fruit body powder",
+    "normalized_key": "maitake fruit body powder",
+    "count": 1,
+    "samples": [
+      "Maitake (Grifola frondosa) fruit body powder"
+    ],
+    "normalized_samples": [
+      "maitake fruit body powder"
+    ],
+    "original_name_keys": [
+      "maitake grifola frondosa fruit body powder"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "dsld",
+    "name_key": "multi anthocyanidins powdered extract",
+    "normalized_key": "multi anthocyanidins powdered extract",
+    "count": 1,
+    "samples": [
+      "Multi-Anthocyanidins powdered extract"
+    ],
+    "normalized_samples": [
+      "multi anthocyanidins powdered extract"
+    ],
+    "original_name_keys": [
+      "multi anthocyanidins powdered extract"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "dsld",
+    "name_key": "p6 extreme blend",
+    "normalized_key": "p6 extreme blend",
+    "count": 1,
+    "samples": [
+      "P6 Extreme Blend"
+    ],
+    "normalized_samples": [
+      "p6 extreme blend"
+    ],
+    "original_name_keys": [
+      "p6 extreme blend"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "pancreatin 4x",
+    "normalized_key": "pancreatin 4x",
+    "count": 1,
+    "samples": [
+      "Pancreatin 4X"
+    ],
+    "normalized_samples": [
+      "pancreatin 4x"
+    ],
+    "original_name_keys": [
+      "pancreatin 4x"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "ultra water complex",
+    "normalized_key": "ultra water complex",
+    "count": 1,
+    "samples": [
+      "Ultra Water Complex"
+    ],
+    "normalized_samples": [
+      "ultra water complex"
+    ],
+    "original_name_keys": [
+      "ultra water complex"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "motherwort aerial parts extract",
+    "normalized_key": "motherwort aerial parts extract",
+    "count": 1,
+    "samples": [
+      "Motherwort (Leonurus cardiaca) aerial parts extract"
+    ],
+    "normalized_samples": [
+      "motherwort aerial parts extract"
+    ],
+    "original_name_keys": [
+      "motherwort leonurus cardiaca aerial parts extract"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "dsld",
+    "name_key": "folinic acid",
+    "normalized_key": "folinic acid",
+    "count": 1,
+    "samples": [
+      "Folinic Acid"
+    ],
+    "normalized_samples": [
+      "folinic acid"
+    ],
+    "original_name_keys": [
+      "folinic acid"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "micronized amino acids",
+    "normalized_key": "micronized amino acids",
+    "count": 1,
+    "samples": [
+      "Micronized Amino Acids"
+    ],
+    "normalized_samples": [
+      "micronized amino acids"
+    ],
+    "original_name_keys": [
+      "micronized amino acids"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "p6 testosterone technology",
+    "normalized_key": "p6 testosterone technology",
+    "count": 1,
+    "samples": [
+      "P6 Testosterone Technology"
+    ],
+    "normalized_samples": [
+      "p6 testosterone technology"
+    ],
+    "original_name_keys": [
+      "p6 testosterone technology"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "other omega 3 fatty acids",
+    "normalized_key": "other omega 3 fatty acids",
+    "count": 1,
+    "samples": [
+      "Other Omega-3 Fatty Acids"
+    ],
+    "normalized_samples": [
+      "other omega 3 fatty acids"
+    ],
+    "original_name_keys": [
+      "other omega 3 fatty acids"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "raw sunflower lecithin",
+    "normalized_key": "raw sunflower lecithin",
+    "count": 1,
+    "samples": [
+      "raw Sunflower Lecithin"
+    ],
+    "normalized_samples": [
+      "raw sunflower lecithin"
+    ],
+    "original_name_keys": [
+      "raw sunflower lecithin"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "butcher s broom",
+    "normalized_key": "butcher s broom",
+    "count": 1,
+    "samples": [
+      "Butcher's Broom"
+    ],
+    "normalized_samples": [
+      "butcher s broom"
+    ],
+    "original_name_keys": [
+      "butcher s broom"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "pineapple",
+    "normalized_key": "pineapple",
+    "count": 1,
+    "samples": [
+      "Pineapple"
+    ],
+    "normalized_samples": [
+      "pineapple"
+    ],
+    "original_name_keys": [
+      "pineapple"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "torrent proprietary blend",
+    "normalized_key": "torrent proprietary blend",
+    "count": 1,
+    "samples": [
+      "Torrent Proprietary Blend"
+    ],
+    "normalized_samples": [
+      "torrent proprietary blend"
+    ],
+    "original_name_keys": [
+      "torrent proprietary blend"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "rhaponticum",
+    "normalized_key": "rhaponticum",
+    "count": 1,
+    "samples": [
+      "Rhaponticum"
+    ],
+    "normalized_samples": [
+      "rhaponticum"
+    ],
+    "original_name_keys": [
+      "rhaponticum"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "cayenne pepper",
+    "normalized_key": "cayenne pepper",
+    "count": 1,
+    "samples": [
+      "Cayenne Pepper"
+    ],
+    "normalized_samples": [
+      "cayenne pepper"
+    ],
+    "original_name_keys": [
+      "cayenne pepper"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "organic cultured vegetable blend",
+    "normalized_key": "organic cultured vegetable blend",
+    "count": 1,
+    "samples": [
+      "Organic Cultured Vegetable Blend"
+    ],
+    "normalized_samples": [
+      "organic cultured vegetable blend"
+    ],
+    "original_name_keys": [
+      "organic cultured vegetable blend"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "essential fatty acid blend",
+    "normalized_key": "essential fatty acid blend",
+    "count": 1,
+    "samples": [
+      "Essential Fatty Acid Blend"
+    ],
+    "normalized_samples": [
+      "essential fatty acid blend"
+    ],
+    "original_name_keys": [
+      "essential fatty acid blend"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "sulfate",
+    "normalized_key": "sulfate",
+    "count": 1,
+    "samples": [
+      "Sulfate"
+    ],
+    "normalized_samples": [
+      "sulfate"
+    ],
+    "original_name_keys": [
+      "sulfate"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "higenamine hcl",
+    "normalized_key": "higenamine hcl",
+    "count": 1,
+    "samples": [
+      "Higenamine HCl"
+    ],
+    "normalized_samples": [
+      "higenamine hcl"
+    ],
+    "original_name_keys": [
+      "higenamine hcl"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "crea drive blend",
+    "normalized_key": "crea drive blend",
+    "count": 1,
+    "samples": [
+      "Crea-Drive(TM) Blend"
+    ],
+    "normalized_samples": [
+      "crea drive blend"
+    ],
+    "original_name_keys": [
+      "crea drive tm blend"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "trypsin",
+    "normalized_key": "trypsin",
+    "count": 1,
+    "samples": [
+      "Trypsin"
+    ],
+    "normalized_samples": [
+      "trypsin"
+    ],
+    "original_name_keys": [
+      "trypsin"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "pqq pyrroloquinoline quinone disodium salt",
+    "normalized_key": "pqq pyrroloquinoline quinone disodium salt",
+    "count": 1,
+    "samples": [
+      "PQQ (BioPQQ(TM)) Pyrroloquinoline quinone disodium salt"
+    ],
+    "normalized_samples": [
+      "pqq pyrroloquinoline quinone disodium salt"
+    ],
+    "original_name_keys": [
+      "pqq biopqq tm pyrroloquinoline quinone disodium salt"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "dsld",
+    "name_key": "food based proprietary blend",
+    "normalized_key": "food based proprietary blend",
+    "count": 1,
+    "samples": [
+      "Food Based Proprietary Blend"
+    ],
+    "normalized_samples": [
+      "food based proprietary blend"
+    ],
+    "original_name_keys": [
+      "food based proprietary blend"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "ketoprotein blend",
+    "normalized_key": "ketoprotein blend",
+    "count": 1,
+    "samples": [
+      "KetoPROTEIN Blend"
+    ],
+    "normalized_samples": [
+      "ketoprotein blend"
+    ],
+    "original_name_keys": [
+      "ketoprotein blend"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "alfalfa",
+    "normalized_key": "alfalfa",
+    "count": 1,
+    "samples": [
+      "Alfalfa"
+    ],
+    "normalized_samples": [
+      "alfalfa"
+    ],
+    "original_name_keys": [
+      "alfalfa"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "vanadyl sulfate",
+    "normalized_key": "vanadyl sulfate",
+    "count": 1,
+    "samples": [
+      "Vanadyl Sulfate"
+    ],
+    "normalized_samples": [
+      "vanadyl sulfate"
+    ],
+    "original_name_keys": [
+      "vanadyl sulfate"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "eucalyptus",
+    "normalized_key": "eucalyptus",
+    "count": 1,
+    "samples": [
+      "Eucalyptus"
+    ],
+    "normalized_samples": [
+      "eucalyptus"
+    ],
+    "original_name_keys": [
+      "eucalyptus"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "fat calories",
+    "normalized_key": "fat calories",
+    "count": 1,
+    "samples": [
+      "Fat Calories"
+    ],
+    "normalized_samples": [
+      "fat calories"
+    ],
+    "original_name_keys": [
+      "fat calories"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "peppermint oil",
+    "normalized_key": "peppermint oil",
+    "count": 1,
+    "samples": [
+      "Peppermint Oil"
+    ],
+    "normalized_samples": [
+      "peppermint oil"
+    ],
+    "original_name_keys": [
+      "peppermint oil"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "nitro amino matrix",
+    "normalized_key": "nitro amino matrix",
+    "count": 1,
+    "samples": [
+      "Nitro-Amino Matrix"
+    ],
+    "normalized_samples": [
+      "nitro amino matrix"
+    ],
+    "original_name_keys": [
+      "nitro amino matrix"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "mchc",
+    "normalized_key": "mchc",
+    "count": 1,
+    "samples": [
+      "MCHC"
+    ],
+    "normalized_samples": [
+      "mchc"
+    ],
+    "original_name_keys": [
+      "mchc"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "docosahexaenoic acid",
+    "normalized_key": "docosahexaenoic acid",
+    "count": 1,
+    "samples": [
+      "Docosahexaenoic Acid"
+    ],
+    "normalized_samples": [
+      "docosahexaenoic acid"
+    ],
+    "original_name_keys": [
+      "docosahexaenoic acid"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "actiflax flax lignan",
+    "normalized_key": "actiflax flax lignan",
+    "count": 1,
+    "samples": [
+      "ActiFlax Flax Lignan"
+    ],
+    "normalized_samples": [
+      "actiflax flax lignan"
+    ],
+    "original_name_keys": [
+      "actiflax flax lignan"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "whole leaf powder blend",
+    "normalized_key": "whole leaf powder blend",
+    "count": 1,
+    "samples": [
+      "Whole Leaf Powder Blend"
+    ],
+    "normalized_samples": [
+      "whole leaf powder blend"
+    ],
+    "original_name_keys": [
+      "whole leaf powder blend"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "organic acai berry juice powder",
+    "normalized_key": "organic acai berry juice powder",
+    "count": 1,
+    "samples": [
+      "organic Acai berry juice powder"
+    ],
+    "normalized_samples": [
+      "organic acai berry juice powder"
+    ],
+    "original_name_keys": [
+      "organic acai berry juice powder"
+    ],
+    "latin_binomial": true
+  },
+  {
+    "source": "dsld",
+    "name_key": "carnipure",
+    "normalized_key": "carnipure",
+    "count": 1,
+    "samples": [
+      "Carnipure(R)"
+    ],
+    "normalized_samples": [
+      "carnipure"
+    ],
+    "original_name_keys": [
+      "carnipure r"
+    ],
+    "latin_binomial": false
+  },
+  {
+    "source": "dsld",
+    "name_key": "schizandra extract",
+    "normalized_key": "schizandra extract",
+    "count": 1,
+    "samples": [
+      "Schizandra extract"
+    ],
+    "normalized_samples": [
+      "schizandra extract"
+    ],
+    "original_name_keys": [
+      "schizandra extract"
+    ],
+    "latin_binomial": true
+  }
+]

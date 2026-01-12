@@ -1,0 +1,14 @@
+{
+  "mode": "failures-input",
+  "failuresInput": "output/formraw/topk_chunks_200/topk_rem_chunk_11.jsonl",
+  "scoreVersion": "v4.0.0-alpha.3",
+  "processed": 200,
+  "scores": 200,
+  "failed": 0,
+  "ingredientUpsertFailed": 0,
+  "scoreUpsertFailed": 0,
+  "computeScoreFailed": 0,
+  "failuresFile": "backfill-failures.jsonl",
+  "failuresLines": 0,
+  "elapsedMs": 449402
+}

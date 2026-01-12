@@ -1,0 +1,127 @@
+{
+  "mode": "formraw_explicit_hint",
+  "output": "output/formraw/formraw_explicit_hint_lnhpd.jsonl",
+  "limit": 5000,
+  "totalFetched": 51594,
+  "cursor": "80145857",
+  "sourceIdsFile": null,
+  "uniqueSourceIds": 474,
+  "runlistLines": 474,
+  "topHintTokens": [
+    {
+      "token": "paren",
+      "count": 335
+    },
+    {
+      "token": "chloride",
+      "count": 45
+    },
+    {
+      "token": "methyl",
+      "count": 36
+    },
+    {
+      "token": "hydroxy",
+      "count": 28
+    },
+    {
+      "token": "extract",
+      "count": 19
+    },
+    {
+      "token": "sulfate",
+      "count": 7
+    },
+    {
+      "token": "chelate",
+      "count": 4
+    },
+    {
+      "token": "adenosyl",
+      "count": 1
+    }
+  ],
+  "topIngredients": [
+    {
+      "ingredientId": "b856b851-973d-4fbf-b9c5-9ab29c480cd8",
+      "count": 191
+    },
+    {
+      "ingredientId": "157a99b5-2315-42b3-af4b-11e4b0e03d44",
+      "count": 129
+    },
+    {
+      "ingredientId": "59589129-4576-459f-b468-219ac54ff7c5",
+      "count": 44
+    },
+    {
+      "ingredientId": "0979a02b-e0a0-475b-bda0-7bc2ffeae42d",
+      "count": 18
+    },
+    {
+      "ingredientId": "1c18be49-0f43-4f26-98f9-76719350b093",
+      "count": 16
+    },
+    {
+      "ingredientId": "8d7af787-cf70-46d2-9b25-6c08d6766290",
+      "count": 15
+    },
+    {
+      "ingredientId": "91cc2c5e-03cd-4933-bcf5-1f02b513f709",
+      "count": 10
+    },
+    {
+      "ingredientId": "e82996f3-c940-4c31-b282-05ca8597a9ab",
+      "count": 9
+    },
+    {
+      "ingredientId": "add087fc-2c39-4801-a27f-1e23666bc707",
+      "count": 6
+    },
+    {
+      "ingredientId": "5628c329-ae46-4979-a3b7-8370e86ae6bd",
+      "count": 5
+    },
+    {
+      "ingredientId": "44e964b3-058c-4ef7-a90f-ea466d056517",
+      "count": 4
+    },
+    {
+      "ingredientId": "ea285cd1-f8c5-49d7-b252-425563538bcf",
+      "count": 4
+    },
+    {
+      "ingredientId": "b127ecd0-695a-4f87-a58d-be1bc04d552a",
+      "count": 3
+    },
+    {
+      "ingredientId": "ceed2bb7-af73-4f1c-a94d-3490bf1cb339",
+      "count": 3
+    },
+    {
+      "ingredientId": "408b36b3-ec94-4eb6-ae45-a49ab885dd63",
+      "count": 3
+    },
+    {
+      "ingredientId": "5c76f621-e89d-44c4-b4b0-3db2be66e925",
+      "count": 2
+    },
+    {
+      "ingredientId": "e1bffb7a-f735-467e-a6dd-20a94b9cd240",
+      "count": 2
+    },
+    {
+      "ingredientId": "a99056a4-bba4-4c98-af5e-7bbc74730d6c",
+      "count": 2
+    },
+    {
+      "ingredientId": "23b64889-1bb6-4b9b-870c-0611308ac717",
+      "count": 2
+    },
+    {
+      "ingredientId": "597b96ca-86ad-40d7-8484-60a4c5162460",
+      "count": 2
+    }
+  ],
+  "timestamp": "2026-01-11T22:33:07.179Z"
+}

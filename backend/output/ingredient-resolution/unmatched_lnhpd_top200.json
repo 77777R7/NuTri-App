@@ -1,0 +1,1605 @@
+[
+  {
+    "source": "lnhpd",
+    "name_key": "fish oil",
+    "count": 26,
+    "samples": [
+      "Fish oil"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "vitis vinifera",
+    "count": 14,
+    "samples": [
+      "Vitis vinifera",
+      "Vitis Vinifera"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "oryctolagus cuniculus",
+    "count": 12,
+    "samples": [
+      "Oryctolagus cuniculus"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "inositol",
+    "count": 11,
+    "samples": [
+      "Inositol"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "silybum marianum",
+    "count": 10,
+    "samples": [
+      "Silybum marianum"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "linum usitatissimum",
+    "count": 10,
+    "samples": [
+      "Linum usitatissimum"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "glycyrrhiza uralensis",
+    "count": 8,
+    "samples": [
+      "Glycyrrhiza uralensis"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "allium sativum",
+    "count": 8,
+    "samples": [
+      "Allium sativum",
+      "Allium Sativum"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "eleutherococcus senticosus",
+    "count": 8,
+    "samples": [
+      "Eleutherococcus senticosus"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "arnica montana",
+    "count": 7,
+    "samples": [
+      "Arnica montana"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "sus scrofa",
+    "count": 7,
+    "samples": [
+      "Sus scrofa"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "salicylic acid",
+    "count": 7,
+    "samples": [
+      "Salicylic acid"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "glycyrrhiza glabra",
+    "count": 7,
+    "samples": [
+      "Glycyrrhiza glabra"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "harpagophytum procumbens",
+    "count": 7,
+    "samples": [
+      "Harpagophytum procumbens"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "withania somnifera",
+    "count": 7,
+    "samples": [
+      "Withania somnifera"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "hydrastis canadensis",
+    "count": 7,
+    "samples": [
+      "Hydrastis canadensis"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "medicago sativa",
+    "count": 6,
+    "samples": [
+      "Medicago sativa"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "phosphore",
+    "count": 6,
+    "samples": [
+      "Phosphore"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "vanadium",
+    "count": 6,
+    "samples": [
+      "Vanadium"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "dioscorea oppositifolia",
+    "count": 6,
+    "samples": [
+      "Dioscorea oppositifolia"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "silicea",
+    "count": 6,
+    "samples": [
+      "Silicea"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "eucalyptus globulus",
+    "count": 6,
+    "samples": [
+      "Eucalyptus globulus"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "citrus bioflavonoids",
+    "count": 6,
+    "samples": [
+      "Citrus Bioflavonoids",
+      "Citrus bioflavonoids"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "coenzyme q10",
+    "count": 6,
+    "samples": [
+      "Coenzyme Q10"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "ganoderma lucidum",
+    "count": 6,
+    "samples": [
+      "Ganoderma lucidum"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "sambucus nigra",
+    "count": 5,
+    "samples": [
+      "Sambucus nigra"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "1 carboxy n n n trimethylmethanaminium chloride",
+    "count": 5,
+    "samples": [
+      "1-Carboxy-N,N,N-trimethylmethanaminium chloride"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "camellia sinensis",
+    "count": 5,
+    "samples": [
+      "Camellia sinensis"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "angelica sinensis",
+    "count": 5,
+    "samples": [
+      "Angelica sinensis"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "zingiber officinale",
+    "count": 5,
+    "samples": [
+      "Zingiber officinale"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "calendula officinalis",
+    "count": 5,
+    "samples": [
+      "Calendula officinalis"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "angelica dahurica",
+    "count": 5,
+    "samples": [
+      "Angelica dahurica"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "2 amino 2 deoxy d glucose sulfate",
+    "count": 5,
+    "samples": [
+      "2-amino-2-deoxy-D-glucose sulfate"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "4 1 3 1 4 beta d glucan 4 glucanohydrolase",
+    "count": 5,
+    "samples": [
+      "4-(1,3;1,4)-beta-D-Glucan 4-glucanohydrolase"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "mentha x piperita",
+    "count": 5,
+    "samples": [
+      "Mentha x piperita"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "althaea officinalis",
+    "count": 5,
+    "samples": [
+      "Althaea officinalis"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "silicon",
+    "count": 5,
+    "samples": [
+      "Silicon"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "passiflora incarnata",
+    "count": 5,
+    "samples": [
+      "Passiflora incarnata"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "equisetum arvense",
+    "count": 5,
+    "samples": [
+      "Equisetum arvense"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "valeriana officinalis",
+    "count": 5,
+    "samples": [
+      "Valeriana officinalis"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "poria cocos",
+    "count": 4,
+    "samples": [
+      "Poria cocos"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "pinellia ternata",
+    "count": 4,
+    "samples": [
+      "Pinellia ternata"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "kali muriaticum",
+    "count": 4,
+    "samples": [
+      "Kali muriaticum"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "taraxacum officinale",
+    "count": 4,
+    "samples": [
+      "Taraxacum officinale"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "atractylodes macrocephala",
+    "count": 4,
+    "samples": [
+      "Atractylodes macrocephala"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "sodium fluoride",
+    "count": 4,
+    "samples": [
+      "Sodium fluoride"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "trifolium pratense",
+    "count": 4,
+    "samples": [
+      "Trifolium pratense"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "ubiquinone",
+    "count": 4,
+    "samples": [
+      "Ubiquinone"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "3 pyridinecarboxamide",
+    "count": 4,
+    "samples": [
+      "3-Pyridinecarboxamide"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "nickel",
+    "count": 4,
+    "samples": [
+      "Nickel"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "plantago major",
+    "count": 4,
+    "samples": [
+      "Plantago major"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "codonopsis pilosula",
+    "count": 4,
+    "samples": [
+      "Codonopsis pilosula"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "arctium lappa",
+    "count": 4,
+    "samples": [
+      "Arctium lappa"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "paeonia lactiflora",
+    "count": 4,
+    "samples": [
+      "Paeonia lactiflora"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "lecithin",
+    "count": 4,
+    "samples": [
+      "Lecithin"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "whey protein isolate",
+    "count": 4,
+    "samples": [
+      "Whey Protein Isolate"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "4 aminobenzoic acid",
+    "count": 4,
+    "samples": [
+      "4-Aminobenzoic acid"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "myo inositol",
+    "count": 3,
+    "samples": [
+      "Myo-Inositol"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "hamamelis virginiana",
+    "count": 3,
+    "samples": [
+      "Hamamelis virginiana"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "natrum muriaticum",
+    "count": 3,
+    "samples": [
+      "Natrum muriaticum"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "phytolacca decandra",
+    "count": 3,
+    "samples": [
+      "Phytolacca decandra"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "euterpe oleracea",
+    "count": 3,
+    "samples": [
+      "Euterpe oleracea"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "olea europaea",
+    "count": 3,
+    "samples": [
+      "Olea europaea"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "ziziphus jujuba",
+    "count": 3,
+    "samples": [
+      "Ziziphus jujuba"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "serenoa repens",
+    "count": 3,
+    "samples": [
+      "Serenoa repens"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "2 hydroxy n n n trimethylethanaminium",
+    "count": 3,
+    "samples": [
+      "2-Hydroxy-N,N,N-trimethylethanaminium"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "cynara scolymus",
+    "count": 3,
+    "samples": [
+      "Cynara scolymus"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "2 amino 2 deoxy beta d glucopyranose",
+    "count": 3,
+    "samples": [
+      "2-amino-2-deoxy-beta-D-glucopyranose"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "melissa officinalis",
+    "count": 3,
+    "samples": [
+      "Melissa officinalis"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "daucus carota",
+    "count": 3,
+    "samples": [
+      "Daucus carota"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "piper nigrum",
+    "count": 3,
+    "samples": [
+      "Piper nigrum"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "phellodendron chinense",
+    "count": 3,
+    "samples": [
+      "Phellodendron chinense"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "juniperus communis",
+    "count": 3,
+    "samples": [
+      "Juniperus communis"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "plantago ovata",
+    "count": 3,
+    "samples": [
+      "Plantago ovata"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "bryonia",
+    "count": 3,
+    "samples": [
+      "Bryonia"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "paullinia cupana",
+    "count": 3,
+    "samples": [
+      "Paullinia cupana"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "borago officinalis",
+    "count": 3,
+    "samples": [
+      "Borago officinalis"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "ophiopogon japonicus",
+    "count": 3,
+    "samples": [
+      "Ophiopogon japonicus"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "poly 1 3 n aceltyl 2 amino 2 deoxy 3 o beta d glucopyranurosyl 4 or 6 sulfonyl d galactose",
+    "count": 3,
+    "samples": [
+      "Poly-(1->3)-N-aceltyl-2-amino-2-deoxy-3-O-beta-D-glucopyranurosyl-4-(or 6-)sulfonyl-D-galactose"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "ethyl alcohol",
+    "count": 3,
+    "samples": [
+      "Ethyl alcohol"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "triacylglycerol lipase",
+    "count": 3,
+    "samples": [
+      "Triacylglycerol lipase"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "phosphorus",
+    "count": 3,
+    "samples": [
+      "Phosphorus"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "solanum lycopersicum",
+    "count": 3,
+    "samples": [
+      "Solanum lycopersicum"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "dioscorea villosa",
+    "count": 3,
+    "samples": [
+      "Dioscorea villosa"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "citrus aurantium",
+    "count": 3,
+    "samples": [
+      "Citrus aurantium"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "hydrolyzed collagen",
+    "count": 3,
+    "samples": [
+      "Hydrolyzed collagen"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "sanguinaria canadensis",
+    "count": 3,
+    "samples": [
+      "Sanguinaria canadensis"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "aloe barbadensis",
+    "count": 3,
+    "samples": [
+      "Aloe barbadensis"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "thymus vulgaris",
+    "count": 3,
+    "samples": [
+      "Thymus vulgaris"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "berberis vulgaris",
+    "count": 3,
+    "samples": [
+      "Berberis vulgaris"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "mercurius corrosivus",
+    "count": 3,
+    "samples": [
+      "Mercurius corrosivus"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "carica papaya",
+    "count": 3,
+    "samples": [
+      "Carica papaya"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "rheum palmatum",
+    "count": 3,
+    "samples": [
+      "Rheum palmatum"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "lycopersicon esculentum",
+    "count": 3,
+    "samples": [
+      "Lycopersicon esculentum"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "commiphora myrrha",
+    "count": 3,
+    "samples": [
+      "Commiphora myrrha"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "belladonna",
+    "count": 3,
+    "samples": [
+      "Belladonna"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "lepidium meyenii",
+    "count": 3,
+    "samples": [
+      "Lepidium meyenii"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "terminalia chebula",
+    "count": 3,
+    "samples": [
+      "Terminalia chebula"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "rosmarinus officinalis",
+    "count": 3,
+    "samples": [
+      "Rosmarinus officinalis"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "natrium chloratum",
+    "count": 3,
+    "samples": [
+      "Natrium chloratum"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "mentha haplocalyx",
+    "count": 3,
+    "samples": [
+      "Mentha haplocalyx"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "seal oil",
+    "count": 3,
+    "samples": [
+      "Seal oil"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "oenothera biennis",
+    "count": 3,
+    "samples": [
+      "Oenothera biennis"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "sepia officinalis",
+    "count": 3,
+    "samples": [
+      "Sepia officinalis"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "cornus officinalis",
+    "count": 2,
+    "samples": [
+      "Cornus officinalis"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "apis mellifica",
+    "count": 2,
+    "samples": [
+      "Apis mellifica"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "bioflavonoids",
+    "count": 2,
+    "samples": [
+      "Bioflavonoids"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "scrophularia nodosa",
+    "count": 2,
+    "samples": [
+      "Scrophularia nodosa"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "argentum metallicum",
+    "count": 2,
+    "samples": [
+      "Argentum metallicum"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "caulophyllum thalictroides",
+    "count": 2,
+    "samples": [
+      "Caulophyllum thalictroides"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "gentiana lutea",
+    "count": 2,
+    "samples": [
+      "Gentiana lutea"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "saposhnikovia divaricata",
+    "count": 2,
+    "samples": [
+      "Saposhnikovia divaricata"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "actaea racemosa",
+    "count": 2,
+    "samples": [
+      "Actaea racemosa"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "sticta pulmonaria",
+    "count": 2,
+    "samples": [
+      "Sticta pulmonaria"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "3 3 4 5 7 pentahydroxyflavone",
+    "count": 2,
+    "samples": [
+      "3,3',4',5,7-pentahydroxyflavone"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "citrus sinensis",
+    "count": 2,
+    "samples": [
+      "Citrus sinensis"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "matricaria chamomilla",
+    "count": 2,
+    "samples": [
+      "Matricaria chamomilla"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "acorus tatarinowii",
+    "count": 2,
+    "samples": [
+      "Acorus tatarinowii"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "raphanus sativus",
+    "count": 2,
+    "samples": [
+      "Raphanus sativus"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "matricaria recutita",
+    "count": 2,
+    "samples": [
+      "Matricaria recutita"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "tanacetum parthenium",
+    "count": 2,
+    "samples": [
+      "Tanacetum parthenium"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "carlina acaulis",
+    "count": 2,
+    "samples": [
+      "Carlina acaulis"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "grindelia camporum",
+    "count": 2,
+    "samples": [
+      "Grindelia camporum"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "aucklandia lappa",
+    "count": 2,
+    "samples": [
+      "Aucklandia lappa"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "avena sativa",
+    "count": 2,
+    "samples": [
+      "Avena sativa"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "conium maculatum",
+    "count": 2,
+    "samples": [
+      "Conium maculatum"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "modified citrus pectin",
+    "count": 2,
+    "samples": [
+      "Modified citrus pectin"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "nux vomica",
+    "count": 2,
+    "samples": [
+      "Nux vomica"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "salvia miltiorrhiza",
+    "count": 2,
+    "samples": [
+      "Salvia miltiorrhiza"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "drosera",
+    "count": 2,
+    "samples": [
+      "Drosera"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "rheum officinale",
+    "count": 2,
+    "samples": [
+      "Rheum officinale"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "platycodon grandiflorum",
+    "count": 2,
+    "samples": [
+      "Platycodon grandiflorum"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "salvia officinalis",
+    "count": 2,
+    "samples": [
+      "Salvia officinalis"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "ethanol",
+    "count": 2,
+    "samples": [
+      "Ethanol"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "aconitum napellus",
+    "count": 2,
+    "samples": [
+      "Aconitum napellus"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "alisma plantago aquatica",
+    "count": 2,
+    "samples": [
+      "Alisma plantago-aquatica"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "bryonia alba",
+    "count": 2,
+    "samples": [
+      "Bryonia alba"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "cantharis",
+    "count": 2,
+    "samples": [
+      "Cantharis"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "chrysanthemum morifolium",
+    "count": 2,
+    "samples": [
+      "Chrysanthemum morifolium"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "methyl salicylate",
+    "count": 2,
+    "samples": [
+      "Methyl Salicylate"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "mangifera indica",
+    "count": 2,
+    "samples": [
+      "Mangifera indica"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "galium aparine",
+    "count": 2,
+    "samples": [
+      "Galium aparine"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "cimicifuga racemosa",
+    "count": 2,
+    "samples": [
+      "Cimicifuga racemosa"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "s 2 amino 3 methylbutanoic acid",
+    "count": 2,
+    "samples": [
+      "(S)-2-amino-3-methylbutanoic acid"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "foeniculum vulgare",
+    "count": 2,
+    "samples": [
+      "Foeniculum vulgare"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "spongia tosta",
+    "count": 2,
+    "samples": [
+      "Spongia tosta"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "spinacia oleracea",
+    "count": 2,
+    "samples": [
+      "Spinacia oleracea"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "ligustrum lucidum",
+    "count": 2,
+    "samples": [
+      "Ligustrum lucidum"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "rumex crispus",
+    "count": 2,
+    "samples": [
+      "Rumex crispus"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "magnolia officinalis",
+    "count": 2,
+    "samples": [
+      "Magnolia officinalis"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "orchitinum",
+    "count": 2,
+    "samples": [
+      "Orchitinum"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "polygonum multiflorum",
+    "count": 2,
+    "samples": [
+      "Polygonum multiflorum"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "paeonia veitchii",
+    "count": 2,
+    "samples": [
+      "Paeonia veitchii"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "n 2 5 methoxyindol 3 yl ethyl acetamide",
+    "count": 2,
+    "samples": [
+      "N-[2-(5-Methoxyindol-3-yl) ethyl] acetamide"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "beta galactosidase",
+    "count": 2,
+    "samples": [
+      "beta-galactosidase"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "zincum metallicum",
+    "count": 2,
+    "samples": [
+      "Zincum metallicum"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "ferrum phosphoricum",
+    "count": 2,
+    "samples": [
+      "Ferrum phosphoricum"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "zea mays",
+    "count": 2,
+    "samples": [
+      "Zea mays"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "nepeta cataria",
+    "count": 2,
+    "samples": [
+      "Nepeta cataria"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "piperine",
+    "count": 2,
+    "samples": [
+      "Piperine"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "rehmannia glutinosa",
+    "count": 2,
+    "samples": [
+      "Rehmannia glutinosa"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "sarsaparilla",
+    "count": 2,
+    "samples": [
+      "Sarsaparilla"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "panax quinquefolius",
+    "count": 2,
+    "samples": [
+      "Panax quinquefolius"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "menthol",
+    "count": 2,
+    "samples": [
+      "Menthol"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "lappa major",
+    "count": 2,
+    "samples": [
+      "Lappa major"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "cinnamomum aromaticum",
+    "count": 2,
+    "samples": [
+      "Cinnamomum aromaticum"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "rhamnus purshianus",
+    "count": 2,
+    "samples": [
+      "Rhamnus Purshianus"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "saussurea costus",
+    "count": 2,
+    "samples": [
+      "Saussurea costus"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "lycopodium clavatum",
+    "count": 2,
+    "samples": [
+      "Lycopodium clavatum"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "coffea cruda",
+    "count": 2,
+    "samples": [
+      "Coffea cruda"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "atropa belladonna",
+    "count": 2,
+    "samples": [
+      "Atropa belladonna"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "calcarea fluorica",
+    "count": 2,
+    "samples": [
+      "Calcarea fluorica"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "urtica dioica",
+    "count": 2,
+    "samples": [
+      "Urtica dioica"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "1 2 dithiolane 3 pentanoic acid",
+    "count": 2,
+    "samples": [
+      "(+-)-1,2-Dithiolane-3-pentanoic acid"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "hydrolyzed collagen type ii",
+    "count": 2,
+    "samples": [
+      "Hydrolyzed Collagen Type II"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "mercurius solubilis hahnemanni",
+    "count": 2,
+    "samples": [
+      "Mercurius solubilis Hahnemanni"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "verbascum thapsus",
+    "count": 2,
+    "samples": [
+      "Verbascum thapsus"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "petroselinum crispum",
+    "count": 2,
+    "samples": [
+      "Petroselinum crispum"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "phosphoricum acidum",
+    "count": 2,
+    "samples": [
+      "Phosphoricum acidum"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "cassia angustifolia",
+    "count": 2,
+    "samples": [
+      "Cassia angustifolia"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "mentha piperita",
+    "count": 2,
+    "samples": [
+      "Mentha piperita"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "l menthol",
+    "count": 2,
+    "samples": [
+      "l-Menthol"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "marrubium vulgare",
+    "count": 2,
+    "samples": [
+      "Marrubium vulgare"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "calcarea sulphurica",
+    "count": 1,
+    "samples": [
+      "Calcarea sulphurica"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "glandula suprarenalis suis",
+    "count": 1,
+    "samples": [
+      "Glandula suprarenalis suis"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "baptisia tinctoria",
+    "count": 1,
+    "samples": [
+      "Baptisia tinctoria"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "3beta 5z 7e 9 10 secocholesta 5 7 10 19 trien 3 ol",
+    "count": 1,
+    "samples": [
+      "(3beta,5Z,7E)-9,10-Secocholesta-5,7,10(19)-trien-3-ol"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "lactobacillus delbrueckii subsp bulgaricus",
+    "count": 1,
+    "samples": [
+      "Lactobacillus delbrueckii subsp. bulgaricus"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "coriolus versicolor",
+    "count": 1,
+    "samples": [
+      "Coriolus Versicolor"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "sulfur",
+    "count": 1,
+    "samples": [
+      "Sulfur"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "trimethylethanolamine",
+    "count": 1,
+    "samples": [
+      "Trimethylethanolamine"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "tree hydrangea",
+    "count": 1,
+    "samples": [
+      "Tree hydrangea"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "nicotinic acid",
+    "count": 1,
+    "samples": [
+      "Nicotinic acid"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "malpighia punicifolia linne",
+    "count": 1,
+    "samples": [
+      "Malpighia punicifolia linne"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "stibium metallicum",
+    "count": 1,
+    "samples": [
+      "Stibium metallicum"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "strychnos nux vomica",
+    "count": 1,
+    "samples": [
+      "Strychnos nux-vomica"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "cucurbita pepo",
+    "count": 1,
+    "samples": [
+      "Cucurbita pepo"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "lilium tigrinum",
+    "count": 1,
+    "samples": [
+      "Lilium tigrinum"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "euphrasia officinalis",
+    "count": 1,
+    "samples": [
+      "Euphrasia officinalis"
+    ]
+  },
+  {
+    "source": "lnhpd",
+    "name_key": "pinus silvestris",
+    "count": 1,
+    "samples": [
+      "Pinus silvestris"
+    ]
+  }
+]

@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { supabase } from "../src/supabase.js";
 import { extractErrorMeta, withRetry } from "../src/supabaseRetry.js";
+import { V4_SCORE_VERSION } from "../src/scoring/v4ScoreEngine.js";
 
 type RebackfillEntry = {
   timestamp: string;
@@ -325,15 +326,101 @@ const collectTaxonomyMismatch = async () => {
   return { deduped, totalFetched, cursor };
 };
 
+const collectZeroCoverage = async () => {
+  const deduped = new Map<string, { sourceId: string; canonicalSourceId: string | null }>();
+  let cursor = typeof START_AFTER === "string" && START_AFTER.trim() ? START_AFTER.trim() : null;
+  let totalFetched = 0;
+
+  while (deduped.size < LIMIT) {
+    const { data, error, status } = await withRetry(() => {
+      let query = supabase
+        .from("product_scores")
+        .select("source_id,canonical_source_id,explain_json")
+        .eq("source", "lnhpd")
+        .eq("score_version", V4_SCORE_VERSION)
+        .order("source_id", { ascending: true })
+        .limit(PAGE_SIZE);
+      if (cursor) query = query.gt("source_id", cursor);
+      return query;
+    });
+
+    if (error) {
+      const meta = extractErrorMeta(error, status);
+      throw new Error(`[formraw] zero coverage query failed: ${meta.message ?? error.message}`);
+    }
+
+    const rows =
+      (data ?? []) as Array<{ source_id: string | null; canonical_source_id: string | null; explain_json?: any }>;
+    if (!rows.length) break;
+
+    totalFetched += rows.length;
+    rows.forEach((row) => {
+      const sourceId = typeof row?.source_id === "string" ? row.source_id : null;
+      if (!sourceId) return;
+      const ratio = row?.explain_json?.evidence?.formCoverageRatio;
+      if (typeof ratio !== "number" || ratio > 0) return;
+      if (deduped.has(sourceId)) return;
+      const canonicalSourceId =
+        typeof row?.canonical_source_id === "string" ? row.canonical_source_id : null;
+      deduped.set(sourceId, { sourceId, canonicalSourceId });
+    });
+
+    cursor = rows[rows.length - 1]?.source_id ?? cursor;
+    if (rows.length < PAGE_SIZE) break;
+  }
+
+  const candidateIds = Array.from(deduped.values());
+  if (!candidateIds.length) return { deduped, totalFetched, cursor };
+
+  const filterSet = new Set<string>();
+  for (const chunk of chunkArray(candidateIds, 200)) {
+    const sourceIds = chunk.map((row) => row.sourceId);
+    const { data, error, status } = await withRetry(() =>
+      supabase
+        .from("product_ingredients")
+        .select("source_id,canonical_source_id")
+        .eq("source", "lnhpd")
+        .in("source_id", sourceIds)
+        .not("ingredient_id", "is", null)
+        .or("form_raw.is.null,form_raw.eq."),
+    );
+    if (error) {
+      const meta = extractErrorMeta(error, status);
+      throw new Error(`[formraw] zero coverage filter failed: ${meta.message ?? error.message}`);
+    }
+    (data ?? []).forEach((row) => {
+      const sourceId = typeof row?.source_id === "string" ? row.source_id : null;
+      if (sourceId) filterSet.add(sourceId);
+    });
+  }
+
+  if (!filterSet.size) return { deduped: new Map(), totalFetched, cursor };
+
+  const filtered = new Map<string, { sourceId: string; canonicalSourceId: string | null }>();
+  deduped.forEach((value, key) => {
+    if (filterSet.has(key)) filtered.set(key, value);
+  });
+
+  return { deduped: filtered, totalFetched, cursor };
+};
+
 const run = async () => {
-  if (!["formraw-missing", "taxonomy-mismatch"].includes(MODE)) {
+  if (!["formraw-missing", "taxonomy-mismatch", "zero-coverage"].includes(MODE)) {
     throw new Error(`[formraw] invalid mode: ${MODE}`);
   }
 
   const stage =
-    MODE === "taxonomy-mismatch" ? "taxonomy_mismatch_retrofit" : "form_raw_retrofit";
+    MODE === "taxonomy-mismatch"
+      ? "taxonomy_mismatch_retrofit"
+      : MODE === "zero-coverage"
+        ? "form_raw_zero_coverage"
+        : "form_raw_retrofit";
   const collector =
-    MODE === "taxonomy-mismatch" ? collectTaxonomyMismatch : collectFormRawMissing;
+    MODE === "taxonomy-mismatch"
+      ? collectTaxonomyMismatch
+      : MODE === "zero-coverage"
+        ? collectZeroCoverage
+        : collectFormRawMissing;
   const { deduped, totalFetched, cursor } = await collector();
 
   const entries: RebackfillEntry[] = Array.from(deduped.values()).map((row) => ({

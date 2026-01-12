@@ -13,6 +13,7 @@ import { useNavigation, type NavigationProp } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { BrandGradient } from "@/components/BrandGradient";
+import { AUTH_FALLBACK_PATH } from "@/lib/auth-mode";
 import { colors } from "@/lib/theme";
 import { safeBack } from "@/lib/navigation/safeBack";
 import type { Href } from "expo-router";
@@ -55,7 +56,7 @@ export function AuthShell({
       return;
     }
 
-    safeBack(navigation, { fallback: fallbackHref ?? "/(auth)/gate" });
+    safeBack(navigation, { fallback: fallbackHref ?? AUTH_FALLBACK_PATH });
   };
 
   return (

@@ -1,0 +1,75 @@
+{
+  "source": "lnhpd",
+  "topN": 50,
+  "totalMismatches": 9,
+  "tokens": [
+    {
+      "token": "acid",
+      "count": 6
+    },
+    {
+      "token": "seed",
+      "count": 4
+    },
+    {
+      "token": "alpha",
+      "count": 3
+    },
+    {
+      "token": "linolenic",
+      "count": 3
+    },
+    {
+      "token": "fatty",
+      "count": 2
+    },
+    {
+      "token": "acids",
+      "count": 2
+    },
+    {
+      "token": "fruit",
+      "count": 2
+    },
+    {
+      "token": "pantothenic",
+      "count": 1
+    },
+    {
+      "token": "hydrochloride",
+      "count": 1
+    },
+    {
+      "token": "berry",
+      "count": 1
+    },
+    {
+      "token": "212mg",
+      "count": 1
+    },
+    {
+      "token": "linoleic",
+      "count": 1
+    },
+    {
+      "token": "3mg",
+      "count": 1
+    },
+    {
+      "token": "free",
+      "count": 1
+    },
+    {
+      "token": "with",
+      "count": 1
+    },
+    {
+      "token": "sterols",
+      "count": 1
+    },
+    {
+      "token": "oleic",
+      "count": 1
+    }
+  ]
+}

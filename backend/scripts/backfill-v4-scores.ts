@@ -402,6 +402,13 @@ const extractLnhpdIngredients = (payload: unknown, options: {
     if (!key) return;
     const existing = map.get(key);
     const lnhpdMeta = (() => {
+      const ingredientName = pickStringField(record, [
+        "ingredient_name",
+        "ingredient_name_en",
+        "medicinal_ingredient_name",
+        "medicinal_ingredient_name_en",
+      ]);
+      const properName = pickStringField(record, ["proper_name"]);
       const sourceMaterial = pickStringField(record, LNHPD_SOURCE_MATERIAL_KEYS);
       const extractTypeDesc = pickStringField(record, LNHPD_EXTRACT_TYPE_KEYS);
       const ratioNumerator = pickScalarField(record, LNHPD_RATIO_NUMERATOR_KEYS);
@@ -418,7 +425,9 @@ const extractLnhpdIngredients = (payload: unknown, options: {
         potencyConstituent ||
         potencyAmount != null ||
         potencyUnit ||
-        driedHerbEquivalent != null;
+        driedHerbEquivalent != null ||
+        ingredientName ||
+        properName;
       if (!hasValue) return null;
       return {
         sourceMaterial,
@@ -429,6 +438,8 @@ const extractLnhpdIngredients = (payload: unknown, options: {
         potencyAmount,
         potencyUnit,
         driedHerbEquivalent,
+        ingredientName,
+        properName,
       };
     })();
     const candidate = {
@@ -1045,6 +1056,7 @@ const writeSummary = async (payload: {
 }) => {
   if (!summaryJson) return;
   const summary = {
+    mode: "batch",
     source: payload.source,
     scoreVersion: V4_SCORE_VERSION,
     startId: payload.startId || null,
@@ -1055,6 +1067,29 @@ const writeSummary = async (payload: {
     failuresLines: failureTracker.baseLines + failureTracker.lines,
     lastId: payload.lastId,
     nextStart: payload.nextStart,
+    elapsedMs: payload.elapsedMs,
+  };
+  await writeJsonFile(summaryJson, summary);
+};
+
+const writeFailuresSummary = async (payload: {
+  failuresInput: string;
+  stats: BackfillStats;
+  elapsedMs: number;
+}) => {
+  if (!summaryJson) return;
+  const summary = {
+    mode: "failures-input",
+    failuresInput: payload.failuresInput,
+    scoreVersion: V4_SCORE_VERSION,
+    processed: payload.stats.processed,
+    scores: payload.stats.writtenScores,
+    failed: payload.stats.failed,
+    ingredientUpsertFailed: payload.stats.ingredientUpsertFailed,
+    scoreUpsertFailed: payload.stats.scoreUpsertFailed,
+    computeScoreFailed: payload.stats.computeScoreFailed,
+    failuresFile: failuresFile ?? null,
+    failuresLines: failureTracker.baseLines + failureTracker.lines,
     elapsedMs: payload.elapsedMs,
   };
   await writeJsonFile(summaryJson, summary);
@@ -1279,6 +1314,7 @@ const fetchLnhpdRowByIdOrNpn = async (
 };
 
 const backfillFailures = async (filePath: string) => {
+  const startTime = Date.now();
   const entries = await loadFailureEntries(filePath);
   const deduped = new Map<string, FailureEntry>();
   entries.forEach((entry) => {
@@ -1288,6 +1324,21 @@ const backfillFailures = async (filePath: string) => {
   const items = Array.from(deduped.values());
   if (!items.length) {
     console.log(`[backfill:failures] no entries to retry from ${filePath}`);
+    await writeFailuresSummary({
+      failuresInput: filePath,
+      stats: {
+        processed: 0,
+        writtenIngredients: 0,
+        writtenScores: 0,
+        skipped: 0,
+        skippedExisting: 0,
+        failed: 0,
+        ingredientUpsertFailed: 0,
+        scoreUpsertFailed: 0,
+        computeScoreFailed: 0,
+      },
+      elapsedMs: Date.now() - startTime,
+    });
     return;
   }
 
@@ -1357,6 +1408,11 @@ const backfillFailures = async (filePath: string) => {
   console.log(
     `[backfill:failures] processed=${stats.processed} ingredients=${stats.writtenIngredients} scores=${stats.writtenScores} existing=${stats.skippedExisting} skipped=${stats.skipped} failed=${stats.failed} ingredientUpsertFailed=${stats.ingredientUpsertFailed} scoreUpsertFailed=${stats.scoreUpsertFailed} computeScoreFailed=${stats.computeScoreFailed} failuresLines=${failureTracker.baseLines + failureTracker.lines} failuresBytes=${failureTracker.baseBytes + failureTracker.bytes}`,
   );
+  await writeFailuresSummary({
+    failuresInput: filePath,
+    stats,
+    elapsedMs: Date.now() - startTime,
+  });
 };
 
 const fetchSampleSourceIds = async (source: ScoreSource, limitCount: number): Promise<string[]> => {

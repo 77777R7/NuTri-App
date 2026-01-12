@@ -82,10 +82,10 @@ export const createTimeoutSignal = (ms: number): AbortSignal => {
 };
 
 export const combineSignals = (
-  signals: Array<AbortSignal | undefined>,
+  signals: (AbortSignal | undefined)[],
 ): { signal: AbortSignal; cleanup: () => void } => {
   const controller = new AbortController();
-  const cleanups: Array<() => void> = [];
+  const cleanups: (() => void)[] = [];
 
   for (const signal of signals) {
     if (!signal) continue;
@@ -196,7 +196,7 @@ export class CircuitBreaker {
   private state: CircuitBreakerState = "closed";
   private openedAt = 0;
   private halfOpenInFlight = false;
-  private readonly events: Array<{ t: number; ok: boolean }> = [];
+  private readonly events: { t: number; ok: boolean }[] = [];
 
   constructor(
     private readonly options: {

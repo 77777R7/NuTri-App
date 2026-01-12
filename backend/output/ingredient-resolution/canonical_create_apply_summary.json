@@ -1,0 +1,15 @@
+{
+  "timestamp": "2026-01-09T10:05:10.041Z",
+  "source": "lnhpd",
+  "datasetVersion": "v1.3.1-audit-ready-patch-curcumin-quercetin-canonical-202601090655-canonical-202601090856-canonical-202601091005",
+  "plan": "output/ingredient-resolution/canonical_create_plan.json",
+  "summary": {
+    "totalApproved": 17,
+    "ingredientsCreated": 15,
+    "ingredientsExisting": 0,
+    "synonymsInserted": 16,
+    "synonymsOnlyApplied": 2,
+    "rebackfillTargets": 245
+  },
+  "rebackfillOutput": "output/ingredient-resolution/canonical_create_rebackfill.jsonl"
+}

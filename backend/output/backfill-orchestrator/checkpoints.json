@@ -1,0 +1,23 @@
+{
+  "dsld": {
+    "nextStart": 74764
+  },
+  "lnhpd": {
+    "scoreVersion": "v4.0.0-alpha.3",
+    "startId": 19789810,
+    "endId": null,
+    "lastId": 19845423,
+    "nextStart": 19845424,
+    "updatedAt": "2026-01-10T21:21:24.696Z",
+    "stats": {
+      "processed": 100,
+      "scores": 100,
+      "existing": 0,
+      "skipped": 0,
+      "failed": 0,
+      "ingredientUpsertFailed": 0,
+      "scoreUpsertFailed": 0,
+      "computeScoreFailed": 0
+    }
+  }
+}
