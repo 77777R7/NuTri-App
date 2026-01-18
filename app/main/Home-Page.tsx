@@ -1,8 +1,10 @@
 import ProgressScreen from '@/components/screens/ProgressScreen';
 import { MySupplementView } from '@/components/screens/MySupplement';
+import { useDailyCheckIns } from '@/contexts/DailyCheckInContext';
 import { useSavedSupplements } from '@/contexts/SavedSupplementsContext';
 import { useScanHistory } from '@/contexts/ScanHistoryContext';
 import { useScreenTokens } from '@/hooks/useScreenTokens';
+import { buildCheckInKey } from '@/lib/check-ins';
 import { useTranslation } from '@/lib/i18n';
 import type { RoutinePreferences } from '@/types/saved-supplements';
 import type { ScanHistoryItem } from '@/types/scan-history';
@@ -47,6 +49,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -346,24 +349,77 @@ const SupplementCheckInCard = ({
 // Weekday Selector
 // -----------------------------------------------------
 
-const days = [
-  { day: 'S', date: 14 },
-  { day: 'M', date: 15 },
-  { day: 'T', date: 16 },
-  { day: 'W', date: 17 },
-  { day: 'T', date: 18 },
-  { day: 'F', date: 19 },
-  { day: 'S', date: 20 },
-];
+type DayStatus = 'complete' | 'partial' | 'none' | 'future';
+
+type WeekdayItem = {
+  id: string;
+  date: Date;
+  dayLabel: string;
+  dayNumber: number;
+  status: DayStatus;
+};
+
+type WeekdaySelectorProps = {
+  items: WeekdayItem[];
+  selectedDayId: string;
+  todayId: string;
+  onSelectDay: (dateKey: string) => void;
+};
+
+const WEEKDAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+const CALENDAR_RANGE_WEEKS = 4;
+const DAY_ITEM_WIDTH = 48;
+
+const STATUS_DOT_COLORS: Record<DayStatus, string> = {
+  complete: '#22c55e',
+  partial: '#f59e0b',
+  none: '#ef4444',
+  future: '#ffffff',
+};
+
+const getLocalDateKey = (date: Date) => {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, '0');
+  const day = `${date.getDate()}`.padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const buildCalendarDays = (
+  baseDate: Date,
+  statusForDate: (date: Date, dateKey: string) => DayStatus,
+): WeekdayItem[] => {
+  const start = new Date(baseDate);
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - start.getDay());
+  start.setDate(start.getDate() - CALENDAR_RANGE_WEEKS * 7);
+  const totalDays = (CALENDAR_RANGE_WEEKS * 2 + 1) * 7;
+
+  return Array.from({ length: totalDays }, (_, index) => {
+    const date = new Date(start);
+    date.setDate(start.getDate() + index);
+    const dateKey = getLocalDateKey(date);
+    return {
+      id: dateKey,
+      date,
+      dayLabel: WEEKDAY_LABELS[date.getDay()],
+      dayNumber: date.getDate(),
+      status: statusForDate(date, dateKey),
+    };
+  });
+};
 
 type DayItemProps = {
-  item: { day: string; date: number };
+  item: WeekdayItem;
   isSelected: boolean;
+  isToday: boolean;
   onPress: () => void;
 };
 
-const DayItemComponent = ({ item, isSelected, onPress }: DayItemProps) => {
+const DayItemComponent = ({ item, isSelected, isToday, onPress }: DayItemProps) => {
   const progress = useSharedValue(isSelected ? 1 : 0);
+  const statusColor = STATUS_DOT_COLORS[item.status];
+  const statusBorderColor = item.status === 'future' ? 'rgba(148,163,184,0.6)' : 'transparent';
+  const activeBgColor = isToday ? '#1e40af' : '#0f172a';
 
   useEffect(() => {
     progress.value = withSpring(isSelected ? 1 : 0, {
@@ -387,6 +443,11 @@ const DayItemComponent = ({ item, isSelected, onPress }: DayItemProps) => {
     color: interpolateColor(progress.value, [0, 1], ['#0f172a', '#ffffff']),
   }));
 
+  const dotStyle = useAnimatedStyle(() => ({
+    opacity: 0.7 + progress.value * 0.3,
+    transform: [{ scale: 0.9 + progress.value * 0.1 }],
+  }));
+
   return (
     <AnimatedPressable
       onPress={onPress}
@@ -395,16 +456,20 @@ const DayItemComponent = ({ item, isSelected, onPress }: DayItemProps) => {
       })}
     >
       <View style={[styles.dayItemBase, !isSelected && styles.dayItemInactive]}>
-        <Animated.View style={[styles.dayItemActiveBg, bgStyle]} />
-        <AnimatedText style={[styles.dayLabel, dayTextStyle]}>{item.day}</AnimatedText>
+        <Animated.View style={[styles.dayItemActiveBg, bgStyle, { backgroundColor: activeBgColor }]} />
+        <AnimatedText style={[styles.dayLabel, dayTextStyle]}>{item.dayLabel}</AnimatedText>
 
         <View style={styles.dayDateWrap}>
-          <AnimatedText style={[styles.dayDate, dateTextStyle]}>{item.date}</AnimatedText>
+          <AnimatedText style={[styles.dayDate, dateTextStyle]}>{item.dayNumber}</AnimatedText>
           {isSelected ? (
             <Animated.View
               entering={ZoomIn.duration(200)}
               exiting={ZoomOut.duration(200)}
-              style={styles.dayDot}
+              style={[
+                styles.dayDot,
+                dotStyle,
+                { backgroundColor: statusColor, borderColor: statusBorderColor },
+              ]}
             />
           ) : null}
         </View>
@@ -414,13 +479,43 @@ const DayItemComponent = ({ item, isSelected, onPress }: DayItemProps) => {
 };
 
 const DayItem = React.memo(DayItemComponent, (prevProps, nextProps) => {
-  return prevProps.isSelected === nextProps.isSelected && prevProps.item.date === nextProps.item.date;
+  return (
+    prevProps.isSelected === nextProps.isSelected &&
+    prevProps.isToday === nextProps.isToday &&
+    prevProps.item.id === nextProps.item.id &&
+    prevProps.item.status === nextProps.item.status
+  );
 });
 DayItem.displayName = 'DayItem';
 
-const WeekdaySelector = () => {
-  const [selectedDate, setSelectedDate] = useState(14);
+const WeekdaySelector = ({ items, selectedDayId, todayId, onSelectDay }: WeekdaySelectorProps) => {
   const calendarOpacity = useSharedValue(1);
+  const { width: windowWidth } = useWindowDimensions();
+  const scrollRef = useRef<ScrollView>(null);
+  const weeks = useMemo(() => {
+    const grouped: WeekdayItem[][] = [];
+    for (let i = 0; i < items.length; i += 7) {
+      grouped.push(items.slice(i, i + 7));
+    }
+    return grouped;
+  }, [items]);
+  const todayIndex = useMemo(() => items.findIndex(item => item.id === todayId), [items, todayId]);
+  const todayWeekIndex = useMemo(
+    () => (todayIndex < 0 ? 0 : Math.floor(todayIndex / 7)),
+    [todayIndex],
+  );
+  const initialOffset = useMemo(
+    () => Math.max(0, todayWeekIndex * windowWidth),
+    [todayWeekIndex, windowWidth],
+  );
+
+  useEffect(() => {
+    if (todayIndex < 0) return;
+    const frame = requestAnimationFrame(() => {
+      scrollRef.current?.scrollTo({ x: initialOffset, animated: false });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [initialOffset, todayIndex]);
 
   const calendarStyle = useAnimatedStyle(() => ({
     opacity: calendarOpacity.value,
@@ -439,16 +534,31 @@ const WeekdaySelector = () => {
         </AnimatedPressable>
       </View>
 
-      <View style={styles.daysRow}>
-        {days.map(item => (
-          <DayItem
-            key={item.date}
-            item={item}
-            isSelected={selectedDate === item.date}
-            onPress={() => setSelectedDate(item.date)}
-          />
+      <ScrollView
+        ref={scrollRef}
+        horizontal
+        pagingEnabled
+        decelerationRate="fast"
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.weekPager}
+        style={{ marginHorizontal: -PAGE_X }}
+      >
+        {weeks.map((week, weekIndex) => (
+          <View key={`${week[0]?.id ?? 'week'}-${weekIndex}`} style={[styles.weekPage, { width: windowWidth }]}>
+            <View style={styles.daysRow}>
+              {week.map(item => (
+                <DayItem
+                  key={item.id}
+                  item={item}
+                  isSelected={selectedDayId === item.id}
+                  isToday={todayId === item.id}
+                  onPress={() => onSelectDay(item.id)}
+                />
+              ))}
+            </View>
+          </View>
         ))}
-      </View>
+      </ScrollView>
     </Animated.View>
   );
 };
@@ -472,13 +582,15 @@ const CHECKIN_THEMES = [
   { color: 'bg-rose-100', iconColor: 'text-rose-700', iconBg: 'bg-rose-100/40' },
 ];
 
-const SavedSupplements = () => {
+const SavedSupplements = ({ selectedDateKey }: { selectedDateKey: string }) => {
   const { t } = useTranslation();
   const { savedSupplements } = useSavedSupplements();
+  const { checkInsByDate, toggleCheckIn } = useDailyCheckIns();
   const [scrollProgress, setScrollProgress] = useState(0);
-  const [checkedItems, setCheckedItems] = useState<string[]>([]);
 
-  const supplements: (SupplementItem & { id: string })[] = useMemo(() => {
+  type CheckInSupplement = SupplementItem & { id: string; supplementId?: string; checkInKey: string };
+
+  const supplements: CheckInSupplement[] = useMemo(() => {
     const visible = savedSupplements
       .filter(item => item.syncedToCheckIn)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -487,6 +599,8 @@ const SavedSupplements = () => {
       const theme = CHECKIN_THEMES[index % CHECKIN_THEMES.length];
       return {
         id: item.id,
+        supplementId: item.supplementId,
+        checkInKey: buildCheckInKey({ supplementId: item.supplementId, localId: item.id }),
         name: item.productName,
         dose: item.dosageText,
         ...theme,
@@ -494,9 +608,10 @@ const SavedSupplements = () => {
     });
   }, [savedSupplements]);
 
-  const handleCheckIn = (id: string) => {
-    setCheckedItems(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]));
-  };
+  const checkedKeys = useMemo(
+    () => new Set(checkInsByDate[selectedDateKey] ?? []),
+    [checkInsByDate, selectedDateKey],
+  );
 
   const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
@@ -552,8 +667,8 @@ const SavedSupplements = () => {
               >
                 <SupplementCheckInCard
                   item={item}
-                  isChecked={checkedItems.includes(item.id)}
-                  onCheckIn={() => handleCheckIn(item.id)}
+                  isChecked={checkedKeys.has(item.checkInKey)}
+                  onCheckIn={() => toggleCheckIn(selectedDateKey, item.checkInKey, item.supplementId ?? null)}
                 />
               </View>
             ))}
@@ -1338,6 +1453,55 @@ const HomeTab = () => {
   const tokens = useScreenTokens(NAV_HEIGHT);
   const contentTopPadding = tokens.contentTopPadding;
   const contentBottomPadding = tokens.contentBottomPadding;
+  const { savedSupplements } = useSavedSupplements();
+  const { checkInsByDate } = useDailyCheckIns();
+  const baseDate = useMemo(() => new Date(), []);
+  const todayId = useMemo(() => getLocalDateKey(baseDate), [baseDate]);
+  const [selectedDayId, setSelectedDayId] = useState(() => getLocalDateKey(baseDate));
+
+  const checkInTargets = useMemo(
+    () => savedSupplements.filter(item => item.syncedToCheckIn),
+    [savedSupplements],
+  );
+
+  const expectedKeys = useMemo(
+    () =>
+      checkInTargets.map(item =>
+        buildCheckInKey({ supplementId: item.supplementId, localId: item.id }),
+      ),
+    [checkInTargets],
+  );
+
+  const expectedKeySet = useMemo(() => new Set(expectedKeys), [expectedKeys]);
+  const expectedCount = expectedKeys.length;
+
+  const todayStart = useMemo(() => {
+    const today = new Date(baseDate);
+    today.setHours(0, 0, 0, 0);
+    return today.getTime();
+  }, [baseDate]);
+
+  const statusForDate = useCallback(
+    (date: Date, dateKey: string): DayStatus => {
+      if (date.getTime() > todayStart) return 'future';
+      if (expectedCount === 0) return 'none';
+
+      const completedSet = new Set(checkInsByDate[dateKey] ?? []);
+      let completedCount = 0;
+      expectedKeySet.forEach(key => {
+        if (completedSet.has(key)) {
+          completedCount += 1;
+        }
+      });
+
+      if (completedCount === 0) return 'none';
+      if (completedCount >= expectedCount) return 'complete';
+      return 'partial';
+    },
+    [checkInsByDate, expectedCount, expectedKeySet, todayStart],
+  );
+
+  const weekDays = useMemo(() => buildCalendarDays(baseDate, statusForDate), [baseDate, statusForDate]);
 
   return (
     <View style={styles.screen}>
@@ -1360,10 +1524,15 @@ const HomeTab = () => {
           </Text>
         </View>
 
-        <WeekdaySelector />
+        <WeekdaySelector
+          items={weekDays}
+          selectedDayId={selectedDayId}
+          todayId={todayId}
+          onSelectDay={setSelectedDayId}
+        />
 
         <View style={styles.sectionBlock}>
-          <SavedSupplements />
+          <SavedSupplements selectedDateKey={selectedDayId} />
         </View>
 
         <View style={styles.sectionBlock}>
@@ -1550,13 +1719,20 @@ const styles = StyleSheet.create({
   },
   daysRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 4,
-    marginHorizontal: -PAGE_X,
+    alignItems: 'center',
     paddingHorizontal: 4,
+    paddingBottom: 2,
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  weekPager: {
+    alignItems: 'center',
+  },
+  weekPage: {
+    justifyContent: 'center',
   },
   dayItemBase: {
-    width: 48,
+    width: DAY_ITEM_WIDTH,
     height: 80,
     borderRadius: 32,
     borderCurve: 'continuous',
@@ -1598,12 +1774,14 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
   },
   dayDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: '#60a5fa',
     marginTop: 8,
     borderCurve: 'continuous',
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
 
   // ---- Daily check-in section ----

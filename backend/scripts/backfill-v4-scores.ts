@@ -33,6 +33,8 @@ type LabelFactsInput = {
       potencyAmount?: string | number | null;
       potencyUnit?: string | null;
       driedHerbEquivalent?: string | number | null;
+      ingredientName?: string | null;
+      properName?: string | null;
     } | null;
   }[];
   inactive: string[];
@@ -64,6 +66,20 @@ type FailureEntry = {
   status: number | null;
   rayId: string | null;
   message: string | null;
+  errorCode?: string | null;
+  errorDetails?: string | null;
+  errorHint?: string | null;
+  payloadSummary?: {
+    ingredientId: string | null;
+    nameKey: string;
+    unit: string | null;
+    amount: number | null;
+    amountNormalized: number | null;
+    basis: string | null;
+    unitKind: string | null;
+    dailyMultiplier: number | null;
+  } | null;
+  overflowFields?: Record<string, number> | null;
 };
 
 type UpsertResult = {
@@ -390,6 +406,28 @@ const extractLnhpdIngredients = (payload: unknown, options: {
 }): { name: string; amount: number | null; unit: string | null; lnhpdMeta?: LabelFactsInput["actives"][number]["lnhpdMeta"] }[] => {
   if (!Array.isArray(payload)) return [];
   const map = new Map<string, { name: string; amount: number | null; unit: string | null; lnhpdMeta?: LabelFactsInput["actives"][number]["lnhpdMeta"] }>();
+  const scoreLnhpdMeta = (meta?: LabelFactsInput["actives"][number]["lnhpdMeta"] | null): number => {
+    if (!meta) return 0;
+    let score = 0;
+    if (meta.sourceMaterial) score += 3;
+    if (meta.properName) score += 2;
+    if (meta.extractTypeDesc) score += 2;
+    if (meta.ratioNumerator != null && meta.ratioDenominator != null) score += 2;
+    if (meta.potencyConstituent) score += 2;
+    if (meta.potencyAmount != null) score += 1;
+    if (meta.potencyUnit) score += 1;
+    if (meta.driedHerbEquivalent != null) score += 1;
+    if (meta.ingredientName) score += 1;
+    return score;
+  };
+  const pickLnhpdMeta = (
+    current?: LabelFactsInput["actives"][number]["lnhpdMeta"] | null,
+    candidate?: LabelFactsInput["actives"][number]["lnhpdMeta"] | null,
+  ): LabelFactsInput["actives"][number]["lnhpdMeta"] | null => {
+    if (!candidate) return current ?? null;
+    if (!current) return candidate;
+    return scoreLnhpdMeta(candidate) > scoreLnhpdMeta(current) ? candidate : current;
+  };
   payload.forEach((item) => {
     if (!item || typeof item !== "object") return;
     const record = item as Record<string, unknown>;
@@ -452,11 +490,15 @@ const extractLnhpdIngredients = (payload: unknown, options: {
       map.set(key, candidate);
       return;
     }
-    if (!existing.lnhpdMeta && candidate.lnhpdMeta) {
-      existing.lnhpdMeta = candidate.lnhpdMeta;
+    const nextMeta = pickLnhpdMeta(existing.lnhpdMeta ?? null, candidate.lnhpdMeta ?? null);
+    if (nextMeta && nextMeta !== existing.lnhpdMeta) {
+      existing.lnhpdMeta = nextMeta;
     }
     if (existing.amount == null && candidate.amount != null) {
-      map.set(key, candidate);
+      existing.amount = candidate.amount;
+      existing.unit = candidate.unit;
+    } else if (!existing.unit && candidate.unit) {
+      existing.unit = candidate.unit;
     }
   });
   return Array.from(map.values());
@@ -621,6 +663,8 @@ const reportFailure = async (params: {
   stage: string;
   error?: RetryErrorMeta | null;
   message?: string | null;
+  payloadSummary?: FailureEntry["payloadSummary"] | null;
+  overflowFields?: FailureEntry["overflowFields"] | null;
 }) => {
   const meta = params.error ?? null;
   await recordFailure({
@@ -632,6 +676,11 @@ const reportFailure = async (params: {
     status: meta?.status ?? null,
     rayId: meta?.rayId ?? null,
     message: meta?.message ?? params.message ?? null,
+    errorCode: meta?.code ?? null,
+    errorDetails: meta?.details ?? null,
+    errorHint: meta?.hint ?? null,
+    payloadSummary: params.payloadSummary ?? null,
+    overflowFields: params.overflowFields ?? null,
   });
 };
 
@@ -678,6 +727,8 @@ const handleDsldRow = async (
         canonicalSourceId,
         stage: "product_ingredients_upsert",
         error: ingredientResult.error ?? null,
+        payloadSummary: ingredientResult.errorContext?.payloadSummary ?? null,
+        overflowFields: ingredientResult.errorContext?.overflowFields ?? null,
       });
       return;
     }
@@ -818,6 +869,8 @@ const handleLnhpdRow = async (
         canonicalSourceId,
         stage: "product_ingredients_upsert",
         error: ingredientResult.error ?? null,
+        payloadSummary: ingredientResult.errorContext?.payloadSummary ?? null,
+        overflowFields: ingredientResult.errorContext?.overflowFields ?? null,
       });
       return;
     }

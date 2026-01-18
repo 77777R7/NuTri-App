@@ -9,6 +9,8 @@ export type RetryErrorMeta = {
   code: string | null;
   message: string | null;
   rayId: string | null;
+  details?: string | null;
+  hint?: string | null;
 };
 
 const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
@@ -83,11 +85,18 @@ export const extractErrorMeta = (
     (error as { message?: string })?.message ??
     (error as { hint?: string })?.hint ??
     null;
+  const details =
+    (error as { details?: string })?.details ??
+    (error as { error_description?: string })?.error_description ??
+    null;
+  const hint = (error as { hint?: string })?.hint ?? null;
   return {
     status: resolvedStatus,
     code: code ? String(code) : null,
     message: message ? String(message) : null,
     rayId: resolvedRay,
+    details: details ? String(details) : null,
+    hint: hint ? String(hint) : null,
   };
 };
 

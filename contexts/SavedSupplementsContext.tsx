@@ -49,6 +49,8 @@ const parseNotes = (notes: string | null) => {
       dosageText?: string;
       brandName?: string;
       routine?: RoutinePreferences;
+      tags?: string[];
+      lastViewed?: string;
       syncedToCheckIn?: boolean;
       reminderEnabled?: boolean;
     };
@@ -79,6 +81,8 @@ export const SavedSupplementsProvider = ({ children }: { children: React.ReactNo
         dosageText: item.dosageText,
         brandName: item.brandName,
         routine: item.routine,
+        tags: item.tags,
+        lastViewed: item.lastViewed,
         syncedToCheckIn: item.syncedToCheckIn,
         reminderEnabled: item.reminderEnabled,
       });
@@ -157,6 +161,8 @@ export const SavedSupplementsProvider = ({ children }: { children: React.ReactNo
         createdAt: record.saved_at ?? record.updated_at,
         updatedAt: record.updated_at ?? record.saved_at,
         syncedToCheckIn: notes?.syncedToCheckIn ?? true,
+        lastViewed: notes?.lastViewed ?? undefined,
+        tags: notes?.tags ?? undefined,
         reminderEnabled: notes?.reminderEnabled ?? record.reminder_enabled ?? false,
         routine: notes?.routine ?? undefined,
       };
@@ -222,6 +228,8 @@ export const SavedSupplementsProvider = ({ children }: { children: React.ReactNo
         createdAt: input.createdAt ?? now,
         updatedAt: now,
         syncedToCheckIn: input.syncedToCheckIn ?? true,
+        lastViewed: input.lastViewed,
+        tags: input.tags,
         reminderEnabled: input.reminderEnabled ?? false,
         routine: input.routine,
       };
@@ -245,21 +253,28 @@ export const SavedSupplementsProvider = ({ children }: { children: React.ReactNo
       const now = new Date().toISOString();
       let updatedItem: SavedSupplement | null = null;
 
-      const next = savedSupplements.map(item => {
-        if (item.id !== id) return item;
-        updatedItem = {
-          ...item,
-          ...updates,
-          updatedAt: now,
-        };
-        return updatedItem;
+      setSavedSupplements(prev => {
+        const next = prev.map(item => {
+          if (item.id !== id) return item;
+          updatedItem = {
+            ...item,
+            ...updates,
+            updatedAt: now,
+          };
+          return updatedItem;
+        });
+
+        saveSavedSupplements(next).catch(error => {
+          console.warn('[saved-supplements] Failed to persist', error);
+        });
+
+        return next;
       });
 
       if (!updatedItem) return;
-      persist(next);
       await syncToRemote(updatedItem);
     },
-    [persist, savedSupplements, syncToRemote],
+    [syncToRemote],
   );
 
   const updateRoutine = useCallback(

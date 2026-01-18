@@ -40,6 +40,9 @@ const OUTPUT_PATH =
   getArg("output") ?? "output/formraw/formraw_explicit_hint_lnhpd.jsonl";
 const SUMMARY_JSON = getArg("summary-json");
 const SOURCE_IDS_FILE = getArg("source-ids-file");
+const ID_COLUMN_ARG = (getArg("id-column") ?? "canonical_source_id").toLowerCase();
+const ID_COLUMN =
+  ID_COLUMN_ARG === "source_id" ? "source_id" : "canonical_source_id";
 const LIMIT = Math.max(1, Number(getArg("limit") ?? "5000"));
 const PAGE_SIZE = Math.max(1, Number(getArg("page-size") ?? "1000"));
 const MAX_PAGE_SIZE = 1000;
@@ -214,10 +217,22 @@ const loadSourceIds = async (filePath: string): Promise<string[]> => {
   const raw = await readFile(filePath, "utf8");
   const parsed = JSON.parse(raw);
   if (Array.isArray(parsed)) {
-    return parsed.filter((value) => typeof value === "string" && value.trim().length > 0);
+    return parsed
+      .map((value) => {
+        if (typeof value === "string") return value.trim();
+        if (typeof value === "number") return String(value);
+        return "";
+      })
+      .filter((value) => value.length > 0);
   }
   if (parsed && Array.isArray(parsed.sourceIds)) {
-    return parsed.sourceIds.filter((value: unknown) => typeof value === "string" && value.length > 0);
+    return parsed.sourceIds
+      .map((value: unknown) => {
+        if (typeof value === "string") return value.trim();
+        if (typeof value === "number") return String(value);
+        return "";
+      })
+      .filter((value: string) => value.length > 0);
   }
   throw new Error(`[formraw-explicit] invalid source ids file: ${filePath}`);
 };
@@ -246,6 +261,7 @@ const matchExplicitHints = (nameRaw: string | null | undefined): string[] => {
 
 const fetchRowsForSourceIds = async (
   sourceIds: string[],
+  idColumn: "source_id" | "canonical_source_id",
 ): Promise<IngredientRow[]> => {
   const rows: IngredientRow[] = [];
   for (const chunk of chunkArray(sourceIds, 200)) {
@@ -255,7 +271,7 @@ const fetchRowsForSourceIds = async (
         .select("source_id,canonical_source_id,ingredient_id,name_raw,name_key,form_raw")
         .eq("source", "lnhpd")
         .eq("is_active", true)
-        .in("source_id", chunk)
+        .in(idColumn, chunk)
         .not("ingredient_id", "is", null)
         .or("form_raw.is.null,form_raw.eq."),
     );
@@ -285,9 +301,9 @@ const scanMissingFormRaw = async () => {
         .eq("is_active", true)
         .not("ingredient_id", "is", null)
         .or("form_raw.is.null,form_raw.eq.")
-        .order("source_id", { ascending: true })
+        .order(ID_COLUMN, { ascending: true })
         .limit(effectivePageSize);
-      if (cursor) query = query.gt("source_id", cursor);
+      if (cursor) query = query.gt(ID_COLUMN, cursor);
       return query;
     });
 
@@ -300,7 +316,10 @@ const scanMissingFormRaw = async () => {
 
     totalFetched += rows.length;
     rows.forEach((row) => {
-      const sourceId = row.source_id ?? null;
+      const sourceId =
+        ID_COLUMN === "canonical_source_id"
+          ? row.canonical_source_id ?? null
+          : row.source_id ?? null;
       const ingredientId = row.ingredient_id ?? null;
       if (!sourceId || !ingredientId) return;
       if (runlistMap.has(sourceId)) return;
@@ -321,7 +340,10 @@ const scanMissingFormRaw = async () => {
       });
     });
 
-    cursor = rows[rows.length - 1]?.source_id ?? cursor;
+    cursor =
+      ID_COLUMN === "canonical_source_id"
+        ? rows[rows.length - 1]?.canonical_source_id ?? cursor
+        : rows[rows.length - 1]?.source_id ?? cursor;
     if (rows.length < effectivePageSize) break;
   }
 
@@ -347,7 +369,7 @@ const run = async () => {
     if (!sourceIds.length) {
       throw new Error(`[formraw-explicit] source ids file empty: ${SOURCE_IDS_FILE}`);
     }
-    const rows = await fetchRowsForSourceIds(sourceIds);
+    const rows = await fetchRowsForSourceIds(sourceIds, ID_COLUMN);
     const canonicalIds = Array.from(
       new Set(
         rows
@@ -362,7 +384,10 @@ const run = async () => {
     });
 
     rows.forEach((row) => {
-      const sourceId = row.source_id ?? null;
+      const sourceId =
+        ID_COLUMN === "canonical_source_id"
+          ? row.canonical_source_id ?? null
+          : row.source_id ?? null;
       const ingredientId = row.ingredient_id ?? null;
       if (!sourceId || !ingredientId) return;
       const canonicalId = row.canonical_source_id ?? null;
@@ -421,6 +446,7 @@ const run = async () => {
     totalFetched,
     cursor,
     sourceIdsFile: SOURCE_IDS_FILE ?? null,
+    idColumn: ID_COLUMN,
     uniqueSourceIds: uniqueSourceIds.length,
     runlistLines: runlist.length,
     candidateFormRawRows,

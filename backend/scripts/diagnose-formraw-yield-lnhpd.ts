@@ -23,6 +23,17 @@ type IngredientMeta = {
   name: string | null;
 };
 
+type IngredientFormRow = {
+  ingredient_id: string | null;
+  form_key: string | null;
+};
+
+type IngredientAliasRow = {
+  ingredient_id: string | null;
+  alias_norm: string | null;
+  form_key: string | null;
+};
+
 type SnapshotRow = {
   id: string;
   sourceId: string;
@@ -56,6 +67,7 @@ const getArg = (flag: string) => {
 };
 
 const SOURCE_IDS_FILE = getArg("source-ids-file");
+const ID_COLUMN = (getArg("id-column") ?? "canonical_source_id").trim();
 const OUTPUT =
   getArg("output") ?? "output/formraw/formraw_yield_lnhpd.json";
 const SNAPSHOT_OUTPUT = getArg("snapshot-output");
@@ -75,14 +87,30 @@ const isEmptyFormRaw = (value: string | null | undefined): boolean =>
 const normalizeText = (value: string): string =>
   value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 
+const normalizeAliasToken = (value: string): string =>
+  value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+
+const normalizeIdValue = (value: unknown): string | null => {
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+  return null;
+};
+
 const loadSourceIds = async (filePath: string): Promise<string[]> => {
   const raw = await readFile(filePath, "utf8");
   const parsed = JSON.parse(raw);
   if (Array.isArray(parsed)) {
-    return parsed.filter((value) => typeof value === "string" && value.trim().length > 0);
+    return parsed
+      .map((value) => normalizeIdValue(value))
+      .filter((value): value is string => Boolean(value));
   }
   if (parsed && Array.isArray(parsed.sourceIds)) {
-    return parsed.sourceIds.filter((value: unknown) => typeof value === "string" && value.length > 0);
+    return parsed.sourceIds
+      .map((value: unknown) => normalizeIdValue(value))
+      .filter((value): value is string => Boolean(value));
   }
   throw new Error(`[formraw-yield] invalid source ids file: ${filePath}`);
 };
@@ -239,6 +267,89 @@ const fetchRecognizedFormKeys = async (): Promise<Set<string>> => {
   return keys;
 };
 
+const fetchFormKeysByIngredient = async (
+  ingredientIds: string[],
+): Promise<Map<string, Set<string>>> => {
+  const map = new Map<string, Set<string>>();
+  if (!ingredientIds.length) return map;
+  for (const chunk of chunkArray(ingredientIds, CHUNK_SIZE)) {
+    const { data, error } = await withRetry(() =>
+      supabase
+        .from("ingredient_forms")
+        .select("ingredient_id,form_key")
+        .in("ingredient_id", chunk),
+    );
+    if (error) {
+      const meta = extractErrorMeta(error);
+      throw new Error(`[formraw-yield] form fetch failed: ${meta.message ?? error.message}`);
+    }
+    (data ?? []).forEach((row) => {
+      const entry = row as IngredientFormRow;
+      const ingredientId = entry?.ingredient_id ?? null;
+      const formKey =
+        typeof entry?.form_key === "string" ? entry.form_key.trim().toLowerCase() : "";
+      if (!ingredientId || !formKey) return;
+      const bucket = map.get(ingredientId) ?? new Set<string>();
+      bucket.add(formKey);
+      map.set(ingredientId, bucket);
+    });
+  }
+  return map;
+};
+
+const fetchAliasMaps = async (
+  ingredientIds: string[],
+): Promise<{ global: Map<string, string>; scoped: Map<string, Map<string, string>> }> => {
+  const global = new Map<string, string>();
+  const scoped = new Map<string, Map<string, string>>();
+
+  const { data: globalAliases, error: globalError } = await withRetry(() =>
+    supabase
+      .from("ingredient_form_aliases")
+      .select("ingredient_id,alias_norm,form_key")
+      .is("ingredient_id", null),
+  );
+  if (globalError) {
+    const meta = extractErrorMeta(globalError);
+    throw new Error(`[formraw-yield] alias fetch failed: ${meta.message ?? globalError.message}`);
+  }
+  (globalAliases ?? []).forEach((row) => {
+    const entry = row as IngredientAliasRow;
+    const aliasNorm = normalizeAliasToken(entry?.alias_norm ?? "");
+    const formKey =
+      typeof entry?.form_key === "string" ? entry.form_key.trim().toLowerCase() : "";
+    if (!aliasNorm || !formKey) return;
+    if (!global.has(aliasNorm)) global.set(aliasNorm, formKey);
+  });
+
+  if (!ingredientIds.length) return { global, scoped };
+  for (const chunk of chunkArray(ingredientIds, CHUNK_SIZE)) {
+    const { data, error } = await withRetry(() =>
+      supabase
+        .from("ingredient_form_aliases")
+        .select("ingredient_id,alias_norm,form_key")
+        .in("ingredient_id", chunk),
+    );
+    if (error) {
+      const meta = extractErrorMeta(error);
+      throw new Error(`[formraw-yield] alias fetch failed: ${meta.message ?? error.message}`);
+    }
+    (data ?? []).forEach((row) => {
+      const entry = row as IngredientAliasRow;
+      const ingredientId = entry?.ingredient_id ?? null;
+      const aliasNorm = normalizeAliasToken(entry?.alias_norm ?? "");
+      const formKey =
+        typeof entry?.form_key === "string" ? entry.form_key.trim().toLowerCase() : "";
+      if (!ingredientId || !aliasNorm || !formKey) return;
+      const bucket = scoped.get(ingredientId) ?? new Map<string, string>();
+      if (!bucket.has(aliasNorm)) bucket.set(aliasNorm, formKey);
+      scoped.set(ingredientId, bucket);
+    });
+  }
+
+  return { global, scoped };
+};
+
 const collectRawTokens = (sources: string[]): string[] => {
   const tokens: string[] = [];
   sources.forEach((source) => {
@@ -348,7 +459,10 @@ const buildTokenIndex = (factsJson: Record<string, unknown>): Map<string, TokenI
   return normalized;
 };
 
-const fetchRowsForSourceIds = async (sourceIds: string[]): Promise<IngredientRow[]> => {
+const fetchRowsForSourceIds = async (
+  sourceIds: string[],
+  idColumn: string,
+): Promise<IngredientRow[]> => {
   const rows: IngredientRow[] = [];
   for (const chunk of chunkArray(sourceIds, CHUNK_SIZE)) {
     const { data, error } = await withRetry(() =>
@@ -357,7 +471,7 @@ const fetchRowsForSourceIds = async (sourceIds: string[]): Promise<IngredientRow
         .select("id,source_id,canonical_source_id,ingredient_id,name_raw,name_key,form_raw")
         .eq("source", "lnhpd")
         .eq("is_active", true)
-        .in("source_id", chunk)
+        .in(idColumn, chunk)
         .not("ingredient_id", "is", null),
     );
     if (error) {
@@ -435,12 +549,15 @@ const run = async () => {
   if (!SOURCE_IDS_FILE) {
     throw new Error("[formraw-yield] --source-ids-file is required");
   }
+  if (!["source_id", "canonical_source_id"].includes(ID_COLUMN)) {
+    throw new Error(`[formraw-yield] invalid --id-column: ${ID_COLUMN}`);
+  }
   const sourceIds = await loadSourceIds(SOURCE_IDS_FILE);
   if (!sourceIds.length) {
     throw new Error(`[formraw-yield] source ids file empty: ${SOURCE_IDS_FILE}`);
   }
 
-  const rows = await fetchRowsForSourceIds(sourceIds);
+  const rows = await fetchRowsForSourceIds(sourceIds, ID_COLUMN);
   const { resolvedRows, missingFormRawRows, missingTop } = await summarizeMissing(rows);
   const ingredientIds = Array.from(
     new Set(rows.map((row) => row.ingredient_id).filter((id): id is string => Boolean(id))),
@@ -455,13 +572,17 @@ const run = async () => {
   );
   const factsMap = await fetchFactsJsonByIds(canonicalIds);
   const recognizedFormKeys = await fetchRecognizedFormKeys();
+  const formKeysByIngredient = await fetchFormKeysByIngredient(ingredientIds);
+  const aliasMaps = await fetchAliasMaps(ingredientIds);
   const tokenIndexBySourceId = new Map<string, Map<string, TokenIndexEntry>>();
   factsMap.forEach((factsJson, canonicalId) => {
     tokenIndexBySourceId.set(canonicalId, buildTokenIndex(factsJson));
   });
 
   let candidateFormRawRows = 0;
-  let candidateWritableRows = 0;
+  let candidateWritableEmptyRows = 0;
+  let candidateWritableAlreadyFilledRows = 0;
+  const blockedByReason = new Map<string, number>();
   const candidateTokenSources = {
     name_fields: 0,
     proper_name: 0,
@@ -470,7 +591,7 @@ const run = async () => {
   const candidateCoverageByIngredient = new Map<string, number>();
   const previewRows: Array<Record<string, unknown>> = [];
   rows.forEach((row) => {
-    if (!isEmptyFormRaw(row.form_raw)) return;
+    const isEmpty = isEmptyFormRaw(row.form_raw);
     const canonicalId = row.canonical_source_id ?? null;
     if (!canonicalId) return;
     const tokenIndex = tokenIndexBySourceId.get(canonicalId);
@@ -480,7 +601,9 @@ const run = async () => {
     const entry = tokenIndex.get(nameKey);
     const tokens = entry?.tokens ?? [];
     if (!tokens.length) return;
-    candidateFormRawRows += 1;
+    if (isEmpty) {
+      candidateFormRawRows += 1;
+    }
     if (entry?.sourceTokensNormalized.name_fields.length) {
       candidateTokenSources.name_fields += 1;
     }
@@ -493,10 +616,64 @@ const run = async () => {
     const recognizedTokens = tokens.filter((token) =>
       recognizedFormKeys.has(token.toLowerCase()),
     );
-    if (recognizedTokens.length) {
-      candidateWritableRows += 1;
-    }
+
     const ingredientId = row.ingredient_id ?? null;
+    const formKeys = ingredientId ? formKeysByIngredient.get(ingredientId) ?? new Set() : new Set();
+    const aliasScoped = ingredientId ? aliasMaps.scoped.get(ingredientId) ?? new Map() : new Map();
+    const hasForms = formKeys.size > 0;
+    const mappedFormKeys = new Set<string>();
+    let taxonomyConflict = false;
+
+    tokens.forEach((token) => {
+      const tokenKey = token.toLowerCase();
+      let mappedKey: string | null = null;
+      if (hasForms && formKeys.has(tokenKey)) {
+        mappedKey = tokenKey;
+      } else {
+        const aliasKey = normalizeAliasToken(tokenKey);
+        const aliasFormKey =
+          aliasScoped.get(aliasKey) ?? aliasMaps.global.get(aliasKey) ?? null;
+        if (aliasFormKey) mappedKey = aliasFormKey;
+      }
+      if (!mappedKey) return;
+      mappedFormKeys.add(mappedKey);
+      if (hasForms && !formKeys.has(mappedKey)) taxonomyConflict = true;
+    });
+
+    const mappedTokens = Array.from(mappedFormKeys);
+    const ambiguous = mappedTokens.length > 1;
+    const mapsToFormKey = mappedTokens.length === 1 ? mappedTokens[0] : null;
+    const noMap = !mappedTokens.length || !hasForms;
+    const candidateWritable =
+      Boolean(tokens.length) && Boolean(mapsToFormKey) && !taxonomyConflict && !ambiguous;
+
+    let blockedReason: string | null = null;
+    if (!tokens.length) {
+      blockedReason = "SKIP_NO_TOKENS";
+    } else if (!hasForms || noMap) {
+      blockedReason = "SKIP_NO_MAP_TO_FORM_KEY";
+    } else if (taxonomyConflict) {
+      blockedReason = "SKIP_TAXONOMY_CONFLICT";
+    } else if (ambiguous) {
+      blockedReason = "SKIP_AMBIGUOUS_TOKENS";
+    } else if (!isEmpty) {
+      blockedReason = "SKIP_ALREADY_NONEMPTY";
+    }
+
+    if (blockedReason) {
+      blockedByReason.set(
+        blockedReason,
+        (blockedByReason.get(blockedReason) ?? 0) + 1,
+      );
+    }
+
+    if (candidateWritable) {
+      if (isEmpty) {
+        candidateWritableEmptyRows += 1;
+      } else {
+        candidateWritableAlreadyFilledRows += 1;
+      }
+    }
     const label = (
       (ingredientId ? ingredientNames.get(ingredientId) : null) ??
       row.name_raw ??
@@ -511,22 +688,31 @@ const run = async () => {
       );
     });
 
-    if (previewRows.length < SAMPLE_LIMIT) {
+    if (isEmpty && previewRows.length < SAMPLE_LIMIT) {
       const matchedFields = [
         entry?.sourceTokensNormalized.name_fields.length ? "name_fields" : null,
         entry?.sourceTokensNormalized.proper_name.length ? "proper_name" : null,
         entry?.sourceTokensNormalized.source_material.length ? "source_material" : null,
       ].filter(Boolean);
       previewRows.push({
-        sourceId: row.source_id ?? null,
+        sourceId:
+          (ID_COLUMN === "canonical_source_id" ? row.canonical_source_id : row.source_id) ??
+          null,
         canonicalSourceId: row.canonical_source_id ?? null,
+        productIngredientId: row.id ?? null,
+        ingredientId,
         nameRaw: row.name_raw ?? null,
+        nameKey: row.name_key ?? nameKey,
         formRawBefore: row.form_raw ?? null,
         matchedFields,
         tokensRawBySource: entry?.sourceTokensRaw ?? null,
         tokensNormalizedBySource: entry?.sourceTokensNormalized ?? null,
         extractedTokens: tokens,
         recognizedTokens,
+        mappedTokens,
+        mapsToFormKey,
+        candidateWritableEmpty: candidateWritable && isEmpty,
+        blockedReason,
         winnerTokens: recognizedTokens.length ? recognizedTokens : tokens,
       });
     }
@@ -536,15 +722,25 @@ const run = async () => {
     source: "lnhpd",
     timestamp: new Date().toISOString(),
     sourceIdsFile: SOURCE_IDS_FILE,
+    idColumn: ID_COLUMN,
     sourceIdsCount: sourceIds.length,
     resolvedRows,
     missingFormRawRows,
     missingFormRawRatio: resolvedRows ? missingFormRawRows / resolvedRows : null,
     candidateFormRawRows,
     candidateFormRawRatio: resolvedRows ? candidateFormRawRows / resolvedRows : null,
-    candidateWritableRows,
-    candidateWritableRatio: resolvedRows ? candidateWritableRows / resolvedRows : null,
+    candidateWritableEmptyRows,
+    candidateWritableAlreadyFilledRows,
+    candidateWritableEmptyRatio: resolvedRows
+      ? candidateWritableEmptyRows / resolvedRows
+      : null,
+    candidateWritableAlreadyFilledRatio: resolvedRows
+      ? candidateWritableAlreadyFilledRows / resolvedRows
+      : null,
     candidateTokenSources,
+    blockedByReason: Array.from(blockedByReason.entries())
+      .map(([reason, count]) => ({ reason, count }))
+      .sort((a, b) => b.count - a.count),
     candidateCoverageByIngredient: Array.from(candidateCoverageByIngredient.entries())
       .map(([nutrient, count]) => ({ nutrient, count }))
       .sort((a, b) => b.count - a.count),
@@ -560,7 +756,9 @@ const run = async () => {
       .filter((row) => isEmptyFormRaw(row.form_raw))
       .map((row) => ({
         id: row.id as string,
-        sourceId: row.source_id as string,
+        sourceId:
+          (ID_COLUMN === "canonical_source_id" ? row.canonical_source_id : row.source_id) ??
+          "",
         ingredientId: row.ingredient_id as string,
         nameRaw: row.name_raw ?? null,
         formRaw: row.form_raw ?? null,

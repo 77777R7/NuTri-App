@@ -8,10 +8,12 @@ type ScoreSource = "dsld" | "lnhpd";
 
 type ProductScoreRow = {
   source_id: string;
+  canonical_source_id: string | null;
 };
 
 type ProductIngredientRow = {
   source_id: string;
+  canonical_source_id: string | null;
   ingredient_id: string | null;
   name_raw: string;
   form_raw: string | null;
@@ -114,29 +116,50 @@ const chunkArray = <T>(items: T[], size: number): T[][] => {
   return chunks;
 };
 
-const loadSourceIds = async (source: ScoreSource, limit: number): Promise<string[]> => {
+const parseSourceIds = (values: unknown[]): string[] =>
+  values
+    .map((value) => {
+      if (typeof value === "string") return value.trim();
+      if (typeof value === "number") return String(value);
+      return "";
+    })
+    .filter((value) => value.length > 0);
+
+const loadSourceIds = async (
+  source: ScoreSource,
+  limit: number,
+  idColumn: "source_id" | "canonical_source_id",
+): Promise<string[]> => {
   const { data, error } = await supabase
     .from("product_scores")
-    .select("source_id")
+    .select("source_id,canonical_source_id")
     .eq("source", source)
     .eq("score_version", V4_SCORE_VERSION)
     .order("computed_at", { ascending: false })
     .limit(limit);
   if (error) throw error;
-  return (data ?? []).map((row) => (row as ProductScoreRow).source_id).filter(Boolean);
+  const rows = (data ?? []) as ProductScoreRow[];
+  return rows
+    .map((row) =>
+      idColumn === "canonical_source_id"
+        ? row.canonical_source_id ?? ""
+        : row.source_id,
+    )
+    .filter(Boolean);
 };
 
 const fetchIngredients = async (
   source: ScoreSource,
   sourceIds: string[],
+  idColumn: "source_id" | "canonical_source_id",
 ): Promise<ProductIngredientRow[]> => {
   const rows: ProductIngredientRow[] = [];
   for (const chunk of chunkArray(sourceIds, 200)) {
     const { data, error } = await supabase
       .from("product_ingredients")
-      .select("source_id,ingredient_id,name_raw,form_raw,is_active")
+      .select("source_id,canonical_source_id,ingredient_id,name_raw,form_raw,is_active")
       .eq("source", source)
-      .in("source_id", chunk);
+      .in(idColumn, chunk);
     if (error) throw error;
     rows.push(...((data ?? []) as ProductIngredientRow[]));
   }
@@ -185,6 +208,9 @@ const limit = Math.max(1, Number(getArg("limit") ?? "1000"));
 const outDir = getArg("out-dir") ?? "output/form-taxonomy";
 const topN = Math.max(1, Number(getArg("top-n") ?? "50"));
 const sourceIdsFile = getArg("source-ids-file");
+const idColumnArg = (getArg("id-column") ?? "source_id").toLowerCase();
+const idColumn =
+  idColumnArg === "canonical_source_id" ? "canonical_source_id" : "source_id";
 
 const sources: ScoreSource[] =
   sourceArg === "all"
@@ -212,14 +238,12 @@ const runForSource = async (source: ScoreSource) => {
     if (!Array.isArray(ids)) {
       throw new Error("source-ids-file must be a JSON array or { sourceIds: [] }");
     }
-    sourceIds = ids
-      .map((value) => (typeof value === "string" ? value.trim() : ""))
-      .filter((value) => value.length > 0);
+    sourceIds = parseSourceIds(ids);
   } else {
-    sourceIds = await loadSourceIds(source, limit);
+    sourceIds = await loadSourceIds(source, limit, idColumn);
   }
 
-  const ingredients = await fetchIngredients(source, sourceIds);
+  const ingredients = await fetchIngredients(source, sourceIds, idColumn);
   const activeRows = ingredients.filter((row) => row.is_active);
 
   const ingredientIds = Array.from(
@@ -342,7 +366,11 @@ const runForSource = async (source: ScoreSource) => {
       examples.push(
         JSON.stringify({
           source,
-          sourceId: row.source_id,
+          sourceId:
+            idColumn === "canonical_source_id"
+              ? row.canonical_source_id ?? row.source_id
+              : row.source_id,
+          canonicalSourceId: row.canonical_source_id ?? null,
           ingredientId: row.ingredient_id,
           nameRaw: row.name_raw,
           formRaw: row.form_raw,
@@ -385,6 +413,7 @@ const runForSource = async (source: ScoreSource) => {
       limit: sourceIdsFile ? null : limit,
       topN,
       sourceIdsFile: sourceIdsFile ?? null,
+      idColumn,
     },
   };
 

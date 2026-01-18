@@ -142,7 +142,7 @@ export const extractExplicitFormTokens = (value: string): string[] => {
   return tokens;
 };
 
-export const collectExplicitFormTokens = (sources: Array<string | null | undefined>): string[] => {
+export const collectExplicitFormTokens = (sources: (string | null | undefined)[]): string[] => {
   const tokens: string[] = [];
   sources.forEach((source) => {
     if (!source || !source.trim()) return;

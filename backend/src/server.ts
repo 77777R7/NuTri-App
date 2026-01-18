@@ -2043,6 +2043,8 @@ type AuthenticatedRequest = Request & {
 
 const authDisabled =
   process.env.DISABLE_AUTH === "true" || process.env.DISABLE_AUTH === "1";
+const allowAuthBypass =
+  process.env.ALLOW_AUTH_BYPASS === "true" || process.env.ALLOW_AUTH_BYPASS === "1";
 
 const verifySupabaseToken = async (req: Request, res: Response, next: NextFunction) => {
   if (authDisabled) {
@@ -2052,7 +2054,8 @@ const verifySupabaseToken = async (req: Request, res: Response, next: NextFuncti
   const allowBypass =
     (Array.isArray(authBypassHeader)
       ? authBypassHeader.includes("1")
-      : authBypassHeader === "1") && process.env.NODE_ENV !== "production";
+      : authBypassHeader === "1") &&
+    (process.env.NODE_ENV !== "production" || allowAuthBypass);
   if (allowBypass) {
     return next();
   }

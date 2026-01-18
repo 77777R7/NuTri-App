@@ -153,7 +153,6 @@ const run = async () => {
 
   const cohortIdsPath =
     cohortIdsFile ?? (runlistSummary.sourceIdsOutput ?? null);
-  const cohortIds = await loadIdsFromFile(cohortIdsPath);
   const subsetCheck = await checkRunlistSubset(runlistPath, cohortIdsPath);
 
   const mismatchBefore = before.summary?.counts?.mismatch ?? 0;

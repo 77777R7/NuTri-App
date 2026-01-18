@@ -2,7 +2,6 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { supabase } from "../src/supabase.js";
-import { V4_SCORE_VERSION } from "../src/scoring/v4ScoreEngine.js";
 
 type ScoreSource = "lnhpd" | "dsld";
 
@@ -248,8 +247,8 @@ const run = async () => {
   const taxonomyMismatchAfter = new Set<string>();
   const resolvedByStopwords = new Set<string>();
   const stillMismatchTokenCounts = new Map<string, number>();
-  const examplesResolved: Array<Record<string, unknown>> = [];
-  const examplesStillMismatch: Array<Record<string, unknown>> = [];
+  const examplesResolved: Record<string, unknown>[] = [];
+  const examplesStillMismatch: Record<string, unknown>[] = [];
 
   const perProductStillMismatch = new Map<string, boolean>();
 

@@ -311,6 +311,46 @@ export interface Database {
           },
         ];
       };
+      user_checkins: {
+        Row: {
+          check_in_date: string;
+          created_at: string;
+          id: string;
+          supplement_id: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          check_in_date: string;
+          created_at?: string;
+          id?: string;
+          supplement_id: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          check_in_date?: string;
+          created_at?: string;
+          id?: string;
+          supplement_id?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_checkins_supplement_id_fkey';
+            columns: ['supplement_id'];
+            referencedRelation: 'supplements';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_checkins_user_id_fkey';
+            columns: ['user_id'];
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       user_streak: {
         Row: {
           created_at: string;

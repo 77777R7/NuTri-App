@@ -1,7 +1,6 @@
 import { supabase } from './supabase.js';
 import { extractErrorMeta, type RetryErrorMeta, withRetry } from './supabaseRetry.js';
 import type { LabelDraft } from './labelAnalysis.js';
-// eslint-disable-next-line import/no-unresolved -- TS resolves .js specifiers to .ts sources in this project.
 import { canonicalizeLnhpdFormTokens, collectExplicitFormTokens } from './formTaxonomy/lnhpdFormTokenMap.js';
 
 type Basis = 'label_serving' | 'recommended_daily' | 'assumed_daily';
@@ -43,6 +42,30 @@ type LnhpdIngredientMeta = {
   properName?: string | null;
 };
 
+const scoreLnhpdMeta = (meta?: LnhpdIngredientMeta | null): number => {
+  if (!meta) return 0;
+  let score = 0;
+  if (meta.sourceMaterial) score += 3;
+  if (meta.properName) score += 2;
+  if (meta.extractTypeDesc) score += 2;
+  if (meta.ratioNumerator != null && meta.ratioDenominator != null) score += 2;
+  if (meta.potencyConstituent) score += 2;
+  if (meta.potencyAmount != null) score += 1;
+  if (meta.potencyUnit) score += 1;
+  if (meta.driedHerbEquivalent != null) score += 1;
+  if (meta.ingredientName) score += 1;
+  return score;
+};
+
+const pickLnhpdMeta = (
+  current?: LnhpdIngredientMeta | null,
+  candidate?: LnhpdIngredientMeta | null,
+): LnhpdIngredientMeta | null => {
+  if (!candidate) return current ?? null;
+  if (!current) return candidate;
+  return scoreLnhpdMeta(candidate) > scoreLnhpdMeta(current) ? candidate : current;
+};
+
 type UnitKind = 'mass' | 'volume' | 'iu' | 'cfu' | 'percent' | 'homeopathic' | 'unknown';
 
 type ProductIngredientRow = {
@@ -68,9 +91,25 @@ type ProductIngredientRow = {
   match_confidence: number | null;
 };
 
+type UpsertErrorContext = {
+  payloadSummary?: {
+    ingredientId: string | null;
+    nameKey: string;
+    unit: string | null;
+    amount: number | null;
+    amountNormalized: number | null;
+    basis: Basis;
+    unitKind: UnitKind | null;
+    dailyMultiplier: number | null;
+  } | null;
+  overflowFields?: Record<string, number> | null;
+};
+
 type UpsertResult = {
   success: boolean;
   error?: RetryErrorMeta | null;
+  errorContext?: UpsertErrorContext | null;
+  overflowRows?: number;
 };
 
 const normalizeNameKey = (value: string): string =>
@@ -86,7 +125,7 @@ const normalizeFormText = (value: string): string =>
   value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 
 const normalizeFormToken = (value: string): string =>
-  value.toLowerCase().replace(/[^a-z0-9:%]+/g, ' ').trim();
+  value.toLowerCase().replace(/[^a-z0-9_:%]+/g, ' ').trim();
 
 const FORM_RAW_TOKENS = [
   'bisglycinate',
@@ -286,6 +325,14 @@ const extractLnhpdFormRaw = (meta?: LnhpdIngredientMeta | null): string | null =
     });
   };
 
+  const explicitTokens = collectExplicitFormTokens([
+    meta.ingredientName ?? null,
+    meta.properName ?? null,
+    meta.sourceMaterial ?? null,
+    meta.potencyConstituent ?? null,
+  ]);
+  explicitTokens.forEach((token) => addToken(token));
+
   if (meta.sourceMaterial) {
     const normalizedMaterial = normalizeFormToken(meta.sourceMaterial);
     if (normalizedMaterial) {
@@ -393,6 +440,84 @@ const isDoseUnitKind = (unitKind: UnitKind): boolean =>
 const clamp = (value: number, min: number, max: number): number =>
   Math.max(min, Math.min(max, value));
 
+const MAX_NUMERIC_18_6 = 999_999_999_999.999999;
+
+const clampNumeric18_6 = (value: number | null): number | null => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+  if (Math.abs(value) > MAX_NUMERIC_18_6) return null;
+  return value;
+};
+
+const isNumericOverflowError = (meta?: RetryErrorMeta | null): boolean => {
+  const code = meta?.code?.toLowerCase() ?? '';
+  const message = meta?.message?.toLowerCase() ?? '';
+  const details = meta?.details?.toLowerCase() ?? '';
+  if (code === '22003') return true;
+  if (message.includes('numeric field overflow')) return true;
+  return details.includes('numeric field overflow');
+};
+
+const buildPayloadSummary = (row: ProductIngredientRow): UpsertErrorContext['payloadSummary'] => ({
+  ingredientId: row.ingredient_id ?? null,
+  nameKey: row.name_key || buildNameKey(row.name_raw),
+  unit: row.unit ?? null,
+  amount: row.amount ?? null,
+  amountNormalized: row.amount_normalized ?? null,
+  basis: row.basis,
+  unitKind: row.unit_kind ?? null,
+  dailyMultiplier: null,
+});
+
+const collectNumericOverflowFields = (row: ProductIngredientRow): Record<string, number> => {
+  const fields: Record<string, number> = {};
+  if (typeof row.amount === 'number' && Number.isFinite(row.amount)) {
+    if (Math.abs(row.amount) > MAX_NUMERIC_18_6) fields.amount = row.amount;
+  }
+  if (typeof row.amount_normalized === 'number' && Number.isFinite(row.amount_normalized)) {
+    if (Math.abs(row.amount_normalized) > MAX_NUMERIC_18_6) {
+      fields.amount_normalized = row.amount_normalized;
+    }
+  }
+  if (typeof row.parse_confidence === 'number' && Number.isFinite(row.parse_confidence)) {
+    if (row.parse_confidence < 0 || row.parse_confidence > 1) {
+      fields.parse_confidence = row.parse_confidence;
+    }
+  }
+  if (typeof row.match_confidence === 'number' && Number.isFinite(row.match_confidence)) {
+    if (row.match_confidence < 0 || row.match_confidence > 1) {
+      fields.match_confidence = row.match_confidence;
+    }
+  }
+  return fields;
+};
+
+const sanitizeOverflowRow = (
+  row: ProductIngredientRow,
+  overflowFields: Record<string, number>,
+): ProductIngredientRow => {
+  const sanitized: ProductIngredientRow = { ...row };
+  const overflowKeys = Object.keys(overflowFields);
+  const hasAmountOverflow = overflowKeys.includes('amount');
+  const hasNormalizedOverflow = overflowKeys.includes('amount_normalized');
+  const hasConfidenceOverflow =
+    overflowKeys.includes('parse_confidence') || overflowKeys.includes('match_confidence');
+
+  if (hasAmountOverflow || overflowKeys.length === 0) {
+    sanitized.amount = null;
+  }
+  if (hasNormalizedOverflow || overflowKeys.length === 0) {
+    sanitized.amount_normalized = null;
+  }
+  if (hasConfidenceOverflow) {
+    if (overflowKeys.includes('parse_confidence')) sanitized.parse_confidence = null;
+    if (overflowKeys.includes('match_confidence')) sanitized.match_confidence = null;
+  }
+  if (sanitized.amount == null || sanitized.amount_normalized == null) {
+    sanitized.amount_unknown = true;
+  }
+  return sanitized;
+};
+
 const computeRowParseConfidence = (
   baseConfidence: number | null | undefined,
   params: { amountMissing: boolean; unitKind: UnitKind; hasUnit: boolean },
@@ -429,9 +554,10 @@ const normalizeAmountAndUnit = (
   const unitLower = unitRaw.trim().toLowerCase();
   const cfuMultiplier = parseCfuMultiplier(unitLower);
   if (cfuMultiplier) {
-    return { amount: amount * cfuMultiplier, unit: 'cfu' };
+    const scaled = clampNumeric18_6(amount * cfuMultiplier);
+    return { amount: scaled, unit: 'cfu' };
   }
-  return { amount, unit: normalizedUnit };
+  return { amount: clampNumeric18_6(amount), unit: normalizedUnit };
 };
 
 const resolveIngredientLookup = async (
@@ -587,12 +713,15 @@ const hydrateRowsWithLookups = async (
     }
 
     if (row.amount == null || !row.unit || !lookup?.baseUnit) {
+      row.amount = clampNumeric18_6(row.amount);
+      if (row.amount == null) row.amount_unknown = true;
       continue;
     }
 
     if (row.unit === lookup.baseUnit) {
-      row.amount_normalized = row.amount;
+      row.amount_normalized = clampNumeric18_6(row.amount);
       row.unit_normalized = lookup.baseUnit;
+      if (row.amount_normalized == null) row.amount_unknown = true;
       continue;
     }
 
@@ -603,12 +732,27 @@ const hydrateRowsWithLookups = async (
       conversionCache,
     );
     if (factor != null) {
-      row.amount_normalized = row.amount * factor;
+      row.amount_normalized = clampNumeric18_6(row.amount * factor);
       row.unit_normalized = lookup.baseUnit;
+      if (row.amount_normalized == null) row.amount_unknown = true;
     } else {
       row.amount_unknown = true;
       if (row.unit_kind && isDoseUnitKind(row.unit_kind)) {
         row.unit_kind = 'unknown';
+      }
+    }
+
+    if (row.parse_confidence != null) {
+      if (!Number.isFinite(row.parse_confidence)) row.parse_confidence = null;
+      if (row.parse_confidence != null && (row.parse_confidence < 0 || row.parse_confidence > 1)) {
+        row.parse_confidence = null;
+      }
+    }
+
+    if (row.match_confidence != null) {
+      if (!Number.isFinite(row.match_confidence)) row.match_confidence = null;
+      if (row.match_confidence != null && (row.match_confidence < 0 || row.match_confidence > 1)) {
+        row.match_confidence = null;
       }
     }
   }
@@ -669,6 +813,54 @@ const dedupeProductIngredientRows = (rows: ProductIngredientRow[]): ProductIngre
   return Array.from(map.values());
 };
 
+const upsertRowsWithOverflowGuard = async (
+  rows: ProductIngredientRow[],
+): Promise<UpsertResult> => {
+  let overflowRows = 0;
+
+  for (const row of rows) {
+    const { error, status, rayId } = await withRetry(() =>
+      supabase.from('product_ingredients').upsert([row], {
+        onConflict: 'source,source_id,basis,name_key',
+      }),
+    );
+    if (!error) continue;
+
+    const meta = extractErrorMeta(error, status, rayId);
+    if (!isNumericOverflowError(meta)) {
+      return {
+        success: false,
+        error: meta,
+        errorContext: {
+          payloadSummary: buildPayloadSummary(row),
+        },
+      };
+    }
+
+    const overflowFields = collectNumericOverflowFields(row);
+    const sanitized = sanitizeOverflowRow(row, overflowFields);
+    const retry = await withRetry(() =>
+      supabase.from('product_ingredients').upsert([sanitized], {
+        onConflict: 'source,source_id,basis,name_key',
+      }),
+    );
+    if (retry.error) {
+      const retryMeta = extractErrorMeta(retry.error, retry.status, retry.rayId);
+      return {
+        success: false,
+        error: retryMeta,
+        errorContext: {
+          payloadSummary: buildPayloadSummary(row),
+          overflowFields: Object.keys(overflowFields).length ? overflowFields : null,
+        },
+      };
+    }
+    overflowRows += 1;
+  }
+
+  return { success: true, overflowRows };
+};
+
 const upsertProductIngredientRows = async (
   rows: ProductIngredientRow[],
   lnhpdMetaByNameKey?: Map<string, LnhpdIngredientMeta | null> | null,
@@ -685,6 +877,9 @@ const upsertProductIngredientRows = async (
     if (error) {
       const meta = extractErrorMeta(error, status, rayId);
       console.warn('[ProductIngredients] Upsert failed', meta);
+      if (isNumericOverflowError(meta)) {
+        return upsertRowsWithOverflowGuard(dedupedRows);
+      }
       return { success: false, error: meta };
     }
   } catch (error) {
@@ -748,8 +943,10 @@ export async function upsertProductIngredientsFromLabelFacts(params: {
       match_confidence: null,
     });
     if (lnhpdMetaByNameKey && item.lnhpdMeta) {
-      if (!lnhpdMetaByNameKey.has(nameKey)) {
-        lnhpdMetaByNameKey.set(nameKey, item.lnhpdMeta);
+      const existingMeta = lnhpdMetaByNameKey.get(nameKey) ?? null;
+      const nextMeta = pickLnhpdMeta(existingMeta, item.lnhpdMeta);
+      if (nextMeta) {
+        lnhpdMetaByNameKey.set(nameKey, nextMeta);
       }
     }
   });

@@ -1,4 +1,7 @@
 export type RoutinePreferences = {
+  note?: string;
+  time?: string;
+  withFood?: boolean;
   whenToTake?: string;
   howToTake?: string;
 };
@@ -13,6 +16,8 @@ export type SavedSupplement = {
   createdAt: string;
   updatedAt: string;
   syncedToCheckIn: boolean;
+  lastViewed?: string;
+  tags?: string[];
   reminderEnabled?: boolean;
   routine?: RoutinePreferences;
 };
