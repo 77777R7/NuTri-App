@@ -86,6 +86,9 @@ const BREAKPOINTS: { key: BreakpointKey; minWidth: number }[] = [
   { key: 'xl', minWidth: 435 },
 ];
 
+export const PHONE_FRAME_WIDTH = 390;
+const LARGE_SCREEN_MIN_DIM = 600;
+
 const BASE_WIDTH = 390;
 const BASE_HEIGHT = 844;
 
@@ -393,6 +396,14 @@ const calculateModerateScale = (width: number, height?: number) => {
   return clamp(blended, 0.9, 1.08);
 };
 
+export const isPhoneLike = (width: number, height?: number) => {
+  const minDim = Math.min(width, height ?? width);
+  return minDim < LARGE_SCREEN_MIN_DIM;
+};
+
+export const getEffectiveWidth = (width: number, height?: number) =>
+  isPhoneLike(width, height) ? Math.min(width, PHONE_FRAME_WIDTH) : width;
+
 export const getBreakpoint = (width: number): BreakpointKey => {
   const sorted = [...BREAKPOINTS].sort((a, b) => b.minWidth - a.minWidth);
   for (const breakpoint of sorted) {
@@ -404,10 +415,24 @@ export const getBreakpoint = (width: number): BreakpointKey => {
 };
 
 export const resolveDesignTokens = (width: number, height?: number): DesignTokenResult => {
-  const breakpoint = getBreakpoint(width);
-  const scale = calculateModerateScale(width, height);
+  const phoneLike = isPhoneLike(width, height);
+  const effectiveWidth = getEffectiveWidth(width, height);
+  const breakpoint = getBreakpoint(effectiveWidth);
+  let scale = calculateModerateScale(effectiveWidth, height);
+  if (phoneLike) {
+    scale = Math.min(scale, 1);
+  }
   const merged = deepMerge(baseTokens, breakpointOverrides[breakpoint]);
-  const tokens = applyScaling(merged, scale);
+  const scaled = applyScaling(merged, scale);
+  const tokens = phoneLike
+    ? {
+        ...scaled,
+        layout: {
+          ...scaled.layout,
+          maxContentWidth: PHONE_FRAME_WIDTH,
+        },
+      }
+    : scaled;
 
   return {
     breakpoint,

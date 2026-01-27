@@ -1,0 +1,410 @@
+{
+  "meta": {
+    "version": "v1.9.4-parsing-patch-20260124",
+    "description": "Parsing-only patch v1.9.4: expand low-ambiguity form tokens and chelate/glycinate normalization.",
+    "generated_at": "2026-01-19T08:25:07Z"
+  },
+  "sheets": {
+    "normalization_rules": [
+      {
+        "rule_id": "NR17",
+        "pattern": "\\bsodium\\s+ascorbate\\b",
+        "replacement": "sodium_ascorbate",
+        "description": "Normalize vitamin C salt phrase 'sodium ascorbate' to single token."
+      },
+      {
+        "rule_id": "NR18",
+        "pattern": "\\bcalcium\\s+ascorbate\\b",
+        "replacement": "calcium_ascorbate",
+        "description": "Normalize vitamin C salt phrase 'calcium ascorbate' to single token."
+      },
+      {
+        "rule_id": "NR19",
+        "pattern": "\\bpyridoxine\\s+(hydrochloride|hcl)\\b",
+        "replacement": "pyridoxine_hcl",
+        "description": "Normalize pyridoxine hydrochloride to single token."
+      },
+      {
+        "rule_id": "NR20",
+        "pattern": "\\bpyridoxal\\s*-?\\s*5\\s*-?\\s*phosphate\\b",
+        "replacement": "p5p",
+        "description": "Normalize pyridoxal-5-phosphate phrase to P5P token."
+      },
+      {
+        "rule_id": "NR21",
+        "pattern": "\\\\bbis\\\\s*-?\\\\s*glycinate\\\\b",
+        "replacement": "bisglycinate",
+        "description": "Normalize bis glycinate variants to single token."
+      },
+      {
+        "rule_id": "NR22",
+        "pattern": "\\\\bdi\\\\s*-?\\\\s*glycinate\\\\b",
+        "replacement": "bisglycinate",
+        "description": "Normalize di-glycinate variants to bisglycinate."
+      },
+      {
+        "rule_id": "NR23",
+        "pattern": "\\\\bdiglycinate\\\\b",
+        "replacement": "bisglycinate",
+        "description": "Normalize diglycinate to bisglycinate."
+      },
+      {
+        "rule_id": "NR24",
+        "pattern": "\\\\bchelated\\\\b",
+        "replacement": "chelate",
+        "description": "Normalize chelated to chelate token."
+      },
+      {
+        "rule_id": "NR25",
+        "pattern": "\\\\bsulphate\\\\b",
+        "replacement": "sulfate",
+        "description": "Normalize British spelling sulphate to sulfate."
+      }
+    ],
+    "token_aliases": [
+      {
+        "applies_to_ingredient_id": null,
+        "token_raw": "ascorbic acid",
+        "token_normalized": "ascorbic_acid",
+        "alias_confidence": 0.8,
+        "notes": "Normalize vitamin C phrase."
+      },
+      {
+        "applies_to_ingredient_id": null,
+        "token_raw": "ascorbic_acid",
+        "token_normalized": "ascorbic_acid",
+        "alias_confidence": 0.8,
+        "notes": "Canonical token alias."
+      },
+      {
+        "applies_to_ingredient_id": null,
+        "token_raw": "sodium ascorbate",
+        "token_normalized": "sodium_ascorbate",
+        "alias_confidence": 0.8,
+        "notes": "Normalize vitamin C salt."
+      },
+      {
+        "applies_to_ingredient_id": null,
+        "token_raw": "sodium_ascorbate",
+        "token_normalized": "sodium_ascorbate",
+        "alias_confidence": 0.8,
+        "notes": "Canonical token alias."
+      },
+      {
+        "applies_to_ingredient_id": null,
+        "token_raw": "calcium ascorbate",
+        "token_normalized": "calcium_ascorbate",
+        "alias_confidence": 0.8,
+        "notes": "Normalize vitamin C salt."
+      },
+      {
+        "applies_to_ingredient_id": null,
+        "token_raw": "calcium_ascorbate",
+        "token_normalized": "calcium_ascorbate",
+        "alias_confidence": 0.8,
+        "notes": "Canonical token alias."
+      },
+      {
+        "applies_to_ingredient_id": null,
+        "token_raw": "pyridoxine hydrochloride",
+        "token_normalized": "pyridoxine_hcl",
+        "alias_confidence": 0.8,
+        "notes": "Normalize pyridoxine HCl."
+      },
+      {
+        "applies_to_ingredient_id": null,
+        "token_raw": "pyridoxine hcl",
+        "token_normalized": "pyridoxine_hcl",
+        "alias_confidence": 0.8,
+        "notes": "Normalize pyridoxine HCl."
+      },
+      {
+        "applies_to_ingredient_id": null,
+        "token_raw": "pyridoxine_hcl",
+        "token_normalized": "pyridoxine_hcl",
+        "alias_confidence": 0.8,
+        "notes": "Canonical token alias."
+      },
+      {
+        "applies_to_ingredient_id": null,
+        "token_raw": "pyridoxal 5 phosphate",
+        "token_normalized": "p5p",
+        "alias_confidence": 0.8,
+        "notes": "Normalize pyridoxal-5-phosphate to P5P."
+      },
+      {
+        "applies_to_ingredient_id": null,
+        "token_raw": "pyridoxal-5-phosphate",
+        "token_normalized": "p5p",
+        "alias_confidence": 0.8,
+        "notes": "Normalize pyridoxal-5-phosphate to P5P."
+      },
+      {
+        "applies_to_ingredient_id": null,
+        "token_raw": "p5p",
+        "token_normalized": "p5p",
+        "alias_confidence": 0.8,
+        "notes": "Canonical token alias."
+      },
+      {
+        "applies_to_ingredient_id": null,
+        "token_raw": "cholecalciferol",
+        "token_normalized": "d3_cholecalciferol",
+        "alias_confidence": 0.8,
+        "notes": "Normalize vitamin D3 form."
+      },
+      {
+        "applies_to_ingredient_id": null,
+        "token_raw": "vitamin d3",
+        "token_normalized": "d3_cholecalciferol",
+        "alias_confidence": 0.7,
+        "notes": "Normalize vitamin D3 phrase."
+      },
+      {
+        "applies_to_ingredient_id": null,
+        "token_raw": "d3",
+        "token_normalized": "d3_cholecalciferol",
+        "alias_confidence": 0.7,
+        "notes": "Normalize D3 shorthand."
+      },
+      {
+        "applies_to_ingredient_id": null,
+        "token_raw": "ergocalciferol",
+        "token_normalized": "d2_ergocalciferol",
+        "alias_confidence": 0.8,
+        "notes": "Normalize vitamin D2 form."
+      },
+      {
+        "applies_to_ingredient_id": null,
+        "token_raw": "vitamin d2",
+        "token_normalized": "d2_ergocalciferol",
+        "alias_confidence": 0.7,
+        "notes": "Normalize vitamin D2 phrase."
+      },
+      {
+        "applies_to_ingredient_id": null,
+        "token_raw": "d2",
+        "token_normalized": "d2_ergocalciferol",
+        "alias_confidence": 0.7,
+        "notes": "Normalize D2 shorthand."
+      },
+      {
+        "applies_to_ingredient_id": null,
+        "token_raw": "methylcobalamin",
+        "token_normalized": "methylcobalamin",
+        "alias_confidence": 0.8,
+        "notes": "Normalize B12 form."
+      },
+      {
+        "applies_to_ingredient_id": null,
+        "token_raw": "cyanocobalamin",
+        "token_normalized": "cyanocobalamin",
+        "alias_confidence": 0.8,
+        "notes": "Normalize B12 form."
+      },
+      {
+        "applies_to_ingredient_id": null,
+        "token_raw": "hydroxocobalamin",
+        "token_normalized": "hydroxocobalamin",
+        "alias_confidence": 0.8,
+        "notes": "Normalize B12 form."
+      },
+      {
+        "applies_to_ingredient_id": null,
+        "token_raw": "adenosylcobalamin",
+        "token_normalized": "adenosylcobalamin",
+        "alias_confidence": 0.8,
+        "notes": "Normalize B12 form."
+      },
+      {
+        "applies_to_ingredient_id": null,
+        "token_raw": "bis glycinate",
+        "token_normalized": "bisglycinate",
+        "alias_confidence": 0.8,
+        "notes": "Normalize bis glycinate variant."
+      },
+      {
+        "applies_to_ingredient_id": null,
+        "token_raw": "bis-glycinate",
+        "token_normalized": "bisglycinate",
+        "alias_confidence": 0.8,
+        "notes": "Normalize bis-glycinate variant."
+      },
+      {
+        "applies_to_ingredient_id": null,
+        "token_raw": "di glycinate",
+        "token_normalized": "bisglycinate",
+        "alias_confidence": 0.75,
+        "notes": "Normalize di-glycinate variant to bisglycinate."
+      },
+      {
+        "applies_to_ingredient_id": null,
+        "token_raw": "di-glycinate",
+        "token_normalized": "bisglycinate",
+        "alias_confidence": 0.75,
+        "notes": "Normalize di-glycinate variant to bisglycinate."
+      },
+      {
+        "applies_to_ingredient_id": null,
+        "token_raw": "diglycinate",
+        "token_normalized": "bisglycinate",
+        "alias_confidence": 0.75,
+        "notes": "Normalize diglycinate variant to bisglycinate."
+      },
+      {
+        "applies_to_ingredient_id": null,
+        "token_raw": "chelated",
+        "token_normalized": "chelate",
+        "alias_confidence": 0.7,
+        "notes": "Normalize chelated to chelate."
+      },
+      {
+        "applies_to_ingredient_id": null,
+        "token_raw": "chelates",
+        "token_normalized": "chelate",
+        "alias_confidence": 0.7,
+        "notes": "Normalize chelates to chelate."
+      }
+    ],
+    "generic_form_tokens": [
+      {
+        "token_raw": "chloride",
+        "token_normalized": "chloride",
+        "alias_confidence": 0.7,
+        "notes": "Common mineral salt form."
+      },
+      {
+        "token_raw": "citrate",
+        "token_normalized": "citrate",
+        "alias_confidence": 0.7,
+        "notes": "Common mineral salt form."
+      },
+      {
+        "token_raw": "glycinate",
+        "token_normalized": "glycinate",
+        "alias_confidence": 0.7,
+        "notes": "Common chelated form."
+      },
+      {
+        "token_raw": "bisglycinate",
+        "token_normalized": "bisglycinate",
+        "alias_confidence": 0.7,
+        "notes": "Common chelated form."
+      },
+      {
+        "token_raw": "chelate",
+        "token_normalized": "chelate",
+        "alias_confidence": 0.7,
+        "notes": "Common chelated form."
+      },
+      {
+        "token_raw": "oxide",
+        "token_normalized": "oxide",
+        "alias_confidence": 0.7,
+        "notes": "Common mineral salt form."
+      },
+      {
+        "token_raw": "carbonate",
+        "token_normalized": "carbonate",
+        "alias_confidence": 0.7,
+        "notes": "Common mineral salt form."
+      },
+      {
+        "token_raw": "sulfate",
+        "token_normalized": "sulfate",
+        "alias_confidence": 0.7,
+        "notes": "Common mineral salt form."
+      },
+      {
+        "token_raw": "picolinate",
+        "token_normalized": "picolinate",
+        "alias_confidence": 0.7,
+        "notes": "Common mineral chelate form."
+      },
+      {
+        "token_raw": "malate",
+        "token_normalized": "malate",
+        "alias_confidence": 0.7,
+        "notes": "Common mineral salt form."
+      },
+      {
+        "token_raw": "gluconate",
+        "token_normalized": "gluconate",
+        "alias_confidence": 0.7,
+        "notes": "Common mineral salt form."
+      },
+      {
+        "token_raw": "ascorbic acid",
+        "token_normalized": "ascorbic_acid",
+        "alias_confidence": 0.65,
+        "notes": "Vitamin C form token."
+      },
+      {
+        "token_raw": "sodium ascorbate",
+        "token_normalized": "sodium_ascorbate",
+        "alias_confidence": 0.65,
+        "notes": "Vitamin C form token."
+      },
+      {
+        "token_raw": "calcium ascorbate",
+        "token_normalized": "calcium_ascorbate",
+        "alias_confidence": 0.65,
+        "notes": "Vitamin C form token."
+      },
+      {
+        "token_raw": "pyridoxine hcl",
+        "token_normalized": "pyridoxine_hcl",
+        "alias_confidence": 0.65,
+        "notes": "Vitamin B6 form token."
+      },
+      {
+        "token_raw": "p5p",
+        "token_normalized": "p5p",
+        "alias_confidence": 0.65,
+        "notes": "Vitamin B6 form token."
+      },
+      {
+        "token_raw": "d3",
+        "token_normalized": "d3_cholecalciferol",
+        "alias_confidence": 0.65,
+        "notes": "Vitamin D3 form token."
+      },
+      {
+        "token_raw": "d2",
+        "token_normalized": "d2_ergocalciferol",
+        "alias_confidence": 0.65,
+        "notes": "Vitamin D2 form token."
+      },
+      {
+        "token_raw": "phosphate",
+        "token_normalized": "phosphate",
+        "alias_confidence": 0.7,
+        "notes": "Common mineral salt form."
+      },
+      {
+        "token_raw": "acetate",
+        "token_normalized": "acetate",
+        "alias_confidence": 0.7,
+        "notes": "Common mineral salt form."
+      },
+      {
+        "token_raw": "succinate",
+        "token_normalized": "succinate",
+        "alias_confidence": 0.7,
+        "notes": "Common mineral salt form."
+      },
+      {
+        "token_raw": "taurate",
+        "token_normalized": "taurate",
+        "alias_confidence": 0.7,
+        "notes": "Common mineral chelate form."
+      },
+      {
+        "token_raw": "threonate",
+        "token_normalized": "threonate",
+        "alias_confidence": 0.7,
+        "notes": "Common mineral salt form."
+      }
+    ]
+  }
+}

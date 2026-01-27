@@ -1,6 +1,6 @@
 {
   "source": "lnhpd",
-  "generatedAt": "2026-01-09T22:27:18.746Z",
+  "generatedAt": "2026-01-20T03:38:16.222Z",
   "topN": 20,
   "candidates": [
     {
@@ -9,171 +9,55 @@
       "ingredientName": "Inositol",
       "category": null,
       "unit": "mg",
-      "count": 54,
+      "count": 81,
       "nameSamples": [
         "Inositol",
         "Myo-Inositol"
       ],
-      "formTokenSamples": [],
-      "recommendedFormKey": null,
-      "recommendedFormLabel": null
-    },
-    {
-      "ingredientId": "b0c73613-ebec-4b2d-b5a2-8e4461d3a7ac",
-      "canonicalKey": "coenzyme_q10",
-      "ingredientName": "Coenzyme Q10",
-      "category": "enzyme",
-      "unit": "mg",
-      "count": 48,
-      "nameSamples": [
-        "Coenzyme Q10",
-        "Ubiquinone",
-        "Ubidecarenone"
-      ],
       "formTokenSamples": [
         {
-          "token": "whole",
+          "token": "citrate",
           "count": 1
         }
       ],
-      "recommendedFormKey": "whole",
-      "recommendedFormLabel": "Whole"
+      "recommendedFormKey": "citrate",
+      "recommendedFormLabel": "Citrate"
     },
     {
-      "ingredientId": "08239caa-ef8b-40ad-981b-9da28ab10343",
-      "canonicalKey": "goldenseal",
-      "ingredientName": "Goldenseal",
-      "category": null,
-      "unit": "mg",
-      "count": 22,
-      "nameSamples": [
-        "Hydrastis canadensis"
-      ],
-      "formTokenSamples": [
-        {
-          "token": "root",
-          "count": 10
-        },
-        {
-          "token": "root extract",
-          "count": 4
-        },
-        {
-          "token": "extract",
-          "count": 2
-        }
-      ],
-      "recommendedFormKey": "root",
-      "recommendedFormLabel": "Root"
-    },
-    {
-      "ingredientId": "10871c90-9670-4895-9fa4-567ea3821bde",
-      "canonicalKey": "poria_cocos",
-      "ingredientName": "Poria cocos",
+      "ingredientId": "597b96ca-86ad-40d7-8484-60a4c5162460",
+      "canonicalKey": "para_aminobenzoic_acid",
+      "ingredientName": "para-Aminobenzoic acid",
       "category": "botanical",
       "unit": "mg",
-      "count": 17,
+      "count": 8,
       "nameSamples": [
-        "Poria cocos",
-        "Poria"
-      ],
-      "formTokenSamples": [
-        {
-          "token": "extract",
-          "count": 8
-        },
-        {
-          "token": "root",
-          "count": 1
-        }
-      ],
-      "recommendedFormKey": "extract",
-      "recommendedFormLabel": "Extract"
-    },
-    {
-      "ingredientId": "ab90d0e6-cec8-404f-8784-38cd4206854e",
-      "canonicalKey": "rehmannia_glutinosa",
-      "ingredientName": "Rehmannia glutinosa",
-      "category": "botanical",
-      "unit": "mg",
-      "count": 17,
-      "nameSamples": [
-        "Rehmannia glutinosa"
-      ],
-      "formTokenSamples": [
-        {
-          "token": "root extract",
-          "count": 7
-        },
-        {
-          "token": "extract",
-          "count": 6
-        },
-        {
-          "token": "root",
-          "count": 2
-        }
-      ],
-      "recommendedFormKey": "root_extract",
-      "recommendedFormLabel": "Root Extract"
-    },
-    {
-      "ingredientId": "512d8b12-623b-4f63-b02b-61568ef68ed0",
-      "canonicalKey": "salicylic_acid",
-      "ingredientName": "Salicylic Acid",
-      "category": "compound",
-      "unit": "mg",
-      "count": 13,
-      "nameSamples": [
-        "Salicylic acid",
-        "Folic Acid",
-        "Folic acid"
+        "para-Aminobenzoic Acid",
+        "para-Aminobenzoic acid",
+        "4-Aminobenzoic acid"
       ],
       "formTokenSamples": [],
       "recommendedFormKey": null,
       "recommendedFormLabel": null
     },
     {
-      "ingredientId": "a2f82a8c-fa6f-4984-b9bf-81cd2775eb17",
-      "canonicalKey": "plantago_ovata",
-      "ingredientName": "Plantago ovata",
+      "ingredientId": "75521e4b-877f-412b-ae29-f3fbc57d623b",
+      "canonicalKey": "berberis_vulgaris",
+      "ingredientName": "Berberis vulgaris",
       "category": "botanical",
       "unit": "mg",
-      "count": 11,
+      "count": 4,
       "nameSamples": [
-        "Plantago ovata"
-      ],
-      "formTokenSamples": [
-        {
-          "token": "seed",
-          "count": 3
-        }
-      ],
-      "recommendedFormKey": "seed",
-      "recommendedFormLabel": "Seed"
-    },
-    {
-      "ingredientId": "d01bb66c-a1f6-45ef-a9bf-e693b0cbe422",
-      "canonicalKey": "actaea_racemosa",
-      "ingredientName": "Actaea racemosa",
-      "category": "botanical",
-      "unit": "mg",
-      "count": 11,
-      "nameSamples": [
-        "Actaea racemosa",
-        "Cimicifuga racemosa"
+        "Beta vulgaris",
+        "Ephedra vulgaris",
+        "Berberis vulgaris"
       ],
       "formTokenSamples": [
         {
           "token": "root",
-          "count": 4
+          "count": 2
         },
         {
-          "token": "root extract",
-          "count": 4
-        },
-        {
-          "token": "root triterpene glycosides",
+          "token": "root bark",
           "count": 1
         }
       ],
@@ -181,51 +65,42 @@
       "recommendedFormLabel": "Root"
     },
     {
-      "ingredientId": "e59ab98a-647b-4e26-b8e6-18d0fa08dd6e",
-      "canonicalKey": "arctium_lappa",
-      "ingredientName": "Arctium lappa",
+      "ingredientId": "fe68cddb-5ed3-4170-a55c-b9cc05251c6e",
+      "canonicalKey": "daucus_carota",
+      "ingredientName": "Daucus carota",
       "category": "botanical",
       "unit": "mg",
-      "count": 11,
+      "count": 4,
       "nameSamples": [
-        "Arctium lappa",
-        "Arctium Lappa"
+        "Daucus carota"
       ],
       "formTokenSamples": [
-        {
-          "token": "extract",
-          "count": 4
-        },
         {
           "token": "root",
           "count": 2
         },
         {
-          "token": "root extract",
-          "count": 2
+          "token": "extract",
+          "count": 1
         }
       ],
-      "recommendedFormKey": "extract",
-      "recommendedFormLabel": "Extract"
+      "recommendedFormKey": "root",
+      "recommendedFormLabel": "Root"
     },
     {
-      "ingredientId": "8d7af787-cf70-46d2-9b25-6c08d6766290",
-      "canonicalKey": "alfalfa",
-      "ingredientName": "Alfalfa",
-      "category": null,
+      "ingredientId": "4ed60eb9-ac89-4fc7-98dd-c1807ec8aa0c",
+      "canonicalKey": "pogostemon_cablin",
+      "ingredientName": "Pogostemon cablin",
+      "category": "botanical",
       "unit": "mg",
-      "count": 11,
+      "count": 4,
       "nameSamples": [
-        "Medicago sativa"
+        "Pogostemon cablin"
       ],
       "formTokenSamples": [
         {
           "token": "whole plant",
-          "count": 4
-        },
-        {
-          "token": "extract",
-          "count": 3
+          "count": 2
         },
         {
           "token": "whole plant extract",
@@ -236,76 +111,42 @@
       "recommendedFormLabel": "Whole Plant"
     },
     {
-      "ingredientId": "7dadc32a-3830-404f-9b7c-e4c5b4b7735e",
-      "canonicalKey": "atractylodes_macrocephala",
-      "ingredientName": "Atractylodes macrocephala",
+      "ingredientId": "8af37875-a137-4bfa-b16c-5d845c327eee",
+      "canonicalKey": "juniperus_communis",
+      "ingredientName": "Juniperus communis",
       "category": "botanical",
       "unit": "mg",
-      "count": 11,
+      "count": 3,
       "nameSamples": [
-        "Atractylodes macrocephala"
+        "Juniperus communis"
       ],
       "formTokenSamples": [
         {
-          "token": "root extract",
-          "count": 6
-        },
-        {
-          "token": "root",
-          "count": 4
+          "token": "berry",
+          "count": 2
         }
       ],
-      "recommendedFormKey": "root_extract",
-      "recommendedFormLabel": "Root Extract"
+      "recommendedFormKey": "berry",
+      "recommendedFormLabel": "Berry"
     },
     {
-      "ingredientId": "9a223158-e7bc-49d9-a147-4df95414da48",
-      "canonicalKey": "serenoa_repens",
-      "ingredientName": "Serenoa repens",
+      "ingredientId": "631a96f5-85dc-402a-ab8b-0ff9fae975a9",
+      "canonicalKey": "alisma_plantago_aquatica",
+      "ingredientName": "Alisma plantago-aquatica",
       "category": "botanical",
       "unit": "mg",
-      "count": 10,
+      "count": 3,
       "nameSamples": [
-        "Serenoa repens"
-      ],
-      "formTokenSamples": [
-        {
-          "token": "fruit extract",
-          "count": 3
-        },
-        {
-          "token": "extract",
-          "count": 1
-        },
-        {
-          "token": "fruit sterols",
-          "count": 1
-        }
-      ],
-      "recommendedFormKey": "fruit_extract",
-      "recommendedFormLabel": "Fruit Extract"
-    },
-    {
-      "ingredientId": "02b7490b-e37f-4229-a613-340e08e82ea6",
-      "canonicalKey": "codonopsis_pilosula",
-      "ingredientName": "Codonopsis pilosula",
-      "category": "botanical",
-      "unit": "mg",
-      "count": 10,
-      "nameSamples": [
-        "Codonopsis pilosula"
+        "Alisma plantago-aquatica",
+        "Alisma plantago-aquatica subsp. orientale"
       ],
       "formTokenSamples": [
         {
           "token": "root",
-          "count": 3
+          "count": 2
         },
         {
           "token": "root extract",
-          "count": 3
-        },
-        {
-          "token": "extract",
           "count": 1
         }
       ],
@@ -313,76 +154,207 @@
       "recommendedFormLabel": "Root"
     },
     {
-      "ingredientId": "82f29686-a50a-4b72-845a-7167cda04195",
-      "canonicalKey": "paeonia_lactiflora",
-      "ingredientName": "Paeonia lactiflora",
+      "ingredientId": "64123085-50c3-4ad8-b908-1335abf5a214",
+      "canonicalKey": "scrophularia_nodosa",
+      "ingredientName": "Scrophularia nodosa",
       "category": "botanical",
       "unit": "mg",
-      "count": 10,
+      "count": 3,
       "nameSamples": [
-        "Paeonia lactiflora"
+        "Scrophularia ningpoensis",
+        "Scrophularia nodosa"
+      ],
+      "formTokenSamples": [
+        {
+          "token": "root",
+          "count": 1
+        },
+        {
+          "token": "whole",
+          "count": 1
+        }
+      ],
+      "recommendedFormKey": "root",
+      "recommendedFormLabel": "Root"
+    },
+    {
+      "ingredientId": "24893f95-dea1-4259-aa9a-c6148a3f97ee",
+      "canonicalKey": "phellodendron_chinense",
+      "ingredientName": "Phellodendron chinense",
+      "category": "botanical",
+      "unit": "mg",
+      "count": 3,
+      "nameSamples": [
+        "Phellodendron amurense",
+        "Phellodendron chinense"
+      ],
+      "formTokenSamples": [
+        {
+          "token": "bark",
+          "count": 2
+        },
+        {
+          "token": "extract",
+          "count": 1
+        }
+      ],
+      "recommendedFormKey": "bark",
+      "recommendedFormLabel": "Bark"
+    },
+    {
+      "ingredientId": "df15579b-bf7b-416f-927d-72d272544779",
+      "canonicalKey": "aucklandia_lappa",
+      "ingredientName": "Aucklandia lappa",
+      "category": "botanical",
+      "unit": "mg",
+      "count": 3,
+      "nameSamples": [
+        "Aucklandia lappa"
+      ],
+      "formTokenSamples": [
+        {
+          "token": "root",
+          "count": 2
+        },
+        {
+          "token": "root extract",
+          "count": 1
+        }
+      ],
+      "recommendedFormKey": "root",
+      "recommendedFormLabel": "Root"
+    },
+    {
+      "ingredientId": "80bfad4c-7920-489e-af7e-6070b0fa1b62",
+      "canonicalKey": "black_pepper",
+      "ingredientName": "black pepper",
+      "category": null,
+      "unit": "mg",
+      "count": 3,
+      "nameSamples": [
+        "Piper nigrum"
+      ],
+      "formTokenSamples": [
+        {
+          "token": "fruit extract",
+          "count": 2
+        }
+      ],
+      "recommendedFormKey": "fruit_extract",
+      "recommendedFormLabel": "Fruit Extract"
+    },
+    {
+      "ingredientId": "78e303d2-b8ae-4781-9777-fdfdb9991119",
+      "canonicalKey": "salvia_miltiorrhiza",
+      "ingredientName": "Salvia miltiorrhiza",
+      "category": "botanical",
+      "unit": "mg",
+      "count": 3,
+      "nameSamples": [
+        "Salvia miltiorrhiza"
       ],
       "formTokenSamples": [
         {
           "token": "root extract",
-          "count": 4
-        },
-        {
-          "token": "extract",
-          "count": 2
-        },
-        {
-          "token": "root",
-          "count": 2
+          "count": 1
         }
       ],
       "recommendedFormKey": "root_extract",
       "recommendedFormLabel": "Root Extract"
     },
     {
-      "ingredientId": "11b68cf0-5ebd-434c-b7c1-f33db6272ca2",
-      "canonicalKey": "lecithin",
-      "ingredientName": "Lecithin",
-      "category": null,
+      "ingredientId": "fcafa24b-87e0-4259-925a-2031be34f9b9",
+      "canonicalKey": "dioscorea_villosa",
+      "ingredientName": "Dioscorea villosa",
+      "category": "botanical",
       "unit": "mg",
-      "count": 9,
+      "count": 2,
       "nameSamples": [
-        "Lecithin"
+        "Dioscorea villosa"
       ],
       "formTokenSamples": [
         {
-          "token": "phosphatidyl choline",
+          "token": "root",
           "count": 2
-        },
+        }
+      ],
+      "recommendedFormKey": "root",
+      "recommendedFormLabel": "Root"
+    },
+    {
+      "ingredientId": "49dd99d0-4a9e-42f2-bab3-20851e42e0e8",
+      "canonicalKey": "gentiana_lutea",
+      "ingredientName": "Gentiana lutea",
+      "category": "botanical",
+      "unit": "mg",
+      "count": 2,
+      "nameSamples": [
+        "Gentiana lutea"
+      ],
+      "formTokenSamples": [
         {
-          "token": "phosphatidylcholine",
-          "count": 1
-        },
-        {
-          "token": "seed",
+          "token": "root",
           "count": 1
         }
       ],
-      "recommendedFormKey": "phosphatidyl_choline",
-      "recommendedFormLabel": "Phosphatidyl Choline"
+      "recommendedFormKey": "root",
+      "recommendedFormLabel": "Root"
     },
     {
-      "ingredientId": "44a42475-38d9-4c87-9cfb-a007a78e4fdd",
-      "canonicalKey": "flaxseed",
-      "ingredientName": "flaxseed",
+      "ingredientId": "a217da81-ae3c-46f7-9991-6efd9156b2ad",
+      "canonicalKey": "nepeta_cataria",
+      "ingredientName": "Nepeta cataria",
       "category": "botanical",
       "unit": "mg",
-      "count": 8,
+      "count": 2,
       "nameSamples": [
-        "Linum usitatissimum"
+        "Nepeta cataria"
+      ],
+      "formTokenSamples": [
+        {
+          "token": "extract",
+          "count": 1
+        },
+        {
+          "token": "whole plant extract",
+          "count": 1
+        }
+      ],
+      "recommendedFormKey": "extract",
+      "recommendedFormLabel": "Extract"
+    },
+    {
+      "ingredientId": "2642ba6e-f25c-48ad-94bb-9a615d6f19ad",
+      "canonicalKey": "acorus_tatarinowii",
+      "ingredientName": "Acorus tatarinowii",
+      "category": "botanical",
+      "unit": "mg",
+      "count": 2,
+      "nameSamples": [
+        "Acorus tatarinowii"
+      ],
+      "formTokenSamples": [
+        {
+          "token": "root",
+          "count": 1
+        }
+      ],
+      "recommendedFormKey": "root",
+      "recommendedFormLabel": "Root"
+    },
+    {
+      "ingredientId": "6065931c-0a0e-4ea0-8f82-3aaf34a4f5a3",
+      "canonicalKey": "oenothera_biennis",
+      "ingredientName": "Oenothera biennis",
+      "category": "botanical",
+      "unit": "mg",
+      "count": 2,
+      "nameSamples": [
+        "Oenothera biennis"
       ],
       "formTokenSamples": [
         {
           "token": "seed",
-          "count": 5
-        },
-        {
-          "token": "seed alpha linolenic acid",
           "count": 1
         }
       ],
@@ -390,101 +362,62 @@
       "recommendedFormLabel": "Seed"
     },
     {
-      "ingredientId": "30d8df54-76ee-4238-a6fd-1374ffb63272",
-      "canonicalKey": "menthol",
-      "ingredientName": "Menthol",
-      "category": null,
+      "ingredientId": "9ffac83d-a220-4678-96ab-f03947f0d2d8",
+      "canonicalKey": "hamamelis_virginiana",
+      "ingredientName": "Hamamelis virginiana",
+      "category": "botanical",
       "unit": "mg",
-      "count": 8,
+      "count": 2,
       "nameSamples": [
-        "Menthol"
+        "Hamamelis virginiana"
       ],
       "formTokenSamples": [
         {
-          "token": "leaf",
+          "token": "bark",
           "count": 1
         }
       ],
-      "recommendedFormKey": "leaf",
-      "recommendedFormLabel": "Leaf"
+      "recommendedFormKey": "bark",
+      "recommendedFormLabel": "Bark"
     },
     {
-      "ingredientId": "a5e15640-b9b7-4923-a8b8-9b98ed535c11",
-      "canonicalKey": "mentha_x_piperita",
-      "ingredientName": "Mentha x piperita",
+      "ingredientId": "5074fb4b-3d16-4279-abb4-901f0a802c37",
+      "canonicalKey": "sanguinaria_canadensis",
+      "ingredientName": "Sanguinaria canadensis",
       "category": "botanical",
       "unit": "mg",
-      "count": 8,
+      "count": 2,
       "nameSamples": [
-        "Mentha x piperita"
+        "Collinsonia canadensis",
+        "Sanguinaria canadensis"
       ],
       "formTokenSamples": [
-        {
-          "token": "leaf",
-          "count": 5
-        },
-        {
-          "token": "extract",
-          "count": 1
-        },
-        {
-          "token": "leaf extract",
-          "count": 1
-        }
-      ],
-      "recommendedFormKey": "leaf",
-      "recommendedFormLabel": "Leaf"
-    },
-    {
-      "ingredientId": "40952ad5-50d6-4184-8537-fbfb4071b100",
-      "canonicalKey": "ligusticum_chuanxiong",
-      "ingredientName": "Ligusticum chuanxiong",
-      "category": "botanical",
-      "unit": "mg",
-      "count": 8,
-      "nameSamples": [
-        "Ligusticum chuanxiong",
-        "Ligusticum sinense"
-      ],
-      "formTokenSamples": [
-        {
-          "token": "root extract",
-          "count": 3
-        },
         {
           "token": "root",
           "count": 2
-        },
-        {
-          "token": "extract",
-          "count": 1
         }
       ],
-      "recommendedFormKey": "root_extract",
-      "recommendedFormLabel": "Root Extract"
+      "recommendedFormKey": "root",
+      "recommendedFormLabel": "Root"
     },
     {
-      "ingredientId": "88490139-e496-450f-9454-be4aae1455bb",
-      "canonicalKey": "eucalyptus",
-      "ingredientName": "Eucalyptus",
-      "category": null,
+      "ingredientId": "512d8b12-623b-4f63-b02b-61568ef68ed0",
+      "canonicalKey": "salicylic_acid",
+      "ingredientName": "Salicylic Acid",
+      "category": "compound",
       "unit": "mg",
-      "count": 7,
+      "count": 2,
       "nameSamples": [
-        "Eucalyptus globulus"
+        "Folic Acid"
       ],
       "formTokenSamples": [
         {
-          "token": "leaf",
-          "count": 3
-        },
-        {
-          "token": "of d3 dilution",
-          "count": 1
+          "token": "folic acid",
+          "count": 2
         }
       ],
-      "recommendedFormKey": "leaf",
-      "recommendedFormLabel": "Leaf"
+      "recommendedFormKey": "folic_acid",
+      "recommendedFormLabel": "Folic Acid"
     }
   ]
 }

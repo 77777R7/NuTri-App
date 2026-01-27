@@ -150,6 +150,22 @@ type AnalysisStateWithSnapshot = AnalysisState & {
     snapshot: SupplementSnapshot | null;
 };
 
+const shouldPreferExtractedBrand = (brandExtraction?: BrandExtraction | null) =>
+    Boolean(brandExtraction?.brand) &&
+    (brandExtraction?.confidence === 'high' || brandExtraction?.confidence === 'medium');
+
+const resolveBrand = (
+    brandExtraction: BrandExtraction | null | undefined,
+    ...candidates: Array<string | null | undefined>
+) => {
+    const preferred = shouldPreferExtractedBrand(brandExtraction) ? brandExtraction?.brand ?? null : null;
+    const ordered = [preferred, ...candidates];
+    for (const value of ordered) {
+        if (typeof value === 'string' && value.trim()) return value.trim();
+    }
+    return null;
+};
+
 export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
     const [state, setState] = useState<AnalysisState>({
         brandExtraction: null,
@@ -209,6 +225,12 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
                     setState(prev => ({
                         ...prev,
                         brandExtraction: data,
+                        productInfo: prev.productInfo
+                            ? {
+                                ...prev.productInfo,
+                                brand: resolveBrand(data, prev.productInfo.brand),
+                            }
+                            : prev.productInfo,
                     }));
                 } catch (e) {
                     console.error('[SSE] Failed to parse brand_extracted:', e);
@@ -220,9 +242,15 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
                 try {
                     const data = JSON.parse(event.data);
                     console.log('[SSE] Product Info:', data);
+                    const nextProductInfo = data.productInfo ?? null;
                     setState(prev => ({
                         ...prev,
-                        productInfo: data.productInfo,
+                        productInfo: nextProductInfo
+                            ? {
+                                ...nextProductInfo,
+                                brand: resolveBrand(prev.brandExtraction, nextProductInfo.brand),
+                            }
+                            : nextProductInfo,
                         sources: data.sources || [],
                     }));
                 } catch (e) {
@@ -284,7 +312,7 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
                     setState(prev => ({
                         ...prev,
                         productInfo: {
-                            brand: prev.productInfo?.brand ?? snapshotProduct.brand ?? null,
+                            brand: resolveBrand(prev.brandExtraction, prev.productInfo?.brand, snapshotProduct.brand),
                             name: prev.productInfo?.name ?? snapshotProduct.name ?? null,
                             category: prev.productInfo?.category ?? snapshotProduct.category ?? null,
                             image: prev.productInfo?.image ?? snapshotProduct.imageUrl ?? null,

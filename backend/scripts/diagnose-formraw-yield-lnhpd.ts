@@ -3,10 +3,12 @@ import path from "node:path";
 
 import { supabase } from "../src/supabase.js";
 import { extractErrorMeta, withRetry } from "../src/supabaseRetry.js";
+import { canonicalizeLnhpdFormTokens } from "../src/formTaxonomy/lnhpdFormTokenMap.js";
 import {
-  canonicalizeLnhpdFormTokens,
-  extractExplicitFormTokens,
-} from "../src/formTaxonomy/lnhpdFormTokenMap.js";
+  extractExplicitFormTokensWithRules,
+  loadParsingTokenRules,
+  type ParsingTokenRules,
+} from "../src/formTaxonomy/parsingTokenRules.js";
 
 type IngredientRow = {
   id: string | null;
@@ -350,11 +352,11 @@ const fetchAliasMaps = async (
   return { global, scoped };
 };
 
-const collectRawTokens = (sources: string[]): string[] => {
+const collectRawTokens = (sources: string[], rules: ParsingTokenRules): string[] => {
   const tokens: string[] = [];
   sources.forEach((source) => {
     if (!source || !source.trim()) return;
-    tokens.push(...extractExplicitFormTokens(source));
+    tokens.push(...extractExplicitFormTokensWithRules(source, rules));
   });
   return tokens;
 };
@@ -369,7 +371,10 @@ const mergeTokenLists = (target: Set<string>, tokens: string[]) => {
 const normalizeTokenList = (tokens: string[]): string[] =>
   canonicalizeLnhpdFormTokens(tokens);
 
-const buildTokenIndex = (factsJson: Record<string, unknown>): Map<string, TokenIndexEntry> => {
+const buildTokenIndex = (
+  factsJson: Record<string, unknown>,
+  rules: ParsingTokenRules,
+): Map<string, TokenIndexEntry> => {
   const index = new Map<
     string,
     {
@@ -401,9 +406,9 @@ const buildTokenIndex = (factsJson: Record<string, unknown>): Map<string, TokenI
     const nameSources = pickStringField(record, LNHPD_MEDICINAL_NAME_KEYS);
     const properSources = pickStringField(record, LNHPD_PROPER_NAME_KEYS);
     const materialSources = pickStringField(record, LNHPD_SOURCE_MATERIAL_KEYS);
-    const rawNameTokens = collectRawTokens(nameSources);
-    const rawProperTokens = collectRawTokens(properSources);
-    const rawMaterialTokens = collectRawTokens(materialSources);
+    const rawNameTokens = collectRawTokens(nameSources, rules);
+    const rawProperTokens = collectRawTokens(properSources, rules);
+    const rawMaterialTokens = collectRawTokens(materialSources, rules);
     const normalizedNameTokens = normalizeTokenList(rawNameTokens);
     const normalizedProperTokens = normalizeTokenList(rawProperTokens);
     const normalizedMaterialTokens = normalizeTokenList(rawMaterialTokens);
@@ -557,6 +562,7 @@ const run = async () => {
     throw new Error(`[formraw-yield] source ids file empty: ${SOURCE_IDS_FILE}`);
   }
 
+  const parsingRules = await loadParsingTokenRules();
   const rows = await fetchRowsForSourceIds(sourceIds, ID_COLUMN);
   const { resolvedRows, missingFormRawRows, missingTop } = await summarizeMissing(rows);
   const ingredientIds = Array.from(
@@ -576,12 +582,14 @@ const run = async () => {
   const aliasMaps = await fetchAliasMaps(ingredientIds);
   const tokenIndexBySourceId = new Map<string, Map<string, TokenIndexEntry>>();
   factsMap.forEach((factsJson, canonicalId) => {
-    tokenIndexBySourceId.set(canonicalId, buildTokenIndex(factsJson));
+    tokenIndexBySourceId.set(canonicalId, buildTokenIndex(factsJson, parsingRules));
   });
 
   let candidateFormRawRows = 0;
-  let candidateWritableEmptyRows = 0;
-  let candidateWritableAlreadyFilledRows = 0;
+  let candidateWriteableEmptyRows = 0;
+  let candidateWriteableAlreadyFilledRows = 0;
+  let candidateMappableEmptyRows = 0;
+  let candidateMappableAlreadyFilledRows = 0;
   const blockedByReason = new Map<string, number>();
   const candidateTokenSources = {
     name_fields: 0,
@@ -616,6 +624,8 @@ const run = async () => {
     const recognizedTokens = tokens.filter((token) =>
       recognizedFormKeys.has(token.toLowerCase()),
     );
+    const winnerTokens = recognizedTokens.length ? recognizedTokens : tokens;
+    const writeableAmbiguous = winnerTokens.length > 1;
 
     const ingredientId = row.ingredient_id ?? null;
     const formKeys = ingredientId ? formKeysByIngredient.get(ingredientId) ?? new Set() : new Set();
@@ -644,7 +654,9 @@ const run = async () => {
     const ambiguous = mappedTokens.length > 1;
     const mapsToFormKey = mappedTokens.length === 1 ? mappedTokens[0] : null;
     const noMap = !mappedTokens.length || !hasForms;
-    const candidateWritable =
+    const candidateWriteable =
+      Boolean(winnerTokens.length) && !writeableAmbiguous && Boolean(mapsToFormKey);
+    const candidateMappable =
       Boolean(tokens.length) && Boolean(mapsToFormKey) && !taxonomyConflict && !ambiguous;
 
     let blockedReason: string | null = null;
@@ -667,11 +679,18 @@ const run = async () => {
       );
     }
 
-    if (candidateWritable) {
+    if (candidateWriteable) {
       if (isEmpty) {
-        candidateWritableEmptyRows += 1;
+        candidateWriteableEmptyRows += 1;
       } else {
-        candidateWritableAlreadyFilledRows += 1;
+        candidateWriteableAlreadyFilledRows += 1;
+      }
+    }
+    if (candidateMappable) {
+      if (isEmpty) {
+        candidateMappableEmptyRows += 1;
+      } else {
+        candidateMappableAlreadyFilledRows += 1;
       }
     }
     const label = (
@@ -711,9 +730,10 @@ const run = async () => {
         recognizedTokens,
         mappedTokens,
         mapsToFormKey,
-        candidateWritableEmpty: candidateWritable && isEmpty,
+        candidateWriteableEmpty: candidateWriteable && isEmpty,
+        candidateMappableEmpty: candidateMappable && isEmpty,
         blockedReason,
-        winnerTokens: recognizedTokens.length ? recognizedTokens : tokens,
+        winnerTokens,
       });
     }
   });
@@ -729,13 +749,21 @@ const run = async () => {
     missingFormRawRatio: resolvedRows ? missingFormRawRows / resolvedRows : null,
     candidateFormRawRows,
     candidateFormRawRatio: resolvedRows ? candidateFormRawRows / resolvedRows : null,
-    candidateWritableEmptyRows,
-    candidateWritableAlreadyFilledRows,
-    candidateWritableEmptyRatio: resolvedRows
-      ? candidateWritableEmptyRows / resolvedRows
+    candidateWriteableEmptyRows,
+    candidateWriteableAlreadyFilledRows,
+    candidateWriteableEmptyRatio: resolvedRows
+      ? candidateWriteableEmptyRows / resolvedRows
       : null,
-    candidateWritableAlreadyFilledRatio: resolvedRows
-      ? candidateWritableAlreadyFilledRows / resolvedRows
+    candidateWriteableAlreadyFilledRatio: resolvedRows
+      ? candidateWriteableAlreadyFilledRows / resolvedRows
+      : null,
+    candidateMappableEmptyRows,
+    candidateMappableAlreadyFilledRows,
+    candidateMappableEmptyRatio: resolvedRows
+      ? candidateMappableEmptyRows / resolvedRows
+      : null,
+    candidateMappableAlreadyFilledRatio: resolvedRows
+      ? candidateMappableAlreadyFilledRows / resolvedRows
       : null,
     candidateTokenSources,
     blockedByReason: Array.from(blockedByReason.entries())

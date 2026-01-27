@@ -142,6 +142,84 @@ export type HomeDashboardResponse = {
   message?: string;
 };
 
+export type NutriTipSource = {
+  title: string;
+  url: string;
+  publisher: string;
+  regions: string[];
+};
+
+export type NutriTip = {
+  id: string;
+  title: string;
+  coverText: string;
+  detailMarkdown: string;
+  pillar: string;
+  pillarKey: 'safety' | 'label' | 'how_to' | 'ingredient' | 'habits' | 'marketing';
+  riskLevel: 'low' | 'medium' | 'high';
+  evidenceLevel: 'high' | 'moderate' | 'emerging';
+  evidenceType: 'fact_sheet' | 'regulatory_guidance' | 'primary_study';
+  jurisdictionScope: 'global' | 'mixed' | 'us' | 'canada';
+  lastReviewed: string;
+  primaryActionType: string;
+  reviewCadenceDays: number;
+  supplement: string;
+  supplementKey: string;
+  sources: NutriTipSource[];
+  cautions: string[];
+  tags: string[];
+};
+
+export type NutriTipRotation = {
+  method: string;
+  indexFormula: string;
+  epoch: string;
+  notes?: string;
+};
+
+export type NutriTipCadenceSlot = {
+  day: number;
+  pillarKey: NutriTip['pillarKey'];
+};
+
+export type NutriTipRotationAdvanced = {
+  method: string;
+  epoch: string;
+  notes?: string;
+  cadencePattern7Days: NutriTipCadenceSlot[];
+  selectionFormula: string;
+  requiresClientImplementation: boolean;
+};
+
+export type NutriTipRegionProfile = {
+  marketName: string;
+  regulator: string;
+  regulatorNote: string;
+  labelIdentifiersNote: string;
+  adverseEventReportingHint: string;
+};
+
+export type NutriTipsData = {
+  name: string;
+  version: string;
+  generatedAtUTC: string;
+  tipsCount: number;
+  defaultRegion: string;
+  supportedRegions: string[];
+  regionProfiles: Record<string, NutriTipRegionProfile>;
+  rotation: NutriTipRotation;
+  rotationAdvanced?: NutriTipRotationAdvanced;
+  disclaimerShort: string;
+  disclaimerFull: string;
+  tips: NutriTip[];
+};
+
+export type NutriTipsResponse = {
+  success: boolean;
+  data?: NutriTipsData;
+  message?: string;
+};
+
 export const apiClient = {
   search: (payload: SearchRequest, options?: AuthenticatedRequestOptions) =>
     request<SearchAPIResponse>(`/api/search?${new URLSearchParams({
@@ -206,4 +284,7 @@ export const apiClient = {
 
   homeDashboard: (options?: AuthenticatedRequestOptions) =>
     request<HomeDashboardResponse>('/api/mobile/home', { method: 'GET', ...options }),
+
+  nutriTips: (options?: AuthenticatedRequestOptions) =>
+    request<NutriTipsResponse>('/api/nutri-tips', { method: 'GET', ...options }),
 };

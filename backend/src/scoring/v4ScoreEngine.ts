@@ -1863,6 +1863,11 @@ const buildScoreBundleV4FromData = async (params: {
     Object.entries(metrics.goalDoseAdequacy).map(([goal, value]) => [goal, roundScore(value)]),
   );
 
+  const factsHash = computeV4FactsHashFromRows(params.rows, {
+    dailyMultiplier: params.dailyMultiplier.multiplier,
+    dailyMultiplierSource: params.dailyMultiplier.source,
+  });
+
   const bundle: ScoreBundleV4 = {
     overallScore: roundScore(displayOverall),
     pillars: {
@@ -1947,6 +1952,7 @@ const buildScoreBundleV4FromData = async (params: {
         dailyMultiplier: params.dailyMultiplier.multiplier,
         dailyMultiplierSource: params.dailyMultiplier.source,
         dailyMultiplierReliability: params.dailyMultiplier.reliability,
+        factsHash,
         ...(params.source === "lnhpd"
           ? {
               lnhpdIdUsedForDoseLookup: params.dailyMultiplier.lnhpdIdUsedForDoseLookup ?? null,
@@ -2063,6 +2069,16 @@ export const computeV4InputsHashFromRows = (
   rows: ProductIngredientRow[],
   context?: { dailyMultiplier?: number; dailyMultiplierSource?: string; datasetVersion?: string | null },
 ): string => buildInputsHash(rows, context);
+
+export const computeV4FactsHashFromRows = (
+  rows: ProductIngredientRow[],
+  context?: { dailyMultiplier?: number; dailyMultiplierSource?: string },
+): string =>
+  buildInputsHash(rows, {
+    dailyMultiplier: context?.dailyMultiplier ?? null,
+    dailyMultiplierSource: context?.dailyMultiplierSource ?? null,
+    datasetVersion: null,
+  });
 
 export async function computeV4InputsHash(params: {
   source: ScoreSource;

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
   Animated,
@@ -14,11 +14,16 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
+import { ContentFrame } from '@/components/common/ContentFrame';
 import { LinearGradient } from 'expo-linear-gradient';
+import { MotiView } from 'moti';
+import { useDailyCheckIns } from '@/contexts/DailyCheckInContext';
+import { useProgressRange, type ProgressRange } from '@/contexts/ProgressRangeContext';
+import { useSavedSupplements } from '@/contexts/SavedSupplementsContext';
 import { useScreenTokens } from '@/hooks/useScreenTokens';
+import { buildCheckInKey } from '@/lib/check-ins';
 import {
   Activity,
-  AlertCircle,
   CheckCircle2,
   Clock,
   Flame,
@@ -34,8 +39,28 @@ const SHEET_MAX_HEIGHT = Math.round(SCREEN_HEIGHT * 0.85);
 const SCREEN_BG = '#F2F3F7';
 const PAGE_X = 24;
 const NAV_HEIGHT = 64;
+const MINI_METRIC_GAP = 16;
+const MAIN_CARD_GAP = 20;
+const TREND_BAR_HEIGHT = 128;
+const TREND_BAR_MIN_HEIGHT = 8;
+const TREND_DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+const getWeekStartMonday = (baseDate: Date) => {
+  const start = new Date(baseDate);
+  start.setHours(0, 0, 0, 0);
+  const day = start.getDay();
+  const offset = (day + 6) % 7;
+  start.setDate(start.getDate() - offset);
+  return start;
+};
 
-type RangeKey = 'today' | '7d' | '30d';
+type Density = 'compact' | 'regular';
+
+const getTwoUpDensity = (contentWidth: number, gap: number): Density => {
+  const cardWidth = (contentWidth - gap) / 2;
+  return cardWidth < 175 ? 'compact' : 'regular';
+};
+
+type RangeKey = ProgressRange;
 type SheetKey = 'today' | 'adherence' | 'reminders' | 'trend' | 'achievements' | null;
 
 type TodayItem = {
@@ -43,11 +68,100 @@ type TodayItem = {
   name: string;
   time: string;
   done: boolean;
+  checkInKey: string;
+  supplementId?: string | null;
+};
+
+type PlanItem = {
+  id: string;
+  name: string;
+  timeLabel: string;
+  timeRaw?: string | null;
+  timeMinutes: number | null;
+  done: boolean;
+  withFood: boolean;
+  checkInKey: string;
+  supplementId?: string | null;
+};
+
+type TrendSeriesEntry = {
+  k: string;
+  v: number | null;
+  completed: number;
+  total: number;
+  dateKey: string;
 };
 
 const calcPercent = (taken: number, total: number) => {
   if (total <= 0) return 0;
   return Math.round((taken / total) * 100);
+};
+
+const getLocalDateKey = (date: Date) => {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, '0');
+  const day = `${date.getDate()}`.padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const parseTimeMinutes = (time?: string | null) => {
+  if (!time) return null;
+  const [hoursStr, minutesStr] = time.split(':');
+  const hours = Number.parseInt(hoursStr, 10);
+  const minutes = Number.parseInt(minutesStr ?? '0', 10);
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
+  return hours * 60 + minutes;
+};
+
+const formatTimeFromMinutes = (minutes: number) => {
+  const total = ((minutes % (24 * 60)) + (24 * 60)) % (24 * 60);
+  const hours24 = Math.floor(total / 60);
+  const mins = total % 60;
+  const period = hours24 >= 12 ? 'PM' : 'AM';
+  let hours12 = hours24 % 12;
+  if (hours12 === 0) hours12 = 12;
+  return `${hours12}:${mins.toString().padStart(2, '0')} ${period}`;
+};
+
+const formatTimeLabel = (time?: string | null) => {
+  const minutes = parseTimeMinutes(time);
+  if (minutes === null) return 'Anytime';
+  return formatTimeFromMinutes(minutes);
+};
+
+const addMinutesToTimeLabel = (time?: string | null, offsetMinutes = 15) => {
+  const minutes = parseTimeMinutes(time);
+  if (minutes === null) return null;
+  return formatTimeFromMinutes(minutes + offsetMinutes);
+};
+
+const formatPlanTitle = (name: string, timeLabel: string) => {
+  const cleanName = name.replace(/[\s·•.]+$/g, '');
+  return `${cleanName} · ${timeLabel}`;
+};
+
+const getTimeCategoryLabel = (time?: string | null) => {
+  const minutes = parseTimeMinutes(time);
+  if (minutes === null) return null;
+  if (minutes >= 300 && minutes < 720) return 'Morning';
+  if (minutes >= 720 && minutes < 1020) return 'Midday';
+  if (minutes >= 1020 && minutes < 1260) return 'Evening';
+  return 'Bedtime';
+};
+
+const getScheduleLabel = (time?: string | null) => getTimeCategoryLabel(time) ?? formatTimeLabel(time);
+
+const summarizeTrendSeries = (series: TrendSeriesEntry[]) => {
+  const valid = series.filter(entry => entry.v !== null);
+  if (!valid.length) {
+    return { average: null, best: null, lowest: null };
+  }
+  const average = Math.round(
+    valid.reduce((total, entry) => total + (entry.v ?? 0), 0) / valid.length,
+  );
+  const best = valid.reduce((prev, current) => ((current.v ?? 0) > (prev.v ?? 0) ? current : prev), valid[0]);
+  const lowest = valid.reduce((prev, current) => ((current.v ?? 0) < (prev.v ?? 0) ? current : prev), valid[0]);
+  return { average, best, lowest };
 };
 
 type CardProps = {
@@ -210,26 +324,45 @@ type MiniMetricCardProps = {
   value: string;
   sub?: string;
   onPress?: () => void;
+  density?: Density;
 };
 
-const MiniMetricCard = ({ icon, label, value, sub, onPress }: MiniMetricCardProps) => {
+const MiniMetricCard = ({ icon, label, value, sub, onPress, density = 'regular' }: MiniMetricCardProps) => {
+  const isCompact = density === 'compact';
+
   return (
-    <Card style={styles.miniMetricCard}>
+    <Card style={[styles.miniMetricCard, isCompact ? styles.miniMetricCardCompact : styles.miniMetricCardSquare]}>
       <ScalePressable accessibilityLabel={label} onPress={onPress} style={styles.fill} scaleTo={0.95}>
-        <View style={styles.miniMetricPressable}>
+        <View style={[styles.miniMetricPressable, isCompact && styles.miniMetricPressableCompact]}>
           <LinearGradient
             colors={['rgba(255,255,255,0.9)', 'rgba(255,255,255,0.55)']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={styles.miniMetricIcon}
+            style={[styles.miniMetricIcon, isCompact && styles.miniMetricIconCompact]}
           >
             {icon}
           </LinearGradient>
 
           <View style={styles.miniMetricTextWrap}>
-            <Text style={styles.miniMetricLabel}>{label}</Text>
-            <Text style={styles.miniMetricValue}>{value}</Text>
-            {sub ? <Text style={styles.miniMetricSub}>{sub}</Text> : null}
+            <Text
+              style={[styles.miniMetricLabel, isCompact && styles.miniMetricLabelCompact]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {label}
+            </Text>
+            <Text style={[styles.miniMetricValue, isCompact && styles.miniMetricValueCompact]} numberOfLines={1}>
+              {value}
+            </Text>
+            {sub ? (
+              <Text
+                style={[styles.miniMetricSub, isCompact && styles.miniMetricSubCompact]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {sub}
+              </Text>
+            ) : null}
           </View>
         </View>
       </ScalePressable>
@@ -242,9 +375,10 @@ type SheetProps = {
   title: string | null;
   onClose: () => void;
   children?: ReactNode;
+  pageX?: number;
 };
 
-const Sheet = ({ open, title, onClose, children }: SheetProps) => {
+const Sheet = ({ open, title, onClose, children, pageX = PAGE_X }: SheetProps) => {
   const [visible, setVisible] = useState(open);
 
   const overlayOpacity = useRef(new Animated.Value(0)).current;
@@ -301,14 +435,14 @@ const Sheet = ({ open, title, onClose, children }: SheetProps) => {
 
         <Pressable onPress={event => event.stopPropagation()} style={styles.sheetHitbox}>
           <Animated.View style={[styles.sheetContainer, { transform: [{ translateY: sheetTranslate }] }]}>
-            <View style={styles.sheetHeader}>
+            <View style={[styles.sheetHeader, { paddingHorizontal: pageX }]}>
               <Text style={styles.sheetTitle}>{title}</Text>
               <ScalePressable accessibilityLabel="Close" onPress={onClose} style={styles.sheetCloseButton} scaleTo={0.95}>
                 <X size={18} color="#0f172a" />
               </ScalePressable>
             </View>
 
-            <ScrollView contentContainerStyle={styles.sheetContent} showsVerticalScrollIndicator={false}>
+            <ScrollView contentContainerStyle={[styles.sheetContent, { paddingHorizontal: pageX }]} showsVerticalScrollIndicator={false}>
               {children}
             </ScrollView>
           </Animated.View>
@@ -366,39 +500,168 @@ export default function ProgressScreen() {
   const tokens = useScreenTokens(NAV_HEIGHT);
   const contentTopPadding = tokens.contentTopPadding;
   const contentBottomPadding = tokens.contentBottomPadding;
+  const frameWidth = tokens.frameWidth ?? tokens.width;
+  const contentWidth = Math.max(0, frameWidth - tokens.pageX * 2);
+  const twoUpDensity = getTwoUpDensity(contentWidth, MINI_METRIC_GAP);
+  const planCardHeight = Math.max(180, Math.round((contentWidth - 16) / 2));
 
-  const [range, setRange] = useState<RangeKey>('7d');
+  const { range, setRange } = useProgressRange();
   const [sheet, setSheet] = useState<SheetKey>(null);
-  const [backupReminder, setBackupReminder] = useState(false);
+  const [backupReminders, setBackupReminders] = useState<string[]>([]);
+  const [selectedTrendIndex, setSelectedTrendIndex] = useState<number | null>(null);
 
-  const [todayItems, setTodayItems] = useState<TodayItem[]>([
-    { id: 'vitd', name: 'Vit D', time: 'Morning', done: true },
-    { id: 'omega3', name: 'Omega-3', time: 'Dinner', done: true },
-    { id: 'probiotic', name: 'Probiotic', time: 'Lunch', done: true },
-    { id: 'mag', name: 'Magnesium', time: '9:00 PM', done: false },
-  ]);
+  const { savedSupplements } = useSavedSupplements();
+  const { checkInsByDate, toggleCheckIn, addCheckIns } = useDailyCheckIns();
+  const todayKey = useMemo(() => getLocalDateKey(new Date()), []);
+
+  const expectedKeys = useMemo(
+    () =>
+      savedSupplements
+        .filter(item => item.syncedToCheckIn)
+        .map(item => buildCheckInKey({ supplementId: item.supplementId, localId: item.id })),
+    [savedSupplements],
+  );
+  const expectedKeySet = useMemo(() => new Set(expectedKeys), [expectedKeys]);
+  const expectedCount = expectedKeys.length;
+
+  const todayItems = useMemo(() => {
+    const checked = new Set(checkInsByDate[todayKey] ?? []);
+    return savedSupplements
+      .filter(item => item.syncedToCheckIn)
+      .sort((a, b) => {
+        const timeA = parseTimeMinutes(a.routine?.time);
+        const timeB = parseTimeMinutes(b.routine?.time);
+        if (timeA !== null && timeB !== null && timeA !== timeB) {
+          return timeA - timeB;
+        }
+        if (timeA !== null && timeB === null) return -1;
+        if (timeA === null && timeB !== null) return 1;
+        return b.createdAt.localeCompare(a.createdAt);
+      })
+      .map(item => {
+        const checkInKey = buildCheckInKey({ supplementId: item.supplementId, localId: item.id });
+        return {
+          id: item.id,
+          name: item.productName,
+          time: getScheduleLabel(item.routine?.time),
+          done: checked.has(checkInKey),
+          checkInKey,
+          supplementId: item.supplementId ?? null,
+        };
+      });
+  }, [checkInsByDate, savedSupplements, todayKey]);
+
+  const planItems = useMemo<PlanItem[]>(() => {
+    const checked = new Set(checkInsByDate[todayKey] ?? []);
+    return savedSupplements
+      .filter(item => item.syncedToCheckIn)
+      .sort((a, b) => {
+        const timeA = parseTimeMinutes(a.routine?.time);
+        const timeB = parseTimeMinutes(b.routine?.time);
+        if (timeA !== null && timeB !== null && timeA !== timeB) {
+          return timeA - timeB;
+        }
+        if (timeA !== null && timeB === null) return -1;
+        if (timeA === null && timeB !== null) return 1;
+        return b.createdAt.localeCompare(a.createdAt);
+      })
+      .map(item => {
+        const checkInKey = buildCheckInKey({ supplementId: item.supplementId, localId: item.id });
+        const timeRaw = item.routine?.time ?? null;
+        const timeMinutes = parseTimeMinutes(timeRaw);
+        return {
+          id: item.id,
+          name: item.productName,
+          timeLabel: formatTimeLabel(timeRaw),
+          timeRaw,
+          timeMinutes,
+          done: checked.has(checkInKey),
+          withFood: Boolean(item.routine?.withFood),
+          checkInKey,
+          supplementId: item.supplementId ?? null,
+        };
+      });
+  }, [checkInsByDate, savedSupplements, todayKey]);
+
+  const planNextId = useMemo(() => planItems.find(item => !item.done)?.id ?? null, [planItems]);
+  const planCardItems = useMemo(() => {
+    if (planItems.length <= 2) return planItems;
+    const nextItem = planNextId ? planItems.find(item => item.id === planNextId) : null;
+    if (!nextItem) return planItems.slice(0, 2);
+    const rest = planItems.filter(item => item.id !== nextItem.id);
+    return [nextItem, ...rest].slice(0, 2);
+  }, [planItems, planNextId]);
+
+  const [backupCandidateId, setBackupCandidateId] = useState<string | null>(null);
+  const backupCandidateItem = useMemo(
+    () => (backupCandidateId ? planItems.find(item => item.id === backupCandidateId) : null),
+    [backupCandidateId, planItems],
+  );
+  const backupReminderSet = useMemo(() => new Set(backupReminders), [backupReminders]);
+  const backupCandidateActive = Boolean(backupCandidateId && backupReminderSet.has(backupCandidateId));
+
+  useEffect(() => {
+    if (!planItems.length) {
+      setBackupCandidateId(null);
+      return;
+    }
+    if (!backupCandidateId || !planItems.some(item => item.id === backupCandidateId)) {
+      setBackupCandidateId(planNextId ?? planItems[0]?.id ?? null);
+    }
+  }, [backupCandidateId, planItems, planNextId]);
+
+  useEffect(() => {
+    if (!backupReminders.length) return;
+    setBackupReminders(prev => {
+      const filtered = prev.filter(id => planItems.some(item => item.id === id));
+      return filtered.length === prev.length ? prev : filtered;
+    });
+  }, [backupReminders.length, planItems]);
 
   const takenCount = todayItems.filter(item => item.done).length;
   const totalCount = todayItems.length;
   const percent = calcPercent(takenCount, totalCount);
   const remaining = todayItems.filter(item => !item.done);
 
-  const markAllRemaining = () => setTodayItems(prev => prev.map(item => ({ ...item, done: true })));
-  const toggleDone = (id: string) => setTodayItems(prev => prev.map(item => (item.id === id ? { ...item, done: !item.done } : item)));
+  const countCompletedForDate = useCallback(
+    (dateKey: string) => {
+      if (expectedCount === 0) return 0;
+      const completedSet = new Set(checkInsByDate[dateKey] ?? []);
+      let completedCount = 0;
+      expectedKeySet.forEach(key => {
+        if (completedSet.has(key)) completedCount += 1;
+      });
+      return completedCount;
+    },
+    [checkInsByDate, expectedCount, expectedKeySet],
+  );
+
+  const toggleDone = useCallback(
+    (item: TodayItem) => {
+      void toggleCheckIn(todayKey, item.checkInKey, item.supplementId);
+    },
+    [todayKey, toggleCheckIn],
+  );
+
+  const markAllRemaining = useCallback(() => {
+    if (!remaining.length) return;
+    void addCheckIns(
+      todayKey,
+      remaining.map(item => ({ key: item.checkInKey, supplementId: item.supplementId })),
+    );
+  }, [addCheckIns, remaining, todayKey]);
 
   const badgeUnlocked = 2;
   const nextBadgeDaysLeft = 1;
 
   const adherence = useMemo(() => {
     if (range === 'today') {
-      const vitd = todayItems.find(item => item.id === 'vitd');
-      const mag = todayItems.find(item => item.id === 'mag');
       return {
         label: 'Streak',
-        items: [
-          { name: 'Vit D', val: vitd?.done ? 100 : 0 },
-          { name: 'Mag', val: mag?.done ? 100 : 0 },
-        ],
+        items: todayItems.slice(0, 2).map(item => ({
+          name: item.name,
+          val: item.done ? 100 : 0,
+        })),
       };
     }
     if (range === '30d') {
@@ -419,18 +682,63 @@ export default function ProgressScreen() {
     };
   }, [range, todayItems]);
 
+  const trendSeries7d = useMemo<TrendSeriesEntry[]>(() => {
+    const startDate = getWeekStartMonday(new Date());
+
+    return Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(startDate);
+      date.setDate(startDate.getDate() + index);
+      const dateKey = getLocalDateKey(date);
+      const completed = countCompletedForDate(dateKey);
+      const total = expectedCount;
+      const value = total > 0 ? calcPercent(completed, total) : null;
+      return {
+        k: TREND_DAY_LABELS[date.getDay()],
+        v: value,
+        completed,
+        total,
+        dateKey,
+      };
+    });
+  }, [countCompletedForDate, expectedCount]);
+
+  const trendSeries30d = useMemo<TrendSeriesEntry[]>(() => {
+    const endDate = new Date();
+    endDate.setHours(0, 0, 0, 0);
+    const days = Array.from({ length: 28 }, (_, index) => {
+      const date = new Date(endDate);
+      date.setDate(endDate.getDate() - (27 - index));
+      const dateKey = getLocalDateKey(date);
+      const completed = countCompletedForDate(dateKey);
+      const total = expectedCount;
+      const value = total > 0 ? calcPercent(completed, total) : null;
+      return { k: TREND_DAY_LABELS[date.getDay()], v: value, completed, total, dateKey };
+    });
+
+    return Array.from({ length: 4 }, (_, weekIndex) => {
+      const slice = days.slice(weekIndex * 7, weekIndex * 7 + 7);
+      const completed = slice.reduce((total, entry) => total + entry.completed, 0);
+      const total = slice.reduce((sum, entry) => sum + entry.total, 0);
+      const value = total > 0 ? calcPercent(completed, total) : null;
+      return {
+        k: `W${weekIndex + 1}`,
+        v: value,
+        completed,
+        total,
+        dateKey: slice[0]?.dateKey ?? `w${weekIndex + 1}`,
+      };
+    });
+  }, [countCompletedForDate, expectedCount]);
+
   const trend = useMemo(() => {
     if (range === 'today') {
-      const slots = [
-        { label: 'AM', id: 'vitd' },
-        { label: 'Noon', id: 'probiotic' },
-        { label: 'PM', id: 'omega3' },
-        { label: '9pm', id: 'mag' },
-      ];
-      const series = slots.map(slot => {
-        const item = todayItems.find(entry => entry.id === slot.id);
-        return { k: slot.label, v: item?.done ? 100 : 0 };
-      });
+      const series = todayItems.slice(0, 4).map(item => ({
+        k: item.time,
+        v: item.done ? 100 : 0,
+        completed: item.done ? 1 : 0,
+        total: 1,
+        dateKey: item.id,
+      }));
       return {
         title: 'Today Timeline',
         series,
@@ -440,42 +748,39 @@ export default function ProgressScreen() {
     }
 
     if (range === '30d') {
-      const series = [
-        { k: 'W1', v: 72 },
-        { k: 'W2', v: 78 },
-        { k: 'W3', v: 83 },
-        { k: 'W4', v: 86 },
-      ];
-      const avg = calcPercent(series.reduce((total, entry) => total + entry.v, 0), series.length * 100);
-      const best = series.reduce((prev, current) => (current.v > prev.v ? current : prev), series[0]);
-      const low = series.reduce((prev, current) => (current.v < prev.v ? current : prev), series[0]);
+      const { average, best, lowest } = summarizeTrendSeries(trendSeries30d);
       return {
         title: '30-Day Trend',
-        series,
-        summaryA: `Average: ${avg}%`,
-        summaryB: `Lowest: ${low.k} ${low.v}% · Best: ${best.k} ${best.v}%`,
+        series: trendSeries30d,
+        summaryA: average === null ? 'Average: --' : `Average: ${average}%`,
+        summaryB: best && lowest
+          ? `Lowest: ${lowest.k} ${lowest.v}% · Best: ${best.k} ${best.v}%`
+          : 'No data yet',
       };
     }
 
-    const series = [
-      { k: 'M', v: 65 },
-      { k: 'T', v: 80 },
-      { k: 'W', v: 30 },
-      { k: 'T', v: 90 },
-      { k: 'F', v: 100 },
-      { k: 'S', v: 95 },
-      { k: 'S', v: 100 },
-    ];
-    const avg = calcPercent(series.reduce((total, entry) => total + entry.v, 0), series.length * 100);
-    const best = series.reduce((prev, current) => (current.v > prev.v ? current : prev), series[0]);
-    const low = series.reduce((prev, current) => (current.v < prev.v ? current : prev), series[0]);
+    const { average, best, lowest } = summarizeTrendSeries(trendSeries7d);
     return {
       title: '7-Day Trend',
-      series,
-      summaryA: `Average: ${avg}%`,
-      summaryB: `Lowest: ${low.k} ${low.v}% · Best: ${best.k} ${best.v}%`,
+      series: trendSeries7d,
+      summaryA: average === null ? 'Average: --' : `Average: ${average}%`,
+      summaryB: best && lowest
+        ? `Lowest: ${lowest.k} ${lowest.v}% · Best: ${best.k} ${best.v}%`
+        : 'No data yet',
     };
-  }, [range, remaining, takenCount, todayItems, totalCount]);
+  }, [range, remaining, takenCount, todayItems, totalCount, trendSeries30d, trendSeries7d]);
+
+  useEffect(() => {
+    setSelectedTrendIndex(null);
+  }, [range, trend.series.length]);
+
+  const activeTrendIndex = selectedTrendIndex;
+  const selectedTrendEntry = selectedTrendIndex !== null ? trend.series[selectedTrendIndex] : null;
+  const trendDetailLine = selectedTrendEntry
+    ? selectedTrendEntry.v === null
+      ? `Selected: ${selectedTrendEntry.k} --`
+      : `Selected: ${selectedTrendEntry.k} ${selectedTrendEntry.v}% (${selectedTrendEntry.completed}/${selectedTrendEntry.total})`
+    : trend.summaryB;
 
   return (
     <View style={styles.screen}>
@@ -487,74 +792,73 @@ export default function ProgressScreen() {
           {
             paddingTop: contentTopPadding,
             paddingBottom: contentBottomPadding,
-            paddingHorizontal: tokens.pageX,
           },
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={[styles.headerRow, { marginBottom: tokens.sectionGap }]}>
-          <Text style={[styles.headerTitle, { fontSize: tokens.h1Size, lineHeight: tokens.h1Line }]} maxFontSizeMultiplier={1.2}>
-            Progress
-          </Text>
-          <View style={styles.segmentedOffset}>
-            <SegmentedControl value={range} onChange={setRange} />
+        <ContentFrame navHeight={NAV_HEIGHT} style={styles.contentFrame}>
+          {/* Header */}
+          <View style={[styles.headerRow, { marginBottom: MAIN_CARD_GAP }]}>
+            <Text style={[styles.headerTitle, { fontSize: tokens.h1Size, lineHeight: tokens.h1Line }]} maxFontSizeMultiplier={1.2}>
+              Progress
+            </Text>
           </View>
-        </View>
 
-        {/* Top mini metrics */}
-        <View style={styles.row}>
-          <MiniMetricCard
-            icon={<Medal size={22} color="#b45309" />}
-            label="Badges unlocked"
-            value={String(badgeUnlocked)}
-            sub="Streak + Perfect Day"
-            onPress={() => setSheet('achievements')}
-          />
-          <MiniMetricCard
-            icon={<Trophy size={22} color="#334155" />}
-            label="Next badge"
-            value={`${nextBadgeDaysLeft} day`}
-            sub="to 7-day streak"
-            onPress={() => setSheet('achievements')}
-          />
-        </View>
+          {/* Top mini metrics */}
+          <View style={styles.row}>
+            <MiniMetricCard
+              icon={<Medal size={22} color="#b45309" />}
+              label="Badges unlocked"
+              value={String(badgeUnlocked)}
+              sub="Streak + Perfect Day"
+              onPress={() => setSheet('achievements')}
+              density={twoUpDensity}
+            />
+            <MiniMetricCard
+              icon={<Trophy size={22} color="#334155" />}
+              label="Next badge"
+              value={`${nextBadgeDaysLeft} day`}
+              sub="to 7-day streak"
+              onPress={() => setSheet('achievements')}
+              density={twoUpDensity}
+            />
+          </View>
 
-        {/* Today card */}
-        <View style={[styles.sectionSpacing, { marginTop: tokens.sectionGap }]}>
-          <Card style={styles.todayCard}>
-            <View style={styles.todayContent}>
-              <View style={styles.todayHeaderRow}>
-                <View>
-                  <Text style={styles.todayTitle}>Today's Progress</Text>
-                  <Text style={styles.todaySubtitle}>Current Status</Text>
+          {/* Today card */}
+          <View style={[styles.sectionSpacing, { marginTop: MAIN_CARD_GAP }]}>
+            <Card style={styles.todayCard}>
+              <View style={styles.todayContent}>
+                <View style={styles.todayHeaderRow}>
+                  <View>
+                    <Text style={styles.todayTitle}>Today's Progress</Text>
+                    <Text style={styles.todaySubtitle}>Current Status</Text>
+                  </View>
+                  <IconButton
+                    label="Today details"
+                    onPress={() => setSheet('today')}
+                    icon={<TrendingUp size={18} color="#ffffff" />}
+                    style={styles.todayIconButton}
+                  />
                 </View>
-                <IconButton
-                  label="Today details"
-                  onPress={() => setSheet('today')}
-                  icon={<TrendingUp size={18} color="#ffffff" />}
-                  style={styles.todayIconButton}
-                />
-              </View>
 
-              <View style={styles.todayStatsRow}>
-                <Text style={styles.todayPercent}>{percent}%</Text>
-                <View style={styles.todayCountWrap}>
-                  <Text style={styles.todayCount}>{takenCount}/{totalCount}</Text>
-                  <Text style={styles.todayCountLabel}>Taken</Text>
+                <View style={styles.todayStatsRow}>
+                  <Text style={styles.todayPercent}>{percent}%</Text>
+                  <View style={styles.todayCountWrap}>
+                    <Text style={styles.todayCount}>{takenCount}/{totalCount}</Text>
+                    <Text style={styles.todayCountLabel}>Taken</Text>
+                  </View>
                 </View>
-              </View>
 
-              <View style={styles.todayProgressWrap}>
-                <AnimatedProgressBar value={percent} />
-              </View>
+                <View style={styles.todayProgressWrap}>
+                  <AnimatedProgressBar value={percent} />
+                </View>
 
-              <View style={styles.todayMessageRow}>
-                <View style={styles.todayDot} />
-                <Text style={styles.todayMessage}>
-                  {remaining.length ? `Just ${remaining.length} more to hit your daily goal!` : 'You hit your daily goal.'}
-                </Text>
-              </View>
+                <View style={styles.todayMessageRow}>
+                  <View style={styles.todayDot} />
+                  <Text style={styles.todayMessage}>
+                    {remaining.length ? `Just ${remaining.length} more to hit your daily goal!` : 'You hit your daily goal.'}
+                  </Text>
+                </View>
 
               {remaining.length ? (
                 <View style={styles.todayRemainingWrap}>
@@ -568,7 +872,7 @@ export default function ProgressScreen() {
                         left={<Clock size={16} color="#ffffff" />}
                         text={`${item.name} · ${item.time}`}
                         right={<Text style={styles.remainingMark}>Mark</Text>}
-                        onPress={() => toggleDone(item.id)}
+                        onPress={() => toggleDone(item)}
                       />
                     ))}
                   </View>
@@ -593,59 +897,43 @@ export default function ProgressScreen() {
         </View>
 
         {/* Streak + Plan */}
-        <View style={[styles.row, styles.sectionSpacing, { marginTop: tokens.sectionGap }]}>
-          <Card style={[styles.squareCard, styles.consistencyCard]}>
-            <ScalePressable accessibilityLabel="Streak" onPress={() => setSheet('adherence')} style={styles.fill} scaleTo={0.95}>
-              <View style={styles.squarePressable}>
-                <View style={styles.squareHeaderRow}>
-                  <Text style={styles.squareTitle} numberOfLines={1} ellipsizeMode="tail">Streak</Text>
-                  <View style={styles.squareIconWrap}>
-                    <AlertCircle size={16} color="#0f172a" />
-                  </View>
-                </View>
-
-                <View style={styles.squareBody}>
-                  {adherence.items.slice(0, 2).map(item => (
-                    <View key={item.name} style={styles.consistencyRow}>
-                      <Text style={styles.consistencyLabel} numberOfLines={1}>{item.name}</Text>
-                      <View style={styles.consistencyTrack}>
-                        <View style={[styles.consistencyFill, { width: `${item.val}%` }]} />
-                      </View>
-                      <Text style={styles.consistencyValue}>{item.val}%</Text>
-                    </View>
-                  ))}
-                </View>
-
-                <Text style={styles.squareFooter}>Tap card for details.</Text>
-              </View>
-            </ScalePressable>
-          </Card>
-
-          <Card style={[styles.squareCard, styles.remindersCard]}>
+        <View style={[styles.sectionSpacing, { marginTop: MAIN_CARD_GAP }]}>
+          <Card style={[styles.planWideCard, styles.remindersCard, { height: planCardHeight }]}>
             <ScalePressable accessibilityLabel="Plan" onPress={() => setSheet('reminders')} style={styles.fill} scaleTo={0.95}>
-              <View style={styles.squarePressable}>
+              <View style={[styles.squarePressable, styles.planPressable]}>
                 <View style={styles.squareHeaderRow}>
                   <Text style={styles.squareTitle} numberOfLines={1} ellipsizeMode="tail">Plan</Text>
-                  <View style={styles.squareIconWrap}>
+                  <View style={[styles.squareIconWrap, styles.planIconWrap]}>
                     <Clock size={16} color="#0f172a" />
                   </View>
                 </View>
 
                 <View style={styles.squareBody}>
-                  <Pill
-                    dense
-                    left={<Clock size={14} color="#0f172a" />}
-                    text={backupReminder ? 'Mg · 9pm (Backup)' : 'Mg · 9pm'}
-                    right={<Text style={styles.reminderTag}>Next</Text>}
-                    onPress={() => setSheet('reminders')}
-                  />
-                  <Pill
-                    dense
-                    left={<CheckCircle2 size={14} color="#0f172a" />}
-                    text="Vit D"
-                    right={<Text style={styles.reminderTag}>Done</Text>}
-                    onPress={() => setSheet('reminders')}
-                  />
+                  {planCardItems.map(item => {
+                    const status = item.done
+                      ? 'Done'
+                      : planNextId && item.id === planNextId
+                        ? 'Next'
+                        : 'Remaining';
+                    const backupTag = backupReminderSet.has(item.id) ? ' (Backup)' : '';
+                    const foodTag = item.withFood ? ' · With food' : '';
+                    return (
+                      <Pill
+                        key={item.id}
+                        dense
+                        left={
+                          item.done ? (
+                            <CheckCircle2 size={14} color="#0f172a" />
+                          ) : (
+                            <Clock size={14} color="#0f172a" />
+                          )
+                        }
+                        text={`${formatPlanTitle(item.name, item.timeLabel)}${backupTag}${foodTag}`}
+                        right={<Text style={styles.reminderTag}>{status}</Text>}
+                        onPress={() => setSheet('reminders')}
+                      />
+                    );
+                  })}
                 </View>
 
                 <Text style={styles.squareFooter}>Tap card to edit.</Text>
@@ -655,7 +943,7 @@ export default function ProgressScreen() {
         </View>
 
         {/* Trend */}
-        <View style={[styles.sectionSpacing, { marginTop: tokens.sectionGap }]}>
+        <View style={[styles.sectionSpacing, { marginTop: MAIN_CARD_GAP }]}>
           <Card style={styles.trendCard}>
             <View style={styles.trendContent}>
               <View style={styles.trendHeaderRow}>
@@ -669,27 +957,76 @@ export default function ProgressScreen() {
               </View>
 
               <View style={styles.trendBarsRow}>
-                {trend.series.map((entry, idx) => (
-                  <View key={`${entry.k}-${idx}`} style={styles.trendBarColumn}>
-                    <View style={styles.trendBarTrack}>
-                      <View style={[styles.trendBarFill, { height: `${entry.v}%` }]} />
-                    </View>
-                    <Text style={styles.trendBarLabel}>{entry.k}</Text>
-                    <Text style={styles.trendBarValue} numberOfLines={1} ellipsizeMode="clip">{entry.v}%</Text>
-                  </View>
-                ))}
+                {trend.series.map((entry, idx) => {
+                  const isActive = activeTrendIndex !== null && idx === activeTrendIndex;
+                  return (
+                    <MotiView
+                      key={`${entry.k}-${idx}`}
+                      style={styles.trendBarColumn}
+                      animate={{
+                        translateY: isActive ? -6 : 0,
+                        scale: isActive ? 1.05 : 1,
+                      }}
+                      transition={{ type: 'timing', duration: 220 }}
+                    >
+                      <Pressable
+                        onPress={() => setSelectedTrendIndex(prev => (prev === idx ? null : idx))}
+                        style={styles.trendBarPressable}
+                        hitSlop={8}
+                      >
+                        <View style={styles.trendBarTrack}>
+                          <MotiView
+                            from={{ height: 0 }}
+                            animate={{
+                              height:
+                                entry.v === null
+                                  ? TREND_BAR_MIN_HEIGHT
+                                  : entry.v === 0
+                                    ? 0
+                                    : Math.max(
+                                        TREND_BAR_MIN_HEIGHT,
+                                        (entry.v / 100) * TREND_BAR_HEIGHT,
+                                      ),
+                            }}
+                            transition={{ type: 'timing', duration: 520 }}
+                            style={[
+                              styles.trendBarFill,
+                              isActive ? styles.trendBarFillActive : styles.trendBarFillInactive,
+                              entry.v === null && styles.trendBarFillEmpty,
+                              entry.v === 0 && styles.trendBarFillZero,
+                            ]}
+                          />
+                        </View>
+                        <Text style={[styles.trendBarLabel, isActive && styles.trendBarLabelActive]}>
+                          {entry.k}
+                        </Text>
+                        <Text
+                          style={[styles.trendBarValue, isActive && styles.trendBarValueActive]}
+                          numberOfLines={1}
+                          ellipsizeMode="clip"
+                        >
+                          {entry.v === null ? '--' : `${entry.v}%`}
+                        </Text>
+                      </Pressable>
+                    </MotiView>
+                  );
+                })}
               </View>
 
               <View style={styles.trendSummary}>
                 <Text style={styles.trendSummaryPrimary}>{trend.summaryA}</Text>
-                <Text style={styles.trendSummarySecondary}>{trend.summaryB}</Text>
+                <Text style={styles.trendSummarySecondary}>{trendDetailLine}</Text>
+              </View>
+
+              <View style={styles.trendSegmentWrap}>
+                <SegmentedControl value={range} onChange={setRange} />
               </View>
             </View>
           </Card>
         </View>
 
         {/* Achievements */}
-        <View style={[styles.sectionSpacing, { marginTop: tokens.sectionGap }]}>
+        <View style={[styles.sectionSpacing, { marginTop: MAIN_CARD_GAP }]}>
           <Card style={styles.achievementsCard}>
             <View style={styles.achievementsContent}>
               <View style={styles.achievementsHeaderRow}>
@@ -728,6 +1065,7 @@ export default function ProgressScreen() {
             </View>
           </Card>
         </View>
+        </ContentFrame>
       </ScrollView>
 
       <Sheet
@@ -746,13 +1084,14 @@ export default function ProgressScreen() {
             : null
         }
         onClose={() => setSheet(null)}
+        pageX={tokens.pageX}
       >
         {sheet === 'today' ? (
           <View>
             <Text style={styles.sheetSectionTitle}>Today plan</Text>
             <View style={styles.sheetList}>
               {todayItems.map(item => (
-                <ScalePressable key={item.id} accessibilityLabel={item.name} onPress={() => toggleDone(item.id)} style={styles.sheetRowButton} scaleTo={0.98}>
+                <ScalePressable key={item.id} accessibilityLabel={item.name} onPress={() => toggleDone(item)} style={styles.sheetRowButton} scaleTo={0.98}>
                   <View style={styles.sheetRowInner}>
                     <View>
                       <Text style={styles.sheetRowTitle}>{item.name}</Text>
@@ -798,34 +1137,69 @@ export default function ProgressScreen() {
           <View>
             <Text style={styles.sheetSectionTitle}>Today plan</Text>
             <View style={styles.sheetList}>
-              <View style={styles.sheetMetricCard}>
-                <Text style={styles.sheetRowTitle}>Mg · 9:00 PM</Text>
-                <Text style={styles.sheetRowSubtitle}>Next reminder</Text>
-              </View>
+              {planItems.flatMap(item => {
+                const status = item.done
+                  ? 'Done'
+                  : planNextId && item.id === planNextId
+                    ? 'Next reminder'
+                    : 'Remaining';
+                const rows = [
+                  <ScalePressable
+                    key={item.id}
+                    accessibilityLabel={item.name}
+                    onPress={() => setBackupCandidateId(item.id)}
+                    style={[
+                      styles.sheetMetricCard,
+                      styles.sheetSelectableCard,
+                      backupCandidateId === item.id && styles.sheetSelectableCardActive,
+                    ]}
+                    scaleTo={0.98}
+                  >
+                    <View>
+                      <Text style={styles.sheetRowTitle}>{formatPlanTitle(item.name, item.timeLabel)}</Text>
+                      <Text style={styles.sheetRowSubtitle}>{status}</Text>
+                      {item.withFood ? <Text style={styles.sheetRowNote}>Take with food</Text> : null}
+                    </View>
+                  </ScalePressable>,
+                ];
 
-              {backupReminder ? (
-                <View style={styles.sheetMetricCard}>
-                  <Text style={styles.sheetRowTitle}>Mg · 9:15 PM</Text>
-                  <Text style={styles.sheetRowSubtitle}>Backup reminder</Text>
-                </View>
-              ) : null}
+                if (backupReminderSet.has(item.id)) {
+                  const backupLabel = addMinutesToTimeLabel(item.timeRaw) ?? 'Backup reminder';
+                  rows.push(
+                    <View key={`${item.id}-backup`} style={styles.sheetMetricCard}>
+                      <Text style={styles.sheetRowTitle}>{formatPlanTitle(item.name, backupLabel)}</Text>
+                      <Text style={styles.sheetRowSubtitle}>Backup reminder</Text>
+                      {item.withFood ? <Text style={styles.sheetRowNote}>Take with food</Text> : null}
+                    </View>,
+                  );
+                }
 
-              <View style={styles.sheetMetricCard}>
-                <Text style={styles.sheetRowTitle}>Vit D</Text>
-                <Text style={styles.sheetRowSubtitle}>Done</Text>
-              </View>
+                return rows;
+              })}
             </View>
-
-            <ScalePressable
-              accessibilityLabel="Enable backup reminder"
-              onPress={() => setBackupReminder(true)}
-              style={[styles.sheetActionButton, backupReminder ? styles.sheetActionButtonMuted : styles.sheetActionButtonPrimary]}
-              scaleTo={0.98}
-            >
-              <Text style={backupReminder ? styles.sheetActionTextMuted : styles.sheetActionText}>
-                {backupReminder ? 'Backup reminder enabled' : 'Enable backup reminder'}
-              </Text>
-            </ScalePressable>
+            {backupCandidateItem ? (
+              <ScalePressable
+                accessibilityLabel={backupCandidateActive ? 'Cancel backup reminder' : 'Enable backup reminder'}
+                onPress={() => {
+                  if (!backupCandidateId) return;
+                  setBackupReminders(prev => {
+                    if (prev.includes(backupCandidateId)) {
+                      return prev.filter(id => id !== backupCandidateId);
+                    }
+                    return [...prev, backupCandidateId];
+                  });
+                }}
+                style={[
+                  styles.sheetActionButton,
+                  backupCandidateActive ? styles.sheetActionButtonMuted : styles.sheetActionButtonPrimary,
+                ]}
+                scaleTo={0.98}
+              >
+                <Text style={backupCandidateActive ? styles.sheetActionTextMuted : styles.sheetActionText}>
+                  {backupCandidateActive ? 'Cancel backup reminder' : 'Enable backup reminder'}
+                </Text>
+              </ScalePressable>
+            ) : null}
           </View>
         ) : null}
       </Sheet>
@@ -841,7 +1215,13 @@ const styles = StyleSheet.create({
     backgroundColor: SCREEN_BG,
   },
 
-  content: {},
+  content: {
+    width: '100%',
+  },
+  contentFrame: {
+    width: '100%',
+    alignSelf: 'center',
+  },
 
   headerRow: {
     flexDirection: 'row',
@@ -854,9 +1234,6 @@ const styles = StyleSheet.create({
     color: '#0f172a',
     letterSpacing: -0.2,
     includeFontPadding: false,
-  },
-  segmentedOffset: {
-    transform: [{ translateY: 6 }],
   },
 
   row: {
@@ -953,13 +1330,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(15,23,42,0.06)',
     flex: 1,
+  },
+  miniMetricCardSquare: {
     aspectRatio: 1,
+  },
+  miniMetricCardCompact: {
+    minHeight: 160,
   },
   miniMetricPressable: {
     flex: 1,
     padding: 20,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  miniMetricPressableCompact: {
+    padding: 16,
   },
   miniMetricIcon: {
     width: 56,
@@ -972,7 +1357,12 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(15,23,42,0.06)',
     marginBottom: 12,
   },
-  miniMetricTextWrap: { alignItems: 'center' },
+  miniMetricIconCompact: {
+    width: 48,
+    height: 48,
+    marginBottom: 10,
+  },
+  miniMetricTextWrap: { alignItems: 'center', minWidth: 0, width: '100%' },
   miniMetricLabel: {
     fontSize: 12,
     lineHeight: 16,
@@ -981,6 +1371,12 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     textTransform: 'uppercase',
     includeFontPadding: false,
+    textAlign: 'center',
+  },
+  miniMetricLabelCompact: {
+    fontSize: 11,
+    lineHeight: 14,
+    letterSpacing: 1.2,
   },
   miniMetricValue: {
     marginTop: 4,
@@ -989,6 +1385,11 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: '#0f172a',
     includeFontPadding: false,
+    textAlign: 'center',
+  },
+  miniMetricValueCompact: {
+    fontSize: 26,
+    lineHeight: 30,
   },
   miniMetricSub: {
     marginTop: 4,
@@ -997,6 +1398,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#64748b',
     includeFontPadding: false,
+    textAlign: 'center',
+  },
+  miniMetricSubCompact: {
+    marginTop: 2,
+    fontSize: 10,
+    lineHeight: 12,
   },
 
   todayCard: { backgroundColor: '#253FAE' },
@@ -1059,7 +1466,9 @@ const styles = StyleSheet.create({
   todayActionTextDisabled: { color: 'rgba(37,63,174,0.6)' },
 
   squareCard: { flex: 1, aspectRatio: 1 },
+  planWideCard: { flex: 1 },
   squarePressable: { flex: 1, padding: 16 },
+  planPressable: { padding: 24 },
   squareHeaderRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   squareTitle: {
     flex: 1,
@@ -1081,8 +1490,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'rgba(0,0,0,0.06)',
   },
+  planIconWrap: {
+    transform: [{ translateY: -12 }],
+  },
   squareBody: { marginTop: 12, flex: 1, justifyContent: 'center', gap: 8 },
-  squareFooter: { marginTop: 8, fontSize: 11, lineHeight: 14, fontWeight: '700', color: 'rgba(51,65,85,0.7)', includeFontPadding: false, alignSelf: 'flex-start' },
+  squareFooter: { marginTop: 20, fontSize: 11, lineHeight: 14, fontWeight: '700', color: 'rgba(51,65,85,0.7)', includeFontPadding: false, alignSelf: 'flex-start', transform: [{ translateY: 8 }] },
   consistencyCard: { backgroundColor: '#E6E0CF' },
   remindersCard: { backgroundColor: '#F3D153' },
 
@@ -1101,13 +1513,24 @@ const styles = StyleSheet.create({
   iconButtonLight: { backgroundColor: 'rgba(0,0,0,0.06)' },
   trendBarsRow: { marginTop: 24, flexDirection: 'row', alignItems: 'flex-end', gap: 10 },
   trendBarColumn: { flex: 1, alignItems: 'center', gap: 8 },
-  trendBarTrack: { width: 32, height: 128, borderRadius: 999, borderCurve: 'continuous', overflow: 'hidden', justifyContent: 'flex-end', backgroundColor: 'rgba(15,23,42,0.22)' },
-  trendBarFill: { width: '100%', borderRadius: 999, borderCurve: 'continuous', backgroundColor: '#1e293b', shadowColor: '#000000', shadowOpacity: 0.1, shadowOffset: { width: 0, height: 4 }, shadowRadius: 6, elevation: 2 },
-  trendBarLabel: { fontSize: 11, lineHeight: 14, fontWeight: '900', color: '#000000', includeFontPadding: false, textAlign: 'center', width: '100%' },
-  trendBarValue: { fontSize: 12, lineHeight: 16, fontWeight: '900', color: '#475569', includeFontPadding: false, textAlign: 'center', width: '100%', letterSpacing: -0.2, fontVariant: ['tabular-nums'] },
+  trendBarPressable: { width: '100%', alignItems: 'center', gap: 8 },
+  trendBarTrack: { width: 32, height: TREND_BAR_HEIGHT, borderRadius: 999, borderCurve: 'continuous', overflow: 'hidden', justifyContent: 'flex-end', backgroundColor: 'rgba(15,23,42,0.22)' },
+  trendBarFill: { width: '100%', borderRadius: 999, borderCurve: 'continuous', shadowColor: '#000000', shadowOpacity: 0.1, shadowOffset: { width: 0, height: 4 }, shadowRadius: 6, elevation: 2 },
+  trendBarFillActive: { backgroundColor: '#1e293b' },
+  trendBarFillInactive: { backgroundColor: 'rgba(15,23,42,0.55)' },
+  trendBarFillEmpty: { backgroundColor: 'rgba(15,23,42,0.2)' },
+  trendBarFillZero: { backgroundColor: 'transparent', shadowOpacity: 0, elevation: 0 },
+  trendBarLabel: { fontSize: 11, lineHeight: 14, fontWeight: '900', color: 'rgba(15,23,42,0.75)', includeFontPadding: false, textAlign: 'center', width: '100%' },
+  trendBarLabelActive: { color: '#0f172a' },
+  trendBarValue: { fontSize: 12, lineHeight: 16, fontWeight: '900', color: 'rgba(71,85,105,0.9)', includeFontPadding: false, textAlign: 'center', width: '100%', letterSpacing: -0.2, fontVariant: ['tabular-nums'] },
+  trendBarValueActive: { color: '#0f172a' },
   trendSummary: { marginTop: 20, gap: 4 },
   trendSummaryPrimary: { fontSize: 14, lineHeight: 18, fontWeight: '900', color: '#0f172a', includeFontPadding: false },
   trendSummarySecondary: { fontSize: 14, lineHeight: 18, fontWeight: '700', color: 'rgba(15,23,42,0.8)', includeFontPadding: false },
+  trendSegmentWrap: {
+    marginTop: 12,
+    alignSelf: 'flex-end',
+  },
 
   achievementsCard: { backgroundColor: '#D0E6A5' },
   achievementsContent: { padding: 24 },
@@ -1148,6 +1571,7 @@ const styles = StyleSheet.create({
   sheetRowInner: { paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   sheetRowTitle: { fontSize: 14, lineHeight: 18, fontWeight: '900', color: '#0f172a', includeFontPadding: false },
   sheetRowSubtitle: { marginTop: 2, fontSize: 12, lineHeight: 16, fontWeight: '700', color: '#475569', includeFontPadding: false },
+  sheetRowNote: { marginTop: 6, fontSize: 12, lineHeight: 16, fontWeight: '700', color: '#64748b', includeFontPadding: false },
   sheetRowRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   sheetRowStatus: { fontSize: 12, lineHeight: 16, fontWeight: '800', color: '#475569', includeFontPadding: false },
   sheetStatusIcon: { width: 36, height: 36, borderRadius: 999, borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center' },
@@ -1159,6 +1583,8 @@ const styles = StyleSheet.create({
   sheetActionText: { fontSize: 14, lineHeight: 18, fontWeight: '900', color: '#ffffff', includeFontPadding: false },
   sheetActionTextMuted: { fontSize: 14, lineHeight: 18, fontWeight: '900', color: 'rgba(15,23,42,0.70)', includeFontPadding: false },
   sheetMetricCard: { paddingHorizontal: 16, paddingVertical: 12, borderRadius: 16, borderCurve: 'continuous', backgroundColor: 'rgba(15,23,42,0.04)', borderWidth: 1, borderColor: 'rgba(15,23,42,0.06)' },
+  sheetSelectableCard: { alignItems: 'flex-start' },
+  sheetSelectableCardActive: { backgroundColor: '#DBEAFE', borderColor: '#BFDBFE' },
   sheetMetricHeader: { flexDirection: 'row', justifyContent: 'space-between' },
   sheetMetricTrack: { marginTop: 8, height: 12, borderRadius: 999, borderCurve: 'continuous', overflow: 'hidden', backgroundColor: 'rgba(15,23,42,0.14)' },
   sheetMetricFill: { height: '100%', backgroundColor: 'rgba(15,23,42,0.92)' },

@@ -101,6 +101,16 @@ const failuresInput = getArg("failures-input") ?? process.env.BACKFILL_FAILURES_
 const failuresForce = hasFlag("failures-force");
 const checkpointFile = getArg("checkpoint-file") ?? process.env.BACKFILL_CHECKPOINT_FILE ?? null;
 const summaryJson = getArg("summary-json") ?? process.env.BACKFILL_SUMMARY_JSON ?? null;
+const sourceIdsFile =
+  getArg("source-ids-file") ?? process.env.BACKFILL_SOURCE_IDS_FILE ?? null;
+const scoreVersion =
+  getArg("score-version") ?? process.env.BACKFILL_SCORE_VERSION ?? V4_SCORE_VERSION;
+const scoresTable =
+  getArg("scores-table") ?? process.env.BACKFILL_SCORES_TABLE ?? "product_scores";
+const baselineScoresTable =
+  getArg("baseline-scores-table") ??
+  process.env.BACKFILL_BASELINE_SCORES_TABLE ??
+  "product_scores";
 
 const failureTracker = {
   baseLines: 0,
@@ -130,6 +140,39 @@ const readJsonFile = async <T>(filePath: string): Promise<T | null> => {
   } catch {
     return null;
   }
+};
+
+const normalizeSourceIdList = (value: unknown): string[] => {
+  const parsed =
+    Array.isArray(value)
+      ? value
+      : Array.isArray((value as { sourceIds?: unknown })?.sourceIds)
+        ? (value as { sourceIds?: unknown }).sourceIds
+        : Array.isArray((value as { lnhpdIds?: unknown })?.lnhpdIds)
+          ? (value as { lnhpdIds?: unknown }).lnhpdIds
+          : Array.isArray((value as { dsldIds?: unknown })?.dsldIds)
+            ? (value as { dsldIds?: unknown }).dsldIds
+            : Array.isArray((value as { ids?: unknown })?.ids)
+              ? (value as { ids?: unknown }).ids
+              : [];
+
+  return parsed
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
+
+const loadSourceIdsFromFile = async (filePath: string): Promise<string[]> => {
+  const raw = await readFile(filePath, "utf8");
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (error) {
+    throw new Error(
+      `[backfill] source-ids-file invalid JSON: ${filePath} (${error instanceof Error ? error.message : "parse error"})`,
+    );
+  }
+  return normalizeSourceIdList(parsed);
 };
 
 const writeJsonFile = async (filePath: string, payload: unknown): Promise<void> => {
@@ -700,8 +743,14 @@ const handleDsldRow = async (
     return;
   }
 
-  const labelFacts = buildDsldLabelFacts(row.facts_json);
-  if (!labelFacts || (!labelFacts.actives.length && !labelFacts.inactive.length && !labelFacts.proprietaryBlends.length)) {
+  const labelFacts = scoresOnly ? null : buildDsldLabelFacts(row.facts_json);
+  if (
+    !scoresOnly &&
+    (!labelFacts ||
+      (!labelFacts.actives.length &&
+        !labelFacts.inactive.length &&
+        !labelFacts.proprietaryBlends.length))
+  ) {
     stats.skipped += 1;
     return;
   }
@@ -842,8 +891,8 @@ const handleLnhpdRow = async (
     stats.skipped += 1;
     return;
   }
-  const labelFacts = buildLnhpdLabelFacts(row.facts_json);
-  if (!labelFacts || (!labelFacts.actives.length && !labelFacts.inactive.length)) {
+  const labelFacts = scoresOnly ? null : buildLnhpdLabelFacts(row.facts_json);
+  if (!scoresOnly && (!labelFacts || (!labelFacts.actives.length && !labelFacts.inactive.length))) {
     stats.skipped += 1;
     return;
   }
@@ -983,7 +1032,7 @@ const upsertScoreBundle = async (params: {
     source: params.source,
     source_id: params.sourceIdForWrite,
     canonical_source_id: params.canonicalSourceId,
-    score_version: V4_SCORE_VERSION,
+    score_version: scoreVersion,
     overall_score: params.bundle.overallScore,
     effectiveness_score: params.bundle.pillars.effectiveness,
     safety_score: params.bundle.pillars.safety,
@@ -997,7 +1046,7 @@ const upsertScoreBundle = async (params: {
     computed_at: params.bundle.provenance.computedAt,
   };
   const { error, status, rayId } = await withRetry(() =>
-    supabase.from("product_scores").upsert(payload, { onConflict: "source,source_id" }),
+    supabase.from(scoresTable).upsert(payload, { onConflict: "source,source_id" }),
   );
   if (error) {
     return { success: false, error: extractErrorMeta(error, status, rayId) };
@@ -1011,13 +1060,13 @@ const shouldSkipExistingScore = async (
   currentHash?: string | null,
 ): Promise<boolean> => {
   const { data, error } = await supabase
-    .from("product_scores")
+    .from(scoresTable)
     .select("id,score_version,inputs_hash")
     .eq("source", source)
     .eq("source_id", sourceId)
     .maybeSingle();
   if (error || !data) return false;
-  if (data.score_version !== V4_SCORE_VERSION || !data.inputs_hash) return false;
+  if (data.score_version !== scoreVersion || !data.inputs_hash) return false;
   const hashValue =
     currentHash ?? (await computeV4InputsHash({ source, sourceId }));
   if (!hashValue) return false;
@@ -1039,7 +1088,8 @@ const timeBudgetSeconds = Math.max(
 );
 const dryRun = hasFlag("dry-run");
 const skipScores = hasFlag("skip-scores");
-const skipIngredients = hasFlag("skip-ingredients");
+const scoresOnly = hasFlag("scores-only");
+const skipIngredients = hasFlag("skip-ingredients") || scoresOnly;
 const force = hasFlag("force");
 const compareCached = hasFlag("compare-cached");
 const compareLimit = Math.max(1, Number(getArg("compare-limit") ?? "10"));
@@ -1086,7 +1136,8 @@ const writeCheckpoint = async (payload: {
   const updated = {
     ...existing,
     [payload.source]: {
-      scoreVersion: V4_SCORE_VERSION,
+      scoreVersion,
+      scoresTable,
       startId: payload.startId,
       endId: payload.endId,
       lastId: payload.lastId,
@@ -1106,12 +1157,15 @@ const writeSummary = async (payload: {
   nextStart: number | null;
   stats: BackfillStats;
   elapsedMs: number;
+  mode?: "batch" | "source-ids-file";
+  sourceIdsFile?: string | null;
 }) => {
   if (!summaryJson) return;
   const summary = {
-    mode: "batch",
+    mode: payload.mode ?? "batch",
     source: payload.source,
-    scoreVersion: V4_SCORE_VERSION,
+    scoreVersion,
+    scoresTable,
     startId: payload.startId || null,
     endId: payload.endId ?? null,
     limit: limit > 0 ? limit : null,
@@ -1121,6 +1175,7 @@ const writeSummary = async (payload: {
     lastId: payload.lastId,
     nextStart: payload.nextStart,
     elapsedMs: payload.elapsedMs,
+    sourceIdsFile: payload.sourceIdsFile ?? null,
   };
   await writeJsonFile(summaryJson, summary);
 };
@@ -1134,7 +1189,8 @@ const writeFailuresSummary = async (payload: {
   const summary = {
     mode: "failures-input",
     failuresInput: payload.failuresInput,
-    scoreVersion: V4_SCORE_VERSION,
+    scoreVersion,
+    scoresTable,
     processed: payload.stats.processed,
     scores: payload.stats.writtenScores,
     failed: payload.stats.failed,
@@ -1167,13 +1223,17 @@ const backfillDsld = async () => {
   let nextStart: number | null = startDsldId > 0 ? startDsldId : null;
 
   while (true) {
+    if (limit > 0 && stats.processed >= limit) break;
     if (reachedTimeBudget(startTime)) break;
     if (endDsldId != null && endDsldId > 0 && lastId > endDsldId) break;
+    const remaining = limit > 0 ? Math.max(0, limit - stats.processed) : null;
+    const readLimit =
+      remaining != null ? Math.max(1, Math.min(batchSize, remaining)) : batchSize;
     let query = supabase
       .from("dsld_label_facts")
       .select("dsld_label_id,facts_json")
       .order("dsld_label_id", { ascending: true })
-      .limit(batchSize);
+      .limit(readLimit);
 
     if (useGte) {
       query = query.gte("dsld_label_id", lastId);
@@ -1215,7 +1275,6 @@ const backfillDsld = async () => {
       stats,
     });
 
-    if (limit > 0 && stats.processed >= limit) break;
     if (endDsldId != null && endDsldId > 0 && lastId >= endDsldId) break;
     if (reachedTimeBudget(startTime)) break;
   }
@@ -1264,13 +1323,17 @@ const backfillLnhpd = async () => {
   let nextStart: number | null = startLnhpdId > 0 ? startLnhpdId : null;
 
   while (true) {
+    if (limit > 0 && stats.processed >= limit) break;
     if (reachedTimeBudget(startTime)) break;
     if (endLnhpdId != null && endLnhpdId > 0 && lastId > endLnhpdId) break;
+    const remaining = limit > 0 ? Math.max(0, limit - stats.processed) : null;
+    const readLimit =
+      remaining != null ? Math.max(1, Math.min(batchSize, remaining)) : batchSize;
     let query = supabase
       .from(table)
       .select("lnhpd_id,npn,facts_json")
       .order("lnhpd_id", { ascending: true })
-      .limit(batchSize);
+      .limit(readLimit);
 
     if (useGte) {
       query = query.gte("lnhpd_id", lastId);
@@ -1312,7 +1375,6 @@ const backfillLnhpd = async () => {
       stats,
     });
 
-    if (limit > 0 && stats.processed >= limit) break;
     if (endLnhpdId != null && endLnhpdId > 0 && lastId >= endLnhpdId) break;
     if (reachedTimeBudget(startTime)) break;
   }
@@ -1468,6 +1530,211 @@ const backfillFailures = async (filePath: string) => {
   });
 };
 
+const backfillSourceIds = async (
+  source: ScoreSource,
+  sourceIds: string[],
+  filePath: string,
+) => {
+  const startTime = Date.now();
+  const uniqueIds = Array.from(
+    new Set(sourceIds.map((item) => item.trim()).filter(Boolean)),
+  );
+  const items = limit > 0 ? uniqueIds.slice(0, limit) : uniqueIds;
+
+  if (!items.length) {
+    console.log(`[backfill:source-ids] no source ids found in ${filePath}`);
+    await writeSummary({
+      source,
+      startId: 0,
+      endId: null,
+      lastId: null,
+      nextStart: null,
+      stats: {
+        processed: 0,
+        writtenIngredients: 0,
+        writtenScores: 0,
+        skipped: 0,
+        skippedExisting: 0,
+        failed: 0,
+        ingredientUpsertFailed: 0,
+        scoreUpsertFailed: 0,
+        computeScoreFailed: 0,
+      },
+      elapsedMs: Date.now() - startTime,
+      mode: "source-ids-file",
+      sourceIdsFile: filePath,
+    });
+    return;
+  }
+
+  const stats: BackfillStats = {
+    processed: 0,
+    writtenIngredients: 0,
+    writtenScores: 0,
+    skipped: 0,
+    skippedExisting: 0,
+    failed: 0,
+    ingredientUpsertFailed: 0,
+    scoreUpsertFailed: 0,
+    computeScoreFailed: 0,
+  };
+
+  const lnhpdTable = source === "lnhpd" ? await resolveLnhpdTable() : null;
+
+  await runWithConcurrency(items, concurrency, async (sourceId) => {
+    stats.processed += 1;
+    if (scoresOnly) {
+      if (skipScores) {
+        stats.skipped += 1;
+        return;
+      }
+      const ingredientRowsResult = await fetchProductIngredientRows(source, sourceId);
+      if (!ingredientRowsResult) {
+        stats.skipped += 1;
+        return;
+      }
+      if ("error" in ingredientRowsResult) {
+        stats.failed += 1;
+        stats.computeScoreFailed += 1;
+        await reportFailure({
+          source,
+          sourceId,
+          canonicalSourceId: null,
+          stage: "product_ingredients_fetch",
+          error: ingredientRowsResult.error,
+        });
+        return;
+      }
+      const { rows: ingredientRows, sourceIdForWrite, canonicalSourceId } = ingredientRowsResult;
+      const cache = await getDatasetCache();
+      const assumptions =
+        source === "lnhpd" ? await fetchBaselineAssumptions(source, sourceIdForWrite) : null;
+      const dailyMultiplier =
+        source === "lnhpd" ? buildDailyMultiplierFromAssumptions(assumptions) : createDefaultDailyMultiplier();
+      const currentHash = computeV4InputsHashFromRows(ingredientRows, {
+        dailyMultiplier: dailyMultiplier.multiplier,
+        dailyMultiplierSource: dailyMultiplier.source,
+        datasetVersion: cache.datasetVersion,
+      });
+
+      if (!force && (await shouldSkipExistingScore(source, sourceIdForWrite, currentHash))) {
+        stats.skippedExisting += 1;
+        return;
+      }
+      if (dryRun) {
+        stats.writtenScores += 1;
+        return;
+      }
+
+      let computed: Awaited<ReturnType<typeof computeScoreBundleV4Cached>>;
+      try {
+        computed = await computeScoreBundleV4Cached({
+          rows: ingredientRows,
+          source,
+          sourceId,
+          sourceIdForWrite,
+          canonicalSourceId,
+          dailyMultiplier,
+          cache,
+        });
+      } catch (error) {
+        stats.failed += 1;
+        stats.computeScoreFailed += 1;
+        await reportFailure({
+          source,
+          sourceId,
+          canonicalSourceId,
+          stage: "compute_score",
+          message: (error as { message?: string })?.message ?? "score computation failed",
+        });
+        return;
+      }
+
+      const scoreResult = await upsertScoreBundle({
+        source,
+        sourceIdForWrite: computed.sourceIdForWrite,
+        canonicalSourceId: computed.canonicalSourceId,
+        bundle: computed.bundle,
+        inputsHash: computed.inputsHash,
+      });
+      if (!scoreResult.success) {
+        stats.failed += 1;
+        stats.scoreUpsertFailed += 1;
+        await reportFailure({
+          source,
+          sourceId,
+          canonicalSourceId,
+          stage: "product_scores_upsert",
+          error: scoreResult.error ?? null,
+        });
+        return;
+      }
+      stats.writtenScores += 1;
+      return;
+    }
+    if (source === "dsld") {
+      const labelId = parseNumber(sourceId);
+      if (!labelId) {
+        stats.failed += 1;
+        await reportFailure({
+          source: "dsld",
+          sourceId,
+          canonicalSourceId: null,
+          stage: "source_ids_fetch",
+          message: "invalid dsld label id",
+        });
+        return;
+      }
+      const row = await fetchDsldRowById(labelId);
+      if (!row) {
+        stats.failed += 1;
+        await reportFailure({
+          source: "dsld",
+          sourceId,
+          canonicalSourceId: null,
+          stage: "source_ids_fetch",
+          message: "dsld_label_facts not found",
+        });
+        return;
+      }
+      await handleDsldRow(row, stats);
+      return;
+    }
+
+    const lnhpdId = parseNumber(sourceId);
+    const npn = sourceId || null;
+    const row = await fetchLnhpdRowByIdOrNpn(lnhpdTable ?? "lnhpd_facts", lnhpdId, npn);
+    if (!row) {
+      stats.failed += 1;
+      await reportFailure({
+        source: "lnhpd",
+        sourceId,
+        canonicalSourceId: null,
+        stage: "source_ids_fetch",
+        message: "lnhpd facts not found",
+      });
+      return;
+    }
+    await handleLnhpdRow(row, stats);
+  });
+
+  await writeSummary({
+    source,
+    startId: 0,
+    endId: null,
+    lastId: null,
+    nextStart: null,
+    stats,
+    elapsedMs: Date.now() - startTime,
+    mode: "source-ids-file",
+    sourceIdsFile: filePath,
+  });
+
+  console.log(
+    `[backfill:source-ids] source=${source} processed=${stats.processed} ingredients=${stats.writtenIngredients} scores=${stats.writtenScores} existing=${stats.skippedExisting} skipped=${stats.skipped} failed=${stats.failed} ingredientUpsertFailed=${stats.ingredientUpsertFailed} scoreUpsertFailed=${stats.scoreUpsertFailed} computeScoreFailed=${stats.computeScoreFailed} failuresLines=${failureTracker.baseLines + failureTracker.lines} failuresBytes=${failureTracker.baseBytes + failureTracker.bytes}`,
+  );
+};
+
 const fetchSampleSourceIds = async (source: ScoreSource, limitCount: number): Promise<string[]> => {
   const { data, error } = await withRetry<{ source_id: string | null }[]>(() =>
     supabase
@@ -1524,6 +1791,21 @@ const buildDailyMultiplierFromAssumptions = (assumptions: Record<string, unknown
         ? assumptions.dailyMultiplierPenaltyReason
         : null,
   };
+};
+
+const fetchBaselineAssumptions = async (
+  source: ScoreSource,
+  sourceId: string,
+): Promise<Record<string, unknown> | null> => {
+  const { data, error } = await supabase
+    .from(baselineScoresTable)
+    .select("explain_json")
+    .eq("source", source)
+    .eq("source_id", sourceId)
+    .maybeSingle();
+  if (error || !data) return null;
+  const explain = data.explain_json as { assumptions?: Record<string, unknown> } | null;
+  return explain?.assumptions ?? null;
 };
 
 const compareCachedVsBaseline = async (sources: ScoreSource[]): Promise<void> => {
@@ -1587,7 +1869,7 @@ const compareCachedVsBaseline = async (sources: ScoreSource[]): Promise<void> =>
 const main = async () => {
   await initFailureTracker();
   console.log(
-    `[backfill] source=${sourceArg} batch=${batchSize} concurrency=${concurrency} limit=${limit || "none"} timeBudgetSeconds=${timeBudgetSeconds || "none"} dryRun=${dryRun} failuresFile=${failuresFile} failuresForce=${failuresForce} checkpointFile=${checkpointFile ?? "none"} summaryJson=${summaryJson ?? "none"}`,
+    `[backfill] source=${sourceArg} batch=${batchSize} concurrency=${concurrency} limit=${limit || "none"} timeBudgetSeconds=${timeBudgetSeconds || "none"} dryRun=${dryRun} failuresFile=${failuresFile} failuresForce=${failuresForce} checkpointFile=${checkpointFile ?? "none"} summaryJson=${summaryJson ?? "none"} sourceIdsFile=${sourceIdsFile ?? "none"}`,
   );
   if (compareCached) {
     await compareCachedVsBaseline(targetSources);
@@ -1596,6 +1878,14 @@ const main = async () => {
   if (failuresInput) {
     console.log(`[backfill] retrying failures from ${failuresInput}`);
     await backfillFailures(failuresInput);
+    return;
+  }
+  if (sourceIdsFile) {
+    if (targetSources.length !== 1) {
+      throw new Error("[backfill] --source-ids-file requires --source=lnhpd|dsld");
+    }
+    const sourceIds = await loadSourceIdsFromFile(sourceIdsFile);
+    await backfillSourceIds(targetSources[0], sourceIds, sourceIdsFile);
     return;
   }
   if (targetSources.includes("dsld")) {

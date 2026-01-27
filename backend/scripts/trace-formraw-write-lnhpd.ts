@@ -7,8 +7,12 @@ import { extractErrorMeta, withRetry } from "../src/supabaseRetry.js";
 type YieldPreviewRow = {
   sourceId?: string | null;
   canonicalSourceId?: string | null;
+  productIngredientId?: string | null;
   nameRaw?: string | null;
   formRawBefore?: string | null;
+  candidateWriteableEmpty?: boolean | null;
+  candidateMappableEmpty?: boolean | null;
+  mapsToFormKey?: string | null;
   winnerTokens?: string[] | null;
   recognizedTokens?: string[] | null;
   tokensNormalizedBySource?: Record<string, string[]>;
@@ -38,11 +42,14 @@ type IngredientAliasRow = {
 type TraceResult = {
   sourceId: string | null;
   canonicalSourceId: string | null;
+  productIngredientId: string | null;
   ingredientId: string | null;
   ingredientName: string | null;
   nameRaw: string | null;
   nameKey: string | null;
   formRawBefore: string | null;
+  formRawBeforeRaw: string | null;
+  formRawBeforeEmptyType: string;
   tokensNormalized: Record<string, string[]>;
   winnerTokens: string[];
   winnerToken: string | null;
@@ -55,6 +62,8 @@ type TraceResult = {
   updateAffectedRows: number;
   updateError: string | null;
   formRawAfter: string | null;
+  formRawAfterRaw: string | null;
+  formRawAfterEmptyType: string;
   reasonCode: string;
 };
 
@@ -71,7 +80,11 @@ const OUTPUT =
 const ID_COLUMN = (getArg("id-column") ?? "canonical_source_id").trim();
 const LIMIT = Math.max(1, Number(getArg("limit") ?? "1"));
 const REQUIRE_RECOGNIZED = args.includes("--require-recognized");
+const REQUIRE_CANDIDATE_WRITABLE = args.includes("--require-candidate-writable");
+const REQUIRE_CANDIDATE_MAPPABLE = args.includes("--require-candidate-mappable");
+const REQUIRE_MAPPED = args.includes("--require-mapped");
 const DRY_RUN = args.includes("--dry-run");
+const NO_WRITE = args.includes("--no-write");
 
 const ensureDir = async (filePath: string) => {
   const dir = path.dirname(filePath);
@@ -91,6 +104,13 @@ const normalizeToken = (value: string): string =>
   value.toLowerCase().replace(/[^a-z0-9_]+/g, " ").trim();
 
 const isEmpty = (value?: string | null) => !value || !value.trim();
+
+const classifyEmptyType = (value?: string | null): string => {
+  if (value === null || value === undefined) return "null";
+  if (value === "") return "empty_string";
+  if (value.trim().length === 0) return "whitespace";
+  return "non_empty";
+};
 
 const normalizeList = (value: unknown): string[] =>
   Array.isArray(value)
@@ -155,6 +175,7 @@ const fetchProductRows = async (
 };
 
 const buildUpdateWhere = (row: IngredientRow) => ({
+  id: row.id ?? null,
   source: "lnhpd",
   source_id: row.source_id ?? null,
   basis: row.basis ?? null,
@@ -179,18 +200,20 @@ const applyUpdate = async (
   if (DRY_RUN) {
     return { affectedRows: 0, error: null, formRawAfter: row.form_raw ?? null };
   }
-  const { data, error } = await withRetry(() =>
-    supabase
-      .from("product_ingredients")
-      .update({ form_raw: formRaw })
-      .eq("source", "lnhpd")
-      .eq("source_id", updateWhere.source_id ?? "")
-      .eq("basis", updateWhere.basis ?? "")
-      .eq("name_key", updateWhere.name_key ?? "")
-      .eq("ingredient_id", updateWhere.ingredient_id ?? "")
-      .or("form_raw.is.null,form_raw.eq.")
-      .select("id,form_raw"),
-  );
+  const baseQuery = supabase
+    .from("product_ingredients")
+    .update({ form_raw: formRaw })
+    .or("form_raw.is.null,form_raw.eq.")
+    .select("id,form_raw");
+  const query = row.id
+    ? baseQuery.eq("id", row.id)
+    : baseQuery
+        .eq("source", "lnhpd")
+        .eq("source_id", updateWhere.source_id ?? "")
+        .eq("basis", updateWhere.basis ?? "")
+        .eq("name_key", updateWhere.name_key ?? "")
+        .eq("ingredient_id", updateWhere.ingredient_id ?? "");
+  const { data, error } = await withRetry(() => query);
   if (error) {
     const meta = extractErrorMeta(error);
     return { affectedRows: 0, error: meta.message ?? error.message, formRawAfter: null };
@@ -237,26 +260,41 @@ const run = async () => {
         : row.sourceId) ?? null;
     if (!sourceId || !row.nameRaw) continue;
 
+    if (REQUIRE_CANDIDATE_WRITABLE && !row.candidateWriteableEmpty) continue;
+    if (REQUIRE_CANDIDATE_MAPPABLE && !row.candidateMappableEmpty) continue;
+    if (REQUIRE_MAPPED && !row.mapsToFormKey) continue;
+
     const winnerTokens = normalizeList(row.winnerTokens);
     const recognizedTokens = normalizeList(row.recognizedTokens);
     if (REQUIRE_RECOGNIZED && !recognizedTokens.length) continue;
     if (!winnerTokens.length) continue;
 
     const nameKey = buildNameKey(row.nameRaw);
-    const productRows = await fetchProductRows(sourceId, nameKey, ID_COLUMN);
-    const matchedRowsCount = productRows.length;
-    const productRow = matchedRowsCount === 1 ? productRows[0] : null;
+    let productRow: IngredientRow | null = null;
+    let matchedRowsCount = 0;
+    if (row.productIngredientId) {
+      productRow = await fetchRowById(row.productIngredientId);
+      matchedRowsCount = productRow ? 1 : 0;
+    } else {
+      const productRows = await fetchProductRows(sourceId, nameKey, ID_COLUMN);
+      matchedRowsCount = productRows.length;
+      productRow = matchedRowsCount === 1 ? productRows[0] : null;
+    }
 
     if (!productRow) {
       const reasonCode = matchedRowsCount === 0 ? "ROW_NOT_FOUND" : "ROW_NOT_UNIQUE";
+      const formRawBeforeRaw = row.formRawBefore ?? null;
       results.push({
         sourceId: row.sourceId ?? null,
         canonicalSourceId: row.canonicalSourceId ?? null,
+        productIngredientId: row.productIngredientId ?? null,
         ingredientId: null,
         ingredientName: null,
         nameRaw: row.nameRaw ?? null,
         nameKey,
-        formRawBefore: row.formRawBefore ?? null,
+        formRawBefore: formRawBeforeRaw,
+        formRawBeforeRaw,
+        formRawBeforeEmptyType: classifyEmptyType(formRawBeforeRaw),
         tokensNormalized: row.tokensNormalizedBySource ?? {},
         winnerTokens,
         winnerToken: winnerTokens[0] ?? null,
@@ -276,6 +314,8 @@ const run = async () => {
         updateAffectedRows: 0,
         updateError: null,
         formRawAfter: null,
+        formRawAfterRaw: null,
+        formRawAfterEmptyType: "null",
         reasonCode,
       });
       if (results.length >= LIMIT) break;
@@ -284,15 +324,19 @@ const run = async () => {
 
     const ingredientId = productRow.ingredient_id ?? null;
     const ingredientName = await fetchIngredientName(ingredientId);
+    const formRawBeforeRaw = productRow.form_raw ?? row.formRawBefore ?? null;
     if (!ingredientId) {
       results.push({
         sourceId: productRow.source_id ?? row.sourceId ?? null,
         canonicalSourceId: productRow.canonical_source_id ?? row.canonicalSourceId ?? null,
+        productIngredientId: productRow.id ?? row.productIngredientId ?? null,
         ingredientId: null,
         ingredientName: null,
         nameRaw: productRow.name_raw ?? row.nameRaw ?? null,
         nameKey: productRow.name_key ?? nameKey,
-        formRawBefore: productRow.form_raw ?? null,
+        formRawBefore: formRawBeforeRaw,
+        formRawBeforeRaw,
+        formRawBeforeEmptyType: classifyEmptyType(formRawBeforeRaw),
         tokensNormalized: row.tokensNormalizedBySource ?? {},
         winnerTokens,
         winnerToken: winnerTokens[0] ?? null,
@@ -305,6 +349,8 @@ const run = async () => {
         updateAffectedRows: 0,
         updateError: null,
         formRawAfter: null,
+        formRawAfterRaw: null,
+        formRawAfterEmptyType: "null",
         reasonCode: "SKIP_MISSING_INGREDIENT_ID",
       });
       if (results.length >= LIMIT) break;
@@ -351,6 +397,8 @@ const run = async () => {
     let updateAffectedRows = 0;
     let updateError: string | null = null;
     let formRawAfter: string | null = null;
+    let formRawAfterRaw: string | null = null;
+    let formRawAfterEmptyType = "null";
 
     if (!isEmpty(productRow.form_raw)) {
       reasonCode = "SKIP_ALREADY_NONEMPTY";
@@ -363,23 +411,28 @@ const run = async () => {
     } else if (winnerTokens.length > 1) {
       reasonCode = "SKIP_AMBIGUOUS_TOKENS";
     } else {
-      updateAttempted = true;
-      const updateResult = await applyUpdate(productRow, expectedFormRaw, updateWhere);
-      updateAffectedRows = updateResult.affectedRows;
-      updateError = updateResult.error;
-      formRawAfter = updateResult.formRawAfter;
-      if (DRY_RUN) {
-        reasonCode = "SKIP_DRY_RUN";
-      } else if (updateError) {
-        reasonCode = "SKIP_DB_ERROR";
-      } else if (updateAffectedRows === 0) {
-        reasonCode = "SKIP_DB_CONFLICT_OR_NOOP";
+      const skipWrite = DRY_RUN || NO_WRITE;
+      updateAttempted = !skipWrite;
+      if (skipWrite) {
+        reasonCode = "WOULD_UPDATE";
+      } else {
+        const updateResult = await applyUpdate(productRow, expectedFormRaw, updateWhere);
+        updateAffectedRows = updateResult.affectedRows;
+        updateError = updateResult.error;
+        formRawAfter = updateResult.formRawAfter;
+        if (updateError) {
+          reasonCode = "SKIP_DB_ERROR";
+        } else if (updateAffectedRows === 0) {
+          reasonCode = "SKIP_DB_CONFLICT_OR_NOOP";
+        }
       }
     }
 
     const reselected = await fetchRowById(productRow.id ?? null);
     if (reselected) {
       formRawAfter = reselected.form_raw ?? formRawAfter;
+      formRawAfterRaw = reselected.form_raw ?? formRawAfterRaw;
+      formRawAfterEmptyType = classifyEmptyType(formRawAfterRaw);
       if (
         reasonCode === "SKIP_DB_CONFLICT_OR_NOOP" &&
         isEmpty(productRow.form_raw) &&
@@ -392,11 +445,14 @@ const run = async () => {
     results.push({
       sourceId: productRow.source_id ?? row.sourceId ?? null,
       canonicalSourceId: productRow.canonical_source_id ?? row.canonicalSourceId ?? null,
+      productIngredientId: productRow.id ?? row.productIngredientId ?? null,
       ingredientId,
       ingredientName,
       nameRaw: productRow.name_raw ?? row.nameRaw ?? null,
       nameKey: productRow.name_key ?? nameKey,
-      formRawBefore: productRow.form_raw ?? null,
+      formRawBefore: formRawBeforeRaw,
+      formRawBeforeRaw,
+      formRawBeforeEmptyType: classifyEmptyType(formRawBeforeRaw),
       tokensNormalized: row.tokensNormalizedBySource ?? {},
       winnerTokens,
       winnerToken,
@@ -409,6 +465,8 @@ const run = async () => {
       updateAffectedRows,
       updateError,
       formRawAfter,
+      formRawAfterRaw,
+      formRawAfterEmptyType,
       reasonCode,
     });
 

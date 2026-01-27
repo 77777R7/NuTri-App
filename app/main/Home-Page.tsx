@@ -1,11 +1,16 @@
 import ProgressScreen from '@/components/screens/ProgressScreen';
 import { MySupplementView } from '@/components/screens/MySupplement';
+import { ContentFrame } from '@/components/common/ContentFrame';
 import { useDailyCheckIns } from '@/contexts/DailyCheckInContext';
+import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useSavedSupplements } from '@/contexts/SavedSupplementsContext';
 import { useScanHistory } from '@/contexts/ScanHistoryContext';
+import { useFullBleed } from '@/hooks/useFullBleed';
 import { useScreenTokens } from '@/hooks/useScreenTokens';
+import { apiClient, type NutriTipsData } from '@/lib/api-client';
 import { buildCheckInKey } from '@/lib/check-ins';
 import { useTranslation } from '@/lib/i18n';
+import { selectDailyTip, type NutriTipSelection } from '@/lib/nutri-tips';
 import type { RoutinePreferences } from '@/types/saved-supplements';
 import type { ScanHistoryItem } from '@/types/scan-history';
 import { BlurView } from 'expo-blur';
@@ -14,6 +19,7 @@ import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import {
+  Activity,
   AudioWaveform,
   BarChart2,
   Bed,
@@ -33,18 +39,17 @@ import {
   Plus,
   ScanBarcode,
   ScanText,
-  Send,
   ShieldPlus,
-  Sparkles,
   User,
   Waves,
+  X,
   Zap,
   type LucideIcon,
 } from 'lucide-react-native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  NativeScrollEvent,
-  NativeSyntheticEvent,
+  AppState,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -53,7 +58,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Circle } from 'react-native-svg';
+import Svg, { Circle, Line, Rect } from 'react-native-svg';
 import MaskedView from '@react-native-masked-view/masked-view';
 
 // --- 核心动画库引入 ---
@@ -67,10 +72,13 @@ import Animated, {
   interpolateColor,
   runOnJS,
   runOnUI,
+  useAnimatedScrollHandler,
   useAnimatedStyle,
+  useAnimatedProps,
   useDerivedValue,
   useSharedValue,
   withSpring,
+  withSequence,
   withTiming,
   ZoomIn,
   ZoomOut,
@@ -80,15 +88,29 @@ import Animated, {
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const AnimatedText = Animated.createAnimatedComponent(Text);
 const AnimatedView = Animated.createAnimatedComponent(View);
+const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 const SCREEN_BG = '#F2F3F7';
-const PAGE_X = 24;
-const SECTION_GAP = 24;
+const SECTION_GAP = 20;
 const STACK_GAP = 16;
+const TREND_BAR_HEIGHT = 128;
+const TREND_BAR_MIN_HEIGHT = 8;
+
+type Density = 'compact' | 'regular';
+
+const getTwoUpDensity = (contentWidth: number, gap: number): Density => {
+  const cardWidth = (contentWidth - gap) / 2;
+  return cardWidth < 175 ? 'compact' : 'regular';
+};
 
 const BOTTOM_INSET_TRIM = 0;
 const BOTTOM_FADE_EXTRA = 120;
+const TOP_FADE_EXTRA = 4;
 const NAV_HEIGHT = 64;
+const PLUS_BUTTON_SIZE = 64;
+const NAV_PILL_GAP = 16;
+const NAV_PILL_TARGET_WIDTH = 300;
 
 // 类型定义
 type SupplementItem = {
@@ -102,6 +124,21 @@ type SupplementItem = {
 type CategoryIconConfig = {
   icon: LucideIcon;
   rotate?: string;
+};
+
+type TrendSeriesEntry = {
+  k: string;
+  v: number | null;
+  completed: number;
+  total: number;
+  dateKey: string;
+};
+
+type TrendData = {
+  title: string;
+  series: TrendSeriesEntry[];
+  summaryA: string;
+  summaryB: string;
 };
 
 // 颜色转换辅助函数
@@ -121,6 +158,11 @@ const normalizeCategoryKey = (value: string) =>
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '')
     .trim();
+
+const calcPercent = (taken: number, total: number) => {
+  if (total <= 0) return 0;
+  return Math.round((taken / total) * 100);
+};
 
 const CATEGORY_ICON_CONFIGS = {
   immune: { icon: ShieldPlus },
@@ -357,6 +399,7 @@ type WeekdayItem = {
   dayLabel: string;
   dayNumber: number;
   status: DayStatus;
+  isFutureWeek: boolean;
 };
 
 type WeekdaySelectorProps = {
@@ -364,11 +407,17 @@ type WeekdaySelectorProps = {
   selectedDayId: string;
   todayId: string;
   onSelectDay: (dateKey: string) => void;
+  frameWidth: number;
+  pageX: number;
 };
 
 const WEEKDAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const CALENDAR_RANGE_WEEKS = 4;
 const DAY_ITEM_WIDTH = 48;
+const DAY_ITEM_HEIGHT = 80;
+const DAY_ITEM_MIN_WIDTH = 36;
+const DAY_ITEM_MIN_GAP = 6;
+const DAY_ITEM_ROW_INSET = 4;
 
 const STATUS_DOT_COLORS: Record<DayStatus, string> = {
   complete: '#22c55e',
@@ -384,10 +433,20 @@ const getLocalDateKey = (date: Date) => {
   return `${year}-${month}-${day}`;
 };
 
+const isDateKeyAfter = (dateKey: string, referenceKey: string) => dateKey > referenceKey;
+
 const buildCalendarDays = (
   baseDate: Date,
   statusForDate: (date: Date, dateKey: string) => DayStatus,
 ): WeekdayItem[] => {
+  const today = new Date(baseDate);
+  today.setHours(0, 0, 0, 0);
+  const weekStart = new Date(today);
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+  weekEnd.setHours(23, 59, 59, 999);
+
   const start = new Date(baseDate);
   start.setHours(0, 0, 0, 0);
   start.setDate(start.getDate() - start.getDay());
@@ -404,6 +463,107 @@ const buildCalendarDays = (
       dayLabel: WEEKDAY_LABELS[date.getDay()],
       dayNumber: date.getDate(),
       status: statusForDate(date, dateKey),
+      isFutureWeek: date.getTime() > weekEnd.getTime(),
+    };
+  });
+};
+
+const countCompletedForDate = (expectedKeySet: Set<string>, dateKeys: string[] | undefined) => {
+  if (!dateKeys?.length) return 0;
+  const completedSet = new Set(dateKeys);
+  let completedCount = 0;
+  expectedKeySet.forEach(key => {
+    if (completedSet.has(key)) completedCount += 1;
+  });
+  return completedCount;
+};
+
+const summarizeTrendSeries = (series: TrendSeriesEntry[]) => {
+  const valid = series.filter(entry => entry.v !== null);
+  if (!valid.length) {
+    return { average: null, best: null, lowest: null };
+  }
+  const average = Math.round(
+    valid.reduce((total, entry) => total + (entry.v ?? 0), 0) / valid.length,
+  );
+  const best = valid.reduce((prev, current) => ((current.v ?? 0) > (prev.v ?? 0) ? current : prev), valid[0]);
+  const lowest = valid.reduce((prev, current) => ((current.v ?? 0) < (prev.v ?? 0) ? current : prev), valid[0]);
+  return { average, best, lowest };
+};
+
+const getWeekStartMonday = (baseDate: Date) => {
+  const start = new Date(baseDate);
+  start.setHours(0, 0, 0, 0);
+  const day = start.getDay();
+  const offset = (day + 6) % 7;
+  start.setDate(start.getDate() - offset);
+  return start;
+};
+
+const buildDailyTrendSeries = ({
+  baseDate,
+  expectedCount,
+  expectedKeySet,
+  checkInsByDate,
+}: {
+  baseDate: Date;
+  expectedCount: number;
+  expectedKeySet: Set<string>;
+  checkInsByDate: Record<string, string[]>;
+}) => {
+  const startDate = getWeekStartMonday(baseDate);
+
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(startDate);
+    date.setDate(startDate.getDate() + index);
+    const dateKey = getLocalDateKey(date);
+    const completed = countCompletedForDate(expectedKeySet, checkInsByDate[dateKey]);
+    const total = expectedCount;
+    const value = total > 0 ? calcPercent(completed, total) : null;
+    return {
+      k: WEEKDAY_LABELS[date.getDay()],
+      v: value,
+      completed,
+      total,
+      dateKey,
+    };
+  });
+};
+
+const buildWeeklyTrendSeries = ({
+  baseDate,
+  expectedCount,
+  expectedKeySet,
+  checkInsByDate,
+}: {
+  baseDate: Date;
+  expectedCount: number;
+  expectedKeySet: Set<string>;
+  checkInsByDate: Record<string, string[]>;
+}) => {
+  const endDate = new Date(baseDate);
+  endDate.setHours(0, 0, 0, 0);
+  const days = Array.from({ length: 28 }, (_, index) => {
+    const date = new Date(endDate);
+    date.setDate(endDate.getDate() - (27 - index));
+    const dateKey = getLocalDateKey(date);
+    const completed = countCompletedForDate(expectedKeySet, checkInsByDate[dateKey]);
+    const total = expectedCount;
+    const value = total > 0 ? calcPercent(completed, total) : null;
+    return { k: WEEKDAY_LABELS[date.getDay()], v: value, completed, total, dateKey };
+  });
+
+  return Array.from({ length: 4 }, (_, weekIndex) => {
+    const slice = days.slice(weekIndex * 7, weekIndex * 7 + 7);
+    const completed = slice.reduce((sum, entry) => sum + entry.completed, 0);
+    const total = slice.reduce((sum, entry) => sum + entry.total, 0);
+    const value = total > 0 ? calcPercent(completed, total) : null;
+    return {
+      k: `W${weekIndex + 1}`,
+      v: value,
+      completed,
+      total,
+      dateKey: slice[0]?.dateKey ?? `w${weekIndex + 1}`,
     };
   });
 };
@@ -413,22 +573,29 @@ type DayItemProps = {
   isSelected: boolean;
   isToday: boolean;
   onPress: () => void;
+  itemWidth: number;
 };
 
-const DayItemComponent = ({ item, isSelected, isToday, onPress }: DayItemProps) => {
-  const progress = useSharedValue(isSelected ? 1 : 0);
+const DayItemComponent = ({ item, isSelected, isToday, onPress, itemWidth }: DayItemProps) => {
+  const isFutureWeek = item.isFutureWeek;
+  const isActive = isSelected && !isFutureWeek;
+  const progress = useSharedValue(isActive ? 1 : 0);
   const statusColor = STATUS_DOT_COLORS[item.status];
   const statusBorderColor = item.status === 'future' ? 'rgba(148,163,184,0.6)' : 'transparent';
   const activeBgColor = isToday ? '#1e40af' : '#0f172a';
+  const dayLabelColor = isFutureWeek ? '#cbd5e1' : '#94a3b8';
+  const dateBaseColor = isFutureWeek ? '#cbd5e1' : '#0f172a';
+  const dateActiveColor = isFutureWeek ? '#cbd5e1' : '#ffffff';
+  const itemRadius = Math.round(itemWidth / 2);
 
   useEffect(() => {
-    progress.value = withSpring(isSelected ? 1 : 0, {
+    progress.value = withSpring(isActive ? 1 : 0, {
       mass: 1,
       damping: 15,
       stiffness: 120,
       overshootClamping: false,
     });
-  }, [isSelected, progress]);
+  }, [isActive, progress]);
 
   const bgStyle = useAnimatedStyle(() => ({
     opacity: progress.value,
@@ -436,11 +603,11 @@ const DayItemComponent = ({ item, isSelected, isToday, onPress }: DayItemProps) 
   }));
 
   const dayTextStyle = useAnimatedStyle(() => ({
-    color: interpolateColor(progress.value, [0, 1], ['#94a3b8', '#94a3b8']),
+    color: interpolateColor(progress.value, [0, 1], [dayLabelColor, dayLabelColor]),
   }));
 
   const dateTextStyle = useAnimatedStyle(() => ({
-    color: interpolateColor(progress.value, [0, 1], ['#0f172a', '#ffffff']),
+    color: interpolateColor(progress.value, [0, 1], [dateBaseColor, dateActiveColor]),
   }));
 
   const dotStyle = useAnimatedStyle(() => ({
@@ -450,18 +617,27 @@ const DayItemComponent = ({ item, isSelected, isToday, onPress }: DayItemProps) 
 
   return (
     <AnimatedPressable
-      onPress={onPress}
+      disabled={isFutureWeek}
+      onPress={isFutureWeek ? undefined : onPress}
       style={({ pressed }) => ({
-        transform: [{ scale: pressed ? 0.95 : 1 }],
+        transform: [{ scale: pressed && !isFutureWeek ? 0.95 : 1 }],
+        opacity: isFutureWeek ? 0.65 : 1,
       })}
     >
-      <View style={[styles.dayItemBase, !isSelected && styles.dayItemInactive]}>
-        <Animated.View style={[styles.dayItemActiveBg, bgStyle, { backgroundColor: activeBgColor }]} />
+      <View
+        style={[
+          styles.dayItemBase,
+          { width: itemWidth, height: DAY_ITEM_HEIGHT, borderRadius: itemRadius },
+          !isActive && styles.dayItemInactive,
+          isFutureWeek && styles.dayItemFuture,
+        ]}
+      >
+        <Animated.View style={[styles.dayItemActiveBg, bgStyle, { backgroundColor: activeBgColor, borderRadius: itemRadius }]} />
         <AnimatedText style={[styles.dayLabel, dayTextStyle]}>{item.dayLabel}</AnimatedText>
 
         <View style={styles.dayDateWrap}>
           <AnimatedText style={[styles.dayDate, dateTextStyle]}>{item.dayNumber}</AnimatedText>
-          {isSelected ? (
+          {isActive ? (
             <Animated.View
               entering={ZoomIn.duration(200)}
               exiting={ZoomOut.duration(200)}
@@ -483,14 +659,21 @@ const DayItem = React.memo(DayItemComponent, (prevProps, nextProps) => {
     prevProps.isSelected === nextProps.isSelected &&
     prevProps.isToday === nextProps.isToday &&
     prevProps.item.id === nextProps.item.id &&
-    prevProps.item.status === nextProps.item.status
+    prevProps.item.status === nextProps.item.status &&
+    prevProps.item.isFutureWeek === nextProps.item.isFutureWeek &&
+    prevProps.itemWidth === nextProps.itemWidth
   );
 });
 DayItem.displayName = 'DayItem';
 
-const WeekdaySelector = ({ items, selectedDayId, todayId, onSelectDay }: WeekdaySelectorProps) => {
+const WeekdaySelector = ({ items, selectedDayId, todayId, onSelectDay, frameWidth, pageX }: WeekdaySelectorProps) => {
   const calendarOpacity = useSharedValue(1);
   const { width: windowWidth } = useWindowDimensions();
+  const containerWidth = Math.max(0, windowWidth - pageX * 2);
+  const pageWidth = Math.min(frameWidth, containerWidth);
+  const rowWidth = Math.max(0, pageWidth - DAY_ITEM_ROW_INSET * 2);
+  const targetDayWidth = (rowWidth - DAY_ITEM_MIN_GAP * 6) / 7;
+  const dayWidth = Math.min(DAY_ITEM_WIDTH, Math.max(DAY_ITEM_MIN_WIDTH, Math.round(targetDayWidth)));
   const scrollRef = useRef<ScrollView>(null);
   const weeks = useMemo(() => {
     const grouped: WeekdayItem[][] = [];
@@ -505,8 +688,8 @@ const WeekdaySelector = ({ items, selectedDayId, todayId, onSelectDay }: Weekday
     [todayIndex],
   );
   const initialOffset = useMemo(
-    () => Math.max(0, todayWeekIndex * windowWidth),
-    [todayWeekIndex, windowWidth],
+    () => Math.max(0, todayWeekIndex * pageWidth),
+    [pageWidth, todayWeekIndex],
   );
 
   useEffect(() => {
@@ -541,17 +724,17 @@ const WeekdaySelector = ({ items, selectedDayId, todayId, onSelectDay }: Weekday
         decelerationRate="fast"
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.weekPager}
-        style={{ marginHorizontal: -PAGE_X }}
       >
         {weeks.map((week, weekIndex) => (
-          <View key={`${week[0]?.id ?? 'week'}-${weekIndex}`} style={[styles.weekPage, { width: windowWidth }]}>
-            <View style={styles.daysRow}>
+          <View key={`${week[0]?.id ?? 'week'}-${weekIndex}`} style={[styles.weekPage, { width: pageWidth }]}>
+            <View style={[styles.daysRow, { width: pageWidth, paddingHorizontal: DAY_ITEM_ROW_INSET }]}>
               {week.map(item => (
                 <DayItem
                   key={item.id}
                   item={item}
                   isSelected={selectedDayId === item.id}
                   isToday={todayId === item.id}
+                  itemWidth={dayWidth}
                   onPress={() => onSelectDay(item.id)}
                 />
               ))}
@@ -582,11 +765,12 @@ const CHECKIN_THEMES = [
   { color: 'bg-rose-100', iconColor: 'text-rose-700', iconBg: 'bg-rose-100/40' },
 ];
 
-const SavedSupplements = ({ selectedDateKey }: { selectedDateKey: string }) => {
+const SavedSupplements = ({ selectedDateKey, pageX }: { selectedDateKey: string; pageX: number }) => {
   const { t } = useTranslation();
   const { savedSupplements } = useSavedSupplements();
   const { checkInsByDate, toggleCheckIn } = useDailyCheckIns();
-  const [scrollProgress, setScrollProgress] = useState(0);
+  const scrollProgress = useSharedValue(0);
+  const { bleedStyle, contentStyle } = useFullBleed(pageX);
 
   type CheckInSupplement = SupplementItem & { id: string; supplementId?: string; checkInKey: string };
 
@@ -613,17 +797,23 @@ const SavedSupplements = ({ selectedDateKey }: { selectedDateKey: string }) => {
     [checkInsByDate, selectedDateKey],
   );
 
-  const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
-    const scrollableWidth = contentSize.width - layoutMeasurement.width;
-    if (scrollableWidth <= 0) {
-      setScrollProgress(0);
-      return;
-    }
+  const handleScroll = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      const scrollableWidth = event.contentSize.width - event.layoutMeasurement.width;
+      if (scrollableWidth <= 0) {
+        scrollProgress.value = 0;
+        return;
+      }
 
-    const progress = contentOffset.x / scrollableWidth;
-    setScrollProgress(Math.min(Math.max(progress, 0), 1));
-  };
+      const progress = event.contentOffset.x / scrollableWidth;
+      scrollProgress.value = Math.min(Math.max(progress, 0), 1);
+    },
+  });
+
+  const indicatorStyle = useAnimatedStyle(() => ({
+    width: INDICATOR_WIDTH,
+    transform: [{ translateX: scrollProgress.value * INDICATOR_MAX_LEFT }],
+  }));
 
   return (
     <Animated.View entering={FadeInUp.delay(200).duration(500)} style={styles.checkInWrap}>
@@ -645,7 +835,7 @@ const SavedSupplements = ({ selectedDateKey }: { selectedDateKey: string }) => {
         </View>
       ) : (
         <>
-          <ScrollView
+          <AnimatedScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             onScroll={handleScroll}
@@ -653,12 +843,14 @@ const SavedSupplements = ({ selectedDateKey }: { selectedDateKey: string }) => {
             decelerationRate="fast"
             snapToInterval={CARD_WIDTH + CARD_GAP}
             snapToAlignment="center"
-            style={{ marginHorizontal: -PAGE_X, height: CARD_HEIGHT + 20 }}
-            contentContainerStyle={{
-              paddingHorizontal: PAGE_X,
-              paddingBottom: 8,
-              alignItems: 'center',
-            }}
+            style={[bleedStyle, { height: CARD_HEIGHT + 20 }]}
+            contentContainerStyle={[
+              contentStyle,
+              {
+                paddingBottom: 8,
+                alignItems: 'center',
+              },
+            ]}
           >
             {supplements.map((item, index) => (
               <View
@@ -672,15 +864,10 @@ const SavedSupplements = ({ selectedDateKey }: { selectedDateKey: string }) => {
                 />
               </View>
             ))}
-          </ScrollView>
+          </AnimatedScrollView>
 
           <View style={styles.indicatorTrack}>
-            <AnimatedView
-              style={[
-                styles.indicatorThumb,
-                { width: INDICATOR_WIDTH, left: scrollProgress * INDICATOR_MAX_LEFT },
-              ]}
-            />
+            <AnimatedView style={[styles.indicatorThumb, indicatorStyle]} />
           </View>
         </>
       )}
@@ -693,6 +880,23 @@ const SavedSupplements = ({ selectedDateKey }: { selectedDateKey: string }) => {
 // -----------------------------------------------------
 
 const ProgressCard = () => {
+  const { savedSupplements } = useSavedSupplements();
+  const { checkInsByDate } = useDailyCheckIns();
+  const todayKey = getLocalDateKey(new Date());
+  const checkedKeys = useMemo(() => new Set(checkInsByDate[todayKey] ?? []), [checkInsByDate, todayKey]);
+  const checkInTargets = useMemo(
+    () => savedSupplements.filter(item => item.syncedToCheckIn),
+    [savedSupplements],
+  );
+  const totalCount = checkInTargets.length;
+  const takenCount = useMemo(() => {
+    return checkInTargets.reduce((count, item) => {
+      const checkInKey = buildCheckInKey({ supplementId: item.supplementId, localId: item.id });
+      return checkedKeys.has(checkInKey) ? count + 1 : count;
+    }, 0);
+  }, [checkInTargets, checkedKeys]);
+  const remainingCount = Math.max(0, totalCount - takenCount);
+  const percent = totalCount > 0 ? Math.round((takenCount / totalCount) * 100) : 0;
   const today = new Date().toLocaleDateString('en-GB', {
     day: 'numeric',
     month: 'long',
@@ -701,13 +905,50 @@ const ProgressCard = () => {
 
   const radius = 40;
   const circumference = 2 * Math.PI * radius;
-  const progress = 0.6;
+  const progress = totalCount > 0 ? takenCount / totalCount : 0;
+  const progressValue = useSharedValue(progress);
+  const pulse = useSharedValue(1);
+  const percentValue = useSharedValue(percent);
+  const displayPercentValue = useSharedValue(percent);
+  const [displayPercent, setDisplayPercent] = useState(percent);
+
+  useEffect(() => {
+    progressValue.value = withTiming(progress, { duration: 480, easing: Easing.out(Easing.cubic) });
+  }, [progress, progressValue]);
+
+  useEffect(() => {
+    percentValue.value = withTiming(percent, { duration: 900, easing: Easing.out(Easing.cubic) });
+  }, [percent, percentValue]);
+
+  useEffect(() => {
+    if (totalCount === 0) return;
+    pulse.value = withSequence(
+      withTiming(1.02, { duration: 140, easing: Easing.out(Easing.cubic) }),
+      withTiming(1, { duration: 200, easing: Easing.out(Easing.cubic) }),
+    );
+  }, [pulse, takenCount, totalCount]);
+
+  useDerivedValue(() => {
+    const next = Math.round(percentValue.value);
+    if (next !== displayPercentValue.value) {
+      displayPercentValue.value = next;
+      runOnJS(setDisplayPercent)(next);
+    }
+  });
+
+  const cardPulseStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulse.value }],
+  }));
+
+  const ringAnimatedProps = useAnimatedProps(() => ({
+    strokeDashoffset: circumference * (1 - progressValue.value),
+  }));
 
   return (
     <Animated.View
       entering={FadeInUp.delay(300).duration(500).springify()}
-      className="w-full bg-blue-800 rounded-[2rem] p-6 text-white relative overflow-hidden h-64"
-      style={{ borderCurve: 'continuous' }}
+      className="w-full bg-[#1e40af] rounded-[2rem] p-6 text-white relative overflow-hidden h-64"
+      style={[{ borderCurve: 'continuous' }, cardPulseStyle]}
     >
       <View className="flex-1 justify-between relative z-10">
         <View className="flex-row items-center gap-2">
@@ -722,19 +963,19 @@ const ProgressCard = () => {
 
         <View className="mt-auto mb-1">
           <AnimatedText entering={FadeInUp.delay(500).springify()} style={styles.progressBig}>
-            60%
+            {displayPercent}%
           </AnimatedText>
 
           <View style={{ marginTop: 8, gap: 6 }}>
             <View className="flex-row items-center gap-2">
               <CheckCircle2 size={16} color="#34d399" />
-              <Text style={styles.progressTaken}>Taken: 3 / 5</Text>
+              <Text style={styles.progressTaken}>Taken: {takenCount} / {totalCount}</Text>
             </View>
             <View className="flex-row items-center gap-2">
               <View className="w-4 h-4 items-center justify-center">
                 <View className="w-1.5 h-1.5 rounded-full bg-blue-400/50" />
               </View>
-              <Text style={styles.progressRemain}>Remaining: 2</Text>
+              <Text style={styles.progressRemain}>Remaining: {remainingCount}</Text>
             </View>
           </View>
 
@@ -767,7 +1008,7 @@ const ProgressCard = () => {
               fill="transparent"
               strokeLinecap="round"
             />
-            <Circle
+            <AnimatedCircle
               cx="50"
               cy="50"
               r={radius}
@@ -776,13 +1017,13 @@ const ProgressCard = () => {
               fill="transparent"
               strokeLinecap="round"
               strokeDasharray={circumference}
-              strokeDashoffset={circumference * (1 - progress)}
+              animatedProps={ringAnimatedProps}
             />
           </Svg>
 
           <View className="absolute inset-0 items-center justify-center pt-1">
-            <Text style={styles.goalValue}>3</Text>
-            <Text style={styles.goalSub}>of 5</Text>
+            <Text style={styles.goalValue}>{takenCount}</Text>
+            <Text style={styles.goalSub}>of {totalCount}</Text>
           </View>
         </View>
       </View>
@@ -790,85 +1031,371 @@ const ProgressCard = () => {
   );
 };
 
-const NutriChatCard = () => (
-  <Animated.View
-    entering={FadeInUp.delay(300).duration(500).springify()}
-    className="bg-[#F8F4E3] rounded-[2rem] p-5 flex-1 flex-col justify-between h-48 relative overflow-hidden"
-    style={{ borderCurve: 'continuous' }}
-  >
-    <View className="flex-row items-center gap-1.5 z-10">
-      <View
-        className="w-8 h-8 rounded-full border border-slate-300/50 items-center justify-center bg-white"
-        style={{ borderCurve: 'continuous' }}
-      >
-        <Sparkles size={16} color="#f59e0b" />
-      </View>
-      <Text style={styles.smallCardTitle}>NuTri Chat</Text>
-    </View>
+type NutriTipCardProps = {
+  selection: NutriTipSelection | null;
+  loading: boolean;
+  error: string | null;
+  density?: Density;
+};
 
-    <View className="flex-1 justify-between z-10 mt-2 mb-1">
-      <View
-        className="self-start bg-white p-3 rounded-2xl shadow-sm border border-slate-200/50 max-w-[90%]"
-        style={{ borderCurve: 'continuous' }}
-      >
-        <Text style={styles.chatBubbleText}>Questions about your intake? I&apos;m here to help!</Text>
-      </View>
-
-      <View
-        className="w-full h-9 bg-white/60 rounded-full border border-slate-200/60 flex-row items-center px-3 gap-2"
-        style={{ borderCurve: 'continuous' }}
-      >
-        <Text style={styles.chatPlaceholder}>Ask AI anything...</Text>
-        <View className="ml-auto w-6 h-6 rounded-full bg-slate-800 items-center justify-center">
-          <Send size={12} color="#ffffff" />
-        </View>
-      </View>
-    </View>
-  </Animated.View>
+const DidYouKnowLogo = () => (
+  <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="10.5" r="4.5" stroke="#0f172a" strokeWidth={2.3} />
+    <Rect x="9" y="15" width="6" height="4" rx="1.2" stroke="#0f172a" strokeWidth={2.3} />
+    <Line x1="12" y1="2.5" x2="12" y2="5" stroke="#0f172a" strokeWidth={2.3} strokeLinecap="round" />
+    <Line x1="6.5" y1="5" x2="8.5" y2="6.5" stroke="#0f172a" strokeWidth={2.3} strokeLinecap="round" />
+    <Line x1="17.5" y1="5" x2="15.5" y2="6.5" stroke="#0f172a" strokeWidth={2.3} strokeLinecap="round" />
+    <Line x1="4.5" y1="10.5" x2="7" y2="10.5" stroke="#0f172a" strokeWidth={2.3} strokeLinecap="round" />
+    <Line x1="19.5" y1="10.5" x2="17" y2="10.5" stroke="#0f172a" strokeWidth={2.3} strokeLinecap="round" />
+  </Svg>
 );
 
-const StreakCard = () => (
-  <Animated.View
-    entering={FadeInUp.delay(300).duration(500).springify()}
-    className="bg-yellow-400 rounded-[2rem] p-6 flex-1 flex-col justify-between h-48 relative overflow-hidden"
-    style={{ borderCurve: 'continuous' }}
-  >
-    <View className="flex-row items-center justify-between z-10">
-      <View className="flex-row items-center gap-2">
-        <View
-          className="w-8 h-8 rounded-full bg-orange-500/20 items-center justify-center"
-          style={{ borderCurve: 'continuous' }}
-        >
-          <Flame size={16} color="#ea580c" />
-        </View>
-        <Text style={styles.smallCardTitleDark}>Streak</Text>
-      </View>
-    </View>
+const NutriTipCard = ({ selection, loading, error, density = 'regular' }: NutriTipCardProps) => {
+  const isCompact = density === 'compact';
+  const cardPadding = isCompact ? 20 : 24;
+  const bubblePadding = isCompact ? 12 : 18;
+  const summaryMaxWidth = '100%';
+  const { height: windowHeight, width: windowWidth } = useWindowDimensions();
+  const [isThoughtOpen, setIsThoughtOpen] = useState(false);
+  const overlayBubbleWidth = Math.min(360, windowWidth - (isCompact ? 32 : 48));
+  const overlayBubbleMaxHeight = Math.min(560, Math.max(280, windowHeight * 0.7));
+  const overlayBodyMaxHeight = Math.max(160, overlayBubbleMaxHeight - 140);
+  const tip = selection?.tip;
+  const title = loading ? 'Loading daily tip...' : error ? 'Tip unavailable' : tip?.title ?? 'Daily tip';
+  const promptTitle = 'DID YOU KNOW?';
+  const supplementName = loading
+    ? 'Loading...'
+    : error
+      ? 'Tip unavailable'
+      : tip?.supplement ?? tip?.title ?? 'Daily tip';
+  const detailText = loading
+    ? "Hang tight while we fetch today's full tip."
+    : error
+      ? "We couldn't load the full tip right now."
+      : tip?.detailMarkdown ?? tip?.coverText ?? 'New knowledge for your supplements.';
+  const formattedDetail = useMemo(() => {
+    return detailText
+      .replace(/\r\n/g, '\n')
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/\[(.*?)\]\((.*?)\)/g, '$1 ($2)')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }, [detailText]);
+  const showTitle = Boolean(!loading && !error && tip?.title && tip.title !== supplementName);
 
-    <View className="z-10 mt-auto flex-row justify-between items-end">
-      <View>
-        <View className="flex-row items-baseline gap-1">
-          <Text style={styles.streakValue}>6</Text>
-          <Text style={styles.streakUnit}>Days</Text>
+  const renderDetailContent = useCallback(() => {
+    const lines = formattedDetail.split('\n');
+    let section: 'sources' | 'disclaimer' | null = null;
+
+    return (
+      <Text style={styles.thoughtBubbleText}>
+        {lines.map((line, index) => {
+          const trimmed = line.trim();
+          const lower = trimmed.toLowerCase();
+          if (lower === 'sources') {
+            section = 'sources';
+          } else if (lower === 'disclaimer') {
+            section = 'disclaimer';
+          }
+
+          if (!trimmed) {
+            return <Text key={`detail-line-${index}`}>{'\n'}</Text>;
+          }
+
+          const isHeading = lower === 'sources' || lower === 'disclaimer';
+          const isSourceBullet = section === 'sources' && /^[-–—]\s*/.test(trimmed);
+          const isDisclaimerLine = section === 'disclaimer' && !isHeading;
+
+          if (isSourceBullet) {
+            const bulletMatch = trimmed.match(/^([-–—]\s*)(.*)$/);
+            const bulletPrefix = bulletMatch?.[1] ?? '';
+            const restText = bulletMatch?.[2] ?? trimmed;
+            const urlMatch = restText.match(/https?:\/\/\S+/i);
+            if (urlMatch && urlMatch.index !== undefined) {
+              const start = urlMatch.index;
+              const url = urlMatch[0];
+              const before = restText.slice(0, start);
+              const after = restText.slice(start + url.length);
+              return (
+                <Text key={`detail-line-${index}`}>
+                  {bulletPrefix}
+                  <Text style={styles.thoughtBubbleTextBold}>{before}</Text>
+                  <Text>{url}</Text>
+                  <Text style={styles.thoughtBubbleTextBold}>{after}</Text>
+                  {index < lines.length - 1 ? '\n' : ''}
+                </Text>
+              );
+            }
+
+            return (
+              <Text key={`detail-line-${index}`}>
+                {bulletPrefix}
+                <Text style={styles.thoughtBubbleTextBold}>{restText}</Text>
+                {index < lines.length - 1 ? '\n' : ''}
+              </Text>
+            );
+          }
+
+          if (isDisclaimerLine) {
+            return (
+              <Text key={`detail-line-${index}`} style={styles.thoughtBubbleTextBold}>
+                {line}
+                {index < lines.length - 1 ? '\n' : ''}
+              </Text>
+            );
+          }
+
+          return (
+            <Text key={`detail-line-${index}`}>
+              {line}
+              {index < lines.length - 1 ? '\n' : ''}
+            </Text>
+          );
+        })}
+      </Text>
+    );
+  }, [formattedDetail]);
+
+  const handleOpenTip = () => {
+    setIsThoughtOpen(true);
+  };
+
+  const handleCloseTip = () => {
+    setIsThoughtOpen(false);
+  };
+
+  return (
+    <>
+      <Animated.View
+        entering={FadeInUp.delay(300).duration(500).springify()}
+        className="bg-[#EFE2C8] rounded-[2rem] flex-1 flex-col relative overflow-hidden"
+        style={{ borderCurve: 'continuous', padding: cardPadding, minHeight: 192 }}
+      >
+        <View style={styles.tipHeaderRow}>
+          <View style={styles.tipHeaderLeft}>
+            <View style={styles.tipLogoBox}>
+              <DidYouKnowLogo />
+            </View>
+            <Text style={styles.tipHeaderTitle} numberOfLines={1}>
+              {promptTitle}
+            </Text>
+          </View>
         </View>
-        <View className="mt-1 bg-slate-900/10 px-2 py-1 rounded-lg" style={{ borderCurve: 'continuous' }}>
-          <Text style={styles.streakGoal}>Goal: 30 Days</Text>
+
+        <View style={styles.tipBody}>
+          <Pressable
+            onPress={handleOpenTip}
+            style={[
+              styles.tipSupplementCard,
+              {
+                borderCurve: 'continuous',
+                padding: bubblePadding,
+                maxWidth: summaryMaxWidth,
+                minHeight: isCompact ? 48 : 64,
+              },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={`Open tip for ${supplementName}`}
+          >
+            <Text
+              style={[styles.tipSupplementName, isCompact ? { fontSize: 12, lineHeight: 16 } : null]}
+              numberOfLines={2}
+            >
+              {supplementName}
+            </Text>
+          </Pressable>
+          <Text style={styles.tipHint}>Tap the supplement for the full tip.</Text>
+        </View>
+      </Animated.View>
+
+      <Modal
+        visible={isThoughtOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={handleCloseTip}
+      >
+        <View style={styles.tipModalOverlay}>
+          <BlurView intensity={42} tint="light" style={StyleSheet.absoluteFill} />
+          <View style={styles.tipModalDim} />
+          <Pressable style={StyleSheet.absoluteFill} onPress={handleCloseTip} />
+          <SafeAreaView style={styles.tipModalSafe} edges={['top', 'bottom']}>
+            <MotiView
+              from={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ type: 'timing', duration: 220 }}
+              style={styles.thoughtBubbleShell}
+            >
+              <View
+                style={[
+                  styles.thoughtBubble,
+                  { width: overlayBubbleWidth, maxHeight: overlayBubbleMaxHeight },
+                ]}
+              >
+                <View style={styles.thoughtBubbleHeader}>
+                  <Text style={styles.thoughtBubbleTitle}>{supplementName}</Text>
+                  <Pressable
+                    onPress={handleCloseTip}
+                    style={styles.thoughtBubbleClose}
+                    accessibilityRole="button"
+                    accessibilityLabel="Close tip"
+                  >
+                    <X size={16} color="#64748b" />
+                  </Pressable>
+                </View>
+                {showTitle ? <Text style={styles.thoughtBubbleSubtitle}>{title}</Text> : null}
+                <ScrollView
+                  style={{ maxHeight: overlayBodyMaxHeight }}
+                  contentContainerStyle={styles.thoughtBubbleScroll}
+                  showsVerticalScrollIndicator
+                >
+                  {renderDetailContent()}
+                </ScrollView>
+              </View>
+              <View style={styles.thoughtBubbleTailLarge} />
+              <View style={styles.thoughtBubbleTailSmall} />
+            </MotiView>
+          </SafeAreaView>
+        </View>
+      </Modal>
+    </>
+  );
+};
+
+const StreakCard = ({ density = 'regular' }: { density?: Density }) => {
+  const isCompact = density === 'compact';
+  const cardPadding = isCompact ? 20 : 24;
+
+  return (
+    <Animated.View
+      entering={FadeInUp.delay(300).duration(500).springify()}
+      className="bg-[#FACC15] rounded-[2rem] flex-1 flex-col justify-between relative overflow-hidden"
+      style={{ borderCurve: 'continuous', padding: cardPadding, minHeight: 192 }}
+    >
+      <View className="flex-row items-center justify-between z-10">
+        <View className="flex-row items-center gap-2">
+          <View
+            className="w-8 h-8 rounded-full bg-orange-500/20 items-center justify-center"
+            style={{ borderCurve: 'continuous' }}
+          >
+            <Flame size={16} color="#ea580c" />
+          </View>
+          <Text style={styles.smallCardTitleDark}>Streak</Text>
         </View>
       </View>
 
-      <View className="h-10 flex-row items-end gap-1">
-        {[0.4, 0.6, 0.3, 0.7, 0.5, 0.9, 1].map((h, i) => (
-          <Animated.View
-            key={i}
-            entering={FadeInUp.delay(600 + i * 100).springify()}
-            style={{ height: `${h * 100}%` }}
-            className={`w-1.5 rounded-t-sm ${i === 6 ? 'bg-slate-900' : 'bg-slate-900/30'}`}
-          />
-        ))}
+      <View className="z-10 mt-auto flex-row justify-between items-end">
+        <View style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
+          <View className="flex-row items-baseline gap-1">
+            <Text style={styles.streakValue}>6</Text>
+            <Text style={styles.streakUnit}>Days</Text>
+          </View>
+          <View className="mt-1 bg-slate-900/10 px-2 py-1 rounded-lg" style={{ borderCurve: 'continuous' }}>
+            <Text style={styles.streakGoal} numberOfLines={1} ellipsizeMode="tail">
+              Goal: 30 Days
+            </Text>
+          </View>
+        </View>
+
+        <View style={{ flexShrink: 0 }} className="h-10 flex-row items-end gap-1">
+          {[0.4, 0.6, 0.3, 0.7, 0.5, 0.9, 1].map((h, i) => (
+            <Animated.View
+              key={i}
+              entering={FadeInUp.delay(600 + i * 100).springify()}
+              style={{ height: `${h * 100}%` }}
+              className={`w-1.5 rounded-t-sm ${i === 6 ? 'bg-slate-900' : 'bg-slate-900/30'}`}
+            />
+          ))}
+        </View>
       </View>
-    </View>
-  </Animated.View>
-);
+    </Animated.View>
+  );
+};
+
+const TrendCard = ({ trend }: { trend: TrendData }) => {
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const activeIndex = selectedIndex;
+  const selectedEntry = selectedIndex !== null ? trend.series[selectedIndex] : null;
+  const detailLine = selectedEntry
+    ? selectedEntry.v === null
+      ? `Selected: ${selectedEntry.k} --`
+      : `Selected: ${selectedEntry.k} ${selectedEntry.v}% (${selectedEntry.completed}/${selectedEntry.total})`
+    : trend.summaryB;
+
+  useEffect(() => {
+    setSelectedIndex(null);
+  }, [trend.title, trend.series.length]);
+
+  return (
+    <Animated.View
+      entering={FadeInUp.delay(420).duration(500)}
+      style={[styles.trendCard, { borderCurve: 'continuous' }]}
+    >
+      <View style={styles.trendContent}>
+        <View style={styles.trendHeaderRow}>
+          <Text style={styles.trendTitle}>{trend.title}</Text>
+          <View style={styles.trendIconButton}>
+            <Activity size={20} color="#0f172a" />
+          </View>
+        </View>
+
+        <View style={styles.trendBarsRow}>
+          {trend.series.map((entry, idx) => {
+            const isActive = activeIndex !== null && idx === activeIndex;
+            return (
+              <MotiView
+                key={`${entry.k}-${idx}`}
+                style={styles.trendBarColumn}
+                animate={{
+                  translateY: isActive ? -6 : 0,
+                  scale: isActive ? 1.05 : 1,
+                }}
+                transition={{ type: 'timing', duration: 220 }}
+              >
+                <Pressable
+                  onPress={() => setSelectedIndex(prev => (prev === idx ? null : idx))}
+                  style={styles.trendBarPressable}
+                  hitSlop={8}
+                >
+                  <View style={styles.trendBarTrack}>
+                    <MotiView
+                      from={{ height: 0 }}
+                      animate={{
+                        height:
+                          entry.v === null
+                            ? TREND_BAR_MIN_HEIGHT
+                            : entry.v === 0
+                              ? 0
+                              : Math.max(TREND_BAR_MIN_HEIGHT, (entry.v / 100) * TREND_BAR_HEIGHT),
+                      }}
+                      transition={{ type: 'timing', duration: 520 }}
+                      style={[
+                        styles.trendBarFill,
+                        isActive ? styles.trendBarFillActive : styles.trendBarFillInactive,
+                        entry.v === null && styles.trendBarFillEmpty,
+                        entry.v === 0 && styles.trendBarFillZero,
+                      ]}
+                    />
+                  </View>
+                  <Text style={[styles.trendBarLabel, isActive && styles.trendBarLabelActive]}>
+                    {entry.k}
+                  </Text>
+                  <Text style={[styles.trendBarValue, isActive && styles.trendBarValueActive]}>
+                    {entry.v === null ? '--' : `${entry.v}%`}
+                  </Text>
+                </Pressable>
+              </MotiView>
+            );
+          })}
+        </View>
+
+        <View style={styles.trendSummary}>
+          <Text style={styles.trendSummaryPrimary}>{trend.summaryA}</Text>
+          <Text style={styles.trendSummarySecondary}>{detailLine}</Text>
+        </View>
+      </View>
+    </Animated.View>
+  );
+};
 
 // -----------------------------------------------------
 // Recently Scanned
@@ -924,7 +1451,7 @@ const RecentlyScanned = () => {
   return (
     <Animated.View
       entering={FadeInUp.delay(600).duration(500)}
-      className="bg-blue-300 rounded-[2rem] p-6 pb-24"
+      className="bg-blue-300 rounded-[2rem] p-6"
       style={{ borderCurve: 'continuous' }}
     >
       <View className="flex-row justify-between items-start mb-4">
@@ -1070,7 +1597,6 @@ const TabItem = ({
       style={[
         styles.tabItem,
         isText ? styles.tabItemText : styles.tabItemIcon,
-        item.id === 'home' ? { marginRight: 'auto' } : {},
         { zIndex: 10 },
       ]}
     >
@@ -1095,15 +1621,20 @@ const TabItem = ({
 const BottomNav = ({
   currentTab,
   onTabChange,
+  pageX,
 }: {
   currentTab: TabId;
   onTabChange: (tab: TabId) => void;
+  pageX: number;
 }) => {
   const insets = useSafeAreaInsets();
+  const { width: windowWidth } = useWindowDimensions();
   const bottomInset = Math.max(0, insets.bottom - BOTTOM_INSET_TRIM);
   const bottomFadeHeight = Math.max(160, bottomInset + BOTTOM_FADE_EXTRA);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const activeId = useSharedValue<TabId>(currentTab);
+  const available = windowWidth - pageX * 2 - PLUS_BUTTON_SIZE - NAV_PILL_GAP;
+  const navPillWidth = Math.max(0, Math.min(NAV_PILL_TARGET_WIDTH, available));
 
   type TabItemConfig = { id: TabId; label: string; icon: any; type: TabType; activeColor?: string };
 
@@ -1271,14 +1802,14 @@ const BottomNav = ({
         )}
       </AnimatePresence>
 
-      <View pointerEvents="box-none" style={[styles.bottomBarContainer, { paddingBottom: bottomInset }]}>
+      <View pointerEvents="box-none" style={[styles.bottomBarContainer, { paddingBottom: bottomInset, paddingHorizontal: pageX }]}>
         <View
           pointerEvents="none"
           style={[
             styles.bottomFade,
             {
-              left: -24,
-              right: -24,
+              left: -pageX,
+              right: -pageX,
               bottom: -bottomInset,
               height: bottomFadeHeight,
             },
@@ -1294,7 +1825,7 @@ const BottomNav = ({
               />
             }
           >
-            <BlurView intensity={32} tint="light" style={StyleSheet.absoluteFill} />
+            <BlurView intensity={52} tint="light" style={StyleSheet.absoluteFill} />
           </MaskedView>
 
           <LinearGradient
@@ -1310,7 +1841,7 @@ const BottomNav = ({
           />
         </View>
 
-        <View style={styles.outerWrapper}>
+        <View style={[styles.outerWrapper, { flex: 0, width: navPillWidth }]}>
           <Animated.View style={[styles.navShadowWrap, navBarStyle]}>
             <View style={styles.navPill}>
               <BlurView intensity={22} tint="light" style={StyleSheet.absoluteFill} />
@@ -1323,7 +1854,11 @@ const BottomNav = ({
                 </Animated.View>
 
                 {tabs.map(tab => (
-                  <View key={tab.id} onLayout={onTabLayout(tab.id, tab.type, tab.activeColor)} style={tab.id === 'home' ? { marginRight: 'auto' } : {}}>
+                  <View
+                    key={tab.id}
+                    onLayout={onTabLayout(tab.id, tab.type, tab.activeColor)}
+                    style={tab.id === 'progress' ? { marginLeft: 'auto' } : undefined}
+                  >
                     <TabItem
                       item={tab}
                       activeTabId={activeId}
@@ -1453,11 +1988,85 @@ const HomeTab = () => {
   const tokens = useScreenTokens(NAV_HEIGHT);
   const contentTopPadding = tokens.contentTopPadding;
   const contentBottomPadding = tokens.contentBottomPadding;
+  const frameWidth = tokens.frameWidth ?? tokens.width;
+  const contentWidth = Math.max(0, frameWidth - tokens.pageX * 2);
+  const twoUpDensity = getTwoUpDensity(contentWidth, STACK_GAP);
+  const { draft } = useOnboarding();
   const { savedSupplements } = useSavedSupplements();
   const { checkInsByDate } = useDailyCheckIns();
-  const baseDate = useMemo(() => new Date(), []);
+  const [baseDate, setBaseDate] = useState(() => new Date());
+  const [selectedDayId, setSelectedDayId] = useState(() => getLocalDateKey(new Date()));
+  const [tipsPayload, setTipsPayload] = useState<NutriTipsData | null>(null);
+  const [tipsError, setTipsError] = useState<string | null>(null);
+  const [tipsLoading, setTipsLoading] = useState(true);
   const todayId = useMemo(() => getLocalDateKey(baseDate), [baseDate]);
-  const [selectedDayId, setSelectedDayId] = useState(() => getLocalDateKey(baseDate));
+  const todayIdRef = useRef(todayId);
+
+  const refreshToday = useCallback(() => {
+    const now = new Date();
+    const nextTodayId = getLocalDateKey(now);
+    const prevTodayId = todayIdRef.current;
+    if (nextTodayId === prevTodayId) return;
+    todayIdRef.current = nextTodayId;
+    setBaseDate(now);
+    setSelectedDayId(prev => (prev === prevTodayId ? nextTodayId : prev));
+  }, []);
+
+  useEffect(() => {
+    todayIdRef.current = todayId;
+  }, [todayId]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', state => {
+      if (state === 'active') {
+        refreshToday();
+      }
+    });
+    return () => subscription.remove();
+  }, [refreshToday]);
+
+  useEffect(() => {
+    const now = new Date();
+    const nextMidnight = new Date(now);
+    nextMidnight.setHours(24, 0, 0, 0);
+    const timeout = setTimeout(() => {
+      refreshToday();
+    }, nextMidnight.getTime() - now.getTime() + 500);
+    return () => clearTimeout(timeout);
+  }, [todayId, refreshToday]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadTips = async () => {
+      try {
+        setTipsLoading(true);
+        const response = await apiClient.nutriTips();
+        if (!isMounted) return;
+        if (response.success) {
+          setTipsPayload(response.data ?? null);
+          setTipsError(null);
+        } else {
+          setTipsPayload(null);
+          setTipsError(response.message ?? 'Failed to load NuTri tips.');
+        }
+      } catch (error) {
+        if (!isMounted) return;
+        setTipsPayload(null);
+        setTipsError(error instanceof Error ? error.message : 'Failed to load NuTri tips.');
+      } finally {
+        if (isMounted) {
+          setTipsLoading(false);
+        }
+      }
+    };
+
+    loadTips();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const checkInTargets = useMemo(
     () => savedSupplements.filter(item => item.syncedToCheckIn),
@@ -1475,11 +2084,40 @@ const HomeTab = () => {
   const expectedKeySet = useMemo(() => new Set(expectedKeys), [expectedKeys]);
   const expectedCount = expectedKeys.length;
 
+  const trend = useMemo<TrendData>(() => {
+    const series = buildDailyTrendSeries({ baseDate, expectedCount, expectedKeySet, checkInsByDate });
+    const { average, best, lowest } = summarizeTrendSeries(series);
+    return {
+      title: '7-Day Trend',
+      series,
+      summaryA: average === null ? 'Average: --' : `Average: ${average}%`,
+      summaryB: best && lowest
+        ? `Lowest: ${lowest.k} ${lowest.v}% · Best: ${best.k} ${best.v}%`
+        : 'No data yet',
+    };
+  }, [baseDate, checkInsByDate, expectedCount, expectedKeySet]);
+
   const todayStart = useMemo(() => {
     const today = new Date(baseDate);
     today.setHours(0, 0, 0, 0);
     return today.getTime();
   }, [baseDate]);
+
+  const currentWeekEndKey = useMemo(() => {
+    const today = new Date(baseDate);
+    today.setHours(0, 0, 0, 0);
+    const weekStart = new Date(today);
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    return getLocalDateKey(weekEnd);
+  }, [baseDate]);
+
+  useEffect(() => {
+    if (isDateKeyAfter(selectedDayId, currentWeekEndKey)) {
+      setSelectedDayId(todayId);
+    }
+  }, [selectedDayId, currentWeekEndKey, todayId]);
 
   const statusForDate = useCallback(
     (date: Date, dateKey: string): DayStatus => {
@@ -1502,6 +2140,11 @@ const HomeTab = () => {
   );
 
   const weekDays = useMemo(() => buildCalendarDays(baseDate, statusForDate), [baseDate, statusForDate]);
+  const regionHint = draft?.location?.country ?? null;
+  const tipSelection = useMemo(
+    () => (tipsPayload ? selectDailyTip(tipsPayload, baseDate, regionHint) : null),
+    [tipsPayload, baseDate, regionHint],
+  );
 
   return (
     <View style={styles.screen}>
@@ -1514,40 +2157,47 @@ const HomeTab = () => {
           {
             paddingTop: contentTopPadding,
             paddingBottom: contentBottomPadding,
-            paddingHorizontal: tokens.pageX,
           },
         ]}
       >
-        <View style={styles.screenHeaderRow}>
-          <Text style={[styles.h1, { fontSize: tokens.h1Size, lineHeight: tokens.h1Line }]} maxFontSizeMultiplier={1.2}>
-            NuTri
-          </Text>
-        </View>
+        <ContentFrame navHeight={NAV_HEIGHT} style={styles.contentFrame}>
+          <View style={styles.screenHeaderRow}>
+            <Text style={[styles.h1, { fontSize: tokens.h1Size, lineHeight: tokens.h1Line }]} maxFontSizeMultiplier={1.2}>
+              NuTri
+            </Text>
+          </View>
 
-        <WeekdaySelector
-          items={weekDays}
-          selectedDayId={selectedDayId}
-          todayId={todayId}
-          onSelectDay={setSelectedDayId}
-        />
+          <WeekdaySelector
+            items={weekDays}
+            selectedDayId={selectedDayId}
+            todayId={todayId}
+            onSelectDay={setSelectedDayId}
+            frameWidth={tokens.frameWidth}
+            pageX={tokens.pageX}
+          />
 
-        <View style={styles.sectionBlock}>
-          <SavedSupplements selectedDateKey={selectedDayId} />
-        </View>
+          <View style={styles.sectionBlock}>
+            <SavedSupplements selectedDateKey={selectedDayId} pageX={tokens.pageX} />
+          </View>
 
-        <View style={styles.sectionBlock}>
-          <View style={styles.stack16}>
-            <ProgressCard />
-            <View style={styles.row16}>
-              <NutriChatCard />
-              <StreakCard />
+          <View style={styles.sectionBlock}>
+            <View style={styles.stack16}>
+              <ProgressCard />
+              <View style={styles.row16}>
+                <NutriTipCard selection={tipSelection} loading={tipsLoading} error={tipsError} density={twoUpDensity} />
+                <StreakCard density={twoUpDensity} />
+              </View>
             </View>
           </View>
-        </View>
 
-        <View style={styles.sectionBlock}>
-          <RecentlyScanned />
-        </View>
+          <View style={styles.sectionBlock}>
+            <TrendCard trend={trend} />
+          </View>
+
+          <View style={styles.sectionBlock}>
+            <RecentlyScanned />
+          </View>
+        </ContentFrame>
       </ScrollView>
     </View>
   );
@@ -1566,18 +2216,20 @@ const ProfileTab = () => {
         contentContainerStyle={{
           paddingTop: contentTopPadding,
           paddingBottom: contentBottomPadding,
-          paddingHorizontal: tokens.pageX,
+          width: '100%',
         }}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.screenHeaderRow}>
-          <Text style={[styles.h1, { fontSize: tokens.h1Size, lineHeight: tokens.h1Line }]} maxFontSizeMultiplier={1.2}>
-            Profile
-          </Text>
-        </View>
-        <View>
-          <Text style={styles.placeholderText}>Profile</Text>
-        </View>
+        <ContentFrame navHeight={NAV_HEIGHT} style={styles.contentFrame}>
+          <View style={styles.screenHeaderRow}>
+            <Text style={[styles.h1, { fontSize: tokens.h1Size, lineHeight: tokens.h1Line }]} maxFontSizeMultiplier={1.2}>
+              Profile
+            </Text>
+          </View>
+          <View>
+            <Text style={styles.placeholderText}>Profile</Text>
+          </View>
+        </ContentFrame>
       </ScrollView>
     </View>
   );
@@ -1591,6 +2243,9 @@ export default function MainScreen() {
   const [currentTab, setCurrentTab] = useState<TabId>('home');
   const screenTab = useSharedValue<TabId>(currentTab);
   const { savedSupplements, removeSupplements, updateRoutine } = useSavedSupplements();
+  const tokens = useScreenTokens(NAV_HEIGHT);
+  const insets = useSafeAreaInsets();
+  const topFadeHeight = Math.max(52, Math.max(0, insets.top) + TOP_FADE_EXTRA);
 
   useEffect(() => {
     screenTab.value = currentTab;
@@ -1632,6 +2287,48 @@ export default function MainScreen() {
     >
       <StatusBar style="dark" />
       <View style={{ flex: 1 }}>
+        <View
+          pointerEvents="none"
+          style={[
+            styles.topFade,
+            {
+              left: -tokens.pageX,
+              right: -tokens.pageX,
+              height: topFadeHeight,
+            },
+          ]}
+        >
+          <MaskedView
+            style={StyleSheet.absoluteFill}
+            maskElement={
+              <LinearGradient
+                colors={[
+                  'rgba(0,0,0,1)',
+                  'rgba(0,0,0,0.7)',
+                  'rgba(0,0,0,0.2)',
+                  'rgba(0,0,0,0)',
+                ]}
+                locations={[0, 0.38, 0.72, 1]}
+                style={StyleSheet.absoluteFill}
+              />
+            }
+          >
+            <BlurView intensity={32} tint="light" style={StyleSheet.absoluteFill} />
+          </MaskedView>
+
+          <LinearGradient
+            colors={[
+              '#F2F3F7',
+              'rgba(242,243,247,0.92)',
+              'rgba(242,243,247,0.60)',
+              'rgba(242,243,247,0.20)',
+              'rgba(242,243,247,0.00)',
+            ]}
+            locations={[0, 0.16, 0.42, 0.78, 1]}
+            style={StyleSheet.absoluteFill}
+          />
+        </View>
+
         <View style={styles.tabContainer}>
           <Animated.View style={[styles.tabScreen, homeFadeStyle]} pointerEvents={currentTab === 'home' ? 'auto' : 'none'}>
             <HomeTab />
@@ -1654,7 +2351,7 @@ export default function MainScreen() {
           </Animated.View>
         </View>
 
-        <BottomNav currentTab={currentTab} onTabChange={setCurrentTab} />
+        <BottomNav currentTab={currentTab} onTabChange={setCurrentTab} pageX={tokens.pageX} />
       </View>
     </SafeAreaView>
   );
@@ -1670,7 +2367,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: SCREEN_BG,
   },
-  homeContent: {},
+  homeContent: {
+    width: '100%',
+  },
+  contentFrame: {
+    width: '100%',
+    alignSelf: 'center',
+  },
   screenHeaderRow: {
     marginBottom: 14,
   },
@@ -1720,7 +2423,6 @@ const styles = StyleSheet.create({
   daysRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 4,
     paddingBottom: 2,
     justifyContent: 'space-between',
     width: '100%',
@@ -1733,7 +2435,7 @@ const styles = StyleSheet.create({
   },
   dayItemBase: {
     width: DAY_ITEM_WIDTH,
-    height: 80,
+    height: DAY_ITEM_HEIGHT,
     borderRadius: 32,
     borderCurve: 'continuous',
     alignItems: 'center',
@@ -1748,6 +2450,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.50)',
     borderWidth: 1,
     borderColor: 'rgba(241,245,249,0.75)',
+  },
+  dayItemFuture: {
+    backgroundColor: 'rgba(148,163,184,0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(148,163,184,0.35)',
   },
   dayItemActiveBg: {
     ...StyleSheet.absoluteFillObject,
@@ -1997,15 +2704,6 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
   },
 
-  smallCardTitle: {
-    fontSize: 12,
-    lineHeight: 16,
-    fontWeight: '800',
-    color: '#334155',
-    letterSpacing: 0.8,
-    includeFontPadding: false,
-    textTransform: 'uppercase',
-  },
   smallCardTitleDark: {
     fontSize: 12,
     lineHeight: 16,
@@ -2015,19 +2713,300 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
     textTransform: 'uppercase',
   },
-  chatBubbleText: {
-    fontSize: 12,
-    lineHeight: 18,
-    fontWeight: '600',
-    color: '#475569',
+  trendCard: {
+    backgroundColor: '#A8C9FF',
+    borderRadius: 32,
+    borderCurve: 'continuous',
+  },
+  trendContent: {
+    padding: 24,
+  },
+  trendHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+  },
+  trendTitle: {
+    fontSize: 30,
+    lineHeight: 36,
+    fontWeight: '900',
+    color: '#0f172a',
     includeFontPadding: false,
   },
-  chatPlaceholder: {
-    fontSize: 10,
+  trendIconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderCurve: 'continuous',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.06)',
+  },
+  trendBarsRow: {
+    marginTop: 24,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 10,
+  },
+  trendBarColumn: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 8,
+  },
+  trendBarPressable: {
+    width: '100%',
+    alignItems: 'center',
+    gap: 8,
+  },
+  trendBarTrack: {
+    width: 32,
+    height: TREND_BAR_HEIGHT,
+    borderRadius: 999,
+    borderCurve: 'continuous',
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(15,23,42,0.22)',
+  },
+  trendBarFill: {
+    width: '100%',
+    borderRadius: 999,
+    borderCurve: 'continuous',
+    shadowColor: '#000000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  trendBarFillActive: {
+    backgroundColor: '#1e293b',
+  },
+  trendBarFillInactive: {
+    backgroundColor: 'rgba(15,23,42,0.55)',
+  },
+  trendBarFillEmpty: {
+    backgroundColor: 'rgba(15,23,42,0.2)',
+  },
+  trendBarFillZero: {
+    backgroundColor: 'transparent',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  trendBarLabel: {
+    fontSize: 11,
     lineHeight: 14,
-    fontWeight: '700',
-    color: '#94a3b8',
+    fontWeight: '900',
+    color: 'rgba(15,23,42,0.75)',
     includeFontPadding: false,
+    textAlign: 'center',
+    width: '100%',
+  },
+  trendBarLabelActive: {
+    color: '#0f172a',
+  },
+  trendBarValue: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '900',
+    color: 'rgba(71,85,105,0.9)',
+    includeFontPadding: false,
+    textAlign: 'center',
+    width: '100%',
+    letterSpacing: -0.2,
+    fontVariant: ['tabular-nums'],
+  },
+  trendBarValueActive: {
+    color: '#0f172a',
+  },
+  trendSummary: {
+    marginTop: 20,
+    gap: 4,
+  },
+  trendSummaryPrimary: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: '900',
+    color: '#0f172a',
+    includeFontPadding: false,
+  },
+  trendSummarySecondary: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: '700',
+    color: 'rgba(15,23,42,0.8)',
+    includeFontPadding: false,
+  },
+  tipHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  tipHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    alignSelf: 'center',
+    transform: [{ translateX: -6 }],
+  },
+  tipLogoBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#cdb6ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tipHeaderTitle: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '800',
+    color: '#0f172a',
+    letterSpacing: 0.4,
+    includeFontPadding: false,
+  },
+  tipBody: {
+    flex: 1,
+    justifyContent: 'flex-start',
+    marginTop: 10,
+    gap: 10,
+  },
+  tipSupplementCard: {
+    alignSelf: 'stretch',
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(226, 232, 240, 0.8)',
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tipSupplementName: {
+    fontSize: 16,
+    lineHeight: 20,
+    fontWeight: '900',
+    color: '#0f172a',
+    includeFontPadding: false,
+    textAlign: 'center',
+  },
+  tipHint: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '700',
+    color: '#64748b',
+    includeFontPadding: false,
+  },
+  tipModalOverlay: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tipModalDim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(15, 23, 42, 0.12)',
+  },
+  tipModalSafe: {
+    flex: 1,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  thoughtBubbleShell: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  thoughtBubble: {
+    backgroundColor: '#ffffff',
+    borderRadius: 28,
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(226, 232, 240, 0.7)',
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.16,
+    shadowRadius: 20,
+    elevation: 6,
+  },
+  thoughtBubbleHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+    gap: 8,
+  },
+  thoughtBubbleTitle: {
+    flex: 1,
+    fontSize: 16,
+    lineHeight: 20,
+    fontWeight: '800',
+    color: '#0f172a',
+    includeFontPadding: false,
+  },
+  thoughtBubbleSubtitle: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '700',
+    color: '#475569',
+    marginBottom: 12,
+    includeFontPadding: false,
+  },
+  thoughtBubbleText: {
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: '600',
+    color: '#334155',
+    includeFontPadding: false,
+  },
+  thoughtBubbleTextBold: {
+    fontWeight: '800',
+  },
+  thoughtBubbleScroll: {
+    paddingBottom: 4,
+  },
+  thoughtBubbleClose: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(148, 163, 184, 0.15)',
+  },
+  thoughtBubbleTailLarge: {
+    position: 'absolute',
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#ffffff',
+    bottom: -18,
+    left: 48,
+    borderWidth: 1,
+    borderColor: 'rgba(226, 232, 240, 0.7)',
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  thoughtBubbleTailSmall: {
+    position: 'absolute',
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#ffffff',
+    bottom: -32,
+    left: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(226, 232, 240, 0.7)',
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 3,
   },
   streakValue: {
     fontSize: 36,
@@ -2149,16 +3128,13 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 50,
   },
   outerWrapper: {
-    flex: 1,
-    maxWidth: 380,
-    marginRight: 16,
+    marginRight: NAV_PILL_GAP,
   },
   navPill: {
     height: 64,
@@ -2189,6 +3165,11 @@ const styles = StyleSheet.create({
   },
   bottomFade: {
     position: 'absolute',
+  },
+  topFade: {
+    position: 'absolute',
+    top: 0,
+    zIndex: 40,
   },
   plusWrap: {
     width: 64,
@@ -2228,7 +3209,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 8,
     gap: 6,
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     position: 'relative',
   },
   tabItem: {

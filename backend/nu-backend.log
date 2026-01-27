@@ -1,0 +1,19 @@
+
+> nutri-app-backend@0.1.0 dev
+> tsx watch src/server.ts
+
+[Supabase] Loading env from: /Users/howard07/NuTriApp/nutri-app/backend/.env
+[Supabase] Dotenv result error: undefined
+[Supabase] SUPABASE_URL exists: true
+[Supabase] SUPABASE_SERVICE_ROLE_KEY exists: true
+[Supabase] SUPABASE_ANON_KEY exists: true
+Search backend listening on http://localhost:3001
+[HTTP] 200 GET /api/nutri-tips (3.0ms) id=042bd90a-1bff-4ded-98f9-376b00029d7e
+[HTTP] 200 GET /api/nutri-tips (3.6ms) id=64a656d9-178b-46d7-9ac4-53c2d6748bd1
+[HTTP] 304 GET /api/nutri-tips (4.1ms) id=80ca955a-3e81-4e4e-8f32-32ae052f58ac
+[HTTP] 304 GET /api/nutri-tips (2.8ms) id=e32518e2-7d0a-4c6f-a01b-f81f94a0ad3b
+[HTTP] 304 GET /api/nutri-tips (1.9ms) id=22b5be9e-57ca-4d25-b2a3-ed71d3e13ed6
+[HTTP] 304 GET /api/nutri-tips (2.6ms) id=20602153-9d31-4a47-88b3-be5428f0fcbb
+[HTTP] 304 GET /api/nutri-tips (2.1ms) id=f7690376-6c15-4755-9d3e-e9a58701419c
+[HTTP] 304 GET /api/nutri-tips (37.9ms) id=6dbcd489-b55a-42ee-8df1-d57aefd612ee
+[HTTP] 304 GET /api/nutri-tips (11.2ms) id=7fab47ec-d9d7-4d93-839d-ffa04a2e1287

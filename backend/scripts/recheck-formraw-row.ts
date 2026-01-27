@@ -7,6 +7,7 @@ import { extractErrorMeta, withRetry } from "../src/supabaseRetry.js";
 type TraceResult = {
   updateWhere?: Record<string, string | null>;
   expectedFormRaw?: string | null;
+  productIngredientId?: string | null;
 };
 
 const args = process.argv.slice(2);
@@ -31,6 +32,13 @@ const ensureDir = async (filePath: string) => {
   await mkdir(dir, { recursive: true });
 };
 
+const classifyEmptyType = (value: string | null | undefined) => {
+  if (value === null || value === undefined) return "null";
+  if (value === "") return "empty_string";
+  if (value.trim().length === 0) return "whitespace";
+  return "non_empty";
+};
+
 const run = async () => {
   const traceRaw = await readFile(TRACE_PATH, "utf8");
   const traceJson = JSON.parse(traceRaw) as { traces?: TraceResult[] };
@@ -42,24 +50,40 @@ const run = async () => {
   const updateWhere = trace.updateWhere;
   const expectedFormRaw = FORM_RAW_OVERRIDE ?? trace.expectedFormRaw ?? null;
 
-  const { data: rows, error } = await withRetry(() =>
-    supabase
-      .from("product_ingredients")
-      .select("id,form_raw,updated_at,match_method,match_confidence")
-      .eq("source", "lnhpd")
-      .eq("source_id", updateWhere.source_id ?? "")
-      .eq("basis", updateWhere.basis ?? "")
-      .eq("name_key", updateWhere.name_key ?? "")
-      .eq("ingredient_id", updateWhere.ingredient_id ?? ""),
-  );
+  let rows: Array<Record<string, unknown>> = [];
+  let error: { message?: string } | null = null;
+  if (trace.productIngredientId) {
+    const result = await withRetry(() =>
+      supabase
+        .from("product_ingredients")
+        .select("id,form_raw,updated_at,match_method,match_confidence")
+        .eq("id", trace.productIngredientId ?? ""),
+    );
+    rows = (result.data ?? []) as Array<Record<string, unknown>>;
+    error = result.error as { message?: string } | null;
+  } else {
+    const result = await withRetry(() =>
+      supabase
+        .from("product_ingredients")
+        .select("id,form_raw,updated_at,match_method,match_confidence")
+        .eq("source", "lnhpd")
+        .eq("source_id", updateWhere.source_id ?? "")
+        .eq("basis", updateWhere.basis ?? "")
+        .eq("name_key", updateWhere.name_key ?? "")
+        .eq("ingredient_id", updateWhere.ingredient_id ?? ""),
+    );
+    rows = (result.data ?? []) as Array<Record<string, unknown>>;
+    error = result.error as { message?: string } | null;
+  }
   if (error) {
     const meta = extractErrorMeta(error);
     throw new Error(meta.message ?? error.message);
   }
 
-  const matchedRows = (rows ?? []) as Array<Record<string, unknown>>;
+  const matchedRows = rows;
   const matchedRowsCount = matchedRows.length;
   const rowId = matchedRowsCount === 1 ? (matchedRows[0]?.id as string | undefined) : null;
+  const formRawBefore = matchedRowsCount === 1 ? (matchedRows[0]?.form_raw as string | null | undefined) : null;
 
   let updateResult: Record<string, unknown> | null = null;
   if (FORCE_UPDATE && rowId && expectedFormRaw) {
@@ -68,7 +92,7 @@ const run = async () => {
         .from("product_ingredients")
         .update({ form_raw: expectedFormRaw })
         .eq("id", rowId)
-        .is("form_raw", null)
+        .or("form_raw.is.null,form_raw.eq.")
         .select("id,form_raw"),
     );
     updateResult = {
@@ -103,8 +127,11 @@ const run = async () => {
     expectedFormRaw,
     matchedRowsCount,
     matchedRows,
+    formRawBefore,
+    formRawBeforeEmptyType: classifyEmptyType(formRawBefore as string | null | undefined),
     updateById: updateResult,
     rowAfter,
+    formRawAfterEmptyType: classifyEmptyType((rowAfter as Record<string, unknown> | null)?.form_raw as string | null | undefined),
   };
 
   await ensureDir(OUTPUT);

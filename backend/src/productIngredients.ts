@@ -1,7 +1,13 @@
 import { supabase } from './supabase.js';
 import { extractErrorMeta, type RetryErrorMeta, withRetry } from './supabaseRetry.js';
 import type { LabelDraft } from './labelAnalysis.js';
-import { canonicalizeLnhpdFormTokens, collectExplicitFormTokens } from './formTaxonomy/lnhpdFormTokenMap.js';
+import { canonicalizeLnhpdFormTokens } from './formTaxonomy/lnhpdFormTokenMap.js';
+import {
+  collectExplicitFormTokensWithRules,
+  loadParsingTokenRules,
+  normalizeFormText,
+  type ParsingTokenRules,
+} from './formTaxonomy/parsingTokenRules.js';
 
 type Basis = 'label_serving' | 'recommended_daily' | 'assumed_daily';
 
@@ -112,6 +118,13 @@ type UpsertResult = {
   overflowRows?: number;
 };
 
+const FORM_RAW_IDEMPOTENT_SOURCES: ReadonlySet<ProductIngredientRow['source']> = new Set([
+  'lnhpd',
+  'dsld',
+  'ocr',
+  'manual',
+]);
+
 const normalizeNameKey = (value: string): string =>
   value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 
@@ -121,8 +134,7 @@ const buildNameKey = (value: string): string => {
   return value.trim().toLowerCase();
 };
 
-const normalizeFormText = (value: string): string =>
-  value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const isEmptyFormRaw = (value?: string | null): boolean => !value || !value.trim();
 
 const normalizeFormToken = (value: string): string =>
   value.toLowerCase().replace(/[^a-z0-9_:%]+/g, ' ').trim();
@@ -203,32 +215,41 @@ const FORM_RAW_TOKENS = [
 
 const FORM_RAW_TOKENS_SORTED = [...FORM_RAW_TOKENS].sort((a, b) => b.length - a.length);
 
-const matchFormToken = (value: string): string | null => {
+const buildFormRawTokensSorted = (rules: ParsingTokenRules): string[] => {
+  if (!rules.formRawTokens.length) return FORM_RAW_TOKENS_SORTED;
+  const tokens = new Set(FORM_RAW_TOKENS_SORTED);
+  rules.formRawTokens.forEach((token) => {
+    if (token) tokens.add(token);
+  });
+  return Array.from(tokens).sort((a, b) => b.length - a.length);
+};
+
+const matchFormToken = (value: string, tokens: string[]): string | null => {
   const normalized = normalizeFormText(value);
   if (!normalized) return null;
-  for (const token of FORM_RAW_TOKENS_SORTED) {
+  for (const token of tokens) {
     if (token && normalized.includes(token)) return token;
   }
   return null;
 };
 
-const extractFormRaw = (nameRaw: string): string | null => {
+const extractFormRaw = (nameRaw: string, tokens: string[]): string | null => {
   const trimmed = nameRaw.trim();
   if (!trimmed) return null;
 
   const parenMatch = trimmed.match(/\((?:as|from)\s+([^)]+)\)/i);
   if (parenMatch?.[1]) {
-    const token = matchFormToken(parenMatch[1]);
+    const token = matchFormToken(parenMatch[1], tokens);
     if (token) return token;
   }
 
   const asMatch = trimmed.match(/\b(?:as|from)\s+([a-z0-9][a-z0-9\s\-\/+]+)$/i);
   if (asMatch?.[1]) {
-    const token = matchFormToken(asMatch[1]);
+    const token = matchFormToken(asMatch[1], tokens);
     if (token) return token;
   }
 
-  const token = matchFormToken(trimmed);
+  const token = matchFormToken(trimmed, tokens);
   if (token) return token;
 
   return null;
@@ -310,7 +331,10 @@ const buildPotencyAmountToken = (
   return `${value}${normalizedUnit}`;
 };
 
-const extractLnhpdFormRaw = (meta?: LnhpdIngredientMeta | null): string | null => {
+const extractLnhpdFormRaw = (
+  meta: LnhpdIngredientMeta | null | undefined,
+  rules: ParsingTokenRules,
+): string | null => {
   if (!meta) return null;
   if (shouldSkipSourceMaterial(meta.sourceMaterial ?? null)) return null;
 
@@ -325,12 +349,15 @@ const extractLnhpdFormRaw = (meta?: LnhpdIngredientMeta | null): string | null =
     });
   };
 
-  const explicitTokens = collectExplicitFormTokens([
-    meta.ingredientName ?? null,
-    meta.properName ?? null,
-    meta.sourceMaterial ?? null,
-    meta.potencyConstituent ?? null,
-  ]);
+  const explicitTokens = collectExplicitFormTokensWithRules(
+    [
+      meta.ingredientName ?? null,
+      meta.properName ?? null,
+      meta.sourceMaterial ?? null,
+      meta.potencyConstituent ?? null,
+    ],
+    rules,
+  );
   explicitTokens.forEach((token) => addToken(token));
 
   if (meta.sourceMaterial) {
@@ -372,6 +399,7 @@ const extractLnhpdFormRaw = (meta?: LnhpdIngredientMeta | null): string | null =
 const extractLnhpdFallbackFormTokens = (
   nameRaw: string,
   meta?: LnhpdIngredientMeta | null,
+  rules?: ParsingTokenRules,
 ): string[] => {
   const sources = [
     nameRaw,
@@ -381,7 +409,10 @@ const extractLnhpdFallbackFormTokens = (
   ].filter((value): value is string => Boolean(value && value.trim()));
   if (!sources.length) return [];
   if (meta?.sourceMaterial && shouldSkipSourceMaterial(meta.sourceMaterial)) return [];
-  return collectExplicitFormTokens(sources);
+  return collectExplicitFormTokensWithRules(
+    sources,
+    rules ?? { normalizationRules: [], tokenMatchers: [], formRawTokens: [] },
+  );
 };
 
 const normalizeUnitLabel = (unitRaw?: string | null): string | null => {
@@ -689,6 +720,7 @@ const resolveConversionFactor = async (
 const hydrateRowsWithLookups = async (
   rows: ProductIngredientRow[],
   lnhpdMetaByNameKey?: Map<string, LnhpdIngredientMeta | null> | null,
+  parsingRules?: ParsingTokenRules,
 ): Promise<void> => {
   const ingredientCache = new Map<string, IngredientLookup | null>();
   const conversionCache = new Map<string, number | null>();
@@ -706,7 +738,7 @@ const hydrateRowsWithLookups = async (
     ) {
       const nameKey = row.name_key || buildNameKey(row.name_raw);
       const meta = lnhpdMetaByNameKey?.get(nameKey) ?? null;
-      const tokens = extractLnhpdFallbackFormTokens(row.name_raw, meta);
+      const tokens = extractLnhpdFallbackFormTokens(row.name_raw, meta, parsingRules);
       if (tokens.length) {
         row.form_raw = tokens.join(' ');
       }
@@ -813,6 +845,70 @@ const dedupeProductIngredientRows = (rows: ProductIngredientRow[]): ProductIngre
   return Array.from(map.values());
 };
 
+const preserveExistingFormRaw = async (rows: ProductIngredientRow[]): Promise<void> => {
+  const groups = new Map<
+    string,
+    {
+      source: ProductIngredientRow['source'];
+      sourceId: string;
+      basis: Basis;
+      nameKeys: Set<string>;
+      rows: ProductIngredientRow[];
+    }
+  >();
+
+  rows.forEach((row) => {
+    if (!FORM_RAW_IDEMPOTENT_SOURCES.has(row.source)) return;
+    const nameKey = row.name_key || buildNameKey(row.name_raw);
+    row.name_key = nameKey;
+    const groupKey = `${row.source}:${row.source_id}:${row.basis}`;
+    const group =
+      groups.get(groupKey) ??
+      {
+        source: row.source,
+        sourceId: row.source_id,
+        basis: row.basis,
+        nameKeys: new Set<string>(),
+        rows: [],
+      };
+    group.nameKeys.add(nameKey);
+    group.rows.push(row);
+    groups.set(groupKey, group);
+  });
+
+  for (const group of groups.values()) {
+    const nameKeys = Array.from(group.nameKeys.values());
+    if (!nameKeys.length) continue;
+    const { data, error, status, rayId } = await withRetry(() =>
+      supabase
+        .from('product_ingredients')
+        .select('name_key,form_raw')
+        .eq('source', group.source)
+        .eq('source_id', group.sourceId)
+        .eq('basis', group.basis)
+        .in('name_key', nameKeys),
+    );
+    if (error) {
+      const meta = extractErrorMeta(error, status, rayId);
+      console.warn('[ProductIngredients] form_raw idempotency lookup failed', meta);
+      continue;
+    }
+    const existingByNameKey = new Map<string, string | null>();
+    (data ?? []).forEach((row) => {
+      const nameKey = row?.name_key;
+      if (!nameKey) return;
+      existingByNameKey.set(nameKey as string, (row.form_raw as string | null) ?? null);
+    });
+    group.rows.forEach((row) => {
+      const nameKey = row.name_key || buildNameKey(row.name_raw);
+      const existingFormRaw = existingByNameKey.get(nameKey);
+      if (!isEmptyFormRaw(existingFormRaw)) {
+        row.form_raw = existingFormRaw ?? null;
+      }
+    });
+  }
+};
+
 const upsertRowsWithOverflowGuard = async (
   rows: ProductIngredientRow[],
 ): Promise<UpsertResult> => {
@@ -864,11 +960,13 @@ const upsertRowsWithOverflowGuard = async (
 const upsertProductIngredientRows = async (
   rows: ProductIngredientRow[],
   lnhpdMetaByNameKey?: Map<string, LnhpdIngredientMeta | null> | null,
+  parsingRules?: ParsingTokenRules,
 ): Promise<UpsertResult> => {
   const dedupedRows = dedupeProductIngredientRows(rows);
   if (!dedupedRows.length) return { success: true };
   try {
-    await hydrateRowsWithLookups(dedupedRows, lnhpdMetaByNameKey);
+    await hydrateRowsWithLookups(dedupedRows, lnhpdMetaByNameKey, parsingRules);
+    await preserveExistingFormRaw(dedupedRows);
     const { error, status, rayId } = await withRetry(() =>
       supabase
         .from('product_ingredients')
@@ -899,6 +997,8 @@ export async function upsertProductIngredientsFromLabelFacts(params: {
   parseConfidence?: number | null;
 }): Promise<UpsertResult> {
   const basis = params.basis ?? 'label_serving';
+  const parsingRules = await loadParsingTokenRules();
+  const formRawTokensSorted = buildFormRawTokensSorted(parsingRules);
   const rows: ProductIngredientRow[] = [];
   const lnhpdMetaByNameKey =
     params.source === 'lnhpd' ? new Map<string, LnhpdIngredientMeta | null>() : null;
@@ -911,8 +1011,10 @@ export async function upsertProductIngredientsFromLabelFacts(params: {
     const amountUnknown = amountMissing || !isDoseUnitKind(unitKind);
     const nameKey = buildNameKey(item.name);
     const lnhpdFormRaw =
-      params.source === 'lnhpd' ? extractLnhpdFormRaw(item.lnhpdMeta ?? null) : null;
-    let formRaw = lnhpdFormRaw ?? item.formRaw ?? extractFormRaw(item.name);
+      params.source === 'lnhpd'
+        ? extractLnhpdFormRaw(item.lnhpdMeta ?? null, parsingRules)
+        : null;
+    let formRaw = lnhpdFormRaw ?? item.formRaw ?? extractFormRaw(item.name, formRawTokensSorted);
     if (params.source === 'lnhpd' && formRaw) {
       formRaw = canonicalizeLnhpdFormTokens(formRaw.split(/\s+/)).join(' ');
     }
@@ -958,7 +1060,7 @@ export async function upsertProductIngredientsFromLabelFacts(params: {
     const amountMissing = normalized.amount == null;
     const amountUnknown = amountMissing || !isDoseUnitKind(unitKind);
     const nameKey = buildNameKey(blend.name);
-    const formRaw = extractFormRaw(blend.name);
+    const formRaw = extractFormRaw(blend.name, formRawTokensSorted);
     rows.push({
       source: params.source,
       source_id: params.sourceId,
@@ -993,7 +1095,7 @@ export async function upsertProductIngredientsFromLabelFacts(params: {
     const amountMissing = true;
     const amountUnknown = true;
     const nameKey = buildNameKey(name);
-    const formRaw = extractFormRaw(name);
+    const formRaw = extractFormRaw(name, formRawTokensSorted);
     rows.push({
       source: params.source,
       source_id: params.sourceId,
@@ -1022,7 +1124,7 @@ export async function upsertProductIngredientsFromLabelFacts(params: {
     });
   });
 
-  return upsertProductIngredientRows(rows, lnhpdMetaByNameKey);
+  return upsertProductIngredientRows(rows, lnhpdMetaByNameKey, parsingRules);
 }
 
 export async function upsertProductIngredientsFromDraft(params: {
@@ -1031,6 +1133,8 @@ export async function upsertProductIngredientsFromDraft(params: {
   basis?: Basis;
 }): Promise<void> {
   const basis = params.basis ?? 'label_serving';
+  const parsingRules = await loadParsingTokenRules();
+  const formRawTokensSorted = buildFormRawTokensSorted(parsingRules);
   const rows: ProductIngredientRow[] = params.draft.ingredients.map((ingredient) => {
     const normalized = normalizeAmountAndUnit(
       ingredient.amount ?? null,
@@ -1038,7 +1142,7 @@ export async function upsertProductIngredientsFromDraft(params: {
     );
     const unitKind = classifyUnitKind(ingredient.unit ?? normalized.unit);
     const nameKey = buildNameKey(ingredient.name);
-    const formRaw = extractFormRaw(ingredient.name);
+    const formRaw = extractFormRaw(ingredient.name, formRawTokensSorted);
     const amountUnknown =
       normalized.amount == null && ingredient.dvPercent == null
         ? true
@@ -1067,5 +1171,5 @@ export async function upsertProductIngredientsFromDraft(params: {
     };
   });
 
-  await upsertProductIngredientRows(rows);
+  await upsertProductIngredientRows(rows, null, parsingRules);
 }

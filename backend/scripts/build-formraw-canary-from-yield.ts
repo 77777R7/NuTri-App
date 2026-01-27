@@ -9,6 +9,7 @@ type YieldPreviewRow = {
   recognizedTokens?: string[] | null;
   winnerTokens?: string[] | null;
   candidateWritableEmpty?: boolean | null;
+  candidateWriteableEmpty?: boolean | null;
 };
 
 type CanaryEntry = {
@@ -73,7 +74,9 @@ const run = async () => {
     const dedupeKey = canonicalSourceId ? `c:${canonicalSourceId}` : `s:${sourceId}`;
     if (seenKeys.has(dedupeKey)) continue;
 
-    if (REQUIRE_CANDIDATE_WRITABLE && !row.candidateWritableEmpty) continue;
+    const candidateWriteable =
+      row.candidateWriteableEmpty ?? row.candidateWritableEmpty ?? false;
+    if (REQUIRE_CANDIDATE_WRITABLE && !candidateWriteable) continue;
     const winnerTokens = normalizeList(row.winnerTokens);
     const recognizedTokens = normalizeList(row.recognizedTokens);
     if (!winnerTokens.length) continue;

@@ -41,23 +41,53 @@ const run = async () => {
     throw new Error("[lnhpd-source-ids] --start-lnhpd-id is required");
   }
 
-  const fetchRows = async (table: string): Promise<LnhpdRow[]> => {
-    const { data, error, status, rayId } = await withRetry(() =>
-      supabase
-        .from(table)
-        .select("lnhpd_id,npn")
-        .order("lnhpd_id", { ascending: true })
-        .gte("lnhpd_id", START_ID)
-        .limit(LIMIT),
-    );
-    if (error) {
-      const meta = extractErrorMeta(error, status, rayId ?? null);
-      const errorMessage =
-        meta.message ?? (error instanceof Error ? error.message : String(error));
-      throw new Error(`[lnhpd-source-ids] query failed: ${errorMessage}`);
-    }
-    return (data ?? []) as LnhpdRow[];
-  };
+const PAGE_SIZE = 1000;
+
+const fetchRowsPage = async (
+  table: string,
+  startId: number,
+  pageLimit: number,
+): Promise<LnhpdRow[]> => {
+  const { data, error, status, rayId } = await withRetry(() =>
+    supabase
+      .from(table)
+      .select("lnhpd_id,npn")
+      .order("lnhpd_id", { ascending: true })
+      .gte("lnhpd_id", startId)
+      .limit(pageLimit),
+  );
+  if (error) {
+    const meta = extractErrorMeta(error, status, rayId ?? null);
+    const errorMessage =
+      meta.message ?? (error instanceof Error ? error.message : String(error));
+    throw new Error(`[lnhpd-source-ids] query failed: ${errorMessage}`);
+  }
+  return (data ?? []) as LnhpdRow[];
+};
+
+const fetchRows = async (table: string): Promise<LnhpdRow[]> => {
+  const rows: LnhpdRow[] = [];
+  let remaining = LIMIT;
+  let cursor = START_ID;
+
+  while (remaining > 0) {
+    const pageLimit = Math.min(PAGE_SIZE, remaining);
+    const page = await fetchRowsPage(table, cursor, pageLimit);
+    if (!page.length) break;
+    rows.push(...page);
+
+    const lastId = page[page.length - 1]?.lnhpd_id;
+    if (lastId == null) break;
+    const lastNumeric = Number(lastId);
+    if (!Number.isFinite(lastNumeric)) break;
+    cursor = lastNumeric + 1;
+    remaining -= page.length;
+
+    if (page.length < pageLimit) break;
+  }
+
+  return rows;
+};
 
   let rows = await fetchRows("lnhpd_facts_complete");
   if (!rows?.length) {

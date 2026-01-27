@@ -16,6 +16,8 @@ type YieldPreviewRow = {
   mappedTokens?: string[] | null;
   mapsToFormKey?: string | null;
   candidateWritableEmpty?: boolean | null;
+  candidateWriteableEmpty?: boolean | null;
+  candidateMappableEmpty?: boolean | null;
 };
 
 type IngredientRow = {
@@ -52,7 +54,10 @@ const OUTPUT =
   getArg("output") ?? "output/formraw/candidate_empty_rows.json";
 const LIMIT = Math.max(1, Number(getArg("limit") ?? "1000"));
 const REQUIRE_CANDIDATE_WRITABLE = args.includes("--require-candidate-writable");
+const REQUIRE_CANDIDATE_MAPPABLE = args.includes("--require-candidate-mappable");
 const REQUIRE_RECOGNIZED = args.includes("--require-recognized");
+const REQUIRE_MAPPED = args.includes("--require-mapped");
+const REQUIRE_STRICT = args.includes("--require-strict");
 const CHUNK_SIZE = Math.max(1, Number(getArg("chunk-size") ?? "200"));
 
 const ensureDir = async (filePath: string) => {
@@ -115,11 +120,18 @@ const run = async () => {
   const candidateRows: YieldPreviewRow[] = [];
   let missingIdRows = 0;
   for (const row of previewRows) {
-    if (REQUIRE_CANDIDATE_WRITABLE && !row.candidateWritableEmpty) continue;
+    const candidateWriteable =
+      row.candidateWriteableEmpty ?? row.candidateWritableEmpty ?? false;
+    const candidateMappable = row.candidateMappableEmpty ?? false;
+    if (REQUIRE_STRICT && !candidateMappable) continue;
+    if (REQUIRE_CANDIDATE_WRITABLE && !candidateWriteable) continue;
+    if (REQUIRE_CANDIDATE_MAPPABLE && !candidateMappable) continue;
+    if (REQUIRE_MAPPED && !row.mapsToFormKey) continue;
     const winnerTokens = normalizeList(row.winnerTokens);
     const recognizedTokens = normalizeList(row.recognizedTokens);
     if (!winnerTokens.length) continue;
-    if (REQUIRE_RECOGNIZED && !recognizedTokens.length) continue;
+    if ((REQUIRE_RECOGNIZED || REQUIRE_STRICT) && !recognizedTokens.length) continue;
+    if (REQUIRE_STRICT && !row.mapsToFormKey) continue;
     if (!row.productIngredientId) {
       missingIdRows += 1;
       continue;
@@ -173,6 +185,7 @@ const run = async () => {
     missingDbRows,
     requireCandidateWritable: REQUIRE_CANDIDATE_WRITABLE,
     requireRecognized: REQUIRE_RECOGNIZED,
+    requireStrict: REQUIRE_STRICT,
     rows: outputRows,
   };
 

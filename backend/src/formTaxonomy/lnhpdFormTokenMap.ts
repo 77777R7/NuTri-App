@@ -70,10 +70,35 @@ export const canonicalizeLnhpdFormTokens = (tokens: string[]): string[] => {
 
   const cleaned: string[] = [];
   const cleanedSeen = new Set<string>();
+  const dropTokens = new Set([
+    "beta",
+    "chelate",
+    "glycinate",
+    "bisglycinate",
+    "capsule",
+    "capsules",
+    "softgel",
+    "softgels",
+    "tablet",
+    "tablets",
+    "caplet",
+    "gummy",
+    "gummies",
+    "chewable",
+    "lozenge",
+    "pill",
+    "powder",
+    "liquid",
+    "drops",
+    "spray",
+    "gel",
+    "gels",
+  ]);
   const dosagePattern = /^\d+(?:mg|mcg|g|iu|ml|cfu)$/;
   output.forEach((token) => {
     if (!token) return;
     if (token === "and" || token === "dhe") return;
+    if (dropTokens.has(token)) return;
     if (dosagePattern.test(token)) return;
     const normalized = normalizeToken(token);
     if (!isValidToken(normalized)) return;
@@ -103,6 +128,14 @@ const EXPLICIT_FORM_RULES: ExplicitTokenRule[] = [
   { pattern: /\bubiquinol\b/, tokens: ["ubiquinol"] },
   { pattern: /\bubiquinone\b|\bubidecarenone\b|\bcoq10\b|\bcoenzyme q10\b/, tokens: ["ubiquinone"] },
   {
+    pattern: /\bthiamin(?:e)?\b.*\b(hydrochloride|hcl)\b/,
+    tokens: ["thiamine_hcl"],
+  },
+  {
+    pattern: /\bvitamin\s*b6\b.*\b(hydrochloride|hcl)\b/,
+    tokens: ["pyridoxine_hcl"],
+  },
+  {
     pattern: /\bpyridoxine\b.*\b(hydrochloride|hcl)\b/,
     tokens: ["pyridoxine_hcl"],
   },
@@ -110,20 +143,25 @@ const EXPLICIT_FORM_RULES: ExplicitTokenRule[] = [
     pattern: /\bpyridoxal\b.*\bphosphate\b|\bp\s*-?\s*5\s*-?\s*p\b|\bp5p\b/,
     tokens: ["p5p"],
   },
-  { pattern: /\bbisglycinate\b/, tokens: ["bisglycinate"] },
-  { pattern: /\bglycinate\b/, tokens: ["glycinate"] },
   { pattern: /\bpicolinate\b/, tokens: ["picolinate"] },
   { pattern: /\bthreonate\b/, tokens: ["threonate"] },
   { pattern: /\bmalate\b/, tokens: ["malate"] },
-  { pattern: /\bcitrate\b/, tokens: ["citrate"] },
+  {
+    pattern:
+      /\b(?:magnesium|calcium|potassium|sodium|zinc|iron|copper|chromium|selenium|boron)\s+citrate\b/,
+    tokens: ["citrate"],
+  },
   { pattern: /\bgluconate\b/, tokens: ["gluconate"] },
   { pattern: /\bsulphate\b|\bsulfate\b/, tokens: ["sulfate"] },
   { pattern: /\bcarbonate\b/, tokens: ["carbonate"] },
-  { pattern: /\bchloride\b|\bhydrochloride\b|\bhcl\b/, tokens: ["chloride"] },
+  {
+    pattern:
+      /\b(?:magnesium|calcium|potassium|sodium|zinc|iron|copper|chromium|selenium|boron)\s+chloride\b/,
+    tokens: ["chloride"],
+  },
   { pattern: /\boxide\b/, tokens: ["oxide"] },
   { pattern: /\bphosphate\b/, tokens: ["phosphate"] },
   { pattern: /\btaurate\b/, tokens: ["taurate"] },
-  { pattern: /\bchelate\b|\bchelated\b/, tokens: ["chelate"] },
   { pattern: /\bacetate\b/, tokens: ["acetate"] },
   { pattern: /\bsuccinate\b/, tokens: ["succinate"] },
 ];

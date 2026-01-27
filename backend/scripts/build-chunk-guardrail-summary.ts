@@ -113,22 +113,29 @@ const run = async () => {
   const emptyToNonEmpty =
     emptyToNonEmptyCandidates ??
     (beforeEmpty != null && afterEmpty != null ? beforeEmpty - afterEmpty : null);
-  const candidateWritableEmptyRows =
+  const candidateWriteableEmptyRows =
     candidateEmptyBeforeCount ??
+    toNumber(yieldReport?.candidateWriteableEmptyRows) ??
     toNumber(yieldReport?.candidateWritableEmptyRows) ??
     toNumber(yieldReport?.candidateWritableRows) ??
     null;
-  const candidateWritableAlreadyFilledRows =
-    toNumber(yieldReport?.candidateWritableAlreadyFilledRows) ?? null;
+  const candidateWriteableAlreadyFilledRows =
+    toNumber(yieldReport?.candidateWriteableAlreadyFilledRows) ??
+    toNumber(yieldReport?.candidateWritableAlreadyFilledRows) ??
+    null;
+  const candidateMappableEmptyRows =
+    toNumber(yieldReport?.candidateMappableEmptyRows) ?? null;
+  const candidateMappableAlreadyFilledRows =
+    toNumber(yieldReport?.candidateMappableAlreadyFilledRows) ?? null;
   const candidateFormRawRows = toNumber(yieldReport?.candidateFormRawRows) ?? null;
   const writeYieldRate =
     emptyToNonEmpty != null &&
-    candidateWritableEmptyRows &&
-    candidateWritableEmptyRows > 0
-      ? Number((emptyToNonEmpty / candidateWritableEmptyRows).toFixed(4))
+    candidateWriteableEmptyRows &&
+    candidateWriteableEmptyRows > 0
+      ? Number((emptyToNonEmpty / candidateWriteableEmptyRows).toFixed(4))
       : null;
   const writeYieldGateRequired =
-    candidateWritableEmptyRows != null && candidateWritableEmptyRows >= 10;
+    candidateWriteableEmptyRows != null && candidateWriteableEmptyRows >= 10;
   const writeYieldGatePassed = writeYieldGateRequired
     ? (emptyToNonEmpty ?? 0) >= 1
     : null;
@@ -154,8 +161,10 @@ const run = async () => {
     formRawNonEmptyRowsAfter: afterNonEmpty,
     changedToEmpty: nonempty?.changedToEmpty ?? 0,
     candidateFormRawRows,
-    candidateWritableEmptyRows,
-    candidateWritableAlreadyFilledRows,
+    candidateWriteableEmptyRows,
+    candidateWriteableAlreadyFilledRows,
+    candidateMappableEmptyRows,
+    candidateMappableAlreadyFilledRows,
     candidateEmptyRowsBefore: candidateEmptyBeforeCount,
     candidateEmptyRowsAfter: candidateEmptyAfterCount,
     writeYieldDelta,

@@ -36,6 +36,7 @@ import { buildBarcodeSnapshot, buildLabelSnapshot, validateSnapshotOrFallback, t
 import { getSnapshotCache, storeSnapshotCache } from "./snapshotCache.js";
 import type { SupplementSnapshot } from "./schemas/supplementSnapshot.js";
 import { supabase } from "./supabase.js";
+import { getNutriTipsData } from "./nutriTips.js";
 import type {
   AiSupplementAnalysis,
   ErrorResponse,
@@ -2409,6 +2410,20 @@ const coerceScoreExplain = (value: unknown): Record<string, unknown> | null => {
 // ============================================================================
 
 /**
+ * NuTri daily tips dataset
+ */
+app.get("/api/nutri-tips", async (_req: Request, res: Response) => {
+  try {
+    const data = await getNutriTipsData();
+    return res.json({ success: true, data });
+  } catch (error) {
+    captureException(error, { route: "/api/nutri-tips" });
+    console.error("/api/nutri-tips unexpected error", error);
+    return res.status(500).json({ success: false, message: "Failed to load tips." });
+  }
+});
+
+/**
  * Legacy endpoint for barcode search only (no AI analysis)
  */
 app.get("/api/search-by-barcode", async (req: Request, res: Response) => {
@@ -2727,9 +2742,33 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       queueTimeoutMs: RESILIENCE_CONTEXT_FETCH_QUEUE_TIMEOUT_MS,
     };
 
+    const pickText = (...values: Array<string | null | undefined>) => {
+      for (const value of values) {
+        if (typeof value !== "string") continue;
+        const trimmed = value.trim();
+        if (trimmed.length > 0) return trimmed;
+      }
+      return null;
+    };
+
+    const shouldPreferExtractedBrand = (
+      brandExtraction?: SnapshotAnalysisPayload["brandExtraction"] | null,
+    ) =>
+      Boolean(brandExtraction?.brand) &&
+      (brandExtraction?.confidence === "high" || brandExtraction?.confidence === "medium");
+
+    const resolveBrand = (
+      brandExtraction: SnapshotAnalysisPayload["brandExtraction"] | null | undefined,
+      ...candidates: Array<string | null | undefined>
+    ) => {
+      const preferred = shouldPreferExtractedBrand(brandExtraction) ? brandExtraction?.brand ?? null : null;
+      return pickText(preferred, ...candidates);
+    };
+
     const emitCachedSnapshot = (cached: {
       snapshot: SupplementSnapshot;
       analysisPayload: SnapshotAnalysisPayload | null;
+      expiresAt?: string | null;
     }, catalog?: CatalogResolved | null) => {
       console.log(`[Stream] Cache hit for barcode: ${barcode}`);
       const { snapshot, analysisPayload } = cached;
@@ -2749,23 +2788,32 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         sendSSE(res, "brand_extracted", workingAnalysisPayload.brandExtraction);
       }
 
-      const pickField = (...values: (string | null | undefined)[]) => {
-        for (const value of values) {
-          if (typeof value !== "string") continue;
-          const trimmed = value.trim();
-          if (trimmed.length > 0) return trimmed;
-        }
-        return null;
-      };
-
       const catalogCategory = catalog?.category ?? catalog?.categoryRaw ?? null;
 
       const productInfo = {
-        brand: pickField(catalog?.brand, workingAnalysisPayload?.productInfo?.brand, snapshot.product.brand),
-        name: pickField(catalog?.productName, workingAnalysisPayload?.productInfo?.name, snapshot.product.name),
-        category: pickField(catalogCategory, workingAnalysisPayload?.productInfo?.category, snapshot.product.category),
-        image: pickField(catalog?.imageUrl, workingAnalysisPayload?.productInfo?.image, snapshot.product.imageUrl),
+        brand: resolveBrand(
+          workingAnalysisPayload?.brandExtraction,
+          catalog?.brand,
+          workingAnalysisPayload?.productInfo?.brand,
+          snapshot.product.brand,
+        ),
+        name: pickText(catalog?.productName, workingAnalysisPayload?.productInfo?.name, snapshot.product.name),
+        category: pickText(catalogCategory, workingAnalysisPayload?.productInfo?.category, snapshot.product.category),
+        image: pickText(catalog?.imageUrl, workingAnalysisPayload?.productInfo?.image, snapshot.product.imageUrl),
       };
+
+      if (workingAnalysisPayload) {
+        workingAnalysisPayload = {
+          ...workingAnalysisPayload,
+          productInfo: {
+            ...workingAnalysisPayload.productInfo,
+            brand: productInfo.brand ?? null,
+            name: productInfo.name ?? null,
+            category: productInfo.category ?? null,
+            image: productInfo.image ?? null,
+          },
+        };
+      }
 
       const sources = workingAnalysisPayload?.sources ?? snapshot.references.items.map((ref) => ({
         title: ref.title,
@@ -2788,6 +2836,33 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         },
         analysis: snapshot.analysis ?? analysisMeta,
       };
+
+      const payloadInfo = analysisPayload?.productInfo ?? null;
+      const snapshotMismatch =
+        productInfo.brand !== snapshot.product.brand ||
+        productInfo.name !== snapshot.product.name ||
+        productInfo.category !== snapshot.product.category ||
+        productInfo.image !== snapshot.product.imageUrl;
+      const payloadMismatch = payloadInfo
+        ? payloadInfo.brand !== productInfo.brand ||
+          payloadInfo.name !== productInfo.name ||
+          payloadInfo.category !== productInfo.category ||
+          payloadInfo.image !== productInfo.image
+        : false;
+
+      if (snapshotMismatch || payloadMismatch) {
+        const updatedSnapshot: SupplementSnapshot = {
+          ...snapshotToSend,
+          updatedAt: nowIso(),
+        };
+        void storeSnapshotCache({
+          key: cacheKey,
+          source: "barcode",
+          snapshot: updatedSnapshot,
+          analysisPayload: workingAnalysisPayload,
+          expiresAt: cached.expiresAt ?? undefined,
+        });
+      }
 
       const fallbackScore = (value: number | undefined) =>
         typeof value === "number" ? Math.round(value / 10) : 5;
@@ -2904,19 +2979,16 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
               dsldLabelId: snapshot.regulatory.dsldLabelId,
             };
             const catalogCategory = catalog.category ?? catalog.categoryRaw ?? null;
-            const pickField = (...values: (string | null | undefined)[]) => {
-              for (const value of values) {
-                if (typeof value !== "string") continue;
-                const trimmed = value.trim();
-                if (trimmed.length > 0) return trimmed;
-              }
-              return null;
-            };
             const finalProductInfo = {
-              brand: pickField(catalog.brand, analysisPayload?.productInfo?.brand, snapshot.product.brand),
-              name: pickField(catalog.productName, analysisPayload?.productInfo?.name, snapshot.product.name),
-              category: pickField(catalogCategory, analysisPayload?.productInfo?.category, snapshot.product.category),
-              image: pickField(catalog.imageUrl, analysisPayload?.productInfo?.image, snapshot.product.imageUrl),
+              brand: resolveBrand(
+                analysisPayload?.brandExtraction,
+                catalog.brand,
+                analysisPayload?.productInfo?.brand,
+                snapshot.product.brand,
+              ),
+              name: pickText(catalog.productName, analysisPayload?.productInfo?.name, snapshot.product.name),
+              category: pickText(catalogCategory, analysisPayload?.productInfo?.category, snapshot.product.category),
+              image: pickText(catalog.imageUrl, analysisPayload?.productInfo?.image, snapshot.product.imageUrl),
             };
 
             snapshot.product.brand = finalProductInfo.brand;
@@ -3019,19 +3091,16 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       let workingAnalysisPayload: SnapshotAnalysisPayload = cached?.analysisPayload ?? {};
 
       const catalogCategory = catalog.category ?? catalog.categoryRaw ?? null;
-      const pickField = (...values: (string | null | undefined)[]) => {
-        for (const value of values) {
-          if (typeof value !== "string") continue;
-          const trimmed = value.trim();
-          if (trimmed.length > 0) return trimmed;
-        }
-        return null;
-      };
       let finalProductInfo = {
-        brand: pickField(catalog.brand, workingAnalysisPayload.productInfo?.brand, workingSnapshot.product.brand),
-        name: pickField(catalog.productName, workingAnalysisPayload.productInfo?.name, workingSnapshot.product.name),
-        category: pickField(catalogCategory, workingAnalysisPayload.productInfo?.category, workingSnapshot.product.category),
-        image: pickField(catalog.imageUrl, workingAnalysisPayload.productInfo?.image, workingSnapshot.product.imageUrl),
+        brand: resolveBrand(
+          workingAnalysisPayload.brandExtraction,
+          catalog.brand,
+          workingAnalysisPayload.productInfo?.brand,
+          workingSnapshot.product.brand,
+        ),
+        name: pickText(catalog.productName, workingAnalysisPayload.productInfo?.name, workingSnapshot.product.name),
+        category: pickText(catalogCategory, workingAnalysisPayload.productInfo?.category, workingSnapshot.product.category),
+        image: pickText(catalog.imageUrl, workingAnalysisPayload.productInfo?.image, workingSnapshot.product.imageUrl),
       };
 
       workingSnapshot = {
@@ -3102,10 +3171,15 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       }
 
       finalProductInfo = {
-        brand: pickField(workingSnapshot.product.brand, catalog.brand, workingAnalysisPayload.productInfo?.brand),
-        name: pickField(workingSnapshot.product.name, catalog.productName, workingAnalysisPayload.productInfo?.name),
-        category: pickField(catalogCategory, workingAnalysisPayload.productInfo?.category, workingSnapshot.product.category),
-        image: pickField(catalog.imageUrl, workingAnalysisPayload.productInfo?.image, workingSnapshot.product.imageUrl),
+        brand: resolveBrand(
+          workingAnalysisPayload.brandExtraction,
+          workingSnapshot.product.brand,
+          catalog.brand,
+          workingAnalysisPayload.productInfo?.brand,
+        ),
+        name: pickText(workingSnapshot.product.name, catalog.productName, workingAnalysisPayload.productInfo?.name),
+        category: pickText(catalogCategory, workingAnalysisPayload.productInfo?.category, workingSnapshot.product.category),
+        image: pickText(catalog.imageUrl, workingAnalysisPayload.productInfo?.image, workingSnapshot.product.imageUrl),
       };
 
       workingSnapshot = {
@@ -3544,7 +3618,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     const catalogProduct = catalogSnapshotForAi?.product.name ?? null;
     const catalogCategory = catalogSnapshotForAi?.product.category ?? null;
 
-    const brand = catalogBrand || extraction.brand || "Unknown Brand";
+    const brand = resolveBrand(extraction, catalogBrand, extraction.brand, "Unknown Brand");
     const product = catalogProduct || extraction.product || initialItems[0].title;
 
     // Send product info immediately (user sees something fast)
@@ -3728,24 +3802,19 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       usagePayload: usageToSend ?? null,
     });
 
-    const pickField = (...values: (string | null | undefined)[]) => {
-      for (const value of values) {
-        if (typeof value !== "string") continue;
-        const trimmed = value.trim();
-        if (trimmed.length > 0) return trimmed;
-      }
-      return null;
-    };
-
     const mergedCandidate = catalogSnapshotForAi
       ? {
           ...catalogSnapshotForAi,
           product: {
             ...catalogSnapshotForAi.product,
-            brand: pickField(catalogSnapshotForAi.product.brand, snapshotCandidate.product.brand),
-            name: pickField(catalogSnapshotForAi.product.name, snapshotCandidate.product.name),
-            category: pickField(catalogSnapshotForAi.product.category, snapshotCandidate.product.category),
-            imageUrl: pickField(catalogSnapshotForAi.product.imageUrl, snapshotCandidate.product.imageUrl),
+            brand: resolveBrand(
+              analysisPayloadDraft.brandExtraction,
+              catalogSnapshotForAi.product.brand,
+              snapshotCandidate.product.brand,
+            ),
+            name: pickText(catalogSnapshotForAi.product.name, snapshotCandidate.product.name),
+            category: pickText(catalogSnapshotForAi.product.category, snapshotCandidate.product.category),
+            imageUrl: pickText(catalogSnapshotForAi.product.imageUrl, snapshotCandidate.product.imageUrl),
           },
           references: mergeReferenceItems(catalogSnapshotForAi.references, snapshotCandidate.references),
           scores: snapshotCandidate.scores ?? catalogSnapshotForAi.scores,

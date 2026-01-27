@@ -939,35 +939,39 @@ const main = async () => {
   if (!dryRun && importKnowledge && ingredientIdMap.size > 0) {
     const ingredientUuids = Array.from(new Set(ingredientIdMap.values()));
     if (ingredientUuids.length) {
-      const { data: existingForms, error: formsError } = await supabase
-        .from('ingredient_forms')
-        .select('ingredient_id,form_key,audit_status')
-        .in('ingredient_id', ingredientUuids);
-      if (formsError) {
-        throw new Error(`[import] ingredient_forms prefetch failed: ${formsError.message}`);
+      if (formRows.length) {
+        const { data: existingForms, error: formsError } = await supabase
+          .from('ingredient_forms')
+          .select('ingredient_id,form_key,audit_status')
+          .in('ingredient_id', ingredientUuids);
+        if (formsError) {
+          throw new Error(`[import] ingredient_forms prefetch failed: ${formsError.message}`);
+        }
+        (existingForms ?? []).forEach((row) => {
+          if (!row?.ingredient_id || !row.form_key) return;
+          existingFormStatus.set(
+            `${row.ingredient_id}::${row.form_key}`,
+            normalizeAuditStatus(row.audit_status ?? null),
+          );
+        });
       }
-      (existingForms ?? []).forEach((row) => {
-        if (!row?.ingredient_id || !row.form_key) return;
-        existingFormStatus.set(
-          `${row.ingredient_id}::${row.form_key}`,
-          normalizeAuditStatus(row.audit_status ?? null),
-        );
-      });
 
-      const { data: existingEvidence, error: evidenceError } = await supabase
-        .from('ingredient_evidence')
-        .select('ingredient_id,goal,audit_status')
-        .in('ingredient_id', ingredientUuids);
-      if (evidenceError) {
-        throw new Error(`[import] ingredient_evidence prefetch failed: ${evidenceError.message}`);
+      if (evidenceRows.length) {
+        const { data: existingEvidence, error: evidenceError } = await supabase
+          .from('ingredient_evidence')
+          .select('ingredient_id,goal,audit_status')
+          .in('ingredient_id', ingredientUuids);
+        if (evidenceError) {
+          throw new Error(`[import] ingredient_evidence prefetch failed: ${evidenceError.message}`);
+        }
+        (existingEvidence ?? []).forEach((row) => {
+          if (!row?.ingredient_id || !row.goal) return;
+          existingEvidenceStatus.set(
+            `${row.ingredient_id}::${row.goal}`,
+            normalizeAuditStatus(row.audit_status ?? null),
+          );
+        });
       }
-      (existingEvidence ?? []).forEach((row) => {
-        if (!row?.ingredient_id || !row.goal) return;
-        existingEvidenceStatus.set(
-          `${row.ingredient_id}::${row.goal}`,
-          normalizeAuditStatus(row.audit_status ?? null),
-        );
-      });
     }
   }
 

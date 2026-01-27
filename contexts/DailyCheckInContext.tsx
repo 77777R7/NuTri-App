@@ -14,6 +14,10 @@ type DailyCheckInState = {
   checkInsByDate: DailyCheckInsByDate;
   isChecked: (dateKey: string, checkInKey: string) => boolean;
   toggleCheckIn: (dateKey: string, checkInKey: string, supplementId?: string | null) => Promise<void>;
+  addCheckIns: (
+    dateKey: string,
+    entries: { key: string; supplementId?: string | null }[],
+  ) => Promise<void>;
   refreshFromRemote: () => Promise<void>;
 };
 
@@ -156,6 +160,45 @@ export const DailyCheckInProvider = ({ children }: { children: React.ReactNode }
     [checkInsByDate, persist, user?.id],
   );
 
+  const addCheckIns = useCallback(
+    async (dateKey: string, entries: { key: string; supplementId?: string | null }[]) => {
+      if (!entries.length) return;
+      const existing = new Set(checkInsByDate[dateKey] ?? []);
+      const nextEntries = entries.filter(entry => !existing.has(entry.key));
+      if (!nextEntries.length) return;
+
+      nextEntries.forEach(entry => existing.add(entry.key));
+
+      const next: DailyCheckInsByDate = { ...checkInsByDate };
+      next[dateKey] = Array.from(existing);
+      persist(next);
+
+      if (!user?.id) return;
+
+      const payload = nextEntries
+        .filter(entry => entry.supplementId)
+        .map(entry => ({
+          user_id: user.id,
+          supplement_id: entry.supplementId,
+          check_in_date: dateKey,
+        }));
+
+      if (payload.length === 0) return;
+
+      try {
+        const { error } = await supabase
+          .from('user_checkins')
+          .upsert(payload, { onConflict: 'user_id,supplement_id,check_in_date' });
+        if (error) {
+          console.warn('[daily-check-ins] Remote batch upsert failed', error);
+        }
+      } catch (error) {
+        console.warn('[daily-check-ins] Remote batch sync failed', error);
+      }
+    },
+    [checkInsByDate, persist, user?.id],
+  );
+
   const isChecked = useCallback(
     (dateKey: string, checkInKey: string) => (checkInsByDate[dateKey] ?? []).includes(checkInKey),
     [checkInsByDate],
@@ -167,9 +210,10 @@ export const DailyCheckInProvider = ({ children }: { children: React.ReactNode }
       checkInsByDate,
       isChecked,
       toggleCheckIn,
+      addCheckIns,
       refreshFromRemote,
     }),
-    [checkInsByDate, isChecked, loading, refreshFromRemote, toggleCheckIn],
+    [addCheckIns, checkInsByDate, isChecked, loading, refreshFromRemote, toggleCheckIn],
   );
 
   return <DailyCheckInContext.Provider value={value}>{children}</DailyCheckInContext.Provider>;

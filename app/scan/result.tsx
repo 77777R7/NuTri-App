@@ -12,6 +12,7 @@ import { useScanHistory } from '@/contexts/ScanHistoryContext';
 import { useResponsiveTokens } from '@/hooks/useResponsiveTokens';
 import { useScoreBundleV4 } from '@/hooks/useScoreBundleV4';
 import { useStreamAnalysis } from '@/hooks/useStreamAnalysis';
+import { useSavedSupplements } from '@/contexts/SavedSupplementsContext';
 import { consumeScanSession, type ScanSession } from '@/lib/scan/session';
 import { requestLabelAnalysis } from '@/lib/scan/service';
 import { getBarcodeQuality, getLabelDraftQuality } from '@/lib/scan/quality';
@@ -31,6 +32,14 @@ type LabelIngredientEntry = {
 };
 
 const DV_UNIT = '% DV';
+const normalizeBarcode = (value?: string | null) => {
+  if (!value) return '';
+  const digits = value.replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.length >= 14) return digits.slice(-14);
+  if (digits.length >= 8) return digits.padStart(14, '0');
+  return digits;
+};
 
 function buildLabelIngredientEntries(
   labelInsights: LabelInsightsSnapshot,
@@ -287,8 +296,10 @@ export default function ScanResultScreen() {
   const { tokens } = useResponsiveTokens();
   const styles = useMemo(() => createStyles(tokens), [tokens]);
   const { addScan } = useScanHistory();
+  const { savedSupplements, updateSupplement } = useSavedSupplements();
   const addedRef = useRef(false);
   const lastDosageRef = useRef<string | null>(null);
+  const lastBrandRef = useRef<string | null>(null);
   const analysisRequestedRef = useRef(false);
 
   // Get session to retrieve barcode
@@ -607,6 +618,28 @@ export default function ScanResultScreen() {
     usage,
   ]);
 
+  useEffect(() => {
+    const brand = productInfo?.brand ?? null;
+    if (!barcode || !brand) return;
+    if (brand === lastBrandRef.current) return;
+    const normalizedBarcode = normalizeBarcode(barcode);
+    if (!normalizedBarcode) return;
+    const matches = savedSupplements.filter(
+      item =>
+        item.barcode &&
+        normalizeBarcode(item.barcode) === normalizedBarcode &&
+        item.brandName !== brand,
+    );
+    if (matches.length === 0) {
+      lastBrandRef.current = brand;
+      return;
+    }
+    matches.forEach(item => {
+      void updateSupplement(item.id, { brandName: brand });
+    });
+    lastBrandRef.current = brand;
+  }, [barcode, productInfo?.brand, savedSupplements, updateSupplement]);
+
   const handleBack = () => {
     if (session?.mode === 'barcode') {
       router.replace('/scan/barcode');
@@ -920,6 +953,7 @@ export default function ScanResultScreen() {
     <ResponsiveScreen
       contentStyle={styles.screen}
       style={styles.safeArea}
+      gutter={0}
     >
       <Stack.Screen
         options={{

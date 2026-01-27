@@ -3,7 +3,11 @@ import path from "node:path";
 
 import { supabase } from "../src/supabase.js";
 import { extractErrorMeta, withRetry } from "../src/supabaseRetry.js";
-import { collectExplicitFormTokens } from "../src/formTaxonomy/lnhpdFormTokenMap.js";
+import {
+  collectExplicitFormTokensWithRules,
+  loadParsingTokenRules,
+  type ParsingTokenRules,
+} from "../src/formTaxonomy/parsingTokenRules.js";
 
 type IngredientRow = {
   source_id: string | null;
@@ -150,7 +154,10 @@ const fetchFactsJsonByIds = async (
   return factsMap;
 };
 
-const buildTokenIndex = (factsJson: Record<string, unknown>): Map<string, string[]> => {
+const buildTokenIndex = (
+  factsJson: Record<string, unknown>,
+  rules: ParsingTokenRules,
+): Map<string, string[]> => {
   const index = new Map<string, Set<string>>();
   const medicinalRaw = factsJson.medicinalIngredients;
   const medicinal = Array.isArray(medicinalRaw)
@@ -165,7 +172,7 @@ const buildTokenIndex = (factsJson: Record<string, unknown>): Map<string, string
     const nameKeys = extractNameKeys(record);
     if (!nameKeys.length) return;
     const sources = extractFormSources(record);
-    const tokens = collectExplicitFormTokens(sources);
+    const tokens = collectExplicitFormTokensWithRules(sources, rules);
     if (!tokens.length) return;
     nameKeys.forEach((key) => {
       const bucket = index.get(key) ?? new Set<string>();
@@ -363,6 +370,7 @@ const run = async () => {
   const hintCounts = new Map<string, number>();
   const ingredientCounts = new Map<string, number>();
   let candidateFormRawRows = 0;
+  const parsingRules = await loadParsingTokenRules();
 
   if (SOURCE_IDS_FILE) {
     const sourceIds = await loadSourceIds(SOURCE_IDS_FILE);
@@ -380,7 +388,7 @@ const run = async () => {
     const factsMap = await fetchFactsJsonByIds(canonicalIds);
     const tokenIndexBySourceId = new Map<string, Map<string, string[]>>();
     factsMap.forEach((factsJson, canonicalId) => {
-      tokenIndexBySourceId.set(canonicalId, buildTokenIndex(factsJson));
+      tokenIndexBySourceId.set(canonicalId, buildTokenIndex(factsJson, parsingRules));
     });
 
     rows.forEach((row) => {

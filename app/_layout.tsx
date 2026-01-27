@@ -13,6 +13,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { DailyCheckInProvider } from '@/contexts/DailyCheckInContext';
 import { OnboardingProvider } from '@/contexts/OnboardingContext';
+import { ProgressRangeProvider } from '@/contexts/ProgressRangeContext';
 import { ScanHistoryProvider } from '@/contexts/ScanHistoryContext';
 import { SavedSupplementsProvider } from '@/contexts/SavedSupplementsContext';
 import { TransitionProvider } from '@/contexts/TransitionContext';
@@ -49,22 +50,24 @@ export default function RootLayout() {
         <AuthProvider>
           <SavedSupplementsProvider>
             <DailyCheckInProvider>
-              <ScanHistoryProvider>
-                <OnboardingProvider>
-                  <TransitionProvider>
-                    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-                      <Stack screenOptions={{ headerShown: false }}>
-                        <Stack.Screen name="index" options={{ gestureEnabled: false }} />
-                        <Stack.Screen name="(auth)" />
-                        <Stack.Screen name="(tabs)" />
-                        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal', headerShown: true }} />
-                      </Stack>
-                      <StatusBar style="auto" />
-                      <Toast position="bottom" />
-                    </ThemeProvider>
-                  </TransitionProvider>
-                </OnboardingProvider>
-              </ScanHistoryProvider>
+              <ProgressRangeProvider>
+                <ScanHistoryProvider>
+                  <OnboardingProvider>
+                    <TransitionProvider>
+                      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                        <Stack screenOptions={{ headerShown: false }}>
+                          <Stack.Screen name="index" options={{ gestureEnabled: false }} />
+                          <Stack.Screen name="(auth)" />
+                          <Stack.Screen name="(tabs)" />
+                          <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal', headerShown: true }} />
+                        </Stack>
+                        <StatusBar style="auto" />
+                        <Toast position="bottom" />
+                      </ThemeProvider>
+                    </TransitionProvider>
+                  </OnboardingProvider>
+                </ScanHistoryProvider>
+              </ProgressRangeProvider>
             </DailyCheckInProvider>
           </SavedSupplementsProvider>
         </AuthProvider>

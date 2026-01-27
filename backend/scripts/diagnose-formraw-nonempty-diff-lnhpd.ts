@@ -34,7 +34,9 @@ const SOURCE_IDS_FILE = getArg("source-ids-file");
 const ID_COLUMN = (getArg("id-column") ?? "canonical_source_id").trim();
 const OUTPUT = getArg("output") ?? "output/formraw/formraw_nonempty_diff_lnhpd.json";
 const COMPARE_SNAPSHOT = getArg("compare-snapshot");
-const SAMPLE_LIMIT = Math.max(1, Number(getArg("sample-limit") ?? "20"));
+const SAMPLE_LIMIT = Number.isFinite(Number(getArg("sample-limit") ?? "20"))
+  ? Number(getArg("sample-limit") ?? "20")
+  : 20;
 const CHUNK_SIZE = Math.max(1, Number(getArg("chunk-size") ?? "200"));
 
 const ensureDir = async (filePath: string) => {
@@ -143,7 +145,8 @@ const run = async () => {
 
   if (!COMPARE_SNAPSHOT) {
     const rows = sortRows(await fetchNonEmptyRows(sourceIds, ID_COLUMN));
-    const sample = rows.slice(0, SAMPLE_LIMIT).map((row) => ({
+    const sampleRows = SAMPLE_LIMIT <= 0 ? rows : rows.slice(0, SAMPLE_LIMIT);
+    const sample = sampleRows.map((row) => ({
       id: row.id as string,
       sourceId:
         (ID_COLUMN === "canonical_source_id" ? row.canonical_source_id : row.source_id) ?? "",

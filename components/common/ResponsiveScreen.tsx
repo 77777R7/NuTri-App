@@ -11,6 +11,7 @@ type ResponsiveScreenProps = PropsWithChildren<{
   edges?: Edge[];
   style?: StyleProp<ViewStyle>;
   contentStyle?: StyleProp<ViewStyle>;
+  gutter?: number;
 }>;
 
 export const ResponsiveScreen: React.FC<ResponsiveScreenProps> = ({
@@ -18,6 +19,7 @@ export const ResponsiveScreen: React.FC<ResponsiveScreenProps> = ({
   edges = ['top', 'bottom'],
   style,
   contentStyle,
+  gutter,
 }) => {
   const { tokens } = useResponsiveTokens();
   const insets = useSafeAreaInsets();
@@ -31,14 +33,19 @@ export const ResponsiveScreen: React.FC<ResponsiveScreenProps> = ({
     paddingBottom: Math.max(tokens.safeArea.bottom - bottomInset, 0),
   };
 
-  const contentPadding: StyleProp<ViewStyle> = {
-    paddingHorizontal: tokens.layout.gutter,
+  const outerPadding: StyleProp<ViewStyle> = {
+    paddingHorizontal: gutter ?? tokens.layout.gutter,
+  };
+
+  const contentFrame: StyleProp<ViewStyle> = {
     maxWidth: tokens.layout.maxContentWidth,
   };
 
   return (
     <SafeAreaView edges={edges} style={[styles.safeArea, safeAreaStyle, style]}>
-      <View style={[styles.content, contentPadding, contentStyle]}>{children}</View>
+      <View style={[styles.outer, outerPadding]}>
+        <View style={[styles.content, contentFrame, contentStyle]}>{children}</View>
+      </View>
     </SafeAreaView>
   );
 };
@@ -47,10 +54,13 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
+  outer: {
+    flex: 1,
+    width: '100%',
+  },
   content: {
     flex: 1,
     alignSelf: 'center',
     width: '100%',
   },
 });
-

@@ -67,6 +67,82 @@ const getArg = (name: string): string | null => {
 const normalizeText = (value: string): string =>
   value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 
+const normalizeNameKey = (value: string): string =>
+  value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+
+const DSLD_EXCLUDED_NAME_KEYS = new Set([
+  "calories",
+  "calories from fat",
+  "total calories",
+  "total fat",
+  "fat",
+  "saturated fat",
+  "trans fat",
+  "cholesterol",
+  "sodium",
+  "total carbohydrates",
+  "total carbohydrate",
+  "carbohydrates",
+  "net carbohydrates",
+  "dietary fiber",
+  "total sugars",
+  "added sugars",
+  "sugars",
+  "sugar",
+  "protein",
+  "polyunsaturated fat",
+  "monounsaturated fat",
+  "monounsatured fat",
+  "total omega 3 5 6 7 9 11",
+  "proprietary blend",
+  "proprietary herbal blend",
+  "proprietary extract blend",
+  "proprietary blend combination",
+  "proprietary blend herb botanical",
+  "active ingredients",
+  "amino acid profile",
+  "typical amino acid profile",
+  "essential fatty acid blend",
+  "antioxidant blend",
+  "antioxidant complex",
+  "energy blend",
+  "explosive energy blend",
+  "herbal blend",
+  "herbal proprietary blend",
+  "proprietary sports blend",
+  "proprietary performance blend",
+  "proprietary branched chain ethyl ester amino acid matrix",
+  "advanced 3x nitric oxide booster",
+  "energy rush",
+  "focus enhancer",
+  "rapid hydration surge",
+  "muscle glucose primer",
+  "strength blend",
+  "digestive enzyme blend",
+  "enzyme blend",
+  "norepiphex alpha2 andregenic blockade complex",
+  "norepiphex m maoxidizor i",
+  "thyromimetic activity stimulator",
+  "ultra concentrated fat destroying complex",
+  "designer whey full spectrum whey peptides delivery proprietary blend",
+  "cerecalase proprietary blend",
+  "multi enzyme blend",
+  "hydroxycut shape blend",
+  "typical branched chain amino acid profile",
+  "trace elements",
+  "fatty acid composition",
+  "novel high molecular weight carb blend",
+  "normaglan concentrate proprietary blend",
+  "processed by the method of siddha ghruta in",
+  "dna",
+  "edta",
+  "water",
+  "mass peak",
+  "nitro peak",
+]);
+
+const isDsldExcludedKey = (key: string): boolean => DSLD_EXCLUDED_NAME_KEYS.has(key);
+
 const isValidToken = (value: string): boolean => {
   if (!value) return false;
   if (value.length <= 1) return false;
@@ -244,7 +320,18 @@ const runForSource = async (source: ScoreSource) => {
   }
 
   const ingredients = await fetchIngredients(source, sourceIds, idColumn);
-  const activeRows = ingredients.filter((row) => row.is_active);
+  let excludedRows = 0;
+  const activeRows = ingredients.filter((row) => {
+    if (!row.is_active) return false;
+    if (source === "dsld") {
+      const nameKey = normalizeNameKey(row.name_raw);
+      if (isDsldExcludedKey(nameKey)) {
+        excludedRows += 1;
+        return false;
+      }
+    }
+    return true;
+  });
 
   const ingredientIds = Array.from(
     new Set(activeRows.map((row) => row.ingredient_id).filter((id): id is string => Boolean(id))),
@@ -281,6 +368,7 @@ const runForSource = async (source: ScoreSource) => {
     taxonomyMismatch: 0,
     formRawNoMatch: 0,
     matched: 0,
+    excludedRows: source === "dsld" ? excludedRows : 0,
   };
 
   activeRows.forEach((row) => {
