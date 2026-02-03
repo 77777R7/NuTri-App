@@ -57,6 +57,76 @@ const HIGH_QUALITY_DOMAINS = [
 ];
 
 // ============================================================================
+// EXTRACTABILITY / MARKETPLACE DOMAINS
+// ============================================================================
+
+const MARKETPLACE_DOMAINS = [
+    "ebay.com",
+    "ebay.ca",
+    "ebay.co.uk",
+    "ebay.de",
+    "etsy.com",
+    "mercari.com",
+    "poshmark.com",
+    "bonanza.com",
+    "depop.com",
+];
+
+const EXTRACTABILITY_TIER_A_DOMAINS = [
+    "iherb.com",
+    "gnc.com",
+    "vitaminshoppe.com",
+    "vitacost.com",
+    "luckyvitamin.com",
+    "swansonvitamins.com",
+    "pipingrock.com",
+    "puritan.com",
+    "nowfoods.com",
+    "thorne.com",
+    "pureencapsulations.com",
+    "lifeextension.com",
+    "gardenoflife.com",
+    "nordicnaturals.com",
+    "jarrow.com",
+    "doctorsbest.com",
+    "solgar.com",
+    "naturemade.com",
+    "naturesway.com",
+    "solaray.com",
+    "countrylifevitamins.com",
+    "well.ca",
+    "nationalnutrition.ca",
+    "supplementscanada.com",
+    "jamiesonvitamins.com",
+    "webbernaturals.com",
+];
+
+const EXTRACTABILITY_TIER_B_DOMAINS = [
+    "amazon.com",
+    "amazon.ca",
+    "amazon.co.uk",
+    "amazon.de",
+    "walmart.com",
+    "walmart.ca",
+    "target.com",
+    "costco.com",
+    "costco.ca",
+    "cvs.com",
+    "walgreens.com",
+    "bodybuilding.com",
+    "myprotein.com",
+    "bulksupplements.com",
+];
+
+const EXTRACTABILITY_TIER_C_DOMAINS = [
+    "facebook.com",
+    "instagram.com",
+    "pinterest.com",
+    "tiktok.com",
+    "youtube.com",
+];
+
+// ============================================================================
 // SCORING PATTERNS
 // ============================================================================
 
@@ -91,6 +161,9 @@ const KEYWORDS = [
 
 const THIRD_PARTY_KEYWORDS = ["third party tested", "usp verified", "nsf certified", "informed sport", "gmp certified"];
 
+const STRONG_URL_SIGNAL_REGEX = /(upc|gtin|ean|barcode|sku)[^0-9]{0,6}\d{8,14}/i;
+const PRODUCT_PATH_REGEX = /\/(product|products|p|dp|gp\/product|itm|item)\b/i;
+
 // ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
@@ -107,12 +180,59 @@ export function extractDomain(url: string): string {
     }
 }
 
+const normalizeDomain = (value: string): string => value.toLowerCase().replace(/^www\./, "");
+
+const domainMatches = (domain: string, candidate: string): boolean =>
+    domain === candidate || domain.endsWith(`.${candidate}`);
+
+const matchDomainList = (domain: string, list: string[]): boolean =>
+    list.some((entry) => domainMatches(domain, entry));
+
+const resolveDomain = (value: string): string => {
+    if (value.includes("://")) {
+        return normalizeDomain(extractDomain(value));
+    }
+    return normalizeDomain(value);
+};
+
+export type ExtractabilityTier = "A" | "B" | "C" | "U";
+
+export const isMarketplaceDomain = (value: string): boolean => {
+    const domain = resolveDomain(value);
+    return matchDomainList(domain, MARKETPLACE_DOMAINS);
+};
+
+export const getExtractabilityTier = (value: string): ExtractabilityTier => {
+    const domain = resolveDomain(value);
+    if (isMarketplaceDomain(domain) || matchDomainList(domain, EXTRACTABILITY_TIER_C_DOMAINS)) return "C";
+    if (matchDomainList(domain, EXTRACTABILITY_TIER_A_DOMAINS)) return "A";
+    if (matchDomainList(domain, EXTRACTABILITY_TIER_B_DOMAINS)) return "B";
+    return "U";
+};
+
+export const getExtractabilityScore = (value: string): number => {
+    const tier = getExtractabilityTier(value);
+    if (tier === "A") return 1;
+    if (tier === "B") return 0.6;
+    if (tier === "C") return 0.15;
+    return 0.35;
+};
+
+export const getUrlSignalScore = (url: string): number => {
+    let score = 0;
+    if (STRONG_URL_SIGNAL_REGEX.test(url)) score += 18;
+    if (PRODUCT_PATH_REGEX.test(url)) score += 8;
+    return score;
+};
+
+export const hasStrongUrlSignal = (url: string): boolean => STRONG_URL_SIGNAL_REGEX.test(url);
+
 /**
  * Check if domain is a high-quality source
  */
 export function isHighQualityDomain(url: string): boolean {
-    const domain = extractDomain(url).toLowerCase();
-    return HIGH_QUALITY_DOMAINS.some((hq) => domain.includes(hq) || hq.includes(domain));
+    const domain = resolveDomain(url);
+    return matchDomainList(domain, HIGH_QUALITY_DOMAINS);
 }
 
 // ============================================================================
@@ -129,6 +249,7 @@ export const scoreSearchItem = (item: SearchItem, options: SearchScoreOptions = 
 
     const text = `${item.title} ${item.snippet}`.toLowerCase();
     const link = item.link.toLowerCase();
+    const domain = resolveDomain(item.link);
 
     // 1. Keywords (+30)
     if (KEYWORDS.some((kw) => text.includes(kw.toLowerCase()))) {
@@ -141,7 +262,7 @@ export const scoreSearchItem = (item: SearchItem, options: SearchScoreOptions = 
     }
 
     // 3. High Quality Domain (+25)
-    if (isHighQualityDomain(link)) {
+    if (isHighQualityDomain(domain)) {
         score += 25;
     } else {
         // Dynamic Brand Trust: Check if domain contains the brand name
@@ -150,6 +271,17 @@ export const scoreSearchItem = (item: SearchItem, options: SearchScoreOptions = 
         if (potentialBrand && potentialBrand.length > 3 && link.includes(potentialBrand)) {
             score += 20; // Brand official site
         }
+    }
+
+    // 3b. Extractability Tier (+20 / +10 / -15)
+    const extractTier = getExtractabilityTier(domain);
+    if (extractTier === "A") score += 20;
+    if (extractTier === "B") score += 10;
+    if (extractTier === "C") score -= 15;
+
+    // 3c. Marketplace penalty (-25)
+    if (isMarketplaceDomain(domain)) {
+        score -= 25;
     }
 
     // 4. Image Presence (+10) - Products with images are usually real listings
@@ -167,12 +299,15 @@ export const scoreSearchItem = (item: SearchItem, options: SearchScoreOptions = 
         score += 15;
     }
 
-    // 7. Barcode mentioned (+20)
+    // 7. Strong URL signals (+0~26)
+    score += getUrlSignalScore(link);
+
+    // 8. Barcode mentioned (+20)
     if (barcode && (item.title.includes(barcode) || item.snippet.includes(barcode))) {
         score += 20;
     }
 
-    return Math.min(100, score);
+    return Math.min(100, Math.max(0, score));
 };
 
 export const scoreSearchQuality = (items: SearchItem[], options: SearchScoreOptions = {}): number => {
@@ -187,12 +322,16 @@ export const scoreSearchQuality = (items: SearchItem[], options: SearchScoreOpti
     const baseScore = scores.slice(0, topK).reduce((acc, cur) => acc + cur, 0) / topK;
 
     const highQualityCount = items.filter((item) => isHighQualityDomain(item.link)).length;
-    const uniqueDomains = new Set(items.map((item) => extractDomain(item.link).toLowerCase()));
+    const uniqueDomains = new Set(items.map((item) => resolveDomain(item.link)));
+    const extractableCount = items.filter((item) => getExtractabilityTier(item.link) === "A").length;
+    const marketplaceCount = items.filter((item) => isMarketplaceDomain(item.link)).length;
 
     const highQualityBonus = Math.min(15, highQualityCount * 5);
     const diversityBonus = Math.min(10, Math.max(0, uniqueDomains.size - 1) * 3);
+    const extractabilityBonus = Math.min(15, extractableCount * 5);
+    const marketplacePenalty = Math.min(20, marketplaceCount * 5);
 
-    return Math.min(100, Math.round(baseScore + highQualityBonus + diversityBonus));
+    return Math.min(100, Math.max(0, Math.round(baseScore + highQualityBonus + diversityBonus + extractabilityBonus - marketplacePenalty)));
 };
 
 export const getSearchQualitySummary = (items: SearchItem[], options: SearchScoreOptions = {}) => {
@@ -201,7 +340,9 @@ export const getSearchQualitySummary = (items: SearchItem[], options: SearchScor
         score: scoreSearchQuality(items, options),
         topScores: scores.slice(0, 3),
         highQualityCount: items.filter((item) => isHighQualityDomain(item.link)).length,
-        uniqueDomains: new Set(items.map((item) => extractDomain(item.link).toLowerCase())).size,
+        uniqueDomains: new Set(items.map((item) => resolveDomain(item.link))).size,
+        extractableCount: items.filter((item) => getExtractabilityTier(item.link) === "A").length,
+        marketplaceCount: items.filter((item) => isMarketplaceDomain(item.link)).length,
     };
 };
 

@@ -13,6 +13,14 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
+import Reanimated, {
+  Easing as ReanimatedEasing,
+  runOnJS,
+  useAnimatedReaction,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import { ContentFrame } from '@/components/common/ContentFrame';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -24,11 +32,11 @@ import { useScreenTokens } from '@/hooks/useScreenTokens';
 import { buildCheckInKey } from '@/lib/check-ins';
 import {
   Activity,
+  Check,
   CheckCircle2,
   Clock,
   Flame,
   Medal,
-  TrendingUp,
   Trophy,
   X,
 } from 'lucide-react-native';
@@ -40,7 +48,10 @@ const SCREEN_BG = '#F2F3F7';
 const PAGE_X = 24;
 const NAV_HEIGHT = 64;
 const MINI_METRIC_GAP = 16;
-const MAIN_CARD_GAP = 20;
+const MAIN_CARD_GAP = 16;
+const CARD_RADIUS = 28;
+const CARD_PADDING_X = 20;
+const CARD_PADDING_Y = 18;
 const TREND_BAR_HEIGHT = 128;
 const TREND_BAR_MIN_HEIGHT = 8;
 const TREND_DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -292,28 +303,32 @@ const SegmentedControl = ({ value, onChange }: SegmentedControlProps) => {
 
 const AnimatedProgressBar = ({ value }: { value: number }) => {
   const pct = Math.max(0, Math.min(100, value));
-  const widthAnim = useRef(new Animated.Value(0)).current;
-  const trackWidthRef = useRef(0);
-
-  const onTrackLayout = (e: any) => {
-    trackWidthRef.current = e.nativeEvent.layout.width;
-    widthAnim.setValue((pct / 100) * trackWidthRef.current);
-  };
+  const progress = useSharedValue(pct / 100);
+  const trackWidth = useSharedValue(0);
 
   useEffect(() => {
-    const w = trackWidthRef.current;
-    if (w <= 0) return;
-    Animated.timing(widthAnim, {
-      toValue: (pct / 100) * w,
-      duration: 500,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
-  }, [pct, widthAnim]);
+    progress.value = withTiming(pct / 100, {
+      duration: 480,
+      easing: ReanimatedEasing.out(ReanimatedEasing.cubic),
+    });
+  }, [pct, progress]);
+
+  const fillStyle = useAnimatedStyle(() => {
+    const scale = progress.value;
+    const translateX = (scale - 1) * 0.5 * trackWidth.value;
+    return {
+      transform: [{ translateX }, { scaleX: scale }],
+    };
+  });
 
   return (
-    <View style={styles.progressTrack} onLayout={onTrackLayout}>
-      <Animated.View style={[styles.progressFill, { width: widthAnim }]} />
+    <View
+      style={styles.progressTrack}
+      onLayout={event => {
+        trackWidth.value = event.nativeEvent.layout.width;
+      }}
+    >
+      <Reanimated.View style={[styles.progressFill, fillStyle]} />
     </View>
   );
 };
@@ -584,13 +599,34 @@ export default function ProgressScreen() {
   }, [checkInsByDate, savedSupplements, todayKey]);
 
   const planNextId = useMemo(() => planItems.find(item => !item.done)?.id ?? null, [planItems]);
+  const pendingPlanItems = useMemo(() => planItems.filter(item => !item.done), [planItems]);
+  const pendingPlanCount = pendingPlanItems.length;
+  const planTotalCount = planItems.length;
+  const planPreviewCount = planCardHeight < 200 ? 1 : 2;
+
+  const planNextItem = useMemo(
+    () => (planNextId ? planItems.find(item => item.id === planNextId) : null),
+    [planItems, planNextId],
+  );
+
+  const planSummaryLabel = useMemo(() => {
+    if (!planTotalCount) return 'Set schedule';
+    if (!pendingPlanCount) return 'All done';
+    return pendingPlanCount === 1 ? '1 remaining' : `${pendingPlanCount} remaining`;
+  }, [pendingPlanCount, planTotalCount]);
+
+  const planSubLabel = useMemo(() => {
+    if (!planTotalCount) return 'Tap to set reminders.';
+    if (!pendingPlanCount) return "You're set for today.";
+    if (!planNextItem) return 'Next: Anytime';
+    const time = planNextItem.timeLabel ?? 'Anytime';
+    return time === 'Anytime' ? 'Next: Anytime' : `Next at ${time}`;
+  }, [pendingPlanCount, planNextItem, planTotalCount]);
+
   const planCardItems = useMemo(() => {
-    if (planItems.length <= 2) return planItems;
-    const nextItem = planNextId ? planItems.find(item => item.id === planNextId) : null;
-    if (!nextItem) return planItems.slice(0, 2);
-    const rest = planItems.filter(item => item.id !== nextItem.id);
-    return [nextItem, ...rest].slice(0, 2);
-  }, [planItems, planNextId]);
+    if (!pendingPlanItems.length) return [];
+    return pendingPlanItems.slice(0, planPreviewCount);
+  }, [pendingPlanItems, planPreviewCount]);
 
   const [backupCandidateId, setBackupCandidateId] = useState<string | null>(null);
   const backupCandidateItem = useMemo(
@@ -622,6 +658,26 @@ export default function ProgressScreen() {
   const totalCount = todayItems.length;
   const percent = calcPercent(takenCount, totalCount);
   const remaining = todayItems.filter(item => !item.done);
+  const nextRemaining = remaining[0] ?? null;
+  const percentShared = useSharedValue(percent);
+  const [displayPercent, setDisplayPercent] = useState(percent);
+
+  useEffect(() => {
+    percentShared.value = withTiming(percent, {
+      duration: 520,
+      easing: ReanimatedEasing.out(ReanimatedEasing.cubic),
+    });
+  }, [percent, percentShared]);
+
+  useAnimatedReaction(
+    () => Math.round(percentShared.value),
+    (next, prev) => {
+      if (next !== prev) {
+        runOnJS(setDisplayPercent)(next);
+      }
+    },
+    [percentShared],
+  );
 
   const countCompletedForDate = useCallback(
     (dateKey: string) => {
@@ -643,6 +699,13 @@ export default function ProgressScreen() {
     [todayKey, toggleCheckIn],
   );
 
+  const togglePlanDone = useCallback(
+    (item: PlanItem) => {
+      void toggleCheckIn(todayKey, item.checkInKey, item.supplementId);
+    },
+    [todayKey, toggleCheckIn],
+  );
+
   const markAllRemaining = useCallback(() => {
     if (!remaining.length) return;
     void addCheckIns(
@@ -653,6 +716,41 @@ export default function ProgressScreen() {
 
   const badgeUnlocked = 2;
   const nextBadgeDaysLeft = 1;
+  const streakGoalDays = 7;
+  const currentStreakDays = Math.max(0, streakGoalDays - nextBadgeDaysLeft);
+  const streakSecuredToday = totalCount > 0 && takenCount === totalCount;
+  const streakStatus =
+    totalCount === 0
+      ? 'RESTART TODAY'
+      : streakSecuredToday
+        ? 'STREAK SECURED FOR TODAY'
+        : takenCount > 0
+          ? 'FINISH TODAY TO KEEP YOUR STREAK'
+          : 'RESTART TODAY';
+
+  const weekActiveDays = useMemo(() => {
+    const startDate = getWeekStartMonday(new Date());
+    let activeDays = 0;
+    for (let index = 0; index < 7; index += 1) {
+      const date = new Date(startDate);
+      date.setDate(startDate.getDate() + index);
+      if (countCompletedForDate(getLocalDateKey(date)) > 0) activeDays += 1;
+    }
+    return activeDays;
+  }, [countCompletedForDate]);
+
+  const activeDays30 = useMemo(() => {
+    const startDate = new Date();
+    startDate.setHours(0, 0, 0, 0);
+    startDate.setDate(startDate.getDate() - 29);
+    let activeDays = 0;
+    for (let index = 0; index < 30; index += 1) {
+      const date = new Date(startDate);
+      date.setDate(startDate.getDate() + index);
+      if (countCompletedForDate(getLocalDateKey(date)) > 0) activeDays += 1;
+    }
+    return activeDays;
+  }, [countCompletedForDate]);
 
   const adherence = useMemo(() => {
     if (range === 'today') {
@@ -730,18 +828,57 @@ export default function ProgressScreen() {
     });
   }, [countCompletedForDate, expectedCount]);
 
+  const todayTimelineSeries = useMemo<TrendSeriesEntry[]>(() => {
+    if (!planItems.length) return [];
+
+    const map = new Map<
+      string,
+      {
+        k: string;
+        timeMinutes: number | null;
+        completed: number;
+        total: number;
+      }
+    >();
+
+    for (const item of planItems) {
+      const key = item.timeMinutes === null ? 'anytime' : `t-${item.timeMinutes}`;
+      const existing = map.get(key);
+
+      if (!existing) {
+        map.set(key, {
+          k: item.timeLabel,
+          timeMinutes: item.timeMinutes,
+          completed: item.done ? 1 : 0,
+          total: 1,
+        });
+      } else {
+        existing.total += 1;
+        if (item.done) existing.completed += 1;
+      }
+    }
+
+    const groups = Array.from(map.values()).sort((a, b) => {
+      if (a.timeMinutes === null && b.timeMinutes === null) return 0;
+      if (a.timeMinutes === null) return 1;
+      if (b.timeMinutes === null) return -1;
+      return a.timeMinutes - b.timeMinutes;
+    });
+
+    return groups.map(group => ({
+      k: group.k,
+      v: group.total > 0 ? calcPercent(group.completed, group.total) : null,
+      completed: group.completed,
+      total: group.total,
+      dateKey: group.timeMinutes === null ? 'anytime' : `t-${group.timeMinutes}`,
+    }));
+  }, [planItems]);
+
   const trend = useMemo(() => {
     if (range === 'today') {
-      const series = todayItems.slice(0, 4).map(item => ({
-        k: item.time,
-        v: item.done ? 100 : 0,
-        completed: item.done ? 1 : 0,
-        total: 1,
-        dateKey: item.id,
-      }));
       return {
         title: 'Today Timeline',
-        series,
+        series: todayTimelineSeries,
         summaryA: `Taken: ${takenCount}/${totalCount}`,
         summaryB: remaining.length ? `Remaining: ${remaining[0].name}` : 'All done today',
       };
@@ -768,7 +905,7 @@ export default function ProgressScreen() {
         ? `Lowest: ${lowest.k} ${lowest.v}% · Best: ${best.k} ${best.v}%`
         : 'No data yet',
     };
-  }, [range, remaining, takenCount, todayItems, totalCount, trendSeries30d, trendSeries7d]);
+  }, [range, remaining, takenCount, todayTimelineSeries, totalCount, trendSeries30d, trendSeries7d]);
 
   useEffect(() => {
     setSelectedTrendIndex(null);
@@ -781,6 +918,8 @@ export default function ProgressScreen() {
       ? `Selected: ${selectedTrendEntry.k} --`
       : `Selected: ${selectedTrendEntry.k} ${selectedTrendEntry.v}% (${selectedTrendEntry.completed}/${selectedTrendEntry.total})`
     : trend.summaryB;
+
+  const streakCardHeight = Math.max(190, Math.round(planCardHeight * 1.05));
 
   return (
     <View style={styles.screen}>
@@ -829,22 +968,30 @@ export default function ProgressScreen() {
             <Card style={styles.todayCard}>
               <View style={styles.todayContent}>
                 <View style={styles.todayHeaderRow}>
-                  <View>
+                  <View style={styles.todayHeaderLeft}>
                     <Text style={styles.todayTitle}>Today's Progress</Text>
-                    <Text style={styles.todaySubtitle}>Current Status</Text>
+                    <Text style={styles.todaySubtitle}>
+                      {totalCount === 0
+                        ? 'No items scheduled'
+                        : remaining.length === 0
+                        ? 'Goal hit for today'
+                        : `${remaining.length} remaining`}
+                    </Text>
                   </View>
                   <IconButton
                     label="Today details"
                     onPress={() => setSheet('today')}
-                    icon={<TrendingUp size={18} color="#ffffff" />}
+                    icon={<Activity size={18} color="#ffffff" />}
                     style={styles.todayIconButton}
                   />
                 </View>
 
                 <View style={styles.todayStatsRow}>
-                  <Text style={styles.todayPercent}>{percent}%</Text>
+                  <Text style={styles.todayPercent}>{displayPercent}%</Text>
                   <View style={styles.todayCountWrap}>
-                    <Text style={styles.todayCount}>{takenCount}/{totalCount}</Text>
+                    <Text style={styles.todayCount}>
+                      {takenCount}/{totalCount}
+                    </Text>
                     <Text style={styles.todayCountLabel}>Taken</Text>
                   </View>
                 </View>
@@ -856,89 +1003,255 @@ export default function ProgressScreen() {
                 <View style={styles.todayMessageRow}>
                   <View style={styles.todayDot} />
                   <Text style={styles.todayMessage}>
-                    {remaining.length ? `Just ${remaining.length} more to hit your daily goal!` : 'You hit your daily goal.'}
+                    {totalCount === 0
+                      ? 'Add items to your plan to start tracking.'
+                      : remaining.length
+                      ? `Just ${remaining.length} more to hit your daily goal!`
+                      : 'You hit your daily goal.'}
                   </Text>
                 </View>
 
-              {remaining.length ? (
-                <View style={styles.todayRemainingWrap}>
-                  <Text style={styles.todayRemainingLabel}>Remaining</Text>
-                  <View style={styles.remainingList}>
-                    {remaining.slice(0, 2).map(item => (
-                      <Pill
-                        key={item.id}
-                        tone="dark"
-                        compact
-                        left={<Clock size={16} color="#ffffff" />}
-                        text={`${item.name} · ${item.time}`}
-                        right={<Text style={styles.remainingMark}>Mark</Text>}
-                        onPress={() => toggleDone(item)}
-                      />
-                    ))}
+                {totalCount > 0 ? (
+                  <View style={styles.todayNextWrap}>
+                    <Text style={styles.todayNextLabel}>Next up</Text>
+
+                    {nextRemaining ? (
+                      <View style={styles.todayNextCard}>
+                        <View style={styles.todayNextIconWrap}>
+                          <Clock size={16} color="#ffffff" />
+                        </View>
+
+                        <ScalePressable
+                          accessibilityLabel={`View details for ${nextRemaining.name}`}
+                          onPress={() => setSheet('today')}
+                          style={styles.todayNextTextPressable}
+                          scaleTo={0.98}
+                        >
+                          <View style={styles.todayNextTextWrap}>
+                            <Text style={styles.todayNextName} numberOfLines={2} ellipsizeMode="tail">
+                              {nextRemaining.name}
+                            </Text>
+                            <Text style={styles.todayNextMeta} numberOfLines={1} ellipsizeMode="tail">
+                              {nextRemaining.time}
+                            </Text>
+                          </View>
+                        </ScalePressable>
+
+                        <ScalePressable
+                          accessibilityLabel={`Mark ${nextRemaining.name} as taken`}
+                          onPress={() => toggleDone(nextRemaining)}
+                          style={styles.todayNextCheckButton}
+                          scaleTo={0.92}
+                        >
+                          <View style={styles.todayNextCheckInner}>
+                            <Check size={18} color="#253FAE" />
+                          </View>
+                        </ScalePressable>
+                      </View>
+                    ) : (
+                      <View style={styles.todayNextCardDone}>
+                        <View style={styles.todayNextIconWrap}>
+                          <CheckCircle2 size={16} color="#ffffff" />
+                        </View>
+                        <View style={styles.todayNextTextWrap}>
+                          <Text style={styles.todayNextName} numberOfLines={1}>
+                            All items logged
+                          </Text>
+                          <Text style={styles.todayNextMeta} numberOfLines={1}>
+                            Nice work today.
+                          </Text>
+                        </View>
+                      </View>
+                    )}
+
+                    {remaining.length > 1 ? (
+                      <ScalePressable
+                        accessibilityLabel="View all remaining"
+                        onPress={() => setSheet('today')}
+                        style={styles.todayViewAllButton}
+                        scaleTo={0.98}
+                      >
+                        <Text style={styles.todayViewAllText}>View all ({remaining.length})</Text>
+                      </ScalePressable>
+                    ) : null}
+                  </View>
+                ) : null}
+
+                <View style={styles.todayActionWrap}>
+                  <ScalePressable
+                    accessibilityLabel={totalCount === 0 ? 'Set up plan' : 'Today details'}
+                    onPress={() => {
+                      if (totalCount === 0) {
+                        setSheet('reminders');
+                      } else {
+                        setSheet('today');
+                      }
+                    }}
+                    style={[styles.todayActionButton, styles.todayActionEnabled]}
+                    scaleTo={0.95}
+                  >
+                    <Text style={[styles.todayActionText, styles.todayActionTextEnabled]}>
+                      {totalCount === 0
+                        ? 'Set up plan'
+                        : remaining.length
+                        ? `View remaining (${remaining.length})`
+                        : 'View today details'}
+                    </Text>
+                  </ScalePressable>
+                </View>
+              </View>
+            </Card>
+          </View>
+
+        {/* Plan */}
+        <View style={[styles.sectionSpacing, { marginTop: MAIN_CARD_GAP }]}>
+          <Card style={[styles.planWideCard, styles.remindersCard, { height: planCardHeight }]}>
+            <ScalePressable
+              accessibilityLabel="Plan"
+              onPress={() => setSheet('reminders')}
+              style={styles.fill}
+              scaleTo={0.97}
+            >
+              <View style={styles.planCardContent}>
+                <View style={styles.planHeaderRow}>
+                  <View style={styles.planHeaderLeft}>
+                    <Text style={styles.planTitleText}>Plan</Text>
+                    <View style={styles.planSummaryChip}>
+                      <Text style={styles.planSummaryText} numberOfLines={1} ellipsizeMode="tail">
+                        {planSummaryLabel}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.planHeaderRight}>
+                    <Text style={styles.planEditLabel}>Edit</Text>
+                    <View style={styles.planHeaderIconWrap}>
+                      <Clock size={16} color="#0f172a" />
+                    </View>
                   </View>
                 </View>
-              ) : null}
 
-              <View style={styles.todayActionWrap}>
-                <ScalePressable
-                  accessibilityLabel="Log remaining"
-                  onPress={markAllRemaining}
-                  disabled={!remaining.length}
-                  style={[styles.todayActionButton, remaining.length ? styles.todayActionEnabled : styles.todayActionDisabled]}
-                  scaleTo={0.95}
-                >
-                  <Text style={[styles.todayActionText, remaining.length ? styles.todayActionTextEnabled : styles.todayActionTextDisabled]}>
-                    Log remaining
-                  </Text>
-                </ScalePressable>
+                <Text style={styles.planSubLabel} numberOfLines={1} ellipsizeMode="tail">
+                  {planSubLabel}
+                </Text>
+
+                {!planTotalCount ? (
+                  <View style={styles.planEmptyState}>
+                    <Text style={styles.planEmptyTitle}>No reminders yet</Text>
+                    <Text style={styles.planEmptySub}>Tap to schedule your plan.</Text>
+                  </View>
+                ) : !pendingPlanCount ? (
+                  <View style={styles.planAllDoneState}>
+                    <View style={styles.planAllDoneIconWrap}>
+                      <CheckCircle2 size={16} color="#0f172a" />
+                    </View>
+                    <View style={styles.planAllDoneTextWrap}>
+                      <Text style={styles.planAllDoneTitle} numberOfLines={1} ellipsizeMode="tail">
+                        All done for today
+                      </Text>
+                      <Text style={styles.planAllDoneSub} numberOfLines={1} ellipsizeMode="tail">
+                        Tap to review or edit reminders.
+                      </Text>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={styles.planRows}>
+                    {planCardItems.map(item => {
+                      const isNext = Boolean(planNextId && item.id === planNextId);
+                      const metaParts = [];
+                      if (isNext) metaParts.push('Next');
+                      metaParts.push(item.timeLabel);
+                      if (item.withFood) metaParts.push('With food');
+                      if (backupReminderSet.has(item.id)) metaParts.push('Backup');
+                      const metaText = metaParts.join(' · ');
+
+                      return (
+                        <View key={item.id} style={[styles.planRow, isNext ? styles.planRowNext : null]}>
+                          <View style={[styles.planRowIconWrap, isNext ? styles.planRowIconWrapNext : null]}>
+                            <Clock size={14} color="#0f172a" />
+                          </View>
+
+                          <View style={styles.planRowTextWrap}>
+                            <Text style={styles.planRowTitle} numberOfLines={1} ellipsizeMode="tail">
+                              {item.name}
+                            </Text>
+                            <Text style={styles.planRowMeta} numberOfLines={1} ellipsizeMode="tail">
+                              {metaText}
+                            </Text>
+                          </View>
+
+                          <ScalePressable
+                            accessibilityLabel={`Mark ${item.name} as taken`}
+                            onPress={() => togglePlanDone(item)}
+                            style={styles.planMarkButton}
+                            scaleTo={0.9}
+                          >
+                            <Check size={16} color="#0f172a" />
+                          </ScalePressable>
+                        </View>
+                      );
+                    })}
+                  </View>
+                )}
               </View>
-            </View>
+            </ScalePressable>
           </Card>
         </View>
 
-        {/* Streak + Plan */}
+        {/* Streak */}
         <View style={[styles.sectionSpacing, { marginTop: MAIN_CARD_GAP }]}>
-          <Card style={[styles.planWideCard, styles.remindersCard, { height: planCardHeight }]}>
-            <ScalePressable accessibilityLabel="Plan" onPress={() => setSheet('reminders')} style={styles.fill} scaleTo={0.95}>
-              <View style={[styles.squarePressable, styles.planPressable]}>
-                <View style={styles.squareHeaderRow}>
-                  <Text style={styles.squareTitle} numberOfLines={1} ellipsizeMode="tail">Plan</Text>
-                  <View style={[styles.squareIconWrap, styles.planIconWrap]}>
-                    <Clock size={16} color="#0f172a" />
+          <Card style={[styles.planWideCard, styles.streakWideCard, { height: streakCardHeight }]}>
+            <View style={styles.streakContent}>
+              <View style={styles.streakHeaderRow}>
+                <Text style={styles.streakTitle}>Streak</Text>
+                <View style={styles.streakIconWrap}>
+                  <Trophy size={18} color="#7C3AED" />
+                </View>
+              </View>
+
+              <View style={styles.streakBody}>
+                <View style={styles.streakBodyRow}>
+                  <View style={styles.streakPrimary}>
+                    <View style={styles.streakMainRow}>
+                      <Text style={styles.streakDaysValue}>{currentStreakDays}</Text>
+                      <Text style={styles.streakDaysLabel}>DAYS</Text>
+                    </View>
+                    <Text style={styles.streakSubLabel}>TO {streakGoalDays}-DAY STREAK</Text>
+
+                    <View style={styles.streakStatusRow}>
+                      {streakSecuredToday ? (
+                        <CheckCircle2 size={14} color="#1F2937" />
+                      ) : totalCount === 0 ? (
+                        <Flame size={14} color="#1F2937" />
+                      ) : (
+                        <Clock size={14} color="#1F2937" />
+                      )}
+                      <Text style={styles.streakStatus} numberOfLines={2}>
+                        {streakStatus}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.streakSideMetrics}>
+                    <View style={styles.streakSideMetricRow}>
+                      <Text style={styles.streakSideMetricLabel}>THIS WEEK</Text>
+                      <Text style={styles.streakSideMetricValue} numberOfLines={1}>
+                        {weekActiveDays}/7{' '}
+                        <Text style={styles.streakSideMetricSuffix}>CHECK-INS</Text>
+                      </Text>
+                    </View>
+
+                    <View style={styles.streakSideMetricRow}>
+                      <Text style={styles.streakSideMetricLabel}>LAST 30 DAYS</Text>
+                      <Text style={styles.streakSideMetricValue} numberOfLines={1}>
+                        {activeDays30}{' '}
+                        <Text style={styles.streakSideMetricSuffix}>ACTIVE DAYS</Text>
+                      </Text>
+                    </View>
                   </View>
                 </View>
-
-                <View style={styles.squareBody}>
-                  {planCardItems.map(item => {
-                    const status = item.done
-                      ? 'Done'
-                      : planNextId && item.id === planNextId
-                        ? 'Next'
-                        : 'Remaining';
-                    const backupTag = backupReminderSet.has(item.id) ? ' (Backup)' : '';
-                    const foodTag = item.withFood ? ' · With food' : '';
-                    return (
-                      <Pill
-                        key={item.id}
-                        dense
-                        left={
-                          item.done ? (
-                            <CheckCircle2 size={14} color="#0f172a" />
-                          ) : (
-                            <Clock size={14} color="#0f172a" />
-                          )
-                        }
-                        text={`${formatPlanTitle(item.name, item.timeLabel)}${backupTag}${foodTag}`}
-                        right={<Text style={styles.reminderTag}>{status}</Text>}
-                        onPress={() => setSheet('reminders')}
-                      />
-                    );
-                  })}
-                </View>
-
-                <Text style={styles.squareFooter}>Tap card to edit.</Text>
               </View>
-            </ScalePressable>
+            </View>
           </Card>
         </View>
 
@@ -956,62 +1269,176 @@ export default function ProgressScreen() {
                 />
               </View>
 
-              <View style={styles.trendBarsRow}>
-                {trend.series.map((entry, idx) => {
-                  const isActive = activeTrendIndex !== null && idx === activeTrendIndex;
-                  return (
-                    <MotiView
-                      key={`${entry.k}-${idx}`}
-                      style={styles.trendBarColumn}
-                      animate={{
-                        translateY: isActive ? -6 : 0,
-                        scale: isActive ? 1.05 : 1,
-                      }}
-                      transition={{ type: 'timing', duration: 220 }}
-                    >
-                      <Pressable
-                        onPress={() => setSelectedTrendIndex(prev => (prev === idx ? null : idx))}
-                        style={styles.trendBarPressable}
-                        hitSlop={8}
+              {range === 'today' ? (
+                <View style={styles.trendTimelineWrap}>
+                  {trend.series.length ? (
+                    <>
+                      <View style={styles.trendTimelineTimeRow}>
+                        {trend.series.map((entry, idx) => {
+                          const isActive = activeTrendIndex !== null && idx === activeTrendIndex;
+                          return (
+                            <View key={`${entry.k}-${idx}-time`} style={styles.trendTimelineColumn}>
+                              <MotiView
+                                animate={{ translateY: isActive ? -2 : 0 }}
+                                transition={{ type: 'timing', duration: 200 }}
+                              >
+                                <Text
+                                  style={[styles.trendTimelineTime, isActive && styles.trendTimelineTimeActive]}
+                                  numberOfLines={1}
+                                  ellipsizeMode="tail"
+                                >
+                                  {entry.k}
+                                </Text>
+                              </MotiView>
+                              {isActive ? (
+                                <View style={styles.trendTimelineUnderlineWrap}>
+                                  <MotiView
+                                    from={{ width: 0, opacity: 0 }}
+                                    animate={{ width: 22, opacity: 1 }}
+                                    transition={{ type: 'timing', duration: 220 }}
+                                    style={styles.trendTimelineActiveUnderline}
+                                  />
+                                </View>
+                              ) : null}
+                            </View>
+                          );
+                        })}
+                      </View>
+
+                      <View style={styles.trendTimelineTrackRow}>
+                        <View pointerEvents="none" style={styles.trendTimelineTrack} />
+                        {trend.series.map((entry, idx) => {
+                          const isActive = activeTrendIndex !== null && idx === activeTrendIndex;
+                          const pctLabel = entry.v === null ? '--' : `${entry.v}%`;
+                          const dotTone =
+                            entry.v === null
+                              ? styles.trendTimelineDotEmpty
+                              : entry.v >= 100
+                                ? styles.trendTimelineDotDone
+                                : entry.v > 0
+                                  ? styles.trendTimelineDotPartial
+                                  : styles.trendTimelineDotPending;
+
+                          return (
+                            <MotiView
+                              key={`${entry.k}-${idx}-dot`}
+                              style={styles.trendTimelineColumn}
+                              animate={{ scale: isActive ? 1.08 : 1 }}
+                              transition={{ type: 'timing', duration: 200 }}
+                            >
+                              <Pressable
+                                onPress={() => setSelectedTrendIndex(prev => (prev === idx ? null : idx))}
+                                style={styles.trendTimelineDotPressable}
+                                hitSlop={10}
+                                accessibilityRole="button"
+                                accessibilityLabel={`Timeline ${entry.k}`}
+                              >
+                                {isActive ? (
+                                  <MotiView
+                                    key={`${entry.k}-${idx}-active-dot`}
+                                    from={{ scale: 0.6 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ type: 'timing', duration: 220 }}
+                                    style={[
+                                      styles.trendTimelineDot,
+                                      dotTone,
+                                      styles.trendTimelineDotActive,
+                                    ]}
+                                  />
+                                ) : (
+                                  <View style={[styles.trendTimelineDot, dotTone]} />
+                                )}
+                              </Pressable>
+                            </MotiView>
+                          );
+                        })}
+                      </View>
+
+                      <View style={styles.trendTimelineValueRow}>
+                        {trend.series.map((entry, idx) => {
+                          const isActive = activeTrendIndex !== null && idx === activeTrendIndex;
+                          return (
+                            <View key={`${entry.k}-${idx}-val`} style={styles.trendTimelineColumn}>
+                              <Text
+                                style={[styles.trendTimelineValue, isActive && styles.trendTimelineValueActive]}
+                                numberOfLines={1}
+                                ellipsizeMode="clip"
+                              >
+                                {entry.v === null ? '--' : `${entry.v}%`}
+                              </Text>
+                            </View>
+                          );
+                        })}
+                      </View>
+                    </>
+                  ) : (
+                    <View style={styles.trendEmptyWrap}>
+                      <Text style={styles.trendEmptyText}>No items scheduled today.</Text>
+                    </View>
+                  )}
+                </View>
+              ) : (
+                <View style={styles.trendBarsRow}>
+                  {trend.series.map((entry, idx) => {
+                    const isActive = activeTrendIndex !== null && idx === activeTrendIndex;
+                    const pctLabel = entry.v === null ? '--' : `${entry.v}%`;
+                    return (
+                      <MotiView
+                        key={`${entry.k}-${idx}`}
+                        style={styles.trendBarColumn}
+                        animate={{
+                          translateY: isActive ? -6 : 0,
+                          scale: isActive ? 1.05 : 1,
+                        }}
+                        transition={{ type: 'timing', duration: 220 }}
                       >
-                        <View style={styles.trendBarTrack}>
-                          <MotiView
-                            from={{ height: 0 }}
-                            animate={{
-                              height:
-                                entry.v === null
-                                  ? TREND_BAR_MIN_HEIGHT
-                                  : entry.v === 0
-                                    ? 0
-                                    : Math.max(
-                                        TREND_BAR_MIN_HEIGHT,
-                                        (entry.v / 100) * TREND_BAR_HEIGHT,
-                                      ),
-                            }}
-                            transition={{ type: 'timing', duration: 520 }}
-                            style={[
-                              styles.trendBarFill,
-                              isActive ? styles.trendBarFillActive : styles.trendBarFillInactive,
-                              entry.v === null && styles.trendBarFillEmpty,
-                              entry.v === 0 && styles.trendBarFillZero,
-                            ]}
-                          />
-                        </View>
-                        <Text style={[styles.trendBarLabel, isActive && styles.trendBarLabelActive]}>
-                          {entry.k}
-                        </Text>
-                        <Text
-                          style={[styles.trendBarValue, isActive && styles.trendBarValueActive]}
-                          numberOfLines={1}
-                          ellipsizeMode="clip"
+                        <Pressable
+                          onPress={() => setSelectedTrendIndex(prev => (prev === idx ? null : idx))}
+                          style={styles.trendBarPressable}
+                          hitSlop={8}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Trend ${entry.k}`}
                         >
-                          {entry.v === null ? '--' : `${entry.v}%`}
-                        </Text>
-                      </Pressable>
-                    </MotiView>
-                  );
-                })}
-              </View>
+                          <View style={[styles.trendBarTrack, isActive && styles.trendBarTrackActive]}>
+                            <MotiView
+                              from={{ height: 0 }}
+                              animate={{
+                                height:
+                                  entry.v === null
+                                    ? TREND_BAR_MIN_HEIGHT
+                                    : entry.v === 0
+                                      ? 0
+                                      : Math.max(
+                                          TREND_BAR_MIN_HEIGHT,
+                                          (entry.v / 100) * TREND_BAR_HEIGHT,
+                                        ),
+                              }}
+                              transition={{ type: 'timing', duration: 520 }}
+                              style={[
+                                styles.trendBarFill,
+                                isActive ? styles.trendBarFillActive : styles.trendBarFillInactive,
+                                entry.v === null && styles.trendBarFillEmpty,
+                                entry.v === 0 && styles.trendBarFillZero,
+                              ]}
+                            />
+                          </View>
+
+                          <Text style={[styles.trendBarLabel, isActive && styles.trendBarLabelActive]}>
+                            {entry.k}
+                          </Text>
+                          <Text
+                            style={[styles.trendBarValue, isActive && styles.trendBarValueActive]}
+                            numberOfLines={1}
+                            ellipsizeMode="clip"
+                          >
+                            {pctLabel}
+                          </Text>
+                        </Pressable>
+                      </MotiView>
+                    );
+                  })}
+                </View>
+              )}
 
               <View style={styles.trendSummary}>
                 <Text style={styles.trendSummaryPrimary}>{trend.summaryA}</Text>
@@ -1246,7 +1673,7 @@ const styles = StyleSheet.create({
 
   cardBase: {
     position: 'relative',
-    borderRadius: 32,
+    borderRadius: CARD_RADIUS,
     borderCurve: 'continuous',
     overflow: 'hidden',
     shadowColor: '#0f172a',
@@ -1320,6 +1747,7 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
+    width: '100%',
     borderRadius: 999,
     borderCurve: 'continuous',
     backgroundColor: 'rgba(255,255,255,0.92)',
@@ -1407,23 +1835,24 @@ const styles = StyleSheet.create({
   },
 
   todayCard: { backgroundColor: '#253FAE' },
-  todayContent: { padding: 24 },
+  todayContent: { paddingHorizontal: CARD_PADDING_X, paddingTop: CARD_PADDING_Y, paddingBottom: CARD_PADDING_Y },
   todayHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  todayHeaderLeft: { flex: 1, minWidth: 0, paddingRight: 12 },
   todayTitle: {
-    fontSize: 30,
-    lineHeight: 36,
+    fontSize: 28,
+    lineHeight: 34,
     fontWeight: '900',
     color: '#ffffff',
     letterSpacing: -0.3,
     includeFontPadding: false,
   },
   todaySubtitle: {
-    marginTop: 4,
+    marginTop: 6,
     fontSize: 11,
     lineHeight: 14,
     fontWeight: '800',
-    color: 'rgba(255,255,255,0.6)',
-    letterSpacing: 3.5,
+    color: 'rgba(255,255,255,0.7)',
+    letterSpacing: 1.8,
     textTransform: 'uppercase',
     includeFontPadding: false,
   },
@@ -1453,11 +1882,73 @@ const styles = StyleSheet.create({
   todayMessageRow: { marginTop: 16, flexDirection: 'row', alignItems: 'center', gap: 12 },
   todayDot: { width: 8, height: 8, borderRadius: 999, borderCurve: 'continuous', backgroundColor: '#ffffff' },
   todayMessage: { fontSize: 16, lineHeight: 22, fontWeight: '700', color: 'rgba(255,255,255,0.85)', flex: 1, includeFontPadding: false },
+
+  todayNextWrap: { marginTop: 18 },
+  todayNextLabel: {
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: '800',
+    color: 'rgba(255,255,255,0.6)',
+    letterSpacing: 2.5,
+    textTransform: 'uppercase',
+    includeFontPadding: false,
+  },
+  todayNextCard: {
+    marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 18,
+    borderCurve: 'continuous',
+    backgroundColor: 'rgba(255,255,255,0.10)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+    gap: 12,
+  },
+  todayNextCardDone: {
+    marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 18,
+    borderCurve: 'continuous',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.14)',
+    gap: 12,
+  },
+  todayNextIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 999,
+    borderCurve: 'continuous',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.14)',
+  },
+  todayNextTextPressable: { flex: 1, minWidth: 0 },
+  todayNextTextWrap: { flex: 1, minWidth: 0 },
+  todayNextName: { fontSize: 14, lineHeight: 18, fontWeight: '800', color: '#ffffff', includeFontPadding: false },
+  todayNextMeta: { marginTop: 2, fontSize: 12, lineHeight: 16, fontWeight: '700', color: 'rgba(255,255,255,0.72)', includeFontPadding: false },
+  todayNextCheckButton: { padding: 2 },
+  todayNextCheckInner: {
+    width: 42,
+    height: 42,
+    borderRadius: 999,
+    borderCurve: 'continuous',
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  todayViewAllButton: { marginTop: 10, alignSelf: 'flex-start' },
+  todayViewAllText: { fontSize: 12, lineHeight: 16, fontWeight: '800', color: 'rgba(255,255,255,0.85)', includeFontPadding: false },
   todayRemainingWrap: { marginTop: 16 },
   todayRemainingLabel: { fontSize: 11, lineHeight: 14, fontWeight: '800', color: 'rgba(255,255,255,0.6)', letterSpacing: 2.5, textTransform: 'uppercase', includeFontPadding: false },
   remainingList: { marginTop: 12, gap: 8 },
   remainingMark: { fontSize: 11, lineHeight: 14, fontWeight: '800', color: 'rgba(255,255,255,0.8)', includeFontPadding: false },
-  todayActionWrap: { marginTop: 16 },
+  todayActionWrap: { marginTop: 18 },
   todayActionButton: { paddingVertical: 12, borderRadius: 999, borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center' },
   todayActionEnabled: { backgroundColor: 'rgba(255,255,255,0.92)' },
   todayActionDisabled: { backgroundColor: 'rgba(255,255,255,0.45)' },
@@ -1469,6 +1960,164 @@ const styles = StyleSheet.create({
   planWideCard: { flex: 1 },
   squarePressable: { flex: 1, padding: 16 },
   planPressable: { padding: 24 },
+  planCardContent: { flex: 1, paddingHorizontal: CARD_PADDING_X, paddingVertical: CARD_PADDING_Y },
+  planHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  planHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 },
+  planTitleText: {
+    fontSize: 24,
+    lineHeight: 30,
+    fontWeight: '900',
+    color: '#0f172a',
+    includeFontPadding: false,
+  },
+  planSummaryChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderCurve: 'continuous',
+    backgroundColor: 'rgba(255,255,255,0.55)',
+    borderWidth: 1,
+    borderColor: 'rgba(15,23,42,0.08)',
+  },
+  planSummaryText: {
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: '900',
+    color: '#0f172a',
+    includeFontPadding: false,
+    letterSpacing: 0.2,
+  },
+  planHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  planEditLabel: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '800',
+    color: 'rgba(15,23,42,0.75)',
+    includeFontPadding: false,
+  },
+  planHeaderIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 999,
+    borderCurve: 'continuous',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.06)',
+  },
+  planSubLabel: {
+    marginTop: 10,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '700',
+    color: 'rgba(15,23,42,0.7)',
+    includeFontPadding: false,
+  },
+  planRows: { marginTop: 12, gap: 10 },
+  planRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 18,
+    borderCurve: 'continuous',
+    backgroundColor: 'rgba(255,255,255,0.50)',
+    borderWidth: 1,
+    borderColor: 'rgba(15,23,42,0.08)',
+  },
+  planRowNext: {
+    backgroundColor: 'rgba(255,255,255,0.72)',
+    borderColor: 'rgba(15,23,42,0.14)',
+  },
+  planRowIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 999,
+    borderCurve: 'continuous',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(15,23,42,0.08)',
+    marginRight: 10,
+  },
+  planRowIconWrapNext: { backgroundColor: 'rgba(15,23,42,0.12)' },
+  planRowTextWrap: { flex: 1, minWidth: 0 },
+  planRowTitle: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: '900',
+    color: '#0f172a',
+    includeFontPadding: false,
+  },
+  planRowMeta: {
+    marginTop: 2,
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: '700',
+    color: 'rgba(15,23,42,0.65)',
+    includeFontPadding: false,
+  },
+  planMarkButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 999,
+    borderCurve: 'continuous',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.65)',
+    borderWidth: 1,
+    borderColor: 'rgba(15,23,42,0.12)',
+  },
+  planEmptyState: { flex: 1, justifyContent: 'center', paddingTop: 8 },
+  planEmptyTitle: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: '900',
+    color: '#0f172a',
+    includeFontPadding: false,
+  },
+  planEmptySub: {
+    marginTop: 4,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '700',
+    color: 'rgba(15,23,42,0.7)',
+    includeFontPadding: false,
+  },
+  planAllDoneState: {
+    marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 18,
+    borderCurve: 'continuous',
+    backgroundColor: 'rgba(255,255,255,0.55)',
+    borderWidth: 1,
+    borderColor: 'rgba(15,23,42,0.08)',
+  },
+  planAllDoneIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 999,
+    borderCurve: 'continuous',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(15,23,42,0.08)',
+    marginRight: 10,
+  },
+  planAllDoneTextWrap: { flex: 1, minWidth: 0 },
+  planAllDoneTitle: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: '900',
+    color: '#0f172a',
+    includeFontPadding: false,
+  },
+  planAllDoneSub: {
+    marginTop: 2,
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: '700',
+    color: 'rgba(15,23,42,0.65)',
+    includeFontPadding: false,
+  },
   squareHeaderRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   squareTitle: {
     flex: 1,
@@ -1497,6 +2146,107 @@ const styles = StyleSheet.create({
   squareFooter: { marginTop: 20, fontSize: 11, lineHeight: 14, fontWeight: '700', color: 'rgba(51,65,85,0.7)', includeFontPadding: false, alignSelf: 'flex-start', transform: [{ translateY: 8 }] },
   consistencyCard: { backgroundColor: '#E6E0CF' },
   remindersCard: { backgroundColor: '#F3D153' },
+  streakWideCard: { backgroundColor: '#C9B6FF' },
+
+  streakContent: { flex: 1, paddingHorizontal: CARD_PADDING_X, paddingVertical: CARD_PADDING_Y },
+  streakHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  streakTitle: {
+    fontSize: 24,
+    lineHeight: 30,
+    fontWeight: '900',
+    color: '#1F2937',
+    includeFontPadding: false,
+  },
+  streakIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 999,
+    borderCurve: 'continuous',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(124,58,237,0.14)',
+  },
+  streakBody: { flex: 1, marginTop: 12 },
+  streakBodyRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 16,
+  },
+  streakPrimary: { flex: 1, minWidth: 0, gap: 6 },
+  streakMainRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
+  streakDaysValue: {
+    fontSize: 38,
+    lineHeight: 42,
+    fontWeight: '900',
+    color: '#1F2937',
+    includeFontPadding: false,
+    letterSpacing: -0.6,
+  },
+  streakDaysLabel: {
+    fontSize: 16,
+    lineHeight: 20,
+    fontWeight: '800',
+    color: '#1F2937',
+    includeFontPadding: false,
+    letterSpacing: 0.6,
+  },
+  streakSubLabel: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '700',
+    color: '#4B5563',
+    includeFontPadding: false,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+  },
+  streakStatusRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 },
+  streakStatus: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '700',
+    color: '#4B5563',
+    includeFontPadding: false,
+    flexShrink: 1,
+  },
+  streakSideMetrics: {
+    flexBasis: 132,
+    flexShrink: 0,
+    alignSelf: 'stretch',
+    paddingLeft: 14,
+    borderLeftWidth: 1,
+    borderColor: 'rgba(15,23,42,0.12)',
+    gap: 12,
+    paddingTop: 4,
+  },
+  streakSideMetricRow: { alignItems: 'flex-end', gap: 4 },
+  streakSideMetricLabel: {
+    fontSize: 10,
+    lineHeight: 14,
+    fontWeight: '800',
+    color: '#6B7280',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    includeFontPadding: false,
+  },
+  streakSideMetricValue: {
+    fontSize: 13,
+    lineHeight: 16,
+    fontWeight: '900',
+    color: '#1F2937',
+    includeFontPadding: false,
+    letterSpacing: 0.2,
+    textAlign: 'right',
+    fontVariant: ['tabular-nums'],
+  },
+  streakSideMetricSuffix: {
+    fontSize: 11,
+    lineHeight: 16,
+    fontWeight: '800',
+    color: 'rgba(31,41,55,0.7)',
+    includeFontPadding: false,
+  },
 
   consistencyRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   consistencyLabel: { width: 36, fontSize: 12, lineHeight: 16, fontWeight: '800', color: '#1e293b', includeFontPadding: false },
@@ -1507,23 +2257,121 @@ const styles = StyleSheet.create({
   reminderTag: { fontSize: 10, lineHeight: 12, fontWeight: '900', color: '#475569', includeFontPadding: false },
 
   trendCard: { backgroundColor: '#A8C9FF' },
-  trendContent: { padding: 24 },
+  trendContent: { paddingHorizontal: CARD_PADDING_X, paddingVertical: CARD_PADDING_Y },
   trendHeaderRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
-  trendTitle: { fontSize: 30, lineHeight: 36, fontWeight: '900', color: '#0f172a', includeFontPadding: false },
+  trendTitle: { fontSize: 24, lineHeight: 30, fontWeight: '900', color: '#0f172a', includeFontPadding: false },
   iconButtonLight: { backgroundColor: 'rgba(0,0,0,0.06)' },
   trendBarsRow: { marginTop: 24, flexDirection: 'row', alignItems: 'flex-end', gap: 10 },
   trendBarColumn: { flex: 1, alignItems: 'center', gap: 8 },
-  trendBarPressable: { width: '100%', alignItems: 'center', gap: 8 },
-  trendBarTrack: { width: 32, height: TREND_BAR_HEIGHT, borderRadius: 999, borderCurve: 'continuous', overflow: 'hidden', justifyContent: 'flex-end', backgroundColor: 'rgba(15,23,42,0.22)' },
+  trendBarPressable: { width: '100%', alignItems: 'center', gap: 8, position: 'relative' },
+  trendBarTrack: {
+    width: 32,
+    height: TREND_BAR_HEIGHT,
+    borderRadius: 999,
+    borderCurve: 'continuous',
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(15,23,42,0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(15,23,42,0.10)',
+  },
+  trendBarTrackActive: { borderColor: 'rgba(15,23,42,0.18)' },
   trendBarFill: { width: '100%', borderRadius: 999, borderCurve: 'continuous', shadowColor: '#000000', shadowOpacity: 0.1, shadowOffset: { width: 0, height: 4 }, shadowRadius: 6, elevation: 2 },
   trendBarFillActive: { backgroundColor: '#1e293b' },
   trendBarFillInactive: { backgroundColor: 'rgba(15,23,42,0.55)' },
   trendBarFillEmpty: { backgroundColor: 'rgba(15,23,42,0.2)' },
   trendBarFillZero: { backgroundColor: 'transparent', shadowOpacity: 0, elevation: 0 },
   trendBarLabel: { fontSize: 11, lineHeight: 14, fontWeight: '900', color: 'rgba(15,23,42,0.75)', includeFontPadding: false, textAlign: 'center', width: '100%' },
-  trendBarLabelActive: { color: '#0f172a' },
+  trendBarLabelActive: { color: '#0f172a', textDecorationLine: 'underline' },
   trendBarValue: { fontSize: 12, lineHeight: 16, fontWeight: '900', color: 'rgba(71,85,105,0.9)', includeFontPadding: false, textAlign: 'center', width: '100%', letterSpacing: -0.2, fontVariant: ['tabular-nums'] },
   trendBarValueActive: { color: '#0f172a' },
+  trendTimelineWrap: { marginTop: 24 },
+  trendTimelineTimeRow: { flexDirection: 'row', gap: 10, alignItems: 'flex-end' },
+  trendTimelineTrackRow: { marginTop: 10, flexDirection: 'row', gap: 10, alignItems: 'center', position: 'relative', height: 30 },
+  trendTimelineValueRow: { marginTop: 10, flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
+  trendTimelineColumn: { flex: 1, alignItems: 'center', minWidth: 0 },
+  trendTimelineTime: {
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: '900',
+    color: 'rgba(15,23,42,0.70)',
+    includeFontPadding: false,
+    textAlign: 'center',
+  },
+  trendTimelineTimeActive: { color: '#0f172a' },
+  trendTimelineUnderlineWrap: {
+    marginTop: 4,
+    width: 22,
+    height: 2,
+    borderRadius: 999,
+    overflow: 'hidden',
+    alignSelf: 'center',
+  },
+  trendTimelineActiveUnderline: {
+    height: 2,
+    borderRadius: 999,
+    backgroundColor: 'rgba(15,23,42,0.92)',
+  },
+  trendTimelineTrack: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 2,
+    borderRadius: 999,
+    backgroundColor: 'rgba(15,23,42,0.18)',
+  },
+  trendTimelineDotPressable: { position: 'relative', alignItems: 'center', justifyContent: 'center', width: 22, height: 22 },
+  trendTimelineDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 999,
+    borderCurve: 'continuous',
+    borderWidth: 1,
+    borderColor: 'rgba(15,23,42,0.16)',
+    backgroundColor: 'rgba(15,23,42,0.12)',
+  },
+  trendTimelineDotDone: { backgroundColor: 'rgba(15,23,42,0.92)', borderColor: 'rgba(15,23,42,0.92)' },
+  trendTimelineDotPartial: { backgroundColor: 'rgba(15,23,42,0.60)', borderColor: 'rgba(15,23,42,0.60)' },
+  trendTimelineDotPending: { backgroundColor: 'rgba(15,23,42,0.12)', borderColor: 'rgba(15,23,42,0.16)' },
+  trendTimelineDotEmpty: { backgroundColor: 'rgba(15,23,42,0.10)', borderColor: 'rgba(15,23,42,0.10)' },
+  trendTimelineDotActive: {
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.9)',
+    shadowColor: '#0f172a',
+    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  trendTimelineValue: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '900',
+    color: 'rgba(71,85,105,0.90)',
+    includeFontPadding: false,
+    textAlign: 'center',
+    width: '100%',
+    letterSpacing: -0.2,
+    fontVariant: ['tabular-nums'],
+  },
+  trendTimelineValueActive: { color: '#0f172a' },
+  trendEmptyWrap: {
+    height: 120,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 20,
+    borderCurve: 'continuous',
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    borderWidth: 1,
+    borderColor: 'rgba(15,23,42,0.06)',
+  },
+  trendEmptyText: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '800',
+    color: 'rgba(15,23,42,0.65)',
+    includeFontPadding: false,
+  },
   trendSummary: { marginTop: 20, gap: 4 },
   trendSummaryPrimary: { fontSize: 14, lineHeight: 18, fontWeight: '900', color: '#0f172a', includeFontPadding: false },
   trendSummarySecondary: { fontSize: 14, lineHeight: 18, fontWeight: '700', color: 'rgba(15,23,42,0.8)', includeFontPadding: false },
@@ -1533,9 +2381,9 @@ const styles = StyleSheet.create({
   },
 
   achievementsCard: { backgroundColor: '#D0E6A5' },
-  achievementsContent: { padding: 24 },
+  achievementsContent: { paddingHorizontal: CARD_PADDING_X, paddingVertical: CARD_PADDING_Y },
   achievementsHeaderRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
-  achievementsTitle: { fontSize: 30, lineHeight: 36, fontWeight: '900', color: '#0f172a', includeFontPadding: false },
+  achievementsTitle: { fontSize: 24, lineHeight: 30, fontWeight: '900', color: '#0f172a', includeFontPadding: false },
   achievementsActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   viewAllButton: { justifyContent: 'center' },
   achievementsLink: { fontSize: 12, lineHeight: 16, fontWeight: '800', color: 'rgba(15,23,42,0.7)', includeFontPadding: false },

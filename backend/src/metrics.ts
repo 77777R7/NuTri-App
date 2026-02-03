@@ -5,6 +5,9 @@ export const METRIC_NAMES = [
   "scanlog_write_success",
   "scanlog_write_timeout",
   "scanlog_write_breaker_open",
+  "training_write_success",
+  "training_write_timeout",
+  "training_write_breaker_open",
   "deepseek_bundle_success",
   "deepseek_bundle_fail_degraded",
 ] as const;

@@ -323,6 +323,11 @@ const extractRelevantPassages = (text: string, maxChars: number): string => {
     "suggested use",
     "directions",
     "warning",
+    "upc",
+    "gtin",
+    "ean",
+    "jan",
+    "npn",
     "allergen",
     "price",
     "msrp",
@@ -401,6 +406,7 @@ type ResilienceOptions = {
   signal?: AbortSignal;
   timeoutMs?: number;
   queueTimeoutMs?: number;
+  maxTokens?: number;
   budget?: DeadlineBudget;
   semaphore?: Semaphore;
   breaker?: CircuitBreaker;
@@ -683,7 +689,7 @@ export async function fetchAnalysisSection(
     }
 
     const retryConfig: RetryOptions = {
-      maxAttempts: options.retry?.maxAttempts ?? 2,
+      maxAttempts: options.retry?.maxAttempts ?? 1,
       baseDelayMs: options.retry?.baseDelayMs ?? 400,
       maxDelayMs: options.retry?.maxDelayMs ?? 1500,
       jitterRatio: options.retry?.jitterRatio ?? 0.4,
@@ -789,7 +795,7 @@ export async function fetchAnalysisBundle(
     }
 
     const retryConfig: RetryOptions = {
-      maxAttempts: options.retry?.maxAttempts ?? 2,
+      maxAttempts: options.retry?.maxAttempts ?? 1,
       baseDelayMs: options.retry?.baseDelayMs ?? 400,
       maxDelayMs: options.retry?.maxDelayMs ?? 1500,
       jitterRatio: options.retry?.jitterRatio ?? 0.4,
@@ -819,9 +825,10 @@ export async function fetchAnalysisBundle(
               { role: "system", content: PROMPT_ANALYSIS_BUNDLE },
               { role: "user", content: context },
             ],
-            temperature: 0.2,
+            temperature: 0.0,
             stream: false,
-            max_tokens: 2000,
+            max_tokens: options.maxTokens ?? 2000,
+            response_format: { type: "json_object" },
           }),
           signal,
         });
@@ -854,10 +861,83 @@ export async function fetchAnalysisBundle(
         efficacy: record.efficacy ?? null,
         safety: record.safety ?? null,
         usagePayload: record.usagePayload ?? null,
-      };
+        _meta: { repairUsed: false },
+      } as AnalysisBundle;
     }
 
-    console.warn("[DeepSeek] Invalid JSON for bundle, skipping repair");
+    // One-shot JSON repair call (hard cap: bundle<=1 + repair<=1).
+    const repairPrompt = `You are a JSON repair assistant.
+Return a SINGLE valid JSON object.
+- OUTPUT JSON ONLY. NO MARKDOWN.
+- Preserve the original meaning as much as possible.
+- Ensure top-level keys exist: efficacy, safety, usagePayload (use null if missing).
+`;
+
+    const repairTimeoutMs = Math.min(3500, timeoutMs);
+    const repairBudgetedTimeout = options.budget ? options.budget.msFor(repairTimeoutMs) : repairTimeoutMs;
+    if (repairBudgetedTimeout <= 0) {
+      console.warn("[DeepSeek] Invalid JSON for bundle; repair skipped due to budget");
+      return null;
+    }
+
+    const repairResponse = await withRetry(async () => {
+      const timeoutSignal = createTimeoutSignal(repairBudgetedTimeout);
+      const { signal, cleanup } = combineSignals([options.signal, timeoutSignal]);
+      try {
+        const result = await fetch("https://api.deepseek.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: model,
+            messages: [
+              { role: "system", content: repairPrompt },
+              { role: "user", content: `Fix this to valid json:\n${content}` },
+            ],
+            temperature: 0.0,
+            stream: false,
+            max_tokens: 1200,
+            response_format: { type: "json_object" },
+          }),
+          signal,
+        });
+
+        if (!result.ok) {
+          throw new HttpError(result.status, `DeepSeek API error: ${result.status}`);
+        }
+
+        return result;
+      } catch (error) {
+        if (timeoutSignal.aborted && !options.signal?.aborted && isAbortError(error)) {
+          throw new TimeoutError();
+        }
+        throw error;
+      } finally {
+        cleanup();
+      }
+    }, {
+      ...retryConfig,
+      maxAttempts: 1,
+    });
+
+    const repairData = (await repairResponse.json()) as {
+      choices?: { message?: { content?: string } }[];
+    };
+    const repairedContent = repairData.choices?.[0]?.message?.content || "{}";
+    const repairedParsed = tryParseJsonLenient(repairedContent);
+    if (repairedParsed && typeof repairedParsed === "object") {
+      const record = repairedParsed as Record<string, unknown>;
+      return {
+        efficacy: record.efficacy ?? null,
+        safety: record.safety ?? null,
+        usagePayload: record.usagePayload ?? null,
+        _meta: { repairUsed: true },
+      } as AnalysisBundle;
+    }
+
+    console.warn("[DeepSeek] Invalid JSON for bundle after repair");
     return null;
   } catch (error) {
     if (!isAbortError(error)) {

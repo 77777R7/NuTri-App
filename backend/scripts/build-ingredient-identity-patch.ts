@@ -33,6 +33,14 @@ type IngredientRow = {
   unit: string | null;
 };
 
+type IngredientSynonymRow = {
+  ingredient_id: string | null;
+  synonym: string | null;
+  alias_type?: string | null;
+  confidence?: number | null;
+  source?: string | null;
+};
+
 type AutoApplyEntry = {
   nameKey: string;
   count: number;
@@ -47,7 +55,8 @@ type AutoApplyEntry = {
     | "ingredient_name"
     | "constrained"
     | "new_canonical"
-    | "mineral_form";
+    | "mineral_form"
+    | "microbe_canonical";
   confidence: number;
   reason: string;
   constraints?: string[] | null;
@@ -106,6 +115,88 @@ const normalizeText = (value: string): string =>
 const normalizeCanonicalKey = (value: string): string =>
   value.toLowerCase().replace(/[_\s]+/g, " ").trim();
 
+const STRIP_SUFFIX_TOKENS = new Set([
+  "extract",
+  "powder",
+  "juice",
+  "concentrate",
+  "leaf",
+  "root",
+  "seed",
+  "bark",
+  "peel",
+  "flower",
+  "herb",
+  "oil",
+  "berry",
+  "fruit",
+  "capsule",
+  "tablets",
+  "tablet",
+  "softgels",
+  "softgel",
+]);
+
+const STRIP_PREFIX_TOKENS = new Set([
+  "organic",
+  "natural",
+  "pure",
+  "wild",
+  "raw",
+  "whole",
+]);
+
+const STRIP_ANYWHERE_TOKENS = new Set([
+  "blend",
+  "complex",
+  "formula",
+  "controller",
+  "aid",
+  "rapid",
+  "rx",
+  "pro",
+  "ultra",
+  "elite",
+  "max",
+  "plus",
+  "advanced",
+  "phase",
+  "weight",
+  "loss",
+  "burn",
+  "burner",
+]);
+
+const stripNameKeyVariants = (value: string): string[] => {
+  const base = normalizeText(value);
+  if (!base) return [];
+  const rawTokens = base.split(/\s+/).filter(Boolean);
+  if (!rawTokens.length) return [];
+
+  const tokens = rawTokens.filter((token) => !STRIP_ANYWHERE_TOKENS.has(token));
+
+  let start = 0;
+  while (start < tokens.length && STRIP_PREFIX_TOKENS.has(tokens[start])) {
+    start += 1;
+  }
+
+  let end = tokens.length;
+  while (end > start && STRIP_SUFFIX_TOKENS.has(tokens[end - 1])) {
+    end -= 1;
+  }
+
+  const trimmed = tokens.slice(start, end);
+  if (!trimmed.length) return [];
+
+  const candidate = trimmed.join(" ");
+  const variants = new Set<string>();
+  if (candidate !== base) variants.add(candidate);
+  if (trimmed.length > 2) {
+    variants.add(trimmed.slice(0, 2).join(" "));
+  }
+  return Array.from(variants);
+};
+
 const normalizeUnit = (unit?: string | null, unitKind?: string | null): string | null => {
   const raw = (unit ?? "").trim().toLowerCase();
   const kind = (unitKind ?? "").trim().toLowerCase();
@@ -157,6 +248,10 @@ const isFoodPowder = (value: string): boolean => {
   if (FOOD_POWDER_PHRASES.some((phrase) => normalized.includes(phrase))) {
     return true;
   }
+  if (/\b(food|protein|electrolyte)\s+blend\b/.test(normalized)) return true;
+  if (/\bproprietary\b/.test(normalized) && /\bblend\b/.test(normalized)) return true;
+  if (/\bingredients?\b/.test(normalized)) return true;
+  if (/\bfatty\s+acid(s)?\b/.test(normalized)) return true;
   const tokens = new Set(normalized.split(/\s+/).filter(Boolean));
   return Array.from(tokens).some((token) => FOOD_POWDER_TOKENS.has(token));
 };
@@ -188,6 +283,8 @@ const isExcipientOrMetal = (value: string): boolean => {
     "propylene glycol",
     "glycerin",
     "magnesium stearate",
+    "distilled water",
+    "water",
   ].some((token) => lowered.includes(token));
 };
 
@@ -203,6 +300,31 @@ const MICROBE_GENUS = new Set([
   "propionibacterium",
 ]);
 
+const ENZYME_TOKENS = new Set([
+  "cellulase",
+  "trypsin",
+  "lipase",
+  "amylase",
+  "protease",
+  "lactase",
+  "bromelain",
+  "papain",
+  "peptidase",
+  "glucosidase",
+  "galactosidase",
+  "beta galactosidase",
+  "alpha amylase",
+  "pepsin",
+]);
+
+const isEnzymeName = (value: string): boolean => {
+  const normalized = normalizeText(value);
+  if (!normalized) return false;
+  const tokens = normalized.split(/\s+/).filter(Boolean);
+  if (tokens.some((token) => ENZYME_TOKENS.has(token))) return true;
+  return /\benzyme\b/.test(normalized);
+};
+
 const isMicrobeName = (
   value: string,
   samples: string[],
@@ -211,9 +333,16 @@ const isMicrobeName = (
   if ((unitHint?.get("cfu") ?? 0) > 0) return true;
   const lowered = value.toLowerCase();
   if (Array.from(MICROBE_GENUS).some((token) => lowered.includes(token))) return true;
+  if (lowered.includes("acidophilus")) return true;
   return samples.some((sample) =>
     Array.from(MICROBE_GENUS).some((token) => sample.toLowerCase().includes(token)),
   );
+};
+
+const isMicrobeBlend = (value: string): boolean => {
+  const normalized = normalizeText(value);
+  if (!normalized) return false;
+  return /\b(consortium|blend|total cultures|culture|probiotic)\b/.test(normalized);
 };
 
 const FORM_TOKENS = new Set([
@@ -385,10 +514,691 @@ const CURATED_SYNONYM_MAP: Record<
     reason: "curated_shark_cartilage",
     category: "animal",
   },
+  "agmatine sulfate": {
+    keys: ["agmatine_sulfate"],
+    reason: "curated_agmatine_sulfate",
+    category: "chemical",
+  },
+  "higenamine": {
+    keys: ["higenamine"],
+    reason: "curated_higenamine",
+    category: "chemical",
+  },
+  "d limonene": {
+    keys: ["d_limonene"],
+    reason: "curated_d_limonene",
+    category: "chemical",
+  },
+  "hordenine hcl": {
+    keys: ["hordenine_hcl", "hordenine"],
+    reason: "curated_hordenine_hcl",
+    category: "chemical",
+  },
+  "betapower betaine anhydrous": {
+    keys: ["betaine_anhydrous", "betaine"],
+    reason: "curated_betaine_anhydrous",
+    category: "chemical",
+  },
+  "dmg": {
+    keys: ["dimethylglycine"],
+    reason: "curated_dimethylglycine",
+    category: "chemical",
+  },
+  "folic acid 0": {
+    keys: ["folic_acid"],
+    reason: "curated_folic_acid_zero",
+    category: "vitamin",
+  },
+  "thiamine mononitrate": {
+    keys: ["thiamine_mononitrate", "vitamin_b1"],
+    reason: "curated_thiamine_mononitrate",
+    category: "vitamin",
+  },
+  "sodium bicarbonate": {
+    keys: ["sodium_bicarbonate", "sodium"],
+    reason: "curated_sodium_bicarbonate",
+    category: "mineral",
+  },
+  "himalayan rock salt": {
+    keys: ["sodium_chloride", "salt"],
+    reason: "curated_himalayan_rock_salt",
+    category: "mineral",
+  },
+  "pure wild fish oil concentrate": {
+    keys: ["fish_oil"],
+    reason: "curated_fish_oil_concentrate",
+    category: "lipid",
+  },
+  "natural fish oil concentrate": {
+    keys: ["fish_oil"],
+    reason: "curated_fish_oil_concentrate",
+    category: "lipid",
+  },
+  "beet": {
+    keys: ["beta_vulgaris"],
+    reason: "curated_beet",
+    category: "botanical",
+  },
+  "thyme": {
+    keys: ["thymus_vulgaris"],
+    reason: "curated_thyme",
+    category: "botanical",
+  },
+  "skullcap": {
+    keys: ["scutellaria_lateriflora"],
+    reason: "curated_skullcap",
+    category: "botanical",
+  },
+  "butcher s broom": {
+    keys: ["ruscus_aculeatus"],
+    reason: "curated_butchers_broom",
+    category: "botanical",
+  },
+  "african mango": {
+    keys: ["irvingia_gabonensis"],
+    reason: "curated_african_mango",
+    category: "botanical",
+  },
+  "marigold extract": {
+    keys: ["tagetes_erecta", "calendula_officinalis"],
+    reason: "curated_marigold_extract",
+    category: "botanical",
+  },
+  "marigold": {
+    keys: ["tagetes_erecta", "calendula_officinalis"],
+    reason: "curated_marigold",
+    category: "botanical",
+  },
+  "papaya fruit powder": {
+    keys: ["carica_papaya"],
+    reason: "curated_papaya",
+    category: "botanical",
+  },
+  "celery": {
+    keys: ["apium_graveolens"],
+    reason: "curated_celery",
+    category: "botanical",
+  },
+  "sage": {
+    keys: ["salvia_officinalis"],
+    reason: "curated_sage",
+    category: "botanical",
+  },
+  "juniper berry powder": {
+    keys: ["juniperus_communis"],
+    reason: "curated_juniper",
+    category: "botanical",
+  },
+  "organic golden flax meal": {
+    keys: ["linum_usitatissimum"],
+    reason: "curated_flax",
+    category: "botanical",
+  },
+  "cauliflower": {
+    keys: ["brassica_oleracea"],
+    reason: "curated_cauliflower",
+    category: "botanical",
+  },
+  "horny goat weed": {
+    keys: ["epimedium"],
+    reason: "curated_horny_goat_weed",
+    category: "botanical",
+  },
+  "shankhpushpi whole plant extract": {
+    keys: ["convolvulus_pluricaulis"],
+    reason: "curated_shankhpushpi",
+    category: "botanical",
+  },
+  "musli root powder": {
+    keys: ["chlorophytum_borivilianum"],
+    reason: "curated_musli",
+    category: "botanical",
+  },
+  "deer antler velvet extract": {
+    keys: ["deer_antler_velvet"],
+    reason: "curated_deer_antler_velvet",
+    category: "animal",
+  },
+  "neonatal thymus concentrate": {
+    keys: ["thymus_concentrate"],
+    reason: "curated_thymus_concentrate",
+    category: "animal",
+  },
+  "neonatal spleen concentrate": {
+    keys: ["spleen_concentrate"],
+    reason: "curated_spleen_concentrate",
+    category: "animal",
+  },
+  "fulvic acid minerals": {
+    keys: ["fulvic_acid"],
+    reason: "curated_fulvic_acid",
+    category: "chemical",
+  },
+  "bioperine black pepper piper nigrum fruit extract": {
+    keys: ["piper_nigrum", "black_pepper"],
+    reason: "curated_bioperine",
+    category: "botanical",
+  },
+  "actigin": {
+    keys: ["actigin"],
+    reason: "curated_actigin",
+    category: "chemical",
+  },
+  "hydromax": {
+    keys: ["hydromax"],
+    reason: "curated_hydromax",
+    category: "chemical",
+  },
+  "nitrosigine": {
+    keys: ["nitrosigine"],
+    reason: "curated_nitrosigine",
+    category: "chemical",
+  },
+  "hica": {
+    keys: ["hica"],
+    reason: "curated_hica",
+    category: "chemical",
+  },
+  "phytase": {
+    keys: ["phytase"],
+    reason: "curated_phytase",
+    category: "enzyme",
+  },
+  "beta phenylethylamine hcl": {
+    keys: ["phenethylamine", "beta_phenethylamine"],
+    reason: "curated_phenethylamine_hcl",
+    category: "chemical",
+  },
+  "succinic acid": {
+    keys: ["succinic_acid"],
+    reason: "curated_succinic_acid",
+    category: "chemical",
+  },
+  "gamma butyrobetaine ethyl ester hcl": {
+    keys: ["gamma_butyrobetaine"],
+    reason: "curated_gamma_butyrobetaine",
+    category: "chemical",
+  },
+  lithium: {
+    keys: ["lithium"],
+    reason: "curated_lithium",
+    category: "mineral",
+  },
+  cobalt: {
+    keys: ["cobalt"],
+    reason: "curated_cobalt",
+    category: "mineral",
+  },
+  "cochin cardamon dried fruit extract": {
+    keys: ["elettaria_cardamomum", "cardamom"],
+    reason: "curated_cardamom_extract",
+    category: "botanical",
+  },
+  "organic cardamom": {
+    keys: ["elettaria_cardamomum", "cardamom"],
+    reason: "curated_cardamom",
+    category: "botanical",
+  },
+  "apple pectin and fiber": {
+    keys: ["pectin"],
+    reason: "curated_apple_pectin",
+    category: "chemical",
+  },
+  "organic alfalfa grass powder": {
+    keys: ["medicago_sativa"],
+    reason: "curated_alfalfa",
+    category: "botanical",
+  },
+  "organic oat grass powder": {
+    keys: ["avena_sativa"],
+    reason: "curated_oat_grass",
+    category: "botanical",
+  },
+  "acerola berry juice powder": {
+    keys: ["malpighia_emarginata", "acerola"],
+    reason: "curated_acerola",
+    category: "botanical",
+  },
+  "beet juice powder": {
+    keys: ["beta_vulgaris"],
+    reason: "curated_beet_juice",
+    category: "botanical",
+  },
+  "spinach powder": {
+    keys: ["spinacia_oleracea"],
+    reason: "curated_spinach",
+    category: "botanical",
+  },
+  "suma root powder": {
+    keys: ["pfaffia_paniculata"],
+    reason: "curated_suma",
+    category: "botanical",
+  },
+  "dunaliella extract": {
+    keys: ["dunaliella_salina"],
+    reason: "curated_dunaliella",
+    category: "botanical",
+  },
+  "kosher gelatin": {
+    keys: ["gelatin"],
+    reason: "curated_gelatin",
+    category: "animal",
+  },
+  "opc": {
+    keys: ["oligomeric_proanthocyanidins"],
+    reason: "curated_opc",
+    category: "chemical",
+  },
+  "oregano oil": {
+    keys: ["origanum_vulgare"],
+    reason: "curated_oregano",
+    category: "botanical",
+  },
+  "keratin": {
+    keys: ["keratin"],
+    reason: "curated_keratin",
+    category: "chemical",
+  },
+  "schizandra extract": {
+    keys: ["schisandra_chinensis"],
+    reason: "curated_schisandra",
+    category: "botanical",
+  },
+  "yellow dock": {
+    keys: ["rumex_crispus"],
+    reason: "curated_yellow_dock",
+    category: "botanical",
+  },
+  "bladderwrack": {
+    keys: ["fucus_vesiculosus"],
+    reason: "curated_bladderwrack",
+    category: "botanical",
+  },
+  "lactospore": {
+    keys: ["bacillus_coagulans"],
+    reason: "curated_lactospore",
+    category: "microbe",
+    baseUnit: "CFU",
+  },
+  "bioresponse dim": {
+    keys: ["diindolylmethane", "dim"],
+    reason: "curated_bioresponse_dim",
+    category: "chemical",
+  },
+  "artinia": {
+    keys: ["artinia"],
+    reason: "curated_artinia",
+    category: "chemical",
+  },
+  "optimsm": {
+    keys: ["msm", "methylsulfonylmethane"],
+    reason: "curated_optimsm",
+    category: "chemical",
+  },
+  "triphala": {
+    keys: ["triphala"],
+    reason: "curated_triphala",
+    category: "botanical",
+  },
+  "triphala powder": {
+    keys: ["triphala"],
+    reason: "curated_triphala_powder",
+    category: "botanical",
+  },
+  "shiitake": {
+    keys: ["lentinula_edodes", "shiitake"],
+    reason: "curated_shiitake",
+    category: "botanical",
+  },
+  "pashanbhed": {
+    keys: ["bergenia_ligulata", "pashanbhed"],
+    reason: "curated_pashanbhed",
+    category: "botanical",
+  },
+  "punarnava extract": {
+    keys: ["boerhavia_diffusa", "punarnava"],
+    reason: "curated_punarnava",
+    category: "botanical",
+  },
+  "shuddha guggul": {
+    keys: ["commiphora_mukul", "guggul"],
+    reason: "curated_shuddha_guggul",
+    category: "botanical",
+  },
+  "palatinose": {
+    keys: ["isomaltulose", "palatinose"],
+    reason: "curated_palatinose",
+    category: "chemical",
+  },
+  "bioresponse dim": {
+    keys: ["diindolylmethane", "dim"],
+    reason: "curated_dim",
+    category: "chemical",
+  },
+  "turmerone": {
+    keys: ["turmerone"],
+    reason: "curated_turmerone",
+    category: "chemical",
+  },
+  "cardarine": {
+    keys: ["cardarine", "gw_501516"],
+    reason: "curated_cardarine",
+    category: "chemical",
+  },
+  "camu camu": {
+    keys: ["myrciaria_dubia", "camu_camu"],
+    reason: "curated_camu_camu",
+    category: "botanical",
+  },
+  "cbc": {
+    keys: ["cannabichromene", "cbc"],
+    reason: "curated_cbc",
+    category: "chemical",
+  },
+  "cbd": {
+    keys: ["cannabidiol", "cbd"],
+    reason: "curated_cbd",
+    category: "chemical",
+  },
+  "cbda": {
+    keys: ["cannabidiolic_acid", "cbda"],
+    reason: "curated_cbda",
+    category: "chemical",
+  },
+  "cbdv": {
+    keys: ["cannabidivarin", "cbdv"],
+    reason: "curated_cbdv",
+    category: "chemical",
+  },
+  "cbg": {
+    keys: ["cannabigerol", "cbg"],
+    reason: "curated_cbg",
+    category: "chemical",
+  },
+  "cbga": {
+    keys: ["cannabigerolic_acid", "cbga"],
+    reason: "curated_cbga",
+    category: "chemical",
+  },
+  "cbn": {
+    keys: ["cannabinol", "cbn"],
+    reason: "curated_cbn",
+    category: "chemical",
+  },
+  "oat straw": {
+    keys: ["avena_sativa", "oat_straw"],
+    reason: "curated_oat_straw",
+    category: "botanical",
+  },
+  "rosemary": {
+    keys: ["rosmarinus_officinalis", "rosemary"],
+    reason: "curated_rosemary",
+    category: "botanical",
+  },
+  "motherwort": {
+    keys: ["leonurus_cardiaca", "motherwort"],
+    reason: "curated_motherwort",
+    category: "botanical",
+  },
+  "ginkgo powder": {
+    keys: ["ginkgo_biloba"],
+    reason: "curated_ginkgo_powder",
+    category: "botanical",
+  },
+  "aronia melanocarpa": {
+    keys: ["aronia_melanocarpa", "black_chokeberry"],
+    reason: "curated_aronia",
+    category: "botanical",
+  },
+  "l casei": {
+    keys: ["lactobacillus_casei"],
+    reason: "curated_l_casei",
+    category: "microbe",
+    baseUnit: "CFU",
+  },
+  "l plantarum": {
+    keys: ["lactobacillus_plantarum"],
+    reason: "curated_l_plantarum",
+    category: "microbe",
+    baseUnit: "CFU",
+  },
+  "l rhamnosus": {
+    keys: ["lactobacillus_rhamnosus"],
+    reason: "curated_l_rhamnosus",
+    category: "microbe",
+    baseUnit: "CFU",
+  },
+  "pau d arco": {
+    keys: ["tabebuia_impetiginosa", "pau_d_arco"],
+    reason: "curated_pau_d_arco",
+    category: "botanical",
+  },
+  "hydrangea": {
+    keys: ["hydrangea_arborescens", "hydrangea"],
+    reason: "curated_hydrangea",
+    category: "botanical",
+  },
+  "invertase": {
+    keys: ["invertase"],
+    reason: "curated_invertase",
+    category: "enzyme",
+  },
+  "organic atractylodes extract": {
+    keys: ["atractylodes_macrocephala", "atractylodes"],
+    reason: "curated_atractylodes",
+    category: "botanical",
+  },
+  "dog rose rosa canina young shoot extract": {
+    keys: ["rosa_canina", "dog_rose"],
+    reason: "curated_rosa_canina",
+    category: "botanical",
+  },
+  "yohimbe extract": {
+    keys: ["pausinystalia_yohimbe", "yohimbe"],
+    reason: "curated_v11_yohimbe",
+    category: "botanical",
+  },
+  "horsechestnut": {
+    keys: ["aesculus_hippocastanum", "horse_chestnut"],
+    reason: "curated_v11_horsechestnut",
+    category: "botanical",
+  },
+  "organic lobelia": {
+    keys: ["lobelia_inflata", "lobelia"],
+    reason: "curated_v11_lobelia",
+    category: "botanical",
+  },
+  "kudzu": {
+    keys: ["pueraria_lobata", "kudzu"],
+    reason: "curated_v11_kudzu",
+    category: "botanical",
+  },
+  "guarana 4 1 extract": {
+    keys: ["paullinia_cupana", "guarana"],
+    reason: "curated_v11_guarana",
+    category: "botanical",
+  },
+  "spearmint": {
+    keys: ["mentha_spicata", "spearmint"],
+    reason: "curated_v11_spearmint",
+    category: "botanical",
+  },
+  "toothed clubmoss extract": {
+    keys: ["huperzia_serrata", "clubmoss"],
+    reason: "curated_v11_clubmoss",
+    category: "botanical",
+  },
+  "eyebright 4 1 extract": {
+    keys: ["euphrasia_officinalis", "eyebright"],
+    reason: "curated_v11_eyebright",
+    category: "botanical",
+  },
+  "blessed thistle powder": {
+    keys: ["cnicus_benedictus", "blessed_thistle"],
+    reason: "curated_v11_blessed_thistle",
+    category: "botanical",
+  },
+  "amla ghana": {
+    keys: ["phyllanthus_emblica", "amla"],
+    reason: "curated_v11_amla_ghana",
+    category: "botanical",
+  },
+  "gokshur ghana": {
+    keys: ["tribulus_terrestris", "gokshura"],
+    reason: "curated_v11_gokshur",
+    category: "botanical",
+  },
+  "gokhshur": {
+    keys: ["tribulus_terrestris", "gokshura"],
+    reason: "curated_v11_gokhshur",
+    category: "botanical",
+  },
+  "shatavari powder": {
+    keys: ["asparagus_racemosus", "shatavari"],
+    reason: "curated_v11_shatavari",
+    category: "botanical",
+  },
+  "elaichi powder": {
+    keys: ["elettaria_cardamomum", "cardamom"],
+    reason: "curated_v11_elaichi",
+    category: "botanical",
+  },
+  "sunflower oil": {
+    keys: ["sunflower_oil", "helianthus_annuus"],
+    reason: "curated_v11_sunflower_oil",
+    category: "lipid",
+  },
+  "purified distilled fish oil": {
+    keys: ["fish_oil"],
+    reason: "curated_v11_fish_oil",
+    category: "lipid",
+  },
+  "broccoli powder": {
+    keys: ["brassica_oleracea", "broccoli"],
+    reason: "curated_v11_broccoli",
+    category: "botanical",
+  },
+  "guar gum": {
+    keys: ["guar_gum"],
+    reason: "curated_v11_guar_gum",
+    category: "chemical",
+  },
+  "meriva curcumin phytosome": {
+    keys: ["curcumin"],
+    reason: "curated_v11_meriva",
+    category: "chemical",
+  },
+  "red wine polyphenols": {
+    keys: ["polyphenols"],
+    reason: "curated_v11_polyphenols",
+    category: "chemical",
+  },
+  "siliphos": {
+    keys: ["silybin_phosphatidylcholine", "siliphos"],
+    reason: "curated_v11_siliphos",
+    category: "chemical",
+  },
+  "clinically dosed bcaa 2 1 1": {
+    keys: ["branched_chain_amino_acids", "bcaa"],
+    reason: "curated_v11_bcaa",
+    category: "chemical",
+  },
+  "horseradish tree 0 5 teaspoon s": {
+    keys: ["moringa_oleifera", "moringa"],
+    reason: "curated_v11_moringa",
+    category: "botanical",
+  },
+  "suma": {
+    keys: ["pfaffia_paniculata", "suma"],
+    reason: "curated_suma",
+    category: "botanical",
+  },
+  "organic fermented amla": {
+    keys: ["phyllanthus_emblica", "amla"],
+    reason: "curated_amla",
+    category: "botanical",
+  },
+  "palmitoylethanolamide": {
+    keys: ["palmitoylethanolamide", "pea"],
+    reason: "curated_palmitoylethanolamide",
+    category: "chemical",
+  },
+  "butyric acid": {
+    keys: ["butyric_acid"],
+    reason: "curated_butyric_acid",
+    category: "chemical",
+  },
+  "essential phospholipids": {
+    keys: ["phosphatidylcholine", "phosphatidyl_choline"],
+    reason: "curated_essential_phospholipids",
+    category: "lipid",
+  },
+  "annatto": {
+    keys: ["bixa_orellana", "annatto"],
+    reason: "curated_annatto",
+    category: "botanical",
+  },
+  "epicatechin extract": {
+    keys: ["epicatechin"],
+    reason: "curated_epicatechin",
+    category: "chemical",
+  },
+  "2 aminoisoheptane": {
+    keys: ["2_aminoisoheptane", "dmha"],
+    reason: "curated_dmha",
+    category: "chemical",
+  },
+  "maitakegold 404": {
+    keys: ["grifola_frondosa", "maitake"],
+    reason: "curated_maitakegold",
+    category: "botanical",
+  },
+  "crimson clover trifolium incarnatum dried seed extract": {
+    keys: ["trifolium_incarnatum"],
+    reason: "curated_crimson_clover",
+    category: "botanical",
+  },
+  "adrenal tissue": {
+    keys: ["adrenal_gland"],
+    reason: "curated_adrenal_tissue",
+    category: "animal",
+  },
+  "thymus tissue": {
+    keys: ["thymus"],
+    reason: "curated_thymus_tissue",
+    category: "animal",
+  },
+  "instantized 2 1 1 bcaas": {
+    keys: ["branched_chain_amino_acids", "bcaa"],
+    reason: "curated_bcaa",
+    category: "chemical",
+  },
+  "octanoate": {
+    keys: ["octanoic_acid", "caprylic_acid"],
+    reason: "curated_octanoate",
+    category: "chemical",
+  },
+  "evnolmax": {
+    keys: ["tocotrienols"],
+    reason: "curated_evnolmax",
+    category: "vitamin",
+  },
+  "zhen zhu mu pinctada margaritifera liquid extract": {
+    keys: ["pinctada_margaritifera"],
+    reason: "curated_pinctada_margaritifera",
+    category: "animal",
+  },
+  "shi jue ming haliotis laevigata dried shell liquid extract": {
+    keys: ["haliotis_laevigata"],
+    reason: "curated_haliotis_laevigata",
+    category: "animal",
+  },
 };
 
 const LATIN_BINOMIAL_STRICT_RE =
   /^([A-Z][a-z]+)\s+([a-z]{2,})(?:\s+(?:var\.?|subsp\.?|ssp\.?|f\.?|cv\.?|×|x)\s+([a-z]{2,}))?$/;
+const LATIN_BINOMIAL_SEARCH_RE =
+  /([A-Z][a-z]+)\s+([a-z]{2,})(?:\s+(?:var\.?|subsp\.?|ssp\.?|f\.?|cv\.?|×|x)\s+([a-z]{2,}))?/g;
 
 const LATIN_SECOND_WORD_STOPLIST = new Set([
   "protein",
@@ -478,12 +1288,22 @@ const fetchIngredients = async (): Promise<IngredientRow[]> => {
   return (data ?? []) as IngredientRow[];
 };
 
+const fetchIngredientSynonyms = async (): Promise<IngredientSynonymRow[]> => {
+  const { data, error } = await supabase
+    .from("ingredient_synonyms")
+    .select("ingredient_id,synonym,alias_type,confidence,source");
+  if (error) throw error;
+  return (data ?? []) as IngredientSynonymRow[];
+};
+
 const buildLookup = (rows: IngredientRow[]) => {
   const canonicalMap = new Map<string, IngredientRow>();
   const nameMap = new Map<string, IngredientRow[]>();
   const canonicalKeyIndex = new Map<string, IngredientRow>();
+  const ingredientById = new Map<string, IngredientRow>();
 
   rows.forEach((row) => {
+    ingredientById.set(row.id, row);
     if (row.canonical_key) {
       canonicalKeyIndex.set(row.canonical_key, row);
       const normalized = normalizeCanonicalKey(row.canonical_key);
@@ -500,7 +1320,20 @@ const buildLookup = (rows: IngredientRow[]) => {
     }
   });
 
-  return { canonicalMap, nameMap, canonicalKeyIndex };
+  return { canonicalMap, nameMap, canonicalKeyIndex, ingredientById };
+};
+
+const buildSynonymIndex = (rows: IngredientSynonymRow[]) => {
+  const index = new Map<string, IngredientSynonymRow[]>();
+  rows.forEach((row) => {
+    if (!row.ingredient_id || !row.synonym) return;
+    const normalized = normalizeText(row.synonym);
+    if (!normalized) return;
+    const bucket = index.get(normalized) ?? [];
+    bucket.push(row);
+    index.set(normalized, bucket);
+  });
+  return index;
 };
 
 const readMissingPayload = async (filePath: string): Promise<MissingIngredientPayload> => {
@@ -537,7 +1370,10 @@ const run = async () => {
   const totalMissing = payload.summary.activeMissingRows || 0;
   const topMissing = payload.topMissing.slice(0, topN);
   const importCandidates = payload.topMissing.slice(0, importTopN);
-  const { canonicalMap, nameMap, canonicalKeyIndex } = buildLookup(await fetchIngredients());
+  const ingredientRows = await fetchIngredients();
+  const { canonicalMap, nameMap, canonicalKeyIndex, ingredientById } =
+    buildLookup(ingredientRows);
+  const synonymIndex = buildSynonymIndex(await fetchIngredientSynonyms());
   const sourceColumn =
     idColumn === "source_id" ? "source_id" : ("canonical_source_id" as const);
 
@@ -604,6 +1440,21 @@ const run = async () => {
       rule,
       match: resolveCanonicalFromKeys(rule.keys),
     };
+  };
+
+  const resolveSynonymMatch = (candidates: string[]) => {
+    for (const candidate of candidates) {
+      const normalized = normalizeText(candidate);
+      if (!normalized) continue;
+      const rows = synonymIndex.get(normalized);
+      if (!rows || !rows.length) continue;
+      const row = rows.find((entry) => entry.ingredient_id);
+      if (!row?.ingredient_id) continue;
+      const ingredient = ingredientById.get(row.ingredient_id);
+      if (!ingredient) continue;
+      return { ingredient, row, normalized };
+    }
+    return null;
   };
 
   const isMineralLike = (nameKey: string): boolean => {
@@ -707,26 +1558,44 @@ const run = async () => {
     });
   };
 
-  const resolveLatinBinomial = (
+const resolveLatinBinomial = (
     nameKey: string,
     samples: string[],
   ): { canonicalKey: string; displayName: string } | null => {
     if (!samples.length) return null;
-    if (nameKey.split(/\s+/).some((token) => NON_BOTANICAL_TOKENS.has(token))) return null;
-    for (const sample of samples) {
+    const candidates: string[] = [];
+    samples.forEach((sample) => {
+      const parenMatches = sample.match(/\(([^)]+)\)/g);
+      if (parenMatches && parenMatches.length) {
+        parenMatches.forEach((match) => {
+          const inner = match.replace(/[()]/g, "").trim();
+          if (inner) candidates.push(inner);
+        });
+      } else {
+        candidates.push(sample);
+      }
+    });
+
+    for (const sample of candidates) {
       const cleaned = sample
         .replace(/[()[\]{}]/g, " ")
         .replace(/[^A-Za-z\s×x.]/g, " ")
         .replace(/\s+/g, " ")
         .trim();
-      const match = cleaned.match(LATIN_BINOMIAL_STRICT_RE);
-      if (!match) continue;
-      const genus = match[1];
-      const species = match[2].toLowerCase();
-      if (LATIN_SECOND_WORD_STOPLIST.has(species)) continue;
-      if (MICROBE_GENUS.has(genus.toLowerCase())) continue;
-      const canonicalKey = `${genus}_${species}`.toLowerCase();
-      return { canonicalKey, displayName: `${genus} ${species}` };
+      if (!cleaned) continue;
+
+      const strict = cleaned.match(LATIN_BINOMIAL_STRICT_RE);
+      const matches = strict ? [strict] : Array.from(cleaned.matchAll(LATIN_BINOMIAL_SEARCH_RE));
+      for (const match of matches) {
+        const genus = match[1];
+        const species = match[2]?.toLowerCase();
+        if (!genus || !species) continue;
+        if (LATIN_SECOND_WORD_STOPLIST.has(species)) continue;
+        if (MICROBE_GENUS.has(genus.toLowerCase())) continue;
+        if (NON_BOTANICAL_TOKENS.has(genus.toLowerCase())) continue;
+        const canonicalKey = `${genus}_${species}`.toLowerCase();
+        return { canonicalKey, displayName: `${genus} ${species}` };
+      }
     }
     return null;
   };
@@ -782,6 +1651,98 @@ const run = async () => {
           synonyms: dedupeSynonyms([entry.nameKey, ...nameRawSamples]),
         });
       }
+      return;
+    }
+
+    const variantKeys = new Set<string>();
+    stripNameKeyVariants(entry.nameKey).forEach((key) => variantKeys.add(key));
+    nameRawSamples.forEach((sample) => {
+      stripNameKeyVariants(sample).forEach((key) => variantKeys.add(key));
+    });
+    for (const variant of variantKeys) {
+      const canonicalVariant = canonicalKeyIndex.get(
+        normalizeCanonicalKey(variant),
+      );
+      if (canonicalVariant) {
+        autoApply.push({
+          nameKey,
+          count: entry.count,
+          sourceCount: entry.sourceCount,
+          nameRawSamples,
+          sourceIdSamples,
+          ingredientId: canonicalVariant.id,
+          canonicalKey: canonicalVariant.canonical_key ?? null,
+          ingredientName: canonicalVariant.name ?? null,
+          mappingType: "alias_variant",
+          confidence: 0.92,
+          reason: "strip_variant_canonical_match",
+        });
+        queueSynonymPatch({
+          canonicalKey: canonicalVariant.canonical_key ?? null,
+          ingredientName: canonicalVariant.name ?? null,
+          synonyms: [entry.nameKey, ...nameRawSamples],
+        });
+        return;
+      }
+      const variantMatches = nameMap.get(variant) ?? [];
+      if (variantMatches.length === 1) {
+        const match = variantMatches[0];
+        autoApply.push({
+          nameKey,
+          count: entry.count,
+          sourceCount: entry.sourceCount,
+          nameRawSamples,
+          sourceIdSamples,
+          ingredientId: match.id,
+          canonicalKey: match.canonical_key ?? null,
+          ingredientName: match.name ?? null,
+          mappingType: "alias_variant",
+          confidence: 0.9,
+          reason: "strip_variant_synonym_match",
+        });
+        queueSynonymPatch({
+          canonicalKey: match.canonical_key ?? null,
+          ingredientName: match.name ?? null,
+          synonyms: [entry.nameKey, ...nameRawSamples],
+        });
+        return;
+      }
+    }
+
+    const synonymCandidates: string[] = [];
+    const seenSynonyms = new Set<string>();
+    const pushSynonymCandidate = (value?: string | null) => {
+      if (!value) return;
+      const trimmed = value.trim();
+      if (!trimmed) return;
+      if (seenSynonyms.has(trimmed)) return;
+      seenSynonyms.add(trimmed);
+      synonymCandidates.push(trimmed);
+    };
+    pushSynonymCandidate(entry.nameKey);
+    nameRawSamples.forEach((sample) => pushSynonymCandidate(sample));
+    variantKeys.forEach((variant) => pushSynonymCandidate(variant));
+
+    const synonymMatch = resolveSynonymMatch(synonymCandidates);
+    if (synonymMatch) {
+      autoApply.push({
+        nameKey,
+        count: entry.count,
+        sourceCount: entry.sourceCount,
+        nameRawSamples,
+        sourceIdSamples,
+        ingredientId: synonymMatch.ingredient.id,
+        canonicalKey: synonymMatch.ingredient.canonical_key ?? null,
+        ingredientName: synonymMatch.ingredient.name ?? null,
+        mappingType: "synonym_lookup",
+        confidence: synonymMatch.row.confidence ?? 0.85,
+        reason: "ingredient_synonym_match",
+      });
+      queueSynonymPatch({
+        canonicalKey: synonymMatch.ingredient.canonical_key ?? null,
+        ingredientName: synonymMatch.ingredient.name ?? null,
+        synonyms: [entry.nameKey, ...nameRawSamples],
+      });
       return;
     }
 
@@ -917,13 +1878,62 @@ const run = async () => {
     }
 
     if (isMicrobeName(nameKey, nameRawSamples, unitCounts.get(nameKey))) {
-      manualQueue.push({
+      if (isMicrobeBlend(nameKey)) {
+        manualQueue.push({
+          nameKey,
+          count: entry.count,
+          sourceCount: entry.sourceCount,
+          nameRawSamples,
+          sourceIdSamples,
+          reason: "microbe_blend_excluded",
+        });
+        return;
+      }
+      autoApply.push({
         nameKey,
         count: entry.count,
         sourceCount: entry.sourceCount,
         nameRawSamples,
         sourceIdSamples,
-        reason: "microbe_excluded",
+        ingredientId: "NEW",
+        canonicalKey: nameKey.replace(/\s+/g, "_"),
+        ingredientName: titleCase(nameKey),
+        mappingType: "microbe_canonical",
+        confidence: 0.8,
+        reason: "microbe_auto",
+        constraints: ["microbe_category"],
+      });
+      importPatchRecords.push({
+        ingredient_id: nameKey.replace(/\s+/g, "_"),
+        ingredient: titleCase(nameKey),
+        category: "microbe",
+        base_unit: inferBaseUnit(nameKey) ?? "cfu",
+        synonyms: dedupeSynonyms([entry.nameKey, ...nameRawSamples]),
+      });
+      return;
+    }
+
+    if (isEnzymeName(nameKey)) {
+      autoApply.push({
+        nameKey,
+        count: entry.count,
+        sourceCount: entry.sourceCount,
+        nameRawSamples,
+        sourceIdSamples,
+        ingredientId: "NEW",
+        canonicalKey: nameKey.replace(/\s+/g, "_"),
+        ingredientName: titleCase(nameKey),
+        mappingType: "new_canonical",
+        confidence: 0.75,
+        reason: "enzyme_auto",
+        constraints: ["enzyme_category"],
+      });
+      importPatchRecords.push({
+        ingredient_id: nameKey.replace(/\s+/g, "_"),
+        ingredient: titleCase(nameKey),
+        category: "enzyme",
+        base_unit: inferBaseUnit(nameKey) ?? "mg",
+        synonyms: dedupeSynonyms([entry.nameKey, ...nameRawSamples]),
       });
       return;
     }
@@ -1161,6 +2171,7 @@ const run = async () => {
     }, {}),
     categories: {
       botanical: autoApply.filter((entry) => entry.mappingType === "new_canonical").length,
+      microbe: autoApply.filter((entry) => entry.mappingType === "microbe_canonical").length,
       mineral:
         autoApply.filter((entry) => entry.mappingType === "mineral_form").length +
         manualQueue.filter((entry) => entry.reason === "mineral_no_canonical").length,

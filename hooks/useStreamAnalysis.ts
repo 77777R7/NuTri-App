@@ -154,12 +154,30 @@ const shouldPreferExtractedBrand = (brandExtraction?: BrandExtraction | null) =>
     Boolean(brandExtraction?.brand) &&
     (brandExtraction?.confidence === 'high' || brandExtraction?.confidence === 'medium');
 
+const sanitizeBrandCandidate = (value?: string | null) => {
+    if (!value) return null;
+    let cleaned = value.trim();
+    if (!cleaned) return null;
+    cleaned = cleaned.replace(/｜/g, '|');
+    if (cleaned.includes('|')) {
+        const [left] = cleaned.split('|');
+        cleaned = left?.trim() ?? '';
+    }
+    const dashSplit = cleaned.split(/\s[\-\u2013\u2014]\s/);
+    if (dashSplit.length > 1) {
+        cleaned = dashSplit[0]?.trim() ?? cleaned;
+    }
+    cleaned = cleaned.replace(/[^\p{L}\p{N}\s\-’'®]/gu, ' ').replace(/\s+/g, ' ').trim();
+    if (!cleaned || /^\d+$/.test(cleaned)) return null;
+    return cleaned;
+};
+
 const resolveBrand = (
     brandExtraction: BrandExtraction | null | undefined,
     ...candidates: Array<string | null | undefined>
 ) => {
-    const preferred = shouldPreferExtractedBrand(brandExtraction) ? brandExtraction?.brand ?? null : null;
-    const ordered = [preferred, ...candidates];
+    const preferred = shouldPreferExtractedBrand(brandExtraction) ? sanitizeBrandCandidate(brandExtraction?.brand) : null;
+    const ordered = [preferred, ...candidates.map(candidate => sanitizeBrandCandidate(candidate ?? null))];
     for (const value of ordered) {
         if (typeof value === 'string' && value.trim()) return value.trim();
     }
@@ -258,6 +276,48 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
                 }
             });
 
+            // Cached analysis payload (from snapshot.analysis_json)
+            es.addEventListener('analysis_payload' as any, (event: any) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    const nextBrandExtraction = data.brandExtraction ?? null;
+                    const nextProductInfo = data.productInfo ?? null;
+                    const nextEfficacy = data.analysis_efficacy ?? data.efficacy ?? null;
+                    const nextSafety = data.analysis_safety ?? data.safety ?? null;
+                    const nextUsagePayload = data.analysis_usage ?? data.usagePayload ?? null;
+                    const nextSources = data.analysis_sources ?? data.sources ?? null;
+                    const nextAnalysis = data.analysis ?? null;
+                    console.log('[SSE] Analysis Payload:', data);
+                    setState(prev => ({
+                        ...prev,
+                        brandExtraction: nextBrandExtraction ?? prev.brandExtraction,
+                        productInfo: nextProductInfo
+                            ? {
+                                brand: resolveBrand(nextBrandExtraction ?? prev.brandExtraction, nextProductInfo.brand, prev.productInfo?.brand),
+                                name: nextProductInfo.name ?? prev.productInfo?.name ?? null,
+                                category: nextProductInfo.category ?? prev.productInfo?.category ?? null,
+                                image: nextProductInfo.image ?? prev.productInfo?.image ?? null,
+                            }
+                            : prev.productInfo,
+                        efficacy: nextEfficacy ?? prev.efficacy,
+                        safety: nextSafety ?? prev.safety,
+                        usage: nextUsagePayload?.usage ?? prev.usage,
+                        value: nextUsagePayload?.value ?? prev.value,
+                        social: nextUsagePayload?.social ?? prev.social,
+                        sources: Array.isArray(nextSources) && nextSources.length ? nextSources : prev.sources,
+                        analysisMeta: nextAnalysis
+                            ? {
+                                status: nextAnalysis.status ?? null,
+                                version: nextAnalysis.version ?? null,
+                                labelExtraction: nextAnalysis.labelExtraction ?? null,
+                            }
+                            : prev.analysisMeta,
+                    }));
+                } catch (e) {
+                    console.error('[SSE] Failed to parse analysis_payload:', e);
+                }
+            });
+
             // Efficacy Result (enhanced with ingredients)
             es.addEventListener('result_efficacy' as any, (event: any) => {
                 try {
@@ -344,11 +404,20 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
                 if (event.type === 'error' && event.data) {
                     try {
                         const errorData = JSON.parse(event.data);
-                        setState(prev => ({
-                            ...prev,
-                            status: 'error',
-                            error: errorData.message || 'Scan failed'
-                        }));
+                        if (errorData?.message === 'Product not found') {
+                            console.info('[SSE] Not found:', errorData);
+                            setState(prev => ({
+                                ...prev,
+                                status: 'complete',
+                                error: null,
+                            }));
+                        } else {
+                            setState(prev => ({
+                                ...prev,
+                                status: 'error',
+                                error: errorData.message || 'Scan failed'
+                            }));
+                        }
                     } catch {
                         setState(prev => ({ ...prev, status: 'error', error: 'Connection failed' }));
                     }

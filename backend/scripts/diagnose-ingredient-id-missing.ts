@@ -121,9 +121,67 @@ const DSLD_EXCLUDED_NAME_KEYS = new Set([
   "water",
   "mass peak",
   "nitro peak",
+  "total fat 15",
+  "vegetable glycerin",
+  "yellow beeswax",
+  "vegatable capsule",
+  "carbon bond organic microcomplexed technologies",
+  "rocket delivery",
+  "super absorb",
+  "pc 35",
 ]);
 
-const isDsldExcludedKey = (key: string): boolean => DSLD_EXCLUDED_NAME_KEYS.has(key);
+const DSLD_EXCLUDED_KEY_PATTERNS: RegExp[] = [
+  /\bproprietary\b/,
+  /\bblend\b/,
+  /\bcomplex\b/,
+  /\bmatrix\b/,
+  /\bformula\b/,
+  /\bingredients?\b/,
+  /\bflavou?r(ing)?\b/,
+  /\bpatent\s+pending\b/,
+  /\bpre[\s-]?workout\b/,
+  /\bpowerhouse\b/,
+  /\boptimizer\b/,
+  /\benhancer\b/,
+  /\binterfusion\b/,
+  /\bcomposite\b/,
+  /\bprofile\b/,
+  /\bfoodstate\b/,
+  /\bvitamins?\b/,
+  /\bminerals?\b/,
+  /\btotal\s+cultures?\b/,
+  /\bprobiotic\s+cultures?\b/,
+  /\bnon\s+dairy\s+probiotic\s+cultures?\b/,
+  /\bactive\s+cofactors?\b/,
+  /\bexcipient\b/,
+  /\bq\s*s\b/,
+  /\b(amino\s+acid\s+profile|fatty\s+acid\s+composition)\b/,
+  /\b(distilled\s+water|water)\b/,
+  /\b(electrolyte\s+blend|food\s+blend|protein\s+blend)\b/,
+  /\bfatty\s+acids?\b/,
+  /\bpolyunsaturated\s+fat\b/,
+  /\bmonounsaturated\s+fat\b/,
+  /\bomega\s*\d+\b.*\b(fat|fatty\s+acid|fatty\s+acids)\b/,
+  /\balcohol\b/,
+  /\bweight\s+loss\b/,
+  /\bfat\s+burner\b/,
+  /\bburner\b/,
+  /\bthermogenic\b/,
+  /\bcarb\s+controller\b/,
+  /\brapid\b/,
+  /\brx\b/,
+  /\bpro\b/,
+  /\bultra\b/,
+  /\bmax\b/,
+  /\bperformance\b/,
+  /\benergy\b/,
+];
+
+const isDsldExcludedKey = (key: string): boolean => {
+  if (DSLD_EXCLUDED_NAME_KEYS.has(key)) return true;
+  return DSLD_EXCLUDED_KEY_PATTERNS.some((pattern) => pattern.test(key));
+};
 
 const ensureDir = async (filePath: string) => {
   const dir = path.dirname(filePath);
@@ -208,7 +266,7 @@ const run = async () => {
   const activeMissing = ingredients.filter((row) => {
     if (!row.is_active || row.ingredient_id) return false;
     if (source === "dsld") {
-      const key = row.name_key ?? normalizeNameKey(row.name_raw);
+      const key = normalizeNameKey(row.name_key ?? row.name_raw);
       if (key && isDsldExcludedKey(key)) {
         excludedRows += 1;
         return false;

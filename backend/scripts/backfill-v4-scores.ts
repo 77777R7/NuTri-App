@@ -87,6 +87,29 @@ type UpsertResult = {
   error?: RetryErrorMeta | null;
 };
 
+const recordInvalidSourceId = async (
+  source: ScoreSource,
+  sourceId: string,
+  reason: string,
+): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from("invalid_source_ids")
+      .upsert({ source, source_id: sourceId, reason }, { onConflict: "source,source_id" });
+    if (error) {
+      console.error(
+        `[invalid_source_ids] upsert failed source=${source} sourceId=${sourceId} reason=${reason}: ${error.message}`,
+      );
+    }
+  } catch (err) {
+    console.error(
+      `[invalid_source_ids] upsert threw source=${source} sourceId=${sourceId} reason=${reason}: ${
+        err instanceof Error ? err.message : String(err)
+      }`,
+    );
+  }
+};
+
 const args = process.argv.slice(2);
 const hasFlag = (flag: string) => args.includes(`--${flag}`);
 const getArg = (flag: string) => {
@@ -1475,26 +1498,14 @@ const backfillFailures = async (filePath: string) => {
     if (entry.source === "dsld") {
       const labelId = parseNumber(entry.canonicalSourceId ?? entry.sourceId);
       if (!labelId) {
-        stats.failed += 1;
-        await reportFailure({
-          source: "dsld",
-          sourceId: entry.sourceId,
-          canonicalSourceId: entry.canonicalSourceId ?? null,
-          stage: "retry_fetch",
-          message: "invalid dsld label id",
-        });
+        stats.skipped += 1;
+        await recordInvalidSourceId("dsld", entry.sourceId, "invalid_label_id");
         return;
       }
       const row = await fetchDsldRowById(labelId);
       if (!row) {
-        stats.failed += 1;
-        await reportFailure({
-          source: "dsld",
-          sourceId: entry.sourceId,
-          canonicalSourceId: entry.canonicalSourceId ?? null,
-          stage: "retry_fetch",
-          message: "dsld_label_facts not found",
-        });
+        stats.skipped += 1;
+        await recordInvalidSourceId("dsld", entry.sourceId, "facts_not_found");
         return;
       }
       await handleDsldRow(row, stats, { forceRunAll: true, forceScores: failuresForce });
@@ -1675,26 +1686,14 @@ const backfillSourceIds = async (
     if (source === "dsld") {
       const labelId = parseNumber(sourceId);
       if (!labelId) {
-        stats.failed += 1;
-        await reportFailure({
-          source: "dsld",
-          sourceId,
-          canonicalSourceId: null,
-          stage: "source_ids_fetch",
-          message: "invalid dsld label id",
-        });
+        stats.skipped += 1;
+        await recordInvalidSourceId("dsld", sourceId, "invalid_label_id");
         return;
       }
       const row = await fetchDsldRowById(labelId);
       if (!row) {
-        stats.failed += 1;
-        await reportFailure({
-          source: "dsld",
-          sourceId,
-          canonicalSourceId: null,
-          stage: "source_ids_fetch",
-          message: "dsld_label_facts not found",
-        });
+        stats.skipped += 1;
+        await recordInvalidSourceId("dsld", sourceId, "facts_not_found");
         return;
       }
       await handleDsldRow(row, stats);

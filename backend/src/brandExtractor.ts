@@ -171,6 +171,24 @@ export function normalizeBrandName(name: string): string {
 export function cleanTitle(title: string): string {
     let cleaned = title;
 
+    // Strip site/tagline suffixes after pipe or dash (e.g., "Brand | The Gold Standard in Vitamins.")
+    if (cleaned.includes("|")) {
+        const [left] = cleaned.split("|");
+        if (left && left.trim()) cleaned = left.trim();
+    }
+    if (/[\-\u2013\u2014]/.test(cleaned)) {
+        const parts = cleaned.split(/\s[\-\u2013\u2014]\s/);
+        if (parts.length > 1) {
+            const left = parts[0]?.trim() ?? "";
+            const right = parts.slice(1).join(" ").trim();
+            const taglinePattern =
+                /\b(the|official|shop|home|site|brand|vitamins?|supplements?|nutrition|gold standard)\b/i;
+            if (left && right && taglinePattern.test(right)) {
+                cleaned = left;
+            }
+        }
+    }
+
     // Remove common suffixes like "- Amazon.com", "| iHerb"
     cleaned = cleaned.replace(/[\-\|–—]\s*(Amazon|iHerb|Walmart|Target|CVS|GNC).*$/gi, "");
 

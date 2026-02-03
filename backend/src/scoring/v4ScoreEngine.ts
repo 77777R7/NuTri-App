@@ -2075,8 +2075,8 @@ export const computeV4FactsHashFromRows = (
   context?: { dailyMultiplier?: number; dailyMultiplierSource?: string },
 ): string =>
   buildInputsHash(rows, {
-    dailyMultiplier: context?.dailyMultiplier ?? null,
-    dailyMultiplierSource: context?.dailyMultiplierSource ?? null,
+    dailyMultiplier: context?.dailyMultiplier,
+    dailyMultiplierSource: context?.dailyMultiplierSource,
     datasetVersion: null,
   });
 

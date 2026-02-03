@@ -880,8 +880,8 @@ const SavedSupplements = ({ selectedDateKey, pageX }: { selectedDateKey: string;
 // -----------------------------------------------------
 
 const ProgressCard = () => {
-  const { savedSupplements } = useSavedSupplements();
-  const { checkInsByDate } = useDailyCheckIns();
+  const { savedSupplements, loading: supplementsLoading } = useSavedSupplements();
+  const { checkInsByDate, loading: checkInsLoading } = useDailyCheckIns();
   const todayKey = getLocalDateKey(new Date());
   const checkedKeys = useMemo(() => new Set(checkInsByDate[todayKey] ?? []), [checkInsByDate, todayKey]);
   const checkInTargets = useMemo(
@@ -910,17 +910,45 @@ const ProgressCard = () => {
   const pulse = useSharedValue(1);
   const percentValue = useSharedValue(percent);
   const displayPercentValue = useSharedValue(percent);
+  const cardOpacity = useSharedValue(supplementsLoading || checkInsLoading ? 0 : 1);
+  const cardTranslateY = useSharedValue(supplementsLoading || checkInsLoading ? 12 : 0);
+  const animationReadyRef = useRef(false);
   const [displayPercent, setDisplayPercent] = useState(percent);
 
   useEffect(() => {
+    if (supplementsLoading || checkInsLoading) return;
+
+    if (!animationReadyRef.current) {
+      progressValue.value = progress;
+      percentValue.value = percent;
+      displayPercentValue.value = percent;
+      setDisplayPercent(percent);
+      animationReadyRef.current = true;
+      return;
+    }
+
     progressValue.value = withTiming(progress, { duration: 480, easing: Easing.out(Easing.cubic) });
-  }, [progress, progressValue]);
-
-  useEffect(() => {
     percentValue.value = withTiming(percent, { duration: 900, easing: Easing.out(Easing.cubic) });
-  }, [percent, percentValue]);
+  }, [
+    supplementsLoading,
+    checkInsLoading,
+    progress,
+    percent,
+    progressValue,
+    percentValue,
+    displayPercentValue,
+    cardOpacity,
+    cardTranslateY,
+  ]);
 
   useEffect(() => {
+    if (supplementsLoading || checkInsLoading) return;
+    cardOpacity.value = withTiming(1, { duration: 260, easing: Easing.out(Easing.cubic) });
+    cardTranslateY.value = withTiming(0, { duration: 320, easing: Easing.out(Easing.cubic) });
+  }, [supplementsLoading, checkInsLoading, cardOpacity, cardTranslateY]);
+
+  useEffect(() => {
+    if (!animationReadyRef.current) return;
     if (totalCount === 0) return;
     pulse.value = withSequence(
       withTiming(1.02, { duration: 140, easing: Easing.out(Easing.cubic) }),
@@ -936,8 +964,9 @@ const ProgressCard = () => {
     }
   });
 
-  const cardPulseStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: pulse.value }],
+  const cardAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: cardOpacity.value,
+    transform: [{ translateY: cardTranslateY.value }, { scale: pulse.value }],
   }));
 
   const ringAnimatedProps = useAnimatedProps(() => ({
@@ -946,9 +975,8 @@ const ProgressCard = () => {
 
   return (
     <Animated.View
-      entering={FadeInUp.delay(300).duration(500).springify()}
       className="w-full bg-[#1e40af] rounded-[2rem] p-6 text-white relative overflow-hidden h-64"
-      style={[{ borderCurve: 'continuous' }, cardPulseStyle]}
+      style={[{ borderCurve: 'continuous' }, cardAnimatedStyle]}
     >
       <View className="flex-1 justify-between relative z-10">
         <View className="flex-row items-center gap-2">
@@ -962,7 +990,7 @@ const ProgressCard = () => {
         </View>
 
         <View className="mt-auto mb-1">
-          <AnimatedText entering={FadeInUp.delay(500).springify()} style={styles.progressBig}>
+          <AnimatedText style={styles.progressBig}>
             {displayPercent}%
           </AnimatedText>
 

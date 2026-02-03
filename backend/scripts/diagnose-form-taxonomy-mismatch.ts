@@ -139,6 +139,14 @@ const DSLD_EXCLUDED_NAME_KEYS = new Set([
   "water",
   "mass peak",
   "nitro peak",
+  "total fat 15",
+  "vegetable glycerin",
+  "yellow beeswax",
+  "vegatable capsule",
+  "carbon bond organic microcomplexed technologies",
+  "rocket delivery",
+  "super absorb",
+  "pc 35",
 ]);
 
 const isDsldExcludedKey = (key: string): boolean => DSLD_EXCLUDED_NAME_KEYS.has(key);

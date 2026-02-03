@@ -294,6 +294,27 @@ function clampText(value?: string | null, maxChars: number = 100) {
     return clipped.trim();
 }
 
+function clampTextWithEllipsis(value?: string | null, maxChars: number = 100) {
+    const normalized = normalizeText(value);
+    if (!normalized) return '';
+    if (normalized.length <= maxChars) return normalized;
+    const clipped = clampText(normalized, Math.max(0, maxChars - 1));
+    return clipped ? `${clipped}…` : '';
+}
+
+function shortenCompanyName(value?: string | null) {
+    const normalized = normalizeText(value);
+    if (!normalized) return null;
+    let cleaned = normalized.replace(/\s+dba\b.*$/i, '').trim();
+    cleaned = cleaned.replace(/\s*\(.*$/, '').trim();
+    cleaned = cleaned.replace(/\s{2,}/g, ' ').trim();
+    if (!cleaned) cleaned = normalized;
+    if (cleaned.length > 48) {
+        cleaned = clampTextWithEllipsis(cleaned, 48);
+    }
+    return cleaned;
+}
+
 function capitalizeSentences(value?: string | null) {
     const normalized = normalizeText(value);
     if (!normalized) return '';
@@ -827,6 +848,9 @@ export const AnalysisDashboard: React.FC<{
         [analysis.sources, sourceType]
     );
     const analysisMeta = useMemo(() => analysis.meta ?? null, [analysis.meta]);
+    const labelSource =
+        (analysisMeta as { labelExtraction?: { source?: string | null } | null } | null)?.labelExtraction?.source ?? null;
+    const isRegulatoryLabel = labelSource === 'lnhpd';
     const analysisStatus = (analysisMeta as { analysisStatus?: string | null; status?: string | null } | null)?.analysisStatus
         ?? (analysisMeta as { status?: string | null } | null)?.status
         ?? null;
@@ -1023,16 +1047,22 @@ export const AnalysisDashboard: React.FC<{
         (Array.isArray(efficacy.benefits) && efficacy.benefits[0]) ||
         'Formula effectiveness has been analyzed based on typical clinical ranges.';
 
-    const usageSummary =
+    const usageSummaryRaw =
         usage.summary ||
         usage.timing ||
         t.analysisPlaceholderUsage;
+    const usageSummary = isRegulatoryLabel
+        ? clampTextWithEllipsis(usageSummaryRaw, 160)
+        : usageSummaryRaw;
 
-    const safetySummary =
+    const safetySummaryRaw =
         safety.verdict ||
         (Array.isArray(safety.redFlags) && safety.redFlags[0]) ||
         (Array.isArray(safety.risks) && safety.risks[0]) ||
         t.analysisPlaceholderInsufficient;
+    const safetySummary = isRegulatoryLabel
+        ? clampTextWithEllipsis(safetySummaryRaw, 160)
+        : safetySummaryRaw;
 
     // Legacy meta is no longer used - scoring now comes from AI analysis directly
 
@@ -1153,7 +1183,8 @@ export const AnalysisDashboard: React.FC<{
         .filter((benefit: unknown): benefit is string =>
             typeof benefit === 'string' && benefit.trim().length > 0,
         )
-        .slice(0, 3);
+        .slice(0, isRegulatoryLabel ? 2 : 3)
+        .map((benefit) => isRegulatoryLabel ? clampTextWithEllipsis(benefit, 120) : benefit);
 
     const scienceIngredients = useMemo(
         () =>
@@ -1191,6 +1222,9 @@ export const AnalysisDashboard: React.FC<{
     })();
 
     const bestFor = usage.bestFor || usage.target || usage.who || bestForFallback;
+    const bestForDisplay = isRegulatoryLabel
+        ? clampTextWithEllipsis(bestFor, 220)
+        : bestFor;
     const routineLine = usage.dosage || usage.frequency || usage.timing || '';
 
     const warningLine =
@@ -1467,10 +1501,16 @@ export const AnalysisDashboard: React.FC<{
     const safetyDataStatus = safetyCover.dataStatus;
     const scienceFooterText = undefined;
 
+    const overviewSummaryDisplay = isRegulatoryLabel
+        ? clampTextWithEllipsis(overviewSummary, 220)
+        : overviewSummary;
+    const displayBrand = isRegulatoryLabel
+        ? (shortenCompanyName(productInfo.brand) ?? productInfo.brand)
+        : productInfo.brand;
     const overviewContent = (
         <View style={{ gap: 16 }}>
             <Text style={styles.modalParagraph}>
-                {overviewSummary || t.analysisPlaceholderOverviewSummary}
+                {overviewSummaryDisplay || t.analysisPlaceholderOverviewSummary}
             </Text>
             <View style={styles.modalOverviewGrid}>
                 <View style={styles.modalOverviewCard}>
@@ -1500,10 +1540,12 @@ export const AnalysisDashboard: React.FC<{
                 ))}
             </View>
             <View style={styles.modalTagRow}>
-                {productInfo.brand && (
+                {displayBrand && (
                     <View style={styles.modalTag}>
                         <Text style={styles.modalTagLabel}>Brand</Text>
-                        <Text style={styles.modalTagValue}>{productInfo.brand}</Text>
+                        <Text style={styles.modalTagValue} numberOfLines={2} ellipsizeMode="tail">
+                            {displayBrand}
+                        </Text>
                     </View>
                 )}
                 {productInfo.category && (
@@ -1677,7 +1719,7 @@ export const AnalysisDashboard: React.FC<{
                     <Text style={styles.modalParagraphSmall}>{timingCopy}</Text>
                     <View style={styles.modalCalloutCard}>
                         <Text style={styles.modalBulletTitle}>Best for</Text>
-                        <Text style={styles.modalParagraphSmall}>{bestFor}</Text>
+                        <Text style={styles.modalParagraphSmall}>{bestForDisplay}</Text>
                         {usage.frequency && (
                             <Text style={styles.modalParagraphSmall}>Frequency: {usage.frequency}</Text>
                         )}
@@ -1795,7 +1837,12 @@ export const AnalysisDashboard: React.FC<{
     ];
 
     const productTitle = productInfo.name || 'Supplement';
-    const productSubtitle = [productInfo.brand, productInfo.category].filter(Boolean).join(' • ');
+    const productSubtitle = [
+        displayBrand,
+        ...(isRegulatoryLabel ? [] : [productInfo.category]),
+    ]
+        .filter(Boolean)
+        .join(' • ');
 
     return (
         <View style={styles.root}>
@@ -1811,7 +1858,15 @@ export const AnalysisDashboard: React.FC<{
                 <View style={styles.headerSection}>
                     <Text style={styles.headerEyebrow}>{t.analysisHeaderEyebrow}</Text>
                     <Text style={styles.headerTitle}>{productTitle}</Text>
-                    {!!productSubtitle && <Text style={styles.headerSubtitle}>{productSubtitle}</Text>}
+                    {!!productSubtitle && (
+                        <Text
+                            style={styles.headerSubtitle}
+                            numberOfLines={isRegulatoryLabel ? 2 : 1}
+                            ellipsizeMode="tail"
+                        >
+                            {productSubtitle}
+                        </Text>
+                    )}
                 </View>
 
                 {/* Score Ring Card */}

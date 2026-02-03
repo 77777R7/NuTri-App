@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
-    "build": "tsc -p tsconfig.json"
+    "build": "tsc -p tsconfig.json",
+    "cleanup:supabase": "tsx scripts/cleanup-supabase-caches.ts"
   },
   "dependencies": {
     "@google-cloud/vision": "^5.3.4",
