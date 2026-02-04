@@ -18,7 +18,15 @@ import {
   type AnalysisBundle,
   type BasisTag,
 } from "./analysisBundle.js";
-import { buildFactsDigestFromDsld, buildFactsDigestFromLnhpd, buildFactsDigestFromWeb, computeFactsDigestHash, type FactsDigest } from "./factsDigest.js";
+import {
+  buildFactsDigestFromDsld,
+  buildFactsDigestFromLnhpd,
+  buildFactsDigestFromWeb,
+  computeFactsDigestHash,
+  type DsldFactsInput,
+  type FactsDigest,
+  type LnhpdFactsInput,
+} from "./factsDigest.js";
 import { getAnalysisIdentityCache, getWebCanonicalMap, insertAnalysisIdentityPending, upsertAnalysisIdentityCache, upsertWebCanonicalMap } from "./analysisIdentityCache.js";
 import {
   clearNegativeCache,
@@ -1769,6 +1777,48 @@ const applyLnhpdFactsToSnapshot = (
 
   return updated;
 };
+
+const buildLnhpdFactsInputFromSnapshot = (snapshot: SupplementSnapshot): LnhpdFactsInput => ({
+  brandName: snapshot.product.brand ?? null,
+  productName: snapshot.product.name ?? null,
+  npn: snapshot.regulatory.npn ?? null,
+  servingSize: snapshot.label.servingSize ?? null,
+  servingsPerContainer: snapshot.label.servingsPerContainer ?? null,
+  actives: snapshot.label.actives.map((item) => ({
+    name: item.name,
+    amount: item.amount ?? null,
+    unit: item.amountUnitNormalized ?? item.amountUnit ?? null,
+    formRaw: item.form ?? null,
+  })),
+  inactive: snapshot.label.inactive.map((item) => item.name),
+  purposes: [],
+  routes: [],
+  doses: [],
+  datasetVersion: snapshot.analysis?.labelExtraction?.datasetVersion ?? null,
+  extractedAt: snapshot.analysis?.labelExtraction?.fetchedAt ?? null,
+});
+
+const buildDsldFactsInputFromSnapshot = (snapshot: SupplementSnapshot): DsldFactsInput => ({
+  brandName: snapshot.product.brand ?? null,
+  productName: snapshot.product.name ?? null,
+  servingSize: snapshot.label.servingSize ?? null,
+  servingsPerContainer: snapshot.label.servingsPerContainer ?? null,
+  actives: snapshot.label.actives.map((item) => ({
+    name: item.name,
+    amount: item.amount ?? null,
+    unit: item.amountUnitNormalized ?? item.amountUnit ?? null,
+    formRaw: item.form ?? null,
+  })),
+  inactive: snapshot.label.inactive.map((item) => item.name),
+  proprietaryBlends: snapshot.label.proprietaryBlends.map((blend) => ({
+    name: blend.name,
+    totalAmount: blend.totalAmount ?? null,
+    unit: blend.unit ?? null,
+    ingredients: blend.ingredients ?? null,
+  })),
+  datasetVersion: snapshot.analysis?.labelExtraction?.datasetVersion ?? null,
+  extractedAt: snapshot.analysis?.labelExtraction?.fetchedAt ?? null,
+});
 
 const SIMILARITY_STOPWORDS = new Set([
   "supplement",
@@ -5740,6 +5790,106 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
 
       if (!needsEnrichment && snapshotIsVerified) {
         if (!forceStage1) {
+          const snapshotLabelSource =
+            cachedFast.snapshot.analysis?.labelExtraction?.source
+            ?? cachedFast.analysisPayload?.analysis?.labelExtraction?.source
+            ?? null;
+          const snapshotLabelVersion =
+            cachedFast.snapshot.analysis?.labelExtraction?.datasetVersion
+            ?? cachedFast.analysisPayload?.analysis?.labelExtraction?.datasetVersion
+            ?? cachedFast.snapshot.analysis?.labelExtraction?.fetchedAt
+            ?? null;
+          let digest: FactsDigest | null = null;
+          let identityType: FactsDigest["identity"]["type"] = "gtin14";
+          let identityValue = barcodeGtin14;
+          let factsSourceVersion = "snapshot:unknown";
+
+          if ((snapshotLabelSource === "lnhpd" || snapshotLabelSource === "manual") && snapshotVerifiedNpn) {
+            identityType = "npn";
+            identityValue = snapshotVerifiedNpn;
+            const lnhpdTimeoutSignal = createTimeoutSignal(RESILIENCE_LNHPD_TIMEOUT_MS);
+            const { signal, cleanup } = combineSignals([requestSignal, lnhpdTimeoutSignal]);
+            try {
+              const lnhpdFacts = await fetchLnhpdFactsByNpn(snapshotVerifiedNpn, signal);
+              if (lnhpdFacts) {
+                factsSourceVersion = `lnhpd:${lnhpdFacts.datasetVersion ?? lnhpdFacts.extractedAt ?? "unknown"}`;
+                digest = buildFactsDigestFromLnhpd({
+                  facts: lnhpdFacts,
+                  snapshot: cachedFast.snapshot,
+                  identityValue: snapshotVerifiedNpn,
+                  regionTags: cachedFast.snapshot.regulatory.regionTags,
+                });
+              }
+            } catch (error) {
+              console.warn("[analysis_bundle] cached LNHPD fetch failed", error);
+            } finally {
+              cleanup();
+            }
+            if (!digest) {
+              const fallbackFacts = buildLnhpdFactsInputFromSnapshot(cachedFast.snapshot);
+              factsSourceVersion = `lnhpd:${snapshotLabelVersion ?? "unknown"}`;
+              digest = buildFactsDigestFromLnhpd({
+                facts: fallbackFacts,
+                snapshot: cachedFast.snapshot,
+                identityValue: snapshotVerifiedNpn,
+                regionTags: cachedFast.snapshot.regulatory.regionTags,
+              });
+            }
+          }
+
+          if (!digest) {
+            const dsldLabelIdRaw = cachedFast.snapshot.regulatory.dsldLabelId;
+            const dsldLabelId = dsldLabelIdRaw ? Number(dsldLabelIdRaw) : Number.NaN;
+            if ((snapshotLabelSource === "dsld" || snapshotLabelSource === "label_scan") && dsldLabelIdRaw && Number.isFinite(dsldLabelId)) {
+              identityType = "dsldLabelId";
+              identityValue = dsldLabelIdRaw;
+              const dsldTimeoutSignal = createTimeoutSignal(RESILIENCE_LNHPD_TIMEOUT_MS);
+              const { signal, cleanup } = combineSignals([requestSignal, dsldTimeoutSignal]);
+              try {
+                const dsldFacts = await fetchDsldFactsByLabelId(dsldLabelId, signal);
+                if (dsldFacts) {
+                  factsSourceVersion = `dsld:${dsldFacts.datasetVersion ?? dsldFacts.extractedAt ?? "unknown"}`;
+                  digest = buildFactsDigestFromDsld({
+                    facts: dsldFacts,
+                    snapshot: cachedFast.snapshot,
+                    identityValue: dsldLabelIdRaw,
+                    regionTags: cachedFast.snapshot.regulatory.regionTags,
+                  });
+                }
+              } catch (error) {
+                console.warn("[analysis_bundle] cached DSLD fetch failed", error);
+              } finally {
+                cleanup();
+              }
+            }
+          }
+
+          if (!digest) {
+            const fallbackFacts = buildDsldFactsInputFromSnapshot(cachedFast.snapshot);
+            const fallbackLabelId = cachedFast.snapshot.regulatory.dsldLabelId;
+            identityType = fallbackLabelId ? "dsldLabelId" : "gtin14";
+            identityValue = fallbackLabelId ?? barcodeGtin14;
+            factsSourceVersion = `dsld:${snapshotLabelVersion ?? "unknown"}`;
+            digest = buildFactsDigestFromDsld({
+              facts: fallbackFacts,
+              snapshot: cachedFast.snapshot,
+              identityValue,
+              regionTags: cachedFast.snapshot.regulatory.regionTags,
+            });
+          }
+
+          if (digest) {
+            stage0BundlePromise = emitAnalysisBundleSequence({
+              digest,
+              identityType,
+              identityValue,
+              factsSourceVersion,
+              allowAi: Boolean(deepseekKey),
+              apiKey: deepseekKey,
+            });
+            await awaitStage0Bundle();
+          }
+
           sendSSE(res, "done", { barcode });
           res.end();
 
