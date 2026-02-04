@@ -949,3 +949,262 @@ Return a SINGLE valid JSON object.
     release?.();
   }
 }
+
+// ============================================================================
+// Analysis Bundle v3 (fast + ingredients detail)
+// ============================================================================
+
+const PROMPT_ANALYSIS_BUNDLE_FAST_V3 = `You are NuTri-AI. Use the provided FACTS_DIGEST_JSON.
+Return JSON only with this exact shape:
+{
+  "overview": { "summary": "...", "bullets": [ { "text": "...", "basisTags": ["..."] } ] },
+  "usage": {
+    "bullets": [ { "text": "...", "basisTags": ["..."] } ],
+    "bestTimeToTake": { "text": "...", "basisTags": ["..."] } | null,
+    "withFood": { "value": true|false|null, "text": "...", "basisTags": ["..."] } | null
+  },
+  "safety": { "verdict": "...", "bullets": [ { "text": "...", "basisTags": ["..."] } ] }
+}
+
+Rules:
+- basisTags must be from: label_fact, regulatory_claim, ingredient_inference, web_evidence, general_advice, not_provided, conflict.
+- overview.summary <= 180 chars; overview.bullets exactly 2 items.
+- If FACTS_DIGEST_JSON.claims.labelPurposes exists, use regulatory_claim tags.
+- If sourceType is dsld or web and you infer benefits, use ingredient_inference or web_evidence tags.
+- If safety info is missing in facts, set safety.bullets empty and verdict "Not provided by source" with basisTags ["not_provided"].
+- Do not include dosage instructions beyond what is in FACTS_DIGEST_JSON.labelDosing.
+- Output JSON only, no markdown, no trailing commas.
+`;
+
+const PROMPT_INGREDIENTS_DETAIL_V3 = `You are NuTri-AI. Use the provided FACTS_DIGEST_JSON.
+Return JSON only with this exact shape:
+{
+  "items": [
+    {
+      "name": "...",
+      "whatItDoes": "...",
+      "doseContext": "...",
+      "formExplain": "...",
+      "basisTags": ["..."]
+    }
+  ],
+  "overallSummary": { "text": "...", "basisTags": ["..."] } | null,
+  "overlapNotes": { "text": "...", "basisTags": ["..."] } | null
+}
+
+Rules:
+- basisTags must be from: label_fact, regulatory_claim, ingredient_inference, web_evidence, general_advice, not_provided, conflict.
+- Do not make disease treatment claims.
+- If dosage is unknown, explicitly say so in doseContext.
+- If form is unknown, explain why.
+- Use ingredient_inference or label_fact tags based on FACTS_DIGEST_JSON.sourceType and evidence.
+- Output JSON only, no markdown, no trailing commas.
+`;
+
+export async function fetchAnalysisBundleFastV3(
+  context: string,
+  model: string,
+  apiKey: string,
+  options: ResilienceOptions = {},
+): Promise<Record<string, unknown> | null> {
+  let release: (() => void) | null = null;
+  try {
+    if (options.breaker && !options.breaker.canRequest()) {
+      return null;
+    }
+
+    const timeoutMs = options.timeoutMs ?? 3500;
+    const budgetedTimeout = options.budget ? options.budget.msFor(timeoutMs) : timeoutMs;
+    if (budgetedTimeout <= 0) {
+      return null;
+    }
+
+    if (options.semaphore) {
+      try {
+        release = await options.semaphore.acquire({
+          timeoutMs: options.queueTimeoutMs ?? 0,
+          signal: options.signal,
+        });
+      } catch {
+        return null;
+      }
+    }
+
+    const retryConfig: RetryOptions = {
+      maxAttempts: options.retry?.maxAttempts ?? 1,
+      baseDelayMs: options.retry?.baseDelayMs ?? 250,
+      maxDelayMs: options.retry?.maxDelayMs ?? 900,
+      jitterRatio: options.retry?.jitterRatio ?? 0.3,
+      shouldRetry: (error) => {
+        if (error instanceof TimeoutError) return true;
+        if (error instanceof HttpError) return isRetryableStatus(error.status);
+        if (isAbortError(error)) return false;
+        return error instanceof TypeError;
+      },
+      signal: options.signal,
+      budget: options.budget,
+    };
+
+    const response = await withRetry(async () => {
+      const timeoutSignal = createTimeoutSignal(budgetedTimeout);
+      const { signal, cleanup } = combineSignals([options.signal, timeoutSignal]);
+      try {
+        const result = await fetch("https://api.deepseek.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: "system", content: PROMPT_ANALYSIS_BUNDLE_FAST_V3 },
+              { role: "user", content: context },
+            ],
+            temperature: 0.2,
+            stream: false,
+            max_tokens: options.maxTokens ?? 900,
+            response_format: { type: "json_object" },
+          }),
+          signal,
+        });
+
+        if (!result.ok) {
+          throw new HttpError(result.status, `DeepSeek API error: ${result.status}`);
+        }
+
+        return result;
+      } catch (error) {
+        if (timeoutSignal.aborted && !options.signal?.aborted && isAbortError(error)) {
+          throw new TimeoutError();
+        }
+        throw error;
+      } finally {
+        cleanup();
+      }
+    }, retryConfig);
+
+    options.breaker?.recordSuccess();
+
+    const data = (await response.json()) as { choices?: { message?: { content?: string } }[] };
+    const content = data.choices?.[0]?.message?.content || "{}";
+    const parsed = tryParseJsonLenient(content);
+    if (parsed && typeof parsed === "object") {
+      return parsed as Record<string, unknown>;
+    }
+
+    return null;
+  } catch (error) {
+    if (!isAbortError(error)) {
+      options.breaker?.recordFailure();
+    }
+    console.error("Error fetching analysis bundle fast v3:", error);
+    return null;
+  } finally {
+    release?.();
+  }
+}
+
+export async function fetchIngredientsDetailV3(
+  context: string,
+  model: string,
+  apiKey: string,
+  options: ResilienceOptions = {},
+): Promise<Record<string, unknown> | null> {
+  let release: (() => void) | null = null;
+  try {
+    if (options.breaker && !options.breaker.canRequest()) {
+      return null;
+    }
+
+    const timeoutMs = options.timeoutMs ?? 7000;
+    const budgetedTimeout = options.budget ? options.budget.msFor(timeoutMs) : timeoutMs;
+    if (budgetedTimeout <= 0) {
+      return null;
+    }
+
+    if (options.semaphore) {
+      try {
+        release = await options.semaphore.acquire({
+          timeoutMs: options.queueTimeoutMs ?? 0,
+          signal: options.signal,
+        });
+      } catch {
+        return null;
+      }
+    }
+
+    const retryConfig: RetryOptions = {
+      maxAttempts: options.retry?.maxAttempts ?? 1,
+      baseDelayMs: options.retry?.baseDelayMs ?? 350,
+      maxDelayMs: options.retry?.maxDelayMs ?? 1200,
+      jitterRatio: options.retry?.jitterRatio ?? 0.35,
+      shouldRetry: (error) => {
+        if (error instanceof TimeoutError) return true;
+        if (error instanceof HttpError) return isRetryableStatus(error.status);
+        if (isAbortError(error)) return false;
+        return error instanceof TypeError;
+      },
+      signal: options.signal,
+      budget: options.budget,
+    };
+
+    const response = await withRetry(async () => {
+      const timeoutSignal = createTimeoutSignal(budgetedTimeout);
+      const { signal, cleanup } = combineSignals([options.signal, timeoutSignal]);
+      try {
+        const result = await fetch("https://api.deepseek.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: "system", content: PROMPT_INGREDIENTS_DETAIL_V3 },
+              { role: "user", content: context },
+            ],
+            temperature: 0.2,
+            stream: false,
+            max_tokens: options.maxTokens ?? 1200,
+            response_format: { type: "json_object" },
+          }),
+          signal,
+        });
+
+        if (!result.ok) {
+          throw new HttpError(result.status, `DeepSeek API error: ${result.status}`);
+        }
+
+        return result;
+      } catch (error) {
+        if (timeoutSignal.aborted && !options.signal?.aborted && isAbortError(error)) {
+          throw new TimeoutError();
+        }
+        throw error;
+      } finally {
+        cleanup();
+      }
+    }, retryConfig);
+
+    options.breaker?.recordSuccess();
+
+    const data = (await response.json()) as { choices?: { message?: { content?: string } }[] };
+    const content = data.choices?.[0]?.message?.content || "{}";
+    const parsed = tryParseJsonLenient(content);
+    if (parsed && typeof parsed === "object") {
+      return parsed as Record<string, unknown>;
+    }
+
+    return null;
+  } catch (error) {
+    if (!isAbortError(error)) {
+      options.breaker?.recordFailure();
+    }
+    console.error("Error fetching ingredients detail v3:", error);
+    return null;
+  } finally {
+    release?.();
+  }
+}

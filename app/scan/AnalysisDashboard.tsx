@@ -11,7 +11,7 @@ import {
 } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     Modal,
     Pressable,
@@ -40,6 +40,9 @@ import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { InteractiveScoreRing } from '@/components/ui/InteractiveScoreRing';
 import { ContentSection } from '@/components/ui/ScoreDetailCard';
 import { useTranslation } from '@/lib/i18n';
+import { Config } from '@/constants/Config';
+import { withAuthHeaders } from '@/lib/auth-token';
+import type { AnalysisBundle, BasisTag, Bullet, IngredientsDetail } from '@/types/analysisBundle';
 import { computeSmartScores, type AnalysisInput } from '../../lib/scoring';
 type Analysis = any;
 type ScoreState = 'active' | 'muted' | 'loading';
@@ -813,13 +816,450 @@ const dedupeIngredients = (items: IngredientDetail[]): IngredientDetail[] => {
     return ordered;
 };
 
+const BASIS_TAG_LABELS: Record<BasisTag, string> = {
+    label_fact: 'label',
+    regulatory_claim: 'reg',
+    ingredient_inference: 'inferred',
+    web_evidence: 'web',
+    general_advice: 'advice',
+    not_provided: 'not provided',
+    conflict: 'conflict',
+};
+
+const formatBasisTags = (tags?: BasisTag[] | null) => {
+    if (!tags || tags.length === 0) return '';
+    const labels = tags.map(tag => BASIS_TAG_LABELS[tag] ?? tag);
+    return labels.join(' · ');
+};
+
+const formatTaggedText = (text: string, tags?: BasisTag[] | null) => {
+    const tagText = formatBasisTags(tags);
+    if (!tagText) return text;
+    return `${text} · ${tagText}`;
+};
+
+const mapBundleStatusToCover = (status: AnalysisBundle['sections']['overview']['dataStatus']): CoverStatus => {
+    if (status === 'complete') return 'complete';
+    if (status === 'pending') return 'partial';
+    return 'limited';
+};
+
+const buildBundleDataStatus = (status: AnalysisBundle['sections']['overview']['dataStatus']) => ({
+    status: mapBundleStatusToCover(status),
+    missingReasons: [],
+    sources: [],
+});
+
+const AnalysisBundleDashboard: React.FC<{
+    bundle: AnalysisBundle;
+    analysis: Analysis;
+    isStreaming?: boolean;
+    scoreBadge?: string;
+    scoreState?: ScoreState;
+    sourceType?: SourceType;
+}> = ({ bundle, analysis, isStreaming = false, scoreBadge, scoreState = 'active', sourceType = 'barcode' }) => {
+    const { t } = useTranslation();
+    const [selectedTile, setSelectedTile] = useState<TileConfig | null>(null);
+    const [bundleState, setBundleState] = useState<AnalysisBundle>(bundle);
+    const [detailLoading, setDetailLoading] = useState(false);
+    const [detailError, setDetailError] = useState<string | null>(null);
+    const scrollY = useSharedValue(0);
+    const scrollHandler = useAnimatedScrollHandler((event) => {
+        scrollY.value = event.contentOffset.y;
+    });
+    const { height: viewportHeight } = useWindowDimensions();
+    const [tilesContainerW, setTilesContainerW] = useState(0);
+    const TILE_GAP = 12;
+    const tileWidth: DimensionValue = tilesContainerW > 0 ? tilesContainerW : '100%';
+
+    useEffect(() => {
+        setBundleState(bundle);
+    }, [bundle]);
+
+    const onTilesGridLayout = useCallback((e: LayoutChangeEvent) => {
+        const nextWidth = e.nativeEvent.layout.width;
+        setTilesContainerW((prev) => (Math.abs(prev - nextWidth) < 1 ? prev : nextWidth));
+    }, []);
+
+    const productInfo = analysis?.productInfo ?? { brand: null, name: null, category: null, image: null };
+    const productTitle = productInfo.name || 'Supplement';
+    const productSubtitle = [productInfo.brand, productInfo.category].filter(Boolean).join(' • ');
+
+    const overviewCover = bundleState.sections.overview.cover;
+    const overviewBullets = (overviewCover?.bullets ?? []).map((bullet) => ({
+        text: formatTaggedText(bullet.text, bullet.basisTags),
+    }));
+
+    const ingredientsCover = bundleState.sections.ingredients.cover;
+    const ingredientsItems = ingredientsCover?.items ?? [];
+    const ingredientMechanisms: Mechanism[] = ingredientsItems.slice(0, 3).map((item) => ({
+        name: item.name,
+        amount: item.dose ?? 'Dose unknown',
+        fill: item.dose ? 0.75 : 0.4,
+        mode: item.dose ? 'actual' : 'unknown',
+        showInfo: item.basisTags.length > 0,
+    }));
+
+    const usageCover = bundleState.sections.usage.cover;
+    const usageBullets = (usageCover?.bullets ?? []).map((bullet) => ({
+        text: formatTaggedText(bullet.text, bullet.basisTags),
+    }));
+    const usageRoutine = usageCover?.bestTimeToTake?.text ?? usageCover?.dosage?.text ?? null;
+
+    const safetyCover = bundleState.sections.safety.cover;
+    const safetyBullets = (safetyCover?.bullets ?? []).map((bullet) => ({
+        text: formatTaggedText(bullet.text, bullet.basisTags),
+    }));
+
+    const fetchIngredientsDetail = useCallback(async (attempt = 0) => {
+        if (detailLoading) return;
+        setDetailLoading(true);
+        setDetailError(null);
+        try {
+            const API_URL = Config.searchApiBaseUrl.replace(/\\/$/, '');
+            const headers = await withAuthHeaders({ 'Content-Type': 'application/json' });
+            const response = await fetch(`${API_URL}/api/analysis-section`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({
+                    identity: bundleState.meta.authoritativeIdentity,
+                    section: 'ingredients_detail',
+                    locale: bundleState.meta.locale,
+                    promptVersion: bundleState.meta.promptVersion,
+                    factsDigestHash: bundleState.meta.factsDigestHash,
+                }),
+            });
+            if (response.status === 202) {
+                const payload = await response.json();
+                const retryMs = typeof payload?.retryAfterMs === 'number' ? payload.retryAfterMs : 2000;
+                if (attempt < 2) {
+                    setTimeout(() => {
+                        fetchIngredientsDetail(attempt + 1);
+                    }, retryMs);
+                }
+                setDetailLoading(false);
+                return;
+            }
+            if (!response.ok) {
+                setDetailError('Detail unavailable');
+                setDetailLoading(false);
+                return;
+            }
+            const payload = await response.json();
+            const detail = payload?.detail as IngredientsDetail | null;
+            if (detail) {
+                setBundleState((prev) => ({
+                    ...prev,
+                    sections: {
+                        ...prev.sections,
+                        ingredients: {
+                            ...prev.sections.ingredients,
+                            detail,
+                            dataStatus: payload?.dataStatus ?? prev.sections.ingredients.dataStatus,
+                        },
+                    },
+                }));
+            }
+        } catch (err) {
+            setDetailError('Detail unavailable');
+        } finally {
+            setDetailLoading(false);
+        }
+    }, [bundleState, detailLoading]);
+
+    useEffect(() => {
+        if (selectedTile?.type === 'science') {
+            const hasDetail = bundleState.sections.ingredients.detail?.items?.length ?? 0;
+            if (!hasDetail && !detailLoading) {
+                fetchIngredientsDetail();
+            }
+        }
+    }, [selectedTile, bundleState, detailLoading, fetchIngredientsDetail]);
+
+    const overviewContent = (
+        <View style={{ gap: 12 }}>
+            <Text style={styles.modalParagraph}>{overviewCover?.summary ?? t.analysisPlaceholderOverviewSummary}</Text>
+            <View style={styles.modalCalloutCard}>
+                <Text style={styles.modalBulletTitle}>Highlights</Text>
+                {overviewCover?.bullets?.length ? (
+                    overviewCover.bullets.map((bullet, idx) => (
+                        <Text key={idx} style={styles.modalBulletItem}>
+                            • {formatTaggedText(bullet.text, bullet.basisTags)}
+                        </Text>
+                    ))
+                ) : (
+                    <Text style={styles.modalParagraphSmall}>{t.analysisPlaceholderOverviewBenefits}</Text>
+                )}
+            </View>
+        </View>
+    );
+
+    const ingredientsDetail = bundleState.sections.ingredients.detail;
+    const ingredientsContent = (
+        <View style={{ gap: 16 }}>
+            <View style={styles.modalCalloutCard}>
+                <Text style={styles.modalBulletTitle}>Ingredients</Text>
+                {ingredientsItems.length > 0 ? (
+                    ingredientsItems.map((item, idx) => (
+                        <Text key={idx} style={styles.modalBulletItem}>
+                            • {item.name}{item.dose ? ` — ${item.dose}` : ''}{item.basisTags.length ? ` · ${formatBasisTags(item.basisTags)}` : ''}
+                        </Text>
+                    ))
+                ) : (
+                    <Text style={styles.modalParagraphSmall}>{t.analysisPlaceholderUnknown}</Text>
+                )}
+            </View>
+            {detailLoading && (
+                <Text style={styles.modalParagraphSmall}>Generating ingredient insights...</Text>
+            )}
+            {detailError && (
+                <Text style={styles.modalParagraphSmall}>{detailError}</Text>
+            )}
+            {ingredientsDetail?.items?.length ? (
+                <View style={styles.modalCalloutCard}>
+                    <Text style={styles.modalBulletTitle}>Ingredient Details</Text>
+                    {ingredientsDetail.items.map((item, idx) => (
+                        <View key={idx} style={{ marginBottom: 12 }}>
+                            <Text style={[styles.modalParagraphSmall, { fontWeight: '600' }]}>{item.name}</Text>
+                            <Text style={styles.modalParagraphSmall}>{item.whatItDoes}</Text>
+                            <Text style={styles.modalParagraphSmall}>{item.doseContext}</Text>
+                            <Text style={styles.modalParagraphSmall}>{item.formExplain}</Text>
+                        </View>
+                    ))}
+                </View>
+            ) : null}
+            {ingredientsDetail?.overallSummary?.text ? (
+                <View style={styles.modalCalloutCard}>
+                    <Text style={styles.modalBulletTitle}>Overall Summary</Text>
+                    <Text style={styles.modalParagraphSmall}>{ingredientsDetail.overallSummary.text}</Text>
+                </View>
+            ) : null}
+        </View>
+    );
+
+    const usageContent = (
+        <View style={{ gap: 16 }}>
+            <View style={styles.modalUsageCard}>
+                <Pill size={32} color="#F97316" />
+                <View style={{ flex: 1 }}>
+                    <Text style={styles.modalUsageTitle}>Suggested Routine</Text>
+                    <Text style={styles.modalUsageSubtitle}>
+                        {usageCover?.dosage?.text ?? usageCover?.bestTimeToTake?.text ?? 'Follow label dose'}
+                    </Text>
+                </View>
+            </View>
+            {usageCover?.bullets?.length ? (
+                usageCover.bullets.map((bullet, idx) => (
+                    <Text key={idx} style={styles.modalBulletItem}>
+                        • {formatTaggedText(bullet.text, bullet.basisTags)}
+                    </Text>
+                ))
+            ) : (
+                <Text style={styles.modalParagraphSmall}>Usage guidance pending.</Text>
+            )}
+            {bundleState.sections.usage.detail?.scheduleFromLabel?.length ? (
+                <View style={styles.modalCalloutCard}>
+                    <Text style={styles.modalBulletTitle}>Label Dosing</Text>
+                    {bundleState.sections.usage.detail.scheduleFromLabel.map((dose, idx) => (
+                        <Text key={idx} style={styles.modalBulletItem}>
+                            • {dose.rawText ?? dose.dose ?? ''}
+                        </Text>
+                    ))}
+                </View>
+            ) : null}
+        </View>
+    );
+
+    const safetyContent = (
+        <View style={{ gap: 16 }}>
+            <View style={styles.modalSafetyCard}>
+                <CheckCircle2 size={28} color="#16A34A" />
+                <View style={{ flex: 1 }}>
+                    <Text style={styles.modalSafetyTitle}>{safetyCover?.verdict ?? 'Safety summary pending'}</Text>
+                    <Text style={styles.modalSafetyText}>
+                        {safetyCover?.bullets?.[0]?.text ?? 'No safety details available.'}
+                    </Text>
+                </View>
+            </View>
+            {bundleState.sections.safety.detail?.warnings?.length ? (
+                <View style={styles.modalWarningCard}>
+                    <Text style={styles.modalWarningText}>Warnings:</Text>
+                    {bundleState.sections.safety.detail.warnings.map((warning, idx) => (
+                        <Text key={idx} style={styles.modalWarningTextItem}>
+                            • {formatTaggedText(warning.text, warning.basisTags)}
+                        </Text>
+                    ))}
+                </View>
+            ) : null}
+        </View>
+    );
+
+    const tiles: TileConfig[] = [
+        {
+            id: 1,
+            type: 'overview',
+            title: t.analysisTileOverviewTitle,
+            modalTitle: t.analysisTileOverviewModalTitle,
+            icon: Zap,
+            accentColor: 'text-blue-500',
+            backgroundColor: '#123CC5',
+            textColor: '#F7FBFF',
+            labelColor: '#D6E5FF',
+            viewLabel: t.analysisView,
+            eyebrow: t.analysisEyebrowCoreBenefits,
+            summary: overviewCover?.summary
+                ? { text: overviewCover.summary }
+                : { text: t.analysisPlaceholderOverviewSummary, isPlaceholder: true },
+            summaryLines: 2,
+            bullets: overviewBullets,
+            bulletLimit: 2,
+            bulletLines: 2,
+            dataStatus: buildBundleDataStatus(bundleState.sections.overview.dataStatus),
+            content: overviewContent,
+        },
+        {
+            id: 2,
+            type: 'science',
+            title: t.analysisTileScienceTitle,
+            modalTitle: t.analysisTileScienceModalTitle,
+            icon: BarChart3,
+            accentColor: 'text-amber-500',
+            backgroundColor: '#F7C948',
+            textColor: '#ea580c',
+            labelColor: '#ea580c',
+            viewLabel: t.analysisView,
+            eyebrow: t.analysisEyebrowKeyMechanism,
+            mechanisms: ingredientMechanisms,
+            dataStatus: buildBundleDataStatus(bundleState.sections.ingredients.dataStatus),
+            content: ingredientsContent,
+        },
+        {
+            id: 3,
+            type: 'usage',
+            title: t.analysisTileUsageTitle,
+            modalTitle: t.analysisTileUsageModalTitle,
+            icon: Clock,
+            accentColor: 'text-sky-500',
+            backgroundColor: '#8CCBFF',
+            textColor: '#0B2545',
+            labelColor: '#0B2545',
+            viewLabel: t.analysisView,
+            eyebrow: t.analysisEyebrowDailyRoutine,
+            routineLine: usageRoutine ? { text: usageRoutine } : undefined,
+            bullets: usageBullets,
+            dataStatus: buildBundleDataStatus(bundleState.sections.usage.dataStatus),
+            content: usageContent,
+        },
+        {
+            id: 4,
+            type: 'safety',
+            title: t.analysisTileSafetyTitle,
+            modalTitle: t.analysisTileSafetyModalTitle,
+            icon: Shield,
+            accentColor: 'text-rose-500',
+            backgroundColor: '#F1E7D8',
+            textColor: '#2E2A25',
+            labelColor: '#6B5B4B',
+            viewLabel: t.analysisView,
+            eyebrow: t.analysisEyebrowSafetyNotes,
+            warning: safetyCover?.bullets?.[0]
+                ? { text: formatTaggedText(safetyCover.bullets[0].text, safetyCover.bullets[0].basisTags) }
+                : undefined,
+            tip: safetyCover?.bullets?.[1]
+                ? { text: formatTaggedText(safetyCover.bullets[1].text, safetyCover.bullets[1].basisTags) }
+                : undefined,
+            dataStatus: buildBundleDataStatus(bundleState.sections.safety.dataStatus),
+            content: safetyContent,
+        },
+    ];
+
+    const ringScore = (value?: number | null) => {
+        if (typeof value !== 'number' || Number.isNaN(value)) return 50;
+        return Math.round(value * 10);
+    };
+    const ringScores = {
+        effectiveness: ringScore(analysis?.efficacy?.score),
+        safety: ringScore(analysis?.safety?.score),
+        value: ringScore(analysis?.value?.score),
+        overall: ringScore(analysis?.scores?.overall),
+    };
+
+    return (
+        <View style={styles.root}>
+            <Animated.ScrollView
+                style={styles.scroll}
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+                scrollEventThrottle={16}
+                onScroll={scrollHandler}
+            >
+                <View style={styles.headerSection}>
+                    <Text style={styles.headerEyebrow}>{t.analysisHeaderEyebrow}</Text>
+                    <Text style={styles.headerTitle}>{productTitle}</Text>
+                    {!!productSubtitle && (
+                        <Text style={styles.headerSubtitle} numberOfLines={2} ellipsizeMode="tail">
+                            {productSubtitle}
+                        </Text>
+                    )}
+                </View>
+
+                <View style={styles.scoreSection}>
+                    <InteractiveScoreRing
+                        scores={{
+                            effectiveness: ringScores.effectiveness,
+                            safety: ringScores.safety,
+                            value: ringScores.value,
+                            overall: ringScores.overall,
+                        }}
+                        descriptions={{ effectiveness: '', safety: '', value: '', overall: '' }}
+                        display={{ showValue: true }}
+                        unknownCategories={{ effectiveness: false, safety: false, value: false }}
+                        labels={{
+                            overall: t.analysisScoreLabel,
+                            effectiveness: t.analysisScoreEffectiveness,
+                            safety: t.analysisScoreSafety,
+                            value: sourceType === 'label_scan' ? t.analysisScoreFormulaQuality : t.analysisScoreValue,
+                            valueLabel: sourceType === 'label_scan' ? t.analysisScoreFormulaQuality : t.analysisScoreValue,
+                        }}
+                        metaLines={[]}
+                        badgeText={scoreBadge}
+                        sourceType={sourceType}
+                    />
+                </View>
+
+                <View style={styles.tilesHeader}>
+                    <Text style={styles.tilesTitle}>{t.analysisDeepCategoriesTitle}</Text>
+                    <Text style={styles.tilesSubtitle}>{t.analysisDeepCategoriesSubtitle}</Text>
+                </View>
+
+                <View style={styles.tilesGrid} onLayout={onTilesGridLayout}>
+                    {tiles.map((tile) => (
+                        <AnimatedTile
+                            key={tile.id}
+                            tile={tile}
+                            onPress={() => setSelectedTile(tile)}
+                            scrollY={scrollY}
+                            viewportHeight={viewportHeight}
+                            tileWidth={tileWidth}
+                            style={{ marginBottom: TILE_GAP }}
+                        />
+                    ))}
+                </View>
+            </Animated.ScrollView>
+
+            <DashboardModal visible={!!selectedTile} tile={selectedTile} onClose={() => setSelectedTile(null)} />
+        </View>
+    );
+};
+
 export const AnalysisDashboard: React.FC<{
     analysis: Analysis;
     isStreaming?: boolean;
     scoreBadge?: string;
     scoreState?: ScoreState;
     sourceType?: SourceType;
-}> = ({ analysis, isStreaming = false, scoreBadge, scoreState, sourceType }) => {
+    analysisBundle?: AnalysisBundle | null;
+}> = ({ analysis, isStreaming = false, scoreBadge, scoreState, sourceType, analysisBundle }) => {
     const [selectedTile, setSelectedTile] = useState<TileConfig | null>(null);
     const { t } = useTranslation();
     const scrollY = useSharedValue(0);
@@ -1835,6 +2275,19 @@ export const AnalysisDashboard: React.FC<{
             ),
         },
     ];
+
+    if (analysisBundle?.meta?.schemaVersion === 3) {
+        return (
+            <AnalysisBundleDashboard
+                bundle={analysisBundle}
+                analysis={analysis}
+                isStreaming={isStreaming}
+                scoreBadge={scoreBadge}
+                scoreState={scoreState}
+                sourceType={sourceType}
+            />
+        );
+    }
 
     const productTitle = productInfo.name || 'Supplement';
     const productSubtitle = [

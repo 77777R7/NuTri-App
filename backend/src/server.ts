@@ -11,7 +11,15 @@ import { resolveCatalogByBarcode, type CatalogResolved } from "./catalogResolver
 import { buildCatalogBarcodeSnapshot } from "./catalogSnapshot.js";
 import { logBarcodeScan } from "./scanLog.js";
 import { extractBrandProduct, type BrandExtractionResult } from "./brandExtractor.js";
-import { buildCombinedContext, fetchAnalysisBundle, prepareContextSources } from "./deepseek.js";
+import { buildCombinedContext, fetchAnalysisBundle, fetchAnalysisBundleFastV3, fetchIngredientsDetailV3, prepareContextSources } from "./deepseek.js";
+import {
+  IngredientsDetailSchema,
+  safeParseAnalysisBundle,
+  type AnalysisBundle,
+  type BasisTag,
+} from "./analysisBundle.js";
+import { buildFactsDigestFromDsld, buildFactsDigestFromLnhpd, buildFactsDigestFromWeb, computeFactsDigestHash, type FactsDigest } from "./factsDigest.js";
+import { getAnalysisIdentityCache, getWebCanonicalMap, insertAnalysisIdentityPending, upsertAnalysisIdentityCache, upsertWebCanonicalMap } from "./analysisIdentityCache.js";
 import {
   clearNegativeCache,
   clearNpnNegativeCache,
@@ -238,6 +246,14 @@ const REGULATORY_MAP_MIN_CONFIDENCE = Number(process.env.REGULATORY_MAP_MIN_CONF
 const NPN_NEGATIVE_CACHE_TTL_MS = Number(process.env.NPN_NEGATIVE_CACHE_TTL_MS ?? 24 * 60 * 60 * 1000);
 const NPN_NEGATIVE_CACHE_WINDOW_HOURS = Number(process.env.NPN_NEGATIVE_CACHE_WINDOW_HOURS ?? 12);
 const NPN_NEGATIVE_CACHE_THRESHOLD = Number(process.env.NPN_NEGATIVE_CACHE_THRESHOLD ?? 2);
+
+const ANALYSIS_BUNDLE_PROMPT_VERSION = process.env.ANALYSIS_BUNDLE_PROMPT_VERSION ?? "reg_v3";
+const ANALYSIS_BUNDLE_FAST_TIMEOUT_MS = Number(process.env.ANALYSIS_BUNDLE_FAST_TIMEOUT_MS ?? 3500);
+const ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS = Number(process.env.ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS ?? 7000);
+const ANALYSIS_IDENTITY_CACHE_TTL_MS = Number(
+  process.env.ANALYSIS_IDENTITY_CACHE_TTL_MS ?? 30 * 24 * 60 * 60 * 1000,
+);
+const WEB_CANONICAL_TTL_MS = Number(process.env.WEB_CANONICAL_TTL_MS ?? 30 * 24 * 60 * 60 * 1000);
 
 const GUARDRAIL_SIMILARITY_THRESHOLD = Number(process.env.GUARDRAIL_SIMILARITY_THRESHOLD ?? 0.6);
 
@@ -517,6 +533,308 @@ const parseActiveSummaryLine = (rawLine: string): { name: string; amount: number
 
 const normalizeMatchText = (value: string): string =>
   value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+const ANALYSIS_BASIS_TAGS = new Set<BasisTag>([
+  "label_fact",
+  "regulatory_claim",
+  "ingredient_inference",
+  "web_evidence",
+  "general_advice",
+  "not_provided",
+  "conflict",
+]);
+
+const resolveLocale = (acceptLanguage?: string | null): "zh" | "en" => {
+  if (!acceptLanguage) return "en";
+  return /(^|,)\s*zh\b/i.test(acceptLanguage) ? "zh" : "en";
+};
+
+const clampText = (value: string, maxChars: number): string => {
+  if (value.length <= maxChars) return value;
+  return `${value.slice(0, maxChars - 1).trim()}…`;
+};
+
+const normalizeBasisTags = (tags: unknown, fallback: BasisTag): BasisTag[] => {
+  if (!Array.isArray(tags)) {
+    return ANALYSIS_BASIS_TAGS.has(fallback) ? [fallback] : [];
+  }
+  const filtered = tags
+    .map((tag) => (typeof tag === "string" ? tag : ""))
+    .filter((tag): tag is BasisTag => ANALYSIS_BASIS_TAGS.has(tag as BasisTag));
+  if (filtered.length > 0) return filtered;
+  return ANALYSIS_BASIS_TAGS.has(fallback) ? [fallback] : [];
+};
+
+const buildSectionBullet = (text: string, basisTags: BasisTag[]): { text: string; basisTags: BasisTag[] } => ({
+  text,
+  basisTags,
+});
+
+const extractSectionText = (text: string | null | undefined, patterns: RegExp[], maxChars = 600): string | null => {
+  if (!text) return null;
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    const value = match?.[1]?.trim();
+    if (value) {
+      const normalized = value.replace(/\s+/g, " ").trim();
+      return normalized.length > maxChars ? `${normalized.slice(0, maxChars).trim()}…` : normalized;
+    }
+  }
+  return null;
+};
+
+const resolveSourceBasisTag = (sourceType: FactsDigest["sourceType"]): BasisTag =>
+  sourceType === "web" ? "web_evidence" : "label_fact";
+
+const buildIngredientsCover = (
+  digest: FactsDigest,
+): AnalysisBundle["sections"]["ingredients"]["cover"] => {
+  const basisTag = resolveSourceBasisTag(digest.sourceType);
+  const items = digest.actives.slice(0, 6).map((active) => ({
+    name: active.name,
+    dose: active.amountText ?? (active.amount != null && active.unit ? `${active.amount} ${active.unit}` : null),
+    basisTags: [basisTag],
+  }));
+  return {
+    items,
+    totalCount: digest.actives.length,
+  };
+};
+
+const buildFallbackOverviewSummary = (digest: FactsDigest): string => {
+  const primary = digest.actives[0]?.name ?? null;
+  if (primary) return `A supplement centered on ${primary}.`;
+  if (digest.product.name) return `${digest.product.name} supplement overview.`;
+  return "Supplement overview unavailable.";
+};
+
+const buildFallbackOverviewBullets = (digest: FactsDigest): Array<{ text: string; basisTags: BasisTag[] }> => {
+  const bullets: Array<{ text: string; basisTags: BasisTag[] }> = [];
+  if (digest.claims.labelPurposes.length > 0) {
+    digest.claims.labelPurposes.slice(0, 2).forEach((purpose) => {
+      bullets.push(buildSectionBullet(purpose, ["regulatory_claim"]));
+    });
+  }
+  if (bullets.length < 2 && digest.actives.length > 0) {
+    const basisTag = resolveSourceBasisTag(digest.sourceType);
+    for (const active of digest.actives) {
+      if (bullets.length >= 2) break;
+      bullets.push(buildSectionBullet(`Contains ${active.name}`, [basisTag]));
+    }
+  }
+  return bullets;
+};
+
+const buildUsageDosageField = (digest: FactsDigest): { text: string; basisTags: BasisTag[] } | null => {
+  const raw = digest.labelDosing.map((dose) => dose.rawText).filter(Boolean)[0];
+  if (!raw) return null;
+  return { text: raw, basisTags: ["label_fact"] };
+};
+
+const buildAnalysisBundleSkeleton = (params: {
+  digest: FactsDigest;
+  bundleId: string;
+  revision: number;
+  phase: "skeleton" | "fast_ai" | "full_ai";
+  locale: "zh" | "en";
+  factsDigestHash: string;
+  factsSourceVersion: string;
+  identityType: FactsDigest["identity"]["type"];
+  identityValue: string;
+  dataStatus: {
+    overview: "pending" | "limited";
+    usage: "pending" | "limited";
+    safety: "pending" | "limited";
+  };
+}): AnalysisBundle => {
+  const { digest } = params;
+  return {
+    meta: {
+      schemaVersion: 3,
+      promptVersion: ANALYSIS_BUNDLE_PROMPT_VERSION,
+      sourceType: digest.sourceType,
+      authoritativeIdentity: { type: params.identityType, value: params.identityValue },
+      locale: params.locale,
+      phase: params.phase,
+      bundleId: params.bundleId,
+      revision: params.revision,
+      factsDigestHash: params.factsDigestHash,
+      factsSourceVersion: params.factsSourceVersion,
+    },
+    sections: {
+      overview: {
+        layout: "overview_card",
+        cover: null,
+        detail: null,
+        dataStatus: params.dataStatus.overview,
+      },
+      ingredients: {
+        layout: "ingredients_list",
+        cover: buildIngredientsCover(digest),
+        detail: null,
+        dataStatus: digest.actives.length > 0 ? "complete" : "limited",
+      },
+      usage: {
+        layout: "usage_bullets",
+        cover: null,
+        detail: {
+          timingRationale: null,
+          withFoodRationale: null,
+          scheduleFromLabel: digest.labelDosing.map((dose) => ({
+            population: dose.population ?? null,
+            age: dose.age ?? null,
+            dose: dose.dose ?? null,
+            frequency: dose.frequency ?? null,
+            rawText: dose.rawText ?? null,
+            basisTags: ["label_fact"],
+          })),
+        },
+        dataStatus: params.dataStatus.usage,
+      },
+      safety: {
+        layout: "safety_bullets",
+        cover: null,
+        detail: {
+          warnings: [],
+          consultDoctorIf: [],
+          redFlags: [],
+        },
+        dataStatus: params.dataStatus.safety,
+      },
+    },
+  };
+};
+
+const mergeFastAnalysisBundle = (params: {
+  skeleton: AnalysisBundle;
+  digest: FactsDigest;
+  fastOutput: Record<string, unknown> | null;
+}): AnalysisBundle => {
+  const { skeleton, digest, fastOutput } = params;
+  const fallbackSummary = buildFallbackOverviewSummary(digest);
+  const fallbackBullets = buildFallbackOverviewBullets(digest);
+  const overviewRaw = (fastOutput?.overview ?? {}) as Record<string, unknown>;
+  const overviewSummaryCandidate =
+    typeof overviewRaw.summary === "string" && overviewRaw.summary.trim()
+      ? clampText(overviewRaw.summary.trim(), 180)
+      : fallbackSummary;
+  const overviewBulletsRaw = Array.isArray(overviewRaw.bullets) ? overviewRaw.bullets : [];
+  const overviewBullets = overviewBulletsRaw
+    .map((item) => ({
+      text: typeof item?.text === "string" ? item.text : "",
+      basisTags: normalizeBasisTags(item?.basisTags, "ingredient_inference"),
+    }))
+    .filter((item) => item.text)
+    .slice(0, 2);
+  const overviewBulletsFinal = overviewBullets.length > 0 ? overviewBullets : fallbackBullets;
+
+  const usageRaw = (fastOutput?.usage ?? {}) as Record<string, unknown>;
+  const usageBulletsRaw = Array.isArray(usageRaw.bullets) ? usageRaw.bullets : [];
+  const usageBullets = usageBulletsRaw
+    .map((item) => ({
+      text: typeof item?.text === "string" ? item.text : "",
+      basisTags: normalizeBasisTags(item?.basisTags, "general_advice"),
+    }))
+    .filter((item) => item.text)
+    .slice(0, 3);
+  const bestTimeToTake =
+    usageRaw.bestTimeToTake && typeof usageRaw.bestTimeToTake === "object"
+      ? {
+          text: typeof (usageRaw.bestTimeToTake as Record<string, unknown>).text === "string"
+            ? (usageRaw.bestTimeToTake as Record<string, unknown>).text as string
+            : "",
+          basisTags: normalizeBasisTags((usageRaw.bestTimeToTake as Record<string, unknown>).basisTags, "general_advice"),
+        }
+      : null;
+  const withFoodRaw = usageRaw.withFood && typeof usageRaw.withFood === "object" ? usageRaw.withFood as Record<string, unknown> : null;
+  const withFood = withFoodRaw
+    ? {
+        value: typeof withFoodRaw.value === "boolean" || withFoodRaw.value === null ? withFoodRaw.value as boolean | null : null,
+        text: typeof withFoodRaw.text === "string" ? withFoodRaw.text : null,
+        basisTags: normalizeBasisTags(withFoodRaw.basisTags, "general_advice"),
+      }
+    : null;
+  const dosageField = buildUsageDosageField(digest);
+
+  const safetyRaw = (fastOutput?.safety ?? {}) as Record<string, unknown>;
+  const safetyVerdict =
+    typeof safetyRaw.verdict === "string" && safetyRaw.verdict.trim()
+      ? safetyRaw.verdict.trim()
+      : digest.warnings.missingFlag
+        ? "Not provided by source"
+        : "Safety summary unavailable";
+  const safetyBulletsRaw = Array.isArray(safetyRaw.bullets) ? safetyRaw.bullets : [];
+  const safetyBullets = safetyBulletsRaw
+    .map((item) => ({
+      text: typeof item?.text === "string" ? item.text : "",
+      basisTags: normalizeBasisTags(item?.basisTags, digest.warnings.missingFlag ? "not_provided" : "general_advice"),
+    }))
+    .filter((item) => item.text)
+    .slice(0, 3);
+  const safetyBulletsFinal =
+    safetyBullets.length > 0
+      ? safetyBullets
+      : digest.warnings.missingFlag
+        ? [buildSectionBullet("General safety: consult a healthcare professional if needed.", ["general_advice"])]
+        : [];
+
+  const overviewStatus = overviewBulletsFinal.length > 0 ? "complete" : "limited";
+  const usageStatus = usageBullets.length > 0 || bestTimeToTake || withFood || dosageField ? "complete" : "limited";
+  const safetyStatus = digest.warnings.missingFlag ? "not_provided" : safetyBulletsFinal.length > 0 ? "complete" : "limited";
+  const safetyTag = resolveSourceBasisTag(digest.sourceType);
+
+  return {
+    ...skeleton,
+    meta: {
+      ...skeleton.meta,
+      phase: "fast_ai",
+      revision: skeleton.meta.revision + 1,
+    },
+    sections: {
+      overview: {
+        ...skeleton.sections.overview,
+        cover: {
+          summary: overviewSummaryCandidate,
+          bullets: overviewBulletsFinal,
+        },
+        detail: {
+          summary: overviewSummaryCandidate,
+          bullets: overviewBulletsFinal,
+        },
+        dataStatus: overviewStatus,
+      },
+      ingredients: skeleton.sections.ingredients,
+      usage: {
+        ...skeleton.sections.usage,
+        cover: {
+          bullets: usageBullets,
+          bestTimeToTake: bestTimeToTake && bestTimeToTake.text ? bestTimeToTake : null,
+          withFood: withFood,
+          dosage: dosageField ?? null,
+        },
+        detail: {
+          timingRationale: null,
+          withFoodRationale: null,
+          scheduleFromLabel: skeleton.sections.usage.detail?.scheduleFromLabel ?? [],
+        },
+        dataStatus: usageStatus,
+      },
+      safety: {
+        ...skeleton.sections.safety,
+        cover: {
+          verdict: safetyVerdict,
+          bullets: safetyBulletsFinal,
+        },
+        detail: {
+          warnings: digest.warnings.warnings.map((warning) => buildSectionBullet(warning, [safetyTag])),
+          consultDoctorIf: digest.warnings.consultDoctorIf.map((item) => buildSectionBullet(item, [safetyTag])),
+          redFlags: digest.warnings.redFlags.map((item) => buildSectionBullet(item, [safetyTag])),
+        },
+        dataStatus: safetyStatus,
+      },
+    },
+  };
+};
 
 const scoreTextMatch = (needle?: string | null, haystack?: string | null): number => {
   if (!needle || !haystack) return 0;
@@ -3381,6 +3699,7 @@ const barcodeEnrichInFlight = new Map<string, Promise<void>>();
 const barcodeEnrichBackground = new Map<string, Promise<void>>();
 const barcodeShadowInFlight = new Map<string, Promise<void>>();
 const barcodeSecondaryBackfill = new Map<string, Promise<void>>();
+const analysisSectionRateLimit = new Map<string, { count: number; windowStart: number }>();
 
 const queueShadowCompare = (params: {
   barcodeGtin14: string;
@@ -3952,6 +4271,17 @@ const enrichStreamBodySchema = z
     deviceId: z.string().optional(),
   })
   .passthrough();
+
+const analysisSectionBodySchema = z.object({
+  identity: z.object({
+    type: z.enum(["npn", "dsldLabelId", "webCanonicalId", "gtin14"]),
+    value: z.string().min(1),
+  }),
+  section: z.enum(["ingredients_detail"]),
+  locale: z.enum(["zh", "en"]),
+  promptVersion: z.string().min(1),
+  factsDigestHash: z.string().min(8),
+});
 
 const ensureOverviewBodySchema = z
   .object({
@@ -4688,6 +5018,178 @@ app.get("/api/score/v4/:source/:id", verifySupabaseToken, async (req: Request, r
 });
 
 /**
+ * On-demand analysis section endpoint (ingredients detail)
+ */
+app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res: Response) => {
+  const parsedBody = parseRequestBody(analysisSectionBodySchema, req, res);
+  if (!parsedBody) {
+    return;
+  }
+
+  const { identity, section, locale, promptVersion, factsDigestHash } = parsedBody;
+  const requestId = String(res.getHeader("x-request-id") ?? "");
+  const rateKey = `${identity.type}:${identity.value}:${locale}:${promptVersion}:${section}`;
+  const now = Date.now();
+  const existingRate = analysisSectionRateLimit.get(rateKey);
+  if (!existingRate || now - existingRate.windowStart > 60_000) {
+    analysisSectionRateLimit.set(rateKey, { count: 1, windowStart: now });
+  } else {
+    existingRate.count += 1;
+    if (existingRate.count > 6) {
+      res.status(429).json({ error: "rate_limited" } satisfies ErrorResponse);
+      return;
+    }
+  }
+
+  const deepseekKey = process.env.DEEPSEEK_API_KEY ?? null;
+  if (!deepseekKey) {
+    res.status(503).json({ error: "deepseek_api_key_missing" } satisfies ErrorResponse);
+    return;
+  }
+
+  const digestRow = await getAnalysisIdentityCache(
+    {
+      identityType: identity.type,
+      identityValue: identity.value,
+      locale,
+      promptVersion,
+      factsDigestHash,
+      section: "digest",
+    },
+    { timeoutMs: 800 },
+  ).catch(() => null);
+
+  if (!digestRow) {
+    res.status(404).json({ error: "facts_digest_missing" } satisfies ErrorResponse);
+    return;
+  }
+
+  const cachedDetail = await getAnalysisIdentityCache(
+    {
+      identityType: identity.type,
+      identityValue: identity.value,
+      locale,
+      promptVersion,
+      factsDigestHash,
+      section: section,
+    },
+    { timeoutMs: 800 },
+  ).catch(() => null);
+
+  if (cachedDetail?.status === "complete" && cachedDetail.payload) {
+    res.json({
+      section: "ingredients",
+      detail: cachedDetail.payload,
+      dataStatus: "complete",
+      meta: {
+        bundleId: randomUUID(),
+        revision: 2,
+        factsDigestHash,
+      },
+      timingMs: 0,
+    });
+    return;
+  }
+
+  if (cachedDetail?.status === "pending") {
+    res.status(202).json({
+      status: "pending",
+      jobId: createHash("sha256").update(rateKey + factsDigestHash).digest("hex"),
+      retryAfterMs: 2000,
+      meta: { requestId },
+    });
+    return;
+  }
+
+  const inserted = await insertAnalysisIdentityPending(
+    {
+      identityType: identity.type,
+      identityValue: identity.value,
+      locale,
+      promptVersion,
+      factsDigestHash,
+      factsSourceVersion: digestRow.facts_source_version ?? "",
+      section,
+      factsDigestJson: digestRow.facts_digest_json,
+      expiresAt: new Date(Date.now() + ANALYSIS_IDENTITY_CACHE_TTL_MS).toISOString(),
+    },
+    { timeoutMs: 1200 },
+  ).catch(() => false);
+
+  if (!inserted) {
+    res.status(202).json({
+      status: "pending",
+      jobId: createHash("sha256").update(rateKey + factsDigestHash).digest("hex"),
+      retryAfterMs: 2000,
+      meta: { requestId },
+    });
+    return;
+  }
+
+  const model = process.env.DEEPSEEK_MODEL || "deepseek-chat";
+  const digest = digestRow.facts_digest_json as FactsDigest;
+  const context = `FACTS_DIGEST_JSON: ${JSON.stringify(digest)}`;
+
+  const start = performance.now();
+  const detailRaw = await fetchIngredientsDetailV3(context, model, deepseekKey, {
+    breaker: deepseekBreaker,
+    semaphore: deepseekSemaphore,
+    timeoutMs: ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS,
+    queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS,
+    retry: { maxAttempts: 1 },
+  });
+  const timingMs = Math.round(performance.now() - start);
+
+  const parsedDetail = detailRaw ? IngredientsDetailSchema.safeParse(detailRaw) : null;
+  const detailPayload = parsedDetail?.success ? parsedDetail.data : null;
+  const detailStatus: "complete" | "error" = detailPayload ? "complete" : "error";
+
+  void upsertAnalysisIdentityCache(
+    {
+      identityType: identity.type,
+      identityValue: identity.value,
+      locale,
+      promptVersion,
+      factsDigestHash,
+      factsSourceVersion: digestRow.facts_source_version ?? "",
+      section,
+      status: detailStatus,
+      payload: detailPayload,
+      factsDigestJson: digestRow.facts_digest_json,
+      expiresAt: new Date(Date.now() + ANALYSIS_IDENTITY_CACHE_TTL_MS).toISOString(),
+    },
+    { timeoutMs: 1200 },
+  );
+
+  if (!detailPayload) {
+    res.status(500).json({
+      section: "ingredients",
+      detail: null,
+      dataStatus: "error",
+      meta: {
+        bundleId: randomUUID(),
+        revision: 2,
+        factsDigestHash,
+      },
+      timingMs,
+    });
+    return;
+  }
+
+  res.json({
+    section: "ingredients",
+    detail: detailPayload,
+    dataStatus: "complete",
+    meta: {
+      bundleId: randomUUID(),
+      revision: 2,
+      factsDigestHash,
+    },
+    timingMs,
+  });
+});
+
+/**
  * Main streaming endpoint: Two-step search + AI analysis
  */
 app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Response) => {
@@ -4698,6 +5200,10 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
   const rawBarcode = parsedBody.barcode;
   const normalized = normalizeBarcodeInput(rawBarcode);
   const model = process.env.DEEPSEEK_MODEL || "deepseek-chat";
+  const acceptLanguageHeader =
+    typeof req.headers["accept-language"] === "string" ? req.headers["accept-language"] : null;
+  const locale = resolveLocale(acceptLanguageHeader);
+  const bundleId = randomUUID();
   let finishInFlight: ((error?: unknown) => void) | null = null;
   let catalogSnapshotForAi: SupplementSnapshot | null = null;
   let catalogAnalysisPayloadForAi: SnapshotAnalysisPayload | null = null;
@@ -4755,6 +5261,126 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       lnhpd_fetch_status: lnhpdFetchStatus,
       ...(extra ?? {}),
     });
+
+    const emitAnalysisBundleSequence = async (params: {
+      digest: FactsDigest;
+      identityType: FactsDigest["identity"]["type"];
+      identityValue: string;
+      factsSourceVersion: string;
+      allowAi: boolean;
+      apiKey: string | null;
+    }): Promise<{ factsDigestHash: string } | null> => {
+      const factsDigestHash = computeFactsDigestHash(params.digest);
+      const dataStatus = params.allowAi
+        ? { overview: "pending" as const, usage: "pending" as const, safety: "pending" as const }
+        : { overview: "limited" as const, usage: "limited" as const, safety: "limited" as const };
+
+      const skeleton = buildAnalysisBundleSkeleton({
+        digest: params.digest,
+        bundleId,
+        revision: 0,
+        phase: "skeleton",
+        locale,
+        factsDigestHash,
+        factsSourceVersion: params.factsSourceVersion,
+        identityType: params.identityType,
+        identityValue: params.identityValue,
+        dataStatus,
+      });
+
+      void upsertAnalysisIdentityCache(
+        {
+          identityType: params.identityType,
+          identityValue: params.identityValue,
+          locale,
+          promptVersion: ANALYSIS_BUNDLE_PROMPT_VERSION,
+          factsDigestHash,
+          factsSourceVersion: params.factsSourceVersion,
+          section: "digest",
+          status: "complete",
+          payload: null,
+          factsDigestJson: params.digest,
+          expiresAt: new Date(Date.now() + ANALYSIS_IDENTITY_CACHE_TTL_MS).toISOString(),
+        },
+        { timeoutMs: 900 },
+      );
+
+      const skeletonParsed = safeParseAnalysisBundle(skeleton);
+      if (skeletonParsed.success) {
+        sendSSE(res, "analysis_bundle", skeletonParsed.data);
+      } else {
+        console.warn("[analysis_bundle] skeleton validation failed", skeletonParsed.error?.message);
+      }
+
+      if (!params.allowAi || !params.apiKey) {
+        return { factsDigestHash };
+      }
+
+      const cachedFast = await getAnalysisIdentityCache(
+        {
+          identityType: params.identityType,
+          identityValue: params.identityValue,
+          locale,
+          promptVersion: ANALYSIS_BUNDLE_PROMPT_VERSION,
+          factsDigestHash,
+          section: "bundle_fast",
+        },
+        { timeoutMs: 700 },
+      ).catch(() => null);
+
+      if (cachedFast?.payload && typeof cachedFast.payload === "object") {
+        const fastCandidate = {
+          ...(cachedFast.payload as AnalysisBundle),
+          meta: {
+            ...(cachedFast.payload as AnalysisBundle).meta,
+            bundleId,
+            revision: 1,
+            phase: "fast_ai",
+            factsDigestHash,
+            factsSourceVersion: params.factsSourceVersion,
+          },
+        } satisfies AnalysisBundle;
+        const parsed = safeParseAnalysisBundle(fastCandidate);
+        if (parsed.success) {
+          sendSSE(res, "analysis_bundle", parsed.data);
+        }
+        return { factsDigestHash };
+      }
+
+      const context = `FACTS_DIGEST_JSON: ${JSON.stringify(params.digest)}`;
+      const fastRaw = await fetchAnalysisBundleFastV3(context, model, params.apiKey, {
+        breaker: deepseekBreaker,
+        semaphore: deepseekSemaphore,
+        timeoutMs: ANALYSIS_BUNDLE_FAST_TIMEOUT_MS,
+        queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS,
+        retry: { maxAttempts: 1 },
+      });
+      const fastBundle = mergeFastAnalysisBundle({ skeleton, digest: params.digest, fastOutput: fastRaw });
+      const parsed = safeParseAnalysisBundle(fastBundle);
+      if (parsed.success) {
+        sendSSE(res, "analysis_bundle", parsed.data);
+        void upsertAnalysisIdentityCache(
+          {
+            identityType: params.identityType,
+            identityValue: params.identityValue,
+            locale,
+            promptVersion: ANALYSIS_BUNDLE_PROMPT_VERSION,
+            factsDigestHash,
+            factsSourceVersion: params.factsSourceVersion,
+            section: "bundle_fast",
+            status: "complete",
+            payload: parsed.data,
+            factsDigestJson: params.digest,
+            expiresAt: new Date(Date.now() + ANALYSIS_IDENTITY_CACHE_TTL_MS).toISOString(),
+          },
+          { timeoutMs: 900 },
+        );
+      } else {
+        console.warn("[analysis_bundle] fast bundle validation failed", parsed.error?.message);
+      }
+
+      return { factsDigestHash };
+    };
     const googleResilience: SearchResilienceOptions = {
       signal: requestSignal,
       budget,
@@ -4799,6 +5425,10 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         maxDelayMs: 300,
         jitterRatio: 0.3,
       },
+    };
+    const supabaseWriteResilience = {
+      ...supabaseReadResilience,
+      timeoutMs: Number(process.env.RESILIENCE_SUPABASE_WRITE_TIMEOUT_MS ?? 1500),
     };
     const contextResilience = {
       signal: requestSignal,
@@ -5358,6 +5988,29 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         updatedAt: nowIso(),
       };
 
+      if (dsldFacts) {
+        const dsldFactsSourceVersion = `dsld:${dsldFacts.datasetVersion ?? dsldFacts.extractedAt ?? "unknown"}`;
+        const dsldIdentityValue = catalog.dsldLabelId
+          ? String(catalog.dsldLabelId)
+          : workingSnapshot.regulatory.dsldLabelId ?? barcodeGtin14;
+        const dsldIdentityType =
+          catalog.dsldLabelId || workingSnapshot.regulatory.dsldLabelId ? "dsldLabelId" : "gtin14";
+        const dsldDigest = buildFactsDigestFromDsld({
+          facts: dsldFacts,
+          snapshot: workingSnapshot,
+          identityValue: dsldIdentityValue,
+          regionTags: workingSnapshot.regulatory.regionTags,
+        });
+        void emitAnalysisBundleSequence({
+          digest: dsldDigest,
+          identityType: dsldIdentityType,
+          identityValue: dsldIdentityValue,
+          factsSourceVersion: dsldFactsSourceVersion,
+          allowAi: Boolean(deepseekKey),
+          apiKey: deepseekKey,
+        });
+      }
+
       const payloadSources = workingAnalysisPayload.sources ?? [];
       workingAnalysisPayload = {
         ...workingAnalysisPayload,
@@ -5572,6 +6225,22 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
 	                usagePayload: lnhpdAnalysisPayload.usagePayload ?? null,
 	              });
 	              lnhpdSnapshot = applyLnhpdFactsToSnapshot(lnhpdSnapshot, lnhpdFacts);
+
+	              const lnhpdFactsSourceVersion = `lnhpd:${lnhpdFacts.datasetVersion ?? lnhpdFacts.extractedAt ?? "unknown"}`;
+	              const lnhpdDigest = buildFactsDigestFromLnhpd({
+	                facts: lnhpdFacts,
+	                snapshot: lnhpdSnapshot,
+	                identityValue: candidate.npn,
+	                regionTags: lnhpdSnapshot.regulatory.regionTags,
+	              });
+	              void emitAnalysisBundleSequence({
+	                digest: lnhpdDigest,
+	                identityType: "npn",
+	                identityValue: candidate.npn,
+	                factsSourceVersion: lnhpdFactsSourceVersion,
+	                allowAi: Boolean(deepseekKey),
+	                apiKey: deepseekKey,
+	              });
 
 	              const analysisStatus = buildAnalysisStatus({
 	                hasLabelFacts: hasLabelFacts(lnhpdSnapshot),
@@ -8151,6 +8820,47 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
       snapshot.analysis = analysisMeta;
       snapshot.updatedAt = nowIso();
 
+      const fallbackCanonicalUrls = initialItems.map((item) => item.link).slice(0, 2);
+      const fallbackCanonicalHash = createHash("sha256").update(fallbackCanonicalUrls.join("|")).digest("hex");
+      const fallbackFactsSourceVersion = `web:${RESOLUTION_ENGINE_VERSION}:${fallbackCanonicalHash}`;
+      const fallbackCanonicalBestUrl = fallbackCanonicalUrls[0] ?? null;
+      const fallbackWebCanonicalId = fallbackCanonicalBestUrl
+        ? createHash("sha256").update(`${fallbackCanonicalBestUrl}|${RESOLUTION_ENGINE_VERSION}|${barcodeGtin14}`).digest("hex")
+        : barcodeGtin14;
+      const fallbackIdentityType = fallbackCanonicalBestUrl ? "webCanonicalId" : "gtin14";
+      const fallbackDigest = buildFactsDigestFromWeb({
+        facts: {
+          barcode: barcodeGtin14,
+          canonical: {
+            name: fallbackFacts.canonical?.name ?? null,
+            brand: fallbackFacts.canonical?.brand ?? null,
+            url: fallbackFacts.canonical?.url ?? null,
+            domain: fallbackFacts.canonical?.domain ?? null,
+          },
+          identifiers: { npn: null },
+          textFacts: {
+            ingredientsText: null,
+            directionsText: null,
+            warningsText: null,
+            servingSizeText: null,
+          },
+          coverageScore: fallbackFacts.coverageScore ?? 0,
+          missingFields: fallbackFacts.missingFields ?? [],
+        },
+        snapshot,
+        identityType: fallbackIdentityType,
+        identityValue: fallbackWebCanonicalId,
+        regionTags: snapshot.regulatory.regionTags,
+      });
+      void emitAnalysisBundleSequence({
+        digest: fallbackDigest,
+        identityType: fallbackIdentityType,
+        identityValue: fallbackWebCanonicalId,
+        factsSourceVersion: fallbackFactsSourceVersion,
+        allowAi: Boolean(deepseekKey),
+        apiKey: deepseekKey,
+      });
+
       if (stage1SnapshotWriteEnabled) {
         void storeSnapshotCache({
           key: cacheKey,
@@ -9355,10 +10065,34 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
     snapshot.analysis = analysisMeta;
     snapshot.updatedAt = nowIso();
 
+
     const expiresAt = computeExpiresAt(analysisStatus);
 
     // Best URL caching: only on strongMatch (hard rule).
     const bestEvidence = bestCandidate?.evidence ?? deepCandidates[0]?.evidence ?? null;
+    const canonicalMap = await getWebCanonicalMap(
+      { barcodeGtin14, engineVersion: RESOLUTION_ENGINE_VERSION },
+      { ...supabaseReadResilience, timeoutMs: 500 },
+    ).catch(() => null);
+    const canonicalUrls =
+      canonicalMap?.canonical_urls ??
+      (selectedItems.length ? selectedItems : initialItems).map((item) => item.link).slice(0, 3);
+    const canonicalHash =
+      canonicalMap?.canonical_hash ?? createHash("sha256").update(canonicalUrls.join("|")).digest("hex");
+    const canonicalBestUrl = canonicalMap?.best_url ?? bestEvidence?.url ?? canonicalUrls[0] ?? null;
+    if (!canonicalMap && canonicalUrls.length > 0) {
+      void upsertWebCanonicalMap(
+        {
+          barcodeGtin14,
+          engineVersion: RESOLUTION_ENGINE_VERSION,
+          canonicalUrls,
+          canonicalHash,
+          bestUrl: canonicalBestUrl,
+          expiresAt: new Date(Date.now() + WEB_CANONICAL_TTL_MS).toISOString(),
+        },
+        { ...supabaseReadResilience, timeoutMs: 700 },
+      );
+    }
     if (
       bestEvidence?.strongMatch &&
       !marketplaceOnly &&
@@ -9384,6 +10118,46 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
         { ...supabaseReadResilience, timeoutMs: 700 },
       );
     }
+
+    const webFactsSourceVersion = `web:${RESOLUTION_ENGINE_VERSION}:${canonicalHash}`;
+    const webCanonicalId = canonicalBestUrl
+      ? createHash("sha256").update(`${canonicalBestUrl}|${RESOLUTION_ENGINE_VERSION}|${barcodeGtin14}`).digest("hex")
+      : barcodeGtin14;
+    const webIdentityType = canonicalBestUrl ? "webCanonicalId" : "gtin14";
+
+    const webFactsInput = {
+      barcode: barcodeGtin14,
+      canonical: {
+        name: factsForAnalysis.canonical?.name ?? null,
+        brand: factsForAnalysis.canonical?.brand ?? null,
+        url: factsForAnalysis.canonical?.url ?? null,
+        domain: factsForAnalysis.canonical?.domain ?? null,
+      },
+      identifiers: { npn: factsForAnalysis.identifiers?.npn ?? null },
+      textFacts: {
+        ingredientsText: factsForAnalysis.textFacts?.ingredientsText ?? null,
+        directionsText: factsForAnalysis.textFacts?.directionsText ?? null,
+        warningsText: factsForAnalysis.textFacts?.warningsText ?? null,
+        servingSizeText: factsForAnalysis.textFacts?.servingSizeText ?? null,
+      },
+      coverageScore: factsForAnalysis.coverageScore ?? 0,
+      missingFields: factsForAnalysis.missingFields ?? [],
+    };
+    const webDigest = buildFactsDigestFromWeb({
+      facts: webFactsInput,
+      snapshot,
+      identityType: webIdentityType,
+      identityValue: webCanonicalId,
+      regionTags: snapshot.regulatory.regionTags,
+    });
+    void emitAnalysisBundleSequence({
+      digest: webDigest,
+      identityType: webIdentityType,
+      identityValue: webCanonicalId,
+      factsSourceVersion: webFactsSourceVersion,
+      allowAi: Boolean(deepseekKey),
+      apiKey: deepseekKey,
+    });
 
     if (stage1SnapshotWriteEnabled) {
       void storeSnapshotCache({

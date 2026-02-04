@@ -18,6 +18,8 @@ const tasks: CleanupTask[] = [
   { name: "cleanup_expired_negative_cache" },
   { name: "cleanup_expired_barcode_regulatory_map" },
   { name: "cleanup_expired_npn_negative_cache" },
+  { name: "cleanup_expired_analysis_identity_cache" },
+  { name: "cleanup_expired_web_canonical_map" },
   { name: "cleanup_expired_barcode_resolution_training", args: { ttl_days: ttlDays } },
 ];
 
