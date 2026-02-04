@@ -5447,6 +5447,22 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         // ignore (client disconnect or timeout)
       }
     };
+    let stage1BundlePromise: Promise<{ factsDigestHash: string } | null> | null = null;
+    const awaitStage1Bundle = async () => {
+      if (!stage1BundlePromise) return;
+      const waitMs = Math.max(0, ANALYSIS_BUNDLE_FAST_TIMEOUT_MS + 500);
+      try {
+        await abortable(
+          Promise.race([
+            stage1BundlePromise.catch(() => null),
+            new Promise((resolve) => setTimeout(resolve, waitMs)),
+          ]),
+          requestSignal,
+        );
+      } catch {
+        // ignore (client disconnect or timeout)
+      }
+    };
     const googleResilience: SearchResilienceOptions = {
       signal: requestSignal,
       budget,
@@ -9020,7 +9036,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
         identityValue: fallbackWebCanonicalId,
         regionTags: snapshot.regulatory.regionTags,
       });
-      void emitAnalysisBundleSequence({
+      stage1BundlePromise = emitAnalysisBundleSequence({
         digest: fallbackDigest,
         identityType: fallbackIdentityType,
         identityValue: fallbackWebCanonicalId,
@@ -9132,6 +9148,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
       });
       clearNegative();
 
+      await awaitStage1Bundle();
       sendSSE(res, "done", { barcode });
       res.end();
       finishInFlight?.();
@@ -10318,7 +10335,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
       identityValue: webCanonicalId,
       regionTags: snapshot.regulatory.regionTags,
     });
-    void emitAnalysisBundleSequence({
+    stage1BundlePromise = emitAnalysisBundleSequence({
       digest: webDigest,
       identityType: webIdentityType,
       identityValue: webCanonicalId,
@@ -10460,11 +10477,14 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
 
     const canRespond = !requestSignal.aborted && !res.writableEnded;
     if (canRespond) {
-      if (stage1SseEnabled) {
-        sendSSE(res, "snapshot", snapshot);
+      await awaitStage1Bundle();
+      if (!requestSignal.aborted && !res.writableEnded) {
+        if (stage1SseEnabled) {
+          sendSSE(res, "snapshot", snapshot);
+        }
+        sendSSE(res, "done", { barcode });
+        res.end();
       }
-      sendSSE(res, "done", { barcode });
-      res.end();
     }
 
     finishInFlight?.();
