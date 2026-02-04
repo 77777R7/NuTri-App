@@ -9,6 +9,8 @@ import {
 } from "./resilience.js";
 import type { CircuitBreaker, DeadlineBudget, RetryOptions, Semaphore } from "./resilience.js";
 
+export type AnalysisIdentityStatus = "pending" | "running" | "complete" | "error";
+
 export type AnalysisIdentityCacheRow = {
   identity_type: string;
   identity_value: string;
@@ -17,9 +19,13 @@ export type AnalysisIdentityCacheRow = {
   facts_digest_hash: string;
   facts_source_version: string;
   section: string;
-  status: "pending" | "complete" | "error";
+  status: AnalysisIdentityStatus;
   payload: unknown | null;
   facts_digest_json: unknown;
+  attempts: number | null;
+  locked_until: string | null;
+  last_error: string | null;
+  error_code: string | null;
   updated_at: string;
   created_at: string;
   expires_at: string | null;
@@ -133,7 +139,7 @@ export async function getAnalysisIdentityCache(params: {
     const query = supabase
       .from("analysis_identity_cache")
       .select(
-        "identity_type,identity_value,locale,prompt_version,facts_digest_hash,facts_source_version,section,status,payload,facts_digest_json,updated_at,created_at,expires_at",
+        "identity_type,identity_value,locale,prompt_version,facts_digest_hash,facts_source_version,section,status,payload,facts_digest_json,attempts,locked_until,last_error,error_code,updated_at,created_at,expires_at",
       )
       .eq("identity_type", params.identityType)
       .eq("identity_value", params.identityValue)
@@ -163,9 +169,13 @@ export async function upsertAnalysisIdentityCache(params: {
   factsDigestHash: string;
   factsSourceVersion: string;
   section: string;
-  status: "pending" | "complete" | "error";
+  status: AnalysisIdentityStatus;
   payload: unknown | null;
   factsDigestJson: unknown;
+  attempts?: number | null;
+  lockedUntil?: string | null;
+  lastError?: string | null;
+  errorCode?: string | null;
   expiresAt: string | null;
 }, options: ResilienceOptions = {}): Promise<void> {
   const record = {
@@ -179,6 +189,10 @@ export async function upsertAnalysisIdentityCache(params: {
     status: params.status,
     payload: params.payload,
     facts_digest_json: params.factsDigestJson,
+    attempts: params.attempts ?? 0,
+    locked_until: params.lockedUntil ?? null,
+    last_error: params.lastError ?? null,
+    error_code: params.errorCode ?? null,
     expires_at: params.expiresAt,
     updated_at: new Date().toISOString(),
   };
@@ -207,6 +221,11 @@ export async function insertAnalysisIdentityPending(params: {
   factsDigestHash: string;
   factsSourceVersion: string;
   section: string;
+  status?: AnalysisIdentityStatus;
+  attempts?: number | null;
+  lockedUntil?: string | null;
+  lastError?: string | null;
+  errorCode?: string | null;
   factsDigestJson: unknown;
   expiresAt: string | null;
 }, options: ResilienceOptions = {}): Promise<boolean> {
@@ -218,9 +237,13 @@ export async function insertAnalysisIdentityPending(params: {
     facts_digest_hash: params.factsDigestHash,
     facts_source_version: params.factsSourceVersion,
     section: params.section,
-    status: "pending",
+    status: params.status ?? "pending",
     payload: null,
     facts_digest_json: params.factsDigestJson,
+    attempts: params.attempts ?? 0,
+    locked_until: params.lockedUntil ?? null,
+    last_error: params.lastError ?? null,
+    error_code: params.errorCode ?? null,
     expires_at: params.expiresAt,
     updated_at: new Date().toISOString(),
   };
@@ -238,6 +261,59 @@ export async function insertAnalysisIdentityPending(params: {
       const rawStatus = (error as { status?: number }).status;
       const status = typeof rawStatus === "number" ? rawStatus : 503;
       throw new HttpError(status, error.message ?? "analysis_identity_cache_insert_error");
+    }
+    return data as Array<{ identity_type: string }> | null;
+  }, options);
+
+  return Boolean(result && result.length > 0);
+}
+
+export async function updateAnalysisIdentityCache(params: {
+  identityType: string;
+  identityValue: string;
+  locale: string;
+  promptVersion: string;
+  factsDigestHash: string;
+  section: string;
+  status: AnalysisIdentityStatus;
+  payload?: unknown | null;
+  factsDigestJson?: unknown;
+  factsSourceVersion?: string;
+  attempts?: number | null;
+  lockedUntil?: string | null;
+  lastError?: string | null;
+  errorCode?: string | null;
+  expiresAt?: string | null;
+}, options: ResilienceOptions = {}): Promise<boolean> {
+  const record: Record<string, unknown> = {
+    status: params.status,
+    updated_at: new Date().toISOString(),
+  };
+  if (params.payload !== undefined) record.payload = params.payload;
+  if (params.factsDigestJson !== undefined) record.facts_digest_json = params.factsDigestJson;
+  if (params.factsSourceVersion !== undefined) record.facts_source_version = params.factsSourceVersion;
+  if (params.attempts !== undefined) record.attempts = params.attempts;
+  if (params.lockedUntil !== undefined) record.locked_until = params.lockedUntil;
+  if (params.lastError !== undefined) record.last_error = params.lastError;
+  if (params.errorCode !== undefined) record.error_code = params.errorCode;
+  if (params.expiresAt !== undefined) record.expires_at = params.expiresAt;
+
+  const result = await runWithResilience(async (signal) => {
+    const { data, error } = await supabase
+      .from("analysis_identity_cache")
+      .update(record)
+      .eq("identity_type", params.identityType)
+      .eq("identity_value", params.identityValue)
+      .eq("locale", params.locale)
+      .eq("prompt_version", params.promptVersion)
+      .eq("facts_digest_hash", params.factsDigestHash)
+      .eq("section", params.section)
+      .select("identity_type")
+      .abortSignal(signal);
+    if (error && options.retry && shouldRetrySupabaseError(error)) {
+      const rawStatus = (error as { status?: number }).status;
+      const status = typeof rawStatus === "number" ? rawStatus : 503;
+      throw new HttpError(status, error.message ?? "analysis_identity_cache_update_error");
     }
     return data as Array<{ identity_type: string }> | null;
   }, options);

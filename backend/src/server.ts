@@ -27,7 +27,7 @@ import {
   type FactsDigest,
   type LnhpdFactsInput,
 } from "./factsDigest.js";
-import { getAnalysisIdentityCache, getWebCanonicalMap, insertAnalysisIdentityPending, upsertAnalysisIdentityCache, upsertWebCanonicalMap } from "./analysisIdentityCache.js";
+import { getAnalysisIdentityCache, getWebCanonicalMap, insertAnalysisIdentityPending, updateAnalysisIdentityCache, upsertAnalysisIdentityCache, upsertWebCanonicalMap } from "./analysisIdentityCache.js";
 import {
   clearNegativeCache,
   clearNpnNegativeCache,
@@ -258,6 +258,8 @@ const NPN_NEGATIVE_CACHE_THRESHOLD = Number(process.env.NPN_NEGATIVE_CACHE_THRES
 const ANALYSIS_BUNDLE_PROMPT_VERSION = process.env.ANALYSIS_BUNDLE_PROMPT_VERSION ?? "reg_v3.1";
 const ANALYSIS_BUNDLE_FAST_TIMEOUT_MS = Number(process.env.ANALYSIS_BUNDLE_FAST_TIMEOUT_MS ?? 3500);
 const ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS = Number(process.env.ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS ?? 7000);
+const ANALYSIS_DETAIL_LOCK_MS = Number(process.env.ANALYSIS_DETAIL_LOCK_MS ?? 45_000);
+const ANALYSIS_DETAIL_STALE_MS = Number(process.env.ANALYSIS_DETAIL_STALE_MS ?? 60_000);
 const ANALYSIS_IDENTITY_CACHE_TTL_MS = Number(
   process.env.ANALYSIS_IDENTITY_CACHE_TTL_MS ?? 30 * 24 * 60 * 60 * 1000,
 );
@@ -5183,6 +5185,17 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     { timeoutMs: 800 },
   ).catch(() => null);
 
+  const nowMs = Date.now();
+  const jobId = createHash("sha256").update(rateKey + factsDigestHash).digest("hex");
+  const pendingAgeMs = cachedDetail?.updated_at ? Math.max(0, nowMs - Date.parse(cachedDetail.updated_at)) : null;
+  const lockedUntilMs =
+    cachedDetail?.locked_until ? Date.parse(cachedDetail.locked_until) : null;
+  const isStaleJob = cachedDetail
+    ? pendingAgeMs !== null && pendingAgeMs > ANALYSIS_DETAIL_STALE_MS
+      ? true
+      : lockedUntilMs !== null && Number.isFinite(lockedUntilMs) && lockedUntilMs <= nowMs
+    : false;
+
   if (cachedDetail?.status === "complete" && cachedDetail.payload) {
     res.json({
       section: "ingredients",
@@ -5198,36 +5211,96 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     return;
   }
 
-  if (cachedDetail?.status === "pending") {
-    res.status(202).json({
-      status: "pending",
-      jobId: createHash("sha256").update(rateKey + factsDigestHash).digest("hex"),
-      retryAfterMs: 2000,
-      meta: { requestId },
+  if (cachedDetail?.status === "error") {
+    res.status(200).json({
+      section: "ingredients",
+      detail: null,
+      dataStatus: "error",
+      errorCode: cachedDetail.error_code ?? "DETAIL_ERROR",
+      retryable: true,
+      meta: {
+        bundleId: randomUUID(),
+        revision: 2,
+        factsDigestHash,
+        jobId,
+        jobStatus: cachedDetail.status,
+        attempts: cachedDetail.attempts ?? 0,
+        updatedAt: cachedDetail.updated_at,
+        pendingAgeMs,
+      },
+      timingMs: 0,
     });
     return;
   }
 
-  const inserted = await insertAnalysisIdentityPending(
-    {
-      identityType: identity.type,
-      identityValue: identity.value,
-      locale,
-      promptVersion,
-      factsDigestHash,
-      factsSourceVersion: digestRow.facts_source_version ?? "",
-      section,
-      factsDigestJson: digestRow.facts_digest_json,
-      expiresAt: new Date(Date.now() + ANALYSIS_IDENTITY_CACHE_TTL_MS).toISOString(),
-    },
-    { timeoutMs: 1200 },
-  ).catch(() => false);
+  if (cachedDetail?.status === "pending" || cachedDetail?.status === "running") {
+    if (!isStaleJob) {
+      res.status(202).json({
+        status: "pending",
+        jobId,
+        retryAfterMs: 2000,
+        jobStatus: cachedDetail.status,
+        attempts: cachedDetail.attempts ?? 0,
+        updatedAt: cachedDetail.updated_at,
+        pendingAgeMs,
+        meta: { requestId },
+      });
+      return;
+    }
+  }
 
-  if (!inserted) {
+  const lockUntil = new Date(nowMs + ANALYSIS_DETAIL_LOCK_MS).toISOString();
+  const attempts = (cachedDetail?.attempts ?? 0) + 1;
+
+  let claimed = false;
+  if (cachedDetail) {
+    claimed = await updateAnalysisIdentityCache(
+      {
+        identityType: identity.type,
+        identityValue: identity.value,
+        locale,
+        promptVersion,
+        factsDigestHash,
+        section,
+        status: "running",
+        payload: null,
+        attempts,
+        lockedUntil: lockUntil,
+        lastError: null,
+        errorCode: null,
+        expiresAt: new Date(Date.now() + ANALYSIS_IDENTITY_CACHE_TTL_MS).toISOString(),
+      },
+      { timeoutMs: 1200 },
+    ).catch(() => false);
+  } else {
+    claimed = await insertAnalysisIdentityPending(
+      {
+        identityType: identity.type,
+        identityValue: identity.value,
+        locale,
+        promptVersion,
+        factsDigestHash,
+        factsSourceVersion: digestRow.facts_source_version ?? "",
+        section,
+        status: "running",
+        attempts,
+        lockedUntil: lockUntil,
+        factsDigestJson: digestRow.facts_digest_json,
+        expiresAt: new Date(Date.now() + ANALYSIS_IDENTITY_CACHE_TTL_MS).toISOString(),
+      },
+      { timeoutMs: 1200 },
+    ).catch(() => false);
+  }
+
+  if (!claimed) {
     res.status(202).json({
       status: "pending",
-      jobId: createHash("sha256").update(rateKey + factsDigestHash).digest("hex"),
+      jobId,
       retryAfterMs: 2000,
+      jobStatus: cachedDetail?.status ?? "pending",
+      attempts: cachedDetail?.attempts ?? 0,
+      updatedAt: cachedDetail?.updated_at ?? null,
+      pendingAgeMs,
       meta: { requestId },
     });
     return;
@@ -5270,6 +5343,10 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       status: detailStatus,
       payload: detailPayload,
       factsDigestJson: digestRow.facts_digest_json,
+      attempts,
+      lockedUntil: null,
+      lastError: detailPayload ? null : errorCode ?? "LLM_DETAIL_FAILED",
+      errorCode: detailPayload ? null : errorCode ?? "LLM_DETAIL_FAILED",
       expiresAt: new Date(Date.now() + ANALYSIS_IDENTITY_CACHE_TTL_MS).toISOString(),
     },
     { timeoutMs: 1200 },
@@ -5289,6 +5366,11 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
         bundleId: randomUUID(),
         revision: 2,
         factsDigestHash,
+        jobId,
+        jobStatus: detailStatus,
+        attempts,
+        updatedAt: new Date().toISOString(),
+        pendingAgeMs: null,
       },
       timingMs,
     });
@@ -5303,6 +5385,11 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       bundleId: randomUUID(),
       revision: 2,
       factsDigestHash,
+      jobId,
+      jobStatus: detailStatus,
+      attempts,
+      updatedAt: new Date().toISOString(),
+      pendingAgeMs: null,
     },
     timingMs,
   });
@@ -5462,46 +5549,70 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         const parsed = safeParseAnalysisBundle(fastCandidate);
         if (parsed.success && canWrite()) {
           sendSSE(res, "analysis_bundle", parsed.data);
+          return { factsDigestHash };
         }
-        return { factsDigestHash };
       }
 
       const context = `FACTS_DIGEST_JSON: ${JSON.stringify(params.digest)}`;
       const canUseAi = params.allowAi && Boolean(params.apiKey);
       let fastRaw: Record<string, unknown> | null = null;
       let fastFailed = false;
-      if (canUseAi && params.apiKey) {
-        const combined = params.llmSignal ? combineSignals([params.signal, params.llmSignal]) : null;
-        const llmSignal = combined?.signal ?? params.signal;
-        try {
-          fastRaw = await fetchAnalysisBundleFastV3(context, model, params.apiKey, {
-            breaker: deepseekBreaker,
-            semaphore: deepseekSemaphore,
-            timeoutMs: ANALYSIS_BUNDLE_FAST_TIMEOUT_MS,
-            queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS,
-            retry: { maxAttempts: 1 },
-            signal: llmSignal,
-          });
-        } finally {
-          combined?.cleanup();
+      let fastBundle: AnalysisBundle | null = null;
+      try {
+        if (canUseAi && params.apiKey) {
+          const combined = params.llmSignal ? combineSignals([params.signal, params.llmSignal]) : null;
+          const llmSignal = combined?.signal ?? params.signal;
+          try {
+            fastRaw = await fetchAnalysisBundleFastV3(context, model, params.apiKey, {
+              breaker: deepseekBreaker,
+              semaphore: deepseekSemaphore,
+              timeoutMs: ANALYSIS_BUNDLE_FAST_TIMEOUT_MS,
+              queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS,
+              retry: { maxAttempts: 1 },
+              signal: llmSignal,
+            });
+          } catch (error) {
+            console.warn("[analysis_bundle] fast generation failed", error);
+            fastFailed = true;
+          } finally {
+            combined?.cleanup();
+          }
+          if (!fastRaw) fastFailed = true;
+        } else {
+          fastFailed = true;
         }
-        if (!fastRaw) fastFailed = true;
-      } else {
-        fastFailed = true;
+
+        let fastCandidate = mergeFastAnalysisBundle({ skeleton, digest: params.digest, fastOutput: fastRaw });
+        if (fastFailed) {
+          fastCandidate = applyFastFailureStatus(fastCandidate);
+        }
+        let parsed = safeParseAnalysisBundle(fastCandidate);
+        if (!parsed.success) {
+          const fallbackCandidate = applyFastFailureStatus(
+            mergeFastAnalysisBundle({ skeleton, digest: params.digest, fastOutput: null }),
+          );
+          parsed = safeParseAnalysisBundle(fallbackCandidate);
+        }
+        if (parsed.success) {
+          fastBundle = parsed.data;
+        } else {
+          console.warn("[analysis_bundle] fast bundle validation failed", parsed.error?.message);
+        }
+      } catch (error) {
+        console.warn("[analysis_bundle] fast bundle crashed", error);
+        const fallbackCandidate = applyFastFailureStatus(
+          mergeFastAnalysisBundle({ skeleton, digest: params.digest, fastOutput: null }),
+        );
+        const parsed = safeParseAnalysisBundle(fallbackCandidate);
+        if (parsed.success) {
+          fastBundle = parsed.data;
+        } else {
+          console.warn("[analysis_bundle] fast fallback validation failed", parsed.error?.message);
+        }
       }
 
-      let fastBundle = mergeFastAnalysisBundle({ skeleton, digest: params.digest, fastOutput: fastRaw });
-      if (fastFailed) {
-        fastBundle = applyFastFailureStatus(fastBundle);
-      }
-      let parsed = safeParseAnalysisBundle(fastBundle);
-      if (!parsed.success) {
-        const fallbackBundle = buildFastFailureBundle(skeleton);
-        parsed = safeParseAnalysisBundle(fallbackBundle);
-      }
-
-      if (parsed.success && canWrite()) {
-        sendSSE(res, "analysis_bundle", parsed.data);
+      if (fastBundle && canWrite()) {
+        sendSSE(res, "analysis_bundle", fastBundle);
         void upsertAnalysisIdentityCache(
           {
             identityType: params.identityType,
@@ -5512,14 +5623,12 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
             factsSourceVersion: params.factsSourceVersion,
             section: "bundle_fast",
             status: "complete",
-            payload: parsed.data,
+            payload: fastBundle,
             factsDigestJson: params.digest,
             expiresAt: new Date(Date.now() + ANALYSIS_IDENTITY_CACHE_TTL_MS).toISOString(),
           },
           { timeoutMs: 900 },
         );
-      } else if (!parsed.success) {
-        console.warn("[analysis_bundle] fast bundle validation failed", parsed.error?.message);
       }
 
       return { factsDigestHash };
