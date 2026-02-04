@@ -20,6 +20,24 @@ import type { SearchItem } from "./types.js";
 // ENHANCED PROMPTS
 // ============================================================================
 
+const deepseekDebug =
+  process.env.DEEPSEEK_DEBUG === "1" || process.env.DEEPSEEK_DEBUG === "true";
+
+const truncateForLog = (value: string, max = 2000): string =>
+  value.length > max ? `${value.slice(0, max)}…` : value;
+
+const logDeepseekParseIssue = (
+  label: string,
+  payload: string,
+  extra?: Record<string, unknown>,
+): void => {
+  const snippet = truncateForLog(payload);
+  console.warn(`[DeepSeek] ${label}`, {
+    ...(extra ?? {}),
+    snippet,
+  });
+};
+
 const PROMPT_EFFICACY = `You are NuTri-AI, a supplement science expert. Analyze this supplement with SCIENTIFIC DEPTH.
 
 CRITICAL INSTRUCTIONS:
@@ -1086,13 +1104,29 @@ export async function fetchAnalysisBundleFastV3(
 
     options.breaker?.recordSuccess();
 
-    const data = (await response.json()) as { choices?: { message?: { content?: string } }[] };
-    const content = data.choices?.[0]?.message?.content || "{}";
+    const raw = await response.text();
+    let data: { choices?: { message?: { content?: string } }[]; error?: unknown } | null = null;
+    try {
+      data = JSON.parse(raw);
+    } catch (error) {
+      logDeepseekParseIssue("fast_v3_response_parse_failed", raw, { error: String(error) });
+      return null;
+    }
+    const content = data?.choices?.[0]?.message?.content;
+    if (!content || typeof content !== "string") {
+      if (deepseekDebug || !content) {
+        logDeepseekParseIssue("fast_v3_missing_content", raw, {
+          hasChoices: Array.isArray(data?.choices),
+          error: data?.error ?? null,
+        });
+      }
+      return null;
+    }
     const parsed = tryParseJsonLenient(content);
     if (parsed && typeof parsed === "object") {
       return parsed as Record<string, unknown>;
     }
-
+    logDeepseekParseIssue("fast_v3_content_parse_failed", content, { error: "invalid_json_object" });
     return null;
   } catch (error) {
     if (!isAbortError(error)) {
@@ -1190,13 +1224,29 @@ export async function fetchIngredientsDetailV3(
 
     options.breaker?.recordSuccess();
 
-    const data = (await response.json()) as { choices?: { message?: { content?: string } }[] };
-    const content = data.choices?.[0]?.message?.content || "{}";
+    const raw = await response.text();
+    let data: { choices?: { message?: { content?: string } }[]; error?: unknown } | null = null;
+    try {
+      data = JSON.parse(raw);
+    } catch (error) {
+      logDeepseekParseIssue("detail_v3_response_parse_failed", raw, { error: String(error) });
+      return null;
+    }
+    const content = data?.choices?.[0]?.message?.content;
+    if (!content || typeof content !== "string") {
+      if (deepseekDebug || !content) {
+        logDeepseekParseIssue("detail_v3_missing_content", raw, {
+          hasChoices: Array.isArray(data?.choices),
+          error: data?.error ?? null,
+        });
+      }
+      return null;
+    }
     const parsed = tryParseJsonLenient(content);
     if (parsed && typeof parsed === "object") {
       return parsed as Record<string, unknown>;
     }
-
+    logDeepseekParseIssue("detail_v3_content_parse_failed", content, { error: "invalid_json_object" });
     return null;
   } catch (error) {
     if (!isAbortError(error)) {

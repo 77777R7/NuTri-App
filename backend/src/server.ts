@@ -794,7 +794,10 @@ const mergeFastAnalysisBundle = (params: {
     digest.sourceType === "dsld" &&
     overviewBulletsFinal.length > 0 &&
     overviewBulletsFinal.every((bullet) => isContainsBullet(bullet.text));
-  const dsldInference = dsldNeedsInference ? buildDsldInferenceOverview(digest) : null;
+  const dsldForceInference =
+    digest.sourceType === "dsld" &&
+    (overviewBulletsFinal.length === 0 || dsldNeedsInference);
+  const dsldInference = dsldForceInference ? buildDsldInferenceOverview(digest) : null;
 
   const usageRaw = (fastOutput?.usage ?? {}) as Record<string, unknown>;
   const usageBulletsRaw = Array.isArray(usageRaw.bullets) ? usageRaw.bullets : [];

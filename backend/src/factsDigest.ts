@@ -216,6 +216,18 @@ const PURPOSE_CATEGORY_ORDER = [
   "general",
 ];
 
+const PURPOSE_CATEGORY_LABELS: Record<string, string> = {
+  immune: "Supports immune function",
+  antioxidant: "Antioxidant support",
+  energy: "Supports energy and metabolism",
+  bone: "Supports bone and connective tissue",
+  heart: "Supports cardiovascular health",
+  skin: "Supports skin, hair, and nails",
+  digestive: "Supports digestive health",
+  stress: "Supports stress and sleep balance",
+  general: "Supports general health",
+};
+
 const categorizePurpose = (purpose: string): string => {
   const normalized = purpose.toLowerCase();
   if (/immune|immunity|cold/.test(normalized)) return "immune";
@@ -242,6 +254,25 @@ const dedupeAndSortPurposes = (purposes: string[]): string[] => {
     if (idxA !== idxB) return idxA - idxB;
     return a.localeCompare(b);
   });
+};
+
+const summarizePurposes = (purposes: string[], maxItems = 4): string[] => {
+  const cleaned = dedupeAndSortPurposes(purposes);
+  if (!cleaned.length) return [];
+  const categoryMap = new Map<string, string>();
+  for (const purpose of cleaned) {
+    const category = categorizePurpose(purpose);
+    if (!categoryMap.has(category)) {
+      categoryMap.set(category, PURPOSE_CATEGORY_LABELS[category] ?? purpose);
+    }
+  }
+  const ordered = PURPOSE_CATEGORY_ORDER.flatMap((category) =>
+    categoryMap.has(category) ? [categoryMap.get(category)!] : [],
+  );
+  if (ordered.length > 0) {
+    return ordered.slice(0, maxItems);
+  }
+  return cleaned.slice(0, maxItems);
 };
 
 const computeCompleteness = (digest: FactsDigest): FactsDigest["quality"] => {
@@ -335,7 +366,7 @@ export const buildFactsDigestFromLnhpd = (params: {
       missingFlag: true,
     },
     claims: {
-      labelPurposes: dedupeAndSortPurposes(facts.purposes ?? []),
+      labelPurposes: summarizePurposes(facts.purposes ?? []),
       webClaims: [],
     },
     quality: { isComplete: false, missingFields: [], completenessScore: 0 },
