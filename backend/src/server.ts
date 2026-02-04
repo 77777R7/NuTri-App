@@ -5389,6 +5389,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       allowAi: boolean;
       apiKey: string | null;
       signal?: AbortSignal;
+      llmSignal?: AbortSignal;
     }): Promise<{ factsDigestHash: string } | null> => {
       const factsDigestHash = computeFactsDigestHash(params.digest);
       const canWrite = () => !params.signal?.aborted && !res.writableEnded;
@@ -5470,14 +5471,20 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       let fastRaw: Record<string, unknown> | null = null;
       let fastFailed = false;
       if (canUseAi && params.apiKey) {
-        fastRaw = await fetchAnalysisBundleFastV3(context, model, params.apiKey, {
-          breaker: deepseekBreaker,
-          semaphore: deepseekSemaphore,
-          timeoutMs: ANALYSIS_BUNDLE_FAST_TIMEOUT_MS,
-          queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS,
-          retry: { maxAttempts: 1 },
-          signal: params.signal,
-        });
+        const combined = params.llmSignal ? combineSignals([params.signal, params.llmSignal]) : null;
+        const llmSignal = combined?.signal ?? params.signal;
+        try {
+          fastRaw = await fetchAnalysisBundleFastV3(context, model, params.apiKey, {
+            breaker: deepseekBreaker,
+            semaphore: deepseekSemaphore,
+            timeoutMs: ANALYSIS_BUNDLE_FAST_TIMEOUT_MS,
+            queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS,
+            retry: { maxAttempts: 1 },
+            signal: llmSignal,
+          });
+        } finally {
+          combined?.cleanup();
+        }
         if (!fastRaw) fastFailed = true;
       } else {
         fastFailed = true;
@@ -5519,7 +5526,6 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     };
     let stage0BundlePromise: Promise<{ factsDigestHash: string } | null> | null = null;
     let stage0BundleAbort: AbortController | null = null;
-    let stage0BundleCleanup: (() => void) | null = null;
     const awaitStage0Bundle = async () => {
       if (!stage0BundlePromise) return;
       const waitMs = Math.max(0, ANALYSIS_BUNDLE_FAST_TIMEOUT_MS + 500);
@@ -5546,7 +5552,6 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     };
     let stage1BundlePromise: Promise<{ factsDigestHash: string } | null> | null = null;
     let stage1BundleAbort: AbortController | null = null;
-    let stage1BundleCleanup: (() => void) | null = null;
     const awaitStage1Bundle = async () => {
       if (!stage1BundlePromise) return;
       const waitMs = Math.max(0, ANALYSIS_BUNDLE_FAST_TIMEOUT_MS + 500);
@@ -5571,30 +5576,26 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         stage1BundleAbort?.abort(new Error("fast_bundle_timeout"));
       }
     };
-    const startStage0Bundle = (params: Omit<Parameters<typeof emitAnalysisBundleSequence>[0], "signal">) => {
+    const startStage0Bundle = (
+      params: Omit<Parameters<typeof emitAnalysisBundleSequence>[0], "signal" | "llmSignal">,
+    ) => {
       stage0BundleAbort?.abort(new Error("fast_bundle_replaced"));
-      stage0BundleCleanup?.();
       stage0BundleAbort = new AbortController();
-      const { signal, cleanup } = combineSignals([requestSignal, stage0BundleAbort.signal]);
-      stage0BundleCleanup = cleanup;
-      stage0BundlePromise = emitAnalysisBundleSequence({ ...params, signal }).finally(() => {
-        if (stage0BundleCleanup === cleanup) {
-          stage0BundleCleanup = null;
-        }
-        cleanup();
+      stage0BundlePromise = emitAnalysisBundleSequence({
+        ...params,
+        signal: requestSignal,
+        llmSignal: stage0BundleAbort.signal,
       });
     };
-    const startStage1Bundle = (params: Omit<Parameters<typeof emitAnalysisBundleSequence>[0], "signal">) => {
+    const startStage1Bundle = (
+      params: Omit<Parameters<typeof emitAnalysisBundleSequence>[0], "signal" | "llmSignal">,
+    ) => {
       stage1BundleAbort?.abort(new Error("fast_bundle_replaced"));
-      stage1BundleCleanup?.();
       stage1BundleAbort = new AbortController();
-      const { signal, cleanup } = combineSignals([requestSignal, stage1BundleAbort.signal]);
-      stage1BundleCleanup = cleanup;
-      stage1BundlePromise = emitAnalysisBundleSequence({ ...params, signal }).finally(() => {
-        if (stage1BundleCleanup === cleanup) {
-          stage1BundleCleanup = null;
-        }
-        cleanup();
+      stage1BundlePromise = emitAnalysisBundleSequence({
+        ...params,
+        signal: requestSignal,
+        llmSignal: stage1BundleAbort.signal,
       });
     };
     const googleResilience: SearchResilienceOptions = {
