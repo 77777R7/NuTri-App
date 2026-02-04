@@ -1582,35 +1582,38 @@ const resolveAuthorityCandidate = (params: {
   let mapStatus: "hit" | "stale" | "miss" = "miss";
   let mapCandidate: AuthorityCandidate | null = null;
 
-  const mapNpn = mapRow?.npn?.trim() ?? null;
-  if (mapNpn) {
-    const expired = isExpiredAt(mapRow.expires_at);
-    mapStatus = expired ? "stale" : "hit";
-    const isConflict = mapRow.source === "conflict";
-    const hasMinConfidence = Number.isFinite(mapRow.confidence) && mapRow.confidence >= REGULATORY_MAP_MIN_CONFIDENCE;
-    if (!isConflict && hasMinConfidence) {
-      if (!expired) {
-        mapCandidate = {
-          npn: mapNpn,
-          source: "map",
-          isStale: false,
-          requiresGuardrail: false,
-          confidence: mapRow.confidence,
-        };
-      } else if (mapRow.expires_at) {
-        const expiresMs = Date.parse(mapRow.expires_at);
-        const withinWindow =
-          Number.isFinite(expiresMs) && Date.now() - expiresMs <= REGULATORY_MAP_STALE_WINDOW_MS;
-        const isHighConfidence =
-          mapRow.source === "lnhpd" || mapRow.source === "snapshot_verified" || mapRow.confidence >= 0.9;
-        if (withinWindow && isHighConfidence) {
+  if (mapRow && mapRow.npn) {
+    const mapNpn = mapRow.npn.trim();
+    if (mapNpn) {
+      const expired = isExpiredAt(mapRow.expires_at);
+      mapStatus = expired ? "stale" : "hit";
+      const isConflict = mapRow.source === "conflict";
+      const hasMinConfidence =
+        Number.isFinite(mapRow.confidence) && mapRow.confidence >= REGULATORY_MAP_MIN_CONFIDENCE;
+      if (!isConflict && hasMinConfidence) {
+        if (!expired) {
           mapCandidate = {
             npn: mapNpn,
-            source: "map_stale",
-            isStale: true,
-            requiresGuardrail: true,
+            source: "map",
+            isStale: false,
+            requiresGuardrail: false,
             confidence: mapRow.confidence,
           };
+        } else if (mapRow.expires_at) {
+          const expiresMs = Date.parse(mapRow.expires_at);
+          const withinWindow =
+            Number.isFinite(expiresMs) && Date.now() - expiresMs <= REGULATORY_MAP_STALE_WINDOW_MS;
+          const isHighConfidence =
+            mapRow.source === "lnhpd" || mapRow.source === "snapshot_verified" || mapRow.confidence >= 0.9;
+          if (withinWindow && isHighConfidence) {
+            mapCandidate = {
+              npn: mapNpn,
+              source: "map_stale",
+              isStale: true,
+              requiresGuardrail: true,
+              confidence: mapRow.confidence,
+            };
+          }
         }
       }
     }
@@ -6886,7 +6889,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
                     threshold: NPN_NEGATIVE_CACHE_THRESHOLD,
                     ttlMs: NPN_NEGATIVE_CACHE_TTL_MS,
                   },
-                  { ...supabaseWriteResilience, timeoutMs: 500 },
+                  { ...supabaseReadResilience, timeoutMs: 500 },
                 );
               }
             }
