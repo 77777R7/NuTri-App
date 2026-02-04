@@ -77,6 +77,7 @@ export type AnalysisBundleMeta = {
   revision: number;
   factsDigestHash: string;
   factsSourceVersion: string;
+  serverCommitSha?: string | null;
 };
 
 export type AnalysisBundle = {

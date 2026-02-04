@@ -146,6 +146,7 @@ export const AnalysisBundleMetaSchema = z.object({
   revision: z.number().int().min(0),
   factsDigestHash: z.string(),
   factsSourceVersion: z.string(),
+  serverCommitSha: z.string().nullable().optional(),
 });
 
 export type AnalysisBundleMeta = z.infer<typeof AnalysisBundleMetaSchema>;

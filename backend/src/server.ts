@@ -262,6 +262,8 @@ const ANALYSIS_IDENTITY_CACHE_TTL_MS = Number(
   process.env.ANALYSIS_IDENTITY_CACHE_TTL_MS ?? 30 * 24 * 60 * 60 * 1000,
 );
 const WEB_CANONICAL_TTL_MS = Number(process.env.WEB_CANONICAL_TTL_MS ?? 30 * 24 * 60 * 60 * 1000);
+const SERVER_COMMIT_SHA =
+  process.env.RENDER_GIT_COMMIT ?? process.env.GIT_COMMIT_SHA ?? process.env.COMMIT_SHA ?? null;
 
 const GUARDRAIL_SIMILARITY_THRESHOLD = Number(process.env.GUARDRAIL_SIMILARITY_THRESHOLD ?? 0.6);
 
@@ -616,6 +618,20 @@ const buildFallbackOverviewSummary = (digest: FactsDigest): string => {
   return "Supplement overview unavailable.";
 };
 
+const buildDsldInferenceOverview = (digest: FactsDigest): { summary: string; bullets: Array<{ text: string; basisTags: BasisTag[] }> } => {
+  const actives = digest.actives.map((active) => active.name).filter(Boolean);
+  const primary = actives.slice(0, 2).join(" and ");
+  const summary = primary
+    ? `A dietary supplement providing ${primary} to support general nutrition.`
+    : "A dietary supplement intended to support general wellness based on its ingredients.";
+  const bullets: Array<{ text: string; basisTags: BasisTag[] }> = [];
+  if (primary) {
+    bullets.push(buildSectionBullet(`Supports general nutrition based on ingredients like ${primary}.`, ["ingredient_inference"]));
+  }
+  bullets.push(buildSectionBullet("Consider use when dietary intake may be insufficient.", ["ingredient_inference"]));
+  return { summary, bullets };
+};
+
 const buildFallbackOverviewBullets = (digest: FactsDigest): Array<{ text: string; basisTags: BasisTag[] }> => {
   const bullets: Array<{ text: string; basisTags: BasisTag[] }> = [];
   if (digest.claims.labelPurposes.length > 0) {
@@ -632,6 +648,41 @@ const buildFallbackOverviewBullets = (digest: FactsDigest): Array<{ text: string
   }
   return bullets;
 };
+
+const isContainsBullet = (text: string | null | undefined): boolean => {
+  if (!text) return false;
+  return /^contains\\b/i.test(text.trim());
+};
+
+const applyFastFailureStatus = (bundle: AnalysisBundle): AnalysisBundle => {
+  const overviewStatus = bundle.sections.overview.cover ? "limited" : "error";
+  const usageStatus = bundle.sections.usage.cover ? "limited" : "error";
+  const safetyStatus = bundle.sections.safety.cover ? "limited" : "error";
+  return {
+    ...bundle,
+    sections: {
+      ...bundle.sections,
+      overview: { ...bundle.sections.overview, dataStatus: overviewStatus },
+      usage: { ...bundle.sections.usage, dataStatus: usageStatus },
+      safety: { ...bundle.sections.safety, dataStatus: safetyStatus },
+    },
+  };
+};
+
+const buildFastFailureBundle = (skeleton: AnalysisBundle): AnalysisBundle => ({
+  ...skeleton,
+  meta: {
+    ...skeleton.meta,
+    phase: "fast_ai",
+    revision: skeleton.meta.revision + 1,
+  },
+  sections: {
+    ...skeleton.sections,
+    overview: { ...skeleton.sections.overview, dataStatus: "error" },
+    usage: { ...skeleton.sections.usage, dataStatus: "error" },
+    safety: { ...skeleton.sections.safety, dataStatus: "error" },
+  },
+});
 
 const buildUsageDosageField = (digest: FactsDigest): { text: string; basisTags: BasisTag[] } | null => {
   const raw = digest.labelDosing.map((dose) => dose.rawText).filter(Boolean)[0];
@@ -668,6 +719,7 @@ const buildAnalysisBundleSkeleton = (params: {
       revision: params.revision,
       factsDigestHash: params.factsDigestHash,
       factsSourceVersion: params.factsSourceVersion,
+      serverCommitSha: SERVER_COMMIT_SHA,
     },
     sections: {
       overview: {
@@ -735,6 +787,11 @@ const mergeFastAnalysisBundle = (params: {
     .filter((item) => item.text)
     .slice(0, 2);
   const overviewBulletsFinal = overviewBullets.length > 0 ? overviewBullets : fallbackBullets;
+  const dsldNeedsInference =
+    digest.sourceType === "dsld" &&
+    overviewBulletsFinal.length > 0 &&
+    overviewBulletsFinal.every((bullet) => isContainsBullet(bullet.text));
+  const dsldInference = dsldNeedsInference ? buildDsldInferenceOverview(digest) : null;
 
   const usageRaw = (fastOutput?.usage ?? {}) as Record<string, unknown>;
   const usageBulletsRaw = Array.isArray(usageRaw.bullets) ? usageRaw.bullets : [];
@@ -802,12 +859,12 @@ const mergeFastAnalysisBundle = (params: {
       overview: {
         ...skeleton.sections.overview,
         cover: {
-          summary: overviewSummaryCandidate,
-          bullets: overviewBulletsFinal,
+          summary: dsldInference?.summary ?? overviewSummaryCandidate,
+          bullets: dsldInference?.bullets ?? overviewBulletsFinal,
         },
         detail: {
-          summary: overviewSummaryCandidate,
-          bullets: overviewBulletsFinal,
+          summary: dsldInference?.summary ?? overviewSummaryCandidate,
+          bullets: dsldInference?.bullets ?? overviewBulletsFinal,
         },
         dataStatus: overviewStatus,
       },
@@ -5181,13 +5238,20 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   const context = `FACTS_DIGEST_JSON: ${JSON.stringify(digest)}`;
 
   const start = performance.now();
-  const detailRaw = await fetchIngredientsDetailV3(context, model, deepseekKey, {
-    breaker: deepseekBreaker,
-    semaphore: deepseekSemaphore,
-    timeoutMs: ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS,
-    queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS,
-    retry: { maxAttempts: 1 },
-  });
+  let detailRaw: Record<string, unknown> | null = null;
+  let errorCode: string | null = null;
+  try {
+    detailRaw = await fetchIngredientsDetailV3(context, model, deepseekKey, {
+      breaker: deepseekBreaker,
+      semaphore: deepseekSemaphore,
+      timeoutMs: ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS,
+      queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS,
+      retry: { maxAttempts: 1 },
+    });
+  } catch (error) {
+    console.warn("[analysis-section] detail fetch failed", error);
+    errorCode = "LLM_REQUEST_FAILED";
+  }
   const timingMs = Math.round(performance.now() - start);
 
   const parsedDetail = detailRaw ? IngredientsDetailSchema.safeParse(detailRaw) : null;
@@ -5212,10 +5276,15 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   );
 
   if (!detailPayload) {
-    res.status(500).json({
+    const fallbackErrorCode =
+      errorCode ??
+      (detailRaw ? (parsedDetail?.success ? null : "LLM_PARSE_FAILED") : "LLM_EMPTY_RESPONSE");
+    res.status(200).json({
       section: "ingredients",
       detail: null,
       dataStatus: "error",
+      errorCode: fallbackErrorCode,
+      retryable: true,
       meta: {
         bundleId: randomUUID(),
         revision: 2,
@@ -5319,8 +5388,10 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       factsSourceVersion: string;
       allowAi: boolean;
       apiKey: string | null;
+      signal?: AbortSignal;
     }): Promise<{ factsDigestHash: string } | null> => {
       const factsDigestHash = computeFactsDigestHash(params.digest);
+      const canWrite = () => !params.signal?.aborted && !res.writableEnded;
       const dataStatus = params.allowAi
         ? { overview: "pending" as const, usage: "pending" as const, safety: "pending" as const }
         : { overview: "limited" as const, usage: "limited" as const, safety: "limited" as const };
@@ -5356,14 +5427,10 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       );
 
       const skeletonParsed = safeParseAnalysisBundle(skeleton);
-      if (skeletonParsed.success) {
+      if (skeletonParsed.success && canWrite()) {
         sendSSE(res, "analysis_bundle", skeletonParsed.data);
       } else {
         console.warn("[analysis_bundle] skeleton validation failed", skeletonParsed.error?.message);
-      }
-
-      if (!params.allowAi || !params.apiKey) {
-        return { factsDigestHash };
       }
 
       const cachedFast = await getAnalysisIdentityCache(
@@ -5388,26 +5455,45 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
             phase: "fast_ai",
             factsDigestHash,
             factsSourceVersion: params.factsSourceVersion,
+            serverCommitSha: SERVER_COMMIT_SHA,
           },
         } satisfies AnalysisBundle;
         const parsed = safeParseAnalysisBundle(fastCandidate);
-        if (parsed.success) {
+        if (parsed.success && canWrite()) {
           sendSSE(res, "analysis_bundle", parsed.data);
         }
         return { factsDigestHash };
       }
 
       const context = `FACTS_DIGEST_JSON: ${JSON.stringify(params.digest)}`;
-      const fastRaw = await fetchAnalysisBundleFastV3(context, model, params.apiKey, {
-        breaker: deepseekBreaker,
-        semaphore: deepseekSemaphore,
-        timeoutMs: ANALYSIS_BUNDLE_FAST_TIMEOUT_MS,
-        queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS,
-        retry: { maxAttempts: 1 },
-      });
-      const fastBundle = mergeFastAnalysisBundle({ skeleton, digest: params.digest, fastOutput: fastRaw });
-      const parsed = safeParseAnalysisBundle(fastBundle);
-      if (parsed.success) {
+      const canUseAi = params.allowAi && Boolean(params.apiKey);
+      let fastRaw: Record<string, unknown> | null = null;
+      let fastFailed = false;
+      if (canUseAi && params.apiKey) {
+        fastRaw = await fetchAnalysisBundleFastV3(context, model, params.apiKey, {
+          breaker: deepseekBreaker,
+          semaphore: deepseekSemaphore,
+          timeoutMs: ANALYSIS_BUNDLE_FAST_TIMEOUT_MS,
+          queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS,
+          retry: { maxAttempts: 1 },
+          signal: params.signal,
+        });
+        if (!fastRaw) fastFailed = true;
+      } else {
+        fastFailed = true;
+      }
+
+      let fastBundle = mergeFastAnalysisBundle({ skeleton, digest: params.digest, fastOutput: fastRaw });
+      if (fastFailed) {
+        fastBundle = applyFastFailureStatus(fastBundle);
+      }
+      let parsed = safeParseAnalysisBundle(fastBundle);
+      if (!parsed.success) {
+        const fallbackBundle = buildFastFailureBundle(skeleton);
+        parsed = safeParseAnalysisBundle(fallbackBundle);
+      }
+
+      if (parsed.success && canWrite()) {
         sendSSE(res, "analysis_bundle", parsed.data);
         void upsertAnalysisIdentityCache(
           {
@@ -5425,43 +5511,91 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           },
           { timeoutMs: 900 },
         );
-      } else {
+      } else if (!parsed.success) {
         console.warn("[analysis_bundle] fast bundle validation failed", parsed.error?.message);
       }
 
       return { factsDigestHash };
     };
     let stage0BundlePromise: Promise<{ factsDigestHash: string } | null> | null = null;
+    let stage0BundleAbort: AbortController | null = null;
+    let stage0BundleCleanup: (() => void) | null = null;
     const awaitStage0Bundle = async () => {
       if (!stage0BundlePromise) return;
       const waitMs = Math.max(0, ANALYSIS_BUNDLE_FAST_TIMEOUT_MS + 500);
+      let timedOut = false;
       try {
         await abortable(
           Promise.race([
             stage0BundlePromise.catch(() => null),
-            new Promise((resolve) => setTimeout(resolve, waitMs)),
+            new Promise((resolve) =>
+              setTimeout(() => {
+                timedOut = true;
+                resolve(null);
+              }, waitMs),
+            ),
           ]),
           requestSignal,
         );
       } catch {
         // ignore (client disconnect or timeout)
       }
+      if (timedOut) {
+        stage0BundleAbort?.abort(new Error("fast_bundle_timeout"));
+      }
     };
     let stage1BundlePromise: Promise<{ factsDigestHash: string } | null> | null = null;
+    let stage1BundleAbort: AbortController | null = null;
+    let stage1BundleCleanup: (() => void) | null = null;
     const awaitStage1Bundle = async () => {
       if (!stage1BundlePromise) return;
       const waitMs = Math.max(0, ANALYSIS_BUNDLE_FAST_TIMEOUT_MS + 500);
+      let timedOut = false;
       try {
         await abortable(
           Promise.race([
             stage1BundlePromise.catch(() => null),
-            new Promise((resolve) => setTimeout(resolve, waitMs)),
+            new Promise((resolve) =>
+              setTimeout(() => {
+                timedOut = true;
+                resolve(null);
+              }, waitMs),
+            ),
           ]),
           requestSignal,
         );
       } catch {
         // ignore (client disconnect or timeout)
       }
+      if (timedOut) {
+        stage1BundleAbort?.abort(new Error("fast_bundle_timeout"));
+      }
+    };
+    const startStage0Bundle = (params: Omit<Parameters<typeof emitAnalysisBundleSequence>[0], "signal">) => {
+      stage0BundleAbort?.abort(new Error("fast_bundle_replaced"));
+      stage0BundleCleanup?.();
+      stage0BundleAbort = new AbortController();
+      const { signal, cleanup } = combineSignals([requestSignal, stage0BundleAbort.signal]);
+      stage0BundleCleanup = cleanup;
+      stage0BundlePromise = emitAnalysisBundleSequence({ ...params, signal }).finally(() => {
+        if (stage0BundleCleanup === cleanup) {
+          stage0BundleCleanup = null;
+        }
+        cleanup();
+      });
+    };
+    const startStage1Bundle = (params: Omit<Parameters<typeof emitAnalysisBundleSequence>[0], "signal">) => {
+      stage1BundleAbort?.abort(new Error("fast_bundle_replaced"));
+      stage1BundleCleanup?.();
+      stage1BundleAbort = new AbortController();
+      const { signal, cleanup } = combineSignals([requestSignal, stage1BundleAbort.signal]);
+      stage1BundleCleanup = cleanup;
+      stage1BundlePromise = emitAnalysisBundleSequence({ ...params, signal }).finally(() => {
+        if (stage1BundleCleanup === cleanup) {
+          stage1BundleCleanup = null;
+        }
+        cleanup();
+      });
     };
     const googleResilience: SearchResilienceOptions = {
       signal: requestSignal,
@@ -5895,14 +6029,14 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           }
 
           if (digest) {
-            stage0BundlePromise = emitAnalysisBundleSequence({
-              digest,
-              identityType,
-              identityValue,
-              factsSourceVersion,
-              allowAi: Boolean(deepseekKey),
-              apiKey: deepseekKey,
-            });
+        startStage0Bundle({
+          digest,
+          identityType,
+          identityValue,
+          factsSourceVersion,
+          allowAi: Boolean(deepseekKey),
+          apiKey: deepseekKey,
+        });
             await awaitStage0Bundle();
           }
 
@@ -6183,14 +6317,14 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           identityValue: dsldIdentityValue,
           regionTags: workingSnapshot.regulatory.regionTags,
         });
-        stage0BundlePromise = emitAnalysisBundleSequence({
-          digest: dsldDigest,
-          identityType: dsldIdentityType,
-          identityValue: dsldIdentityValue,
-          factsSourceVersion: dsldFactsSourceVersion,
-          allowAi: Boolean(deepseekKey),
-          apiKey: deepseekKey,
-        });
+            startStage0Bundle({
+              digest: dsldDigest,
+              identityType: dsldIdentityType,
+              identityValue: dsldIdentityValue,
+              factsSourceVersion: dsldFactsSourceVersion,
+              allowAi: Boolean(deepseekKey),
+              apiKey: deepseekKey,
+            });
       }
 
       const payloadSources = workingAnalysisPayload.sources ?? [];
@@ -6416,7 +6550,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
                 identityValue: candidate.npn,
                 regionTags: lnhpdSnapshot.regulatory.regionTags,
               });
-              stage0BundlePromise = emitAnalysisBundleSequence({
+              startStage0Bundle({
                 digest: lnhpdDigest,
                 identityType: "npn",
                 identityValue: candidate.npn,
@@ -9036,7 +9170,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
         identityValue: fallbackWebCanonicalId,
         regionTags: snapshot.regulatory.regionTags,
       });
-      stage1BundlePromise = emitAnalysisBundleSequence({
+      startStage1Bundle({
         digest: fallbackDigest,
         identityType: fallbackIdentityType,
         identityValue: fallbackWebCanonicalId,
@@ -10335,7 +10469,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
       identityValue: webCanonicalId,
       regionTags: snapshot.regulatory.regionTags,
     });
-    stage1BundlePromise = emitAnalysisBundleSequence({
+    startStage1Bundle({
       digest: webDigest,
       identityType: webIdentityType,
       identityValue: webCanonicalId,
