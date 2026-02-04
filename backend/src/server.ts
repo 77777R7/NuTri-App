@@ -260,6 +260,7 @@ const ANALYSIS_BUNDLE_FAST_TIMEOUT_MS = Number(process.env.ANALYSIS_BUNDLE_FAST_
 const ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS = Number(process.env.ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS ?? 7000);
 const ANALYSIS_DETAIL_LOCK_MS = Number(process.env.ANALYSIS_DETAIL_LOCK_MS ?? 45_000);
 const ANALYSIS_DETAIL_STALE_MS = Number(process.env.ANALYSIS_DETAIL_STALE_MS ?? 60_000);
+const ANALYSIS_DETAIL_ERROR_RETRY_MS = Number(process.env.ANALYSIS_DETAIL_ERROR_RETRY_MS ?? 0);
 const ANALYSIS_IDENTITY_CACHE_TTL_MS = Number(
   process.env.ANALYSIS_IDENTITY_CACHE_TTL_MS ?? 30 * 24 * 60 * 60 * 1000,
 );
@@ -5195,6 +5196,10 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       ? true
       : lockedUntilMs !== null && Number.isFinite(lockedUntilMs) && lockedUntilMs <= nowMs
     : false;
+  const shouldRetryError =
+    cachedDetail?.status === "error" &&
+    (ANALYSIS_DETAIL_ERROR_RETRY_MS <= 0 ||
+      (pendingAgeMs !== null && pendingAgeMs >= ANALYSIS_DETAIL_ERROR_RETRY_MS));
 
   if (cachedDetail?.status === "complete" && cachedDetail.payload) {
     res.json({
@@ -5211,7 +5216,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     return;
   }
 
-  if (cachedDetail?.status === "error") {
+  if (cachedDetail?.status === "error" && !shouldRetryError) {
     res.status(200).json({
       section: "ingredients",
       detail: null,
@@ -5637,52 +5642,20 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     let stage0BundleAbort: AbortController | null = null;
     const awaitStage0Bundle = async () => {
       if (!stage0BundlePromise) return;
-      const waitMs = Math.max(0, ANALYSIS_BUNDLE_FAST_TIMEOUT_MS + 500);
-      let timedOut = false;
       try {
-        await abortable(
-          Promise.race([
-            stage0BundlePromise.catch(() => null),
-            new Promise((resolve) =>
-              setTimeout(() => {
-                timedOut = true;
-                resolve(null);
-              }, waitMs),
-            ),
-          ]),
-          requestSignal,
-        );
+        await abortable(stage0BundlePromise.catch(() => null), requestSignal);
       } catch {
-        // ignore (client disconnect or timeout)
-      }
-      if (timedOut) {
-        stage0BundleAbort?.abort(new Error("fast_bundle_timeout"));
+        // ignore (client disconnect)
       }
     };
     let stage1BundlePromise: Promise<{ factsDigestHash: string } | null> | null = null;
     let stage1BundleAbort: AbortController | null = null;
     const awaitStage1Bundle = async () => {
       if (!stage1BundlePromise) return;
-      const waitMs = Math.max(0, ANALYSIS_BUNDLE_FAST_TIMEOUT_MS + 500);
-      let timedOut = false;
       try {
-        await abortable(
-          Promise.race([
-            stage1BundlePromise.catch(() => null),
-            new Promise((resolve) =>
-              setTimeout(() => {
-                timedOut = true;
-                resolve(null);
-              }, waitMs),
-            ),
-          ]),
-          requestSignal,
-        );
+        await abortable(stage1BundlePromise.catch(() => null), requestSignal);
       } catch {
-        // ignore (client disconnect or timeout)
-      }
-      if (timedOut) {
-        stage1BundleAbort?.abort(new Error("fast_bundle_timeout"));
+        // ignore (client disconnect)
       }
     };
     const startStage0Bundle = (
@@ -5991,11 +5964,11 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
 
 	    // Stage 0 helpers (first-party resolution). These are safe to prefetch in parallel.
 	    // Hard rule: negative cache has NO termination authority in Stage 0.
-	    const regulatoryMapPromise = getBarcodeRegulatoryMap(barcodeGtin14, barcodeRawDigits, {
-	      ...supabaseReadResilience,
-	      timeoutMs: 350,
-        includeExpired: true,
-	    });
+    const regulatoryMapPromise = getBarcodeRegulatoryMap(barcodeGtin14, barcodeRawDigits, {
+      ...supabaseReadResilience,
+      timeoutMs: 1200,
+      includeExpired: true,
+    });
 	    const negativeCachePromise = getNegativeCache(barcodeGtin14, barcodeRawDigits, {
 	      ...supabaseReadResilience,
 	      timeoutMs: 350,
