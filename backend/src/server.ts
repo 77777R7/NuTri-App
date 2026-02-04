@@ -5381,6 +5381,22 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
 
       return { factsDigestHash };
     };
+    let stage0BundlePromise: Promise<{ factsDigestHash: string } | null> | null = null;
+    const awaitStage0Bundle = async () => {
+      if (!stage0BundlePromise) return;
+      const waitMs = Math.max(0, ANALYSIS_BUNDLE_FAST_TIMEOUT_MS + 500);
+      try {
+        await abortable(
+          Promise.race([
+            stage0BundlePromise.catch(() => null),
+            new Promise((resolve) => setTimeout(resolve, waitMs)),
+          ]),
+          requestSignal,
+        );
+      } catch {
+        // ignore (client disconnect or timeout)
+      }
+    };
     const googleResilience: SearchResilienceOptions = {
       signal: requestSignal,
       budget,
@@ -6001,7 +6017,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           identityValue: dsldIdentityValue,
           regionTags: workingSnapshot.regulatory.regionTags,
         });
-        void emitAnalysisBundleSequence({
+        stage0BundlePromise = emitAnalysisBundleSequence({
           digest: dsldDigest,
           identityType: dsldIdentityType,
           identityValue: dsldIdentityValue,
@@ -6110,11 +6126,12 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         });
       }
 
-	      if (!forceStage1) {
-	        sendSSE(res, "done", { barcode });
-	        res.end();
-	        return;
-	      }
+      if (!forceStage1) {
+        await awaitStage0Bundle();
+        sendSSE(res, "done", { barcode });
+        res.end();
+        return;
+      }
 	      console.log("[ResolutionV2] FORCE_STAGE1 enabled; continuing after catalog hit");
 	    }
 
@@ -6226,21 +6243,21 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
 	              });
 	              lnhpdSnapshot = applyLnhpdFactsToSnapshot(lnhpdSnapshot, lnhpdFacts);
 
-	              const lnhpdFactsSourceVersion = `lnhpd:${lnhpdFacts.datasetVersion ?? lnhpdFacts.extractedAt ?? "unknown"}`;
-	              const lnhpdDigest = buildFactsDigestFromLnhpd({
-	                facts: lnhpdFacts,
-	                snapshot: lnhpdSnapshot,
-	                identityValue: candidate.npn,
-	                regionTags: lnhpdSnapshot.regulatory.regionTags,
-	              });
-	              void emitAnalysisBundleSequence({
-	                digest: lnhpdDigest,
-	                identityType: "npn",
-	                identityValue: candidate.npn,
-	                factsSourceVersion: lnhpdFactsSourceVersion,
-	                allowAi: Boolean(deepseekKey),
-	                apiKey: deepseekKey,
-	              });
+              const lnhpdFactsSourceVersion = `lnhpd:${lnhpdFacts.datasetVersion ?? lnhpdFacts.extractedAt ?? "unknown"}`;
+              const lnhpdDigest = buildFactsDigestFromLnhpd({
+                facts: lnhpdFacts,
+                snapshot: lnhpdSnapshot,
+                identityValue: candidate.npn,
+                regionTags: lnhpdSnapshot.regulatory.regionTags,
+              });
+              stage0BundlePromise = emitAnalysisBundleSequence({
+                digest: lnhpdDigest,
+                identityType: "npn",
+                identityValue: candidate.npn,
+                factsSourceVersion: lnhpdFactsSourceVersion,
+                allowAi: Boolean(deepseekKey),
+                apiKey: deepseekKey,
+              });
 
 	              const analysisStatus = buildAnalysisStatus({
 	                hasLabelFacts: hasLabelFacts(lnhpdSnapshot),
@@ -6333,6 +6350,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
 	              });
 
 	              if (!forceStage1) {
+	                await awaitStage0Bundle();
 	                sendSSE(res, "done", { barcode });
 	                res.end();
 	                return;
