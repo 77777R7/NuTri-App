@@ -40,6 +40,7 @@ export type ResolutionCacheRow = {
 
 export type NegativeCacheRow = {
   barcode_gtin14: string;
+  barcode_raw?: string | null;
   reason_code: string;
   until: string;
   attempt_count: number;
@@ -47,8 +48,18 @@ export type NegativeCacheRow = {
   updated_at: string;
 };
 
+export type NpnNegativeCacheRow = {
+  npn: string;
+  reason_code: string;
+  until: string | null;
+  attempt_count: number;
+  last_attempt_at: string;
+  updated_at: string;
+};
+
 export type BarcodeRegulatoryMapRow = {
   barcode_gtin14: string;
+  barcode_raw?: string | null;
   npn: string;
   confidence: number;
   source: string;
@@ -111,15 +122,30 @@ const selectResolutionCacheRow = async (
   return data as ResolutionCacheRow;
 };
 
+const buildBarcodeKeyList = (barcodeGtin14: string, barcodeRaw?: string | null): string[] => {
+  const keys = [barcodeGtin14, barcodeRaw].filter((value): value is string => Boolean(value));
+  return Array.from(new Set(keys));
+};
+
 const selectNegativeCacheRow = async (
   barcodeGtin14: string,
   signal: AbortSignal,
+  barcodeRaw?: string | null,
 ): Promise<NegativeCacheRow | null> => {
-  const query = supabase
+  const keys = buildBarcodeKeyList(barcodeGtin14, barcodeRaw);
+  let query = supabase
     .from("negative_cache")
-    .select("barcode_gtin14,reason_code,until,attempt_count,last_attempt_at,updated_at")
-    .eq("barcode_gtin14", barcodeGtin14)
-    .abortSignal(signal);
+    .select("barcode_gtin14,barcode_raw,reason_code,until,attempt_count,last_attempt_at,updated_at")
+    .order("updated_at", { ascending: false })
+    .limit(1);
+  if (keys.length > 1) {
+    query = query.in("barcode_gtin14", keys);
+  } else if (keys.length === 1) {
+    query = query.eq("barcode_gtin14", keys[0]);
+  } else {
+    return null;
+  }
+  query = query.abortSignal(signal);
   const { data, error } = await query.maybeSingle();
   if (error || !data) return null;
   if (isExpired((data as { until?: string }).until)) return null;
@@ -131,6 +157,21 @@ const isExpired = (expiresAt: string | null | undefined): boolean => {
   const ms = Date.parse(expiresAt);
   if (Number.isNaN(ms)) return false;
   return ms <= Date.now();
+};
+
+const selectNpnNegativeCacheRow = async (
+  npn: string,
+  signal: AbortSignal,
+): Promise<NpnNegativeCacheRow | null> => {
+  const query = supabase
+    .from("npn_negative_cache")
+    .select("npn,reason_code,until,attempt_count,last_attempt_at,updated_at")
+    .eq("npn", npn)
+    .abortSignal(signal);
+  const { data, error } = await query.maybeSingle();
+  if (error || !data) return null;
+  if (isExpired((data as { until?: string | null }).until ?? null)) return null;
+  return data as NpnNegativeCacheRow;
 };
 
 const runWithResilience = async <T>(
@@ -366,14 +407,24 @@ export async function clearResolutionCacheBestUrl(
 
 export async function getNegativeCache(
   barcodeGtin14: string,
+  barcodeRaw?: string | null,
   options: ResilienceOptions = {},
 ): Promise<NegativeCacheRow | null> {
   return await runWithResilience(async (signal) => {
-    const query = supabase
+    const keys = buildBarcodeKeyList(barcodeGtin14, barcodeRaw);
+    let query = supabase
       .from("negative_cache")
-      .select("barcode_gtin14,reason_code,until,attempt_count,last_attempt_at,updated_at")
-      .eq("barcode_gtin14", barcodeGtin14)
-      .abortSignal(signal);
+      .select("barcode_gtin14,barcode_raw,reason_code,until,attempt_count,last_attempt_at,updated_at")
+      .order("updated_at", { ascending: false })
+      .limit(1);
+    if (keys.length > 1) {
+      query = query.in("barcode_gtin14", keys);
+    } else if (keys.length === 1) {
+      query = query.eq("barcode_gtin14", keys[0]);
+    } else {
+      return null;
+    }
+    query = query.abortSignal(signal);
     const { data, error } = await query.maybeSingle();
     if (error && options.retry && shouldRetrySupabaseError(error)) {
       const rawStatus = (error as { status?: number }).status;
@@ -391,14 +442,16 @@ export async function upsertNegativeCache(
     barcodeGtin14: string;
     reasonCode: string;
     until: string;
+    barcodeRaw?: string | null;
   },
   options: ResilienceOptions = {},
 ): Promise<void> {
   await runWithResilience(async (signal) => {
-    const existing = await selectNegativeCacheRow(input.barcodeGtin14, signal);
+    const existing = await selectNegativeCacheRow(input.barcodeGtin14, signal, input.barcodeRaw ?? null);
     const now = new Date().toISOString();
     const record: Record<string, unknown> = {
       barcode_gtin14: input.barcodeGtin14,
+      barcode_raw: input.barcodeRaw ?? existing?.barcode_raw ?? null,
       reason_code: input.reasonCode,
       until: input.until,
       attempt_count: (existing?.attempt_count ?? 0) + 1,
@@ -437,26 +490,119 @@ export async function clearNegativeCache(
   }, options);
 }
 
-export async function getBarcodeRegulatoryMap(
-  barcodeGtin14: string,
+export async function getNpnNegativeCache(
+  npn: string,
   options: ResilienceOptions = {},
-): Promise<BarcodeRegulatoryMapRow | null> {
+): Promise<NpnNegativeCacheRow | null> {
   return await runWithResilience(async (signal) => {
     const query = supabase
-      .from("barcode_regulatory_map")
-      .select("barcode_gtin14,npn,confidence,source,last_seen_at,expires_at,created_at,updated_at")
-      .eq("barcode_gtin14", barcodeGtin14)
+      .from("npn_negative_cache")
+      .select("npn,reason_code,until,attempt_count,last_attempt_at,updated_at")
+      .eq("npn", npn)
       .abortSignal(signal);
     const { data, error } = await query.maybeSingle();
     if (error && options.retry && shouldRetrySupabaseError(error)) {
       const rawStatus = (error as { status?: number }).status;
       const status = typeof rawStatus === "number" ? rawStatus : 503;
+      throw new HttpError(status, error.message ?? "npn_negative_cache_read_error");
+    }
+    if (error || !data) return null;
+    if (!data.until) return null;
+    if (isExpired(data.until ?? null)) return null;
+    return data as NpnNegativeCacheRow;
+  }, options);
+}
+
+export async function recordNpnNegativeAttempt(
+  input: {
+    npn: string;
+    reasonCode: string;
+    windowMs: number;
+    threshold: number;
+    ttlMs: number;
+  },
+  options: ResilienceOptions = {},
+): Promise<NpnNegativeCacheRow | null> {
+  return await runWithResilience(async (signal) => {
+    const existing = await selectNpnNegativeCacheRow(input.npn, signal);
+    const now = new Date().toISOString();
+    const lastAttemptMs = existing?.last_attempt_at ? Date.parse(existing.last_attempt_at) : null;
+    const withinWindow = lastAttemptMs !== null && Date.now() - lastAttemptMs <= input.windowMs;
+    const attemptCount = withinWindow ? (existing?.attempt_count ?? 0) + 1 : 1;
+    const shouldBlock = attemptCount >= Math.max(1, input.threshold);
+    const until = shouldBlock ? new Date(Date.now() + input.ttlMs).toISOString() : existing?.until ?? null;
+    const record: Record<string, unknown> = {
+      npn: input.npn,
+      reason_code: input.reasonCode,
+      attempt_count: attemptCount,
+      last_attempt_at: now,
+      until,
+      updated_at: now,
+    };
+    const { error } = await supabase
+      .from("npn_negative_cache")
+      .upsert(record, { onConflict: "npn" })
+      .abortSignal(signal);
+    if (error && options.retry && shouldRetrySupabaseError(error)) {
+      const rawStatus = (error as { status?: number }).status;
+      const status = typeof rawStatus === "number" ? rawStatus : 503;
+      throw new HttpError(status, error.message ?? "npn_negative_cache_write_error");
+    }
+    if (error) return null;
+    return record as NpnNegativeCacheRow;
+  }, options);
+}
+
+export async function clearNpnNegativeCache(
+  npn: string,
+  options: ResilienceOptions = {},
+): Promise<void> {
+  await runWithResilience(async (signal) => {
+    const { error } = await supabase
+      .from("npn_negative_cache")
+      .delete()
+      .eq("npn", npn)
+      .abortSignal(signal);
+    if (error && options.retry && shouldRetrySupabaseError(error)) {
+      const rawStatus = (error as { status?: number }).status;
+      const status = typeof rawStatus === "number" ? rawStatus : 503;
+      throw new HttpError(status, error.message ?? "npn_negative_cache_delete_error");
+    }
+    return null;
+  }, options);
+}
+
+export async function getBarcodeRegulatoryMap(
+  barcodeGtin14: string,
+  barcodeRaw?: string | null,
+  options: (ResilienceOptions & { includeExpired?: boolean }) = {},
+): Promise<BarcodeRegulatoryMapRow | null> {
+  const { includeExpired, ...resilience } = options;
+  return await runWithResilience(async (signal) => {
+    const keys = buildBarcodeKeyList(barcodeGtin14, barcodeRaw);
+    let query = supabase
+      .from("barcode_regulatory_map")
+      .select("barcode_gtin14,barcode_raw,npn,confidence,source,last_seen_at,expires_at,created_at,updated_at")
+      .order("updated_at", { ascending: false })
+      .limit(1);
+    if (keys.length > 1) {
+      query = query.in("barcode_gtin14", keys);
+    } else if (keys.length === 1) {
+      query = query.eq("barcode_gtin14", keys[0]);
+    } else {
+      return null;
+    }
+    query = query.abortSignal(signal);
+    const { data, error } = await query.maybeSingle();
+    if (error && resilience.retry && shouldRetrySupabaseError(error)) {
+      const rawStatus = (error as { status?: number }).status;
+      const status = typeof rawStatus === "number" ? rawStatus : 503;
       throw new HttpError(status, error.message ?? "barcode_regulatory_map_read_error");
     }
     if (error || !data) return null;
-    if (isExpired(data.expires_at ?? null)) return null;
+    if (!includeExpired && isExpired(data.expires_at ?? null)) return null;
     return data as BarcodeRegulatoryMapRow;
-  }, options);
+  }, resilience);
 }
 
 export async function upsertBarcodeRegulatoryMap(
@@ -466,6 +612,7 @@ export async function upsertBarcodeRegulatoryMap(
     confidence: number;
     source: string;
     expiresAt: string | null;
+    barcodeRaw?: string | null;
   },
   options: ResilienceOptions = {},
 ): Promise<void> {
@@ -473,6 +620,7 @@ export async function upsertBarcodeRegulatoryMap(
     const now = new Date().toISOString();
     const record: Record<string, unknown> = {
       barcode_gtin14: input.barcodeGtin14,
+      barcode_raw: input.barcodeRaw ?? null,
       npn: input.npn,
       confidence: input.confidence,
       source: input.source,

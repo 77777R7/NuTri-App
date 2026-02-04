@@ -233,6 +233,7 @@ const baseSnapshot = (input: {
     regulatory: {
       npn: null,
       npnStatus: null,
+      npnVerifiedBy: null,
       dsldLabelId: null,
       regionTags: [],
       lastCheckedAt: null,

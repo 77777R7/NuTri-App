@@ -83,6 +83,7 @@ export type SupplementSnapshot = {
   regulatory: {
     npn: string | null;
     npnStatus: 'verified' | 'not_found' | 'unknown' | null;
+    npnVerifiedBy: 'lnhpd_fetch' | 'manual' | null;
     dsldLabelId: string | null;
     regionTags: string[];
     lastCheckedAt: string | null;

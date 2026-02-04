@@ -117,7 +117,10 @@ const normalizeCanonicalKey = (value: string): string =>
 
 const STRIP_SUFFIX_TOKENS = new Set([
   "extract",
+  "extracts",
   "powder",
+  "liquid",
+  "dried",
   "juice",
   "concentrate",
   "leaf",
@@ -142,6 +145,9 @@ const STRIP_PREFIX_TOKENS = new Set([
   "natural",
   "pure",
   "wild",
+  "wildcrafted",
+  "certified",
+  "fermented",
   "raw",
   "whole",
 ]);
@@ -165,6 +171,15 @@ const STRIP_ANYWHERE_TOKENS = new Set([
   "loss",
   "burn",
   "burner",
+  "tm",
+  "original",
+  "consortium",
+  "system",
+  "maximizer",
+  "acceleration",
+  "accelerator",
+  "soothing",
+  "preload",
 ]);
 
 const stripNameKeyVariants = (value: string): string[] => {
@@ -282,6 +297,7 @@ const isExcipientOrMetal = (value: string): boolean => {
     "tin",
     "propylene glycol",
     "glycerin",
+    "glycerol",
     "magnesium stearate",
     "distilled water",
     "water",
@@ -1106,6 +1122,61 @@ const CURATED_SYNONYM_MAP: Record<
   "horseradish tree 0 5 teaspoon s": {
     keys: ["moringa_oleifera", "moringa"],
     reason: "curated_v11_moringa",
+    category: "botanical",
+  },
+  "sea cucumber powder": {
+    keys: ["sea_cucumber", "holothuria"],
+    reason: "curated_v13_sea_cucumber",
+    category: "animal",
+  },
+  osha: {
+    keys: ["osha", "ligusticum_porteri"],
+    reason: "curated_v13_osha",
+    category: "botanical",
+  },
+  hypericins: {
+    keys: ["hypericin", "st_johns_wort", "hypericum_perforatum"],
+    reason: "curated_v13_hypericin",
+    category: "botanical",
+  },
+  thioproline: {
+    keys: ["thioproline"],
+    reason: "curated_v13_thioproline",
+    category: "chemical",
+  },
+  "fringe tree": {
+    keys: ["fringe_tree", "chionanthus_virginicus"],
+    reason: "curated_v13_fringe_tree",
+    category: "botanical",
+  },
+  mucin: {
+    keys: ["mucin"],
+    reason: "curated_v13_mucin",
+    category: "animal",
+  },
+  "deodorized garlic": {
+    keys: ["garlic", "allium_sativum"],
+    reason: "curated_v13_garlic",
+    category: "botanical",
+  },
+  "canola oil": {
+    keys: ["canola_oil", "rapeseed_oil"],
+    reason: "curated_v13_canola_oil",
+    category: "lipid",
+  },
+  "dimethylaminoethanol bitartrate": {
+    keys: ["dmae_bitartrate", "dmae", "dimethylaminoethanol"],
+    reason: "curated_v13_dmae_bitartrate",
+    category: "chemical",
+  },
+  "wild blueberry anthocyanin extract": {
+    keys: ["blueberry", "vaccinium_angustifolium"],
+    reason: "curated_v13_blueberry_anthocyanin",
+    category: "botanical",
+  },
+  "organic sacred basil": {
+    keys: ["holy_basil", "ocimum_tenuiflorum", "tulsi"],
+    reason: "curated_v13_sacred_basil",
     category: "botanical",
   },
   "suma": {
