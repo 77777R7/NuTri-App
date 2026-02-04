@@ -5074,6 +5074,10 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         aiAvailable,
       });
 
+      const snapshotIsVerified =
+        cachedFast.snapshot.regulatory.npnStatus === "verified" &&
+        cachedFast.snapshot.regulatory.npnVerifiedBy === "lnhpd_fetch";
+
       const snapshotVerifiedNpn = cachedFast.snapshot.regulatory.npn;
       const snapshotVerifiedBy = cachedFast.snapshot.regulatory.npnVerifiedBy;
       const snapshotNpnStatus = cachedFast.snapshot.regulatory.npnStatus;
@@ -5088,7 +5092,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         });
       }
 
-      if (!needsEnrichment) {
+      if (!needsEnrichment && snapshotIsVerified) {
         if (!forceStage1) {
           sendSSE(res, "done", { barcode });
           res.end();
