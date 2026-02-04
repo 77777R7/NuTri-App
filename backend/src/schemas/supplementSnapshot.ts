@@ -114,6 +114,7 @@ export const SupplementSnapshotSchema = z.object({
   regulatory: z.object({
     npn: z.string().nullable(),
     npnStatus: z.enum(['verified', 'not_found', 'unknown']).nullable(),
+    npnVerifiedBy: z.enum(['lnhpd_fetch', 'manual']).nullable().default(null),
     dsldLabelId: z.string().nullable(),
     regionTags: z.array(z.string()),
     lastCheckedAt: z.string().nullable(),

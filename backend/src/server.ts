@@ -14,12 +14,15 @@ import { extractBrandProduct, type BrandExtractionResult } from "./brandExtracto
 import { buildCombinedContext, fetchAnalysisBundle, prepareContextSources } from "./deepseek.js";
 import {
   clearNegativeCache,
+  clearNpnNegativeCache,
   clearResolutionCacheBestUrl,
   getBarcodeRegulatoryMap,
   getNegativeCache,
+  getNpnNegativeCache,
   getResolutionCache,
   getSerpCache,
   insertBarcodeResolutionTrainingRow,
+  recordNpnNegativeAttempt,
   recordResolutionCacheFailure,
   upsertBarcodeRegulatoryMap,
   upsertNegativeCache,
@@ -215,6 +218,28 @@ const NEGATIVE_TTL_NO_TEXT_FACTS_MS = Number(process.env.NEGATIVE_TTL_NO_TEXT_FA
 const NEGATIVE_TTL_ONLY_IMAGES_MS = Number(process.env.NEGATIVE_TTL_ONLY_IMAGES_MS ?? 3 * 24 * 60 * 60 * 1000);
 const NEGATIVE_TTL_NEEDS_JS_MS = Number(process.env.NEGATIVE_TTL_NEEDS_JS_MS ?? 3 * 24 * 60 * 60 * 1000);
 const NEGATIVE_TTL_MARKETPLACE_ONLY_MS = Number(process.env.NEGATIVE_TTL_MARKETPLACE_ONLY_MS ?? 12 * 60 * 60 * 1000);
+
+const REGULATORY_MAP_TTL_MS_LNHPD = Number(
+  process.env.REGULATORY_MAP_TTL_MS_LNHPD ?? 90 * 24 * 60 * 60 * 1000,
+);
+const REGULATORY_MAP_TTL_MS_WEB = Number(
+  process.env.REGULATORY_MAP_TTL_MS_WEB ?? 30 * 24 * 60 * 60 * 1000,
+);
+const REGULATORY_MAP_STALE_MAX_DAYS = Number(process.env.REGULATORY_MAP_STALE_MAX_DAYS ?? 180);
+const REGULATORY_MAP_STALE_WINDOW_MS = REGULATORY_MAP_STALE_MAX_DAYS * 24 * 60 * 60 * 1000;
+const REGULATORY_MAP_CONFLICT_TTL_MS = Number(
+  process.env.REGULATORY_MAP_CONFLICT_TTL_MS ?? 7 * 24 * 60 * 60 * 1000,
+);
+const REGULATORY_MAP_NOT_FOUND_TTL_MS = Number(
+  process.env.REGULATORY_MAP_NOT_FOUND_TTL_MS ?? 24 * 60 * 60 * 1000,
+);
+const REGULATORY_MAP_MIN_CONFIDENCE = Number(process.env.REGULATORY_MAP_MIN_CONFIDENCE ?? 0.5);
+
+const NPN_NEGATIVE_CACHE_TTL_MS = Number(process.env.NPN_NEGATIVE_CACHE_TTL_MS ?? 24 * 60 * 60 * 1000);
+const NPN_NEGATIVE_CACHE_WINDOW_HOURS = Number(process.env.NPN_NEGATIVE_CACHE_WINDOW_HOURS ?? 12);
+const NPN_NEGATIVE_CACHE_THRESHOLD = Number(process.env.NPN_NEGATIVE_CACHE_THRESHOLD ?? 2);
+
+const GUARDRAIL_SIMILARITY_THRESHOLD = Number(process.env.GUARDRAIL_SIMILARITY_THRESHOLD ?? 0.6);
 
 
 const googleSemaphore = new Semaphore(RESILIENCE_GOOGLE_CONCURRENCY);
@@ -1418,12 +1443,243 @@ const applyLnhpdFactsToSnapshot = (
       ...snapshot.regulatory,
       npn: facts.npn ?? snapshot.regulatory.npn,
       npnStatus: facts.npn ? 'verified' : snapshot.regulatory.npnStatus ?? 'unknown',
+      npnVerifiedBy: facts.npn ? 'lnhpd_fetch' : snapshot.regulatory.npnVerifiedBy ?? null,
       regionTags: Array.from(updatedRegionTags),
       lastCheckedAt: nowIso(),
     },
   };
 
   return updated;
+};
+
+const SIMILARITY_STOPWORDS = new Set([
+  "supplement",
+  "supplements",
+  "vitamin",
+  "vitamins",
+  "tablet",
+  "tablets",
+  "capsule",
+  "capsules",
+  "caplet",
+  "caplets",
+  "softgel",
+  "softgels",
+  "gummy",
+  "gummies",
+  "chewable",
+  "chewables",
+  "mg",
+  "mcg",
+  "ug",
+  "iu",
+  "g",
+  "kg",
+  "ml",
+  "oz",
+  "count",
+  "counts",
+  "bottle",
+  "bottles",
+  "pack",
+  "packs",
+  "size",
+  "serving",
+  "servings",
+  "daily",
+  "extra",
+  "plus",
+]);
+
+const tokenizeForSimilarity = (value?: string | null): string[] => {
+  if (!value) return [];
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .split(/\s+/)
+    .map((token) => token.trim())
+    .filter((token) => token.length > 0 && !SIMILARITY_STOPWORDS.has(token) && !/^\d+$/.test(token));
+};
+
+const jaccardScore = (leftTokens: string[], rightTokens: string[]): number => {
+  if (leftTokens.length === 0 || rightTokens.length === 0) return 0;
+  const leftSet = new Set(leftTokens);
+  const rightSet = new Set(rightTokens);
+  let intersection = 0;
+  for (const token of rightSet) {
+    if (leftSet.has(token)) intersection += 1;
+  }
+  const union = leftSet.size + rightSet.size - intersection;
+  return union > 0 ? intersection / union : 0;
+};
+
+const computeIngredientOverlapScore = (
+  lnhpdActives: Array<{ name: string }>,
+  candidateIngredients: string[],
+): number => {
+  if (!lnhpdActives.length || candidateIngredients.length === 0) return 0;
+  const candidateTokens = candidateIngredients.map((name) => tokenizeForSimilarity(name));
+  for (const active of lnhpdActives) {
+    const activeTokens = tokenizeForSimilarity(active.name);
+    if (activeTokens.length === 0) continue;
+    for (const tokens of candidateTokens) {
+      if (jaccardScore(activeTokens, tokens) >= GUARDRAIL_SIMILARITY_THRESHOLD) {
+        return 1;
+      }
+    }
+  }
+  return 0;
+};
+
+const computeGuardrailScore = (params: {
+  lnhpdFacts: LnhpdFacts;
+  candidateBrands: string[];
+  candidateNames: string[];
+  candidateIngredients: string[];
+}): { score: number; brandScore: number; productScore: number; ingredientScore: number } => {
+  const brandTokens = tokenizeForSimilarity(params.lnhpdFacts.brandName ?? null);
+  const productTokens = tokenizeForSimilarity(params.lnhpdFacts.productName ?? null);
+  const brandScore = params.candidateBrands.reduce((best, brand) => {
+    const score = jaccardScore(brandTokens, tokenizeForSimilarity(brand));
+    return Math.max(best, score);
+  }, 0);
+  const productScore = params.candidateNames.reduce((best, name) => {
+    const score = jaccardScore(productTokens, tokenizeForSimilarity(name));
+    return Math.max(best, score);
+  }, 0);
+  const ingredientScore = computeIngredientOverlapScore(
+    params.lnhpdFacts.actives,
+    params.candidateIngredients,
+  );
+  return {
+    score: Math.max(brandScore, productScore, ingredientScore),
+    brandScore,
+    productScore,
+    ingredientScore,
+  };
+};
+
+const isExpiredAt = (value?: string | null): boolean => {
+  if (!value) return false;
+  const ms = Date.parse(value);
+  if (Number.isNaN(ms)) return false;
+  return ms <= Date.now();
+};
+
+type AuthorityCandidate = {
+  npn: string;
+  source: "map" | "map_stale" | "snapshot";
+  isStale: boolean;
+  requiresGuardrail: boolean;
+  confidence: number | null;
+};
+
+const resolveAuthorityCandidate = (params: {
+  regulatoryMap: { npn: string; confidence: number; source: string; expires_at: string | null } | null;
+  snapshot: SupplementSnapshot | null;
+}): { candidate: AuthorityCandidate | null; mapStatus: "hit" | "stale" | "miss" } => {
+  const mapRow = params.regulatoryMap;
+  let mapStatus: "hit" | "stale" | "miss" = "miss";
+  let mapCandidate: AuthorityCandidate | null = null;
+
+  const mapNpn = mapRow?.npn?.trim() ?? null;
+  if (mapNpn) {
+    const expired = isExpiredAt(mapRow.expires_at);
+    mapStatus = expired ? "stale" : "hit";
+    const isConflict = mapRow.source === "conflict";
+    const hasMinConfidence = Number.isFinite(mapRow.confidence) && mapRow.confidence >= REGULATORY_MAP_MIN_CONFIDENCE;
+    if (!isConflict && hasMinConfidence) {
+      if (!expired) {
+        mapCandidate = {
+          npn: mapNpn,
+          source: "map",
+          isStale: false,
+          requiresGuardrail: false,
+          confidence: mapRow.confidence,
+        };
+      } else if (mapRow.expires_at) {
+        const expiresMs = Date.parse(mapRow.expires_at);
+        const withinWindow =
+          Number.isFinite(expiresMs) && Date.now() - expiresMs <= REGULATORY_MAP_STALE_WINDOW_MS;
+        const isHighConfidence =
+          mapRow.source === "lnhpd" || mapRow.source === "snapshot_verified" || mapRow.confidence >= 0.9;
+        if (withinWindow && isHighConfidence) {
+          mapCandidate = {
+            npn: mapNpn,
+            source: "map_stale",
+            isStale: true,
+            requiresGuardrail: true,
+            confidence: mapRow.confidence,
+          };
+        }
+      }
+    }
+  }
+
+  if (mapCandidate) {
+    return { candidate: mapCandidate, mapStatus };
+  }
+
+  const snapshotNpn = params.snapshot?.regulatory?.npn?.trim() ?? null;
+  const snapshotVerified =
+    params.snapshot?.regulatory?.npnStatus === "verified" &&
+    params.snapshot?.regulatory?.npnVerifiedBy === "lnhpd_fetch";
+  if (snapshotNpn && snapshotVerified) {
+    return {
+      candidate: {
+        npn: snapshotNpn,
+        source: "snapshot",
+        isStale: true,
+        requiresGuardrail: true,
+        confidence: 0.9,
+      },
+      mapStatus,
+    };
+  }
+
+  return { candidate: null, mapStatus };
+};
+
+const buildCandidateEvidence = (params: {
+  snapshot: SupplementSnapshot | null;
+  analysisPayload: SnapshotAnalysisPayload | null;
+  catalog: CatalogResolved | null;
+}): { brands: string[]; names: string[]; ingredients: string[] } => {
+  const brands = new Set<string>();
+  const names = new Set<string>();
+  const ingredients = new Set<string>();
+
+  const addValue = (set: Set<string>, value?: string | null) => {
+    if (!value) return;
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    set.add(trimmed);
+  };
+
+  addValue(brands, params.snapshot?.product.brand ?? null);
+  addValue(brands, params.analysisPayload?.productInfo?.brand ?? null);
+  addValue(brands, params.catalog?.brand ?? null);
+
+  addValue(names, params.snapshot?.product.name ?? null);
+  addValue(names, params.analysisPayload?.productInfo?.name ?? null);
+  addValue(names, params.catalog?.productName ?? null);
+
+  params.snapshot?.label?.actives?.forEach((active) => {
+    addValue(ingredients, active.name);
+  });
+  const efficacyPayload = params.analysisPayload?.efficacy as
+    | { ingredients?: Array<{ name?: string | null }> | null }
+    | null
+    | undefined;
+  efficacyPayload?.ingredients?.forEach((ingredient) => {
+    addValue(ingredients, ingredient?.name ?? null);
+  });
+
+  return {
+    brands: Array.from(brands),
+    names: Array.from(names),
+    ingredients: Array.from(ingredients),
+  };
 };
 
 const mergeReferenceItems = (
@@ -4459,6 +4715,15 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     const barcode = normalized.code;
     const cacheKey = buildBarcodeCacheKey(barcode);
     const barcodeGtin14 = normalized.code.padStart(14, "0");
+    const barcodeRawDigits = normalized.code;
+
+    let regulatoryMapStatus: "hit" | "stale" | "miss" | "timeout" = "miss";
+    let npnCandidateSource: "map" | "snapshot" | "web" | null = null;
+    let npnCandidateStale = false;
+    let npnNegativeCacheHit = false;
+    let lnhpdGuardrailScore: number | null = null;
+    let lnhpdGuardrailPass: boolean | null = null;
+    let lnhpdFetchStatus: "success" | "not_found" | "timeout" | "error" | null = null;
 
     const startedAt = performance.now();
     const budget = new DeadlineBudget(Date.now() + RESILIENCE_TOTAL_BUDGET_MS);
@@ -4477,6 +4742,16 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       process.env.SHADOW_COMPARE_ENABLE === "1" || process.env.SHADOW_COMPARE_ENABLE === "true";
     const deviceId = parsedBody.deviceId ?? null;
     const requestSignal = requestAbort.signal;
+    const buildAuthorityMeta = (extra?: Record<string, unknown>) => ({
+      regulatory_map_status: regulatoryMapStatus,
+      npn_candidate_source: npnCandidateSource,
+      npn_candidate_stale: npnCandidateStale,
+      npn_negative_cache_hit: npnNegativeCacheHit,
+      lnhpd_guardrail_score: lnhpdGuardrailScore,
+      lnhpd_guardrail_pass: lnhpdGuardrailPass,
+      lnhpd_fetch_status: lnhpdFetchStatus,
+      ...(extra ?? {}),
+    });
     const googleResilience: SearchResilienceOptions = {
       signal: requestSignal,
       budget,
@@ -4757,11 +5032,12 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
 
 	    // Stage 0 helpers (first-party resolution). These are safe to prefetch in parallel.
 	    // Hard rule: negative cache has NO termination authority in Stage 0.
-	    const regulatoryMapPromise = getBarcodeRegulatoryMap(barcodeGtin14, {
+	    const regulatoryMapPromise = getBarcodeRegulatoryMap(barcodeGtin14, barcodeRawDigits, {
 	      ...supabaseReadResilience,
 	      timeoutMs: 350,
+        includeExpired: true,
 	    });
-	    const negativeCachePromise = getNegativeCache(barcodeGtin14, {
+	    const negativeCachePromise = getNegativeCache(barcodeGtin14, barcodeRawDigits, {
 	      ...supabaseReadResilience,
 	      timeoutMs: 350,
 	    });
@@ -4794,6 +5070,20 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         catalog: catalogFast,
         aiAvailable,
       });
+
+      const snapshotVerifiedNpn = cachedFast.snapshot.regulatory.npn;
+      const snapshotVerifiedBy = cachedFast.snapshot.regulatory.npnVerifiedBy;
+      const snapshotNpnStatus = cachedFast.snapshot.regulatory.npnStatus;
+      if (snapshotVerifiedNpn && snapshotVerifiedBy === "lnhpd_fetch" && snapshotNpnStatus === "verified") {
+        void upsertBarcodeRegulatoryMap({
+          barcodeGtin14,
+          npn: snapshotVerifiedNpn,
+          confidence: 0.9,
+          source: "snapshot_verified",
+          expiresAt: new Date(Date.now() + REGULATORY_MAP_TTL_MS_LNHPD).toISOString(),
+          barcodeRaw: rawBarcode,
+        });
+      }
 
       if (!needsEnrichment) {
         if (!forceStage1) {
@@ -4891,12 +5181,12 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
               deviceId,
               requestId,
               timingTotalMs,
-              meta: {
+              meta: buildAuthorityMeta({
                 cacheKey: barcodeGtin14,
                 mode: "snapshot_cache_hit_fast",
                 deepseek_bundle_skipped_reason: "stage0_hit",
                 timing: { stage0_ms: timingTotalMs },
-              },
+              }),
             });
           })();
 
@@ -5134,12 +5424,12 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         deviceId,
         requestId,
         timingTotalMs,
-        meta: {
+        meta: buildAuthorityMeta({
           cacheKey: gtin14,
           mode: cached ? "catalog_hit_with_snapshot" : "catalog_hit_no_snapshot",
           deepseek_bundle_skipped_reason: "stage0_hit",
           timing: { stage0_ms: timingTotalMs },
-        },
+        }),
       });
 
       catalogSnapshotForAi = workingSnapshot;
@@ -5173,138 +5463,238 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
 	    // =========================================================================
 	    // Hard rule: Stage 1 web resolution must not start (or short-circuit) before we
 	    // give first-party resolvers (A/Catalog/LNHPD) a chance to terminate.
-	    const regulatoryMap = await regulatoryMapPromise.catch(() => null);
-	    const npnFromMap = regulatoryMap?.npn?.trim() ?? null;
-	    if (npnFromMap) {
-	      const lnhpdTimeoutSignal = createTimeoutSignal(RESILIENCE_LNHPD_TIMEOUT_MS);
-	      const { signal: lnhpdSignal, cleanup } = combineSignals([requestSignal, lnhpdTimeoutSignal]);
-	      try {
-	        const lnhpdFacts = await fetchLnhpdFactsByNpn(npnFromMap, lnhpdSignal);
-	        if (lnhpdFacts) {
-	          const lnhpdLabelFacts = toLabelFactsFromLnhpd(lnhpdFacts);
-	          const labelExtraction: LabelExtractionMeta = {
-	            source: "lnhpd",
-	            fetchedAt: lnhpdFacts.extractedAt ?? nowIso(),
-	            datasetVersion: lnhpdFacts.datasetVersion ?? null,
-	          };
+	    let regulatoryMap: Awaited<ReturnType<typeof getBarcodeRegulatoryMap>> | null = null;
+	    try {
+	      regulatoryMap = await regulatoryMapPromise;
+	    } catch (error) {
+	      regulatoryMapStatus = "timeout";
+	      console.warn("[ResolutionV2] Regulatory map lookup failed", error);
+	    }
 
-	          const labelAnalysis = buildLabelOnlyAnalysis(lnhpdLabelFacts);
-	          const lnhpdProductInfo = {
-	            brand: lnhpdFacts.brandName ?? null,
-	            name: lnhpdFacts.productName ?? null,
-	            category: null,
-	            image: null,
-	          };
+	    const { candidate, mapStatus } = resolveAuthorityCandidate({
+	      regulatoryMap,
+	      snapshot: cachedFast?.snapshot ?? null,
+	    });
+	    if (regulatoryMapStatus !== "timeout") {
+	      regulatoryMapStatus = mapStatus;
+	    }
 
-	          const lnhpdSources: { title: string; link: string; domain: string; isHighQuality: boolean }[] = [];
-	          const lnhpdAnalysisPayload: SnapshotAnalysisPayload = {
-	            ...labelAnalysis,
-	            brandExtraction: {
-	              brand: lnhpdFacts.brandName ?? null,
-	              product: lnhpdFacts.productName ?? null,
-	              category: null,
-	              confidence: "high",
-	              source: "rule",
-	            },
-	            productInfo: lnhpdProductInfo,
-	            sources: lnhpdSources,
-	          };
+	    if (candidate) {
+	      npnCandidateSource = candidate.source === "snapshot" ? "snapshot" : "map";
+	      npnCandidateStale = candidate.isStale;
 
-	          let lnhpdSnapshot = buildBarcodeSnapshot({
-	            barcode,
-	            productInfo: lnhpdProductInfo,
-	            sources: [],
-	            efficacy: lnhpdAnalysisPayload.efficacy ?? null,
-	            safety: lnhpdAnalysisPayload.safety ?? null,
-	            usagePayload: lnhpdAnalysisPayload.usagePayload ?? null,
-	          });
-	          lnhpdSnapshot = applyLnhpdFactsToSnapshot(lnhpdSnapshot, lnhpdFacts);
+	      const npnNegative = await getNpnNegativeCache(candidate.npn, {
+	        ...supabaseReadResilience,
+	        timeoutMs: 250,
+	      }).catch(() => null);
+	      if (npnNegative) {
+	        npnNegativeCacheHit = true;
+	      } else {
+	        const lnhpdTimeoutSignal = createTimeoutSignal(RESILIENCE_LNHPD_TIMEOUT_MS);
+	        const { signal: lnhpdSignal, cleanup } = combineSignals([requestSignal, lnhpdTimeoutSignal]);
+	        try {
+	          const lnhpdFacts = await fetchLnhpdFactsByNpn(candidate.npn, lnhpdSignal);
+	          const timedOut = lnhpdTimeoutSignal.aborted;
 
-	          const analysisStatus = buildAnalysisStatus({
-	            hasLabelFacts: hasLabelFacts(lnhpdSnapshot),
-	            hasAi: hasAiPayload(lnhpdAnalysisPayload),
-	            dsldLabelId: null,
-	          });
-	          const analysisMeta = buildAnalysisMeta({ status: analysisStatus, labelExtraction });
-	          lnhpdAnalysisPayload.analysis = analysisMeta;
-	          lnhpdSnapshot.status = "resolved";
-	          lnhpdSnapshot.analysis = analysisMeta;
-	          lnhpdSnapshot.updatedAt = nowIso();
+	          if (lnhpdFacts) {
+	            lnhpdFetchStatus = "success";
 
-          sendSSE(res, "brand_extracted", {
-            brand: lnhpdFacts.brandName ?? null,
-            product: lnhpdFacts.productName ?? null,
-            category: null,
-            confidence: "high",
-            source: "rule",
-          });
+	            let guardrailPass = true;
+	            if (candidate.requiresGuardrail) {
+	              const evidence = buildCandidateEvidence({
+	                snapshot: cachedFast?.snapshot ?? null,
+	                analysisPayload: cachedFast?.analysisPayload ?? null,
+	                catalog,
+	              });
+	              const guardrail = computeGuardrailScore({
+	                lnhpdFacts,
+	                candidateBrands: evidence.brands,
+	                candidateNames: evidence.names,
+	                candidateIngredients: evidence.ingredients,
+	              });
+	              lnhpdGuardrailScore = guardrail.score;
+	              guardrailPass = guardrail.score >= GUARDRAIL_SIMILARITY_THRESHOLD;
+	              lnhpdGuardrailPass = guardrailPass;
+	            }
 
-          sendSSE(res, "product_info", {
-            productInfo: {
-              brand: lnhpdFacts.brandName ?? null,
-              name: lnhpdFacts.productName ?? null,
-              category: null,
-              image: null,
-            },
-            sources: [],
-          });
+	            if (!guardrailPass) {
+	              void upsertBarcodeRegulatoryMap({
+	                barcodeGtin14,
+	                npn: candidate.npn,
+	                confidence: 0.2,
+	                source: "conflict",
+	                expiresAt: new Date(Date.now() + REGULATORY_MAP_CONFLICT_TTL_MS).toISOString(),
+	                barcodeRaw: rawBarcode,
+	              });
+	            } else {
+	              const lnhpdLabelFacts = toLabelFactsFromLnhpd(lnhpdFacts);
+	              const labelExtraction: LabelExtractionMeta = {
+	                source: "lnhpd",
+	                fetchedAt: lnhpdFacts.extractedAt ?? nowIso(),
+	                datasetVersion: lnhpdFacts.datasetVersion ?? null,
+	              };
 
-	          sendSSE(res, "result_efficacy", lnhpdAnalysisPayload.efficacy);
-	          sendSSE(res, "result_safety", lnhpdAnalysisPayload.safety);
-	          sendSSE(res, "result_usage", lnhpdAnalysisPayload.usagePayload);
-	          sendSSE(res, "snapshot", lnhpdSnapshot);
-	          stage0Delivered = true;
-	          stage0Source = "lnhpd";
+	              const labelAnalysis = buildLabelOnlyAnalysis(lnhpdLabelFacts);
+	              const lnhpdProductInfo = {
+	                brand: lnhpdFacts.brandName ?? null,
+	                name: lnhpdFacts.productName ?? null,
+	                category: null,
+	                image: null,
+	              };
 
-	          const expiresAt = computeExpiresAt(analysisStatus);
-	          void storeSnapshotCache({
-	            key: barcodeGtin14,
-	            source: "barcode",
-	            snapshot: lnhpdSnapshot,
-	            analysisPayload: lnhpdAnalysisPayload,
-	            expiresAt,
-	          });
+	              const lnhpdSources: { title: string; link: string; domain: string; isHighQuality: boolean }[] = [];
+	              const lnhpdAnalysisPayload: SnapshotAnalysisPayload = {
+	                ...labelAnalysis,
+	                brandExtraction: {
+	                  brand: lnhpdFacts.brandName ?? null,
+	                  product: lnhpdFacts.productName ?? null,
+	                  category: null,
+	                  confidence: "high",
+	                  source: "rule",
+	                },
+	                productInfo: lnhpdProductInfo,
+	                sources: lnhpdSources,
+	              };
 
-	          // Refresh barcode -> NPN map (best-effort).
-	          void upsertBarcodeRegulatoryMap({
-	            barcodeGtin14,
-	            npn: npnFromMap,
-	            confidence: Math.max(0.9, regulatoryMap?.confidence ?? 0),
-	            source: "lnhpd",
-	            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-	          });
+	              let lnhpdSnapshot = buildBarcodeSnapshot({
+	                barcode,
+	                productInfo: lnhpdProductInfo,
+	                sources: [],
+	                efficacy: lnhpdAnalysisPayload.efficacy ?? null,
+	                safety: lnhpdAnalysisPayload.safety ?? null,
+	                usagePayload: lnhpdAnalysisPayload.usagePayload ?? null,
+	              });
+	              lnhpdSnapshot = applyLnhpdFactsToSnapshot(lnhpdSnapshot, lnhpdFacts);
 
-	          const timingTotalMs = Math.round(performance.now() - startedAt);
-	          void logBarcodeScan({
-	            barcodeGtin14,
-	            barcodeRaw: rawBarcode,
-	            checksumValid: normalized.isValidChecksum ?? null,
-	            catalogHit: false,
-	            servedFrom: "lnhpd",
-	            dsldLabelId: null,
-	            snapshotId: lnhpdSnapshot.snapshotId,
-	            brandName: lnhpdFacts.brandName ?? null,
-	            productName: lnhpdFacts.productName ?? null,
-	            deviceId,
-	            requestId,
-	            timingTotalMs,
-            meta: {
-              stage0: "lnhpd_map_hit",
-              npn: npnFromMap,
-              deepseek_bundle_skipped_reason: "stage0_hit",
-              timing: { stage0_ms: timingTotalMs },
-            },
-	          });
+	              const analysisStatus = buildAnalysisStatus({
+	                hasLabelFacts: hasLabelFacts(lnhpdSnapshot),
+	                hasAi: hasAiPayload(lnhpdAnalysisPayload),
+	                dsldLabelId: null,
+	              });
+	              const analysisMeta = buildAnalysisMeta({ status: analysisStatus, labelExtraction });
+	              lnhpdAnalysisPayload.analysis = analysisMeta;
+	              lnhpdSnapshot.status = "resolved";
+	              lnhpdSnapshot.analysis = analysisMeta;
+	              lnhpdSnapshot.updatedAt = nowIso();
 
-	          if (!forceStage1) {
-	            sendSSE(res, "done", { barcode });
-	            res.end();
-	            return;
+	              sendSSE(res, "brand_extracted", {
+	                brand: lnhpdFacts.brandName ?? null,
+	                product: lnhpdFacts.productName ?? null,
+	                category: null,
+	                confidence: "high",
+	                source: "rule",
+	              });
+
+	              sendSSE(res, "product_info", {
+	                productInfo: {
+	                  brand: lnhpdFacts.brandName ?? null,
+	                  name: lnhpdFacts.productName ?? null,
+	                  category: null,
+	                  image: null,
+	                },
+	                sources: [],
+	              });
+
+	              sendSSE(res, "result_efficacy", lnhpdAnalysisPayload.efficacy);
+	              sendSSE(res, "result_safety", lnhpdAnalysisPayload.safety);
+	              sendSSE(res, "result_usage", lnhpdAnalysisPayload.usagePayload);
+	              sendSSE(res, "snapshot", lnhpdSnapshot);
+	              stage0Delivered = true;
+	              stage0Source = "lnhpd";
+
+	              const expiresAt = computeExpiresAt(analysisStatus);
+	              void storeSnapshotCache({
+	                key: barcodeGtin14,
+	                source: "barcode",
+	                snapshot: lnhpdSnapshot,
+	                analysisPayload: lnhpdAnalysisPayload,
+	                expiresAt,
+	              });
+
+	              void upsertBarcodeRegulatoryMap({
+	                barcodeGtin14,
+	                npn: candidate.npn,
+	                confidence: Math.max(0.9, candidate.confidence ?? 0),
+	                source: "lnhpd",
+	                expiresAt: new Date(Date.now() + REGULATORY_MAP_TTL_MS_LNHPD).toISOString(),
+	                barcodeRaw: rawBarcode,
+	              });
+
+	              void clearNpnNegativeCache(candidate.npn, { ...supabaseReadResilience, timeoutMs: 500 });
+
+	              if (aiAvailable && deepseekKey && analysisStatus !== "complete" && analysisStatus !== "ai_enriched") {
+	                queueFirstPartyAnalysisCompletion({
+	                  cacheKey: barcodeGtin14,
+	                  barcode,
+	                  model,
+	                  deepseekKey,
+	                  snapshot: lnhpdSnapshot,
+	                  analysisPayload: lnhpdAnalysisPayload,
+	                  labelFacts: lnhpdLabelFacts,
+	                });
+	              }
+
+	              const timingTotalMs = Math.round(performance.now() - startedAt);
+	              void logBarcodeScan({
+	                barcodeGtin14,
+	                barcodeRaw: rawBarcode,
+	                checksumValid: normalized.isValidChecksum ?? null,
+	                catalogHit: false,
+	                servedFrom: "lnhpd",
+	                dsldLabelId: null,
+	                snapshotId: lnhpdSnapshot.snapshotId,
+	                brandName: lnhpdFacts.brandName ?? null,
+	                productName: lnhpdFacts.productName ?? null,
+	                deviceId,
+	                requestId,
+	                timingTotalMs,
+	                meta: buildAuthorityMeta({
+	                  stage0: "lnhpd_map_hit",
+	                  npn: candidate.npn,
+	                  deepseek_bundle_skipped_reason: "stage0_hit",
+	                  timing: { stage0_ms: timingTotalMs },
+	                }),
+	              });
+
+	              if (!forceStage1) {
+	                sendSSE(res, "done", { barcode });
+	                res.end();
+	                return;
+	              }
+	              console.log("[ResolutionV2] FORCE_STAGE1 enabled; continuing after LNHPD map hit");
+	            }
+	          } else {
+	            lnhpdFetchStatus = timedOut ? "timeout" : "not_found";
+	            if (lnhpdFetchStatus === "not_found") {
+	              void upsertBarcodeRegulatoryMap({
+	                barcodeGtin14,
+	                npn: candidate.npn,
+	                confidence: 0.2,
+	                source: "lnhpd_not_found",
+	                expiresAt: new Date(Date.now() + REGULATORY_MAP_NOT_FOUND_TTL_MS).toISOString(),
+	                barcodeRaw: rawBarcode,
+	              });
+	            }
+
+	            if (lnhpdFetchStatus === "timeout" || lnhpdFetchStatus === "not_found") {
+	              void recordNpnNegativeAttempt(
+	                {
+	                  npn: candidate.npn,
+	                  reasonCode: lnhpdFetchStatus === "timeout" ? "lnhpd_timeout" : "lnhpd_not_found",
+	                  windowMs: NPN_NEGATIVE_CACHE_WINDOW_HOURS * 60 * 60 * 1000,
+	                  threshold: NPN_NEGATIVE_CACHE_THRESHOLD,
+	                  ttlMs: NPN_NEGATIVE_CACHE_TTL_MS,
+	                },
+	                { ...supabaseReadResilience, timeoutMs: 500 },
+	              );
+	            }
 	          }
-	          console.log("[ResolutionV2] FORCE_STAGE1 enabled; continuing after LNHPD map hit");
+	        } catch (error) {
+	          lnhpdFetchStatus = "error";
+	          console.warn("[ResolutionV2] LNHPD fetch failed", error);
+	        } finally {
+	          cleanup();
 	        }
-	      } finally {
-	        cleanup();
 	      }
 	    }
 
@@ -5326,7 +5716,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           deviceId,
           requestId,
           timingTotalMs,
-          meta: { reason: "google_cse_env_not_set" },
+          meta: buildAuthorityMeta({ reason: "google_cse_env_not_set" }),
         });
         return;
       }
@@ -5351,7 +5741,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           deviceId,
           requestId,
           timingTotalMs,
-          meta: { reason: "deepseek_api_key_missing" },
+          meta: buildAuthorityMeta({ reason: "deepseek_api_key_missing" }),
         });
         return;
       }
@@ -5401,7 +5791,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           deviceId,
           requestId,
           timingTotalMs,
-          meta: { cacheKey: barcodeGtin14, mode: "wait_inflight_hit" },
+          meta: buildAuthorityMeta({ cacheKey: barcodeGtin14, mode: "wait_inflight_hit" }),
         });
         return;
       }
@@ -5537,7 +5927,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     const writeNegative = async (reasonCode: string): Promise<void> => {
       const until = computeNegativeUntil(reasonCode);
       await upsertNegativeCache(
-        { barcodeGtin14, reasonCode, until },
+        { barcodeGtin14, reasonCode, until, barcodeRaw: rawBarcode },
         { ...supabaseReadResilience, timeoutMs: 700 },
       );
     };
@@ -6338,7 +6728,10 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
 
         const writeSecondaryNegative = async (reasonCode: string) => {
           const until = computeNegativeUntil(reasonCode);
-          await upsertNegativeCache({ barcodeGtin14, reasonCode, until }, supabaseWriteResilience);
+          await upsertNegativeCache(
+            { barcodeGtin14, reasonCode, until, barcodeRaw: rawBarcode },
+            supabaseWriteResilience,
+          );
         };
 
         const marketplaceSeedItems = params.seedItems.filter((item) => {
@@ -6382,11 +6775,15 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         if (npnSeed?.npn) {
           npnCandidate = npnSeed.npn;
           npnSourceUrl = npnSeed.sourceUrl;
+          npnCandidateSource = "web";
+          npnCandidateStale = false;
           const lnhpdTimeoutSignal = createTimeoutSignal(RESILIENCE_LNHPD_TIMEOUT_MS);
           const { signal: lnhpdSignal, cleanup } = combineSignals([lnhpdTimeoutSignal]);
           try {
             const lnhpdFacts = await fetchLnhpdFactsByNpn(npnCandidate, lnhpdSignal);
+            const timedOut = lnhpdTimeoutSignal.aborted;
             if (lnhpdFacts) {
+              lnhpdFetchStatus = "success";
               lnhpdId = lnhpdFacts.lnhpdId;
               lnhpdBrand = lnhpdFacts.brandName ?? null;
               lnhpdProduct = lnhpdFacts.productName ?? null;
@@ -6452,10 +6849,12 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
                 npn: npnCandidate,
                 confidence: 0.9,
                 source: "lnhpd",
-                expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                expiresAt: new Date(Date.now() + REGULATORY_MAP_TTL_MS_LNHPD).toISOString(),
+                barcodeRaw: rawBarcode,
               });
 
               void clearNegativeCache(barcodeGtin14, supabaseWriteResilience);
+              void clearNpnNegativeCache(npnCandidate, supabaseWriteResilience);
               factsSummary = {
                 npn: npnCandidate,
                 lnhpdId: lnhpdFacts.lnhpdId,
@@ -6466,7 +6865,30 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
               outcome = "SECONDARY_BACKFILL_LNHPD_SUCCESS";
               failureReason = null;
             } else {
+              lnhpdFetchStatus = timedOut ? "timeout" : "not_found";
               npnLookupFailed = true;
+              if (lnhpdFetchStatus === "not_found") {
+                void upsertBarcodeRegulatoryMap({
+                  barcodeGtin14,
+                  npn: npnCandidate,
+                  confidence: 0.2,
+                  source: "lnhpd_not_found",
+                  expiresAt: new Date(Date.now() + REGULATORY_MAP_NOT_FOUND_TTL_MS).toISOString(),
+                  barcodeRaw: rawBarcode,
+                });
+              }
+              if (lnhpdFetchStatus === "timeout" || lnhpdFetchStatus === "not_found") {
+                void recordNpnNegativeAttempt(
+                  {
+                    npn: npnCandidate,
+                    reasonCode: lnhpdFetchStatus === "timeout" ? "lnhpd_timeout" : "lnhpd_not_found",
+                    windowMs: NPN_NEGATIVE_CACHE_WINDOW_HOURS * 60 * 60 * 1000,
+                    threshold: NPN_NEGATIVE_CACHE_THRESHOLD,
+                    ttlMs: NPN_NEGATIVE_CACHE_TTL_MS,
+                  },
+                  { ...supabaseWriteResilience, timeoutMs: 500 },
+                );
+              }
             }
           } finally {
             cleanup();
@@ -6591,12 +7013,15 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
                 if (result.value.evidence.npnCandidate && !npnCandidate) {
                   npnCandidate = result.value.evidence.npnCandidate;
                   npnSourceUrl = result.value.evidence.url ?? result.value.item.link;
+                  npnCandidateSource = "web";
+                  npnCandidateStale = false;
                   void upsertBarcodeRegulatoryMap({
                     barcodeGtin14,
                     npn: npnCandidate,
                     confidence: 0.8,
                     source: "web_npn",
-                    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                    expiresAt: new Date(Date.now() + REGULATORY_MAP_TTL_MS_WEB).toISOString(),
+                    barcodeRaw: rawBarcode,
                   });
                 }
                 if (!result.value.evidence.seedVerified) {
@@ -6766,12 +7191,15 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
                     };
                     if (bestFacts.identifiers.npn) {
                       npnFoundSecondary = true;
+                      npnCandidateSource = "web";
+                      npnCandidateStale = false;
                       void upsertBarcodeRegulatoryMap({
                         barcodeGtin14,
                         npn: bestFacts.identifiers.npn,
                         confidence: 0.85,
                         source: "web_npn",
-                        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                        expiresAt: new Date(Date.now() + REGULATORY_MAP_TTL_MS_WEB).toISOString(),
+                        barcodeRaw: rawBarcode,
                       });
                     }
 
@@ -6880,7 +7308,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
                           candidate: snapshotCandidate,
                           fallback: {
                             source: "barcode",
-                            barcodeRaw: barcode,
+                            barcodeRaw: rawBarcode,
                             productInfo: {
                               brand: finalProductInfo.brand,
                               name: finalProductInfo.name,
@@ -7178,7 +7606,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
           deviceId,
           requestId,
           timingTotalMs,
-          meta: { reason: "negative_cache", reasonCode: negative.reason_code, until: negative.until },
+          meta: buildAuthorityMeta({ reason: "negative_cache", reasonCode: negative.reason_code, until: negative.until }),
         });
         finishInFlight?.(new Error("negative_cache"));
         return;
@@ -7468,14 +7896,14 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
             deviceId,
             requestId,
             timingTotalMs,
-            meta: {
+            meta: buildAuthorityMeta({
               stage0Outcome,
               reason: reasonCode,
               profilesUsed,
               cacheHits,
               calls,
               timing,
-            },
+            }),
           });
           finishInFlight?.(new Error("product_not_found"));
           return;
@@ -7692,7 +8120,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
         candidate: snapshotCandidate,
         fallback: {
           source: "barcode",
-          barcodeRaw: barcode,
+          barcodeRaw: rawBarcode,
           productInfo: {
             brand: finalProductInfo.brand,
             name: finalProductInfo.name,
@@ -8276,7 +8704,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
         deviceId,
         requestId,
         timingTotalMs,
-        meta: { stage0Outcome, reason: reasonCode, profilesUsed, cacheHits, calls, timing },
+        meta: buildAuthorityMeta({ stage0Outcome, reason: reasonCode, profilesUsed, cacheHits, calls, timing }),
       });
       finishInFlight?.(new Error("no_valid_url"));
       return;
@@ -8287,11 +8715,15 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
       deepCandidates.map((c) => c.evidence.npnCandidate).find((value): value is string => typeof value === "string") ??
       null;
     if (npnCandidate) {
+      npnCandidateSource = "web";
+      npnCandidateStale = false;
       const lnhpdTimeoutSignal = createTimeoutSignal(RESILIENCE_LNHPD_TIMEOUT_MS);
       const { signal: lnhpdSignal, cleanup } = combineSignals([requestSignal, lnhpdTimeoutSignal]);
       try {
         const lnhpdFacts = await fetchLnhpdFactsByNpn(npnCandidate, lnhpdSignal);
+        const timedOut = lnhpdTimeoutSignal.aborted;
 	        if (lnhpdFacts) {
+          lnhpdFetchStatus = "success";
           const lnhpdLabelFacts = toLabelFactsFromLnhpd(lnhpdFacts);
           const labelExtraction: LabelExtractionMeta = {
             source: "lnhpd",
@@ -8372,7 +8804,8 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
             npn: npnCandidate,
             confidence: 0.9,
             source: "lnhpd",
-            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            expiresAt: new Date(Date.now() + REGULATORY_MAP_TTL_MS_LNHPD).toISOString(),
+            barcodeRaw: rawBarcode,
           });
 
           // Best-effort background enrichment for nicer copy; does not block interactive.
@@ -8389,6 +8822,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
           }
 
 	          clearNegative();
+            void clearNpnNegativeCache(npnCandidate, { ...supabaseReadResilience, timeoutMs: 500 });
 	          if (!forceStage1) {
 	            sendSSE(res, "done", { barcode });
 	            res.end();
@@ -8396,7 +8830,31 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
 	            return;
 	          }
 	          console.log("[ResolutionV2] FORCE_STAGE1 enabled; continuing after LNHPD candidate hit");
-	        }
+        } else {
+          lnhpdFetchStatus = timedOut ? "timeout" : "not_found";
+          if (lnhpdFetchStatus === "not_found") {
+            void upsertBarcodeRegulatoryMap({
+              barcodeGtin14,
+              npn: npnCandidate,
+              confidence: 0.2,
+              source: "lnhpd_not_found",
+              expiresAt: new Date(Date.now() + REGULATORY_MAP_NOT_FOUND_TTL_MS).toISOString(),
+              barcodeRaw: rawBarcode,
+            });
+          }
+          if (lnhpdFetchStatus === "timeout" || lnhpdFetchStatus === "not_found") {
+            void recordNpnNegativeAttempt(
+              {
+                npn: npnCandidate,
+                reasonCode: lnhpdFetchStatus === "timeout" ? "lnhpd_timeout" : "lnhpd_not_found",
+                windowMs: NPN_NEGATIVE_CACHE_WINDOW_HOURS * 60 * 60 * 1000,
+                threshold: NPN_NEGATIVE_CACHE_THRESHOLD,
+                ttlMs: NPN_NEGATIVE_CACHE_TTL_MS,
+              },
+              { ...supabaseWriteResilience, timeoutMs: 500 },
+            );
+          }
+        }
       } finally {
         cleanup();
       }
@@ -8652,12 +9110,15 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
     }
 
     if (bestFacts.identifiers.npn) {
+      npnCandidateSource = "web";
+      npnCandidateStale = false;
       void upsertBarcodeRegulatoryMap({
         barcodeGtin14,
         npn: bestFacts.identifiers.npn,
         confidence: 0.8,
         source: "web_npn",
-        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        expiresAt: new Date(Date.now() + REGULATORY_MAP_TTL_MS_WEB).toISOString(),
+        barcodeRaw: rawBarcode,
       });
     }
 
@@ -8863,7 +9324,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
       candidate: snapshotCandidate,
       fallback: {
         source: "barcode",
-        barcodeRaw: barcode,
+        barcodeRaw: rawBarcode,
         productInfo: {
           brand: finalProductInfo.brand,
           name: finalProductInfo.name,
@@ -9072,7 +9533,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
       deviceId,
       requestId,
       timingTotalMs,
-      meta: {
+      meta: buildAuthorityMeta({
         stage0Outcome,
         profilesUsed,
         serpTopk,
@@ -9084,7 +9545,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
           stage0_ms: Math.round(stage1Start - startedAt),
           stage1_ms: Math.round(performance.now() - stage1Start),
         },
-      },
+      }),
 	    });
 
     console.log(`[Stream] All analysis complete for barcode: ${barcode}`);
