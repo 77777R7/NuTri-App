@@ -5,6 +5,7 @@ import { Config } from '@/constants/Config';
 import { withAuthHeaders } from '@/lib/auth-token';
 import { buildBarcodeSnapshot } from '@/lib/snapshot';
 import type { SupplementSnapshot } from '@/types/supplementSnapshot';
+import type { AnalysisBundle } from '@/types/analysisBundle';
 
 // ============================================================================
 // TYPES
@@ -142,6 +143,7 @@ type AnalysisState = {
             datasetVersion: string | null;
         } | null;
     } | null;
+    analysisBundle: AnalysisBundle | null;
     status: 'idle' | 'loading' | 'streaming' | 'complete' | 'error';
     error: string | null;
 };
@@ -196,6 +198,7 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
         social: null,
         meta: null,
         analysisMeta: null,
+        analysisBundle: null,
         status: 'idle',
         error: null,
     });
@@ -206,7 +209,7 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
     useEffect(() => {
         if (!barcode) return;
 
-        setState(prev => ({ ...prev, status: 'loading', error: null }));
+        setState(prev => ({ ...prev, status: 'loading', error: null, analysisBundle: null }));
         setServerSnapshot(null);
 
         const API_URL = Config.searchApiBaseUrl.replace(/\/$/, '');
@@ -315,6 +318,23 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
                     }));
                 } catch (e) {
                     console.error('[SSE] Failed to parse analysis_payload:', e);
+                }
+            });
+
+            // Analysis bundle v3 (unified UI)
+            es.addEventListener('analysis_bundle' as any, (event: any) => {
+                try {
+                    const data = JSON.parse(event.data) as AnalysisBundle;
+                    if (!data?.meta || data.meta.schemaVersion !== 3) return;
+                    setState(prev => {
+                        const prevBundle = prev.analysisBundle;
+                        if (!prevBundle || data.meta.revision > prevBundle.meta.revision) {
+                            return { ...prev, analysisBundle: data };
+                        }
+                        return prev;
+                    });
+                } catch (e) {
+                    console.error('[SSE] Failed to parse analysis_bundle:', e);
                 }
             });
 

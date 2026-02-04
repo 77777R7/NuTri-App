@@ -1,0 +1,533 @@
+import { createHash } from "node:crypto";
+import type { SupplementSnapshot } from "./schemas/supplementSnapshot.js";
+
+export type FactsDigestSource = "lnhpd" | "dsld" | "web";
+export type FactsIdentityType = "npn" | "dsldLabelId" | "webCanonicalId" | "gtin14";
+
+export type FactsDigest = {
+  sourceType: FactsDigestSource;
+  identity: {
+    type: FactsIdentityType;
+    value: string;
+    regionTags: string[];
+    verifiedStatus?: string | null;
+  };
+  product: {
+    brandDisplay: string | null;
+    brandLegal?: string | null;
+    name: string | null;
+    dosageForm: string | null;
+    route: string | null;
+  };
+  actives: Array<{
+    name: string;
+    amount: number | null;
+    unit: string | null;
+    amountText?: string | null;
+    chemicalForm?: string | null;
+    deliveryForm?: string | null;
+    evidenceText?: string | null;
+    source: "label" | "dsld" | "lnhpd" | "web";
+    confidence: number | null;
+  }>;
+  inactives: string[];
+  serving: {
+    servingSize: string | null;
+    servingsPerContainer: number | null;
+  };
+  labelDosing: Array<{
+    population: string | null;
+    age: string | null;
+    dose: string | null;
+    frequency: string | null;
+    rawText: string | null;
+  }>;
+  warnings: {
+    warnings: string[];
+    consultDoctorIf: string[];
+    redFlags: string[];
+    missingFlag: boolean;
+  };
+  claims: {
+    labelPurposes: string[];
+    webClaims: string[];
+  };
+  quality: {
+    isComplete: boolean;
+    missingFields: string[];
+    completenessScore: number;
+  };
+};
+
+export type LnhpdFactsInput = {
+  brandName: string | null;
+  productName: string | null;
+  npn: string | null;
+  servingSize: string | null;
+  servingsPerContainer: number | null;
+  actives: Array<{
+    name: string;
+    amount: number | null;
+    unit: string | null;
+    formRaw?: string | null;
+    lnhpdMeta?: {
+      ingredientName?: string | null;
+      properName?: string | null;
+      sourceMaterial?: string | null;
+      extractTypeDesc?: string | null;
+    } | null;
+  }>;
+  inactive: string[];
+  purposes: string[];
+  routes: string[];
+  doses: string[];
+  datasetVersion: string | null;
+  extractedAt: string | null;
+};
+
+export type DsldFactsInput = {
+  brandName: string | null;
+  productName: string | null;
+  servingSize: string | null;
+  servingsPerContainer: number | null;
+  actives: Array<{
+    name: string;
+    amount: number | null;
+    unit: string | null;
+    formRaw?: string | null;
+  }>;
+  inactive: string[];
+  proprietaryBlends: Array<{
+    name: string;
+    totalAmount: number | null;
+    unit: string | null;
+    ingredients: string[] | null;
+  }>;
+  datasetVersion: string | null;
+  extractedAt: string | null;
+};
+
+export type WebFactsInput = {
+  barcode: string;
+  canonical: {
+    name?: string | null;
+    brand?: string | null;
+    url?: string | null;
+    domain?: string | null;
+  };
+  identifiers: {
+    npn?: string | null;
+  };
+  textFacts: {
+    ingredientsText?: string | null;
+    directionsText?: string | null;
+    warningsText?: string | null;
+    servingSizeText?: string | null;
+  };
+  coverageScore: number;
+  missingFields: string[];
+};
+
+const normalizeWhitespace = (value: string): string => value.replace(/\s+/g, " ").trim();
+
+const normalizeUnitLabel = (unitRaw?: string | null): string | null => {
+  if (!unitRaw) return null;
+  const normalized = unitRaw.trim().toLowerCase();
+  if (!normalized) return null;
+  if (
+    normalized.startsWith("mcg") ||
+    normalized.startsWith("ug") ||
+    normalized.startsWith("µg") ||
+    normalized.startsWith("μg") ||
+    normalized.startsWith("microgram")
+  ) {
+    return "mcg";
+  }
+  if (normalized.startsWith("mg") || normalized.startsWith("milligram")) return "mg";
+  if (normalized.startsWith("g") || normalized.startsWith("gram")) return "g";
+  if (normalized.startsWith("iu") || normalized.startsWith("i.u")) return "iu";
+  if (normalized.includes("cfu") || normalized.includes("ufc")) return "cfu";
+  if (normalized.startsWith("ml") || normalized.startsWith("milliliter") || normalized.startsWith("millilitre")) {
+    return "ml";
+  }
+  return normalized;
+};
+
+const parseActiveSummaryLine = (rawLine: string): { name: string; amount: number | null; unit: string | null } => {
+  const cleaned = rawLine.replace(/\{[^}]*\}/g, "").trim();
+  if (!cleaned) {
+    return { name: rawLine.trim(), amount: null, unit: null };
+  }
+
+  const amountUnitMatch = cleaned.match(
+    /(.*?)(\d+(?:\.\d+)?)\s*(mcg|μg|µg|ug|mg|g|iu|ml|cfu|ufc|kcal|cal|calorie(?:s)?|%\s*dv|%dv|%)/i,
+  );
+  if (amountUnitMatch) {
+    const [, name, amountRaw, unitRaw] = amountUnitMatch;
+    const amount = Number(amountRaw);
+    const unitNormalized = normalizeUnitLabel(unitRaw);
+    return {
+      name: name.trim(),
+      amount: Number.isFinite(amount) ? amount : null,
+      unit: unitNormalized,
+    };
+  }
+
+  const numericMatch = cleaned.match(/(.*?)(\d+(?:\.\d+)?)$/);
+  if (numericMatch) {
+    const [, name, amountRaw] = numericMatch;
+    const amount = Number(amountRaw);
+    return {
+      name: name.trim(),
+      amount: Number.isFinite(amount) ? amount : null,
+      unit: null,
+    };
+  }
+
+  return { name: cleaned, amount: null, unit: null };
+};
+
+const splitTextToLines = (value?: string | null): string[] => {
+  if (!value) return [];
+  return value
+    .split(/\n|\r|•|\u2022|;|\|/g)
+    .map((item) => normalizeWhitespace(item))
+    .filter(Boolean);
+};
+
+const extractShortBullets = (value?: string | null): string[] => {
+  const lines = splitTextToLines(value);
+  if (!lines.length) return [];
+  return lines.map((item) => {
+    if (item.length <= 160) return item;
+    return `${item.slice(0, 157).trim()}...`;
+  });
+};
+
+const PURPOSE_CATEGORY_ORDER = [
+  "immune",
+  "antioxidant",
+  "energy",
+  "bone",
+  "heart",
+  "skin",
+  "digestive",
+  "stress",
+  "general",
+];
+
+const categorizePurpose = (purpose: string): string => {
+  const normalized = purpose.toLowerCase();
+  if (/immune|immunity|cold/.test(normalized)) return "immune";
+  if (/antioxidant|oxidative/.test(normalized)) return "antioxidant";
+  if (/energy|fatigue|metabolism/.test(normalized)) return "energy";
+  if (/bone|calcium|oste/.test(normalized)) return "bone";
+  if (/heart|cardio|cholesterol|lipid/.test(normalized)) return "heart";
+  if (/skin|hair|nail|collagen/.test(normalized)) return "skin";
+  if (/digest|gut|stomach/.test(normalized)) return "digestive";
+  if (/stress|calm|sleep/.test(normalized)) return "stress";
+  return "general";
+};
+
+const dedupeAndSortPurposes = (purposes: string[]): string[] => {
+  const cleaned = purposes
+    .map((item) => normalizeWhitespace(item))
+    .filter(Boolean);
+  const unique = Array.from(new Set(cleaned));
+  return unique.sort((a, b) => {
+    const catA = categorizePurpose(a);
+    const catB = categorizePurpose(b);
+    const idxA = PURPOSE_CATEGORY_ORDER.indexOf(catA);
+    const idxB = PURPOSE_CATEGORY_ORDER.indexOf(catB);
+    if (idxA !== idxB) return idxA - idxB;
+    return a.localeCompare(b);
+  });
+};
+
+const computeCompleteness = (digest: FactsDigest): FactsDigest["quality"] => {
+  const missingFields: string[] = [];
+  if (!digest.product.name) missingFields.push("product_name");
+  if (!digest.product.brandDisplay) missingFields.push("brand");
+  if (!digest.actives.length) missingFields.push("actives");
+  if (!digest.serving.servingSize) missingFields.push("serving_size");
+  if (digest.warnings.missingFlag) missingFields.push("warnings");
+
+  const totalFields = 5;
+  const completenessScore = Math.max(0, Math.min(1, (totalFields - missingFields.length) / totalFields));
+  return {
+    isComplete: completenessScore >= 0.8,
+    missingFields,
+    completenessScore,
+  };
+};
+
+const pickBrandDisplay = (snapshot: SupplementSnapshot | null | undefined, fallback?: string | null): string | null => {
+  if (snapshot?.product?.brand) return snapshot.product.brand;
+  if (fallback) return fallback;
+  return null;
+};
+
+const pickProductName = (snapshot: SupplementSnapshot | null | undefined, fallback?: string | null): string | null => {
+  if (snapshot?.product?.name) return snapshot.product.name;
+  if (fallback) return fallback;
+  return null;
+};
+
+export const buildFactsDigestFromLnhpd = (params: {
+  facts: LnhpdFactsInput;
+  snapshot?: SupplementSnapshot | null;
+  identityValue: string;
+  regionTags?: string[] | null;
+}): FactsDigest => {
+  const { facts, snapshot, identityValue } = params;
+  const brandDisplay = pickBrandDisplay(snapshot, facts.brandName ?? null);
+  const productName = pickProductName(snapshot, facts.productName ?? null);
+
+  const actives = (facts.actives ?? []).map((active) => {
+    const normalizedUnit = normalizeUnitLabel(active.unit ?? null);
+    const chemicalForm = active.lnhpdMeta?.properName ?? active.lnhpdMeta?.ingredientName ?? null;
+    const evidenceText = active.lnhpdMeta?.sourceMaterial ?? active.lnhpdMeta?.extractTypeDesc ?? null;
+    return {
+      name: normalizeWhitespace(active.name),
+      amount: active.amount ?? null,
+      unit: normalizedUnit,
+      amountText: active.amount != null && normalizedUnit ? `${active.amount} ${normalizedUnit}` : null,
+      chemicalForm: chemicalForm ? normalizeWhitespace(chemicalForm) : null,
+      deliveryForm: null,
+      evidenceText: evidenceText ? normalizeWhitespace(evidenceText) : null,
+      source: "lnhpd" as const,
+      confidence: active.lnhpdMeta ? 0.9 : 0.7,
+    };
+  });
+
+  const digest: FactsDigest = {
+    sourceType: "lnhpd",
+    identity: {
+      type: "npn",
+      value: identityValue,
+      regionTags: params.regionTags ?? snapshot?.regulatory?.regionTags ?? [],
+      verifiedStatus: snapshot?.regulatory?.npnStatus ?? null,
+    },
+    product: {
+      brandDisplay: brandDisplay ?? null,
+      brandLegal: facts.brandName ?? null,
+      name: productName ?? null,
+      dosageForm: snapshot?.label?.servingSize ?? null,
+      route: facts.routes?.[0] ?? null,
+    },
+    actives,
+    inactives: facts.inactive ?? [],
+    serving: {
+      servingSize: facts.servingSize ?? null,
+      servingsPerContainer: facts.servingsPerContainer ?? null,
+    },
+    labelDosing: (facts.doses ?? []).map((dose) => ({
+      population: null,
+      age: null,
+      dose: null,
+      frequency: null,
+      rawText: normalizeWhitespace(dose),
+    })),
+    warnings: {
+      warnings: [],
+      consultDoctorIf: [],
+      redFlags: [],
+      missingFlag: true,
+    },
+    claims: {
+      labelPurposes: dedupeAndSortPurposes(facts.purposes ?? []),
+      webClaims: [],
+    },
+    quality: { isComplete: false, missingFields: [], completenessScore: 0 },
+  };
+
+  digest.quality = computeCompleteness(digest);
+  return digest;
+};
+
+export const buildFactsDigestFromDsld = (params: {
+  facts: DsldFactsInput;
+  snapshot?: SupplementSnapshot | null;
+  identityValue: string;
+  regionTags?: string[] | null;
+}): FactsDigest => {
+  const { facts, snapshot, identityValue } = params;
+  const brandDisplay = pickBrandDisplay(snapshot, facts.brandName ?? null);
+  const productName = pickProductName(snapshot, facts.productName ?? null);
+
+  const actives = (facts.actives ?? []).map((active) => {
+    const normalizedUnit = normalizeUnitLabel(active.unit ?? null);
+    return {
+      name: normalizeWhitespace(active.name),
+      amount: active.amount ?? null,
+      unit: normalizedUnit,
+      amountText: active.amount != null && normalizedUnit ? `${active.amount} ${normalizedUnit}` : null,
+      chemicalForm: active.formRaw ? normalizeWhitespace(active.formRaw) : null,
+      deliveryForm: null,
+      evidenceText: null,
+      source: "dsld" as const,
+      confidence: 0.8,
+    };
+  });
+
+  const digest: FactsDigest = {
+    sourceType: "dsld",
+    identity: {
+      type: "dsldLabelId",
+      value: identityValue,
+      regionTags: params.regionTags ?? snapshot?.regulatory?.regionTags ?? [],
+      verifiedStatus: snapshot?.regulatory?.npnStatus ?? null,
+    },
+    product: {
+      brandDisplay: brandDisplay ?? null,
+      brandLegal: facts.brandName ?? null,
+      name: productName ?? null,
+      dosageForm: snapshot?.label?.servingSize ?? null,
+      route: null,
+    },
+    actives,
+    inactives: facts.inactive ?? [],
+    serving: {
+      servingSize: facts.servingSize ?? null,
+      servingsPerContainer: facts.servingsPerContainer ?? null,
+    },
+    labelDosing: [],
+    warnings: {
+      warnings: [],
+      consultDoctorIf: [],
+      redFlags: [],
+      missingFlag: true,
+    },
+    claims: {
+      labelPurposes: [],
+      webClaims: [],
+    },
+    quality: { isComplete: false, missingFields: [], completenessScore: 0 },
+  };
+
+  digest.quality = computeCompleteness(digest);
+  return digest;
+};
+
+export const buildFactsDigestFromWeb = (params: {
+  facts: WebFactsInput;
+  snapshot?: SupplementSnapshot | null;
+  identityType: FactsIdentityType;
+  identityValue: string;
+  regionTags?: string[] | null;
+}): FactsDigest => {
+  const { facts, snapshot } = params;
+  const brandDisplay = pickBrandDisplay(snapshot, facts.canonical?.brand ?? null);
+  const productName = pickProductName(snapshot, facts.canonical?.name ?? null);
+
+  const ingredientLines = splitTextToLines(facts.textFacts.ingredientsText ?? null);
+  const actives = ingredientLines.slice(0, 20).map((line) => {
+    const parsed = parseActiveSummaryLine(line);
+    const normalizedUnit = normalizeUnitLabel(parsed.unit ?? null);
+    return {
+      name: normalizeWhitespace(parsed.name),
+      amount: parsed.amount,
+      unit: normalizedUnit,
+      amountText: parsed.amount != null && normalizedUnit ? `${parsed.amount} ${normalizedUnit}` : null,
+      chemicalForm: null,
+      deliveryForm: null,
+      evidenceText: line,
+      source: "web" as const,
+      confidence: 0.6,
+    };
+  });
+
+  const warnings = extractShortBullets(facts.textFacts.warningsText ?? null);
+  const dosingLines = extractShortBullets(facts.textFacts.directionsText ?? null);
+
+  const digest: FactsDigest = {
+    sourceType: "web",
+    identity: {
+      type: params.identityType,
+      value: params.identityValue,
+      regionTags: params.regionTags ?? snapshot?.regulatory?.regionTags ?? [],
+      verifiedStatus: snapshot?.regulatory?.npnStatus ?? null,
+    },
+    product: {
+      brandDisplay: brandDisplay ?? null,
+      brandLegal: null,
+      name: productName ?? null,
+      dosageForm: null,
+      route: null,
+    },
+    actives,
+    inactives: [],
+    serving: {
+      servingSize: facts.textFacts.servingSizeText ? normalizeWhitespace(facts.textFacts.servingSizeText) : null,
+      servingsPerContainer: null,
+    },
+    labelDosing: dosingLines.map((dose) => ({
+      population: null,
+      age: null,
+      dose: null,
+      frequency: null,
+      rawText: dose,
+    })),
+    warnings: {
+      warnings,
+      consultDoctorIf: [],
+      redFlags: [],
+      missingFlag: warnings.length === 0,
+    },
+    claims: {
+      labelPurposes: [],
+      webClaims: [],
+    },
+    quality: { isComplete: false, missingFields: [], completenessScore: 0 },
+  };
+
+  digest.quality = computeCompleteness(digest);
+  return digest;
+};
+
+const canonicalizeValue = (value: unknown, path: string[] = []): unknown => {
+  if (Array.isArray(value)) {
+    const normalizedItems = value.map((item) => canonicalizeValue(item, path));
+    const pathKey = path.join(".");
+    if (pathKey.endsWith("actives")) {
+      return [...normalizedItems].sort((a, b) => {
+        const left = a as { name?: string; amount?: number | null; unit?: string | null };
+        const right = b as { name?: string; amount?: number | null; unit?: string | null };
+        const keyLeft = `${left?.name ?? ""}|${left?.amount ?? ""}|${left?.unit ?? ""}`;
+        const keyRight = `${right?.name ?? ""}|${right?.amount ?? ""}|${right?.unit ?? ""}`;
+        return keyLeft.localeCompare(keyRight);
+      });
+    }
+    if (
+      pathKey.endsWith("labelPurposes") ||
+      pathKey.endsWith("webClaims") ||
+      pathKey.endsWith("warnings") ||
+      pathKey.endsWith("consultDoctorIf") ||
+      pathKey.endsWith("redFlags")
+    ) {
+      return [...normalizedItems].sort((a, b) => String(a).localeCompare(String(b)));
+    }
+    return normalizedItems;
+  }
+  if (value && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .filter(([, val]) => val !== undefined)
+      .sort(([a], [b]) => a.localeCompare(b));
+    const out: Record<string, unknown> = {};
+    for (const [key, val] of entries) {
+      out[key] = canonicalizeValue(val, [...path, key]);
+    }
+    return out;
+  }
+  return value;
+};
+
+export const canonicalizeFactsDigest = (digest: FactsDigest): string => {
+  const normalized = canonicalizeValue(digest) as Record<string, unknown>;
+  return JSON.stringify(normalized);
+};
+
+export const computeFactsDigestHash = (digest: FactsDigest): string => {
+  const canonical = canonicalizeFactsDigest(digest);
+  return createHash("sha256").update(canonical).digest("hex");
+};

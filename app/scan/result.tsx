@@ -345,6 +345,7 @@ export default function ScanResultScreen() {
     error,
     analysisMeta,
     snapshot,
+    analysisBundle,
   } = useStreamAnalysis(barcode);
   const barcodeQuality = useMemo(() => getBarcodeQuality({ status, error }), [error, status]);
   const scoreQuery = useMemo(() => resolveScoreQueryFromSnapshot(snapshot), [snapshot]);
@@ -777,6 +778,7 @@ export default function ScanResultScreen() {
           scoreBadge="Label-only estimate"
           scoreState={scoreState}
           sourceType="label_scan"
+          analysisBundle={analysisBundle}
         />
 
         {renderV4ScoreCard('NuTri V4 Score', labelScoreState)}
@@ -974,6 +976,7 @@ export default function ScanResultScreen() {
         analysis={compositeAnalysis}
         isStreaming={isStreaming}
         sourceType="barcode"
+        analysisBundle={analysisBundle}
       />
 
       {renderV4ScoreCard('NuTri V4 Score', barcodeScoreState)}
