@@ -38,6 +38,12 @@ const logDeepseekParseIssue = (
   });
 };
 
+const buildDebugPayload = (label: string, payload: string, extra?: Record<string, unknown>) => ({
+  __deepseek_error: label,
+  __deepseek_snippet: truncateForLog(payload, 1200),
+  __deepseek_meta: extra ?? null,
+});
+
 const PROMPT_EFFICACY = `You are NuTri-AI, a supplement science expert. Analyze this supplement with SCIENTIFIC DEPTH.
 
 CRITICAL INSTRUCTIONS:
@@ -1114,20 +1120,21 @@ export async function fetchAnalysisBundleFastV3(
     }
     const content = data?.choices?.[0]?.message?.content;
     if (!content || typeof content !== "string") {
-      if (deepseekDebug || !content) {
-        logDeepseekParseIssue("fast_v3_missing_content", raw, {
-          hasChoices: Array.isArray(data?.choices),
-          error: data?.error ?? null,
-        });
-      }
-      return null;
+      const meta = { hasChoices: Array.isArray(data?.choices), error: data?.error ?? null };
+      logDeepseekParseIssue("fast_v3_missing_content", raw, meta);
+      return deepseekDebug ? (buildDebugPayload("fast_v3_missing_content", raw, meta) as Record<string, unknown>) : null;
     }
     const parsed = tryParseJsonLenient(content);
     if (parsed && typeof parsed === "object") {
       return parsed as Record<string, unknown>;
     }
     logDeepseekParseIssue("fast_v3_content_parse_failed", content, { error: "invalid_json_object" });
-    return null;
+    return deepseekDebug
+      ? (buildDebugPayload("fast_v3_content_parse_failed", content, { error: "invalid_json_object" }) as Record<
+          string,
+          unknown
+        >)
+      : null;
   } catch (error) {
     if (!isAbortError(error)) {
       options.breaker?.recordFailure();
@@ -1230,24 +1237,32 @@ export async function fetchIngredientsDetailV3(
       data = JSON.parse(raw);
     } catch (error) {
       logDeepseekParseIssue("detail_v3_response_parse_failed", raw, { error: String(error) });
-      return null;
+      return deepseekDebug
+        ? (buildDebugPayload("detail_v3_response_parse_failed", raw, { error: String(error) }) as Record<
+            string,
+            unknown
+          >)
+        : null;
     }
     const content = data?.choices?.[0]?.message?.content;
     if (!content || typeof content !== "string") {
-      if (deepseekDebug || !content) {
-        logDeepseekParseIssue("detail_v3_missing_content", raw, {
-          hasChoices: Array.isArray(data?.choices),
-          error: data?.error ?? null,
-        });
-      }
-      return null;
+      const meta = { hasChoices: Array.isArray(data?.choices), error: data?.error ?? null };
+      logDeepseekParseIssue("detail_v3_missing_content", raw, meta);
+      return deepseekDebug
+        ? (buildDebugPayload("detail_v3_missing_content", raw, meta) as Record<string, unknown>)
+        : null;
     }
     const parsed = tryParseJsonLenient(content);
     if (parsed && typeof parsed === "object") {
       return parsed as Record<string, unknown>;
     }
     logDeepseekParseIssue("detail_v3_content_parse_failed", content, { error: "invalid_json_object" });
-    return null;
+    return deepseekDebug
+      ? (buildDebugPayload("detail_v3_content_parse_failed", content, { error: "invalid_json_object" }) as Record<
+          string,
+          unknown
+        >)
+      : null;
   } catch (error) {
     if (!isAbortError(error)) {
       options.breaker?.recordFailure();

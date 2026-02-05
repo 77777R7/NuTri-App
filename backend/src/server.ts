@@ -255,7 +255,7 @@ const NPN_NEGATIVE_CACHE_TTL_MS = Number(process.env.NPN_NEGATIVE_CACHE_TTL_MS ?
 const NPN_NEGATIVE_CACHE_WINDOW_HOURS = Number(process.env.NPN_NEGATIVE_CACHE_WINDOW_HOURS ?? 12);
 const NPN_NEGATIVE_CACHE_THRESHOLD = Number(process.env.NPN_NEGATIVE_CACHE_THRESHOLD ?? 2);
 
-const ANALYSIS_BUNDLE_PROMPT_VERSION = process.env.ANALYSIS_BUNDLE_PROMPT_VERSION ?? "reg_v3.1";
+const ANALYSIS_BUNDLE_PROMPT_VERSION = process.env.ANALYSIS_BUNDLE_PROMPT_VERSION ?? "reg_v3.2";
 const ANALYSIS_BUNDLE_FAST_TIMEOUT_MS = Number(process.env.ANALYSIS_BUNDLE_FAST_TIMEOUT_MS ?? 3500);
 const ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS = Number(process.env.ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS ?? 7000);
 const ANALYSIS_DETAIL_LOCK_MS = Number(process.env.ANALYSIS_DETAIL_LOCK_MS ?? 45_000);
@@ -5338,6 +5338,10 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   const parsedDetail = detailRaw ? IngredientsDetailSchema.safeParse(detailRaw) : null;
   const detailPayload = parsedDetail?.success ? parsedDetail.data : null;
   const detailStatus: "complete" | "error" = detailPayload ? "complete" : "error";
+  const detailDebug =
+    detailRaw && typeof detailRaw === "object" && "__deepseek_error" in (detailRaw as Record<string, unknown>)
+      ? (detailRaw as Record<string, unknown>)
+      : null;
 
   void upsertAnalysisIdentityCache(
     {
@@ -5363,13 +5367,26 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   if (!detailPayload) {
     const fallbackErrorCode =
       errorCode ??
-      (detailRaw ? (parsedDetail?.success ? null : "LLM_PARSE_FAILED") : "LLM_EMPTY_RESPONSE");
+      (detailDebug?.__deepseek_error
+        ? String(detailDebug.__deepseek_error)
+        : detailRaw
+          ? (parsedDetail?.success ? null : "LLM_PARSE_FAILED")
+          : "LLM_EMPTY_RESPONSE");
     res.status(200).json({
       section: "ingredients",
       detail: null,
       dataStatus: "error",
       errorCode: fallbackErrorCode,
       retryable: true,
+      debug:
+        process.env.DEEPSEEK_DEBUG === "1" || process.env.DEEPSEEK_DEBUG === "true"
+          ? {
+              deepseekError: detailDebug?.__deepseek_error ?? null,
+              snippet: detailDebug?.__deepseek_snippet ?? null,
+              meta: detailDebug?.__deepseek_meta ?? null,
+              parseIssues: parsedDetail?.success ? null : parsedDetail?.error?.issues ?? null,
+            }
+          : undefined,
       meta: {
         bundleId: randomUUID(),
         revision: 2,
