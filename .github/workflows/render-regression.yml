@@ -17,6 +17,10 @@ on:
         description: "Optional override for expected deployed commit SHA"
         required: false
         type: string
+      render_deploy_hook_url:
+        description: "Optional override for Render deploy hook URL"
+        required: false
+        type: string
 
 concurrency:
   group: render-regression-${{ github.workflow }}-${{ github.ref }}
@@ -43,8 +47,11 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           INPUT_BASE_URL: ${{ github.event.inputs.render_base_url }}
           INPUT_EXPECTED_SHA: ${{ github.event.inputs.expected_commit_sha }}
+          INPUT_DEPLOY_HOOK_URL: ${{ github.event.inputs.render_deploy_hook_url }}
           DEFAULT_BASE_URL: ${{ secrets.RENDER_BASE_URL }}
           PREVIEW_BASE_URL: ${{ secrets.RENDER_PREVIEW_BASE_URL }}
+          DEFAULT_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          PREVIEW_DEPLOY_HOOK_URL: ${{ secrets.RENDER_PREVIEW_DEPLOY_HOOK_URL }}
           PUSH_SHA: ${{ github.sha }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -53,6 +60,7 @@ jobs:
 
           BASE_URL="${INPUT_BASE_URL:-}"
           EXPECTED_SHA="${INPUT_EXPECTED_SHA:-}"
+          DEPLOY_HOOK_URL="${INPUT_DEPLOY_HOOK_URL:-}"
           DEPLOY_MODE="primary"
 
           if [[ -z "$BASE_URL" ]]; then
@@ -62,6 +70,14 @@ jobs:
             else
               BASE_URL="${DEFAULT_BASE_URL:-https://nutri-app-qn0u.onrender.com}"
               DEPLOY_MODE="primary"
+            fi
+          fi
+
+          if [[ -z "$DEPLOY_HOOK_URL" ]]; then
+            if [[ "$DEPLOY_MODE" == "preview" ]]; then
+              DEPLOY_HOOK_URL="${PREVIEW_DEPLOY_HOOK_URL:-}"
+            else
+              DEPLOY_HOOK_URL="${DEFAULT_DEPLOY_HOOK_URL:-}"
             fi
           fi
 
@@ -82,10 +98,19 @@ jobs:
           echo "base_url=$BASE_URL" >> "$GITHUB_OUTPUT"
           echo "expected_sha=$EXPECTED_SHA" >> "$GITHUB_OUTPUT"
           echo "deploy_mode=$DEPLOY_MODE" >> "$GITHUB_OUTPUT"
+          echo "deploy_hook_url=$DEPLOY_HOOK_URL" >> "$GITHUB_OUTPUT"
 
           echo "Resolved base_url=$BASE_URL"
           echo "Resolved expected_sha=$EXPECTED_SHA"
           echo "Resolved deploy_mode=$DEPLOY_MODE"
+
+      - name: Trigger Render Deploy Hook
+        if: steps.target.outputs.deploy_hook_url != ''
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ steps.target.outputs.deploy_hook_url }}
+        run: |
+          curl -fsS -X POST "$RENDER_DEPLOY_HOOK_URL"
+          echo "Triggered Render deploy hook"
 
       - name: Wait for Render Deploy Commit
         env:
