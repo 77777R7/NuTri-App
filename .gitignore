@@ -38,6 +38,10 @@ yarn-error.*
 backend/output/
 backend/backend/
 
+# local artifacts
+artifacts/
+output/
+
 # typescript
 *.tsbuildinfo
 

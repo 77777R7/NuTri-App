@@ -903,7 +903,9 @@ const applyFormExplainGuard = (detail: IngredientsDetail, detailDigest: FactsDig
     const hasEvidence = Boolean(match?.chemicalForm) && confidence !== null && confidence >= 0.6;
     const chemicalFormExplain = hasEvidence
       ? item.chemicalFormExplain
-      : { text: "Chemical form not provided by source.", basisTags: ["not_provided"] as BasisTag[] };
+      : match
+        ? buildChemicalFormExplainFallback(match, null)
+        : { text: "Chemical form not provided by source.", basisTags: ["not_provided"] as BasisTag[] };
     const deliveryFormExplain = match?.deliveryForm ? item.deliveryFormExplain : null;
     return { ...item, chemicalFormExplain, deliveryFormExplain };
   });
@@ -6183,6 +6185,13 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         // ignore (client disconnect)
       }
     };
+    const awaitAnalysisBundle = async () => {
+      if (stage1BundlePromise) {
+        await awaitStage1Bundle();
+        return;
+      }
+      await awaitStage0Bundle();
+    };
     const startStage0Bundle = (
       params: Omit<Parameters<typeof emitAnalysisBundleSequence>[0], "signal" | "llmSignal">,
     ) => {
@@ -6197,6 +6206,9 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     const startStage1Bundle = (
       params: Omit<Parameters<typeof emitAnalysisBundleSequence>[0], "signal" | "llmSignal">,
     ) => {
+      // Hard rule: only emit ONE analysis_bundle sequence per request.
+      // If Stage 0 already started (skeleton+fast), Stage 1 must not re-emit revision 0/1.
+      if (stage0BundlePromise) return;
       stage1BundleAbort?.abort(new Error("fast_bundle_replaced"));
       stage1BundleAbort = new AbortController();
       stage1BundlePromise = emitAnalysisBundleSequence({
@@ -6527,6 +6539,112 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         catalog: catalogFast,
         aiAvailable,
       });
+
+      // Cache-hit fast path: emit analysis_bundle even when Stage 1 is skipped or fails.
+      // This makes cache hits deterministic for clients that rely on analysis_bundle.
+      if (!forceStage1) {
+        const snapshotLabelSource =
+          cachedFast.snapshot.analysis?.labelExtraction?.source
+          ?? cachedFast.analysisPayload?.analysis?.labelExtraction?.source
+          ?? null;
+        const snapshotLabelVersion =
+          cachedFast.snapshot.analysis?.labelExtraction?.datasetVersion
+          ?? cachedFast.analysisPayload?.analysis?.labelExtraction?.datasetVersion
+          ?? cachedFast.snapshot.analysis?.labelExtraction?.fetchedAt
+          ?? null;
+
+        const snapshotNpn = cachedFast.snapshot.regulatory.npn ?? null;
+        const snapshotNpnStatus = cachedFast.snapshot.regulatory.npnStatus ?? null;
+        const snapshotVerifiedBy = cachedFast.snapshot.regulatory.npnVerifiedBy ?? null;
+        const snapshotIsVerified =
+          snapshotNpnStatus === "verified" &&
+          snapshotVerifiedBy === "lnhpd_fetch" &&
+          Boolean(snapshotNpn);
+
+        if (!snapshotIsVerified) {
+          let digest: FactsDigest | null = null;
+          let identityType: FactsDigest["identity"]["type"] = "gtin14";
+          let identityValue = barcodeGtin14;
+          let factsSourceVersion = "snapshot:unknown";
+
+          // Prefer DSLD identity when present.
+          const dsldLabelIdRaw = cachedFast.snapshot.regulatory.dsldLabelId;
+          if ((snapshotLabelSource === "dsld" || snapshotLabelSource === "label_scan") && dsldLabelIdRaw) {
+            const fallbackFacts = buildDsldFactsInputFromSnapshot(cachedFast.snapshot);
+            identityType = "dsldLabelId";
+            identityValue = dsldLabelIdRaw;
+            factsSourceVersion = `dsld:${snapshotLabelVersion ?? "unknown"}`;
+            digest = buildFactsDigestFromDsld({
+              facts: fallbackFacts,
+              snapshot: cachedFast.snapshot,
+              identityValue,
+              regionTags: cachedFast.snapshot.regulatory.regionTags,
+            });
+          }
+
+          // Otherwise treat as web snapshot if we have any references.
+          if (!digest) {
+            const urls = cachedFast.snapshot.references.items
+              .map((ref) => ref.url)
+              .filter((value): value is string => typeof value === "string" && value.length > 0)
+              .slice(0, 2);
+            const canonicalHash = createHash("sha256").update(urls.join("|"))
+              .digest("hex");
+            const bestUrl = urls[0] ?? null;
+            const webCanonicalId = bestUrl
+              ? createHash("sha256").update(`${bestUrl}|${RESOLUTION_ENGINE_VERSION}|${barcodeGtin14}`).digest("hex")
+              : barcodeGtin14;
+            identityType = bestUrl ? "webCanonicalId" : "gtin14";
+            identityValue = webCanonicalId;
+            factsSourceVersion = urls.length
+              ? `web:${RESOLUTION_ENGINE_VERSION}:${canonicalHash}`
+              : `web:${RESOLUTION_ENGINE_VERSION}:none`;
+
+            const webFactsInput = {
+              barcode: barcodeGtin14,
+              canonical: {
+                name: cachedFast.snapshot.product.name ?? null,
+                brand: cachedFast.snapshot.product.brand ?? null,
+                url: bestUrl,
+                domain: bestUrl ? extractDomain(bestUrl) : null,
+              },
+              identifiers: { npn: null },
+              textFacts: {
+                ingredientsText: null,
+                directionsText: null,
+                warningsText: null,
+                servingSizeText: null,
+              },
+              coverageScore: 0,
+              missingFields: [
+                "textFacts.ingredientsText",
+                "textFacts.directionsText",
+                "textFacts.warningsText",
+                "textFacts.servingSizeText",
+              ],
+            };
+
+            digest = buildFactsDigestFromWeb({
+              facts: webFactsInput,
+              snapshot: cachedFast.snapshot,
+              identityType,
+              identityValue,
+              regionTags: cachedFast.snapshot.regulatory.regionTags,
+            });
+          }
+
+          if (digest) {
+            startStage0Bundle({
+              digest,
+              identityType,
+              identityValue,
+              factsSourceVersion,
+              allowAi: Boolean(deepseekKey),
+              apiKey: deepseekKey,
+            });
+          }
+        }
+      }
 
       const snapshotIsVerified =
         cachedFast.snapshot.regulatory.npnStatus === "verified" &&
@@ -7375,7 +7493,119 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         },
       ).catch(() => null);
       if (after) {
+        // Deterministic cache-hit contract: always emit analysis_bundle skeleton+fast,
+        // even when we are returning from the in-flight wait path.
+        if (!stage0BundlePromise) {
+          const snapshotLabelSource =
+            after.snapshot.analysis?.labelExtraction?.source ??
+            after.analysisPayload?.analysis?.labelExtraction?.source ??
+            null;
+          const snapshotLabelVersion =
+            after.snapshot.analysis?.labelExtraction?.datasetVersion ??
+            after.analysisPayload?.analysis?.labelExtraction?.datasetVersion ??
+            after.snapshot.analysis?.labelExtraction?.fetchedAt ??
+            null;
+
+          let digest: FactsDigest | null = null;
+          let identityType: FactsDigest["identity"]["type"] = "gtin14";
+          let identityValue = barcodeGtin14;
+          let factsSourceVersion = `snapshot:${snapshotLabelSource ?? "unknown"}`;
+
+          const snapshotNpn = after.snapshot.regulatory.npn ?? null;
+          if ((snapshotLabelSource === "lnhpd" || snapshotLabelSource === "manual") && snapshotNpn) {
+            identityType = "npn";
+            identityValue = snapshotNpn;
+            factsSourceVersion = `lnhpd:${snapshotLabelVersion ?? "unknown"}`;
+            const fallbackFacts = buildLnhpdFactsInputFromSnapshot(after.snapshot);
+            digest = buildFactsDigestFromLnhpd({
+              facts: fallbackFacts,
+              snapshot: after.snapshot,
+              identityValue: snapshotNpn,
+              regionTags: after.snapshot.regulatory.regionTags,
+            });
+          }
+
+          const snapshotDsldLabelId = after.snapshot.regulatory.dsldLabelId ?? null;
+          if (
+            !digest &&
+            (snapshotLabelSource === "dsld" || snapshotLabelSource === "label_scan") &&
+            snapshotDsldLabelId
+          ) {
+            identityType = "dsldLabelId";
+            identityValue = snapshotDsldLabelId;
+            factsSourceVersion = `dsld:${snapshotLabelVersion ?? "unknown"}`;
+            const fallbackFacts = buildDsldFactsInputFromSnapshot(after.snapshot);
+            digest = buildFactsDigestFromDsld({
+              facts: fallbackFacts,
+              snapshot: after.snapshot,
+              identityValue: snapshotDsldLabelId,
+              regionTags: after.snapshot.regulatory.regionTags,
+            });
+          }
+
+          if (!digest) {
+            const urls = after.snapshot.references.items
+              .map((ref) => ref.url)
+              .filter((value): value is string => typeof value === "string" && value.length > 0)
+              .slice(0, 2);
+            const canonicalHash = createHash("sha256").update(urls.join("|")).digest("hex");
+            const bestUrl = urls[0] ?? null;
+            const webCanonicalId = bestUrl
+              ? createHash("sha256")
+                  .update(`${bestUrl}|${RESOLUTION_ENGINE_VERSION}|${barcodeGtin14}`)
+                  .digest("hex")
+              : barcodeGtin14;
+            identityType = bestUrl ? "webCanonicalId" : "gtin14";
+            identityValue = webCanonicalId;
+            factsSourceVersion = urls.length
+              ? `web:${RESOLUTION_ENGINE_VERSION}:${canonicalHash}`
+              : `web:${RESOLUTION_ENGINE_VERSION}:none`;
+
+            digest = buildFactsDigestFromWeb({
+              facts: {
+                barcode: barcodeGtin14,
+                canonical: {
+                  name: after.snapshot.product.name ?? null,
+                  brand: after.snapshot.product.brand ?? null,
+                  url: bestUrl,
+                  domain: bestUrl ? extractDomain(bestUrl) : null,
+                },
+                identifiers: { npn: null },
+                textFacts: {
+                  ingredientsText: null,
+                  directionsText: null,
+                  warningsText: null,
+                  servingSizeText: null,
+                },
+                coverageScore: 0,
+                missingFields: [
+                  "textFacts.ingredientsText",
+                  "textFacts.directionsText",
+                  "textFacts.warningsText",
+                  "textFacts.servingSizeText",
+                ],
+              },
+              snapshot: after.snapshot,
+              identityType,
+              identityValue,
+              regionTags: after.snapshot.regulatory.regionTags,
+            });
+          }
+
+          if (digest) {
+            startStage0Bundle({
+              digest,
+              identityType,
+              identityValue,
+              factsSourceVersion,
+              allowAi: Boolean(deepseekKey),
+              apiKey: deepseekKey,
+            });
+          }
+        }
+
         emitCachedSnapshot(after);
+        await awaitAnalysisBundle();
         sendSSE(res, "done", { barcode });
         res.end();
         const timingTotalMs = Math.round(performance.now() - startedAt);
@@ -9890,7 +10120,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
       });
       clearNegative();
 
-      await awaitStage1Bundle();
+      await awaitAnalysisBundle();
       sendSSE(res, "done", { barcode });
       res.end();
       finishInFlight?.();
@@ -11219,7 +11449,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
 
     const canRespond = !requestSignal.aborted && !res.writableEnded;
     if (canRespond) {
-      await awaitStage1Bundle();
+      await awaitAnalysisBundle();
       if (!requestSignal.aborted && !res.writableEnded) {
         if (stage1SseEnabled) {
           sendSSE(res, "snapshot", snapshot);

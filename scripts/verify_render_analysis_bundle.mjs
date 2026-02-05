@@ -1,0 +1,189 @@
+#!/usr/bin/env node
+/* eslint-disable no-console */
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const DEFAULT_BARCODES = ["00029537001069", "026664275110", "000000000000"];
+const baseUrl = process.env.RENDER_BASE_URL || "https://nutri-app-qn0u.onrender.com";
+const barcodes = process.argv.slice(2).length ? process.argv.slice(2) : DEFAULT_BARCODES;
+
+const headers = {
+  "Content-Type": "application/json",
+  Accept: "text/event-stream",
+};
+if (process.env.RENDER_REGRESSION_TOKEN) {
+  headers["x-regression-token"] = process.env.RENDER_REGRESSION_TOKEN;
+} else {
+  // Back-compat for non-production environments only.
+  headers["x-auth-disabled"] = "1";
+}
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function fetchSse(url, payload, timeoutMs = 25000) {
+  const ctrl = new AbortController();
+  const timeout = setTimeout(() => ctrl.abort(), timeoutMs);
+  const res = await fetch(url, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+    signal: ctrl.signal,
+  });
+  if (!res.ok) {
+    throw new Error(`SSE request failed: ${res.status}`);
+  }
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let currentEvent = null;
+  let currentData = "";
+  const events = [];
+
+  const flushEvent = () => {
+    if (!currentEvent) return;
+    const data = currentData.trim();
+    if (!data) {
+      currentEvent = null;
+      currentData = "";
+      return;
+    }
+    try {
+      events.push({ event: currentEvent, data: JSON.parse(data) });
+    } catch {
+      events.push({ event: currentEvent, data });
+    }
+    currentEvent = null;
+    currentData = "";
+  };
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split(/\r?\n/);
+    buffer = lines.pop() ?? "";
+    for (const line of lines) {
+      if (!line.trim()) {
+        flushEvent();
+        continue;
+      }
+      if (line.startsWith("event:")) {
+        currentEvent = line.replace("event:", "").trim();
+      } else if (line.startsWith("data:")) {
+        currentData += line.replace("data:", "").trim();
+      }
+    }
+  }
+  flushEvent();
+  clearTimeout(timeout);
+  return events;
+}
+
+function pickBundle(events) {
+  const bundles = events.filter((e) => e.event === "analysis_bundle").map((e) => e.data);
+  if (!bundles.length) return null;
+  const fast = [...bundles].reverse().find((b) => b?.meta?.phase === "fast_ai");
+  return fast ?? bundles[bundles.length - 1];
+}
+
+function loadKbTexts() {
+  try {
+    const kbPath = path.join(__dirname, "..", "backend", "data", "kb", "kb_runtime_index.json");
+    const raw = fs.readFileSync(kbPath, "utf-8");
+    const kb = JSON.parse(raw);
+    const texts = new Set();
+    const entries = kb?.ingredient_form_index ? Object.values(kb.ingredient_form_index) : [];
+    for (const entry of entries) {
+      const segs = entry?.segments ?? {};
+      for (const bucket of Object.values(segs)) {
+        const en = bucket?.en;
+        if (Array.isArray(en)) {
+          for (const item of en) {
+            if (item?.text) texts.add(item.text);
+          }
+        }
+      }
+    }
+    return texts;
+  } catch {
+    return null;
+  }
+}
+
+const kbTexts = loadKbTexts();
+
+function summarizeBundle(bundle) {
+  if (!bundle) return null;
+  const { meta, sections } = bundle;
+  return {
+    meta,
+    overview: sections?.overview,
+    ingredients: sections?.ingredients,
+    usage: sections?.usage,
+    safety: sections?.safety,
+  };
+}
+
+async function fetchDetail(bundle) {
+  const meta = bundle?.meta;
+  if (!meta?.authoritativeIdentity || !meta?.factsDigestHash) return null;
+  const payload = {
+    identity: meta.authoritativeIdentity,
+    section: "ingredients_detail",
+    locale: meta.locale || "en",
+    promptVersion: meta.promptVersion,
+    factsDigestHash: meta.factsDigestHash,
+    limit: 6,
+    cursor: 0,
+  };
+  const res = await fetch(`${baseUrl}/api/analysis-section`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  return { status: res.status, data };
+}
+
+function inferKbUsage(detailData) {
+  const meta = detailData?.meta || {};
+  if (meta.fallbackUsed === "kb_dsld") return true;
+  if (!kbTexts || !detailData?.detail?.items) return false;
+  return detailData.detail.items.some((item) => kbTexts.has(item?.chemicalFormExplain?.text));
+}
+
+async function run() {
+  for (const barcode of barcodes) {
+    console.log(`\\n=== Barcode ${barcode} ===`);
+    const events = await fetchSse(`${baseUrl}/api/enrich-stream`, { barcode });
+    const bundle = pickBundle(events);
+    if (!bundle) {
+      console.log("No analysis_bundle received.");
+      continue;
+    }
+    const summary = summarizeBundle(bundle);
+    console.log("analysis_bundle summary:");
+    console.log(JSON.stringify(summary, null, 2));
+
+    await sleep(500);
+    const detailRes = await fetchDetail(bundle);
+    if (!detailRes) {
+      console.log("detail: unavailable (missing meta)");
+      continue;
+    }
+    console.log("\\nanalysis-section response:");
+    console.log(JSON.stringify(detailRes, null, 2));
+
+    const kbUsed = inferKbUsage(detailRes.data);
+    console.log(`\\nKB likely used: ${kbUsed ? "YES" : "NO"}`);
+  }
+}
+
+run().catch((err) => {
+  console.error("Script failed:", err);
+  process.exit(1);
+});
