@@ -1,0 +1,161 @@
+name: Render Regression
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      render_base_url:
+        description: "Optional override for Render base URL"
+        required: false
+        type: string
+      expected_commit_sha:
+        description: "Optional override for expected deployed commit SHA"
+        required: false
+        type: string
+
+concurrency:
+  group: render-regression-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Resolve Target Context
+        id: target
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_BASE_URL: ${{ inputs.render_base_url }}
+          INPUT_EXPECTED_SHA: ${{ inputs.expected_commit_sha }}
+          DEFAULT_BASE_URL: ${{ secrets.RENDER_BASE_URL }}
+          PREVIEW_BASE_URL: ${{ secrets.RENDER_PREVIEW_BASE_URL }}
+          PUSH_SHA: ${{ github.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+
+          BASE_URL="${INPUT_BASE_URL:-}"
+          EXPECTED_SHA="${INPUT_EXPECTED_SHA:-}"
+          DEPLOY_MODE="primary"
+
+          if [[ -z "$BASE_URL" ]]; then
+            if [[ "$EVENT_NAME" == "pull_request" && -n "${PREVIEW_BASE_URL:-}" ]]; then
+              BASE_URL="$PREVIEW_BASE_URL"
+              DEPLOY_MODE="preview"
+            else
+              BASE_URL="${DEFAULT_BASE_URL:-https://nutri-app-qn0u.onrender.com}"
+              DEPLOY_MODE="primary"
+            fi
+          fi
+
+          if [[ -z "$EXPECTED_SHA" ]]; then
+            if [[ "$EVENT_NAME" == "push" ]]; then
+              EXPECTED_SHA="$PUSH_SHA"
+            elif [[ "$EVENT_NAME" == "pull_request" ]]; then
+              if [[ "$DEPLOY_MODE" == "preview" ]]; then
+                EXPECTED_SHA="$PR_HEAD_SHA"
+              else
+                EXPECTED_SHA="$PR_BASE_SHA"
+              fi
+            else
+              EXPECTED_SHA="$PUSH_SHA"
+            fi
+          fi
+
+          echo "base_url=$BASE_URL" >> "$GITHUB_OUTPUT"
+          echo "expected_sha=$EXPECTED_SHA" >> "$GITHUB_OUTPUT"
+          echo "deploy_mode=$DEPLOY_MODE" >> "$GITHUB_OUTPUT"
+
+          echo "Resolved base_url=$BASE_URL"
+          echo "Resolved expected_sha=$EXPECTED_SHA"
+          echo "Resolved deploy_mode=$DEPLOY_MODE"
+
+      - name: Wait for Render Deploy Commit
+        env:
+          RENDER_BASE_URL: ${{ steps.target.outputs.base_url }}
+          EXPECTED_COMMIT_SHA: ${{ steps.target.outputs.expected_sha }}
+          RENDER_AUTH_DISABLED_HEADER: ${{ secrets.RENDER_AUTH_DISABLED_HEADER }}
+          RENDER_DEPLOY_WAIT_TIMEOUT_MS: "900000"
+          RENDER_DEPLOY_WAIT_INTERVAL_MS: "15000"
+          RENDER_COMMIT_PROBE_BARCODE: "00029537001069"
+        run: node scripts/ci/wait-render-commit.mjs
+
+      - name: Prepare Artifact Directory
+        id: artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          ARTIFACT_DIR="artifacts/render-regression/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "$ARTIFACT_DIR"
+          echo "artifact_dir=$ARTIFACT_DIR" >> "$GITHUB_OUTPUT"
+
+      - name: Run Render Regression Suite
+        env:
+          RENDER_BASE_URL: ${{ steps.target.outputs.base_url }}
+          RENDER_AUTH_DISABLED_HEADER: ${{ secrets.RENDER_AUTH_DISABLED_HEADER }}
+          RENDER_ARTIFACT_DIR: ${{ steps.artifact.outputs.artifact_dir }}
+          RENDER_LNHPD_BARCODE: "00029537001069"
+          RENDER_DSLD_BARCODE: "026664275110"
+          RENDER_WEB_BARCODE: "000000000000"
+          RENDER_DETAIL_LIMIT: "6"
+        run: node scripts/ci/render-regression.mjs
+
+      - name: Upload Regression Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: render-regression-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ steps.artifact.outputs.artifact_dir }}
+          if-no-files-found: warn
+
+      - name: Create Issue On Failure
+        if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.RENDER_OPEN_ISSUE_ON_FAIL == '1'
+        uses: actions/github-script@v7
+        env:
+          SUMMARY_PATH: ${{ steps.artifact.outputs.artifact_dir }}/summary.json
+          BASE_URL: ${{ steps.target.outputs.base_url }}
+          EXPECTED_SHA: ${{ steps.target.outputs.expected_sha }}
+        with:
+          script: |
+            const fs = require('fs');
+            const summaryPath = process.env.SUMMARY_PATH;
+            let summary = 'summary.json missing';
+            if (summaryPath && fs.existsSync(summaryPath)) {
+              summary = fs.readFileSync(summaryPath, 'utf8');
+            }
+
+            const title = `[Render Regression] Failed for ${context.sha.slice(0, 12)}`;
+            const body = [
+              `Workflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              `Base URL: ${process.env.BASE_URL}`,
+              `Expected SHA: ${process.env.EXPECTED_SHA}`,
+              '',
+              '```json',
+              summary,
+              '```',
+            ].join('\n');
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body,
+              labels: ['ci', 'render-regression'],
+            });
