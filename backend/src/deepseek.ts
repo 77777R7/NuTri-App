@@ -38,7 +38,11 @@ const logDeepseekParseIssue = (
   });
 };
 
-const buildDebugPayload = (label: string, payload: string, extra?: Record<string, unknown>) => ({
+const buildDebugPayload = (
+  label: string,
+  payload: string,
+  extra?: Record<string, unknown> | null,
+) => ({
   __deepseek_error: label,
   __deepseek_snippet: truncateForLog(payload, 1200),
   __deepseek_meta: extra ?? null,
@@ -1034,7 +1038,9 @@ export async function fetchAnalysisBundleFastV3(
   let release: (() => void) | null = null;
   try {
     if (options.breaker && !options.breaker.canRequest()) {
-      return null;
+      return deepseekDebug
+        ? (buildDebugPayload("fast_v3_breaker_open", "", null) as Record<string, unknown>)
+        : null;
     }
 
     const timeoutMs = options.timeoutMs ?? 3500;
@@ -1050,7 +1056,9 @@ export async function fetchAnalysisBundleFastV3(
           signal: options.signal,
         });
       } catch {
-        return null;
+        return deepseekDebug
+          ? (buildDebugPayload("fast_v3_semaphore_timeout", "", null) as Record<string, unknown>)
+          : null;
       }
     }
 
@@ -1140,7 +1148,11 @@ export async function fetchAnalysisBundleFastV3(
       options.breaker?.recordFailure();
     }
     console.error("Error fetching analysis bundle fast v3:", error);
-    return null;
+    return deepseekDebug
+      ? (buildDebugPayload("fast_v3_request_failed", String(error), {
+          name: error instanceof Error ? error.name : null,
+        }) as Record<string, unknown>)
+      : null;
   } finally {
     release?.();
   }
@@ -1155,7 +1167,9 @@ export async function fetchIngredientsDetailV3(
   let release: (() => void) | null = null;
   try {
     if (options.breaker && !options.breaker.canRequest()) {
-      return null;
+      return deepseekDebug
+        ? (buildDebugPayload("detail_v3_breaker_open", "", null) as Record<string, unknown>)
+        : null;
     }
 
     const timeoutMs = options.timeoutMs ?? 7000;
@@ -1171,7 +1185,9 @@ export async function fetchIngredientsDetailV3(
           signal: options.signal,
         });
       } catch {
-        return null;
+        return deepseekDebug
+          ? (buildDebugPayload("detail_v3_semaphore_timeout", "", null) as Record<string, unknown>)
+          : null;
       }
     }
 
@@ -1268,7 +1284,11 @@ export async function fetchIngredientsDetailV3(
       options.breaker?.recordFailure();
     }
     console.error("Error fetching ingredients detail v3:", error);
-    return null;
+    return deepseekDebug
+      ? (buildDebugPayload("detail_v3_request_failed", String(error), {
+          name: error instanceof Error ? error.name : null,
+        }) as Record<string, unknown>)
+      : null;
   } finally {
     release?.();
   }

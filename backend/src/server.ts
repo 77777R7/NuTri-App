@@ -255,7 +255,7 @@ const NPN_NEGATIVE_CACHE_TTL_MS = Number(process.env.NPN_NEGATIVE_CACHE_TTL_MS ?
 const NPN_NEGATIVE_CACHE_WINDOW_HOURS = Number(process.env.NPN_NEGATIVE_CACHE_WINDOW_HOURS ?? 12);
 const NPN_NEGATIVE_CACHE_THRESHOLD = Number(process.env.NPN_NEGATIVE_CACHE_THRESHOLD ?? 2);
 
-const ANALYSIS_BUNDLE_PROMPT_VERSION = process.env.ANALYSIS_BUNDLE_PROMPT_VERSION ?? "reg_v3.2";
+const ANALYSIS_BUNDLE_PROMPT_VERSION = process.env.ANALYSIS_BUNDLE_PROMPT_VERSION ?? "reg_v3.3";
 const ANALYSIS_BUNDLE_FAST_TIMEOUT_MS = Number(process.env.ANALYSIS_BUNDLE_FAST_TIMEOUT_MS ?? 3500);
 const ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS = Number(process.env.ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS ?? 7000);
 const ANALYSIS_DETAIL_LOCK_MS = Number(process.env.ANALYSIS_DETAIL_LOCK_MS ?? 45_000);
@@ -633,6 +633,32 @@ const buildDsldInferenceOverview = (digest: FactsDigest): { summary: string; bul
   }
   bullets.push(buildSectionBullet("Consider use when dietary intake may be insufficient.", ["ingredient_inference"]));
   return { summary, bullets };
+};
+
+const applyDsldInferenceGuard = (bundle: AnalysisBundle, digest: FactsDigest): AnalysisBundle => {
+  if (digest.sourceType !== "dsld") return bundle;
+  const bullets = bundle.sections.overview.cover?.bullets ?? [];
+  const shouldReplace = bullets.length === 0 || bullets.every((bullet) => isContainsBullet(bullet.text));
+  if (!shouldReplace) return bundle;
+  const inference = buildDsldInferenceOverview(digest);
+  return {
+    ...bundle,
+    sections: {
+      ...bundle.sections,
+      overview: {
+        ...bundle.sections.overview,
+        cover: {
+          summary: inference.summary,
+          bullets: inference.bullets,
+        },
+        detail: {
+          summary: inference.summary,
+          bullets: inference.bullets,
+        },
+        dataStatus: "complete",
+      },
+    },
+  };
 };
 
 const buildFallbackOverviewBullets = (digest: FactsDigest): Array<{ text: string; basisTags: BasisTag[] }> => {
@@ -5559,7 +5585,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       ).catch(() => null);
 
       if (cachedFast?.payload && typeof cachedFast.payload === "object") {
-        const fastCandidate = {
+        let fastCandidate = {
           ...(cachedFast.payload as AnalysisBundle),
           meta: {
             ...(cachedFast.payload as AnalysisBundle).meta,
@@ -5570,7 +5596,8 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
             factsSourceVersion: params.factsSourceVersion,
             serverCommitSha: SERVER_COMMIT_SHA,
           },
-        } satisfies AnalysisBundle;
+        } as AnalysisBundle;
+        fastCandidate = applyDsldInferenceGuard(fastCandidate, params.digest);
         const parsed = safeParseAnalysisBundle(fastCandidate);
         if (parsed.success && canWrite()) {
           sendSSE(res, "analysis_bundle", parsed.data);
@@ -5637,7 +5664,8 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       }
 
       if (fastBundle && canWrite()) {
-        sendSSE(res, "analysis_bundle", fastBundle);
+        const adjustedBundle = applyDsldInferenceGuard(fastBundle, params.digest);
+        sendSSE(res, "analysis_bundle", adjustedBundle);
         void upsertAnalysisIdentityCache(
           {
             identityType: params.identityType,
@@ -5648,7 +5676,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
             factsSourceVersion: params.factsSourceVersion,
             section: "bundle_fast",
             status: "complete",
-            payload: fastBundle,
+            payload: adjustedBundle,
             factsDigestJson: params.digest,
             expiresAt: new Date(Date.now() + ANALYSIS_IDENTITY_CACHE_TTL_MS).toISOString(),
           },
