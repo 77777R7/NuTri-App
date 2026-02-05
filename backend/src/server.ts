@@ -800,7 +800,10 @@ const buildChemicalFormExplainFallback = (
   }
   const confidence = active.chemicalFormConfidence ?? null;
   if (!active.chemicalForm || confidence === null || confidence < 0.6) {
-    return { text: "Chemical form not provided by source.", basisTags: ["not_provided"] };
+    return {
+      text: "The label does not specify chemical form. At typical doses, dose and diet often matter more.",
+      basisTags: ["not_provided", "general_advice"],
+    };
   }
   return { text: `Chemical form: ${active.chemicalForm}.`, basisTags: ["label_fact"] };
 };
@@ -832,9 +835,12 @@ const buildDetailSkeleton = (digest: FactsDigest, labelDosingText: string | null
   };
 };
 
-const buildDsldKbFallbackDetail = (digest: FactsDigest): { detail: IngredientsDetail; formResolveSources: Record<string, string> } => {
+const buildDsldKbFallbackDetail = (
+  digest: FactsDigest,
+): { detail: IngredientsDetail; formResolveSources: Record<string, string>; formEvidenceTexts: Record<string, string | null> } => {
   const kb = getKbRuntime();
   const formResolveSources: Record<string, string> = {};
+  const formEvidenceTexts: Record<string, string | null> = {};
   return {
     detail: {
       items: digest.actives.map((active) => {
@@ -843,9 +849,12 @@ const buildDsldKbFallbackDetail = (digest: FactsDigest): { detail: IngredientsDe
               ingredientName: active.name,
               chemicalForm: active.chemicalForm ?? null,
               chemicalFormConfidence: active.chemicalFormConfidence ?? null,
+              chemicalFormSource: active.chemicalFormSource ?? "none",
+              chemicalFormEvidence: active.chemicalFormEvidence ?? null,
             })
-          : { sentence: null, resolveSource: "none" as const };
+          : { sentence: null, resolveSource: "none" as const, evidenceText: null };
         formResolveSources[active.name] = kbResult.resolveSource;
+        formEvidenceTexts[active.name] = kbResult.evidenceText;
         return {
           name: active.name,
           whatItDoes: buildNotProvidedField(),
@@ -858,6 +867,7 @@ const buildDsldKbFallbackDetail = (digest: FactsDigest): { detail: IngredientsDe
       overlapNotes: null,
     },
     formResolveSources,
+    formEvidenceTexts,
   };
 };
 
@@ -5658,6 +5668,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   let dsldParsed: ReturnType<typeof DsldDetailMinimalSchema.safeParse> | null = null;
   let dsldMinimal: DsldDetailMinimal | null = null;
   let formResolveSources: Record<string, string> | null = null;
+  let formEvidenceTexts: Record<string, string | null> | null = null;
   let errorCode: string | null = null;
   let rescueAttempted = false;
   const getDebugErrorCode = (raw: Record<string, unknown> | null): string | null => {
@@ -5771,6 +5782,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   if (isDsldDetail) {
     const dsldBase = buildDsldKbFallbackDetail(detailDigest);
     formResolveSources = dsldBase.formResolveSources;
+    formEvidenceTexts = dsldBase.formEvidenceTexts;
     detailPayload = mergeDsldWhatItDoes(dsldBase.detail, dsldMinimal);
   } else {
     if (detailPayload && labelDosingText) {
@@ -5808,6 +5820,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       const dsldBase = buildDsldKbFallbackDetail(detailDigest);
       detailPayload = dsldBase.detail;
       formResolveSources = dsldBase.formResolveSources;
+      formEvidenceTexts = dsldBase.formEvidenceTexts;
       fallbackUsed = "kb_dsld";
     } else {
       detailPayload = buildDetailSkeleton(detailDigest, labelDosingText);
@@ -5851,9 +5864,10 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 
   const debugEnabled = process.env.DEEPSEEK_DEBUG === "1" || process.env.DEEPSEEK_DEBUG === "true";
   const includeFormResolve = isDsldDetail && formResolveSources;
+  const includeFormEvidence = isDsldDetail && formEvidenceTexts;
   const includeDebug = debugEnabled && detailDataStatus !== "complete";
   const debugPayload =
-    includeDebug || includeFormResolve
+    includeDebug || includeFormResolve || includeFormEvidence
       ? {
           deepseekError: includeDebug ? (detailDebug?.__deepseek_error ?? null) : undefined,
           snippet: includeDebug ? (detailDebug?.__deepseek_snippet ?? null) : undefined,
@@ -5869,6 +5883,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
             : undefined,
           rescueAttempted: includeDebug ? rescueAttempted : undefined,
           formResolveSources: includeFormResolve ? formResolveSources : undefined,
+          formEvidenceTexts: includeFormEvidence ? formEvidenceTexts : undefined,
         }
       : undefined;
 

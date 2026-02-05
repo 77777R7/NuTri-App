@@ -27,7 +27,13 @@ export type FactsDigest = {
     chemicalForm?: string | null;
     chemicalFormEvidence?: string | null;
     chemicalFormConfidence?: number | null;
-    chemicalFormSource?: "lnhpd_meta" | "label_parenthetical" | "ingredient_name" | "none";
+    chemicalFormSource?:
+      | "lnhpd_meta"
+      | "label_parenthetical"
+      | "label_as_phrase"
+      | "label_from_phrase"
+      | "ingredient_name"
+      | "none";
     deliveryForm?: string | null;
     evidenceText?: string | null;
     source: "label" | "dsld" | "lnhpd" | "web";
@@ -161,29 +167,96 @@ const CHEMICAL_FORM_KEYWORDS = [
   "chelate",
 ];
 
-const extractChemicalFormFromText = (
-  rawText: string,
-): { form: string; evidence: string; confidence: number; source: "label_parenthetical" | "ingredient_name" } | null => {
-  const text = normalizeWhitespace(rawText);
-  if (!text) return null;
+const CHEMICAL_FORM_BLACKLIST = ["dioxide", "peroxide", "antioxidant", "oxidative"];
 
+const WEAK_FORM_INGREDIENT_ALLOWLIST = [
+  "calcium",
+  "magnesium",
+  "zinc",
+  "iron",
+  "copper",
+  "selenium",
+  "iodine",
+  "chromium",
+  "manganese",
+  "molybdenum",
+  "potassium",
+  "vitamin",
+  "folate",
+  "folic",
+  "niacin",
+  "riboflavin",
+  "thiamin",
+  "omega",
+  "epa",
+  "dha",
+  "creatine",
+  "coq10",
+  "carnitine",
+];
+
+const hasBlacklistedFormToken = (text: string): boolean => {
+  const normalized = text.toLowerCase();
+  return CHEMICAL_FORM_BLACKLIST.some((token) => normalized.includes(token));
+};
+
+const extractExplicitChemicalFormFromText = (
+  text: string,
+): {
+  form: string;
+  evidence: string;
+  confidence: number;
+  source: "label_parenthetical" | "label_as_phrase" | "label_from_phrase";
+} | null => {
   const parenthetical = text.match(/\(as ([^)]+)\)/i);
   if (parenthetical?.[1]) {
     const form = normalizeWhitespace(parenthetical[1]);
-    if (form) {
-      return { form, evidence: parenthetical[0], confidence: 0.7, source: "label_parenthetical" };
+    if (form && !hasBlacklistedFormToken(form)) {
+      return { form, evidence: parenthetical[0], confidence: 0.8, source: "label_parenthetical" };
     }
   }
 
-  const asMatch = text.match(/\bas ([^,]+)$/i);
+  const asMatch = text.match(/\bas ([^,;]+?)(?:,|;|$)/i);
   if (asMatch?.[1]) {
     const form = normalizeWhitespace(asMatch[1]);
-    if (form) {
-      return { form, evidence: asMatch[0], confidence: 0.7, source: "label_parenthetical" };
+    if (form && !hasBlacklistedFormToken(form)) {
+      return { form, evidence: asMatch[0], confidence: 0.75, source: "label_as_phrase" };
     }
   }
 
+  const fromMatch = text.match(/\bfrom ([^,;]+?)(?:,|;|$)/i);
+  if (fromMatch?.[1]) {
+    const form = normalizeWhitespace(fromMatch[1]);
+    if (form && !hasBlacklistedFormToken(form)) {
+      return { form, evidence: fromMatch[0], confidence: 0.72, source: "label_from_phrase" };
+    }
+  }
+
+  return null;
+};
+
+const isAllowedWeakFormIngredient = (text: string): boolean => {
+  const normalized = text.toLowerCase();
+  return WEAK_FORM_INGREDIENT_ALLOWLIST.some((token) => normalized.includes(token));
+};
+
+const extractChemicalFormFromText = (
+  rawText: string,
+): {
+  form: string;
+  evidence: string;
+  confidence: number;
+  source: "label_parenthetical" | "label_as_phrase" | "label_from_phrase" | "ingredient_name";
+} | null => {
+  const text = normalizeWhitespace(rawText);
+  if (!text) return null;
+
+  const explicit = extractExplicitChemicalFormFromText(text);
+  if (explicit) return explicit;
+
   const lower = text.toLowerCase();
+  if (!isAllowedWeakFormIngredient(lower)) return null;
+  if (hasBlacklistedFormToken(lower)) return null;
   const hasKeyword = CHEMICAL_FORM_KEYWORDS.some((keyword) => lower.includes(` ${keyword}`) || lower.endsWith(keyword));
   if (hasKeyword) {
     return { form: text, evidence: text, confidence: 0.6, source: "ingredient_name" };
