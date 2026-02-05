@@ -7,7 +7,7 @@ const DEFAULT_INTERVAL_MS = 15 * 1000;
 const DEFAULT_REQUEST_TIMEOUT_MS = 30 * 1000;
 
 const baseUrl = process.env.RENDER_BASE_URL;
-const expectedSha = process.env.GITHUB_SHA || process.env.EXPECTED_COMMIT_SHA;
+const expectedSha = process.env.EXPECTED_COMMIT_SHA || process.env.GITHUB_SHA;
 const probeBarcode = process.env.RENDER_COMMIT_PROBE_BARCODE || DEFAULT_PROBE_BARCODE;
 const timeoutMs = Number(process.env.RENDER_DEPLOY_WAIT_TIMEOUT_MS || DEFAULT_TIMEOUT_MS);
 const intervalMs = Number(process.env.RENDER_DEPLOY_WAIT_INTERVAL_MS || DEFAULT_INTERVAL_MS);
