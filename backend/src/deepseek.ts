@@ -435,7 +435,7 @@ type ResilienceOptions = {
   timeoutMs?: number;
   queueTimeoutMs?: number;
   maxTokens?: number;
-  promptOverride?: "primary" | "rescue";
+  promptOverride?: "primary" | "rescue" | "dsld_short" | "dsld_rescue";
   debugOnError?: boolean;
   budget?: DeadlineBudget;
   semaphore?: Semaphore;
@@ -1044,6 +1044,39 @@ Rules:
 - Output JSON only, no markdown, no trailing commas.
 `;
 
+const PROMPT_INGREDIENTS_DETAIL_V3_DSLD_SHORT = `You are NuTri-AI. Use the provided FACTS_DIGEST_JSON.
+Return JSON only with this exact shape:
+{
+  "items": [
+    {
+      "name": "...",
+      "whatItDoes": { "text": "...", "basisTags": ["..."] },
+      "doseContext": { "text": "...", "basisTags": ["..."] },
+      "chemicalFormExplain": { "text": "...", "basisTags": ["..."] },
+      "deliveryFormExplain": { "text": "...", "basisTags": ["..."] } | null
+    }
+  ],
+  "overallSummary": { "text": "...", "basisTags": ["..."] } | null,
+  "overlapNotes": null
+}
+
+Rules:
+- basisTags must be from: label_fact, regulatory_claim, ingredient_inference, web_evidence, general_advice, not_provided, conflict.
+- Only output items for the actives provided in FACTS_DIGEST_JSON.
+- If FACTS_DIGEST_JSON.labelDosing has entries, reference label dosing briefly and do NOT say dosing is unknown.
+- whatItDoes: 1 short sentence (<= 14 words).
+- doseContext: 1 short sentence (<= 14 words).
+- chemicalFormExplain: 1 short sentence (<= 20 words).
+- deliveryFormExplain: 1 short sentence (<= 12 words).
+- overallSummary: max 40 words; can be null if uncertain.
+- chemicalFormExplain rules:
+  - If actives[i].chemicalFormConfidence is null OR < 0.6, output exactly "Chemical form not provided by source." with basisTags ["not_provided"].
+  - If chemicalFormConfidence >= 0.6 and chemicalForm exists, explain cautiously (must include "may" or "limited evidence") with basisTags ["label_fact","ingredient_inference"].
+- deliveryFormExplain only if deliveryForm exists, otherwise null.
+- Avoid starting sentences with "Contains".
+- Output JSON only, no markdown, no trailing commas.
+`;
+
 const PROMPT_INGREDIENTS_DETAIL_V3_RESCUE = `You are NuTri-AI. Use the provided FACTS_DIGEST_JSON.
 Return JSON only with this exact shape:
 {
@@ -1074,6 +1107,39 @@ Rules:
 - chemicalFormExplain: 1 short sentence (<= 20 words).
 - deliveryFormExplain: 1 short sentence (<= 12 words).
 - overallSummary: 2 short sentences, total <= 40 words.
+- Output JSON only, no markdown, no trailing commas.
+`;
+
+const PROMPT_INGREDIENTS_DETAIL_V3_DSLD_RESCUE = `You are NuTri-AI. Use the provided FACTS_DIGEST_JSON.
+Return JSON only with this exact shape:
+{
+  "items": [
+    {
+      "name": "...",
+      "whatItDoes": { "text": "...", "basisTags": ["..."] },
+      "doseContext": { "text": "...", "basisTags": ["..."] },
+      "chemicalFormExplain": { "text": "...", "basisTags": ["..."] },
+      "deliveryFormExplain": { "text": "...", "basisTags": ["..."] } | null
+    }
+  ],
+  "overallSummary": { "text": "...", "basisTags": ["..."] },
+  "overlapNotes": null
+}
+
+Rules:
+- basisTags must be from: label_fact, regulatory_claim, ingredient_inference, web_evidence, general_advice, not_provided, conflict.
+- Only output items for the actives provided in FACTS_DIGEST_JSON.
+- If FACTS_DIGEST_JSON.labelDosing has entries, reference label dosing briefly and do NOT say dosing is unknown.
+- whatItDoes: 1 short sentence (<= 12 words).
+- doseContext: 1 short sentence (<= 12 words).
+- chemicalFormExplain: 1 short sentence (<= 18 words).
+- deliveryFormExplain: 1 short sentence (<= 10 words).
+- overallSummary: max 32 words.
+- chemicalFormExplain rules:
+  - If actives[i].chemicalFormConfidence is null OR < 0.6, output exactly "Chemical form not provided by source." with basisTags ["not_provided"].
+  - If chemicalFormConfidence >= 0.6 and chemicalForm exists, explain cautiously (must include "may" or "limited evidence") with basisTags ["label_fact","ingredient_inference"].
+- deliveryFormExplain only if deliveryForm exists, otherwise null.
+- Avoid starting sentences with "Contains".
 - Output JSON only, no markdown, no trailing commas.
 `;
 export async function fetchAnalysisBundleFastV3(
@@ -1215,7 +1281,13 @@ export async function fetchIngredientsDetailV3(
   const useDebugPayload = deepseekDebug || options.debugOnError === true;
   try {
     const prompt =
-      options.promptOverride === "rescue" ? PROMPT_INGREDIENTS_DETAIL_V3_RESCUE : PROMPT_INGREDIENTS_DETAIL_V3;
+      options.promptOverride === "rescue"
+        ? PROMPT_INGREDIENTS_DETAIL_V3_RESCUE
+        : options.promptOverride === "dsld_short"
+          ? PROMPT_INGREDIENTS_DETAIL_V3_DSLD_SHORT
+          : options.promptOverride === "dsld_rescue"
+            ? PROMPT_INGREDIENTS_DETAIL_V3_DSLD_RESCUE
+            : PROMPT_INGREDIENTS_DETAIL_V3;
     if (options.breaker && !options.breaker.canRequest()) {
       return useDebugPayload
         ? (buildDebugPayload("detail_v3_breaker_open", "", null) as Record<string, unknown>)

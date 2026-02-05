@@ -12,6 +12,7 @@ import { buildCatalogBarcodeSnapshot } from "./catalogSnapshot.js";
 import { logBarcodeScan } from "./scanLog.js";
 import { extractBrandProduct, type BrandExtractionResult } from "./brandExtractor.js";
 import { buildCombinedContext, fetchAnalysisBundle, fetchAnalysisBundleFastV3, fetchIngredientsDetailV3, prepareContextSources } from "./deepseek.js";
+import { getKbRuntime, lookupKbFormExplain } from "./kbRuntime.js";
 import {
   IngredientsDetailSchema,
   safeParseAnalysisBundle,
@@ -262,14 +263,21 @@ const NPN_NEGATIVE_CACHE_THRESHOLD = Number(process.env.NPN_NEGATIVE_CACHE_THRES
 const ANALYSIS_BUNDLE_PROMPT_VERSION = process.env.ANALYSIS_BUNDLE_PROMPT_VERSION ?? "reg_v4.0";
 const ANALYSIS_BUNDLE_FAST_TIMEOUT_MS = Number(process.env.ANALYSIS_BUNDLE_FAST_TIMEOUT_MS ?? 3500);
 const ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS = Number(process.env.ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS ?? 7000);
+const ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS_DSLD = Number(
+  process.env.ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS_DSLD ?? 4500,
+);
 const ANALYSIS_DETAIL_LIMIT_DEFAULT = Number(process.env.ANALYSIS_DETAIL_LIMIT_DEFAULT ?? 8);
 const ANALYSIS_DETAIL_LIMIT_MAX = Number(process.env.ANALYSIS_DETAIL_LIMIT_MAX ?? 12);
 const ANALYSIS_DETAIL_LIMIT_RESCUE = Number(process.env.ANALYSIS_DETAIL_LIMIT_RESCUE ?? 6);
+const ANALYSIS_DETAIL_LIMIT_DSLD = Number(process.env.ANALYSIS_DETAIL_LIMIT_DSLD ?? 6);
 const ANALYSIS_DETAIL_MAX_TOKENS = Number(process.env.ANALYSIS_DETAIL_MAX_TOKENS ?? 1000);
 const ANALYSIS_DETAIL_RESCUE_MAX_TOKENS = Number(process.env.ANALYSIS_DETAIL_RESCUE_MAX_TOKENS ?? 700);
+const ANALYSIS_DETAIL_MAX_TOKENS_DSLD = Number(process.env.ANALYSIS_DETAIL_MAX_TOKENS_DSLD ?? 500);
+const ANALYSIS_DETAIL_RESCUE_MAX_TOKENS_DSLD = Number(process.env.ANALYSIS_DETAIL_RESCUE_MAX_TOKENS_DSLD ?? 350);
 const ANALYSIS_DETAIL_LOCK_MS = Number(process.env.ANALYSIS_DETAIL_LOCK_MS ?? 45_000);
 const ANALYSIS_DETAIL_STALE_MS = Number(process.env.ANALYSIS_DETAIL_STALE_MS ?? 60_000);
 const ANALYSIS_DETAIL_ERROR_RETRY_MS = Number(process.env.ANALYSIS_DETAIL_ERROR_RETRY_MS ?? 0);
+const ANALYSIS_DETAIL_FALLBACK_TTL_MS = Number(process.env.ANALYSIS_DETAIL_FALLBACK_TTL_MS ?? 6 * 60 * 60 * 1000);
 const ANALYSIS_IDENTITY_CACHE_TTL_MS = Number(
   process.env.ANALYSIS_IDENTITY_CACHE_TTL_MS ?? 30 * 24 * 60 * 60 * 1000,
 );
@@ -751,6 +759,82 @@ const buildActiveAmountText = (active: FactsDigest["actives"][number]): string |
     return `${active.amount} ${active.unit} per serving`;
   }
   if (active.amountText) return active.amountText;
+  return null;
+};
+
+const buildNotProvidedField = (text = "Not provided by source."): { text: string; basisTags: BasisTag[] } => ({
+  text,
+  basisTags: ["not_provided"],
+});
+
+const buildLabelField = (text: string): { text: string; basisTags: BasisTag[] } => ({
+  text,
+  basisTags: ["label_fact"],
+});
+
+const buildDeliveryFormExplain = (deliveryForm: string | null): { text: string; basisTags: BasisTag[] } | null => {
+  if (!deliveryForm) return null;
+  return { text: `Delivery form: ${deliveryForm}.`, basisTags: ["label_fact"] };
+};
+
+const buildChemicalFormExplainFallback = (
+  active: FactsDigest["actives"][number],
+  kbSentence: string | null,
+): { text: string; basisTags: BasisTag[] } => {
+  const confidence = active.chemicalFormConfidence ?? null;
+  if (!active.chemicalForm || confidence === null || confidence < 0.6) {
+    return { text: "Chemical form not provided by source.", basisTags: ["not_provided"] };
+  }
+  if (kbSentence) {
+    return { text: kbSentence, basisTags: ["label_fact", "ingredient_inference"] };
+  }
+  return { text: `Chemical form: ${active.chemicalForm}.`, basisTags: ["label_fact"] };
+};
+
+const buildDetailSkeleton = (digest: FactsDigest, labelDosingText: string | null): IngredientsDetail => {
+  const doseField = labelDosingText ? buildLabelField(labelDosingText) : buildNotProvidedField();
+  return {
+    items: digest.actives.map((active) => ({
+      name: active.name,
+      whatItDoes: buildNotProvidedField(),
+      doseContext: doseField,
+      chemicalFormExplain: buildNotProvidedField("Chemical form not provided by source."),
+      deliveryFormExplain: buildDeliveryFormExplain(active.deliveryForm ?? null),
+    })),
+    overallSummary: null,
+    overlapNotes: null,
+  };
+};
+
+const buildDsldKbFallbackDetail = (digest: FactsDigest, labelDosingText: string | null): IngredientsDetail => {
+  const kb = getKbRuntime();
+  const doseField = labelDosingText ? buildLabelField(labelDosingText) : buildNotProvidedField();
+  return {
+    items: digest.actives.map((active) => {
+      const kbSentence = kb
+        ? lookupKbFormExplain({
+            ingredientName: active.name,
+            chemicalForm: active.chemicalForm ?? null,
+            chemicalFormConfidence: active.chemicalFormConfidence ?? null,
+          })
+        : null;
+      return {
+        name: active.name,
+        whatItDoes: buildNotProvidedField(),
+        doseContext: doseField,
+        chemicalFormExplain: buildChemicalFormExplainFallback(active, kbSentence),
+        deliveryFormExplain: buildDeliveryFormExplain(active.deliveryForm ?? null),
+      };
+    }),
+    overallSummary: null,
+    overlapNotes: null,
+  };
+};
+
+const resolveFallbackUsed = (errorCode: string | null | undefined): "kb_dsld" | "skeleton" | null => {
+  if (!errorCode) return null;
+  if (errorCode === "FALLBACK_KB_DSLD") return "kb_dsld";
+  if (errorCode === "FALLBACK_SKELETON") return "skeleton";
   return null;
 };
 
@@ -5262,25 +5346,12 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   }
 
   const { identity, section, locale, promptVersion, factsDigestHash } = parsedBody;
-  const requestedLimit = Math.min(
+  const rawRequestedLimit = Math.min(
     Math.max(parsedBody.limit ?? ANALYSIS_DETAIL_LIMIT_DEFAULT, 1),
     ANALYSIS_DETAIL_LIMIT_MAX,
   );
   const cursor = Math.max(0, parsedBody.cursor ?? 0);
-  const sectionKey = `${section}:${requestedLimit}:${cursor}`;
   const requestId = String(res.getHeader("x-request-id") ?? "");
-  const rateKey = `${identity.type}:${identity.value}:${locale}:${promptVersion}:${sectionKey}`;
-  const now = Date.now();
-  const existingRate = analysisSectionRateLimit.get(rateKey);
-  if (!existingRate || now - existingRate.windowStart > 60_000) {
-    analysisSectionRateLimit.set(rateKey, { count: 1, windowStart: now });
-  } else {
-    existingRate.count += 1;
-    if (existingRate.count > 6) {
-      res.status(429).json({ error: "rate_limited" } satisfies ErrorResponse);
-      return;
-    }
-  }
 
   const deepseekKey = process.env.DEEPSEEK_API_KEY ?? null;
   if (!deepseekKey) {
@@ -5306,6 +5377,21 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   }
 
   const digest = digestRow.facts_digest_json as FactsDigest;
+  const requestedLimit =
+    digest.sourceType === "dsld" ? Math.min(rawRequestedLimit, ANALYSIS_DETAIL_LIMIT_DSLD) : rawRequestedLimit;
+  const sectionKey = `${section}:${requestedLimit}:${cursor}`;
+  const rateKey = `${identity.type}:${identity.value}:${locale}:${promptVersion}:${sectionKey}`;
+  const now = Date.now();
+  const existingRate = analysisSectionRateLimit.get(rateKey);
+  if (!existingRate || now - existingRate.windowStart > 60_000) {
+    analysisSectionRateLimit.set(rateKey, { count: 1, windowStart: now });
+  } else {
+    existingRate.count += 1;
+    if (existingRate.count > 6) {
+      res.status(429).json({ error: "rate_limited" } satisfies ErrorResponse);
+      return;
+    }
+  }
   const totalActives = digest.actives.length;
   const buildDetailPage = (returnedCount: number) => {
     const nextCursor = cursor + returnedCount;
@@ -5382,15 +5468,18 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     const cachedItemsCount = Array.isArray((cachedDetail.payload as { items?: unknown }).items)
       ? (cachedDetail.payload as { items: unknown[] }).items.length
       : 0;
+    const cachedFallback = resolveFallbackUsed(cachedDetail.error_code ?? null);
     res.json({
       section: "ingredients",
       detail: cachedDetail.payload,
-      dataStatus: "complete",
+      dataStatus: cachedFallback ? "limited" : "complete",
       page: buildDetailPage(cachedItemsCount),
       meta: {
         bundleId: randomUUID(),
         revision: 2,
         factsDigestHash,
+        fallbackUsed: cachedFallback ?? undefined,
+        fallbackReason: cachedFallback ? cachedDetail.last_error ?? cachedDetail.error_code ?? null : undefined,
       },
       timingMs: 0,
     });
@@ -5506,6 +5595,14 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       cursor: sliceStart,
       totalActives,
     })}\nFACTS_DIGEST_JSON: ${JSON.stringify(detailFacts)}`;
+  const isDsldDetail = digest.sourceType === "dsld";
+  const detailTimeoutMs = isDsldDetail ? ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS_DSLD : ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS;
+  const detailMaxTokens = isDsldDetail ? ANALYSIS_DETAIL_MAX_TOKENS_DSLD : ANALYSIS_DETAIL_MAX_TOKENS;
+  const detailRescueMaxTokens = isDsldDetail
+    ? ANALYSIS_DETAIL_RESCUE_MAX_TOKENS_DSLD
+    : ANALYSIS_DETAIL_RESCUE_MAX_TOKENS;
+  const primaryPromptOverride = isDsldDetail ? "dsld_short" : undefined;
+  const rescuePromptOverride = isDsldDetail ? "dsld_rescue" : "rescue";
 
   const start = performance.now();
   let detailRaw: Record<string, unknown> | null = null;
@@ -5533,11 +5630,12 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     detailRaw = await fetchIngredientsDetailV3(buildDetailContext(detailDigest, requestedLimit), model, deepseekKey, {
       breaker: deepseekBreaker,
       semaphore: deepseekSemaphore,
-      timeoutMs: ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS,
+      timeoutMs: detailTimeoutMs,
       queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS_DETAIL,
       retry: { maxAttempts: 1 },
-      maxTokens: ANALYSIS_DETAIL_MAX_TOKENS,
+      maxTokens: detailMaxTokens,
       debugOnError: true,
+      promptOverride: primaryPromptOverride,
     });
   } catch (error) {
     console.warn("[analysis-section] detail fetch failed", error);
@@ -5575,12 +5673,12 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
         {
           breaker: deepseekBreaker,
           semaphore: deepseekSemaphore,
-          timeoutMs: ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS,
+          timeoutMs: detailTimeoutMs,
           queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS_DETAIL,
           retry: { maxAttempts: 1 },
-          maxTokens: ANALYSIS_DETAIL_RESCUE_MAX_TOKENS,
+          maxTokens: detailRescueMaxTokens,
           debugOnError: true,
-          promptOverride: "rescue",
+          promptOverride: rescuePromptOverride,
         },
       );
       if (rescueRaw) {
@@ -5612,7 +5710,6 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   }
 
   const timingMs = Math.round(performance.now() - start);
-  const detailStatus: "complete" | "error" = detailPayload ? "complete" : "error";
   const resolvedErrorCode =
     detailPayload
       ? null
@@ -5622,6 +5719,28 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
           : detailRaw
             ? (parsedDetail?.success ? null : "LLM_PARSE_FAILED")
             : "LLM_EMPTY_RESPONSE");
+
+  let fallbackUsed: "kb_dsld" | "skeleton" | null = null;
+  let fallbackReason: string | null = null;
+
+  if (!detailPayload) {
+    fallbackReason = resolvedErrorCode ?? "LLM_DETAIL_FAILED";
+    if (isDsldDetail) {
+      detailPayload = buildDsldKbFallbackDetail(detailDigest, labelDosingText);
+      fallbackUsed = "kb_dsld";
+    } else {
+      detailPayload = buildDetailSkeleton(detailDigest, labelDosingText);
+      fallbackUsed = "skeleton";
+    }
+  }
+
+  const detailStatus: "complete" | "error" = detailPayload ? "complete" : "error";
+  const detailDataStatus = fallbackUsed ? "limited" : detailPayload ? "complete" : "error";
+  const fallbackMarker =
+    fallbackUsed === "kb_dsld" ? "FALLBACK_KB_DSLD" : fallbackUsed === "skeleton" ? "FALLBACK_SKELETON" : null;
+  const detailExpiresAt = new Date(
+    Date.now() + (fallbackUsed ? ANALYSIS_DETAIL_FALLBACK_TTL_MS : ANALYSIS_IDENTITY_CACHE_TTL_MS),
+  ).toISOString();
 
   void upsertAnalysisIdentityCache(
     {
@@ -5637,50 +5756,17 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       factsDigestJson: digestRow.facts_digest_json,
       attempts,
       lockedUntil: null,
-      lastError: detailPayload ? null : resolvedErrorCode ?? "LLM_DETAIL_FAILED",
-      errorCode: detailPayload ? null : resolvedErrorCode ?? "LLM_DETAIL_FAILED",
-      expiresAt: new Date(Date.now() + ANALYSIS_IDENTITY_CACHE_TTL_MS).toISOString(),
+      lastError: fallbackUsed ? fallbackReason : detailPayload ? null : resolvedErrorCode ?? "LLM_DETAIL_FAILED",
+      errorCode: fallbackUsed ? fallbackMarker : detailPayload ? null : resolvedErrorCode ?? "LLM_DETAIL_FAILED",
+      expiresAt: detailExpiresAt,
     },
     { timeoutMs: 1200 },
   );
 
-  if (!detailPayload) {
-    res.status(200).json({
-      section: "ingredients",
-      detail: null,
-      dataStatus: "error",
-      errorCode: resolvedErrorCode ?? "LLM_DETAIL_FAILED",
-      retryable: true,
-      page: buildDetailPage(0),
-      debug:
-        process.env.DEEPSEEK_DEBUG === "1" || process.env.DEEPSEEK_DEBUG === "true"
-          ? {
-              deepseekError: detailDebug?.__deepseek_error ?? null,
-              snippet: detailDebug?.__deepseek_snippet ?? null,
-              meta: detailDebug?.__deepseek_meta ?? null,
-              parseIssues: parsedDetail?.success ? null : parsedDetail?.error?.issues ?? null,
-              rescueAttempted,
-            }
-          : undefined,
-      meta: {
-        bundleId: randomUUID(),
-        revision: 2,
-        factsDigestHash,
-        jobId,
-        jobStatus: detailStatus,
-        attempts,
-        updatedAt: new Date().toISOString(),
-        pendingAgeMs: null,
-      },
-      timingMs,
-    });
-    return;
-  }
-
   res.json({
     section: "ingredients",
     detail: detailPayload,
-    dataStatus: "complete",
+    dataStatus: detailDataStatus,
     page: buildDetailPage(detailPayload.items.length),
     meta: {
       bundleId: randomUUID(),
@@ -5691,8 +5777,20 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       attempts,
       updatedAt: new Date().toISOString(),
       pendingAgeMs: null,
+      fallbackUsed: fallbackUsed ?? undefined,
+      fallbackReason: fallbackReason ?? undefined,
     },
     timingMs,
+    debug:
+      detailDataStatus !== "complete" && (process.env.DEEPSEEK_DEBUG === "1" || process.env.DEEPSEEK_DEBUG === "true")
+        ? {
+            deepseekError: detailDebug?.__deepseek_error ?? null,
+            snippet: detailDebug?.__deepseek_snippet ?? null,
+            meta: detailDebug?.__deepseek_meta ?? null,
+            parseIssues: parsedDetail?.success ? null : parsedDetail?.error?.issues ?? null,
+            rescueAttempted,
+          }
+        : undefined,
   });
 });
 
