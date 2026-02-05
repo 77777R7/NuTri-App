@@ -41,8 +41,8 @@ jobs:
         shell: bash
         env:
           EVENT_NAME: ${{ github.event_name }}
-          INPUT_BASE_URL: ${{ inputs.render_base_url }}
-          INPUT_EXPECTED_SHA: ${{ inputs.expected_commit_sha }}
+          INPUT_BASE_URL: ${{ github.event.inputs.render_base_url }}
+          INPUT_EXPECTED_SHA: ${{ github.event.inputs.expected_commit_sha }}
           DEFAULT_BASE_URL: ${{ secrets.RENDER_BASE_URL }}
           PREVIEW_BASE_URL: ${{ secrets.RENDER_PREVIEW_BASE_URL }}
           PUSH_SHA: ${{ github.sha }}
