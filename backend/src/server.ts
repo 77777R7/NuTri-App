@@ -3967,6 +3967,8 @@ const authDisabled =
   process.env.DISABLE_AUTH === "true" || process.env.DISABLE_AUTH === "1";
 const allowAuthBypass =
   process.env.ALLOW_AUTH_BYPASS === "true" || process.env.ALLOW_AUTH_BYPASS === "1";
+const regressionAuthToken = process.env.REGRESSION_AUTH_TOKEN ?? null;
+const regressionAuthRoutes = new Set(["/api/enrich-stream", "/api/analysis-section"]);
 
 const verifySupabaseToken = async (req: Request, res: Response, next: NextFunction) => {
   if (authDisabled) {
@@ -3981,6 +3983,18 @@ const verifySupabaseToken = async (req: Request, res: Response, next: NextFuncti
   if (allowBypass) {
     return next();
   }
+
+  // CI regression path: scoped token only for non-destructive analysis endpoints.
+  if (regressionAuthToken && regressionAuthRoutes.has(req.path)) {
+    const regressionHeader = req.headers["x-regression-token"];
+    const hasRegressionToken = Array.isArray(regressionHeader)
+      ? regressionHeader.includes(regressionAuthToken)
+      : regressionHeader === regressionAuthToken;
+    if (hasRegressionToken) {
+      return next();
+    }
+  }
+
   const authHeader = req.headers.authorization;
   if (!authHeader) {
     return res
