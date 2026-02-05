@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const ANALYSIS_BUNDLE_SCHEMA_VERSION = 3 as const;
+export const ANALYSIS_BUNDLE_SCHEMA_VERSION = 4 as const;
 
 export const BasisTagSchema = z.enum([
   "label_fact",
@@ -67,10 +67,10 @@ export type IngredientsCover = z.infer<typeof IngredientsCoverSchema>;
 
 export const IngredientsDetailItemSchema = z.object({
   name: z.string(),
-  whatItDoes: z.string(),
-  doseContext: z.string(),
-  formExplain: z.string(),
-  basisTags: z.array(BasisTagSchema),
+  whatItDoes: UsageFieldSchema,
+  doseContext: UsageFieldSchema,
+  chemicalFormExplain: UsageFieldSchema,
+  deliveryFormExplain: UsageFieldSchema.nullable(),
 });
 
 export type IngredientsDetailItem = z.infer<typeof IngredientsDetailItemSchema>;

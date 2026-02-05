@@ -25,6 +25,9 @@ export type FactsDigest = {
     unit: string | null;
     amountText?: string | null;
     chemicalForm?: string | null;
+    chemicalFormEvidence?: string | null;
+    chemicalFormConfidence?: number | null;
+    chemicalFormSource?: "lnhpd_meta" | "label_parenthetical" | "ingredient_name" | "none";
     deliveryForm?: string | null;
     evidenceText?: string | null;
     source: "label" | "dsld" | "lnhpd" | "web";
@@ -129,6 +132,65 @@ export type WebFactsInput = {
 };
 
 const normalizeWhitespace = (value: string): string => value.replace(/\s+/g, " ").trim();
+
+const normalizeChemicalFormConfidence = (value?: number | null): number | null => {
+  if (value === null || value === undefined) return null;
+  if (!Number.isFinite(value)) return null;
+  if (value < 0 || value > 1) return null;
+  return value;
+};
+
+const CHEMICAL_FORM_KEYWORDS = [
+  "oxide",
+  "citrate",
+  "gluconate",
+  "carbonate",
+  "sulfate",
+  "chloride",
+  "ascorbate",
+  "glycinate",
+  "malate",
+  "picolinate",
+  "tartrate",
+  "succinate",
+  "nitrate",
+  "phosphate",
+  "fumarate",
+  "lactate",
+  "bisglycinate",
+  "chelate",
+];
+
+const extractChemicalFormFromText = (
+  rawText: string,
+): { form: string; evidence: string; confidence: number; source: "label_parenthetical" | "ingredient_name" } | null => {
+  const text = normalizeWhitespace(rawText);
+  if (!text) return null;
+
+  const parenthetical = text.match(/\(as ([^)]+)\)/i);
+  if (parenthetical?.[1]) {
+    const form = normalizeWhitespace(parenthetical[1]);
+    if (form) {
+      return { form, evidence: parenthetical[0], confidence: 0.7, source: "label_parenthetical" };
+    }
+  }
+
+  const asMatch = text.match(/\bas ([^,]+)$/i);
+  if (asMatch?.[1]) {
+    const form = normalizeWhitespace(asMatch[1]);
+    if (form) {
+      return { form, evidence: asMatch[0], confidence: 0.7, source: "label_parenthetical" };
+    }
+  }
+
+  const lower = text.toLowerCase();
+  const hasKeyword = CHEMICAL_FORM_KEYWORDS.some((keyword) => lower.includes(` ${keyword}`) || lower.endsWith(keyword));
+  if (hasKeyword) {
+    return { form: text, evidence: text, confidence: 0.6, source: "ingredient_name" };
+  }
+
+  return null;
+};
 
 const normalizeUnitLabel = (unitRaw?: string | null): string | null => {
   if (!unitRaw) return null;
@@ -318,12 +380,20 @@ export const buildFactsDigestFromLnhpd = (params: {
     const normalizedUnit = normalizeUnitLabel(active.unit ?? null);
     const chemicalForm = active.lnhpdMeta?.properName ?? active.lnhpdMeta?.ingredientName ?? null;
     const evidenceText = active.lnhpdMeta?.sourceMaterial ?? active.lnhpdMeta?.extractTypeDesc ?? null;
+    const normalizedChemicalForm = chemicalForm ? normalizeWhitespace(chemicalForm) : null;
+    const chemicalFormConfidence = normalizeChemicalFormConfidence(normalizedChemicalForm ? 0.8 : null);
+    const chemicalFormSource: FactsDigest["actives"][number]["chemicalFormSource"] = normalizedChemicalForm
+      ? "lnhpd_meta"
+      : "none";
     return {
       name: normalizeWhitespace(active.name),
       amount: active.amount ?? null,
       unit: normalizedUnit,
       amountText: active.amount != null && normalizedUnit ? `${active.amount} ${normalizedUnit}` : null,
-      chemicalForm: chemicalForm ? normalizeWhitespace(chemicalForm) : null,
+      chemicalForm: normalizedChemicalForm,
+      chemicalFormEvidence: normalizedChemicalForm,
+      chemicalFormConfidence,
+      chemicalFormSource,
       deliveryForm: null,
       evidenceText: evidenceText ? normalizeWhitespace(evidenceText) : null,
       source: "lnhpd" as const,
@@ -388,12 +458,28 @@ export const buildFactsDigestFromDsld = (params: {
 
   const actives = (facts.actives ?? []).map((active) => {
     const normalizedUnit = normalizeUnitLabel(active.unit ?? null);
+    const formRawNormalized = active.formRaw ? normalizeWhitespace(active.formRaw) : null;
+    const extracted =
+      formRawNormalized
+        ? {
+            form: formRawNormalized,
+            evidence: formRawNormalized,
+            confidence: 0.75,
+            source: "label_parenthetical" as const,
+          }
+        : extractChemicalFormFromText(active.name);
+    const chemicalForm = extracted?.form ?? null;
+    const chemicalFormConfidence = normalizeChemicalFormConfidence(extracted?.confidence ?? null);
+    const chemicalFormSource: FactsDigest["actives"][number]["chemicalFormSource"] = extracted?.source ?? "none";
     return {
       name: normalizeWhitespace(active.name),
       amount: active.amount ?? null,
       unit: normalizedUnit,
       amountText: active.amount != null && normalizedUnit ? `${active.amount} ${normalizedUnit}` : null,
-      chemicalForm: active.formRaw ? normalizeWhitespace(active.formRaw) : null,
+      chemicalForm: chemicalForm,
+      chemicalFormEvidence: extracted?.evidence ?? null,
+      chemicalFormConfidence,
+      chemicalFormSource,
       deliveryForm: null,
       evidenceText: null,
       source: "dsld" as const,
@@ -461,6 +547,9 @@ export const buildFactsDigestFromWeb = (params: {
       unit: normalizedUnit,
       amountText: parsed.amount != null && normalizedUnit ? `${parsed.amount} ${normalizedUnit}` : null,
       chemicalForm: null,
+      chemicalFormEvidence: null,
+      chemicalFormConfidence: null,
+      chemicalFormSource: "none" as const,
       deliveryForm: null,
       evidenceText: line,
       source: "web" as const,

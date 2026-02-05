@@ -1012,10 +1012,10 @@ Return JSON only with this exact shape:
   "items": [
     {
       "name": "...",
-      "whatItDoes": "...",
-      "doseContext": "...",
-      "formExplain": "...",
-      "basisTags": ["..."]
+      "whatItDoes": { "text": "...", "basisTags": ["..."] },
+      "doseContext": { "text": "...", "basisTags": ["..."] },
+      "chemicalFormExplain": { "text": "...", "basisTags": ["..."] },
+      "deliveryFormExplain": { "text": "...", "basisTags": ["..."] } | null
     }
   ],
   "overallSummary": { "text": "...", "basisTags": ["..."] } | null,
@@ -1025,17 +1025,22 @@ Return JSON only with this exact shape:
 Rules:
 - basisTags must be from: label_fact, regulatory_claim, ingredient_inference, web_evidence, general_advice, not_provided, conflict.
 - Do not make disease treatment claims.
-- If dosage is unknown, explicitly say so in doseContext.
-- If form is unknown, explain why.
-- Use ingredient_inference or label_fact tags based on FACTS_DIGEST_JSON.sourceType and evidence.
-- If sourceType is lnhpd and labelPurposes exist, include regulatory_claim in basisTags (add label_fact when referencing dosage/form).
 - If FACTS_DIGEST_JSON.labelDosing has entries, reference label dosing briefly and do NOT say dosing is unknown.
-- Only output items for the actives provided in FACTS_DIGEST_JSON (do not invent missing items).
-- Avoid starting sentences with "Contains".
 - whatItDoes: 1 sentence, max ~18 words.
 - doseContext: 1 sentence, max ~18 words.
-- formExplain: 1 sentence, max ~18 words.
+- chemicalFormExplain: 1 sentence, max ~25 words.
+- deliveryFormExplain: 1 short sentence, max ~16 words.
 - overallSummary: max ~60 words.
+- Use ingredient_inference or regulatory_claim tags based on FACTS_DIGEST_JSON.sourceType and evidence.
+- If sourceType is lnhpd and labelPurposes exist, whatItDoes should use regulatory_claim (add label_fact only if referencing dosage/form).
+- chemicalFormExplain rules:
+  - If actives[i].chemicalFormConfidence is null OR < 0.6, output exactly "Chemical form not provided by source." with basisTags ["not_provided"].
+  - If chemicalFormConfidence >= 0.6 and chemicalForm exists, explain salt/shape meaning using cautious language (must include \"may\" or \"limited evidence\"). Use basisTags ["label_fact","ingredient_inference"].
+- deliveryFormExplain:
+  - Only output if actives[i].deliveryForm exists, otherwise null.
+  - When present, be factual (e.g., \"Delivery form: tablet.\") with basisTags ["label_fact"].
+- Avoid starting any field with "Contains".
+- Only output items for the actives provided in FACTS_DIGEST_JSON (do not invent missing items).
 - Output JSON only, no markdown, no trailing commas.
 `;
 
@@ -1045,10 +1050,10 @@ Return JSON only with this exact shape:
   "items": [
     {
       "name": "...",
-      "whatItDoes": "...",
-      "doseContext": "...",
-      "formExplain": "...",
-      "basisTags": ["..."]
+      "whatItDoes": { "text": "...", "basisTags": ["..."] },
+      "doseContext": { "text": "...", "basisTags": ["..."] },
+      "chemicalFormExplain": { "text": "...", "basisTags": ["..."] },
+      "deliveryFormExplain": { "text": "...", "basisTags": ["..."] } | null
     }
   ],
   "overallSummary": { "text": "...", "basisTags": ["..."] },
@@ -1059,10 +1064,15 @@ Rules:
 - basisTags must be from: label_fact, regulatory_claim, ingredient_inference, web_evidence, general_advice, not_provided, conflict.
 - Only output items for the actives provided in FACTS_DIGEST_JSON.
 - If FACTS_DIGEST_JSON.labelDosing has entries, reference label dosing briefly and do NOT say dosing is unknown.
+- chemicalFormExplain rules:
+  - If actives[i].chemicalFormConfidence is null OR < 0.6, output exactly "Chemical form not provided by source." with basisTags ["not_provided"].
+  - If chemicalFormConfidence >= 0.6 and chemicalForm exists, explain cautiously (must include \"may\" or \"limited evidence\") with basisTags ["label_fact","ingredient_inference"].
+- deliveryFormExplain only if deliveryForm exists, otherwise null.
 - Avoid starting sentences with "Contains".
 - whatItDoes: 1 short sentence (<= 14 words).
 - doseContext: 1 short sentence (<= 14 words).
-- formExplain: 1 short sentence (<= 14 words).
+- chemicalFormExplain: 1 short sentence (<= 20 words).
+- deliveryFormExplain: 1 short sentence (<= 12 words).
 - overallSummary: 2 short sentences, total <= 40 words.
 - Output JSON only, no markdown, no trailing commas.
 `;

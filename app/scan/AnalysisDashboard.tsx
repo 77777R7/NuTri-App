@@ -42,7 +42,15 @@ import { ContentSection } from '@/components/ui/ScoreDetailCard';
 import { useTranslation } from '@/lib/i18n';
 import { Config } from '@/constants/Config';
 import { withAuthHeaders } from '@/lib/auth-token';
-import type { AnalysisBundle, BasisTag, Bullet, IngredientsDetail } from '@/types/analysisBundle';
+import type {
+    AnalysisBundle,
+    AnalysisBundleV4,
+    BasisTag,
+    Bullet,
+    IngredientsDetail,
+    IngredientsDetailV3,
+    IngredientsDetailV4,
+} from '@/types/analysisBundle';
 import { computeSmartScores, type AnalysisInput } from '../../lib/scoring';
 type Analysis = any;
 type ScoreState = 'active' | 'muted' | 'loading';
@@ -838,6 +846,9 @@ const formatTaggedText = (text: string, tags?: BasisTag[] | null) => {
     return `${text} · ${tagText}`;
 };
 
+const isBundleV4 = (bundle: AnalysisBundle): bundle is AnalysisBundleV4 =>
+    bundle.meta.schemaVersion === 4;
+
 const mapBundleStatusToCover = (status: AnalysisBundle['sections']['overview']['dataStatus']): CoverStatus => {
     if (status === 'complete') return 'complete';
     if (status === 'pending') return 'partial';
@@ -927,6 +938,8 @@ const AnalysisBundleDashboard: React.FC<{
                     locale: bundleState.meta.locale,
                     promptVersion: bundleState.meta.promptVersion,
                     factsDigestHash: bundleState.meta.factsDigestHash,
+                    limit: 8,
+                    cursor: 0,
                 }),
             });
             if (response.status === 202) {
@@ -995,6 +1008,7 @@ const AnalysisBundleDashboard: React.FC<{
     );
 
     const ingredientsDetail = bundleState.sections.ingredients.detail;
+    const isV4 = isBundleV4(bundleState);
     const ingredientsContent = (
         <View style={{ gap: 16 }}>
             <View style={styles.modalCalloutCard}>
@@ -1018,14 +1032,26 @@ const AnalysisBundleDashboard: React.FC<{
             {ingredientsDetail?.items?.length ? (
                 <View style={styles.modalCalloutCard}>
                     <Text style={styles.modalBulletTitle}>Ingredient Details</Text>
-                    {ingredientsDetail.items.map((item, idx) => (
-                        <View key={idx} style={{ marginBottom: 12 }}>
-                            <Text style={[styles.modalParagraphSmall, { fontWeight: '600' }]}>{item.name}</Text>
-                            <Text style={styles.modalParagraphSmall}>{item.whatItDoes}</Text>
-                            <Text style={styles.modalParagraphSmall}>{item.doseContext}</Text>
-                            <Text style={styles.modalParagraphSmall}>{item.formExplain}</Text>
-                        </View>
-                    ))}
+                    {isV4
+                        ? (ingredientsDetail as IngredientsDetailV4).items.map((item, idx) => (
+                            <View key={idx} style={{ marginBottom: 12 }}>
+                                <Text style={[styles.modalParagraphSmall, { fontWeight: '600' }]}>{item.name}</Text>
+                                <Text style={styles.modalParagraphSmall}>{item.whatItDoes.text}</Text>
+                                <Text style={styles.modalParagraphSmall}>{item.doseContext.text}</Text>
+                                <Text style={styles.modalParagraphSmall}>{item.chemicalFormExplain.text}</Text>
+                                {item.deliveryFormExplain?.text ? (
+                                    <Text style={styles.modalParagraphSmall}>{item.deliveryFormExplain.text}</Text>
+                                ) : null}
+                            </View>
+                        ))
+                        : (ingredientsDetail as IngredientsDetailV3).items.map((item, idx) => (
+                            <View key={idx} style={{ marginBottom: 12 }}>
+                                <Text style={[styles.modalParagraphSmall, { fontWeight: '600' }]}>{item.name}</Text>
+                                <Text style={styles.modalParagraphSmall}>{item.whatItDoes}</Text>
+                                <Text style={styles.modalParagraphSmall}>{item.doseContext}</Text>
+                                <Text style={styles.modalParagraphSmall}>{item.formExplain}</Text>
+                            </View>
+                        ))}
                 </View>
             ) : null}
             {ingredientsDetail?.overallSummary?.text ? (
@@ -2276,7 +2302,7 @@ export const AnalysisDashboard: React.FC<{
         },
     ];
 
-    if (analysisBundle?.meta?.schemaVersion === 3) {
+    if (analysisBundle?.meta?.schemaVersion === 3 || analysisBundle?.meta?.schemaVersion === 4) {
         return (
             <AnalysisBundleDashboard
                 bundle={analysisBundle}

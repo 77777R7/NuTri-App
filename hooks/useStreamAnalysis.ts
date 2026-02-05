@@ -325,7 +325,7 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
             es.addEventListener('analysis_bundle' as any, (event: any) => {
                 try {
                     const data = JSON.parse(event.data) as AnalysisBundle;
-                    if (!data?.meta || data.meta.schemaVersion !== 3) return;
+                    if (!data?.meta || (data.meta.schemaVersion !== 3 && data.meta.schemaVersion !== 4)) return;
                     setState(prev => {
                         const prevBundle = prev.analysisBundle;
                         if (!prevBundle || data.meta.revision > prevBundle.meta.revision) {

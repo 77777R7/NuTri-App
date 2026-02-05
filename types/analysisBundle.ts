@@ -19,7 +19,8 @@ export type OverviewDetail = { summary: string; bullets: Bullet[] };
 export type IngredientsCoverItem = { name: string; dose: string | null; basisTags: BasisTag[] };
 export type IngredientsCover = { items: IngredientsCoverItem[]; totalCount?: number | null };
 
-export type IngredientsDetailItem = {
+// V3 detail item
+export type IngredientsDetailItemV3 = {
   name: string;
   whatItDoes: string;
   doseContext: string;
@@ -27,8 +28,23 @@ export type IngredientsDetailItem = {
   basisTags: BasisTag[];
 };
 
-export type IngredientsDetail = {
-  items: IngredientsDetailItem[];
+export type IngredientsDetailV3 = {
+  items: IngredientsDetailItemV3[];
+  overallSummary: UsageField | null;
+  overlapNotes: UsageField | null;
+};
+
+// V4 detail item
+export type IngredientsDetailItemV4 = {
+  name: string;
+  whatItDoes: UsageField;
+  doseContext: UsageField;
+  chemicalFormExplain: UsageField;
+  deliveryFormExplain: UsageField | null;
+};
+
+export type IngredientsDetailV4 = {
+  items: IngredientsDetailItemV4[];
   overallSummary: UsageField | null;
   overlapNotes: UsageField | null;
 };
@@ -66,7 +82,7 @@ export type SafetyDetail = {
 
 export type DataStatus = 'complete' | 'pending' | 'limited' | 'not_provided' | 'error';
 
-export type AnalysisBundleMeta = {
+export type AnalysisBundleMetaV3 = {
   schemaVersion: 3;
   promptVersion: string;
   sourceType: 'lnhpd' | 'dsld' | 'web';
@@ -80,12 +96,27 @@ export type AnalysisBundleMeta = {
   serverCommitSha?: string | null;
 };
 
-export type AnalysisBundle = {
-  meta: AnalysisBundleMeta;
+export type AnalysisBundleMetaV4 = AnalysisBundleMetaV3 & { schemaVersion: 4 };
+
+export type AnalysisBundleV3 = {
+  meta: AnalysisBundleMetaV3;
   sections: {
     overview: { layout: 'overview_card'; cover: OverviewCover | null; detail: OverviewDetail | null; dataStatus: DataStatus };
-    ingredients: { layout: 'ingredients_list'; cover: IngredientsCover | null; detail: IngredientsDetail | null; dataStatus: DataStatus };
+    ingredients: { layout: 'ingredients_list'; cover: IngredientsCover | null; detail: IngredientsDetailV3 | null; dataStatus: DataStatus };
     usage: { layout: 'usage_bullets'; cover: UsageCover | null; detail: UsageDetail | null; dataStatus: DataStatus };
     safety: { layout: 'safety_bullets'; cover: SafetyCover | null; detail: SafetyDetail | null; dataStatus: DataStatus };
   };
 };
+
+export type AnalysisBundleV4 = {
+  meta: AnalysisBundleMetaV4;
+  sections: {
+    overview: { layout: 'overview_card'; cover: OverviewCover | null; detail: OverviewDetail | null; dataStatus: DataStatus };
+    ingredients: { layout: 'ingredients_list'; cover: IngredientsCover | null; detail: IngredientsDetailV4 | null; dataStatus: DataStatus };
+    usage: { layout: 'usage_bullets'; cover: UsageCover | null; detail: UsageDetail | null; dataStatus: DataStatus };
+    safety: { layout: 'safety_bullets'; cover: SafetyCover | null; detail: SafetyDetail | null; dataStatus: DataStatus };
+  };
+};
+
+export type AnalysisBundle = AnalysisBundleV3 | AnalysisBundleV4;
+export type IngredientsDetail = IngredientsDetailV3 | IngredientsDetailV4;

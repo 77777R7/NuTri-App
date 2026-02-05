@@ -259,7 +259,7 @@ const NPN_NEGATIVE_CACHE_TTL_MS = Number(process.env.NPN_NEGATIVE_CACHE_TTL_MS ?
 const NPN_NEGATIVE_CACHE_WINDOW_HOURS = Number(process.env.NPN_NEGATIVE_CACHE_WINDOW_HOURS ?? 12);
 const NPN_NEGATIVE_CACHE_THRESHOLD = Number(process.env.NPN_NEGATIVE_CACHE_THRESHOLD ?? 2);
 
-const ANALYSIS_BUNDLE_PROMPT_VERSION = process.env.ANALYSIS_BUNDLE_PROMPT_VERSION ?? "reg_v3.6";
+const ANALYSIS_BUNDLE_PROMPT_VERSION = process.env.ANALYSIS_BUNDLE_PROMPT_VERSION ?? "reg_v4.0";
 const ANALYSIS_BUNDLE_FAST_TIMEOUT_MS = Number(process.env.ANALYSIS_BUNDLE_FAST_TIMEOUT_MS ?? 3500);
 const ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS = Number(process.env.ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS ?? 7000);
 const ANALYSIS_DETAIL_LIMIT_DEFAULT = Number(process.env.ANALYSIS_DETAIL_LIMIT_DEFAULT ?? 8);
@@ -742,7 +742,7 @@ const buildLabelDosingText = (digest: FactsDigest): string | null => {
   return parts.join(": ");
 };
 
-const UNKNOWN_DOSE_RE = /\b(unknown|not detailed|not specified|not provided|unspecified)\b/i;
+const UNKNOWN_DOSE_RE = /\b(unknown|not detailed|not specified|not provided|unspecified|no specific)\b/i;
 
 const normalizeIngredientName = (name: string) => name.toLowerCase().replace(/\s+/g, " ").trim();
 
@@ -754,15 +754,32 @@ const buildActiveAmountText = (active: FactsDigest["actives"][number]): string |
   return null;
 };
 
+const applyFormExplainGuard = (detail: IngredientsDetail, detailDigest: FactsDigest): IngredientsDetail => {
+  const items = detail.items.map((item) => {
+    const match = detailDigest.actives.find(
+      (active) => normalizeIngredientName(active.name) === normalizeIngredientName(item.name),
+    );
+    const confidence = match?.chemicalFormConfidence ?? null;
+    const hasEvidence = Boolean(match?.chemicalForm) && confidence !== null && confidence >= 0.6;
+    const chemicalFormExplain = hasEvidence
+      ? item.chemicalFormExplain
+      : { text: "Chemical form not provided by source.", basisTags: ["not_provided"] as BasisTag[] };
+    const deliveryFormExplain = match?.deliveryForm ? item.deliveryFormExplain : null;
+    return { ...item, chemicalFormExplain, deliveryFormExplain };
+  });
+  return { ...detail, items };
+};
+
 const sanitizeDetailDoseContext = (
   detail: IngredientsDetail,
   detailDigest: FactsDigest,
   labelDosingText: string,
 ): IngredientsDetail => {
   const labelLine = `Label dosing: ${labelDosingText}`;
+  const missingNote = "Some details were not provided by the source (e.g., delivery form).";
   const actives = detailDigest.actives;
   const items = detail.items.map((item) => {
-    if (!UNKNOWN_DOSE_RE.test(item.doseContext)) {
+    if (!UNKNOWN_DOSE_RE.test(item.doseContext.text)) {
       return item;
     }
     const match = actives.find(
@@ -773,7 +790,7 @@ const sanitizeDetailDoseContext = (
     if (amountText) parts.push(amountText);
     parts.push(labelLine);
     const newDoseContext = `${parts.join(". ")}.`;
-    return { ...item, doseContext: newDoseContext };
+    return { ...item, doseContext: { text: newDoseContext, basisTags: ["label_fact"] as BasisTag[] } };
   });
 
   let overallSummary = detail.overallSummary;
@@ -782,12 +799,15 @@ const sanitizeDetailDoseContext = (
       .split(/(?<=[.!?])\s+/)
       .filter((sentence) => sentence && !UNKNOWN_DOSE_RE.test(sentence));
     let cleaned = sentences.join(" ").trim();
+    const baseTags = overallSummary.basisTags ?? [];
+    const nextTags = Array.from(new Set<BasisTag>([...baseTags, "not_provided"]));
     if (!cleaned) {
-      cleaned = labelLine + ".";
-    } else if (!cleaned.toLowerCase().includes("label dosing")) {
-      cleaned = `${cleaned} ${labelLine}.`;
+      cleaned = missingNote;
+    } else {
+      if (!cleaned.endsWith(".")) cleaned = `${cleaned}.`;
+      cleaned = `${cleaned} ${missingNote}`;
     }
-    overallSummary = { ...overallSummary, text: cleaned };
+    overallSummary = { ...overallSummary, text: cleaned, basisTags: nextTags };
   }
 
   return { ...detail, items, overallSummary };
@@ -812,7 +832,7 @@ const buildAnalysisBundleSkeleton = (params: {
   const { digest } = params;
   return {
     meta: {
-      schemaVersion: 3,
+      schemaVersion: 4,
       promptVersion: ANALYSIS_BUNDLE_PROMPT_VERSION,
       sourceType: digest.sourceType,
       authoritativeIdentity: { type: params.identityType, value: params.identityValue },
@@ -5586,6 +5606,9 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   const labelDosingText = buildLabelDosingText(digest);
   if (detailPayload && labelDosingText) {
     detailPayload = sanitizeDetailDoseContext(detailPayload, detailDigest, labelDosingText);
+  }
+  if (detailPayload) {
+    detailPayload = applyFormExplainGuard(detailPayload, detailDigest);
   }
 
   const timingMs = Math.round(performance.now() - start);
