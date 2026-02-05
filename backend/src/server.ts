@@ -259,7 +259,7 @@ const NPN_NEGATIVE_CACHE_TTL_MS = Number(process.env.NPN_NEGATIVE_CACHE_TTL_MS ?
 const NPN_NEGATIVE_CACHE_WINDOW_HOURS = Number(process.env.NPN_NEGATIVE_CACHE_WINDOW_HOURS ?? 12);
 const NPN_NEGATIVE_CACHE_THRESHOLD = Number(process.env.NPN_NEGATIVE_CACHE_THRESHOLD ?? 2);
 
-const ANALYSIS_BUNDLE_PROMPT_VERSION = process.env.ANALYSIS_BUNDLE_PROMPT_VERSION ?? "reg_v3.5";
+const ANALYSIS_BUNDLE_PROMPT_VERSION = process.env.ANALYSIS_BUNDLE_PROMPT_VERSION ?? "reg_v3.6";
 const ANALYSIS_BUNDLE_FAST_TIMEOUT_MS = Number(process.env.ANALYSIS_BUNDLE_FAST_TIMEOUT_MS ?? 3500);
 const ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS = Number(process.env.ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS ?? 7000);
 const ANALYSIS_DETAIL_LIMIT_DEFAULT = Number(process.env.ANALYSIS_DETAIL_LIMIT_DEFAULT ?? 8);
@@ -726,6 +726,71 @@ const buildUsageDosageField = (digest: FactsDigest): { text: string; basisTags: 
   const raw = digest.labelDosing.map((dose) => dose.rawText).filter(Boolean)[0];
   if (!raw) return null;
   return { text: raw, basisTags: ["label_fact"] };
+};
+
+const buildLabelDosingText = (digest: FactsDigest): string | null => {
+  const raw = digest.labelDosing.map((dose) => dose.rawText).filter(Boolean)[0];
+  if (raw) return raw;
+  const first = digest.labelDosing[0];
+  if (!first) return null;
+  const parts: string[] = [];
+  const prefix = [first.population, first.age].filter(Boolean).join(" ");
+  if (prefix) parts.push(prefix.trim());
+  const doseBits = [first.dose, first.frequency].filter(Boolean).join(", ");
+  if (doseBits) parts.push(doseBits.trim());
+  if (!parts.length) return null;
+  return parts.join(": ");
+};
+
+const UNKNOWN_DOSE_RE = /\b(unknown|not detailed|not specified|not provided|unspecified)\b/i;
+
+const normalizeIngredientName = (name: string) => name.toLowerCase().replace(/\s+/g, " ").trim();
+
+const buildActiveAmountText = (active: FactsDigest["actives"][number]): string | null => {
+  if (active.amount !== null && active.unit) {
+    return `${active.amount} ${active.unit} per serving`;
+  }
+  if (active.amountText) return active.amountText;
+  return null;
+};
+
+const sanitizeDetailDoseContext = (
+  detail: IngredientsDetail,
+  detailDigest: FactsDigest,
+  labelDosingText: string,
+): IngredientsDetail => {
+  const labelLine = `Label dosing: ${labelDosingText}`;
+  const actives = detailDigest.actives;
+  const items = detail.items.map((item) => {
+    if (!UNKNOWN_DOSE_RE.test(item.doseContext)) {
+      return item;
+    }
+    const match = actives.find(
+      (active) => normalizeIngredientName(active.name) === normalizeIngredientName(item.name),
+    );
+    const amountText = match ? buildActiveAmountText(match) : null;
+    const parts = [];
+    if (amountText) parts.push(amountText);
+    parts.push(labelLine);
+    const newDoseContext = `${parts.join(". ")}.`;
+    return { ...item, doseContext: newDoseContext };
+  });
+
+  let overallSummary = detail.overallSummary;
+  if (overallSummary?.text && UNKNOWN_DOSE_RE.test(overallSummary.text)) {
+    const sentences = overallSummary.text
+      .split(/(?<=[.!?])\s+/)
+      .filter((sentence) => sentence && !UNKNOWN_DOSE_RE.test(sentence));
+    let cleaned = sentences.join(" ").trim();
+    if (!cleaned) {
+      cleaned = labelLine + ".";
+    } else if (!cleaned.toLowerCase().includes("label dosing")) {
+      cleaned = `${cleaned} ${labelLine}.`;
+    }
+    overallSummary = { ...overallSummary, text: cleaned };
+  }
+
+  return { ...detail, items, overallSummary };
 };
 
 const buildAnalysisBundleSkeleton = (params: {
@@ -5516,6 +5581,11 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
         errorCode = "LLM_REQUEST_FAILED";
       }
     }
+  }
+
+  const labelDosingText = buildLabelDosingText(digest);
+  if (detailPayload && labelDosingText) {
+    detailPayload = sanitizeDetailDoseContext(detailPayload, detailDigest, labelDosingText);
   }
 
   const timingMs = Math.round(performance.now() - start);
