@@ -140,6 +140,8 @@ jobs:
           RENDER_ARTIFACT_DIR: ${{ steps.artifact.outputs.artifact_dir }}
           RENDER_LNHPD_BARCODE: "00029537001069"
           RENDER_DSLD_BARCODE: "026664275110"
+          RENDER_DSLD_NOFORM_BARCODE: "026664275110"
+          RENDER_DSLD_FORM_BARCODE: "00690290532093"
           RENDER_WEB_BARCODE: "000000000000"
           RENDER_DETAIL_LIMIT: "6"
         run: node scripts/ci/render-regression.mjs

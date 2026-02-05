@@ -257,9 +257,18 @@ const extractChemicalFormFromText = (
   const lower = text.toLowerCase();
   if (!isAllowedWeakFormIngredient(lower)) return null;
   if (hasBlacklistedFormToken(lower)) return null;
-  const hasKeyword = CHEMICAL_FORM_KEYWORDS.some((keyword) => lower.includes(` ${keyword}`) || lower.endsWith(keyword));
-  if (hasKeyword) {
-    return { form: text, evidence: text, confidence: 0.6, source: "ingredient_name" };
+  const keywordMatch =
+    [...CHEMICAL_FORM_KEYWORDS]
+      .sort((a, b) => b.length - a.length)
+      .find((keyword) => {
+        if (!lower.includes(keyword)) return false;
+        // Use word boundaries to avoid partial matches (e.g. antioxidant/oxidative).
+        const re = new RegExp(`\\b${keyword}\\b`, "i");
+        return re.test(lower);
+      }) ?? null;
+  if (keywordMatch) {
+    // P0-C: normalize for KB lookup (keyword), while preserving original label evidence text.
+    return { form: keywordMatch, evidence: text, confidence: 0.6, source: "ingredient_name" };
   }
 
   return null;

@@ -118,10 +118,10 @@ const normalizeToken = (value: string): string => {
 
 const normalizeFreeText = (value: string): string => value.toLowerCase().trim();
 
-const pickBestAlias = (entries: AliasEntry[] | undefined): string | null => {
+const pickBestAliasEntry = (entries: AliasEntry[] | undefined): AliasEntry | null => {
   if (!entries || entries.length === 0) return null;
   const sorted = [...entries].sort((a, b) => (b.alias_confidence ?? 0) - (a.alias_confidence ?? 0));
-  return sorted[0]?.form_key ?? null;
+  return sorted[0] ?? null;
 };
 
 const extractSegmentText = (entry: KbEntry | undefined): string | null => {
@@ -173,6 +173,7 @@ export const getKbRuntime = (): KbRuntime | null => {
 
   const reverseTokenIndex: Record<string, string> = {};
   for (const [formKey, tokens] of Object.entries(alias.reverse ?? {})) {
+    if (!formKey || formKey === "null" || formKey === "undefined") continue;
     for (const token of tokens) {
       const normalized = normalizeToken(token);
       if (!normalized) continue;
@@ -250,15 +251,78 @@ const extractReverseTokenFromName = (
 };
 
 const resolveFormKeyFromToken = (kb: KbRuntime, ingredientId: string, token: string) => {
+  const runtimeIndex = kb.runtime.ingredient_form_index ?? {};
+  const hasRuntimeEntry = (formKey: string | null): boolean =>
+    Boolean(formKey && runtimeIndex[`${ingredientId}|${formKey}`]);
+  const preferRuntimeKey = (candidates: Array<string | null>): string | null =>
+    candidates.find((candidate) => hasRuntimeEntry(candidate)) ?? candidates.find(Boolean) ?? null;
+
   const byIngredient = kb.alias.byIngredient?.[ingredientId];
-  const byIngredientKey = pickBestAlias(byIngredient?.[token]) ?? null;
-  if (byIngredientKey) return { formKey: byIngredientKey, resolveSource: "alias_map_by_ingredient" as FormResolveSource };
-  const globalKey = pickBestAlias(kb.alias.global?.[token]) ?? null;
-  if (globalKey) return { formKey: globalKey, resolveSource: "alias_map_global" as FormResolveSource };
+  const byIngredientEntry = pickBestAliasEntry(byIngredient?.[token]);
+  if (byIngredientEntry) {
+    const prefix = `${ingredientId}_`;
+    const derivedSuffix = token.startsWith(prefix) ? token.slice(prefix.length) : null;
+    const formKey = byIngredientEntry.form_key ?? preferRuntimeKey([token, derivedSuffix]);
+    return { formKey, resolveSource: "alias_map_by_ingredient" as FormResolveSource };
+  }
+
+  const globalEntry = pickBestAliasEntry(kb.alias.global?.[token]);
+  if (globalEntry) {
+    const prefixed = `${ingredientId}_${token}`;
+    const formKey = globalEntry.form_key ?? preferRuntimeKey([token, prefixed]);
+    return { formKey, resolveSource: "alias_map_global" as FormResolveSource };
+  }
+
   const reverseKey = kb.reverseTokenIndex[token] ?? null;
   if (reverseKey) return { formKey: reverseKey, resolveSource: "alias_map_global" as FormResolveSource };
   return { formKey: null, resolveSource: "none" as FormResolveSource };
 };
+
+const normalizeVitaminIngredientToken = (value: string): string | null => {
+  const cleaned = value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  if (!cleaned.startsWith("vitamin")) return null;
+  const parts = cleaned.split(/\s+/).filter(Boolean);
+  if (parts.length < 2) return null;
+  const second = parts[1];
+
+  // vitamin d3/d2 -> vitamin_d; vitamin k1/k2 -> vitamin_k1/vitamin_k2; vitamin b-12 -> vitamin_b12
+  const match = second.match(/^([a-z])(\d+)?$/i);
+  if (!match) return null;
+  const letter = match[1].toLowerCase();
+  const num = match[2] ?? "";
+  if (letter === "d") return "vitamin_d";
+  if (letter === "k") {
+    if (num === "2") return "vitamin_k2";
+    if (num === "1") return "vitamin_k1";
+    return "vitamin_k1";
+  }
+  if (letter === "b") {
+    // Normalize b12 / b-12 / b 12 etc
+    const joined = parts.slice(1).join("");
+    const bNum = joined.replace(/^b/i, "").replace(/[^0-9]/g, "");
+    if (bNum) return `vitamin_b${bNum}`;
+    return null;
+  }
+  if (letter === "a") return "vitamin_a";
+  if (letter === "c") return "vitamin_c";
+  if (letter === "e") return "vitamin_e";
+  return `vitamin_${letter}${num}`;
+};
+
+const FIRST_WORD_ALLOWLIST = new Set([
+  "calcium",
+  "magnesium",
+  "zinc",
+  "iron",
+  "copper",
+  "selenium",
+  "iodine",
+  "chromium",
+  "manganese",
+  "molybdenum",
+  "potassium",
+  "vitamin",
+]);
 
 const resolveIngredientId = (
   kb: KbRuntime,
@@ -276,7 +340,20 @@ const resolveIngredientId = (
   if (commaToken) return commaToken;
   const beforeAs = beforeComma.split(/\bas\b/i)[0]?.trim() ?? beforeComma;
   const asToken = kb.ingredientNameIndex[normalizeToken(beforeAs)];
-  return asToken ?? null;
+  if (asToken) return asToken;
+
+  const vitaminToken = normalizeVitaminIngredientToken(beforeAs);
+  if (vitaminToken) {
+    const vitaminId = kb.ingredientNameIndex[vitaminToken];
+    if (vitaminId) return vitaminId;
+  }
+
+  // P0-B: first-word fallback is allowlisted (minerals + vitamin only) to avoid misattribution.
+  const words = normalizeFreeText(beforeAs).split(/\s+/).filter(Boolean);
+  const firstWord = words[0] ?? null;
+  if (!firstWord || !FIRST_WORD_ALLOWLIST.has(firstWord)) return null;
+  const firstToken = kb.ingredientNameIndex[normalizeToken(firstWord)];
+  return firstToken ?? null;
 };
 
 export const lookupKbFormExplain = (params: {
