@@ -435,6 +435,8 @@ type ResilienceOptions = {
   timeoutMs?: number;
   queueTimeoutMs?: number;
   maxTokens?: number;
+  promptOverride?: "primary" | "rescue";
+  debugOnError?: boolean;
   budget?: DeadlineBudget;
   semaphore?: Semaphore;
   breaker?: CircuitBreaker;
@@ -1026,9 +1028,44 @@ Rules:
 - If dosage is unknown, explicitly say so in doseContext.
 - If form is unknown, explain why.
 - Use ingredient_inference or label_fact tags based on FACTS_DIGEST_JSON.sourceType and evidence.
+- If sourceType is lnhpd and labelPurposes exist, include regulatory_claim in basisTags (add label_fact when referencing dosage/form).
+- If FACTS_DIGEST_JSON.labelDosing has entries, reference label dosing briefly and do NOT say dosing is unknown.
+- Only output items for the actives provided in FACTS_DIGEST_JSON (do not invent missing items).
+- Avoid starting sentences with "Contains".
+- whatItDoes: 1 sentence, max ~18 words.
+- doseContext: 1 sentence, max ~18 words.
+- formExplain: 1 sentence, max ~18 words.
+- overallSummary: max ~60 words.
 - Output JSON only, no markdown, no trailing commas.
 `;
 
+const PROMPT_INGREDIENTS_DETAIL_V3_RESCUE = `You are NuTri-AI. Use the provided FACTS_DIGEST_JSON.
+Return JSON only with this exact shape:
+{
+  "items": [
+    {
+      "name": "...",
+      "whatItDoes": "...",
+      "doseContext": "...",
+      "formExplain": "...",
+      "basisTags": ["..."]
+    }
+  ],
+  "overallSummary": { "text": "...", "basisTags": ["..."] },
+  "overlapNotes": null
+}
+
+Rules:
+- basisTags must be from: label_fact, regulatory_claim, ingredient_inference, web_evidence, general_advice, not_provided, conflict.
+- Only output items for the actives provided in FACTS_DIGEST_JSON.
+- If FACTS_DIGEST_JSON.labelDosing has entries, reference label dosing briefly and do NOT say dosing is unknown.
+- Avoid starting sentences with "Contains".
+- whatItDoes: 1 short sentence (<= 14 words).
+- doseContext: 1 short sentence (<= 14 words).
+- formExplain: 1 short sentence (<= 14 words).
+- overallSummary: 2 short sentences, total <= 40 words.
+- Output JSON only, no markdown, no trailing commas.
+`;
 export async function fetchAnalysisBundleFastV3(
   context: string,
   model: string,
@@ -1165,9 +1202,12 @@ export async function fetchIngredientsDetailV3(
   options: ResilienceOptions = {},
 ): Promise<Record<string, unknown> | null> {
   let release: (() => void) | null = null;
+  const useDebugPayload = deepseekDebug || options.debugOnError === true;
   try {
+    const prompt =
+      options.promptOverride === "rescue" ? PROMPT_INGREDIENTS_DETAIL_V3_RESCUE : PROMPT_INGREDIENTS_DETAIL_V3;
     if (options.breaker && !options.breaker.canRequest()) {
-      return deepseekDebug
+      return useDebugPayload
         ? (buildDebugPayload("detail_v3_breaker_open", "", null) as Record<string, unknown>)
         : null;
     }
@@ -1185,7 +1225,7 @@ export async function fetchIngredientsDetailV3(
           signal: options.signal,
         });
       } catch {
-        return deepseekDebug
+        return useDebugPayload
           ? (buildDebugPayload("detail_v3_semaphore_timeout", "", null) as Record<string, unknown>)
           : null;
       }
@@ -1219,7 +1259,7 @@ export async function fetchIngredientsDetailV3(
           body: JSON.stringify({
             model,
             messages: [
-              { role: "system", content: PROMPT_INGREDIENTS_DETAIL_V3 },
+              { role: "system", content: prompt },
               { role: "user", content: context },
             ],
             temperature: 0.2,
@@ -1253,7 +1293,7 @@ export async function fetchIngredientsDetailV3(
       data = JSON.parse(raw);
     } catch (error) {
       logDeepseekParseIssue("detail_v3_response_parse_failed", raw, { error: String(error) });
-      return deepseekDebug
+      return useDebugPayload
         ? (buildDebugPayload("detail_v3_response_parse_failed", raw, { error: String(error) }) as Record<
             string,
             unknown
@@ -1264,7 +1304,7 @@ export async function fetchIngredientsDetailV3(
     if (!content || typeof content !== "string") {
       const meta = { hasChoices: Array.isArray(data?.choices), error: data?.error ?? null };
       logDeepseekParseIssue("detail_v3_missing_content", raw, meta);
-      return deepseekDebug
+      return useDebugPayload
         ? (buildDebugPayload("detail_v3_missing_content", raw, meta) as Record<string, unknown>)
         : null;
     }
@@ -1273,7 +1313,7 @@ export async function fetchIngredientsDetailV3(
       return parsed as Record<string, unknown>;
     }
     logDeepseekParseIssue("detail_v3_content_parse_failed", content, { error: "invalid_json_object" });
-    return deepseekDebug
+    return useDebugPayload
       ? (buildDebugPayload("detail_v3_content_parse_failed", content, { error: "invalid_json_object" }) as Record<
           string,
           unknown
@@ -1284,7 +1324,7 @@ export async function fetchIngredientsDetailV3(
       options.breaker?.recordFailure();
     }
     console.error("Error fetching ingredients detail v3:", error);
-    return deepseekDebug
+    return useDebugPayload
       ? (buildDebugPayload("detail_v3_request_failed", String(error), {
           name: error instanceof Error ? error.name : null,
         }) as Record<string, unknown>)
