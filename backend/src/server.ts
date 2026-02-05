@@ -15,6 +15,7 @@ import { buildCombinedContext, fetchAnalysisBundle, fetchAnalysisBundleFastV3, f
 import { getKbRuntime, lookupKbFormExplain } from "./kbRuntime.js";
 import {
   IngredientsDetailSchema,
+  UsageFieldSchema,
   safeParseAnalysisBundle,
   type AnalysisBundle,
   type BasisTag,
@@ -754,6 +755,19 @@ const UNKNOWN_DOSE_RE = /\b(unknown|not detailed|not specified|not provided|unsp
 
 const normalizeIngredientName = (name: string) => name.toLowerCase().replace(/\s+/g, " ").trim();
 
+const DsldDetailMinimalSchema = z.object({
+  items: z.array(
+    z.object({
+      name: z.string(),
+      whatItDoes: UsageFieldSchema,
+    }),
+  ),
+  overallSummary: UsageFieldSchema.nullable().optional(),
+  overlapNotes: UsageFieldSchema.nullable().optional(),
+});
+
+type DsldDetailMinimal = z.infer<typeof DsldDetailMinimalSchema>;
+
 const buildActiveAmountText = (active: FactsDigest["actives"][number]): string | null => {
   if (active.amount !== null && active.unit) {
     return `${active.amount} ${active.unit} per serving`;
@@ -781,14 +795,26 @@ const buildChemicalFormExplainFallback = (
   active: FactsDigest["actives"][number],
   kbSentence: string | null,
 ): { text: string; basisTags: BasisTag[] } => {
+  if (kbSentence) {
+    return { text: kbSentence, basisTags: ["label_fact", "ingredient_inference"] };
+  }
   const confidence = active.chemicalFormConfidence ?? null;
   if (!active.chemicalForm || confidence === null || confidence < 0.6) {
     return { text: "Chemical form not provided by source.", basisTags: ["not_provided"] };
   }
-  if (kbSentence) {
-    return { text: kbSentence, basisTags: ["label_fact", "ingredient_inference"] };
-  }
   return { text: `Chemical form: ${active.chemicalForm}.`, basisTags: ["label_fact"] };
+};
+
+const buildPerServingDoseContext = (
+  active: FactsDigest["actives"][number],
+  servingSize: string | null,
+): { text: string; basisTags: BasisTag[] } => {
+  const amountText = buildActiveAmountText(active);
+  if (!amountText) {
+    return buildNotProvidedField();
+  }
+  const suffix = servingSize ? ` (Serving size: ${servingSize})` : "";
+  return buildLabelField(`${amountText}${suffix}`);
 };
 
 const buildDetailSkeleton = (digest: FactsDigest, labelDosingText: string | null): IngredientsDetail => {
@@ -806,29 +832,49 @@ const buildDetailSkeleton = (digest: FactsDigest, labelDosingText: string | null
   };
 };
 
-const buildDsldKbFallbackDetail = (digest: FactsDigest, labelDosingText: string | null): IngredientsDetail => {
+const buildDsldKbFallbackDetail = (digest: FactsDigest): { detail: IngredientsDetail; formResolveSources: Record<string, string> } => {
   const kb = getKbRuntime();
-  const doseField = labelDosingText ? buildLabelField(labelDosingText) : buildNotProvidedField();
+  const formResolveSources: Record<string, string> = {};
   return {
-    items: digest.actives.map((active) => {
-      const kbSentence = kb
-        ? lookupKbFormExplain({
-            ingredientName: active.name,
-            chemicalForm: active.chemicalForm ?? null,
-            chemicalFormConfidence: active.chemicalFormConfidence ?? null,
-          })
-        : null;
-      return {
-        name: active.name,
-        whatItDoes: buildNotProvidedField(),
-        doseContext: doseField,
-        chemicalFormExplain: buildChemicalFormExplainFallback(active, kbSentence),
-        deliveryFormExplain: buildDeliveryFormExplain(active.deliveryForm ?? null),
-      };
-    }),
-    overallSummary: null,
-    overlapNotes: null,
+    detail: {
+      items: digest.actives.map((active) => {
+        const kbResult = kb
+          ? lookupKbFormExplain({
+              ingredientName: active.name,
+              chemicalForm: active.chemicalForm ?? null,
+              chemicalFormConfidence: active.chemicalFormConfidence ?? null,
+            })
+          : { sentence: null, resolveSource: "none" as const };
+        formResolveSources[active.name] = kbResult.resolveSource;
+        return {
+          name: active.name,
+          whatItDoes: buildNotProvidedField(),
+          doseContext: buildPerServingDoseContext(active, digest.serving.servingSize ?? null),
+          chemicalFormExplain: buildChemicalFormExplainFallback(active, kbResult.sentence),
+          deliveryFormExplain: buildDeliveryFormExplain(active.deliveryForm ?? null),
+        };
+      }),
+      overallSummary: null,
+      overlapNotes: null,
+    },
+    formResolveSources,
   };
+};
+
+const mergeDsldWhatItDoes = (baseDetail: IngredientsDetail, minimal: DsldDetailMinimal | null): IngredientsDetail => {
+  if (!minimal) return baseDetail;
+  const map = new Map<string, DsldDetailMinimal["items"][number]>();
+  minimal.items.forEach((item) => {
+    map.set(normalizeIngredientName(item.name), item);
+  });
+  const items = baseDetail.items.map((item) => {
+    const match = map.get(normalizeIngredientName(item.name));
+    if (!match) return item;
+    return { ...item, whatItDoes: match.whatItDoes };
+  });
+  const overallSummary = minimal.overallSummary ?? baseDetail.overallSummary;
+  const overlapNotes = minimal.overlapNotes ?? baseDetail.overlapNotes;
+  return { ...baseDetail, items, overallSummary, overlapNotes };
 };
 
 const resolveFallbackUsed = (errorCode: string | null | undefined): "kb_dsld" | "skeleton" | null => {
@@ -5609,6 +5655,9 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   let detailDebug: Record<string, unknown> | null = null;
   let detailPayload: IngredientsDetail | null = null;
   let parsedDetail: ReturnType<typeof IngredientsDetailSchema.safeParse> | null = null;
+  let dsldParsed: ReturnType<typeof DsldDetailMinimalSchema.safeParse> | null = null;
+  let dsldMinimal: DsldDetailMinimal | null = null;
+  let formResolveSources: Record<string, string> | null = null;
   let errorCode: string | null = null;
   let rescueAttempted = false;
   const getDebugErrorCode = (raw: Record<string, unknown> | null): string | null => {
@@ -5643,8 +5692,13 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   }
 
   if (detailRaw) {
-    parsedDetail = IngredientsDetailSchema.safeParse(detailRaw);
-    detailPayload = parsedDetail.success ? parsedDetail.data : null;
+    if (isDsldDetail) {
+      dsldParsed = DsldDetailMinimalSchema.safeParse(detailRaw);
+      dsldMinimal = dsldParsed.success ? dsldParsed.data : null;
+    } else {
+      parsedDetail = IngredientsDetailSchema.safeParse(detailRaw);
+      detailPayload = parsedDetail.success ? parsedDetail.data : null;
+    }
   }
   detailDebug =
     detailRaw && typeof detailRaw === "object" && "__deepseek_error" in (detailRaw as Record<string, unknown>)
@@ -5652,10 +5706,9 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       : null;
 
   const debugErrorCode = getDebugErrorCode(detailRaw);
-  const shouldRescue =
-    !detailPayload &&
-    (isParseFailure(debugErrorCode) ||
-      (detailRaw !== null && !parsedDetail?.success));
+  const shouldRescue = isDsldDetail
+    ? !dsldMinimal && (isParseFailure(debugErrorCode) || (detailRaw !== null && !dsldParsed?.success))
+    : !detailPayload && (isParseFailure(debugErrorCode) || (detailRaw !== null && !parsedDetail?.success));
 
   if (shouldRescue) {
     rescueAttempted = true;
@@ -5682,15 +5735,28 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
         },
       );
       if (rescueRaw) {
-        const rescueParsed = IngredientsDetailSchema.safeParse(rescueRaw);
-        if (rescueParsed.success) {
-          detailPayload = rescueParsed.data;
-          detailDebug = null;
+        if (isDsldDetail) {
+          const rescueParsed = DsldDetailMinimalSchema.safeParse(rescueRaw);
+          if (rescueParsed.success) {
+            dsldMinimal = rescueParsed.data;
+            detailDebug = null;
+          } else {
+            detailDebug =
+              rescueRaw && typeof rescueRaw === "object" && "__deepseek_error" in (rescueRaw as Record<string, unknown>)
+                ? (rescueRaw as Record<string, unknown>)
+                : detailDebug;
+          }
         } else {
-          detailDebug =
-            rescueRaw && typeof rescueRaw === "object" && "__deepseek_error" in (rescueRaw as Record<string, unknown>)
-              ? (rescueRaw as Record<string, unknown>)
-              : detailDebug;
+          const rescueParsed = IngredientsDetailSchema.safeParse(rescueRaw);
+          if (rescueParsed.success) {
+            detailPayload = rescueParsed.data;
+            detailDebug = null;
+          } else {
+            detailDebug =
+              rescueRaw && typeof rescueRaw === "object" && "__deepseek_error" in (rescueRaw as Record<string, unknown>)
+                ? (rescueRaw as Record<string, unknown>)
+                : detailDebug;
+          }
         }
       }
     } catch (error) {
@@ -5702,22 +5768,35 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   }
 
   const labelDosingText = buildLabelDosingText(digest);
-  if (detailPayload && labelDosingText) {
-    detailPayload = sanitizeDetailDoseContext(detailPayload, detailDigest, labelDosingText);
-  }
-  if (detailPayload) {
-    detailPayload = applyFormExplainGuard(detailPayload, detailDigest);
+  if (isDsldDetail) {
+    const dsldBase = buildDsldKbFallbackDetail(detailDigest);
+    formResolveSources = dsldBase.formResolveSources;
+    detailPayload = mergeDsldWhatItDoes(dsldBase.detail, dsldMinimal);
+  } else {
+    if (detailPayload && labelDosingText) {
+      detailPayload = sanitizeDetailDoseContext(detailPayload, detailDigest, labelDosingText);
+    }
+    if (detailPayload) {
+      detailPayload = applyFormExplainGuard(detailPayload, detailDigest);
+    }
   }
 
   const timingMs = Math.round(performance.now() - start);
+  const dsldFallback = isDsldDetail && !dsldMinimal;
   const resolvedErrorCode =
-    detailPayload
+    detailPayload && !dsldFallback
       ? null
       : errorCode ??
         (detailDebug?.__deepseek_error
           ? String(detailDebug.__deepseek_error)
           : detailRaw
-            ? (parsedDetail?.success ? null : "LLM_PARSE_FAILED")
+            ? isDsldDetail
+              ? dsldParsed?.success
+                ? null
+                : "LLM_PARSE_FAILED"
+              : parsedDetail?.success
+                ? null
+                : "LLM_PARSE_FAILED"
             : "LLM_EMPTY_RESPONSE");
 
   let fallbackUsed: "kb_dsld" | "skeleton" | null = null;
@@ -5726,12 +5805,19 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   if (!detailPayload) {
     fallbackReason = resolvedErrorCode ?? "LLM_DETAIL_FAILED";
     if (isDsldDetail) {
-      detailPayload = buildDsldKbFallbackDetail(detailDigest, labelDosingText);
+      const dsldBase = buildDsldKbFallbackDetail(detailDigest);
+      detailPayload = dsldBase.detail;
+      formResolveSources = dsldBase.formResolveSources;
       fallbackUsed = "kb_dsld";
     } else {
       detailPayload = buildDetailSkeleton(detailDigest, labelDosingText);
       fallbackUsed = "skeleton";
     }
+  }
+
+  if (dsldFallback) {
+    fallbackUsed = "kb_dsld";
+    fallbackReason = resolvedErrorCode ?? "LLM_DETAIL_FAILED";
   }
 
   const detailStatus: "complete" | "error" = detailPayload ? "complete" : "error";
@@ -5763,6 +5849,29 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     { timeoutMs: 1200 },
   );
 
+  const debugEnabled = process.env.DEEPSEEK_DEBUG === "1" || process.env.DEEPSEEK_DEBUG === "true";
+  const includeFormResolve = isDsldDetail && formResolveSources;
+  const includeDebug = debugEnabled && detailDataStatus !== "complete";
+  const debugPayload =
+    includeDebug || includeFormResolve
+      ? {
+          deepseekError: includeDebug ? (detailDebug?.__deepseek_error ?? null) : undefined,
+          snippet: includeDebug ? (detailDebug?.__deepseek_snippet ?? null) : undefined,
+          meta: includeDebug ? (detailDebug?.__deepseek_meta ?? null) : undefined,
+          parseIssues: includeDebug
+            ? isDsldDetail
+              ? dsldParsed?.success
+                ? null
+                : dsldParsed?.error?.issues ?? null
+              : parsedDetail?.success
+                ? null
+                : parsedDetail?.error?.issues ?? null
+            : undefined,
+          rescueAttempted: includeDebug ? rescueAttempted : undefined,
+          formResolveSources: includeFormResolve ? formResolveSources : undefined,
+        }
+      : undefined;
+
   res.json({
     section: "ingredients",
     detail: detailPayload,
@@ -5781,16 +5890,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       fallbackReason: fallbackReason ?? undefined,
     },
     timingMs,
-    debug:
-      detailDataStatus !== "complete" && (process.env.DEEPSEEK_DEBUG === "1" || process.env.DEEPSEEK_DEBUG === "true")
-        ? {
-            deepseekError: detailDebug?.__deepseek_error ?? null,
-            snippet: detailDebug?.__deepseek_snippet ?? null,
-            meta: detailDebug?.__deepseek_meta ?? null,
-            parseIssues: parsedDetail?.success ? null : parsedDetail?.error?.issues ?? null,
-            rescueAttempted,
-          }
-        : undefined,
+    debug: debugPayload,
   });
 });
 

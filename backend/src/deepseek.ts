@@ -1050,10 +1050,7 @@ Return JSON only with this exact shape:
   "items": [
     {
       "name": "...",
-      "whatItDoes": { "text": "...", "basisTags": ["..."] },
-      "doseContext": { "text": "...", "basisTags": ["..."] },
-      "chemicalFormExplain": { "text": "...", "basisTags": ["..."] },
-      "deliveryFormExplain": { "text": "...", "basisTags": ["..."] } | null
+      "whatItDoes": { "text": "...", "basisTags": ["..."] }
     }
   ],
   "overallSummary": { "text": "...", "basisTags": ["..."] } | null,
@@ -1063,16 +1060,8 @@ Return JSON only with this exact shape:
 Rules:
 - basisTags must be from: label_fact, regulatory_claim, ingredient_inference, web_evidence, general_advice, not_provided, conflict.
 - Only output items for the actives provided in FACTS_DIGEST_JSON.
-- If FACTS_DIGEST_JSON.labelDosing has entries, reference label dosing briefly and do NOT say dosing is unknown.
 - whatItDoes: 1 short sentence (<= 14 words).
-- doseContext: 1 short sentence (<= 14 words).
-- chemicalFormExplain: 1 short sentence (<= 20 words).
-- deliveryFormExplain: 1 short sentence (<= 12 words).
 - overallSummary: max 40 words; can be null if uncertain.
-- chemicalFormExplain rules:
-  - If actives[i].chemicalFormConfidence is null OR < 0.6, output exactly "Chemical form not provided by source." with basisTags ["not_provided"].
-  - If chemicalFormConfidence >= 0.6 and chemicalForm exists, explain cautiously (must include "may" or "limited evidence") with basisTags ["label_fact","ingredient_inference"].
-- deliveryFormExplain only if deliveryForm exists, otherwise null.
 - Avoid starting sentences with "Contains".
 - Output JSON only, no markdown, no trailing commas.
 `;
@@ -1116,29 +1105,17 @@ Return JSON only with this exact shape:
   "items": [
     {
       "name": "...",
-      "whatItDoes": { "text": "...", "basisTags": ["..."] },
-      "doseContext": { "text": "...", "basisTags": ["..."] },
-      "chemicalFormExplain": { "text": "...", "basisTags": ["..."] },
-      "deliveryFormExplain": { "text": "...", "basisTags": ["..."] } | null
+      "whatItDoes": { "text": "...", "basisTags": ["..."] }
     }
   ],
-  "overallSummary": { "text": "...", "basisTags": ["..."] },
+  "overallSummary": null,
   "overlapNotes": null
 }
 
 Rules:
 - basisTags must be from: label_fact, regulatory_claim, ingredient_inference, web_evidence, general_advice, not_provided, conflict.
 - Only output items for the actives provided in FACTS_DIGEST_JSON.
-- If FACTS_DIGEST_JSON.labelDosing has entries, reference label dosing briefly and do NOT say dosing is unknown.
 - whatItDoes: 1 short sentence (<= 12 words).
-- doseContext: 1 short sentence (<= 12 words).
-- chemicalFormExplain: 1 short sentence (<= 18 words).
-- deliveryFormExplain: 1 short sentence (<= 10 words).
-- overallSummary: max 32 words.
-- chemicalFormExplain rules:
-  - If actives[i].chemicalFormConfidence is null OR < 0.6, output exactly "Chemical form not provided by source." with basisTags ["not_provided"].
-  - If chemicalFormConfidence >= 0.6 and chemicalForm exists, explain cautiously (must include "may" or "limited evidence") with basisTags ["label_fact","ingredient_inference"].
-- deliveryFormExplain only if deliveryForm exists, otherwise null.
 - Avoid starting sentences with "Contains".
 - Output JSON only, no markdown, no trailing commas.
 `;

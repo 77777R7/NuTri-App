@@ -40,14 +40,80 @@ type KbRuntime = {
   reverseTokenIndex: Record<string, string>;
 };
 
+export type FormResolveSource =
+  | "digest_chemical_form"
+  | "alias_map_by_ingredient"
+  | "alias_map_global"
+  | "reverse_name_parse"
+  | "none";
+
 let cachedKb: KbRuntime | null = null;
 let kbLoadAttempted = false;
+
+const REVERSE_FORM_ALLOWLIST = new Set([
+  "calcium",
+  "magnesium",
+  "zinc",
+  "iron",
+  "copper",
+  "selenium",
+  "iodine",
+  "chromium",
+  "manganese",
+  "molybdenum",
+  "potassium",
+  "vitamin_a",
+  "vitamin_b",
+  "vitamin_c",
+  "vitamin_d",
+  "vitamin_e",
+  "vitamin_k",
+  "folate",
+  "folic_acid",
+  "niacin",
+  "riboflavin",
+  "thiamin",
+  "omega_3",
+  "epa",
+  "dha",
+  "creatine",
+  "coq10",
+  "l_carnitine",
+]);
+
+const REVERSE_FORM_BLACKLIST = ["dioxide", "peroxide", "antioxidant", "oxidative"];
+
+const REVERSE_FORM_KEYWORDS = [
+  "oxide",
+  "citrate",
+  "gluconate",
+  "carbonate",
+  "sulfate",
+  "chloride",
+  "ascorbate",
+  "glycinate",
+  "malate",
+  "picolinate",
+  "tartrate",
+  "succinate",
+  "nitrate",
+  "phosphate",
+  "fumarate",
+  "lactate",
+  "bisglycinate",
+  "chelate",
+  "acetate",
+  "hydrochloride",
+  "hcl",
+];
 
 const normalizeToken = (value: string): string => {
   const lowered = value.toLowerCase().trim();
   const cleaned = lowered.replace(/[^a-z0-9_]+/g, "_");
   return cleaned.replace(/_+/g, "_").replace(/^_+|_+$/g, "");
 };
+
+const normalizeFreeText = (value: string): string => value.toLowerCase().trim();
 
 const pickBestAlias = (entries: AliasEntry[] | undefined): string | null => {
   if (!entries || entries.length === 0) return null;
@@ -115,38 +181,106 @@ export const getKbRuntime = (): KbRuntime | null => {
   return cachedKb;
 };
 
+const hasBlacklistToken = (value: string): boolean => {
+  const lower = normalizeFreeText(value);
+  return REVERSE_FORM_BLACKLIST.some((token) => lower.includes(token));
+};
+
+const isAllowedIngredient = (ingredientId: string | null | undefined): boolean => {
+  if (!ingredientId) return false;
+  if (REVERSE_FORM_ALLOWLIST.has(ingredientId)) return true;
+  if (ingredientId.startsWith("vitamin_b") && REVERSE_FORM_ALLOWLIST.has("vitamin_b")) return true;
+  return false;
+};
+
+const extractReverseTokenFromName = (name: string, ingredientId: string | null): string | null => {
+  if (!ingredientId || !isAllowedIngredient(ingredientId)) return null;
+  const normalizedName = normalizeFreeText(name);
+  if (!normalizedName) return null;
+
+  const parenthetical = normalizedName.match(/\(as ([^)]+)\)/i);
+  if (parenthetical?.[1]) {
+    if (hasBlacklistToken(parenthetical[1])) return null;
+    return normalizeToken(parenthetical[1]);
+  }
+
+  const asMatch = normalizedName.match(/\bas ([^,]+?)(?:,|$)/i);
+  if (asMatch?.[1]) {
+    if (hasBlacklistToken(asMatch[1])) return null;
+    return normalizeToken(asMatch[1]);
+  }
+
+  const fromMatch = normalizedName.match(/\bfrom ([^,]+?)(?:,|$)/i);
+  if (fromMatch?.[1]) {
+    if (hasBlacklistToken(fromMatch[1])) return null;
+    return normalizeToken(fromMatch[1]);
+  }
+
+  const keywordMatch = REVERSE_FORM_KEYWORDS.find((keyword) => {
+    if (!normalizedName.includes(keyword)) return false;
+    const regex = new RegExp(`\\b${keyword}\\b`, "i");
+    return regex.test(normalizedName);
+  });
+
+  if (keywordMatch) {
+    if (hasBlacklistToken(normalizedName)) return null;
+    const normalizedToken = normalizeToken(name);
+    const ingredientToken = normalizeToken(ingredientId);
+    if (normalizedToken.startsWith(`${ingredientToken}_`) || normalizedToken.endsWith(`_${keywordMatch}`)) {
+      return normalizedToken;
+    }
+  }
+
+  return null;
+};
+
+const resolveFormKeyFromToken = (kb: KbRuntime, ingredientId: string, token: string) => {
+  const byIngredient = kb.alias.byIngredient?.[ingredientId];
+  const byIngredientKey = pickBestAlias(byIngredient?.[token]) ?? null;
+  if (byIngredientKey) return { formKey: byIngredientKey, resolveSource: "alias_map_by_ingredient" as FormResolveSource };
+  const globalKey = pickBestAlias(kb.alias.global?.[token]) ?? null;
+  if (globalKey) return { formKey: globalKey, resolveSource: "alias_map_global" as FormResolveSource };
+  const reverseKey = kb.reverseTokenIndex[token] ?? null;
+  if (reverseKey) return { formKey: reverseKey, resolveSource: "alias_map_global" as FormResolveSource };
+  return { formKey: null, resolveSource: "none" as FormResolveSource };
+};
+
 export const lookupKbFormExplain = (params: {
   ingredientName: string;
   chemicalForm: string | null;
   chemicalFormConfidence: number | null;
   ingredientId?: string | null;
-}): string | null => {
+}): { sentence: string | null; resolveSource: FormResolveSource } => {
   const kb = getKbRuntime();
-  if (!kb) return null;
-  if (!params.chemicalForm || params.chemicalFormConfidence === null || params.chemicalFormConfidence < 0.6) {
-    return null;
-  }
+  if (!kb) return { sentence: null, resolveSource: "none" };
 
   const ingredientKey = normalizeToken(params.ingredientName);
   const ingredientId = params.ingredientId ?? kb.ingredientNameIndex[ingredientKey];
-  if (!ingredientId) return null;
+  if (!ingredientId) return { sentence: null, resolveSource: "none" };
 
-  const token = normalizeToken(params.chemicalForm);
-  let formKey: string | null = null;
-
-  const byIngredient = kb.alias.byIngredient?.[ingredientId];
-  formKey = pickBestAlias(byIngredient?.[token]) ?? null;
-
-  if (!formKey) {
-    formKey = pickBestAlias(kb.alias.global?.[token]) ?? null;
+  if (params.chemicalForm && params.chemicalFormConfidence !== null && params.chemicalFormConfidence >= 0.6) {
+    const token = normalizeToken(params.chemicalForm);
+    const resolved = resolveFormKeyFromToken(kb, ingredientId, token);
+    if (resolved.formKey) {
+      const entry = kb.runtime.ingredient_form_index?.[`${ingredientId}|${resolved.formKey}`];
+      const sentence = extractSegmentText(entry);
+      if (sentence) {
+        return { sentence, resolveSource: resolved.resolveSource ?? "digest_chemical_form" };
+      }
+    }
   }
 
-  if (!formKey) {
-    formKey = kb.reverseTokenIndex[token] ?? null;
+  const reverseToken = extractReverseTokenFromName(params.ingredientName, ingredientId);
+  if (reverseToken) {
+    const resolved = resolveFormKeyFromToken(kb, ingredientId, reverseToken);
+    if (resolved.formKey) {
+      const entry = kb.runtime.ingredient_form_index?.[`${ingredientId}|${resolved.formKey}`];
+      const sentence = extractSegmentText(entry);
+      if (sentence) {
+        return { sentence, resolveSource: "reverse_name_parse" };
+      }
+    }
   }
 
-  if (!formKey) return null;
-  const entry = kb.runtime.ingredient_form_index?.[`${ingredientId}|${formKey}`];
-  const sentence = extractSegmentText(entry);
-  return sentence ?? null;
+  return { sentence: null, resolveSource: "none" };
 };
