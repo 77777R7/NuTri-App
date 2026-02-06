@@ -497,6 +497,11 @@ async function main() {
   const runtimeRaw = runtimeIndexPath ? await fs.readFile(runtimeIndexPath, "utf-8") : null;
   const runtimeJson = runtimeRaw ? JSON.parse(runtimeRaw.replace(/\bNaN\b/g, "null")) : null;
   const ingredientFormIndex = runtimeJson?.ingredient_form_index ?? {};
+  const runtimeSourcePath =
+    process.env.KB_RUNTIME_SOURCE_PATH || path.join("kb", "source", "kb_runtime_index.source.json");
+  const sourceRaw = await fs.readFile(runtimeSourcePath, "utf-8").catch(() => null);
+  const sourceJson = sourceRaw ? JSON.parse(sourceRaw.replace(/\bNaN\b/g, "null")) : null;
+  const sourceIngredientFormIndex = sourceJson?.ingredient_form_index ?? {};
 
   const resolveRuntimeEntry = ({ ingredientKey, token }) => {
     if (!ingredientKey || !token) return { entry: null, runtimeKey: null };
@@ -512,11 +517,66 @@ async function main() {
     return { entry: null, runtimeKey: null };
   };
 
+  const resolveSourceEntry = ({ ingredientKey, token }) => {
+    if (!ingredientKey || !token) return { entry: null, runtimeKey: null };
+    const candidates = [
+      `${ingredientKey}|${token}`,
+      // Some salt forms are scoped by ingredient in the KB (e.g. potassium_chloride).
+      `${ingredientKey}|${ingredientKey}_${token}`,
+    ];
+    for (const k of candidates) {
+      const entry = sourceIngredientFormIndex[k];
+      if (entry) return { entry, runtimeKey: k };
+    }
+    return { entry: null, runtimeKey: null };
+  };
+
   const classifyGapType = ({ ingredientKey, token }) => {
     if (!ingredientKey) return { gapType: "ingredient_unresolved", gapDetail: null };
     if (!token) return { gapType: "form_unresolved", gapDetail: null };
     const { entry, runtimeKey } = resolveRuntimeEntry({ ingredientKey, token });
-    if (!entry) return { gapType: "kb_sentence_missing", gapDetail: "no_runtime_entry" };
+    if (!entry) {
+      // Operational detail: distinguish "truly missing KB runtime entry" from
+      // "draft exists in source but filtered out of production" (needs_capture / needs_edit).
+      const { entry: sourceEntry, runtimeKey: sourceKey } = resolveSourceEntry({ ingredientKey, token });
+      if (!sourceEntry) return { gapType: "kb_sentence_missing", gapDetail: "no_runtime_entry" };
+
+      const segments = sourceEntry?.segments ?? null;
+      if (!segments || typeof segments !== "object" || Object.keys(segments).length === 0) {
+        return { gapType: "kb_sentence_missing", gapDetail: `draft_missing_segments:${sourceKey ?? "unknown_key"}` };
+      }
+
+      const sentences = [];
+      for (const seg of Object.values(segments)) {
+        const en = seg?.en;
+        if (Array.isArray(en)) sentences.push(...en);
+      }
+      if (!sentences.length) {
+        return { gapType: "kb_sentence_missing", gapDetail: `draft_empty_segments:${sourceKey ?? "unknown_key"}` };
+      }
+
+      const needsCapture = sentences.some((s) => String(s?.evidence_excerpt_status || "") !== "captured");
+      const needsReview = sentences.some((s) => String(s?.review_status || "") !== "approved");
+
+      if (needsCapture && needsReview) {
+        return {
+          gapType: "kb_excerpt_missing",
+          gapDetail: `draft_needs_capture_and_review:${sourceKey ?? "unknown_key"}`,
+        };
+      }
+      if (needsCapture) {
+        return { gapType: "kb_excerpt_missing", gapDetail: `draft_needs_capture:${sourceKey ?? "unknown_key"}` };
+      }
+      if (needsReview) {
+        return { gapType: "kb_sentence_missing", gapDetail: `draft_needs_review:${sourceKey ?? "unknown_key"}` };
+      }
+
+      // Source appears ready but production is missing it. This is likely a build/filter issue.
+      return {
+        gapType: "kb_sentence_missing",
+        gapDetail: `production_missing_but_source_ready:${sourceKey ?? "unknown_key"}`,
+      };
+    }
     const segments = entry?.segments ?? null;
     if (!segments || typeof segments !== "object" || Object.keys(segments).length === 0) {
       // If the runtime entry exists but has no shipped segments, it's typically because the production
