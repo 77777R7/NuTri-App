@@ -80,6 +80,17 @@ const INGREDIENT_ALLOWLIST = [
 ];
 
 const REVERSE_FORM_BLACKLIST = ["dioxide", "peroxide", "antioxidant", "oxidative"];
+const SULFATE_CHLORIDE_TOKENS = new Set(["sulfate", "chloride"]);
+
+const guessIngredientForNoise = (value) => {
+  const cleaned = normalizeFreeText(stripAmountSuffix(value))
+    .replace(/^(as|from)\s+/i, "")
+    .replace(/^[^a-z0-9]+/i, "")
+    .trim();
+  if (!cleaned) return "unknown";
+  const first = cleaned.split(/\s+/)[0] || "unknown";
+  return first.replace(/[^a-z0-9]+/g, "");
+};
 
 const buildHeaders = () => ({
   apikey: SUPABASE_KEY,
@@ -350,6 +361,7 @@ async function main() {
   await fs.writeFile(path.join(ARTIFACT_DIR, "candidates_meta_raw.json"), JSON.stringify(ranked, null, 2));
 
   const enriched = [];
+  const sulfateChlorideNoise = [];
   const explicitEvidenceKinds = new Set(["label_parenthetical", "label_as_phrase", "label_from_phrase", "salt_name"]);
   const runtimeIndexPath = process.env.KB_RUNTIME_INDEX_PATH;
   const runtimeRaw = runtimeIndexPath ? await fs.readFile(runtimeIndexPath, "utf-8") : null;
@@ -410,11 +422,28 @@ async function main() {
         if (!hasStrong) continue;
       }
 
-      for (const t of tokensMatched) tokenMatchCounts[t] += 1;
-
       // KB runtime expects a stable ingredient string without trailing amounts/units; otherwise
       // reverse-token parsing can include the dose (e.g. "as calcium ascorbate 125 mg") and miss.
       const kbLookupName = stripAmountSuffix(chunk);
+      const ingredientKey = normalizeIngredientKey(kbLookupName) ?? normalizeIngredientKey(chunk) ?? null;
+      const hasSulfateChloride = tokensMatched.some((t) => SULFATE_CHLORIDE_TOKENS.has(t));
+      if (hasSulfateChloride && !ingredientKey) {
+        // P1: sulfate/chloride in DSLD meta is often dominated by non-salt "ingredients" like glucosamine sulfate.
+        // Capture as noise for triage but exclude from KB hit-rate metrics and regression candidate selection.
+        sulfateChlorideNoise.push({
+          barcodeGtin14: meta?.barcode_normalized_gtin14 ?? null,
+          dsldLabelId: meta?.dsld_label_id ?? null,
+          dsldProductVersionCode: meta?.dsld_product_version_code ?? null,
+          raw: chunk,
+          name: kbLookupName,
+          tokens: tokensMatched.filter((t) => SULFATE_CHLORIDE_TOKENS.has(t)),
+          evidenceKind,
+          ingredientGuess: guessIngredientForNoise(kbLookupName),
+        });
+        continue;
+      }
+
+      for (const t of tokensMatched) tokenMatchCounts[t] += 1;
       const kb = lookupKbFormExplain({
         ingredientName: kbLookupName,
         chemicalForm: null,
@@ -427,7 +456,6 @@ async function main() {
       const baseName = kbLookupName;
       const isKbHit = Boolean(kb?.sentenceId && kb?.sentence);
       if (isKbHit) kbSentenceHitNames.push(baseName);
-      const ingredientKey = normalizeIngredientKey(baseName) ?? normalizeIngredientKey(chunk) ?? null;
       const primaryToken = tokensMatched[0] ?? null;
       const gap = isKbHit ? null : classifyGapType({ ingredientKey, token: primaryToken });
 
@@ -475,6 +503,10 @@ async function main() {
   await fs.writeFile(path.join(ARTIFACT_DIR, "candidates_enriched.json"), JSON.stringify(enriched, null, 2));
   await fs.writeFile(path.join(ARTIFACT_DIR, "candidates_kb_hits.json"), JSON.stringify(hits, null, 2));
   await fs.writeFile(path.join(ARTIFACT_DIR, "candidates_kb_gaps.json"), JSON.stringify(gaps, null, 2));
+  await fs.writeFile(
+    path.join(ARTIFACT_DIR, "sulfate_chloride_noise.json"),
+    JSON.stringify(sulfateChlorideNoise, null, 2),
+  );
 
   // Operational leaderboards.
   const tokenStats = Object.fromEntries(
@@ -491,6 +523,28 @@ async function main() {
       ];
     }),
   );
+
+  const sulfateChlorideNoiseStats = (() => {
+    const byIngredientGuess = {};
+    const byToken = {};
+    for (const row of sulfateChlorideNoise) {
+      const ig = String(row.ingredientGuess || "unknown");
+      byIngredientGuess[ig] = (byIngredientGuess[ig] ?? 0) + 1;
+      for (const t of row.tokens || []) {
+        byToken[t] = (byToken[t] ?? 0) + 1;
+      }
+    }
+    const top = (obj, limit = 25) =>
+      Object.entries(obj)
+        .sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0))
+        .slice(0, limit)
+        .map(([k, v]) => ({ key: k, count: v }));
+    return {
+      total: sulfateChlorideNoise.length,
+      byToken: top(byToken, 10),
+      byIngredientGuess: top(byIngredientGuess, 15),
+    };
+  })();
 
   const ingredientStats = {};
   for (const row of enriched) {
@@ -573,6 +627,7 @@ async function main() {
       hitsPerToken: stratHits.stratifiedCounts,
       gapsPerToken: stratGaps.stratifiedCounts,
     },
+    sulfateChlorideNoiseStats,
   };
   await fs.writeFile(path.join(ARTIFACT_DIR, "kb_gap_report.json"), JSON.stringify(gapReport, null, 2));
 
@@ -591,6 +646,77 @@ async function main() {
     }
     await fs.writeFile(path.join(ARTIFACT_DIR, filename), csvLines.join("\n") + "\n");
   };
+
+  const writeSimpleCsv = async (filename, rows) => {
+    if (!rows.length) return;
+    const header = Object.keys(rows[0] ?? {});
+    const csvLines = [header.join(",")];
+    for (const row of rows) {
+      const values = header.map((key) => {
+        const raw = row[key] ?? "";
+        const s = String(raw).replace(/\"/g, '""');
+        return `"${s}"`;
+      });
+      csvLines.push(values.join(","));
+    }
+    await fs.writeFile(path.join(ARTIFACT_DIR, filename), csvLines.join("\n") + "\n");
+  };
+
+  // Workstream B: actionable sulfate/chloride triage list.
+  const actionMap = new Map();
+  const actionKey = (token, ingredient, gapType) => `${token}|${ingredient}|${gapType}`;
+  const actionFor = (token, ingredient, gapType) => {
+    if (gapType === "ingredient_unresolved") {
+      return "Noise: treat as ingredient (not nutrient salt-form) or add ingredient alias; exclude from form scan stats.";
+    }
+    if (gapType === "kb_sentence_missing") return `Add KB sentence+excerpt for ${ingredient}+${token}.`;
+    if (gapType === "kb_excerpt_missing") return `Capture excerpt/reference IDs for existing ${ingredient}+${token}.`;
+    if (gapType === "form_unresolved") return `Parser/alias: improve token extraction for ${ingredient}+${token}.`;
+    return "Investigate.";
+  };
+  const bumpAction = ({ token, ingredient, gapType, example }) => {
+    const key = actionKey(token, ingredient, gapType);
+    if (!actionMap.has(key)) {
+      actionMap.set(key, {
+        token,
+        ingredient,
+        gapType,
+        count: 0,
+        example_actives_excerpt: example,
+        action: actionFor(token, ingredient, gapType),
+      });
+    }
+    const cur = actionMap.get(key);
+    cur.count += 1;
+    if (!cur.example_actives_excerpt) cur.example_actives_excerpt = example;
+  };
+
+  for (const n of sulfateChlorideNoise) {
+    for (const token of n.tokens || []) {
+      bumpAction({
+        token,
+        ingredient: String(n.ingredientGuess || "unknown"),
+        gapType: "ingredient_unresolved",
+        example: String(n.raw || n.name || ""),
+      });
+    }
+  }
+
+  for (const row of gaps) {
+    for (const m of row.matchedActives || []) {
+      const token = (m.tokens || []).find((t) => SULFATE_CHLORIDE_TOKENS.has(t));
+      if (!token) continue;
+      bumpAction({
+        token,
+        ingredient: String(m.ingredientKey || "unknown"),
+        gapType: String(m.gapType || "unknown"),
+        example: String(m.raw || m.name || ""),
+      });
+    }
+  }
+
+  const actionRows = [...actionMap.values()].sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
+  await writeSimpleCsv("sulfate_chloride_action_list.csv", actionRows);
 
   await writeCsv("candidates_top80_kb_hits.csv", stratHits.selected);
   await writeCsv("candidates_top80_kb_gaps.csv", stratGaps.selected);

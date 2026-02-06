@@ -5454,9 +5454,8 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   const deepseekDebugEnabled =
     process.env.DEEPSEEK_DEBUG === "1" || process.env.DEEPSEEK_DEBUG === "true";
   // Internal debug/audit fields (sentence/excerpt/reference IDs) must not leak to normal users.
-  // Allow only for CI/regression token, or local/dev with DEEPSEEK_DEBUG enabled.
-  const allowInternalDebug =
-    isRegressionRequest || (process.env.NODE_ENV !== "production" && deepseekDebugEnabled);
+  // Allow only for CI/regression token.
+  const allowInternalDebug = isRegressionRequest;
 
   const { identity, section, locale, promptVersion, factsDigestHash } = parsedBody;
   const rawRequestedLimit = Math.min(
