@@ -704,8 +704,9 @@ async function main() {
     }
   }
 
-  for (const row of gaps) {
+  for (const row of enriched) {
     for (const m of row.matchedActives || []) {
+      if (!m.gapType) continue;
       const token = (m.tokens || []).find((t) => SULFATE_CHLORIDE_TOKENS.has(t));
       if (!token) continue;
       bumpAction({
