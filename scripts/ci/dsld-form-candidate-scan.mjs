@@ -108,6 +108,31 @@ const detectEvidenceKind = (name) => {
   return "salt_name";
 };
 
+const scoreMetaRow = (row) => {
+  const summary = String(row?.active_ingredients_summary ?? "");
+  const s = normalizeText(summary);
+  let score = 0;
+
+  // Prefer explicit evidence cues so enrichment can actually validate KB positive path.
+  if (/\(as\s+[^)]+\)/i.test(s)) score += 10;
+  if (/\bas\s+[^,;]+/i.test(s)) score += 6;
+  if (/\bfrom\s+[^,;]+/i.test(s)) score += 6;
+
+  // Prefer rows that contain any token as a whole word (avoid substring noise like "sesquioxide").
+  const tokenWordHits = TOKENS.reduce((acc, t) => acc + (tokenRegex(t).test(s) ? 1 : 0), 0);
+  score += tokenWordHits * 3;
+
+  // Prefer rows mentioning allowlisted nutrient families.
+  if (hasAllowlistedIngredient(s)) score += 2;
+
+  // Prefer moderate-sized products; penalize very small/very large.
+  const approx = countActivesApprox(row?.active_ingredients_summary);
+  if (approx >= 5 && approx <= 15) score += 2;
+  if (approx > 20) score -= 2;
+
+  return score;
+};
+
 async function fetchMetaCandidatesForToken(token) {
   const url = new URL(`${SUPABASE_URL}/rest/v1/dsld_labels_meta`);
   url.searchParams.set(
@@ -211,11 +236,16 @@ async function main() {
   // digest-level `chemicalFormSource`.
   const filtered = deduped.filter((r) => countActivesApprox(r.active_ingredients_summary) <= MAX_ACTIVES);
 
-  await fs.writeFile(path.join(ARTIFACT_DIR, "candidates_meta_raw.json"), JSON.stringify(filtered, null, 2));
+  // Rank so enrichment focuses on rows most likely to contain explicit form evidence.
+  const ranked = [...filtered].sort((a, b) => scoreMetaRow(b) - scoreMetaRow(a));
+
+  await fs.writeFile(path.join(ARTIFACT_DIR, "candidates_meta_raw.json"), JSON.stringify(ranked, null, 2));
 
   const enriched = [];
-  const labelIds = filtered.map((r) => Number(r.dsld_label_id)).filter((n) => Number.isFinite(n)).slice(0, MAX_ENRICH);
-  console.log(`[dsld-scan] deduped=${deduped.length} filtered=${filtered.length} enrich=${labelIds.length}`);
+  const labelIds = ranked.map((r) => Number(r.dsld_label_id)).filter((n) => Number.isFinite(n)).slice(0, MAX_ENRICH);
+  console.log(
+    `[dsld-scan] deduped=${deduped.length} filtered=${filtered.length} ranked=${ranked.length} enrich=${labelIds.length}`,
+  );
 
   for (const labelId of labelIds) {
     // eslint-disable-next-line no-await-in-loop
