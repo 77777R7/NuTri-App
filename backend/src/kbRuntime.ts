@@ -195,7 +195,8 @@ export const getKbRuntime = (): KbRuntime | null => {
 
   const reverseTokenIndex: Record<string, string> = {};
   for (const [formKey, tokens] of Object.entries(alias.reverse ?? {})) {
-    if (!formKey || formKey === "null" || formKey === "undefined") continue;
+    // Guard against generator artifacts (e.g. "NaN") that should never be treated as a real form_key.
+    if (!formKey || formKey === "null" || formKey === "undefined" || formKey === "NaN") continue;
     for (const token of tokens) {
       const normalized = normalizeToken(token);
       if (!normalized) continue;
