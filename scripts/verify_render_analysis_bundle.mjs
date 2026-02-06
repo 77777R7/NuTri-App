@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const DEFAULT_BARCODES = ["00029537001069", "026664275110", "000000000000"];
+const DEFAULT_BARCODES = ["00029537001069", "026664275110", "00690290532093", "00678226014301", "000000000000"];
 const baseUrl = process.env.RENDER_BASE_URL || "https://nutri-app-qn0u.onrender.com";
 const barcodes = process.argv.slice(2).length ? process.argv.slice(2) : DEFAULT_BARCODES;
 
@@ -90,32 +90,6 @@ function pickBundle(events) {
   return fast ?? bundles[bundles.length - 1];
 }
 
-function loadKbTexts() {
-  try {
-    const kbPath = path.join(__dirname, "..", "backend", "data", "kb", "kb_runtime_index.json");
-    const raw = fs.readFileSync(kbPath, "utf-8");
-    const kb = JSON.parse(raw);
-    const texts = new Set();
-    const entries = kb?.ingredient_form_index ? Object.values(kb.ingredient_form_index) : [];
-    for (const entry of entries) {
-      const segs = entry?.segments ?? {};
-      for (const bucket of Object.values(segs)) {
-        const en = bucket?.en;
-        if (Array.isArray(en)) {
-          for (const item of en) {
-            if (item?.text) texts.add(item.text);
-          }
-        }
-      }
-    }
-    return texts;
-  } catch {
-    return null;
-  }
-}
-
-const kbTexts = loadKbTexts();
-
 function summarizeBundle(bundle) {
   if (!bundle) return null;
   const { meta, sections } = bundle;
@@ -152,8 +126,9 @@ async function fetchDetail(bundle) {
 function inferKbUsage(detailData) {
   const meta = detailData?.meta || {};
   if (meta.fallbackUsed === "kb_dsld") return true;
-  if (!kbTexts || !detailData?.detail?.items) return false;
-  return detailData.detail.items.some((item) => kbTexts.has(item?.chemicalFormExplain?.text));
+  const sentenceIds = detailData?.debug?.formSentenceIds;
+  if (!sentenceIds || typeof sentenceIds !== "object") return false;
+  return Object.values(sentenceIds).some((v) => typeof v === "string" && v.startsWith("s_"));
 }
 
 async function run() {
