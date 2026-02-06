@@ -2,9 +2,18 @@
 /* eslint-disable no-console */
 import fs from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { buildFactsDigestFromDsld } from "../../backend/dist/factsDigest.js";
 import { lookupKbFormExplain } from "../../backend/dist/kbRuntime.js";
+
+// Ensure KB paths resolve regardless of the runner cwd.
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = path.resolve(__dirname, "../..");
+const DEFAULT_KB_DIR = path.join(REPO_ROOT, "backend", "data", "kb");
+process.env.KB_RUNTIME_INDEX_PATH =
+  process.env.KB_RUNTIME_INDEX_PATH || path.join(DEFAULT_KB_DIR, "kb_runtime_index.json");
+process.env.KB_FORM_ALIAS_PATH = process.env.KB_FORM_ALIAS_PATH || path.join(DEFAULT_KB_DIR, "form_alias_map.json");
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
