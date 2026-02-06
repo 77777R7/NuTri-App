@@ -160,9 +160,18 @@ const detectEvidenceKind = (text) => {
   return "salt_name";
 };
 
+const isVitaminCChemicalFormName = (value) => {
+  const cleaned = normalizeFreeText(value);
+  return /\bascorbic\b/.test(cleaned) || /\bascorbate\b/.test(cleaned) || /\bester[-_ ]?c\b/.test(cleaned);
+};
+
 const normalizeIngredientKey = (text) => {
-  const s = normalizeFreeText(text);
+  const cleaned = stripAmountSuffix(String(text ?? "")).replace(/^(as|from)\s+/i, "").trim();
+  const s = normalizeFreeText(cleaned);
   if (!s) return null;
+
+  // Prefer vitamin C scope when the label explicitly indicates vitamin C forms (ascorbic/ascorbate/Ester-C).
+  if (isVitaminCChemicalFormName(s)) return "vitamin_c";
 
   if (s.startsWith("vitamin")) {
     const parts = s.replace(/[^a-z0-9]+/g, " ").trim().split(/\s+/).filter(Boolean);
@@ -346,7 +355,7 @@ async function main() {
   await fs.writeFile(path.join(ARTIFACT_DIR, "candidates_meta_raw.json"), JSON.stringify(ranked, null, 2));
 
   const enriched = [];
-  const explicitEvidenceKinds = new Set(["label_parenthetical", "label_as_phrase", "label_from_phrase"]);
+  const explicitEvidenceKinds = new Set(["label_parenthetical", "label_as_phrase", "label_from_phrase", "salt_name"]);
 
   const evaluate = ranked.slice(0, MAX_EVALUATE);
   console.log(`[dsld-scan] deduped=${deduped.length} filtered=${filtered.length} ranked=${ranked.length} eval=${evaluate.length}`);
@@ -374,14 +383,21 @@ async function main() {
 
       if (REQUIRE_EXPLICIT) {
         if (!explicitEvidenceKinds.has(evidenceKind)) continue;
-        const hasStrong = tokensMatched.some((t) => hasExplicitTokenEvidence(chunk, t));
+        // Two-stage evidence parsing:
+        // - label_parenthetical/as/from must contain an explicit token within the evidence phrase
+        // - salt_name accepts the strong "{ingredient} {token}" structure (word-boundary token + allowlist + blacklist already applied)
+        const hasStrong =
+          evidenceKind === "salt_name" ? true : tokensMatched.some((t) => hasExplicitTokenEvidence(chunk, t));
         if (!hasStrong) continue;
       }
 
       for (const t of tokensMatched) tokenMatchCounts[t] += 1;
 
+      // KB runtime expects a stable ingredient string without trailing amounts/units; otherwise
+      // reverse-token parsing can include the dose (e.g. "as calcium ascorbate 125 mg") and miss.
+      const kbLookupName = stripAmountSuffix(chunk);
       const kb = lookupKbFormExplain({
-        ingredientName: chunk,
+        ingredientName: kbLookupName,
         chemicalForm: null,
         chemicalFormConfidence: null,
         chemicalFormSource: "none",
@@ -389,7 +405,7 @@ async function main() {
         ingredientId: null,
       });
 
-      const baseName = stripAmountSuffix(chunk.split("(")[0] ?? chunk);
+      const baseName = kbLookupName;
       const isKbHit = Boolean(kb?.sentenceId && kb?.sentence);
       if (isKbHit) kbSentenceHitNames.push(baseName);
 
@@ -526,4 +542,3 @@ main().catch((err) => {
   console.error(`[dsld-scan] fatal: ${String(err)}`);
   process.exit(1);
 });
-
