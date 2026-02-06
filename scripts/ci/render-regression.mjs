@@ -106,12 +106,19 @@ async function readSseEvents(barcode) {
   const ctrl = new AbortController();
   const timeout = setTimeout(() => ctrl.abort(), SSE_TIMEOUT_MS);
 
-  const res = await fetch(`${BASE_URL}/api/enrich-stream`, {
-    method: "POST",
-    headers: buildHeaders(true),
-    body: JSON.stringify({ barcode }),
-    signal: ctrl.signal,
-  });
+  let res;
+  try {
+    res = await fetch(`${BASE_URL}/api/enrich-stream`, {
+      method: "POST",
+      headers: buildHeaders(true),
+      body: JSON.stringify({ barcode }),
+      signal: ctrl.signal,
+    });
+  } catch (err) {
+    // Treat an SSE timeout/abort as a case-level failure (no events), not a fatal crash.
+    if (err?.name === "AbortError") return [];
+    throw err;
+  }
 
   if (!res.ok) {
     clearTimeout(timeout);
@@ -129,6 +136,9 @@ async function readSseEvents(barcode) {
   let buffer = "";
   let currentEvent = null;
   let currentDataLines = [];
+  let sawSkeleton = false;
+  let sawFast = false;
+  let shouldStopEarly = false;
 
   const flushEvent = () => {
     if (!currentEvent) return;
@@ -147,13 +157,31 @@ async function readSseEvents(barcode) {
     }
 
     events.push({ event: currentEvent, data: parsed, rawData: dataRaw });
+
+    if (currentEvent === "analysis_bundle" && parsed && typeof parsed === "object") {
+      const rev = parsed?.meta?.revision;
+      const phase = parsed?.meta?.phase;
+      if (rev === 0 && phase === "skeleton") sawSkeleton = true;
+      if (rev === 1 && phase === "fast_ai") sawFast = true;
+      // We only need revision 0 + 1 for regression assertions; don't wait for the full stream to finish.
+      if (sawSkeleton && sawFast) shouldStopEarly = true;
+    }
+
     currentEvent = null;
     currentDataLines = [];
   };
 
   try {
-    while (true) {
-      const { value, done } = await reader.read();
+    outer: while (true) {
+      let chunk;
+      try {
+        chunk = await reader.read();
+      } catch (err) {
+        if (err?.name === "AbortError") break;
+        throw err;
+      }
+
+      const { value, done } = chunk;
       if (done) break;
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split(/\r?\n/);
@@ -162,6 +190,7 @@ async function readSseEvents(barcode) {
       for (const line of lines) {
         if (line.length === 0) {
           flushEvent();
+          if (shouldStopEarly) break outer;
           continue;
         }
         if (line.startsWith("event:")) {
@@ -514,12 +543,59 @@ async function runCase(testCase) {
   return result;
 }
 
+async function runCaseSafely(testCase) {
+  try {
+    return await runCase(testCase);
+  } catch (err) {
+    const errors = [`exception: ${String(err?.name === "AbortError" ? "AbortError" : err)}`];
+    const summary = {
+      barcode: testCase.barcode,
+      caseId: testCase.id,
+      expectedSourceType: testCase.expectedSourceType,
+      requiredFormKeyword: testCase.requiredFormKeyword ?? null,
+      targetActiveKeyword: testCase.targetActiveKeyword ?? null,
+      sourceType: null,
+      promptVersion: null,
+      serverCommitSha: null,
+      bundleId: null,
+      revision: null,
+      phase: null,
+      factsDigestHash: null,
+      factsSourceVersion: null,
+      dataStatus: null,
+      fallbackUsed: null,
+      fallbackReason: null,
+      jobStatus: null,
+      attempts: null,
+      timingMs: null,
+      detailCursorUsed: null,
+      formResolveSourcesNonNoneCount: null,
+      formResolveSourcesNonNone: null,
+      formSentenceIdHitsCount: null,
+      formSentenceIdHits: null,
+      errors,
+      pass: false,
+    };
+
+    const result = {
+      case: testCase,
+      events: [],
+      fastBundle: null,
+      detailResponse: { status: 0, payload: null, response: null },
+      errors,
+      summary,
+    };
+    await writeCaseArtifacts(result);
+    return result;
+  }
+}
+
 async function runCaseWithFallback(testCase) {
   const [primaryBarcode, fallbackBarcode] = testCase.barcodes;
   if (!primaryBarcode) {
     throw new Error(`case ${testCase.id} missing barcode`);
   }
-  const primary = await runCase({ ...testCase, barcode: primaryBarcode });
+  const primary = await runCaseSafely({ ...testCase, barcode: primaryBarcode });
   primary.summary.usedBarcode = primaryBarcode;
 
   if (!fallbackBarcode || primary.summary.pass) {
@@ -529,7 +605,7 @@ async function runCaseWithFallback(testCase) {
   }
 
   const primaryFailedReason = primary.errors.join("; ");
-  const fallback = await runCase({ ...testCase, barcode: fallbackBarcode });
+  const fallback = await runCaseSafely({ ...testCase, barcode: fallbackBarcode });
   fallback.summary.usedBarcode = fallbackBarcode;
   fallback.summary.primaryBarcode = primaryBarcode;
   fallback.summary.primaryFailedReason = primaryFailedReason || "primary_failed";
