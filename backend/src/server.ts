@@ -5564,6 +5564,42 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       ? (cachedDetail.payload as { items: unknown[] }).items.length
       : 0;
     const cachedFallback = resolveFallbackUsed(cachedDetail.error_code ?? null);
+    const isDsldDetail = digest.sourceType === "dsld";
+    let debug: Record<string, unknown> | undefined;
+    if (isDsldDetail) {
+      // Cached DSLD detail should still expose form resolution metadata for QA/CI.
+      // We compute it from the digest slice but only attribute KB sentence IDs when the cached
+      // chemicalFormExplain actually matches a KB sentence (basisTags include ingredient_inference).
+      const sliceStart = Math.min(cursor, totalActives);
+      const sliceEnd = Math.min(sliceStart + requestedLimit, totalActives);
+      const detailDigest: FactsDigest = { ...digest, actives: digest.actives.slice(sliceStart, sliceEnd) };
+      const dsldBase = buildDsldKbFallbackDetail(detailDigest);
+      const payload = cachedDetail.payload as IngredientsDetail;
+      const byName = new Map<string, IngredientsDetail["items"][number]>();
+      if (Array.isArray(payload.items)) {
+        for (const item of payload.items) {
+          byName.set(normalizeIngredientName(item.name), item);
+        }
+      }
+      const sentenceIds: Record<string, string | null> = {};
+      const excerptIds: Record<string, string | null> = {};
+      const referenceIds: Record<string, string | null> = {};
+      for (const [name, sentenceId] of Object.entries(dsldBase.formSentenceIds)) {
+        const cachedItem = byName.get(normalizeIngredientName(name));
+        const tags = cachedItem?.chemicalFormExplain?.basisTags;
+        const isKbSentence = Array.isArray(tags) && tags.includes("ingredient_inference");
+        sentenceIds[name] = isKbSentence ? sentenceId ?? null : null;
+        excerptIds[name] = isKbSentence ? dsldBase.formExcerptIds[name] ?? null : null;
+        referenceIds[name] = isKbSentence ? dsldBase.formReferenceIds[name] ?? null : null;
+      }
+      debug = {
+        formResolveSources: dsldBase.formResolveSources,
+        formEvidenceTexts: dsldBase.formEvidenceTexts,
+        formSentenceIds: sentenceIds,
+        formExcerptIds: excerptIds,
+        formReferenceIds: referenceIds,
+      };
+    }
     res.json({
       section: "ingredients",
       detail: cachedDetail.payload,
@@ -5577,6 +5613,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
         fallbackReason: cachedFallback ? cachedDetail.last_error ?? cachedDetail.error_code ?? null : undefined,
       },
       timingMs: 0,
+      debug,
     });
     return;
   }
