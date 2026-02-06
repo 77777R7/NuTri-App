@@ -110,7 +110,7 @@ jobs:
           echo "Resolved deploy_mode=$DEPLOY_MODE"
 
       - name: Trigger Render Deploy Hook
-        if: steps.target.outputs.deploy_hook_url != '' && (github.event_name != 'workflow_dispatch' || github.event.inputs.skip_deploy_hook != 'true')
+        if: steps.target.outputs.deploy_hook_url != '' && (github.event_name != 'workflow_dispatch' || github.event.inputs.skip_deploy_hook != 'true') && (github.event_name != 'pull_request' || steps.target.outputs.deploy_mode == 'preview')
         env:
           RENDER_DEPLOY_HOOK_URL: ${{ steps.target.outputs.deploy_hook_url }}
         run: |
@@ -118,6 +118,7 @@ jobs:
           echo "Triggered Render deploy hook"
 
       - name: Wait for Render Deploy Commit
+        if: github.event_name != 'pull_request' || steps.target.outputs.deploy_mode == 'preview'
         env:
           RENDER_BASE_URL: ${{ steps.target.outputs.base_url }}
           EXPECTED_COMMIT_SHA: ${{ steps.target.outputs.expected_sha }}
@@ -146,7 +147,10 @@ jobs:
           RENDER_LNHPD_BARCODE: "00029537001069"
           RENDER_DSLD_BARCODE: "026664275110"
           RENDER_DSLD_NOFORM_BARCODE: "026664275110"
-          RENDER_DSLD_FORM_BARCODE: "00690290532093"
+          # Keep multiple zinc-citrate samples; catalog mappings can drift.
+          RENDER_DSLD_FORM_BARCODE: "05060208412307"
+          RENDER_DSLD_FORM_BARCODE2: "05060370562466"
+          RENDER_DSLD_FORM_BARCODE3: "00690290532093"
           # Prefer a stable picolinate sample for case dsld_with_form_2.
           RENDER_DSLD_FORM2_BARCODE: "00854936003044"
           RENDER_DSLD_FORM2_BARCODE2: "09315771009765"
