@@ -1,0 +1,38 @@
+name: Backend Unit Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: backend-tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Backend Dependencies
+        run: npm --prefix backend ci
+
+      - name: Build Backend
+        run: npm --prefix backend run build
+
+      - name: Run Backend Tests
+        run: npm --prefix backend test
+

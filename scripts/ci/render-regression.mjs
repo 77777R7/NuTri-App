@@ -6,11 +6,13 @@ import path from "node:path";
 const dsldNoFormBarcode =
   process.env.RENDER_DSLD_NOFORM_BARCODE || process.env.RENDER_DSLD_BARCODE || "026664275110";
 const dsldWithFormBarcode = process.env.RENDER_DSLD_FORM_BARCODE || "00690290532093";
+const dsldWithFormBarcode2 = process.env.RENDER_DSLD_FORM2_BARCODE || "00678226014301";
 
 const DEFAULT_CASES = [
   { id: "lnhpd", barcode: process.env.RENDER_LNHPD_BARCODE || "00029537001069", expectedSourceType: "lnhpd" },
   { id: "dsld_no_form", barcode: dsldNoFormBarcode, expectedSourceType: "dsld" },
   { id: "dsld_with_form", barcode: dsldWithFormBarcode, expectedSourceType: "dsld" },
+  { id: "dsld_with_form_2", barcode: dsldWithFormBarcode2, expectedSourceType: "dsld" },
   { id: "web", barcode: process.env.RENDER_WEB_BARCODE || "000000000000", expectedSourceType: "web" },
 ];
 
@@ -230,14 +232,14 @@ function assertDetailContract(detailResponse) {
   return errors;
 }
 
-function assertDsldWithFormKbHit(detailResponse) {
+function assertDsldWithFormKbHit(detailResponse, caseId) {
   const errors = [];
   if (detailResponse.status !== 200) return errors;
   const body = detailResponse.response;
 
   const items = body?.detail?.items;
   if (!Array.isArray(items)) {
-    errors.push("dsld_with_form: analysis-section missing detail.items");
+    errors.push(`${caseId}: analysis-section missing detail.items`);
     return errors;
   }
 
@@ -247,17 +249,27 @@ function assertDsldWithFormKbHit(detailResponse) {
     return Array.isArray(tags) && tags.includes("ingredient_inference");
   });
   if (!hasKbSentence) {
-    errors.push("dsld_with_form: expected at least one chemicalFormExplain tagged ingredient_inference (KB sentence)");
+    errors.push(`${caseId}: expected at least one chemicalFormExplain tagged ingredient_inference (KB sentence)`);
+  }
+
+  // P0-2 (stronger): confirm sentenceId/excerptId is present (true KB hit, not rule text).
+  const sentenceIds = body?.debug?.formSentenceIds;
+  const hasSentenceId =
+    sentenceIds && typeof sentenceIds === "object"
+      ? Object.values(sentenceIds).some((value) => typeof value === "string" && value.startsWith("s_"))
+      : false;
+  if (!hasSentenceId) {
+    errors.push(`${caseId}: expected at least one debug.formSentenceIds entry (true KB hit)`);
   }
 
   const sources = body?.debug?.formResolveSources;
   if (!sources || typeof sources !== "object") {
-    errors.push("dsld_with_form: missing debug.formResolveSources");
+    errors.push(`${caseId}: missing debug.formResolveSources`);
     return errors;
   }
   const hasNonNone = Object.values(sources).some((value) => typeof value === "string" && value !== "none");
   if (!hasNonNone) {
-    errors.push("dsld_with_form: expected at least one formResolveSource != none");
+    errors.push(`${caseId}: expected at least one formResolveSource != none`);
   }
 
   return errors;
@@ -308,7 +320,9 @@ async function runCase(testCase) {
   const detailErrors = bundleCheck.fastBundle ? assertDetailContract(detailResponse) : [];
 
   const dsldKbErrors =
-    bundleCheck.fastBundle && testCase.id === "dsld_with_form" ? assertDsldWithFormKbHit(detailResponse) : [];
+    bundleCheck.fastBundle && testCase.id.startsWith("dsld_with_form")
+      ? assertDsldWithFormKbHit(detailResponse, testCase.id)
+      : [];
 
   const errors = [...bundleCheck.errors, ...detailErrors, ...dsldKbErrors];
   const summary = {

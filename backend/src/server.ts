@@ -837,10 +837,20 @@ const buildDetailSkeleton = (digest: FactsDigest, labelDosingText: string | null
 
 const buildDsldKbFallbackDetail = (
   digest: FactsDigest,
-): { detail: IngredientsDetail; formResolveSources: Record<string, string>; formEvidenceTexts: Record<string, string | null> } => {
+): {
+  detail: IngredientsDetail;
+  formResolveSources: Record<string, string>;
+  formEvidenceTexts: Record<string, string | null>;
+  formSentenceIds: Record<string, string | null>;
+  formExcerptIds: Record<string, string | null>;
+  formReferenceIds: Record<string, string | null>;
+} => {
   const kb = getKbRuntime();
   const formResolveSources: Record<string, string> = {};
   const formEvidenceTexts: Record<string, string | null> = {};
+  const formSentenceIds: Record<string, string | null> = {};
+  const formExcerptIds: Record<string, string | null> = {};
+  const formReferenceIds: Record<string, string | null> = {};
   return {
     detail: {
       items: digest.actives.map((active) => {
@@ -852,9 +862,19 @@ const buildDsldKbFallbackDetail = (
               chemicalFormSource: active.chemicalFormSource ?? "none",
               chemicalFormEvidence: active.chemicalFormEvidence ?? null,
             })
-          : { sentence: null, resolveSource: "none" as const, evidenceText: null };
+          : {
+              sentence: null,
+              sentenceId: null,
+              excerptId: null,
+              referenceId: null,
+              resolveSource: "none" as const,
+              evidenceText: null,
+            };
         formResolveSources[active.name] = kbResult.resolveSource;
         formEvidenceTexts[active.name] = kbResult.evidenceText;
+        formSentenceIds[active.name] = kbResult.sentenceId ?? null;
+        formExcerptIds[active.name] = kbResult.excerptId ?? null;
+        formReferenceIds[active.name] = kbResult.referenceId ?? null;
         return {
           name: active.name,
           whatItDoes: buildNotProvidedField(),
@@ -868,6 +888,9 @@ const buildDsldKbFallbackDetail = (
     },
     formResolveSources,
     formEvidenceTexts,
+    formSentenceIds,
+    formExcerptIds,
+    formReferenceIds,
   };
 };
 
@@ -5685,6 +5708,9 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   let dsldMinimal: DsldDetailMinimal | null = null;
   let formResolveSources: Record<string, string> | null = null;
   let formEvidenceTexts: Record<string, string | null> | null = null;
+  let formSentenceIds: Record<string, string | null> | null = null;
+  let formExcerptIds: Record<string, string | null> | null = null;
+  let formReferenceIds: Record<string, string | null> | null = null;
   let errorCode: string | null = null;
   let rescueAttempted = false;
   const getDebugErrorCode = (raw: Record<string, unknown> | null): string | null => {
@@ -5799,6 +5825,9 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     const dsldBase = buildDsldKbFallbackDetail(detailDigest);
     formResolveSources = dsldBase.formResolveSources;
     formEvidenceTexts = dsldBase.formEvidenceTexts;
+    formSentenceIds = dsldBase.formSentenceIds;
+    formExcerptIds = dsldBase.formExcerptIds;
+    formReferenceIds = dsldBase.formReferenceIds;
     detailPayload = mergeDsldWhatItDoes(dsldBase.detail, dsldMinimal);
   } else {
     if (detailPayload && labelDosingText) {
@@ -5837,6 +5866,9 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       detailPayload = dsldBase.detail;
       formResolveSources = dsldBase.formResolveSources;
       formEvidenceTexts = dsldBase.formEvidenceTexts;
+      formSentenceIds = dsldBase.formSentenceIds;
+      formExcerptIds = dsldBase.formExcerptIds;
+      formReferenceIds = dsldBase.formReferenceIds;
       fallbackUsed = "kb_dsld";
     } else {
       detailPayload = buildDetailSkeleton(detailDigest, labelDosingText);
@@ -5881,9 +5913,17 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   const debugEnabled = process.env.DEEPSEEK_DEBUG === "1" || process.env.DEEPSEEK_DEBUG === "true";
   const includeFormResolve = isDsldDetail && formResolveSources;
   const includeFormEvidence = isDsldDetail && formEvidenceTexts;
+  const includeFormSentenceIds = isDsldDetail && formSentenceIds;
+  const includeFormExcerptIds = isDsldDetail && formExcerptIds;
+  const includeFormReferenceIds = isDsldDetail && formReferenceIds;
   const includeDebug = debugEnabled && detailDataStatus !== "complete";
   const debugPayload =
-    includeDebug || includeFormResolve || includeFormEvidence
+    includeDebug ||
+    includeFormResolve ||
+    includeFormEvidence ||
+    includeFormSentenceIds ||
+    includeFormExcerptIds ||
+    includeFormReferenceIds
       ? {
           deepseekError: includeDebug ? (detailDebug?.__deepseek_error ?? null) : undefined,
           snippet: includeDebug ? (detailDebug?.__deepseek_snippet ?? null) : undefined,
@@ -5900,6 +5940,9 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
           rescueAttempted: includeDebug ? rescueAttempted : undefined,
           formResolveSources: includeFormResolve ? formResolveSources : undefined,
           formEvidenceTexts: includeFormEvidence ? formEvidenceTexts : undefined,
+          formSentenceIds: includeFormSentenceIds ? formSentenceIds : undefined,
+          formExcerptIds: includeFormExcerptIds ? formExcerptIds : undefined,
+          formReferenceIds: includeFormReferenceIds ? formReferenceIds : undefined,
         }
       : undefined;
 

@@ -2,7 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 
 type AliasEntry = {
-  form_key: string;
+  // Some generated KB alias entries use null and rely on derived keys (token or ingredientId_token).
+  form_key: string | null;
   alias_confidence?: number | null;
   notes?: string | null;
 };
@@ -19,11 +20,18 @@ type KbEntry = {
   form_key?: string | null;
   form_display?: string | null;
   segments?: {
-    absorption?: { en?: Array<{ text?: string | null }> };
-    solubility?: { en?: Array<{ text?: string | null }> };
-    tolerability?: { en?: Array<{ text?: string | null }> };
-    caveats?: { en?: Array<{ text?: string | null }> };
+    absorption?: { en?: Array<KbSentence> };
+    solubility?: { en?: Array<KbSentence> };
+    tolerability?: { en?: Array<KbSentence> };
+    caveats?: { en?: Array<KbSentence> };
   };
+};
+
+type KbSentence = {
+  text?: string | null;
+  sentence_id?: string | null;
+  evidence_snippet_id?: string | null;
+  evidence_reference_id?: string | null;
 };
 
 type KbRuntimeIndex = {
@@ -125,12 +133,26 @@ const pickBestAliasEntry = (entries: AliasEntry[] | undefined): AliasEntry | nul
 };
 
 const extractSegmentText = (entry: KbEntry | undefined): string | null => {
+  return extractBestSegment(entry)?.text ?? null;
+};
+
+const extractBestSegment = (
+  entry: KbEntry | undefined,
+): { text: string; sentenceId: string | null; excerptId: string | null; referenceId: string | null } | null => {
   if (!entry?.segments) return null;
   const seg = entry.segments;
   const order = [seg.absorption, seg.solubility, seg.tolerability, seg.caveats];
   for (const bucket of order) {
-    const text = bucket?.en?.[0]?.text;
-    if (text) return text;
+    const sentence = bucket?.en?.[0];
+    const text = sentence?.text;
+    if (text) {
+      return {
+        text,
+        sentenceId: sentence?.sentence_id ?? null,
+        excerptId: sentence?.evidence_snippet_id ?? null,
+        referenceId: sentence?.evidence_reference_id ?? null,
+      };
+    }
   }
   return null;
 };
@@ -206,7 +228,7 @@ const isAllowedIngredient = (ingredientId: string | null | undefined): boolean =
 const extractReverseTokenFromName = (
   name: string,
   ingredientId: string | null,
-): { token: string; evidenceText: string } | null => {
+): { token: string; evidenceText: string; resolveSource: FormResolveSource } | null => {
   if (!ingredientId || !isAllowedIngredient(ingredientId)) return null;
   const normalizedName = normalizeFreeText(name);
   if (!normalizedName) return null;
@@ -215,21 +237,21 @@ const extractReverseTokenFromName = (
   if (parenthetical?.[1]) {
     const extracted = normalizeFreeText(parenthetical[1]);
     if (hasBlacklistToken(extracted)) return null;
-    return { token: normalizeToken(extracted), evidenceText: parenthetical[0] };
+    return { token: normalizeToken(extracted), evidenceText: parenthetical[0], resolveSource: "label_parenthetical" };
   }
 
   const asMatch = normalizedName.match(/\bas ([^,]+?)(?:,|$)/i);
   if (asMatch?.[1]) {
     const extracted = normalizeFreeText(asMatch[1]);
     if (hasBlacklistToken(extracted)) return null;
-    return { token: normalizeToken(extracted), evidenceText: asMatch[0] };
+    return { token: normalizeToken(extracted), evidenceText: asMatch[0], resolveSource: "label_as_phrase" };
   }
 
   const fromMatch = normalizedName.match(/\bfrom ([^,]+?)(?:,|$)/i);
   if (fromMatch?.[1]) {
     const extracted = normalizeFreeText(fromMatch[1]);
     if (hasBlacklistToken(extracted)) return null;
-    return { token: normalizeToken(extracted), evidenceText: fromMatch[0] };
+    return { token: normalizeToken(extracted), evidenceText: fromMatch[0], resolveSource: "label_from_phrase" };
   }
 
   const keywordMatch = REVERSE_FORM_KEYWORDS.find((keyword) => {
@@ -243,7 +265,7 @@ const extractReverseTokenFromName = (
     const normalizedToken = normalizeToken(name);
     const ingredientToken = normalizeToken(ingredientId);
     if (normalizedToken.startsWith(`${ingredientToken}_`) || normalizedToken.endsWith(`_${keywordMatch}`)) {
-      return { token: normalizedToken, evidenceText: name };
+      return { token: normalizedToken, evidenceText: name, resolveSource: "reverse_name_parse" };
     }
   }
 
@@ -256,6 +278,11 @@ const resolveFormKeyFromToken = (kb: KbRuntime, ingredientId: string, token: str
     Boolean(formKey && runtimeIndex[`${ingredientId}|${formKey}`]);
   const preferRuntimeKey = (candidates: Array<string | null>): string | null =>
     candidates.find((candidate) => hasRuntimeEntry(candidate)) ?? candidates.find(Boolean) ?? null;
+
+  // If the incoming token is already a canonical KB form_key, use it directly.
+  if (hasRuntimeEntry(token)) {
+    return { formKey: token, resolveSource: "digest_chemical_form" as FormResolveSource };
+  }
 
   const byIngredient = kb.alias.byIngredient?.[ingredientId];
   const byIngredientEntry = pickBestAliasEntry(byIngredient?.[token]);
@@ -309,6 +336,11 @@ const normalizeVitaminIngredientToken = (value: string): string | null => {
   return `vitamin_${letter}${num}`;
 };
 
+const isVitaminCChemicalFormName = (value: string): boolean => {
+  const cleaned = value.toLowerCase();
+  return /\bascorbic\b/.test(cleaned) || /\bascorbate\b/.test(cleaned) || /\bester[-_ ]?c\b/.test(cleaned);
+};
+
 const FIRST_WORD_ALLOWLIST = new Set([
   "calcium",
   "magnesium",
@@ -342,6 +374,13 @@ const resolveIngredientId = (
   const asToken = kb.ingredientNameIndex[normalizeToken(beforeAs)];
   if (asToken) return asToken;
 
+  // P0: Vitamin C forms are commonly listed as salts (e.g. calcium/sodium ascorbate).
+  // Prefer vitamin_c scope over mineral scope when the ingredient name explicitly indicates vitamin C.
+  if (isVitaminCChemicalFormName(beforeAs)) {
+    const vitaminC = kb.ingredientNameIndex["vitamin_c"];
+    if (vitaminC) return vitaminC;
+  }
+
   const vitaminToken = normalizeVitaminIngredientToken(beforeAs);
   if (vitaminToken) {
     const vitaminId = kb.ingredientNameIndex[vitaminToken];
@@ -370,20 +409,31 @@ export const lookupKbFormExplain = (params: {
     | null;
   chemicalFormEvidence?: string | null;
   ingredientId?: string | null;
-}): { sentence: string | null; resolveSource: FormResolveSource; evidenceText: string | null } => {
+}): {
+  sentence: string | null;
+  sentenceId: string | null;
+  excerptId: string | null;
+  referenceId: string | null;
+  resolveSource: FormResolveSource;
+  evidenceText: string | null;
+} => {
   const kb = getKbRuntime();
-  if (!kb) return { sentence: null, resolveSource: "none", evidenceText: null };
+  if (!kb) {
+    return { sentence: null, sentenceId: null, excerptId: null, referenceId: null, resolveSource: "none", evidenceText: null };
+  }
 
   const ingredientId = resolveIngredientId(kb, params.ingredientName, params.ingredientId);
-  if (!ingredientId) return { sentence: null, resolveSource: "none", evidenceText: null };
+  if (!ingredientId) {
+    return { sentence: null, sentenceId: null, excerptId: null, referenceId: null, resolveSource: "none", evidenceText: null };
+  }
 
   if (params.chemicalForm && params.chemicalFormConfidence !== null && params.chemicalFormConfidence >= 0.6) {
     const token = normalizeToken(params.chemicalForm);
     const resolved = resolveFormKeyFromToken(kb, ingredientId, token);
     if (resolved.formKey) {
       const entry = kb.runtime.ingredient_form_index?.[`${ingredientId}|${resolved.formKey}`];
-      const sentence = extractSegmentText(entry);
-      if (sentence) {
+      const seg = extractBestSegment(entry);
+      if (seg) {
         const explicitSource =
           params.chemicalFormSource === "label_parenthetical" ||
           params.chemicalFormSource === "label_as_phrase" ||
@@ -391,7 +441,10 @@ export const lookupKbFormExplain = (params: {
             ? params.chemicalFormSource
             : null;
         return {
-          sentence,
+          sentence: seg.text,
+          sentenceId: seg.sentenceId,
+          excerptId: seg.excerptId,
+          referenceId: seg.referenceId,
           resolveSource: explicitSource ?? resolved.resolveSource ?? "digest_chemical_form",
           evidenceText: params.chemicalFormEvidence ?? params.chemicalForm,
         };
@@ -404,12 +457,19 @@ export const lookupKbFormExplain = (params: {
     const resolved = resolveFormKeyFromToken(kb, ingredientId, reverseToken.token);
     if (resolved.formKey) {
       const entry = kb.runtime.ingredient_form_index?.[`${ingredientId}|${resolved.formKey}`];
-      const sentence = extractSegmentText(entry);
-      if (sentence) {
-        return { sentence, resolveSource: "reverse_name_parse", evidenceText: reverseToken.evidenceText };
+      const seg = extractBestSegment(entry);
+      if (seg) {
+        return {
+          sentence: seg.text,
+          sentenceId: seg.sentenceId,
+          excerptId: seg.excerptId,
+          referenceId: seg.referenceId,
+          resolveSource: reverseToken.resolveSource,
+          evidenceText: reverseToken.evidenceText,
+        };
       }
     }
   }
 
-  return { sentence: null, resolveSource: "none", evidenceText: null };
+  return { sentence: null, sentenceId: null, excerptId: null, referenceId: null, resolveSource: "none", evidenceText: null };
 };
