@@ -5571,6 +5571,9 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       : 0;
     const cachedFallback = resolveFallbackUsed(cachedDetail.error_code ?? null);
     const isDsldDetail = digest.sourceType === "dsld";
+    // DSLD detail is KB-first; older cache rows may still carry the legacy FALLBACK_KB_DSLD marker.
+    // Treat those as complete to avoid permanently "locking in" a limited UI state.
+    const hideDsldFallbackMarker = isDsldDetail && cachedFallback === "kb_dsld";
     let debug: Record<string, unknown> | undefined;
     if (isDsldDetail) {
       // Cached DSLD detail should still expose form resolution metadata for QA/CI.
@@ -5609,14 +5612,18 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     res.json({
       section: "ingredients",
       detail: cachedDetail.payload,
-      dataStatus: cachedFallback ? "limited" : "complete",
+      dataStatus: hideDsldFallbackMarker ? "complete" : cachedFallback ? "limited" : "complete",
       page: buildDetailPage(cachedItemsCount),
       meta: {
         bundleId: randomUUID(),
         revision: 2,
         factsDigestHash,
-        fallbackUsed: cachedFallback ?? undefined,
-        fallbackReason: cachedFallback ? cachedDetail.last_error ?? cachedDetail.error_code ?? null : undefined,
+        fallbackUsed: hideDsldFallbackMarker ? undefined : cachedFallback ?? undefined,
+        fallbackReason: hideDsldFallbackMarker
+          ? undefined
+          : cachedFallback
+            ? cachedDetail.last_error ?? cachedDetail.error_code ?? null
+            : undefined,
       },
       timingMs: 0,
       debug,
