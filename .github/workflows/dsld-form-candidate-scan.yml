@@ -6,10 +6,28 @@ on:
       tokens:
         description: "Comma-separated form tokens to search (e.g. citrate,glycinate,ascorbate)"
         required: false
-        default: "oxide,citrate,glycinate,bisglycinate,sulfate,chloride,ascorbate,picolinate"
+        # Extended list (P1): keep core tokens, plus additional salts/forms that commonly appear
+        # in DSLD labels but are not yet guaranteed to have KB coverage. This is meant to surface
+        # actionable kb_sentence_missing / kb_excerpt_missing rows for operational iteration.
+        default: "oxide,citrate,glycinate,bisglycinate,ascorbate,picolinate,sulfate,chloride,gluconate,carbonate,malate,tartrate,succinate,fumarate,lactate,acetate,phosphate,orotate,bicarbonate,hydrochloride,hcl,monohydrate"
         type: string
       max_enrich:
         description: "Max label_ids to evaluate (readonly view + local KB matching)"
+        required: false
+        default: "600"
+        type: string
+      labels_per_token:
+        description: "Max meta rows to pull per token (from readonly view)"
+        required: false
+        default: "800"
+        type: string
+      max_actives:
+        description: "Max actives (approx) per label to include"
+        required: false
+        default: "30"
+        type: string
+      output_limit:
+        description: "Max output rows per CSV (hits/gaps)"
         required: false
         default: "120"
         type: string
@@ -63,9 +81,14 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_READONLY_KEY: ${{ secrets.SUPABASE_READONLY_KEY }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-          DSLD_FORM_TOKENS: ${{ github.event.inputs.tokens }}
-          DSLD_SCAN_MAX_EVALUATE: ${{ github.event.inputs.max_enrich }}
-          DSLD_SCAN_REQUIRE_EXPLICIT: ${{ github.event.inputs.require_explicit }}
+          # For scheduled runs, github.event.inputs.* are empty; provide stable defaults so nightly
+          # behaves the same as a workflow_dispatch with default inputs.
+          DSLD_FORM_TOKENS: ${{ github.event.inputs.tokens != '' && github.event.inputs.tokens || 'oxide,citrate,glycinate,bisglycinate,ascorbate,picolinate,sulfate,chloride,gluconate,carbonate,malate,tartrate,succinate,fumarate,lactate,acetate,phosphate,orotate,bicarbonate,hydrochloride,hcl,monohydrate' }}
+          DSLD_SCAN_MAX_EVALUATE: ${{ github.event.inputs.max_enrich != '' && github.event.inputs.max_enrich || '600' }}
+          DSLD_SCAN_MAX_LABELS_PER_TOKEN: ${{ github.event.inputs.labels_per_token != '' && github.event.inputs.labels_per_token || '800' }}
+          DSLD_SCAN_MAX_ACTIVES: ${{ github.event.inputs.max_actives != '' && github.event.inputs.max_actives || '30' }}
+          DSLD_SCAN_OUTPUT_LIMIT: ${{ github.event.inputs.output_limit != '' && github.event.inputs.output_limit || '120' }}
+          DSLD_SCAN_REQUIRE_EXPLICIT: ${{ github.event.inputs.require_explicit != '' && github.event.inputs.require_explicit || '1' }}
         run: node scripts/ci/dsld-form-candidate-scan.mjs
 
       - name: Build KB Provenance Index (Artifact)

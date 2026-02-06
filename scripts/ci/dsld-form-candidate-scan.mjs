@@ -39,10 +39,26 @@ const DEFAULT_TOKENS = [
   "citrate",
   "glycinate",
   "bisglycinate",
-  "sulfate",
-  "chloride",
   "ascorbate",
   "picolinate",
+  "sulfate",
+  "chloride",
+  // P1 operational scan: expand beyond the core salt forms so kb_sentence_missing/kb_excerpt_missing
+  // surface in the action list and can drive a reviewable KB iteration loop.
+  "gluconate",
+  "carbonate",
+  "malate",
+  "tartrate",
+  "succinate",
+  "fumarate",
+  "lactate",
+  "acetate",
+  "phosphate",
+  "orotate",
+  "bicarbonate",
+  "hydrochloride",
+  "hcl",
+  "monohydrate",
 ];
 
 const TOKENS = FORM_TOKENS.length ? FORM_TOKENS : DEFAULT_TOKENS;
@@ -50,7 +66,8 @@ const MAX_LABELS_PER_TOKEN = Number(process.env.DSLD_SCAN_MAX_LABELS_PER_TOKEN |
 const MAX_EVALUATE = Number(process.env.DSLD_SCAN_MAX_EVALUATE || 250);
 const MAX_ACTIVES = Number(process.env.DSLD_SCAN_MAX_ACTIVES || 15);
 const REQUIRE_EXPLICIT = (process.env.DSLD_SCAN_REQUIRE_EXPLICIT || "1") !== "0";
-const MIN_PER_TOKEN = Number(process.env.DSLD_SCAN_MIN_PER_TOKEN || 10);
+// Keep the per-token sample target feasible when TOKENS expands; prefer coverage over depth.
+const MIN_PER_TOKEN = Number(process.env.DSLD_SCAN_MIN_PER_TOKEN || 5);
 const OUTPUT_LIMIT = Number(process.env.DSLD_SCAN_OUTPUT_LIMIT || 80);
 
 const INGREDIENT_ALLOWLIST = [
