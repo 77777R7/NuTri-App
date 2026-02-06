@@ -27,7 +27,11 @@ const buildLexTokens = (value) =>
 
 const dsldNoFormBarcode =
   process.env.RENDER_DSLD_NOFORM_BARCODE || process.env.RENDER_DSLD_BARCODE || "026664275110";
-const dsldWithFormBarcode = process.env.RENDER_DSLD_FORM_BARCODE || "00690290532093";
+// Keep multiple zinc-citrate samples: catalog/DSLD mappings can drift, and some barcodes may fall back to "not found"
+// depending on upstream catalog coverage.
+const dsldWithFormBarcode = process.env.RENDER_DSLD_FORM_BARCODE || "05060208412307";
+const dsldWithFormBarcodeB = process.env.RENDER_DSLD_FORM_BARCODE2 || "05060370562466";
+const dsldWithFormBarcodeC = process.env.RENDER_DSLD_FORM_BARCODE3 || "00690290532093";
 // Prefer a picolinate sample where DSLD facts include explicit actives (avoid proprietary-blend-only rows).
 const dsldWithFormBarcode2 = process.env.RENDER_DSLD_FORM2_BARCODE || "00854936003044";
 const dsldWithFormBarcode2b = process.env.RENDER_DSLD_FORM2_BARCODE2 || "09315771009765";
@@ -46,7 +50,7 @@ const DEFAULT_CASES = [
   { id: "dsld_no_form", barcodes: [dsldNoFormBarcode], expectedSourceType: "dsld" },
   {
     id: "dsld_with_form",
-    barcodes: [dsldWithFormBarcode],
+    barcodes: [dsldWithFormBarcode, dsldWithFormBarcodeB, dsldWithFormBarcodeC],
     expectedSourceType: "dsld",
     requiredFormKeyword: "citrate",
     // Bind assertions to the intended active (avoid passing due to a different citrate ingredient).
