@@ -828,6 +828,8 @@ async function main() {
         token,
         ingredient,
         gapType,
+        triage: "",
+        canonical_form_token: "",
         gap_detail: gapDetail ?? "",
         count: 0,
         example_actives_excerpt: example,
@@ -840,24 +842,105 @@ async function main() {
     if (!cur.gap_detail && gapDetail) cur.gap_detail = gapDetail;
   };
 
+  // kb_sentence_missing triage: classify into 3 buckets so we don't blindly "add KB" when it is
+  // actually a parser normalization issue or scan noise.
+  const classifySentenceMissing = ({ token, ingredientKey, example }) => {
+    const t = String(token || "").toLowerCase();
+    const ig = String(ingredientKey || "").toLowerCase();
+    const ex = String(example || "").toLowerCase();
+
+    // Noise: "monohydrate" is almost always meaningful for creatine; non-creatine monohydrate
+    // hits are frequently ingredients like calcium HMB monohydrate.
+    if (t === "monohydrate" && ig && ig !== "creatine") {
+      return {
+        triage: "noise",
+        canonicalFormToken: "",
+        action: "Noise: exclude non-creatine monohydrate (often part of an ingredient name, e.g. HMB monohydrate).",
+      };
+    }
+
+    // Normalization: hydrochloride is commonly abbreviated as HCl in the KB.
+    if (t === "hydrochloride" && ig) {
+      const { entry } = resolveRuntimeEntry({ ingredientKey: ig, token: "hcl" });
+      if (entry) {
+        return {
+          triage: "parser_normalization",
+          canonicalFormToken: "hcl",
+          action: `Parser/alias: normalize hydrochloride -> hcl for ${ig} (runtime entry exists).`,
+        };
+      }
+    }
+
+    // Normalization: iron fumarate is usually keyed as ferrous_fumarate in the KB.
+    if (ig === "iron" && t === "fumarate") {
+      const { entry } = resolveRuntimeEntry({ ingredientKey: ig, token: "ferrous_fumarate" });
+      if (entry) {
+        return {
+          triage: "parser_normalization",
+          canonicalFormToken: "ferrous_fumarate",
+          action: "Parser/alias: normalize fumarate -> ferrous_fumarate for iron (runtime entry exists).",
+        };
+      }
+    }
+
+    // Noise-ish: calcium monohydrate is often calcium HMB monohydrate rather than a mineral salt form.
+    if (ig === "calcium" && t === "monohydrate" && (ex.includes("hydroxymethylbutyrate") || ex.includes("hmb"))) {
+      return {
+        triage: "noise",
+        canonicalFormToken: "",
+        action: "Noise: treat calcium HMB monohydrate as an ingredient (not a calcium salt form) and exclude from scan stats.",
+      };
+    }
+
+    return {
+      triage: "kb_missing",
+      canonicalFormToken: "",
+      action: `Add KB sentence+excerpt for ${ig || "unknown"}+${t}.`,
+    };
+  };
+
   for (const row of enriched) {
     for (const m of row.matchedActives || []) {
       if (!m.gapType) continue;
       const token = String(m.primaryToken || (m.tokens || [])[0] || "");
       if (!token) continue;
+      const ingredientKey = String(m.ingredientKey || "unknown");
+      const gapType = String(m.gapType || "unknown");
+      const example = String(m.raw || m.name || "");
       bumpGlobalAction({
         token,
-        ingredient: String(m.ingredientKey || "unknown"),
-        gapType: String(m.gapType || "unknown"),
+        ingredient: ingredientKey,
+        gapType,
         gapDetail: m.gapDetail ? String(m.gapDetail) : "",
-        example: String(m.raw || m.name || ""),
+        example,
       });
+
+      if (gapType === "kb_sentence_missing") {
+        const triage = classifySentenceMissing({ token, ingredientKey, example });
+        const actionKeyStr = actionKey(token, ingredientKey, gapType);
+        const cur = globalActionMap.get(actionKeyStr);
+        if (cur) {
+          cur.triage = triage.triage;
+          cur.canonical_form_token = triage.canonicalFormToken;
+          cur.action = triage.action;
+        }
+      }
     }
   }
 
   const globalRows = [...globalActionMap.values()].sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
   await writeSimpleCsv("kb_gap_action_list.csv", globalRows, {
-    header: ["token", "ingredient", "gapType", "gap_detail", "count", "example_actives_excerpt", "action"],
+    header: [
+      "token",
+      "ingredient",
+      "gapType",
+      "triage",
+      "canonical_form_token",
+      "gap_detail",
+      "count",
+      "example_actives_excerpt",
+      "action",
+    ],
   });
 
   await writeCsv("candidates_top80_kb_hits.csv", stratHits.selected);
