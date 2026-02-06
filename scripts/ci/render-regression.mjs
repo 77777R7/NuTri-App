@@ -7,6 +7,8 @@ const dsldNoFormBarcode =
   process.env.RENDER_DSLD_NOFORM_BARCODE || process.env.RENDER_DSLD_BARCODE || "026664275110";
 const dsldWithFormBarcode = process.env.RENDER_DSLD_FORM_BARCODE || "00690290532093";
 const dsldWithFormBarcode2 = process.env.RENDER_DSLD_FORM2_BARCODE || "00678226014301";
+const dsldWithFormGlycinateBarcode = process.env.RENDER_DSLD_GLYCINATE_BARCODE || "00700461233336";
+const dsldWithFormGlycinateBarcode2 = process.env.RENDER_DSLD_GLYCINATE_BARCODE2 || "00700461233350";
 const dsldWithFormAscorbateBarcode = process.env.RENDER_DSLD_ASCORBATE_BARCODE || "00708118021602";
 const dsldWithFormAscorbateBarcode2 = process.env.RENDER_DSLD_ASCORBATE_BARCODE2 || "00708118010262";
 
@@ -18,6 +20,11 @@ const DEFAULT_CASES = [
   {
     id: "dsld_with_form_ascorbate",
     barcodes: [dsldWithFormAscorbateBarcode, dsldWithFormAscorbateBarcode2],
+    expectedSourceType: "dsld",
+  },
+  {
+    id: "dsld_with_form_glycinate",
+    barcodes: [dsldWithFormGlycinateBarcode, dsldWithFormGlycinateBarcode2],
     expectedSourceType: "dsld",
   },
   { id: "web", barcodes: [process.env.RENDER_WEB_BARCODE || "000000000000"], expectedSourceType: "web" },
