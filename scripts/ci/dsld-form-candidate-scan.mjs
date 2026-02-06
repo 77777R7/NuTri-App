@@ -66,6 +66,11 @@ const MAX_LABELS_PER_TOKEN = Number(process.env.DSLD_SCAN_MAX_LABELS_PER_TOKEN |
 const MAX_EVALUATE = Number(process.env.DSLD_SCAN_MAX_EVALUATE || 250);
 const MAX_ACTIVES = Number(process.env.DSLD_SCAN_MAX_ACTIVES || 15);
 const REQUIRE_EXPLICIT = (process.env.DSLD_SCAN_REQUIRE_EXPLICIT || "1") !== "0";
+// Query strategy:
+// - per_token: query the view once per token (can be slow/timeout on large datasets without DB indexes)
+// - sample: fetch a fixed sample and stratify locally (preferred for CI stability)
+const META_QUERY_MODE = String(process.env.DSLD_SCAN_META_QUERY_MODE || "sample").toLowerCase();
+const META_SAMPLE_SIZE = Number(process.env.DSLD_SCAN_META_SAMPLE_SIZE || Math.max(2000, MAX_EVALUATE * 10));
 // Keep the per-token sample target feasible when TOKENS expands; prefer coverage over depth.
 const MIN_PER_TOKEN = Number(process.env.DSLD_SCAN_MIN_PER_TOKEN || 5);
 const OUTPUT_LIMIT = Number(process.env.DSLD_SCAN_OUTPUT_LIMIT || 80);
@@ -302,6 +307,27 @@ async function fetchMetaCandidatesForToken(token) {
   return await res.json();
 }
 
+async function fetchMetaCandidatesSample(limit) {
+  const url = new URL(`${SUPABASE_URL}/rest/v1/${DSLD_CANDIDATE_VIEW}`);
+  url.searchParams.set(
+    "select",
+    [
+      "dsld_label_id",
+      "barcode_normalized_gtin14",
+      "dsld_product_version_code",
+      "active_ingredients_summary",
+    ].join(","),
+  );
+  url.searchParams.set("limit", String(limit));
+
+  const res = await fetch(url.toString(), { headers: buildHeaders() });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`meta sample query failed limit=${limit} status=${res.status} body=${body.slice(0, 200)}`);
+  }
+  return await res.json();
+}
+
 function scoreCandidate(candidate) {
   const activesCount = candidate.activesCount ?? 0;
   const kbHits = candidate.kbSentenceHitCount ?? 0;
@@ -380,15 +406,44 @@ async function main() {
 
   await ensureDir(ARTIFACT_DIR);
   console.log(
-    `[dsld-scan] tokens=${TOKENS.join(",")} view=${DSLD_CANDIDATE_VIEW} auth=${SUPABASE_KEY_KIND} out=${ARTIFACT_DIR}`,
+    `[dsld-scan] tokens=${TOKENS.join(",")} view=${DSLD_CANDIDATE_VIEW} auth=${SUPABASE_KEY_KIND} mode=${META_QUERY_MODE} out=${ARTIFACT_DIR}`,
   );
 
   const metaRows = [];
-  for (const token of TOKENS) {
-    // eslint-disable-next-line no-await-in-loop
-    const rows = await fetchMetaCandidatesForToken(token);
-    console.log(`[dsld-scan] token=${token} meta_rows=${rows.length}`);
-    metaRows.push(...rows);
+  const metaQueryErrors = [];
+  if (META_QUERY_MODE === "per_token") {
+    for (const token of TOKENS) {
+      // eslint-disable-next-line no-await-in-loop
+      try {
+        const rows = await fetchMetaCandidatesForToken(token);
+        console.log(`[dsld-scan] token=${token} meta_rows=${rows.length}`);
+        metaRows.push(...rows);
+      } catch (err) {
+        // Operationally: don't fail the entire scan on one token timeout; record and continue.
+        const msg = String(err?.message ?? err ?? "unknown_error");
+        console.warn(`[dsld-scan] warn: ${msg}`);
+        metaQueryErrors.push({ mode: "per_token", token, error: msg });
+      }
+    }
+  } else if (META_QUERY_MODE === "sample") {
+    try {
+      const rows = await fetchMetaCandidatesSample(META_SAMPLE_SIZE);
+      console.log(`[dsld-scan] meta_sample_rows=${rows.length} (limit=${META_SAMPLE_SIZE})`);
+      metaRows.push(...rows);
+    } catch (err) {
+      const msg = String(err?.message ?? err ?? "unknown_error");
+      console.error(`[dsld-scan] fatal: ${msg}`);
+      process.exit(1);
+    }
+  } else {
+    console.error(`Invalid DSLD_SCAN_META_QUERY_MODE=${META_QUERY_MODE} (expected per_token|sample)`);
+    process.exit(1);
+  }
+
+  if (!metaRows.length) {
+    console.error("[dsld-scan] fatal: no meta rows fetched (check SUPABASE_* secrets and view performance)");
+    await fs.writeFile(path.join(ARTIFACT_DIR, "meta_query_errors.json"), JSON.stringify(metaQueryErrors, null, 2));
+    process.exit(1);
   }
 
   // Deduplicate by label_id; keep first row.
@@ -703,6 +758,9 @@ async function main() {
     generatedAt: new Date().toISOString(),
     view: DSLD_CANDIDATE_VIEW,
     authKind: SUPABASE_KEY_KIND,
+    metaQueryMode: META_QUERY_MODE,
+    metaSampleSize: META_QUERY_MODE === "sample" ? META_SAMPLE_SIZE : null,
+    metaQueryErrors,
     tokens: TOKENS,
     requireExplicit: REQUIRE_EXPLICIT,
     metaCandidates: filtered.length,
