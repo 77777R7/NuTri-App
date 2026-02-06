@@ -9,12 +9,12 @@
     "production_filter": {
       "mode": "captured_and_approved",
       "note": "Segments are filtered so only evidence_excerpt_status=captured is shipped; curated_override sentences must be review_status=approved.",
-      "filtered_at": "2026-02-06T21:39:54.786Z"
+      "filtered_at": "2026-02-06T21:47:54.582Z"
     },
     "review_policy": {
       "library": "pre_reviewed",
       "curated_override": "approved_required",
-      "annotated_at": "2026-02-06T21:39:54.795Z"
+      "annotated_at": "2026-02-06T21:47:54.583Z"
     },
     "kb_source": {
       "kind": "runtime_index_source",
@@ -3188,8 +3188,29 @@
       "overall_confidence": 0.74,
       "evidence_grade": "C",
       "reference_ids": [
-        "ref_b8f45c98f886"
-      ]
+        "ref_b8f45c98f886",
+        "ref_18b4a422ce30"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_18b4a422ce30",
+              "evidence_snippet_id": "x_9bd17bb273beafff",
+              "overall_confidence": 0.74,
+              "reference_ids": [
+                "ref_18b4a422ce30"
+              ],
+              "sentence_id": "s_816bd95489fca815",
+              "source": "form_library",
+              "text": "NIH ODS lists manganese gluconate among supplemental forms and notes no data are available on relative bioavailability across forms.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
     },
     "manganese|manganese_bisglycinate": {
       "source": "override",

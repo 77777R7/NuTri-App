@@ -3174,19 +3174,39 @@
         "ref_7e356410f54c"
       ]
     },
-    "manganese|manganese_gluconate": {
-      "source": "override",
-      "ingredient_id": "manganese",
-      "ingredient": "Manganese",
-      "form_key": "manganese_gluconate",
-      "form_display": "Manganese gluconate",
-      "form_family": "chelated",
-      "overall_confidence": 0.74,
-      "evidence_grade": "C",
-      "reference_ids": [
-        "ref_b8f45c98f886"
-      ]
-    },
+	    "manganese|manganese_gluconate": {
+	      "source": "override",
+	      "ingredient_id": "manganese",
+	      "ingredient": "Manganese",
+	      "form_key": "manganese_gluconate",
+	      "form_display": "Manganese gluconate",
+	      "form_family": "chelated",
+	      "overall_confidence": 0.74,
+	      "evidence_grade": "C",
+	      "reference_ids": [
+	        "ref_b8f45c98f886",
+	        "ref_18b4a422ce30"
+	      ],
+	      "segments": {
+	        "absorption": {
+	          "en": [
+	            {
+	              "evidence_excerpt_status": "captured",
+	              "evidence_grade": "B",
+	              "evidence_reference_id": "ref_18b4a422ce30",
+	              "evidence_snippet_id": "x_9bd17bb273beafff",
+	              "overall_confidence": 0.74,
+	              "reference_ids": [
+	                "ref_18b4a422ce30"
+	              ],
+	              "sentence_id": "s_816bd95489fca815",
+	              "source": "form_library",
+	              "text": "NIH ODS lists manganese gluconate among supplemental forms and notes no data are available on relative bioavailability across forms."
+	            }
+	          ]
+	        }
+	      }
+	    },
     "manganese|manganese_bisglycinate": {
       "source": "override",
       "ingredient_id": "manganese",
