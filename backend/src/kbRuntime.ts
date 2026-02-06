@@ -355,6 +355,9 @@ const FIRST_WORD_ALLOWLIST = new Set([
   "molybdenum",
   "potassium",
   "vitamin",
+  // P1: allow a small set of non-vitamin/mineral ingredient families to resolve when the DSLD label
+  // embeds the form in the ingredient name (e.g. "Creatine Citrate"). Keep this list conservative.
+  "creatine",
 ]);
 
 const resolveIngredientId = (

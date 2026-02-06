@@ -1,0 +1,57 @@
+name: Render Regression (Nightly)
+
+on:
+  workflow_dispatch:
+    inputs:
+      render_base_url:
+        description: "Optional override for Render base URL"
+        required: false
+        type: string
+  schedule:
+    - cron: "30 9 * * *" # nightly 09:30 UTC
+
+concurrency:
+  group: render-regression-nightly-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Prepare Artifact Directory
+        id: artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          ARTIFACT_DIR="artifacts/render-regression-nightly/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "$ARTIFACT_DIR"
+          echo "artifact_dir=$ARTIFACT_DIR" >> "$GITHUB_OUTPUT"
+
+      - name: Run Render Regression Suite (Nightly Extras)
+        env:
+          RENDER_BASE_URL: ${{ github.event.inputs.render_base_url || secrets.RENDER_BASE_URL }}
+          RENDER_REGRESSION_TOKEN: ${{ secrets.RENDER_REGRESSION_TOKEN }}
+          RENDER_ARTIFACT_DIR: ${{ steps.artifact.outputs.artifact_dir }}
+          RENDER_INCLUDE_NIGHTLY_CASES: "1"
+          # Optional overrides; script has stable defaults.
+          RENDER_DSLD_CREATINE_CITRATE_BARCODE: ${{ vars.RENDER_DSLD_CREATINE_CITRATE_BARCODE }}
+        run: node scripts/ci/render-regression.mjs
+
+      - name: Upload Regression Artifact
+        if: always() && steps.artifact.outputs.artifact_dir != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: render-regression-nightly-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ steps.artifact.outputs.artifact_dir }}
+          if-no-files-found: warn
+
