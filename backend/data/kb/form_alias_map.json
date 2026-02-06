@@ -1288,6 +1288,14 @@
       "zinc_bisglycinate",
       "zinc_glycinate"
     ],
+    "citrate": [
+      "citrate",
+      "calcium citrate",
+      "chromium citrate",
+      "magnesium citrate",
+      "manganese citrate",
+      "zinc citrate"
+    ],
     "picolinate": [
       "picolinate",
       "chromium picolinate",

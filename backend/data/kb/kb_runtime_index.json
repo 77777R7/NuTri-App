@@ -296,7 +296,81 @@
       "reference_ids": [
         "ref_d00668aab572",
         "ref_db0df849804a"
-      ]
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_d00668aab572",
+              "evidence_snippet_id": "x_e74743c5c827dcee",
+              "overall_confidence": 0.76,
+              "reference_ids": [
+                "ref_d00668aab572",
+                "ref_db0df849804a"
+              ],
+              "sentence_id": "s_27b3bd782da4b2ea",
+              "source": "curated_override",
+              "text": "Calcium citrate is a more soluble salt; absorption may be consistent for many people, especially with food. Evidence is limited."
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_d00668aab572",
+              "evidence_snippet_id": "x_e74743c5c827dcee",
+              "overall_confidence": 0.76,
+              "reference_ids": [
+                "ref_d00668aab572",
+                "ref_db0df849804a"
+              ],
+              "sentence_id": "s_2276b50d10f14893",
+              "source": "curated_override",
+              "text": "Evidence is mixed; overall effect depends on dose, baseline status, and diet."
+            }
+          ]
+        },
+        "solubility": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_d00668aab572",
+              "evidence_snippet_id": "x_e74743c5c827dcee",
+              "overall_confidence": 0.76,
+              "reference_ids": [
+                "ref_d00668aab572",
+                "ref_db0df849804a"
+              ],
+              "sentence_id": "s_a2a8452226253144",
+              "source": "curated_override",
+              "text": "Typically dissolves more readily than oxide forms; this may support steadier uptake."
+            }
+          ]
+        },
+        "tolerability": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_d00668aab572",
+              "evidence_snippet_id": "x_e74743c5c827dcee",
+              "overall_confidence": 0.76,
+              "reference_ids": [
+                "ref_d00668aab572",
+                "ref_db0df849804a"
+              ],
+              "sentence_id": "s_d0dded1687fd1589",
+              "source": "curated_override",
+              "text": "Often well tolerated; if sensitive, consider splitting the dose."
+            }
+          ]
+        }
+      }
     },
     "calcium|calcium_gluconate": {
       "source": "override",
@@ -434,7 +508,85 @@
         "ref_f467d2352e07",
         "ref_3226a97a5e81",
         "ref_5c15b5640c1a"
-      ]
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_f467d2352e07",
+              "evidence_snippet_id": "x_ba679eb9c1e15b4e",
+              "overall_confidence": 0.84,
+              "reference_ids": [
+                "ref_f467d2352e07",
+                "ref_3226a97a5e81",
+                "ref_5c15b5640c1a"
+              ],
+              "sentence_id": "s_3d396e1a076413ba",
+              "source": "curated_override",
+              "text": "Zinc bisglycinate is a chelated form; absorption may be steady and it may compare favorably to oxide forms in some studies. Evidence is mixed."
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_f467d2352e07",
+              "evidence_snippet_id": "x_ba679eb9c1e15b4e",
+              "overall_confidence": 0.84,
+              "reference_ids": [
+                "ref_f467d2352e07",
+                "ref_3226a97a5e81",
+                "ref_5c15b5640c1a"
+              ],
+              "sentence_id": "s_ad7c108f618222e7",
+              "source": "curated_override",
+              "text": "Evidence is limited; benefits aren’t guaranteed—label dose and your tolerance often matter more than the form alone."
+            }
+          ]
+        },
+        "solubility": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_f467d2352e07",
+              "evidence_snippet_id": "x_ba679eb9c1e15b4e",
+              "overall_confidence": 0.84,
+              "reference_ids": [
+                "ref_f467d2352e07",
+                "ref_3226a97a5e81",
+                "ref_5c15b5640c1a"
+              ],
+              "sentence_id": "s_bd2ab87591f2b20a",
+              "source": "curated_override",
+              "text": "Chelated forms are generally more soluble than oxides, which may support more consistent dissolution."
+            }
+          ]
+        },
+        "tolerability": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_f467d2352e07",
+              "evidence_snippet_id": "x_ba679eb9c1e15b4e",
+              "overall_confidence": 0.84,
+              "reference_ids": [
+                "ref_f467d2352e07",
+                "ref_3226a97a5e81",
+                "ref_5c15b5640c1a"
+              ],
+              "sentence_id": "s_1a3c3958df3fa9b0",
+              "source": "curated_override",
+              "text": "Many people choose this form for GI comfort, though individual response varies."
+            }
+          ]
+        }
+      }
     },
     "zinc|citrate": {
       "source": "override",
