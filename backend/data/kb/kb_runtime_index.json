@@ -1600,6 +1600,89 @@
         }
       }
     },
+    "magnesium|bisglycinate": {
+      "source": "override",
+      "ingredient_id": "magnesium",
+      "ingredient": "Magnesium",
+      "form_key": "bisglycinate",
+      "form_display": "Magnesium bisglycinate",
+      "form_family": "chelated",
+      "overall_confidence": 0.74,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_836fb57ba9df"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_836fb57ba9df",
+              "evidence_snippet_id": "x_0bc54007a1fa3ae9",
+              "overall_confidence": 0.74,
+              "reference_ids": [
+                "ref_836fb57ba9df"
+              ],
+              "sentence_id": "s_39fe7768eac7bf97",
+              "source": "curated_override",
+              "text": "Magnesium bisglycinate is a chelated form; absorption may be steady and it may compare favorably to oxide forms in some studies. Evidence is mixed."
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_836fb57ba9df",
+              "evidence_snippet_id": "x_0bc54007a1fa3ae9",
+              "overall_confidence": 0.74,
+              "reference_ids": [
+                "ref_836fb57ba9df"
+              ],
+              "sentence_id": "s_319c248fe54b9764",
+              "source": "curated_override",
+              "text": "Evidence is limited; benefits aren’t guaranteed—label dose and your tolerance often matter more than the form alone."
+            }
+          ]
+        },
+        "solubility": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_836fb57ba9df",
+              "evidence_snippet_id": "x_0bc54007a1fa3ae9",
+              "overall_confidence": 0.74,
+              "reference_ids": [
+                "ref_836fb57ba9df"
+              ],
+              "sentence_id": "s_33c9f9244d456e49",
+              "source": "curated_override",
+              "text": "Chelated forms are generally more soluble than oxides, which may support more consistent dissolution."
+            }
+          ]
+        },
+        "tolerability": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_836fb57ba9df",
+              "evidence_snippet_id": "x_0bc54007a1fa3ae9",
+              "overall_confidence": 0.74,
+              "reference_ids": [
+                "ref_836fb57ba9df"
+              ],
+              "sentence_id": "s_90fcdae8f8e628d9",
+              "source": "curated_override",
+              "text": "Many people choose this form for GI comfort, though individual response varies."
+            }
+          ]
+        }
+      }
+    },
     "n_acetylcysteine|nac": {
       "source": "override",
       "ingredient_id": "n_acetylcysteine",
@@ -1667,6 +1750,55 @@
       "reference_ids": [
         "ref_963445a26cb4"
       ]
+    },
+    "creatine|citrate": {
+      "source": "override",
+      "ingredient_id": "creatine",
+      "ingredient": "Creatine",
+      "form_key": "citrate",
+      "form_display": "Creatine citrate",
+      "form_family": "generic",
+      "overall_confidence": 0.55,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_963445a26cb4"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_963445a26cb4",
+              "evidence_snippet_id": "x_8f8850f2817c3853",
+              "overall_confidence": 0.55,
+              "reference_ids": [
+                "ref_963445a26cb4"
+              ],
+              "sentence_id": "s_9509ec4fd1aa9bb3",
+              "source": "curated_override",
+              "text": "Creatine citrate is a creatine salt; evidence is strongest for creatine monohydrate, and evidence for alternative forms is limited."
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_963445a26cb4",
+              "evidence_snippet_id": "x_8f8850f2817c3853",
+              "overall_confidence": 0.55,
+              "reference_ids": [
+                "ref_963445a26cb4"
+              ],
+              "sentence_id": "s_c5796dfa7c4718f9",
+              "source": "curated_override",
+              "text": "If you choose creatine, monohydrate has the most research; form differences may be modest at typical doses."
+            }
+          ]
+        }
+      }
     },
     "creatine|hcl": {
       "source": "override",
