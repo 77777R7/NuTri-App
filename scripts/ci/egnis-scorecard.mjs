@@ -13,6 +13,7 @@ const RUN_ATTEMPT = process.env.GITHUB_RUN_ATTEMPT || "1";
 const REQUIRED_RUNS = Number(process.env.EGNIS_REQUIRED_RUNS || 10);
 const NIGHTLY_RUNS = Number(process.env.EGNIS_NIGHTLY_RUNS || 14);
 const TOKEN_HIT_RATE_THRESHOLD = Number(process.env.EGNIS_TOKEN_HIT_RATE_THRESHOLD || 0.85);
+const FAIL_ON_NOT_READY = (process.env.EGNIS_FAIL_ON_NOT_READY || "0") === "1";
 
 const SCORECARD_DIR = process.env.SCORECARD_ARTIFACT_DIR || "artifacts/egnis-scorecard";
 const DSLD_OUT_DIR =
@@ -280,10 +281,15 @@ async function main() {
 
   console.log(`[scorecard] wrote ${scorePathJson}`);
   console.log(`[scorecard] ready=${score.stopCondition.ready}`);
+
+  // If desired, treat "not ready" as a failing CI signal while still producing artifacts.
+  if (FAIL_ON_NOT_READY && !score.stopCondition.ready) {
+    console.error(`[scorecard] stop_condition_not_ready`);
+    process.exit(1);
+  }
 }
 
 main().catch((err) => {
   console.error(`[scorecard] fatal: ${String(err)}`);
   process.exit(1);
 });
-
