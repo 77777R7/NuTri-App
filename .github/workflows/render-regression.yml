@@ -142,7 +142,9 @@ jobs:
           RENDER_DSLD_BARCODE: "026664275110"
           RENDER_DSLD_NOFORM_BARCODE: "026664275110"
           RENDER_DSLD_FORM_BARCODE: "00690290532093"
-          RENDER_DSLD_FORM2_BARCODE: "00678226014301"
+          # Prefer a stable picolinate sample for case dsld_with_form_2 (distinct from glycinate).
+          RENDER_DSLD_FORM2_BARCODE: "00789939100622"
+          RENDER_DSLD_FORM2_BARCODE2: "00854936003044"
           # Optional overrides; script has stable defaults.
           RENDER_DSLD_ASCORBATE_BARCODE: ${{ vars.RENDER_DSLD_ASCORBATE_BARCODE }}
           RENDER_DSLD_ASCORBATE_BARCODE2: ${{ vars.RENDER_DSLD_ASCORBATE_BARCODE2 }}

@@ -6,10 +6,12 @@ import path from "node:path";
 const dsldNoFormBarcode =
   process.env.RENDER_DSLD_NOFORM_BARCODE || process.env.RENDER_DSLD_BARCODE || "026664275110";
 const dsldWithFormBarcode = process.env.RENDER_DSLD_FORM_BARCODE || "00690290532093";
-const dsldWithFormBarcode2 = process.env.RENDER_DSLD_FORM2_BARCODE || "00678226014301";
+// Prefer a picolinate sample (page0) so dsld_with_form_2 exercises a distinct family vs glycinate.
+const dsldWithFormBarcode2 = process.env.RENDER_DSLD_FORM2_BARCODE || "00789939100622";
+const dsldWithFormBarcode2b = process.env.RENDER_DSLD_FORM2_BARCODE2 || "00854936003044";
 const dsldWithFormGlycinateBarcode = process.env.RENDER_DSLD_GLYCINATE_BARCODE || "00700461233336";
 const dsldWithFormGlycinateBarcode2 = process.env.RENDER_DSLD_GLYCINATE_BARCODE2 || "00700461233350";
-// Primary sample should have a KB form hit on page0 (limit=6). Keep a fallback barcode in case the DSLD mapping drifts.
+// Keep a fallback barcode in case the DSLD mapping drifts.
 const dsldWithFormBisglycinateBarcode = process.env.RENDER_DSLD_BISGLYCINATE_BARCODE || "00850025187091";
 const dsldWithFormBisglycinateBarcode2 = process.env.RENDER_DSLD_BISGLYCINATE_BARCODE2 || "00323359110306";
 const dsldWithFormAscorbateBarcode = process.env.RENDER_DSLD_ASCORBATE_BARCODE || "00708118021602";
@@ -18,22 +20,30 @@ const dsldWithFormAscorbateBarcode2 = process.env.RENDER_DSLD_ASCORBATE_BARCODE2
 const DEFAULT_CASES = [
   { id: "lnhpd", barcodes: [process.env.RENDER_LNHPD_BARCODE || "00029537001069"], expectedSourceType: "lnhpd" },
   { id: "dsld_no_form", barcodes: [dsldNoFormBarcode], expectedSourceType: "dsld" },
-  { id: "dsld_with_form", barcodes: [dsldWithFormBarcode], expectedSourceType: "dsld" },
-  { id: "dsld_with_form_2", barcodes: [dsldWithFormBarcode2], expectedSourceType: "dsld" },
+  { id: "dsld_with_form", barcodes: [dsldWithFormBarcode], expectedSourceType: "dsld", requiredFormKeyword: "citrate" },
+  {
+    id: "dsld_with_form_2",
+    barcodes: [dsldWithFormBarcode2, dsldWithFormBarcode2b],
+    expectedSourceType: "dsld",
+    requiredFormKeyword: "picolinate",
+  },
   {
     id: "dsld_with_form_ascorbate",
     barcodes: [dsldWithFormAscorbateBarcode, dsldWithFormAscorbateBarcode2],
     expectedSourceType: "dsld",
+    requiredFormKeyword: "ascorbate",
   },
   {
     id: "dsld_with_form_bisglycinate",
     barcodes: [dsldWithFormBisglycinateBarcode, dsldWithFormBisglycinateBarcode2],
     expectedSourceType: "dsld",
+    requiredFormKeyword: "bisglycinate",
   },
   {
     id: "dsld_with_form_glycinate",
     barcodes: [dsldWithFormGlycinateBarcode, dsldWithFormGlycinateBarcode2],
     expectedSourceType: "dsld",
+    requiredFormKeyword: "glycinate",
   },
   { id: "web", barcodes: [process.env.RENDER_WEB_BARCODE || "000000000000"], expectedSourceType: "web" },
 ];
@@ -43,6 +53,7 @@ const SSE_TIMEOUT_MS = Number(process.env.RENDER_SSE_TIMEOUT_MS || 90_000);
 const DETAIL_TIMEOUT_MS = Number(process.env.RENDER_DETAIL_TIMEOUT_MS || 45_000);
 const ARTIFACT_DIR = process.env.RENDER_ARTIFACT_DIR || "artifacts/render-regression";
 const DETAIL_LIMIT = Number(process.env.RENDER_DETAIL_LIMIT || 6);
+const DETAIL_MAX_PAGES = Number(process.env.RENDER_DETAIL_MAX_PAGES || 4);
 
 if (!BASE_URL) {
   console.error("RENDER_BASE_URL is required");
@@ -191,7 +202,9 @@ function assertBundleContract(bundleEvents, expectedSourceType) {
   return { errors, fastBundle };
 }
 
-async function fetchIngredientsDetail(fastBundle) {
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function fetchIngredientsDetailPage(fastBundle, cursor) {
   const identity = fastBundle?.meta?.authoritativeIdentity;
   if (!identity?.type || !identity?.value) {
     throw new Error("analysis_bundle missing authoritativeIdentity");
@@ -204,29 +217,44 @@ async function fetchIngredientsDetail(fastBundle) {
     promptVersion: fastBundle?.meta?.promptVersion,
     factsDigestHash: fastBundle?.meta?.factsDigestHash,
     limit: DETAIL_LIMIT,
-    cursor: 0,
+    cursor,
   };
 
-  const ctrl = new AbortController();
-  const timeout = setTimeout(() => ctrl.abort(), DETAIL_TIMEOUT_MS);
+  const startedAt = Date.now();
+  let pollAttempts = 0;
+  while (true) {
+    pollAttempts += 1;
+    const ctrl = new AbortController();
+    const timeout = setTimeout(() => ctrl.abort(), DETAIL_TIMEOUT_MS);
 
-  const res = await fetch(`${BASE_URL}/api/analysis-section`, {
-    method: "POST",
-    headers: buildHeaders(false),
-    body: JSON.stringify(payload),
-    signal: ctrl.signal,
-  });
+    const res = await fetch(`${BASE_URL}/api/analysis-section`, {
+      method: "POST",
+      headers: buildHeaders(false),
+      body: JSON.stringify(payload),
+      signal: ctrl.signal,
+    });
 
-  clearTimeout(timeout);
+    clearTimeout(timeout);
 
-  let json;
-  try {
-    json = await res.json();
-  } catch {
-    json = { parseError: "invalid_json" };
+    let json;
+    try {
+      json = await res.json();
+    } catch {
+      json = { parseError: "invalid_json" };
+    }
+
+    if (res.status !== 202) {
+      return { status: res.status, payload, response: json, pollAttempts };
+    }
+
+    const retryAfterMs = Number(json?.retryAfterMs ?? 2000);
+    const elapsed = Date.now() - startedAt;
+    if (elapsed >= DETAIL_TIMEOUT_MS) {
+      return { status: res.status, payload, response: json, pollAttempts };
+    }
+
+    await sleep(Math.min(Math.max(retryAfterMs, 250), 5000));
   }
-
-  return { status: res.status, payload, response: json };
 }
 
 function assertDetailContract(detailResponse) {
@@ -254,8 +282,9 @@ function assertDetailContract(detailResponse) {
   return errors;
 }
 
-function assertDsldWithFormKbHit(detailResponse, caseId) {
+function assertDsldWithFormKbHit(detailResponse, testCase) {
   const errors = [];
+  const caseId = testCase.id;
   if (detailResponse.status !== 200) return errors;
   const body = detailResponse.response;
 
@@ -265,23 +294,41 @@ function assertDsldWithFormKbHit(detailResponse, caseId) {
     return errors;
   }
 
+  const requiredKeyword = String(testCase.requiredFormKeyword ?? "").trim().toLowerCase();
+  const matchesKeyword = (name) => {
+    if (!requiredKeyword) return true;
+    return String(name ?? "").toLowerCase().includes(requiredKeyword);
+  };
+
   // P0-A: Confirm a true KB sentence was used, not just a non-empty string.
+  // For with-form cases, also enforce the intended token family via a keyword.
   const hasKbSentence = items.some((item) => {
+    if (!matchesKeyword(item?.name)) return false;
     const tags = item?.chemicalFormExplain?.basisTags;
     return Array.isArray(tags) && tags.includes("ingredient_inference");
   });
   if (!hasKbSentence) {
-    errors.push(`${caseId}: expected at least one chemicalFormExplain tagged ingredient_inference (KB sentence)`);
+    errors.push(
+      `${caseId}: expected at least one chemicalFormExplain tagged ingredient_inference` +
+        (requiredKeyword ? ` (matching keyword=${requiredKeyword})` : "") +
+        ` (KB sentence)`
+    );
   }
 
   // P0-2 (stronger): confirm sentenceId/excerptId is present (true KB hit, not rule text).
   const sentenceIds = body?.debug?.formSentenceIds;
   const hasSentenceId =
     sentenceIds && typeof sentenceIds === "object"
-      ? Object.values(sentenceIds).some((value) => typeof value === "string" && value.startsWith("s_"))
+      ? Object.entries(sentenceIds).some(
+          ([k, value]) => matchesKeyword(k) && typeof value === "string" && value.startsWith("s_")
+        )
       : false;
   if (!hasSentenceId) {
-    errors.push(`${caseId}: expected at least one debug.formSentenceIds entry (true KB hit)`);
+    errors.push(
+      `${caseId}: expected at least one debug.formSentenceIds entry` +
+        (requiredKeyword ? ` (matching keyword=${requiredKeyword})` : "") +
+        ` (true KB hit)`
+    );
   }
 
   const sources = body?.debug?.formResolveSources;
@@ -289,9 +336,14 @@ function assertDsldWithFormKbHit(detailResponse, caseId) {
     errors.push(`${caseId}: missing debug.formResolveSources`);
     return errors;
   }
-  const hasNonNone = Object.values(sources).some((value) => typeof value === "string" && value !== "none");
+  const hasNonNone = Object.entries(sources).some(
+    ([k, value]) => matchesKeyword(k) && typeof value === "string" && value !== "none"
+  );
   if (!hasNonNone) {
-    errors.push(`${caseId}: expected at least one formResolveSource != none`);
+    errors.push(
+      `${caseId}: expected at least one formResolveSource != none` +
+        (requiredKeyword ? ` (matching keyword=${requiredKeyword})` : "")
+    );
   }
 
   return errors;
@@ -318,6 +370,7 @@ function pickKeyFields(result) {
     barcode: result.case.barcode,
     caseId: result.case.id,
     expectedSourceType: result.case.expectedSourceType,
+    requiredFormKeyword: result.case.requiredFormKeyword ?? null,
     sourceType: fastBundle?.meta?.sourceType,
     promptVersion: fastBundle?.meta?.promptVersion ?? null,
     serverCommitSha: fastBundle?.meta?.serverCommitSha ?? null,
@@ -332,6 +385,7 @@ function pickKeyFields(result) {
     jobStatus: detail?.meta?.jobStatus ?? null,
     attempts: detail?.meta?.attempts ?? null,
     timingMs: detail?.timingMs ?? null,
+    detailCursorUsed: result.detailResponse?.payload?.cursor ?? null,
     formResolveSourcesNonNoneCount: nonNoneSources ? Object.keys(nonNoneSources).length : null,
     formResolveSourcesNonNone: nonNoneSources,
     formSentenceIdHitsCount: sentenceIdHits ? Object.keys(sentenceIdHits).length : null,
@@ -355,15 +409,58 @@ async function runCase(testCase) {
   const bundleEvents = getBundleEvents(events);
   const bundleCheck = assertBundleContract(bundleEvents, testCase.expectedSourceType);
 
-  const detailResponse = bundleCheck.fastBundle
-    ? await fetchIngredientsDetail(bundleCheck.fastBundle)
-    : { status: 0, payload: null, response: null };
+  let detailResponse = { status: 0, payload: null, response: null };
+  if (bundleCheck.fastBundle) {
+    const requiredKeyword = String(testCase.requiredFormKeyword ?? "").trim().toLowerCase();
+    const shouldPage = testCase.id.startsWith("dsld_with_form") && Boolean(requiredKeyword);
+    if (!shouldPage) {
+      detailResponse = await fetchIngredientsDetailPage(bundleCheck.fastBundle, 0);
+    } else {
+      let cursor = 0;
+      let pages = 0;
+      let last = null;
+      while (pages < DETAIL_MAX_PAGES) {
+        // eslint-disable-next-line no-await-in-loop
+        const pageRes = await fetchIngredientsDetailPage(bundleCheck.fastBundle, cursor);
+        last = pageRes;
+        pages += 1;
+
+        if (pageRes.status !== 200) {
+          detailResponse = pageRes;
+          break;
+        }
+
+        const sentenceIds = pageRes.response?.debug?.formSentenceIds;
+        const hasKeywordSentence =
+          sentenceIds && typeof sentenceIds === "object"
+            ? Object.entries(sentenceIds).some(
+                ([k, v]) =>
+                  String(k).toLowerCase().includes(requiredKeyword) &&
+                  typeof v === "string" &&
+                  v.startsWith("s_"),
+              )
+            : false;
+        if (hasKeywordSentence) {
+          detailResponse = pageRes;
+          break;
+        }
+
+        const nextCursor = pageRes.response?.page?.nextCursor;
+        if (typeof nextCursor !== "number") {
+          detailResponse = pageRes;
+          break;
+        }
+        cursor = nextCursor;
+      }
+      if (!detailResponse?.status && last) detailResponse = last;
+    }
+  }
 
   const detailErrors = bundleCheck.fastBundle ? assertDetailContract(detailResponse) : [];
 
   const dsldKbErrors =
     bundleCheck.fastBundle && testCase.id.startsWith("dsld_with_form")
-      ? assertDsldWithFormKbHit(detailResponse, testCase.id)
+      ? assertDsldWithFormKbHit(detailResponse, testCase)
       : [];
 
   const errors = [...bundleCheck.errors, ...detailErrors, ...dsldKbErrors];
@@ -463,10 +560,12 @@ async function main() {
     primaryBarcode: item.summary.primaryBarcode ?? null,
     primaryFailedReason: item.summary.primaryFailedReason ?? null,
     sourceType: item.summary.sourceType,
+    requiredFormKeyword: item.summary.requiredFormKeyword ?? null,
     promptVersion: item.summary.promptVersion,
     serverCommitSha: item.summary.serverCommitSha,
     factsSourceVersion: item.summary.factsSourceVersion,
     detailDataStatus: item.detailResponse?.response?.dataStatus ?? null,
+    detailCursorUsed: item.summary.detailCursorUsed ?? null,
     fallbackUsed: item.summary.fallbackUsed,
     fallbackReason: item.summary.fallbackReason,
     formResolveSourcesNonNone: item.summary.formResolveSourcesNonNone ?? null,
@@ -475,8 +574,8 @@ async function main() {
   await fs.writeFile(path.join(ARTIFACT_DIR, "release-evidence.json"), JSON.stringify(evidenceRows, null, 2));
 
   const mdLines = [
-    "| caseId | barcode | usedBarcode | primaryFailedReason | sourceType | promptVersion | serverCommitSha | factsSourceVersion | detail.dataStatus | fallbackUsed | formResolveSources(non-none) | formSentenceIds(hits) |",
-    "|---|---|---|---|---|---|---|---|---|---|---|---|",
+    "| caseId | barcode | usedBarcode | primaryFailedReason | sourceType | requiredKeyword | cursor | promptVersion | serverCommitSha | factsSourceVersion | detail.dataStatus | fallbackUsed | formResolveSources(non-none) | formSentenceIds(hits) |",
+    "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
   ];
   for (const row of evidenceRows) {
     const sources = row.formResolveSourcesNonNone
@@ -490,7 +589,7 @@ async function main() {
           .join("<br>")
       : "";
     mdLines.push(
-      `| ${row.caseId} | ${row.barcode} | ${row.usedBarcode ?? ""} | ${row.primaryFailedReason ?? ""} | ${row.sourceType ?? ""} | ${row.promptVersion ?? ""} | ${row.serverCommitSha ?? ""} | ${row.factsSourceVersion ?? ""} | ${row.detailDataStatus ?? ""} | ${row.fallbackUsed ?? ""} | ${sources} | ${sids} |`,
+      `| ${row.caseId} | ${row.barcode} | ${row.usedBarcode ?? ""} | ${row.primaryFailedReason ?? ""} | ${row.sourceType ?? ""} | ${row.requiredFormKeyword ?? ""} | ${row.detailCursorUsed ?? ""} | ${row.promptVersion ?? ""} | ${row.serverCommitSha ?? ""} | ${row.factsSourceVersion ?? ""} | ${row.detailDataStatus ?? ""} | ${row.fallbackUsed ?? ""} | ${sources} | ${sids} |`,
     );
   }
   await fs.writeFile(path.join(ARTIFACT_DIR, "release-evidence.md"), mdLines.join("\n") + "\n");
