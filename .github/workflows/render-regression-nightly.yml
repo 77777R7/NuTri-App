@@ -39,7 +39,7 @@ jobs:
 
       - name: Run Render Regression Suite (Nightly Extras)
         env:
-          RENDER_BASE_URL: ${{ github.event.inputs.render_base_url || secrets.RENDER_BASE_URL }}
+          RENDER_BASE_URL: ${{ github.event.inputs.render_base_url != '' && github.event.inputs.render_base_url || secrets.RENDER_BASE_URL }}
           RENDER_REGRESSION_TOKEN: ${{ secrets.RENDER_REGRESSION_TOKEN }}
           RENDER_ARTIFACT_DIR: ${{ steps.artifact.outputs.artifact_dir }}
           RENDER_INCLUDE_NIGHTLY_CASES: "1"
@@ -54,4 +54,3 @@ jobs:
           name: render-regression-nightly-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ steps.artifact.outputs.artifact_dir }}
           if-no-files-found: warn
-
