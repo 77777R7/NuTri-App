@@ -1,9 +1,9 @@
 {
   "meta": {
-    "generated_at": "2026-02-06T15:05:30Z",
+    "generated_at": "2026-02-06T23:36:09Z",
     "source": "nutri_minimal_data_package_v4_0_en_only_review_excerpts",
     "note": "Production evidence excerpts used by shipped KB sentences (captured only).",
-    "ref_count": 18
+    "ref_count": 21
   },
   "evidence_excerpts": [
     {
@@ -221,6 +221,42 @@
       "excerpt_text": "NIH ODS notes copper supplements use many forms including cupric oxide, cupric sulfate, copper amino acid chelates, and copper gluconate, and that no studies have compared bioavailability across forms.",
       "source": "NIH ODS",
       "url": "https://ods.od.nih.gov/factsheets/Copper-HealthProfessional/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "manual_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-06T23:36:09Z",
+      "citation_id": "ref_ba63efe2dcc3",
+      "excerpt_id": "x_70e26b2a8930",
+      "excerpt_sha256": "a3827aaf90e754303e9244bd19751bcd65d38823f10b00379449d635481fd166",
+      "excerpt_text": "Zinc proteinate had the highest bioaccessibility (42%) without phytic acid, while inorganic zinc sulphate (24%) and zinc bisglycinate (27%) were lower.",
+      "source": "PubMed (Nutrients 2025)",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/41515164/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "manual_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-06T23:36:09Z",
+      "citation_id": "ref_7c7a164eae12",
+      "excerpt_id": "x_f41c4ff26903",
+      "excerpt_sha256": "c09a0180c3a74f4a5b1777db5127aafbc96935e65ecf2f6f2a534f83aa9b6315",
+      "excerpt_text": "Twenty-four barrows were randomly allotted to diets that consisted of cellulose and either zinc sulphate (C) or zinc glycinate (ZnGly).",
+      "source": "PubMed (Animals 2019)",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/31362348/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "manual_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-06T23:36:09Z",
+      "citation_id": "ref_266326210fa7",
+      "excerpt_id": "x_9d375c93ff7c",
+      "excerpt_sha256": "671375c04dfa7c47e02d030b1187aec7ced7e8468fb12f2f08198027bcb26e19",
+      "excerpt_text": "The aim of the study was to evaluate the hypoglycaemic potential of supplementary Cr in the form of chromium(III) glycinate (CrGly) in the diabetic model of rats.",
+      "source": "PubMed (Biol Trace Elem Res 2020)",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/30826908/"
     }
   ]
 }
