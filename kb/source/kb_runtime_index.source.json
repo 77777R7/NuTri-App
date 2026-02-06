@@ -424,9 +424,29 @@
       "evidence_grade": "C",
       "reference_ids": [
         "ref_d00668aab572",
+        "ref_b31e16044c47",
         "ref_0f31a67b8942",
         "ref_ad0bbe889a27"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+          "evidence_excerpt_status": "captured",
+          "evidence_grade": "B",
+          "evidence_reference_id": "ref_b31e16044c47",
+          "evidence_snippet_id": "x_274296fd4455d321",
+          "overall_confidence": 0.74,
+          "reference_ids": [
+            "ref_b31e16044c47"
+          ],
+          "sentence_id": "s_2f9b9b0f5f9a5c3e",
+          "source": "form_library",
+          "text": "NIH ODS lists calcium gluconate among forms used in supplements and notes calcium salts vary in elemental calcium content."
+        }
       ]
+    }
+  }
     },
     "calcium|calcium_chloride": {
       "source": "override",
@@ -2175,7 +2195,26 @@
       "evidence_grade": "B",
       "reference_ids": [
         "ref_ca802bd3b26b"
-      ]
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_ca802bd3b26b",
+              "evidence_snippet_id": "x_b240178c41f73d4c",
+              "overall_confidence": 0.76,
+              "reference_ids": [
+                "ref_ca802bd3b26b"
+              ],
+              "sentence_id": "s_4c1ad4bfe0b42e8c",
+              "source": "form_library",
+              "text": "NIH ODS notes copper supplements use many forms, including copper gluconate, and states no studies have compared the bioavailability of different supplemental forms."
+            }
+          ]
+        }
+      }
     },
     "copper|copper_citrate": {
       "source": "override",
@@ -3135,19 +3174,39 @@
         "ref_7e356410f54c"
       ]
     },
-    "manganese|manganese_gluconate": {
-      "source": "override",
-      "ingredient_id": "manganese",
-      "ingredient": "Manganese",
-      "form_key": "manganese_gluconate",
-      "form_display": "Manganese gluconate",
-      "form_family": "chelated",
-      "overall_confidence": 0.74,
-      "evidence_grade": "C",
-      "reference_ids": [
-        "ref_b8f45c98f886"
-      ]
-    },
+	    "manganese|manganese_gluconate": {
+	      "source": "override",
+	      "ingredient_id": "manganese",
+	      "ingredient": "Manganese",
+	      "form_key": "manganese_gluconate",
+	      "form_display": "Manganese gluconate",
+	      "form_family": "chelated",
+	      "overall_confidence": 0.74,
+	      "evidence_grade": "C",
+	      "reference_ids": [
+	        "ref_b8f45c98f886",
+	        "ref_18b4a422ce30"
+	      ],
+	      "segments": {
+	        "absorption": {
+	          "en": [
+	            {
+	              "evidence_excerpt_status": "captured",
+	              "evidence_grade": "B",
+	              "evidence_reference_id": "ref_18b4a422ce30",
+	              "evidence_snippet_id": "x_9bd17bb273beafff",
+	              "overall_confidence": 0.74,
+	              "reference_ids": [
+	                "ref_18b4a422ce30"
+	              ],
+	              "sentence_id": "s_816bd95489fca815",
+	              "source": "form_library",
+	              "text": "NIH ODS lists manganese gluconate among supplemental forms and notes no data are available on relative bioavailability across forms."
+	            }
+	          ]
+	        }
+	      }
+	    },
     "manganese|manganese_bisglycinate": {
       "source": "override",
       "ingredient_id": "manganese",
@@ -3171,8 +3230,29 @@
       "overall_confidence": 0.53,
       "evidence_grade": "C",
       "reference_ids": [
-        "ref_81c5effcbcf8"
+        "ref_81c5effcbcf8",
+        "ref_18b4a422ce30",
+        "ref_b8f45c98f886"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+          "evidence_excerpt_status": "captured",
+          "evidence_grade": "B",
+          "evidence_reference_id": "ref_18b4a422ce30",
+          "evidence_snippet_id": "x_9bd17bb273beafff",
+          "overall_confidence": 0.53,
+          "reference_ids": [
+            "ref_18b4a422ce30"
+          ],
+          "sentence_id": "s_3d1f4eac8e2c9f0a",
+          "source": "form_library",
+          "text": "NIH ODS lists manganese sulfate among supplemental forms and notes no data are available on relative bioavailability across forms."
+        }
       ]
+    }
+  }
     },
     "alpha_lipoic_acid|stabilized": {
       "source": "override",
@@ -3924,9 +4004,29 @@
       "evidence_grade": "C",
       "reference_ids": [
         "ref_d00668aab572",
+        "ref_b31e16044c47",
         "ref_0f31a67b8942",
         "ref_2d94a2bb26ad"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+          "evidence_excerpt_status": "captured",
+          "evidence_grade": "B",
+          "evidence_reference_id": "ref_b31e16044c47",
+          "evidence_snippet_id": "x_274296fd4455d321",
+          "overall_confidence": 0.74,
+          "reference_ids": [
+            "ref_b31e16044c47"
+          ],
+          "sentence_id": "s_1b92a6d7c0bfa6e2",
+          "source": "form_library",
+          "text": "NIH ODS lists calcium lactate among forms used in supplements and notes calcium salts vary in elemental calcium content."
+        }
       ]
+    }
+  }
     },
     "calcium|calcium_phosphate": {
       "source": "library",

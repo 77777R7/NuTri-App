@@ -3,7 +3,7 @@
     "generated_at": "2026-02-06T15:05:30Z",
     "source": "nutri_minimal_data_package_v4_0_en_only_review_excerpts",
     "note": "Production evidence excerpts used by shipped KB sentences (captured only).",
-    "ref_count": 16
+    "ref_count": 18
   },
   "evidence_excerpts": [
     {
@@ -118,6 +118,18 @@
       "audit_status": "verified",
       "capture_method": "web_capture",
       "capture_status": "captured",
+      "captured_at": "2026-02-06T17:30:00Z",
+      "citation_id": "ref_b31e16044c47",
+      "excerpt_id": "x_274296fd4455d321",
+      "excerpt_sha256": "274296fd4455d3213903fbae1775a4d1f5f8dbf1711908fe9682a46ded6b7830",
+      "excerpt_text": "Other calcium forms in supplements include calcium sulfate, ascorbate, microcrystalline hydroxyapatite, gluconate, lactate, and phosphate [14]. The forms of calcium in supplements contain varying amounts of elemental calcium.",
+      "source": "NIH ODS",
+      "url": "https://ods.od.nih.gov/factsheets/Calcium-HealthProfessional/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
       "captured_at": "2026-02-06T15:05:30Z",
       "citation_id": "ref_df0b98fd0dc5",
       "excerpt_id": "x_4591a7faa61a51b6",
@@ -183,6 +195,18 @@
       "excerpt_id": "x_f687fe6b88ba0fe6",
       "excerpt_sha256": "fba8b09ce06c1be288719a90e60260eb3a45b9cd442f857876b3f1179d0ab374",
       "excerpt_text": "NIH ODS notes manganese supplements come in many forms, including manganese citrate, and states no data are available on the relative bioavailability of different supplemental forms.",
+      "source": "NIH ODS",
+      "url": "https://ods.od.nih.gov/factsheets/Manganese-HealthProfessional/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-06T17:30:00Z",
+      "citation_id": "ref_18b4a422ce30",
+      "excerpt_id": "x_9bd17bb273beafff",
+      "excerpt_sha256": "9bd17bb273beafff3ab1a41030eb852b7774fe47c16123b6da059adffff7c52a",
+      "excerpt_text": "Other forms include manganese gluconate, manganese picolinate, manganese sulfate, manganese citrate, and manganese chloride. No data are available on the relative bioavailability of different forms of supplemental manganese.",
       "source": "NIH ODS",
       "url": "https://ods.od.nih.gov/factsheets/Manganese-HealthProfessional/"
     },
