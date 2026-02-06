@@ -148,7 +148,7 @@ jobs:
         run: node scripts/ci/render-regression.mjs
 
       - name: Upload Regression Artifact
-        if: always()
+        if: always() && steps.artifact.outputs.artifact_dir != ''
         uses: actions/upload-artifact@v4
         with:
           name: render-regression-${{ github.run_id }}-${{ github.run_attempt }}
