@@ -68,6 +68,11 @@ jobs:
           DSLD_SCAN_REQUIRE_EXPLICIT: ${{ github.event.inputs.require_explicit }}
         run: node scripts/ci/dsld-form-candidate-scan.mjs
 
+      - name: Build KB Provenance Index (Artifact)
+        env:
+          KB_PROV_INDEX_PATH: artifacts/dsld-form-candidates/${{ github.run_id }}-${{ github.run_attempt }}/kb_prov_index.json
+        run: node scripts/kb/build_kb_prov_index.mjs
+
       - name: Upload Artifacts
         if: always()
         uses: actions/upload-artifact@v4
