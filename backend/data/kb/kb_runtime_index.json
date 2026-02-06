@@ -9,12 +9,12 @@
     "production_filter": {
       "mode": "captured_and_approved",
       "note": "Segments are filtered so only evidence_excerpt_status=captured is shipped; curated_override sentences must be review_status=approved.",
-      "filtered_at": "2026-02-06T16:35:19.491Z"
+      "filtered_at": "2026-02-06T21:19:00.379Z"
     },
     "review_policy": {
       "library": "pre_reviewed",
       "curated_override": "approved_required",
-      "annotated_at": "2026-02-06T16:35:19.492Z"
+      "annotated_at": "2026-02-06T21:19:00.384Z"
     },
     "kb_source": {
       "kind": "runtime_index_source",
@@ -300,7 +300,27 @@
       "reference_ids": [
         "ref_d00668aab572",
         "ref_e76fc8fec2e3"
-      ]
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_d00668aab572",
+              "evidence_snippet_id": "x_e74743c5c827dcee",
+              "overall_confidence": 0.78,
+              "reference_ids": [
+                "ref_d00668aab572"
+              ],
+              "sentence_id": "s_9c48f6a9d4b8277f",
+              "source": "form_library",
+              "text": "NIH ODS notes the two most common forms of calcium in supplements are calcium carbonate and calcium citrate.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
     },
     "calcium|citrate": {
       "source": "override",
@@ -1843,7 +1863,27 @@
       "evidence_grade": "A",
       "reference_ids": [
         "ref_963445a26cb4"
-      ]
+      ],
+      "segments": {
+        "caveats": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_963445a26cb4",
+              "evidence_snippet_id": "x_8f8850f2817c3853",
+              "overall_confidence": 0.55,
+              "reference_ids": [
+                "ref_963445a26cb4"
+              ],
+              "sentence_id": "s_c5796dfa7c4718f9",
+              "source": "curated_override",
+              "text": "If you choose creatine, monohydrate has the most research; form differences may be modest at typical doses.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
     },
     "creatine|citrate": {
       "source": "override",
@@ -1906,8 +1946,29 @@
       "overall_confidence": 0.51,
       "evidence_grade": "C",
       "reference_ids": [
-        "ref_9ac08e99abfc"
-      ]
+        "ref_9ac08e99abfc",
+        "ref_963445a26cb4"
+      ],
+      "segments": {
+        "caveats": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_963445a26cb4",
+              "evidence_snippet_id": "x_8f8850f2817c3853",
+              "overall_confidence": 0.51,
+              "reference_ids": [
+                "ref_963445a26cb4"
+              ],
+              "sentence_id": "s_c5796dfa7c4718f9",
+              "source": "curated_override",
+              "text": "If you choose creatine, monohydrate has the most research; form differences may be modest at typical doses.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
     },
     "vitamin_e|dl_alpha": {
       "source": "override",
@@ -2560,8 +2621,28 @@
       "overall_confidence": 0.53,
       "evidence_grade": "C",
       "reference_ids": [
-        "ref_cf49c59d9586"
-      ]
+        "ref_df0b98fd0dc5"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_df0b98fd0dc5",
+              "evidence_snippet_id": "x_4591a7faa61a51b6",
+              "overall_confidence": 0.53,
+              "reference_ids": [
+                "ref_df0b98fd0dc5"
+              ],
+              "sentence_id": "s_1cc9a6aa7af3d5c2",
+              "source": "form_library",
+              "text": "NIH ODS notes potassium supplements can be present in multiple forms, including potassium gluconate; labels list elemental potassium rather than the salt weight.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
     },
     "iodine|kelp": {
       "source": "override",
@@ -7926,7 +8007,27 @@
       "evidence_grade": "C",
       "reference_ids": [
         "ref_df0b98fd0dc5"
-      ]
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_df0b98fd0dc5",
+              "evidence_snippet_id": "x_4591a7faa61a51b6",
+              "overall_confidence": 0.62,
+              "reference_ids": [
+                "ref_df0b98fd0dc5"
+              ],
+              "sentence_id": "s_40f9c4a2a0e6f0bf",
+              "source": "form_library",
+              "text": "NIH ODS notes potassium supplements can be present in multiple forms, including potassium phosphate; labels list elemental potassium rather than the salt weight.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
     },
     "magnesium|magnesium_phosphate": {
       "source": "library",
