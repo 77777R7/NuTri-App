@@ -9,12 +9,12 @@
     "production_filter": {
       "mode": "captured_and_approved",
       "note": "Segments are filtered so only evidence_excerpt_status=captured is shipped; curated_override sentences must be review_status=approved.",
-      "filtered_at": "2026-02-06T21:47:54.582Z"
+      "filtered_at": "2026-02-06T23:43:29.967Z"
     },
     "review_policy": {
       "library": "pre_reviewed",
       "curated_override": "approved_required",
-      "annotated_at": "2026-02-06T21:47:54.583Z"
+      "annotated_at": "2026-02-06T23:43:29.972Z"
     },
     "kb_source": {
       "kind": "runtime_index_source",
@@ -4207,6 +4207,39 @@
         "ref_0f31a67b8942"
       ]
     },
+    "chromium|glycinate": {
+      "source": "override",
+      "ingredient_id": "chromium",
+      "ingredient": "Chromium",
+      "form_key": "glycinate",
+      "form_display": "Chromium glycinate (chelate)",
+      "form_family": "chelated",
+      "overall_confidence": 0.58,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_266326210fa7"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_266326210fa7",
+              "evidence_snippet_id": "x_9d375c93ff7c",
+              "overall_confidence": 0.58,
+              "reference_ids": [
+                "ref_266326210fa7"
+              ],
+              "sentence_id": "s_04dfb24ae33f",
+              "source": "curated_override",
+              "text": "Chromium(III) glycinate is a chelated chromium form used in supplements; evidence for clear advantages over other chromium forms is limited.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
+    },
     "chromium|polynicotinate": {
       "source": "library",
       "ingredient_id": "chromium",
@@ -8128,6 +8161,72 @@
               "sentence_id": "s_40f9c4a2a0e6f0bf",
               "source": "form_library",
               "text": "NIH ODS notes potassium supplements can be present in multiple forms, including potassium phosphate; labels list elemental potassium rather than the salt weight.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
+    },
+    "potassium|bisglycinate": {
+      "source": "override",
+      "ingredient_id": "potassium",
+      "ingredient": "Potassium",
+      "form_key": "bisglycinate",
+      "form_display": "Potassium bisglycinate",
+      "form_family": "chelated",
+      "overall_confidence": 0.6,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_ba63efe2dcc3"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_ba63efe2dcc3",
+              "evidence_snippet_id": "x_70e26b2a8930",
+              "overall_confidence": 0.6,
+              "reference_ids": [
+                "ref_ba63efe2dcc3"
+              ],
+              "sentence_id": "s_424511540a98",
+              "source": "curated_override",
+              "text": "Bisglycinate is an amino acid chelate form used in supplements; evidence for consistent advantages is limited.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
+    },
+    "potassium|glycinate": {
+      "source": "override",
+      "ingredient_id": "potassium",
+      "ingredient": "Potassium",
+      "form_key": "glycinate",
+      "form_display": "Potassium glycinate",
+      "form_family": "chelated",
+      "overall_confidence": 0.58,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_7c7a164eae12"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_7c7a164eae12",
+              "evidence_snippet_id": "x_f41c4ff26903",
+              "overall_confidence": 0.58,
+              "reference_ids": [
+                "ref_7c7a164eae12"
+              ],
+              "sentence_id": "s_5b443b895d73",
+              "source": "curated_override",
+              "text": "Glycinate is a glycine-chelated form used in supplements; evidence for consistent advantages is limited.",
               "review_status": "approved"
             }
           ]
