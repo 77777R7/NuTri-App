@@ -22,30 +22,41 @@ const dsldWithFormCreatineCitrateBarcode =
 const DEFAULT_CASES = [
   { id: "lnhpd", barcodes: [process.env.RENDER_LNHPD_BARCODE || "00029537001069"], expectedSourceType: "lnhpd" },
   { id: "dsld_no_form", barcodes: [dsldNoFormBarcode], expectedSourceType: "dsld" },
-  { id: "dsld_with_form", barcodes: [dsldWithFormBarcode], expectedSourceType: "dsld", requiredFormKeyword: "citrate" },
+  {
+    id: "dsld_with_form",
+    barcodes: [dsldWithFormBarcode],
+    expectedSourceType: "dsld",
+    requiredFormKeyword: "citrate",
+    // Bind assertions to the intended active (avoid passing due to a different citrate ingredient).
+    targetActiveKeyword: "zinc citrate",
+  },
   {
     id: "dsld_with_form_2",
     barcodes: [dsldWithFormBarcode2, dsldWithFormBarcode2b],
     expectedSourceType: "dsld",
     requiredFormKeyword: "picolinate",
+    targetActiveKeyword: "chromium picolinate",
   },
   {
     id: "dsld_with_form_ascorbate",
     barcodes: [dsldWithFormAscorbateBarcode, dsldWithFormAscorbateBarcode2],
     expectedSourceType: "dsld",
     requiredFormKeyword: "ascorbate",
+    targetActiveKeyword: "calcium ascorbate",
   },
   {
     id: "dsld_with_form_bisglycinate",
     barcodes: [dsldWithFormBisglycinateBarcode, dsldWithFormBisglycinateBarcode2],
     expectedSourceType: "dsld",
     requiredFormKeyword: "bisglycinate",
+    targetActiveKeyword: "zinc bisglycinate",
   },
   {
     id: "dsld_with_form_glycinate",
     barcodes: [dsldWithFormGlycinateBarcode, dsldWithFormGlycinateBarcode2],
     expectedSourceType: "dsld",
     requiredFormKeyword: "glycinate",
+    targetActiveKeyword: "magnesium glycinate",
   },
   { id: "web", barcodes: [process.env.RENDER_WEB_BARCODE || "000000000000"], expectedSourceType: "web" },
 ];
@@ -58,6 +69,7 @@ if (process.env.RENDER_INCLUDE_NIGHTLY_CASES === "1") {
     barcodes: [dsldWithFormCreatineCitrateBarcode],
     expectedSourceType: "dsld",
     requiredFormKeyword: "creatine citrate",
+    targetActiveKeyword: "creatine citrate",
   });
 }
 
@@ -308,23 +320,27 @@ function assertDsldWithFormKbHit(detailResponse, testCase) {
   }
 
   const requiredKeyword = String(testCase.requiredFormKeyword ?? "").trim().toLowerCase();
-  const matchesKeyword = (name) => {
-    if (!requiredKeyword) return true;
-    return String(name ?? "").toLowerCase().includes(requiredKeyword);
+  const targetKeyword = String(testCase.targetActiveKeyword ?? requiredKeyword).trim().toLowerCase();
+  const matchesTarget = (name) => {
+    const s = String(name ?? "").toLowerCase();
+    if (targetKeyword && !s.includes(targetKeyword)) return false;
+    if (requiredKeyword && !s.includes(requiredKeyword)) return false;
+    return true;
   };
 
   // P0-A: Confirm a true KB sentence was used, not just a non-empty string.
-  // For with-form cases, also enforce the intended token family via a keyword.
+  // Bind the assertion to the intended active item (avoid passing due to a different ingredient).
   const hasKbSentence = items.some((item) => {
-    if (!matchesKeyword(item?.name)) return false;
+    if (!matchesTarget(item?.name)) return false;
     const tags = item?.chemicalFormExplain?.basisTags;
     return Array.isArray(tags) && tags.includes("ingredient_inference");
   });
   if (!hasKbSentence) {
     errors.push(
       `${caseId}: expected at least one chemicalFormExplain tagged ingredient_inference` +
-        (requiredKeyword ? ` (matching keyword=${requiredKeyword})` : "") +
-        ` (KB sentence)`
+        (targetKeyword ? ` (target=${targetKeyword})` : "") +
+        (requiredKeyword && requiredKeyword !== targetKeyword ? ` (required=${requiredKeyword})` : "") +
+        ` (true KB sentence)`
     );
   }
 
@@ -333,13 +349,13 @@ function assertDsldWithFormKbHit(detailResponse, testCase) {
   const hasSentenceId =
     sentenceIds && typeof sentenceIds === "object"
       ? Object.entries(sentenceIds).some(
-          ([k, value]) => matchesKeyword(k) && typeof value === "string" && value.startsWith("s_")
+          ([k, value]) => matchesTarget(k) && typeof value === "string" && value.startsWith("s_")
         )
       : false;
   if (!hasSentenceId) {
     errors.push(
       `${caseId}: expected at least one debug.formSentenceIds entry` +
-        (requiredKeyword ? ` (matching keyword=${requiredKeyword})` : "") +
+        (targetKeyword ? ` (target=${targetKeyword})` : "") +
         ` (true KB hit)`
     );
   }
@@ -350,12 +366,12 @@ function assertDsldWithFormKbHit(detailResponse, testCase) {
     return errors;
   }
   const hasNonNone = Object.entries(sources).some(
-    ([k, value]) => matchesKeyword(k) && typeof value === "string" && value !== "none"
+    ([k, value]) => matchesTarget(k) && typeof value === "string" && value !== "none"
   );
   if (!hasNonNone) {
     errors.push(
       `${caseId}: expected at least one formResolveSource != none` +
-        (requiredKeyword ? ` (matching keyword=${requiredKeyword})` : "")
+        (targetKeyword ? ` (target=${targetKeyword})` : "")
     );
   }
 
@@ -384,6 +400,7 @@ function pickKeyFields(result) {
     caseId: result.case.id,
     expectedSourceType: result.case.expectedSourceType,
     requiredFormKeyword: result.case.requiredFormKeyword ?? null,
+    targetActiveKeyword: result.case.targetActiveKeyword ?? null,
     sourceType: fastBundle?.meta?.sourceType,
     promptVersion: fastBundle?.meta?.promptVersion ?? null,
     serverCommitSha: fastBundle?.meta?.serverCommitSha ?? null,
@@ -425,7 +442,8 @@ async function runCase(testCase) {
   let detailResponse = { status: 0, payload: null, response: null };
   if (bundleCheck.fastBundle) {
     const requiredKeyword = String(testCase.requiredFormKeyword ?? "").trim().toLowerCase();
-    const shouldPage = testCase.id.startsWith("dsld_with_form") && Boolean(requiredKeyword);
+    const targetKeyword = String(testCase.targetActiveKeyword ?? requiredKeyword).trim().toLowerCase();
+    const shouldPage = testCase.id.startsWith("dsld_with_form") && Boolean(targetKeyword || requiredKeyword);
     if (!shouldPage) {
       detailResponse = await fetchIngredientsDetailPage(bundleCheck.fastBundle, 0);
     } else {
@@ -448,7 +466,7 @@ async function runCase(testCase) {
           sentenceIds && typeof sentenceIds === "object"
             ? Object.entries(sentenceIds).some(
                 ([k, v]) =>
-                  String(k).toLowerCase().includes(requiredKeyword) &&
+                  String(k).toLowerCase().includes(targetKeyword || requiredKeyword) &&
                   typeof v === "string" &&
                   v.startsWith("s_"),
               )
@@ -574,6 +592,7 @@ async function main() {
     primaryFailedReason: item.summary.primaryFailedReason ?? null,
     sourceType: item.summary.sourceType,
     requiredFormKeyword: item.summary.requiredFormKeyword ?? null,
+    targetActiveKeyword: item.summary.targetActiveKeyword ?? null,
     promptVersion: item.summary.promptVersion,
     serverCommitSha: item.summary.serverCommitSha,
     factsSourceVersion: item.summary.factsSourceVersion,
@@ -587,8 +606,8 @@ async function main() {
   await fs.writeFile(path.join(ARTIFACT_DIR, "release-evidence.json"), JSON.stringify(evidenceRows, null, 2));
 
   const mdLines = [
-    "| caseId | barcode | usedBarcode | primaryFailedReason | sourceType | requiredKeyword | cursor | promptVersion | serverCommitSha | factsSourceVersion | detail.dataStatus | fallbackUsed | formResolveSources(non-none) | formSentenceIds(hits) |",
-    "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
+    "| caseId | barcode | usedBarcode | primaryFailedReason | sourceType | requiredKeyword | targetActive | cursor | promptVersion | serverCommitSha | factsSourceVersion | detail.dataStatus | fallbackUsed | formResolveSources(non-none) | formSentenceIds(hits) |",
+    "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
   ];
   for (const row of evidenceRows) {
     const sources = row.formResolveSourcesNonNone
@@ -602,7 +621,7 @@ async function main() {
           .join("<br>")
       : "";
     mdLines.push(
-      `| ${row.caseId} | ${row.barcode} | ${row.usedBarcode ?? ""} | ${row.primaryFailedReason ?? ""} | ${row.sourceType ?? ""} | ${row.requiredFormKeyword ?? ""} | ${row.detailCursorUsed ?? ""} | ${row.promptVersion ?? ""} | ${row.serverCommitSha ?? ""} | ${row.factsSourceVersion ?? ""} | ${row.detailDataStatus ?? ""} | ${row.fallbackUsed ?? ""} | ${sources} | ${sids} |`,
+      `| ${row.caseId} | ${row.barcode} | ${row.usedBarcode ?? ""} | ${row.primaryFailedReason ?? ""} | ${row.sourceType ?? ""} | ${row.requiredFormKeyword ?? ""} | ${row.targetActiveKeyword ?? ""} | ${row.detailCursorUsed ?? ""} | ${row.promptVersion ?? ""} | ${row.serverCommitSha ?? ""} | ${row.factsSourceVersion ?? ""} | ${row.detailDataStatus ?? ""} | ${row.fallbackUsed ?? ""} | ${sources} | ${sids} |`,
     );
   }
   await fs.writeFile(path.join(ARTIFACT_DIR, "release-evidence.md"), mdLines.join("\n") + "\n");

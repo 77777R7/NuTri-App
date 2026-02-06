@@ -7,9 +7,14 @@
     "generated_from": "nutri_minimal_data_package_v4_0_en_only_review_excerpts.json@v4.0",
     "updated_at": "2026-02-05T07:50:12.316030Z",
     "production_filter": {
-      "mode": "captured_only",
-      "note": "Segments are filtered so only evidence_excerpt_status=captured is shipped.",
-      "filtered_at": "2026-02-06T02:01:14.162Z"
+      "mode": "captured_and_approved",
+      "note": "Segments are filtered so only evidence_excerpt_status=captured is shipped; curated_override sentences must be review_status=approved.",
+      "filtered_at": "2026-02-06T08:32:03.080Z"
+    },
+    "review_policy": {
+      "library": "pre_reviewed",
+      "curated_override": "approved_required",
+      "annotated_at": "2026-02-06T08:32:03.020Z"
     }
   },
   "ingredient_form_index": {
@@ -41,7 +46,8 @@
               ],
               "sentence_id": "s_8c58e0249b6ac428",
               "source": "curated_override",
-              "text": "Standard curcuminoid extract (e.g., C3 Complex) is a standardized/extracted form; it may provide a more consistent amount of key actives than raw powder."
+              "text": "Standard curcuminoid extract (e.g., C3 Complex) is a standardized/extracted form; it may provide a more consistent amount of key actives than raw powder.",
+              "review_status": "approved"
             }
           ]
         },
@@ -59,7 +65,8 @@
               ],
               "sentence_id": "s_27f4009aecbc38f7",
               "source": "curated_override",
-              "text": "Evidence is limited; standardization improves consistency of actives, not necessarily absorption."
+              "text": "Evidence is limited; standardization improves consistency of actives, not necessarily absorption.",
+              "review_status": "approved"
             }
           ]
         },
@@ -77,7 +84,8 @@
               ],
               "sentence_id": "s_aadf69966ab468fa",
               "source": "curated_override",
-              "text": "Solubility and absorption may depend on the specific actives and any carriers used."
+              "text": "Solubility and absorption may depend on the specific actives and any carriers used.",
+              "review_status": "approved"
             }
           ]
         },
@@ -95,7 +103,8 @@
               ],
               "sentence_id": "s_b99e2bb3aaf25852",
               "source": "curated_override",
-              "text": "Tolerance may vary by concentration and accompanying compounds; start low if sensitive."
+              "text": "Tolerance may vary by concentration and accompanying compounds; start low if sensitive.",
+              "review_status": "approved"
             }
           ]
         }
@@ -129,7 +138,8 @@
               ],
               "sentence_id": "s_bf806645b9e40d0f",
               "source": "curated_override",
-              "text": "Cyclodextrin curcumin complex (e.g., Cavacurmin) is designed to improve curcumin absorption; it may increase exposure versus standard extracts, but evidence is mixed across products."
+              "text": "Cyclodextrin curcumin complex (e.g., Cavacurmin) is designed to improve curcumin absorption; it may increase exposure versus standard extracts, but evidence is mixed across products.",
+              "review_status": "approved"
             }
           ]
         },
@@ -147,7 +157,8 @@
               ],
               "sentence_id": "s_624e576a9931b7cc",
               "source": "curated_override",
-              "text": "Evidence is limited; outcomes depend strongly on formulation and standardization."
+              "text": "Evidence is limited; outcomes depend strongly on formulation and standardization.",
+              "review_status": "approved"
             }
           ]
         },
@@ -165,7 +176,8 @@
               ],
               "sentence_id": "s_7bef368f337ad3cd",
               "source": "curated_override",
-              "text": "Curcumin is poorly soluble; delivery systems may improve dispersion."
+              "text": "Curcumin is poorly soluble; delivery systems may improve dispersion.",
+              "review_status": "approved"
             }
           ]
         },
@@ -183,7 +195,8 @@
               ],
               "sentence_id": "s_6431c88c77c98f1c",
               "source": "curated_override",
-              "text": "Often tolerated; concentrated systems may cause GI upset in some people."
+              "text": "Often tolerated; concentrated systems may cause GI upset in some people.",
+              "review_status": "approved"
             }
           ]
         }
@@ -312,7 +325,8 @@
               ],
               "sentence_id": "s_27b3bd782da4b2ea",
               "source": "curated_override",
-              "text": "Calcium citrate is a more soluble salt; absorption may be consistent for many people, especially with food. Evidence is limited."
+              "text": "Calcium citrate is a more soluble salt; absorption may be consistent for many people, especially with food. Evidence is limited.",
+              "review_status": "approved"
             }
           ]
         },
@@ -330,7 +344,8 @@
               ],
               "sentence_id": "s_2276b50d10f14893",
               "source": "curated_override",
-              "text": "Evidence is mixed; overall effect depends on dose, baseline status, and diet."
+              "text": "Evidence is mixed; overall effect depends on dose, baseline status, and diet.",
+              "review_status": "approved"
             }
           ]
         },
@@ -348,7 +363,8 @@
               ],
               "sentence_id": "s_a2a8452226253144",
               "source": "curated_override",
-              "text": "Typically dissolves more readily than oxide forms; this may support steadier uptake."
+              "text": "Typically dissolves more readily than oxide forms; this may support steadier uptake.",
+              "review_status": "approved"
             }
           ]
         },
@@ -366,7 +382,8 @@
               ],
               "sentence_id": "s_d0dded1687fd1589",
               "source": "curated_override",
-              "text": "Often well tolerated; if sensitive, consider splitting the dose."
+              "text": "Often well tolerated; if sensitive, consider splitting the dose.",
+              "review_status": "approved"
             }
           ]
         }
@@ -525,7 +542,8 @@
               ],
               "sentence_id": "s_3d396e1a076413ba",
               "source": "curated_override",
-              "text": "Zinc bisglycinate is a chelated form; absorption may be steady and it may compare favorably to oxide forms in some studies. Evidence is mixed."
+              "text": "Zinc bisglycinate is a chelated form; absorption may be steady and it may compare favorably to oxide forms in some studies. Evidence is mixed.",
+              "review_status": "approved"
             }
           ]
         },
@@ -544,7 +562,8 @@
               ],
               "sentence_id": "s_ad7c108f618222e7",
               "source": "curated_override",
-              "text": "Evidence is limited; benefits aren’t guaranteed—label dose and your tolerance often matter more than the form alone."
+              "text": "Evidence is limited; benefits aren’t guaranteed—label dose and your tolerance often matter more than the form alone.",
+              "review_status": "approved"
             }
           ]
         },
@@ -563,7 +582,8 @@
               ],
               "sentence_id": "s_bd2ab87591f2b20a",
               "source": "curated_override",
-              "text": "Chelated forms are generally more soluble than oxides, which may support more consistent dissolution."
+              "text": "Chelated forms are generally more soluble than oxides, which may support more consistent dissolution.",
+              "review_status": "approved"
             }
           ]
         },
@@ -582,7 +602,8 @@
               ],
               "sentence_id": "s_1a3c3958df3fa9b0",
               "source": "curated_override",
-              "text": "Many people choose this form for GI comfort, though individual response varies."
+              "text": "Many people choose this form for GI comfort, though individual response varies.",
+              "review_status": "approved"
             }
           ]
         }
@@ -616,7 +637,8 @@
               ],
               "sentence_id": "s_9cbb3e2fec203f51",
               "source": "curated_override",
-              "text": "Zinc citrate is a more soluble salt; absorption may be consistent for many people, especially with food. Evidence is limited."
+              "text": "Zinc citrate is a more soluble salt; absorption may be consistent for many people, especially with food. Evidence is limited.",
+              "review_status": "approved"
             }
           ]
         },
@@ -634,7 +656,8 @@
               ],
               "sentence_id": "s_126637a52b18b551",
               "source": "curated_override",
-              "text": "Evidence is mixed; overall effect depends on dose, baseline status, and diet."
+              "text": "Evidence is mixed; overall effect depends on dose, baseline status, and diet.",
+              "review_status": "approved"
             }
           ]
         },
@@ -652,7 +675,8 @@
               ],
               "sentence_id": "s_3b8a8abf1b2715f0",
               "source": "curated_override",
-              "text": "Typically dissolves more readily than oxide forms; this may support steadier uptake."
+              "text": "Typically dissolves more readily than oxide forms; this may support steadier uptake.",
+              "review_status": "approved"
             }
           ]
         },
@@ -670,7 +694,8 @@
               ],
               "sentence_id": "s_7c5018e5928e349c",
               "source": "curated_override",
-              "text": "Often well tolerated; if sensitive, consider splitting the dose."
+              "text": "Often well tolerated; if sensitive, consider splitting the dose.",
+              "review_status": "approved"
             }
           ]
         }
@@ -704,7 +729,8 @@
               ],
               "sentence_id": "s_a72e1a67df4c249d",
               "source": "curated_override",
-              "text": "Zinc gluconate is a chelated/organic form; absorption may be comparable to, or slightly better than, some inorganic salts in some studies."
+              "text": "Zinc gluconate is a chelated/organic form; absorption may be comparable to, or slightly better than, some inorganic salts in some studies.",
+              "review_status": "approved"
             }
           ]
         },
@@ -722,7 +748,8 @@
               ],
               "sentence_id": "s_2f4c0144b212a0c7",
               "source": "curated_override",
-              "text": "Evidence is mixed; benefits may depend on dose, meal timing, and baseline status."
+              "text": "Evidence is mixed; benefits may depend on dose, meal timing, and baseline status.",
+              "review_status": "approved"
             }
           ]
         },
@@ -740,7 +767,8 @@
               ],
               "sentence_id": "s_38cf04ebb3f4ec52",
               "source": "curated_override",
-              "text": "Generally more soluble than oxide/carbonate forms, which may support more consistent dissolution."
+              "text": "Generally more soluble than oxide/carbonate forms, which may support more consistent dissolution.",
+              "review_status": "approved"
             }
           ]
         },
@@ -758,7 +786,8 @@
               ],
               "sentence_id": "s_1fed3473ce2a3347",
               "source": "curated_override",
-              "text": "Some people find chelated forms may be gentler on the stomach, though evidence is limited."
+              "text": "Some people find chelated forms may be gentler on the stomach, though evidence is limited.",
+              "review_status": "approved"
             }
           ]
         }
@@ -792,7 +821,8 @@
               ],
               "sentence_id": "s_4af3346242dc40ef",
               "source": "curated_override",
-              "text": "Zinc oxide is a low‑solubility salt; compared with citrate or glycinate forms, absorption may be lower in some situations. Evidence is limited."
+              "text": "Zinc oxide is a low‑solubility salt; compared with citrate or glycinate forms, absorption may be lower in some situations. Evidence is limited.",
+              "review_status": "approved"
             }
           ]
         },
@@ -810,7 +840,8 @@
               ],
               "sentence_id": "s_231c568d7e7eb28d",
               "source": "curated_override",
-              "text": "Evidence is mixed; diet (e.g., phytates), dose, and formulation can materially change absorption."
+              "text": "Evidence is mixed; diet (e.g., phytates), dose, and formulation can materially change absorption.",
+              "review_status": "approved"
             }
           ]
         },
@@ -828,7 +859,8 @@
               ],
               "sentence_id": "s_50afa9da818e844b",
               "source": "curated_override",
-              "text": "Low water solubility; taking with a meal may help it dissolve."
+              "text": "Low water solubility; taking with a meal may help it dissolve.",
+              "review_status": "approved"
             }
           ]
         },
@@ -846,7 +878,8 @@
               ],
               "sentence_id": "s_f8cb1c0782504522",
               "source": "curated_override",
-              "text": "Often tolerated at typical doses; if it feels harsh, taking with food may improve comfort."
+              "text": "Often tolerated at typical doses; if it feels harsh, taking with food may improve comfort.",
+              "review_status": "approved"
             }
           ]
         }
@@ -896,7 +929,8 @@
               ],
               "sentence_id": "s_a5d6834b8db320c6",
               "source": "curated_override",
-              "text": "Ascorbic acid is the standard vitamin C form; absorption is usually good at typical doses, while very high doses may saturate uptake. Evidence is mixed."
+              "text": "Ascorbic acid is the standard vitamin C form; absorption is usually good at typical doses, while very high doses may saturate uptake. Evidence is mixed.",
+              "review_status": "approved"
             }
           ]
         },
@@ -914,7 +948,8 @@
               ],
               "sentence_id": "s_d0da39ec1633328a",
               "source": "curated_override",
-              "text": "Evidence is limited; practical differences often come down to dose and tolerability rather than the form name."
+              "text": "Evidence is limited; practical differences often come down to dose and tolerability rather than the form name.",
+              "review_status": "approved"
             }
           ]
         },
@@ -932,7 +967,8 @@
               ],
               "sentence_id": "s_050f03732610d7d3",
               "source": "curated_override",
-              "text": "Generally water‑soluble; dissolution is usually not the limiting factor."
+              "text": "Generally water‑soluble; dissolution is usually not the limiting factor.",
+              "review_status": "approved"
             }
           ]
         },
@@ -950,7 +986,8 @@
               ],
               "sentence_id": "s_bdf571b5d00f526f",
               "source": "curated_override",
-              "text": "At higher doses, some people get GI upset; splitting doses or taking with food may help."
+              "text": "At higher doses, some people get GI upset; splitting doses or taking with food may help.",
+              "review_status": "approved"
             }
           ]
         }
@@ -986,7 +1023,8 @@
               ],
               "sentence_id": "s_ac03c39a31c57a97",
               "source": "curated_override",
-              "text": "Ascorbyl palmitate is a common form; differences versus other forms are often modest and context‑dependent."
+              "text": "Ascorbyl palmitate is a common form; differences versus other forms are often modest and context‑dependent.",
+              "review_status": "approved"
             }
           ]
         },
@@ -1005,7 +1043,8 @@
               ],
               "sentence_id": "s_84d981b09af9e86e",
               "source": "curated_override",
-              "text": "Evidence is limited; label dose and context can matter more than the form alone."
+              "text": "Evidence is limited; label dose and context can matter more than the form alone.",
+              "review_status": "approved"
             }
           ]
         },
@@ -1024,7 +1063,8 @@
               ],
               "sentence_id": "s_f01058ecab7a6a39",
               "source": "curated_override",
-              "text": "Solubility varies by formulation; product excipients and manufacturing can matter."
+              "text": "Solubility varies by formulation; product excipients and manufacturing can matter.",
+              "review_status": "approved"
             }
           ]
         },
@@ -1043,7 +1083,8 @@
               ],
               "sentence_id": "s_ddfb362b435d1897",
               "source": "curated_override",
-              "text": "Tolerance is generally similar across forms, but individual response may vary."
+              "text": "Tolerance is generally similar across forms, but individual response may vary.",
+              "review_status": "approved"
             }
           ]
         }
@@ -1077,7 +1118,8 @@
               ],
               "sentence_id": "s_cda5707d0fa7f436",
               "source": "curated_override",
-              "text": "Calcium ascorbate is a buffered vitamin C form; absorption is often similar to ascorbic acid, and evidence for large differences is limited."
+              "text": "Calcium ascorbate is a buffered vitamin C form; absorption is often similar to ascorbic acid, and evidence for large differences is limited.",
+              "review_status": "approved"
             }
           ]
         },
@@ -1095,7 +1137,8 @@
               ],
               "sentence_id": "s_011c9619fc8bb4ca",
               "source": "curated_override",
-              "text": "Evidence is mixed; focus on total daily dose and your personal tolerance."
+              "text": "Evidence is mixed; focus on total daily dose and your personal tolerance.",
+              "review_status": "approved"
             }
           ]
         },
@@ -1113,7 +1156,8 @@
               ],
               "sentence_id": "s_9d17e7444da3d957",
               "source": "curated_override",
-              "text": "Typically water‑soluble; dissolution is usually adequate."
+              "text": "Typically water‑soluble; dissolution is usually adequate.",
+              "review_status": "approved"
             }
           ]
         },
@@ -1131,7 +1175,8 @@
               ],
               "sentence_id": "s_0e17af5da3a09a76",
               "source": "curated_override",
-              "text": "Buffered forms may feel gentler on the stomach for some people, though evidence is limited."
+              "text": "Buffered forms may feel gentler on the stomach for some people, though evidence is limited.",
+              "review_status": "approved"
             }
           ]
         }
@@ -1180,7 +1225,8 @@
               ],
               "sentence_id": "s_b1aa57e9bb484a4d",
               "source": "curated_override",
-              "text": "Ubiquinone is the oxidized form; absorption may improve with oil‑based softgels or solubilized formulations. Evidence is limited."
+              "text": "Ubiquinone is the oxidized form; absorption may improve with oil‑based softgels or solubilized formulations. Evidence is limited.",
+              "review_status": "approved"
             }
           ]
         },
@@ -1198,7 +1244,8 @@
               ],
               "sentence_id": "s_bff1e6bc91c95be9",
               "source": "curated_override",
-              "text": "Evidence is mixed; compare products by dose, formulation, and your response rather than the form name alone."
+              "text": "Evidence is mixed; compare products by dose, formulation, and your response rather than the form name alone.",
+              "review_status": "approved"
             }
           ]
         },
@@ -1216,7 +1263,8 @@
               ],
               "sentence_id": "s_0f53c41a948ad7f0",
               "source": "curated_override",
-              "text": "Fat‑soluble; dispersion is typically better in oil‑based products."
+              "text": "Fat‑soluble; dispersion is typically better in oil‑based products.",
+              "review_status": "approved"
             }
           ]
         },
@@ -1234,7 +1282,8 @@
               ],
               "sentence_id": "s_6e7e850c508de2a8",
               "source": "curated_override",
-              "text": "Usually tolerated; take with food to improve comfort and absorption."
+              "text": "Usually tolerated; take with food to improve comfort and absorption.",
+              "review_status": "approved"
             }
           ]
         }
@@ -1294,7 +1343,8 @@
               ],
               "sentence_id": "s_01f6b9f1d9ea6e55",
               "source": "curated_override",
-              "text": "Magnesium sulfate is a common salt form; absorption is often adequate, but may depend on dose and food. Evidence is limited."
+              "text": "Magnesium sulfate is a common salt form; absorption is often adequate, but may depend on dose and food. Evidence is limited.",
+              "review_status": "approved"
             }
           ]
         },
@@ -1311,7 +1361,8 @@
               ],
               "sentence_id": "s_f04b764cbd7665a8",
               "source": "curated_override",
-              "text": "Evidence is mixed; focus on a clinically relevant dose and your personal tolerance."
+              "text": "Evidence is mixed; focus on a clinically relevant dose and your personal tolerance.",
+              "review_status": "approved"
             }
           ]
         },
@@ -1328,7 +1379,8 @@
               ],
               "sentence_id": "s_de1ac2656386e70f",
               "source": "curated_override",
-              "text": "Usually dissolves readily; solubility is generally higher than oxide forms."
+              "text": "Usually dissolves readily; solubility is generally higher than oxide forms.",
+              "review_status": "approved"
             }
           ]
         },
@@ -1345,7 +1397,8 @@
               ],
               "sentence_id": "s_6cc2e31007a629f4",
               "source": "curated_override",
-              "text": "At higher doses, some people notice GI discomfort; taking with food may help."
+              "text": "At higher doses, some people notice GI discomfort; taking with food may help.",
+              "review_status": "approved"
             }
           ]
         }
@@ -1377,7 +1430,8 @@
               ],
               "sentence_id": "s_bbac770085babaeb",
               "source": "curated_override",
-              "text": "Magnesium oxide is a low‑solubility salt; compared with citrate or glycinate forms, absorption may be lower in some situations. Evidence is limited."
+              "text": "Magnesium oxide is a low‑solubility salt; compared with citrate or glycinate forms, absorption may be lower in some situations. Evidence is limited.",
+              "review_status": "approved"
             }
           ]
         },
@@ -1394,7 +1448,8 @@
               ],
               "sentence_id": "s_2bd7f537628a2751",
               "source": "curated_override",
-              "text": "Evidence is mixed; diet (e.g., phytates), dose, and formulation can materially change absorption."
+              "text": "Evidence is mixed; diet (e.g., phytates), dose, and formulation can materially change absorption.",
+              "review_status": "approved"
             }
           ]
         },
@@ -1411,7 +1466,8 @@
               ],
               "sentence_id": "s_00d5c621b1ac7e9e",
               "source": "curated_override",
-              "text": "Low water solubility; taking with a meal may help it dissolve."
+              "text": "Low water solubility; taking with a meal may help it dissolve.",
+              "review_status": "approved"
             }
           ]
         },
@@ -1428,7 +1484,8 @@
               ],
               "sentence_id": "s_36b5dcc40cbc3d46",
               "source": "curated_override",
-              "text": "Often tolerated at typical doses; if it feels harsh, taking with food may improve comfort."
+              "text": "Often tolerated at typical doses; if it feels harsh, taking with food may improve comfort.",
+              "review_status": "approved"
             }
           ]
         }
@@ -1460,7 +1517,8 @@
               ],
               "sentence_id": "s_4088abafb0e547a2",
               "source": "curated_override",
-              "text": "Magnesium citrate is a more soluble salt; absorption may be consistent for many people, especially with food. Evidence is limited."
+              "text": "Magnesium citrate is a more soluble salt; absorption may be consistent for many people, especially with food. Evidence is limited.",
+              "review_status": "approved"
             }
           ]
         },
@@ -1477,7 +1535,8 @@
               ],
               "sentence_id": "s_c44995b760c63812",
               "source": "curated_override",
-              "text": "Evidence is mixed; overall effect depends on dose, baseline status, and diet."
+              "text": "Evidence is mixed; overall effect depends on dose, baseline status, and diet.",
+              "review_status": "approved"
             }
           ]
         },
@@ -1494,7 +1553,8 @@
               ],
               "sentence_id": "s_8a27ef5e5a7c9258",
               "source": "curated_override",
-              "text": "Typically dissolves more readily than oxide forms; this may support steadier uptake."
+              "text": "Typically dissolves more readily than oxide forms; this may support steadier uptake.",
+              "review_status": "approved"
             }
           ]
         },
@@ -1511,7 +1571,8 @@
               ],
               "sentence_id": "s_ed79d4a378837134",
               "source": "curated_override",
-              "text": "Often well tolerated; if sensitive, consider splitting the dose."
+              "text": "Often well tolerated; if sensitive, consider splitting the dose.",
+              "review_status": "approved"
             }
           ]
         }
@@ -1543,7 +1604,8 @@
               ],
               "sentence_id": "s_1303b7aed4d66190",
               "source": "curated_override",
-              "text": "Magnesium glycinate (bisglycinate) is a chelated form; absorption may be steady and it may compare favorably to oxide forms in some studies. Evidence is mixed."
+              "text": "Magnesium glycinate (bisglycinate) is a chelated form; absorption may be steady and it may compare favorably to oxide forms in some studies. Evidence is mixed.",
+              "review_status": "approved"
             }
           ]
         },
@@ -1560,7 +1622,8 @@
               ],
               "sentence_id": "s_5147db5c397203b6",
               "source": "curated_override",
-              "text": "Evidence is limited; benefits aren’t guaranteed—label dose and your tolerance often matter more than the form alone."
+              "text": "Evidence is limited; benefits aren’t guaranteed—label dose and your tolerance often matter more than the form alone.",
+              "review_status": "approved"
             }
           ]
         },
@@ -1577,7 +1640,8 @@
               ],
               "sentence_id": "s_cbe33b3d07ce9af6",
               "source": "curated_override",
-              "text": "Chelated forms are generally more soluble than oxides, which may support more consistent dissolution."
+              "text": "Chelated forms are generally more soluble than oxides, which may support more consistent dissolution.",
+              "review_status": "approved"
             }
           ]
         },
@@ -1594,7 +1658,8 @@
               ],
               "sentence_id": "s_7afa2031685ae457",
               "source": "curated_override",
-              "text": "Many people choose this form for GI comfort, though individual response varies."
+              "text": "Many people choose this form for GI comfort, though individual response varies.",
+              "review_status": "approved"
             }
           ]
         }
@@ -1626,7 +1691,8 @@
               ],
               "sentence_id": "s_39fe7768eac7bf97",
               "source": "curated_override",
-              "text": "Magnesium bisglycinate is a chelated form; absorption may be steady and it may compare favorably to oxide forms in some studies. Evidence is mixed."
+              "text": "Magnesium bisglycinate is a chelated form; absorption may be steady and it may compare favorably to oxide forms in some studies. Evidence is mixed.",
+              "review_status": "approved"
             }
           ]
         },
@@ -1643,7 +1709,8 @@
               ],
               "sentence_id": "s_319c248fe54b9764",
               "source": "curated_override",
-              "text": "Evidence is limited; benefits aren’t guaranteed—label dose and your tolerance often matter more than the form alone."
+              "text": "Evidence is limited; benefits aren’t guaranteed—label dose and your tolerance often matter more than the form alone.",
+              "review_status": "approved"
             }
           ]
         },
@@ -1660,7 +1727,8 @@
               ],
               "sentence_id": "s_33c9f9244d456e49",
               "source": "curated_override",
-              "text": "Chelated forms are generally more soluble than oxides, which may support more consistent dissolution."
+              "text": "Chelated forms are generally more soluble than oxides, which may support more consistent dissolution.",
+              "review_status": "approved"
             }
           ]
         },
@@ -1677,7 +1745,8 @@
               ],
               "sentence_id": "s_90fcdae8f8e628d9",
               "source": "curated_override",
-              "text": "Many people choose this form for GI comfort, though individual response varies."
+              "text": "Many people choose this form for GI comfort, though individual response varies.",
+              "review_status": "approved"
             }
           ]
         }
@@ -1777,7 +1846,8 @@
               ],
               "sentence_id": "s_9509ec4fd1aa9bb3",
               "source": "curated_override",
-              "text": "Creatine citrate is a creatine salt; evidence is strongest for creatine monohydrate, and evidence for alternative forms is limited."
+              "text": "Creatine citrate is a creatine salt; evidence is strongest for creatine monohydrate, and evidence for alternative forms is limited.",
+              "review_status": "approved"
             }
           ]
         },
@@ -1794,7 +1864,8 @@
               ],
               "sentence_id": "s_c5796dfa7c4718f9",
               "source": "curated_override",
-              "text": "If you choose creatine, monohydrate has the most research; form differences may be modest at typical doses."
+              "text": "If you choose creatine, monohydrate has the most research; form differences may be modest at typical doses.",
+              "review_status": "approved"
             }
           ]
         }
@@ -2496,7 +2567,8 @@
               ],
               "sentence_id": "s_919096cda90f21f3",
               "source": "curated_override",
-              "text": "Chromium picolinate is a chelated form used in supplements; evidence for meaningful advantages over other forms is mixed."
+              "text": "Chromium picolinate is a chelated form used in supplements; evidence for meaningful advantages over other forms is mixed.",
+              "review_status": "approved"
             }
           ]
         },
@@ -2514,7 +2586,8 @@
               ],
               "sentence_id": "s_02460c4afb020c1b",
               "source": "curated_override",
-              "text": "Evidence is mixed; any benefit may depend on dose and baseline status."
+              "text": "Evidence is mixed; any benefit may depend on dose and baseline status.",
+              "review_status": "approved"
             }
           ]
         },
@@ -2532,7 +2605,8 @@
               ],
               "sentence_id": "s_dabe986d8e4d5b48",
               "source": "curated_override",
-              "text": "Chelated forms are often more soluble than some inorganic salts, though practical differences can be modest."
+              "text": "Chelated forms are often more soluble than some inorganic salts, though practical differences can be modest.",
+              "review_status": "approved"
             }
           ]
         },
@@ -2550,7 +2624,8 @@
               ],
               "sentence_id": "s_02d480b9b01fd379",
               "source": "curated_override",
-              "text": "Some people choose chelated forms for GI comfort, but evidence is limited and individual response varies."
+              "text": "Some people choose chelated forms for GI comfort, but evidence is limited and individual response varies.",
+              "review_status": "approved"
             }
           ]
         }

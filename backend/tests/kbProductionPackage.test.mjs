@@ -37,6 +37,14 @@ test("KB runtime index looks like a production package (no draft statuses)", () 
     `expected meta.generated_from to include review_excerpts (got ${generatedFrom})`,
   );
 
+  const productionFilter = meta.production_filter ?? {};
+  assert.ok(productionFilter && typeof productionFilter === "object", "expected meta.production_filter object");
+  assert.equal(
+    productionFilter.mode,
+    "captured_and_approved",
+    `expected production_filter.mode=captured_and_approved (got ${String(productionFilter.mode)})`,
+  );
+
   const walk = (value) => {
     if (!value) return;
     if (Array.isArray(value)) {
@@ -49,6 +57,14 @@ test("KB runtime index looks like a production package (no draft statuses)", () 
       if (k === "review_status") {
         assert.equal(v, "approved", `expected review_status=approved, got ${String(v)}`);
       }
+      if (k === "source" && v === "curated_override") {
+        // Overrides must be explicitly approved to ship in production.
+        assert.equal(
+          value.review_status,
+          "approved",
+          `expected curated_override review_status=approved (got ${String(value.review_status)})`,
+        );
+      }
       if (k === "evidence_excerpt_status") {
         assert.notEqual(v, "needs_capture", "production KB should not ship needs_capture evidence");
       }
@@ -58,4 +74,3 @@ test("KB runtime index looks like a production package (no draft statuses)", () 
 
   walk(json);
 });
-
