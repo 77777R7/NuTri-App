@@ -4216,7 +4216,7 @@
         "absorption": {
           "en": [
             {
-              "evidence_excerpt_status": "needs_capture",
+              "evidence_excerpt_status": "captured",
               "evidence_grade": "C",
               "evidence_reference_id": "ref_266326210fa7",
               "evidence_snippet_id": "x_9d375c93ff7c",
@@ -4226,7 +4226,7 @@
               ],
               "sentence_id": "s_04dfb24ae33f",
               "source": "curated_override",
-              "text": "Chromium glycinate (or chromium \"glycinate chelate\" blends) is a chelated form used in supplements; evidence for meaningful advantages over other chromium forms is limited.",
+              "text": "Chromium(III) glycinate is a chelated chromium form used in supplements; evidence for clear advantages over other chromium forms is limited.",
               "review_status": "needs_edit"
             }
           ]
@@ -8175,7 +8175,7 @@
         "absorption": {
           "en": [
             {
-              "evidence_excerpt_status": "needs_capture",
+              "evidence_excerpt_status": "captured",
               "evidence_grade": "C",
               "evidence_reference_id": "ref_ba63efe2dcc3",
               "evidence_snippet_id": "x_70e26b2a8930",
@@ -8185,7 +8185,7 @@
               ],
               "sentence_id": "s_424511540a98",
               "source": "curated_override",
-              "text": "Potassium bisglycinate is a glycine-chelated form; evidence specific to potassium bisglycinate is limited, and practical differences can be modest.",
+              "text": "Bisglycinate is an amino acid chelate form used in supplements; evidence for consistent advantages is limited.",
               "review_status": "needs_edit"
             }
           ]
@@ -8208,7 +8208,7 @@
         "absorption": {
           "en": [
             {
-              "evidence_excerpt_status": "needs_capture",
+              "evidence_excerpt_status": "captured",
               "evidence_grade": "C",
               "evidence_reference_id": "ref_7c7a164eae12",
               "evidence_snippet_id": "x_f41c4ff26903",
@@ -8218,7 +8218,7 @@
               ],
               "sentence_id": "s_5b443b895d73",
               "source": "curated_override",
-              "text": "Potassium glycinate is an amino acid chelate form; evidence specific to potassium glycinate is limited.",
+              "text": "Glycinate is a glycine-chelated form used in supplements; evidence for consistent advantages is limited.",
               "review_status": "needs_edit"
             }
           ]
