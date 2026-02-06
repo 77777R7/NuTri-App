@@ -58,6 +58,8 @@ const INGREDIENT_ALLOWLIST = [
   "magnesium",
   "zinc",
   "iron",
+  "ferrous",
+  "ferric",
   "copper",
   "selenium",
   "iodine",
@@ -204,6 +206,10 @@ const normalizeIngredientKey = (text) => {
   const words = s.replace(/[^a-z0-9]+/g, " ").trim().split(/\s+/).filter(Boolean);
   const first = words[0] ?? null;
   if (!first) return null;
+  // Common iron label forms:
+  // - "Ferrous bisglycinate" (DSLD meta)
+  // - "Ferric citrate" (less common, but same base nutrient)
+  if (first === "ferrous" || first === "ferric") return "iron";
   if (INGREDIENT_ALLOWLIST.includes(first)) return first;
   return null;
 };
@@ -368,14 +374,35 @@ async function main() {
   const runtimeJson = runtimeRaw ? JSON.parse(runtimeRaw.replace(/\bNaN\b/g, "null")) : null;
   const ingredientFormIndex = runtimeJson?.ingredient_form_index ?? {};
 
+  const resolveRuntimeEntry = ({ ingredientKey, token }) => {
+    if (!ingredientKey || !token) return { entry: null, runtimeKey: null };
+    const candidates = [
+      `${ingredientKey}|${token}`,
+      // Some salt forms are scoped by ingredient in the KB (e.g. potassium_chloride).
+      `${ingredientKey}|${ingredientKey}_${token}`,
+    ];
+    for (const k of candidates) {
+      const entry = ingredientFormIndex[k];
+      if (entry) return { entry, runtimeKey: k };
+    }
+    return { entry: null, runtimeKey: null };
+  };
+
   const classifyGapType = ({ ingredientKey, token }) => {
     if (!ingredientKey) return { gapType: "ingredient_unresolved", gapDetail: null };
     if (!token) return { gapType: "form_unresolved", gapDetail: null };
-    const entry = ingredientFormIndex[`${ingredientKey}|${token}`] ?? null;
+    const { entry, runtimeKey } = resolveRuntimeEntry({ ingredientKey, token });
     if (!entry) return { gapType: "kb_sentence_missing", gapDetail: "no_runtime_entry" };
     const segments = entry?.segments ?? null;
     if (!segments || typeof segments !== "object" || Object.keys(segments).length === 0) {
-      return { gapType: "kb_sentence_missing", gapDetail: "missing_segments" };
+      // If the runtime entry exists but has no shipped segments, it's typically because the production
+      // package filtered out draft/uncaptured content. Treat as excerpt/evidence gap so the fix is
+      // "capture evidence" rather than "write new sentences".
+      const refs = entry?.reference_ids;
+      if (Array.isArray(refs) && refs.length > 0) {
+        return { gapType: "kb_excerpt_missing", gapDetail: `segments_missing:${runtimeKey ?? "unknown_key"}` };
+      }
+      return { gapType: "kb_sentence_missing", gapDetail: `missing_segments:${runtimeKey ?? "unknown_key"}` };
     }
     const sentences = [];
     for (const seg of Object.values(segments)) {
@@ -720,6 +747,46 @@ async function main() {
 
   const actionRows = [...actionMap.values()].sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
   await writeSimpleCsv("sulfate_chloride_action_list.csv", actionRows);
+
+  // Workstream B: global actionable gap list (all tokens). This excludes sulfate/chloride noise
+  // (captured separately) and focuses on fixable gaps: parser/alias vs KB sentence vs excerpt capture.
+  const globalActionMap = new Map();
+  const bumpGlobalAction = ({ token, ingredient, gapType, gapDetail, example }) => {
+    const key = actionKey(token, ingredient, gapType);
+    if (!globalActionMap.has(key)) {
+      globalActionMap.set(key, {
+        token,
+        ingredient,
+        gapType,
+        gap_detail: gapDetail ?? "",
+        count: 0,
+        example_actives_excerpt: example,
+        action: actionFor(token, ingredient, gapType),
+      });
+    }
+    const cur = globalActionMap.get(key);
+    cur.count += 1;
+    if (!cur.example_actives_excerpt) cur.example_actives_excerpt = example;
+    if (!cur.gap_detail && gapDetail) cur.gap_detail = gapDetail;
+  };
+
+  for (const row of enriched) {
+    for (const m of row.matchedActives || []) {
+      if (!m.gapType) continue;
+      const token = String(m.primaryToken || (m.tokens || [])[0] || "");
+      if (!token) continue;
+      bumpGlobalAction({
+        token,
+        ingredient: String(m.ingredientKey || "unknown"),
+        gapType: String(m.gapType || "unknown"),
+        gapDetail: m.gapDetail ? String(m.gapDetail) : "",
+        example: String(m.raw || m.name || ""),
+      });
+    }
+  }
+
+  const globalRows = [...globalActionMap.values()].sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
+  await writeSimpleCsv("kb_gap_action_list.csv", globalRows);
 
   await writeCsv("candidates_top80_kb_hits.csv", stratHits.selected);
   await writeCsv("candidates_top80_kb_gaps.csv", stratGaps.selected);
