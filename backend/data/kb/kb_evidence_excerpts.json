@@ -3,7 +3,7 @@
     "generated_at": "2026-02-06T15:05:30Z",
     "source": "nutri_minimal_data_package_v4_0_en_only_review_excerpts",
     "note": "Production evidence excerpts used by shipped KB sentences (captured only).",
-    "ref_count": 15
+    "ref_count": 16
   },
   "evidence_excerpts": [
     {
@@ -185,6 +185,18 @@
       "excerpt_text": "NIH ODS notes manganese supplements come in many forms, including manganese citrate, and states no data are available on the relative bioavailability of different supplemental forms.",
       "source": "NIH ODS",
       "url": "https://ods.od.nih.gov/factsheets/Manganese-HealthProfessional/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-06T16:35:00Z",
+      "citation_id": "ref_ca802bd3b26b",
+      "excerpt_id": "x_b240178c41f73d4c",
+      "excerpt_sha256": "693424b29a6c4a7c65f116bb45b10c39f63102cf7f5d247e5945632b0610ef19",
+      "excerpt_text": "NIH ODS notes copper supplements use many forms including cupric oxide, cupric sulfate, copper amino acid chelates, and copper gluconate, and that no studies have compared bioavailability across forms.",
+      "source": "NIH ODS",
+      "url": "https://ods.od.nih.gov/factsheets/Copper-HealthProfessional/"
     }
   ]
 }

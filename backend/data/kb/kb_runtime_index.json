@@ -9,12 +9,12 @@
     "production_filter": {
       "mode": "captured_and_approved",
       "note": "Segments are filtered so only evidence_excerpt_status=captured is shipped; curated_override sentences must be review_status=approved.",
-      "filtered_at": "2026-02-06T16:26:46.119Z"
+      "filtered_at": "2026-02-06T16:35:19.491Z"
     },
     "review_policy": {
       "library": "pre_reviewed",
       "curated_override": "approved_required",
-      "annotated_at": "2026-02-06T16:26:46.127Z"
+      "annotated_at": "2026-02-06T16:35:19.492Z"
     },
     "kb_source": {
       "kind": "runtime_index_source",
@@ -2176,6 +2176,39 @@
       "reference_ids": [
         "ref_aa4c5514b22b"
       ]
+    },
+    "copper|oxide": {
+      "source": "override",
+      "ingredient_id": "copper",
+      "ingredient": "Copper",
+      "form_key": "oxide",
+      "form_display": "Cupric oxide",
+      "form_family": "oxide_carbonate",
+      "overall_confidence": 0.76,
+      "evidence_grade": "B",
+      "reference_ids": [
+        "ref_ca802bd3b26b"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_ca802bd3b26b",
+              "evidence_snippet_id": "x_b240178c41f73d4c",
+              "overall_confidence": 0.76,
+              "reference_ids": [
+                "ref_ca802bd3b26b"
+              ],
+              "review_status": "approved",
+              "sentence_id": "s_4add6ac4d344d8dc",
+              "source": "curated_override",
+              "text": "NIH ODS notes copper supplements contain many forms including cupric oxide, and states no studies have compared copper bioavailability across forms."
+            }
+          ]
+        }
+      }
     },
     "vitamin_k2|mk7": {
       "source": "override",
