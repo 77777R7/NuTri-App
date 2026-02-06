@@ -883,6 +883,37 @@ async function main() {
       }
     }
 
+    // Normalization: riboflavin 5-phosphate is a vitamin B2 form (often written "Riboflavin 5-Phosphate").
+    if (ig === "riboflavin" && t === "phosphate" && (ex.includes("5-phosphate") || ex.includes("5 phosphate"))) {
+      const { entry } = resolveRuntimeEntry({ ingredientKey: ig, token: "riboflavin_5_phosphate" });
+      if (entry) {
+        return {
+          triage: "parser_normalization",
+          canonicalFormToken: "riboflavin_5_phosphate",
+          action: "Parser/alias: normalize phosphate -> riboflavin_5_phosphate for riboflavin (runtime entry exists).",
+        };
+      }
+    }
+
+    // Normalization: vitamin C ascorbate salts are keyed by the cation (calcium/sodium), not generic "ascorbate".
+    if (ig === "vitamin_c" && t === "ascorbate") {
+      const canon =
+        ex.includes("calcium ascorbate") ? "calcium_ascorbate" :
+        ex.includes("sodium ascorbate") ? "sodium_ascorbate" :
+        ex.includes("ester-c") || ex.includes("ester c") ? "ester_c" :
+        "";
+      if (canon) {
+        const { entry } = resolveRuntimeEntry({ ingredientKey: ig, token: canon });
+        if (entry) {
+          return {
+            triage: "parser_normalization",
+            canonicalFormToken: canon,
+            action: `Parser/alias: normalize ascorbate -> ${canon} for vitamin_c (runtime entry exists).`,
+          };
+        }
+      }
+    }
+
     // Noise-ish: calcium monohydrate is often calcium HMB monohydrate rather than a mineral salt form.
     if (ig === "calcium" && t === "monohydrate" && (ex.includes("hydroxymethylbutyrate") || ex.includes("hmb"))) {
       return {
