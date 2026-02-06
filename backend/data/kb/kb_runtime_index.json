@@ -9,12 +9,12 @@
     "production_filter": {
       "mode": "captured_and_approved",
       "note": "Segments are filtered so only evidence_excerpt_status=captured is shipped; curated_override sentences must be review_status=approved.",
-      "filtered_at": "2026-02-06T21:19:00.379Z"
+      "filtered_at": "2026-02-06T21:39:54.786Z"
     },
     "review_policy": {
       "library": "pre_reviewed",
       "curated_override": "approved_required",
-      "annotated_at": "2026-02-06T21:19:00.384Z"
+      "annotated_at": "2026-02-06T21:39:54.795Z"
     },
     "kb_source": {
       "kind": "runtime_index_source",
@@ -425,9 +425,30 @@
       "evidence_grade": "C",
       "reference_ids": [
         "ref_d00668aab572",
+        "ref_b31e16044c47",
         "ref_0f31a67b8942",
         "ref_ad0bbe889a27"
-      ]
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_b31e16044c47",
+              "evidence_snippet_id": "x_274296fd4455d321",
+              "overall_confidence": 0.74,
+              "reference_ids": [
+                "ref_b31e16044c47"
+              ],
+              "sentence_id": "s_2f9b9b0f5f9a5c3e",
+              "source": "form_library",
+              "text": "NIH ODS lists calcium gluconate among forms used in supplements and notes calcium salts vary in elemental calcium content.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
     },
     "calcium|calcium_chloride": {
       "source": "override",
@@ -2176,7 +2197,27 @@
       "evidence_grade": "B",
       "reference_ids": [
         "ref_ca802bd3b26b"
-      ]
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_ca802bd3b26b",
+              "evidence_snippet_id": "x_b240178c41f73d4c",
+              "overall_confidence": 0.76,
+              "reference_ids": [
+                "ref_ca802bd3b26b"
+              ],
+              "sentence_id": "s_4c1ad4bfe0b42e8c",
+              "source": "form_library",
+              "text": "NIH ODS notes copper supplements use many forms, including copper gluconate, and states no studies have compared the bioavailability of different supplemental forms.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
     },
     "copper|copper_citrate": {
       "source": "override",
@@ -3173,8 +3214,30 @@
       "overall_confidence": 0.53,
       "evidence_grade": "C",
       "reference_ids": [
-        "ref_81c5effcbcf8"
-      ]
+        "ref_81c5effcbcf8",
+        "ref_18b4a422ce30",
+        "ref_b8f45c98f886"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_18b4a422ce30",
+              "evidence_snippet_id": "x_9bd17bb273beafff",
+              "overall_confidence": 0.53,
+              "reference_ids": [
+                "ref_18b4a422ce30"
+              ],
+              "sentence_id": "s_3d1f4eac8e2c9f0a",
+              "source": "form_library",
+              "text": "NIH ODS lists manganese sulfate among supplemental forms and notes no data are available on relative bioavailability across forms.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
     },
     "alpha_lipoic_acid|stabilized": {
       "source": "override",
@@ -3926,9 +3989,30 @@
       "evidence_grade": "C",
       "reference_ids": [
         "ref_d00668aab572",
+        "ref_b31e16044c47",
         "ref_0f31a67b8942",
         "ref_2d94a2bb26ad"
-      ]
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_b31e16044c47",
+              "evidence_snippet_id": "x_274296fd4455d321",
+              "overall_confidence": 0.74,
+              "reference_ids": [
+                "ref_b31e16044c47"
+              ],
+              "sentence_id": "s_1b92a6d7c0bfa6e2",
+              "source": "form_library",
+              "text": "NIH ODS lists calcium lactate among forms used in supplements and notes calcium salts vary in elemental calcium content.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
     },
     "calcium|calcium_phosphate": {
       "source": "library",
