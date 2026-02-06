@@ -278,23 +278,42 @@ function assertDsldWithFormKbHit(detailResponse, caseId) {
 function pickKeyFields(result) {
   const fastBundle = result.fastBundle;
   const detail = result.detailResponse?.response;
+  const debug = detail?.debug;
+
+  const formResolveSources =
+    debug?.formResolveSources && typeof debug.formResolveSources === "object" ? debug.formResolveSources : null;
+  const formSentenceIds =
+    debug?.formSentenceIds && typeof debug.formSentenceIds === "object" ? debug.formSentenceIds : null;
+
+  const nonNoneSources = formResolveSources
+    ? Object.fromEntries(Object.entries(formResolveSources).filter(([, v]) => typeof v === "string" && v !== "none"))
+    : null;
+  const sentenceIdHits = formSentenceIds
+    ? Object.fromEntries(Object.entries(formSentenceIds).filter(([, v]) => typeof v === "string" && v.startsWith("s_")))
+    : null;
 
   return {
     barcode: result.case.barcode,
     caseId: result.case.id,
     expectedSourceType: result.case.expectedSourceType,
     sourceType: fastBundle?.meta?.sourceType,
+    promptVersion: fastBundle?.meta?.promptVersion ?? null,
     serverCommitSha: fastBundle?.meta?.serverCommitSha ?? null,
     bundleId: fastBundle?.meta?.bundleId ?? null,
     revision: fastBundle?.meta?.revision ?? null,
     phase: fastBundle?.meta?.phase ?? null,
     factsDigestHash: fastBundle?.meta?.factsDigestHash ?? null,
+    factsSourceVersion: fastBundle?.meta?.factsSourceVersion ?? null,
     dataStatus: detail?.dataStatus ?? null,
     fallbackUsed: detail?.meta?.fallbackUsed ?? null,
     fallbackReason: detail?.meta?.fallbackReason ?? null,
     jobStatus: detail?.meta?.jobStatus ?? null,
     attempts: detail?.meta?.attempts ?? null,
     timingMs: detail?.timingMs ?? null,
+    formResolveSourcesNonNoneCount: nonNoneSources ? Object.keys(nonNoneSources).length : null,
+    formResolveSourcesNonNone: nonNoneSources,
+    formSentenceIdHitsCount: sentenceIdHits ? Object.keys(sentenceIdHits).length : null,
+    formSentenceIdHits: sentenceIdHits,
   };
 }
 
@@ -369,6 +388,43 @@ async function main() {
   };
 
   await fs.writeFile(path.join(ARTIFACT_DIR, "summary.json"), JSON.stringify(summary, null, 2));
+
+  // Release evidence table (stable, one row per case).
+  const evidenceRows = runResults.map((item) => ({
+    caseId: item.summary.caseId,
+    barcode: item.summary.barcode,
+    sourceType: item.summary.sourceType,
+    promptVersion: item.summary.promptVersion,
+    serverCommitSha: item.summary.serverCommitSha,
+    factsSourceVersion: item.summary.factsSourceVersion,
+    detailDataStatus: item.detailResponse?.response?.dataStatus ?? null,
+    fallbackUsed: item.summary.fallbackUsed,
+    fallbackReason: item.summary.fallbackReason,
+    formResolveSourcesNonNone: item.summary.formResolveSourcesNonNone ?? null,
+    formSentenceIdHits: item.summary.formSentenceIdHits ?? null,
+  }));
+  await fs.writeFile(path.join(ARTIFACT_DIR, "release-evidence.json"), JSON.stringify(evidenceRows, null, 2));
+
+  const mdLines = [
+    "| caseId | barcode | sourceType | promptVersion | serverCommitSha | factsSourceVersion | detail.dataStatus | fallbackUsed | formResolveSources(non-none) | formSentenceIds(hits) |",
+    "|---|---|---|---|---|---|---|---|---|---|",
+  ];
+  for (const row of evidenceRows) {
+    const sources = row.formResolveSourcesNonNone
+      ? Object.entries(row.formResolveSourcesNonNone)
+          .map(([k, v]) => `${k}:${v}`)
+          .join("<br>")
+      : "";
+    const sids = row.formSentenceIdHits
+      ? Object.entries(row.formSentenceIdHits)
+          .map(([k, v]) => `${k}:${v}`)
+          .join("<br>")
+      : "";
+    mdLines.push(
+      `| ${row.caseId} | ${row.barcode} | ${row.sourceType ?? ""} | ${row.promptVersion ?? ""} | ${row.serverCommitSha ?? ""} | ${row.factsSourceVersion ?? ""} | ${row.detailDataStatus ?? ""} | ${row.fallbackUsed ?? ""} | ${sources} | ${sids} |`,
+    );
+  }
+  await fs.writeFile(path.join(ARTIFACT_DIR, "release-evidence.md"), mdLines.join("\n") + "\n");
 
   if (summary.failCount > 0) {
     console.error("[render-regression] failures detected:");

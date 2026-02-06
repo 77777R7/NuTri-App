@@ -1,0 +1,67 @@
+name: DSLD Form Candidate Scan
+
+on:
+  workflow_dispatch:
+    inputs:
+      tokens:
+        description: "Comma-separated form tokens to search (e.g. citrate,glycinate,ascorbate)"
+        required: false
+        default: "oxide,citrate,glycinate,bisglycinate,sulfate,chloride,ascorbate,picolinate"
+        type: string
+      max_enrich:
+        description: "Max label_ids to enrich (RPC facts fetch + local KB matching)"
+        required: false
+        default: "120"
+        type: string
+      require_explicit:
+        description: "Require (as ...) parenthetical evidence in active_ingredients_summary (1/0)"
+        required: false
+        default: "1"
+        type: string
+
+  schedule:
+    - cron: "0 9 * * 1" # weekly Monday 09:00 UTC
+
+concurrency:
+  group: dsld-form-candidate-scan-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    # Keep this non-blocking; skip if secrets aren't configured.
+    if: ${{ secrets.SUPABASE_URL != '' && secrets.SUPABASE_SERVICE_ROLE_KEY != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Backend Deps
+        run: npm --prefix backend ci
+
+      - name: Build Backend (for dist imports)
+        run: npm --prefix backend run build
+
+      - name: Run Candidate Scan
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DSLD_FORM_TOKENS: ${{ github.event.inputs.tokens }}
+          DSLD_SCAN_MAX_ENRICH: ${{ github.event.inputs.max_enrich }}
+          DSLD_SCAN_REQUIRE_EXPLICIT: ${{ github.event.inputs.require_explicit }}
+        run: node scripts/ci/dsld-form-candidate-scan.mjs
+
+      - name: Upload Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dsld-form-candidates-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/dsld-form-candidates
+          if-no-files-found: warn
+
