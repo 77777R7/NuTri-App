@@ -28,8 +28,6 @@ concurrency:
 
 jobs:
   scan:
-    # Keep this non-blocking; skip if secrets aren't configured.
-    if: ${{ secrets.SUPABASE_URL != '' && secrets.SUPABASE_SERVICE_ROLE_KEY != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -48,6 +46,17 @@ jobs:
       - name: Build Backend (for dist imports)
         run: npm --prefix backend run build
 
+      - name: Validate Supabase Secrets
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${SUPABASE_URL:-}" || -z "${SUPABASE_SERVICE_ROLE_KEY:-}" ]]; then
+            echo "Missing SUPABASE_URL and/or SUPABASE_SERVICE_ROLE_KEY secrets." >&2
+            exit 1
+          fi
+
       - name: Run Candidate Scan
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -64,4 +73,3 @@ jobs:
           name: dsld-form-candidates-${{ github.run_id }}-${{ github.run_attempt }}
           path: artifacts/dsld-form-candidates
           if-no-files-found: warn
-
