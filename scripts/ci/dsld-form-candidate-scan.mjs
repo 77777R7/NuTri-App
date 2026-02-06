@@ -69,7 +69,8 @@ const REQUIRE_EXPLICIT = (process.env.DSLD_SCAN_REQUIRE_EXPLICIT || "1") !== "0"
 // Query strategy:
 // - per_token: query the view once per token (can be slow/timeout on large datasets without DB indexes)
 // - sample: fetch a fixed sample and stratify locally (preferred for CI stability)
-const META_QUERY_MODE = String(process.env.DSLD_SCAN_META_QUERY_MODE || "sample").toLowerCase();
+// - hybrid: per_token with sample fallback on token failures (recommended)
+const META_QUERY_MODE = String(process.env.DSLD_SCAN_META_QUERY_MODE || "hybrid").toLowerCase();
 const META_SAMPLE_SIZE = Number(process.env.DSLD_SCAN_META_SAMPLE_SIZE || Math.max(2000, MAX_EVALUATE * 10));
 // Keep the per-token sample target feasible when TOKENS expands; prefer coverage over depth.
 const MIN_PER_TOKEN = Number(process.env.DSLD_SCAN_MIN_PER_TOKEN || 5);
@@ -285,7 +286,8 @@ const scoreMetaRow = (row) => {
   return score;
 };
 
-async function fetchMetaCandidatesForToken(token) {
+async function fetchMetaCandidatesForToken(token, opts = {}) {
+  const limit = Number(opts.limit || MAX_LABELS_PER_TOKEN);
   const url = new URL(`${SUPABASE_URL}/rest/v1/${DSLD_CANDIDATE_VIEW}`);
   url.searchParams.set(
     "select",
@@ -297,7 +299,7 @@ async function fetchMetaCandidatesForToken(token) {
     ].join(","),
   );
   url.searchParams.set("active_ingredients_summary", `ilike.*${token}*`);
-  url.searchParams.set("limit", String(MAX_LABELS_PER_TOKEN));
+  url.searchParams.set("limit", String(limit));
 
   const res = await fetch(url.toString(), { headers: buildHeaders() });
   if (!res.ok) {
@@ -411,11 +413,25 @@ async function main() {
 
   const metaRows = [];
   const metaQueryErrors = [];
-  if (META_QUERY_MODE === "per_token") {
+  if (META_QUERY_MODE === "per_token" || META_QUERY_MODE === "hybrid") {
+    let hadFailure = false;
     for (const token of TOKENS) {
       // eslint-disable-next-line no-await-in-loop
       try {
-        const rows = await fetchMetaCandidatesForToken(token);
+        // Retry once on statement timeout with a smaller limit. This keeps the job operational
+        // under transient PostgREST/db load while still surfacing actionable gaps.
+        let rows = [];
+        try {
+          rows = await fetchMetaCandidatesForToken(token, { limit: MAX_LABELS_PER_TOKEN });
+        } catch (err) {
+          const msg = String(err?.message ?? err ?? "unknown_error");
+          const isTimeout = msg.includes("statement timeout") || msg.includes("\"57014\"");
+          if (isTimeout && MAX_LABELS_PER_TOKEN > 400) {
+            rows = await fetchMetaCandidatesForToken(token, { limit: 400 });
+          } else {
+            throw err;
+          }
+        }
         console.log(`[dsld-scan] token=${token} meta_rows=${rows.length}`);
         metaRows.push(...rows);
       } catch (err) {
@@ -423,6 +439,18 @@ async function main() {
         const msg = String(err?.message ?? err ?? "unknown_error");
         console.warn(`[dsld-scan] warn: ${msg}`);
         metaQueryErrors.push({ mode: "per_token", token, error: msg });
+        hadFailure = true;
+      }
+    }
+    if (META_QUERY_MODE === "hybrid" && hadFailure) {
+      try {
+        const rows = await fetchMetaCandidatesSample(META_SAMPLE_SIZE);
+        console.log(`[dsld-scan] meta_sample_rows=${rows.length} (limit=${META_SAMPLE_SIZE})`);
+        metaRows.push(...rows);
+      } catch (err) {
+        const msg = String(err?.message ?? err ?? "unknown_error");
+        console.warn(`[dsld-scan] warn: meta sample fallback failed: ${msg}`);
+        metaQueryErrors.push({ mode: "sample_fallback", token: null, error: msg });
       }
     }
   } else if (META_QUERY_MODE === "sample") {
@@ -436,7 +464,7 @@ async function main() {
       process.exit(1);
     }
   } else {
-    console.error(`Invalid DSLD_SCAN_META_QUERY_MODE=${META_QUERY_MODE} (expected per_token|sample)`);
+    console.error(`Invalid DSLD_SCAN_META_QUERY_MODE=${META_QUERY_MODE} (expected per_token|sample|hybrid)`);
     process.exit(1);
   }
 
