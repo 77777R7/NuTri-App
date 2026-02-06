@@ -9,7 +9,7 @@ on:
         default: "oxide,citrate,glycinate,bisglycinate,sulfate,chloride,ascorbate,picolinate"
         type: string
       max_enrich:
-        description: "Max label_ids to enrich (RPC facts fetch + local KB matching)"
+        description: "Max label_ids to evaluate (readonly view + local KB matching)"
         required: false
         default: "120"
         type: string
