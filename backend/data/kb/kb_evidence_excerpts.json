@@ -1,0 +1,154 @@
+{
+  "meta": {
+    "generated_at": "2026-02-06T15:05:30Z",
+    "source": "nutri_minimal_data_package_v4_0_en_only_review_excerpts",
+    "note": "Production evidence excerpts used by shipped KB sentences (captured only).",
+    "ref_count": 12
+  },
+  "evidence_excerpts": [
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-05T06:33:15Z",
+      "citation_id": "ref_0c7d1c9cb8f8",
+      "excerpt_id": "x_9d4f7af897c09dfc",
+      "excerpt_sha256": "96a595eba27c49d99f6c9666d987119faba5b4ce94bcddc7f0a84f4cb3828b41",
+      "excerpt_text": "NIH ODS explains that vitamin C supplements come in multiple forms (e.g., ascorbic acid, sodium/calcium ascorbate, and combination products such as Ester\u2011C). It reports that some human studies found similar plasma vitamin C across forms, and that authors concluded simple ascorbic acid is often the preferred source due to cost.",
+      "source": "NIH ODS",
+      "url": "https://ods.od.nih.gov/factsheets/VitaminC-HealthProfessional/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-05T06:33:15Z",
+      "citation_id": "ref_308010f957ae",
+      "excerpt_id": "x_cba7bc8e17d4ac91",
+      "excerpt_sha256": "9af3a279dcd9a2fb09bd018f06c27a2c54bc4f02704e3aa324bd64af226428f8",
+      "excerpt_text": "A PubMed record on innovative curcumin formulations describes pharmacokinetic comparisons using plasma concentration\u2013time curves and metrics such as AUC and Cmax to calculate relative absorption for different formulations.",
+      "source": "PubMed",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/28204880/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-05T06:33:15Z",
+      "citation_id": "ref_3226a97a5e81",
+      "excerpt_id": "x_53e0aeb063365dec",
+      "excerpt_sha256": "c070e8f91c2ad0dca402fde4c5dccf7812e51bfe321b850366a24f9dd6dc9a23",
+      "excerpt_text": "NIH ODS notes that zinc bioavailability from vegetarian diets is often lower than from nonvegetarian diets because phytates in legumes and whole grains bind zinc and inhibit absorption. It also states that food preparation techniques that reduce phytate binding (e.g., soaking) and organic acids in fermented foods might increase zinc absorption.",
+      "source": "NIH ODS",
+      "url": "https://ods.od.nih.gov/factsheets/Zinc-HealthProfessional/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-06T15:05:30Z",
+      "citation_id": "ref_39c3c7e49eaf",
+      "excerpt_id": "x_4f40a94f85ad3e25",
+      "excerpt_sha256": "92d9a2f9935b7647ebfa6aff56f6e0b5b9fc44b1743dde1a47b583ce6b25e201",
+      "excerpt_text": "Among copper's various forms, copper bis-glycinate (Cbg) has been used as an official EU-approved oral supplement to promote health.",
+      "source": "PubMed",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/40142058/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-06T15:05:30Z",
+      "citation_id": "ref_595031703427",
+      "excerpt_id": "x_1ac80a2e27303b39",
+      "excerpt_sha256": "64d82fa5d9cd95bde209b0b924d4f06b598df5ad12649e90d8edb2373c8bee0a",
+      "excerpt_text": "Dietary supplements contain many forms of chromium, including chromium picolinate, chromium nicotinate, chromium polynicotinate, chromium chloride, and chromium histidinate [ 18 , 27 ].",
+      "source": "NIH ODS",
+      "url": "https://ods.od.nih.gov/factsheets/Chromium-HealthProfessional/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-05T06:33:15Z",
+      "citation_id": "ref_836fb57ba9df",
+      "excerpt_id": "x_0bc54007a1fa3ae9",
+      "excerpt_sha256": "4e7bfda9b0f2795d29b0113d4c70b9de6585b04266d2dc30408ef618b4663e34",
+      "excerpt_text": "NIH ODS states that magnesium supplements come in different forms and absorption varies; forms that dissolve well in liquid tend to have higher absorption. It notes that aspartate, citrate, lactate, and chloride forms tend to have higher bioavailability than magnesium oxide and magnesium sulfate in small studies.",
+      "source": "NIH ODS",
+      "url": "https://ods.od.nih.gov/factsheets/Magnesium-HealthProfessional/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-05T06:33:15Z",
+      "citation_id": "ref_930d09a85d87",
+      "excerpt_id": "x_1b86cafc8ab1b99c",
+      "excerpt_sha256": "9c917d5049f666be102930039d57cbe07a5d87b57e8919828d7e887c3e86cf2b",
+      "excerpt_text": "A review on CoQ10 bioavailability reports that some studies found higher Cmax/AUC with ubiquinol versus ubiquinone, particularly in older subjects, but also cautions that comparisons can be confounded by formulation differences; it summarizes that the idea of universally superior ubiquinol bioavailability may be mistaken.",
+      "source": "PubMed Central",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7278738/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-06T15:05:30Z",
+      "citation_id": "ref_963445a26cb4",
+      "excerpt_id": "x_8f8850f2817c3853",
+      "excerpt_sha256": "d85ac4aa732fd370bd0fdc8693b3843e6677201714b628d78b256e0554b99f50",
+      "excerpt_text": "Clinical evidence has not demonstrated that different forms of creatine such as creatine citrate [ 50 ], creatine serum [ 58 ], creatine ethyl ester.",
+      "source": "JISSN",
+      "url": "https://jissn.biomedcentral.com/articles/10.1186/s12970-017-0173-z"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-06T15:05:30Z",
+      "citation_id": "ref_d00668aab572",
+      "excerpt_id": "x_e74743c5c827dcee",
+      "excerpt_sha256": "266d19a4e5f0b412f12334bfc0ee9807672dbb5b64eea73d91036fb426b688fd",
+      "excerpt_text": "The two most common forms of calcium in supplements are calcium carbonate and calcium citrate [ 1 ].",
+      "source": "NIH ODS",
+      "url": "https://ods.od.nih.gov/factsheets/Calcium-HealthProfessional/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-06T15:05:30Z",
+      "citation_id": "ref_df0b98fd0dc5",
+      "excerpt_id": "x_4591a7faa61a51b6",
+      "excerpt_sha256": "dfaaa72dd8d8cc6d069cfb17241949aa82d5486d2fc67b318882565bb1192c45",
+      "excerpt_text": "In dietary supplements, potassium is often present as potassium chloride, but many other forms&mdash;including potassium citrate, phosphate, aspartate, bicarbonate, and gluconate&mdash;are also used [ 18.",
+      "source": "NIH ODS",
+      "url": "https://ods.od.nih.gov/factsheets/Potassium-HealthProfessional/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-06T15:05:30Z",
+      "citation_id": "ref_efadf9ba73e1",
+      "excerpt_id": "x_bfa88fa88fc3bc5d",
+      "excerpt_sha256": "6648f684685832ac54cc9e18af88b89ade6f42e079b04e971e0ab9d2ccab9171",
+      "excerpt_text": "Conclusions: Ferrous bisglycinate (18-mg) was not as effective as ferrous sulfate (60-mg) in increasing ferritin concentrations and did not differentially influence biomarkers of gut health.",
+      "source": "PubMed",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/37271416/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-06T15:05:30Z",
+      "citation_id": "ref_f467d2352e07",
+      "excerpt_id": "x_ba679eb9c1e15b4e",
+      "excerpt_sha256": "958de76c59cfe7c4bacc5e935fd668eaf02162ba0924f5bc4a0ec245cb3da5ec",
+      "excerpt_text": "Bis-glycinate administration was safe and well tolerated and bis-glycinate significantly increased the oral bioavailability of zinc (+43.4%) compared with the gluconate.",
+      "source": "PubMed",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/18271278/"
+    }
+  ]
+}
