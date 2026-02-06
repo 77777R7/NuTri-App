@@ -2196,7 +2196,81 @@
       "reference_ids": [
         "ref_595031703427",
         "ref_5cc24d70846d"
-      ]
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_595031703427",
+              "evidence_snippet_id": "x_1ac80a2e27303b39",
+              "overall_confidence": 0.76,
+              "reference_ids": [
+                "ref_595031703427",
+                "ref_5cc24d70846d"
+              ],
+              "sentence_id": "s_919096cda90f21f3",
+              "source": "curated_override",
+              "text": "Chromium picolinate is a chelated form used in supplements; evidence for meaningful advantages over other forms is mixed."
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_595031703427",
+              "evidence_snippet_id": "x_1ac80a2e27303b39",
+              "overall_confidence": 0.76,
+              "reference_ids": [
+                "ref_595031703427",
+                "ref_5cc24d70846d"
+              ],
+              "sentence_id": "s_02460c4afb020c1b",
+              "source": "curated_override",
+              "text": "Evidence is mixed; any benefit may depend on dose and baseline status."
+            }
+          ]
+        },
+        "solubility": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_595031703427",
+              "evidence_snippet_id": "x_1ac80a2e27303b39",
+              "overall_confidence": 0.76,
+              "reference_ids": [
+                "ref_595031703427",
+                "ref_5cc24d70846d"
+              ],
+              "sentence_id": "s_dabe986d8e4d5b48",
+              "source": "curated_override",
+              "text": "Chelated forms are often more soluble than some inorganic salts, though practical differences can be modest."
+            }
+          ]
+        },
+        "tolerability": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_595031703427",
+              "evidence_snippet_id": "x_1ac80a2e27303b39",
+              "overall_confidence": 0.76,
+              "reference_ids": [
+                "ref_595031703427",
+                "ref_5cc24d70846d"
+              ],
+              "sentence_id": "s_02d480b9b01fd379",
+              "source": "curated_override",
+              "text": "Some people choose chelated forms for GI comfort, but evidence is limited and individual response varies."
+            }
+          ]
+        }
+      }
     },
     "chromium|chromium_citrate": {
       "source": "override",

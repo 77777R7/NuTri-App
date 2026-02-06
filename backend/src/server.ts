@@ -3992,6 +3992,9 @@ type AuthenticatedRequest = Request & {
     id: string;
     email?: string | null;
   };
+  // Set only when the request is authenticated via REGRESSION_AUTH_TOKEN.
+  // Used to gate internal debug/audit fields from normal users.
+  regressionAuth?: boolean;
 };
 
 const authDisabled =
@@ -4022,6 +4025,7 @@ const verifySupabaseToken = async (req: Request, res: Response, next: NextFuncti
       ? regressionHeader.includes(regressionAuthToken)
       : regressionHeader === regressionAuthToken;
     if (hasRegressionToken) {
+      (req as AuthenticatedRequest).regressionAuth = true;
       return next();
     }
   }
@@ -5446,6 +5450,14 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     return;
   }
 
+  const isRegressionRequest = (req as AuthenticatedRequest).regressionAuth === true;
+  const deepseekDebugEnabled =
+    process.env.DEEPSEEK_DEBUG === "1" || process.env.DEEPSEEK_DEBUG === "true";
+  // Internal debug/audit fields (sentence/excerpt/reference IDs) must not leak to normal users.
+  // Allow only for CI/regression token, or local/dev with DEEPSEEK_DEBUG enabled.
+  const allowInternalDebug =
+    isRegressionRequest || (process.env.NODE_ENV !== "production" && deepseekDebugEnabled);
+
   const { identity, section, locale, promptVersion, factsDigestHash } = parsedBody;
   const rawRequestedLimit = Math.min(
     Math.max(parsedBody.limit ?? ANALYSIS_DETAIL_LIMIT_DEFAULT, 1),
@@ -5575,7 +5587,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     // Treat those as complete to avoid permanently "locking in" a limited UI state.
     const hideDsldFallbackMarker = isDsldDetail && cachedFallback === "kb_dsld";
     let debug: Record<string, unknown> | undefined;
-    if (isDsldDetail) {
+    if (allowInternalDebug && isDsldDetail) {
       // Cached DSLD detail should still expose form resolution metadata for QA/CI.
       // We compute it from the digest slice but only attribute KB sentence IDs when the cached
       // chemicalFormExplain actually matches a KB sentence (basisTags include ingredient_inference).
@@ -6011,13 +6023,12 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     { timeoutMs: 1200 },
   );
 
-  const debugEnabled = process.env.DEEPSEEK_DEBUG === "1" || process.env.DEEPSEEK_DEBUG === "true";
-  const includeFormResolve = isDsldDetail && formResolveSources;
-  const includeFormEvidence = isDsldDetail && formEvidenceTexts;
-  const includeFormSentenceIds = isDsldDetail && formSentenceIds;
-  const includeFormExcerptIds = isDsldDetail && formExcerptIds;
-  const includeFormReferenceIds = isDsldDetail && formReferenceIds;
-  const includeDebug = debugEnabled && detailDataStatus !== "complete";
+  const includeFormResolve = allowInternalDebug && isDsldDetail && formResolveSources;
+  const includeFormEvidence = allowInternalDebug && isDsldDetail && formEvidenceTexts;
+  const includeFormSentenceIds = allowInternalDebug && isDsldDetail && formSentenceIds;
+  const includeFormExcerptIds = allowInternalDebug && isDsldDetail && formExcerptIds;
+  const includeFormReferenceIds = allowInternalDebug && isDsldDetail && formReferenceIds;
+  const includeDebug = allowInternalDebug && deepseekDebugEnabled && detailDataStatus !== "complete";
   const debugPayload =
     includeDebug ||
     includeFormResolve ||

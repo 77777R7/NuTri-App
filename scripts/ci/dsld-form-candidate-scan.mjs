@@ -15,15 +15,12 @@ process.env.KB_RUNTIME_INDEX_PATH =
 process.env.KB_FORM_ALIAS_PATH = process.env.KB_FORM_ALIAS_PATH || path.join(DEFAULT_KB_DIR, "form_alias_map.json");
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY =
-  process.env.SUPABASE_READONLY_KEY || process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_KEY = process.env.SUPABASE_READONLY_KEY || process.env.SUPABASE_ANON_KEY;
 const SUPABASE_KEY_KIND = process.env.SUPABASE_READONLY_KEY
   ? "readonly"
   : process.env.SUPABASE_ANON_KEY
     ? "anon"
-    : process.env.SUPABASE_SERVICE_ROLE_KEY
-      ? "service_role"
-      : "missing";
+    : "missing";
 
 const DSLD_CANDIDATE_VIEW = process.env.DSLD_CANDIDATE_VIEW || "regression_dsld_form_candidates_v";
 
@@ -233,10 +230,6 @@ async function fetchMetaCandidatesForToken(token) {
       "dsld_label_id",
       "barcode_normalized_gtin14",
       "dsld_product_version_code",
-      "brand",
-      "product_name",
-      "serving_size_raw",
-      "servings_per_container",
       "active_ingredients_summary",
     ].join(","),
   );
@@ -265,6 +258,7 @@ function toCsvRow(candidate) {
     .slice(0, 6)
     .map((m) => `${m.name} [${m.tokens.join("+")}]`)
     .join(" | ");
+  const gapTypes = unique((candidate.matchedActives ?? []).map((m) => m.gapType).filter(Boolean)).join("+");
   return {
     barcode_gtin14: candidate.barcodeGtin14 ?? "",
     dsld_label_id: candidate.dsldLabelId ?? "",
@@ -274,6 +268,7 @@ function toCsvRow(candidate) {
     kb_sentence_hit_count: candidate.kbSentenceHitCount ?? 0,
     kb_sentence_hit_names: kbHitNames,
     matched_actives: matched,
+    gap_types: gapTypes,
     active_ingredients_summary: String(candidate.activeIngredientsSummary ?? "").replace(/\s+/g, " ").trim(),
     score: candidate.score ?? 0,
   };
@@ -356,6 +351,30 @@ async function main() {
 
   const enriched = [];
   const explicitEvidenceKinds = new Set(["label_parenthetical", "label_as_phrase", "label_from_phrase", "salt_name"]);
+  const runtimeIndexPath = process.env.KB_RUNTIME_INDEX_PATH;
+  const runtimeRaw = runtimeIndexPath ? await fs.readFile(runtimeIndexPath, "utf-8") : null;
+  const runtimeJson = runtimeRaw ? JSON.parse(runtimeRaw.replace(/\bNaN\b/g, "null")) : null;
+  const ingredientFormIndex = runtimeJson?.ingredient_form_index ?? {};
+
+  const classifyGapType = ({ ingredientKey, token }) => {
+    if (!ingredientKey) return { gapType: "ingredient_unresolved", gapDetail: null };
+    if (!token) return { gapType: "form_unresolved", gapDetail: null };
+    const entry = ingredientFormIndex[`${ingredientKey}|${token}`] ?? null;
+    if (!entry) return { gapType: "kb_sentence_missing", gapDetail: "no_runtime_entry" };
+    const segments = entry?.segments ?? null;
+    if (!segments || typeof segments !== "object" || Object.keys(segments).length === 0) {
+      return { gapType: "kb_sentence_missing", gapDetail: "missing_segments" };
+    }
+    const sentences = [];
+    for (const seg of Object.values(segments)) {
+      const en = seg?.en;
+      if (Array.isArray(en)) sentences.push(...en);
+    }
+    if (!sentences.length) return { gapType: "kb_sentence_missing", gapDetail: "empty_segments" };
+    const missingEvidence = sentences.some((s) => !s?.evidence_reference_id || !s?.evidence_snippet_id);
+    if (missingEvidence) return { gapType: "kb_excerpt_missing", gapDetail: "missing_evidence_ids" };
+    return { gapType: "kb_sentence_missing", gapDetail: "unknown" };
+  };
 
   const evaluate = ranked.slice(0, MAX_EVALUATE);
   console.log(`[dsld-scan] deduped=${deduped.length} filtered=${filtered.length} ranked=${ranked.length} eval=${evaluate.length}`);
@@ -408,6 +427,9 @@ async function main() {
       const baseName = kbLookupName;
       const isKbHit = Boolean(kb?.sentenceId && kb?.sentence);
       if (isKbHit) kbSentenceHitNames.push(baseName);
+      const ingredientKey = normalizeIngredientKey(baseName) ?? normalizeIngredientKey(chunk) ?? null;
+      const primaryToken = tokensMatched[0] ?? null;
+      const gap = isKbHit ? null : classifyGapType({ ingredientKey, token: primaryToken });
 
       matchedActives.push({
         name: baseName,
@@ -419,6 +441,10 @@ async function main() {
         excerptId: kb?.excerptId ?? null,
         referenceId: kb?.referenceId ?? null,
         evidenceText: kb?.evidenceText ?? null,
+        ingredientKey,
+        primaryToken,
+        gapType: gap?.gapType ?? null,
+        gapDetail: gap?.gapDetail ?? null,
       });
     }
 
@@ -429,10 +455,6 @@ async function main() {
       barcodeGtin14: meta?.barcode_normalized_gtin14 ?? null,
       dsldLabelId: meta?.dsld_label_id ?? null,
       dsldProductVersionCode: meta?.dsld_product_version_code ?? null,
-      brand: meta?.brand ?? null,
-      productName: meta?.product_name ?? null,
-      servingSize: meta?.serving_size_raw ?? null,
-      servingsPerContainer: meta?.servings_per_container ?? null,
       activesCount,
       activeIngredientsSummary: meta?.active_ingredients_summary ?? null,
       matchedActives,
@@ -490,6 +512,42 @@ async function main() {
   const stratHits = selectStratified(hits, { kind: "kb_hits" });
   const stratGaps = selectStratified(gaps, { kind: "kb_gaps" });
 
+  const gapTypeStats = {};
+  const gapTypeByToken = Object.fromEntries(TOKENS.map((t) => [t, {}]));
+  const kbSentenceMissingCombos = {};
+  const kbExcerptMissingCombos = {};
+
+  for (const row of enriched) {
+    for (const active of row.matchedActives ?? []) {
+      const gt = active.gapType;
+      if (!gt) continue;
+      gapTypeStats[gt] = (gapTypeStats[gt] ?? 0) + 1;
+      const tok = active.primaryToken;
+      if (tok && gapTypeByToken[tok]) {
+        gapTypeByToken[tok][gt] = (gapTypeByToken[tok][gt] ?? 0) + 1;
+      }
+
+      const comboKey =
+        active.ingredientKey && active.primaryToken ? `${active.ingredientKey}|${active.primaryToken}` : null;
+      if (!comboKey) continue;
+      if (gt === "kb_sentence_missing") {
+        kbSentenceMissingCombos[comboKey] = (kbSentenceMissingCombos[comboKey] ?? 0) + 1;
+      }
+      if (gt === "kb_excerpt_missing") {
+        kbExcerptMissingCombos[comboKey] = (kbExcerptMissingCombos[comboKey] ?? 0) + 1;
+      }
+    }
+  }
+
+  const comboTop = (obj, limit = 50) =>
+    Object.entries(obj)
+      .sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0))
+      .slice(0, limit)
+      .map(([k, v]) => {
+        const [ingredientKey, formToken] = String(k).split("|");
+        return { ingredientKey, formToken, count: v };
+      });
+
   const gapReport = {
     generatedAt: new Date().toISOString(),
     view: DSLD_CANDIDATE_VIEW,
@@ -503,6 +561,10 @@ async function main() {
     kbGapCandidates: gaps.length,
     tokenStats,
     ingredientStatsTopGaps: ingredientLeaderboard,
+    gapTypeStats,
+    gapTypeByToken,
+    kbSentenceMissingTopCombos: comboTop(kbSentenceMissingCombos, 80),
+    kbExcerptMissingTopCombos: comboTop(kbExcerptMissingCombos, 80),
     stratifiedSampling: {
       outputLimit: OUTPUT_LIMIT,
       minPerToken: MIN_PER_TOKEN,
