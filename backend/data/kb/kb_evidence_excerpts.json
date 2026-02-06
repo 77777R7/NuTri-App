@@ -3,7 +3,7 @@
     "generated_at": "2026-02-06T15:05:30Z",
     "source": "nutri_minimal_data_package_v4_0_en_only_review_excerpts",
     "note": "Production evidence excerpts used by shipped KB sentences (captured only).",
-    "ref_count": 12
+    "ref_count": 15
   },
   "evidence_excerpts": [
     {
@@ -149,6 +149,42 @@
       "excerpt_text": "Bis-glycinate administration was safe and well tolerated and bis-glycinate significantly increased the oral bioavailability of zinc (+43.4%) compared with the gluconate.",
       "source": "PubMed",
       "url": "https://pubmed.ncbi.nlm.nih.gov/18271278/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-06T16:20:00Z",
+      "citation_id": "ref_11d346fef7d9",
+      "excerpt_id": "x_aaff1766969ff128",
+      "excerpt_sha256": "8eda0f599217e7043fec4de8d3183ae2f5ec799af6326a30cf99c7b58c45453d",
+      "excerpt_text": "A PubMed abstract reports an in vitro digestion study comparing calcium carbonate, calcium citrate malate, calcium phosphate, and calcium bisglycinate; final calcium bioaccessibility differed by source (about 20-36%).",
+      "source": "PubMed",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/29287395/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-06T16:20:00Z",
+      "citation_id": "ref_de758fd42d17",
+      "excerpt_id": "x_85e814196647cd5f",
+      "excerpt_sha256": "084e415b8dea0213fe418ff670b96d48fe560629493f7121be7cb529467b3dbb",
+      "excerpt_text": "NIH ODS says common selenium supplement forms include selenomethionine, selenium-enriched yeast, sodium selenite, and sodium selenate, and absorption from these forms can be up to about 90%.",
+      "source": "NIH ODS",
+      "url": "https://ods.od.nih.gov/factsheets/Selenium-HealthProfessional/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-06T16:20:00Z",
+      "citation_id": "ref_b8f45c98f886",
+      "excerpt_id": "x_f687fe6b88ba0fe6",
+      "excerpt_sha256": "fba8b09ce06c1be288719a90e60260eb3a45b9cd442f857876b3f1179d0ab374",
+      "excerpt_text": "NIH ODS notes manganese supplements come in many forms, including manganese citrate, and states no data are available on the relative bioavailability of different supplemental forms.",
+      "source": "NIH ODS",
+      "url": "https://ods.od.nih.gov/factsheets/Manganese-HealthProfessional/"
     }
   ]
 }
