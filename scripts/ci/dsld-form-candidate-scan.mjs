@@ -727,9 +727,9 @@ async function main() {
     await fs.writeFile(path.join(ARTIFACT_DIR, filename), csvLines.join("\n") + "\n");
   };
 
-  const writeSimpleCsv = async (filename, rows) => {
-    if (!rows.length) return;
-    const header = Object.keys(rows[0] ?? {});
+  const writeSimpleCsv = async (filename, rows, opts = {}) => {
+    const header = opts.header || Object.keys(rows[0] ?? {});
+    if (!header.length) return;
     const csvLines = [header.join(",")];
     for (const row of rows) {
       const values = header.map((key) => {
@@ -797,7 +797,9 @@ async function main() {
   }
 
   const actionRows = [...actionMap.values()].sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
-  await writeSimpleCsv("sulfate_chloride_action_list.csv", actionRows);
+  await writeSimpleCsv("sulfate_chloride_action_list.csv", actionRows, {
+    header: ["token", "ingredient", "gapType", "count", "example_actives_excerpt", "action"],
+  });
 
   // Workstream B: global actionable gap list (all tokens). This excludes sulfate/chloride noise
   // (captured separately) and focuses on fixable gaps: parser/alias vs KB sentence vs excerpt capture.
@@ -837,7 +839,9 @@ async function main() {
   }
 
   const globalRows = [...globalActionMap.values()].sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
-  await writeSimpleCsv("kb_gap_action_list.csv", globalRows);
+  await writeSimpleCsv("kb_gap_action_list.csv", globalRows, {
+    header: ["token", "ingredient", "gapType", "gap_detail", "count", "example_actives_excerpt", "action"],
+  });
 
   await writeCsv("candidates_top80_kb_hits.csv", stratHits.selected);
   await writeCsv("candidates_top80_kb_gaps.csv", stratGaps.selected);
