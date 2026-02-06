@@ -385,7 +385,9 @@ async function main() {
     if (!sentences.length) return { gapType: "kb_sentence_missing", gapDetail: "empty_segments" };
     const missingEvidence = sentences.some((s) => !s?.evidence_reference_id || !s?.evidence_snippet_id);
     if (missingEvidence) return { gapType: "kb_excerpt_missing", gapDetail: "missing_evidence_ids" };
-    return { gapType: "kb_sentence_missing", gapDetail: "unknown" };
+    // If runtime entry exists (and has sentences with evidence IDs) but we still didn't hit,
+    // the gap is usually parsing/alias mismatch, not missing KB content.
+    return { gapType: "form_unresolved", gapDetail: "runtime_entry_present" };
   };
 
   const evaluate = ranked.slice(0, MAX_EVALUATE);
