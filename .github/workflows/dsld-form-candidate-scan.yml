@@ -81,9 +81,9 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_READONLY_KEY: ${{ secrets.SUPABASE_READONLY_KEY }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-          # CI stability: avoid per-token ilike scans that can hit PostgREST/db statement timeouts.
-          # We fetch a fixed sample from the readonly view and stratify locally.
-          DSLD_SCAN_META_QUERY_MODE: sample
+          # CI stability: per-token meta queries can occasionally hit PostgREST/db statement timeouts.
+          # Use hybrid mode: per-token fetch + sample fallback on failures.
+          DSLD_SCAN_META_QUERY_MODE: hybrid
           DSLD_SCAN_META_SAMPLE_SIZE: "8000"
           # For scheduled runs, github.event.inputs.* are empty; provide stable defaults so nightly
           # behaves the same as a workflow_dispatch with default inputs.
