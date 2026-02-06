@@ -25,6 +25,9 @@ test("Vitamin C forms resolve to vitamin_c scope (ascorbate/ascorbic acid)", () 
     { ingredientName: "Calcium Ascorbate", chemicalForm: "calcium_ascorbate" },
     { ingredientName: "Sodium Ascorbate", chemicalForm: "sodium_ascorbate" },
     { ingredientName: "Ascorbic Acid", chemicalForm: "ascorbic_acid" },
+    // DSLD meta strings can appear with a leading "as ".
+    { ingredientName: "as Calcium Ascorbate", chemicalForm: "Calcium Ascorbate" },
+    { ingredientName: "as Sodium Ascorbate", chemicalForm: "Sodium Ascorbate" },
   ];
 
   for (const c of cases) {
@@ -36,4 +39,3 @@ test("Vitamin C forms resolve to vitamin_c scope (ascorbate/ascorbic acid)", () 
     assert.ok(result.referenceId, `expected referenceId for ${c.ingredientName}`);
   }
 });
-

@@ -361,10 +361,14 @@ const resolveIngredientId = (
   ingredientName: string,
   providedIngredientId?: string | null,
 ): string | null => {
+  // Some DSLD strings can start with "as ..." (e.g. "as Calcium Ascorbate"). Strip the leading
+  // marker so ingredient resolution doesn't collapse to an empty "beforeAs" token.
+  const cleanedIngredientName = ingredientName.replace(/^(as|from)\s+/i, "").trim();
+
   if (providedIngredientId) return providedIngredientId;
-  const direct = kb.ingredientNameIndex[normalizeToken(ingredientName)];
+  const direct = kb.ingredientNameIndex[normalizeToken(cleanedIngredientName)];
   if (direct) return direct;
-  const strippedParenthetical = ingredientName.replace(/\([^)]*\)/g, " ").trim();
+  const strippedParenthetical = cleanedIngredientName.replace(/\([^)]*\)/g, " ").trim();
   const withoutParenthetical = kb.ingredientNameIndex[normalizeToken(strippedParenthetical)];
   if (withoutParenthetical) return withoutParenthetical;
   const beforeComma = strippedParenthetical.split(",")[0]?.trim() ?? strippedParenthetical;
