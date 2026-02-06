@@ -170,6 +170,30 @@ const detectEvidenceKind = (text) => {
   return "salt_name";
 };
 
+const getFirstWordToken = (text) => {
+  const cleaned = normalizeFreeText(stripAmountSuffix(text)).replace(/^(as|from)\s+/i, "").trim();
+  const m = cleaned.match(/^([a-z0-9]+)/i);
+  return m?.[1]?.toLowerCase() ?? null;
+};
+
+// "salt_name" evidence is only considered strong when the chunk looks like a real salt-form label,
+// e.g. "Zinc Citrate", "Creatine Citrate", "Ferrous Bisglycinate". This avoids false positives from
+// generic token presence elsewhere in the text.
+const hasStrongSaltNameStructure = ({ chunk, ingredientKey, token }) => {
+  if (!ingredientKey || !token) return false;
+  const first = getFirstWordToken(chunk);
+  if (!first) return false;
+  // Use the allowlist on the raw label head token rather than ingredientKey; ingredientKey can be a
+  // normalized scope (e.g. vitamin_c) that doesn't appear verbatim in the label text.
+  if (!INGREDIENT_ALLOWLIST.includes(first)) return false;
+  if (!tokenRegex(token).test(chunk)) return false;
+
+  const safeFirst = first.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&");
+  const safeToken = token.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&");
+  const strong = new RegExp(`^\\s*${safeFirst}\\b[^,;]*\\b${safeToken}\\b`, "i");
+  return strong.test(chunk);
+};
+
 const isVitaminCChemicalFormName = (value) => {
   const cleaned = normalizeFreeText(value);
   return /\bascorbic\b/.test(cleaned) || /\bascorbate\b/.test(cleaned) || /\bester[-_ ]?c\b/.test(cleaned);
@@ -441,20 +465,23 @@ async function main() {
       const evidenceKind = detectEvidenceKind(chunk);
       evidenceKinds.add(evidenceKind);
 
-      if (REQUIRE_EXPLICIT) {
-        if (!explicitEvidenceKinds.has(evidenceKind)) continue;
-        // Two-stage evidence parsing:
-        // - label_parenthetical/as/from must contain an explicit token within the evidence phrase
-        // - salt_name accepts the strong "{ingredient} {token}" structure (word-boundary token + allowlist + blacklist already applied)
-        const hasStrong =
-          evidenceKind === "salt_name" ? true : tokensMatched.some((t) => hasExplicitTokenEvidence(chunk, t));
-        if (!hasStrong) continue;
-      }
-
       // KB runtime expects a stable ingredient string without trailing amounts/units; otherwise
       // reverse-token parsing can include the dose (e.g. "as calcium ascorbate 125 mg") and miss.
       const kbLookupName = stripAmountSuffix(chunk);
       const ingredientKey = normalizeIngredientKey(kbLookupName) ?? normalizeIngredientKey(chunk) ?? null;
+
+      if (REQUIRE_EXPLICIT) {
+        if (!explicitEvidenceKinds.has(evidenceKind)) continue;
+        // Two-stage evidence parsing:
+        // - label_parenthetical/as/from must contain an explicit token within the evidence phrase
+        // - salt_name accepts only the strong "{ingredient} {token}" structure (word-boundary token + allowlist + blacklist already applied)
+        const hasStrong =
+          evidenceKind === "salt_name"
+            ? tokensMatched.some((t) => hasStrongSaltNameStructure({ chunk: kbLookupName, ingredientKey, token: t }))
+            : tokensMatched.some((t) => hasExplicitTokenEvidence(chunk, t));
+        if (!hasStrong) continue;
+      }
+
       const hasSulfateChloride = tokensMatched.some((t) => SULFATE_CHLORIDE_TOKENS.has(t));
       if (hasSulfateChloride && !ingredientKey) {
         // P1: sulfate/chloride in DSLD meta is often dominated by non-salt "ingredients" like glucosamine sulfate.
@@ -473,19 +500,43 @@ async function main() {
       }
 
       for (const t of tokensMatched) tokenMatchCounts[t] += 1;
-      const kb = lookupKbFormExplain({
-        ingredientName: kbLookupName,
-        chemicalForm: null,
-        chemicalFormConfidence: null,
-        chemicalFormSource: "none",
-        chemicalFormEvidence: null,
-        ingredientId: null,
-      });
+
+      const tokenWithRuntime = tokensMatched.find((t) => resolveRuntimeEntry({ ingredientKey, token: t }).entry);
+      const orderedTokens = [
+        ...(tokenWithRuntime ? [tokenWithRuntime] : []),
+        ...tokensMatched.filter((t) => t !== tokenWithRuntime),
+      ];
+
+      const kbLookupForToken = (token) =>
+        lookupKbFormExplain({
+          ingredientName: kbLookupName,
+          ingredientId: ingredientKey,
+          chemicalForm: token,
+          // Candidate scan is explicitly looking for labels that disclose the form token.
+          chemicalFormConfidence: 1,
+          chemicalFormSource:
+            evidenceKind === "label_parenthetical" || evidenceKind === "label_as_phrase" || evidenceKind === "label_from_phrase"
+              ? evidenceKind
+              : "reverse_name_parse",
+          chemicalFormEvidence: chunk,
+        });
+
+      let kb = null;
+      let kbHitToken = null;
+      for (const t of orderedTokens) {
+        const candidate = kbLookupForToken(t);
+        if (candidate?.sentenceId && candidate?.sentence) {
+          kb = candidate;
+          kbHitToken = t;
+          break;
+        }
+      }
+      if (!kb) kb = kbLookupForToken(orderedTokens[0] ?? tokensMatched[0] ?? null);
 
       const baseName = kbLookupName;
       const isKbHit = Boolean(kb?.sentenceId && kb?.sentence);
       if (isKbHit) kbSentenceHitNames.push(baseName);
-      const primaryToken = tokensMatched[0] ?? null;
+      const primaryToken = kbHitToken ?? tokenWithRuntime ?? tokensMatched[0] ?? null;
       const gap = isKbHit ? null : classifyGapType({ ingredientKey, token: primaryToken });
 
       matchedActives.push({
