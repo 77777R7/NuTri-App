@@ -43,6 +43,9 @@ jobs:
           RENDER_REGRESSION_TOKEN: ${{ secrets.RENDER_REGRESSION_TOKEN }}
           RENDER_ARTIFACT_DIR: ${{ steps.artifact.outputs.artifact_dir }}
           RENDER_INCLUDE_NIGHTLY_CASES: "1"
+          # Nightly-only: enable lexical groundedness checks for early signal without blocking merges.
+          RENDER_GROUNDEDNESS_LEXICAL: "1"
+          RENDER_GROUNDEDNESS_LEXICAL_REQUIRE_FORM: "0"
           # Optional overrides; script has stable defaults.
           RENDER_DSLD_CREATINE_CITRATE_BARCODE: ${{ vars.RENDER_DSLD_CREATINE_CITRATE_BARCODE }}
         run: node scripts/ci/render-regression.mjs

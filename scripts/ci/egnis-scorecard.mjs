@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 /* eslint-disable no-console */
+import { execFile } from "node:child_process";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { promisify } from "node:util";
 
 const REPO = process.env.GITHUB_REPOSITORY;
 const TOKEN = process.env.GITHUB_TOKEN;
@@ -23,6 +25,7 @@ const DSLD_SCAN_DIR = path.join(DSLD_OUT_DIR, `${RUN_ID}-${RUN_ATTEMPT}`);
 const CORE_TOKENS = ["oxide", "citrate", "glycinate", "bisglycinate", "picolinate", "ascorbate"];
 
 const ensureDir = async (dir) => fs.mkdir(dir, { recursive: true });
+const execFileAsync = promisify(execFile);
 
 const fetchJson = async (url) => {
   const headers = {
@@ -37,6 +40,67 @@ const fetchJson = async (url) => {
   }
   return JSON.parse(text);
 };
+
+async function unzipList(zipPath) {
+  const { stdout } = await execFileAsync("unzip", ["-Z1", zipPath], { maxBuffer: 50 * 1024 * 1024 });
+  return String(stdout || "")
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+}
+
+async function unzipExtractText(zipPath, innerPath) {
+  const { stdout } = await execFileAsync("unzip", ["-p", zipPath, innerPath], { maxBuffer: 50 * 1024 * 1024 });
+  return String(stdout || "");
+}
+
+async function downloadArtifactZip({ repo, runId, artifactPrefix, outDir }) {
+  const artifacts = await fetchJson(`${API_URL}/repos/${repo}/actions/runs/${runId}/artifacts`);
+  const list = artifacts?.artifacts ?? [];
+  const matches = list.filter((a) => typeof a?.name === "string" && a.name.startsWith(artifactPrefix));
+  if (!matches.length) return null;
+
+  // Prefer the highest attempt number when multiple artifacts exist for the same run (reruns).
+  const parseAttempt = (name) => {
+    const m = String(name || "").match(/-(\\d+)$/);
+    return m ? Number(m[1]) : 0;
+  };
+  matches.sort((a, b) => parseAttempt(b.name) - parseAttempt(a.name));
+  const artifact = matches[0];
+  const artifactId = artifact?.id;
+  if (!artifactId) return null;
+
+  const res = await fetch(`${API_URL}/repos/${repo}/actions/artifacts/${artifactId}/zip`, {
+    headers: {
+      Accept: "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+      Authorization: `Bearer ${TOKEN}`,
+    },
+    redirect: "follow",
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`artifact download failed ${res.status}: ${text.slice(0, 200)}`);
+  }
+  const buf = Buffer.from(await res.arrayBuffer());
+  const zipPath = path.join(outDir, `${artifactPrefix}.zip`);
+  await fs.writeFile(zipPath, buf);
+  return { zipPath, artifactName: artifact.name, artifactId };
+}
+
+async function loadReleaseEvidenceFromRun({ repo, runId, outDir }) {
+  const prefix = `render-regression-${runId}-`;
+  const downloaded = await downloadArtifactZip({ repo, runId, artifactPrefix: prefix, outDir });
+  if (!downloaded) return null;
+
+  const files = await unzipList(downloaded.zipPath);
+  const evidencePath = files.find((p) => p.endsWith("release-evidence.json")) ?? null;
+  if (!evidencePath) return null;
+
+  const raw = await unzipExtractText(downloaded.zipPath, evidencePath);
+  const parsed = JSON.parse(raw);
+  return { parsed, artifactName: downloaded.artifactName, evidencePath };
+}
 
 const parseCsv = (csv) => {
   const lines = String(csv || "")
@@ -129,6 +193,12 @@ async function main() {
       recent: [],
       pass: false,
     },
+    groundedness: {
+      source: "render-regression artifacts (release-evidence.json)",
+      requiredRuns: REQUIRED_RUNS,
+      recent: [],
+      pass: false,
+    },
     kbCoverage: {
       source: "dsld-form-candidate-scan",
       scanDir: DSLD_SCAN_DIR,
@@ -170,6 +240,71 @@ async function main() {
     score.nightly.pass =
       score.nightly.recent.length >= NIGHTLY_RUNS &&
       score.nightly.recent.every((r) => r.conclusion === "success");
+
+    // Groundedness evaluation: download recent required regression artifacts and assert
+    // dsld_with_form* cases contain true KB evidence IDs and minimal evidence structure.
+    try {
+      const groundedDir = path.join(SCORECARD_DIR, "groundedness");
+      await ensureDir(groundedDir);
+      const runs = (score.required.recent || []).slice(0, REQUIRED_RUNS);
+      const results = [];
+      for (const run of runs) {
+        const runId = run.id;
+        if (!runId) continue;
+        const loaded = await loadReleaseEvidenceFromRun({ repo: REPO, runId, outDir: groundedDir });
+        if (!loaded || !Array.isArray(loaded.parsed)) {
+          results.push({ runId, pass: false, reason: "missing_release_evidence" });
+          continue;
+        }
+
+        const evidence = loaded.parsed;
+        const dsldWithForm = evidence.filter(
+          (c) =>
+            String(c?.caseId || "").startsWith("dsld_with_form") &&
+            String(c?.sourceType || "").toLowerCase() === "dsld" &&
+            String(c?.requiredFormKeyword || "").trim().length > 0,
+        );
+
+        const failures = [];
+        for (const c of dsldWithForm) {
+          const cid = String(c.caseId || "");
+          const sentenceHits = c?.formSentenceIdHits && typeof c.formSentenceIdHits === "object" ? c.formSentenceIdHits : null;
+          const excerptHits = c?.formExcerptIdHits && typeof c.formExcerptIdHits === "object" ? c.formExcerptIdHits : null;
+          const refHits = c?.formReferenceIdHits && typeof c.formReferenceIdHits === "object" ? c.formReferenceIdHits : null;
+          const hasSentence = sentenceHits ? Object.values(sentenceHits).some((v) => typeof v === "string" && v.startsWith("s_")) : false;
+          const hasExcerpt = excerptHits ? Object.values(excerptHits).some((v) => typeof v === "string" && v.startsWith("x_")) : false;
+          const hasRef = refHits ? Object.values(refHits).some((v) => typeof v === "string" && v.startsWith("ref_")) : false;
+          if (!hasSentence) failures.push(`${cid}:missing_sentence_id`);
+          if (!hasExcerpt) failures.push(`${cid}:missing_excerpt_id`);
+          if (!hasRef) failures.push(`${cid}:missing_reference_id`);
+
+          const claims = Array.isArray(c?.groundednessClaims) ? c.groundednessClaims : null;
+          const hasClaim = claims
+            ? claims.some(
+                (cl) =>
+                  Array.isArray(cl?.supportingExcerptIds) &&
+                  cl.supportingExcerptIds.some((x) => typeof x === "string" && x.startsWith("x_")) &&
+                  (cl?.supportStrength === "strong" || cl?.supportStrength === "moderate" || cl?.supportStrength === "weak"),
+              )
+            : false;
+          if (!hasClaim) failures.push(`${cid}:missing_groundedness_claim`);
+        }
+
+        results.push({
+          runId,
+          headSha: run.head_sha ?? null,
+          conclusion: run.conclusion ?? null,
+          pass: failures.length === 0,
+          failures,
+        });
+      }
+
+      score.groundedness.recent = results;
+      score.groundedness.pass =
+        results.length >= REQUIRED_RUNS && results.every((r) => r.pass === true);
+    } catch (err) {
+      score.stopCondition.reasons.push(`groundedness evaluation failed: ${String(err)}`);
+    }
   }
 
   // KB coverage is evaluated from the local candidate scan outputs (run in the same workflow).
@@ -223,6 +358,7 @@ async function main() {
   // Stop condition: minimal automated subset. (API 500/pending metrics come from regression suites.)
   if (!score.required.pass) score.stopCondition.reasons.push("required render regression not green for last N runs");
   if (!score.nightly.pass) score.stopCondition.reasons.push("nightly render regression not green for last N runs");
+  if (!score.groundedness.pass) score.stopCondition.reasons.push("groundedness gate failed for last N required runs");
   if (!score.kbCoverage.coreTokensPass)
     score.stopCondition.reasons.push(`core token hit_rate < ${TOKEN_HIT_RATE_THRESHOLD} for one or more tokens`);
   if (score.kbCoverage.topActionList.hasKbSentenceMissingTop50)
@@ -246,6 +382,7 @@ async function main() {
     ``,
     `- Required (last ${REQUIRED_RUNS}): ${score.required.pass ? "PASS" : "FAIL"}`,
     `- Nightly (last ${NIGHTLY_RUNS}): ${score.nightly.pass ? "PASS" : "FAIL"}`,
+    `- Groundedness (last ${REQUIRED_RUNS} required artifacts): ${score.groundedness.pass ? "PASS" : "FAIL"}`,
     ``,
     `## KB Coverage`,
     ``,

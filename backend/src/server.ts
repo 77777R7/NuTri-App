@@ -5470,11 +5470,18 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   }
 
   const isRegressionRequest = (req as AuthenticatedRequest).regressionAuth === true;
+  const regressionDebugHeader = req.headers["x-regression-debug"];
+  const wantsRegressionDebug = Array.isArray(regressionDebugHeader)
+    ? regressionDebugHeader.includes("1")
+    : regressionDebugHeader === "1";
   const deepseekDebugEnabled =
     process.env.DEEPSEEK_DEBUG === "1" || process.env.DEEPSEEK_DEBUG === "true";
   // Internal debug/audit fields (sentence/excerpt/reference IDs) must not leak to normal users.
-  // Allow only for CI/regression token.
-  const allowInternalDebug = isRegressionRequest;
+  // Allow only for CI/regression token, and only when explicitly requested (x-regression-debug: 1).
+  // This gives us a stable regression invariant:
+  // - With regression token + x-regression-debug: include audit/debug fields
+  // - With regression token only: no audit/debug fields
+  const allowInternalDebug = isRegressionRequest && wantsRegressionDebug;
 
   const { identity, section, locale, promptVersion, factsDigestHash } = parsedBody;
   const rawRequestedLimit = Math.min(

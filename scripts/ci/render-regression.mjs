@@ -104,13 +104,14 @@ if (!BASE_URL) {
   process.exit(1);
 }
 
-const buildHeaders = (acceptSse = false) => {
+const buildHeaders = (acceptSse = false, includeRegressionDebug = true) => {
   const headers = {
     "Content-Type": "application/json",
   };
   if (acceptSse) headers.Accept = "text/event-stream";
   if (process.env.RENDER_REGRESSION_TOKEN) {
     headers["x-regression-token"] = process.env.RENDER_REGRESSION_TOKEN;
+    if (includeRegressionDebug) headers["x-regression-debug"] = "1";
   } else if (process.env.RENDER_AUTH_DISABLED_HEADER) {
     headers["x-auth-disabled"] = process.env.RENDER_AUTH_DISABLED_HEADER;
   }
@@ -129,7 +130,7 @@ async function readSseEvents(barcode) {
   try {
     res = await fetch(`${BASE_URL}/api/enrich-stream`, {
       method: "POST",
-      headers: buildHeaders(true),
+      headers: buildHeaders(true, false),
       body: JSON.stringify({ barcode }),
       signal: ctrl.signal,
     });
@@ -307,12 +308,43 @@ function assertLnhpdLabelDosingCopied(fastBundle) {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-async function fetchIngredientsDetailPage(fastBundle, cursor) {
+let debugGateNegativeAssertionDone = false;
+
+async function assertInternalDebugGated(fastBundle) {
+  const errors = [];
+  const res = await fetchIngredientsDetailPage(fastBundle, 0, { includeRegressionDebug: false });
+  if (res.status !== 200) {
+    errors.push(`debug gate check: expected HTTP 200 from analysis-section (got ${res.status})`);
+    return errors;
+  }
+
+  const dbg = res?.response?.debug;
+  if (!dbg) return errors;
+
+  const forbiddenKeys = [
+    "formResolveSources",
+    "formEvidenceTexts",
+    "formSentenceIds",
+    "formExcerptIds",
+    "formReferenceIds",
+    "formEvidenceGrades",
+    "formSupportStrengths",
+  ];
+
+  const leaked = forbiddenKeys.filter((k) => Object.prototype.hasOwnProperty.call(dbg, k));
+  if (leaked.length) {
+    errors.push(`debug gate check: unexpected debug fields without x-regression-debug: ${leaked.join(", ")}`);
+  }
+  return errors;
+}
+
+async function fetchIngredientsDetailPage(fastBundle, cursor, opts = {}) {
   const identity = fastBundle?.meta?.authoritativeIdentity;
   if (!identity?.type || !identity?.value) {
     throw new Error("analysis_bundle missing authoritativeIdentity");
   }
 
+  const includeRegressionDebug = opts?.includeRegressionDebug !== false;
   const payload = {
     identity,
     section: "ingredients_detail",
@@ -332,7 +364,7 @@ async function fetchIngredientsDetailPage(fastBundle, cursor) {
 
     const res = await fetch(`${BASE_URL}/api/analysis-section`, {
       method: "POST",
-      headers: buildHeaders(false),
+      headers: buildHeaders(false, includeRegressionDebug),
       body: JSON.stringify(payload),
       signal: ctrl.signal,
     });
@@ -656,12 +688,26 @@ async function writeCaseArtifacts(result) {
 }
 
 async function runCase(testCase) {
-  const events = await readSseEvents(testCase.barcode);
+  let events = await readSseEvents(testCase.barcode);
+  // Render services can cold-start; the first request occasionally yields an empty stream.
+  // Retry once to reduce flakiness without masking systematic failures.
+  if (!events.length) {
+    await sleep(1500);
+    events = await readSseEvents(testCase.barcode);
+  }
   const bundleEvents = getBundleEvents(events);
   const bundleCheck = assertBundleContract(bundleEvents, testCase.expectedSourceType);
 
   let detailResponse = { status: 0, payload: null, response: null };
   if (bundleCheck.fastBundle) {
+    if (!debugGateNegativeAssertionDone && bundleCheck.fastBundle?.meta?.sourceType === "dsld") {
+      debugGateNegativeAssertionDone = true;
+      const gateErrors = await assertInternalDebugGated(bundleCheck.fastBundle);
+      if (gateErrors.length) {
+        // Attach to this case so the run fails loudly.
+        bundleCheck.errors.push(...gateErrors);
+      }
+    }
     const requiredKeyword = String(testCase.requiredFormKeyword ?? "").trim().toLowerCase();
     const targetKeyword = String(testCase.targetActiveKeyword ?? requiredKeyword).trim().toLowerCase();
     const shouldPage = testCase.id.startsWith("dsld_with_form") && Boolean(targetKeyword || requiredKeyword);
