@@ -23,6 +23,17 @@ const filterSentences = (sentences) => {
   if (MODE === "captured_only") {
     return sentences.filter((s) => s?.evidence_excerpt_status === "captured");
   }
+  if (MODE === "captured_and_approved") {
+    return sentences.filter((s) => {
+      if (s?.evidence_excerpt_status !== "captured") return false;
+      const source = String(s?.source ?? "");
+      // Library content is treated as pre-reviewed; overrides require explicit approval.
+      if (source === "curated_override") return s?.review_status === "approved";
+      if (source === "form_library") return true;
+      // Default: if review_status exists, require approved; otherwise keep.
+      return s?.review_status == null ? true : s?.review_status === "approved";
+    });
+  }
   return sentences;
 };
 
@@ -59,7 +70,10 @@ async function main() {
     ...(json.meta ?? {}),
     production_filter: {
       mode: MODE,
-      note: "Segments are filtered so only evidence_excerpt_status=captured is shipped.",
+      note:
+        MODE === "captured_and_approved"
+          ? "Segments are filtered so only evidence_excerpt_status=captured is shipped; curated_override sentences must be review_status=approved."
+          : "Segments are filtered so only evidence_excerpt_status=captured is shipped.",
       filtered_at: new Date().toISOString(),
     },
   };
@@ -72,4 +86,3 @@ main().catch((err) => {
   console.error(`[kb] filter failed: ${String(err)}`);
   process.exit(1);
 });
-
