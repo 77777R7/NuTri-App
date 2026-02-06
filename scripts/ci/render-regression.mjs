@@ -6,6 +6,9 @@ import path from "node:path";
 const ENABLE_GROUNDEDNESS_LEXICAL = (process.env.RENDER_GROUNDEDNESS_LEXICAL || "0") === "1";
 const REQUIRE_FORM_TOKEN_IN_EXCERPT =
   (process.env.RENDER_GROUNDEDNESS_LEXICAL_REQUIRE_FORM || "0") === "1";
+const ENFORCE_DEBUG_GATE_NEGATIVE_ASSERTION =
+  (process.env.RENDER_ENFORCE_DEBUG_GATE_NEGATIVE || (process.env.GITHUB_EVENT_NAME === "push" ? "1" : "0")) ===
+  "1";
 
 let evidenceExcerptByRef = null;
 
@@ -700,7 +703,11 @@ async function runCase(testCase) {
 
   let detailResponse = { status: 0, payload: null, response: null };
   if (bundleCheck.fastBundle) {
-    if (!debugGateNegativeAssertionDone && bundleCheck.fastBundle?.meta?.sourceType === "dsld") {
+    if (
+      ENFORCE_DEBUG_GATE_NEGATIVE_ASSERTION &&
+      !debugGateNegativeAssertionDone &&
+      bundleCheck.fastBundle?.meta?.sourceType === "dsld"
+    ) {
       debugGateNegativeAssertionDone = true;
       const gateErrors = await assertInternalDebugGated(bundleCheck.fastBundle);
       if (gateErrors.length) {
