@@ -2495,7 +2495,27 @@
       "evidence_grade": "B",
       "reference_ids": [
         "ref_df0b98fd0dc5"
-      ]
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_df0b98fd0dc5",
+              "evidence_snippet_id": "x_4591a7faa61a51b6",
+              "overall_confidence": 0.76,
+              "reference_ids": [
+                "ref_df0b98fd0dc5"
+              ],
+              "review_status": "approved",
+              "sentence_id": "s_3758e9d0a5108e6c",
+              "source": "curated_override",
+              "text": "NIH ODS notes potassium supplements can be present in multiple forms, including potassium citrate; labels list elemental potassium rather than the salt weight."
+            }
+          ]
+        }
+      }
     },
     "potassium|potassium_gluconate": {
       "source": "override",
@@ -7997,6 +8017,72 @@
         }
       }
     },
+    "calcium|bisglycinate": {
+      "source": "override",
+      "ingredient_id": "calcium",
+      "ingredient": "Calcium",
+      "form_key": "bisglycinate",
+      "form_display": "Calcium bisglycinate",
+      "form_family": "chelated",
+      "overall_confidence": 0.55,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_11d346fef7d9"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_11d346fef7d9",
+              "evidence_snippet_id": "x_aaff1766969ff128",
+              "overall_confidence": 0.55,
+              "reference_ids": [
+                "ref_11d346fef7d9"
+              ],
+              "review_status": "approved",
+              "sentence_id": "s_f9d744de3c0934c9",
+              "source": "curated_override",
+              "text": "A PubMed abstract reports an in vitro digestion study comparing calcium carbonate, citrate malate, calcium phosphate, and calcium bisglycinate; final calcium bioaccessibility differed by source (about 20-36%)."
+            }
+          ]
+        }
+      }
+    },
+    "selenium|citrate": {
+      "source": "override",
+      "ingredient_id": "selenium",
+      "ingredient": "Selenium",
+      "form_key": "citrate",
+      "form_display": "Selenium citrate",
+      "form_family": "chelated",
+      "overall_confidence": 0.6,
+      "evidence_grade": "B",
+      "reference_ids": [
+        "ref_de758fd42d17"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_de758fd42d17",
+              "evidence_snippet_id": "x_85e814196647cd5f",
+              "overall_confidence": 0.6,
+              "reference_ids": [
+                "ref_de758fd42d17"
+              ],
+              "review_status": "approved",
+              "sentence_id": "s_458b15a96859a7b0",
+              "source": "curated_override",
+              "text": "NIH ODS says common selenium supplement forms include selenomethionine, selenium-enriched yeast, sodium selenite, and sodium selenate, and absorption from these forms can be up to about 90%."
+            }
+          ]
+        }
+      }
+    },
     "manganese|citrate": {
       "source": "override",
       "ingredient_id": "manganese",
@@ -8005,22 +8091,26 @@
       "form_display": "Manganese citrate",
       "form_family": "chelated",
       "overall_confidence": 0.5,
-      "evidence_grade": "C",
-      "reference_ids": [],
+      "evidence_grade": "B",
+      "reference_ids": [
+        "ref_b8f45c98f886"
+      ],
       "segments": {
         "absorption": {
           "en": [
             {
               "evidence_excerpt_status": "captured",
-              "evidence_grade": "C",
-              "evidence_reference_id": "ref_manganese_ods_placeholder",
-              "evidence_snippet_id": "x_manganese_ods_placeholder",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_b8f45c98f886",
+              "evidence_snippet_id": "x_f687fe6b88ba0fe6",
               "overall_confidence": 0.5,
-              "reference_ids": [],
-              "review_status": "needs_edit",
-              "sentence_id": "s_c9d32e738790fa2c",
+              "reference_ids": [
+                "ref_b8f45c98f886"
+              ],
+              "review_status": "approved",
+              "sentence_id": "s_18c9a74a9aca2b7f",
               "source": "curated_override",
-              "text": "Draft: Manganese citrate is a manganese salt used in supplements; evidence for meaningful advantages over other forms is limited."
+              "text": "NIH ODS notes manganese supplements come in many forms, including manganese citrate, and states no data are available on the relative bioavailability of different supplemental forms."
             }
           ]
         }
