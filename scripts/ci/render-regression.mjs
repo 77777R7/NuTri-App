@@ -6,9 +6,9 @@ import path from "node:path";
 const dsldNoFormBarcode =
   process.env.RENDER_DSLD_NOFORM_BARCODE || process.env.RENDER_DSLD_BARCODE || "026664275110";
 const dsldWithFormBarcode = process.env.RENDER_DSLD_FORM_BARCODE || "00690290532093";
-// Prefer a picolinate sample (page0) so dsld_with_form_2 exercises a distinct family vs glycinate.
-const dsldWithFormBarcode2 = process.env.RENDER_DSLD_FORM2_BARCODE || "00789939100622";
-const dsldWithFormBarcode2b = process.env.RENDER_DSLD_FORM2_BARCODE2 || "00854936003044";
+// Prefer a picolinate sample where DSLD facts include explicit actives (avoid proprietary-blend-only rows).
+const dsldWithFormBarcode2 = process.env.RENDER_DSLD_FORM2_BARCODE || "00854936003044";
+const dsldWithFormBarcode2b = process.env.RENDER_DSLD_FORM2_BARCODE2 || "09315771009765";
 const dsldWithFormGlycinateBarcode = process.env.RENDER_DSLD_GLYCINATE_BARCODE || "00700461233336";
 const dsldWithFormGlycinateBarcode2 = process.env.RENDER_DSLD_GLYCINATE_BARCODE2 || "00700461233350";
 // Keep a fallback barcode in case the DSLD mapping drifts.
