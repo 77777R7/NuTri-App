@@ -204,14 +204,12 @@ async function main() {
 
   const deduped = [...byId.values()].filter((r) => r?.barcode_normalized_gtin14);
   // Light filter: avoid huge multi-actives labels.
-  const filtered = deduped
-    .filter((r) => countActivesApprox(r.active_ingredients_summary) <= MAX_ACTIVES)
-    .filter((r) => {
-      if (!REQUIRE_EXPLICIT) return true;
-      const summary = r.active_ingredients_summary;
-      // Require at least one token to appear inside (as ...) to avoid noisy candidates.
-      return TOKENS.some((t) => hasExplicitAsToken(summary, t));
-    });
+  //
+  // NOTE: We intentionally do NOT enforce explicit "(as ...)" evidence at the meta layer.
+  // Many DSLD summaries use "as ..." phrasing (or other formats), so enforcing it here can
+  // incorrectly drop all candidates. Explicit evidence is enforced during enrichment using
+  // digest-level `chemicalFormSource`.
+  const filtered = deduped.filter((r) => countActivesApprox(r.active_ingredients_summary) <= MAX_ACTIVES);
 
   await fs.writeFile(path.join(ARTIFACT_DIR, "candidates_meta_raw.json"), JSON.stringify(filtered, null, 2));
 
