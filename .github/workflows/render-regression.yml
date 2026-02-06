@@ -21,6 +21,11 @@ on:
         description: "Optional override for Render deploy hook URL"
         required: false
         type: string
+      skip_deploy_hook:
+        description: "Skip calling Render deploy hook (use when verifying an already-deployed commit)"
+        required: false
+        default: false
+        type: boolean
 
 concurrency:
   group: render-regression-${{ github.workflow }}-${{ github.ref }}
@@ -105,7 +110,7 @@ jobs:
           echo "Resolved deploy_mode=$DEPLOY_MODE"
 
       - name: Trigger Render Deploy Hook
-        if: steps.target.outputs.deploy_hook_url != ''
+        if: steps.target.outputs.deploy_hook_url != '' && (github.event_name != 'workflow_dispatch' || github.event.inputs.skip_deploy_hook != 'true')
         env:
           RENDER_DEPLOY_HOOK_URL: ${{ steps.target.outputs.deploy_hook_url }}
         run: |
