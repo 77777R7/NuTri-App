@@ -2177,6 +2177,39 @@
         "ref_aa4c5514b22b"
       ]
     },
+    "copper|oxide": {
+      "source": "override",
+      "ingredient_id": "copper",
+      "ingredient": "Copper",
+      "form_key": "oxide",
+      "form_display": "Cupric oxide",
+      "form_family": "oxide_carbonate",
+      "overall_confidence": 0.76,
+      "evidence_grade": "B",
+      "reference_ids": [
+        "ref_ca802bd3b26b"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_ca802bd3b26b",
+              "evidence_snippet_id": "x_b240178c41f73d4c",
+              "overall_confidence": 0.76,
+              "reference_ids": [
+                "ref_ca802bd3b26b"
+              ],
+              "review_status": "approved",
+              "sentence_id": "s_4add6ac4d344d8dc",
+              "source": "curated_override",
+              "text": "NIH ODS notes copper supplements contain many forms including cupric oxide, and states no studies have compared copper bioavailability across forms."
+            }
+          ]
+        }
+      }
+    },
     "vitamin_k2|mk7": {
       "source": "override",
       "ingredient_id": "vitamin_k2",
