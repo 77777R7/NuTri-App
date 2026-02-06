@@ -49,20 +49,22 @@ jobs:
       - name: Validate Supabase Secrets
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_READONLY_KEY: ${{ secrets.SUPABASE_READONLY_KEY }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           set -euo pipefail
-          if [[ -z "${SUPABASE_URL:-}" || -z "${SUPABASE_SERVICE_ROLE_KEY:-}" ]]; then
-            echo "Missing SUPABASE_URL and/or SUPABASE_SERVICE_ROLE_KEY secrets." >&2
+          if [[ -z "${SUPABASE_URL:-}" || ( -z "${SUPABASE_READONLY_KEY:-}" && -z "${SUPABASE_ANON_KEY:-}" ) ]]; then
+            echo "Missing SUPABASE_URL and/or SUPABASE_READONLY_KEY (or SUPABASE_ANON_KEY) secrets." >&2
             exit 1
           fi
 
       - name: Run Candidate Scan
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_READONLY_KEY: ${{ secrets.SUPABASE_READONLY_KEY }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           DSLD_FORM_TOKENS: ${{ github.event.inputs.tokens }}
-          DSLD_SCAN_MAX_ENRICH: ${{ github.event.inputs.max_enrich }}
+          DSLD_SCAN_MAX_EVALUATE: ${{ github.event.inputs.max_enrich }}
           DSLD_SCAN_REQUIRE_EXPLICIT: ${{ github.event.inputs.require_explicit }}
         run: node scripts/ci/dsld-form-candidate-scan.mjs
 

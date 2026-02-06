@@ -7,13 +7,20 @@ const dsldNoFormBarcode =
   process.env.RENDER_DSLD_NOFORM_BARCODE || process.env.RENDER_DSLD_BARCODE || "026664275110";
 const dsldWithFormBarcode = process.env.RENDER_DSLD_FORM_BARCODE || "00690290532093";
 const dsldWithFormBarcode2 = process.env.RENDER_DSLD_FORM2_BARCODE || "00678226014301";
+const dsldWithFormAscorbateBarcode = process.env.RENDER_DSLD_ASCORBATE_BARCODE || "00708118021602";
+const dsldWithFormAscorbateBarcode2 = process.env.RENDER_DSLD_ASCORBATE_BARCODE2 || "00708118010262";
 
 const DEFAULT_CASES = [
-  { id: "lnhpd", barcode: process.env.RENDER_LNHPD_BARCODE || "00029537001069", expectedSourceType: "lnhpd" },
-  { id: "dsld_no_form", barcode: dsldNoFormBarcode, expectedSourceType: "dsld" },
-  { id: "dsld_with_form", barcode: dsldWithFormBarcode, expectedSourceType: "dsld" },
-  { id: "dsld_with_form_2", barcode: dsldWithFormBarcode2, expectedSourceType: "dsld" },
-  { id: "web", barcode: process.env.RENDER_WEB_BARCODE || "000000000000", expectedSourceType: "web" },
+  { id: "lnhpd", barcodes: [process.env.RENDER_LNHPD_BARCODE || "00029537001069"], expectedSourceType: "lnhpd" },
+  { id: "dsld_no_form", barcodes: [dsldNoFormBarcode], expectedSourceType: "dsld" },
+  { id: "dsld_with_form", barcodes: [dsldWithFormBarcode], expectedSourceType: "dsld" },
+  { id: "dsld_with_form_2", barcodes: [dsldWithFormBarcode2], expectedSourceType: "dsld" },
+  {
+    id: "dsld_with_form_ascorbate",
+    barcodes: [dsldWithFormAscorbateBarcode, dsldWithFormAscorbateBarcode2],
+    expectedSourceType: "dsld",
+  },
+  { id: "web", barcodes: [process.env.RENDER_WEB_BARCODE || "000000000000"], expectedSourceType: "web" },
 ];
 
 const BASE_URL = process.env.RENDER_BASE_URL;
@@ -318,7 +325,8 @@ function pickKeyFields(result) {
 }
 
 async function writeCaseArtifacts(result) {
-  const caseDir = path.join(ARTIFACT_DIR, result.case.id);
+  // Preserve multiple attempts (e.g. primary + fallback barcode) under a stable case directory.
+  const caseDir = path.join(ARTIFACT_DIR, result.case.id, result.case.barcode);
   await ensureDir(caseDir);
 
   await fs.writeFile(path.join(caseDir, "events.json"), JSON.stringify(result.events, null, 2));
@@ -363,15 +371,58 @@ async function runCase(testCase) {
   return result;
 }
 
+async function runCaseWithFallback(testCase) {
+  const [primaryBarcode, fallbackBarcode] = testCase.barcodes;
+  if (!primaryBarcode) {
+    throw new Error(`case ${testCase.id} missing barcode`);
+  }
+  const primary = await runCase({ ...testCase, barcode: primaryBarcode });
+  primary.summary.usedBarcode = primaryBarcode;
+
+  if (!fallbackBarcode || primary.summary.pass) {
+    primary.summary.primaryFailedReason = null;
+    primary.summary.primaryBarcode = primaryBarcode;
+    return primary;
+  }
+
+  const primaryFailedReason = primary.errors.join("; ");
+  const fallback = await runCase({ ...testCase, barcode: fallbackBarcode });
+  fallback.summary.usedBarcode = fallbackBarcode;
+  fallback.summary.primaryBarcode = primaryBarcode;
+  fallback.summary.primaryFailedReason = primaryFailedReason || "primary_failed";
+
+  if (fallback.summary.pass) {
+    return fallback;
+  }
+
+  // Both failed: keep the primary as the canonical failure, but preserve fallback context.
+  primary.summary.primaryBarcode = primaryBarcode;
+  primary.summary.primaryFailedReason = null;
+  primary.summary.fallbackBarcode = fallbackBarcode;
+  primary.summary.fallbackFailedReason = fallback.errors.join("; ") || "fallback_failed";
+  primary.summary.errors = [
+    ...primary.summary.errors,
+    `fallback_failed: ${primary.summary.fallbackFailedReason}`,
+  ];
+  primary.summary.pass = false;
+  primary.errors = primary.summary.errors;
+  return primary;
+}
+
 async function main() {
   await ensureDir(ARTIFACT_DIR);
 
   const runResults = [];
   for (const testCase of DEFAULT_CASES) {
-    console.log(`[render-regression] running case=${testCase.id} barcode=${testCase.barcode}`);
+    const primaryBarcode = testCase.barcodes?.[0] ?? "";
+    const fallbackBarcode = testCase.barcodes?.[1] ?? null;
+    const label = fallbackBarcode
+      ? `${primaryBarcode} (fallback ${fallbackBarcode})`
+      : primaryBarcode;
+    console.log(`[render-regression] running case=${testCase.id} barcode=${label}`);
     // serial execution keeps logs deterministic and easier to debug
     // eslint-disable-next-line no-await-in-loop
-    const result = await runCase(testCase);
+    const result = await runCaseWithFallback(testCase);
     runResults.push(result);
     console.log(
       `[render-regression] case=${testCase.id} pass=${result.summary.pass} sourceType=${result.summary.sourceType} dataStatus=${result.summary.dataStatus} fallback=${result.summary.fallbackUsed ?? "none"}`
@@ -393,6 +444,9 @@ async function main() {
   const evidenceRows = runResults.map((item) => ({
     caseId: item.summary.caseId,
     barcode: item.summary.barcode,
+    usedBarcode: item.summary.usedBarcode ?? item.summary.barcode,
+    primaryBarcode: item.summary.primaryBarcode ?? null,
+    primaryFailedReason: item.summary.primaryFailedReason ?? null,
     sourceType: item.summary.sourceType,
     promptVersion: item.summary.promptVersion,
     serverCommitSha: item.summary.serverCommitSha,
@@ -406,8 +460,8 @@ async function main() {
   await fs.writeFile(path.join(ARTIFACT_DIR, "release-evidence.json"), JSON.stringify(evidenceRows, null, 2));
 
   const mdLines = [
-    "| caseId | barcode | sourceType | promptVersion | serverCommitSha | factsSourceVersion | detail.dataStatus | fallbackUsed | formResolveSources(non-none) | formSentenceIds(hits) |",
-    "|---|---|---|---|---|---|---|---|---|---|",
+    "| caseId | barcode | usedBarcode | primaryFailedReason | sourceType | promptVersion | serverCommitSha | factsSourceVersion | detail.dataStatus | fallbackUsed | formResolveSources(non-none) | formSentenceIds(hits) |",
+    "|---|---|---|---|---|---|---|---|---|---|---|---|",
   ];
   for (const row of evidenceRows) {
     const sources = row.formResolveSourcesNonNone
@@ -421,7 +475,7 @@ async function main() {
           .join("<br>")
       : "";
     mdLines.push(
-      `| ${row.caseId} | ${row.barcode} | ${row.sourceType ?? ""} | ${row.promptVersion ?? ""} | ${row.serverCommitSha ?? ""} | ${row.factsSourceVersion ?? ""} | ${row.detailDataStatus ?? ""} | ${row.fallbackUsed ?? ""} | ${sources} | ${sids} |`,
+      `| ${row.caseId} | ${row.barcode} | ${row.usedBarcode ?? ""} | ${row.primaryFailedReason ?? ""} | ${row.sourceType ?? ""} | ${row.promptVersion ?? ""} | ${row.serverCommitSha ?? ""} | ${row.factsSourceVersion ?? ""} | ${row.detailDataStatus ?? ""} | ${row.fallbackUsed ?? ""} | ${sources} | ${sids} |`,
     );
   }
   await fs.writeFile(path.join(ARTIFACT_DIR, "release-evidence.md"), mdLines.join("\n") + "\n");

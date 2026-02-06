@@ -4,7 +4,6 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { buildFactsDigestFromDsld } from "../../backend/dist/factsDigest.js";
 import { lookupKbFormExplain } from "../../backend/dist/kbRuntime.js";
 
 // Ensure KB paths resolve regardless of the runner cwd.
@@ -16,7 +15,17 @@ process.env.KB_RUNTIME_INDEX_PATH =
 process.env.KB_FORM_ALIAS_PATH = process.env.KB_FORM_ALIAS_PATH || path.join(DEFAULT_KB_DIR, "form_alias_map.json");
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_KEY =
+  process.env.SUPABASE_READONLY_KEY || process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_KEY_KIND = process.env.SUPABASE_READONLY_KEY
+  ? "readonly"
+  : process.env.SUPABASE_ANON_KEY
+    ? "anon"
+    : process.env.SUPABASE_SERVICE_ROLE_KEY
+      ? "service_role"
+      : "missing";
+
+const DSLD_CANDIDATE_VIEW = process.env.DSLD_CANDIDATE_VIEW || "regression_dsld_form_candidates_v";
 
 const OUT_DIR = process.env.DSLD_CANDIDATE_ARTIFACT_DIR || "artifacts/dsld-form-candidates";
 const RUN_ID = process.env.GITHUB_RUN_ID || "local";
@@ -41,9 +50,11 @@ const DEFAULT_TOKENS = [
 
 const TOKENS = FORM_TOKENS.length ? FORM_TOKENS : DEFAULT_TOKENS;
 const MAX_LABELS_PER_TOKEN = Number(process.env.DSLD_SCAN_MAX_LABELS_PER_TOKEN || 200);
-const MAX_ENRICH = Number(process.env.DSLD_SCAN_MAX_ENRICH || 120);
+const MAX_EVALUATE = Number(process.env.DSLD_SCAN_MAX_EVALUATE || 250);
 const MAX_ACTIVES = Number(process.env.DSLD_SCAN_MAX_ACTIVES || 15);
 const REQUIRE_EXPLICIT = (process.env.DSLD_SCAN_REQUIRE_EXPLICIT || "1") !== "0";
+const MIN_PER_TOKEN = Number(process.env.DSLD_SCAN_MIN_PER_TOKEN || 10);
+const OUTPUT_LIMIT = Number(process.env.DSLD_SCAN_OUTPUT_LIMIT || 80);
 
 const INGREDIENT_ALLOWLIST = [
   "calcium",
@@ -71,9 +82,11 @@ const INGREDIENT_ALLOWLIST = [
   "carnitine",
 ];
 
+const REVERSE_FORM_BLACKLIST = ["dioxide", "peroxide", "antioxidant", "oxidative"];
+
 const buildHeaders = () => ({
-  apikey: SUPABASE_SERVICE_ROLE_KEY,
-  Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+  apikey: SUPABASE_KEY,
+  Authorization: `Bearer ${SUPABASE_KEY}`,
   "Content-Type": "application/json",
 });
 
@@ -82,6 +95,13 @@ const ensureDir = async (dir) => {
 };
 
 const normalizeText = (value) => String(value ?? "").toLowerCase();
+
+const normalizeFreeText = (value) => String(value ?? "").toLowerCase().trim();
+
+const stripAmountSuffix = (value) =>
+  String(value ?? "")
+    .replace(/\s+\d+(?:\.\d+)?\s*(?:mcg|ug|mg|g|iu|ml|%)(?:\b|\/|\s).*$/i, "")
+    .trim();
 
 const countActivesApprox = (summary) => {
   const s = String(summary ?? "").trim();
@@ -94,6 +114,17 @@ const countActivesApprox = (summary) => {
   return commaParts.length;
 };
 
+const splitActivesSummary = (summary) => {
+  const s = String(summary ?? "").trim();
+  if (!s) return [];
+  // Many DSLD meta summaries are semicolon-separated; newlines also show up.
+  return s
+    .split(/;|\n/g)
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .slice(0, 80);
+};
+
 const tokenRegex = (token) => new RegExp(`\\b${token.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")}\\b`, "i");
 
 const hasAllowlistedIngredient = (text) => {
@@ -101,20 +132,63 @@ const hasAllowlistedIngredient = (text) => {
   return INGREDIENT_ALLOWLIST.some((tok) => lower.includes(tok));
 };
 
-const hasExplicitAsToken = (summary, token) => {
-  const s = normalizeText(summary);
-  if (!s.includes("(as")) return false;
-  // Require token inside the (as ...) parenthetical to avoid false positives.
-  const re = new RegExp(`\\(as[^)]*\\b${token.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")}\\b[^)]*\\)`, "i");
-  return re.test(s);
+const hasBlacklistToken = (value) => {
+  const lower = normalizeText(value);
+  return REVERSE_FORM_BLACKLIST.some((tok) => lower.includes(tok));
 };
 
-const detectEvidenceKind = (name) => {
-  const lower = normalizeText(name);
+const hasExplicitTokenEvidence = (text, token) => {
+  const s = normalizeText(text);
+  const safeToken = token.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&");
+  if (!s.includes("as")) return false;
+  // Parenthetical: (as ... token ...)
+  const parenthetical = new RegExp(`\\(as[^)]*\\b${safeToken}\\b[^)]*\\)`, "i");
+  if (parenthetical.test(s)) return true;
+  // Phrase: "as ... token ..."
+  const asPhrase = new RegExp(`\\bas[^,;]*\\b${safeToken}\\b[^,;]*(?:,|;|$)`, "i");
+  if (asPhrase.test(s)) return true;
+  // Phrase: "from ... token ..."
+  const fromPhrase = new RegExp(`\\bfrom[^,;]*\\b${safeToken}\\b[^,;]*(?:,|;|$)`, "i");
+  return fromPhrase.test(s);
+};
+
+const detectEvidenceKind = (text) => {
+  const lower = normalizeText(text);
   if (/\(as\s+[^)]+\)/i.test(lower)) return "label_parenthetical";
   if (/\bas\s+[^,;]+(?:,|;|$)/i.test(lower)) return "label_as_phrase";
   if (/\bfrom\s+[^,;]+(?:,|;|$)/i.test(lower)) return "label_from_phrase";
   return "salt_name";
+};
+
+const normalizeIngredientKey = (text) => {
+  const s = normalizeFreeText(text);
+  if (!s) return null;
+
+  if (s.startsWith("vitamin")) {
+    const parts = s.replace(/[^a-z0-9]+/g, " ").trim().split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      const second = parts[1];
+      const m = second.match(/^([a-z])(\d+)?$/i);
+      if (m) {
+        const letter = m[1].toLowerCase();
+        const num = m[2] ?? "";
+        if (letter === "c") return "vitamin_c";
+        if (letter === "d") return "vitamin_d";
+        if (letter === "e") return "vitamin_e";
+        if (letter === "a") return "vitamin_a";
+        if (letter === "k") return num === "2" ? "vitamin_k2" : "vitamin_k1";
+        if (letter === "b") return `vitamin_b${num || ""}`.replace(/_+$/g, "");
+        return `vitamin_${letter}${num}`;
+      }
+    }
+    return "vitamin";
+  }
+
+  const words = s.replace(/[^a-z0-9]+/g, " ").trim().split(/\s+/).filter(Boolean);
+  const first = words[0] ?? null;
+  if (!first) return null;
+  if (INGREDIENT_ALLOWLIST.includes(first)) return first;
+  return null;
 };
 
 const scoreMetaRow = (row) => {
@@ -122,7 +196,7 @@ const scoreMetaRow = (row) => {
   const s = normalizeText(summary);
   let score = 0;
 
-  // Prefer explicit evidence cues so enrichment can actually validate KB positive path.
+  // Prefer explicit evidence cues so the KB-positive path is testable.
   if (/\(as\s+[^)]+\)/i.test(s)) score += 10;
   if (/\bas\s+[^,;]+/i.test(s)) score += 6;
   if (/\bfrom\s+[^,;]+/i.test(s)) score += 6;
@@ -135,7 +209,7 @@ const scoreMetaRow = (row) => {
   if (hasAllowlistedIngredient(s)) score += 2;
 
   // Prefer moderate-sized products; penalize very small/very large.
-  const approx = countActivesApprox(row?.active_ingredients_summary);
+  const approx = countActivesApprox(summary);
   if (approx >= 5 && approx <= 15) score += 2;
   if (approx > 20) score -= 2;
 
@@ -143,7 +217,7 @@ const scoreMetaRow = (row) => {
 };
 
 async function fetchMetaCandidatesForToken(token) {
-  const url = new URL(`${SUPABASE_URL}/rest/v1/dsld_labels_meta`);
+  const url = new URL(`${SUPABASE_URL}/rest/v1/${DSLD_CANDIDATE_VIEW}`);
   url.searchParams.set(
     "select",
     [
@@ -162,63 +236,90 @@ async function fetchMetaCandidatesForToken(token) {
 
   const res = await fetch(url.toString(), { headers: buildHeaders() });
   if (!res.ok) {
-    throw new Error(`meta query failed token=${token} status=${res.status}`);
+    const body = await res.text().catch(() => "");
+    throw new Error(`meta query failed token=${token} status=${res.status} body=${body.slice(0, 200)}`);
   }
   return await res.json();
 }
 
-async function fetchDsldFactsByLabelId(labelId) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/resolve_dsld_facts_by_label_id`, {
-    method: "POST",
-    headers: buildHeaders(),
-    body: JSON.stringify({ p_label_id: labelId }),
-  });
-  if (!res.ok) {
-    throw new Error(`resolve_dsld_facts_by_label_id failed labelId=${labelId} status=${res.status}`);
-  }
-  const json = await res.json();
-  const record = Array.isArray(json) ? json[0] : json;
-  return record ?? null;
-}
-
-function scoreCandidate(enriched) {
-  // Prefer stable regression-like samples: moderate actives count, clear token evidence, KB sentence hit.
-  const activesCount = enriched.activesCount ?? 0;
-  const kbHits = enriched.kbSentenceHitCount ?? 0;
-  const tokenHits = enriched.matchedActives?.length ?? 0;
+function scoreCandidate(candidate) {
+  const activesCount = candidate.activesCount ?? 0;
+  const kbHits = candidate.kbSentenceHitCount ?? 0;
+  const tokenHits = candidate.matchedActives?.length ?? 0;
   const countScore = activesCount >= 5 && activesCount <= 15 ? 3 : activesCount <= 20 ? 1 : 0;
   return kbHits * 10 + tokenHits * 2 + countScore;
 }
 
-function toCsvRow(enriched) {
-  const kbHitNames = (enriched.kbSentenceHitNames ?? []).slice(0, 5).join(" | ");
-  const matched = (enriched.matchedActives ?? [])
+function toCsvRow(candidate) {
+  const kbHitNames = (candidate.kbSentenceHitNames ?? []).slice(0, 5).join(" | ");
+  const matched = (candidate.matchedActives ?? [])
     .slice(0, 6)
     .map((m) => `${m.name} [${m.tokens.join("+")}]`)
     .join(" | ");
   return {
-    barcode_gtin14: enriched.barcodeGtin14 ?? "",
-    dsld_label_id: enriched.dsldLabelId ?? "",
-    dataset_version: enriched.datasetVersion ?? "",
-    dsld_product_version_code: enriched.dsldProductVersionCode ?? "",
-    actives_count: enriched.activesCount ?? "",
-    evidence_kinds: (enriched.evidenceKinds ?? []).join("+"),
-    kb_sentence_hit_count: enriched.kbSentenceHitCount ?? 0,
+    barcode_gtin14: candidate.barcodeGtin14 ?? "",
+    dsld_label_id: candidate.dsldLabelId ?? "",
+    dsld_product_version_code: candidate.dsldProductVersionCode ?? "",
+    actives_count: candidate.activesCount ?? "",
+    evidence_kinds: (candidate.evidenceKinds ?? []).join("+"),
+    kb_sentence_hit_count: candidate.kbSentenceHitCount ?? 0,
     kb_sentence_hit_names: kbHitNames,
     matched_actives: matched,
-    active_ingredients_summary: String(enriched.activeIngredientsSummary ?? "").replace(/\s+/g, " ").trim(),
-    score: enriched.score ?? 0,
+    active_ingredients_summary: String(candidate.activeIngredientsSummary ?? "").replace(/\s+/g, " ").trim(),
+    score: candidate.score ?? 0,
   };
 }
 
+const unique = (arr) => [...new Set(arr)];
+
+const selectStratified = (rows, { kind }) => {
+  const selected = [];
+  const selectedIds = new Set();
+  const perTokenSelected = Object.fromEntries(TOKENS.map((t) => [t, 0]));
+
+  for (const token of TOKENS) {
+    const subset = rows
+      .filter((r) => (r.tokenMatchCounts?.[token] ?? 0) > 0)
+      .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+    for (const row of subset) {
+      const id = String(row.dsldLabelId ?? "");
+      if (!id) continue;
+      if (selected.length >= OUTPUT_LIMIT) break;
+      if (perTokenSelected[token] >= MIN_PER_TOKEN) break;
+      if (selectedIds.has(id)) continue;
+      selected.push(row);
+      selectedIds.add(id);
+      perTokenSelected[token] += 1;
+    }
+  }
+
+  // Fill remaining slots with best-scoring rows.
+  const remainder = rows.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+  for (const row of remainder) {
+    if (selected.length >= OUTPUT_LIMIT) break;
+    const id = String(row.dsldLabelId ?? "");
+    if (!id || selectedIds.has(id)) continue;
+    selected.push(row);
+    selectedIds.add(id);
+  }
+
+  const stratifiedCounts = Object.fromEntries(
+    TOKENS.map((t) => [t, selected.filter((r) => (r.tokenMatchCounts?.[t] ?? 0) > 0).length]),
+  );
+
+  return { selected, stratifiedCounts, kind };
+};
+
 async function main() {
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-    console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+  if (!SUPABASE_URL || !SUPABASE_KEY) {
+    console.error("Missing SUPABASE_URL or SUPABASE_READONLY_KEY/SUPABASE_ANON_KEY");
     process.exit(1);
   }
 
   await ensureDir(ARTIFACT_DIR);
-  console.log(`[dsld-scan] tokens=${TOKENS.join(",")} out=${ARTIFACT_DIR}`);
+  console.log(
+    `[dsld-scan] tokens=${TOKENS.join(",")} view=${DSLD_CANDIDATE_VIEW} auth=${SUPABASE_KEY_KIND} out=${ARTIFACT_DIR}`,
+  );
 
   const metaRows = [];
   for (const token of TOKENS) {
@@ -237,99 +338,95 @@ async function main() {
   }
 
   const deduped = [...byId.values()].filter((r) => r?.barcode_normalized_gtin14);
-  // Light filter: avoid huge multi-actives labels.
-  //
-  // NOTE: We intentionally do NOT enforce explicit "(as ...)" evidence at the meta layer.
-  // Many DSLD summaries use "as ..." phrasing (or other formats), so enforcing it here can
-  // incorrectly drop all candidates. Explicit evidence is enforced during enrichment using
-  // digest-level `chemicalFormSource`.
-  const filtered = deduped.filter((r) => countActivesApprox(r.active_ingredients_summary) <= MAX_ACTIVES);
+  const filtered = deduped
+    .filter((r) => countActivesApprox(r.active_ingredients_summary) <= MAX_ACTIVES)
+    .filter((r) => (hasAllowlistedIngredient(r.active_ingredients_summary) ? true : false));
 
-  // Rank so enrichment focuses on rows most likely to contain explicit form evidence.
   const ranked = [...filtered].sort((a, b) => scoreMetaRow(b) - scoreMetaRow(a));
-
   await fs.writeFile(path.join(ARTIFACT_DIR, "candidates_meta_raw.json"), JSON.stringify(ranked, null, 2));
 
   const enriched = [];
-  const labelIds = ranked.map((r) => Number(r.dsld_label_id)).filter((n) => Number.isFinite(n)).slice(0, MAX_ENRICH);
-  console.log(
-    `[dsld-scan] deduped=${deduped.length} filtered=${filtered.length} ranked=${ranked.length} enrich=${labelIds.length}`,
-  );
+  const explicitEvidenceKinds = new Set(["label_parenthetical", "label_as_phrase", "label_from_phrase"]);
 
-  for (const labelId of labelIds) {
-    // eslint-disable-next-line no-await-in-loop
-    const record = await fetchDsldFactsByLabelId(labelId).catch(() => null);
-    if (!record?.facts_json) continue;
-    const facts = record.facts_json;
+  const evaluate = ranked.slice(0, MAX_EVALUATE);
+  console.log(`[dsld-scan] deduped=${deduped.length} filtered=${filtered.length} ranked=${ranked.length} eval=${evaluate.length}`);
 
-    const meta = byId.get(String(labelId)) ?? null;
-    const digest = buildFactsDigestFromDsld({ facts, identityValue: String(labelId) });
+  for (const meta of evaluate) {
+    const summary = String(meta?.active_ingredients_summary ?? "");
+    const chunks = splitActivesSummary(summary);
+    if (!chunks.length) continue;
 
     const matchedActives = [];
     const evidenceKinds = new Set();
-    const kbSentenceHitNames = [];
     const tokenMatchCounts = Object.fromEntries(TOKENS.map((t) => [t, 0]));
+    const kbSentenceHitNames = [];
 
-    const explicitSources = new Set(["label_parenthetical", "label_as_phrase", "label_from_phrase"]);
+    for (const chunk of chunks) {
+      const lower = normalizeText(chunk);
+      if (!hasAllowlistedIngredient(lower)) continue;
+      if (hasBlacklistToken(lower)) continue;
 
-    for (const active of digest.actives) {
-      const name = active.name;
-      const lowerName = normalizeText(name);
-      const chemicalForm = normalizeText(active.chemicalForm);
-      const evidenceText = normalizeText(active.chemicalFormEvidence);
-      const haystack = `${lowerName} ${chemicalForm} ${evidenceText}`.trim();
+      const tokensMatched = TOKENS.filter((t) => tokenRegex(t).test(lower));
+      if (!tokensMatched.length) continue;
 
-      const tokensMatched = TOKENS.filter((t) => tokenRegex(t).test(haystack));
-      if (tokensMatched.length === 0) continue;
-      if (!hasAllowlistedIngredient(lowerName)) continue;
-      if (REQUIRE_EXPLICIT && !explicitSources.has(active.chemicalFormSource ?? "none")) continue;
+      const evidenceKind = detectEvidenceKind(chunk);
+      evidenceKinds.add(evidenceKind);
 
-      const kb = lookupKbFormExplain({
-        ingredientName: active.name,
-        chemicalForm: active.chemicalForm ?? null,
-        chemicalFormConfidence: active.chemicalFormConfidence ?? null,
-        chemicalFormSource: active.chemicalFormSource ?? "none",
-        chemicalFormEvidence: active.chemicalFormEvidence ?? null,
-        ingredientId: null,
-      });
-      if (kb?.sentenceId && kb?.sentence) {
-        kbSentenceHitNames.push(active.name);
+      if (REQUIRE_EXPLICIT) {
+        if (!explicitEvidenceKinds.has(evidenceKind)) continue;
+        const hasStrong = tokensMatched.some((t) => hasExplicitTokenEvidence(chunk, t));
+        if (!hasStrong) continue;
       }
 
-      const evidenceKind = detectEvidenceKind(active.chemicalFormEvidence ?? name);
-      evidenceKinds.add(evidenceKind);
       for (const t of tokensMatched) tokenMatchCounts[t] += 1;
+
+      const kb = lookupKbFormExplain({
+        ingredientName: chunk,
+        chemicalForm: null,
+        chemicalFormConfidence: null,
+        chemicalFormSource: "none",
+        chemicalFormEvidence: null,
+        ingredientId: null,
+      });
+
+      const baseName = stripAmountSuffix(chunk.split("(")[0] ?? chunk);
+      const isKbHit = Boolean(kb?.sentenceId && kb?.sentence);
+      if (isKbHit) kbSentenceHitNames.push(baseName);
+
       matchedActives.push({
-        name: active.name,
+        name: baseName,
+        raw: chunk,
         tokens: tokensMatched,
         evidenceKind,
-        chemicalForm: active.chemicalForm ?? null,
-        chemicalFormSource: active.chemicalFormSource ?? "none",
-        chemicalFormEvidence: active.chemicalFormEvidence ?? null,
         formResolveSource: kb?.resolveSource ?? "none",
         sentenceId: kb?.sentenceId ?? null,
+        excerptId: kb?.excerptId ?? null,
+        referenceId: kb?.referenceId ?? null,
+        evidenceText: kb?.evidenceText ?? null,
       });
     }
 
-    const activesCount = Array.isArray(digest.actives) ? digest.actives.length : 0;
+    if (!matchedActives.length) continue;
+
+    const activesCount = countActivesApprox(summary);
     const row = {
       barcodeGtin14: meta?.barcode_normalized_gtin14 ?? null,
-      dsldLabelId: labelId,
-      datasetVersion: record.dataset_version ?? facts.datasetVersion ?? null,
+      dsldLabelId: meta?.dsld_label_id ?? null,
       dsldProductVersionCode: meta?.dsld_product_version_code ?? null,
-      brand: meta?.brand ?? facts.brandName ?? null,
-      productName: meta?.product_name ?? facts.productName ?? null,
-      servingSize: meta?.serving_size_raw ?? facts.servingSize ?? null,
+      brand: meta?.brand ?? null,
+      productName: meta?.product_name ?? null,
+      servingSize: meta?.serving_size_raw ?? null,
+      servingsPerContainer: meta?.servings_per_container ?? null,
       activesCount,
       activeIngredientsSummary: meta?.active_ingredients_summary ?? null,
       matchedActives,
       evidenceKinds: [...evidenceKinds],
       tokenMatchCounts,
       kbSentenceHitCount: kbSentenceHitNames.length,
-      kbSentenceHitNames: [...new Set(kbSentenceHitNames)],
+      kbSentenceHitNames: unique(kbSentenceHitNames),
     };
     row.score = scoreCandidate(row);
-    if (row.matchedActives.length > 0) enriched.push(row);
+    enriched.push(row);
   }
 
   enriched.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
@@ -341,34 +438,69 @@ async function main() {
   await fs.writeFile(path.join(ARTIFACT_DIR, "candidates_kb_hits.json"), JSON.stringify(hits, null, 2));
   await fs.writeFile(path.join(ARTIFACT_DIR, "candidates_kb_gaps.json"), JSON.stringify(gaps, null, 2));
 
+  // Operational leaderboards.
+  const tokenStats = Object.fromEntries(
+    TOKENS.map((t) => {
+      const candidatesWithToken = enriched.filter((r) => (r.tokenMatchCounts?.[t] ?? 0) > 0);
+      const hitCandidates = candidatesWithToken.filter((r) => (r.kbSentenceHitCount ?? 0) > 0);
+      return [
+        t,
+        {
+          candidates: candidatesWithToken.length,
+          kbHits: hitCandidates.length,
+          kbGaps: candidatesWithToken.length - hitCandidates.length,
+        },
+      ];
+    }),
+  );
+
+  const ingredientStats = {};
+  for (const row of enriched) {
+    for (const active of row.matchedActives ?? []) {
+      const key = normalizeIngredientKey(active.name) ?? normalizeIngredientKey(active.raw) ?? "unknown";
+      if (!ingredientStats[key]) ingredientStats[key] = { matches: 0, kbHits: 0, kbGaps: 0 };
+      ingredientStats[key].matches += 1;
+      if (active.sentenceId && String(active.sentenceId).startsWith("s_")) ingredientStats[key].kbHits += 1;
+      else ingredientStats[key].kbGaps += 1;
+    }
+  }
+
+  const ingredientLeaderboard = Object.fromEntries(
+    Object.entries(ingredientStats)
+      .sort((a, b) => (b[1].kbGaps ?? 0) - (a[1].kbGaps ?? 0))
+      .slice(0, 50),
+  );
+
+  const stratHits = selectStratified(hits, { kind: "kb_hits" });
+  const stratGaps = selectStratified(gaps, { kind: "kb_gaps" });
+
   const gapReport = {
     generatedAt: new Date().toISOString(),
+    view: DSLD_CANDIDATE_VIEW,
+    authKind: SUPABASE_KEY_KIND,
     tokens: TOKENS,
     requireExplicit: REQUIRE_EXPLICIT,
     metaCandidates: filtered.length,
+    evaluatedCandidates: evaluate.length,
     enrichedCandidates: enriched.length,
     kbHitCandidates: hits.length,
     kbGapCandidates: gaps.length,
-    tokenStats: Object.fromEntries(
-      TOKENS.map((t) => {
-        const candidatesWithToken = enriched.filter((r) => (r.tokenMatchCounts?.[t] ?? 0) > 0);
-        const hitCandidates = candidatesWithToken.filter((r) => (r.kbSentenceHitCount ?? 0) > 0);
-        return [
-          t,
-          {
-            candidates: candidatesWithToken.length,
-            kbHits: hitCandidates.length,
-            kbGaps: candidatesWithToken.length - hitCandidates.length,
-          },
-        ];
-      }),
-    ),
+    tokenStats,
+    ingredientStatsTopGaps: ingredientLeaderboard,
+    stratifiedSampling: {
+      outputLimit: OUTPUT_LIMIT,
+      minPerToken: MIN_PER_TOKEN,
+      hitsSelected: stratHits.selected.length,
+      gapsSelected: stratGaps.selected.length,
+      hitsPerToken: stratHits.stratifiedCounts,
+      gapsPerToken: stratGaps.stratifiedCounts,
+    },
   };
   await fs.writeFile(path.join(ARTIFACT_DIR, "kb_gap_report.json"), JSON.stringify(gapReport, null, 2));
 
-  // CSV output for quick triage.
   const writeCsv = async (filename, rows) => {
-    const top = rows.slice(0, 80).map(toCsvRow);
+    if (!rows.length) return;
+    const top = rows.map(toCsvRow);
     const header = Object.keys(top[0] ?? {});
     const csvLines = [header.join(",")];
     for (const row of top) {
@@ -382,8 +514,8 @@ async function main() {
     await fs.writeFile(path.join(ARTIFACT_DIR, filename), csvLines.join("\n") + "\n");
   };
 
-  await writeCsv("candidates_top80_kb_hits.csv", hits);
-  await writeCsv("candidates_top80_kb_gaps.csv", gaps);
+  await writeCsv("candidates_top80_kb_hits.csv", stratHits.selected);
+  await writeCsv("candidates_top80_kb_gaps.csv", stratGaps.selected);
 
   console.log(
     `[dsld-scan] enriched=${enriched.length} kb_hits=${hits.length} kb_gaps=${gaps.length} wrote=${ARTIFACT_DIR}`,
@@ -394,3 +526,4 @@ main().catch((err) => {
   console.error(`[dsld-scan] fatal: ${String(err)}`);
   process.exit(1);
 });
+

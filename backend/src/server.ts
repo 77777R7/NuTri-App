@@ -159,9 +159,13 @@ const RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS = Number(process.env.RESILIENCE_DEEPS
 const RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS_DETAIL = Number(
   process.env.RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS_DETAIL ?? 1500,
 );
+const RESILIENCE_DEEPSEEK_DSLD_MIN_QUEUE_TIMEOUT_MS = Number(
+  process.env.RESILIENCE_DEEPSEEK_DSLD_MIN_QUEUE_TIMEOUT_MS ?? 80,
+);
 const RESILIENCE_CONTEXT_FETCH_QUEUE_TIMEOUT_MS = Number(process.env.RESILIENCE_CONTEXT_FETCH_QUEUE_TIMEOUT_MS ?? 300);
 const RESILIENCE_GOOGLE_CONCURRENCY = Number(process.env.RESILIENCE_GOOGLE_CONCURRENCY ?? 3);
 const RESILIENCE_DEEPSEEK_CONCURRENCY = Number(process.env.RESILIENCE_DEEPSEEK_CONCURRENCY ?? 2);
+const RESILIENCE_DEEPSEEK_DSLD_MIN_CONCURRENCY = Number(process.env.RESILIENCE_DEEPSEEK_DSLD_MIN_CONCURRENCY ?? 1);
 const RESILIENCE_CONTEXT_FETCH_CONCURRENCY = Number(process.env.RESILIENCE_CONTEXT_FETCH_CONCURRENCY ?? 4);
 const RESILIENCE_SUPABASE_READ_CONCURRENCY = Number(process.env.RESILIENCE_SUPABASE_READ_CONCURRENCY ?? 10);
 const RESILIENCE_BREAKER_WINDOW_MS = Number(process.env.RESILIENCE_BREAKER_WINDOW_MS ?? 30_000);
@@ -291,6 +295,8 @@ const GUARDRAIL_SIMILARITY_THRESHOLD = Number(process.env.GUARDRAIL_SIMILARITY_T
 
 const googleSemaphore = new Semaphore(RESILIENCE_GOOGLE_CONCURRENCY);
 const deepseekSemaphore = new Semaphore(RESILIENCE_DEEPSEEK_CONCURRENCY);
+// DSLD detail uses a minimal prompt. Keep it on a separate semaphore so it doesn't fight with heavier prompts.
+const deepseekDsldMinimalSemaphore = new Semaphore(RESILIENCE_DEEPSEEK_DSLD_MIN_CONCURRENCY);
 const contextFetchSemaphore = new Semaphore(RESILIENCE_CONTEXT_FETCH_CONCURRENCY);
 const supabaseReadSemaphore = new Semaphore(RESILIENCE_SUPABASE_READ_CONCURRENCY);
 
@@ -5750,6 +5756,8 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   let formReferenceIds: Record<string, string | null> | null = null;
   let errorCode: string | null = null;
   let rescueAttempted = false;
+  let dsldLlmSkipReason: string | null = null;
+  let dsldLlmAttempted = false;
   const getDebugErrorCode = (raw: Record<string, unknown> | null): string | null => {
     if (!raw) return null;
     if (typeof raw === "object" && "__deepseek_error" in raw) {
@@ -5766,16 +5774,42 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     );
 
   try {
-    detailRaw = await fetchIngredientsDetailV3(buildDetailContext(detailDigest, requestedLimit), model, deepseekKey, {
-      breaker: deepseekBreaker,
-      semaphore: deepseekSemaphore,
-      timeoutMs: detailTimeoutMs,
-      queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS_DETAIL,
-      retry: { maxAttempts: 1 },
-      maxTokens: detailMaxTokens,
-      debugOnError: true,
-      promptOverride: primaryPromptOverride,
-    });
+    if (isDsldDetail) {
+      let release: (() => void) | null = null;
+      try {
+        release = await deepseekDsldMinimalSemaphore.acquire({ timeoutMs: RESILIENCE_DEEPSEEK_DSLD_MIN_QUEUE_TIMEOUT_MS });
+      } catch {
+        dsldLlmSkipReason = "semaphore_busy";
+      }
+      if (release) {
+        dsldLlmAttempted = true;
+        try {
+          // DSLD minimal prompt does not require the heavy global semaphore; this call is protected by the
+          // dedicated minimal semaphore above.
+          detailRaw = await fetchIngredientsDetailV3(buildDetailContext(detailDigest, requestedLimit), model, deepseekKey, {
+            breaker: deepseekBreaker,
+            timeoutMs: detailTimeoutMs,
+            retry: { maxAttempts: 1 },
+            maxTokens: detailMaxTokens,
+            debugOnError: true,
+            promptOverride: primaryPromptOverride,
+          });
+        } finally {
+          release();
+        }
+      }
+    } else {
+      detailRaw = await fetchIngredientsDetailV3(buildDetailContext(detailDigest, requestedLimit), model, deepseekKey, {
+        breaker: deepseekBreaker,
+        semaphore: deepseekSemaphore,
+        timeoutMs: detailTimeoutMs,
+        queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS_DETAIL,
+        retry: { maxAttempts: 1 },
+        maxTokens: detailMaxTokens,
+        debugOnError: true,
+        promptOverride: primaryPromptOverride,
+      });
+    }
   } catch (error) {
     console.warn("[analysis-section] detail fetch failed", error);
     errorCode = "LLM_REQUEST_FAILED";
@@ -5876,22 +5910,39 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   }
 
   const timingMs = Math.round(performance.now() - start);
-  const dsldFallback = isDsldDetail && !dsldMinimal;
-  const resolvedErrorCode =
-    detailPayload && !dsldFallback
+  const dsldWhatItDoesUsed = isDsldDetail && Boolean(dsldMinimal);
+  const dsldWhatItDoesStatus = isDsldDetail
+    ? dsldWhatItDoesUsed
+      ? "llm"
+      : dsldLlmSkipReason
+        ? "skipped"
+        : dsldLlmAttempted
+          ? "failed"
+          : "skipped"
+    : null;
+  const dsldWhatItDoesReason = isDsldDetail
+    ? dsldWhatItDoesUsed
       ? null
-      : errorCode ??
-        (detailDebug?.__deepseek_error
-          ? String(detailDebug.__deepseek_error)
-          : detailRaw
-            ? isDsldDetail
-              ? dsldParsed?.success
-                ? null
-                : "LLM_PARSE_FAILED"
-              : parsedDetail?.success
-                ? null
-                : "LLM_PARSE_FAILED"
-            : "LLM_EMPTY_RESPONSE");
+      : dsldLlmSkipReason ??
+        errorCode ??
+        (detailDebug?.__deepseek_error ? String(detailDebug.__deepseek_error) : null) ??
+        "LLM_UNAVAILABLE"
+    : null;
+
+  const resolvedErrorCode = detailPayload
+    ? null
+    : errorCode ??
+      (detailDebug?.__deepseek_error
+        ? String(detailDebug.__deepseek_error)
+        : detailRaw
+          ? isDsldDetail
+            ? dsldParsed?.success
+              ? null
+              : "LLM_PARSE_FAILED"
+            : parsedDetail?.success
+              ? null
+              : "LLM_PARSE_FAILED"
+          : "LLM_EMPTY_RESPONSE");
 
   let fallbackUsed: "kb_dsld" | "skeleton" | null = null;
   let fallbackReason: string | null = null;
@@ -5913,18 +5964,12 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     }
   }
 
-  if (dsldFallback) {
-    fallbackUsed = "kb_dsld";
-    fallbackReason = resolvedErrorCode ?? "LLM_DETAIL_FAILED";
-  }
-
   const detailStatus: "complete" | "error" = detailPayload ? "complete" : "error";
   const detailDataStatus = fallbackUsed ? "limited" : detailPayload ? "complete" : "error";
   const fallbackMarker =
     fallbackUsed === "kb_dsld" ? "FALLBACK_KB_DSLD" : fallbackUsed === "skeleton" ? "FALLBACK_SKELETON" : null;
-  const detailExpiresAt = new Date(
-    Date.now() + (fallbackUsed ? ANALYSIS_DETAIL_FALLBACK_TTL_MS : ANALYSIS_IDENTITY_CACHE_TTL_MS),
-  ).toISOString();
+  const shouldUseShortTtl = Boolean(fallbackUsed) || (isDsldDetail && !dsldWhatItDoesUsed);
+  const detailExpiresAt = new Date(Date.now() + (shouldUseShortTtl ? ANALYSIS_DETAIL_FALLBACK_TTL_MS : ANALYSIS_IDENTITY_CACHE_TTL_MS)).toISOString();
 
   void upsertAnalysisIdentityCache(
     {
@@ -5940,8 +5985,20 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       factsDigestJson: digestRow.facts_digest_json,
       attempts,
       lockedUntil: null,
-      lastError: fallbackUsed ? fallbackReason : detailPayload ? null : resolvedErrorCode ?? "LLM_DETAIL_FAILED",
-      errorCode: fallbackUsed ? fallbackMarker : detailPayload ? null : resolvedErrorCode ?? "LLM_DETAIL_FAILED",
+      lastError: fallbackUsed
+        ? fallbackReason
+        : isDsldDetail && !dsldWhatItDoesUsed
+          ? dsldWhatItDoesReason
+          : detailPayload
+            ? null
+            : resolvedErrorCode ?? "LLM_DETAIL_FAILED",
+      errorCode: fallbackUsed
+        ? fallbackMarker
+        : isDsldDetail && !dsldWhatItDoesUsed
+          ? `DSLD_WHATITDOES_${dsldWhatItDoesStatus ?? "skipped"}`
+          : detailPayload
+            ? null
+            : resolvedErrorCode ?? "LLM_DETAIL_FAILED",
       expiresAt: detailExpiresAt,
     },
     { timeoutMs: 1200 },
@@ -5999,6 +6056,8 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       pendingAgeMs: null,
       fallbackUsed: fallbackUsed ?? undefined,
       fallbackReason: fallbackReason ?? undefined,
+      whatItDoesStatus: isDsldDetail ? dsldWhatItDoesStatus : undefined,
+      whatItDoesReason: isDsldDetail && dsldWhatItDoesStatus !== "llm" ? dsldWhatItDoesReason : undefined,
     },
     timingMs,
     debug: debugPayload,
