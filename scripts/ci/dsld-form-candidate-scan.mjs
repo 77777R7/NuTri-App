@@ -971,14 +971,13 @@ async function main() {
 
     // Normalization: riboflavin 5-phosphate is a vitamin B2 form (often written "Riboflavin 5-Phosphate").
     if (ig === "riboflavin" && t === "phosphate" && (ex.includes("5-phosphate") || ex.includes("5 phosphate"))) {
-      const { entry } = resolveRuntimeEntry({ ingredientKey: ig, token: "riboflavin_5_phosphate" });
-      if (entry) {
-        return {
-          triage: "parser_normalization",
-          canonicalFormToken: "riboflavin_5_phosphate",
-          action: "Parser/alias: normalize phosphate -> riboflavin_5_phosphate for riboflavin (runtime entry exists).",
-        };
-      }
+      // Even if the KB entry is missing today, the correct fix is still "normalize to the canonical token",
+      // not "add riboflavin+phosphate". This prevents wasting KB effort on a non-canonical combo.
+      return {
+        triage: "parser_normalization",
+        canonicalFormToken: "riboflavin_5_phosphate",
+        action: "Parser/alias: normalize phosphate -> riboflavin_5_phosphate for riboflavin (canonical form).",
+      };
     }
 
     // Normalization: vitamin C ascorbate salts are keyed by the cation (calcium/sodium), not generic "ascorbate".
@@ -989,14 +988,11 @@ async function main() {
         ex.includes("ester-c") || ex.includes("ester c") ? "ester_c" :
         "";
       if (canon) {
-        const { entry } = resolveRuntimeEntry({ ingredientKey: ig, token: canon });
-        if (entry) {
-          return {
-            triage: "parser_normalization",
-            canonicalFormToken: canon,
-            action: `Parser/alias: normalize ascorbate -> ${canon} for vitamin_c (runtime entry exists).`,
-          };
-        }
+        return {
+          triage: "parser_normalization",
+          canonicalFormToken: canon,
+          action: `Parser/alias: normalize ascorbate -> ${canon} for vitamin_c (canonical salt form).`,
+        };
       }
     }
 
@@ -1037,9 +1033,19 @@ async function main() {
         const actionKeyStr = actionKey(token, ingredientKey, gapType);
         const cur = globalActionMap.get(actionKeyStr);
         if (cur) {
-          cur.triage = triage.triage;
-          cur.canonical_form_token = triage.canonicalFormToken;
-          cur.action = triage.action;
+          // Multiple examples can map to the same (token, ingredient, gapType) row; keep the
+          // highest-priority triage (never downgrade parser_normalization -> kb_missing).
+          const priority = (value) => (value === "parser_normalization" ? 2 : value === "noise" ? 1 : 0);
+          const curP = priority(String(cur.triage || ""));
+          const nextP = priority(String(triage.triage || ""));
+          if (nextP > curP || (!cur.triage && triage.triage)) {
+            cur.triage = triage.triage;
+            cur.canonical_form_token = triage.canonicalFormToken;
+            cur.action = triage.action;
+          } else if (nextP === curP && nextP === 2 && !cur.canonical_form_token && triage.canonicalFormToken) {
+            // Same triage bucket, but new example provides a more specific canonical token.
+            cur.canonical_form_token = triage.canonicalFormToken;
+          }
         }
       }
     }
