@@ -850,6 +850,8 @@ const buildDsldKbFallbackDetail = (
   formSentenceIds: Record<string, string | null>;
   formExcerptIds: Record<string, string | null>;
   formReferenceIds: Record<string, string | null>;
+  formEvidenceGrades: Record<string, string | null>;
+  formSupportStrengths: Record<string, "strong" | "moderate" | "weak" | null>;
 } => {
   const kb = getKbRuntime();
   const formResolveSources: Record<string, string> = {};
@@ -857,6 +859,18 @@ const buildDsldKbFallbackDetail = (
   const formSentenceIds: Record<string, string | null> = {};
   const formExcerptIds: Record<string, string | null> = {};
   const formReferenceIds: Record<string, string | null> = {};
+  const formEvidenceGrades: Record<string, string | null> = {};
+  const formSupportStrengths: Record<string, "strong" | "moderate" | "weak" | null> = {};
+
+  const gradeToStrength = (grade: string | null): "strong" | "moderate" | "weak" | null => {
+    if (!grade) return null;
+    const normalized = String(grade).trim().toUpperCase();
+    const first = normalized[0];
+    if (first === "A") return "strong";
+    if (first === "B") return "moderate";
+    if (first === "C") return "weak";
+    return null;
+  };
   return {
     detail: {
       items: digest.actives.map((active) => {
@@ -873,6 +887,7 @@ const buildDsldKbFallbackDetail = (
               sentenceId: null,
               excerptId: null,
               referenceId: null,
+              evidenceGrade: null,
               resolveSource: "none" as const,
               evidenceText: null,
             };
@@ -881,6 +896,8 @@ const buildDsldKbFallbackDetail = (
         formSentenceIds[active.name] = kbResult.sentenceId ?? null;
         formExcerptIds[active.name] = kbResult.excerptId ?? null;
         formReferenceIds[active.name] = kbResult.referenceId ?? null;
+        formEvidenceGrades[active.name] = kbResult.evidenceGrade ?? null;
+        formSupportStrengths[active.name] = gradeToStrength(kbResult.evidenceGrade ?? null);
         return {
           name: active.name,
           whatItDoes: buildNotProvidedField(),
@@ -897,6 +914,8 @@ const buildDsldKbFallbackDetail = (
     formSentenceIds,
     formExcerptIds,
     formReferenceIds,
+    formEvidenceGrades,
+    formSupportStrengths,
   };
 };
 
@@ -5604,6 +5623,8 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       const sentenceIds: Record<string, string | null> = {};
       const excerptIds: Record<string, string | null> = {};
       const referenceIds: Record<string, string | null> = {};
+      const evidenceGrades: Record<string, string | null> = {};
+      const supportStrengths: Record<string, "strong" | "moderate" | "weak" | null> = {};
       for (const [name, sentenceId] of Object.entries(dsldBase.formSentenceIds)) {
         const cachedItem = byName.get(normalizeIngredientName(name));
         const tags = cachedItem?.chemicalFormExplain?.basisTags;
@@ -5611,6 +5632,8 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
         sentenceIds[name] = isKbSentence ? sentenceId ?? null : null;
         excerptIds[name] = isKbSentence ? dsldBase.formExcerptIds[name] ?? null : null;
         referenceIds[name] = isKbSentence ? dsldBase.formReferenceIds[name] ?? null : null;
+        evidenceGrades[name] = isKbSentence ? dsldBase.formEvidenceGrades[name] ?? null : null;
+        supportStrengths[name] = isKbSentence ? dsldBase.formSupportStrengths[name] ?? null : null;
       }
       debug = {
         formResolveSources: dsldBase.formResolveSources,
@@ -5618,6 +5641,8 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
         formSentenceIds: sentenceIds,
         formExcerptIds: excerptIds,
         formReferenceIds: referenceIds,
+        formEvidenceGrades: evidenceGrades,
+        formSupportStrengths: supportStrengths,
       };
     }
     res.json({
@@ -5772,6 +5797,8 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   let formSentenceIds: Record<string, string | null> | null = null;
   let formExcerptIds: Record<string, string | null> | null = null;
   let formReferenceIds: Record<string, string | null> | null = null;
+  let formEvidenceGrades: Record<string, string | null> | null = null;
+  let formSupportStrengths: Record<string, "strong" | "moderate" | "weak" | null> | null = null;
   let errorCode: string | null = null;
   let rescueAttempted = false;
   let dsldLlmSkipReason: string | null = null;
@@ -5917,6 +5944,8 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     formSentenceIds = dsldBase.formSentenceIds;
     formExcerptIds = dsldBase.formExcerptIds;
     formReferenceIds = dsldBase.formReferenceIds;
+    formEvidenceGrades = dsldBase.formEvidenceGrades;
+    formSupportStrengths = dsldBase.formSupportStrengths;
     detailPayload = mergeDsldWhatItDoes(dsldBase.detail, dsldMinimal);
   } else {
     if (detailPayload && labelDosingText) {
@@ -5975,6 +6004,8 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       formSentenceIds = dsldBase.formSentenceIds;
       formExcerptIds = dsldBase.formExcerptIds;
       formReferenceIds = dsldBase.formReferenceIds;
+      formEvidenceGrades = dsldBase.formEvidenceGrades;
+      formSupportStrengths = dsldBase.formSupportStrengths;
       fallbackUsed = "kb_dsld";
     } else {
       detailPayload = buildDetailSkeleton(detailDigest, labelDosingText);
@@ -6027,6 +6058,8 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   const includeFormSentenceIds = allowInternalDebug && isDsldDetail && formSentenceIds;
   const includeFormExcerptIds = allowInternalDebug && isDsldDetail && formExcerptIds;
   const includeFormReferenceIds = allowInternalDebug && isDsldDetail && formReferenceIds;
+  const includeFormEvidenceGrades = allowInternalDebug && isDsldDetail && formEvidenceGrades;
+  const includeFormSupportStrengths = allowInternalDebug && isDsldDetail && formSupportStrengths;
   const includeDebug = allowInternalDebug && deepseekDebugEnabled && detailDataStatus !== "complete";
   const debugPayload =
     includeDebug ||
@@ -6034,7 +6067,9 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     includeFormEvidence ||
     includeFormSentenceIds ||
     includeFormExcerptIds ||
-    includeFormReferenceIds
+    includeFormReferenceIds ||
+    includeFormEvidenceGrades ||
+    includeFormSupportStrengths
       ? {
           deepseekError: includeDebug ? (detailDebug?.__deepseek_error ?? null) : undefined,
           snippet: includeDebug ? (detailDebug?.__deepseek_snippet ?? null) : undefined,
@@ -6054,6 +6089,8 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
           formSentenceIds: includeFormSentenceIds ? formSentenceIds : undefined,
           formExcerptIds: includeFormExcerptIds ? formExcerptIds : undefined,
           formReferenceIds: includeFormReferenceIds ? formReferenceIds : undefined,
+          formEvidenceGrades: includeFormEvidenceGrades ? formEvidenceGrades : undefined,
+          formSupportStrengths: includeFormSupportStrengths ? formSupportStrengths : undefined,
         }
       : undefined;
 

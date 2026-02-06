@@ -32,6 +32,7 @@ type KbSentence = {
   sentence_id?: string | null;
   evidence_snippet_id?: string | null;
   evidence_reference_id?: string | null;
+  evidence_grade?: string | null;
 };
 
 type KbRuntimeIndex = {
@@ -138,7 +139,13 @@ const extractSegmentText = (entry: KbEntry | undefined): string | null => {
 
 const extractBestSegment = (
   entry: KbEntry | undefined,
-): { text: string; sentenceId: string | null; excerptId: string | null; referenceId: string | null } | null => {
+): {
+  text: string;
+  sentenceId: string | null;
+  excerptId: string | null;
+  referenceId: string | null;
+  evidenceGrade: string | null;
+} | null => {
   if (!entry?.segments) return null;
   const seg = entry.segments;
   const order = [seg.absorption, seg.solubility, seg.tolerability, seg.caveats];
@@ -151,6 +158,7 @@ const extractBestSegment = (
         sentenceId: sentence?.sentence_id ?? null,
         excerptId: sentence?.evidence_snippet_id ?? null,
         referenceId: sentence?.evidence_reference_id ?? null,
+        evidenceGrade: sentence?.evidence_grade ?? null,
       };
     }
   }
@@ -422,17 +430,34 @@ export const lookupKbFormExplain = (params: {
   sentenceId: string | null;
   excerptId: string | null;
   referenceId: string | null;
+  evidenceGrade: string | null;
   resolveSource: FormResolveSource;
   evidenceText: string | null;
 } => {
   const kb = getKbRuntime();
   if (!kb) {
-    return { sentence: null, sentenceId: null, excerptId: null, referenceId: null, resolveSource: "none", evidenceText: null };
+    return {
+      sentence: null,
+      sentenceId: null,
+      excerptId: null,
+      referenceId: null,
+      evidenceGrade: null,
+      resolveSource: "none",
+      evidenceText: null,
+    };
   }
 
   const ingredientId = resolveIngredientId(kb, params.ingredientName, params.ingredientId);
   if (!ingredientId) {
-    return { sentence: null, sentenceId: null, excerptId: null, referenceId: null, resolveSource: "none", evidenceText: null };
+    return {
+      sentence: null,
+      sentenceId: null,
+      excerptId: null,
+      referenceId: null,
+      evidenceGrade: null,
+      resolveSource: "none",
+      evidenceText: null,
+    };
   }
 
   if (params.chemicalForm && params.chemicalFormConfidence !== null && params.chemicalFormConfidence >= 0.6) {
@@ -453,6 +478,7 @@ export const lookupKbFormExplain = (params: {
           sentenceId: seg.sentenceId,
           excerptId: seg.excerptId,
           referenceId: seg.referenceId,
+          evidenceGrade: seg.evidenceGrade,
           resolveSource: explicitSource ?? resolved.resolveSource ?? "digest_chemical_form",
           evidenceText: params.chemicalFormEvidence ?? params.chemicalForm,
         };
@@ -472,6 +498,7 @@ export const lookupKbFormExplain = (params: {
           sentenceId: seg.sentenceId,
           excerptId: seg.excerptId,
           referenceId: seg.referenceId,
+          evidenceGrade: seg.evidenceGrade,
           resolveSource: reverseToken.resolveSource,
           evidenceText: reverseToken.evidenceText,
         };
@@ -479,5 +506,13 @@ export const lookupKbFormExplain = (params: {
     }
   }
 
-  return { sentence: null, sentenceId: null, excerptId: null, referenceId: null, resolveSource: "none", evidenceText: null };
+  return {
+    sentence: null,
+    sentenceId: null,
+    excerptId: null,
+    referenceId: null,
+    evidenceGrade: null,
+    resolveSource: "none",
+    evidenceText: null,
+  };
 };

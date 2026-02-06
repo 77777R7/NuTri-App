@@ -3,6 +3,25 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
+const ENABLE_GROUNDEDNESS_LEXICAL = (process.env.RENDER_GROUNDEDNESS_LEXICAL || "0") === "1";
+const REQUIRE_FORM_TOKEN_IN_EXCERPT =
+  (process.env.RENDER_GROUNDEDNESS_LEXICAL_REQUIRE_FORM || "0") === "1";
+
+let evidenceExcerptByRef = null;
+
+const normalizeLex = (value) =>
+  String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+
+const buildLexTokens = (value) =>
+  normalizeLex(value)
+    .split(/\s+/)
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .filter((t) => t.length >= 3);
+
 const dsldNoFormBarcode =
   process.env.RENDER_DSLD_NOFORM_BARCODE || process.env.RENDER_DSLD_BARCODE || "026664275110";
 const dsldWithFormBarcode = process.env.RENDER_DSLD_FORM_BARCODE || "00690290532093";
@@ -256,6 +275,36 @@ function assertBundleContract(bundleEvents, expectedSourceType) {
   return { errors, fastBundle };
 }
 
+function assertLnhpdLabelDosingCopied(fastBundle) {
+  const errors = [];
+  const usage = fastBundle?.sections?.usage;
+  const schedule = Array.isArray(usage?.detail?.scheduleFromLabel) ? usage.detail.scheduleFromLabel : [];
+  const raw = String(schedule?.[0]?.rawText ?? "").trim();
+  const dosage = usage?.cover?.dosage?.text ? String(usage.cover.dosage.text).trim() : "";
+
+  if (!raw) {
+    errors.push("lnhpd: expected usage.detail.scheduleFromLabel[0].rawText to be non-empty");
+    return errors;
+  }
+  if (!dosage) {
+    errors.push("lnhpd: expected usage.cover.dosage.text to be non-empty");
+    return errors;
+  }
+
+  const norm = (v) =>
+    String(v)
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .trim();
+  if (!norm(dosage).includes(norm(raw))) {
+    errors.push(`lnhpd: expected dosage to include label dosing rawText (dosage="${dosage}" raw="${raw}")`);
+  }
+  if (/\bunknown\b|\bnot provided\b|\bunspecified\b/i.test(dosage)) {
+    errors.push(`lnhpd: dosage must not say unknown/not provided (dosage="${dosage}")`);
+  }
+  return errors;
+}
+
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function fetchIngredientsDetailPage(fastBundle, cursor) {
@@ -389,6 +438,85 @@ function assertDsldWithFormKbHit(detailResponse, testCase) {
     );
   }
 
+  const excerptIds = body?.debug?.formExcerptIds;
+  const hasExcerptId =
+    excerptIds && typeof excerptIds === "object"
+      ? Object.entries(excerptIds).some(
+          ([k, value]) => matchesTarget(k) && typeof value === "string" && value.startsWith("x_")
+        )
+      : false;
+  if (!hasExcerptId) {
+    errors.push(
+      `${caseId}: expected at least one debug.formExcerptIds entry` +
+        (targetKeyword ? ` (target=${targetKeyword})` : "") +
+        ` (grounded excerpt id)`
+    );
+  }
+
+  const referenceIds = body?.debug?.formReferenceIds;
+  const hasReferenceId =
+    referenceIds && typeof referenceIds === "object"
+      ? Object.entries(referenceIds).some(
+          ([k, value]) => matchesTarget(k) && typeof value === "string" && value.startsWith("ref_")
+        )
+      : false;
+  if (!hasReferenceId) {
+    errors.push(
+      `${caseId}: expected at least one debug.formReferenceIds entry` +
+        (targetKeyword ? ` (target=${targetKeyword})` : "") +
+        ` (grounded reference id)`
+    );
+  }
+
+  if (ENABLE_GROUNDEDNESS_LEXICAL) {
+    const refMap = referenceIds && typeof referenceIds === "object" ? referenceIds : null;
+    const xMap = excerptIds && typeof excerptIds === "object" ? excerptIds : null;
+    if (refMap && xMap && evidenceExcerptByRef) {
+      const targetRef = Object.entries(refMap).find(
+        ([k, v]) => matchesTarget(k) && typeof v === "string" && v.startsWith("ref_")
+      );
+      const targetX = Object.entries(xMap).find(
+        ([k, v]) => matchesTarget(k) && typeof v === "string" && v.startsWith("x_")
+      );
+      const refId = targetRef?.[1] ?? null;
+      const excerptId = targetX?.[1] ?? null;
+      const row = refId ? evidenceExcerptByRef.get(refId) : null;
+      const excerptText = row?.excerpt_text ? String(row.excerpt_text) : "";
+
+      if (!refId || !excerptId) {
+        errors.push(`${caseId}: lexical check missing refId/excerptId (target=${targetKeyword || requiredKeyword})`);
+      } else if (!row) {
+        errors.push(`${caseId}: lexical check missing evidence excerpt row for ${refId}`);
+      } else if (String(row.excerpt_id || "") !== String(excerptId)) {
+        errors.push(`${caseId}: lexical check excerpt_id mismatch for ${refId}`);
+      } else if (!excerptText.trim()) {
+        errors.push(`${caseId}: lexical check excerpt_text empty for ${refId}`);
+      } else {
+        const claimTokens = buildLexTokens(targetKeyword || requiredKeyword);
+        const formTokens = requiredKeyword ? buildLexTokens(requiredKeyword) : [];
+        const hay = normalizeLex(excerptText);
+
+        const hasAnyClaimToken = claimTokens.length ? claimTokens.some((t) => hay.includes(t)) : true;
+        if (!hasAnyClaimToken) {
+          errors.push(
+            `${caseId}: lexical check failed (no claim tokens found in excerpt)` +
+              ` claimTokens=${claimTokens.join("|")} ref=${refId}`
+          );
+        }
+
+        if (REQUIRE_FORM_TOKEN_IN_EXCERPT && formTokens.length) {
+          const hasForm = formTokens.some((t) => hay.includes(t));
+          if (!hasForm) {
+            errors.push(
+              `${caseId}: lexical check failed (no form tokens found in excerpt)` +
+                ` formTokens=${formTokens.join("|")} ref=${refId}`
+            );
+          }
+        }
+      }
+    }
+  }
+
   const sources = body?.debug?.formResolveSources;
   if (!sources || typeof sources !== "object") {
     errors.push(`${caseId}: missing debug.formResolveSources`);
@@ -416,6 +544,10 @@ function pickKeyFields(result) {
     debug?.formResolveSources && typeof debug.formResolveSources === "object" ? debug.formResolveSources : null;
   const formSentenceIds =
     debug?.formSentenceIds && typeof debug.formSentenceIds === "object" ? debug.formSentenceIds : null;
+  const formExcerptIds =
+    debug?.formExcerptIds && typeof debug.formExcerptIds === "object" ? debug.formExcerptIds : null;
+  const formReferenceIds =
+    debug?.formReferenceIds && typeof debug.formReferenceIds === "object" ? debug.formReferenceIds : null;
 
   const nonNoneSources = formResolveSources
     ? Object.fromEntries(Object.entries(formResolveSources).filter(([, v]) => typeof v === "string" && v !== "none"))
@@ -423,6 +555,61 @@ function pickKeyFields(result) {
   const sentenceIdHits = formSentenceIds
     ? Object.fromEntries(Object.entries(formSentenceIds).filter(([, v]) => typeof v === "string" && v.startsWith("s_")))
     : null;
+  const excerptIdHits = formExcerptIds
+    ? Object.fromEntries(Object.entries(formExcerptIds).filter(([, v]) => typeof v === "string" && v.startsWith("x_")))
+    : null;
+  const referenceIdHits = formReferenceIds
+    ? Object.fromEntries(Object.entries(formReferenceIds).filter(([, v]) => typeof v === "string" && v.startsWith("ref_")))
+    : null;
+
+  const supportStrengths =
+    debug?.formSupportStrengths && typeof debug.formSupportStrengths === "object" ? debug.formSupportStrengths : null;
+
+  // A2 minimal evidence structure (debug/CI-only): claimId + supportingExcerptIds + supportStrength
+  // Bind to the intended active keyword when provided, to avoid passing due to a different ingredient.
+  let groundednessClaims = null;
+  if (
+    fastBundle?.meta?.sourceType === "dsld" &&
+    Array.isArray(detail?.detail?.items) &&
+    debug &&
+    formExcerptIds &&
+    supportStrengths &&
+    fastBundle?.meta?.authoritativeIdentity?.type &&
+    fastBundle?.meta?.authoritativeIdentity?.value
+  ) {
+    const requiredKeyword = String(result.case.requiredFormKeyword ?? "").trim().toLowerCase();
+    const targetKeyword = String(result.case.targetActiveKeyword ?? requiredKeyword).trim().toLowerCase();
+    const matchesTarget = (name) => {
+      const s = String(name ?? "").toLowerCase();
+      if (targetKeyword && !s.includes(targetKeyword)) return false;
+      if (requiredKeyword && !s.includes(requiredKeyword)) return false;
+      return true;
+    };
+
+    const cursorBase = Number(result.detailResponse?.payload?.cursor ?? 0) || 0;
+    const idType = fastBundle.meta.authoritativeIdentity.type;
+    const idValue = fastBundle.meta.authoritativeIdentity.value;
+    groundednessClaims = detail.detail.items
+      .map((item, idx) => {
+        if (!matchesTarget(item?.name)) return null;
+        const name = String(item?.name ?? "");
+        const excerptId = formExcerptIds?.[name] ?? null;
+        const supportStrength = supportStrengths?.[name] ?? null;
+        const claimIndex = cursorBase + idx;
+        const claimId = `v4:dsld:${idType}:${idValue}:ingredients:chemicalFormExplain:${claimIndex}`;
+        return {
+          name,
+          claimId,
+          supportingExcerptIds: typeof excerptId === "string" && excerptId.startsWith("x_") ? [excerptId] : [],
+          supportStrength:
+            supportStrength === "strong" || supportStrength === "moderate" || supportStrength === "weak"
+              ? supportStrength
+              : null,
+        };
+      })
+      .filter(Boolean);
+    if (!groundednessClaims.length) groundednessClaims = null;
+  }
 
   return {
     barcode: result.case.barcode,
@@ -449,6 +636,11 @@ function pickKeyFields(result) {
     formResolveSourcesNonNone: nonNoneSources,
     formSentenceIdHitsCount: sentenceIdHits ? Object.keys(sentenceIdHits).length : null,
     formSentenceIdHits: sentenceIdHits,
+    formExcerptIdHitsCount: excerptIdHits ? Object.keys(excerptIdHits).length : null,
+    formExcerptIdHits: excerptIdHits,
+    formReferenceIdHitsCount: referenceIdHits ? Object.keys(referenceIdHits).length : null,
+    formReferenceIdHits: referenceIdHits,
+    groundednessClaims,
   };
 }
 
@@ -516,6 +708,9 @@ async function runCase(testCase) {
     }
   }
 
+  const lnhpdUsageErrors =
+    bundleCheck.fastBundle && testCase.id === "lnhpd" ? assertLnhpdLabelDosingCopied(bundleCheck.fastBundle) : [];
+
   const detailErrors = bundleCheck.fastBundle ? assertDetailContract(detailResponse) : [];
 
   const dsldKbErrors =
@@ -523,7 +718,7 @@ async function runCase(testCase) {
       ? assertDsldWithFormKbHit(detailResponse, testCase)
       : [];
 
-  const errors = [...bundleCheck.errors, ...detailErrors, ...dsldKbErrors];
+  const errors = [...bundleCheck.errors, ...lnhpdUsageErrors, ...detailErrors, ...dsldKbErrors];
   const summary = {
     ...pickKeyFields({ case: testCase, fastBundle: bundleCheck.fastBundle, detailResponse }),
     errors,
@@ -631,6 +826,19 @@ async function runCaseWithFallback(testCase) {
 async function main() {
   await ensureDir(ARTIFACT_DIR);
 
+  if (ENABLE_GROUNDEDNESS_LEXICAL) {
+    try {
+      const raw = await fs.readFile(path.join("backend", "data", "kb", "kb_evidence_excerpts.json"), "utf-8");
+      const json = JSON.parse(String(raw).replace(/\bNaN\b/g, "null"));
+      const rows = Array.isArray(json?.evidence_excerpts) ? json.evidence_excerpts : [];
+      evidenceExcerptByRef = new Map(rows.map((r) => [String(r.citation_id || ""), r]).filter(([k]) => k));
+      console.log(`[render-regression] lexical groundedness enabled (refs=${evidenceExcerptByRef.size})`);
+    } catch (err) {
+      console.warn(`[render-regression] lexical groundedness enabled but failed to load kb_evidence_excerpts.json: ${String(err)}`);
+      evidenceExcerptByRef = null;
+    }
+  }
+
   const runResults = [];
   for (const testCase of CASES) {
     const primaryBarcode = testCase.barcodes?.[0] ?? "";
@@ -678,11 +886,14 @@ async function main() {
     fallbackReason: item.summary.fallbackReason,
     formResolveSourcesNonNone: item.summary.formResolveSourcesNonNone ?? null,
     formSentenceIdHits: item.summary.formSentenceIdHits ?? null,
+    formExcerptIdHits: item.summary.formExcerptIdHits ?? null,
+    formReferenceIdHits: item.summary.formReferenceIdHits ?? null,
+    groundednessClaims: item.summary.groundednessClaims ?? null,
   }));
   await fs.writeFile(path.join(ARTIFACT_DIR, "release-evidence.json"), JSON.stringify(evidenceRows, null, 2));
 
   const mdLines = [
-    "| caseId | barcode | usedBarcode | primaryFailedReason | sourceType | requiredKeyword | targetActive | cursor | promptVersion | serverCommitSha | factsSourceVersion | detail.dataStatus | fallbackUsed | formResolveSources(non-none) | formSentenceIds(hits) |",
+    "| caseId | barcode | usedBarcode | primaryFailedReason | sourceType | requiredKeyword | targetActive | cursor | promptVersion | serverCommitSha | factsSourceVersion | detail.dataStatus | fallbackUsed | formResolveSources(non-none) | formSentenceIds(hits) | formExcerptIds(hits) |",
     "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
   ];
   for (const row of evidenceRows) {
@@ -696,8 +907,13 @@ async function main() {
           .map(([k, v]) => `${k}:${v}`)
           .join("<br>")
       : "";
+    const xids = row.formExcerptIdHits
+      ? Object.entries(row.formExcerptIdHits)
+          .map(([k, v]) => `${k}:${v}`)
+          .join("<br>")
+      : "";
     mdLines.push(
-      `| ${row.caseId} | ${row.barcode} | ${row.usedBarcode ?? ""} | ${row.primaryFailedReason ?? ""} | ${row.sourceType ?? ""} | ${row.requiredFormKeyword ?? ""} | ${row.targetActiveKeyword ?? ""} | ${row.detailCursorUsed ?? ""} | ${row.promptVersion ?? ""} | ${row.serverCommitSha ?? ""} | ${row.factsSourceVersion ?? ""} | ${row.detailDataStatus ?? ""} | ${row.fallbackUsed ?? ""} | ${sources} | ${sids} |`,
+      `| ${row.caseId} | ${row.barcode} | ${row.usedBarcode ?? ""} | ${row.primaryFailedReason ?? ""} | ${row.sourceType ?? ""} | ${row.requiredFormKeyword ?? ""} | ${row.targetActiveKeyword ?? ""} | ${row.detailCursorUsed ?? ""} | ${row.promptVersion ?? ""} | ${row.serverCommitSha ?? ""} | ${row.factsSourceVersion ?? ""} | ${row.detailDataStatus ?? ""} | ${row.fallbackUsed ?? ""} | ${sources} | ${sids} | ${xids} |`,
     );
   }
   await fs.writeFile(path.join(ARTIFACT_DIR, "release-evidence.md"), mdLines.join("\n") + "\n");
