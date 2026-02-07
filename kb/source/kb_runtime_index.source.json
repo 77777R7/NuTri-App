@@ -571,6 +571,39 @@
         "ref_c3b364908eea"
       ]
     },
+    "calcium|calcium_sulfate": {
+      "source": "override",
+      "ingredient_id": "calcium",
+      "ingredient": "Calcium",
+      "form_key": "calcium_sulfate",
+      "form_display": "Calcium sulfate",
+      "form_family": "sulfate_chloride",
+      "overall_confidence": 0.56,
+      "evidence_grade": "B",
+      "reference_ids": [
+        "ref_b31e16044c47"
+      ],
+      "segments": {
+        "caveats": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_b31e16044c47",
+              "evidence_snippet_id": "x_274296fd4455d321",
+              "overall_confidence": 0.56,
+              "reference_ids": [
+                "ref_b31e16044c47"
+              ],
+              "sentence_id": "s_dd1251531bf6ac88",
+              "source": "curated_override",
+              "text": "NIH ODS lists calcium sulfate among forms used in supplements and notes calcium salts vary in elemental calcium content.",
+              "review_status": "needs_edit"
+            }
+          ]
+        }
+      }
+    },
     "iron|ferrous_gluconate": {
       "source": "override",
       "ingredient_id": "iron",
@@ -2098,6 +2131,39 @@
         }
       }
     },
+    "creatine|phosphate": {
+      "source": "override",
+      "ingredient_id": "creatine",
+      "ingredient": "Creatine",
+      "form_key": "phosphate",
+      "form_display": "Creatine phosphate (phosphocreatine)",
+      "form_family": "generic",
+      "overall_confidence": 0.4,
+      "evidence_grade": "B",
+      "reference_ids": [
+        "ref_6944971c8ccc"
+      ],
+      "segments": {
+        "caveats": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_6944971c8ccc",
+              "evidence_snippet_id": "x_fd417bef51b642db",
+              "overall_confidence": 0.4,
+              "reference_ids": [
+                "ref_6944971c8ccc"
+              ],
+              "sentence_id": "s_cb08cae1cdfde87d",
+              "source": "curated_override",
+              "text": "N-phosphocreatine is a phosphoamino acid consisting of creatine having a phospho group attached at the primary nitrogen of the guanidino group.",
+              "review_status": "needs_edit"
+            }
+          ]
+        }
+      }
+    },
     "creatine|gluconate": {
       "source": "override",
       "ingredient_id": "creatine",
@@ -2895,6 +2961,39 @@
               "sentence_id": "s_3758e9d0a5108e6c",
               "source": "curated_override",
               "text": "NIH ODS notes potassium supplements can be present in multiple forms, including potassium citrate; labels list elemental potassium rather than the salt weight."
+            }
+          ]
+        }
+      }
+    },
+    "potassium|potassium_aspartate": {
+      "source": "override",
+      "ingredient_id": "potassium",
+      "ingredient": "Potassium",
+      "form_key": "potassium_aspartate",
+      "form_display": "Potassium aspartate",
+      "form_family": "chelated",
+      "overall_confidence": 0.53,
+      "evidence_grade": "B",
+      "reference_ids": [
+        "ref_df0b98fd0dc5"
+      ],
+      "segments": {
+        "caveats": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_df0b98fd0dc5",
+              "evidence_snippet_id": "x_4591a7faa61a51b6",
+              "overall_confidence": 0.53,
+              "reference_ids": [
+                "ref_df0b98fd0dc5"
+              ],
+              "sentence_id": "s_3139eee5b1d5680f",
+              "source": "curated_override",
+              "text": "NIH ODS notes potassium supplements can be present in multiple forms, including aspartate salts; labels typically list elemental potassium rather than the salt weight.",
+              "review_status": "needs_edit"
             }
           ]
         }

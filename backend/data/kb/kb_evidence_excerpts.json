@@ -3,7 +3,7 @@
     "generated_at": "2026-02-07T09:41:20Z",
     "source": "nutri_minimal_data_package_v4_0_en_only_review_excerpts",
     "note": "Production evidence excerpts used by shipped KB sentences (captured only).",
-    "ref_count": 31
+    "ref_count": 32
   },
   "evidence_excerpts": [
     {
@@ -377,6 +377,18 @@
       "excerpt_text": "Alpha-tocopherol in dietary supplements and fortified foods is often esterified to prolong its shelf life while protecting its antioxidant properties. The body hydrolyzes and absorbs these esters (alpha-tocopheryl acetate and succinate) as efficiently as alpha-tocopherol.",
       "source": "NIH ODS",
       "url": "https://ods.od.nih.gov/factsheets/VitaminE-HealthProfessional/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-07T20:48:30Z",
+      "citation_id": "ref_6944971c8ccc",
+      "excerpt_id": "x_fd417bef51b642db",
+      "excerpt_sha256": "cf4662df4be457c250e371b979cac6d71c81171dc8a5558636534fe72f5fa7af",
+      "excerpt_text": "N-phosphocreatine is a phosphoamino acid consisting of creatine having a phospho group attached at the primary nitrogen of the guanidino group. It has a role as a human metabolite and a mouse metabolite. It is a phosphoamino acid and a phosphagen. It is functionally related to a creatine. It is a conjugate acid of a N-phosphocreatinate(2-).",
+      "source": "ChEBI",
+      "url": "https://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:17287"
     }
   ]
 }
