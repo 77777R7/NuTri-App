@@ -9,7 +9,7 @@ on:
         # Extended list (P1): keep core tokens, plus additional salts/forms that commonly appear
         # in DSLD labels but are not yet guaranteed to have KB coverage. This is meant to surface
         # actionable kb_sentence_missing / kb_excerpt_missing rows for operational iteration.
-        default: "oxide,citrate,glycinate,bisglycinate,ascorbate,picolinate,sulfate,chloride,gluconate,carbonate,malate,tartrate,succinate,fumarate,lactate,acetate,phosphate,orotate,bicarbonate,hydrochloride,hcl,monohydrate,taurate,aspartate,threonate,polynicotinate,gluceptate,selenate,selenite,monomethionine"
+        default: "oxide,citrate,glycinate,bisglycinate,ascorbate,picolinate,nicotinate,sulfate,chloride,gluconate,carbonate,malate,tartrate,succinate,fumarate,lactate,acetate,phosphate,orotate,carnosine,bicarbonate,hydrochloride,hcl,monohydrate,taurate,aspartate,threonate,polynicotinate,gluceptate,selenate,selenite,monomethionine"
         type: string
       max_enrich:
         description: "Max label_ids to evaluate (readonly view + local KB matching)"
@@ -87,7 +87,7 @@ jobs:
           DSLD_SCAN_META_SAMPLE_SIZE: "8000"
           # For scheduled runs, github.event.inputs.* are empty; provide stable defaults so nightly
           # behaves the same as a workflow_dispatch with default inputs.
-          DSLD_FORM_TOKENS: ${{ github.event.inputs.tokens != '' && github.event.inputs.tokens || 'oxide,citrate,glycinate,bisglycinate,ascorbate,picolinate,sulfate,chloride,gluconate,carbonate,malate,tartrate,succinate,fumarate,lactate,acetate,phosphate,orotate,bicarbonate,hydrochloride,hcl,monohydrate,taurate,aspartate,threonate,polynicotinate,gluceptate,selenate,selenite,monomethionine' }}
+          DSLD_FORM_TOKENS: ${{ github.event.inputs.tokens != '' && github.event.inputs.tokens || 'oxide,citrate,glycinate,bisglycinate,ascorbate,picolinate,nicotinate,sulfate,chloride,gluconate,carbonate,malate,tartrate,succinate,fumarate,lactate,acetate,phosphate,orotate,carnosine,bicarbonate,hydrochloride,hcl,monohydrate,taurate,aspartate,threonate,polynicotinate,gluceptate,selenate,selenite,monomethionine' }}
           DSLD_SCAN_MAX_EVALUATE: ${{ github.event.inputs.max_enrich != '' && github.event.inputs.max_enrich || '900' }}
           DSLD_SCAN_MAX_LABELS_PER_TOKEN: ${{ github.event.inputs.labels_per_token != '' && github.event.inputs.labels_per_token || '800' }}
           DSLD_SCAN_MAX_ACTIVES: ${{ github.event.inputs.max_actives != '' && github.event.inputs.max_actives || '30' }}

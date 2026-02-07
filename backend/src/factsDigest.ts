@@ -157,6 +157,8 @@ const CHEMICAL_FORM_KEYWORDS = [
   "glycinate",
   "malate",
   "picolinate",
+  "nicotinate",
+  "carnosine",
   "tartrate",
   "succinate",
   "nitrate",

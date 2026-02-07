@@ -41,6 +41,7 @@ const DEFAULT_TOKENS = [
   "bisglycinate",
   "ascorbate",
   "picolinate",
+  "nicotinate",
   "sulfate",
   "chloride",
   // P1 operational scan: expand beyond the core salt forms so kb_sentence_missing/kb_excerpt_missing
@@ -55,6 +56,7 @@ const DEFAULT_TOKENS = [
   "acetate",
   "phosphate",
   "orotate",
+  "carnosine",
   "bicarbonate",
   "hydrochloride",
   "hcl",
