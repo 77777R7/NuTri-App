@@ -598,7 +598,7 @@
               "sentence_id": "s_dd1251531bf6ac88",
               "source": "curated_override",
               "text": "NIH ODS lists calcium sulfate among forms used in supplements and notes calcium salts vary in elemental calcium content.",
-              "review_status": "needs_edit"
+              "review_status": "approved"
             }
           ]
         }
@@ -843,6 +843,39 @@
               "sentence_id": "s_d0200247d5433cef",
               "source": "curated_override",
               "text": "Zinc aspartate is a zinc form (zinc aspartate).",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
+    },
+    "zinc|carnosine": {
+      "source": "override",
+      "ingredient_id": "zinc",
+      "ingredient": "Zinc",
+      "form_key": "carnosine",
+      "form_display": "Zinc carnosine",
+      "form_family": "chelated",
+      "overall_confidence": 0.56,
+      "evidence_grade": "B",
+      "reference_ids": [
+        "ref_6e6063971ba5"
+      ],
+      "segments": {
+        "caveats": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_6e6063971ba5",
+              "evidence_snippet_id": "x_8e4087dfa08cb7eb",
+              "overall_confidence": 0.56,
+              "reference_ids": [
+                "ref_6e6063971ba5"
+              ],
+              "sentence_id": "s_11f3ef5e8b858972",
+              "source": "curated_override",
+              "text": "Polaprezinc is an orally bioavailable chelate composed of zinc and L-carnosine.",
               "review_status": "approved"
             }
           ]
@@ -3343,6 +3376,39 @@
               "sentence_id": "s_02d480b9b01fd379",
               "source": "curated_override",
               "text": "Some people choose chelated forms for GI comfort, but evidence is limited and individual response varies.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
+    },
+    "chromium|nicotinate": {
+      "source": "override",
+      "ingredient_id": "chromium",
+      "ingredient": "Chromium",
+      "form_key": "nicotinate",
+      "form_display": "Chromium nicotinate",
+      "form_family": "generic",
+      "overall_confidence": 0.56,
+      "evidence_grade": "B",
+      "reference_ids": [
+        "ref_595031703427"
+      ],
+      "segments": {
+        "caveats": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_595031703427",
+              "evidence_snippet_id": "x_1ac80a2e27303b39",
+              "overall_confidence": 0.56,
+              "reference_ids": [
+                "ref_595031703427"
+              ],
+              "sentence_id": "s_87009958791507d4",
+              "source": "curated_override",
+              "text": "NIH ODS lists chromium nicotinate among forms used in dietary supplements.",
               "review_status": "approved"
             }
           ]

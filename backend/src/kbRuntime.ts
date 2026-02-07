@@ -106,6 +106,8 @@ const REVERSE_FORM_KEYWORDS = [
   "glycinate",
   "malate",
   "picolinate",
+  "nicotinate",
+  "carnosine",
   "palmitate",
   "tartrate",
   "threonate",

@@ -425,6 +425,18 @@
       "excerpt_text": "Potassium Ascorbate | C6H7KO6 | CID 23687519 - PubChem",
       "source": "PubChem",
       "url": "https://pubchem.ncbi.nlm.nih.gov/compound/23687519"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-07T23:23:06Z",
+      "citation_id": "ref_6e6063971ba5",
+      "excerpt_id": "x_8e4087dfa08cb7eb",
+      "excerpt_sha256": "8e4087dfa08cb7ebad5b47cc8cfe3e38185f8ca28cce1017832f7cf9936ba69f",
+      "excerpt_text": "An orally bioavailable chelate composed of zinc and L-carnosine.",
+      "source": "NCI Drug Dictionary",
+      "url": "https://www.cancer.gov/publications/dictionaries/cancer-drug/def/polaprezinc"
     }
   ]
 }
