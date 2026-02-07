@@ -7,59 +7,59 @@
   "global": {
     "citrate": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.8,
         "notes": "Generic form token"
       }
     ],
     "chloride": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.8,
         "notes": "Generic form token"
       },
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.7,
         "notes": "FR spelling."
       }
     ],
     "oxide": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.8,
         "notes": "Generic form token"
       }
     ],
     "sulfate": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.8,
         "notes": "Generic form token"
       },
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.9,
         "notes": "UK spelling; normalization rule also present."
       }
     ],
     "gluconate": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.8,
         "notes": "Generic form token"
       }
     ],
     "picolinate": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.8,
         "notes": "Generic form token"
       }
     ],
     "bisglycinate": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.8,
         "notes": "Generic form token"
       },
@@ -71,19 +71,19 @@
     ],
     "glycinate": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.8,
         "notes": "Generic form token"
       },
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.8,
         "notes": "May map to glycinate/bisglycinate depending context"
       }
     ],
     "chelate": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.8,
         "notes": "Generic form token"
       },
@@ -95,114 +95,114 @@
     ],
     "acetate": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.8,
         "notes": "Generic form token"
       }
     ],
     "malate": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.8,
         "notes": "Generic form token"
       }
     ],
     "lactate": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.8,
         "notes": "Generic form token"
       }
     ],
     "aspartate": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.8,
         "notes": "Generic form token"
       }
     ],
     "taurate": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.8,
         "notes": "Generic form token"
       }
     ],
     "threonate": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.8,
         "notes": "Generic form token"
       },
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.8,
         "notes": "Token"
       }
     ],
     "carbonate": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.8,
         "notes": "Generic form token"
       }
     ],
     "hydrochloride": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.8,
         "notes": "Generic form token"
       },
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.8,
         "notes": "Generic form token"
       },
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.8,
         "notes": "Abbreviation"
       },
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.8,
-        "notes": NaN
+        "notes": null
       }
     ],
     "monohydrate": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.8,
         "notes": "Generic form token"
       },
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "phosphate": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.8,
         "notes": "Generic form token"
       },
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "palmitate": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.8,
         "notes": "Generic form token"
       }
     ],
     "succinate": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.8,
         "notes": "Generic form token"
       }
@@ -216,318 +216,318 @@
     ],
     "l_threonate": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.8,
         "notes": "Normalized token"
       }
     ],
     "liposomal": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.8,
         "notes": "Delivery format token"
       },
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "lipo": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.8,
         "notes": "Abbrev token"
       }
     ],
     "phytosome": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.8,
         "notes": "Delivery format token"
       },
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "mononitrate": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "dicalcium_phosphate": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "dihydrate": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "trihydrate": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "anhydrous": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "standardized": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "standardised": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "extract": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "full_spectrum": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "whole_herb": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "root": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "leaf": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "flower": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "powder": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "capsule": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "tablet": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "softgel": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "gummy": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "liquid": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "tincture": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "tea": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "infusion": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "decoction": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "micronized": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "micronised": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "nano": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "nanoparticle": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "micellar": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "emulsified": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "time_release": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "sustained_release": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "extended_release": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "delayed_release": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "usp": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "bp": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "ep": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "nf": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "gmp": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Descriptor token (parsing aid)"
       }
     ],
     "citrato": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.7,
         "notes": "ES/IT spelling."
       }
     ],
     "citrat": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Truncated token seen in some labels."
       }
@@ -541,28 +541,28 @@
     ],
     "ascorbic": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.7,
         "notes": "Recognize 'ascorbic' token (paired with NR12 dropping 'acid')."
       }
     ],
     "folic": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.65,
         "notes": "Recognize 'folic' token (paired with NR12 dropping 'acid')."
       }
     ],
     "nicotinic": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.65,
         "notes": "Recognize 'nicotinic' token (paired with NR12 dropping 'acid')."
       }
     ],
     "pantothenic": [
       {
-        "form_key": NaN,
+        "form_key": null,
         "alias_confidence": 0.6,
         "notes": "Recognize 'pantothenic' token (paired with NR12 dropping 'acid')."
       }
@@ -574,7 +574,7 @@
         {
           "form_key": "ascorbic_acid",
           "alias_confidence": 0.9,
-          "notes": NaN
+          "notes": null
         },
         {
           "form_key": "ascorbic_acid",
@@ -586,42 +586,42 @@
         {
           "form_key": "sodium_ascorbate",
           "alias_confidence": 0.9,
-          "notes": NaN
+          "notes": null
         }
       ],
       "calcium_ascorbate": [
         {
           "form_key": "calcium_ascorbate",
           "alias_confidence": 0.9,
-          "notes": NaN
+          "notes": null
         }
       ],
       "ester_c": [
         {
           "form_key": "ester_c",
           "alias_confidence": 0.85,
-          "notes": NaN
+          "notes": null
         }
       ]
     },
     "curcumin": {
       "meriva": [
         {
-          "form_key": NaN,
+          "form_key": null,
           "alias_confidence": 0.85,
           "notes": "Brand->form mapping candidate"
         }
       ],
       "c3_complex": [
         {
-          "form_key": NaN,
+          "form_key": null,
           "alias_confidence": 0.8,
           "notes": "Standardized extract name"
         }
       ],
       "bioperine": [
         {
-          "form_key": NaN,
+          "form_key": null,
           "alias_confidence": 0.8,
           "notes": "Piperine enhancer token"
         }
@@ -632,93 +632,93 @@
         {
           "form_key": "methylcobalamin",
           "alias_confidence": 0.9,
-          "notes": NaN
+          "notes": null
         }
       ],
       "methyl_b12": [
         {
           "form_key": "methylcobalamin",
           "alias_confidence": 0.85,
-          "notes": NaN
+          "notes": null
         }
       ],
       "cyanocobalamin": [
         {
           "form_key": "cyanocobalamin",
           "alias_confidence": 0.9,
-          "notes": NaN
+          "notes": null
         }
       ],
       "hydroxocobalamin": [
         {
           "form_key": "hydroxocobalamin",
           "alias_confidence": 0.9,
-          "notes": NaN
+          "notes": null
         }
       ],
       "adenosylcobalamin": [
         {
           "form_key": "adenosylcobalamin",
           "alias_confidence": 0.85,
-          "notes": NaN
+          "notes": null
         }
       ]
     },
     "magnesium": {
       "magnesium_citrate": [
         {
-          "form_key": NaN,
+          "form_key": null,
           "alias_confidence": 0.85,
-          "notes": NaN
+          "notes": null
         }
       ],
       "magnesium_glycinate": [
         {
-          "form_key": NaN,
+          "form_key": null,
           "alias_confidence": 0.85,
-          "notes": NaN
+          "notes": null
         }
       ],
       "magnesium_bisglycinate": [
         {
-          "form_key": NaN,
+          "form_key": null,
           "alias_confidence": 0.85,
-          "notes": NaN
+          "notes": null
         }
       ],
       "magnesium_oxide": [
         {
-          "form_key": NaN,
+          "form_key": null,
           "alias_confidence": 0.9,
-          "notes": NaN
+          "notes": null
         }
       ],
       "magnesium_sulfate": [
         {
           "form_key": "magnesium_sulfate",
           "alias_confidence": 0.9,
-          "notes": NaN
+          "notes": null
         }
       ],
       "magnesium_chloride": [
         {
           "form_key": "magnesium_chloride",
           "alias_confidence": 0.85,
-          "notes": NaN
+          "notes": null
         }
       ],
       "magnesium_lactate": [
         {
-          "form_key": NaN,
+          "form_key": null,
           "alias_confidence": 0.85,
-          "notes": NaN
+          "notes": null
         }
       ],
       "magnesium_aspartate": [
         {
-          "form_key": NaN,
+          "form_key": null,
           "alias_confidence": 0.85,
-          "notes": NaN
+          "notes": null
         }
       ],
       "magnesium_phosphate": [
@@ -734,7 +734,7 @@
         {
           "form_key": "bisglycinate",
           "alias_confidence": 0.9,
-          "notes": NaN
+          "notes": null
         }
       ],
       "zinc_glycinate": [
@@ -746,37 +746,37 @@
       ],
       "zinc_picolinate": [
         {
-          "form_key": NaN,
+          "form_key": null,
           "alias_confidence": 0.9,
-          "notes": NaN
+          "notes": null
         }
       ],
       "zinc_oxide": [
         {
-          "form_key": NaN,
+          "form_key": null,
           "alias_confidence": 0.9,
-          "notes": NaN
+          "notes": null
         }
       ],
       "zinc_gluconate": [
         {
-          "form_key": NaN,
+          "form_key": null,
           "alias_confidence": 0.9,
-          "notes": NaN
+          "notes": null
         }
       ],
       "zinc_sulfate": [
         {
-          "form_key": NaN,
+          "form_key": null,
           "alias_confidence": 0.9,
-          "notes": NaN
+          "notes": null
         }
       ],
       "zinc_acetate": [
         {
           "form_key": "zinc_acetate",
           "alias_confidence": 0.85,
-          "notes": NaN
+          "notes": null
         }
       ],
       "glycinate": [
@@ -830,6 +830,13 @@
           "form_key": "alpha_tocopherol",
           "alias_confidence": 0.85,
           "notes": "Vitamin form alias"
+        }
+      ],
+      "vitamin_e_acetate": [
+        {
+          "form_key": "dl_alpha_tocopheryl_acetate",
+          "alias_confidence": 0.75,
+          "notes": "DSLD often lists 'Vitamin E Acetate' without specifying tocopheryl/alpha; default to dl-alpha tocopheryl acetate."
         }
       ],
       "tocopheryl_acetate": [
@@ -1253,7 +1260,7 @@
     "entries": 170
   },
   "reverse": {
-    "NaN": [
+    "null": [
       "acetate",
       "anhydrous",
       "ascorbic",
