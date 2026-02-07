@@ -3,7 +3,7 @@
     "generated_at": "2026-02-06T23:36:09Z",
     "source": "nutri_minimal_data_package_v4_0_en_only_review_excerpts",
     "note": "Production evidence excerpts used by shipped KB sentences (captured only).",
-    "ref_count": 21
+    "ref_count": 23
   },
   "evidence_excerpts": [
     {
@@ -257,6 +257,30 @@
       "excerpt_text": "The aim of the study was to evaluate the hypoglycaemic potential of supplementary Cr in the form of chromium(III) glycinate (CrGly) in the diabetic model of rats.",
       "source": "PubMed (Biol Trace Elem Res 2020)",
       "url": "https://pubmed.ncbi.nlm.nih.gov/30826908/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-07T00:07:38Z",
+      "citation_id": "ref_0e0b6f8f4fb0",
+      "excerpt_id": "x_6e52b96e9c0a7fb0",
+      "excerpt_sha256": "afc84b673bfda0013f75baea390e2b1a743e68b23b6bec6b63b34ab1d846ec11",
+      "excerpt_text": "NIH ODS notes potassium in supplements is often potassium chloride, but other forms such as potassium citrate, phosphate, aspartate, bicarbonate, and gluconate are also used. It states Supplement Facts typically list elemental potassium rather than the salt weight.",
+      "source": "NIH ODS",
+      "url": "https://ods.od.nih.gov/factsheets/Potassium-HealthProfessional/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-07T00:07:38Z",
+      "citation_id": "ref_4a2f3c9fdbd1",
+      "excerpt_id": "x_19ef0f1cce6ce2d1",
+      "excerpt_sha256": "96f1132a3cbe773f3337ea6e733848c97ee8507d9d0f861aeadfde879478a9cf",
+      "excerpt_text": "A PubMed abstract describes replacing part of inorganic mineral salts with organic forms, specifically glycine chelates of minerals including calcium, iron, zinc, and copper, in a supplementation study.",
+      "source": "PubMed",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/37958183/"
     }
   ]
 }

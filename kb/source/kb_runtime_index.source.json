@@ -331,24 +331,24 @@
       "overall_confidence": 0.4,
       "evidence_grade": "C",
       "reference_ids": [
-        "ref_93a6e2a47fd2"
+        "ref_d00668aab572"
       ],
       "segments": {
         "absorption": {
           "en": [
             {
-              "evidence_excerpt_status": "needs_capture",
+              "evidence_excerpt_status": "captured",
               "evidence_grade": "C",
-              "evidence_reference_id": "ref_93a6e2a47fd2",
-              "evidence_snippet_id": "x_932b4d0b0c3f3d77",
+              "evidence_reference_id": "ref_d00668aab572",
+              "evidence_snippet_id": "x_e74743c5c827dcee",
               "overall_confidence": 0.4,
               "reference_ids": [
-                "ref_93a6e2a47fd2"
+                "ref_d00668aab572"
               ],
               "review_status": "needs_edit",
               "sentence_id": "s_8e2b1d24d0d1b53e",
               "source": "curated_override",
-              "text": "Calcium bicarbonate is a carbonate-related salt; evidence for meaningful differences between salts is limited."
+              "text": "The label lists calcium as a bicarbonate salt; NIH ODS notes the most common supplemental calcium forms are calcium carbonate and calcium citrate."
             }
           ]
         }
@@ -462,7 +462,7 @@
         "absorption": {
           "en": [
             {
-              "evidence_excerpt_status": "needs_capture",
+              "evidence_excerpt_status": "captured",
               "evidence_grade": "C",
               "evidence_reference_id": "ref_4a2f3c9fdbd1",
               "evidence_snippet_id": "x_19ef0f1cce6ce2d1",
@@ -2763,7 +2763,7 @@
         "absorption": {
           "en": [
             {
-              "evidence_excerpt_status": "needs_capture",
+              "evidence_excerpt_status": "captured",
               "evidence_grade": "C",
               "evidence_reference_id": "ref_0e0b6f8f4fb0",
               "evidence_snippet_id": "x_6e52b96e9c0a7fb0",
