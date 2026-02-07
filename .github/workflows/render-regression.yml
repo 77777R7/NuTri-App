@@ -126,6 +126,8 @@ jobs:
           RENDER_REGRESSION_TOKEN: ${{ secrets.RENDER_REGRESSION_TOKEN }}
           RENDER_DEPLOY_WAIT_TIMEOUT_MS: "900000"
           RENDER_DEPLOY_WAIT_INTERVAL_MS: "15000"
+          # Render cold starts can exceed 30s. Avoid false failures in the deploy-wait probe.
+          RENDER_DEPLOY_REQUEST_TIMEOUT_MS: "90000"
           RENDER_COMMIT_PROBE_BARCODE: "00029537001069"
         run: node scripts/ci/wait-render-commit.mjs
 
