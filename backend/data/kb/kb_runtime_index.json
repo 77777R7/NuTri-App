@@ -9,12 +9,12 @@
     "production_filter": {
       "mode": "captured_and_approved",
       "note": "Segments are filtered so only evidence_excerpt_status=captured is shipped; curated_override sentences must be review_status=approved.",
-      "filtered_at": "2026-02-07T22:52:19.453Z"
+      "filtered_at": "2026-02-07T22:59:13.675Z"
     },
     "review_policy": {
       "library": "pre_reviewed",
       "curated_override": "approved_required",
-      "annotated_at": "2026-02-07T22:52:19.454Z"
+      "annotated_at": "2026-02-07T22:59:13.675Z"
     },
     "kb_source": {
       "kind": "runtime_index_source",
@@ -1432,6 +1432,39 @@
               "sentence_id": "s_57d981d7ef97f097",
               "source": "curated_override",
               "text": "Magnesium ascorbate is an ascorbate form (magnesium ascorbate).",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
+    },
+    "vitamin_c|potassium_ascorbate": {
+      "source": "override",
+      "ingredient_id": "vitamin_c",
+      "ingredient": "Vitamin C",
+      "form_key": "potassium_ascorbate",
+      "form_display": "Potassium ascorbate",
+      "form_family": "generic",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_f9a2195a33cc"
+      ],
+      "segments": {
+        "caveats": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_f9a2195a33cc",
+              "evidence_snippet_id": "x_6d217ba0c65dd02e",
+              "overall_confidence": 0.4,
+              "reference_ids": [
+                "ref_f9a2195a33cc"
+              ],
+              "sentence_id": "s_2414a1775d9dc3ae",
+              "source": "curated_override",
+              "text": "Potassium ascorbate is an ascorbate form (potassium ascorbate).",
               "review_status": "approved"
             }
           ]
