@@ -337,6 +337,7 @@ async function main() {
         token: r.token,
         ingredient: r.ingredient,
         gapType: r.gapType,
+        triage: r.triage || null,
         gap_detail: r.gap_detail,
         count: Number(r.count ?? 0),
         example: r.example_actives_excerpt,
@@ -346,7 +347,11 @@ async function main() {
     const top50 = rows.slice(0, 50);
     const top10ExcerptMissing = rows.filter((r) => r.gapType === "kb_excerpt_missing").slice(0, 10);
     score.kbCoverage.topActionList.topRows = top50;
-    score.kbCoverage.topActionList.hasKbSentenceMissingTop50 = top50.some((r) => r.gapType === "kb_sentence_missing");
+    // Only block launch-ready on *actionable* KB gaps.
+    // Parser normalization and noise triage should be tracked, but should not prevent KB iteration from progressing.
+    score.kbCoverage.topActionList.hasKbSentenceMissingTop50 = top50.some(
+      (r) => r.gapType === "kb_sentence_missing" && r.triage === "kb_missing",
+    );
     score.kbCoverage.topActionList.hasFormUnresolvedRuntimeTop50 = top50.some(
       (r) => r.gapType === "form_unresolved" && String(r.gap_detail || "").includes("runtime_entry_present"),
     );
@@ -399,10 +404,12 @@ async function main() {
   mdLines.push("");
   mdLines.push(`## Action List (Top 10)`);
   mdLines.push("");
-  mdLines.push(`| token | ingredient | gapType | count | example |`);
-  mdLines.push(`|---|---|---|---:|---|`);
+  mdLines.push(`| token | ingredient | gapType | triage | count | example |`);
+  mdLines.push(`|---|---|---|---|---:|---|`);
   for (const r of (score.kbCoverage.topActionList.topRows ?? []).slice(0, 10)) {
-    mdLines.push(`| ${r.token} | ${r.ingredient} | ${r.gapType} | ${r.count} | ${String(r.example || "").slice(0, 80)} |`);
+    mdLines.push(
+      `| ${r.token} | ${r.ingredient} | ${r.gapType} | ${r.triage ?? ""} | ${r.count} | ${String(r.example || "").slice(0, 80)} |`,
+    );
   }
   mdLines.push("");
   mdLines.push(`## Stop Condition`);
