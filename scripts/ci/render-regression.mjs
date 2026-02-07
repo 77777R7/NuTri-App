@@ -44,6 +44,10 @@ const dsldWithFormAscorbateBarcode = process.env.RENDER_DSLD_ASCORBATE_BARCODE |
 const dsldWithFormAscorbateBarcode2 = process.env.RENDER_DSLD_ASCORBATE_BARCODE2 || "00708118010262";
 const dsldWithFormCreatineCitrateBarcode =
   process.env.RENDER_DSLD_CREATINE_CITRATE_BARCODE || "00850748005269";
+const dsldWithFormFerrousFumarateBarcode =
+  process.env.RENDER_DSLD_FERROUS_FUMARATE_BARCODE || "00696305151204";
+const dsldWithFormFerrousFumarateBarcode2 =
+  process.env.RENDER_DSLD_FERROUS_FUMARATE_BARCODE2 || "00651074168532";
 
 const DEFAULT_CASES = [
   { id: "lnhpd", barcodes: [process.env.RENDER_LNHPD_BARCODE || "00029537001069"], expectedSourceType: "lnhpd" },
@@ -96,6 +100,13 @@ if (process.env.RENDER_INCLUDE_NIGHTLY_CASES === "1") {
     expectedSourceType: "dsld",
     requiredFormKeyword: "creatine citrate",
     targetActiveKeyword: "creatine citrate",
+  });
+  CASES.splice(CASES.length - 1, 0, {
+    id: "dsld_with_form_ferrous_fumarate",
+    barcodes: [dsldWithFormFerrousFumarateBarcode, dsldWithFormFerrousFumarateBarcode2],
+    expectedSourceType: "dsld",
+    requiredFormKeyword: "fumarate",
+    targetActiveKeyword: "ferrous fumarate",
   });
 }
 
