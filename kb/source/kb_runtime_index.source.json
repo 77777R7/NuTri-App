@@ -5,7 +5,7 @@
     "index_size": 385,
     "package_sha256": "2aa5ea802c66cdc23ebf376ac0410705d0727588a6345ff57f756cc061f01411",
     "generated_from": "nutri_minimal_data_package_v4_0_en_only_review_excerpts.json@v4.0",
-    "updated_at": "2026-02-05T07:50:12.316030Z",
+    "updated_at": "2026-02-07T02:05:04.209Z",
     "production_filter": {
       "mode": "captured_and_approved",
       "note": "Segments are filtered so only evidence_excerpt_status=captured is shipped; curated_override sentences must be review_status=approved.",
@@ -22,17 +22,17 @@
       "updated_at": "2026-02-06T15:00:15.190472Z"
     },
     "reviewed_at": "2026-02-07T01:35:27.045628+00:00",
-    "reviewed_changes": {
-      "changed_sentence_count": 6,
-      "changed_sentence_ids": [
-        "s_f9d744de3c0934c9",
-        "s_4c1ad4bfe0b42e8c",
-        "s_4add6ac4d344d8dc",
-        "s_84d4fadda8b2abef",
-        "s_a12a63cfc52617d3",
-        "s_ac03c39a31c57a97"
-      ]
-    }
+    "reviewed_changes": [
+      {
+        "at": "2026-02-07T02:05:04.216Z",
+        "change": "add_draft_runtime_entries",
+        "items": [
+          "molybdenum|glycinate",
+          "molybdenum|citrate",
+          "magnesium|orotate"
+        ]
+      }
+    ]
   },
   "ingredient_form_index": {
     "curcumin|standard_curcuminoids": {
@@ -8556,6 +8556,39 @@
           ]
         }
       }
+    },
+    "molybdenum|glycinate": {
+      "source": "override",
+      "ingredient_id": "molybdenum",
+      "ingredient": "Molybdenum",
+      "form_key": "glycinate",
+      "form_display": "Molybdenum glycinate (chelated)",
+      "form_family": "chelated",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": []
+    },
+    "molybdenum|citrate": {
+      "source": "override",
+      "ingredient_id": "molybdenum",
+      "ingredient": "Molybdenum",
+      "form_key": "citrate",
+      "form_display": "Molybdenum citrate",
+      "form_family": "chelated",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": []
+    },
+    "magnesium|orotate": {
+      "source": "override",
+      "ingredient_id": "magnesium",
+      "ingredient": "Magnesium",
+      "form_key": "orotate",
+      "form_display": "Magnesium orotate",
+      "form_family": "chelated",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": []
     }
   },
   "alias_index": {
