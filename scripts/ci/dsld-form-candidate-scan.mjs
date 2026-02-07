@@ -222,6 +222,40 @@ const isVitaminCChemicalFormName = (value) => {
   return /\bascorbic\b/.test(cleaned) || /\bascorbate\b/.test(cleaned) || /\bester[-_ ]?c\b/.test(cleaned);
 };
 
+const canonicalizeFormTokenForLookup = ({ token, ingredientKey, evidenceText }) => {
+  const t = String(token || "").toLowerCase();
+  const ig = String(ingredientKey || "").toLowerCase();
+  const ex = normalizeText(evidenceText);
+
+  // Keep these canonicalizations extremely narrow and evidence-based so we don't create
+  // "fake hits" that paper over real KB gaps.
+  if (ig === "creatine" && t === "hydrochloride") return "hcl";
+
+  if (ig === "iron" && t === "fumarate") return "ferrous_fumarate";
+
+  if (ig === "riboflavin" && t === "phosphate" && (ex.includes("5-phosphate") || ex.includes("5 phosphate"))) {
+    return "riboflavin_5_phosphate";
+  }
+
+  if (ig === "vitamin_c" && t === "ascorbate") {
+    if (ex.includes("calcium ascorbate")) return "calcium_ascorbate";
+    if (ex.includes("sodium ascorbate")) return "sodium_ascorbate";
+    if (ex.includes("ester-c") || ex.includes("ester c")) return "ester_c";
+  }
+
+  return null;
+};
+
+const expandTokensForLookup = ({ tokensMatched, ingredientKey, evidenceText }) => {
+  const out = [];
+  for (const tok of tokensMatched || []) {
+    const canon = canonicalizeFormTokenForLookup({ token: tok, ingredientKey, evidenceText });
+    if (canon && !out.includes(canon)) out.push(canon);
+    if (!out.includes(tok)) out.push(tok);
+  }
+  return out;
+};
+
 const normalizeIngredientKey = (text) => {
   const cleaned = stripAmountSuffix(String(text ?? "")).replace(/^(as|from)\s+/i, "").trim();
   const s = normalizeFreeText(cleaned);
@@ -630,6 +664,17 @@ async function main() {
       const kbLookupName = stripAmountSuffix(chunk);
       const ingredientKey = normalizeIngredientKey(kbLookupName) ?? normalizeIngredientKey(chunk) ?? null;
 
+      // Noise guard: non-creatine "monohydrate" hits are frequently ingredients like calcium HMB monohydrate.
+      // Exclude these from the actionable lists/stats so we don't chase fake salt-form gaps.
+      if (
+        ingredientKey &&
+        ingredientKey !== "creatine" &&
+        tokensMatched.includes("monohydrate") &&
+        (normalizeText(kbLookupName).includes("hydroxymethylbutyrate") || normalizeText(kbLookupName).includes("hmb"))
+      ) {
+        continue;
+      }
+
       if (REQUIRE_EXPLICIT) {
         if (!explicitEvidenceKinds.has(evidenceKind)) continue;
         // Two-stage evidence parsing:
@@ -661,10 +706,15 @@ async function main() {
 
       for (const t of tokensMatched) tokenMatchCounts[t] += 1;
 
-      const tokenWithRuntime = tokensMatched.find((t) => resolveRuntimeEntry({ ingredientKey, token: t }).entry);
+      const tokensForLookup = expandTokensForLookup({
+        tokensMatched,
+        ingredientKey,
+        evidenceText: kbLookupName,
+      });
+      const tokenWithRuntime = tokensForLookup.find((t) => resolveRuntimeEntry({ ingredientKey, token: t }).entry);
       const orderedTokens = [
         ...(tokenWithRuntime ? [tokenWithRuntime] : []),
-        ...tokensMatched.filter((t) => t !== tokenWithRuntime),
+        ...tokensForLookup.filter((t) => t !== tokenWithRuntime),
       ];
 
       const kbLookupForToken = (token) =>
