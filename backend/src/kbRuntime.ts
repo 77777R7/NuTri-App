@@ -293,6 +293,14 @@ const resolveFormKeyFromToken = (kb: KbRuntime, ingredientId: string, token: str
     return { formKey: token, resolveSource: "digest_chemical_form" as FormResolveSource };
   }
 
+  // Some DSLD labels embed the ingredient id into the tokenized name (e.g. "Iron Ferrous Fumarate" ->
+  // "iron_ferrous_fumarate"). If the suffix is a runtime form_key for this ingredient, prefer it.
+  const derivedPrefix = `${ingredientId}_`;
+  const derivedSuffix = token.startsWith(derivedPrefix) ? token.slice(derivedPrefix.length) : null;
+  if (derivedSuffix && hasRuntimeEntry(derivedSuffix)) {
+    return { formKey: derivedSuffix, resolveSource: "alias_map_by_ingredient" as FormResolveSource };
+  }
+
   const byIngredient = kb.alias.byIngredient?.[ingredientId];
   const byIngredientEntry = pickBestAliasEntry(byIngredient?.[token]);
   if (byIngredientEntry) {
