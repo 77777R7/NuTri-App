@@ -5628,52 +5628,107 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     // DSLD detail is KB-first; older cache rows may still carry the legacy FALLBACK_KB_DSLD marker.
     // Treat those as complete to avoid permanently "locking in" a limited UI state.
     const hideDsldFallbackMarker = isDsldDetail && cachedFallback === "kb_dsld";
+    let detailPayload = cachedDetail.payload as IngredientsDetail;
     let debug: Record<string, unknown> | undefined;
-    if (allowInternalDebug && isDsldDetail) {
-      // Cached DSLD detail should still expose form resolution metadata for QA/CI.
-      // We compute it from the digest slice but only attribute KB sentence IDs when the cached
-      // chemicalFormExplain actually matches a KB sentence (basisTags include ingredient_inference).
+    if (isDsldDetail) {
+      // DSLD detail is KB-first for dose/form fields. Even when we hit a cached LLM payload, we should
+      // refresh KB-first fields so:
+      // - new/approved KB sentences take effect immediately (no long-lived stale cache)
+      // - CI/nightly regressions observe true KB hits after a deploy
       const sliceStart = Math.min(cursor, totalActives);
       const sliceEnd = Math.min(sliceStart + requestedLimit, totalActives);
       const detailDigest: FactsDigest = { ...digest, actives: digest.actives.slice(sliceStart, sliceEnd) };
       const dsldBase = buildDsldKbFallbackDetail(detailDigest);
-      const payload = cachedDetail.payload as IngredientsDetail;
-      const byName = new Map<string, IngredientsDetail["items"][number]>();
-      if (Array.isArray(payload.items)) {
-        for (const item of payload.items) {
-          byName.set(normalizeIngredientName(item.name), item);
+
+      const baseByName = new Map<string, IngredientsDetail["items"][number]>();
+      for (const item of dsldBase.detail.items) {
+        baseByName.set(normalizeIngredientName(item.name), item);
+      }
+
+      let changed = false;
+      const patchedItems = Array.isArray(detailPayload.items)
+        ? detailPayload.items.map((item) => {
+            const base = baseByName.get(normalizeIngredientName(item.name));
+            if (!base) return item;
+            const next = {
+              ...item,
+              doseContext: base.doseContext,
+              chemicalFormExplain: base.chemicalFormExplain,
+              deliveryFormExplain: base.deliveryFormExplain,
+            };
+            if (
+              item.doseContext?.text !== next.doseContext?.text ||
+              item.chemicalFormExplain?.text !== next.chemicalFormExplain?.text
+            ) {
+              changed = true;
+            }
+            return next;
+          })
+        : detailPayload.items;
+
+      detailPayload = { ...detailPayload, items: patchedItems };
+
+      if (changed) {
+        void upsertAnalysisIdentityCache(
+          {
+            identityType: identity.type,
+            identityValue: identity.value,
+            locale,
+            promptVersion: promptVersionForCache,
+            factsDigestHash,
+            factsSourceVersion: cachedDetail.facts_source_version ?? "",
+            section: sectionKey,
+            status: "complete",
+            payload: detailPayload,
+            factsDigestJson: cachedDetail.facts_digest_json ?? digestRow.facts_digest_json,
+            attempts: cachedDetail.attempts ?? 0,
+            lockedUntil: null,
+            lastError: cachedDetail.last_error ?? null,
+            errorCode: cachedDetail.error_code ?? null,
+            expiresAt: cachedDetail.expires_at ?? new Date(Date.now() + ANALYSIS_IDENTITY_CACHE_TTL_MS).toISOString(),
+          },
+          { timeoutMs: 900 },
+        );
+      }
+
+      if (allowInternalDebug) {
+        const byName = new Map<string, IngredientsDetail["items"][number]>();
+        if (Array.isArray(detailPayload.items)) {
+          for (const item of detailPayload.items) {
+            byName.set(normalizeIngredientName(item.name), item);
+          }
         }
+        const sentenceIds: Record<string, string | null> = {};
+        const excerptIds: Record<string, string | null> = {};
+        const referenceIds: Record<string, string | null> = {};
+        const evidenceGrades: Record<string, string | null> = {};
+        const supportStrengths: Record<string, "strong" | "moderate" | "weak" | null> = {};
+        for (const [name, sentenceId] of Object.entries(dsldBase.formSentenceIds)) {
+          const item = byName.get(normalizeIngredientName(name));
+          const tags = item?.chemicalFormExplain?.basisTags;
+          const isKbSentence = Array.isArray(tags) && tags.includes("ingredient_inference");
+          sentenceIds[name] = isKbSentence ? sentenceId ?? null : null;
+          excerptIds[name] = isKbSentence ? dsldBase.formExcerptIds[name] ?? null : null;
+          referenceIds[name] = isKbSentence ? dsldBase.formReferenceIds[name] ?? null : null;
+          evidenceGrades[name] = isKbSentence ? dsldBase.formEvidenceGrades[name] ?? null : null;
+          supportStrengths[name] = isKbSentence ? dsldBase.formSupportStrengths[name] ?? null : null;
+        }
+        debug = {
+          formResolveSources: dsldBase.formResolveSources,
+          formEvidenceTexts: dsldBase.formEvidenceTexts,
+          formSentenceIds: sentenceIds,
+          formExcerptIds: excerptIds,
+          formReferenceIds: referenceIds,
+          formEvidenceGrades: evidenceGrades,
+          formSupportStrengths: supportStrengths,
+        };
       }
-      const sentenceIds: Record<string, string | null> = {};
-      const excerptIds: Record<string, string | null> = {};
-      const referenceIds: Record<string, string | null> = {};
-      const evidenceGrades: Record<string, string | null> = {};
-      const supportStrengths: Record<string, "strong" | "moderate" | "weak" | null> = {};
-      for (const [name, sentenceId] of Object.entries(dsldBase.formSentenceIds)) {
-        const cachedItem = byName.get(normalizeIngredientName(name));
-        const tags = cachedItem?.chemicalFormExplain?.basisTags;
-        const isKbSentence = Array.isArray(tags) && tags.includes("ingredient_inference");
-        sentenceIds[name] = isKbSentence ? sentenceId ?? null : null;
-        excerptIds[name] = isKbSentence ? dsldBase.formExcerptIds[name] ?? null : null;
-        referenceIds[name] = isKbSentence ? dsldBase.formReferenceIds[name] ?? null : null;
-        evidenceGrades[name] = isKbSentence ? dsldBase.formEvidenceGrades[name] ?? null : null;
-        supportStrengths[name] = isKbSentence ? dsldBase.formSupportStrengths[name] ?? null : null;
-      }
-      debug = {
-        formResolveSources: dsldBase.formResolveSources,
-        formEvidenceTexts: dsldBase.formEvidenceTexts,
-        formSentenceIds: sentenceIds,
-        formExcerptIds: excerptIds,
-        formReferenceIds: referenceIds,
-        formEvidenceGrades: evidenceGrades,
-        formSupportStrengths: supportStrengths,
-      };
     }
     res.json({
       section: "ingredients",
-      detail: cachedDetail.payload,
+      detail: detailPayload,
       dataStatus: hideDsldFallbackMarker ? "complete" : cachedFallback ? "limited" : "complete",
-      page: buildDetailPage(cachedItemsCount),
+      page: buildDetailPage(Array.isArray(detailPayload.items) ? detailPayload.items.length : cachedItemsCount),
       meta: {
         bundleId: randomUUID(),
         revision: 2,
