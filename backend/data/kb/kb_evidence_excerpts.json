@@ -1,9 +1,9 @@
 {
   "meta": {
-    "generated_at": "2026-02-07T07:19:41Z",
+    "generated_at": "2026-02-07T07:45:08Z",
     "source": "nutri_minimal_data_package_v4_0_en_only_review_excerpts",
     "note": "Production evidence excerpts used by shipped KB sentences (captured only).",
-    "ref_count": 24
+    "ref_count": 25
   },
   "evidence_excerpts": [
     {
@@ -29,6 +29,18 @@
       "excerpt_text": "No studies have compared the relative bioavailability of molybdenum from these different forms.",
       "source": "NIH ODS",
       "url": "https://ods.od.nih.gov/factsheets/Molybdenum-HealthProfessional/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-07T07:45:08Z",
+      "citation_id": "ref_6a05d59dcc43",
+      "excerpt_id": "x_7d3b13135939bc20",
+      "excerpt_sha256": "fa83758b42ed542d9476ad8af18f40a9d8506fc73c9c43be72f80666da380593",
+      "excerpt_text": "Magnesium orotate dihydrate (MO) has the sum formula C10H6MgN4O8 x 2H2O and a MG of 370.52. The salt is poorly soluble in water",
+      "source": "PubMed",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/16366126/"
     },
     {
       "audit_status": "verified",

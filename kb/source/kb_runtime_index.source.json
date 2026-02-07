@@ -8606,7 +8606,7 @@
               "sentence_id": "s_720617ce6191d687",
               "source": "curated_override",
               "text": "No studies have compared the relative bioavailability of molybdenum from these different forms.",
-              "review_status": "needs_edit"
+              "review_status": "approved"
             }
           ]
         }
@@ -8639,7 +8639,7 @@
               "sentence_id": "s_908d55c3240f85bd",
               "source": "curated_override",
               "text": "No studies have compared the relative bioavailability of molybdenum from these different forms.",
-              "review_status": "needs_edit"
+              "review_status": "approved"
             }
           ]
         }
@@ -8653,26 +8653,26 @@
       "form_display": "Magnesium orotate",
       "form_family": "chelated",
       "overall_confidence": 0.4,
-      "evidence_grade": "B",
+      "evidence_grade": "C",
       "reference_ids": [
-        "ref_836fb57ba9df"
+        "ref_6a05d59dcc43"
       ],
       "segments": {
-        "absorption": {
+        "solubility": {
           "en": [
             {
               "evidence_excerpt_status": "captured",
-              "evidence_grade": "B",
-              "evidence_reference_id": "ref_836fb57ba9df",
-              "evidence_snippet_id": "x_0bc54007a1fa3ae9",
-              "overall_confidence": 0.7,
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_6a05d59dcc43",
+              "evidence_snippet_id": "x_7d3b13135939bc20",
+              "overall_confidence": 0.55,
               "reference_ids": [
-                "ref_836fb57ba9df"
+                "ref_6a05d59dcc43"
               ],
               "sentence_id": "s_b633c594e6eb6e3b",
               "source": "curated_override",
-              "text": "NIH ODS notes magnesium supplements come in different forms and absorption can vary; evidence suggests more soluble forms may absorb better in small studies.",
-              "review_status": "needs_edit"
+              "text": "Magnesium orotate is described as poorly soluble in water.",
+              "review_status": "approved"
             }
           ]
         }

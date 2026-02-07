@@ -98,8 +98,9 @@ async function main() {
   }
   json.ingredient_form_index = ingredientFormIndex;
 
+  const { change_log: _changeLog, ...metaWithoutChangeLog } = json.meta ?? {};
   json.meta = {
-    ...(json.meta ?? {}),
+    ...metaWithoutChangeLog,
     production_filter: {
       mode: MODE,
       note:

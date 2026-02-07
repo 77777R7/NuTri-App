@@ -5,16 +5,16 @@
     "index_size": 385,
     "package_sha256": "2aa5ea802c66cdc23ebf376ac0410705d0727588a6345ff57f756cc061f01411",
     "generated_from": "nutri_minimal_data_package_v4_0_en_only_review_excerpts.json@v4.0",
-    "updated_at": "2026-02-05T07:50:12.316030Z",
+    "updated_at": "2026-02-07T07:03:51.538Z",
     "production_filter": {
       "mode": "captured_and_approved",
       "note": "Segments are filtered so only evidence_excerpt_status=captured is shipped; curated_override sentences must be review_status=approved.",
-      "filtered_at": "2026-02-07T01:53:55.371Z"
+      "filtered_at": "2026-02-07T07:47:00.574Z"
     },
     "review_policy": {
       "library": "pre_reviewed",
       "curated_override": "approved_required",
-      "annotated_at": "2026-02-07T01:53:55.378Z"
+      "annotated_at": "2026-02-07T07:47:00.575Z"
     },
     "kb_source": {
       "kind": "runtime_index_source",
@@ -8560,6 +8560,105 @@
               "sentence_id": "s_18c9a74a9aca2b7f",
               "source": "curated_override",
               "text": "NIH ODS notes manganese supplements come in many forms, including manganese citrate, and states no data are available on the relative bioavailability of different supplemental forms."
+            }
+          ]
+        }
+      }
+    },
+    "molybdenum|glycinate": {
+      "source": "override",
+      "ingredient_id": "molybdenum",
+      "ingredient": "Molybdenum",
+      "form_key": "glycinate",
+      "form_display": "Molybdenum glycinate (chelated)",
+      "form_family": "chelated",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_b028c005f1c2"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_b028c005f1c2",
+              "evidence_snippet_id": "x_339cca4e64808187",
+              "overall_confidence": 0.78,
+              "reference_ids": [
+                "ref_b028c005f1c2"
+              ],
+              "sentence_id": "s_720617ce6191d687",
+              "source": "curated_override",
+              "text": "No studies have compared the relative bioavailability of molybdenum from these different forms.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
+    },
+    "molybdenum|citrate": {
+      "source": "override",
+      "ingredient_id": "molybdenum",
+      "ingredient": "Molybdenum",
+      "form_key": "citrate",
+      "form_display": "Molybdenum citrate",
+      "form_family": "chelated",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_b028c005f1c2"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_b028c005f1c2",
+              "evidence_snippet_id": "x_339cca4e64808187",
+              "overall_confidence": 0.7,
+              "reference_ids": [
+                "ref_b028c005f1c2"
+              ],
+              "sentence_id": "s_908d55c3240f85bd",
+              "source": "curated_override",
+              "text": "No studies have compared the relative bioavailability of molybdenum from these different forms.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
+    },
+    "magnesium|orotate": {
+      "source": "override",
+      "ingredient_id": "magnesium",
+      "ingredient": "Magnesium",
+      "form_key": "orotate",
+      "form_display": "Magnesium orotate",
+      "form_family": "chelated",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_6a05d59dcc43"
+      ],
+      "segments": {
+        "solubility": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_6a05d59dcc43",
+              "evidence_snippet_id": "x_7d3b13135939bc20",
+              "overall_confidence": 0.55,
+              "reference_ids": [
+                "ref_6a05d59dcc43"
+              ],
+              "sentence_id": "s_b633c594e6eb6e3b",
+              "source": "curated_override",
+              "text": "Magnesium orotate is described as poorly soluble in water.",
+              "review_status": "approved"
             }
           ]
         }
