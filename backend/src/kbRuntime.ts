@@ -106,7 +106,9 @@ const REVERSE_FORM_KEYWORDS = [
   "glycinate",
   "malate",
   "picolinate",
+  "palmitate",
   "tartrate",
+  "threonate",
   "succinate",
   "nitrate",
   "phosphate",
@@ -299,6 +301,19 @@ const resolveFormKeyFromToken = (kb: KbRuntime, ingredientId: string, token: str
   const derivedSuffix = token.startsWith(derivedPrefix) ? token.slice(derivedPrefix.length) : null;
   if (derivedSuffix && hasRuntimeEntry(derivedSuffix)) {
     return { formKey: derivedSuffix, resolveSource: "alias_map_by_ingredient" as FormResolveSource };
+  }
+
+  // Canonicalize common shorthand tokens to shipped runtime keys when possible.
+  // This keeps both scan and runtime resolution stable without requiring every dataset to
+  // spell the exact KB form_key (e.g. "Magnesium L-Threonate" vs "threonate").
+  if (ingredientId === "magnesium" && token === "threonate" && hasRuntimeEntry("l_threonate")) {
+    return { formKey: "l_threonate", resolveSource: "alias_map_by_ingredient" as FormResolveSource };
+  }
+  if (ingredientId === "vitamin_a" && token === "palmitate" && hasRuntimeEntry("retinyl_palmitate")) {
+    return { formKey: "retinyl_palmitate", resolveSource: "alias_map_by_ingredient" as FormResolveSource };
+  }
+  if (ingredientId === "vitamin_a" && token === "acetate" && hasRuntimeEntry("retinyl_acetate")) {
+    return { formKey: "retinyl_acetate", resolveSource: "alias_map_by_ingredient" as FormResolveSource };
   }
 
   const byIngredient = kb.alias.byIngredient?.[ingredientId];

@@ -259,8 +259,19 @@ const canonicalizeFormTokenForLookup = ({ token, ingredientKey, evidenceText }) 
   if (ig === "vitamin_c" && t === "ascorbate") {
     if (ex.includes("calcium ascorbate")) return "calcium_ascorbate";
     if (ex.includes("sodium ascorbate")) return "sodium_ascorbate";
+    if (ex.includes("magnesium ascorbate")) return "magnesium_ascorbate";
     if (ex.includes("ester-c") || ex.includes("ester c")) return "ester_c";
   }
+
+  // Magnesium L-threonate is often written as "Magnesium L-Threonate". Normalize the token so
+  // runtime lookups hit the shipped KB key (magnesium|l_threonate).
+  if (ig === "magnesium" && t === "threonate" && ex.includes("threonate")) return "l_threonate";
+
+  // Vitamin A palmitate is commonly listed as retinyl palmitate. Normalize to the shipped KB key.
+  if (ig === "vitamin_a" && t === "palmitate" && ex.includes("palmitate")) return "retinyl_palmitate";
+
+  // Vitamin A acetate is commonly listed as retinyl acetate. Normalize to the shipped KB key.
+  if (ig === "vitamin_a" && t === "acetate" && ex.includes("acetate")) return "retinyl_acetate";
 
   return null;
 };
