@@ -9,12 +9,12 @@
     "production_filter": {
       "mode": "captured_and_approved",
       "note": "Segments are filtered so only evidence_excerpt_status=captured is shipped; curated_override sentences must be review_status=approved.",
-      "filtered_at": "2026-02-07T19:23:11.366Z"
+      "filtered_at": "2026-02-07T22:52:19.453Z"
     },
     "review_policy": {
       "library": "pre_reviewed",
       "curated_override": "approved_required",
-      "annotated_at": "2026-02-07T19:23:11.366Z"
+      "annotated_at": "2026-02-07T22:52:19.454Z"
     },
     "kb_source": {
       "kind": "runtime_index_source",
@@ -541,6 +541,19 @@
         "ref_c3b364908eea"
       ]
     },
+    "calcium|calcium_sulfate": {
+      "source": "override",
+      "ingredient_id": "calcium",
+      "ingredient": "Calcium",
+      "form_key": "calcium_sulfate",
+      "form_display": "Calcium sulfate",
+      "form_family": "sulfate_chloride",
+      "overall_confidence": 0.56,
+      "evidence_grade": "B",
+      "reference_ids": [
+        "ref_b31e16044c47"
+      ]
+    },
     "iron|ferrous_gluconate": {
       "source": "override",
       "ingredient_id": "iron",
@@ -747,6 +760,39 @@
               "sentence_id": "s_1a3c3958df3fa9b0",
               "source": "curated_override",
               "text": "Many people choose this form for GI comfort, though individual response varies.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
+    },
+    "zinc|aspartate": {
+      "source": "override",
+      "ingredient_id": "zinc",
+      "ingredient": "Zinc",
+      "form_key": "aspartate",
+      "form_display": "Zinc aspartate",
+      "form_family": "generic",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_076a5fb11469"
+      ],
+      "segments": {
+        "caveats": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_076a5fb11469",
+              "evidence_snippet_id": "x_4a93432be7f90a9b",
+              "overall_confidence": 0.4,
+              "reference_ids": [
+                "ref_076a5fb11469"
+              ],
+              "sentence_id": "s_d0200247d5433cef",
+              "source": "curated_override",
+              "text": "Zinc aspartate is a zinc form (zinc aspartate).",
               "review_status": "approved"
             }
           ]
@@ -1353,6 +1399,39 @@
               "sentence_id": "s_0e17af5da3a09a76",
               "source": "curated_override",
               "text": "Buffered forms may feel gentler on the stomach for some people, though evidence is limited.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
+    },
+    "vitamin_c|magnesium_ascorbate": {
+      "source": "override",
+      "ingredient_id": "vitamin_c",
+      "ingredient": "Vitamin C",
+      "form_key": "magnesium_ascorbate",
+      "form_display": "Magnesium ascorbate",
+      "form_family": "generic",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_ab108991ff46"
+      ],
+      "segments": {
+        "caveats": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_ab108991ff46",
+              "evidence_snippet_id": "x_a134b1dcc20899b4",
+              "overall_confidence": 0.4,
+              "reference_ids": [
+                "ref_ab108991ff46"
+              ],
+              "sentence_id": "s_57d981d7ef97f097",
+              "source": "curated_override",
+              "text": "Magnesium ascorbate is an ascorbate form (magnesium ascorbate).",
               "review_status": "approved"
             }
           ]
@@ -2062,6 +2141,39 @@
               "sentence_id": "s_c5796dfa7c4718f9",
               "source": "curated_override",
               "text": "If you choose creatine, monohydrate has the most research; form differences may be modest at typical doses.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
+    },
+    "creatine|phosphate": {
+      "source": "override",
+      "ingredient_id": "creatine",
+      "ingredient": "Creatine",
+      "form_key": "phosphate",
+      "form_display": "Creatine phosphate (phosphocreatine)",
+      "form_family": "generic",
+      "overall_confidence": 0.4,
+      "evidence_grade": "B",
+      "reference_ids": [
+        "ref_6944971c8ccc"
+      ],
+      "segments": {
+        "caveats": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_6944971c8ccc",
+              "evidence_snippet_id": "x_fd417bef51b642db",
+              "overall_confidence": 0.4,
+              "reference_ids": [
+                "ref_6944971c8ccc"
+              ],
+              "sentence_id": "s_cb08cae1cdfde87d",
+              "source": "curated_override",
+              "text": "N-phosphocreatine is a phosphoamino acid consisting of creatine having a phospho group attached at the primary nitrogen of the guanidino group.",
               "review_status": "approved"
             }
           ]
@@ -2870,6 +2982,19 @@
           ]
         }
       }
+    },
+    "potassium|potassium_aspartate": {
+      "source": "override",
+      "ingredient_id": "potassium",
+      "ingredient": "Potassium",
+      "form_key": "potassium_aspartate",
+      "form_display": "Potassium aspartate",
+      "form_family": "chelated",
+      "overall_confidence": 0.53,
+      "evidence_grade": "B",
+      "reference_ids": [
+        "ref_df0b98fd0dc5"
+      ]
     },
     "potassium|potassium_gluconate": {
       "source": "override",
