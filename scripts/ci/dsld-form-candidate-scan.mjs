@@ -59,6 +59,16 @@ const DEFAULT_TOKENS = [
   "hydrochloride",
   "hcl",
   "monohydrate",
+  // Longer-tail forms: increase the chance of surfacing actionable gaps (kb_sentence_missing/kb_excerpt_missing)
+  // without having to massively increase MAX_EVALUATE.
+  "taurate",
+  "aspartate",
+  "threonate",
+  "polynicotinate",
+  "gluceptate",
+  "selenate",
+  "selenite",
+  "monomethionine",
 ];
 
 const TOKENS = FORM_TOKENS.length ? FORM_TOKENS : DEFAULT_TOKENS;
