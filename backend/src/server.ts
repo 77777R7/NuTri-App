@@ -5770,15 +5770,80 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   }
 
   if (!claimed) {
-    res.status(202).json({
-      status: "pending",
-      jobId,
-      retryAfterMs: 2000,
-      jobStatus: cachedDetail?.status ?? "pending",
-      attempts: cachedDetail?.attempts ?? 0,
-      updatedAt: cachedDetail?.updated_at ?? null,
-      pendingAgeMs,
-      meta: { requestId },
+    // If we can't coordinate via the identity cache (write timeout, conflict, etc), don't leave callers stuck
+    // in a 202 loop. Return a terminal response:
+    // - DSLD: KB-first detail is cheap and deterministic, so compute inline.
+    // - Others: return a minimal limited skeleton.
+    if (isDsldDetail) {
+      const sliceStart = Math.min(cursor, totalActives);
+      const sliceEnd = Math.min(sliceStart + requestedLimit, totalActives);
+      const detailDigest: FactsDigest = { ...digest, actives: digest.actives.slice(sliceStart, sliceEnd) };
+      const dsldBase = buildDsldKbFallbackDetail(detailDigest);
+
+      let debug: Record<string, unknown> | undefined;
+      if (allowInternalDebug) {
+        debug = {
+          formResolveSources: dsldBase.formResolveSources,
+          formEvidenceTexts: dsldBase.formEvidenceTexts,
+          formSentenceIds: dsldBase.formSentenceIds,
+          formExcerptIds: dsldBase.formExcerptIds,
+          formReferenceIds: dsldBase.formReferenceIds,
+          formEvidenceGrades: dsldBase.formEvidenceGrades,
+          formSupportStrengths: dsldBase.formSupportStrengths,
+        };
+      }
+
+      res.status(200).json({
+        section: "ingredients",
+        detail: dsldBase.detail,
+        dataStatus: "complete",
+        page: buildDetailPage(Array.isArray(dsldBase.detail.items) ? dsldBase.detail.items.length : 0),
+        meta: {
+          bundleId: randomUUID(),
+          revision: 2,
+          factsDigestHash,
+          fallbackUsed: "skeleton",
+          fallbackReason: "cache_claim_failed",
+          jobId,
+          jobStatus: cachedDetail?.status ?? "pending",
+          attempts: cachedDetail?.attempts ?? 0,
+          updatedAt: cachedDetail?.updated_at ?? null,
+          pendingAgeMs,
+        },
+        timingMs: 0,
+        debug,
+      });
+      return;
+    }
+
+    const sliceStart = Math.min(cursor, totalActives);
+    const sliceEnd = Math.min(sliceStart + requestedLimit, totalActives);
+    const items = digest.actives.slice(sliceStart, sliceEnd).map((active) => ({
+      name: active.name,
+      whatItDoes: { text: "Not provided by source.", basisTags: ["not_provided"] satisfies BasisTag[] },
+      doseContext: { text: "Not provided by source.", basisTags: ["not_provided"] satisfies BasisTag[] },
+      chemicalFormExplain: { text: "Chemical form not provided by source.", basisTags: ["not_provided"] satisfies BasisTag[] },
+      deliveryFormExplain: null,
+    }));
+
+    res.status(200).json({
+      section: "ingredients",
+      detail: { items, overallSummary: null, overlapNotes: null },
+      dataStatus: "limited",
+      page: buildDetailPage(items.length),
+      meta: {
+        bundleId: randomUUID(),
+        revision: 2,
+        factsDigestHash,
+        fallbackUsed: "skeleton",
+        fallbackReason: "cache_claim_failed",
+        jobId,
+        jobStatus: cachedDetail?.status ?? "pending",
+        attempts: cachedDetail?.attempts ?? 0,
+        updatedAt: cachedDetail?.updated_at ?? null,
+        pendingAgeMs,
+      },
+      timingMs: 0,
     });
     return;
   }
