@@ -165,6 +165,8 @@ const CHEMICAL_FORM_KEYWORDS = [
   "lactate",
   "bisglycinate",
   "chelate",
+  // Common mineral salt form in DSLD labels (e.g. "Magnesium Orotate").
+  "orotate",
 ];
 
 const CHEMICAL_FORM_BLACKLIST = ["dioxide", "peroxide", "antioxidant", "oxidative"];
