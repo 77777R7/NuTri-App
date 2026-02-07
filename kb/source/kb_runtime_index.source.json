@@ -5,7 +5,7 @@
     "index_size": 385,
     "package_sha256": "2aa5ea802c66cdc23ebf376ac0410705d0727588a6345ff57f756cc061f01411",
     "generated_from": "nutri_minimal_data_package_v4_0_en_only_review_excerpts.json@v4.0",
-    "updated_at": "2026-02-07T06:55:06.828Z",
+    "updated_at": "2026-02-07T07:03:51.538Z",
     "production_filter": {
       "mode": "captured_and_approved",
       "note": "Segments are filtered so only evidence_excerpt_status=captured is shipped; curated_override sentences must be review_status=approved.",
@@ -43,6 +43,16 @@
           "magnesium|orotate"
         ],
         "note": "Draft runtime entries only (no segments). Follow-up PR will add needs_edit/needs_capture sentences + excerpts."
+      },
+      {
+        "at": "2026-02-07T07:03:51.538Z",
+        "change": "add_draft_sentences_needs_capture",
+        "items": [
+          "molybdenum|glycinate",
+          "molybdenum|citrate",
+          "magnesium|orotate"
+        ],
+        "note": "Draft KB sentences for top kb_missing combos. All sentences set to needs_edit + needs_capture; evidence capture queue added in separate file."
       }
     ]
   },
@@ -8578,7 +8588,29 @@
       "form_family": "chelated",
       "overall_confidence": 0.4,
       "evidence_grade": "C",
-      "reference_ids": []
+      "reference_ids": [
+        "ref_b028c005f1c2"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "needs_capture",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_b028c005f1c2",
+              "evidence_snippet_id": "x_339cca4e64808187",
+              "overall_confidence": 0.78,
+              "reference_ids": [
+                "ref_b028c005f1c2"
+              ],
+              "sentence_id": "s_720617ce6191d687",
+              "source": "curated_override",
+              "text": "NIH ODS lists molybdenum glycinate among supplement forms and reports no studies comparing relative bioavailability across forms.",
+              "review_status": "needs_edit"
+            }
+          ]
+        }
+      }
     },
     "molybdenum|citrate": {
       "source": "override",
@@ -8589,7 +8621,29 @@
       "form_family": "chelated",
       "overall_confidence": 0.4,
       "evidence_grade": "C",
-      "reference_ids": []
+      "reference_ids": [
+        "ref_b028c005f1c2"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "needs_capture",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_b028c005f1c2",
+              "evidence_snippet_id": "x_339cca4e64808187",
+              "overall_confidence": 0.7,
+              "reference_ids": [
+                "ref_b028c005f1c2"
+              ],
+              "sentence_id": "s_908d55c3240f85bd",
+              "source": "curated_override",
+              "text": "NIH ODS reports no studies comparing relative bioavailability of molybdenum across supplemental forms; differences between forms are uncertain.",
+              "review_status": "needs_edit"
+            }
+          ]
+        }
+      }
     },
     "magnesium|orotate": {
       "source": "override",
@@ -8600,7 +8654,29 @@
       "form_family": "chelated",
       "overall_confidence": 0.4,
       "evidence_grade": "C",
-      "reference_ids": []
+      "reference_ids": [
+        "ref_6a05d59dcc43"
+      ],
+      "segments": {
+        "solubility": {
+          "en": [
+            {
+              "evidence_excerpt_status": "needs_capture",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_6a05d59dcc43",
+              "evidence_snippet_id": "x_7d3b13135939bc20",
+              "overall_confidence": 0.55,
+              "reference_ids": [
+                "ref_6a05d59dcc43"
+              ],
+              "sentence_id": "s_b633c594e6eb6e3b",
+              "source": "curated_override",
+              "text": "Magnesium orotate is a magnesium salt; one review describes it as poorly soluble in water.",
+              "review_status": "needs_edit"
+            }
+          ]
+        }
+      }
     }
   },
   "alias_index": {

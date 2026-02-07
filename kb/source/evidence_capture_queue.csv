@@ -1,0 +1,3 @@
+priority,citation_id,excerpt_id,url,source,combo_keys,sentence_ids,capture_instructions
+P0,ref_b028c005f1c2,x_339cca4e64808187,https://ods.od.nih.gov/factsheets/Molybdenum-HealthProfessional/,NIH ODS,"molybdenum|glycinate;molybdenum|citrate","s_720617ce6191d687;s_908d55c3240f85bd","Capture a short excerpt (<=25 words) that (1) lists molybdenum glycinate among supplement forms, and (2) states there are no studies comparing relative bioavailability across forms."
+P1,ref_6a05d59dcc43,x_7d3b13135939bc20,https://pubmed.ncbi.nlm.nih.gov/16366126/,PubMed,"magnesium|orotate","s_b633c594e6eb6e3b","Capture a short excerpt (<=25 words) that defines magnesium orotate as a magnesium salt and/or mentions limited solubility (if stated in abstract/record)."
