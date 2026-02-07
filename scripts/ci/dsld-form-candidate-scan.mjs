@@ -670,7 +670,11 @@ async function main() {
         ingredientKey &&
         ingredientKey !== "creatine" &&
         tokensMatched.includes("monohydrate") &&
-        (normalizeText(kbLookupName).includes("hydroxymethylbutyrate") || normalizeText(kbLookupName).includes("hmb"))
+        (
+          normalizeText(kbLookupName).includes("hydroxymethylbutyrate") ||
+          normalizeText(kbLookupName).includes("hydroxymethylbutrate") ||
+          normalizeText(kbLookupName).includes("hmb")
+        )
       ) {
         continue;
       }
@@ -1107,7 +1111,11 @@ async function main() {
     }
 
     // Noise-ish: calcium monohydrate is often calcium HMB monohydrate rather than a mineral salt form.
-    if (ig === "calcium" && t === "monohydrate" && (ex.includes("hydroxymethylbutyrate") || ex.includes("hmb"))) {
+    if (
+      ig === "calcium" &&
+      t === "monohydrate" &&
+      (ex.includes("hydroxymethylbutyrate") || ex.includes("hydroxymethylbutrate") || ex.includes("hmb"))
+    ) {
       return {
         triage: "noise",
         canonicalFormToken: "",
