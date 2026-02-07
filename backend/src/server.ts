@@ -5515,10 +5515,23 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   }
 
   const digest = digestRow.facts_digest_json as FactsDigest;
+  const isDsldDetail = digest.sourceType === "dsld";
+  // DSLD detail is KB-first and can improve as the shipped KB package changes.
+  // To avoid "locking in" stale detail pages for long TTLs, incorporate the production KB package
+  // signature into the cache dimension (promptVersionForCache) so new KB packages naturally re-gen.
+  // The client still sends the stable promptVersion (e.g. reg_v4.0); this only affects server-side caching.
+  let promptVersionForCache = promptVersion;
+  if (isDsldDetail) {
+    const kb = getKbRuntime();
+    const pkgSha = kb?.runtime?.meta?.package_sha256;
+    if (typeof pkgSha === "string" && pkgSha.trim()) {
+      promptVersionForCache = `${promptVersion}|kb:${pkgSha.trim().slice(0, 12)}`;
+    }
+  }
   const requestedLimit =
-    digest.sourceType === "dsld" ? Math.min(rawRequestedLimit, ANALYSIS_DETAIL_LIMIT_DSLD) : rawRequestedLimit;
+    isDsldDetail ? Math.min(rawRequestedLimit, ANALYSIS_DETAIL_LIMIT_DSLD) : rawRequestedLimit;
   const sectionKey = `${section}:${requestedLimit}:${cursor}`;
-  const rateKey = `${identity.type}:${identity.value}:${locale}:${promptVersion}:${sectionKey}`;
+  const rateKey = `${identity.type}:${identity.value}:${locale}:${promptVersionForCache}:${sectionKey}`;
   const now = Date.now();
   const existingRate = analysisSectionRateLimit.get(rateKey);
   if (!existingRate || now - existingRate.windowStart > 60_000) {
@@ -5580,7 +5593,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       identityType: identity.type,
       identityValue: identity.value,
       locale,
-      promptVersion,
+      promptVersion: promptVersionForCache,
       factsDigestHash,
       section: sectionKey,
     },
@@ -5723,7 +5736,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
         identityType: identity.type,
         identityValue: identity.value,
         locale,
-        promptVersion,
+        promptVersion: promptVersionForCache,
         factsDigestHash,
         section: sectionKey,
         status: "running",
@@ -5742,7 +5755,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
         identityType: identity.type,
         identityValue: identity.value,
         locale,
-        promptVersion,
+        promptVersion: promptVersionForCache,
         factsDigestHash,
         factsSourceVersion: digestRow.facts_source_version ?? "",
         section: sectionKey,
@@ -5783,7 +5796,6 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       cursor: sliceStart,
       totalActives,
     })}\nFACTS_DIGEST_JSON: ${JSON.stringify(detailFacts)}`;
-  const isDsldDetail = digest.sourceType === "dsld";
   const detailTimeoutMs = isDsldDetail ? ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS_DSLD : ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS;
   const detailMaxTokens = isDsldDetail ? ANALYSIS_DETAIL_MAX_TOKENS_DSLD : ANALYSIS_DETAIL_MAX_TOKENS;
   const detailRescueMaxTokens = isDsldDetail
@@ -6032,7 +6044,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       identityType: identity.type,
       identityValue: identity.value,
       locale,
-      promptVersion,
+      promptVersion: promptVersionForCache,
       factsDigestHash,
       factsSourceVersion: digestRow.facts_source_version ?? "",
       section: sectionKey,
