@@ -5532,15 +5532,19 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     isDsldDetail ? Math.min(rawRequestedLimit, ANALYSIS_DETAIL_LIMIT_DSLD) : rawRequestedLimit;
   const sectionKey = `${section}:${requestedLimit}:${cursor}`;
   const rateKey = `${identity.type}:${identity.value}:${locale}:${promptVersionForCache}:${sectionKey}`;
-  const now = Date.now();
-  const existingRate = analysisSectionRateLimit.get(rateKey);
-  if (!existingRate || now - existingRate.windowStart > 60_000) {
-    analysisSectionRateLimit.set(rateKey, { count: 1, windowStart: now });
-  } else {
-    existingRate.count += 1;
-    if (existingRate.count > 6) {
-      res.status(429).json({ error: "rate_limited" } satisfies ErrorResponse);
-      return;
+  // Rate limiting is for end-users. CI/regression calls can legitimately issue many requests in a tight window
+  // (primary+fallback barcodes, pagination, retries). Don't allow the limiter to introduce flaky 429s in CI.
+  if (!isRegressionRequest) {
+    const now = Date.now();
+    const existingRate = analysisSectionRateLimit.get(rateKey);
+    if (!existingRate || now - existingRate.windowStart > 60_000) {
+      analysisSectionRateLimit.set(rateKey, { count: 1, windowStart: now });
+    } else {
+      existingRate.count += 1;
+      if (existingRate.count > 6) {
+        res.status(429).json({ error: "rate_limited" } satisfies ErrorResponse);
+        return;
+      }
     }
   }
   const totalActives = digest.actives.length;
