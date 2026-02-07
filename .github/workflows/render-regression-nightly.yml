@@ -28,6 +28,16 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Wait for Render Deploy Commit
+        env:
+          RENDER_BASE_URL: ${{ github.event.inputs.render_base_url != '' && github.event.inputs.render_base_url || secrets.RENDER_BASE_URL }}
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          RENDER_REGRESSION_TOKEN: ${{ secrets.RENDER_REGRESSION_TOKEN }}
+          RENDER_DEPLOY_WAIT_TIMEOUT_MS: "900000"
+          RENDER_DEPLOY_WAIT_INTERVAL_MS: "15000"
+          RENDER_COMMIT_PROBE_BARCODE: "00029537001069"
+        run: node scripts/ci/wait-render-commit.mjs
+
       - name: Prepare Artifact Directory
         id: artifact
         shell: bash
