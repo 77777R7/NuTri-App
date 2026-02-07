@@ -158,9 +158,10 @@ const ensureDir = async (dir) => {
   await fs.mkdir(dir, { recursive: true });
 };
 
-async function readSseEvents(barcode) {
+async function readSseEvents(barcode, options = {}) {
   const ctrl = new AbortController();
-  const timeout = setTimeout(() => ctrl.abort(), SSE_TIMEOUT_MS);
+  const timeoutMs = Number(options.timeoutMs || SSE_TIMEOUT_MS);
+  const timeout = setTimeout(() => ctrl.abort(), timeoutMs);
 
   let res;
   try {
@@ -923,6 +924,33 @@ async function main() {
       console.warn(`[render-regression] lexical groundedness enabled but failed to load kb_evidence_excerpts.json: ${String(err)}`);
       evidenceExcerptByRef = null;
     }
+  }
+
+  // Render services on free tiers can cold-start. If the first few SSE calls happen during a cold start,
+  // regression can fail with "missing analysis_bundle" even though the backend is healthy once warmed.
+  // Warm up the service once before running the full suite.
+  const WARMUP_BARCODE =
+    process.env.RENDER_WARMUP_BARCODE ||
+    CASES?.[0]?.barcodes?.[0] ||
+    process.env.RENDER_LNHPD_BARCODE ||
+    "00029537001069";
+  const WARMUP_TIMEOUT_MS = Number(process.env.RENDER_WARMUP_TIMEOUT_MS || 240_000);
+  const warmupAttempts = Number(process.env.RENDER_WARMUP_ATTEMPTS || 2);
+  for (let i = 1; i <= warmupAttempts; i += 1) {
+    console.log(`[render-regression] warmup attempt=${i}/${warmupAttempts} barcode=${WARMUP_BARCODE}`);
+    // eslint-disable-next-line no-await-in-loop
+    const events = await readSseEvents(WARMUP_BARCODE, { timeoutMs: WARMUP_TIMEOUT_MS });
+    const sawBundle = events.some((e) => e.event === "analysis_bundle");
+    if (sawBundle) {
+      console.log("[render-regression] warmup ok (analysis_bundle received)");
+      break;
+    }
+    if (i === warmupAttempts) {
+      console.warn("[render-regression] warmup did not receive analysis_bundle; continuing anyway");
+      break;
+    }
+    // eslint-disable-next-line no-await-in-loop
+    await new Promise((r) => setTimeout(r, 5000));
   }
 
   const runResults = [];
