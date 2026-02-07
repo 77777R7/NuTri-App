@@ -1,9 +1,9 @@
 {
   "meta": {
-    "generated_at": "2026-02-07T08:36:19Z",
+    "generated_at": "2026-02-07T09:41:20Z",
     "source": "nutri_minimal_data_package_v4_0_en_only_review_excerpts",
     "note": "Production evidence excerpts used by shipped KB sentences (captured only).",
-    "ref_count": 27
+    "ref_count": 30
   },
   "evidence_excerpts": [
     {
@@ -329,6 +329,42 @@
       "excerpt_text": "NIH ODS explains that iron supplement forms vary in elemental iron; ferrous fumarate is about 33% elemental iron by weight.",
       "source": "NIH ODS",
       "url": "https://ods.od.nih.gov/factsheets/Iron-HealthProfessional/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-07T09:41:20Z",
+      "citation_id": "ref_e95ebd9b87e1",
+      "excerpt_id": "x_00d2edaf6fe51552",
+      "excerpt_sha256": "50cae4336da81c14067293a0e71a0937e977e44c9a8241203ba898a7cf899dfe",
+      "excerpt_text": "Zinc Orotate | C10H6N4O8Zn | CID 108934 - PubChem",
+      "source": "PubChem",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/compound/108934"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-07T09:41:20Z",
+      "citation_id": "ref_a98d6dd78838",
+      "excerpt_id": "x_b562f6aef7dbb400",
+      "excerpt_sha256": "389a304aa52e7ae539f5ed150cc5e6319589f763a07b178f003bef8c8fe00778",
+      "excerpt_text": "D-Gluconic acid creatine salt | C10H21N3O9 | CID 87263643 - PubChem",
+      "source": "PubChem",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/compound/87263643"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-07T09:41:20Z",
+      "citation_id": "ref_bedd569a466c",
+      "excerpt_id": "x_39454b10746174f9",
+      "excerpt_sha256": "3392ca3afb176e454452cdea98bc8f4f0e4cc2f0debec15399757cf8526f6780",
+      "excerpt_text": "Levocarnitine fumarate | C18H36N2O10 | CID 109374093 - PubChem",
+      "source": "PubChem",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/compound/109374093"
     }
   ]
 }

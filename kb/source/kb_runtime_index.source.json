@@ -983,7 +983,7 @@
         "absorption": {
           "en": [
             {
-              "evidence_excerpt_status": "needs_capture",
+              "evidence_excerpt_status": "captured",
               "evidence_grade": "C",
               "evidence_reference_id": "ref_e95ebd9b87e1",
               "evidence_snippet_id": "x_00d2edaf6fe51552",
@@ -994,7 +994,7 @@
               "sentence_id": "s_e1ec686fc323a186",
               "source": "curated_override",
               "text": "Zinc orotate is a disclosed zinc salt form; evidence comparing specific zinc salt forms is limited.",
-              "review_status": "needs_edit"
+              "review_status": "approved"
             }
           ]
         }
@@ -2114,7 +2114,7 @@
         "absorption": {
           "en": [
             {
-              "evidence_excerpt_status": "needs_capture",
+              "evidence_excerpt_status": "captured",
               "evidence_grade": "C",
               "evidence_reference_id": "ref_a98d6dd78838",
               "evidence_snippet_id": "x_b562f6aef7dbb400",
@@ -2125,7 +2125,7 @@
               "sentence_id": "s_dd41cf61b5748b64",
               "source": "curated_override",
               "text": "Creatine gluconate is a disclosed creatine form; evidence comparing alternative forms to monohydrate is limited.",
-              "review_status": "needs_edit"
+              "review_status": "approved"
             }
           ]
         }
@@ -2181,7 +2181,7 @@
         "absorption": {
           "en": [
             {
-              "evidence_excerpt_status": "needs_capture",
+              "evidence_excerpt_status": "captured",
               "evidence_grade": "C",
               "evidence_reference_id": "ref_bedd569a466c",
               "evidence_snippet_id": "x_39454b10746174f9",
@@ -2192,7 +2192,7 @@
               "sentence_id": "s_98cef2299aee1b1e",
               "source": "curated_override",
               "text": "Carnitine fumarate is a disclosed carnitine salt form; comparative evidence between supplemental forms is limited.",
-              "review_status": "needs_edit"
+              "review_status": "approved"
             }
           ]
         }

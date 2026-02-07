@@ -9,12 +9,12 @@
     "production_filter": {
       "mode": "captured_and_approved",
       "note": "Segments are filtered so only evidence_excerpt_status=captured is shipped; curated_override sentences must be review_status=approved.",
-      "filtered_at": "2026-02-07T08:37:11.353Z"
+      "filtered_at": "2026-02-07T09:42:20.480Z"
     },
     "review_policy": {
       "library": "pre_reviewed",
       "curated_override": "approved_required",
-      "annotated_at": "2026-02-07T08:37:11.359Z"
+      "annotated_at": "2026-02-07T09:42:20.486Z"
     },
     "kb_source": {
       "kind": "runtime_index_source",
@@ -948,7 +948,27 @@
       "evidence_grade": "C",
       "reference_ids": [
         "ref_e95ebd9b87e1"
-      ]
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_e95ebd9b87e1",
+              "evidence_snippet_id": "x_00d2edaf6fe51552",
+              "overall_confidence": 0.4,
+              "reference_ids": [
+                "ref_e95ebd9b87e1"
+              ],
+              "sentence_id": "s_e1ec686fc323a186",
+              "source": "curated_override",
+              "text": "Zinc orotate is a disclosed zinc salt form; evidence comparing specific zinc salt forms is limited.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
     },
     "zinc|oxide": {
       "source": "override",
@@ -2059,7 +2079,27 @@
       "evidence_grade": "C",
       "reference_ids": [
         "ref_a98d6dd78838"
-      ]
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_a98d6dd78838",
+              "evidence_snippet_id": "x_b562f6aef7dbb400",
+              "overall_confidence": 0.4,
+              "reference_ids": [
+                "ref_a98d6dd78838"
+              ],
+              "sentence_id": "s_dd41cf61b5748b64",
+              "source": "curated_override",
+              "text": "Creatine gluconate is a disclosed creatine form; evidence comparing alternative forms to monohydrate is limited.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
     },
     "creatine|hcl": {
       "source": "override",
@@ -2106,7 +2146,27 @@
       "evidence_grade": "C",
       "reference_ids": [
         "ref_bedd569a466c"
-      ]
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_bedd569a466c",
+              "evidence_snippet_id": "x_39454b10746174f9",
+              "overall_confidence": 0.4,
+              "reference_ids": [
+                "ref_bedd569a466c"
+              ],
+              "sentence_id": "s_98cef2299aee1b1e",
+              "source": "curated_override",
+              "text": "Carnitine fumarate is a disclosed carnitine salt form; comparative evidence between supplemental forms is limited.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
     },
     "vitamin_e|dl_alpha": {
       "source": "override",
