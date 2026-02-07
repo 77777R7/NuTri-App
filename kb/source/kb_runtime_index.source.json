@@ -53,6 +53,16 @@
           "magnesium|orotate"
         ],
         "note": "Draft KB sentences for top kb_missing combos. All sentences set to needs_edit + needs_capture; evidence capture queue added in separate file."
+      },
+      {
+        "at": "2026-02-07T08:18:00.000Z",
+        "change": "add_draft_sentences_needs_capture",
+        "items": [
+          "creatine|gluconate",
+          "carnitine|fumarate",
+          "zinc|orotate"
+        ],
+        "note": "Draft KB sentences for next Top3 kb_missing combos (no_runtime_entry). All sentences set to needs_edit + needs_capture; evidence capture queue appended."
       }
     ]
   },
@@ -952,6 +962,39 @@
               "source": "curated_override",
               "text": "Some people find chelated forms may be gentler on the stomach, though evidence is limited.",
               "review_status": "approved"
+            }
+          ]
+        }
+      }
+    },
+    "zinc|orotate": {
+      "source": "override",
+      "ingredient_id": "zinc",
+      "ingredient": "Zinc",
+      "form_key": "orotate",
+      "form_display": "Zinc orotate",
+      "form_family": "chelated",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_e95ebd9b87e1"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "needs_capture",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_e95ebd9b87e1",
+              "evidence_snippet_id": "x_00d2edaf6fe51552",
+              "overall_confidence": 0.4,
+              "reference_ids": [
+                "ref_e95ebd9b87e1"
+              ],
+              "sentence_id": "s_e1ec686fc323a186",
+              "source": "curated_override",
+              "text": "Zinc orotate is a disclosed zinc salt form; evidence comparing specific zinc salt forms is limited.",
+              "review_status": "needs_edit"
             }
           ]
         }
@@ -2055,6 +2098,39 @@
         }
       }
     },
+    "creatine|gluconate": {
+      "source": "override",
+      "ingredient_id": "creatine",
+      "ingredient": "Creatine",
+      "form_key": "gluconate",
+      "form_display": "Creatine gluconate",
+      "form_family": "generic",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_a98d6dd78838"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "needs_capture",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_a98d6dd78838",
+              "evidence_snippet_id": "x_b562f6aef7dbb400",
+              "overall_confidence": 0.4,
+              "reference_ids": [
+                "ref_a98d6dd78838"
+              ],
+              "sentence_id": "s_dd41cf61b5748b64",
+              "source": "curated_override",
+              "text": "Creatine gluconate is a disclosed creatine form; evidence comparing alternative forms to monohydrate is limited.",
+              "review_status": "needs_edit"
+            }
+          ]
+        }
+      }
+    },
     "creatine|hcl": {
       "source": "override",
       "ingredient_id": "creatine",
@@ -2084,6 +2160,39 @@
               "source": "curated_override",
               "text": "If you choose creatine, monohydrate has the most research; form differences may be modest at typical doses.",
               "review_status": "approved"
+            }
+          ]
+        }
+      }
+    },
+    "carnitine|fumarate": {
+      "source": "override",
+      "ingredient_id": "carnitine",
+      "ingredient": "Carnitine",
+      "form_key": "fumarate",
+      "form_display": "Carnitine fumarate",
+      "form_family": "generic",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_bedd569a466c"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "needs_capture",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_bedd569a466c",
+              "evidence_snippet_id": "x_39454b10746174f9",
+              "overall_confidence": 0.4,
+              "reference_ids": [
+                "ref_bedd569a466c"
+              ],
+              "sentence_id": "s_98cef2299aee1b1e",
+              "source": "curated_override",
+              "text": "Carnitine fumarate is a disclosed carnitine salt form; comparative evidence between supplemental forms is limited.",
+              "review_status": "needs_edit"
             }
           ]
         }
