@@ -50,6 +50,8 @@ const dsldWithFormFerrousFumarateBarcode =
   process.env.RENDER_DSLD_FERROUS_FUMARATE_BARCODE || "00696305151204";
 const dsldWithFormFerrousFumarateBarcode2 =
   process.env.RENDER_DSLD_FERROUS_FUMARATE_BARCODE2 || "00651074168532";
+const dsldWithFormVitaminEAcetateBarcode =
+  process.env.RENDER_DSLD_VITE_ACETATE_BARCODE || "00896743002001";
 
 const DEFAULT_CASES = [
   { id: "lnhpd", barcodes: [process.env.RENDER_LNHPD_BARCODE || "00029537001069"], expectedSourceType: "lnhpd" },
@@ -116,6 +118,13 @@ if (process.env.RENDER_INCLUDE_NIGHTLY_CASES === "1") {
     expectedSourceType: "dsld",
     requiredFormKeyword: "fumarate",
     targetActiveKeyword: "ferrous fumarate",
+  });
+  CASES.splice(CASES.length - 1, 0, {
+    id: "dsld_with_form_vitamin_e_acetate",
+    barcodes: [dsldWithFormVitaminEAcetateBarcode],
+    expectedSourceType: "dsld",
+    requiredFormKeyword: "acetate",
+    targetActiveKeyword: "vitamin e acetate",
   });
 }
 
