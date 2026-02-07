@@ -9,17 +9,29 @@
     "production_filter": {
       "mode": "captured_and_approved",
       "note": "Segments are filtered so only evidence_excerpt_status=captured is shipped; curated_override sentences must be review_status=approved.",
-      "filtered_at": "2026-02-06T23:43:29.967Z"
+      "filtered_at": "2026-02-07T01:53:55.371Z"
     },
     "review_policy": {
       "library": "pre_reviewed",
       "curated_override": "approved_required",
-      "annotated_at": "2026-02-06T23:43:29.972Z"
+      "annotated_at": "2026-02-07T01:53:55.378Z"
     },
     "kb_source": {
       "kind": "runtime_index_source",
       "note": "This file is the editable KB source; production package is built by filtering captured_and_approved.",
       "updated_at": "2026-02-06T15:00:15.190472Z"
+    },
+    "reviewed_at": "2026-02-07T01:35:27.045628+00:00",
+    "reviewed_changes": {
+      "changed_sentence_count": 6,
+      "changed_sentence_ids": [
+        "s_f9d744de3c0934c9",
+        "s_4c1ad4bfe0b42e8c",
+        "s_4add6ac4d344d8dc",
+        "s_84d4fadda8b2abef",
+        "s_a12a63cfc52617d3",
+        "s_ac03c39a31c57a97"
+      ]
     }
   },
   "ingredient_form_index": {
@@ -322,6 +334,39 @@
         }
       }
     },
+    "calcium|bicarbonate": {
+      "source": "override",
+      "ingredient_id": "calcium",
+      "ingredient": "Calcium",
+      "form_key": "bicarbonate",
+      "form_display": "Calcium bicarbonate",
+      "form_family": "oxide_carbonate",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_d00668aab572"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_d00668aab572",
+              "evidence_snippet_id": "x_e74743c5c827dcee",
+              "overall_confidence": 0.4,
+              "reference_ids": [
+                "ref_d00668aab572"
+              ],
+              "review_status": "approved",
+              "sentence_id": "s_8e2b1d24d0d1b53e",
+              "source": "curated_override",
+              "text": "The label lists calcium as a bicarbonate salt; NIH ODS notes the most common supplemental calcium forms are calcium carbonate and calcium citrate."
+            }
+          ]
+        }
+      }
+    },
     "calcium|citrate": {
       "source": "override",
       "ingredient_id": "calcium",
@@ -409,6 +454,39 @@
               "source": "curated_override",
               "text": "Often well tolerated; if sensitive, consider splitting the dose.",
               "review_status": "approved"
+            }
+          ]
+        }
+      }
+    },
+    "calcium|glycinate": {
+      "source": "override",
+      "ingredient_id": "calcium",
+      "ingredient": "Calcium",
+      "form_key": "glycinate",
+      "form_display": "Calcium glycinate (chelated)",
+      "form_family": "chelated",
+      "overall_confidence": 0.5,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_4a2f3c9fdbd1"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_4a2f3c9fdbd1",
+              "evidence_snippet_id": "x_19ef0f1cce6ce2d1",
+              "overall_confidence": 0.5,
+              "reference_ids": [
+                "ref_4a2f3c9fdbd1"
+              ],
+              "review_status": "approved",
+              "sentence_id": "s_9020f6a0f0e8e8b2",
+              "source": "curated_override",
+              "text": "Glycinate is a glycine-chelated form used in supplements; evidence for consistent advantages is limited."
             }
           ]
         }
@@ -1089,7 +1167,7 @@
               ],
               "sentence_id": "s_ac03c39a31c57a97",
               "source": "curated_override",
-              "text": "Ascorbyl palmitate is a common form; differences versus other forms are often modest and context‑dependent.",
+              "text": "Ascorbyl palmitate is a fat‑soluble vitamin C derivative used in some products; evidence for meaningful advantages for vitamin C status versus ascorbic acid or ascorbate salts is limited.",
               "review_status": "approved"
             }
           ]
@@ -2212,7 +2290,7 @@
               ],
               "sentence_id": "s_4c1ad4bfe0b42e8c",
               "source": "form_library",
-              "text": "NIH ODS notes copper supplements use many forms, including copper gluconate, and states no studies have compared the bioavailability of different supplemental forms.",
+              "text": "NIH ODS notes copper supplements use many forms (gluconate, sulfate, chelates, oxide) and reports no studies directly comparing copper bioavailability across these supplemental forms.",
               "review_status": "approved"
             }
           ]
@@ -2306,7 +2384,7 @@
               "review_status": "approved",
               "sentence_id": "s_4add6ac4d344d8dc",
               "source": "curated_override",
-              "text": "NIH ODS notes copper supplements contain many forms including cupric oxide, and states no studies have compared copper bioavailability across forms."
+              "text": "Copper oxide is one form used in supplements; NIH ODS reports no studies directly comparing copper bioavailability across supplemental forms, so differences versus other salts are uncertain."
             }
           ]
         }
@@ -2680,6 +2758,39 @@
               "source": "form_library",
               "text": "NIH ODS notes potassium supplements can be present in multiple forms, including potassium gluconate; labels list elemental potassium rather than the salt weight.",
               "review_status": "approved"
+            }
+          ]
+        }
+      }
+    },
+    "potassium|bicarbonate": {
+      "source": "override",
+      "ingredient_id": "potassium",
+      "ingredient": "Potassium",
+      "form_key": "bicarbonate",
+      "form_display": "Potassium bicarbonate",
+      "form_family": "oxide_carbonate",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_0e0b6f8f4fb0"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_0e0b6f8f4fb0",
+              "evidence_snippet_id": "x_6e52b96e9c0a7fb0",
+              "overall_confidence": 0.4,
+              "reference_ids": [
+                "ref_0e0b6f8f4fb0"
+              ],
+              "review_status": "approved",
+              "sentence_id": "s_30e7c0dbe493e6b0",
+              "source": "curated_override",
+              "text": "Potassium bicarbonate is a carbonate-related salt used in supplements; labels typically list elemental potassium rather than the salt weight. Evidence for meaningful differences between salts is limited."
             }
           ]
         }
@@ -5787,7 +5898,7 @@
               ],
               "sentence_id": "s_84d4fadda8b2abef",
               "source": "family_library",
-              "text": "Magnesium chloride is widely used; uptake is generally acceptable, though higher doses may irritate the gut in some people."
+              "text": "Magnesium chloride is used in some supplements; uptake is generally acceptable, though higher doses may irritate the gut in some people."
             }
           ]
         },
@@ -7742,7 +7853,7 @@
               ],
               "sentence_id": "s_a12a63cfc52617d3",
               "source": "family_library",
-              "text": "Zinc chloride is widely used; uptake is generally acceptable, though higher doses may irritate the gut in some people."
+              "text": "Zinc chloride is a soluble zinc salt used in some products; uptake is generally acceptable, though higher doses may irritate the gut in some people."
             },
             {
               "evidence_excerpt_status": "captured",
@@ -8382,7 +8493,7 @@
               "review_status": "approved",
               "sentence_id": "s_f9d744de3c0934c9",
               "source": "curated_override",
-              "text": "A PubMed abstract reports an in vitro digestion study comparing calcium carbonate, citrate malate, calcium phosphate, and calcium bisglycinate; final calcium bioaccessibility differed by source (about 20-36%)."
+              "text": "A PubMed abstract reports an in vitro digestion study comparing calcium carbonate, citrate malate, calcium phosphate, and calcium bisglycinate; final calcium bioaccessibility differed by source (about 20–36%), and in‑vitro results may not predict human absorption."
             }
           ]
         }
@@ -8592,6 +8703,13 @@
       }
     ],
     "carbonate": [
+      {
+        "form_key": null,
+        "alias_confidence": 0.8,
+        "notes": "Generic form token"
+      }
+    ],
+    "bicarbonate": [
       {
         "form_key": null,
         "alias_confidence": 0.8,
