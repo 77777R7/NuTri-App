@@ -3678,7 +3678,27 @@
       "evidence_grade": "C",
       "reference_ids": [
         "ref_ac9e9e873bc5"
-      ]
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_ac9e9e873bc5",
+              "evidence_snippet_id": "x_5a3d620128705266",
+              "overall_confidence": 0.51,
+              "reference_ids": [
+                "ref_ac9e9e873bc5"
+              ],
+              "sentence_id": "s_fbb85f91223ffc8b",
+              "source": "curated_override",
+              "text": "Riboflavin-5-phosphate is also known as FMN; NIH ODS notes some supplements contain riboflavin 5'-phosphate.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
     },
     "aloe_vera|aloe_inner_leaf": {
       "source": "library",
@@ -5320,7 +5340,27 @@
       "reference_ids": [
         "ref_71abc0b287ef",
         "ref_6e7af71c2698"
-      ]
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_71abc0b287ef",
+              "evidence_snippet_id": "x_0c36d55d5e1e4cdd",
+              "overall_confidence": 0.76,
+              "reference_ids": [
+                "ref_71abc0b287ef",
+                "ref_6e7af71c2698"
+              ],
+              "sentence_id": "s_4adaf3942570af9a",
+              "source": "form_library",
+              "text": "Ferrous fumarate is a common iron supplement form; NIH ODS notes it is about 33% elemental iron by weight."
+            }
+          ]
+        }
+      }
     },
     "iron|heme": {
       "source": "library",

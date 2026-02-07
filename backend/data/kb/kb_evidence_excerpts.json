@@ -1,9 +1,9 @@
 {
   "meta": {
-    "generated_at": "2026-02-07T07:45:08Z",
+    "generated_at": "2026-02-07T08:36:19Z",
     "source": "nutri_minimal_data_package_v4_0_en_only_review_excerpts",
     "note": "Production evidence excerpts used by shipped KB sentences (captured only).",
-    "ref_count": 25
+    "ref_count": 27
   },
   "evidence_excerpts": [
     {
@@ -305,6 +305,30 @@
       "excerpt_text": "A PubMed abstract describes replacing part of inorganic mineral salts with organic forms, specifically glycine chelates of minerals including calcium, iron, zinc, and copper, in a supplementation study.",
       "source": "PubMed",
       "url": "https://pubmed.ncbi.nlm.nih.gov/37958183/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-07T08:36:19Z",
+      "citation_id": "ref_ac9e9e873bc5",
+      "excerpt_id": "x_5a3d620128705266",
+      "excerpt_sha256": "92ba59c8025e21be39587eb72a7a67305c4ba05c64d9a30e066f2b50efcb695b",
+      "excerpt_text": "NIH ODS notes that FMN (riboflavin-5'-phosphate) is a riboflavin coenzyme and that some supplements contain riboflavin 5'-phosphate.",
+      "source": "NIH ODS",
+      "url": "https://ods.od.nih.gov/factsheets/Riboflavin-HealthProfessional/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-07T08:36:19Z",
+      "citation_id": "ref_71abc0b287ef",
+      "excerpt_id": "x_0c36d55d5e1e4cdd",
+      "excerpt_sha256": "a2590694a0df8fca4a0852bc05526e1f56d87df3b6285ce70474696aae5a5687",
+      "excerpt_text": "NIH ODS explains that iron supplement forms vary in elemental iron; ferrous fumarate is about 33% elemental iron by weight.",
+      "source": "NIH ODS",
+      "url": "https://ods.od.nih.gov/factsheets/Iron-HealthProfessional/"
     }
   ]
 }

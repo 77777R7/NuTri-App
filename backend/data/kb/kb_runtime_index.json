@@ -9,12 +9,12 @@
     "production_filter": {
       "mode": "captured_and_approved",
       "note": "Segments are filtered so only evidence_excerpt_status=captured is shipped; curated_override sentences must be review_status=approved.",
-      "filtered_at": "2026-02-07T07:47:00.574Z"
+      "filtered_at": "2026-02-07T08:37:11.353Z"
     },
     "review_policy": {
       "library": "pre_reviewed",
       "curated_override": "approved_required",
-      "annotated_at": "2026-02-07T07:47:00.575Z"
+      "annotated_at": "2026-02-07T08:37:11.359Z"
     },
     "kb_source": {
       "kind": "runtime_index_source",
@@ -936,6 +936,19 @@
           ]
         }
       }
+    },
+    "zinc|orotate": {
+      "source": "override",
+      "ingredient_id": "zinc",
+      "ingredient": "Zinc",
+      "form_key": "orotate",
+      "form_display": "Zinc orotate",
+      "form_family": "chelated",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_e95ebd9b87e1"
+      ]
     },
     "zinc|oxide": {
       "source": "override",
@@ -2035,6 +2048,19 @@
         }
       }
     },
+    "creatine|gluconate": {
+      "source": "override",
+      "ingredient_id": "creatine",
+      "ingredient": "Creatine",
+      "form_key": "gluconate",
+      "form_display": "Creatine gluconate",
+      "form_family": "generic",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_a98d6dd78838"
+      ]
+    },
     "creatine|hcl": {
       "source": "override",
       "ingredient_id": "creatine",
@@ -2068,6 +2094,19 @@
           ]
         }
       }
+    },
+    "carnitine|fumarate": {
+      "source": "override",
+      "ingredient_id": "carnitine",
+      "ingredient": "Carnitine",
+      "form_key": "fumarate",
+      "form_display": "Carnitine fumarate",
+      "form_family": "generic",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_bedd569a466c"
+      ]
     },
     "vitamin_e|dl_alpha": {
       "source": "override",
@@ -3553,7 +3592,27 @@
       "evidence_grade": "C",
       "reference_ids": [
         "ref_ac9e9e873bc5"
-      ]
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_ac9e9e873bc5",
+              "evidence_snippet_id": "x_5a3d620128705266",
+              "overall_confidence": 0.51,
+              "reference_ids": [
+                "ref_ac9e9e873bc5"
+              ],
+              "sentence_id": "s_fbb85f91223ffc8b",
+              "source": "curated_override",
+              "text": "Riboflavin-5-phosphate is also known as FMN; NIH ODS notes some supplements contain riboflavin 5'-phosphate.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
     },
     "aloe_vera|aloe_inner_leaf": {
       "source": "library",
@@ -5196,7 +5255,28 @@
       "reference_ids": [
         "ref_71abc0b287ef",
         "ref_6e7af71c2698"
-      ]
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_71abc0b287ef",
+              "evidence_snippet_id": "x_0c36d55d5e1e4cdd",
+              "overall_confidence": 0.76,
+              "reference_ids": [
+                "ref_71abc0b287ef",
+                "ref_6e7af71c2698"
+              ],
+              "sentence_id": "s_4adaf3942570af9a",
+              "source": "form_library",
+              "text": "Ferrous fumarate is a common iron supplement form; NIH ODS notes it is about 33% elemental iron by weight.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
     },
     "iron|heme": {
       "source": "library",
