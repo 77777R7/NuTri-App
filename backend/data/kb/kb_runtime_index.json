@@ -9,12 +9,12 @@
     "production_filter": {
       "mode": "captured_and_approved",
       "note": "Segments are filtered so only evidence_excerpt_status=captured is shipped; curated_override sentences must be review_status=approved.",
-      "filtered_at": "2026-02-07T18:33:06.198Z"
+      "filtered_at": "2026-02-07T19:23:11.366Z"
     },
     "review_policy": {
       "library": "pre_reviewed",
       "curated_override": "approved_required",
-      "annotated_at": "2026-02-07T18:33:06.204Z"
+      "annotated_at": "2026-02-07T19:23:11.366Z"
     },
     "kb_source": {
       "kind": "runtime_index_source",
@@ -2209,7 +2209,27 @@
         "ref_95a9286429ec",
         "ref_0f31a67b8942",
         "ref_77e44584d6f9"
-      ]
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_77e44584d6f9",
+              "evidence_snippet_id": "x_1ca055ac1db7818d",
+              "overall_confidence": 0.7,
+              "reference_ids": [
+                "ref_77e44584d6f9"
+              ],
+              "sentence_id": "s_cbd643e35b1911df",
+              "source": "curated_override",
+              "text": "Alpha-tocopheryl acetate is an esterified vitamin E form used in supplements; NIH ODS notes the body hydrolyzes and absorbs these esters as efficiently as alpha-tocopherol.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
     },
     "vitamin_e|dl_alpha_tocopheryl_acetate": {
       "source": "override",
@@ -2224,7 +2244,27 @@
         "ref_95a9286429ec",
         "ref_0f31a67b8942",
         "ref_77e44584d6f9"
-      ]
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_77e44584d6f9",
+              "evidence_snippet_id": "x_1ca055ac1db7818d",
+              "overall_confidence": 0.7,
+              "reference_ids": [
+                "ref_77e44584d6f9"
+              ],
+              "sentence_id": "s_13422890d5510764",
+              "source": "curated_override",
+              "text": "Alpha-tocopheryl acetate is an esterified vitamin E form used in supplements; NIH ODS notes the body hydrolyzes and absorbs these esters as efficiently as alpha-tocopherol.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
     },
     "vitamin_a|beta_carotene": {
       "source": "override",
