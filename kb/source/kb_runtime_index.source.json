@@ -2237,8 +2237,29 @@
       "evidence_grade": "B",
       "reference_ids": [
         "ref_95a9286429ec",
-        "ref_0f31a67b8942"
-      ]
+        "ref_0f31a67b8942",
+        "ref_77e44584d6f9"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_77e44584d6f9",
+              "evidence_snippet_id": "x_1ca055ac1db7818d",
+              "overall_confidence": 0.7,
+              "reference_ids": [
+                "ref_77e44584d6f9"
+              ],
+              "sentence_id": "s_cbd643e35b1911df",
+              "source": "curated_override",
+              "text": "Alpha-tocopheryl acetate is an esterified vitamin E form used in supplements; NIH ODS notes the body hydrolyzes and absorbs these esters as efficiently as alpha-tocopherol.",
+              "review_status": "needs_edit"
+            }
+          ]
+        }
+      }
     },
     "vitamin_e|dl_alpha_tocopheryl_acetate": {
       "source": "override",
@@ -2251,8 +2272,29 @@
       "evidence_grade": "B",
       "reference_ids": [
         "ref_95a9286429ec",
-        "ref_0f31a67b8942"
-      ]
+        "ref_0f31a67b8942",
+        "ref_77e44584d6f9"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_77e44584d6f9",
+              "evidence_snippet_id": "x_1ca055ac1db7818d",
+              "overall_confidence": 0.7,
+              "reference_ids": [
+                "ref_77e44584d6f9"
+              ],
+              "sentence_id": "s_13422890d5510764",
+              "source": "curated_override",
+              "text": "Alpha-tocopheryl acetate is an esterified vitamin E form used in supplements; NIH ODS notes the body hydrolyzes and absorbs these esters as efficiently as alpha-tocopherol.",
+              "review_status": "needs_edit"
+            }
+          ]
+        }
+      }
     },
     "vitamin_a|beta_carotene": {
       "source": "override",

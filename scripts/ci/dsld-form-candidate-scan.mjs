@@ -237,8 +237,18 @@ const canonicalizeFormTokenForLookup = ({ token, ingredientKey, evidenceText }) 
 
   if (ig === "iron" && t === "fumarate") return "ferrous_fumarate";
 
-  if (ig === "riboflavin" && t === "phosphate" && (ex.includes("5-phosphate") || ex.includes("5 phosphate"))) {
-    return "riboflavin_5_phosphate";
+  // Riboflavin "phosphate" in DSLD labels commonly refers to FMN (riboflavin-5'-phosphate).
+  // Keep this canonicalization narrow: only within riboflavin scope and only when the evidence
+  // phrase actually contains "riboflavin" (avoid cross-ingredient phosphate noise).
+  if (ig === "riboflavin" && t === "phosphate" && ex.includes("riboflavin")) return "riboflavin_5_phosphate";
+
+  // Vitamin E acetate: DSLD commonly discloses tocopheryl acetate in a parenthetical "(as ...)" phrase.
+  // Canonicalize acetate tokens to the tocopheryl acetate runtime keys so the scan can classify gaps
+  // against the right KB entries (and avoid "no_runtime_entry" false gaps).
+  if (ig === "vitamin_e" && t === "acetate" && ex.includes("tocopheryl") && ex.includes("acetate")) {
+    if (ex.includes("d-alpha")) return "d_alpha_tocopheryl_acetate";
+    if (ex.includes("dl-alpha")) return "dl_alpha_tocopheryl_acetate";
+    return "dl_alpha_tocopheryl_acetate";
   }
 
   if (ig === "vitamin_c" && t === "ascorbate") {
@@ -617,9 +627,44 @@ async function main() {
     }
     const segments = entry?.segments ?? null;
     if (!segments || typeof segments !== "object" || Object.keys(segments).length === 0) {
-      // If the runtime entry exists but has no shipped segments, it's typically because the production
-      // package filtered out draft/uncaptured content. Treat as excerpt/evidence gap so the fix is
-      // "capture evidence" rather than "write new sentences".
+      // Runtime entry exists but has no shipped segments. This often means the source has draft
+      // segments that were filtered out (needs_review / needs_capture). Consult the source entry
+      // so the action list stays actionable (avoid mislabeling review gaps as excerpt gaps).
+      const { entry: sourceEntry, runtimeKey: sourceKey } = resolveSourceEntry({ ingredientKey, token });
+      if (sourceEntry) {
+        const sourceSegments = sourceEntry?.segments ?? null;
+        if (!sourceSegments || typeof sourceSegments !== "object" || Object.keys(sourceSegments).length === 0) {
+          return { gapType: "kb_sentence_missing", gapDetail: `draft_missing_segments:${sourceKey ?? runtimeKey ?? "unknown_key"}` };
+        }
+        const sentences = [];
+        for (const seg of Object.values(sourceSegments)) {
+          const en = seg?.en;
+          if (Array.isArray(en)) sentences.push(...en);
+        }
+        if (!sentences.length) {
+          return { gapType: "kb_sentence_missing", gapDetail: `draft_empty_segments:${sourceKey ?? runtimeKey ?? "unknown_key"}` };
+        }
+        const needsCapture = sentences.some((s) => String(s?.evidence_excerpt_status || "") !== "captured");
+        const needsReview = sentences.some((s) => String(s?.review_status || "") !== "approved");
+        if (needsCapture && needsReview) {
+          return {
+            gapType: "kb_excerpt_missing",
+            gapDetail: `draft_needs_capture_and_review:${sourceKey ?? runtimeKey ?? "unknown_key"}`,
+          };
+        }
+        if (needsCapture) {
+          return { gapType: "kb_excerpt_missing", gapDetail: `draft_needs_capture:${sourceKey ?? runtimeKey ?? "unknown_key"}` };
+        }
+        if (needsReview) {
+          return { gapType: "kb_sentence_missing", gapDetail: `draft_needs_review:${sourceKey ?? runtimeKey ?? "unknown_key"}` };
+        }
+        return {
+          gapType: "kb_sentence_missing",
+          gapDetail: `production_missing_but_source_ready:${sourceKey ?? runtimeKey ?? "unknown_key"}`,
+        };
+      }
+
+      // Fallback: treat as evidence gap if we have refs, otherwise sentence gap.
       const refs = entry?.reference_ids;
       if (Array.isArray(refs) && refs.length > 0) {
         return { gapType: "kb_excerpt_missing", gapDetail: `segments_missing:${runtimeKey ?? "unknown_key"}` };

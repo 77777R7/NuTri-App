@@ -832,6 +832,34 @@
           "notes": "Vitamin form alias"
         }
       ],
+      "tocopheryl_acetate": [
+        {
+          "form_key": "dl_alpha_tocopheryl_acetate",
+          "alias_confidence": 0.8,
+          "notes": "Common label form name; map to tocopheryl acetate KB entry."
+        }
+      ],
+      "alpha_tocopheryl_acetate": [
+        {
+          "form_key": "dl_alpha_tocopheryl_acetate",
+          "alias_confidence": 0.82,
+          "notes": "Common label form name; map to tocopheryl acetate KB entry."
+        }
+      ],
+      "dl_alpha_tocopheryl_acetate": [
+        {
+          "form_key": "dl_alpha_tocopheryl_acetate",
+          "alias_confidence": 0.9,
+          "notes": "Tokenized label form."
+        }
+      ],
+      "d_alpha_tocopheryl_acetate": [
+        {
+          "form_key": "d_alpha_tocopheryl_acetate",
+          "alias_confidence": 0.9,
+          "notes": "Tokenized label form."
+        }
+      ],
       "tocotrienol": [
         {
           "form_key": "tocotrienols",
@@ -895,6 +923,34 @@
           "form_key": "riboflavin_5_phosphate",
           "alias_confidence": 0.85,
           "notes": "Vitamin form alias"
+        }
+      ],
+      "phosphate": [
+        {
+          "form_key": "riboflavin_5_phosphate",
+          "alias_confidence": 0.75,
+          "notes": "DSLD commonly lists riboflavin phosphate; treat as FMN (riboflavin-5-phosphate)."
+        }
+      ],
+      "riboflavin_phosphate": [
+        {
+          "form_key": "riboflavin_5_phosphate",
+          "alias_confidence": 0.8,
+          "notes": "Tokenized salt-name variant."
+        }
+      ],
+      "sodium_riboflavin_phosphate": [
+        {
+          "form_key": "riboflavin_5_phosphate",
+          "alias_confidence": 0.82,
+          "notes": "Common label salt name."
+        }
+      ],
+      "fmn": [
+        {
+          "form_key": "riboflavin_5_phosphate",
+          "alias_confidence": 0.85,
+          "notes": "FMN abbreviation."
         }
       ],
       "r_5_p": [
