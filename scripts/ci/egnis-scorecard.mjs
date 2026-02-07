@@ -169,11 +169,21 @@ const summarizeRuns = (runs, n) => {
   return recent.map((r) => ({
     id: r.id,
     created_at: r.created_at,
+    status: r.status,
     conclusion: r.conclusion,
     html_url: r.html_url,
     head_sha: r.head_sha,
   }));
 };
+
+const isCountedGateRun = (r) =>
+  r &&
+  r.status === "completed" &&
+  typeof r.conclusion === "string" &&
+  r.conclusion.length > 0 &&
+  // GitHub cancels older runs on newer pushes; don't treat that as a product regression.
+  r.conclusion !== "cancelled" &&
+  r.conclusion !== "skipped";
 
 async function main() {
   await ensureDir(SCORECARD_DIR);
@@ -220,16 +230,21 @@ async function main() {
   if (!REPO || !TOKEN) {
     score.stopCondition.reasons.push("missing GITHUB_REPOSITORY or GITHUB_TOKEN (cannot evaluate workflow history)");
   } else {
-    const requiredRunsUrl = `${API_URL}/repos/${REPO}/actions/workflows/render-regression.yml/runs?branch=main&per_page=${REQUIRED_RUNS}`;
+    // Fetch more than we need and filter to completed, countable runs so in-progress/cancelled runs don't
+    // randomly fail readiness checks.
+    const requiredRunsUrl = `${API_URL}/repos/${REPO}/actions/workflows/render-regression.yml/runs?branch=main&per_page=${Math.max(
+      REQUIRED_RUNS * 5,
+      50,
+    )}`;
     const nightlyRunsUrl = `${API_URL}/repos/${REPO}/actions/workflows/render-regression-nightly.yml/runs?branch=main&per_page=${Math.max(
-      NIGHTLY_RUNS,
-      20,
+      NIGHTLY_RUNS * 3,
+      50,
     )}`;
 
     const required = await fetchJson(requiredRunsUrl);
     const nightly = await fetchJson(nightlyRunsUrl);
-    const requiredRuns = required.workflow_runs ?? [];
-    const nightlyRuns = nightly.workflow_runs ?? [];
+    const requiredRuns = (required.workflow_runs ?? []).filter(isCountedGateRun);
+    const nightlyRuns = (nightly.workflow_runs ?? []).filter(isCountedGateRun);
 
     score.required.recent = summarizeRuns(requiredRuns, REQUIRED_RUNS);
     score.nightly.recent = summarizeRuns(nightlyRuns, NIGHTLY_RUNS);
@@ -246,7 +261,7 @@ async function main() {
     try {
       const groundedDir = path.join(SCORECARD_DIR, "groundedness");
       await ensureDir(groundedDir);
-      const runs = (score.required.recent || []).slice(0, REQUIRED_RUNS);
+      const runs = (score.required.recent || []).filter((r) => r.conclusion === "success").slice(0, REQUIRED_RUNS);
       const results = [];
       for (const run of runs) {
         const runId = run.id;
