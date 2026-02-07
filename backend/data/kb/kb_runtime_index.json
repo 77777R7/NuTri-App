@@ -9,12 +9,12 @@
     "production_filter": {
       "mode": "captured_and_approved",
       "note": "Segments are filtered so only evidence_excerpt_status=captured is shipped; curated_override sentences must be review_status=approved.",
-      "filtered_at": "2026-02-07T09:42:20.480Z"
+      "filtered_at": "2026-02-07T18:33:06.198Z"
     },
     "review_policy": {
       "library": "pre_reviewed",
       "curated_override": "approved_required",
-      "annotated_at": "2026-02-07T09:42:20.486Z"
+      "annotated_at": "2026-02-07T18:33:06.204Z"
     },
     "kb_source": {
       "kind": "runtime_index_source",
@@ -2207,7 +2207,8 @@
       "evidence_grade": "B",
       "reference_ids": [
         "ref_95a9286429ec",
-        "ref_0f31a67b8942"
+        "ref_0f31a67b8942",
+        "ref_77e44584d6f9"
       ]
     },
     "vitamin_e|dl_alpha_tocopheryl_acetate": {
@@ -2221,7 +2222,8 @@
       "evidence_grade": "B",
       "reference_ids": [
         "ref_95a9286429ec",
-        "ref_0f31a67b8942"
+        "ref_0f31a67b8942",
+        "ref_77e44584d6f9"
       ]
     },
     "vitamin_a|beta_carotene": {

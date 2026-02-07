@@ -3,7 +3,7 @@
     "generated_at": "2026-02-07T09:41:20Z",
     "source": "nutri_minimal_data_package_v4_0_en_only_review_excerpts",
     "note": "Production evidence excerpts used by shipped KB sentences (captured only).",
-    "ref_count": 30
+    "ref_count": 31
   },
   "evidence_excerpts": [
     {
@@ -365,6 +365,18 @@
       "excerpt_text": "Levocarnitine fumarate | C18H36N2O10 | CID 109374093 - PubChem",
       "source": "PubChem",
       "url": "https://pubchem.ncbi.nlm.nih.gov/compound/109374093"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-07T17:30:00Z",
+      "citation_id": "ref_77e44584d6f9",
+      "excerpt_id": "x_1ca055ac1db7818d",
+      "excerpt_sha256": "4bb7d57099a88d7502b67084718f8addb932f2af77d14036b6904345e02aa20a",
+      "excerpt_text": "Alpha-tocopherol in dietary supplements and fortified foods is often esterified to prolong its shelf life while protecting its antioxidant properties. The body hydrolyzes and absorbs these esters (alpha-tocopheryl acetate and succinate) as efficiently as alpha-tocopherol.",
+      "source": "NIH ODS",
+      "url": "https://ods.od.nih.gov/factsheets/VitaminE-HealthProfessional/"
     }
   ]
 }
