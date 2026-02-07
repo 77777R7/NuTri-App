@@ -9,12 +9,12 @@
     "production_filter": {
       "mode": "captured_and_approved",
       "note": "Segments are filtered so only evidence_excerpt_status=captured is shipped; curated_override sentences must be review_status=approved.",
-      "filtered_at": "2026-02-07T23:24:07.551Z"
+      "filtered_at": "2026-02-07T23:47:14.323Z"
     },
     "review_policy": {
       "library": "pre_reviewed",
       "curated_override": "approved_required",
-      "annotated_at": "2026-02-07T23:24:07.559Z"
+      "annotated_at": "2026-02-07T23:47:14.327Z"
     },
     "kb_source": {
       "kind": "runtime_index_source",
@@ -6590,7 +6590,7 @@
       ]
     },
     "niacin|niacinamide": {
-      "source": "library",
+      "source": "override",
       "ingredient_id": "niacin",
       "ingredient": "Niacin",
       "form_key": "niacinamide",
@@ -6599,9 +6599,28 @@
       "overall_confidence": 0.76,
       "evidence_grade": "B",
       "reference_ids": [
-        "ref_a8f5a562e9b7",
-        "ref_af5a80eb48f4"
-      ]
+        "ref_c3f1683e721f"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_c3f1683e721f",
+              "evidence_snippet_id": "x_656fce7d57b3e928",
+              "overall_confidence": 0.76,
+              "reference_ids": [
+                "ref_c3f1683e721f"
+              ],
+              "sentence_id": "s_3d8ec8908fd4024e",
+              "source": "curated_override",
+              "text": "Dietary supplements provide niacin as nicotinic acid or nicotinamide (niacinamide).",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
     },
     "niacin|nicotinamide_riboside": {
       "source": "library",
@@ -7428,6 +7447,39 @@
         "ref_b5cdf0ab1888"
       ]
     },
+    "vitamin_b6|pyridoxine": {
+      "source": "override",
+      "ingredient_id": "vitamin_b6",
+      "ingredient": "Vitamin B6",
+      "form_key": "pyridoxine",
+      "form_display": "Pyridoxine",
+      "form_family": "generic",
+      "overall_confidence": 0.74,
+      "evidence_grade": "B",
+      "reference_ids": [
+        "ref_10fd68c51e70"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_10fd68c51e70",
+              "evidence_snippet_id": "x_05b5706bc75cb15b",
+              "overall_confidence": 0.74,
+              "reference_ids": [
+                "ref_10fd68c51e70"
+              ],
+              "sentence_id": "s_1e09a7734e6454ef",
+              "source": "curated_override",
+              "text": "Vitamin B6 supplements commonly provide pyridoxine (often as pyridoxine HCl).",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
+    },
     "vitamin_b6|pyridoxine_hcl": {
       "source": "library",
       "ingredient_id": "vitamin_b6",
@@ -7815,6 +7867,39 @@
       "reference_ids": [
         "ref_02e9b40ade19"
       ]
+    },
+    "vitamin_e|tocopherol": {
+      "source": "override",
+      "ingredient_id": "vitamin_e",
+      "ingredient": "Vitamin E",
+      "form_key": "tocopherol",
+      "form_display": "Tocopherol (vitamin E form)",
+      "form_family": "generic",
+      "overall_confidence": 0.74,
+      "evidence_grade": "B",
+      "reference_ids": [
+        "ref_8b175cea5f3f"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_8b175cea5f3f",
+              "evidence_snippet_id": "x_e207f5406af6d755",
+              "overall_confidence": 0.74,
+              "reference_ids": [
+                "ref_8b175cea5f3f"
+              ],
+              "sentence_id": "s_70cf396491fc19fe",
+              "source": "curated_override",
+              "text": "Vitamin E exists in multiple forms (including tocopherols); alpha-tocopherol is recognized to meet human requirements.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
     },
     "vitamin_k1|food_matrix": {
       "source": "library",

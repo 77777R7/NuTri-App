@@ -3,7 +3,7 @@
     "generated_at": "2026-02-07T22:58:01Z",
     "source": "nutri_minimal_data_package_v4_0_en_only_review_excerpts",
     "note": "Production evidence excerpts used by shipped KB sentences (captured only).",
-    "ref_count": 35
+    "ref_count": 38
   },
   "evidence_excerpts": [
     {
@@ -375,6 +375,42 @@
       "excerpt_id": "x_1ca055ac1db7818d",
       "excerpt_sha256": "4bb7d57099a88d7502b67084718f8addb932f2af77d14036b6904345e02aa20a",
       "excerpt_text": "Alpha-tocopherol in dietary supplements and fortified foods is often esterified to prolong its shelf life while protecting its antioxidant properties. The body hydrolyzes and absorbs these esters (alpha-tocopheryl acetate and succinate) as efficiently as alpha-tocopherol.",
+      "source": "NIH ODS",
+      "url": "https://ods.od.nih.gov/factsheets/VitaminE-HealthProfessional/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-07T23:44:44Z",
+      "citation_id": "ref_c3f1683e721f",
+      "excerpt_id": "x_656fce7d57b3e928",
+      "excerpt_sha256": "462ea3672a9090ee26b700d0b68df67584d789036bd0b0ffa544f9d525623e63",
+      "excerpt_text": "Nicotinic acid and nicotinamide are the two most common forms of niacin in supplements.",
+      "source": "NIH ODS",
+      "url": "https://ods.od.nih.gov/factsheets/Niacin-HealthProfessional/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-07T23:44:44Z",
+      "citation_id": "ref_10fd68c51e70",
+      "excerpt_id": "x_05b5706bc75cb15b",
+      "excerpt_sha256": "77b98c1c8e4dbd448d06badcb17835b0ba78ec1c6eda03f79504877d242b794b",
+      "excerpt_text": "The most common vitamin B6 vitamer in supplements is pyridoxine (in the form of pyridoxine hydrochloride [HCl]), although some supplements contain PLP.",
+      "source": "NIH ODS",
+      "url": "https://ods.od.nih.gov/factsheets/VitaminB6-HealthProfessional/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-07T23:44:44Z",
+      "citation_id": "ref_8b175cea5f3f",
+      "excerpt_id": "x_e207f5406af6d755",
+      "excerpt_sha256": "9541baf9e43b0e3613790566dd5c406062c0a9da2a54b61d927c49f603b9af56",
+      "excerpt_text": "Naturally occurring vitamin E exists in eight chemical forms (alpha-, beta-, gamma-, and delta-tocopherol and alpha-, beta-, gamma-, and delta-tocotrienol). Alpha-tocopherol is the only form that is recognized to meet human requirements.",
       "source": "NIH ODS",
       "url": "https://ods.od.nih.gov/factsheets/VitaminE-HealthProfessional/"
     },
