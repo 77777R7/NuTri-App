@@ -1,9 +1,9 @@
 {
   "meta": {
-    "generated_at": "2026-02-07T09:41:20Z",
+    "generated_at": "2026-02-07T22:50:48Z",
     "source": "nutri_minimal_data_package_v4_0_en_only_review_excerpts",
     "note": "Production evidence excerpts used by shipped KB sentences (captured only).",
-    "ref_count": 32
+    "ref_count": 34
   },
   "evidence_excerpts": [
     {
@@ -389,6 +389,30 @@
       "excerpt_text": "N-phosphocreatine is a phosphoamino acid consisting of creatine having a phospho group attached at the primary nitrogen of the guanidino group. It has a role as a human metabolite and a mouse metabolite. It is a phosphoamino acid and a phosphagen. It is functionally related to a creatine. It is a conjugate acid of a N-phosphocreatinate(2-).",
       "source": "ChEBI",
       "url": "https://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:17287"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-07T22:50:48Z",
+      "citation_id": "ref_ab108991ff46",
+      "excerpt_id": "x_a134b1dcc20899b4",
+      "excerpt_sha256": "1470bfffcdfd0fa518542df560b79521418baaa02cb4203d83f09104e2778d8f",
+      "excerpt_text": "Magnesium Ascorbate | C12H14MgO12 | CID 54682511 - PubChem",
+      "source": "PubChem",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/compound/54682511"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-07T22:50:48Z",
+      "citation_id": "ref_076a5fb11469",
+      "excerpt_id": "x_4a93432be7f90a9b",
+      "excerpt_sha256": "0ccd481606ddb25f4913fb69249d06b3ef57912e532d19a2bd425a03fb815597",
+      "excerpt_text": "Zinc Aspartate | C8H12N2O8Zn | CID 56841018 - PubChem",
+      "source": "PubChem",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/compound/56841018"
     }
   ]
 }
