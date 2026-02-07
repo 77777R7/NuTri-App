@@ -1174,14 +1174,22 @@ async function main() {
       const canon =
         ex.includes("calcium ascorbate") ? "calcium_ascorbate" :
         ex.includes("sodium ascorbate") ? "sodium_ascorbate" :
+        ex.includes("magnesium ascorbate") ? "magnesium_ascorbate" :
         ex.includes("ester-c") || ex.includes("ester c") ? "ester_c" :
         "";
       if (canon) {
-        return {
-          triage: "parser_normalization",
-          canonicalFormToken: canon,
-          action: `Parser/alias: normalize ascorbate -> ${canon} for vitamin_c (canonical salt form).`,
-        };
+        const hasCanon = Boolean(resolveRuntimeEntry({ ingredientKey: ig, token: canon }).entry);
+        return hasCanon
+          ? {
+              triage: "parser_normalization",
+              canonicalFormToken: canon,
+              action: `Parser/alias: normalize ascorbate -> ${canon} for vitamin_c (runtime entry exists).`,
+            }
+          : {
+              triage: "kb_missing",
+              canonicalFormToken: canon,
+              action: `Add KB sentence+excerpt for vitamin_c+${canon} (canonical salt form).`,
+            };
       }
     }
 
