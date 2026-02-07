@@ -321,6 +321,39 @@
         }
       }
     },
+    "calcium|bicarbonate": {
+      "source": "override",
+      "ingredient_id": "calcium",
+      "ingredient": "Calcium",
+      "form_key": "bicarbonate",
+      "form_display": "Calcium bicarbonate",
+      "form_family": "oxide_carbonate",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_93a6e2a47fd2"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "needs_capture",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_93a6e2a47fd2",
+              "evidence_snippet_id": "x_932b4d0b0c3f3d77",
+              "overall_confidence": 0.4,
+              "reference_ids": [
+                "ref_93a6e2a47fd2"
+              ],
+              "review_status": "needs_edit",
+              "sentence_id": "s_8e2b1d24d0d1b53e",
+              "source": "curated_override",
+              "text": "Calcium bicarbonate is a carbonate-related salt; evidence for meaningful differences between salts is limited."
+            }
+          ]
+        }
+      }
+    },
     "calcium|citrate": {
       "source": "override",
       "ingredient_id": "calcium",
@@ -408,6 +441,39 @@
               "source": "curated_override",
               "text": "Often well tolerated; if sensitive, consider splitting the dose.",
               "review_status": "approved"
+            }
+          ]
+        }
+      }
+    },
+    "calcium|glycinate": {
+      "source": "override",
+      "ingredient_id": "calcium",
+      "ingredient": "Calcium",
+      "form_key": "glycinate",
+      "form_display": "Calcium glycinate (chelated)",
+      "form_family": "chelated",
+      "overall_confidence": 0.5,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_4a2f3c9fdbd1"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "needs_capture",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_4a2f3c9fdbd1",
+              "evidence_snippet_id": "x_19ef0f1cce6ce2d1",
+              "overall_confidence": 0.5,
+              "reference_ids": [
+                "ref_4a2f3c9fdbd1"
+              ],
+              "review_status": "needs_edit",
+              "sentence_id": "s_9020f6a0f0e8e8b2",
+              "source": "curated_override",
+              "text": "Glycinate is a glycine-chelated form used in supplements; evidence for consistent advantages is limited."
             }
           ]
         }
@@ -2676,6 +2742,39 @@
               "sentence_id": "s_1cc9a6aa7af3d5c2",
               "source": "form_library",
               "text": "NIH ODS notes potassium supplements can be present in multiple forms, including potassium gluconate; labels list elemental potassium rather than the salt weight."
+            }
+          ]
+        }
+      }
+    },
+    "potassium|bicarbonate": {
+      "source": "override",
+      "ingredient_id": "potassium",
+      "ingredient": "Potassium",
+      "form_key": "bicarbonate",
+      "form_display": "Potassium bicarbonate",
+      "form_family": "oxide_carbonate",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_0e0b6f8f4fb0"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "needs_capture",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_0e0b6f8f4fb0",
+              "evidence_snippet_id": "x_6e52b96e9c0a7fb0",
+              "overall_confidence": 0.4,
+              "reference_ids": [
+                "ref_0e0b6f8f4fb0"
+              ],
+              "review_status": "needs_edit",
+              "sentence_id": "s_30e7c0dbe493e6b0",
+              "source": "curated_override",
+              "text": "Potassium bicarbonate is a carbonate-related salt used in supplements; labels typically list elemental potassium rather than the salt weight. Evidence for meaningful differences between salts is limited."
             }
           ]
         }
@@ -8584,6 +8683,13 @@
       }
     ],
     "carbonate": [
+      {
+        "form_key": null,
+        "alias_confidence": 0.8,
+        "notes": "Generic form token"
+      }
+    ],
+    "bicarbonate": [
       {
         "form_key": null,
         "alias_confidence": 0.8,
