@@ -1488,6 +1488,39 @@
         }
       }
     },
+    "vitamin_c|potassium_ascorbate": {
+      "source": "override",
+      "ingredient_id": "vitamin_c",
+      "ingredient": "Vitamin C",
+      "form_key": "potassium_ascorbate",
+      "form_display": "Potassium ascorbate",
+      "form_family": "generic",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_f9a2195a33cc"
+      ],
+      "segments": {
+        "caveats": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_f9a2195a33cc",
+              "evidence_snippet_id": "x_6d217ba0c65dd02e",
+              "overall_confidence": 0.4,
+              "reference_ids": [
+                "ref_f9a2195a33cc"
+              ],
+              "sentence_id": "s_2414a1775d9dc3ae",
+              "source": "curated_override",
+              "text": "Potassium ascorbate is an ascorbate form (potassium ascorbate).",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
+    },
     "coq10|ubiquinol": {
       "source": "override",
       "ingredient_id": "coq10",

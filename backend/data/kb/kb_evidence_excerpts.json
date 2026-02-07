@@ -1,9 +1,9 @@
 {
   "meta": {
-    "generated_at": "2026-02-07T22:50:48Z",
+    "generated_at": "2026-02-07T22:58:01Z",
     "source": "nutri_minimal_data_package_v4_0_en_only_review_excerpts",
     "note": "Production evidence excerpts used by shipped KB sentences (captured only).",
-    "ref_count": 34
+    "ref_count": 35
   },
   "evidence_excerpts": [
     {
@@ -413,6 +413,18 @@
       "excerpt_text": "Zinc Aspartate | C8H12N2O8Zn | CID 56841018 - PubChem",
       "source": "PubChem",
       "url": "https://pubchem.ncbi.nlm.nih.gov/compound/56841018"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-07T22:58:01Z",
+      "citation_id": "ref_f9a2195a33cc",
+      "excerpt_id": "x_6d217ba0c65dd02e",
+      "excerpt_sha256": "9bf1c14db6a3d2226ad141d91904e4741fcd58fd536809a619f95cb7a56b206d",
+      "excerpt_text": "Potassium Ascorbate | C6H7KO6 | CID 23687519 - PubChem",
+      "source": "PubChem",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/compound/23687519"
     }
   ]
 }
