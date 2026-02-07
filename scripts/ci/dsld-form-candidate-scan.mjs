@@ -206,6 +206,10 @@ const hasStrongSaltNameStructure = ({ chunk, ingredientKey, token }) => {
   if (!ingredientKey || !token) return false;
   const first = getFirstWordToken(chunk);
   if (!first) return false;
+  // "monohydrate" is highly ambiguous in DSLD meta (e.g. HMB monohydrate, pyridoxal-5-phosphate monohydrate).
+  // For CI candidate scanning we only treat it as a relevant form token when it is explicitly a creatine label head
+  // (keeps the action list actionable and avoids noise buckets dominating coverage stats).
+  if (token === "monohydrate" && first !== "creatine") return false;
   // Use the allowlist on the raw label head token rather than ingredientKey; ingredientKey can be a
   // normalized scope (e.g. vitamin_c) that doesn't appear verbatim in the label text.
   if (!INGREDIENT_ALLOWLIST.includes(first)) return false;
