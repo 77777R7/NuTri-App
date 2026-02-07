@@ -1,9 +1,9 @@
 {
   "meta": {
-    "generated_at": "2026-02-06T23:36:09Z",
+    "generated_at": "2026-02-07T07:19:41Z",
     "source": "nutri_minimal_data_package_v4_0_en_only_review_excerpts",
     "note": "Production evidence excerpts used by shipped KB sentences (captured only).",
-    "ref_count": 23
+    "ref_count": 24
   },
   "evidence_excerpts": [
     {
@@ -17,6 +17,18 @@
       "excerpt_text": "NIH ODS explains that vitamin C supplements come in multiple forms (e.g., ascorbic acid, sodium/calcium ascorbate, and combination products such as Ester\u2011C). It reports that some human studies found similar plasma vitamin C across forms, and that authors concluded simple ascorbic acid is often the preferred source due to cost.",
       "source": "NIH ODS",
       "url": "https://ods.od.nih.gov/factsheets/VitaminC-HealthProfessional/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-07T07:19:41Z",
+      "citation_id": "ref_b028c005f1c2",
+      "excerpt_id": "x_339cca4e64808187",
+      "excerpt_sha256": "79eaca8a5d7e9b628233926a8cc2792cdca34fbf430639753d66cf9cb53184c2",
+      "excerpt_text": "No studies have compared the relative bioavailability of molybdenum from these different forms.",
+      "source": "NIH ODS",
+      "url": "https://ods.od.nih.gov/factsheets/Molybdenum-HealthProfessional/"
     },
     {
       "audit_status": "verified",

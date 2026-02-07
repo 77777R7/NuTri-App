@@ -8595,7 +8595,7 @@
         "absorption": {
           "en": [
             {
-              "evidence_excerpt_status": "needs_capture",
+              "evidence_excerpt_status": "captured",
               "evidence_grade": "B",
               "evidence_reference_id": "ref_b028c005f1c2",
               "evidence_snippet_id": "x_339cca4e64808187",
@@ -8605,7 +8605,7 @@
               ],
               "sentence_id": "s_720617ce6191d687",
               "source": "curated_override",
-              "text": "NIH ODS lists molybdenum glycinate among supplement forms and reports no studies comparing relative bioavailability across forms.",
+              "text": "No studies have compared the relative bioavailability of molybdenum from these different forms.",
               "review_status": "needs_edit"
             }
           ]
@@ -8628,7 +8628,7 @@
         "absorption": {
           "en": [
             {
-              "evidence_excerpt_status": "needs_capture",
+              "evidence_excerpt_status": "captured",
               "evidence_grade": "B",
               "evidence_reference_id": "ref_b028c005f1c2",
               "evidence_snippet_id": "x_339cca4e64808187",
@@ -8638,7 +8638,7 @@
               ],
               "sentence_id": "s_908d55c3240f85bd",
               "source": "curated_override",
-              "text": "NIH ODS reports no studies comparing relative bioavailability of molybdenum across supplemental forms; differences between forms are uncertain.",
+              "text": "No studies have compared the relative bioavailability of molybdenum from these different forms.",
               "review_status": "needs_edit"
             }
           ]
@@ -8653,25 +8653,25 @@
       "form_display": "Magnesium orotate",
       "form_family": "chelated",
       "overall_confidence": 0.4,
-      "evidence_grade": "C",
+      "evidence_grade": "B",
       "reference_ids": [
-        "ref_6a05d59dcc43"
+        "ref_836fb57ba9df"
       ],
       "segments": {
-        "solubility": {
+        "absorption": {
           "en": [
             {
-              "evidence_excerpt_status": "needs_capture",
-              "evidence_grade": "C",
-              "evidence_reference_id": "ref_6a05d59dcc43",
-              "evidence_snippet_id": "x_7d3b13135939bc20",
-              "overall_confidence": 0.55,
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_836fb57ba9df",
+              "evidence_snippet_id": "x_0bc54007a1fa3ae9",
+              "overall_confidence": 0.7,
               "reference_ids": [
-                "ref_6a05d59dcc43"
+                "ref_836fb57ba9df"
               ],
               "sentence_id": "s_b633c594e6eb6e3b",
               "source": "curated_override",
-              "text": "Magnesium orotate is a magnesium salt; one review describes it as poorly soluble in water.",
+              "text": "NIH ODS notes magnesium supplements come in different forms and absorption can vary; evidence suggests more soluble forms may absorb better in small studies.",
               "review_status": "needs_edit"
             }
           ]
