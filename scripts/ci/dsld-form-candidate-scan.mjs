@@ -242,10 +242,15 @@ const canonicalizeFormTokenForLookup = ({ token, ingredientKey, evidenceText }) 
   // phrase actually contains "riboflavin" (avoid cross-ingredient phosphate noise).
   if (ig === "riboflavin" && t === "phosphate" && ex.includes("riboflavin")) return "riboflavin_5_phosphate";
 
-  // Vitamin E acetate: DSLD commonly discloses tocopheryl acetate in a parenthetical "(as ...)" phrase.
-  // Canonicalize acetate tokens to the tocopheryl acetate runtime keys so the scan can classify gaps
-  // against the right KB entries (and avoid "no_runtime_entry" false gaps).
-  if (ig === "vitamin_e" && t === "acetate" && ex.includes("tocopheryl") && ex.includes("acetate")) {
+  // Vitamin E acetate: labels may say "Vitamin E Acetate" or "alpha-tocopheryl acetate" (sometimes without the
+  // explicit "tocopheryl" word). Canonicalize to tocopheryl acetate runtime keys so the scan classifies gaps
+  // against the right KB entries (and avoids "no_runtime_entry" false gaps).
+  const hasVitEAcetateEvidence =
+    ig === "vitamin_e" &&
+    t === "acetate" &&
+    ex.includes("acetate") &&
+    (ex.includes("vitamin e") || ex.includes("tocoph") || ex.includes("tocopher"));
+  if (hasVitEAcetateEvidence) {
     if (ex.includes("d-alpha")) return "d_alpha_tocopheryl_acetate";
     if (ex.includes("dl-alpha")) return "dl_alpha_tocopheryl_acetate";
     return "dl_alpha_tocopheryl_acetate";
