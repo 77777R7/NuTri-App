@@ -3955,9 +3955,28 @@
       "overall_confidence": 0.76,
       "evidence_grade": "B",
       "reference_ids": [
-        "ref_012c0d08853f",
-        "ref_dcb0465f1484"
-      ]
+        "ref_f4d3dd82844c"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_f4d3dd82844c",
+              "evidence_snippet_id": "x_8cf094b9fdf32265",
+              "overall_confidence": 0.76,
+              "reference_ids": [
+                "ref_f4d3dd82844c"
+              ],
+              "sentence_id": "s_7d7dd1a52d84e91b",
+              "source": "curated_override",
+              "text": "Riboflavin (vitamin B2) is a water-soluble B vitamin available as a dietary supplement.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
     },
     "riboflavin|flavin_adenine_dinucleotide_fad": {
       "source": "override",
@@ -4608,8 +4627,28 @@
       "reference_ids": [
         "ref_d00668aab572",
         "ref_0f31a67b8942",
-        "ref_fc5bdd8304ce"
-      ]
+        "ref_fc5bdd8304ce",
+        "ref_b31e16044c47"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_b31e16044c47",
+              "evidence_snippet_id": "x_274296fd4455d321",
+              "overall_confidence": 0.74,
+              "reference_ids": [
+                "ref_b31e16044c47"
+              ],
+              "sentence_id": "s_48c60a88214a40c2",
+              "source": "form_library",
+              "text": "NIH ODS lists calcium phosphate among forms used in supplements."
+            }
+          ]
+        }
+      }
     },
     "calcium|citrate_malate": {
       "source": "library",

@@ -3,7 +3,7 @@
     "generated_at": "2026-02-07T22:58:01Z",
     "source": "nutri_minimal_data_package_v4_0_en_only_review_excerpts",
     "note": "Production evidence excerpts used by shipped KB sentences (captured only).",
-    "ref_count": 38
+    "ref_count": 39
   },
   "evidence_excerpts": [
     {
@@ -315,6 +315,18 @@
       "excerpt_id": "x_5a3d620128705266",
       "excerpt_sha256": "92ba59c8025e21be39587eb72a7a67305c4ba05c64d9a30e066f2b50efcb695b",
       "excerpt_text": "NIH ODS notes that FMN (riboflavin-5'-phosphate) is a riboflavin coenzyme and that some supplements contain riboflavin 5'-phosphate.",
+      "source": "NIH ODS",
+      "url": "https://ods.od.nih.gov/factsheets/Riboflavin-HealthProfessional/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-07T23:53:27Z",
+      "citation_id": "ref_f4d3dd82844c",
+      "excerpt_id": "x_8cf094b9fdf32265",
+      "excerpt_sha256": "86622e464a6a34c7fe5dd0cac9067f53bc145d624cd3c36e7219455e65513311",
+      "excerpt_text": "Riboflavin (also known as vitamin B2) is one of the B vitamins, which are all water soluble. Riboflavin is naturally present in some foods, added to some food products, and available as a dietary supplement.",
       "source": "NIH ODS",
       "url": "https://ods.od.nih.gov/factsheets/Riboflavin-HealthProfessional/"
     },
