@@ -1,9 +1,9 @@
 {
   "meta": {
-    "generated_at": "2026-02-08T03:00:21Z",
+    "generated_at": "2026-02-08T04:29:11Z",
     "source": "nutri_minimal_data_package_v4_0_en_only_review_excerpts",
     "note": "Production evidence excerpts used by shipped KB sentences (captured only).",
-    "ref_count": 50
+    "ref_count": 51
   },
   "evidence_excerpts": [
     {
@@ -641,6 +641,18 @@
       "excerpt_text": "PubChem CID 427209 lists synonyms including \"Molybdenum chloride\" and \"hexachloromolybdenum\".",
       "source": "PubChem",
       "url": "https://pubchem.ncbi.nlm.nih.gov/compound/427209"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "pug_rest",
+      "capture_status": "captured",
+      "captured_at": "2026-02-08T04:29:11Z",
+      "citation_id": "ref_a8bef76667ac",
+      "excerpt_id": "x_9f6831706cce7a32",
+      "excerpt_sha256": "9f6831706cce7a32221f42d27f06b483610376aaf49ea5722a6329e4ef7cf507",
+      "excerpt_text": "PubChem synonyms for calcium aspartate include \"L-Aspartic acid, calcium salt (1:1)\".",
+      "source": "PubChem",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/compound/30465"
     }
   ]
 }
