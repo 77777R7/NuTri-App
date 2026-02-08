@@ -71,6 +71,26 @@ const DEFAULT_TOKENS = [
   "selenate",
   "selenite",
   "monomethionine",
+  // Vitamin/cofactor forms (high ROI): these often appear in DSLD as "(as ...)" disclosures and
+  // are a common source of kb_sentence_missing/kb_excerpt_missing once salts are mostly covered.
+  "methylcobalamin",
+  "cyanocobalamin",
+  "adenosylcobalamin",
+  "hydroxocobalamin",
+  "cholecalciferol",
+  "ergocalciferol",
+  "phylloquinone",
+  "menaquinone",
+  "mk-7",
+  "mk7",
+  "mk-4",
+  "mk4",
+  "tocotrienol",
+  "tocotrienols",
+  "pyridoxal",
+  "pyridoxamine",
+  "palmitate",
+  "retinyl",
 ];
 
 const TOKENS = FORM_TOKENS.length ? FORM_TOKENS : DEFAULT_TOKENS;
@@ -114,6 +134,11 @@ const INGREDIENT_ALLOWLIST = [
   "creatine",
   "coq10",
   "carnitine",
+  // DSLD sometimes lists these without the "vitamin" prefix.
+  "tocotrienol",
+  "tocotrienols",
+  "cobalamin",
+  "calciferol",
 ];
 
 const REVERSE_FORM_BLACKLIST = ["dioxide", "peroxide", "antioxidant", "oxidative"];
@@ -305,6 +330,12 @@ const normalizeIngredientKey = (text) => {
 
   // Prefer vitamin C scope when the label explicitly indicates vitamin C forms (ascorbic/ascorbate/Ester-C).
   if (isVitaminCChemicalFormName(s)) return "vitamin_c";
+
+  // DSLD sometimes lists specific vitamin/cofactor names without the "Vitamin X" prefix.
+  // Keep these mappings conservative: only map when the token is unambiguous.
+  if (/\bcobalamin\b/.test(s)) return "vitamin_b12";
+  if (/\bcalciferol\b/.test(s)) return "vitamin_d";
+  if (/\btocotrienols?\b/.test(s)) return "tocotrienols";
 
   if (s.startsWith("vitamin")) {
     const parts = s.replace(/[^a-z0-9]+/g, " ").trim().split(/\s+/).filter(Boolean);
