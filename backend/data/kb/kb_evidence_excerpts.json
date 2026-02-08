@@ -605,6 +605,42 @@
       "excerpt_text": "PubChem CID 89722 lists synonyms including \"Calcium orotate\" and \"Orotic acid calcium salt\".",
       "source": "PubChem",
       "url": "https://pubchem.ncbi.nlm.nih.gov/compound/89722"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "pug_rest",
+      "capture_status": "captured",
+      "captured_at": "2026-02-08T03:54:58Z",
+      "citation_id": "ref_dcd19930e170",
+      "excerpt_id": "x_100ab01fadf11e09",
+      "excerpt_sha256": "b30f13bfec3238218e3a49325cc639fc9f527916e39e46e7e914d392cf30d976",
+      "excerpt_text": "PubChem CID 6116 lists synonyms including \"Calcium acetate\" and \"Acetic acid, calcium salt\".",
+      "source": "PubChem",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/compound/6116"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "pug_rest",
+      "capture_status": "captured",
+      "captured_at": "2026-02-08T03:54:58Z",
+      "citation_id": "ref_f6026db86916",
+      "excerpt_id": "x_e742b83fb65e7145",
+      "excerpt_sha256": "3ecdaf30221326ad24fa71c579de383be62cc08b8b9383247e42a8e47673821a",
+      "excerpt_text": "PubChem CID 13343447 lists synonyms including \"Magnesium taurate\" and \"Magnesium 2-aminoethanesulfonate\".",
+      "source": "PubChem",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/compound/13343447"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "pug_rest",
+      "capture_status": "captured",
+      "captured_at": "2026-02-08T03:54:58Z",
+      "citation_id": "ref_196bab8d122e",
+      "excerpt_id": "x_5c687e68510b6701",
+      "excerpt_sha256": "fdbef04b8c4dcca39d57f6006ebd603b0338bc7bf2ab38dbce3af0bff2435550",
+      "excerpt_text": "PubChem CID 427209 lists synonyms including \"Molybdenum chloride\" and \"hexachloromolybdenum\".",
+      "source": "PubChem",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/compound/427209"
     }
   ]
 }
