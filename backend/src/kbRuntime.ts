@@ -336,6 +336,15 @@ const resolveFormKeyFromToken = (kb: KbRuntime, ingredientId: string, token: str
   ) {
     return { formKey: "thiamine_hcl", resolveSource: "alias_map_by_ingredient" as FormResolveSource };
   }
+  // Carnitine hydrochloride is commonly abbreviated as "HCl" on labels.
+  // Canonicalize to the shipped runtime key to avoid duplicate entries like "carnitine+hydrochloride".
+  if (
+    (ingredientId === "carnitine" || ingredientId === "l_carnitine") &&
+    (token === "hydrochloride" || token === "hcl") &&
+    hasRuntimeEntry("hcl")
+  ) {
+    return { formKey: "hcl", resolveSource: "alias_map_by_ingredient" as FormResolveSource };
+  }
 
   const byIngredient = kb.alias.byIngredient?.[ingredientId];
   const byIngredientEntry = pickBestAliasEntry(byIngredient?.[token]);

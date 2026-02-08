@@ -9,12 +9,12 @@
     "production_filter": {
       "mode": "captured_and_approved",
       "note": "Segments are filtered so only evidence_excerpt_status=captured is shipped; curated_override sentences must be review_status=approved.",
-      "filtered_at": "2026-02-08T05:33:05.932Z"
+      "filtered_at": "2026-02-08T06:09:10.944Z"
     },
     "review_policy": {
       "library": "pre_reviewed",
       "curated_override": "approved_required",
-      "annotated_at": "2026-02-08T05:33:05.933Z"
+      "annotated_at": "2026-02-08T06:09:10.949Z"
     },
     "kb_source": {
       "kind": "runtime_index_source",
@@ -2355,6 +2355,40 @@
         }
       }
     },
+    "carnitine|hcl": {
+      "source": "override",
+      "ingredient_id": "carnitine",
+      "ingredient": "Carnitine",
+      "form_key": "hcl",
+      "form_display": "Carnitine HCl",
+      "form_family": "sulfate_chloride",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_1fef28d3e7f6"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_1fef28d3e7f6",
+              "evidence_snippet_id": "x_170f8cf65b9d4850",
+              "overall_confidence": 0.4,
+              "reference_ids": [
+                "ref_1fef28d3e7f6"
+              ],
+              "review_status": "approved",
+              "sentence_id": "s_d9a9e12ea2f97b7c",
+              "source": "curated_override",
+              "text": "L-carnitine hydrochloride is also labeled as Carnitine HCl (L-Carnitine HCl).",
+              "review_notes": "Identity-level statement only; no comparative absorption/efficacy claims."
+            }
+          ]
+        }
+      }
+    },
     "carnitine|fumarate": {
       "source": "override",
       "ingredient_id": "carnitine",
@@ -3949,7 +3983,27 @@
       "evidence_grade": "B",
       "reference_ids": [
         "ref_f9f23d0b357f"
-      ]
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_f9f23d0b357f",
+              "evidence_snippet_id": "x_7bbd220fd27ea61a",
+              "overall_confidence": 0.76,
+              "reference_ids": [
+                "ref_f9f23d0b357f"
+              ],
+              "review_status": "approved",
+              "sentence_id": "s_5b49c1c2e80eed7f",
+              "source": "curated_override",
+              "text": "Thiamin mononitrate is one of the common supplemental forms of thiamin."
+            }
+          ]
+        }
+      }
     },
     "thiamin|benfotiamine": {
       "source": "override",

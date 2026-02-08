@@ -430,6 +430,18 @@
       "audit_status": "verified",
       "capture_method": "web_capture",
       "capture_status": "captured",
+      "captured_at": "2026-02-08T06:06:22Z",
+      "citation_id": "ref_1fef28d3e7f6",
+      "excerpt_id": "x_170f8cf65b9d4850",
+      "excerpt_sha256": "6e2ab8a0d48ac453ce2184d673b17dd6ec9c0843a7db4639f2b6eb6a19bf17ed",
+      "excerpt_text": "Carnitine HCl; levocarnitine hydrochloride; L-Carnitine HCl",
+      "source": "PubChem",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/compound/656657"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
       "captured_at": "2026-02-07T23:44:44Z",
       "citation_id": "ref_c3f1683e721f",
       "excerpt_id": "x_656fce7d57b3e928",

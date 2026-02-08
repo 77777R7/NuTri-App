@@ -62,6 +62,8 @@ const dsldWithFormCarnitineTartrateBarcode =
   process.env.RENDER_DSLD_CARNITINE_TARTRATE_BARCODE || "00646511021792";
 const dsldWithFormCarnitineTartrateBarcode2 =
   process.env.RENDER_DSLD_CARNITINE_TARTRATE_BARCODE2 || "00646511022270";
+const dsldWithFormCarnitineHclBarcode = process.env.RENDER_DSLD_CARNITINE_HCL_BARCODE || "00853237000929";
+const dsldWithFormCarnitineHclBarcode2 = process.env.RENDER_DSLD_CARNITINE_HCL_BARCODE2 || "00367703108205";
 
 const DEFAULT_CASES = [
   { id: "lnhpd", barcodes: [process.env.RENDER_LNHPD_BARCODE || "00029537001069"], expectedSourceType: "lnhpd" },
@@ -126,6 +128,13 @@ if (process.env.RENDER_INCLUDE_NIGHTLY_CASES === "1") {
     expectedSourceType: "dsld",
     requiredFormKeyword: "tartrate",
     targetActiveKeyword: "carnitine tartrate",
+  });
+  CASES.splice(CASES.length - 1, 0, {
+    id: "dsld_with_form_carnitine_hcl",
+    barcodes: [dsldWithFormCarnitineHclBarcode, dsldWithFormCarnitineHclBarcode2],
+    expectedSourceType: "dsld",
+    requiredFormKeyword: "hcl",
+    targetActiveKeyword: "carnitine hcl",
   });
   CASES.splice(CASES.length - 1, 0, {
     id: "dsld_with_form_creatine_citrate",

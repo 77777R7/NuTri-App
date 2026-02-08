@@ -308,6 +308,11 @@ const canonicalizeFormTokenForLookup = ({ token, ingredientKey, evidenceText }) 
   // Keep these canonicalizations extremely narrow and evidence-based so we don't create
   // "fake hits" that paper over real KB gaps.
   if (ig === "creatine" && t === "hydrochloride") return "hcl";
+  // Carnitine hydrochloride is commonly disclosed as "Carnitine HCl" on labels.
+  // Canonicalize to the shipped KB form key to avoid duplicating "carnitine+hydrochloride".
+  if ((ig === "carnitine" || ig === "l_carnitine") && (t === "hydrochloride" || t === "hcl") && ex.includes("carnitine")) {
+    return "hcl";
+  }
 
   // Vitamin B6 hydrochloride is pyridoxine HCl.
   if (ig === "vitamin_b6" && (t === "hydrochloride" || t === "hcl")) return "pyridoxine_hcl";
