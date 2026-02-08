@@ -1,9 +1,9 @@
 {
   "meta": {
-    "generated_at": "2026-02-07T22:58:01Z",
+    "generated_at": "2026-02-08T00:20:00Z",
     "source": "nutri_minimal_data_package_v4_0_en_only_review_excerpts",
     "note": "Production evidence excerpts used by shipped KB sentences (captured only).",
-    "ref_count": 39
+    "ref_count": 41
   },
   "evidence_excerpts": [
     {
@@ -485,6 +485,30 @@
       "excerpt_text": "An orally bioavailable chelate composed of zinc and L-carnosine.",
       "source": "NCI Drug Dictionary",
       "url": "https://www.cancer.gov/publications/dictionaries/cancer-drug/def/polaprezinc"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-08T00:20:00Z",
+      "citation_id": "ref_0cd5d2bd3523",
+      "excerpt_id": "x_2ee1a5e99a12169f",
+      "excerpt_sha256": "2ee1a5e99a12169fa635e48c6b3e40d28ee96247f28af68410823015fb4348b5",
+      "excerpt_text": "Vitamin A is available in stand-alone supplements and most multivitamins, often in the form of retinyl acetate, retinyl palmitate, provitamin A beta-carotene, or a combination.",
+      "source": "NIH ODS",
+      "url": "https://ods.od.nih.gov/factsheets/VitaminA-HealthProfessional/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-08T00:20:00Z",
+      "citation_id": "ref_961ea51b1c1f",
+      "excerpt_id": "x_25dcb29b33953968",
+      "excerpt_sha256": "25dcb29b339539681b9c17390d2186572b36b7a3210275ab763de04419fec3c7",
+      "excerpt_text": "The forms of magnesium that are most commonly reported to cause diarrhea include magnesium carbonate, chloride, gluconate, and oxide.",
+      "source": "NIH ODS",
+      "url": "https://ods.od.nih.gov/factsheets/Magnesium-HealthProfessional/"
     }
   ]
 }

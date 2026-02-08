@@ -9,12 +9,12 @@
     "production_filter": {
       "mode": "captured_and_approved",
       "note": "Segments are filtered so only evidence_excerpt_status=captured is shipped; curated_override sentences must be review_status=approved.",
-      "filtered_at": "2026-02-07T23:55:59.014Z"
+      "filtered_at": "2026-02-08T00:36:10.697Z"
     },
     "review_policy": {
       "library": "pre_reviewed",
       "curated_override": "approved_required",
-      "annotated_at": "2026-02-07T23:55:59.019Z"
+      "annotated_at": "2026-02-08T00:36:10.705Z"
     },
     "kb_source": {
       "kind": "runtime_index_source",
@@ -4808,7 +4808,28 @@
       "reference_ids": [
         "ref_595031703427",
         "ref_2e3384764821"
-      ]
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_595031703427",
+              "evidence_snippet_id": "x_1ac80a2e27303b39",
+              "overall_confidence": 0.76,
+              "reference_ids": [
+                "ref_595031703427",
+                "ref_2e3384764821"
+              ],
+              "sentence_id": "s_e7d34e3de104",
+              "source": "curated_override",
+              "text": "Chromium polynicotinate is one chromium form found in dietary supplements.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
     },
     "cinnamon_extract|enhanced": {
       "source": "library",
@@ -6334,6 +6355,39 @@
         }
       }
     },
+    "magnesium|gluconate": {
+      "source": "override",
+      "ingredient_id": "magnesium",
+      "ingredient": "Magnesium",
+      "form_key": "gluconate",
+      "form_display": "Magnesium gluconate",
+      "form_family": "generic",
+      "overall_confidence": 0.74,
+      "evidence_grade": "B",
+      "reference_ids": [
+        "ref_961ea51b1c1f"
+      ],
+      "segments": {
+        "tolerability": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_961ea51b1c1f",
+              "evidence_snippet_id": "x_25dcb29b33953968",
+              "overall_confidence": 0.74,
+              "reference_ids": [
+                "ref_961ea51b1c1f"
+              ],
+              "sentence_id": "s_df338468e321",
+              "source": "curated_override",
+              "text": "NIH ODS lists magnesium gluconate among the magnesium forms most commonly reported to cause diarrhea.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
+    },
     "magnesium|magnesium_chloride": {
       "source": "library",
       "ingredient_id": "magnesium",
@@ -7443,8 +7497,29 @@
       "overall_confidence": 0.76,
       "evidence_grade": "B",
       "reference_ids": [
-        "ref_e23d05475354"
-      ]
+        "ref_e23d05475354",
+        "ref_0cd5d2bd3523"
+      ],
+      "segments": {
+        "caveats": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_0cd5d2bd3523",
+              "evidence_snippet_id": "x_2ee1a5e99a12169f",
+              "overall_confidence": 0.76,
+              "reference_ids": [
+                "ref_0cd5d2bd3523"
+              ],
+              "sentence_id": "s_0260f5d07b2b",
+              "source": "curated_override",
+              "text": "Retinyl palmitate is one of the common forms of vitamin A used in supplements and multivitamins.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
     },
     "vitamin_b12|adenosylcobalamin": {
       "source": "library",
