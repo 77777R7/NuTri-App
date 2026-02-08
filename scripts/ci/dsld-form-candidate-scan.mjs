@@ -329,6 +329,15 @@ const normalizeIngredientKey = (text) => {
   const words = s.replace(/[^a-z0-9]+/g, " ").trim().split(/\s+/).filter(Boolean);
   const first = words[0] ?? null;
   if (!first) return null;
+  // P1 noise reductions / ingredient normalization:
+  // Some DSLD actives appear as a standalone form name (e.g. "Niacinamide") or as a
+  // prefixed mineral (e.g. "Dicalcium phosphate"). Treat these as the base nutrient
+  // so the scan can measure real KB coverage instead of "ingredient_unresolved" noise.
+  if (first === "niacinamide" || first === "nicotinamide") return "niacin";
+  if (first === "dicalcium" || first === "tricalcium") return "calcium";
+  if (first === "dipotassium" || first === "monopotassium" || first === "tripotassium") return "potassium";
+  // "L-carnitine ..." frequently tokenizes to ["l", "carnitine", ...]
+  if (first === "l" && (words[1] ?? "") === "carnitine") return "carnitine";
   // Common iron label forms:
   // - "Ferrous bisglycinate" (DSLD meta)
   // - "Ferric citrate" (less common, but same base nutrient)
