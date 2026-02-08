@@ -29,7 +29,10 @@ const guessDevApiBaseUrl = (): string | undefined => {
     if (!host) {
       return undefined;
     }
-    const port = process.env.EXPO_PUBLIC_API_PORT ?? process.env.API_PORT ?? '3000';
+    // Local backend defaults to 3001 (see backend/src/server.ts). When EXPO_PUBLIC_API_BASE_URL
+    // is not set, we guess a dev URL from the Expo host. Defaulting to 3001 avoids
+    // "works in browser but device can't connect" confusion in the common setup.
+    const port = process.env.EXPO_PUBLIC_API_PORT ?? process.env.API_PORT ?? '3001';
     const protocol =
       host === 'localhost' ||
         host.startsWith('127.') ||
