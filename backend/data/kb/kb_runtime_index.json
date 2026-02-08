@@ -5,16 +5,16 @@
     "index_size": 385,
     "package_sha256": "2aa5ea802c66cdc23ebf376ac0410705d0727588a6345ff57f756cc061f01411",
     "generated_from": "nutri_minimal_data_package_v4_0_en_only_review_excerpts.json@v4.0",
-    "updated_at": "2026-02-07T07:03:51.538Z",
+    "updated_at": "2026-02-08T08:28:14.129296Z",
     "production_filter": {
       "mode": "captured_and_approved",
       "note": "Segments are filtered so only evidence_excerpt_status=captured is shipped; curated_override sentences must be review_status=approved.",
-      "filtered_at": "2026-02-08T07:09:56.999Z"
+      "filtered_at": "2026-02-08T08:28:53.982Z"
     },
     "review_policy": {
       "library": "pre_reviewed",
       "curated_override": "approved_required",
-      "annotated_at": "2026-02-08T07:09:57.010Z"
+      "annotated_at": "2026-02-08T08:28:53.988Z"
     },
     "kb_source": {
       "kind": "runtime_index_source",
@@ -3789,7 +3789,28 @@
       "reference_ids": [
         "ref_c82025f94bce",
         "ref_7e356410f54c"
-      ]
+      ],
+      "segments": {
+        "caveats": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_c82025f94bce",
+              "evidence_snippet_id": "x_2fa5378138eef8e2",
+              "overall_confidence": 0.76,
+              "reference_ids": [
+                "ref_c82025f94bce",
+                "ref_7e356410f54c"
+              ],
+              "sentence_id": "s_61063b851a48ba46",
+              "source": "curated_override",
+              "text": "Cyanocobalamin is a common form of vitamin B12 used in dietary supplements.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
     },
     "vitamin_b12|methylcobalamin": {
       "source": "override",
@@ -3803,7 +3824,28 @@
       "reference_ids": [
         "ref_c82025f94bce",
         "ref_7e356410f54c"
-      ]
+      ],
+      "segments": {
+        "caveats": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_c82025f94bce",
+              "evidence_snippet_id": "x_94466041d7a005f5",
+              "overall_confidence": 0.76,
+              "reference_ids": [
+                "ref_c82025f94bce",
+                "ref_7e356410f54c"
+              ],
+              "sentence_id": "s_c4d7dd9ea198e183",
+              "source": "curated_override",
+              "text": "Methylcobalamin is one of the forms of vitamin B12 used in dietary supplements.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
     },
     "manganese|manganese_gluconate": {
       "source": "override",
@@ -8234,7 +8276,28 @@
       "reference_ids": [
         "ref_7c4b8587061a",
         "ref_cdf947da6ceb"
-      ]
+      ],
+      "segments": {
+        "caveats": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_7c4b8587061a",
+              "evidence_snippet_id": "x_8c70062bd922a1c9",
+              "overall_confidence": 0.76,
+              "reference_ids": [
+                "ref_7c4b8587061a",
+                "ref_cdf947da6ceb"
+              ],
+              "sentence_id": "s_44e1a6a5d1219cb9",
+              "source": "curated_override",
+              "text": "Vitamin D3 (cholecalciferol) is one of the two main forms of vitamin D found in foods and dietary supplements.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
     },
     "vitamin_e|d_alpha_tocopheryl_succinate": {
       "source": "library",
