@@ -52,6 +52,10 @@ const dsldWithFormFerrousFumarateBarcode2 =
   process.env.RENDER_DSLD_FERROUS_FUMARATE_BARCODE2 || "00651074168532";
 const dsldWithFormVitaminEAcetateBarcode =
   process.env.RENDER_DSLD_VITE_ACETATE_BARCODE || "00896743002001";
+const dsldWithFormCalciumThreonateBarcode =
+  process.env.RENDER_DSLD_CALCIUM_THREONATE_BARCODE || "00810487032704";
+const dsldWithFormCalciumThreonateBarcode2 =
+  process.env.RENDER_DSLD_CALCIUM_THREONATE_BARCODE2 || "00368025052306";
 
 const DEFAULT_CASES = [
   { id: "lnhpd", barcodes: [process.env.RENDER_LNHPD_BARCODE || "00029537001069"], expectedSourceType: "lnhpd" },
@@ -98,6 +102,13 @@ const DEFAULT_CASES = [
 const CASES = [...DEFAULT_CASES];
 if (process.env.RENDER_INCLUDE_NIGHTLY_CASES === "1") {
   // Non-blocking observation cases: keep out of required checks until stable across multiple runs.
+  CASES.splice(CASES.length - 1, 0, {
+    id: "dsld_with_form_calcium_threonate",
+    barcodes: [dsldWithFormCalciumThreonateBarcode, dsldWithFormCalciumThreonateBarcode2],
+    expectedSourceType: "dsld",
+    requiredFormKeyword: "threonate",
+    targetActiveKeyword: "calcium threonate",
+  });
   CASES.splice(CASES.length - 1, 0, {
     id: "dsld_with_form_creatine_citrate",
     barcodes: [dsldWithFormCreatineCitrateBarcode],

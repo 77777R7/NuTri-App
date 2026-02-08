@@ -769,7 +769,7 @@
               ],
               "sentence_id": "s_ad7c108f618222e7",
               "source": "curated_override",
-              "text": "Evidence is limited; benefits aren’t guaranteed—label dose and your tolerance often matter more than the form alone.",
+              "text": "Evidence is limited; benefits aren\u2019t guaranteed\u2014label dose and your tolerance often matter more than the form alone.",
               "review_status": "approved"
             }
           ]
@@ -1127,7 +1127,7 @@
               ],
               "sentence_id": "s_4af3346242dc40ef",
               "source": "curated_override",
-              "text": "Zinc oxide is a low‑solubility salt; compared with citrate or glycinate forms, absorption may be lower in some situations. Evidence is limited.",
+              "text": "Zinc oxide is a low\u2011solubility salt; compared with citrate or glycinate forms, absorption may be lower in some situations. Evidence is limited.",
               "review_status": "approved"
             }
           ]
@@ -1273,7 +1273,7 @@
               ],
               "sentence_id": "s_050f03732610d7d3",
               "source": "curated_override",
-              "text": "Generally water‑soluble; dissolution is usually not the limiting factor.",
+              "text": "Generally water\u2011soluble; dissolution is usually not the limiting factor.",
               "review_status": "approved"
             }
           ]
@@ -1329,7 +1329,7 @@
               ],
               "sentence_id": "s_ac03c39a31c57a97",
               "source": "curated_override",
-              "text": "Ascorbyl palmitate is a fat‑soluble vitamin C derivative used in some products; evidence for meaningful advantages for vitamin C status versus ascorbic acid or ascorbate salts is limited.",
+              "text": "Ascorbyl palmitate is a fat\u2011soluble vitamin C derivative used in some products; evidence for meaningful advantages for vitamin C status versus ascorbic acid or ascorbate salts is limited.",
               "review_status": "approved"
             }
           ]
@@ -1462,7 +1462,7 @@
               ],
               "sentence_id": "s_9d17e7444da3d957",
               "source": "curated_override",
-              "text": "Typically water‑soluble; dissolution is usually adequate.",
+              "text": "Typically water\u2011soluble; dissolution is usually adequate.",
               "review_status": "approved"
             }
           ]
@@ -1597,7 +1597,7 @@
               ],
               "sentence_id": "s_b1aa57e9bb484a4d",
               "source": "curated_override",
-              "text": "Ubiquinone is the oxidized form; absorption may improve with oil‑based softgels or solubilized formulations. Evidence is limited.",
+              "text": "Ubiquinone is the oxidized form; absorption may improve with oil\u2011based softgels or solubilized formulations. Evidence is limited.",
               "review_status": "approved"
             }
           ]
@@ -1635,7 +1635,7 @@
               ],
               "sentence_id": "s_0f53c41a948ad7f0",
               "source": "curated_override",
-              "text": "Fat‑soluble; dispersion is typically better in oil‑based products.",
+              "text": "Fat\u2011soluble; dispersion is typically better in oil\u2011based products.",
               "review_status": "approved"
             }
           ]
@@ -1666,7 +1666,7 @@
       "ingredient_id": "coq10",
       "ingredient": "CoQ10",
       "form_key": "coq10_cyclodextrin_complex",
-      "form_display": "CoQ10 β-cyclodextrin inclusion complex",
+      "form_display": "CoQ10 \u03b2-cyclodextrin inclusion complex",
       "form_family": "standardized_extract",
       "overall_confidence": 0.72,
       "evidence_grade": "C",
@@ -1802,7 +1802,7 @@
               ],
               "sentence_id": "s_bbac770085babaeb",
               "source": "curated_override",
-              "text": "Magnesium oxide is a low‑solubility salt; compared with citrate or glycinate forms, absorption may be lower in some situations. Evidence is limited.",
+              "text": "Magnesium oxide is a low\u2011solubility salt; compared with citrate or glycinate forms, absorption may be lower in some situations. Evidence is limited.",
               "review_status": "approved"
             }
           ]
@@ -1994,7 +1994,7 @@
               ],
               "sentence_id": "s_5147db5c397203b6",
               "source": "curated_override",
-              "text": "Evidence is limited; benefits aren’t guaranteed—label dose and your tolerance often matter more than the form alone.",
+              "text": "Evidence is limited; benefits aren\u2019t guaranteed\u2014label dose and your tolerance often matter more than the form alone.",
               "review_status": "approved"
             }
           ]
@@ -2081,7 +2081,7 @@
               ],
               "sentence_id": "s_319c248fe54b9764",
               "source": "curated_override",
-              "text": "Evidence is limited; benefits aren’t guaranteed—label dose and your tolerance often matter more than the form alone.",
+              "text": "Evidence is limited; benefits aren\u2019t guaranteed\u2014label dose and your tolerance often matter more than the form alone.",
               "review_status": "approved"
             }
           ]
@@ -2429,7 +2429,7 @@
       "ingredient_id": "vitamin_e",
       "ingredient": "Vitamin E",
       "form_key": "d_alpha_tocopheryl_acetate",
-      "form_display": "D-α-Tocopheryl acetate",
+      "form_display": "D-\u03b1-Tocopheryl acetate",
       "form_family": "sulfate_chloride",
       "overall_confidence": 0.76,
       "evidence_grade": "B",
@@ -2464,7 +2464,7 @@
       "ingredient_id": "vitamin_e",
       "ingredient": "Vitamin E",
       "form_key": "dl_alpha_tocopheryl_acetate",
-      "form_display": "DL-α-Tocopheryl acetate",
+      "form_display": "DL-\u03b1-Tocopheryl acetate",
       "form_family": "sulfate_chloride",
       "overall_confidence": 0.76,
       "evidence_grade": "B",
@@ -4254,7 +4254,7 @@
       "ingredient_id": "ashwagandha",
       "ingredient": "Ashwagandha",
       "form_key": "sensoril",
-      "form_display": "Sensoril® (root+leaf extract)",
+      "form_display": "Sensoril\u00ae (root+leaf extract)",
       "form_family": "standardized_extract",
       "overall_confidence": 0.51,
       "evidence_grade": "C",
@@ -4345,7 +4345,7 @@
       "ingredient_id": "beta_alanine",
       "ingredient": "Beta-alanine",
       "form_key": "carnoSyn",
-      "form_display": "CarnoSyn® beta-alanine (branded)",
+      "form_display": "CarnoSyn\u00ae beta-alanine (branded)",
       "form_family": "generic",
       "overall_confidence": 0.53,
       "evidence_grade": "B",
@@ -4919,7 +4919,7 @@
       "ingredient_id": "citicoline",
       "ingredient": "Citicoline",
       "form_key": "branded",
-      "form_display": "Branded citicoline (e.g., Cognizin®)",
+      "form_display": "Branded citicoline (e.g., Cognizin\u00ae)",
       "form_family": "generic",
       "overall_confidence": 0.53,
       "evidence_grade": "B",
@@ -5358,7 +5358,7 @@
       "ingredient_id": "gaba",
       "ingredient": "GABA",
       "form_key": "pharmaGABA",
-      "form_display": "PharmaGABA® (fermented GABA)",
+      "form_display": "PharmaGABA\u00ae (fermented GABA)",
       "form_family": "fermented",
       "overall_confidence": 0.51,
       "evidence_grade": "C",
@@ -6102,7 +6102,7 @@
       "ingredient_id": "msm",
       "ingredient": "MSM",
       "form_key": "optims_msm",
-      "form_display": "OptiMSM® (branded MSM)",
+      "form_display": "OptiMSM\u00ae (branded MSM)",
       "form_family": "generic",
       "overall_confidence": 0.51,
       "evidence_grade": "C",
@@ -6166,7 +6166,7 @@
               ],
               "sentence_id": "s_fe356ee6fa584528",
               "source": "family_library",
-              "text": "Evidence is mixed; label dose and co‑ingredients can drive outcomes more than the form alone."
+              "text": "Evidence is mixed; label dose and co\u2011ingredients can drive outcomes more than the form alone."
             }
           ]
         },
@@ -6249,7 +6249,7 @@
               ],
               "sentence_id": "s_1eb185aa9b696b23",
               "source": "family_library",
-              "text": "Evidence is mixed; label dose and co‑ingredients can drive outcomes more than the form alone."
+              "text": "Evidence is mixed; label dose and co\u2011ingredients can drive outcomes more than the form alone."
             },
             {
               "evidence_excerpt_status": "captured",
@@ -6279,7 +6279,7 @@
               ],
               "sentence_id": "s_67804ce486f5bd5b",
               "source": "family_library",
-              "text": "Solubility is typically moderate‑to‑good; formulation details still matter."
+              "text": "Solubility is typically moderate\u2011to\u2011good; formulation details still matter."
             }
           ]
         },
@@ -6296,7 +6296,7 @@
               ],
               "sentence_id": "s_722c5e2e8d8a7eb7",
               "source": "family_library",
-              "text": "Tolerance may be good for many users; start low if you’re sensitive."
+              "text": "Tolerance may be good for many users; start low if you\u2019re sensitive."
             }
           ]
         }
@@ -6375,7 +6375,7 @@
               ],
               "sentence_id": "s_990e8e3c30a9ec0f",
               "source": "family_library",
-              "text": "Solubility is typically moderate‑to‑good; formulation details still matter."
+              "text": "Solubility is typically moderate\u2011to\u2011good; formulation details still matter."
             }
           ]
         },
@@ -6612,7 +6612,7 @@
               ],
               "sentence_id": "s_4068e2629de1b313",
               "source": "family_library",
-              "text": "Solubility is typically moderate‑to‑good; formulation details still matter."
+              "text": "Solubility is typically moderate\u2011to\u2011good; formulation details still matter."
             }
           ]
         },
@@ -6629,7 +6629,7 @@
               ],
               "sentence_id": "s_58a374872f1a36f8",
               "source": "family_library",
-              "text": "Tolerance may be good for many users; start low if you’re sensitive."
+              "text": "Tolerance may be good for many users; start low if you\u2019re sensitive."
             }
           ]
         }
@@ -7883,7 +7883,7 @@
               ],
               "sentence_id": "s_7f9b382781d52bad",
               "source": "family_library",
-              "text": "Vitamin C with bioflavonoids is a common form; differences versus other forms are often modest and context‑dependent."
+              "text": "Vitamin C with bioflavonoids is a common form; differences versus other forms are often modest and context\u2011dependent."
             }
           ]
         },
@@ -8003,7 +8003,7 @@
       "ingredient_id": "vitamin_e",
       "ingredient": "Vitamin E",
       "form_key": "d_alpha_tocopheryl_succinate",
-      "form_display": "D-α-Tocopheryl acid succinate",
+      "form_display": "D-\u03b1-Tocopheryl acid succinate",
       "form_family": "generic",
       "overall_confidence": 0.76,
       "evidence_grade": "B",
@@ -8224,7 +8224,7 @@
               ],
               "sentence_id": "s_8f19636d5537fecc",
               "source": "family_library",
-              "text": "Evidence is mixed; label dose and co‑ingredients can drive outcomes more than the form alone."
+              "text": "Evidence is mixed; label dose and co\u2011ingredients can drive outcomes more than the form alone."
             },
             {
               "evidence_excerpt_status": "captured",
@@ -8704,7 +8704,7 @@
               ],
               "sentence_id": "s_85076090bc4dacdc",
               "source": "family_library",
-              "text": "Solubility is typically moderate‑to‑good; formulation details still matter."
+              "text": "Solubility is typically moderate\u2011to\u2011good; formulation details still matter."
             }
           ]
         },
@@ -8721,7 +8721,7 @@
               ],
               "sentence_id": "s_411cafec823c87d5",
               "source": "family_library",
-              "text": "Tolerance may be good for many users; start low if you’re sensitive."
+              "text": "Tolerance may be good for many users; start low if you\u2019re sensitive."
             },
             {
               "evidence_excerpt_status": "captured",
@@ -8822,7 +8822,7 @@
               ],
               "sentence_id": "s_d0868a6099398c1f",
               "source": "family_library",
-              "text": "Evidence is mixed; label dose and co‑ingredients can drive outcomes more than the form alone."
+              "text": "Evidence is mixed; label dose and co\u2011ingredients can drive outcomes more than the form alone."
             }
           ]
         },
@@ -8856,7 +8856,7 @@
               ],
               "sentence_id": "s_a48ff0c970b93435",
               "source": "family_library",
-              "text": "Tolerance may be good for many users; start low if you’re sensitive."
+              "text": "Tolerance may be good for many users; start low if you\u2019re sensitive."
             },
             {
               "evidence_excerpt_status": "captured",
@@ -9051,7 +9051,7 @@
               ],
               "sentence_id": "s_61b886fa5a11db1a",
               "source": "family_library",
-              "text": "Because Magnesium phosphate is less soluble, absorption may be lower for some people—especially without food."
+              "text": "Because Magnesium phosphate is less soluble, absorption may be lower for some people\u2014especially without food."
             }
           ]
         },
@@ -9068,7 +9068,7 @@
               ],
               "sentence_id": "s_747e1ec7eea31f60",
               "source": "family_library",
-              "text": "Evidence is limited; product formulation and co‑ingredients may change outcomes."
+              "text": "Evidence is limited; product formulation and co\u2011ingredients may change outcomes."
             },
             {
               "evidence_excerpt_status": "captured",
@@ -9161,7 +9161,7 @@
               "review_status": "approved",
               "sentence_id": "s_f9d744de3c0934c9",
               "source": "curated_override",
-              "text": "A PubMed abstract reports an in vitro digestion study comparing calcium carbonate, citrate malate, calcium phosphate, and calcium bisglycinate; final calcium bioaccessibility differed by source (about 20–36%), and in‑vitro results may not predict human absorption."
+              "text": "A PubMed abstract reports an in vitro digestion study comparing calcium carbonate, citrate malate, calcium phosphate, and calcium bisglycinate; final calcium bioaccessibility differed by source (about 20\u201336%), and in\u2011vitro results may not predict human absorption."
             }
           ]
         }
@@ -9326,6 +9326,105 @@
               "sentence_id": "s_b633c594e6eb6e3b",
               "source": "curated_override",
               "text": "Magnesium orotate is described as poorly soluble in water.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
+    },
+    "calcium|threonate": {
+      "source": "override",
+      "ingredient_id": "calcium",
+      "ingredient": "Calcium",
+      "form_key": "threonate",
+      "form_display": "Calcium threonate",
+      "form_family": "generic",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_4a2d9d7a1e7a"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_4a2d9d7a1e7a",
+              "evidence_snippet_id": "x_f9e0fa2220f2a686",
+              "overall_confidence": 0.4,
+              "reference_ids": [
+                "ref_4a2d9d7a1e7a"
+              ],
+              "sentence_id": "s_b971b7251f568408",
+              "source": "curated_override",
+              "text": "Calcium threonate is a disclosed calcium form; evidence comparing specific calcium forms is limited.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
+    },
+    "zinc|ascorbate": {
+      "source": "override",
+      "ingredient_id": "zinc",
+      "ingredient": "Zinc",
+      "form_key": "ascorbate",
+      "form_display": "Zinc ascorbate",
+      "form_family": "generic",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_719ee2c08fa9"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_719ee2c08fa9",
+              "evidence_snippet_id": "x_31b88aa71bc5b9a2",
+              "overall_confidence": 0.4,
+              "reference_ids": [
+                "ref_719ee2c08fa9"
+              ],
+              "sentence_id": "s_a1fe9a6fb0188a07",
+              "source": "curated_override",
+              "text": "Zinc ascorbate is a disclosed zinc salt form; evidence comparing specific zinc salt forms is limited.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
+    },
+    "zinc|monomethionine": {
+      "source": "override",
+      "ingredient_id": "zinc",
+      "ingredient": "Zinc",
+      "form_key": "monomethionine",
+      "form_display": "Zinc monomethionine",
+      "form_family": "chelated",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_32d7dfcc3791"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_32d7dfcc3791",
+              "evidence_snippet_id": "x_84363db893f6ba93",
+              "overall_confidence": 0.4,
+              "reference_ids": [
+                "ref_32d7dfcc3791"
+              ],
+              "sentence_id": "s_89517ea8d09def62",
+              "source": "curated_override",
+              "text": "Zinc monomethionine is a disclosed zinc form; evidence comparing specific zinc forms is limited.",
               "review_status": "approved"
             }
           ]
