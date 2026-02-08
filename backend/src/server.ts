@@ -6300,8 +6300,9 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     Number.isFinite(keepAliveMsRaw) && keepAliveMsRaw >= 5000 ? keepAliveMsRaw : 15000;
   const keepAlive = setInterval(() => {
     if (res.writableEnded) return;
-    // SSE comment lines keep intermediaries from timing out idle streams.
-    res.write(": ping\n\n");
+    // Some SSE clients (notably certain React Native polyfills) do not tolerate comment keepalives (": ping").
+    // Use a standard SSE `message` event instead to keep the connection active without breaking parsers.
+    res.write(`data: ${JSON.stringify({ type: "ping" })}\n\n`);
   }, keepAliveMs);
   (keepAlive as any).unref?.();
   const clearKeepAlive = () => clearInterval(keepAlive);
