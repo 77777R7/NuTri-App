@@ -90,6 +90,7 @@ const REVERSE_FORM_ALLOWLIST = new Set([
   "dha",
   "creatine",
   "coq10",
+  "carnitine",
   "l_carnitine",
 ]);
 
@@ -424,6 +425,7 @@ const FIRST_WORD_ALLOWLIST = new Set([
   // P1: allow a small set of non-vitamin/mineral ingredient families to resolve when the DSLD label
   // embeds the form in the ingredient name (e.g. "Creatine Citrate"). Keep this list conservative.
   "creatine",
+  "carnitine",
 ]);
 
 const resolveIngredientId = (
@@ -463,10 +465,19 @@ const resolveIngredientId = (
   }
 
   // P0-B: first-word fallback is allowlisted (minerals + vitamin only) to avoid misattribution.
-  const words = normalizeFreeText(beforeAs).split(/\s+/).filter(Boolean);
-  const firstWord = words[0] ?? null;
-  if (!firstWord || !FIRST_WORD_ALLOWLIST.has(firstWord)) return null;
-  const firstToken = kb.ingredientNameIndex[normalizeToken(firstWord)];
+  const words = normalizeFreeText(beforeAs)
+    .replace(/[^a-z0-9]+/g, " ")
+    .split(/\s+/)
+    .filter(Boolean);
+  let headWord = words[0] ?? null;
+  // Handle common prefixes like "L-" (e.g. "L-Carnitine ...") while still staying conservative:
+  // only shift to the second token if it is explicitly allowlisted.
+  if (headWord && (headWord === "l" || headWord === "d" || headWord === "dl") && words[1]) {
+    const second = words[1];
+    if (FIRST_WORD_ALLOWLIST.has(second)) headWord = second;
+  }
+  if (!headWord || !FIRST_WORD_ALLOWLIST.has(headWord)) return null;
+  const firstToken = kb.ingredientNameIndex[normalizeToken(headWord)];
   return firstToken ?? null;
 };
 
