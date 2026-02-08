@@ -71,6 +71,11 @@ const DEFAULT_TOKENS = [
   "selenate",
   "selenite",
   "monomethionine",
+  // Folate / thiamin forms: important, and often disclose forms explicitly in DSLD. We keep tokens
+  // conservative (whole-word matches) so the action list remains operationally clean.
+  "methylfolate",
+  "folinic",
+  "mononitrate",
   // Vitamin/cofactor forms (high ROI): these often appear in DSLD as "(as ...)" disclosures and
   // are a common source of kb_sentence_missing/kb_excerpt_missing once salts are mostly covered.
   "methylcobalamin",
@@ -124,10 +129,14 @@ const INGREDIENT_ALLOWLIST = [
   "potassium",
   "vitamin",
   "folate",
+  // Common folate/thiamin spelling variants and cofactor names (keep minimal and scoped).
+  "methylfolate",
+  "folinic",
   "folic",
   "niacin",
   "riboflavin",
   "thiamin",
+  "thiamine",
   "omega",
   "epa",
   "dha",
@@ -241,7 +250,12 @@ const getFirstWordToken = (text) => {
 // generic token presence elsewhere in the text.
 const hasStrongSaltNameStructure = ({ chunk, ingredientKey, token }) => {
   if (!ingredientKey || !token) return false;
-  const first = getFirstWordToken(chunk);
+  const cleaned = normalizeFreeText(stripAmountSuffix(chunk)).replace(/^(as|from)\s+/i, "").trim();
+  const normalizedText = cleaned.replace(/[^a-z0-9]+/g, " ").trim();
+  const parts = normalizedText.split(/\s+/).filter(Boolean);
+  let first = parts[0] ?? null;
+  const hadPrefix = first && (first === "l" || first === "d" || first === "dl");
+  if (hadPrefix && parts[1]) first = parts[1];
   if (!first) return false;
   // "monohydrate" is highly ambiguous in DSLD meta (e.g. HMB monohydrate, pyridoxal-5-phosphate monohydrate).
   // For CI candidate scanning we only treat it as a relevant form token when it is explicitly a creatine label head
@@ -252,10 +266,17 @@ const hasStrongSaltNameStructure = ({ chunk, ingredientKey, token }) => {
   if (!INGREDIENT_ALLOWLIST.includes(first)) return false;
   if (!tokenRegex(token).test(chunk)) return false;
 
+  // Some cofactor/supplement forms are commonly listed as the standalone head (e.g. "Methylfolate",
+  // "Folinic Acid"). Treat these as strong only for a very small allowlisted set to avoid
+  // accidentally accepting generic tokens like "oxide"/"citrate" as salt evidence.
+  const STANDALONE_FORM_HEADS = new Set(["methylfolate", "folinic"]);
+  if (first === token && STANDALONE_FORM_HEADS.has(first)) return true;
+
   const safeFirst = first.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&");
   const safeToken = token.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&");
-  const strong = new RegExp(`^\\s*${safeFirst}\\b[^,;]*\\b${safeToken}\\b`, "i");
-  return strong.test(chunk);
+  const prefixPattern = hadPrefix ? `(?:${parts[0]}\\s+)?` : "";
+  const strong = new RegExp(`^\\s*${prefixPattern}${safeFirst}\\b[^,;]*\\b${safeToken}\\b`, "i");
+  return strong.test(normalizedText);
 };
 
 const VITAMIN_C_SALT_CATIONS = new Set(["calcium", "sodium", "magnesium", "potassium"]);
@@ -306,6 +327,21 @@ const canonicalizeFormTokenForLookup = ({ token, ingredientKey, evidenceText }) 
   // Keep this canonicalization narrow: only within riboflavin scope and only when the evidence
   // phrase actually contains "riboflavin" (avoid cross-ingredient phosphate noise).
   if (ig === "riboflavin" && t === "phosphate" && ex.includes("riboflavin")) return "riboflavin_5_phosphate";
+
+  // Folate: "folinic" generally refers to folinic acid (5-formyl THF). Keep this conservative:
+  // only within folate scope and only when the evidence phrase contains "folinic".
+  if (ig === "folate" && t === "folinic" && ex.includes("folinic")) return "folinic_acid";
+
+  // Thiamin mononitrate: DSLD can list this as "Thiamine Mononitrate" or as a Vitamin B1 form.
+  // Canonicalize to the shipped KB key only when the evidence phrase indicates thiamin/thiamine.
+  if (
+    ig === "thiamin" &&
+    t === "mononitrate" &&
+    ex.includes("mononitrate") &&
+    (ex.includes("thiamin") || ex.includes("thiamine"))
+  ) {
+    return "thiamine_mononitrate";
+  }
 
   // Vitamin E acetate: labels may say "Vitamin E Acetate" or "alpha-tocopheryl acetate" (sometimes without the
   // explicit "tocopheryl" word). Canonicalize to tocopheryl acetate runtime keys so the scan classifies gaps
@@ -359,6 +395,15 @@ const normalizeIngredientKey = (text) => {
   // Prefer vitamin C scope only when the label head indicates vitamin C (avoid misattribution like "Zinc Ascorbate").
   if (isVitaminCScopeName(s)) return "vitamin_c";
 
+  // Folate forms are frequently listed directly as their cofactor names (e.g. "L-Methylfolate Calcium",
+  // "Folinic Acid") rather than "Folate (as ...)". Treat these as folate scope so the scan can
+  // correctly measure KB coverage and surface actionable gaps.
+  if (/\bmethylfolate\b/.test(s) || /\b5[- ]?methylfolate\b/.test(s) || /\bmthf\b/.test(s)) return "folate";
+  if (/\bfolinic\b/.test(s)) return "folate";
+
+  // Common spelling variants: thiamin vs thiamine.
+  if (/\bthiamine\b/.test(s)) return "thiamin";
+
   // DSLD sometimes lists specific vitamin/cofactor names without the "Vitamin X" prefix.
   // Keep these mappings conservative: only map when the token is unambiguous.
   if (/\bcobalamin\b/.test(s)) return "vitamin_b12";
@@ -386,7 +431,17 @@ const normalizeIngredientKey = (text) => {
           const joined = parts.slice(1).join("");
           const bNum = joined.replace(/^b/i, "").replace(/[^0-9]/g, "");
           const allowed = new Set(["1", "2", "3", "5", "6", "7", "9", "12"]);
-          if (bNum && allowed.has(bNum)) return `vitamin_b${bNum}`;
+          if (bNum && allowed.has(bNum)) {
+            // Prefer KB-canonical ingredient ids for the common B vitamin families.
+            // This keeps scan/gap results aligned with runtime entries (e.g. thiamin, riboflavin, folate).
+            if (bNum === "1") return "thiamin";
+            if (bNum === "2") return "riboflavin";
+            if (bNum === "3") return "niacin";
+            if (bNum === "5") return "pantothenic_acid";
+            if (bNum === "7") return "biotin";
+            if (bNum === "9") return "folate";
+            return `vitamin_b${bNum}`;
+          }
           return "vitamin_b";
         }
         return `vitamin_${letter}${num}`;
