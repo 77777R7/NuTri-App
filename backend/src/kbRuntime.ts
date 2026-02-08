@@ -527,9 +527,10 @@ const resolveIngredientId = (
     .split(/\s+/)
     .filter(Boolean);
   let headWord = words[0] ?? null;
-  // Handle common prefixes like "L-" (e.g. "L-Carnitine ...") while still staying conservative:
+  // Handle common prefixes like "L-" (e.g. "L-Carnitine ...") or quantity prefixes like
+  // "tri-" / "di-" (e.g. "Tri-Creatine Malate", "Di-Calcium Malate") while still staying conservative:
   // only shift to the second token if it is explicitly allowlisted.
-  if (headWord && (headWord === "l" || headWord === "d" || headWord === "dl") && words[1]) {
+  if (headWord && (headWord === "l" || headWord === "d" || headWord === "dl" || headWord === "tri" || headWord === "di") && words[1]) {
     const second = words[1];
     if (FIRST_WORD_ALLOWLIST.has(second)) headWord = second;
   }
