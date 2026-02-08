@@ -159,6 +159,14 @@ const confidencePriority = (band) => {
   return b === "high" ? 2 : b === "medium" ? 1 : 0;
 };
 
+// sulfate/chloride in DSLD meta is often dominated by ingredient salt names (e.g. "glucosamine sulfate"),
+// which should not be treated as nutrient salt-form gaps (avoids "补错 KB").
+const isSulfateChlorideSaltNameNoise = (value) => {
+  const v = normalizeFreeText(stripAmountSuffix(value)).replace(/^(as|from)\s+/i, "").trim();
+  if (!v) return false;
+  return v.includes("glucosamine") || v.includes("chondroitin");
+};
+
 const guessIngredientForNoise = (value) => {
   const cleaned = normalizeFreeText(stripAmountSuffix(value))
     .replace(/^(as|from)\s+/i, "")
@@ -956,7 +964,8 @@ async function main() {
       }
 
       const hasSulfateChloride = tokensMatched.some((t) => SULFATE_CHLORIDE_TOKENS.has(t));
-      if (hasSulfateChloride && !ingredientKey) {
+      const sulfateChlorideNoiseName = hasSulfateChloride && isSulfateChlorideSaltNameNoise(kbLookupName);
+      if (hasSulfateChloride && (!ingredientKey || sulfateChlorideNoiseName)) {
         // P1: sulfate/chloride in DSLD meta is often dominated by non-salt "ingredients" like glucosamine sulfate.
         // Capture as noise for triage but exclude from KB hit-rate metrics and regression candidate selection.
         sulfateChlorideNoise.push({
