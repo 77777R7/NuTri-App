@@ -327,6 +327,16 @@ const resolveFormKeyFromToken = (kb: KbRuntime, ingredientId: string, token: str
     return { formKey: "mk4", resolveSource: "alias_map_by_ingredient" as FormResolveSource };
   }
 
+  // Vitamin B1 (thiamin) hydrochloride is commonly disclosed as "Thiamine Hydrochloride" or "Thiamine HCl".
+  // Canonicalize to the KB form key to avoid duplicate runtime entries like "thiamin+hydrochloride".
+  if (
+    ingredientId === "thiamin" &&
+    (token === "hydrochloride" || token === "hcl" || token === "thiamine_hydrochloride") &&
+    hasRuntimeEntry("thiamine_hcl")
+  ) {
+    return { formKey: "thiamine_hcl", resolveSource: "alias_map_by_ingredient" as FormResolveSource };
+  }
+
   const byIngredient = kb.alias.byIngredient?.[ingredientId];
   const byIngredientEntry = pickBestAliasEntry(byIngredient?.[token]);
   if (byIngredientEntry) {
