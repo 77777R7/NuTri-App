@@ -370,9 +370,34 @@ const normalizeVitaminIngredientToken = (value: string): string | null => {
   return `vitamin_${letter}${num}`;
 };
 
-const isVitaminCChemicalFormName = (value: string): boolean => {
-  const cleaned = value.toLowerCase();
-  return /\bascorbic\b/.test(cleaned) || /\bascorbate\b/.test(cleaned) || /\bester[-_ ]?c\b/.test(cleaned);
+const VITAMIN_C_SALT_CATIONS = new Set(["calcium", "sodium", "magnesium", "potassium"]);
+
+const extractHeadWord = (value: string): string | null => {
+  const cleaned = normalizeFreeText(value)
+    .replace(/^(as|from)\s+/i, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+  if (!cleaned) return null;
+  return cleaned.split(/\s+/)[0] ?? null;
+};
+
+const isVitaminCScopeName = (value: string): boolean => {
+  const cleaned = normalizeFreeText(value);
+  if (!cleaned) return false;
+
+  // Strong, unambiguous vitamin C signals.
+  if (/\bvitamin\s*c\b/.test(cleaned)) return true;
+  if (/\bascorbic\b/.test(cleaned)) return true;
+  if (/\bester[-_ ]?c\b/.test(cleaned)) return true;
+
+  // Avoid misattribution like "Zinc Ascorbate": treat "ascorbate" as vitamin C scope only when the
+  // label head is a common vitamin C salt cation (calcium/sodium/magnesium/potassium).
+  if (/\bascorbate\b/.test(cleaned)) {
+    const head = extractHeadWord(cleaned);
+    if (head && VITAMIN_C_SALT_CATIONS.has(head)) return true;
+  }
+
+  return false;
 };
 
 const FIRST_WORD_ALLOWLIST = new Set([
@@ -416,8 +441,9 @@ const resolveIngredientId = (
   if (asToken) return asToken;
 
   // P0: Vitamin C forms are commonly listed as salts (e.g. calcium/sodium ascorbate).
-  // Prefer vitamin_c scope over mineral scope when the ingredient name explicitly indicates vitamin C.
-  if (isVitaminCChemicalFormName(beforeAs)) {
+  // Prefer vitamin_c scope over mineral scope only when the ingredient name indicates vitamin C
+  // (avoid misattribution like "Zinc Ascorbate").
+  if (isVitaminCScopeName(beforeAs)) {
     const vitaminC = kb.ingredientNameIndex["vitamin_c"];
     if (vitaminC) return vitaminC;
   }

@@ -39,3 +39,11 @@ test("Vitamin C forms resolve to vitamin_c scope (ascorbate/ascorbic acid)", () 
     assert.ok(result.referenceId, `expected referenceId for ${c.ingredientName}`);
   }
 });
+
+test("Zinc Ascorbate should not be misattributed to vitamin_c scope", () => {
+  // Regression guard: "ascorbate" appears in vitamin C salts, but zinc ascorbate is a zinc salt form.
+  // If ingredient resolution incorrectly collapses to vitamin_c, this would (wrongly) resolve a vitamin C sentence.
+  const result = run("Zinc Ascorbate", "calcium_ascorbate");
+  assert.equal(result.sentence, null, "expected no vitamin_c KB sentence for Zinc Ascorbate");
+  assert.equal(result.resolveSource, "none", "expected resolveSource=none for Zinc Ascorbate");
+});
