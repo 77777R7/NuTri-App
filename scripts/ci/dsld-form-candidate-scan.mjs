@@ -380,6 +380,12 @@ const canonicalizeFormTokenForLookup = ({ token, ingredientKey, evidenceText }) 
     return "dl_alpha_tocopheryl_acetate";
   }
 
+  // Vitamin D: DSLD labels often list the form directly as cholecalciferol/ergocalciferol, while the KB
+  // keys these explicitly as d3_cholecalciferol / d2_ergocalciferol. Canonicalize within vitamin_d scope
+  // to avoid creating duplicate runtime entries for the same forms.
+  if (ig === "vitamin_d" && t === "cholecalciferol" && ex.includes("cholecalciferol")) return "d3_cholecalciferol";
+  if (ig === "vitamin_d" && t === "ergocalciferol" && ex.includes("ergocalciferol")) return "d2_ergocalciferol";
+
   if (ig === "vitamin_c" && t === "ascorbate") {
     if (ex.includes("calcium ascorbate")) return "calcium_ascorbate";
     if (ex.includes("sodium ascorbate")) return "sodium_ascorbate";
