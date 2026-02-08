@@ -1,9 +1,9 @@
 {
   "meta": {
-    "generated_at": "2026-02-08T04:29:11Z",
+    "generated_at": "2026-02-08T05:30:00Z",
     "source": "nutri_minimal_data_package_v4_0_en_only_review_excerpts",
     "note": "Production evidence excerpts used by shipped KB sentences (captured only).",
-    "ref_count": 51
+    "ref_count": 54
   },
   "evidence_excerpts": [
     {
@@ -653,6 +653,42 @@
       "excerpt_text": "PubChem synonyms for calcium aspartate include \"L-Aspartic acid, calcium salt (1:1)\".",
       "source": "PubChem",
       "url": "https://pubchem.ncbi.nlm.nih.gov/compound/30465"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-08T05:30:00Z",
+      "citation_id": "ref_a5541327aa6a",
+      "excerpt_id": "x_d178081625fc1cce",
+      "excerpt_sha256": "e2d66273bb839ee560e606d8d1173bfd05edae89850536b1237d489c37af839b",
+      "excerpt_text": "Some dietary supplements also contain folate in the monoglutamyl form, 5-MTHF (also known as 5-methyltetrahydrofolate or L-methylfolate, and methylfolate).",
+      "source": "NIH ODS",
+      "url": "https://ods.od.nih.gov/factsheets/Folate-HealthProfessional/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-08T05:30:00Z",
+      "citation_id": "ref_f9f23d0b357f",
+      "excerpt_id": "x_7bbd220fd27ea61a",
+      "excerpt_sha256": "554cbff1d4ac9a0fd2b584db682b83340e1b281cb397784c8dcf11de1ac81cf4",
+      "excerpt_text": "Common forms of thiamin in dietary supplements are thiamin mononitrate and thiamin hydrochloride.",
+      "source": "NIH ODS",
+      "url": "https://ods.od.nih.gov/factsheets/Thiamin-Consumer/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-08T05:30:00Z",
+      "citation_id": "ref_b9edbd80ce76",
+      "excerpt_id": "x_1d487ef89253da0d",
+      "excerpt_sha256": "7661853b4d474fb91a70c1502215bc0d5ba9e596f80857906fc8aabcaebb3de6",
+      "excerpt_text": "Folinic acid, or 5-formyl tetrahydrofolic acid, is a naturally occurring, reduced form of folic acid.",
+      "source": "NCBI Bookshelf",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK545232/"
     }
   ]
 }
