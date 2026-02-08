@@ -1,9 +1,9 @@
 {
   "meta": {
-    "generated_at": "2026-02-08T05:30:00Z",
+    "generated_at": "2026-02-08T08:28:45.778130Z",
     "source": "nutri_minimal_data_package_v4_0_en_only_review_excerpts",
     "note": "Production evidence excerpts used by shipped KB sentences (captured only).",
-    "ref_count": 54
+    "ref_count": 62
   },
   "evidence_excerpts": [
     {
@@ -26,7 +26,7 @@
       "citation_id": "ref_0c7d1c9cb8f8",
       "excerpt_id": "x_9d4f7af897c09dfc",
       "excerpt_sha256": "96a595eba27c49d99f6c9666d987119faba5b4ce94bcddc7f0a84f4cb3828b41",
-      "excerpt_text": "NIH ODS explains that vitamin C supplements come in multiple forms (e.g., ascorbic acid, sodium/calcium ascorbate, and combination products such as Ester\u2011C). It reports that some human studies found similar plasma vitamin C across forms, and that authors concluded simple ascorbic acid is often the preferred source due to cost.",
+      "excerpt_text": "NIH ODS explains that vitamin C supplements come in multiple forms (e.g., ascorbic acid, sodium/calcium ascorbate, and combination products such as Ester‑C). It reports that some human studies found similar plasma vitamin C across forms, and that authors concluded simple ascorbic acid is often the preferred source due to cost.",
       "source": "NIH ODS",
       "url": "https://ods.od.nih.gov/factsheets/VitaminC-HealthProfessional/"
     },
@@ -110,7 +110,7 @@
       "citation_id": "ref_308010f957ae",
       "excerpt_id": "x_cba7bc8e17d4ac91",
       "excerpt_sha256": "9af3a279dcd9a2fb09bd018f06c27a2c54bc4f02704e3aa324bd64af226428f8",
-      "excerpt_text": "A PubMed record on innovative curcumin formulations describes pharmacokinetic comparisons using plasma concentration\u2013time curves and metrics such as AUC and Cmax to calculate relative absorption for different formulations.",
+      "excerpt_text": "A PubMed record on innovative curcumin formulations describes pharmacokinetic comparisons using plasma concentration–time curves and metrics such as AUC and Cmax to calculate relative absorption for different formulations.",
       "source": "PubMed",
       "url": "https://pubmed.ncbi.nlm.nih.gov/28204880/"
     },
@@ -713,6 +713,42 @@
       "excerpt_text": "Naturally occurring vitamin E exists in eight chemical forms (alpha-, beta-, gamma-, and delta-tocopherol and alpha-, beta-, gamma-, and delta-tocotrienol)",
       "source": "NIH ODS",
       "url": "https://ods.od.nih.gov/factsheets/VitaminE-HealthProfessional/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-08T08:28:45.778130Z",
+      "citation_id": "ref_c82025f94bce",
+      "excerpt_id": "x_2fa5378138eef8e2",
+      "excerpt_text": "Vitamin B12 is present in many dietary supplements, often as cyanocobalamin, but other forms may also be used.",
+      "source": "NIH ODS",
+      "url": "https://ods.od.nih.gov/factsheets/VitaminB12-HealthProfessional/",
+      "excerpt_sha256": "b62ccdb78ff3671455f58b4934aeb4249b5c9234a3a6170ebfa53e648c004a03"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-08T08:28:45.778130Z",
+      "citation_id": "ref_c82025f94bce",
+      "excerpt_id": "x_94466041d7a005f5",
+      "excerpt_text": "Other forms of vitamin B12 in supplements are adenosylcobalamin, methylcobalamin, and hydroxycobalamin.",
+      "source": "NIH ODS",
+      "url": "https://ods.od.nih.gov/factsheets/VitaminB12-HealthProfessional/",
+      "excerpt_sha256": "6fafe3254e688ebe901a4dcf330eccc6f75320098e8f5392f8fd9bf012646a83"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-08T08:28:45.778130Z",
+      "citation_id": "ref_7c4b8587061a",
+      "excerpt_id": "x_8c70062bd922a1c9",
+      "excerpt_text": "In foods and dietary supplements, vitamin D has two main forms, D 2 (ergocalciferol) and D 3 (cholecalciferol), that differ chemically only in their side-chain structures.",
+      "source": "NIH ODS",
+      "url": "https://ods.od.nih.gov/factsheets/VitaminD-HealthProfessional/",
+      "excerpt_sha256": "0b76f1fd75822d5e3a462a57905610050e804e85c184a6ab479fa6c141fe0398"
     }
   ]
 }
