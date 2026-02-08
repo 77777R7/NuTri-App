@@ -1,9 +1,9 @@
 {
   "meta": {
-    "generated_at": "2026-02-08T08:28:45.778130Z",
+    "generated_at": "2026-02-08T15:42:29Z",
     "source": "nutri_minimal_data_package_v4_0_en_only_review_excerpts",
     "note": "Production evidence excerpts used by shipped KB sentences (captured only).",
-    "ref_count": 62
+    "ref_count": 64
   },
   "evidence_excerpts": [
     {
@@ -749,6 +749,30 @@
       "source": "NIH ODS",
       "url": "https://ods.od.nih.gov/factsheets/VitaminD-HealthProfessional/",
       "excerpt_sha256": "0b76f1fd75822d5e3a462a57905610050e804e85c184a6ab479fa6c141fe0398"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-08T15:42:29Z",
+      "citation_id": "ref_0f30cc68973d",
+      "excerpt_id": "x_3fb8f070860bf7a7",
+      "excerpt_sha256": "457ea80d979e796c135868e598fa294f59d8bfa08e6d00643d4b1ce8f129e85b",
+      "excerpt_text": "PubChem lists Creatine malate (CID 10355479) as a creatine-malic acid compound.",
+      "source": "PubChem",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/compound/10355479"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-08T15:42:29Z",
+      "citation_id": "ref_a060f35f8a9a",
+      "excerpt_id": "x_576d91f0e22ac327",
+      "excerpt_sha256": "f1bdb4fafd01d035c487b12c9ce370a400063ce890a18238967a3108a9041eeb",
+      "excerpt_text": "PubChem lists Calcium malate (CID 167659) as a calcium salt of malic acid.",
+      "source": "PubChem",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/compound/167659"
     }
   ]
 }

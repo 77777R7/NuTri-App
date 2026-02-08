@@ -2295,7 +2295,7 @@
       "overall_confidence": 0.55,
       "evidence_grade": "C",
       "reference_ids": [
-        "ref_963445a26cb4"
+        "ref_0f30cc68973d"
       ],
       "segments": {
         "absorption": {
@@ -2303,16 +2303,16 @@
             {
               "evidence_excerpt_status": "captured",
               "evidence_grade": "C",
-              "evidence_reference_id": "ref_963445a26cb4",
-              "evidence_snippet_id": "x_8f8850f2817c3853",
+              "evidence_reference_id": "ref_0f30cc68973d",
+              "evidence_snippet_id": "x_3fb8f070860bf7a7",
               "overall_confidence": 0.55,
               "reference_ids": [
-                "ref_963445a26cb4"
+                "ref_0f30cc68973d"
               ],
-              "sentence_id": "s_6b1d70c779b2b0e3",
+              "sentence_id": "s_d4e5912d49587d41",
               "source": "curated_override",
-              "text": "Creatine malate is a creatine form; evidence is strongest for creatine monohydrate, and evidence for alternative forms is limited.",
-              "review_status": "needs_edit"
+              "text": "Creatine malate is a creatine-malic acid compound.",
+              "review_status": "approved"
             }
           ]
         }
@@ -4919,24 +4919,24 @@
       "overall_confidence": 0.4,
       "evidence_grade": "C",
       "reference_ids": [
-        "ref_11d346fef7d9"
+        "ref_a060f35f8a9a"
       ],
       "segments": {
-        "caveats": {
+        "absorption": {
           "en": [
             {
               "evidence_excerpt_status": "captured",
               "evidence_grade": "C",
-              "evidence_reference_id": "ref_11d346fef7d9",
-              "evidence_snippet_id": "x_aaff1766969ff128",
+              "evidence_reference_id": "ref_a060f35f8a9a",
+              "evidence_snippet_id": "x_576d91f0e22ac327",
               "overall_confidence": 0.4,
               "reference_ids": [
-                "ref_11d346fef7d9"
+                "ref_a060f35f8a9a"
               ],
-              "sentence_id": "s_1acb052dca29b1c7",
+              "sentence_id": "s_5dc46811e9c78eea",
               "source": "curated_override",
-              "text": "Some calcium supplements use malate-containing salts (for example, citrate-malate); evidence comparing calcium salts can be study-specific.",
-              "review_status": "needs_edit"
+              "text": "Calcium malate is a calcium salt of malic acid.",
+              "review_status": "approved"
             }
           ]
         }

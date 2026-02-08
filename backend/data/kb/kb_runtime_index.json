@@ -9,12 +9,12 @@
     "production_filter": {
       "mode": "captured_and_approved",
       "note": "Segments are filtered so only evidence_excerpt_status=captured is shipped; curated_override sentences must be review_status=approved.",
-      "filtered_at": "2026-02-08T10:09:48.968Z"
+      "filtered_at": "2026-02-08T15:43:32.085Z"
     },
     "review_policy": {
       "library": "pre_reviewed",
       "curated_override": "approved_required",
-      "annotated_at": "2026-02-08T10:09:48.969Z"
+      "annotated_at": "2026-02-08T15:43:32.086Z"
     },
     "kb_source": {
       "kind": "runtime_index_source",
@@ -2265,8 +2265,28 @@
       "overall_confidence": 0.55,
       "evidence_grade": "C",
       "reference_ids": [
-        "ref_963445a26cb4"
-      ]
+        "ref_0f30cc68973d"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_0f30cc68973d",
+              "evidence_snippet_id": "x_3fb8f070860bf7a7",
+              "overall_confidence": 0.55,
+              "reference_ids": [
+                "ref_0f30cc68973d"
+              ],
+              "sentence_id": "s_d4e5912d49587d41",
+              "source": "curated_override",
+              "text": "Creatine malate is a creatine-malic acid compound.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
     },
     "creatine|phosphate": {
       "source": "override",
@@ -4855,8 +4875,28 @@
       "overall_confidence": 0.4,
       "evidence_grade": "C",
       "reference_ids": [
-        "ref_11d346fef7d9"
-      ]
+        "ref_a060f35f8a9a"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_a060f35f8a9a",
+              "evidence_snippet_id": "x_576d91f0e22ac327",
+              "overall_confidence": 0.4,
+              "reference_ids": [
+                "ref_a060f35f8a9a"
+              ],
+              "sentence_id": "s_5dc46811e9c78eea",
+              "source": "curated_override",
+              "text": "Calcium malate is a calcium salt of malic acid.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
     },
     "calcium|hydroxyapatite": {
       "source": "library",
