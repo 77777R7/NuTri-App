@@ -9,6 +9,10 @@
 -- - The view remains the only anon/authenticated-exposed object; base table access stays revoked.
 -- - We keep the view surface area limited to metadata + active_ingredients_summary + token flags.
 
+-- Important: CREATE OR REPLACE VIEW cannot change existing view column names/order.
+-- We drop the view first to allow schema evolution without manual intervention.
+drop view if exists public.regression_dsld_form_candidates_v;
+
 -- Improve ILIKE performance for any remaining token filters (optional, but high ROI).
 create extension if not exists pg_trgm;
 create index if not exists dsld_labels_meta_active_ingredients_summary_trgm_idx
@@ -48,4 +52,3 @@ where m.barcode_normalized_gtin14 is not null;
 -- Harden access: expose only the view to anon/authenticated, and remove direct access to the base table.
 revoke all on table public.dsld_labels_meta from anon, authenticated;
 grant select on public.regression_dsld_form_candidates_v to anon, authenticated;
-
