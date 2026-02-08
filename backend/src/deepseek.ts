@@ -1236,8 +1236,11 @@ export async function fetchAnalysisBundleFastV3(
   } catch (error) {
     if (!isAbortError(error)) {
       options.breaker?.recordFailure();
+      console.error("Error fetching analysis bundle fast v3:", error);
+    } else {
+      // Expected when the SSE client disconnects; avoid noisy logs.
+      console.debug?.("[DeepSeek] fast_v3 aborted", error instanceof Error ? error.message : error);
     }
-    console.error("Error fetching analysis bundle fast v3:", error);
     return deepseekDebug
       ? (buildDebugPayload("fast_v3_request_failed", String(error), {
           name: error instanceof Error ? error.name : null,

@@ -44,7 +44,10 @@ export class BulkheadTimeoutError extends Error {
 
 export const isAbortError = (error: unknown): boolean => {
   if (!error || typeof error !== "object") return false;
-  return "name" in error && (error as { name?: string }).name === "AbortError";
+  if ("name" in error && (error as { name?: string }).name === "AbortError") return true;
+  // We use AbortController.abort(new Error("client_disconnected")) for SSE close events.
+  if ("message" in error && (error as { message?: string }).message === "client_disconnected") return true;
+  return false;
 };
 
 export const isRetryableStatus = (status: number): boolean =>

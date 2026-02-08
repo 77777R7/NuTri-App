@@ -6264,17 +6264,23 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 /**
  * Main streaming endpoint: Two-step search + AI analysis
  */
-app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Response) => {
-  const parsedBody = parseRequestBody(enrichStreamBodySchema, req, res);
-  if (!parsedBody) {
-    return;
-  }
-  const rawBarcode = parsedBody.barcode;
-  const normalized = normalizeBarcodeInput(rawBarcode);
-  const model = process.env.DEEPSEEK_MODEL || "deepseek-chat";
-  const acceptLanguageHeader =
-    typeof req.headers["accept-language"] === "string" ? req.headers["accept-language"] : null;
-  const locale = resolveLocale(acceptLanguageHeader);
+	app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Response) => {
+	  const parsedBody = parseRequestBody(enrichStreamBodySchema, req, res);
+	  if (!parsedBody) {
+	    return;
+	  }
+	  const rawBarcode = parsedBody.barcode;
+	  const streamModeRaw =
+	    typeof (parsedBody as Record<string, unknown>)["streamMode"] === "string"
+	      ? String((parsedBody as Record<string, unknown>)["streamMode"]).trim()
+	      : null;
+	  const streamAnalysisBundleOnly =
+	    streamModeRaw === "analysis_bundle_only" || streamModeRaw === "bundle_only" || streamModeRaw === "analysis_bundle";
+	  const normalized = normalizeBarcodeInput(rawBarcode);
+	  const model = process.env.DEEPSEEK_MODEL || "deepseek-chat";
+	  const acceptLanguageHeader =
+	    typeof req.headers["accept-language"] === "string" ? req.headers["accept-language"] : null;
+	  const locale = resolveLocale(acceptLanguageHeader);
   const bundleId = randomUUID();
   let finishInFlight: ((error?: unknown) => void) | null = null;
   let catalogSnapshotForAi: SupplementSnapshot | null = null;
@@ -6286,6 +6292,21 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no");
+  res.flushHeaders?.();
+
+  const keepAliveMsRaw = Number(process.env.SSE_KEEPALIVE_MS ?? "15000");
+  const keepAliveMs =
+    Number.isFinite(keepAliveMsRaw) && keepAliveMsRaw >= 5000 ? keepAliveMsRaw : 15000;
+  const keepAlive = setInterval(() => {
+    if (res.writableEnded) return;
+    // SSE comment lines keep intermediaries from timing out idle streams.
+    res.write(": ping\n\n");
+  }, keepAliveMs);
+  (keepAlive as any).unref?.();
+  const clearKeepAlive = () => clearInterval(keepAlive);
+  res.on("close", clearKeepAlive);
+  res.on("finish", clearKeepAlive);
 
   try {
     if (!normalized) {
@@ -6655,14 +6676,16 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       return pickText(preferred, ...normalizedCandidates);
     };
 
-    const emitCachedSnapshot = (cached: {
-      snapshot: SupplementSnapshot;
-      analysisPayload: SnapshotAnalysisPayload | null;
-      expiresAt?: string | null;
-    }, catalog?: CatalogResolved | null) => {
-      console.log(`[Stream] Cache hit for barcode: ${barcode}`);
-      const { snapshot, analysisPayload } = cached;
-      let workingAnalysisPayload = analysisPayload ?? null;
+	    type CachedSnapshotSseMode = "full" | "analysis_bundle_only";
+	    const emitCachedSnapshot = (cached: {
+	      snapshot: SupplementSnapshot;
+	      analysisPayload: SnapshotAnalysisPayload | null;
+	      expiresAt?: string | null;
+	    }, catalog?: CatalogResolved | null, options?: { mode?: CachedSnapshotSseMode }) => {
+	      const mode: CachedSnapshotSseMode = options?.mode ?? "full";
+	      console.log(`[Stream] Cache hit for barcode: ${barcode}`);
+	      const { snapshot, analysisPayload } = cached;
+	      let workingAnalysisPayload = analysisPayload ?? null;
       const labelFacts = buildLabelFactsFromSnapshot(snapshot);
       if (labelFacts) {
         const labelAnalysis = buildLabelOnlyAnalysis(labelFacts);
@@ -6715,11 +6738,11 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         isHighQuality: false,
       }));
 
-      sendSSE(res, "product_info", { productInfo, sources });
+	      sendSSE(res, "product_info", { productInfo, sources });
 
-      if (workingAnalysisPayload) {
-        sendSSE(res, "analysis_payload", workingAnalysisPayload);
-      }
+	      if (mode === "full" && workingAnalysisPayload) {
+	        sendSSE(res, "analysis_payload", workingAnalysisPayload);
+	      }
 
       const analysisMeta = resolveAnalysisMeta({ snapshot, analysisPayload: workingAnalysisPayload, catalog });
       const snapshotToSend: SupplementSnapshot = {
@@ -6810,18 +6833,20 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         }
         : null;
 
-      if (workingAnalysisPayload?.efficacy || fallbackEfficacy) {
-        sendSSE(res, "result_efficacy", workingAnalysisPayload?.efficacy ?? fallbackEfficacy);
-      }
-      if (workingAnalysisPayload?.safety || fallbackSafety) {
-        sendSSE(res, "result_safety", workingAnalysisPayload?.safety ?? fallbackSafety);
-      }
-      if (workingAnalysisPayload?.usagePayload || fallbackUsagePayload) {
-        sendSSE(res, "result_usage", workingAnalysisPayload?.usagePayload ?? fallbackUsagePayload);
-      }
+	      if (mode === "full") {
+	        if (workingAnalysisPayload?.efficacy || fallbackEfficacy) {
+	          sendSSE(res, "result_efficacy", workingAnalysisPayload?.efficacy ?? fallbackEfficacy);
+	        }
+	        if (workingAnalysisPayload?.safety || fallbackSafety) {
+	          sendSSE(res, "result_safety", workingAnalysisPayload?.safety ?? fallbackSafety);
+	        }
+	        if (workingAnalysisPayload?.usagePayload || fallbackUsagePayload) {
+	          sendSSE(res, "result_usage", workingAnalysisPayload?.usagePayload ?? fallbackUsagePayload);
+	        }
 
-      sendSSE(res, "snapshot", snapshotToSend);
-    };
+	        sendSSE(res, "snapshot", snapshotToSend);
+	      }
+	    };
 
     const catalogPromise = resolveCatalogByBarcode(normalized, {
       ...supabaseReadResilience,
@@ -6858,16 +6883,20 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     let stage0Delivered = false;
     let stage0Source: Stage0Source = "none";
 
-    const cachedFast = await snapshotPromise.catch(() => null);
-    if (cachedFast) {
+	    const cachedFast = await snapshotPromise.catch(() => null);
+	    if (cachedFast) {
       const hasProductName = Boolean(
         cachedFast.analysisPayload?.productInfo?.name || cachedFast.snapshot.product.name,
       );
       const needsCatalogFast = !hasProductName || !cachedFast.snapshot.regulatory.dsldLabelId;
       const catalogFast = needsCatalogFast ? await catalogPromise.catch(() => null) : null;
-      emitCachedSnapshot(cachedFast, catalogFast);
-      stage0Delivered = true;
-      stage0Source = "snapshot";
+	      emitCachedSnapshot(
+	        cachedFast,
+	        catalogFast,
+	        streamAnalysisBundleOnly ? { mode: "analysis_bundle_only" } : undefined,
+	      );
+	      stage0Delivered = true;
+	      stage0Source = "snapshot";
 
       const needsEnrichment = shouldReEnrich({
         snapshot: cachedFast.snapshot,
@@ -7422,17 +7451,19 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
 
       sendSSE(res, "product_info", { productInfo: finalProductInfo, sources });
 
-      if (workingAnalysisPayload.efficacy) {
-        sendSSE(res, "result_efficacy", workingAnalysisPayload.efficacy);
-      }
-      if (workingAnalysisPayload.safety) {
-        sendSSE(res, "result_safety", workingAnalysisPayload.safety);
-      }
-      if (workingAnalysisPayload.usagePayload) {
-        sendSSE(res, "result_usage", workingAnalysisPayload.usagePayload);
-      }
+      if (!streamAnalysisBundleOnly) {
+        if (workingAnalysisPayload.efficacy) {
+          sendSSE(res, "result_efficacy", workingAnalysisPayload.efficacy);
+        }
+        if (workingAnalysisPayload.safety) {
+          sendSSE(res, "result_safety", workingAnalysisPayload.safety);
+        }
+        if (workingAnalysisPayload.usagePayload) {
+          sendSSE(res, "result_usage", workingAnalysisPayload.usagePayload);
+        }
 
-      sendSSE(res, "snapshot", workingSnapshot);
+        sendSSE(res, "snapshot", workingSnapshot);
+      }
       stage0Delivered = true;
       stage0Source = "catalog";
 
@@ -7650,10 +7681,12 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
 	                sources: [],
 	              });
 
-	              sendSSE(res, "result_efficacy", lnhpdAnalysisPayload.efficacy);
-	              sendSSE(res, "result_safety", lnhpdAnalysisPayload.safety);
-	              sendSSE(res, "result_usage", lnhpdAnalysisPayload.usagePayload);
-	              sendSSE(res, "snapshot", lnhpdSnapshot);
+	              if (!streamAnalysisBundleOnly) {
+	                sendSSE(res, "result_efficacy", lnhpdAnalysisPayload.efficacy);
+	                sendSSE(res, "result_safety", lnhpdAnalysisPayload.safety);
+	                sendSSE(res, "result_usage", lnhpdAnalysisPayload.usagePayload);
+	                sendSSE(res, "snapshot", lnhpdSnapshot);
+	              }
 	              stage0Delivered = true;
 	              stage0Source = "lnhpd";
 
@@ -7940,10 +7973,10 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           }
         }
 
-        emitCachedSnapshot(after);
-        await awaitAnalysisBundle();
-        sendSSE(res, "done", { barcode });
-        res.end();
+	        emitCachedSnapshot(after, null, streamAnalysisBundleOnly ? { mode: "analysis_bundle_only" } : undefined);
+	        await awaitAnalysisBundle();
+	        sendSSE(res, "done", { barcode });
+	        res.end();
         const timingTotalMs = Math.round(performance.now() - startedAt);
         const brandName = after.snapshot.product.brand ?? after.analysisPayload?.productInfo?.brand ?? null;
         const productName = after.snapshot.product.name ?? after.analysisPayload?.productInfo?.name ?? null;
@@ -10247,7 +10280,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
       const safetyToSend = mergeSafetyWithFallback(bundle?.safety ?? null, fallbackBundle.safety);
       const usageToSend = mergeUsagePayloadWithFallback(bundle?.usagePayload ?? null, fallbackBundle.usagePayload);
 
-      if (stage1SseEnabled && !requestSignal.aborted && !res.writableEnded) {
+      if (stage1SseEnabled && !streamAnalysisBundleOnly && !requestSignal.aborted && !res.writableEnded) {
         if (efficacyToSend) sendSSE(res, "result_efficacy", efficacyToSend);
         if (safetyToSend) sendSSE(res, "result_safety", safetyToSend);
         if (usageToSend) sendSSE(res, "result_usage", usageToSend);
@@ -10992,10 +11025,12 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
 	              brandExtractedSent = true;
 	            }
 	            sendSSE(res, "product_info", { productInfo: lnhpdProductInfo, sources: sourcesToSend });
-            sendSSE(res, "result_efficacy", lnhpdAnalysisPayload.efficacy);
-            sendSSE(res, "result_safety", lnhpdAnalysisPayload.safety);
-            sendSSE(res, "result_usage", lnhpdAnalysisPayload.usagePayload);
-            sendSSE(res, "snapshot", lnhpdSnapshot);
+              if (!streamAnalysisBundleOnly) {
+                sendSSE(res, "result_efficacy", lnhpdAnalysisPayload.efficacy);
+                sendSSE(res, "result_safety", lnhpdAnalysisPayload.safety);
+                sendSSE(res, "result_usage", lnhpdAnalysisPayload.usagePayload);
+                sendSSE(res, "snapshot", lnhpdSnapshot);
+              }
 	          }
           stage0Delivered = true;
           stage0Source = "lnhpd";
@@ -11500,7 +11535,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
     const safetyToSend = mergeSafetyWithFallback(bundle?.safety ?? null, llmFallback?.safety ?? null);
     const usageToSend = mergeUsagePayloadWithFallback(bundle?.usagePayload ?? null, llmFallback?.usagePayload ?? null);
 
-    if (stage1SseEnabled && !requestSignal.aborted && !res.writableEnded) {
+    if (stage1SseEnabled && !streamAnalysisBundleOnly && !requestSignal.aborted && !res.writableEnded) {
       if (efficacyToSend) sendSSE(res, "result_efficacy", efficacyToSend);
       if (safetyToSend) sendSSE(res, "result_safety", safetyToSend);
       if (usageToSend) sendSSE(res, "result_usage", usageToSend);
@@ -11787,7 +11822,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
     if (canRespond) {
       await awaitAnalysisBundle();
       if (!requestSignal.aborted && !res.writableEnded) {
-        if (stage1SseEnabled) {
+        if (stage1SseEnabled && !streamAnalysisBundleOnly) {
           sendSSE(res, "snapshot", snapshot);
         }
         sendSSE(res, "done", { barcode });
