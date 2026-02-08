@@ -51,4 +51,7 @@ where m.barcode_normalized_gtin14 is not null;
 
 -- Harden access: expose only the view to anon/authenticated, and remove direct access to the base table.
 revoke all on table public.dsld_labels_meta from anon, authenticated;
+-- Ensure PostgREST can access objects in public when using anon/authenticated keys.
+-- Most Supabase projects grant this by default, but make it explicit for safety.
+grant usage on schema public to anon, authenticated;
 grant select on public.regression_dsld_form_candidates_v to anon, authenticated;
