@@ -9,12 +9,12 @@
     "production_filter": {
       "mode": "captured_and_approved",
       "note": "Segments are filtered so only evidence_excerpt_status=captured is shipped; curated_override sentences must be review_status=approved.",
-      "filtered_at": "2026-02-08T00:36:10.697Z"
+      "filtered_at": "2026-02-08T01:14:12.956Z"
     },
     "review_policy": {
       "library": "pre_reviewed",
       "curated_override": "approved_required",
-      "annotated_at": "2026-02-08T00:36:10.705Z"
+      "annotated_at": "2026-02-08T01:14:12.962Z"
     },
     "kb_source": {
       "kind": "runtime_index_source",
@@ -9284,6 +9284,105 @@
               "sentence_id": "s_b633c594e6eb6e3b",
               "source": "curated_override",
               "text": "Magnesium orotate is described as poorly soluble in water.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
+    },
+    "calcium|threonate": {
+      "source": "override",
+      "ingredient_id": "calcium",
+      "ingredient": "Calcium",
+      "form_key": "threonate",
+      "form_display": "Calcium threonate",
+      "form_family": "generic",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_4a2d9d7a1e7a"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_4a2d9d7a1e7a",
+              "evidence_snippet_id": "x_f9e0fa2220f2a686",
+              "overall_confidence": 0.4,
+              "reference_ids": [
+                "ref_4a2d9d7a1e7a"
+              ],
+              "sentence_id": "s_b971b7251f568408",
+              "source": "curated_override",
+              "text": "Calcium threonate is a disclosed calcium form; evidence comparing specific calcium forms is limited.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
+    },
+    "zinc|ascorbate": {
+      "source": "override",
+      "ingredient_id": "zinc",
+      "ingredient": "Zinc",
+      "form_key": "ascorbate",
+      "form_display": "Zinc ascorbate",
+      "form_family": "generic",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_719ee2c08fa9"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_719ee2c08fa9",
+              "evidence_snippet_id": "x_31b88aa71bc5b9a2",
+              "overall_confidence": 0.4,
+              "reference_ids": [
+                "ref_719ee2c08fa9"
+              ],
+              "sentence_id": "s_a1fe9a6fb0188a07",
+              "source": "curated_override",
+              "text": "Zinc ascorbate is a disclosed zinc salt form; evidence comparing specific zinc salt forms is limited.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
+    },
+    "zinc|monomethionine": {
+      "source": "override",
+      "ingredient_id": "zinc",
+      "ingredient": "Zinc",
+      "form_key": "monomethionine",
+      "form_display": "Zinc monomethionine",
+      "form_family": "chelated",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_32d7dfcc3791"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_32d7dfcc3791",
+              "evidence_snippet_id": "x_84363db893f6ba93",
+              "overall_confidence": 0.4,
+              "reference_ids": [
+                "ref_32d7dfcc3791"
+              ],
+              "sentence_id": "s_89517ea8d09def62",
+              "source": "curated_override",
+              "text": "Zinc monomethionine is a disclosed zinc form; evidence comparing specific zinc forms is limited.",
               "review_status": "approved"
             }
           ]

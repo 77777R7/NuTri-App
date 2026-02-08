@@ -44,6 +44,12 @@ test("Zinc Ascorbate should not be misattributed to vitamin_c scope", () => {
   // Regression guard: "ascorbate" appears in vitamin C salts, but zinc ascorbate is a zinc salt form.
   // If ingredient resolution incorrectly collapses to vitamin_c, this would (wrongly) resolve a vitamin C sentence.
   const result = run("Zinc Ascorbate", "calcium_ascorbate");
-  assert.equal(result.sentence, null, "expected no vitamin_c KB sentence for Zinc Ascorbate");
-  assert.equal(result.resolveSource, "none", "expected resolveSource=none for Zinc Ascorbate");
+  assert.ok(result.sentence, "expected a KB sentence for Zinc Ascorbate");
+  assert.equal(
+    String(result.sentence || "").toLowerCase().includes("zinc ascorbate"),
+    true,
+    "expected zinc-scoped sentence for Zinc Ascorbate",
+  );
+  // If this regresses, we'll typically see vitamin_c resolve via digest_chemical_form (calcium_ascorbate).
+  assert.notEqual(result.resolveSource, "digest_chemical_form", "expected non-vitamin_c resolve path");
 });
