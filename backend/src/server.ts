@@ -6301,7 +6301,8 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   const keepAlive = setInterval(() => {
     if (res.writableEnded) return;
     // Some SSE clients (notably certain React Native polyfills) do not tolerate comment keepalives (": ping").
-    // Use a standard SSE `message` event instead to keep the connection active without breaking parsers.
+    // Use a standard SSE event instead so both mobile clients and our CI parsers stay stable.
+    res.write("event: keepalive\n");
     res.write(`data: ${JSON.stringify({ type: "ping" })}\n\n`);
   }, keepAliveMs);
   (keepAlive as any).unref?.();
