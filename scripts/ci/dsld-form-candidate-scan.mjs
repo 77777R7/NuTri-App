@@ -288,6 +288,9 @@ const canonicalizeFormTokenForLookup = ({ token, ingredientKey, evidenceText }) 
   // "fake hits" that paper over real KB gaps.
   if (ig === "creatine" && t === "hydrochloride") return "hcl";
 
+  // Vitamin B6 hydrochloride is pyridoxine HCl.
+  if (ig === "vitamin_b6" && (t === "hydrochloride" || t === "hcl")) return "pyridoxine_hcl";
+
   if (ig === "iron" && t === "fumarate") return "ferrous_fumarate";
   // Iron sulfate in DSLD is typically listed explicitly as "Ferrous Sulfate" (or similar).
   // Canonicalize sulfate -> ferrous_sulfate only when the evidence text clearly indicates ferrous,
@@ -369,13 +372,23 @@ const normalizeIngredientKey = (text) => {
       const m = second.match(/^([a-z])(\d+)?$/i);
       if (m) {
         const letter = m[1].toLowerCase();
-        const num = m[2] ?? "";
+        let num = m[2] ?? "";
+        // Common DSLD pattern: "Vitamin B-6 ..." normalizes to ["vitamin","b","6",...].
+        // Only treat the 3rd token as a vitamin number when it is a pure digit token.
+        if (!num && parts.length >= 3 && /^[0-9]+$/.test(parts[2] ?? "")) num = parts[2];
         if (letter === "c") return "vitamin_c";
         if (letter === "d") return "vitamin_d";
         if (letter === "e") return "vitamin_e";
         if (letter === "a") return "vitamin_a";
         if (letter === "k") return num === "2" ? "vitamin_k2" : "vitamin_k1";
-        if (letter === "b") return `vitamin_b${num || ""}`.replace(/_+$/g, "");
+        if (letter === "b") {
+          // Normalize b12 / b-12 / b 12 / b-6 etc. Guard against false positives like "B-100 complex".
+          const joined = parts.slice(1).join("");
+          const bNum = joined.replace(/^b/i, "").replace(/[^0-9]/g, "");
+          const allowed = new Set(["1", "2", "3", "5", "6", "7", "9", "12"]);
+          if (bNum && allowed.has(bNum)) return `vitamin_b${bNum}`;
+          return "vitamin_b";
+        }
         return `vitamin_${letter}${num}`;
       }
     }
