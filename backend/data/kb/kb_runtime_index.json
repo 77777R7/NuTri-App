@@ -9,12 +9,12 @@
     "production_filter": {
       "mode": "captured_and_approved",
       "note": "Segments are filtered so only evidence_excerpt_status=captured is shipped; curated_override sentences must be review_status=approved.",
-      "filtered_at": "2026-02-08T03:56:35.479Z"
+      "filtered_at": "2026-02-08T04:30:12.758Z"
     },
     "review_policy": {
       "library": "pre_reviewed",
       "curated_override": "approved_required",
-      "annotated_at": "2026-02-08T03:56:35.485Z"
+      "annotated_at": "2026-02-08T04:30:12.765Z"
     },
     "kb_source": {
       "kind": "runtime_index_source",
@@ -7716,7 +7716,8 @@
       "overall_confidence": 0.76,
       "evidence_grade": "B",
       "reference_ids": [
-        "ref_d7ff68f4575b"
+        "ref_d7ff68f4575b",
+        "ref_10fd68c51e70"
       ]
     },
     "vitamin_c|ester_c": {
@@ -9467,6 +9468,19 @@
           ]
         }
       }
+    },
+    "calcium|aspartate": {
+      "source": "override",
+      "ingredient_id": "calcium",
+      "ingredient": "Calcium",
+      "form_key": "aspartate",
+      "form_display": "Calcium aspartate",
+      "form_family": "generic",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_a8bef76667ac"
+      ]
     },
     "calcium|acetate": {
       "source": "override",

@@ -664,6 +664,22 @@
         }
       ]
     },
+    "vitamin_b6": {
+      "hydrochloride": [
+        {
+          "form_key": "pyridoxine_hcl",
+          "alias_confidence": 0.9,
+          "notes": "DSLD label heads like 'Vitamin B-6 Hydrochloride' refer to pyridoxine HCl."
+        }
+      ],
+      "hcl": [
+        {
+          "form_key": "pyridoxine_hcl",
+          "alias_confidence": 0.85,
+          "notes": "Abbreviation for hydrochloride in supplement labels."
+        }
+      ]
+    },
     "magnesium": {
       "magnesium_citrate": [
         {
