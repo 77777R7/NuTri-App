@@ -701,6 +701,18 @@
       "excerpt_text": "Folinic acid, or 5-formyl tetrahydrofolic acid, is a naturally occurring, reduced form of folic acid.",
       "source": "NCBI Bookshelf",
       "url": "https://www.ncbi.nlm.nih.gov/books/NBK545232/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-08T07:09:37Z",
+      "citation_id": "ref_77e44584d6f9",
+      "excerpt_id": "x_3faa3ff54071c038",
+      "excerpt_sha256": "3faa3ff54071c038a8c7818d4995af8870dc54239ddd612fb4e88f042ac30fcd",
+      "excerpt_text": "Naturally occurring vitamin E exists in eight chemical forms (alpha-, beta-, gamma-, and delta-tocopherol and alpha-, beta-, gamma-, and delta-tocotrienol)",
+      "source": "NIH ODS",
+      "url": "https://ods.od.nih.gov/factsheets/VitaminE-HealthProfessional/"
     }
   ]
 }

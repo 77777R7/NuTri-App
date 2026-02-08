@@ -84,12 +84,14 @@ test("KB evidence excerpts cover all shipped KB sentences (captured + non-search
   const evidenceExcerpts = excerptsJson?.evidence_excerpts ?? [];
   assert.ok(Array.isArray(evidenceExcerpts), "expected kb_evidence_excerpts.json evidence_excerpts array");
 
-  const byRef = new Map();
+  // A single reference (citation_id) can have multiple captured excerpts; index by ref+excerpt.
+  const byRefExcerpt = new Map();
   for (const row of evidenceExcerpts) {
     if (!row || typeof row !== "object") continue;
     const ref = String(row.citation_id || "");
-    if (!ref) continue;
-    byRef.set(ref, row);
+    const excerptId = String(row.excerpt_id || "");
+    if (!ref || !excerptId) continue;
+    byRefExcerpt.set(`${ref}|${excerptId}`, row);
   }
 
   const errors = [];
@@ -107,13 +109,10 @@ test("KB evidence excerpts cover all shipped KB sentences (captured + non-search
           errors.push(`${key}: missing evidence_reference_id/evidence_snippet_id`);
           continue;
         }
-        const row = byRef.get(ref);
+        const row = byRefExcerpt.get(`${ref}|${snippet}`);
         if (!row) {
-          errors.push(`${key}: missing citation_id=${ref} in kb_evidence_excerpts.json`);
+          errors.push(`${key}: missing evidence excerpt row for citation_id=${ref} excerpt_id=${snippet}`);
           continue;
-        }
-        if (String(row.excerpt_id || "") !== snippet) {
-          errors.push(`${key}: excerpt_id mismatch for ${ref} (runtime=${snippet} excerpts=${String(row.excerpt_id || "")})`);
         }
         if (row.capture_status !== "captured") {
           errors.push(`${key}: citation_id=${ref} capture_status must be captured (got ${String(row.capture_status)})`);
