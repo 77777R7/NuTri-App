@@ -9,12 +9,12 @@
     "production_filter": {
       "mode": "captured_and_approved",
       "note": "Segments are filtered so only evidence_excerpt_status=captured is shipped; curated_override sentences must be review_status=approved.",
-      "filtered_at": "2026-02-08T02:22:34.629Z"
+      "filtered_at": "2026-02-08T02:26:59.599Z"
     },
     "review_policy": {
       "library": "pre_reviewed",
       "curated_override": "approved_required",
-      "annotated_at": "2026-02-08T02:22:34.635Z"
+      "annotated_at": "2026-02-08T02:26:59.607Z"
     },
     "kb_source": {
       "kind": "runtime_index_source",
@@ -9202,7 +9202,27 @@
       "evidence_grade": "C",
       "reference_ids": [
         "ref_f98890b4d241"
-      ]
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_f98890b4d241",
+              "evidence_snippet_id": "x_2c58d00807ef5111",
+              "overall_confidence": 0.4,
+              "reference_ids": [
+                "ref_f98890b4d241"
+              ],
+              "sentence_id": "s_d4a59a19ec27aaa9",
+              "source": "curated_override",
+              "text": "Manganese glycinate is a chelated manganese form (also listed as manganese(II) bis(glycinate)).",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
     },
     "molybdenum|glycinate": {
       "source": "override",
