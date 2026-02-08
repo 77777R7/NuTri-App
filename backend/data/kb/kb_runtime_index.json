@@ -9,12 +9,12 @@
     "production_filter": {
       "mode": "captured_and_approved",
       "note": "Segments are filtered so only evidence_excerpt_status=captured is shipped; curated_override sentences must be review_status=approved.",
-      "filtered_at": "2026-02-08T04:36:00.513Z"
+      "filtered_at": "2026-02-08T05:33:05.932Z"
     },
     "review_policy": {
       "library": "pre_reviewed",
       "curated_override": "approved_required",
-      "annotated_at": "2026-02-08T04:36:00.514Z"
+      "annotated_at": "2026-02-08T05:33:05.933Z"
     },
     "kb_source": {
       "kind": "runtime_index_source",
@@ -3078,7 +3078,27 @@
       "reference_ids": [
         "ref_e5d59674dc7a",
         "ref_a5541327aa6a"
-      ]
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_a5541327aa6a",
+              "evidence_snippet_id": "x_d178081625fc1cce",
+              "overall_confidence": 0.78,
+              "reference_ids": [
+                "ref_a5541327aa6a"
+              ],
+              "review_status": "approved",
+              "sentence_id": "s_727cfb90fdaf778e",
+              "source": "curated_override",
+              "text": "Some dietary supplements contain folate as 5-MTHF (methylfolate)."
+            }
+          ]
+        }
+      }
     },
     "potassium|potassium_chloride": {
       "source": "override",
@@ -3896,7 +3916,27 @@
       "evidence_grade": "B",
       "reference_ids": [
         "ref_f9f23d0b357f"
-      ]
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_f9f23d0b357f",
+              "evidence_snippet_id": "x_7bbd220fd27ea61a",
+              "overall_confidence": 0.76,
+              "reference_ids": [
+                "ref_f9f23d0b357f"
+              ],
+              "review_status": "approved",
+              "sentence_id": "s_ffe8fbf6abe95398",
+              "source": "curated_override",
+              "text": "Common thiamin supplement forms include thiamin mononitrate and thiamin hydrochloride (thiamine HCl)."
+            }
+          ]
+        }
+      }
     },
     "thiamin|thiamine_mononitrate": {
       "source": "override",
@@ -5371,7 +5411,27 @@
       "reference_ids": [
         "ref_b9edbd80ce76",
         "ref_45e3cd6c3335"
-      ]
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_b9edbd80ce76",
+              "evidence_snippet_id": "x_1d487ef89253da0d",
+              "overall_confidence": 0.51,
+              "reference_ids": [
+                "ref_b9edbd80ce76"
+              ],
+              "review_status": "approved",
+              "sentence_id": "s_99703661a45c50ca",
+              "source": "curated_override",
+              "text": "Folinic acid (5-formyl tetrahydrofolic acid) is a reduced form of folate."
+            }
+          ]
+        }
+      }
     },
     "gaba|gaba": {
       "source": "library",
