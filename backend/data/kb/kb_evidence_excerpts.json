@@ -1,9 +1,9 @@
 {
   "meta": {
-    "generated_at": "2026-02-08T02:21:19Z",
+    "generated_at": "2026-02-08T03:00:21Z",
     "source": "nutri_minimal_data_package_v4_0_en_only_review_excerpts",
     "note": "Production evidence excerpts used by shipped KB sentences (captured only).",
-    "ref_count": 46
+    "ref_count": 50
   },
   "evidence_excerpts": [
     {
@@ -557,6 +557,54 @@
       "excerpt_text": "Potassium Ascorbate | C6H7KO6 | CID 23687519 - PubChem",
       "source": "PubChem",
       "url": "https://pubchem.ncbi.nlm.nih.gov/compound/23687519"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-08T03:00:21Z",
+      "citation_id": "ref_8a1ccb69f423",
+      "excerpt_id": "x_15e7c378f9bd2078",
+      "excerpt_sha256": "9b442485d50703f071cffa905f345260c0e03be980c59544d6305e1b0514aa52",
+      "excerpt_text": "MK-4, MK-7, and MK-9 are the most well-studied menaquinones.",
+      "source": "NIH ODS",
+      "url": "https://ods.od.nih.gov/factsheets/VitaminK-HealthProfessional/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "web_capture",
+      "capture_status": "captured",
+      "captured_at": "2026-02-08T03:00:21Z",
+      "citation_id": "ref_2330265dd477",
+      "excerpt_id": "x_ecf3d30ecd65b1ee",
+      "excerpt_sha256": "2128ad177541ae6d6c4b8ca093b1c420608c1464116da8110444c1da0a3ea129",
+      "excerpt_text": "Frequently used forms of iron in supplements include ferrous and ferric iron salts, such as ferrous sulfate, ferrous gluconate, ferric citrate, and ferric sulfate.",
+      "source": "NIH ODS",
+      "url": "https://ods.od.nih.gov/factsheets/Iron-HealthProfessional/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "pug_rest",
+      "capture_status": "captured",
+      "captured_at": "2026-02-08T03:00:21Z",
+      "citation_id": "ref_a8a0264b056e",
+      "excerpt_id": "x_d2b9a8985aeca300",
+      "excerpt_sha256": "b1018c87c0e59279814636620c0f4c25dcf364a4b4eb15f94206886807dae4ef",
+      "excerpt_text": "PubChem CID 57349413 lists synonyms including \"L-Carnitine L-tartrate\" and \"Carnitine tartrate\".",
+      "source": "PubChem",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/compound/57349413"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "pug_rest",
+      "capture_status": "captured",
+      "captured_at": "2026-02-08T03:00:21Z",
+      "citation_id": "ref_aff928d46c49",
+      "excerpt_id": "x_9512db7201e828fa",
+      "excerpt_sha256": "6084bb09bfafcbf2ed535263b028e4d6fec5477de31e73f2c4a9b2a9e72db464",
+      "excerpt_text": "PubChem CID 89722 lists synonyms including \"Calcium orotate\" and \"Orotic acid calcium salt\".",
+      "source": "PubChem",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/compound/89722"
     }
   ]
 }

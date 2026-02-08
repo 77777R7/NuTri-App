@@ -629,8 +629,30 @@
       "evidence_grade": "B",
       "reference_ids": [
         "ref_71abc0b287ef",
-        "ref_835f54388de8"
-      ]
+        "ref_835f54388de8",
+        "ref_2330265dd477"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_2330265dd477",
+              "evidence_snippet_id": "x_ecf3d30ecd65b1ee",
+              "overall_confidence": 0.76,
+              "reference_ids": [
+                "ref_2330265dd477"
+              ],
+              "review_status": "approved",
+              "sentence_id": "s_cefaa54f50e607de",
+              "source": "curated_override",
+              "text": "NIH ODS notes commonly used iron supplement forms include ferrous sulfate.",
+              "review_notes": "Minimal identity-level statement; no claims about superiority or absorption differences."
+            }
+          ]
+        }
+      }
     },
     "iron|iron_citrate": {
       "source": "override",
@@ -2396,6 +2418,40 @@
         }
       }
     },
+    "carnitine|tartrate": {
+      "source": "override",
+      "ingredient_id": "carnitine",
+      "ingredient": "Carnitine",
+      "form_key": "tartrate",
+      "form_display": "Carnitine tartrate",
+      "form_family": "generic",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_a8a0264b056e"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_a8a0264b056e",
+              "evidence_snippet_id": "x_d2b9a8985aeca300",
+              "overall_confidence": 0.4,
+              "reference_ids": [
+                "ref_a8a0264b056e"
+              ],
+              "review_status": "approved",
+              "sentence_id": "s_ece4469e71c2674e",
+              "source": "curated_override",
+              "text": "Carnitine tartrate is also listed as L-carnitine L-tartrate (a tartrate salt form of carnitine).",
+              "review_notes": "Minimal identity-level statement; no comparative claims."
+            }
+          ]
+        }
+      }
+    },
     "vitamin_e|dl_alpha": {
       "source": "override",
       "ingredient_id": "vitamin_e",
@@ -2770,7 +2826,28 @@
       "reference_ids": [
         "ref_8a1ccb69f423",
         "ref_344da0534ac5"
-      ]
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_8a1ccb69f423",
+              "evidence_snippet_id": "x_15e7c378f9bd2078",
+              "overall_confidence": 0.76,
+              "reference_ids": [
+                "ref_8a1ccb69f423"
+              ],
+              "review_status": "approved",
+              "sentence_id": "s_9b91cea54750e312",
+              "source": "curated_override",
+              "text": "NIH ODS notes MK-4, MK-7, and MK-9 are the most well-studied menaquinones.",
+              "review_notes": "Identity-level statement anchored to NIH ODS; no claims about superiority or absorption differences."
+            }
+          ]
+        }
+      }
     },
     "vitamin_k2|mk4": {
       "source": "override",
@@ -9360,6 +9437,40 @@
               "source": "curated_override",
               "text": "Magnesium orotate is described as poorly soluble in water.",
               "review_status": "approved"
+            }
+          ]
+        }
+      }
+    },
+    "calcium|orotate": {
+      "source": "override",
+      "ingredient_id": "calcium",
+      "ingredient": "Calcium",
+      "form_key": "orotate",
+      "form_display": "Calcium orotate",
+      "form_family": "chelated",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_aff928d46c49"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_aff928d46c49",
+              "evidence_snippet_id": "x_9512db7201e828fa",
+              "overall_confidence": 0.4,
+              "reference_ids": [
+                "ref_aff928d46c49"
+              ],
+              "review_status": "approved",
+              "sentence_id": "s_44fe266a40c8abe9",
+              "source": "curated_override",
+              "text": "Calcium orotate is also listed as an orotic acid calcium salt (calcium diorotate).",
+              "review_notes": "Minimal identity-level statement; no comparative claims."
             }
           ]
         }
