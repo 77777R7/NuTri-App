@@ -80,6 +80,7 @@ const REVERSE_FORM_ALLOWLIST = new Set([
   "vitamin_d",
   "vitamin_e",
   "vitamin_k",
+  "tocotrienols",
   "folate",
   "folic_acid",
   "niacin",
@@ -246,6 +247,13 @@ const extractReverseTokenFromName = (
   if (!ingredientId || !isAllowedIngredient(ingredientId)) return null;
   const normalizedName = normalizeFreeText(name);
   if (!normalizedName) return null;
+
+  // Tocotrienols are commonly listed with a Greek prefix (e.g. "Gamma Tocotrienols").
+  // Treat the ingredient name itself as the "form token" so KB-first can explain the identity
+  // without guessing delivery form or comparative performance.
+  if (ingredientId === "tocotrienols" && /\btocotrienol(s)?\b/i.test(normalizedName)) {
+    return { token: "tocotrienols", evidenceText: name, resolveSource: "reverse_name_parse" };
+  }
 
   const parenthetical = normalizedName.match(/\(as ([^)]+)\)/i);
   if (parenthetical?.[1]) {
@@ -485,6 +493,19 @@ const resolveIngredientId = (
   const beforeAs = beforeComma.split(/\bas\b/i)[0]?.trim() ?? beforeComma;
   const asToken = kb.ingredientNameIndex[normalizeToken(beforeAs)];
   if (asToken) return asToken;
+
+  // Some DSLD labels include a leading Greek descriptor (e.g. "Gamma Tocotrienols").
+  // If stripping the prefix matches a known ingredient, prefer that.
+  const greekMatch = beforeAs.match(/^(alpha|beta|gamma|delta)\s+(.+)$/i);
+  if (greekMatch?.[2]) {
+    const remainder = greekMatch[2].trim();
+    const greekToken = kb.ingredientNameIndex[normalizeToken(remainder)];
+    if (greekToken) return greekToken;
+    if (/\btocotrienol\b/i.test(remainder)) {
+      const tocotrienols = kb.ingredientNameIndex["tocotrienols"];
+      if (tocotrienols) return tocotrienols;
+    }
+  }
 
   // P0: Vitamin C forms are commonly listed as salts (e.g. calcium/sodium ascorbate).
   // Prefer vitamin_c scope over mineral scope only when the ingredient name indicates vitamin C

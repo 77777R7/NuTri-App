@@ -7664,6 +7664,40 @@
         "ref_64bb75fd547c"
       ]
     },
+    "tocotrienols|tocotrienols": {
+      "source": "override",
+      "ingredient_id": "tocotrienols",
+      "ingredient": "Tocotrienols",
+      "form_key": "tocotrienols",
+      "form_display": "Tocotrienols",
+      "form_family": "generic",
+      "overall_confidence": 0.6,
+      "evidence_grade": "B",
+      "reference_ids": [
+        "ref_77e44584d6f9"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_77e44584d6f9",
+              "evidence_snippet_id": "x_3faa3ff54071c038",
+              "overall_confidence": 0.6,
+              "reference_ids": [
+                "ref_77e44584d6f9"
+              ],
+              "review_status": "approved",
+              "sentence_id": "s_3b027c9d570948bc",
+              "source": "curated_override",
+              "text": "Tocotrienols are one of the chemical forms of naturally occurring vitamin E.",
+              "review_notes": "Identity-level statement only; no comparative absorption/efficacy claims."
+            }
+          ]
+        }
+      }
+    },
     "tribulus_terrestris|enhanced": {
       "source": "library",
       "ingredient_id": "tribulus_terrestris",

@@ -10,6 +10,8 @@ const ENFORCE_DEBUG_GATE_NEGATIVE_ASSERTION =
   (process.env.RENDER_ENFORCE_DEBUG_GATE_NEGATIVE || (process.env.GITHUB_EVENT_NAME === "push" ? "1" : "0")) ===
   "1";
 
+// Evidence excerpt index for lexical groundedness checks.
+// Note: a single reference can have multiple captured excerpts; key by ref+excerpt.
 let evidenceExcerptByRef = null;
 
 const normalizeLex = (value) =>
@@ -64,6 +66,10 @@ const dsldWithFormCarnitineTartrateBarcode2 =
   process.env.RENDER_DSLD_CARNITINE_TARTRATE_BARCODE2 || "00646511022270";
 const dsldWithFormCarnitineHclBarcode = process.env.RENDER_DSLD_CARNITINE_HCL_BARCODE || "00853237000929";
 const dsldWithFormCarnitineHclBarcode2 = process.env.RENDER_DSLD_CARNITINE_HCL_BARCODE2 || "00367703108205";
+const dsldWithFormTocotrienolsBarcode =
+  process.env.RENDER_DSLD_TOCOTRIENOLS_BARCODE || "00351821007984";
+const dsldWithFormTocotrienolsBarcode2 =
+  process.env.RENDER_DSLD_TOCOTRIENOLS_BARCODE2 || "00310539028285";
 
 const DEFAULT_CASES = [
   { id: "lnhpd", barcodes: [process.env.RENDER_LNHPD_BARCODE || "00029537001069"], expectedSourceType: "lnhpd" },
@@ -163,6 +169,14 @@ if (process.env.RENDER_INCLUDE_NIGHTLY_CASES === "1") {
     expectedSourceType: "dsld",
     requiredFormKeyword: "acetate",
     targetActiveKeyword: "vitamin e acetate",
+  });
+  CASES.splice(CASES.length - 1, 0, {
+    id: "dsld_with_form_tocotrienols",
+    barcodes: [dsldWithFormTocotrienolsBarcode, dsldWithFormTocotrienolsBarcode2],
+    expectedSourceType: "dsld",
+    // Use the singular token for lexical checks; NIH ODS excerpt uses "tocotrienol".
+    requiredFormKeyword: "tocotrienol",
+    targetActiveKeyword: "tocotrienol",
   });
 }
 
@@ -587,15 +601,13 @@ function assertDsldWithFormKbHit(detailResponse, testCase) {
       );
       const refId = targetRef?.[1] ?? null;
       const excerptId = targetX?.[1] ?? null;
-      const row = refId ? evidenceExcerptByRef.get(refId) : null;
+      const row = refId && excerptId ? evidenceExcerptByRef.get(`${refId}|${excerptId}`) : null;
       const excerptText = row?.excerpt_text ? String(row.excerpt_text) : "";
 
       if (!refId || !excerptId) {
         errors.push(`${caseId}: lexical check missing refId/excerptId (target=${targetKeyword || requiredKeyword})`);
       } else if (!row) {
-        errors.push(`${caseId}: lexical check missing evidence excerpt row for ${refId}`);
-      } else if (String(row.excerpt_id || "") !== String(excerptId)) {
-        errors.push(`${caseId}: lexical check excerpt_id mismatch for ${refId}`);
+        errors.push(`${caseId}: lexical check missing evidence excerpt row for ${refId} excerpt=${excerptId}`);
       } else if (!excerptText.trim()) {
         errors.push(`${caseId}: lexical check excerpt_text empty for ${refId}`);
       } else {
@@ -956,8 +968,13 @@ async function main() {
       const raw = await fs.readFile(path.join("backend", "data", "kb", "kb_evidence_excerpts.json"), "utf-8");
       const json = JSON.parse(String(raw).replace(/\bNaN\b/g, "null"));
       const rows = Array.isArray(json?.evidence_excerpts) ? json.evidence_excerpts : [];
-      evidenceExcerptByRef = new Map(rows.map((r) => [String(r.citation_id || ""), r]).filter(([k]) => k));
-      console.log(`[render-regression] lexical groundedness enabled (refs=${evidenceExcerptByRef.size})`);
+      evidenceExcerptByRef = new Map(
+        rows
+          .map((r) => [String(r.citation_id || ""), String(r.excerpt_id || ""), r])
+          .filter(([ref, x]) => ref && x)
+          .map(([ref, x, r]) => [`${ref}|${x}`, r]),
+      );
+      console.log(`[render-regression] lexical groundedness enabled (excerpts=${evidenceExcerptByRef.size})`);
     } catch (err) {
       console.warn(`[render-regression] lexical groundedness enabled but failed to load kb_evidence_excerpts.json: ${String(err)}`);
       evidenceExcerptByRef = null;
