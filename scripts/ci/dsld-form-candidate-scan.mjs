@@ -294,6 +294,11 @@ const canonicalizeFormTokenForLookup = ({ token, ingredientKey, evidenceText }) 
   // to avoid accidental over-mapping of unrelated "sulfate" forms.
   if (ig === "iron" && t === "sulfate" && ex.includes("ferrous")) return "ferrous_sulfate";
 
+  // Vitamin K2: DSLD labels commonly write MK-7/MK-4 with a hyphen, while the KB form keys use mk7/mk4.
+  // Canonicalize only within vitamin_k2 scope to avoid accidental cross-ingredient mapping.
+  if (ig === "vitamin_k2" && t === "mk-7") return "mk7";
+  if (ig === "vitamin_k2" && t === "mk-4") return "mk4";
+
   // Riboflavin "phosphate" in DSLD labels commonly refers to FMN (riboflavin-5'-phosphate).
   // Keep this canonicalization narrow: only within riboflavin scope and only when the evidence
   // phrase actually contains "riboflavin" (avoid cross-ingredient phosphate noise).
