@@ -31,3 +31,22 @@ test("Carnitine Tartrate resolves via reverse-token parsing (tartrate)", () => {
   );
 });
 
+test("L-Carnitine HCl resolves via reverse-token parsing (hcl)", () => {
+  const result = lookupKbFormExplain({
+    ingredientName: "L-Carnitine HCl",
+    chemicalForm: null,
+    chemicalFormConfidence: null,
+    chemicalFormSource: "none",
+    chemicalFormEvidence: null,
+  });
+
+  assert.ok(result.sentence, "expected KB sentence");
+  assert.equal(result.resolveSource !== "none", true, "expected non-none resolveSource");
+  assert.ok(result.sentenceId, "expected sentenceId");
+  assert.ok(result.excerptId, "expected excerptId");
+  assert.ok(result.referenceId, "expected referenceId");
+  assert.ok(
+    String(result.sentence).toLowerCase().includes("hcl") || String(result.sentence).toLowerCase().includes("hydrochloride"),
+    "expected sentence to mention HCl/hydrochloride",
+  );
+});

@@ -305,6 +305,23 @@ const resolveFormKeyFromToken = (kb: KbRuntime, ingredientId: string, token: str
   if (derivedSuffix && hasRuntimeEntry(derivedSuffix)) {
     return { formKey: derivedSuffix, resolveSource: "alias_map_by_ingredient" as FormResolveSource };
   }
+  // DSLD can also prefix label heads with stereochemistry tokens like "L-" (e.g. "L-Carnitine HCl"),
+  // which normalize to "l_carnitine_hcl". Prefer a derived suffix when it maps to a shipped runtime key.
+  for (const stereoPrefix of ["l", "d", "dl"]) {
+    const prefix = `${stereoPrefix}_${ingredientId}_`;
+    if (!token.startsWith(prefix)) continue;
+    const suffix = token.slice(prefix.length);
+    if (suffix && hasRuntimeEntry(suffix)) {
+      return { formKey: suffix, resolveSource: "alias_map_by_ingredient" as FormResolveSource };
+    }
+    // Some labels include an extra leading "l_" before the form token (e.g. "l_tartrate").
+    if (suffix?.startsWith("l_")) {
+      const stripped = suffix.slice(2);
+      if (stripped && hasRuntimeEntry(stripped)) {
+        return { formKey: stripped, resolveSource: "alias_map_by_ingredient" as FormResolveSource };
+      }
+    }
+  }
 
   // Canonicalize common shorthand tokens to shipped runtime keys when possible.
   // This keeps both scan and runtime resolution stable without requiring every dataset to
