@@ -9,12 +9,12 @@
     "production_filter": {
       "mode": "captured_and_approved",
       "note": "Segments are filtered so only evidence_excerpt_status=captured is shipped; curated_override sentences must be review_status=approved.",
-      "filtered_at": "2026-02-08T01:14:12.956Z"
+      "filtered_at": "2026-02-08T02:22:34.629Z"
     },
     "review_policy": {
       "library": "pre_reviewed",
       "curated_override": "approved_required",
-      "annotated_at": "2026-02-08T01:14:12.962Z"
+      "annotated_at": "2026-02-08T02:22:34.635Z"
     },
     "kb_source": {
       "kind": "runtime_index_source",
@@ -9190,6 +9190,19 @@
           ]
         }
       }
+    },
+    "manganese|glycinate": {
+      "source": "override",
+      "ingredient_id": "manganese",
+      "ingredient": "Manganese",
+      "form_key": "glycinate",
+      "form_display": "Manganese glycinate",
+      "form_family": "chelated",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_f98890b4d241"
+      ]
     },
     "molybdenum|glycinate": {
       "source": "override",
