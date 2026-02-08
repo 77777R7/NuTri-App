@@ -6295,7 +6295,9 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   res.setHeader("X-Accel-Buffering", "no");
   res.flushHeaders?.();
 
-  const keepAliveMsRaw = Number(process.env.SSE_KEEPALIVE_MS ?? "15000");
+  // Default to a short keepalive because some mobile SSE polyfills time out aggressively.
+  // Can be overridden via SSE_KEEPALIVE_MS (min 5000ms).
+  const keepAliveMsRaw = Number(process.env.SSE_KEEPALIVE_MS ?? "5000");
   const keepAliveMs =
     Number.isFinite(keepAliveMsRaw) && keepAliveMsRaw >= 5000 ? keepAliveMsRaw : 15000;
   const keepAlive = setInterval(() => {

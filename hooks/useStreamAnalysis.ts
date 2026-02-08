@@ -212,7 +212,8 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
         setState(prev => ({ ...prev, status: 'loading', error: null, analysisBundle: null }));
         setServerSnapshot(null);
 
-        const API_URL = Config.searchApiBaseUrl.replace(/\/$/, '');
+        const rawBaseUrl = Config.searchApiBaseUrl;
+        const API_URL = rawBaseUrl.endsWith('/') ? rawBaseUrl.slice(0, -1) : rawBaseUrl;
         let isActive = true;
 
         const startStream = async () => {
