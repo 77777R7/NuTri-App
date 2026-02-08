@@ -230,7 +230,9 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
                 // We only need analysis_bundle + product_info for the v4 dashboard.
                 // This avoids large legacy payloads that can destabilize SSE on mobile networks.
                 body: JSON.stringify({ barcode, streamMode: 'analysis_bundle_only' }),
-                pollingInterval: 0,
+                // Mobile networks can drop long-lived SSE connections; allow reconnects so scans
+                // can recover and hit backend caches instead of stalling the UI.
+                pollingInterval: 5000,
             });
 
             eventSourceRef.current = es;
