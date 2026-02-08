@@ -273,6 +273,10 @@ const canonicalizeFormTokenForLookup = ({ token, ingredientKey, evidenceText }) 
   if (ig === "creatine" && t === "hydrochloride") return "hcl";
 
   if (ig === "iron" && t === "fumarate") return "ferrous_fumarate";
+  // Iron sulfate in DSLD is typically listed explicitly as "Ferrous Sulfate" (or similar).
+  // Canonicalize sulfate -> ferrous_sulfate only when the evidence text clearly indicates ferrous,
+  // to avoid accidental over-mapping of unrelated "sulfate" forms.
+  if (ig === "iron" && t === "sulfate" && ex.includes("ferrous")) return "ferrous_sulfate";
 
   // Riboflavin "phosphate" in DSLD labels commonly refers to FMN (riboflavin-5'-phosphate).
   // Keep this canonicalization narrow: only within riboflavin scope and only when the evidence
