@@ -167,6 +167,15 @@ const isSulfateChlorideSaltNameNoise = (value) => {
   return v.includes("glucosamine") || v.includes("chondroitin");
 };
 
+// Potassium "acetate complex" is frequently a branded/complex naming pattern in DSLD meta
+// (e.g. "HMR Potassium Acetate Complex") rather than a stable nutrient salt-form disclosure.
+// Treat it as scan noise so Top3 stays actionable and we don't "补错 KB".
+const isPotassiumAcetateComplexNoise = (value) => {
+  const v = normalizeFreeText(stripAmountSuffix(value)).replace(/^(as|from)\s+/i, "").trim();
+  if (!v) return false;
+  return /\bpotassium\b/.test(v) && /\bacetate\b/.test(v) && /\bcomplex\b/.test(v);
+};
+
 const guessIngredientForNoise = (value) => {
   const cleaned = normalizeFreeText(stripAmountSuffix(value))
     .replace(/^(as|from)\s+/i, "")
@@ -769,6 +778,7 @@ async function main() {
 
   const enriched = [];
   const sulfateChlorideNoise = [];
+  const acetateComplexNoise = [];
   const explicitEvidenceKinds = new Set(["label_parenthetical", "label_as_phrase", "label_from_phrase", "salt_name"]);
   const runtimeIndexPath = process.env.KB_RUNTIME_INDEX_PATH;
   const runtimeRaw = runtimeIndexPath ? await fs.readFile(runtimeIndexPath, "utf-8") : null;
@@ -957,6 +967,22 @@ async function main() {
         continue;
       }
 
+      // Noise guard: "Potassium Acetate Complex" style names are usually branded/complex naming
+      // and not a stable salt-form disclosure we want to drive KB coverage with.
+      if (ingredientKey === "potassium" && tokensMatched.includes("acetate") && isPotassiumAcetateComplexNoise(kbLookupName)) {
+        acetateComplexNoise.push({
+          barcodeGtin14: meta?.barcode_normalized_gtin14 ?? null,
+          dsldLabelId: meta?.dsld_label_id ?? null,
+          dsldProductVersionCode: meta?.dsld_product_version_code ?? null,
+          raw: chunk,
+          name: kbLookupName,
+          tokens: tokensMatched.filter((t) => t === "acetate"),
+          evidenceKind,
+          ingredientGuess: guessIngredientForNoise(kbLookupName),
+        });
+        continue;
+      }
+
       if (REQUIRE_EXPLICIT) {
         if (!explicitEvidenceKinds.has(evidenceKind)) continue;
         // Two-stage evidence parsing:
@@ -1090,6 +1116,10 @@ async function main() {
     path.join(ARTIFACT_DIR, "sulfate_chloride_noise.json"),
     JSON.stringify(sulfateChlorideNoise, null, 2),
   );
+  await fs.writeFile(
+    path.join(ARTIFACT_DIR, "acetate_complex_noise.json"),
+    JSON.stringify(acetateComplexNoise, null, 2),
+  );
 
   // Operational leaderboards.
   const tokenStats = Object.fromEntries(
@@ -1126,6 +1156,23 @@ async function main() {
       total: sulfateChlorideNoise.length,
       byToken: top(byToken, 10),
       byIngredientGuess: top(byIngredientGuess, 15),
+    };
+  })();
+
+  const acetateComplexNoiseStats = (() => {
+    const byIngredientGuess = {};
+    for (const row of acetateComplexNoise) {
+      const ig = String(row.ingredientGuess || "unknown");
+      byIngredientGuess[ig] = (byIngredientGuess[ig] ?? 0) + 1;
+    }
+    const top = (obj, limit = 25) =>
+      Object.entries(obj)
+        .sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0))
+        .slice(0, limit)
+        .map(([k, v]) => ({ key: k, count: v }));
+    return {
+      total: acetateComplexNoise.length,
+      byIngredientGuess: top(byIngredientGuess, 10),
     };
   })();
 
@@ -1214,6 +1261,7 @@ async function main() {
       gapsPerToken: stratGaps.stratifiedCounts,
     },
     sulfateChlorideNoiseStats,
+    acetateComplexNoiseStats,
   };
   await fs.writeFile(path.join(ARTIFACT_DIR, "kb_gap_report.json"), JSON.stringify(gapReport, null, 2));
 
