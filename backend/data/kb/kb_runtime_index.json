@@ -9,12 +9,12 @@
     "production_filter": {
       "mode": "captured_and_approved",
       "note": "Segments are filtered so only evidence_excerpt_status=captured is shipped; curated_override sentences must be review_status=approved.",
-      "filtered_at": "2026-02-08T04:30:12.758Z"
+      "filtered_at": "2026-02-08T04:36:00.513Z"
     },
     "review_policy": {
       "library": "pre_reviewed",
       "curated_override": "approved_required",
-      "annotated_at": "2026-02-08T04:30:12.765Z"
+      "annotated_at": "2026-02-08T04:36:00.514Z"
     },
     "kb_source": {
       "kind": "runtime_index_source",
@@ -7718,7 +7718,28 @@
       "reference_ids": [
         "ref_d7ff68f4575b",
         "ref_10fd68c51e70"
-      ]
+      ],
+      "segments": {
+        "caveats": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_10fd68c51e70",
+              "evidence_snippet_id": "x_05b5706bc75cb15b",
+              "overall_confidence": 0.76,
+              "reference_ids": [
+                "ref_10fd68c51e70"
+              ],
+              "review_notes": "Minimal identity-level statement; no comparative claims.",
+              "review_status": "approved",
+              "sentence_id": "s_5c38ded121a4a250",
+              "source": "curated_override",
+              "text": "Pyridoxine hydrochloride (HCl) is a common supplemental form of vitamin B6; some supplements use PLP instead."
+            }
+          ]
+        }
+      }
     },
     "vitamin_c|ester_c": {
       "source": "library",
@@ -9480,7 +9501,28 @@
       "evidence_grade": "C",
       "reference_ids": [
         "ref_a8bef76667ac"
-      ]
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_a8bef76667ac",
+              "evidence_snippet_id": "x_9f6831706cce7a32",
+              "overall_confidence": 0.4,
+              "reference_ids": [
+                "ref_a8bef76667ac"
+              ],
+              "review_notes": "Minimal identity-level statement; no comparative claims.",
+              "review_status": "approved",
+              "sentence_id": "s_178d6d562f5156be",
+              "source": "curated_override",
+              "text": "Calcium aspartate is also listed as L-aspartic acid, calcium salt (1:1)."
+            }
+          ]
+        }
+      }
     },
     "calcium|acetate": {
       "source": "override",
