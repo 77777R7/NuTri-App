@@ -401,6 +401,39 @@ const normalizeIngredientKey = (text) => {
   const s = normalizeFreeText(cleaned);
   if (!s) return null;
 
+  // High-ROI form sources often appear with leading brand/quality markers.
+  // Prefer resolving the base nutrient by content (not just the first token) so candidates
+  // like "TRAACS Magnesium Bisglycinate Chelate" don't degrade into ingredient_unresolved noise.
+  const findUnambiguousNutrientMention = (value) => {
+    const v = normalizeFreeText(value);
+    if (!v) return null;
+
+    // Vitamins/cofactors: handle common "no vitamin prefix" forms.
+    if (/(?:methyl|cyano|adeno|hydroxo)cobalamin\b/.test(v) || /\bcobalamin\b/.test(v)) return "vitamin_b12";
+    if (/(?:chole|ergo)calciferol\b/.test(v) || /\bcalciferol\b/.test(v)) return "vitamin_d";
+
+    // Common supplement families that frequently appear in branded actives.
+    if (/\bcreatine\b/.test(v)) return "creatine";
+    if (/\bcarnitine\b/.test(v)) return "carnitine";
+
+    const candidates = [
+      "magnesium",
+      "calcium",
+      "zinc",
+      "chromium",
+      "manganese",
+      "molybdenum",
+      "potassium",
+      "copper",
+      "selenium",
+      "iodine",
+      "iron",
+    ];
+    const hits = candidates.filter((tok) => new RegExp(`\\b${tok}\\b`, "i").test(v));
+    if (hits.length === 1) return hits[0];
+    return null;
+  };
+
   // Prefer vitamin C scope only when the label head indicates vitamin C (avoid misattribution like "Zinc Ascorbate").
   if (isVitaminCScopeName(s)) return "vitamin_c";
 
@@ -418,6 +451,12 @@ const normalizeIngredientKey = (text) => {
   if (/\bcobalamin\b/.test(s)) return "vitamin_b12";
   if (/\bcalciferol\b/.test(s)) return "vitamin_d";
   if (/\btocotrienols?\b/.test(s)) return "tocotrienols";
+
+  // Branded actives: fall back to the first unambiguous nutrient mention (if any).
+  // This is intentionally conservative: if multiple nutrient families appear in one chunk,
+  // we return null and treat it as ambiguous/noise for now.
+  const hinted = findUnambiguousNutrientMention(s);
+  if (hinted) return hinted;
 
   if (s.startsWith("vitamin")) {
     const parts = s.replace(/[^a-z0-9]+/g, " ").trim().split(/\s+/).filter(Boolean);
