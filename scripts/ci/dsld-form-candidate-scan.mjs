@@ -312,6 +312,10 @@ const canonicalizeFormTokenForLookup = ({ token, ingredientKey, evidenceText }) 
   // Vitamin B6 hydrochloride is pyridoxine HCl.
   if (ig === "vitamin_b6" && (t === "hydrochloride" || t === "hcl")) return "pyridoxine_hcl";
 
+  // Thiamin (vitamin B1) hydrochloride is keyed as thiamine_hcl in the KB.
+  // Keep this canonicalization narrow to avoid duplicating "thiamin+hydrochloride" runtime entries.
+  if (ig === "thiamin" && (t === "hydrochloride" || t === "hcl")) return "thiamine_hcl";
+
   if (ig === "iron" && t === "fumarate") return "ferrous_fumarate";
   // Iron sulfate in DSLD is typically listed explicitly as "Ferrous Sulfate" (or similar).
   // Canonicalize sulfate -> ferrous_sulfate only when the evidence text clearly indicates ferrous,
@@ -960,7 +964,10 @@ async function main() {
       const baseName = kbLookupName;
       const isKbHit = Boolean(kb?.sentenceId && kb?.sentence);
       if (isKbHit) kbSentenceHitNames.push(baseName);
-      const primaryToken = kbHitToken ?? tokenWithRuntime ?? tokensMatched[0] ?? null;
+      // Prefer canonicalized tokens (orderedTokens) when classifying gaps so we don't report
+      // false "no_runtime_entry" rows for cases that should normalize to an existing KB key
+      // (e.g. thiamin + hydrochloride -> thiamine_hcl).
+      const primaryToken = kbHitToken ?? tokenWithRuntime ?? orderedTokens[0] ?? tokensMatched[0] ?? null;
       const gap = isKbHit ? null : classifyGapType({ ingredientKey, token: primaryToken });
 
       matchedActives.push({
