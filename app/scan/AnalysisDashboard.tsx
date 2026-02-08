@@ -927,7 +927,7 @@ const AnalysisBundleDashboard: React.FC<{
         setDetailLoading(true);
         setDetailError(null);
         try {
-            const API_URL = Config.searchApiBaseUrl.replace(/\\/$/, '');
+            const API_URL = Config.searchApiBaseUrl.replace(/\/$/, '');
             const headers = await withAuthHeaders({ 'Content-Type': 'application/json' });
             const response = await fetch(`${API_URL}/api/analysis-section`, {
                 method: 'POST',
