@@ -2285,6 +2285,39 @@
         }
       }
     },
+    "creatine|malate": {
+      "source": "override",
+      "ingredient_id": "creatine",
+      "ingredient": "Creatine",
+      "form_key": "malate",
+      "form_display": "Creatine malate",
+      "form_family": "generic",
+      "overall_confidence": 0.55,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_963445a26cb4"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_963445a26cb4",
+              "evidence_snippet_id": "x_8f8850f2817c3853",
+              "overall_confidence": 0.55,
+              "reference_ids": [
+                "ref_963445a26cb4"
+              ],
+              "sentence_id": "s_6b1d70c779b2b0e3",
+              "source": "curated_override",
+              "text": "Creatine malate is a creatine form; evidence is strongest for creatine monohydrate, and evidence for alternative forms is limited.",
+              "review_status": "needs_edit"
+            }
+          ]
+        }
+      }
+    },
     "creatine|phosphate": {
       "source": "override",
       "ingredient_id": "creatine",
@@ -4875,6 +4908,39 @@
       "reference_ids": [
         "ref_3bc57aa0d68a"
       ]
+    },
+    "calcium|malate": {
+      "source": "override",
+      "ingredient_id": "calcium",
+      "ingredient": "Calcium",
+      "form_key": "malate",
+      "form_display": "Calcium malate",
+      "form_family": "chelated",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_11d346fef7d9"
+      ],
+      "segments": {
+        "caveats": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_11d346fef7d9",
+              "evidence_snippet_id": "x_aaff1766969ff128",
+              "overall_confidence": 0.4,
+              "reference_ids": [
+                "ref_11d346fef7d9"
+              ],
+              "sentence_id": "s_1acb052dca29b1c7",
+              "source": "curated_override",
+              "text": "Some calcium supplements use malate-containing salts (for example, citrate-malate); evidence comparing calcium salts can be study-specific.",
+              "review_status": "needs_edit"
+            }
+          ]
+        }
+      }
     },
     "calcium|hydroxyapatite": {
       "source": "library",
@@ -7880,18 +7946,39 @@
       ]
     },
     "vitamin_b12|hydroxocobalamin": {
-      "source": "library",
+      "source": "override",
       "ingredient_id": "vitamin_b12",
       "ingredient": "Vitamin B12",
       "form_key": "hydroxocobalamin",
       "form_display": "Hydroxocobalamin",
-      "form_family": "generic",
+      "form_family": "active_metabolite",
       "overall_confidence": 0.76,
       "evidence_grade": "B",
       "reference_ids": [
         "ref_c82025f94bce",
         "ref_7e356410f54c"
-      ]
+      ],
+      "segments": {
+        "caveats": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_c82025f94bce",
+              "evidence_snippet_id": "x_94466041d7a005f5",
+              "overall_confidence": 0.76,
+              "reference_ids": [
+                "ref_c82025f94bce",
+                "ref_7e356410f54c"
+              ],
+              "sentence_id": "s_70a1c5a8d5ae9a34",
+              "source": "curated_override",
+              "text": "Hydroxycobalamin is one of the forms of vitamin B12 used in dietary supplements.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
     },
     "vitamin_b6|p5p": {
       "source": "library",
