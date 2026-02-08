@@ -9233,6 +9233,39 @@
         }
       }
     },
+    "manganese|glycinate": {
+      "source": "override",
+      "ingredient_id": "manganese",
+      "ingredient": "Manganese",
+      "form_key": "glycinate",
+      "form_display": "Manganese glycinate",
+      "form_family": "chelated",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_f98890b4d241"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "C",
+              "evidence_reference_id": "ref_f98890b4d241",
+              "evidence_snippet_id": "x_2c58d00807ef5111",
+              "overall_confidence": 0.4,
+              "reference_ids": [
+                "ref_f98890b4d241"
+              ],
+              "sentence_id": "s_d4a59a19ec27aaa9",
+              "source": "curated_override",
+              "text": "Manganese glycinate is a chelated manganese form (also listed as manganese(II) bis(glycinate)).",
+              "review_status": "needs_edit"
+            }
+          ]
+        }
+      }
+    },
     "molybdenum|glycinate": {
       "source": "override",
       "ingredient_id": "molybdenum",

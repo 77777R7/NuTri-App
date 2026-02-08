@@ -1,9 +1,9 @@
 {
   "meta": {
-    "generated_at": "2026-02-08T00:20:00Z",
+    "generated_at": "2026-02-08T02:21:19Z",
     "source": "nutri_minimal_data_package_v4_0_en_only_review_excerpts",
     "note": "Production evidence excerpts used by shipped KB sentences (captured only).",
-    "ref_count": 41
+    "ref_count": 46
   },
   "evidence_excerpts": [
     {
@@ -533,6 +533,18 @@
       "excerpt_text": "Riboflavin (also known as vitamin B2) is one of the B vitamins, which are all water soluble. Riboflavin is naturally present in some foods, added to some food products, and available as a dietary supplement.",
       "source": "NIH ODS",
       "url": "https://ods.od.nih.gov/factsheets/Riboflavin-HealthProfessional/"
+    },
+    {
+      "audit_status": "verified",
+      "capture_method": "pug_rest",
+      "capture_status": "captured",
+      "captured_at": "2026-02-08T02:20:43Z",
+      "citation_id": "ref_f98890b4d241",
+      "excerpt_id": "x_2c58d00807ef5111",
+      "excerpt_sha256": "cf678dbf2c5d294507c984f0af96acd15db150d6af2700fb84f3aa78b67248db",
+      "excerpt_text": "PubChem CID 151440 lists synonyms including \"Manganese(II) bis(glycinate)\" and \"manganese glycinate\".",
+      "source": "PubChem",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/compound/151440"
     },
     {
       "audit_status": "verified",

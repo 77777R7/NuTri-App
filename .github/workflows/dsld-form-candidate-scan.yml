@@ -14,12 +14,12 @@ on:
       max_enrich:
         description: "Max label_ids to evaluate (readonly view + local KB matching)"
         required: false
-        default: "1200"
+        default: "2500"
         type: string
       labels_per_token:
         description: "Max meta rows to pull per token (from readonly view)"
         required: false
-        default: "900"
+        default: "1400"
         type: string
       max_actives:
         description: "Max actives (approx) per label to include"
@@ -29,7 +29,7 @@ on:
       output_limit:
         description: "Max output rows per CSV (hits/gaps)"
         required: false
-        default: "160"
+        default: "220"
         type: string
       require_explicit:
         description: "Require (as ...) parenthetical evidence in active_ingredients_summary (1/0)"
