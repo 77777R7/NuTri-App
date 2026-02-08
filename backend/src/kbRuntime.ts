@@ -317,6 +317,14 @@ const resolveFormKeyFromToken = (kb: KbRuntime, ingredientId: string, token: str
   if (ingredientId === "vitamin_a" && token === "acetate" && hasRuntimeEntry("retinyl_acetate")) {
     return { formKey: "retinyl_acetate", resolveSource: "alias_map_by_ingredient" as FormResolveSource };
   }
+  // Vitamin K2: DSLD labels frequently use MK-7 / MK-4 (hyphenated) which normalize to mk_7 / mk_4.
+  // Canonicalize to shipped runtime keys (mk7/mk4) so we don't report false gaps or miss KB matches.
+  if (ingredientId === "vitamin_k2" && token === "mk_7" && hasRuntimeEntry("mk7")) {
+    return { formKey: "mk7", resolveSource: "alias_map_by_ingredient" as FormResolveSource };
+  }
+  if (ingredientId === "vitamin_k2" && token === "mk_4" && hasRuntimeEntry("mk4")) {
+    return { formKey: "mk4", resolveSource: "alias_map_by_ingredient" as FormResolveSource };
+  }
 
   const byIngredient = kb.alias.byIngredient?.[ingredientId];
   const byIngredientEntry = pickBestAliasEntry(byIngredient?.[token]);
