@@ -9,12 +9,12 @@
     "production_filter": {
       "mode": "captured_and_approved",
       "note": "Segments are filtered so only evidence_excerpt_status=captured is shipped; curated_override sentences must be review_status=approved.",
-      "filtered_at": "2026-02-08T08:28:53.982Z"
+      "filtered_at": "2026-02-08T10:09:48.968Z"
     },
     "review_policy": {
       "library": "pre_reviewed",
       "curated_override": "approved_required",
-      "annotated_at": "2026-02-08T08:28:53.988Z"
+      "annotated_at": "2026-02-08T10:09:48.969Z"
     },
     "kb_source": {
       "kind": "runtime_index_source",
@@ -2254,6 +2254,19 @@
           ]
         }
       }
+    },
+    "creatine|malate": {
+      "source": "override",
+      "ingredient_id": "creatine",
+      "ingredient": "Creatine",
+      "form_key": "malate",
+      "form_display": "Creatine malate",
+      "form_family": "generic",
+      "overall_confidence": 0.55,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_963445a26cb4"
+      ]
     },
     "creatine|phosphate": {
       "source": "override",
@@ -4830,6 +4843,19 @@
       "evidence_grade": "C",
       "reference_ids": [
         "ref_3bc57aa0d68a"
+      ]
+    },
+    "calcium|malate": {
+      "source": "override",
+      "ingredient_id": "calcium",
+      "ingredient": "Calcium",
+      "form_key": "malate",
+      "form_display": "Calcium malate",
+      "form_family": "chelated",
+      "overall_confidence": 0.4,
+      "evidence_grade": "C",
+      "reference_ids": [
+        "ref_11d346fef7d9"
       ]
     },
     "calcium|hydroxyapatite": {
@@ -7837,18 +7863,39 @@
       ]
     },
     "vitamin_b12|hydroxocobalamin": {
-      "source": "library",
+      "source": "override",
       "ingredient_id": "vitamin_b12",
       "ingredient": "Vitamin B12",
       "form_key": "hydroxocobalamin",
       "form_display": "Hydroxocobalamin",
-      "form_family": "generic",
+      "form_family": "active_metabolite",
       "overall_confidence": 0.76,
       "evidence_grade": "B",
       "reference_ids": [
         "ref_c82025f94bce",
         "ref_7e356410f54c"
-      ]
+      ],
+      "segments": {
+        "caveats": {
+          "en": [
+            {
+              "evidence_excerpt_status": "captured",
+              "evidence_grade": "B",
+              "evidence_reference_id": "ref_c82025f94bce",
+              "evidence_snippet_id": "x_94466041d7a005f5",
+              "overall_confidence": 0.76,
+              "reference_ids": [
+                "ref_c82025f94bce",
+                "ref_7e356410f54c"
+              ],
+              "sentence_id": "s_70a1c5a8d5ae9a34",
+              "source": "curated_override",
+              "text": "Hydroxycobalamin is one of the forms of vitamin B12 used in dietary supplements.",
+              "review_status": "approved"
+            }
+          ]
+        }
+      }
     },
     "vitamin_b6|p5p": {
       "source": "library",
