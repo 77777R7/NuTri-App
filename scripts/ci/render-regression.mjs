@@ -48,6 +48,9 @@ const dsldWithFormCreatineCitrateBarcode =
   process.env.RENDER_DSLD_CREATINE_CITRATE_BARCODE || "00850748005269";
 const dsldWithFormCreatineGluconateBarcode =
   process.env.RENDER_DSLD_CREATINE_GLUCONATE_BARCODE || "00851005007415";
+const dsldWithFormCreatineMalateBarcode = process.env.RENDER_DSLD_CREATINE_MALATE_BARCODE || "00702669934770";
+const dsldWithFormCreatineMalateBarcode2 = process.env.RENDER_DSLD_CREATINE_MALATE_BARCODE2 || "00851005007415";
+const dsldWithFormCreatineMalateBarcode3 = process.env.RENDER_DSLD_CREATINE_MALATE_BARCODE3 || "05949106122542";
 const dsldWithFormFerrousFumarateBarcode =
   process.env.RENDER_DSLD_FERROUS_FUMARATE_BARCODE || "00696305151204";
 const dsldWithFormFerrousFumarateBarcode2 =
@@ -148,6 +151,13 @@ if (process.env.RENDER_INCLUDE_NIGHTLY_CASES === "1") {
     expectedSourceType: "dsld",
     requiredFormKeyword: "creatine citrate",
     targetActiveKeyword: "creatine citrate",
+  });
+  CASES.splice(CASES.length - 1, 0, {
+    id: "dsld_with_form_creatine_malate",
+    barcodes: [dsldWithFormCreatineMalateBarcode, dsldWithFormCreatineMalateBarcode2, dsldWithFormCreatineMalateBarcode3],
+    expectedSourceType: "dsld",
+    requiredFormKeyword: "malate",
+    targetActiveKeyword: "creatine malate",
   });
   CASES.splice(CASES.length - 1, 0, {
     id: "dsld_with_form_creatine_gluconate",
