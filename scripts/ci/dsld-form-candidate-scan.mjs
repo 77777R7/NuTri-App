@@ -258,9 +258,25 @@ const hasStrongSaltNameStructure = ({ chunk, ingredientKey, token }) => {
   return strong.test(chunk);
 };
 
-const isVitaminCChemicalFormName = (value) => {
+const VITAMIN_C_SALT_CATIONS = new Set(["calcium", "sodium", "magnesium", "potassium"]);
+
+const isVitaminCScopeName = (value) => {
   const cleaned = normalizeFreeText(value);
-  return /\bascorbic\b/.test(cleaned) || /\bascorbate\b/.test(cleaned) || /\bester[-_ ]?c\b/.test(cleaned);
+  if (!cleaned) return false;
+
+  // Strong, unambiguous vitamin C signals.
+  if (/\bvitamin\s*c\b/.test(cleaned)) return true;
+  if (/\bascorbic\b/.test(cleaned)) return true;
+  if (/\bester[-_ ]?c\b/.test(cleaned)) return true;
+
+  // Avoid misattribution like "Zinc Ascorbate": treat "ascorbate" as vitamin C scope only when the
+  // label head is a common vitamin C salt cation (calcium/sodium/magnesium/potassium).
+  if (/\bascorbate\b/.test(cleaned)) {
+    const head = getFirstWordToken(cleaned);
+    if (head && VITAMIN_C_SALT_CATIONS.has(head)) return true;
+  }
+
+  return false;
 };
 
 const canonicalizeFormTokenForLookup = ({ token, ingredientKey, evidenceText }) => {
@@ -328,8 +344,8 @@ const normalizeIngredientKey = (text) => {
   const s = normalizeFreeText(cleaned);
   if (!s) return null;
 
-  // Prefer vitamin C scope when the label explicitly indicates vitamin C forms (ascorbic/ascorbate/Ester-C).
-  if (isVitaminCChemicalFormName(s)) return "vitamin_c";
+  // Prefer vitamin C scope only when the label head indicates vitamin C (avoid misattribution like "Zinc Ascorbate").
+  if (isVitaminCScopeName(s)) return "vitamin_c";
 
   // DSLD sometimes lists specific vitamin/cofactor names without the "Vitamin X" prefix.
   // Keep these mappings conservative: only map when the token is unambiguous.
