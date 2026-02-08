@@ -152,6 +152,12 @@ const INGREDIENT_ALLOWLIST = [
 
 const REVERSE_FORM_BLACKLIST = ["dioxide", "peroxide", "antioxidant", "oxidative"];
 const SULFATE_CHLORIDE_TOKENS = new Set(["sulfate", "chloride"]);
+const CONFIDENCE_BANDS = ["low", "medium", "high"];
+
+const confidencePriority = (band) => {
+  const b = String(band || "").toLowerCase();
+  return b === "high" ? 2 : b === "medium" ? 1 : 0;
+};
 
 const guessIngredientForNoise = (value) => {
   const cleaned = normalizeFreeText(stripAmountSuffix(value))
@@ -975,11 +981,18 @@ async function main() {
       const primaryToken = kbHitToken ?? tokenWithRuntime ?? orderedTokens[0] ?? tokensMatched[0] ?? null;
       const gap = isKbHit ? null : classifyGapType({ ingredientKey, token: primaryToken });
 
+      const strongEvidence =
+        evidenceKind === "salt_name"
+          ? tokensMatched.some((t) => hasStrongSaltNameStructure({ chunk: kbLookupName, ingredientKey, token: t }))
+          : tokensMatched.some((t) => hasExplicitTokenEvidence(chunk, t));
+      const confidenceBand = !ingredientKey ? "low" : strongEvidence ? "high" : "medium";
+
       matchedActives.push({
         name: baseName,
         raw: chunk,
         tokens: tokensMatched,
         evidenceKind,
+        confidenceBand,
         formResolveSource: kb?.resolveSource ?? "none",
         sentenceId: kb?.sentenceId ?? null,
         excerptId: kb?.excerptId ?? null,
@@ -1243,7 +1256,7 @@ async function main() {
   // Workstream B: global actionable gap list (all tokens). This excludes sulfate/chloride noise
   // (captured separately) and focuses on fixable gaps: parser/alias vs KB sentence vs excerpt capture.
   const globalActionMap = new Map();
-  const bumpGlobalAction = ({ token, ingredient, gapType, gapDetail, example }) => {
+  const bumpGlobalAction = ({ token, ingredient, gapType, gapDetail, example, confidenceBand }) => {
     const key = actionKey(token, ingredient, gapType);
     if (!globalActionMap.has(key)) {
       globalActionMap.set(key, {
@@ -1252,6 +1265,7 @@ async function main() {
         gapType,
         triage: "",
         canonical_form_token: "",
+        confidence_band: CONFIDENCE_BANDS.includes(String(confidenceBand || "")) ? String(confidenceBand) : "low",
         gap_detail: gapDetail ?? "",
         count: 0,
         example_actives_excerpt: example,
@@ -1262,11 +1276,14 @@ async function main() {
     cur.count += 1;
     if (!cur.example_actives_excerpt) cur.example_actives_excerpt = example;
     if (!cur.gap_detail && gapDetail) cur.gap_detail = gapDetail;
+    if (confidencePriority(confidenceBand) > confidencePriority(cur.confidence_band)) {
+      cur.confidence_band = CONFIDENCE_BANDS.includes(String(confidenceBand || "")) ? String(confidenceBand) : cur.confidence_band;
+    }
   };
 
   // kb_sentence_missing triage: classify into 3 buckets so we don't blindly "add KB" when it is
   // actually a parser normalization issue or scan noise.
-  const classifySentenceMissing = ({ token, ingredientKey, example }) => {
+const classifySentenceMissing = ({ token, ingredientKey, example }) => {
     const t = String(token || "").toLowerCase();
     const ig = String(ingredientKey || "").toLowerCase();
     const ex = String(example || "").toLowerCase();
@@ -1368,12 +1385,18 @@ async function main() {
       const ingredientKey = String(m.ingredientKey || "unknown");
       const gapType = String(m.gapType || "unknown");
       const example = String(m.raw || m.name || "");
+      const band = CONFIDENCE_BANDS.includes(String(m.confidenceBand || ""))
+        ? String(m.confidenceBand)
+        : ingredientKey === "unknown"
+          ? "low"
+          : "medium";
       bumpGlobalAction({
         token,
         ingredient: ingredientKey,
         gapType,
         gapDetail: m.gapDetail ? String(m.gapDetail) : "",
         example,
+        confidenceBand: band,
       });
 
       if (gapType === "kb_sentence_missing") {
@@ -1407,12 +1430,52 @@ async function main() {
       "gapType",
       "triage",
       "canonical_form_token",
+      "confidence_band",
       "gap_detail",
       "count",
       "example_actives_excerpt",
       "action",
     ],
   });
+
+  // Operational Top3: pick only high/medium confidence KB-fixable rows (avoid low-confidence noise/backlog).
+  // Order of operations: excerpt gaps first (highest ROI), then sentence gaps, and only within triage=kb_missing.
+  const kbFixableRows = globalRows
+    .filter((r) => {
+      const band = String(r.confidence_band || "").toLowerCase();
+      if (band !== "high" && band !== "medium") return false;
+      if (String(r.gapType) === "kb_excerpt_missing") return true;
+      if (String(r.gapType) === "kb_sentence_missing" && String(r.triage) === "kb_missing") return true;
+      return false;
+    })
+    .sort((a, b) => {
+      const gapPriority = (r) => (String(r.gapType) === "kb_excerpt_missing" ? 0 : 1);
+      const pa = gapPriority(a);
+      const pb = gapPriority(b);
+      if (pa !== pb) return pa - pb;
+      const ca = confidencePriority(a.confidence_band);
+      const cb = confidencePriority(b.confidence_band);
+      if (ca !== cb) return cb - ca;
+      return (b.count ?? 0) - (a.count ?? 0);
+    })
+    .slice(0, 3);
+
+  if (kbFixableRows.length) {
+    await writeSimpleCsv("kb_gap_top3.csv", kbFixableRows, {
+      header: [
+        "token",
+        "ingredient",
+        "gapType",
+        "triage",
+        "canonical_form_token",
+        "confidence_band",
+        "gap_detail",
+        "count",
+        "example_actives_excerpt",
+        "action",
+      ],
+    });
+  }
 
   await writeCsv("candidates_top80_kb_hits.csv", stratHits.selected);
   await writeCsv("candidates_top80_kb_gaps.csv", stratGaps.selected);
