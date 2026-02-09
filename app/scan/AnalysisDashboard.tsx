@@ -708,7 +708,7 @@ const DashboardModal: React.FC<{
                 return t.analysisSourceLabel;
             case 'other':
             default:
-                return t.analysisSourceOther;
+                return source.title || t.analysisSourceOther;
         }
     };
 
@@ -855,10 +855,27 @@ const mapBundleStatusToCover = (status: AnalysisBundle['sections']['overview']['
     return 'limited';
 };
 
-const buildBundleDataStatus = (status: AnalysisBundle['sections']['overview']['dataStatus']) => ({
+const buildBundleSources = (sourceType: AnalysisBundle['meta']['sourceType']): SourceRef[] => {
+    // Product trust framing: regulatory/label sources count as "connected" even if we didn't use web evidence.
+    if (sourceType === 'lnhpd' || sourceType === 'dsld') {
+        return [
+            { type: 'label' },
+            { type: 'other', title: 'Web evidence: not used' },
+        ];
+    }
+    if (sourceType === 'web') {
+        return [{ type: 'other', title: 'Web evidence' }];
+    }
+    return [];
+};
+
+const buildBundleDataStatus = (
+    status: AnalysisBundle['sections']['overview']['dataStatus'],
+    sourceType: AnalysisBundle['meta']['sourceType']
+) => ({
     status: mapBundleStatusToCover(status),
     missingReasons: [],
-    sources: [],
+    sources: buildBundleSources(sourceType),
 });
 
 const AnalysisBundleDashboard: React.FC<{
@@ -926,6 +943,20 @@ const AnalysisBundleDashboard: React.FC<{
         if (detailLoading) return;
         setDetailLoading(true);
         setDetailError(null);
+        // Align loading copy with dataStatus: only show "Generating..." when pending.
+        // Treat "detail missing + fetch in-flight" as pending, even if cover facts are already complete.
+        if (!bundleState.sections.ingredients.detail) {
+            setBundleState((prev) => ({
+                ...prev,
+                sections: {
+                    ...prev.sections,
+                    ingredients: {
+                        ...prev.sections.ingredients,
+                        dataStatus: 'pending',
+                    },
+                },
+            }));
+        }
         try {
             const rawBaseUrl = Config.searchApiBaseUrl;
             const API_URL = rawBaseUrl.endsWith('/') ? rawBaseUrl.slice(0, -1) : rawBaseUrl;
@@ -950,12 +981,34 @@ const AnalysisBundleDashboard: React.FC<{
                     setTimeout(() => {
                         fetchIngredientsDetail(attempt + 1);
                     }, retryMs);
+                } else {
+                    setDetailError('Still generating. Please try again.');
+                    setBundleState((prev) => ({
+                        ...prev,
+                        sections: {
+                            ...prev.sections,
+                            ingredients: {
+                                ...prev.sections.ingredients,
+                                dataStatus: 'limited',
+                            },
+                        },
+                    }));
                 }
                 setDetailLoading(false);
                 return;
             }
             if (!response.ok) {
                 setDetailError('Detail unavailable');
+                setBundleState((prev) => ({
+                    ...prev,
+                    sections: {
+                        ...prev.sections,
+                        ingredients: {
+                            ...prev.sections.ingredients,
+                            dataStatus: 'limited',
+                        },
+                    },
+                }));
                 setDetailLoading(false);
                 return;
             }
@@ -976,6 +1029,16 @@ const AnalysisBundleDashboard: React.FC<{
             }
         } catch (err) {
             setDetailError('Detail unavailable');
+            setBundleState((prev) => ({
+                ...prev,
+                sections: {
+                    ...prev.sections,
+                    ingredients: {
+                        ...prev.sections.ingredients,
+                        dataStatus: 'limited',
+                    },
+                },
+            }));
         } finally {
             setDetailLoading(false);
         }
@@ -1024,7 +1087,7 @@ const AnalysisBundleDashboard: React.FC<{
                     <Text style={styles.modalParagraphSmall}>{t.analysisPlaceholderUnknown}</Text>
                 )}
             </View>
-            {detailLoading && (
+            {bundleState.sections.ingredients.dataStatus === 'pending' && (
                 <Text style={styles.modalParagraphSmall}>Generating ingredient insights...</Text>
             )}
             {detailError && (
@@ -1037,11 +1100,23 @@ const AnalysisBundleDashboard: React.FC<{
                         ? (ingredientsDetail as IngredientsDetailV4).items.map((item, idx) => (
                             <View key={idx} style={{ marginBottom: 12 }}>
                                 <Text style={[styles.modalParagraphSmall, { fontWeight: '600' }]}>{item.name}</Text>
-                                <Text style={styles.modalParagraphSmall}>{item.whatItDoes.text}</Text>
-                                <Text style={styles.modalParagraphSmall}>{item.doseContext.text}</Text>
-                                <Text style={styles.modalParagraphSmall}>{item.chemicalFormExplain.text}</Text>
+                                <Text style={styles.modalParagraphSmall}>
+                                    <Text style={{ fontWeight: '600' }}>What it does: </Text>
+                                    {formatTaggedText(item.whatItDoes.text, item.whatItDoes.basisTags)}
+                                </Text>
+                                <Text style={styles.modalParagraphSmall}>
+                                    <Text style={{ fontWeight: '600' }}>Dose (label): </Text>
+                                    {formatTaggedText(item.doseContext.text, item.doseContext.basisTags)}
+                                </Text>
+                                <Text style={styles.modalParagraphSmall}>
+                                    <Text style={{ fontWeight: '600' }}>Chemical form: </Text>
+                                    {formatTaggedText(item.chemicalFormExplain.text, item.chemicalFormExplain.basisTags)}
+                                </Text>
                                 {item.deliveryFormExplain?.text ? (
-                                    <Text style={styles.modalParagraphSmall}>{item.deliveryFormExplain.text}</Text>
+                                    <Text style={styles.modalParagraphSmall}>
+                                        <Text style={{ fontWeight: '600' }}>Delivery form: </Text>
+                                        {formatTaggedText(item.deliveryFormExplain.text, item.deliveryFormExplain.basisTags)}
+                                    </Text>
                                 ) : null}
                             </View>
                         ))
@@ -1075,15 +1150,28 @@ const AnalysisBundleDashboard: React.FC<{
                     </Text>
                 </View>
             </View>
-            {usageCover?.bullets?.length ? (
-                usageCover.bullets.map((bullet, idx) => (
+            <View style={styles.modalCalloutCard}>
+                <Text style={styles.modalBulletTitle}>Usage Guide</Text>
+                <Text style={styles.modalBulletItem}>
+                    • Best time:{' '}
+                    {usageCover?.bestTimeToTake?.text
+                        ? formatTaggedText(usageCover.bestTimeToTake.text, usageCover.bestTimeToTake.basisTags)
+                        : 'Not provided'}
+                </Text>
+                <Text style={styles.modalBulletItem}>
+                    • With food:{' '}
+                    {usageCover?.withFood?.text
+                        ? formatTaggedText(usageCover.withFood.text, usageCover.withFood.basisTags)
+                        : 'Not provided'}
+                </Text>
+            </View>
+            {usageCover?.bullets?.length
+                ? usageCover.bullets.map((bullet, idx) => (
                     <Text key={idx} style={styles.modalBulletItem}>
                         • {formatTaggedText(bullet.text, bullet.basisTags)}
                     </Text>
                 ))
-            ) : (
-                <Text style={styles.modalParagraphSmall}>Usage guidance pending.</Text>
-            )}
+                : null}
             {bundleState.sections.usage.detail?.scheduleFromLabel?.length ? (
                 <View style={styles.modalCalloutCard}>
                     <Text style={styles.modalBulletTitle}>Label Dosing</Text>
@@ -1104,7 +1192,9 @@ const AnalysisBundleDashboard: React.FC<{
                 <View style={{ flex: 1 }}>
                     <Text style={styles.modalSafetyTitle}>{safetyCover?.verdict ?? 'Safety summary pending'}</Text>
                     <Text style={styles.modalSafetyText}>
-                        {safetyCover?.bullets?.[0]?.text ?? 'No safety details available.'}
+                        {safetyCover?.bullets?.[0]
+                            ? formatTaggedText(safetyCover.bullets[0].text, safetyCover.bullets[0].basisTags)
+                            : 'No safety details available.'}
                     </Text>
                 </View>
             </View>
@@ -1141,7 +1231,7 @@ const AnalysisBundleDashboard: React.FC<{
             bullets: overviewBullets,
             bulletLimit: 2,
             bulletLines: 2,
-            dataStatus: buildBundleDataStatus(bundleState.sections.overview.dataStatus),
+            dataStatus: buildBundleDataStatus(bundleState.sections.overview.dataStatus, bundleState.meta.sourceType),
             content: overviewContent,
         },
         {
@@ -1157,7 +1247,7 @@ const AnalysisBundleDashboard: React.FC<{
             viewLabel: t.analysisView,
             eyebrow: t.analysisEyebrowKeyMechanism,
             mechanisms: ingredientMechanisms,
-            dataStatus: buildBundleDataStatus(bundleState.sections.ingredients.dataStatus),
+            dataStatus: buildBundleDataStatus(bundleState.sections.ingredients.dataStatus, bundleState.meta.sourceType),
             content: ingredientsContent,
         },
         {
@@ -1174,7 +1264,7 @@ const AnalysisBundleDashboard: React.FC<{
             eyebrow: t.analysisEyebrowDailyRoutine,
             routineLine: usageRoutine ? { text: usageRoutine } : undefined,
             bullets: usageBullets,
-            dataStatus: buildBundleDataStatus(bundleState.sections.usage.dataStatus),
+            dataStatus: buildBundleDataStatus(bundleState.sections.usage.dataStatus, bundleState.meta.sourceType),
             content: usageContent,
         },
         {
@@ -1191,11 +1281,13 @@ const AnalysisBundleDashboard: React.FC<{
             eyebrow: t.analysisEyebrowSafetyNotes,
             warning: safetyCover?.bullets?.[0]
                 ? { text: formatTaggedText(safetyCover.bullets[0].text, safetyCover.bullets[0].basisTags) }
-                : undefined,
+                : bundleState.sections.safety.dataStatus === 'pending'
+                    ? { text: 'Safety summary pending', isPlaceholder: true }
+                    : { text: 'No safety details available.' },
             tip: safetyCover?.bullets?.[1]
                 ? { text: formatTaggedText(safetyCover.bullets[1].text, safetyCover.bullets[1].basisTags) }
                 : undefined,
-            dataStatus: buildBundleDataStatus(bundleState.sections.safety.dataStatus),
+            dataStatus: buildBundleDataStatus(bundleState.sections.safety.dataStatus, bundleState.meta.sourceType),
             content: safetyContent,
         },
     ];
