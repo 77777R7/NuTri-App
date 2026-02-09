@@ -158,6 +158,10 @@ const STRIP_ANYWHERE_TOKENS = new Set([
   "formula",
   "controller",
   "aid",
+  "module",
+  "amplifier",
+  "composition",
+  "provides",
   "rapid",
   "rx",
   "pro",
@@ -172,6 +176,7 @@ const STRIP_ANYWHERE_TOKENS = new Set([
   "burn",
   "burner",
   "tm",
+  "r",
   "original",
   "consortium",
   "system",
@@ -180,6 +185,8 @@ const STRIP_ANYWHERE_TOKENS = new Set([
   "accelerator",
   "soothing",
   "preload",
+  "sequence",
+  "adaptogen",
 ]);
 
 const stripNameKeyVariants = (value: string): string[] => {
@@ -399,6 +406,17 @@ const MINERAL_CANONICAL_MAP: Array<{ tokens: string[]; keys: string[] }> = [
 ];
 
 const NON_BOTANICAL_TOKENS = new Set([
+  // Marketing/descriptor words that may be capitalized and mis-detected as a genus.
+  "organic",
+  "certified",
+  "natural",
+  "pure",
+  "wild",
+  "wildcrafted",
+  "raw",
+  "whole",
+  "fermented",
+  "standardized",
   "vitamin",
   "acid",
   "protein",
@@ -1264,14 +1282,536 @@ const CURATED_SYNONYM_MAP: Record<
     reason: "curated_haliotis_laevigata",
     category: "animal",
   },
+  "european elder": {
+    keys: ["sambucus_nigra"],
+    reason: "curated_sambucus_nigra",
+    category: "botanical",
+  },
+  mullein: {
+    keys: ["verbascum_thapsus"],
+    reason: "curated_mullein",
+    category: "botanical",
+  },
+  "white mulberry": {
+    keys: ["morus_alba"],
+    reason: "curated_white_mulberry",
+    category: "botanical",
+  },
+  jujube: {
+    keys: ["ziziphus_jujuba"],
+    reason: "curated_jujube",
+    category: "botanical",
+  },
+  "zizyphus extract": {
+    keys: ["ziziphus_jujuba"],
+    reason: "curated_zizyphus",
+    category: "botanical",
+  },
+  "oriental arborvitae": {
+    keys: ["platycladus_orientalis", "thuja_orientalis"],
+    reason: "curated_oriental_arborvitae",
+    category: "botanical",
+  },
+  opiopogon: {
+    keys: ["ophiopogon_japonicus"],
+    reason: "curated_ophiopogon",
+    category: "botanical",
+  },
+  "chinese yam": {
+    keys: ["dioscorea_opposita"],
+    reason: "curated_chinese_yam",
+    category: "botanical",
+  },
+  "grass leaf sweetflag": {
+    keys: ["acorus_calamus"],
+    reason: "curated_sweetflag_leaf",
+    category: "botanical",
+  },
+  sweetflag: {
+    keys: ["acorus_calamus"],
+    reason: "curated_sweetflag",
+    category: "botanical",
+  },
+  "korean ginseng root": {
+    keys: ["panax_ginseng"],
+    reason: "curated_korean_ginseng",
+    category: "botanical",
+  },
+  safflower: {
+    keys: ["carthamus_tinctorius"],
+    reason: "curated_safflower",
+    category: "botanical",
+  },
+  "california poppy liquid extract": {
+    keys: ["eschscholzia_californica"],
+    reason: "curated_california_poppy",
+    category: "botanical",
+  },
+  khella: {
+    keys: ["ammi_visnaga"],
+    reason: "curated_khella",
+    category: "botanical",
+  },
+  catuaba: {
+    keys: ["erythroxylum_catuaba"],
+    reason: "curated_catuaba",
+    category: "botanical",
+  },
+  "japanese knotweed": {
+    keys: ["polygonum_cuspidatum", "fallopia_japonica"],
+    reason: "curated_japanese_knotweed",
+    category: "botanical",
+  },
+  "greater celandine": {
+    keys: ["chelidonium_majus"],
+    reason: "curated_greater_celandine",
+    category: "botanical",
+  },
+  celandine: {
+    keys: ["chelidonium_majus"],
+    reason: "curated_celandine",
+    category: "botanical",
+  },
+  longjack: {
+    keys: ["eurycoma_longifolia"],
+    reason: "curated_longjack",
+    category: "botanical",
+  },
+  allspice: {
+    keys: ["pimenta_dioica"],
+    reason: "curated_allspice",
+    category: "botanical",
+  },
+  carob: {
+    keys: ["ceratonia_siliqua"],
+    reason: "curated_carob",
+    category: "botanical",
+  },
+  dulse: {
+    keys: ["palmaria_palmata"],
+    reason: "curated_dulse",
+    category: "botanical",
+  },
+  konjac: {
+    keys: ["amorphophallus_konjac"],
+    reason: "curated_konjac",
+    category: "botanical",
+  },
+  feverfew: {
+    keys: ["tanacetum_parthenium"],
+    reason: "curated_feverfew",
+    category: "botanical",
+  },
+  "green lipped mussel powder": {
+    keys: ["perna_canaliculus"],
+    reason: "curated_green_lipped_mussel",
+    category: "animal",
+  },
+  "venus fly trap leaves extract": {
+    keys: ["dionaea_muscipula"],
+    reason: "curated_venus_flytrap",
+    category: "botanical",
+  },
+  "ox bile": {
+    keys: ["ox_bile"],
+    reason: "curated_ox_bile",
+    category: "animal",
+  },
+  "wheat germ oil": {
+    keys: ["wheat_germ_oil"],
+    reason: "curated_wheat_germ_oil",
+    category: "lipid",
+  },
+  "vegetable sterols": {
+    keys: ["phytosterols"],
+    reason: "curated_phytosterols",
+    category: "lipid",
+  },
+  allicin: {
+    keys: ["allicin"],
+    reason: "curated_allicin",
+    category: "chemical",
+  },
+  myricetin: {
+    keys: ["myricetin"],
+    reason: "curated_myricetin",
+    category: "chemical",
+  },
+  retinol: {
+    keys: ["retinol", "vitamin_a"],
+    reason: "curated_retinol",
+    category: "vitamin",
+  },
+  panthenol: {
+    keys: ["panthenol"],
+    reason: "curated_panthenol",
+    category: "chemical",
+  },
+  dexpantenol: {
+    keys: ["dexpanthenol"],
+    reason: "curated_dexpanthenol",
+    category: "chemical",
+  },
+  adenosine: {
+    keys: ["adenosine"],
+    reason: "curated_adenosine",
+    category: "chemical",
+  },
+  "ethyl linoleate": {
+    keys: ["ethyl_linoleate"],
+    reason: "curated_ethyl_linoleate",
+    category: "chemical",
+  },
+  picamilon: {
+    keys: ["picamilon"],
+    reason: "curated_picamilon",
+    category: "chemical",
+  },
+  "cetyl myristoleate": {
+    keys: ["cetyl_myristoleate"],
+    reason: "curated_cetyl_myristoleate",
+    category: "chemical",
+  },
+  tungsten: {
+    keys: ["tungsten"],
+    reason: "curated_tungsten",
+    category: "mineral",
+  },
+  "bis picolinato oxovanadium": {
+    keys: ["vanadium", "oxovanadium"],
+    reason: "curated_oxovanadium",
+    category: "mineral",
+  },
+  "p a b a": {
+    keys: ["paba", "para_aminobenzoic_acid"],
+    reason: "curated_paba",
+    category: "chemical",
+  },
+  "salmon oil": {
+    keys: ["omega_3", "omega_3_fatty_acids", "fish_oil"],
+    reason: "curated_salmon_oil",
+    category: "lipid",
+  },
+  "avocado oil": {
+    keys: ["avocado_oil", "persea_americana"],
+    reason: "curated_avocado_oil",
+    category: "lipid",
+  },
+  "natural lutein esters": {
+    keys: ["lutein"],
+    reason: "curated_lutein_esters",
+    category: "chemical",
+  },
+  chrysin: {
+    keys: ["chrysin"],
+    reason: "curated_v15_chrysin",
+    category: "chemical",
+  },
+  cowslip: {
+    keys: ["primula_veris", "cowslip"],
+    reason: "curated_v15_cowslip",
+    category: "botanical",
+  },
+  "black radish powder": {
+    keys: ["raphanus_sativus", "black_radish"],
+    reason: "curated_v15_black_radish",
+    category: "botanical",
+  },
+  "thiamine pyrophosphate": {
+    keys: ["thiamine_pyrophosphate", "thiamine"],
+    reason: "curated_v15_thiamine_pyrophosphate",
+    category: "vitamin",
+  },
+  "tonalin r cla": {
+    keys: ["conjugated_linoleic_acid", "cla"],
+    reason: "curated_v15_tonalin_cla",
+    category: "lipid",
+  },
+  "myoleptin tm cla": {
+    keys: ["conjugated_linoleic_acid", "cla"],
+    reason: "curated_v15_myoleptin_cla",
+    category: "lipid",
+  },
+  monolaurin: {
+    keys: ["monolaurin"],
+    reason: "curated_v15_monolaurin",
+    category: "lipid",
+  },
+  "gan cao": {
+    keys: ["glycyrrhiza_uralensis", "licorice"],
+    reason: "curated_v15_gan_cao",
+    category: "botanical",
+  },
+  "lian qiao": {
+    keys: ["forsythia_suspensa", "lian_qiao"],
+    reason: "curated_v15_lian_qiao",
+    category: "botanical",
+  },
+  "chen pi": {
+    keys: ["citrus_reticulata", "chen_pi"],
+    reason: "curated_v15_chen_pi",
+    category: "botanical",
+  },
+  "blue vervain": {
+    keys: ["verbena_hastata", "blue_vervain"],
+    reason: "curated_v15_blue_vervain",
+    category: "botanical",
+  },
+  "chia oil": {
+    keys: ["salvia_hispanica", "chia", "chia_oil"],
+    reason: "curated_v15_chia_oil",
+    category: "lipid",
+  },
+  chitosan: {
+    keys: ["chitosan"],
+    reason: "curated_v15_chitosan",
+    category: "chemical",
+  },
+  "huang qin": {
+    keys: ["scutellaria_baicalensis", "huang_qin"],
+    reason: "curated_v15_huang_qin",
+    category: "botanical",
+  },
+  "chai hu": {
+    keys: ["bupleurum_chinense", "chai_hu"],
+    reason: "curated_v15_chai_hu",
+    category: "botanical",
+  },
+  "fu ling": {
+    keys: ["poria_cocos", "fu_ling"],
+    reason: "curated_v15_fu_ling",
+    category: "botanical",
+  },
+  "dang gui": {
+    keys: ["angelica_sinensis", "dang_gui"],
+    reason: "curated_v15_dang_gui",
+    category: "botanical",
+  },
+  "alpha lactalbumin": {
+    keys: ["alpha_lactalbumin", "lactalbumin"],
+    reason: "curated_v15_alpha_lactalbumin",
+    category: "animal",
+  },
+  "bovine serum albumin": {
+    keys: ["bovine_serum_albumin", "serum_albumin", "albumin"],
+    reason: "curated_v15_bovine_serum_albumin",
+    category: "animal",
+  },
+  sorrel: {
+    keys: ["rumex_acetosa", "sorrel"],
+    reason: "curated_v15_sorrel",
+    category: "botanical",
+  },
+  idebenone: {
+    keys: ["idebenone"],
+    reason: "curated_v15_idebenone",
+    category: "chemical",
+  },
+  mugwort: {
+    keys: ["artemisia_vulgaris", "mugwort"],
+    reason: "curated_v15_mugwort",
+    category: "botanical",
+  },
+  restharrow: {
+    keys: ["ononis_spinosa", "restharrow"],
+    reason: "curated_v15_restharrow",
+    category: "botanical",
+  },
+  okra: {
+    keys: ["abelmoschus_esculentus", "okra"],
+    reason: "curated_v15_okra",
+    category: "botanical",
+  },
+  clinoptilolite: {
+    keys: ["clinoptilolite", "zeolite"],
+    reason: "curated_v15_clinoptilolite",
+    category: "mineral",
+  },
+  "activated charcoal": {
+    keys: ["activated_charcoal", "charcoal"],
+    reason: "curated_v15_activated_charcoal",
+    category: "chemical",
+  },
+  "nopal cactus": {
+    keys: ["opuntia_ficus_indica", "nopal"],
+    reason: "curated_v15_nopal",
+    category: "botanical",
+  },
+  "l asparagine": {
+    keys: ["l_asparagine", "asparagine"],
+    reason: "curated_v15_asparagine",
+    category: "chemical",
+  },
+  ficin: {
+    keys: ["ficin"],
+    reason: "curated_v15_ficin",
+    category: "enzyme",
+  },
+  "zinc ascorbate": {
+    keys: ["zinc_ascorbate", "zinc"],
+    reason: "curated_v15_zinc_ascorbate",
+    category: "mineral",
+  },
+  methylcobalamin: {
+    keys: ["methylcobalamin", "vitamin_b12"],
+    reason: "curated_v15_methylcobalamin",
+    category: "vitamin",
+  },
+  cleavers: {
+    keys: ["galium_aparine", "cleavers"],
+    reason: "curated_v15_cleavers",
+    category: "botanical",
+  },
+  "p 5 p": {
+    keys: ["pyridoxal_5_phosphate", "p5p", "vitamin_b6"],
+    reason: "curated_v15_p5p",
+    category: "vitamin",
+  },
+  "novasoy phytoestrogen extract": {
+    keys: ["soy_isoflavones", "isoflavones"],
+    reason: "curated_novasoy_phytoestrogen",
+    category: "botanical",
+  },
+  "s thermophilu": {
+    keys: ["streptococcus_thermophilus"],
+    reason: "curated_streptococcus_thermophilus",
+    category: "microbe",
+    baseUnit: "cfu",
+  },
+  // ---------------------------------------------------------------------------
+  // DSLD scale v16+ (scoreable expansion) curated synonyms
+  // ---------------------------------------------------------------------------
+  "horse chestnut": {
+    keys: ["aesculus_hippocastanum"],
+    reason: "curated_v16_horse_chestnut",
+    category: "botanical",
+  },
+  "horse chestnut extract": {
+    keys: ["aesculus_hippocastanum"],
+    reason: "curated_v16_horse_chestnut_extract",
+    category: "botanical",
+  },
+  flax: {
+    keys: ["linum_usitatissimum"],
+    reason: "curated_v16_flax",
+    category: "botanical",
+  },
+  "flax seed": {
+    keys: ["linum_usitatissimum"],
+    reason: "curated_v16_flax_seed",
+    category: "botanical",
+  },
+  "flax seed oil": {
+    keys: ["linum_usitatissimum"],
+    reason: "curated_v16_flax_seed_oil",
+    category: "botanical",
+  },
+  turmeric: {
+    keys: ["curcuma_longa"],
+    reason: "curated_v16_turmeric",
+    category: "botanical",
+  },
+  ginger: {
+    keys: ["zingiber_officinale"],
+    reason: "curated_v16_ginger",
+    category: "botanical",
+  },
+  "toothed clubmoss": {
+    keys: ["huperzia_serrata"],
+    reason: "curated_v16_toothed_clubmoss",
+    category: "botanical",
+  },
+  "black walnut": {
+    keys: ["juglans_nigra"],
+    reason: "curated_v16_black_walnut",
+    category: "botanical",
+  },
+  "arabinogalactan": {
+    keys: ["arabinogalactan"],
+    reason: "curated_v16_arabinogalactan",
+    category: "chemical",
+  },
+  "dicaffeine malate": {
+    keys: ["dicaffeine_malate", "caffeine"],
+    reason: "curated_v16_dicaffeine_malate",
+    category: "chemical",
+  },
+  "m s m": {
+    keys: ["msm", "methylsulfonylmethane"],
+    reason: "curated_v16_msm_spaced",
+    category: "chemical",
+  },
+  "creapure": {
+    keys: ["creatine_monohydrate", "creatine"],
+    reason: "curated_v16_creapure",
+    category: "chemical",
+  },
+  "delta 8 thc": {
+    keys: ["delta_8_thc"],
+    reason: "curated_v16_delta8_thc",
+    category: "chemical",
+  },
+  "dl malate": {
+    keys: ["dl_malate", "malic_acid"],
+    reason: "curated_v16_dl_malate",
+    category: "chemical",
+  },
+  "organic hemp extract": {
+    keys: ["cannabis_sativa"],
+    reason: "curated_v16_hemp_extract",
+    category: "botanical",
+  },
+  "phytocannabinoid rich hemp extract": {
+    keys: ["cannabis_sativa"],
+    reason: "curated_v16_phytocannabinoid_rich_hemp_extract",
+    category: "botanical",
+  },
+  "safflower oil": {
+    keys: ["carthamus_tinctorius"],
+    reason: "curated_v16_safflower_oil",
+    category: "botanical",
+  },
+  "norwegian fish oil concentrate": {
+    keys: ["fish_oil"],
+    reason: "curated_v16_norwegian_fish_oil_concentrate",
+    category: "lipid",
+  },
+  "honey": {
+    keys: ["honey"],
+    reason: "curated_v16_honey",
+    category: "animal",
+  },
+  "agmapure": {
+    keys: ["agmatine_sulfate", "agmatine"],
+    reason: "curated_v16_agmapure",
+    category: "chemical",
+  },
+  alphasize: {
+    keys: ["alpha_gpc"],
+    reason: "curated_v16_alphasize",
+    category: "chemical",
+  },
 };
 
 const LATIN_BINOMIAL_STRICT_RE =
   /^([A-Z][a-z]+)\s+([a-z]{2,})(?:\s+(?:var\.?|subsp\.?|ssp\.?|f\.?|cv\.?|×|x)\s+([a-z]{2,}))?$/;
 const LATIN_BINOMIAL_SEARCH_RE =
   /([A-Z][a-z]+)\s+([a-z]{2,})(?:\s+(?:var\.?|subsp\.?|ssp\.?|f\.?|cv\.?|×|x)\s+([a-z]{2,}))?/g;
+const LATIN_BINOMIAL_SEARCH_CI_RE =
+  /([A-Za-z]{3,})\s+([A-Za-z]{2,})(?:\s+(?:var\.?|subsp\.?|ssp\.?|f\.?|cv\.?|×|x)\s+([A-Za-z]{2,}))?/g;
 
 const LATIN_SECOND_WORD_STOPLIST = new Set([
+  // Marketing/descriptor words that can appear as the second token.
+  "organic",
+  "certified",
+  "natural",
+  "pure",
+  "wild",
+  "wildcrafted",
+  "raw",
+  "whole",
+  "fermented",
+  "standardized",
   "protein",
   "oil",
   "extract",
@@ -1513,6 +2053,31 @@ const run = async () => {
     };
   };
 
+  const isTooGenericVariantKey = (value: string): boolean => {
+    const key = normalizeText(value);
+    if (!key) return true;
+    const tokens = key.split(/\s+/).filter(Boolean);
+    if (tokens.length !== 1) return false;
+    const token = tokens[0];
+    return (
+      STRIP_PREFIX_TOKENS.has(token) ||
+      STRIP_SUFFIX_TOKENS.has(token) ||
+      STRIP_ANYWHERE_TOKENS.has(token) ||
+      NON_BOTANICAL_TOKENS.has(token)
+    );
+  };
+
+  const resolveCuratedSynonymFromVariants = (variants: Iterable<string>) => {
+    for (const variant of variants) {
+      const key = normalizeText(variant);
+      if (!key) continue;
+      if (isTooGenericVariantKey(key)) continue;
+      const curated = resolveCuratedSynonym(key);
+      if (curated) return { ...curated, key };
+    }
+    return null;
+  };
+
   const resolveSynonymMatch = (candidates: string[]) => {
     for (const candidate of candidates) {
       const normalized = normalizeText(candidate);
@@ -1656,10 +2221,20 @@ const resolveLatinBinomial = (
       if (!cleaned) continue;
 
       const strict = cleaned.match(LATIN_BINOMIAL_STRICT_RE);
-      const matches = strict ? [strict] : Array.from(cleaned.matchAll(LATIN_BINOMIAL_SEARCH_RE));
-      for (const match of matches) {
-        const genus = match[1];
-        const species = match[2]?.toLowerCase();
+      const matches = strict
+        ? [strict]
+        : Array.from(cleaned.matchAll(LATIN_BINOMIAL_SEARCH_RE));
+      const matchList =
+        matches.length > 0 ? matches : Array.from(cleaned.matchAll(LATIN_BINOMIAL_SEARCH_CI_RE));
+
+      for (const match of matchList) {
+        const genusRaw = match[1];
+        const speciesRaw = match[2];
+        const genus =
+          genusRaw && genusRaw.length
+            ? genusRaw[0].toUpperCase() + genusRaw.slice(1).toLowerCase()
+            : "";
+        const species = speciesRaw?.toLowerCase();
         if (!genus || !species) continue;
         if (LATIN_SECOND_WORD_STOPLIST.has(species)) continue;
         if (MICROBE_GENUS.has(genus.toLowerCase())) continue;
@@ -1730,6 +2305,62 @@ const resolveLatinBinomial = (
     nameRawSamples.forEach((sample) => {
       stripNameKeyVariants(sample).forEach((key) => variantKeys.add(key));
     });
+
+    // If the raw name isn't curated, try the curated map against stripped variants
+    // (e.g. "beet root powder" -> "beet").
+    const curatedVariant = resolveCuratedSynonymFromVariants(variantKeys);
+    if (curatedVariant) {
+      if (curatedVariant.match) {
+        autoApply.push({
+          nameKey,
+          count: entry.count,
+          sourceCount: entry.sourceCount,
+          nameRawSamples,
+          sourceIdSamples,
+          ingredientId: curatedVariant.match.id,
+          canonicalKey: curatedVariant.match.canonical_key ?? null,
+          ingredientName: curatedVariant.match.name ?? null,
+          mappingType: "curated_synonym",
+          confidence: curatedVariant.rule.confidence ?? 0.86,
+          reason: `${curatedVariant.rule.reason}_via_variant`,
+        });
+        queueSynonymPatch({
+          canonicalKey: curatedVariant.match.canonical_key ?? null,
+          ingredientName: curatedVariant.match.name ?? null,
+          synonyms: [entry.nameKey, ...nameRawSamples, curatedVariant.key],
+        });
+      } else {
+        const preferredKey =
+          curatedVariant.rule.keys[0] ?? nameKey.replace(/\s+/g, "_");
+        autoApply.push({
+          nameKey,
+          count: entry.count,
+          sourceCount: entry.sourceCount,
+          nameRawSamples,
+          sourceIdSamples,
+          ingredientId: "NEW",
+          canonicalKey: preferredKey,
+          ingredientName: titleCase(preferredKey.replace(/_/g, " ")),
+          mappingType: "new_canonical",
+          confidence: curatedVariant.rule.confidence ?? 0.86,
+          reason: "curated_create_canonical_via_variant",
+          constraints: ["create_canonical_for_curated_synonym"],
+        });
+        importPatchRecords.push({
+          ingredient_id: preferredKey,
+          ingredient: titleCase(preferredKey.replace(/_/g, " ")),
+          category: curatedVariant.rule.category ?? "chemical",
+          base_unit: curatedVariant.rule.baseUnit ?? inferBaseUnit(nameKey),
+          synonyms: dedupeSynonyms([
+            entry.nameKey,
+            ...nameRawSamples,
+            curatedVariant.key,
+          ]),
+        });
+      }
+      return;
+    }
+
     for (const variant of variantKeys) {
       const canonicalVariant = canonicalKeyIndex.get(
         normalizeCanonicalKey(variant),
@@ -2126,15 +2757,45 @@ const resolveLatinBinomial = (
           synonyms: dedupeSynonyms(nameRawSamples),
         });
       } else {
-        manualQueue.push({
-          nameKey,
-          count: entry.count,
-          sourceCount: entry.sourceCount,
-          nameRawSamples,
-          sourceIdSamples,
-          reason: "curated_no_canonical",
+        // For curated rules we allow creating canonicals directly; the curated map
+        // is already a human-reviewed allowlist.
+        const preferredKey = curated.rule.keys[0] ?? nameKey.replace(/\s+/g, "_");
+        importPatchRecords.push({
+          ingredient_id: preferredKey,
+          ingredient: titleCase(preferredKey.replace(/_/g, " ")),
+          category: curated.rule.category ?? "chemical",
+          base_unit: curated.rule.baseUnit ?? inferBaseUnit(nameKey),
+          synonyms: dedupeSynonyms([entry.nameKey, ...nameRawSamples]),
         });
       }
+      return;
+    }
+
+    const importVariantKeys = new Set<string>();
+    stripNameKeyVariants(entry.nameKey).forEach((key) => importVariantKeys.add(key));
+    nameRawSamples.forEach((sample) => {
+      stripNameKeyVariants(sample).forEach((key) => importVariantKeys.add(key));
+    });
+    const curatedImportVariant = resolveCuratedSynonymFromVariants(importVariantKeys);
+    if (curatedImportVariant) {
+      const preferredKey =
+        curatedImportVariant.match?.canonical_key ??
+        curatedImportVariant.match?.id ??
+        curatedImportVariant.rule.keys[0] ??
+        nameKey.replace(/\s+/g, "_");
+      importPatchRecords.push({
+        ingredient_id: preferredKey,
+        ingredient:
+          curatedImportVariant.match?.name ??
+          titleCase(preferredKey.replace(/_/g, " ")),
+        category: curatedImportVariant.rule.category ?? "chemical",
+        base_unit: curatedImportVariant.rule.baseUnit ?? inferBaseUnit(nameKey),
+        synonyms: dedupeSynonyms([
+          entry.nameKey,
+          ...nameRawSamples,
+          curatedImportVariant.key,
+        ]),
+      });
       return;
     }
 

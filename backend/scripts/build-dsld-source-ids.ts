@@ -14,6 +14,7 @@ const getArg = (flag: string) => {
   if (idx === -1) return null;
   return args[idx + 1] ?? null;
 };
+const hasFlag = (flag: string) => args.includes(`--${flag}`);
 
 const startIdRaw = getArg("start-dsld-id");
 const limitRaw = getArg("limit");
@@ -115,7 +116,20 @@ const run = async () => {
 
   await ensureDir(OUTPUT);
   await writeFile(OUTPUT, JSON.stringify(payload, null, 2), "utf8");
-  console.log(JSON.stringify({ output: OUTPUT, ...payload }, null, 2));
+  const printIds = hasFlag("print-ids");
+  const summary = {
+    output: OUTPUT,
+    source: payload.source,
+    startId: payload.startId,
+    limit: payload.limit,
+    count: payload.count,
+    firstId: payload.sourceIds[0] ?? null,
+    lastId: payload.sourceIds[payload.sourceIds.length - 1] ?? null,
+    maxDsldLabelId: payload.lastId,
+    timestamp: payload.timestamp,
+    note: printIds ? "ids included" : "ids omitted (use --print-ids)",
+  };
+  console.log(JSON.stringify(printIds ? { ...summary, ...payload } : summary, null, 2));
 };
 
 run().catch((error) => {

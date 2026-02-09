@@ -11,8 +11,9 @@ import { resolveCatalogByBarcode, type CatalogResolved } from "./catalogResolver
 import { buildCatalogBarcodeSnapshot } from "./catalogSnapshot.js";
 import { logBarcodeScan } from "./scanLog.js";
 import { extractBrandProduct, type BrandExtractionResult } from "./brandExtractor.js";
-import { buildCombinedContext, fetchAnalysisBundle, fetchAnalysisBundleFastV3, fetchIngredientsDetailV3, prepareContextSources } from "./deepseek.js";
+import { buildCombinedContext, fetchAnalysisBundle, fetchAnalysisBundleFastV3, fetchIngredientsDetailV3, fetchMySupplementOverviewCard, prepareContextSources } from "./deepseek.js";
 import { getKbRuntime, lookupKbFormExplain } from "./kbRuntime.js";
+import { buildRuleBasedOverview } from "./overviewRuleBased.js";
 import {
   IngredientsDetailSchema,
   UsageFieldSchema,
@@ -679,6 +680,40 @@ const applyDsldInferenceGuard = (bundle: AnalysisBundle, digest: FactsDigest): A
   };
 };
 
+// Some UIs expect two safety bullets (e.g., warning + tip). Keep this deterministic and non-hallucinating.
+const applySafetyNotProvidedGuard = (bundle: AnalysisBundle): AnalysisBundle => {
+  const cover = bundle.sections.safety.cover;
+  if (!cover) return bundle;
+  if (bundle.sections.safety.dataStatus !== "not_provided") return bundle;
+
+  const bullets = Array.isArray(cover.bullets) ? cover.bullets : [];
+  if (bullets.length >= 2) return bundle;
+
+  const nextBullets = [...bullets];
+  if (nextBullets.length === 0) {
+    nextBullets.push(buildSectionBullet("No safety information provided in the source data.", ["not_provided"]));
+  }
+  if (nextBullets.length < 2) {
+    nextBullets.push(
+      buildSectionBullet("General safety: consult a healthcare professional if needed.", ["general_advice"]),
+    );
+  }
+
+  return {
+    ...bundle,
+    sections: {
+      ...bundle.sections,
+      safety: {
+        ...bundle.sections.safety,
+        cover: {
+          ...cover,
+          bullets: nextBullets,
+        },
+      },
+    },
+  };
+};
+
 const buildFallbackOverviewBullets = (digest: FactsDigest): Array<{ text: string; basisTags: BasisTag[] }> => {
   const bullets: Array<{ text: string; basisTags: BasisTag[] }> = [];
   if (digest.claims.labelPurposes.length > 0) {
@@ -799,10 +834,17 @@ const buildChemicalFormExplainFallback = (
     return { text: kbSentence, basisTags: ["label_fact", "ingredient_inference"] };
   }
   const confidence = active.chemicalFormConfidence ?? null;
-  if (!active.chemicalForm || confidence === null || confidence < 0.6) {
-    return { text: "Chemical form not provided by source.", basisTags: ["not_provided"] };
+  const chemicalForm = typeof active.chemicalForm === "string" ? active.chemicalForm.trim() : "";
+  const isTrivialForm = chemicalForm
+    ? normalizeIngredientName(chemicalForm) === normalizeIngredientName(active.name)
+    : true;
+  if (!chemicalForm || isTrivialForm || confidence === null || confidence < 0.6) {
+    return {
+      text: "The label does not specify chemical form. At typical doses, dose and diet often matter more.",
+      basisTags: ["not_provided", "general_advice"],
+    };
   }
-  return { text: `Chemical form: ${active.chemicalForm}.`, basisTags: ["label_fact"] };
+  return { text: `Chemical form: ${chemicalForm}.`, basisTags: ["label_fact"] };
 };
 
 const buildPerServingDoseContext = (
@@ -815,6 +857,111 @@ const buildPerServingDoseContext = (
   }
   const suffix = servingSize ? ` (Serving size: ${servingSize})` : "";
   return buildLabelField(`${amountText}${suffix}`);
+};
+
+const buildDerivedDailyAmountText = (
+  labelDosingText: string | null,
+  servingSize: string | null,
+  active: FactsDigest["actives"][number],
+): string | null => {
+  if (!labelDosingText) return null;
+  if (!servingSize) return null;
+  if (active.amount === null || !active.unit) return null;
+
+  // Only derive when serving size likely maps to the dosing unit (e.g., "Serving size: 1 tablet"),
+  // and the label dosing is in a common LNHPD style. This avoids overstating daily totals.
+  const normalized = labelDosingText.toLowerCase();
+  const timesMatch = normalized.match(/\b(\d+(?:\.\d+)?)\s*(?:times|x)\s*(?:per\s*)?(?:day|daily)\b/);
+  const doseMatch = normalized.match(
+    /\b(\d+(?:\.\d+)?)\s*(tablet|tablets|capsule|capsules|softgel|softgels|gummy|gummies|scoop|scoops|spray|sprays)\b/,
+  );
+  if (!timesMatch?.[1] || !doseMatch?.[1] || !doseMatch?.[2]) return null;
+
+  const times = Number(timesMatch[1]);
+  const perDayUnits = Number(doseMatch[1]);
+  const doseUnitWord = doseMatch[2];
+  if (!Number.isFinite(times) || times <= 0) return null;
+  if (!Number.isFinite(perDayUnits) || perDayUnits <= 0) return null;
+
+  const servingLower = servingSize.toLowerCase();
+  if (!servingLower.includes(doseUnitWord)) return null;
+  if (!/\b1\b/.test(servingLower)) return null;
+
+  const multiplier = times * perDayUnits;
+  const derived = active.amount * multiplier;
+  if (!Number.isFinite(derived) || derived <= 0) return null;
+  const rounded = Math.round(derived * 100) / 100;
+  return `Derived daily total (from label dosing): ~${rounded} ${active.unit}`;
+};
+
+const buildLnhpdDetailKbFirst = (detailDigest: FactsDigest, labelDosingText: string | null): IngredientsDetail => {
+  const kb = getKbRuntime();
+  const servingSize = detailDigest.serving.servingSize ?? null;
+  const labelBits: string[] = [];
+  if (labelDosingText) labelBits.push(`Label dosing: ${labelDosingText}`);
+
+  const items = detailDigest.actives.map((active) => {
+    const kbResult = kb
+      ? lookupKbFormExplain({
+          ingredientName: active.name,
+          chemicalForm: active.chemicalForm ?? null,
+          chemicalFormConfidence: active.chemicalFormConfidence ?? null,
+        })
+      : { sentence: null, resolveSource: "none" as const };
+
+    const perServing = buildPerServingDoseContext(active, servingSize).text;
+    const derivedDaily = buildDerivedDailyAmountText(labelDosingText, servingSize, active);
+    const doseParts = [perServing, ...labelBits, derivedDaily].filter(Boolean);
+    const doseContext = buildLabelField(doseParts.join(". ") + ".");
+
+    const whatItDoes = (() => {
+      const nameKey = normalizeIngredientName(active.name);
+      if (nameKey === "vitamin c") {
+        return {
+          text: "Common roles include immune support, collagen formation, and antioxidant activity.",
+          basisTags: ["general_advice"] as BasisTag[],
+        };
+      }
+      if (nameKey === "zinc") {
+        return { text: "Common roles include immune function and wound healing.", basisTags: ["general_advice"] as BasisTag[] };
+      }
+      if (nameKey === "vitamin d" || nameKey === "vitamin d3" || nameKey === "vitamin d2") {
+        return { text: "Common roles include calcium absorption and bone health support.", basisTags: ["general_advice"] as BasisTag[] };
+      }
+      if (nameKey === "calcium") {
+        return { text: "Common roles include bone health support and muscle function.", basisTags: ["general_advice"] as BasisTag[] };
+      }
+      if (nameKey === "magnesium") {
+        return { text: "Common roles include muscle and nerve function support.", basisTags: ["general_advice"] as BasisTag[] };
+      }
+      if (nameKey === "iron") {
+        return { text: "Common roles include red blood cell formation and oxygen transport.", basisTags: ["general_advice"] as BasisTag[] };
+      }
+      return buildNotProvidedField();
+    })();
+
+    return {
+      name: active.name,
+      whatItDoes,
+      doseContext,
+      chemicalFormExplain: buildChemicalFormExplainFallback(active, kbResult.sentence),
+      deliveryFormExplain: buildDeliveryFormExplain(active.deliveryForm ?? null),
+    };
+  });
+
+  const activeSummary = detailDigest.actives
+    .map((active) => {
+      const amt = buildActiveAmountText(active);
+      return amt ? `${active.name} (${amt.replace(/ per serving$/i, "")})` : active.name;
+    })
+    .filter(Boolean)
+    .join(", ");
+  const summaryParts: string[] = [];
+  if (activeSummary) summaryParts.push(`Actives: ${activeSummary}.`);
+  if (labelDosingText) summaryParts.push(`Label dosing: ${labelDosingText}.`);
+  const overallSummary = summaryParts.length ? buildLabelField(summaryParts.join(" ")) : null;
+
+  return { items, overallSummary, overlapNotes: null };
 };
 
 const buildDetailSkeleton = (digest: FactsDigest, labelDosingText: string | null): IngredientsDetail => {
@@ -3958,6 +4105,19 @@ const authDisabled =
 const allowAuthBypass =
   process.env.ALLOW_AUTH_BYPASS === "true" || process.env.ALLOW_AUTH_BYPASS === "1";
 
+type AuthCacheEntry = {
+  user: {
+    id: string;
+    email?: string | null;
+  };
+  expiresAtMs: number;
+};
+
+// Avoid repeated network auth lookups during a scan flow (SSE + detail requests).
+// This is safe as a short TTL cache: the JWT itself already encodes expiration.
+const AUTH_USER_CACHE_TTL_MS = 60_000;
+const authUserCache = new Map<string, AuthCacheEntry>();
+
 const verifySupabaseToken = async (req: Request, res: Response, next: NextFunction) => {
   if (authDisabled) {
     return next();
@@ -3985,6 +4145,12 @@ const verifySupabaseToken = async (req: Request, res: Response, next: NextFuncti
       .json({ error: "invalid_authorization" } satisfies ErrorResponse);
   }
 
+  const cached = authUserCache.get(token);
+  if (cached && cached.expiresAtMs > Date.now()) {
+    (req as AuthenticatedRequest).user = cached.user;
+    return next();
+  }
+
   try {
     const { data, error } = await supabase.auth.getUser(token);
     if (error || !data.user) {
@@ -3994,6 +4160,13 @@ const verifySupabaseToken = async (req: Request, res: Response, next: NextFuncti
     }
 
     (req as AuthenticatedRequest).user = data.user;
+    authUserCache.set(token, {
+      user: { id: data.user.id, email: data.user.email ?? null },
+      expiresAtMs: Date.now() + AUTH_USER_CACHE_TTL_MS,
+    });
+    if (authUserCache.size > 1000) {
+      authUserCache.clear();
+    }
     return next();
   } catch (error) {
     captureException(error, { route: "verifySupabaseToken" });
@@ -4753,81 +4926,6 @@ const resolveBrandId = async (brandName: string): Promise<string | null> => {
   return inserted?.id ?? null;
 };
 
-const buildRuleBasedOverview = (params: {
-  productName: string;
-  dosageText: string | null;
-}) => {
-  const name = params.productName.toLowerCase();
-  const has = (tokens: string[]) => tokens.some((token) => name.includes(token));
-
-  let timing = "Morning (08:00)";
-  let withFood: boolean | null = null;
-  let usageSummary = "Take with or without food.";
-  let coreBenefits: string[] = [];
-
-  if (has(["melatonin"])) {
-    timing = "Bedtime (30–60 min before sleep)";
-    withFood = false;
-    usageSummary = "Take on an empty stomach for best absorption.";
-    coreBenefits = ["Supports healthy sleep onset"];
-  } else if (has(["probiotic"])) {
-    timing = "Morning (before breakfast)";
-    withFood = false;
-    usageSummary = "Take on an empty stomach unless the label says otherwise.";
-    coreBenefits = ["Supports gut microbiome balance"];
-  } else if (has(["magnesium"])) {
-    timing = "Evening (after dinner)";
-    withFood = true;
-    usageSummary = "Take with food to reduce stomach upset.";
-    coreBenefits = ["Supports muscle relaxation"];
-  } else if (has(["omega-3", "fish oil", "krill"])) {
-    timing = "With meals (morning or dinner)";
-    withFood = true;
-    usageSummary = "Take with food for better absorption.";
-    coreBenefits = ["Supports heart health"];
-  } else if (has(["vitamin d", "d3"])) {
-    timing = "Morning (with breakfast)";
-    withFood = true;
-    usageSummary = "Take with food, ideally with some fat.";
-    coreBenefits = ["Supports bone and immune health"];
-  } else if (has(["iron"])) {
-    timing = "Morning (empty stomach)";
-    withFood = false;
-    usageSummary = "Take on an empty stomach unless it causes discomfort.";
-    coreBenefits = ["Supports healthy red blood cells"];
-  } else if (has(["calcium"])) {
-    timing = "With meals";
-    withFood = true;
-    usageSummary = "Take with food for better absorption.";
-    coreBenefits = ["Supports bone health"];
-  } else if (has(["zinc"])) {
-    timing = "With meals";
-    withFood = true;
-    usageSummary = "Take with food to reduce nausea.";
-    coreBenefits = ["Supports immune function"];
-  } else if (has(["vitamin", "b1", "b2", "b3", "b6", "b12", "folate"])) {
-    timing = "Morning (with breakfast)";
-    withFood = true;
-    usageSummary = "Take with food for best tolerance.";
-    coreBenefits = ["Supports daily nutrition"];
-  }
-
-  const doseText = params.dosageText ? ` (${params.dosageText})` : "";
-  if (coreBenefits.length === 0) {
-    coreBenefits = ["General wellness support"];
-  }
-
-  const overviewSummary = `General guidance for ${params.productName}${doseText}. Follow the product label.`;
-
-  return {
-    overviewSummary,
-    coreBenefits,
-    timing,
-    withFood,
-    usageSummary,
-  };
-};
-
 const resolveSupplementIdForOverview = async (params: {
   supplementId?: string | null;
   barcode?: string | null;
@@ -4960,10 +5058,58 @@ const ensurePublicOverview = async (params: {
 
   if (data?.id) return true;
 
-  const overview = buildRuleBasedOverview({
-    productName: params.productName,
-    dosageText: params.dosageText,
-  });
+  const normalizeTwoSentenceSummary = (value: string): string => {
+    const normalized = value.replace(/\s+/g, " ").trim();
+    if (!normalized) return "";
+    const matches = normalized.match(/[^.!?]+[.!?]+|[^.!?]+$/g) ?? [];
+    const firstRaw = (matches[0] ?? normalized).trim();
+    const secondRaw = (matches[1] ?? "Follow the product label for dosing and timing.").trim();
+    const first = /[.!?]$/.test(firstRaw) ? firstRaw : `${firstRaw}.`;
+    const second = /[.!?]$/.test(secondRaw) ? secondRaw : `${secondRaw}.`;
+    return `${first} ${second}`;
+  };
+
+  const buildFallback = () =>
+    buildRuleBasedOverview({
+      productName: params.productName,
+      dosageText: params.dosageText,
+    });
+
+  let overview = buildFallback();
+  let overviewSource: "rule" | "deepseek" = "rule";
+
+  const deepseekKey = process.env.DEEPSEEK_API_KEY ?? null;
+  if (deepseekKey) {
+    try {
+      const model = process.env.DEEPSEEK_MODEL || "deepseek-chat";
+      const timeoutRaw = Number(process.env.MY_SUPP_OVERVIEW_TIMEOUT_MS ?? 4000);
+      const timeoutMs = Number.isFinite(timeoutRaw) && timeoutRaw > 0 ? timeoutRaw : 4000;
+      const context = [
+        `Product name: ${params.productName}`,
+        `Dosage text: ${params.dosageText ?? "null"}`,
+        "",
+        "Return a My Supplement overview card JSON as instructed.",
+      ].join("\n");
+      const card = await fetchMySupplementOverviewCard(context, model, deepseekKey, {
+        timeoutMs,
+        maxTokens: 600,
+      });
+      if (card) {
+        overviewSource = "deepseek";
+        overview = {
+          overviewSummary: normalizeTwoSentenceSummary(card.overviewSummary),
+          coreBenefits: card.coreBenefits.length > 0 ? card.coreBenefits : overview.coreBenefits,
+          timing: card.timing,
+          withFood: card.withFood,
+          usageSummary: card.withFood ? "Take with food." : "Take on an empty stomach.",
+        };
+      }
+    } catch (error) {
+      console.warn("[ensure-overview] DeepSeek overview card failed; falling back to rules", error);
+      overview = buildFallback();
+      overviewSource = "rule";
+    }
+  }
 
   const analysisData = {
     efficacy: {
@@ -4979,7 +5125,7 @@ const ensurePublicOverview = async (params: {
     usage: {
       timing: overview.timing,
       withFood: overview.withFood,
-      summary: overview.usageSummary,
+      summary: overview.withFood ? "Take with food." : "Take on an empty stomach.",
       conflicts: [],
       sourceType: "general_knowledge",
     },
@@ -5473,6 +5619,50 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       detail: { items: [], overallSummary: null, overlapNotes: null },
       dataStatus: "complete",
       page: buildDetailPage(0),
+      meta: {
+        bundleId: randomUUID(),
+        revision: 2,
+        factsDigestHash,
+      },
+      timingMs: 0,
+    });
+    return;
+  }
+
+  // LNHPD ingredients detail is deterministic: avoid LLM latency and avoid hallucinated chemical forms.
+  if (digest.sourceType === "lnhpd") {
+    const sliceStart = Math.min(cursor, totalActives);
+    const sliceEnd = Math.min(sliceStart + requestedLimit, totalActives);
+    const detailDigest: FactsDigest = {
+      ...digest,
+      actives: digest.actives.slice(sliceStart, sliceEnd),
+    };
+    const labelDosingText = buildLabelDosingText(digest);
+    const detailPayload = buildLnhpdDetailKbFirst(detailDigest, labelDosingText);
+    const detailExpiresAt = new Date(Date.now() + ANALYSIS_IDENTITY_CACHE_TTL_MS).toISOString();
+
+    void upsertAnalysisIdentityCache(
+      {
+        identityType: identity.type,
+        identityValue: identity.value,
+        locale,
+        promptVersion,
+        factsDigestHash,
+        factsSourceVersion: digestRow.facts_source_version ?? "",
+        section: sectionKey,
+        status: "complete",
+        payload: detailPayload,
+        factsDigestJson: digestRow.facts_digest_json,
+        expiresAt: detailExpiresAt,
+      },
+      { timeoutMs: 900 },
+    );
+
+    res.status(200).json({
+      section: "ingredients",
+      detail: detailPayload,
+      dataStatus: "complete",
+      page: buildDetailPage(detailPayload.items.length),
       meta: {
         bundleId: randomUUID(),
         revision: 2,
@@ -6046,6 +6236,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           },
         } as AnalysisBundle;
         fastCandidate = applyDsldInferenceGuard(fastCandidate, params.digest);
+        fastCandidate = applySafetyNotProvidedGuard(fastCandidate);
         const parsed = safeParseAnalysisBundle(fastCandidate);
         if (parsed.success && canWrite()) {
           sendSSE(res, "analysis_bundle", parsed.data);
@@ -6112,7 +6303,8 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       }
 
       if (fastBundle && canWrite()) {
-        const adjustedBundle = applyDsldInferenceGuard(fastBundle, params.digest);
+        let adjustedBundle = applyDsldInferenceGuard(fastBundle, params.digest);
+        adjustedBundle = applySafetyNotProvidedGuard(adjustedBundle);
         sendSSE(res, "analysis_bundle", adjustedBundle);
         void upsertAnalysisIdentityCache(
           {

@@ -2,6 +2,7 @@ import { readFile, writeFile } from "node:fs/promises";
 
 import { supabase } from "../src/supabase.js";
 import { computeV4FactsHashFromRows } from "../src/scoring/v4ScoreEngine.js";
+import { extractErrorMeta, withRetry } from "../src/supabaseRetry.js";
 
 type ScoreRow = {
   source_id: string;
@@ -106,9 +107,12 @@ const loadScores = async (ids: string[], table: string, scoreVersion?: string | 
     if (scoreVersion) {
       query = query.eq("score_version", scoreVersion);
     }
-    const { data, error } = await query;
+    const { data, error } = await withRetry(() => query);
     if (error) {
-      throw new Error(`[compare-product-scores] query failed: ${error.message}`);
+      const meta = extractErrorMeta(error);
+      throw new Error(
+        `[compare-product-scores] query failed: ${meta.message ?? "unknown error"} (status=${meta.status ?? "?"} rayId=${meta.rayId ?? "?"})`,
+      );
     }
     (data ?? []).forEach((row) => {
       rows.set(row.source_id as string, row as ScoreRow);
@@ -135,9 +139,12 @@ const loadExplainRows = async (
     if (scoreVersion) {
       query = query.eq("score_version", scoreVersion);
     }
-    const { data, error } = await query;
+    const { data, error } = await withRetry(() => query);
     if (error) {
-      throw new Error(`[compare-product-scores] explain query failed: ${error.message}`);
+      const meta = extractErrorMeta(error);
+      throw new Error(
+        `[compare-product-scores] explain query failed: ${meta.message ?? "unknown error"} (status=${meta.status ?? "?"} rayId=${meta.rayId ?? "?"})`,
+      );
     }
     (data ?? []).forEach((row) => {
       if (!row?.source_id) return;
@@ -174,15 +181,17 @@ const loadIngredientFacts = async (ids: string[]) => {
       if (!values.length) return;
       let offset = 0;
       while (true) {
-        const { data, error } = await supabase
+        const query = supabase
           .from("product_ingredients")
           .select(selectFields)
           .eq("source", source)
           .in(column, values)
           .range(offset, offset + factsPageSize - 1);
+        const { data, error } = await withRetry(() => query);
         if (error) {
+          const meta = extractErrorMeta(error);
           throw new Error(
-            `[compare-product-scores] product_ingredients ${column} query failed: ${error.message}`,
+            `[compare-product-scores] product_ingredients ${column} query failed: ${meta.message ?? "unknown error"} (status=${meta.status ?? "?"} rayId=${meta.rayId ?? "?"})`,
           );
         }
         const rows = data ?? [];

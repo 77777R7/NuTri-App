@@ -27,13 +27,37 @@ type SavedSupplementsState = {
 
 const SavedSupplementsContext = createContext<SavedSupplementsState | undefined>(undefined);
 
+const UNKNOWN_BRAND = 'Unknown brand';
+
 const normalize = (value: string) =>
   value
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '')
     .trim();
 
-const getDedupeKey = (item: Pick<SavedSupplement, 'barcode' | 'brandName' | 'productName'>) => {
+const sanitizeBrandName = (value?: string | null): string | null => {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (trimmed.toLowerCase() === UNKNOWN_BRAND.toLowerCase()) return null;
+  return trimmed;
+};
+
+const isUuid = (value: string) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+
+const getAllDedupeKeys = (item: Pick<SavedSupplement, 'supplementId' | 'barcode' | 'brandName' | 'productName'>) => {
+  const keys: string[] = [];
+  if (item.supplementId) keys.push(`supplement:${item.supplementId}`);
+  if (item.barcode) keys.push(`barcode:${item.barcode}`);
+  keys.push(`name:${normalize(item.brandName)}:${normalize(item.productName)}`);
+  return keys;
+};
+
+const getDedupeKey = (item: Pick<SavedSupplement, 'supplementId' | 'barcode' | 'brandName' | 'productName'>) => {
+  if (item.supplementId) {
+    return `supplement:${item.supplementId}`;
+  }
   if (item.barcode) {
     return `barcode:${item.barcode}`;
   }
@@ -77,9 +101,10 @@ export const SavedSupplementsProvider = ({ children }: { children: React.ReactNo
     async (item: SavedSupplement) => {
       if (!user?.id || !item.supplementId) return;
 
+      const cleanedBrandName = sanitizeBrandName(item.brandName);
       const notes = JSON.stringify({
         dosageText: item.dosageText,
-        brandName: item.brandName,
+        ...(cleanedBrandName ? { brandName: cleanedBrandName } : {}),
         routine: item.routine,
         tags: item.tags,
         lastViewed: item.lastViewed,
@@ -145,6 +170,9 @@ export const SavedSupplementsProvider = ({ children }: { children: React.ReactNo
         brands?: { name: string } | null;
       } | null;
 
+      const supplementBrand = sanitizeBrandName(supplement?.brands?.name ?? null);
+      const noteBrand = sanitizeBrandName(notes?.brandName ?? null);
+
       const rawDosage = notes?.dosageText ?? '';
       const normalizedDosage = rawDosage ? normalize(rawDosage) : '';
       const normalizedCategory = supplement?.category ? normalize(supplement.category) : '';
@@ -156,7 +184,7 @@ export const SavedSupplementsProvider = ({ children }: { children: React.ReactNo
         supplementId: record.supplement_id,
         barcode: supplement?.barcode ?? null,
         productName: supplement?.name ?? 'Unknown supplement',
-        brandName: notes?.brandName ?? supplement?.brands?.name ?? 'Unknown brand',
+        brandName: supplementBrand ?? noteBrand ?? UNKNOWN_BRAND,
         dosageText,
         createdAt: record.saved_at ?? record.updated_at,
         updatedAt: record.updated_at ?? record.saved_at,
@@ -171,13 +199,13 @@ export const SavedSupplementsProvider = ({ children }: { children: React.ReactNo
     if (remoteItems.length === 0) return;
 
     const merged = [...savedSupplements];
-    const localKeys = new Set(savedSupplements.map(item => getDedupeKey(item)));
+    const localKeys = new Set(savedSupplements.flatMap(item => getAllDedupeKeys(item)));
 
     remoteItems.forEach(item => {
-      const key = getDedupeKey(item);
-      if (!localKeys.has(key)) {
-        merged.push(item);
-      }
+      const keys = getAllDedupeKeys(item);
+      if (keys.some(key => localKeys.has(key))) return;
+      merged.push(item);
+      keys.forEach(key => localKeys.add(key));
     });
 
     if (merged.length !== savedSupplements.length) {
@@ -223,7 +251,7 @@ export const SavedSupplementsProvider = ({ children }: { children: React.ReactNo
         supplementId: input.supplementId,
         barcode: input.barcode ?? null,
         productName: input.productName,
-        brandName: input.brandName,
+        brandName: sanitizeBrandName(input.brandName) ?? UNKNOWN_BRAND,
         dosageText: input.dosageText,
         createdAt: input.createdAt ?? now,
         updatedAt: now,
@@ -234,8 +262,10 @@ export const SavedSupplementsProvider = ({ children }: { children: React.ReactNo
         routine: input.routine,
       };
 
-      const nextKey = getDedupeKey(next);
-      const existing = savedSupplements.find(item => getDedupeKey(item) === nextKey);
+      const nextKeys = getAllDedupeKeys(next);
+      const existing = savedSupplements.find(item =>
+        getAllDedupeKeys(item).some(key => nextKeys.includes(key)),
+      );
       if (existing) {
         return null;
       }

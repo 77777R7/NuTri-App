@@ -212,18 +212,25 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
         setState(prev => ({ ...prev, status: 'loading', error: null, analysisBundle: null }));
         setServerSnapshot(null);
 
-        const API_URL = Config.searchApiBaseUrl.replace(/\/$/, '');
+        const rawBaseUrl = Config.searchApiBaseUrl;
+        const API_URL = rawBaseUrl.endsWith('/') ? rawBaseUrl.slice(0, -1) : rawBaseUrl;
         let isActive = true;
 
         const startStream = async () => {
-            const headers = await withAuthHeaders({ 'Content-Type': 'application/json' });
+            const headers = await withAuthHeaders({
+                'Content-Type': 'application/json',
+                Accept: 'text/event-stream',
+            });
             if (!isActive) return;
 
             // Initialize SSE connection (POST method)
             const es = new RNEventSource(`${API_URL}/api/enrich-stream`, {
                 method: 'POST',
                 headers,
-                body: JSON.stringify({ barcode }),
+                // We only need analysis_bundle + product_info for the v4 dashboard.
+                // This avoids large legacy payloads that can destabilize SSE on mobile networks.
+                body: JSON.stringify({ barcode, streamMode: 'analysis_bundle_only' }),
+                pollingInterval: 0,
             });
 
             eventSourceRef.current = es;

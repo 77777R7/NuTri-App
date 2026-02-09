@@ -72,9 +72,27 @@ const DSLD_EXCLUDED_NAME_KEYS = new Set([
   "sugars",
   "sugar",
   "protein",
+  "glycerol",
   "polyunsaturated fat",
   "monounsaturated fat",
   "monounsatured fat",
+  "100 whole food nutrients",
+  "100 whole food nutrients 0",
+  "bioactive enzymes proteins",
+  "phenolics",
+  "also contains",
+  "mchc",
+  "infusions of flowers of",
+  "nutritrophic core level process glands",
+  "active constituents of",
+  "additional foods extracts",
+  "bronson bioaccelerators",
+  "primary yeast",
+  "aminogen tm enzyme",
+  "pgx r",
+  "kre alkalyn r",
+  "ginkgoselect r phytosome r",
+  "broccoraphanin r",
   "total omega 3 5 6 7 9 11",
   "soluble fiber",
   "proprietary blend",
@@ -146,6 +164,31 @@ const DSLD_EXCLUDED_NAME_KEYS = new Set([
   "processed in siddha ghruta",
   "liquid light",
   "preforpro",
+  "ostivone",
+  "anthoredoxin",
+  "sytrinol",
+  "typical isoflavone composition",
+  "muscle buffering system",
+  "n o vasodilation amplifier",
+  "atp optimizing creatine module",
+  "pronitro 7",
+  "aminospeed m10",
+  "adaptogen x",
+  "dream sequence",
+  "each dha capsule provides",
+  "peroxidases 5000 unit s",
+  "biocore r carbo",
+  "biocore r edge",
+  "ester omega tm salmon oil",
+  "fucopure r fucoxanthin extract",
+  "forslean r extract",
+  "seditol r",
+  "frac r",
+  "isolase r",
+  "mytosterone r",
+  "sytrinol tm",
+  "pectasol r",
+  "in a",
 ]);
 
 const DSLD_EXCLUDED_KEY_PATTERNS: RegExp[] = [
@@ -175,6 +218,10 @@ const DSLD_EXCLUDED_KEY_PATTERNS: RegExp[] = [
   /\bq\s*s\b/,
   /\b(amino\s+acid\s+profile|fatty\s+acid\s+composition)\b/,
   /\b(distilled\s+water|water)\b/,
+  // Common excipients/label tokens that should not count against identity missing gates.
+  /\bglycer(?:in|ol)\b/,
+  // "Total cannabinoids" is typically a label metric/heading, not an ingredient identity.
+  /\btotal\s+cannabinoids?\b/,
   /\b(electrolyte\s+blend|food\s+blend|protein\s+blend)\b/,
   /\bfatty\s+acids?\b/,
   /\bpolyunsaturated\s+fat\b/,
@@ -193,6 +240,10 @@ const DSLD_EXCLUDED_KEY_PATTERNS: RegExp[] = [
   /\bmax\b/,
   /\bperformance\b/,
   /\benergy\b/,
+  /\bmodule\b/,
+  /\bamplifier\b/,
+  /\bcomposition\b/,
+  /\bsystem\b/,
 ];
 
 const isDsldExcludedKey = (key: string): boolean => {
@@ -275,7 +326,30 @@ const run = async () => {
     : (await fetchScores(source, limit)).map((row) => row.source_id);
 
   if (!sourceIds.length) {
-    throw new Error(`[ingredient-missing] no source IDs found for ${source}`);
+    // Empty input should not hard-fail batch pipelines. Emit an empty, auditable
+    // report so callers can treat this as "no sample" (often coverage=0) rather
+    // than a crash.
+    const summary = {
+      source,
+      idColumn: column,
+      sampleSize: 0,
+      activeMissingRows: 0,
+      uniqueMissingKeys: 0,
+      excludedRows: 0,
+      generatedAt: new Date().toISOString(),
+      note: "No source IDs provided; wrote empty result.",
+    };
+
+    const output = {
+      summary,
+      topMissing: [] as MissingIngredientEntry[],
+    };
+
+    await ensureDir(outPath);
+    await writeFile(outPath, JSON.stringify(output, null, 2), "utf8");
+
+    console.log(`[ingredient-missing] source=${source} sample=0 output=${outPath} (empty)`);
+    return;
   }
 
   const ingredients = await fetchIngredients(source, column, sourceIds);

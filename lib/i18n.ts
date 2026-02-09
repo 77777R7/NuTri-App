@@ -127,6 +127,7 @@ const en = {
     analysisPlaceholderNotEnoughInfo: 'Not enough info',
     analysisPlaceholderInsufficient: 'Insufficient data',
     analysisPlaceholderOverviewSummary: 'Insights pending. See label for details.',
+    analysisPlaceholderOverviewBenefits: 'Key benefits pending. See label for details.',
     analysisPlaceholderUsage: 'Follow label directions.',
     analysisPlaceholderBestFor: 'See label for intended use',
     analysisPlaceholderSafetyWarning: 'Check label for warnings',

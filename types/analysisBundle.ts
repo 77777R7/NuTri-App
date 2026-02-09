@@ -96,7 +96,7 @@ export type AnalysisBundleMetaV3 = {
   serverCommitSha?: string | null;
 };
 
-export type AnalysisBundleMetaV4 = AnalysisBundleMetaV3 & { schemaVersion: 4 };
+export type AnalysisBundleMetaV4 = Omit<AnalysisBundleMetaV3, 'schemaVersion'> & { schemaVersion: 4 };
 
 export type AnalysisBundleV3 = {
   meta: AnalysisBundleMetaV3;

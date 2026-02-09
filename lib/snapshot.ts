@@ -323,37 +323,34 @@ const buildScoresFromSections = (input: {
   computedAt: string;
 }): SupplementSnapshot['scores'] | undefined => {
   const { efficacy, safety, value, social, confidence, computedAt } = input;
-  const canScore =
-    typeof efficacy?.score === 'number' &&
-    typeof safety?.score === 'number' &&
-    typeof value?.score === 'number';
-
-  if (!canScore) return undefined;
+  if (!efficacy || typeof efficacy.score !== 'number') return undefined;
+  if (!safety || typeof safety.score !== 'number') return undefined;
+  if (!value || typeof value.score !== 'number') return undefined;
 
   const analysisInput = {
     efficacy: {
-      score: efficacy?.score,
-      primaryActive: efficacy?.primaryActive ?? null,
-      ingredients: efficacy?.ingredients ?? [],
-      overallAssessment: efficacy?.overallAssessment,
-      marketingVsReality: efficacy?.marketingVsReality,
-      coreBenefits: efficacy?.coreBenefits ?? efficacy?.benefits ?? [],
+      score: efficacy.score,
+      primaryActive: efficacy.primaryActive ?? null,
+      ingredients: efficacy.ingredients ?? [],
+      overallAssessment: efficacy.overallAssessment,
+      marketingVsReality: efficacy.marketingVsReality,
+      coreBenefits: efficacy.coreBenefits ?? efficacy.benefits ?? [],
     },
     safety: {
-      score: safety?.score,
-      ulWarnings: safety?.ulWarnings ?? [],
-      allergens: safety?.allergens ?? [],
-      interactions: safety?.interactions ?? [],
-      redFlags: safety?.redFlags ?? [],
-      consultDoctorIf: safety?.consultDoctorIf ?? [],
+      score: safety.score,
+      ulWarnings: safety.ulWarnings ?? [],
+      allergens: safety.allergens ?? [],
+      interactions: safety.interactions ?? [],
+      redFlags: safety.redFlags ?? [],
+      consultDoctorIf: safety.consultDoctorIf ?? [],
     },
     value: {
-      score: value?.score,
-      costPerServing: value?.costPerServing ?? null,
-      alternatives: value?.alternatives ?? [],
+      score: value.score,
+      costPerServing: value.costPerServing ?? null,
+      alternatives: value.alternatives ?? [],
     },
     social: {
-      score: social?.score,
+      score: typeof social?.score === 'number' ? social.score : undefined,
       summary: social?.summary,
     },
   };
@@ -379,37 +376,34 @@ const buildScoresFromAnalysis = (input: {
   const { analysis, confidence, computedAt } = input;
   if (!analysis || analysis.status !== 'success') return undefined;
 
-  const canScore =
-    typeof analysis.efficacy?.score === 'number' &&
-    typeof analysis.safety?.score === 'number' &&
-    typeof analysis.value?.score === 'number';
-
-  if (!canScore) return undefined;
+  if (!analysis.efficacy || typeof analysis.efficacy.score !== 'number') return undefined;
+  if (!analysis.safety || typeof analysis.safety.score !== 'number') return undefined;
+  if (!analysis.value || typeof analysis.value.score !== 'number') return undefined;
 
   const analysisInput = {
     efficacy: {
-      score: analysis.efficacy?.score,
-      primaryActive: analysis.efficacy?.primaryActive ?? null,
-      ingredients: analysis.efficacy?.ingredients ?? [],
-      overallAssessment: analysis.efficacy?.overallAssessment,
-      marketingVsReality: analysis.efficacy?.marketingVsReality,
-      coreBenefits: analysis.efficacy?.coreBenefits ?? analysis.efficacy?.benefits ?? [],
+      score: analysis.efficacy.score,
+      primaryActive: analysis.efficacy.primaryActive ?? null,
+      ingredients: analysis.efficacy.ingredients ?? [],
+      overallAssessment: analysis.efficacy.overallAssessment,
+      marketingVsReality: analysis.efficacy.marketingVsReality,
+      coreBenefits: analysis.efficacy.coreBenefits ?? analysis.efficacy.benefits ?? [],
     },
     safety: {
-      score: analysis.safety?.score,
+      score: analysis.safety.score,
       ulWarnings: [],
       allergens: [],
       interactions: [],
-      redFlags: analysis.safety?.redFlags ?? [],
+      redFlags: analysis.safety.redFlags ?? [],
       consultDoctorIf: [],
     },
     value: {
-      score: analysis.value?.score,
+      score: analysis.value.score,
       costPerServing: null,
       alternatives: [],
     },
     social: {
-      score: analysis.social?.score,
+      score: typeof analysis.social?.score === 'number' ? analysis.social.score : undefined,
       summary: analysis.social?.summary,
     },
   };

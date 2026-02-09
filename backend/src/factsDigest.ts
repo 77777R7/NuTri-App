@@ -161,6 +161,24 @@ const CHEMICAL_FORM_KEYWORDS = [
   "chelate",
 ];
 
+const extractDeliveryFormFromText = (rawText: string): string | null => {
+  const text = normalizeWhitespace(rawText).toLowerCase();
+  if (!text) return null;
+
+  if (/\btablet(s)?\b/.test(text)) return "tablet";
+  if (/\bcaplet(s)?\b/.test(text)) return "tablet";
+  if (/\bcapsule(s)?\b/.test(text)) return "capsule";
+  if (/\bsoftgel(s)?\b/.test(text)) return "softgel";
+  if (/\bgummy\b|\bgummies\b/.test(text)) return "gummy";
+  if (/\bspray(s)?\b/.test(text)) return "spray";
+  if (/\bdrop(s)?\b/.test(text)) return "drops";
+  if (/\bscoop(s)?\b/.test(text)) return "scoop";
+  if (/\bpowder\b/.test(text)) return "powder";
+  if (/\bliquid\b/.test(text)) return "liquid";
+
+  return null;
+};
+
 const extractChemicalFormFromText = (
   rawText: string,
 ): { form: string; evidence: string; confidence: number; source: "label_parenthetical" | "ingredient_name" } | null => {
@@ -376,25 +394,42 @@ export const buildFactsDigestFromLnhpd = (params: {
   const brandDisplay = pickBrandDisplay(snapshot, facts.brandName ?? null);
   const productName = pickProductName(snapshot, facts.productName ?? null);
 
+  const deliveryFormText = [facts.servingSize, ...(facts.doses ?? []), snapshot?.label?.servingSize]
+    .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+    .join(" ");
+  const deliveryForm = extractDeliveryFormFromText(deliveryFormText);
+
   const actives = (facts.actives ?? []).map((active) => {
     const normalizedUnit = normalizeUnitLabel(active.unit ?? null);
-    const chemicalForm = active.lnhpdMeta?.properName ?? active.lnhpdMeta?.ingredientName ?? null;
-    const evidenceText = active.lnhpdMeta?.sourceMaterial ?? active.lnhpdMeta?.extractTypeDesc ?? null;
-    const normalizedChemicalForm = chemicalForm ? normalizeWhitespace(chemicalForm) : null;
-    const chemicalFormConfidence = normalizeChemicalFormConfidence(normalizedChemicalForm ? 0.8 : null);
-    const chemicalFormSource: FactsDigest["actives"][number]["chemicalFormSource"] = normalizedChemicalForm
-      ? "lnhpd_meta"
+    const extracted = active.formRaw
+      ? extractChemicalFormFromText(active.formRaw)
+      : extractChemicalFormFromText(active.name);
+    const extractedForm = extracted?.form ? normalizeWhitespace(extracted.form) : null;
+    const extractedEvidence = extracted?.evidence ? normalizeWhitespace(extracted.evidence) : null;
+    const isTrivialForm =
+      extractedForm !== null &&
+      normalizeWhitespace(extractedForm).toLowerCase() === normalizeWhitespace(active.name).toLowerCase();
+    const chemicalForm = extractedForm && !isTrivialForm ? extractedForm : null;
+    const chemicalFormEvidence = extractedEvidence && !isTrivialForm ? extractedEvidence : null;
+    const chemicalFormConfidence = normalizeChemicalFormConfidence(chemicalForm ? extracted?.confidence ?? null : null);
+    const chemicalFormSource: FactsDigest["actives"][number]["chemicalFormSource"] = chemicalForm
+      ? extracted?.source ?? "ingredient_name"
       : "none";
+    const evidenceText = active.formRaw
+      ? normalizeWhitespace(active.formRaw)
+      : active.lnhpdMeta?.ingredientName
+        ? normalizeWhitespace(active.lnhpdMeta.ingredientName)
+        : null;
     return {
       name: normalizeWhitespace(active.name),
       amount: active.amount ?? null,
       unit: normalizedUnit,
       amountText: active.amount != null && normalizedUnit ? `${active.amount} ${normalizedUnit}` : null,
-      chemicalForm: normalizedChemicalForm,
-      chemicalFormEvidence: normalizedChemicalForm,
+      chemicalForm,
+      chemicalFormEvidence,
       chemicalFormConfidence,
       chemicalFormSource,
-      deliveryForm: null,
+      deliveryForm: deliveryForm ?? null,
       evidenceText: evidenceText ? normalizeWhitespace(evidenceText) : null,
       source: "lnhpd" as const,
       confidence: active.lnhpdMeta ? 0.9 : 0.7,
@@ -413,7 +448,7 @@ export const buildFactsDigestFromLnhpd = (params: {
       brandDisplay: brandDisplay ?? null,
       brandLegal: facts.brandName ?? null,
       name: productName ?? null,
-      dosageForm: snapshot?.label?.servingSize ?? null,
+      dosageForm: deliveryForm ?? snapshot?.label?.servingSize ?? null,
       route: facts.routes?.[0] ?? null,
     },
     actives,

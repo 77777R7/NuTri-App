@@ -1137,6 +1137,7 @@ const reachedTimeBudget = (startTime: number): boolean =>
 
 const summarizeStats = (stats: BackfillStats) => ({
   processed: stats.processed,
+  ingredients: stats.writtenIngredients,
   scores: stats.writtenScores,
   existing: stats.skippedExisting,
   skipped: stats.skipped,
@@ -1552,6 +1553,78 @@ const backfillSourceIds = async (
   );
   const items = limit > 0 ? uniqueIds.slice(0, limit) : uniqueIds;
 
+  const getResumeOffset = async (): Promise<number> => {
+    if (!checkpointFile) return 0;
+    const checkpoint = await readJsonFile<Record<string, unknown>>(checkpointFile);
+    const entry = checkpoint?.[source];
+    if (!entry || typeof entry !== "object") return 0;
+    const record = entry as Record<string, unknown>;
+    if (record.mode !== "source-ids-file") return 0;
+    if (record.scoreVersion !== scoreVersion || record.scoresTable !== scoresTable) return 0;
+    if (record.sourceIdsFile !== filePath) return 0;
+    const processedIndex = Number(record.processedIndex ?? 0);
+    if (!Number.isFinite(processedIndex) || processedIndex <= 0) return 0;
+    return Math.max(0, Math.min(items.length, Math.floor(processedIndex)));
+  };
+
+  const readResumeStats = async (): Promise<Partial<BackfillStats> | null> => {
+    if (!checkpointFile) return null;
+    const checkpoint = await readJsonFile<Record<string, unknown>>(checkpointFile);
+    const entry = checkpoint?.[source];
+    if (!entry || typeof entry !== "object") return null;
+    const record = entry as Record<string, unknown>;
+    if (record.mode !== "source-ids-file") return null;
+    if (record.scoreVersion !== scoreVersion || record.scoresTable !== scoresTable) return null;
+    if (record.sourceIdsFile !== filePath) return null;
+    const statsValue = record.stats;
+    if (!statsValue || typeof statsValue !== "object") return null;
+    const s = statsValue as Record<string, unknown>;
+
+    const num = (key: string): number | null => {
+      const raw = s[key];
+      const value = typeof raw === "number" ? raw : Number(raw);
+      if (!Number.isFinite(value)) return null;
+      return value;
+    };
+
+    return {
+      processed: num("processed") ?? 0,
+      writtenIngredients: num("ingredients") ?? 0,
+      writtenScores: num("scores") ?? 0,
+      skippedExisting: num("existing") ?? 0,
+      skipped: num("skipped") ?? 0,
+      failed: num("failed") ?? 0,
+      ingredientUpsertFailed: num("ingredientUpsertFailed") ?? 0,
+      scoreUpsertFailed: num("scoreUpsertFailed") ?? 0,
+      computeScoreFailed: num("computeScoreFailed") ?? 0,
+    };
+  };
+
+  const writeSourceIdsCheckpoint = async (payload: {
+    processedIndex: number;
+    total: number;
+    lastSourceId: string | null;
+    stats: BackfillStats;
+  }) => {
+    if (!checkpointFile) return;
+    const existing = (await readJsonFile<Record<string, unknown>>(checkpointFile)) ?? {};
+    const updated = {
+      ...existing,
+      [source]: {
+        mode: "source-ids-file",
+        scoreVersion,
+        scoresTable,
+        sourceIdsFile: filePath,
+        processedIndex: payload.processedIndex,
+        total: payload.total,
+        lastSourceId: payload.lastSourceId,
+        updatedAt: new Date().toISOString(),
+        stats: summarizeStats(payload.stats),
+      },
+    };
+    await writeJsonFile(checkpointFile, updated);
+  };
+
   if (!items.length) {
     console.log(`[backfill:source-ids] no source ids found in ${filePath}`);
     await writeSummary({
@@ -1592,130 +1665,175 @@ const backfillSourceIds = async (
 
   const lnhpdTable = source === "lnhpd" ? await resolveLnhpdTable() : null;
 
-  await runWithConcurrency(items, concurrency, async (sourceId) => {
-    stats.processed += 1;
-    if (scoresOnly) {
-      if (skipScores) {
-        stats.skipped += 1;
-        return;
-      }
-      const ingredientRowsResult = await fetchProductIngredientRows(source, sourceId);
-      if (!ingredientRowsResult) {
-        stats.skipped += 1;
-        return;
-      }
-      if ("error" in ingredientRowsResult) {
-        stats.failed += 1;
-        stats.computeScoreFailed += 1;
-        await reportFailure({
-          source,
-          sourceId,
-          canonicalSourceId: null,
-          stage: "product_ingredients_fetch",
-          error: ingredientRowsResult.error,
-        });
-        return;
-      }
-      const { rows: ingredientRows, sourceIdForWrite, canonicalSourceId } = ingredientRowsResult;
-      const cache = await getDatasetCache();
-      const assumptions =
-        source === "lnhpd" ? await fetchBaselineAssumptions(source, sourceIdForWrite) : null;
-      const dailyMultiplier =
-        source === "lnhpd" ? buildDailyMultiplierFromAssumptions(assumptions) : createDefaultDailyMultiplier();
-      const currentHash = computeV4InputsHashFromRows(ingredientRows, {
-        dailyMultiplier: dailyMultiplier.multiplier,
-        dailyMultiplierSource: dailyMultiplier.source,
-        datasetVersion: cache.datasetVersion,
-      });
+  const resumeOffset = await getResumeOffset();
+  if (resumeOffset > 0) {
+    const resumeStats = await readResumeStats();
+    if (resumeStats) {
+      stats.processed = resumeStats.processed ?? stats.processed;
+      stats.writtenIngredients = resumeStats.writtenIngredients ?? stats.writtenIngredients;
+      stats.writtenScores = resumeStats.writtenScores ?? stats.writtenScores;
+      stats.skippedExisting = resumeStats.skippedExisting ?? stats.skippedExisting;
+      stats.skipped = resumeStats.skipped ?? stats.skipped;
+      stats.failed = resumeStats.failed ?? stats.failed;
+      stats.ingredientUpsertFailed = resumeStats.ingredientUpsertFailed ?? stats.ingredientUpsertFailed;
+      stats.scoreUpsertFailed = resumeStats.scoreUpsertFailed ?? stats.scoreUpsertFailed;
+      stats.computeScoreFailed = resumeStats.computeScoreFailed ?? stats.computeScoreFailed;
+    }
 
-      if (!force && (await shouldSkipExistingScore(source, sourceIdForWrite, currentHash))) {
-        stats.skippedExisting += 1;
-        return;
-      }
-      if (dryRun) {
+    // Ensure processed matches the resume pointer even if stats were missing.
+    stats.processed = Math.max(stats.processed, resumeOffset);
+    console.log(
+      `[backfill:source-ids] resuming from checkpoint processedIndex=${resumeOffset}/${items.length}`,
+    );
+  }
+
+  let batch = 0;
+  for (let offset = resumeOffset; offset < items.length; offset += batchSize) {
+    batch += 1;
+    const chunk = items.slice(offset, offset + batchSize);
+
+    await runWithConcurrency(chunk, concurrency, async (sourceId) => {
+      // processed is the number of input ids we've attempted in this run.
+      stats.processed += 1;
+      if (scoresOnly) {
+        if (skipScores) {
+          stats.skipped += 1;
+          return;
+        }
+        const ingredientRowsResult = await fetchProductIngredientRows(source, sourceId);
+        if (!ingredientRowsResult) {
+          stats.skipped += 1;
+          return;
+        }
+        if ("error" in ingredientRowsResult) {
+          stats.failed += 1;
+          stats.computeScoreFailed += 1;
+          await reportFailure({
+            source,
+            sourceId,
+            canonicalSourceId: null,
+            stage: "product_ingredients_fetch",
+            error: ingredientRowsResult.error,
+          });
+          return;
+        }
+        const { rows: ingredientRows, sourceIdForWrite, canonicalSourceId } = ingredientRowsResult;
+        const cache = await getDatasetCache();
+        const assumptions =
+          source === "lnhpd" ? await fetchBaselineAssumptions(source, sourceIdForWrite) : null;
+        const dailyMultiplier =
+          source === "lnhpd"
+            ? buildDailyMultiplierFromAssumptions(assumptions)
+            : createDefaultDailyMultiplier();
+        const currentHash = computeV4InputsHashFromRows(ingredientRows, {
+          dailyMultiplier: dailyMultiplier.multiplier,
+          dailyMultiplierSource: dailyMultiplier.source,
+          datasetVersion: cache.datasetVersion,
+        });
+
+        if (!force && (await shouldSkipExistingScore(source, sourceIdForWrite, currentHash))) {
+          stats.skippedExisting += 1;
+          return;
+        }
+        if (dryRun) {
+          stats.writtenScores += 1;
+          return;
+        }
+
+        let computed: Awaited<ReturnType<typeof computeScoreBundleV4Cached>>;
+        try {
+          computed = await computeScoreBundleV4Cached({
+            rows: ingredientRows,
+            source,
+            sourceId,
+            sourceIdForWrite,
+            canonicalSourceId,
+            dailyMultiplier,
+            cache,
+          });
+        } catch (error) {
+          stats.failed += 1;
+          stats.computeScoreFailed += 1;
+          await reportFailure({
+            source,
+            sourceId,
+            canonicalSourceId,
+            stage: "compute_score",
+            message: (error as { message?: string })?.message ?? "score computation failed",
+          });
+          return;
+        }
+
+        const scoreResult = await upsertScoreBundle({
+          source,
+          sourceIdForWrite: computed.sourceIdForWrite,
+          canonicalSourceId: computed.canonicalSourceId,
+          bundle: computed.bundle,
+          inputsHash: computed.inputsHash,
+        });
+        if (!scoreResult.success) {
+          stats.failed += 1;
+          stats.scoreUpsertFailed += 1;
+          await reportFailure({
+            source,
+            sourceId,
+            canonicalSourceId,
+            stage: "product_scores_upsert",
+            error: scoreResult.error ?? null,
+          });
+          return;
+        }
         stats.writtenScores += 1;
         return;
       }
 
-      let computed: Awaited<ReturnType<typeof computeScoreBundleV4Cached>>;
-      try {
-        computed = await computeScoreBundleV4Cached({
-          rows: ingredientRows,
-          source,
-          sourceId,
-          sourceIdForWrite,
-          canonicalSourceId,
-          dailyMultiplier,
-          cache,
-        });
-      } catch (error) {
-        stats.failed += 1;
-        stats.computeScoreFailed += 1;
-        await reportFailure({
-          source,
-          sourceId,
-          canonicalSourceId,
-          stage: "compute_score",
-          message: (error as { message?: string })?.message ?? "score computation failed",
-        });
+      if (source === "dsld") {
+        const labelId = parseNumber(sourceId);
+        if (!labelId) {
+          stats.skipped += 1;
+          await recordInvalidSourceId("dsld", sourceId, "invalid_label_id");
+          return;
+        }
+        const row = await fetchDsldRowById(labelId);
+        if (!row) {
+          stats.skipped += 1;
+          await recordInvalidSourceId("dsld", sourceId, "facts_not_found");
+          return;
+        }
+        await handleDsldRow(row, stats);
         return;
       }
 
-      const scoreResult = await upsertScoreBundle({
-        source,
-        sourceIdForWrite: computed.sourceIdForWrite,
-        canonicalSourceId: computed.canonicalSourceId,
-        bundle: computed.bundle,
-        inputsHash: computed.inputsHash,
-      });
-      if (!scoreResult.success) {
-        stats.failed += 1;
-        stats.scoreUpsertFailed += 1;
-        await reportFailure({
-          source,
-          sourceId,
-          canonicalSourceId,
-          stage: "product_scores_upsert",
-          error: scoreResult.error ?? null,
-        });
-        return;
-      }
-      stats.writtenScores += 1;
-      return;
-    }
-    if (source === "dsld") {
-      const labelId = parseNumber(sourceId);
-      if (!labelId) {
-        stats.skipped += 1;
-        await recordInvalidSourceId("dsld", sourceId, "invalid_label_id");
-        return;
-      }
-      const row = await fetchDsldRowById(labelId);
+      const lnhpdId = parseNumber(sourceId);
+      const npn = sourceId || null;
+      const row = await fetchLnhpdRowByIdOrNpn(lnhpdTable ?? "lnhpd_facts", lnhpdId, npn);
       if (!row) {
-        stats.skipped += 1;
-        await recordInvalidSourceId("dsld", sourceId, "facts_not_found");
+        stats.failed += 1;
+        await reportFailure({
+          source: "lnhpd",
+          sourceId,
+          canonicalSourceId: null,
+          stage: "source_ids_fetch",
+          message: "lnhpd facts not found",
+        });
         return;
       }
-      await handleDsldRow(row, stats);
-      return;
-    }
+      await handleLnhpdRow(row, stats);
+    });
 
-    const lnhpdId = parseNumber(sourceId);
-    const npn = sourceId || null;
-    const row = await fetchLnhpdRowByIdOrNpn(lnhpdTable ?? "lnhpd_facts", lnhpdId, npn);
-    if (!row) {
-      stats.failed += 1;
-      await reportFailure({
-        source: "lnhpd",
-        sourceId,
-        canonicalSourceId: null,
-        stage: "source_ids_fetch",
-        message: "lnhpd facts not found",
-      });
-      return;
-    }
-    await handleLnhpdRow(row, stats);
-  });
+    const lastSourceId = chunk.length ? chunk[chunk.length - 1] : null;
+    console.log(
+      `[backfill:source-ids] batch=${batch} processed=${stats.processed}/${items.length} ingredients=${stats.writtenIngredients} scores=${stats.writtenScores} existing=${stats.skippedExisting} skipped=${stats.skipped} failed=${stats.failed} ingredientUpsertFailed=${stats.ingredientUpsertFailed} scoreUpsertFailed=${stats.scoreUpsertFailed} computeScoreFailed=${stats.computeScoreFailed} failuresLines=${failureTracker.baseLines + failureTracker.lines} failuresBytes=${failureTracker.baseBytes + failureTracker.bytes}`,
+    );
+    await writeSourceIdsCheckpoint({
+      processedIndex: Math.min(items.length, offset + chunk.length),
+      total: items.length,
+      lastSourceId,
+      stats,
+    });
+
+    if (reachedTimeBudget(startTime)) break;
+  }
 
   await writeSummary({
     source,

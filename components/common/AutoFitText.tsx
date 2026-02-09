@@ -44,7 +44,7 @@ export function AutoFitText({
 
   return (
     <View onLayout={onContainerLayout} style={styles.container}>
-      <Text numberOfLines={1} style={[{ fontSize, lineHeight }, style]} includeFontPadding={false}>
+      <Text numberOfLines={1} style={[{ fontSize, lineHeight, includeFontPadding: false }, style]}>
         {text}
       </Text>
 
@@ -52,8 +52,7 @@ export function AutoFitText({
         <Text
           numberOfLines={1}
           onLayout={onNaturalLayout}
-          style={[{ fontSize: baseFontSize, lineHeight: baseLineHeight }, style]}
-          includeFontPadding={false}
+          style={[{ fontSize: baseFontSize, lineHeight: baseLineHeight, includeFontPadding: false }, style]}
         >
           {text}
         </Text>

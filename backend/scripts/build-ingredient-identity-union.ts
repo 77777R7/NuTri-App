@@ -93,17 +93,19 @@ const run = async () => {
 
   const missingRowsA = payloadA.summary.activeMissingRows ?? 0;
   const missingRowsB = payloadB.summary.activeMissingRows ?? 0;
+  // NOTE: Our missing gate is defined as:
+  //   ingredientIdMissingRatio = activeMissingRows / sampleSize
+  // where sampleSize is the number of source ids in the cohort.
+  // Taxonomy mismatch "activeRows" counts ingredient rows and is not the
+  // denominator for this particular gate, so we use cohort sampleSize here.
+  const sampleSizeA = payloadA.summary.sampleSize ?? 0;
+  const sampleSizeB = payloadB.summary.sampleSize ?? 0;
+  // Still collect mismatch activeRows for stats/debugging.
   const activeRowsA = mismatchAData.counts?.activeRows ?? 0;
   const activeRowsB = mismatchBData.counts?.activeRows ?? 0;
 
-  const needFixA = Math.max(
-    0,
-    missingRowsA - Math.floor(targetRatio * activeRowsA),
-  );
-  const needFixB = Math.max(
-    0,
-    missingRowsB - Math.floor(targetRatio * activeRowsB),
-  );
+  const needFixA = Math.max(0, missingRowsA - Math.floor(targetRatio * sampleSizeA));
+  const needFixB = Math.max(0, missingRowsB - Math.floor(targetRatio * sampleSizeB));
   const worstNeedFix = Math.max(needFixA, needFixB);
   const coverageTarget = Math.ceil(worstNeedFix * buffer);
 
@@ -191,6 +193,8 @@ const run = async () => {
     mismatchB,
     missingRowsA,
     missingRowsB,
+    sampleSizeA,
+    sampleSizeB,
     activeRowsA,
     activeRowsB,
     needFixA,

@@ -926,8 +926,31 @@ const AnalysisBundleDashboard: React.FC<{
         if (detailLoading) return;
         setDetailLoading(true);
         setDetailError(null);
+        // Align loading copy with dataStatus: only show "Generating..." when pending.
+        // Treat "detail missing + fetch in-flight" as pending, even if cover facts are already complete.
+        if (!bundleState.sections.ingredients.detail) {
+            setBundleState((prev) => {
+                if (isBundleV4(prev)) {
+                    return {
+                        ...prev,
+                        sections: {
+                            ...prev.sections,
+                            ingredients: { ...prev.sections.ingredients, dataStatus: 'pending' },
+                        },
+                    };
+                }
+                return {
+                    ...prev,
+                    sections: {
+                        ...prev.sections,
+                        ingredients: { ...prev.sections.ingredients, dataStatus: 'pending' },
+                    },
+                };
+            });
+        }
         try {
-            const API_URL = Config.searchApiBaseUrl.replace(/\\/$/, '');
+            const rawBaseUrl = Config.searchApiBaseUrl;
+            const API_URL = rawBaseUrl.endsWith('/') ? rawBaseUrl.slice(0, -1) : rawBaseUrl;
             const headers = await withAuthHeaders({ 'Content-Type': 'application/json' });
             const response = await fetch(`${API_URL}/api/analysis-section`, {
                 method: 'POST',
@@ -949,32 +972,104 @@ const AnalysisBundleDashboard: React.FC<{
                     setTimeout(() => {
                         fetchIngredientsDetail(attempt + 1);
                     }, retryMs);
+                } else {
+                    setDetailError('Still generating. Please try again.');
+                    setBundleState((prev) => {
+                        if (isBundleV4(prev)) {
+                            return {
+                                ...prev,
+                                sections: {
+                                    ...prev.sections,
+                                    ingredients: { ...prev.sections.ingredients, dataStatus: 'limited' },
+                                },
+                            };
+                        }
+                        return {
+                            ...prev,
+                            sections: {
+                                ...prev.sections,
+                                ingredients: { ...prev.sections.ingredients, dataStatus: 'limited' },
+                            },
+                        };
+                    });
                 }
                 setDetailLoading(false);
                 return;
             }
             if (!response.ok) {
                 setDetailError('Detail unavailable');
+                setBundleState((prev) => {
+                    if (isBundleV4(prev)) {
+                        return {
+                            ...prev,
+                            sections: {
+                                ...prev.sections,
+                                ingredients: { ...prev.sections.ingredients, dataStatus: 'limited' },
+                            },
+                        };
+                    }
+                    return {
+                        ...prev,
+                        sections: {
+                            ...prev.sections,
+                            ingredients: { ...prev.sections.ingredients, dataStatus: 'limited' },
+                        },
+                    };
+                });
                 setDetailLoading(false);
                 return;
             }
             const payload = await response.json();
             const detail = payload?.detail as IngredientsDetail | null;
             if (detail) {
-                setBundleState((prev) => ({
-                    ...prev,
-                    sections: {
-                        ...prev.sections,
-                        ingredients: {
-                            ...prev.sections.ingredients,
-                            detail,
-                            dataStatus: payload?.dataStatus ?? prev.sections.ingredients.dataStatus,
+                setBundleState((prev) => {
+                    const nextStatus = (payload?.dataStatus ?? prev.sections.ingredients.dataStatus) as typeof prev.sections.ingredients.dataStatus;
+                    if (isBundleV4(prev)) {
+                        return {
+                            ...prev,
+                            sections: {
+                                ...prev.sections,
+                                ingredients: {
+                                    ...prev.sections.ingredients,
+                                    detail: detail as IngredientsDetailV4,
+                                    dataStatus: nextStatus,
+                                },
+                            },
+                        };
+                    }
+                    return {
+                        ...prev,
+                        sections: {
+                            ...prev.sections,
+                            ingredients: {
+                                ...prev.sections.ingredients,
+                                detail: detail as IngredientsDetailV3,
+                                dataStatus: nextStatus,
+                            },
                         },
-                    },
-                }));
+                    };
+                });
             }
         } catch (err) {
             setDetailError('Detail unavailable');
+            setBundleState((prev) => {
+                if (isBundleV4(prev)) {
+                    return {
+                        ...prev,
+                        sections: {
+                            ...prev.sections,
+                            ingredients: { ...prev.sections.ingredients, dataStatus: 'limited' },
+                        },
+                    };
+                }
+                return {
+                    ...prev,
+                    sections: {
+                        ...prev.sections,
+                        ingredients: { ...prev.sections.ingredients, dataStatus: 'limited' },
+                    },
+                };
+            });
         } finally {
             setDetailLoading(false);
         }
@@ -1023,7 +1118,7 @@ const AnalysisBundleDashboard: React.FC<{
                     <Text style={styles.modalParagraphSmall}>{t.analysisPlaceholderUnknown}</Text>
                 )}
             </View>
-            {detailLoading && (
+            {bundleState.sections.ingredients.dataStatus === 'pending' && (
                 <Text style={styles.modalParagraphSmall}>Generating ingredient insights...</Text>
             )}
             {detailError && (
@@ -1190,7 +1285,9 @@ const AnalysisBundleDashboard: React.FC<{
             eyebrow: t.analysisEyebrowSafetyNotes,
             warning: safetyCover?.bullets?.[0]
                 ? { text: formatTaggedText(safetyCover.bullets[0].text, safetyCover.bullets[0].basisTags) }
-                : undefined,
+                : bundleState.sections.safety.dataStatus === 'pending'
+                    ? { text: 'Safety summary pending', isPlaceholder: true }
+                    : { text: 'No safety details available.' },
             tip: safetyCover?.bullets?.[1]
                 ? { text: formatTaggedText(safetyCover.bullets[1].text, safetyCover.bullets[1].basisTags) }
                 : undefined,
@@ -1209,6 +1306,11 @@ const AnalysisBundleDashboard: React.FC<{
         value: ringScore(analysis?.value?.score),
         overall: ringScore(analysis?.scores?.overall),
     };
+    const ringDescriptions = useMemo(() => ({
+        effectiveness: { verdict: analysis?.efficacy?.verdict ?? '', highlights: [] },
+        safety: { verdict: analysis?.safety?.verdict ?? '', highlights: [] },
+        practicality: { verdict: analysis?.value?.verdict ?? '', highlights: [] },
+    }), [analysis?.efficacy?.verdict, analysis?.safety?.verdict, analysis?.value?.verdict]);
 
     return (
         <View style={styles.root}>
@@ -1237,8 +1339,7 @@ const AnalysisBundleDashboard: React.FC<{
                             value: ringScores.value,
                             overall: ringScores.overall,
                         }}
-                        descriptions={{ effectiveness: '', safety: '', value: '', overall: '' }}
-                        display={{ showValue: true }}
+                        descriptions={ringDescriptions}
                         unknownCategories={{ effectiveness: false, safety: false, value: false }}
                         labels={{
                             overall: t.analysisScoreLabel,

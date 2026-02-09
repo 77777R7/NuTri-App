@@ -1465,6 +1465,7 @@ const RecentlyScanned = () => {
 
     setSavingIds(prev => ({ ...prev, [item.id]: true }));
     addSupplement({
+      supplementId: item.supplementId ?? undefined,
       barcode: item.barcode ?? null,
       productName: item.productName,
       brandName: item.brandName,

@@ -36,9 +36,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Easing } from "react-native-reanimated";
 
 import { AutoFitText } from "@/components/common/AutoFitText";
+import { Config } from "@/constants/Config";
 import { useScanHistory } from "@/contexts/ScanHistoryContext";
 import { useSavedSupplements } from "@/contexts/SavedSupplementsContext";
 import { useScreenTokens } from "@/hooks/useScreenTokens";
+import { withAuthHeaders } from "@/lib/auth-token";
 import { supabase } from "@/lib/supabase";
 import type { RoutinePreferences, SavedSupplement } from "@/types/saved-supplements";
 
@@ -295,6 +297,75 @@ const formatSentence = (value: string) => {
   return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
 };
 
+const isUuid = (value: string) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+
+const normalizeTwoSentenceSummary = (value: string) => {
+  const normalized = value.replace(/\s+/g, " ").trim();
+  if (!normalized) return "";
+  const matches = normalized.match(/[^.!?]+[.!?]+|[^.!?]+$/g) ?? [];
+  const firstRaw = (matches[0] ?? normalized).trim();
+  const secondRaw = (matches[1] ?? "Follow the product label for dosing and timing.").trim();
+  const first = /[.!?]$/.test(firstRaw) ? firstRaw : `${firstRaw}.`;
+  const second = /[.!?]$/.test(secondRaw) ? secondRaw : `${secondRaw}.`;
+  return `${first} ${second}`;
+};
+
+const buildLocalOverviewFallback = (params: { productName: string; dosageText?: string | null }) => {
+  const name = params.productName.toLowerCase();
+  const has = (tokens: string[]) => tokens.some((token) => name.includes(token));
+
+  let timing = "Morning (with breakfast)";
+  let withFood = true;
+  let benefitPhrase = "general wellness";
+
+  if (has(["melatonin"])) {
+    timing = "Bedtime (30–60 min before sleep)";
+    withFood = false;
+    benefitPhrase = "healthy sleep onset";
+  } else if (has(["probiotic"])) {
+    timing = "Morning (before breakfast)";
+    withFood = false;
+    benefitPhrase = "gut microbiome balance";
+  } else if (has(["magnesium"])) {
+    timing = "Evening (after dinner)";
+    withFood = true;
+    benefitPhrase = "muscle relaxation";
+  } else if (has(["omega-3", "fish oil", "krill"])) {
+    timing = "With meals (morning or dinner)";
+    withFood = true;
+    benefitPhrase = "heart health";
+  } else if (has(["vitamin d", "d3"])) {
+    timing = "Morning (with breakfast)";
+    withFood = true;
+    benefitPhrase = "bone and immune health";
+  } else if (has(["iron"])) {
+    timing = "Morning (empty stomach)";
+    withFood = false;
+    benefitPhrase = "healthy red blood cells";
+  } else if (has(["calcium"])) {
+    timing = "With meals";
+    withFood = true;
+    benefitPhrase = "bone health";
+  } else if (has(["zinc"])) {
+    timing = "With meals";
+    withFood = true;
+    benefitPhrase = "immune function";
+  } else if (has(["vitamin", "b1", "b2", "b3", "b6", "b12", "folate"])) {
+    timing = "Morning (with breakfast)";
+    withFood = true;
+    benefitPhrase = "daily nutrition";
+  }
+
+  const nameText = params.productName.trim() || "This supplement";
+  const doseText = params.dosageText?.trim() ? ` (${params.dosageText.trim()})` : "";
+  const summary = normalizeTwoSentenceSummary(
+    `${nameText}${doseText} is commonly used to support ${benefitPhrase}. Follow the product label for dosing and timing.`,
+  );
+
+  return { summary, timing, withFood };
+};
+
 const getShortProductName = (productName: string, brandName: string) => {
   const trimmed = productName.trim();
   if (!trimmed) return productName;
@@ -389,6 +460,46 @@ const getTimeCategory = (time?: string) => {
 };
 
 const analysisCache = new Map<string, AnalysisPayload>();
+
+type EnsureOverviewResponse = { supplementId: string; analysisReady: boolean };
+
+const ensureOverview = async (params: {
+  supplementId?: string | null;
+  barcode?: string | null;
+  brandName?: string | null;
+  productName: string;
+  dosageText?: string | null;
+  userSupplementId?: string | null;
+}): Promise<EnsureOverviewResponse | null> => {
+  const apiBase = Config.apiBaseUrl?.replace(/\/$/, "");
+  if (!apiBase) return null;
+
+  const headers = await withAuthHeaders({ "Content-Type": "application/json" });
+  const response = await fetch(`${apiBase}/api/ensure-overview`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      supplementId: params.supplementId ?? null,
+      barcode: params.barcode ?? null,
+      brandName: params.brandName ?? null,
+      productName: params.productName,
+      dosageText: params.dosageText ?? null,
+      userSupplementId: params.userSupplementId ?? null,
+    }),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    console.warn("[supplement-overview] ensure-overview failed", response.status, detail);
+    return null;
+  }
+
+  const payload = (await response.json().catch(() => null)) as EnsureOverviewResponse | null;
+  if (!payload?.supplementId) {
+    return null;
+  }
+  return payload;
+};
 
 function ScrollWheel({
   items,
@@ -731,6 +842,7 @@ function DetailSheet({
 }) {
   const insets = useSafeAreaInsets();
   const screenHeight = Dimensions.get("window").height;
+  const { updateSupplement } = useSavedSupplements();
   const [note, setNote] = useState(item.routine?.note ?? "");
   const [time, setTime] = useState(item.routine?.time ?? "08:00");
   const [withFood, setWithFood] = useState(item.routine?.withFood ?? false);
@@ -761,60 +873,107 @@ function DetailSheet({
 
   useEffect(() => {
     let isActive = true;
-    const supplementId = item.supplementId ?? null;
+    const userSupplementId = isUuid(item.id) ? item.id : null;
 
-    if (!supplementId) {
+    const load = async () => {
       setAnalysisData(null);
-      setAnalysisStatus("idle");
-      return () => {
-        isActive = false;
-      };
-    }
+      setAnalysisStatus("loading");
 
-    const cached = analysisCache.get(supplementId);
-    if (cached) {
-      setAnalysisData(cached);
-      setAnalysisStatus("ready");
-      return () => {
-        isActive = false;
-      };
-    }
+      let supplementId = item.supplementId ?? null;
 
-    setAnalysisData(null);
-    setAnalysisStatus("loading");
-    supabase
-      .from("ai_analyses")
-      .select("analysis_data, created_at")
-      .eq("supplement_id", supplementId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle()
-      .then(({ data, error }) => {
-        if (!isActive) return;
-        if (error) {
-          console.warn("[supplement-overview] Failed to load analysis", error.message);
-          setAnalysisData(null);
-          setAnalysisStatus("error");
-          return;
+      // Backfill supplementId when older local items are missing it.
+      if (!supplementId) {
+        const ensured = await ensureOverview({
+          supplementId: null,
+          barcode: item.barcode ?? null,
+          brandName: item.brandName ?? null,
+          productName: item.productName,
+          dosageText: item.dosageText ?? null,
+          userSupplementId,
+        });
+        supplementId = ensured?.supplementId ?? null;
+        if (supplementId && item.supplementId !== supplementId) {
+          await updateSupplement(item.id, { supplementId });
         }
+      }
+
+      if (!isActive) return;
+
+      if (!supplementId) {
+        setAnalysisData(null);
+        setAnalysisStatus("idle");
+        return;
+      }
+
+      const cached = analysisCache.get(supplementId);
+      if (cached) {
+        setAnalysisData(cached);
+        setAnalysisStatus("ready");
+        return;
+      }
+
+      const fetchLatest = async (): Promise<AnalysisPayload | null> => {
+        const { data, error } = await supabase
+          .from("ai_analyses")
+          .select("analysis_data, created_at")
+          .eq("supplement_id", supplementId)
+          .is("user_id", null)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
         const payload = (data?.analysis_data ?? null) as AnalysisPayload | null;
         if (payload) {
           analysisCache.set(supplementId, payload);
         }
+        return payload;
+      };
+
+      try {
+        let payload = await fetchLatest();
+
+        if (!payload) {
+          await ensureOverview({
+            supplementId,
+            barcode: item.barcode ?? null,
+            brandName: item.brandName ?? null,
+            productName: item.productName,
+            dosageText: item.dosageText ?? null,
+            userSupplementId,
+          });
+          payload = await fetchLatest();
+        }
+
+        if (!isActive) return;
         setAnalysisData(payload);
         setAnalysisStatus("ready");
-      })
-      .catch((error: Error) => {
+      } catch (error) {
         if (!isActive) return;
-        console.warn("[supplement-overview] Failed to load analysis", error.message);
+        const message = error instanceof Error ? error.message : "Unknown error";
+        console.warn("[supplement-overview] Failed to load analysis", message);
         setAnalysisData(null);
         setAnalysisStatus("error");
-      });
+      }
+    };
+
+    void load();
 
     return () => {
       isActive = false;
     };
-  }, [item.supplementId]);
+  }, [
+    item.id,
+    item.supplementId,
+    item.barcode,
+    item.brandName,
+    item.productName,
+    item.dosageText,
+    updateSupplement,
+  ]);
 
   useEffect(() => {
     if (saveState !== "saved") return;
@@ -847,42 +1006,35 @@ function DetailSheet({
   const usage = (analysisRoot?.usagePayload?.usage ?? analysisRoot?.usage ?? null) as AnalysisUsage | null;
   const efficacy = (analysisRoot?.efficacy ?? null) as AnalysisEfficacy | null;
 
-  const overviewBenefits = Array.isArray(efficacy?.coreBenefits)
-    ? efficacy?.coreBenefits.filter((benefit) => isNonEmptyString(benefit))
-    : [];
-  const benefitsText =
-    overviewBenefits.length === 1
-      ? `Supports ${overviewBenefits[0]}`
-      : overviewBenefits.length > 1
-      ? `Supports ${overviewBenefits[0]} and ${overviewBenefits[1]}`
-      : "";
+  const fallback = buildLocalOverviewFallback({
+    productName: item.productName,
+    dosageText: item.dosageText ?? null,
+  });
 
-  const functionText = pickFirstText(
-    efficacy?.overviewSummary,
-    efficacy?.overallAssessment,
-    efficacy?.verdict,
-    benefitsText,
-    usage?.summary,
+  const coreBenefits = Array.isArray(efficacy?.coreBenefits)
+    ? efficacy?.coreBenefits.filter((benefit) => isNonEmptyString(benefit)).slice(0, 3)
+    : [];
+  const normalizedBenefit = coreBenefits[0]?.replace(/[.!?]+$/g, "").replace(/^supports?\s+/i, "").trim() ?? "";
+  const benefitSummary = normalizedBenefit
+    ? normalizeTwoSentenceSummary(
+        `${item.productName} is commonly used to support ${normalizedBenefit}. Follow the product label for dosing and timing.`,
+      )
+    : "";
+
+  const summaryText = pickFirstText(
+    efficacy?.overviewSummary ? normalizeTwoSentenceSummary(efficacy.overviewSummary) : "",
+    benefitSummary,
+    fallback.summary,
   );
-  const whenToTakeText = pickFirstText(usage?.timing, usage?.frequency);
-  const howToTakeText =
-    usage?.withFood === true
-      ? "Take with food"
-      : usage?.withFood === false
-      ? "Take on an empty stomach"
-      : pickFirstText(usage?.dosage, usage?.summary);
+
+  const whenToTakeText = pickFirstText(usage?.timing, fallback.timing);
+  const resolvedWithFood = typeof usage?.withFood === "boolean" ? usage.withFood : fallback.withFood;
+  const howToTakeText = resolvedWithFood ? "Take with food" : "Take on an empty stomach";
 
   const overviewBullets = [
-    { label: "When to take", text: whenToTakeText },
+    { label: "When to take", text: whenToTakeText || fallback.timing },
     { label: "How to take", text: howToTakeText },
-  ].filter((item) => isNonEmptyString(item.text));
-
-  const overviewFallback =
-    analysisStatus === "loading"
-      ? "Loading AI overview..."
-      : analysisStatus === "error"
-      ? "Overview is unavailable right now."
-      : "Overview is not available yet.";
+  ];
 
   return (
     <Modal visible transparent animationType="none" onRequestClose={onClose}>
@@ -961,25 +1113,19 @@ function DetailSheet({
                   </View>
 
                   <View style={styles.overviewContent}>
-                    {functionText ? (
-                      <Text style={styles.overviewSummary}>{formatSentence(functionText)}</Text>
-                    ) : (
-                      <Text style={styles.overviewPlaceholder}>{overviewFallback}</Text>
-                    )}
+                    <Text style={styles.overviewSummary}>{summaryText}</Text>
 
-                    {overviewBullets.length > 0 ? (
-                      <View style={styles.overviewBullets}>
-                        {overviewBullets.map((bullet) => (
-                          <View key={bullet.label} style={styles.overviewBulletRow}>
-                            <View style={styles.overviewBulletDot} />
-                            <Text style={styles.overviewBulletText}>
-                              <Text style={styles.overviewBulletLabel}>{bullet.label}: </Text>
-                              {formatSentence(bullet.text)}
-                            </Text>
-                          </View>
-                        ))}
-                      </View>
-                    ) : null}
+                    <View style={styles.overviewBullets}>
+                      {overviewBullets.map((bullet) => (
+                        <View key={bullet.label} style={styles.overviewBulletRow}>
+                          <View style={styles.overviewBulletDot} />
+                          <Text style={styles.overviewBulletText}>
+                            <Text style={styles.overviewBulletLabel}>{bullet.label}: </Text>
+                            {formatSentence(bullet.text)}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
                   </View>
                 </View>
               </View>
@@ -1199,6 +1345,7 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
   const pillWidthRef = useRef(84);
   const [pillWidth, setPillWidth] = useState(84);
   const updatedDosageRef = useRef(new Map<string, string>());
+  const overviewBackfillStartedRef = useRef(false);
   const filterTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const filterScrollRef = useRef<ScrollView>(null);
   const filterWrapRef = useRef<View>(null);
@@ -1394,6 +1541,47 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
     });
   }, [dataById, resolvedData, updateSupplement]);
 
+  // One-time backfill for older saved items that predate supplementId + public overview caching.
+  useEffect(() => {
+    if (overviewBackfillStartedRef.current) return;
+    const candidates = data
+      .filter((item) => !item.supplementId && isNonEmptyString(item.productName))
+      .slice(0, 10);
+    if (candidates.length === 0) return;
+
+    overviewBackfillStartedRef.current = true;
+    let cancelled = false;
+
+    const run = async () => {
+      for (const item of candidates) {
+        if (cancelled) break;
+        try {
+          const ensured = await ensureOverview({
+            supplementId: null,
+            barcode: item.barcode ?? null,
+            brandName: item.brandName ?? null,
+            productName: item.productName,
+            dosageText: item.dosageText ?? null,
+            userSupplementId: isUuid(item.id) ? item.id : null,
+          });
+          if (ensured?.supplementId) {
+            await updateSupplement(item.id, { supplementId: ensured.supplementId });
+          }
+        } catch {
+          // ignore and continue
+        }
+
+        // Light spacing to avoid spiky network usage on app start.
+        await new Promise((resolve) => setTimeout(resolve, 150));
+      }
+    };
+
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [data, updateSupplement]);
+
   const sorted = useMemo(() => [...resolvedData].sort((a, b) => isoDesc(a.createdAt, b.createdAt)), [resolvedData]);
 
   const idToThemeMap = useMemo(() => {
@@ -1541,6 +1729,25 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
     });
   }, []);
 
+  const closeFilter = useCallback(() => {
+    if (filterState === "closed" || filterState === "closing") return;
+    clearFilterTimers();
+    setIsCreatingTag(false);
+    setFilterState("closing");
+    // Fade out immediately to avoid header/safe-area flash during the final width snap.
+    setFilterBackdropVisible(false);
+    filterTimersRef.current.push(
+      setTimeout(() => {
+        setFilterState("closed");
+      }, FILTER_HEIGHT_DURATION),
+    );
+    filterTimersRef.current.push(
+      setTimeout(() => {
+        setFilterBackdropMounted(false);
+      }, FILTER_HEIGHT_DURATION),
+    );
+  }, [clearFilterTimers, filterState]);
+
   const handleCreateTag = useCallback(() => {
     if (!newTagText.trim()) {
       setIsCreatingTag(false);
@@ -1603,25 +1810,6 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
       }, BACKDROP_SHOW_DELAY),
     );
   }, [clearFilterTimers, filterState, measureFilterAnchor]);
-
-  const closeFilter = useCallback(() => {
-    if (filterState === "closed" || filterState === "closing") return;
-    clearFilterTimers();
-    setIsCreatingTag(false);
-    setFilterState("closing");
-    // Fade out immediately to avoid header/safe-area flash during the final width snap.
-    setFilterBackdropVisible(false);
-    filterTimersRef.current.push(
-      setTimeout(() => {
-        setFilterState("closed");
-      }, FILTER_HEIGHT_DURATION),
-    );
-    filterTimersRef.current.push(
-      setTimeout(() => {
-        setFilterBackdropMounted(false);
-      }, FILTER_HEIGHT_DURATION),
-    );
-  }, [clearFilterTimers, filterState]);
 
   const detailItem = useMemo(
     () => (detailId ? resolvedData.find((item) => item.id === detailId) ?? null : null),
