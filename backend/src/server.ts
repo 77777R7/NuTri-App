@@ -11,8 +11,16 @@ import { resolveCatalogByBarcode, type CatalogResolved } from "./catalogResolver
 import { buildCatalogBarcodeSnapshot } from "./catalogSnapshot.js";
 import { logBarcodeScan } from "./scanLog.js";
 import { extractBrandProduct, type BrandExtractionResult } from "./brandExtractor.js";
-import { buildCombinedContext, fetchAnalysisBundle, fetchAnalysisBundleFastV3, fetchIngredientsDetailV3, prepareContextSources } from "./deepseek.js";
+import {
+  buildCombinedContext,
+  fetchAnalysisBundle,
+  fetchAnalysisBundleFastV3,
+  fetchIngredientsDetailV3,
+  fetchMySupplementOverviewCard,
+  prepareContextSources,
+} from "./deepseek.js";
 import { getKbRuntime, lookupKbFormExplain } from "./kbRuntime.js";
+import { buildRuleBasedOverview } from "./overviewRuleBased.js";
 import {
   IngredientsDetailSchema,
   UsageFieldSchema,
@@ -147,6 +155,7 @@ const RESILIENCE_SNAPSHOT_TIMEOUT_MS = Number(process.env.RESILIENCE_SNAPSHOT_TI
 const RESILIENCE_LNHPD_TIMEOUT_MS = Number(process.env.RESILIENCE_LNHPD_TIMEOUT_MS ?? 900);
 const RESILIENCE_GOOGLE_TIMEOUT_MS = Number(process.env.RESILIENCE_GOOGLE_TIMEOUT_MS ?? 2500);
 const RESILIENCE_DEEPSEEK_TIMEOUT_MS = Number(process.env.RESILIENCE_DEEPSEEK_TIMEOUT_MS ?? 10_000);
+const MY_SUPP_OVERVIEW_TIMEOUT_MS = Number(process.env.MY_SUPP_OVERVIEW_TIMEOUT_MS ?? 4_000);
 const RESILIENCE_DEEPSEEK_BACKGROUND_BUDGET_MS = Number(
   process.env.RESILIENCE_DEEPSEEK_BACKGROUND_BUDGET_MS ?? 12_000,
 );
@@ -5106,81 +5115,6 @@ const resolveBrandId = async (brandName: string): Promise<string | null> => {
   return inserted?.id ?? null;
 };
 
-const buildRuleBasedOverview = (params: {
-  productName: string;
-  dosageText: string | null;
-}) => {
-  const name = params.productName.toLowerCase();
-  const has = (tokens: string[]) => tokens.some((token) => name.includes(token));
-
-  let timing = "Morning (08:00)";
-  let withFood: boolean | null = null;
-  let usageSummary = "Take with or without food.";
-  let coreBenefits: string[] = [];
-
-  if (has(["melatonin"])) {
-    timing = "Bedtime (30–60 min before sleep)";
-    withFood = false;
-    usageSummary = "Take on an empty stomach for best absorption.";
-    coreBenefits = ["Supports healthy sleep onset"];
-  } else if (has(["probiotic"])) {
-    timing = "Morning (before breakfast)";
-    withFood = false;
-    usageSummary = "Take on an empty stomach unless the label says otherwise.";
-    coreBenefits = ["Supports gut microbiome balance"];
-  } else if (has(["magnesium"])) {
-    timing = "Evening (after dinner)";
-    withFood = true;
-    usageSummary = "Take with food to reduce stomach upset.";
-    coreBenefits = ["Supports muscle relaxation"];
-  } else if (has(["omega-3", "fish oil", "krill"])) {
-    timing = "With meals (morning or dinner)";
-    withFood = true;
-    usageSummary = "Take with food for better absorption.";
-    coreBenefits = ["Supports heart health"];
-  } else if (has(["vitamin d", "d3"])) {
-    timing = "Morning (with breakfast)";
-    withFood = true;
-    usageSummary = "Take with food, ideally with some fat.";
-    coreBenefits = ["Supports bone and immune health"];
-  } else if (has(["iron"])) {
-    timing = "Morning (empty stomach)";
-    withFood = false;
-    usageSummary = "Take on an empty stomach unless it causes discomfort.";
-    coreBenefits = ["Supports healthy red blood cells"];
-  } else if (has(["calcium"])) {
-    timing = "With meals";
-    withFood = true;
-    usageSummary = "Take with food for better absorption.";
-    coreBenefits = ["Supports bone health"];
-  } else if (has(["zinc"])) {
-    timing = "With meals";
-    withFood = true;
-    usageSummary = "Take with food to reduce nausea.";
-    coreBenefits = ["Supports immune function"];
-  } else if (has(["vitamin", "b1", "b2", "b3", "b6", "b12", "folate"])) {
-    timing = "Morning (with breakfast)";
-    withFood = true;
-    usageSummary = "Take with food for best tolerance.";
-    coreBenefits = ["Supports daily nutrition"];
-  }
-
-  const doseText = params.dosageText ? ` (${params.dosageText})` : "";
-  if (coreBenefits.length === 0) {
-    coreBenefits = ["General wellness support"];
-  }
-
-  const overviewSummary = `General guidance for ${params.productName}${doseText}. Follow the product label.`;
-
-  return {
-    overviewSummary,
-    coreBenefits,
-    timing,
-    withFood,
-    usageSummary,
-  };
-};
-
 const resolveSupplementIdForOverview = async (params: {
   supplementId?: string | null;
   barcode?: string | null;
@@ -5297,6 +5231,8 @@ const ensurePublicOverview = async (params: {
   supplementId: string;
   productName: string;
   dosageText: string | null;
+  brandName?: string | null;
+  barcode?: string | null;
 }): Promise<boolean> => {
   const { data, error } = await supabase
     .from("ai_analyses")
@@ -5313,10 +5249,70 @@ const ensurePublicOverview = async (params: {
 
   if (data?.id) return true;
 
-  const overview = buildRuleBasedOverview({
+  const ruleOverview = buildRuleBasedOverview({
     productName: params.productName,
     dosageText: params.dosageText,
   });
+
+  const normalizeTwoSentenceSummary = (value: string, fallback: string): string => {
+    const pick = safeTrim(value) ?? safeTrim(fallback) ?? "";
+    if (!pick) {
+      return "This supplement is designed to support a common wellness goal. Follow the product label for dosing.";
+    }
+
+    const parts = pick
+      .split(/(?<=[.!?])\s+/)
+      .map((p) => p.trim())
+      .filter(Boolean);
+
+    if (parts.length >= 2) return `${parts[0]} ${parts[1]}`;
+    const only = parts[0] ?? pick;
+    const first = /[.!?]$/.test(only) ? only : `${only}.`;
+    return `${first} Follow the product label for dosing.`;
+  };
+
+  const deepseekKey = process.env.DEEPSEEK_API_KEY ?? null;
+  const model = process.env.DEEPSEEK_MODEL || "deepseek-chat";
+
+  const contextLines: string[] = [`Product name: ${params.productName}`];
+  const cleanedBrand = safeTrim(params.brandName) ?? null;
+  if (cleanedBrand && cleanedBrand !== DEFAULT_BRAND_NAME) contextLines.push(`Brand: ${cleanedBrand}`);
+  const cleanedBarcode = safeTrim(params.barcode) ?? null;
+  if (cleanedBarcode) contextLines.push(`Barcode: ${cleanedBarcode}`);
+  const cleanedDosage = safeTrim(params.dosageText) ?? null;
+  if (cleanedDosage) contextLines.push(`Dosage: ${cleanedDosage}`);
+
+  const deepseekOverview =
+    deepseekKey && deepseekBreaker.canRequest()
+      ? await fetchMySupplementOverviewCard(contextLines.join("\n"), model, deepseekKey, {
+          timeoutMs: MY_SUPP_OVERVIEW_TIMEOUT_MS,
+          queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS,
+          breaker: deepseekBreaker,
+          semaphore: deepseekSemaphore,
+        })
+      : null;
+
+  const overview = deepseekOverview
+    ? {
+        overviewSummary: normalizeTwoSentenceSummary(
+          deepseekOverview.overviewSummary,
+          ruleOverview.overviewSummary,
+        ),
+        coreBenefits:
+          deepseekOverview.coreBenefits.length > 0
+            ? deepseekOverview.coreBenefits
+            : ruleOverview.coreBenefits,
+        timing: safeTrim(deepseekOverview.timing) ?? ruleOverview.timing,
+        withFood: deepseekOverview.withFood,
+        usageSummary: deepseekOverview.withFood ? "Take with food." : "Take on an empty stomach.",
+      }
+    : ruleOverview;
+
+  // Ensure a stable shape even if DeepSeek returns an empty benefits list.
+  overview.coreBenefits = overview.coreBenefits.filter(Boolean).slice(0, 3);
+  if (overview.coreBenefits.length === 0) {
+    overview.coreBenefits = ruleOverview.coreBenefits.slice(0, 3);
+  }
 
   const analysisData = {
     efficacy: {
@@ -12251,6 +12247,8 @@ app.post("/api/ensure-overview", verifySupabaseToken, async (req: Request, res: 
       supplementId,
       productName,
       dosageText,
+      brandName,
+      barcode,
     });
 
     return res.json({ supplementId, analysisReady });

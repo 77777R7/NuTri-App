@@ -174,6 +174,25 @@ For value.costPerServing, use a number (in USD) or null if unknown.
 For usage.withFood: true=with food, false=empty stomach, null=anytime.
 `;
 
+const PROMPT_MY_SUPPLEMENT_OVERVIEW_CARD = `You are NuTri-AI. Create a short, product-style overview card for a dietary supplement.
+
+CRITICAL INSTRUCTIONS:
+1. OUTPUT JSON ONLY. NO MARKDOWN. NO TRAILING COMMAS.
+2. "overviewSummary" MUST be EXACTLY TWO sentences in English. Keep it general and product-oriented.
+3. Do not make medical claims (no diagnosis, treatment, or disease claims). Use general wellness language.
+4. "withFood" MUST be true or false (never null). If uncertain, choose the safer/more tolerable option.
+5. "timing" MUST be a short phrase like "Morning (with breakfast)" or "Bedtime (30–60 min before sleep)". No long rationales.
+6. If dosage is not provided, do not guess. If dosage is provided, you may mention it once.
+
+Return a SINGLE JSON object with exactly these keys:
+{
+  "overviewSummary": "Sentence one. Sentence two.",
+  "coreBenefits": ["Benefit 1", "Benefit 2"],
+  "timing": "Morning (with breakfast)",
+  "withFood": true
+}
+`;
+
 const PROMPT_ANALYSIS_BUNDLE = `You are NuTri-AI, a supplement science expert. Return a SINGLE valid JSON object with exactly three top-level keys: "efficacy", "safety", "usagePayload".
 
 GLOBAL RULES:
@@ -790,6 +809,138 @@ export async function fetchAnalysisSection(
     }
     console.error(`Error fetching ${section}:`, error);
     return null; // Return null to let frontend show skeleton/fallback
+  } finally {
+    release?.();
+  }
+}
+
+export type MySupplementOverviewCard = {
+  overviewSummary: string;
+  coreBenefits: string[];
+  timing: string;
+  withFood: boolean;
+};
+
+export async function fetchMySupplementOverviewCard(
+  context: string,
+  model: string,
+  apiKey: string,
+  options: ResilienceOptions = {},
+): Promise<MySupplementOverviewCard | null> {
+  let release: (() => void) | null = null;
+  try {
+    if (options.breaker && !options.breaker.canRequest()) {
+      return null;
+    }
+
+    const timeoutMs = options.timeoutMs ?? 4_000;
+    const budgetedTimeout = options.budget ? options.budget.msFor(timeoutMs) : timeoutMs;
+    if (budgetedTimeout <= 0) {
+      return null;
+    }
+
+    if (options.semaphore) {
+      try {
+        release = await options.semaphore.acquire({
+          timeoutMs: options.queueTimeoutMs ?? 0,
+          signal: options.signal,
+        });
+      } catch {
+        return null;
+      }
+    }
+
+    const retryConfig: RetryOptions = {
+      maxAttempts: options.retry?.maxAttempts ?? 1,
+      baseDelayMs: options.retry?.baseDelayMs ?? 350,
+      maxDelayMs: options.retry?.maxDelayMs ?? 1200,
+      jitterRatio: options.retry?.jitterRatio ?? 0.35,
+      shouldRetry: (error) => {
+        if (error instanceof TimeoutError) return true;
+        if (error instanceof HttpError) return isRetryableStatus(error.status);
+        if (isAbortError(error)) return false;
+        return error instanceof TypeError;
+      },
+      signal: options.signal,
+      budget: options.budget,
+    };
+
+    const response = await withRetry(async () => {
+      const timeoutSignal = createTimeoutSignal(budgetedTimeout);
+      const { signal, cleanup } = combineSignals([options.signal, timeoutSignal]);
+      try {
+        const result = await fetch("https://api.deepseek.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: "system", content: PROMPT_MY_SUPPLEMENT_OVERVIEW_CARD },
+              { role: "user", content: context },
+            ],
+            temperature: 0.1,
+            stream: false,
+            max_tokens: options.maxTokens ?? 600,
+            response_format: { type: "json_object" },
+          }),
+          signal,
+        });
+
+        if (!result.ok) {
+          throw new HttpError(result.status, `DeepSeek API error: ${result.status}`);
+        }
+
+        return result;
+      } catch (error) {
+        if (timeoutSignal.aborted && !options.signal?.aborted && isAbortError(error)) {
+          throw new TimeoutError();
+        }
+        throw error;
+      } finally {
+        cleanup();
+      }
+    }, retryConfig);
+
+    options.breaker?.recordSuccess();
+
+    const data = (await response.json()) as { choices?: { message?: { content?: string } }[] };
+    const content = data.choices?.[0]?.message?.content || "{}";
+    const parsed = tryParseJsonLenient(content);
+    if (!parsed || typeof parsed !== "object") {
+      return null;
+    }
+
+    const record = parsed as Record<string, unknown>;
+    const overviewSummary =
+      typeof record.overviewSummary === "string" ? record.overviewSummary.trim() : "";
+    const timing = typeof record.timing === "string" ? record.timing.trim() : "";
+    const withFood = typeof record.withFood === "boolean" ? record.withFood : null;
+    const coreBenefitsRaw = Array.isArray(record.coreBenefits) ? record.coreBenefits : [];
+    const coreBenefits = coreBenefitsRaw
+      .filter((benefit) => typeof benefit === "string")
+      .map((benefit) => benefit.trim())
+      .filter(Boolean)
+      .slice(0, 3);
+
+    if (!overviewSummary || !timing || withFood === null) {
+      return null;
+    }
+
+    return {
+      overviewSummary,
+      coreBenefits,
+      timing,
+      withFood,
+    };
+  } catch (error) {
+    if (!isAbortError(error)) {
+      options.breaker?.recordFailure();
+    }
+    console.warn("[DeepSeek] MySupplement overview card generation failed", error);
+    return null;
   } finally {
     release?.();
   }
