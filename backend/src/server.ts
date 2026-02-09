@@ -772,6 +772,38 @@ const UNKNOWN_DOSE_RE = /\b(unknown|not detailed|not specified|not provided|unsp
 
 const normalizeIngredientName = (name: string) => name.toLowerCase().replace(/\s+/g, " ").trim();
 
+const FORM_KEYWORD_RE =
+  /\b(oxide|citrate|ascorbate|glycinate|bisglycinate|picolinate|malate|sulfate|chloride|hydrochloride|hcl|phosphate|fumarate|nitrate|orotate|threonate|gluconate|carbonate)\b/i;
+
+const extractFormKeywords = (text: string): string[] => {
+  const lower = text.toLowerCase();
+  const hits = new Set<string>();
+  let match: RegExpExecArray | null;
+  const globalRe = new RegExp(FORM_KEYWORD_RE.source, "gi");
+  while ((match = globalRe.exec(lower))) {
+    const token = (match[1] ?? "").toLowerCase();
+    if (token) hits.add(token);
+  }
+  return [...hits];
+};
+
+const buildAllowedFormKeywordSet = (digest: FactsDigest): Set<string> => {
+  const allowed = new Set<string>();
+  digest.actives.forEach((active) => {
+    if (!canMentionChemicalForm(active)) return;
+    const evidence = (active.chemicalFormEvidence ?? active.evidenceText ?? active.chemicalForm ?? "").toString();
+    extractFormKeywords(evidence).forEach((kw) => allowed.add(kw));
+  });
+  return allowed;
+};
+
+const hasForbiddenFormKeyword = (text: string, allowed: Set<string>): boolean => {
+  const keywords = extractFormKeywords(text);
+  if (keywords.length === 0) return false;
+  if (allowed.size === 0) return true;
+  return keywords.some((kw) => !allowed.has(kw));
+};
+
 const buildLnhpdDeterministicTiming = (labelDosingText: string | null): { text: string; basisTags: BasisTag[] } => {
   const raw = (labelDosingText ?? "").trim();
   const lower = raw.toLowerCase();
@@ -916,6 +948,131 @@ const buildPerServingDoseContext = (
   }
   const suffix = servingSize ? ` (Serving size: ${servingSize})` : "";
   return buildLabelField(`${amountText}${suffix}`);
+};
+
+const canMentionChemicalForm = (active: FactsDigest["actives"][number]): boolean => {
+  const confidence = active.chemicalFormConfidence ?? null;
+  const chemicalForm = typeof active.chemicalForm === "string" ? active.chemicalForm.trim() : "";
+  if (!chemicalForm) return false;
+  if (confidence === null || confidence < 0.6) return false;
+  // Guard against LNHPD meta fields that repeat the ingredient name (trivial, not a form).
+  if (normalizeIngredientName(chemicalForm) === normalizeIngredientName(active.name)) return false;
+  const evidence = (active.chemicalFormEvidence ?? active.evidenceText ?? chemicalForm).toLowerCase();
+  const token = chemicalForm.toLowerCase();
+  return evidence.includes(token);
+};
+
+const buildChemicalFormExplainEvidenceOnly = (active: FactsDigest["actives"][number]): { text: string; basisTags: BasisTag[] } => {
+  const evidence = (active.chemicalFormEvidence ?? active.chemicalForm ?? "").toString().trim();
+  const cleaned = evidence.length > 140 ? `${evidence.slice(0, 137).trim()}...` : evidence;
+  return buildLabelField(`Listed on the label as: ${cleaned}.`);
+};
+
+const buildLnhpdIngredientsDetailKbFirst = (params: {
+  digest: FactsDigest;
+  labelDosingText: string | null;
+  allowInternalDebug: boolean;
+}): {
+  detail: IngredientsDetail;
+  debug?: Record<string, unknown>;
+} => {
+  const { digest, labelDosingText, allowInternalDebug } = params;
+  const kb = getKbRuntime();
+
+  const formResolveSources: Record<string, string> = {};
+  const formEvidenceTexts: Record<string, string | null> = {};
+  const formSentenceIds: Record<string, string | null> = {};
+  const formExcerptIds: Record<string, string | null> = {};
+  const formReferenceIds: Record<string, string | null> = {};
+  const formEvidenceGrades: Record<string, string | null> = {};
+
+  const purposeText = digest.claims.labelPurposes?.[0] ?? null;
+  const whatItDoesFromPurpose = purposeText
+    ? { text: purposeText.endsWith(".") ? purposeText : `${purposeText}.`, basisTags: ["regulatory_claim"] as BasisTag[] }
+    : null;
+
+  const items: IngredientsDetail["items"] = digest.actives.map((active) => {
+    const kbResult = kb
+      ? lookupKbFormExplain({
+          ingredientName: active.name,
+          chemicalForm: active.chemicalForm ?? null,
+          chemicalFormConfidence: active.chemicalFormConfidence ?? null,
+          chemicalFormSource: active.chemicalFormSource ?? "none",
+          chemicalFormEvidence: active.chemicalFormEvidence ?? null,
+        })
+      : {
+          sentence: null,
+          sentenceId: null,
+          excerptId: null,
+          referenceId: null,
+          evidenceGrade: null,
+          resolveSource: "none" as const,
+          evidenceText: null,
+        };
+
+    formResolveSources[active.name] = kbResult.resolveSource;
+    formEvidenceTexts[active.name] = kbResult.evidenceText ?? active.chemicalFormEvidence ?? null;
+    formSentenceIds[active.name] = kbResult.sentenceId;
+    formExcerptIds[active.name] = kbResult.excerptId;
+    formReferenceIds[active.name] = kbResult.referenceId;
+    formEvidenceGrades[active.name] = kbResult.evidenceGrade;
+
+    const perServing = buildPerServingDoseContext(active, digest.serving.servingSize).text;
+    const doseParts = [perServing];
+    if (labelDosingText) doseParts.push(`Label dosing: ${labelDosingText}.`);
+    const doseContext = buildLabelField(doseParts.join(" "));
+
+    const whatItDoes = whatItDoesFromPurpose ?? buildNotProvidedField();
+
+    const chemicalFormExplain = (() => {
+      if (kbResult.sentence) {
+        return { text: kbResult.sentence, basisTags: ["label_fact", "ingredient_inference"] as BasisTag[] };
+      }
+      if (canMentionChemicalForm(active)) {
+        return buildChemicalFormExplainEvidenceOnly(active);
+      }
+      // Productized, short, and honest: no form token without evidence.
+      return {
+        text: "Chemical form isn't disclosed on the label, so we don't assume a specific form.",
+        basisTags: ["not_provided"] as BasisTag[],
+      };
+    })();
+
+    return {
+      name: active.name,
+      whatItDoes,
+      doseContext,
+      chemicalFormExplain,
+      deliveryFormExplain: buildDeliveryFormExplain(active.deliveryForm ?? null),
+    };
+  });
+
+  const activeSummary = digest.actives
+    .map((active) => {
+      const amt = buildActiveAmountText(active);
+      return amt ? `${active.name} (${amt.replace(/ per serving$/i, "")})` : active.name;
+    })
+    .filter(Boolean)
+    .join(", ");
+  const summaryParts: string[] = [];
+  if (activeSummary) summaryParts.push(`Actives: ${activeSummary}.`);
+  if (labelDosingText) summaryParts.push(`Label dosing: ${labelDosingText}.`);
+  const overallSummary = summaryParts.length ? buildLabelField(summaryParts.join(" ")) : null;
+
+  const detail: IngredientsDetail = { items, overallSummary, overlapNotes: null };
+  if (!allowInternalDebug) return { detail };
+
+  return {
+    detail,
+    debug: {
+      formResolveSources,
+      formEvidenceTexts,
+      formSentenceIds,
+      formExcerptIds,
+      formReferenceIds,
+      formEvidenceGrades,
+    },
+  };
 };
 
 const buildDetailSkeleton = (digest: FactsDigest, labelDosingText: string | null): IngredientsDetail => {
@@ -1176,13 +1333,18 @@ const mergeFastAnalysisBundle = (params: {
   fastOutput: Record<string, unknown> | null;
 }): AnalysisBundle => {
   const { skeleton, digest, fastOutput } = params;
+  const allowedFormKeywords = buildAllowedFormKeywordSet(digest);
   const fallbackSummary = buildFallbackOverviewSummary(digest);
   const fallbackBullets = buildFallbackOverviewBullets(digest);
   const overviewRaw = (fastOutput?.overview ?? {}) as Record<string, unknown>;
-  const overviewSummaryCandidate =
+  const overviewSummaryCandidateRaw =
     typeof overviewRaw.summary === "string" && overviewRaw.summary.trim()
       ? clampText(overviewRaw.summary.trim(), 180)
       : fallbackSummary;
+  const overviewSummaryCandidate =
+    hasForbiddenFormKeyword(overviewSummaryCandidateRaw, allowedFormKeywords)
+      ? fallbackSummary
+      : overviewSummaryCandidateRaw;
   const overviewBulletsRaw = Array.isArray(overviewRaw.bullets) ? overviewRaw.bullets : [];
   const overviewBullets = overviewBulletsRaw
     .map((item) => ({
@@ -1190,6 +1352,7 @@ const mergeFastAnalysisBundle = (params: {
       basisTags: normalizeBasisTags(item?.basisTags, "ingredient_inference"),
     }))
     .filter((item) => item.text)
+    .filter((item) => !hasForbiddenFormKeyword(item.text, allowedFormKeywords))
     .slice(0, 2);
   const overviewBulletsFinal = overviewBullets.length > 0 ? overviewBullets : fallbackBullets;
   const dsldNeedsInference =
@@ -1262,7 +1425,12 @@ const mergeFastAnalysisBundle = (params: {
     safetyBullets.length > 0
       ? safetyBullets
       : digest.warnings.missingFlag
-        ? [buildSectionBullet("General safety: consult a healthcare professional if needed.", ["general_advice"])]
+        ? [
+            buildSectionBullet(
+              "Not provided by source. General reminder: if pregnant/nursing, have a condition, or take medications, check with a clinician.",
+              ["general_advice"],
+            ),
+          ]
         : [];
 
   const overviewStatus = overviewBulletsFinal.length > 0 ? "complete" : "limited";
@@ -5599,10 +5767,6 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   const requestId = String(res.getHeader("x-request-id") ?? "");
 
   const deepseekKey = process.env.DEEPSEEK_API_KEY ?? null;
-  if (!deepseekKey) {
-    res.status(503).json({ error: "deepseek_api_key_missing" } satisfies ErrorResponse);
-    return;
-  }
 
   const digestRow = await getAnalysisIdentityCache(
     {
@@ -5693,6 +5857,59 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
         bundleId: randomUUID(),
         revision: 2,
         factsDigestHash,
+      },
+      timingMs: 0,
+    });
+    return;
+  }
+
+  // LNHPD ingredient detail can be deterministic and KB-first:
+  // - fast (no LLM latency)
+  // - auditable (KB sentence/excerpt/reference governs chemicalFormExplain)
+  // - conservative (no form token unless label evidence is present)
+  if (digest.sourceType === "lnhpd") {
+    const labelDosingText = buildLabelDosingText(digest);
+    const sliceStart = Math.min(cursor, totalActives);
+    const sliceEnd = Math.min(sliceStart + requestedLimit, totalActives);
+    const detailDigest: FactsDigest = { ...digest, actives: digest.actives.slice(sliceStart, sliceEnd) };
+    const built = buildLnhpdIngredientsDetailKbFirst({
+      digest: detailDigest,
+      labelDosingText,
+      allowInternalDebug,
+    });
+    res.status(200).json({
+      section: "ingredients",
+      detail: built.detail,
+      dataStatus: "complete",
+      page: buildDetailPage(Array.isArray(built.detail.items) ? built.detail.items.length : 0),
+      meta: {
+        bundleId: randomUUID(),
+        revision: 2,
+        factsDigestHash,
+      },
+      timingMs: 0,
+      ...(allowInternalDebug ? { debug: built.debug } : {}),
+    });
+    return;
+  }
+
+  if (!deepseekKey) {
+    const labelDosingText = buildLabelDosingText(digest);
+    const sliceStart = Math.min(cursor, totalActives);
+    const sliceEnd = Math.min(sliceStart + requestedLimit, totalActives);
+    const detailDigest: FactsDigest = { ...digest, actives: digest.actives.slice(sliceStart, sliceEnd) };
+    const skeletonDetail = buildDetailSkeleton(detailDigest, labelDosingText);
+    res.status(200).json({
+      section: "ingredients",
+      detail: skeletonDetail,
+      dataStatus: "limited",
+      page: buildDetailPage(Array.isArray(skeletonDetail.items) ? skeletonDetail.items.length : 0),
+      meta: {
+        bundleId: randomUUID(),
+        revision: 2,
+        factsDigestHash,
+        fallbackUsed: "skeleton",
+        fallbackReason: "deepseek_api_key_missing",
       },
       timingMs: 0,
     });
