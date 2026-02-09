@@ -300,6 +300,7 @@ export default function ScanResultScreen() {
   const addedRef = useRef(false);
   const lastDosageRef = useRef<string | null>(null);
   const lastBrandRef = useRef<string | null>(null);
+  const lastSupplementIdRef = useRef<string | null>(null);
   const analysisRequestedRef = useRef(false);
 
   // Get session to retrieve barcode
@@ -506,6 +507,7 @@ export default function ScanResultScreen() {
     analysisRequestedRef.current = false;
     addedRef.current = false;
     lastDosageRef.current = null;
+    lastSupplementIdRef.current = null;
     setLabelAnalysis(null);
     setLabelAnalysisError(null);
     setLabelAnalysisLoading(false);
@@ -556,6 +558,7 @@ export default function ScanResultScreen() {
 
     if (status === 'error' || !productInfo) return;
 
+    const supplementId = snapshot?.product?.entityRefs?.supplementId ?? null;
     const primaryDose = formatDose(
       efficacy?.primaryActive?.dosageValue ?? null,
       efficacy?.primaryActive?.dosageUnit ?? null,
@@ -583,6 +586,7 @@ export default function ScanResultScreen() {
     if (!addedRef.current) {
       addScan({
         barcode: barcode || null,
+        supplementId,
         productName: productInfo.name ?? 'Unknown supplement',
         brandName: productInfo.brand ?? 'Unknown brand',
         dosageText,
@@ -591,19 +595,29 @@ export default function ScanResultScreen() {
       });
       addedRef.current = true;
       lastDosageRef.current = dosageText || null;
+      lastSupplementIdRef.current = supplementId;
       return;
     }
 
-    if (dosageText && dosageText !== lastDosageRef.current) {
+    const shouldUpdateDosage = Boolean(dosageText && dosageText !== lastDosageRef.current);
+    const shouldUpdateSupplementId = Boolean(supplementId && supplementId !== lastSupplementIdRef.current);
+
+    if (shouldUpdateDosage || shouldUpdateSupplementId) {
       addScan({
         barcode: barcode || null,
+        supplementId,
         productName: productInfo.name ?? 'Unknown supplement',
         brandName: productInfo.brand ?? 'Unknown brand',
         dosageText,
         category: productInfo.category ?? null,
         imageUrl: productInfo.image ?? null,
       });
-      lastDosageRef.current = dosageText;
+      if (shouldUpdateDosage) {
+        lastDosageRef.current = dosageText;
+      }
+      if (shouldUpdateSupplementId) {
+        lastSupplementIdRef.current = supplementId;
+      }
     }
   }, [
     addScan,
@@ -615,6 +629,7 @@ export default function ScanResultScreen() {
     productInfo,
     resolvedLabelAnalysis,
     session,
+    snapshot?.product?.entityRefs?.supplementId,
     status,
     usage,
   ]);

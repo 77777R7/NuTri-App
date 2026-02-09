@@ -1,6 +1,7 @@
 export type ScanHistoryItem = {
   id: string;
   barcode?: string | null;
+  supplementId?: string | null;
   productName: string;
   brandName: string;
   dosageText: string;

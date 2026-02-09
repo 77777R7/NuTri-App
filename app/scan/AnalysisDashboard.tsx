@@ -47,6 +47,7 @@ import type {
     AnalysisBundleV4,
     BasisTag,
     Bullet,
+    DataStatus,
     IngredientsDetail,
     IngredientsDetailV3,
     IngredientsDetailV4,
@@ -946,16 +947,30 @@ const AnalysisBundleDashboard: React.FC<{
         // Align loading copy with dataStatus: only show "Generating..." when pending.
         // Treat "detail missing + fetch in-flight" as pending, even if cover facts are already complete.
         if (!bundleState.sections.ingredients.detail) {
-            setBundleState((prev) => ({
-                ...prev,
-                sections: {
-                    ...prev.sections,
-                    ingredients: {
-                        ...prev.sections.ingredients,
-                        dataStatus: 'pending',
+            setBundleState((prev) => {
+                if (isBundleV4(prev)) {
+                    return {
+                        ...prev,
+                        sections: {
+                            ...prev.sections,
+                            ingredients: {
+                                ...prev.sections.ingredients,
+                                dataStatus: 'pending',
+                            },
+                        },
+                    };
+                }
+                return {
+                    ...prev,
+                    sections: {
+                        ...prev.sections,
+                        ingredients: {
+                            ...prev.sections.ingredients,
+                            dataStatus: 'pending',
+                        },
                     },
-                },
-            }));
+                };
+            });
         }
         try {
             const rawBaseUrl = Config.searchApiBaseUrl;
@@ -983,7 +998,50 @@ const AnalysisBundleDashboard: React.FC<{
                     }, retryMs);
                 } else {
                     setDetailError('Still generating. Please try again.');
-                    setBundleState((prev) => ({
+                    setBundleState((prev) => {
+                        if (isBundleV4(prev)) {
+                            return {
+                                ...prev,
+                                sections: {
+                                    ...prev.sections,
+                                    ingredients: {
+                                        ...prev.sections.ingredients,
+                                        dataStatus: 'limited',
+                                    },
+                                },
+                            };
+                        }
+                        return {
+                            ...prev,
+                            sections: {
+                                ...prev.sections,
+                                ingredients: {
+                                    ...prev.sections.ingredients,
+                                    dataStatus: 'limited',
+                                },
+                            },
+                        };
+                    });
+                }
+                setDetailLoading(false);
+                return;
+            }
+            if (!response.ok) {
+                setDetailError('Detail unavailable');
+                setBundleState((prev) => {
+                    if (isBundleV4(prev)) {
+                        return {
+                            ...prev,
+                            sections: {
+                                ...prev.sections,
+                                ingredients: {
+                                    ...prev.sections.ingredients,
+                                    dataStatus: 'limited',
+                                },
+                            },
+                        };
+                    }
+                    return {
                         ...prev,
                         sections: {
                             ...prev.sections,
@@ -992,14 +1050,58 @@ const AnalysisBundleDashboard: React.FC<{
                                 dataStatus: 'limited',
                             },
                         },
-                    }));
-                }
+                    };
+                });
                 setDetailLoading(false);
                 return;
             }
-            if (!response.ok) {
-                setDetailError('Detail unavailable');
-                setBundleState((prev) => ({
+            const payload = await response.json();
+            const detail = (payload?.detail ?? null) as IngredientsDetail | null;
+            if (detail) {
+                setBundleState((prev) => {
+                    const nextStatus = (payload?.dataStatus ?? prev.sections.ingredients.dataStatus) as DataStatus;
+                    if (isBundleV4(prev)) {
+                        return {
+                            ...prev,
+                            sections: {
+                                ...prev.sections,
+                                ingredients: {
+                                    ...prev.sections.ingredients,
+                                    detail: detail as IngredientsDetailV4,
+                                    dataStatus: nextStatus,
+                                },
+                            },
+                        };
+                    }
+                    return {
+                        ...prev,
+                        sections: {
+                            ...prev.sections,
+                            ingredients: {
+                                ...prev.sections.ingredients,
+                                detail: detail as IngredientsDetailV3,
+                                dataStatus: nextStatus,
+                            },
+                        },
+                    };
+                });
+            }
+        } catch (err) {
+            setDetailError('Detail unavailable');
+            setBundleState((prev) => {
+                if (isBundleV4(prev)) {
+                    return {
+                        ...prev,
+                        sections: {
+                            ...prev.sections,
+                            ingredients: {
+                                ...prev.sections.ingredients,
+                                dataStatus: 'limited',
+                            },
+                        },
+                    };
+                }
+                return {
                     ...prev,
                     sections: {
                         ...prev.sections,
@@ -1008,37 +1110,8 @@ const AnalysisBundleDashboard: React.FC<{
                             dataStatus: 'limited',
                         },
                     },
-                }));
-                setDetailLoading(false);
-                return;
-            }
-            const payload = await response.json();
-            const detail = payload?.detail as IngredientsDetail | null;
-            if (detail) {
-                setBundleState((prev) => ({
-                    ...prev,
-                    sections: {
-                        ...prev.sections,
-                        ingredients: {
-                            ...prev.sections.ingredients,
-                            detail,
-                            dataStatus: payload?.dataStatus ?? prev.sections.ingredients.dataStatus,
-                        },
-                    },
-                }));
-            }
-        } catch (err) {
-            setDetailError('Detail unavailable');
-            setBundleState((prev) => ({
-                ...prev,
-                sections: {
-                    ...prev.sections,
-                    ingredients: {
-                        ...prev.sections.ingredients,
-                        dataStatus: 'limited',
-                    },
-                },
-            }));
+                };
+            });
         } finally {
             setDetailLoading(false);
         }
@@ -1286,7 +1359,9 @@ const AnalysisBundleDashboard: React.FC<{
                     : { text: 'No safety details available.' },
             tip: safetyCover?.bullets?.[1]
                 ? { text: formatTaggedText(safetyCover.bullets[1].text, safetyCover.bullets[1].basisTags) }
-                : undefined,
+                : bundleState.sections.safety.dataStatus === 'pending'
+                    ? { text: 'Safety tips pending', isPlaceholder: true }
+                    : { text: 'General reminder: check the label and consult a clinician if needed.' },
             dataStatus: buildBundleDataStatus(bundleState.sections.safety.dataStatus, bundleState.meta.sourceType),
             content: safetyContent,
         },
@@ -1330,8 +1405,11 @@ const AnalysisBundleDashboard: React.FC<{
                             value: ringScores.value,
                             overall: ringScores.overall,
                         }}
-                        descriptions={{ effectiveness: '', safety: '', value: '', overall: '' }}
-                        display={{ showValue: true }}
+                        descriptions={{
+                            effectiveness: { verdict: '', highlights: [] },
+                            safety: { verdict: '', highlights: [] },
+                            practicality: { verdict: '', highlights: [] },
+                        }}
                         unknownCategories={{ effectiveness: false, safety: false, value: false }}
                         labels={{
                             overall: t.analysisScoreLabel,

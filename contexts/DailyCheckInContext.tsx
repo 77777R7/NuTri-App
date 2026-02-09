@@ -176,8 +176,8 @@ export const DailyCheckInProvider = ({ children }: { children: React.ReactNode }
       if (!user?.id) return;
 
       const payload = nextEntries
-        .filter(entry => entry.supplementId)
-        .map(entry => ({
+        .filter((entry): entry is { key: string; supplementId: string } => typeof entry.supplementId === 'string' && entry.supplementId.length > 0)
+        .map((entry) => ({
           user_id: user.id,
           supplement_id: entry.supplementId,
           check_in_date: dateKey,
