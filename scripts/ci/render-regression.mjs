@@ -73,6 +73,9 @@ const dsldWithFormTocotrienolsBarcode =
   process.env.RENDER_DSLD_TOCOTRIENOLS_BARCODE || "00351821007984";
 const dsldWithFormTocotrienolsBarcode2 =
   process.env.RENDER_DSLD_TOCOTRIENOLS_BARCODE2 || "00310539028285";
+const lnhpdWithFormBarcode = process.env.RENDER_LNHPD_WITH_FORM_BARCODE || "00029537001069";
+const lnhpdWithFormBarcode2 = process.env.RENDER_LNHPD_WITH_FORM_BARCODE2 || "00029537001069";
+const lnhpdWithFormBarcode3 = process.env.RENDER_LNHPD_WITH_FORM_BARCODE3 || "00029537001069";
 
 const DEFAULT_CASES = [
   { id: "lnhpd", barcodes: [process.env.RENDER_LNHPD_BARCODE || "00029537001069"], expectedSourceType: "lnhpd" },
@@ -119,6 +122,11 @@ const DEFAULT_CASES = [
 const CASES = [...DEFAULT_CASES];
 if (process.env.RENDER_INCLUDE_NIGHTLY_CASES === "1") {
   // Non-blocking observation cases: keep out of required checks until stable across multiple runs.
+  CASES.splice(CASES.length - 1, 0, {
+    id: "lnhpd_with_form_observe",
+    barcodes: [lnhpdWithFormBarcode, lnhpdWithFormBarcode2, lnhpdWithFormBarcode3],
+    expectedSourceType: "lnhpd",
+  });
   CASES.splice(CASES.length - 1, 0, {
     id: "dsld_with_form_calcium_threonate",
     // Prefer barcodes that recently passed in CI first; keep additional fallbacks to reduce drift flakiness.
@@ -381,6 +389,12 @@ function assertLnhpdLabelDosingCopied(fastBundle) {
   const schedule = Array.isArray(usage?.detail?.scheduleFromLabel) ? usage.detail.scheduleFromLabel : [];
   const raw = String(schedule?.[0]?.rawText ?? "").trim();
   const dosage = usage?.cover?.dosage?.text ? String(usage.cover.dosage.text).trim() : "";
+  const bestTime = usage?.cover?.bestTimeToTake?.text ? String(usage.cover.bestTimeToTake.text).trim() : "";
+  const withFoodText = usage?.cover?.withFood?.text != null ? String(usage.cover.withFood.text).trim() : "";
+  const bestTimeTags = Array.isArray(usage?.cover?.bestTimeToTake?.basisTags)
+    ? usage.cover.bestTimeToTake.basisTags
+    : [];
+  const withFoodTags = Array.isArray(usage?.cover?.withFood?.basisTags) ? usage.cover.withFood.basisTags : [];
 
   if (!raw) {
     errors.push("lnhpd: expected usage.detail.scheduleFromLabel[0].rawText to be non-empty");
@@ -388,6 +402,14 @@ function assertLnhpdLabelDosingCopied(fastBundle) {
   }
   if (!dosage) {
     errors.push("lnhpd: expected usage.cover.dosage.text to be non-empty");
+    return errors;
+  }
+  if (!bestTime) {
+    errors.push("lnhpd: expected usage.cover.bestTimeToTake.text to be non-empty");
+    return errors;
+  }
+  if (!withFoodText) {
+    errors.push("lnhpd: expected usage.cover.withFood.text to be non-empty");
     return errors;
   }
 
@@ -401,6 +423,31 @@ function assertLnhpdLabelDosingCopied(fastBundle) {
   }
   if (/\bunknown\b|\bnot provided\b|\bunspecified\b/i.test(dosage)) {
     errors.push(`lnhpd: dosage must not say unknown/not provided (dosage="${dosage}")`);
+  }
+
+  // Best time / with food must be deterministic (0-LLM). Enforce "non-empty + non-negative" semantics.
+  // basisTags must never imply unsupported inference.
+  const negative = /\bunknown\b|\bnot provided\b|\bunspecified\b/i;
+  if (negative.test(bestTime)) {
+    errors.push(`lnhpd: bestTimeToTake must not say unknown/not provided (text="${bestTime}")`);
+  }
+  if (negative.test(withFoodText)) {
+    errors.push(`lnhpd: withFood must not say unknown/not provided (text="${withFoodText}")`);
+  }
+
+  const allowedTimingTags = new Set(["label_fact", "general_advice"]);
+  if (bestTimeTags.some((t) => t === "ingredient_inference")) {
+    errors.push(`lnhpd: bestTimeToTake must not be tagged ingredient_inference (tags=${bestTimeTags.join(",")})`);
+  }
+  if (!bestTimeTags.some((t) => allowedTimingTags.has(t))) {
+    errors.push(`lnhpd: bestTimeToTake must include label_fact or general_advice (tags=${bestTimeTags.join(",")})`);
+  }
+
+  if (withFoodTags.some((t) => t === "ingredient_inference")) {
+    errors.push(`lnhpd: withFood must not be tagged ingredient_inference (tags=${withFoodTags.join(",")})`);
+  }
+  if (!withFoodTags.some((t) => allowedTimingTags.has(t))) {
+    errors.push(`lnhpd: withFood must include label_fact or general_advice (tags=${withFoodTags.join(",")})`);
   }
   return errors;
 }
@@ -664,6 +711,57 @@ function assertDsldWithFormKbHit(detailResponse, testCase) {
   return errors;
 }
 
+function assertLnhpdWithFormEvidence(detailResponse, testCase) {
+  const errors = [];
+  const caseId = testCase.id;
+  if (detailResponse.status !== 200) return errors;
+  const body = detailResponse.response;
+
+  const items = body?.detail?.items;
+  if (!Array.isArray(items) || items.length === 0) {
+    errors.push(`${caseId}: analysis-section missing detail.items`);
+    return errors;
+  }
+
+  const sentenceIds = body?.debug?.formSentenceIds;
+  const excerptIds = body?.debug?.formExcerptIds;
+  const referenceIds = body?.debug?.formReferenceIds;
+
+  const hasAnyEvidenceItem = items.some((it) => {
+    const tags = it?.chemicalFormExplain?.basisTags;
+    const text = String(it?.chemicalFormExplain?.text ?? "");
+    if (!Array.isArray(tags) || !tags.length) return false;
+    if (tags.includes("not_provided")) return false;
+    // evidence-only fallback is acceptable: label_fact without KB IDs
+    if (tags.includes("label_fact") && /listed on the label as:/i.test(text)) return true;
+    if (tags.includes("label_fact") && /^chemical form:/i.test(text)) return true;
+    // grounded KB sentence is ideal: ingredient_inference + IDs
+    if (tags.includes("ingredient_inference")) {
+      const name = String(it?.name ?? "");
+      const sid = sentenceIds && typeof sentenceIds === "object" ? sentenceIds[name] : null;
+      const xid = excerptIds && typeof excerptIds === "object" ? excerptIds[name] : null;
+      const ref = referenceIds && typeof referenceIds === "object" ? referenceIds[name] : null;
+      return (
+        typeof sid === "string" &&
+        sid.startsWith("s_") &&
+        typeof xid === "string" &&
+        xid.startsWith("x_") &&
+        typeof ref === "string" &&
+        ref.startsWith("ref_")
+      );
+    }
+    return false;
+  });
+
+  if (!hasAnyEvidenceItem) {
+    errors.push(
+      `${caseId}: expected at least one LNHPD active with chemical-form evidence (label_fact evidence-only fallback or grounded KB sentence)`
+    );
+  }
+
+  return errors;
+}
+
 function pickKeyFields(result) {
   const fastBundle = result.fastBundle;
   const detail = result.detailResponse?.response;
@@ -865,7 +963,12 @@ async function runCase(testCase) {
       ? assertDsldWithFormKbHit(detailResponse, testCase)
       : [];
 
-  const errors = [...bundleCheck.errors, ...lnhpdUsageErrors, ...detailErrors, ...dsldKbErrors];
+  const lnhpdKbErrors =
+    bundleCheck.fastBundle && testCase.id.startsWith("lnhpd_with_form")
+      ? assertLnhpdWithFormEvidence(detailResponse, testCase)
+      : [];
+
+  const errors = [...bundleCheck.errors, ...lnhpdUsageErrors, ...detailErrors, ...dsldKbErrors, ...lnhpdKbErrors];
   const summary = {
     ...pickKeyFields({ case: testCase, fastBundle: bundleCheck.fastBundle, detailResponse }),
     errors,
@@ -933,37 +1036,44 @@ async function runCaseSafely(testCase) {
 }
 
 async function runCaseWithFallback(testCase) {
-  const [primaryBarcode, fallbackBarcode] = testCase.barcodes;
-  if (!primaryBarcode) {
-    throw new Error(`case ${testCase.id} missing barcode`);
+  const barcodes = Array.isArray(testCase.barcodes)
+    ? Array.from(new Set(testCase.barcodes.filter(Boolean)))
+    : [];
+  const primaryBarcode = barcodes[0] ?? null;
+  if (!primaryBarcode) throw new Error(`case ${testCase.id} missing barcode`);
+
+  const attempts = [];
+  let primaryResult = null;
+  for (const barcode of barcodes) {
+    // eslint-disable-next-line no-await-in-loop
+    const result = await runCaseSafely({ ...testCase, barcode });
+    result.summary.usedBarcode = barcode;
+    attempts.push({ barcode, pass: result.summary.pass, errors: result.errors });
+    if (barcode === primaryBarcode) primaryResult = result;
+    if (barcode === primaryBarcode) {
+      result.summary.primaryBarcode = primaryBarcode;
+      result.summary.primaryFailedReason = null;
+    } else {
+      result.summary.primaryBarcode = primaryBarcode;
+      result.summary.primaryFailedReason = attempts[0]?.errors?.join("; ") || "primary_failed";
+    }
+    if (result.summary.pass) {
+      if (barcode !== primaryBarcode) {
+        result.summary.fallbackAttempts = attempts;
+      }
+      return result;
+    }
   }
-  const primary = await runCaseSafely({ ...testCase, barcode: primaryBarcode });
+
+  // All failed: return the primary result as the canonical failure but attach fallback context.
+  const primary = primaryResult ?? (await runCaseSafely({ ...testCase, barcode: primaryBarcode }));
   primary.summary.usedBarcode = primaryBarcode;
-
-  if (!fallbackBarcode || primary.summary.pass) {
-    primary.summary.primaryFailedReason = null;
-    primary.summary.primaryBarcode = primaryBarcode;
-    return primary;
-  }
-
-  const primaryFailedReason = primary.errors.join("; ");
-  const fallback = await runCaseSafely({ ...testCase, barcode: fallbackBarcode });
-  fallback.summary.usedBarcode = fallbackBarcode;
-  fallback.summary.primaryBarcode = primaryBarcode;
-  fallback.summary.primaryFailedReason = primaryFailedReason || "primary_failed";
-
-  if (fallback.summary.pass) {
-    return fallback;
-  }
-
-  // Both failed: keep the primary as the canonical failure, but preserve fallback context.
   primary.summary.primaryBarcode = primaryBarcode;
   primary.summary.primaryFailedReason = null;
-  primary.summary.fallbackBarcode = fallbackBarcode;
-  primary.summary.fallbackFailedReason = fallback.errors.join("; ") || "fallback_failed";
+  primary.summary.fallbackAttempts = attempts.slice(1);
   primary.summary.errors = [
     ...primary.summary.errors,
-    `fallback_failed: ${primary.summary.fallbackFailedReason}`,
+    ...attempts.slice(1).map((a) => `fallback_failed(${a.barcode}): ${(a.errors || []).join("; ") || "failed"}`),
   ];
   primary.summary.pass = false;
   primary.errors = primary.summary.errors;
