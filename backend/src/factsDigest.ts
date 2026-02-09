@@ -452,6 +452,35 @@ const pickProductName = (snapshot: SupplementSnapshot | null | undefined, fallba
   return null;
 };
 
+const extractDeliveryFormFromText = (rawText: string): string | null => {
+  const cleaned = normalizeWhitespace(rawText).toLowerCase();
+  if (!cleaned) return null;
+  const forms: Array<{ re: RegExp; value: string }> = [
+    { re: /\btablet(s)?\b/, value: "tablet" },
+    { re: /\bcapsule(s)?\b/, value: "capsule" },
+    { re: /\bsoftgel(s)?\b/, value: "softgel" },
+    { re: /\bgumm(y|ies)\b/, value: "gummy" },
+    { re: /\bspray(s)?\b/, value: "spray" },
+    { re: /\bscoop(s)?\b/, value: "scoop" },
+    { re: /\bdrop(s)?\b/, value: "drops" },
+    { re: /\bpowder\b/, value: "powder" },
+    { re: /\bliquid\b/, value: "liquid" },
+  ];
+  for (const { re, value } of forms) {
+    if (re.test(cleaned)) return value;
+  }
+  return null;
+};
+
+const extractDeliveryFormFromDosingLines = (lines: string[]): string | null => {
+  for (const line of lines) {
+    if (!line) continue;
+    const match = extractDeliveryFormFromText(line);
+    if (match) return match;
+  }
+  return null;
+};
+
 export const buildFactsDigestFromLnhpd = (params: {
   facts: LnhpdFactsInput;
   snapshot?: SupplementSnapshot | null;
@@ -462,25 +491,48 @@ export const buildFactsDigestFromLnhpd = (params: {
   const brandDisplay = pickBrandDisplay(snapshot, facts.brandName ?? null);
   const productName = pickProductName(snapshot, facts.productName ?? null);
 
+  const dosingLines = (facts.doses ?? []).map((dose) => normalizeWhitespace(dose)).filter(Boolean);
+  const deliveryForm =
+    extractDeliveryFormFromDosingLines(dosingLines) ??
+    (facts.servingSize ? extractDeliveryFormFromText(facts.servingSize) : null);
+
   const actives = (facts.actives ?? []).map((active) => {
     const normalizedUnit = normalizeUnitLabel(active.unit ?? null);
-    const chemicalForm = active.lnhpdMeta?.properName ?? active.lnhpdMeta?.ingredientName ?? null;
     const evidenceText = active.lnhpdMeta?.sourceMaterial ?? active.lnhpdMeta?.extractTypeDesc ?? null;
-    const normalizedChemicalForm = chemicalForm ? normalizeWhitespace(chemicalForm) : null;
-    const chemicalFormConfidence = normalizeChemicalFormConfidence(normalizedChemicalForm ? 0.8 : null);
-    const chemicalFormSource: FactsDigest["actives"][number]["chemicalFormSource"] = normalizedChemicalForm
-      ? "lnhpd_meta"
-      : "none";
+
+    // P0-2: Extract chemical form evidence from LNHPD inputs in a DSLD-like way, so KB-first can
+    // resolve reliably when the label discloses a salt/form.
+    const candidateSources = [
+      active.formRaw ?? null,
+      active.lnhpdMeta?.ingredientName ?? null,
+      active.lnhpdMeta?.properName ?? null,
+      active.name ?? null,
+    ].filter(Boolean) as string[];
+    let extracted: ReturnType<typeof extractChemicalFormFromText> | null = null;
+    for (const source of candidateSources) {
+      const next = extractChemicalFormFromText(source);
+      if (!next) continue;
+      if (!extracted || next.confidence > extracted.confidence) extracted = next;
+    }
+    const chemicalForm = extracted?.form ? normalizeWhitespace(extracted.form) : null;
+    const chemicalFormEvidence =
+      extracted?.source === "ingredient_name"
+        ? extracted.evidence
+        : extracted?.form ?? null;
+    const chemicalFormConfidence = normalizeChemicalFormConfidence(extracted?.confidence ?? null);
+    const chemicalFormSource: FactsDigest["actives"][number]["chemicalFormSource"] =
+      extracted?.source ?? "none";
+
     return {
       name: normalizeWhitespace(active.name),
       amount: active.amount ?? null,
       unit: normalizedUnit,
       amountText: active.amount != null && normalizedUnit ? `${active.amount} ${normalizedUnit}` : null,
-      chemicalForm: normalizedChemicalForm,
-      chemicalFormEvidence: normalizedChemicalForm,
+      chemicalForm,
+      chemicalFormEvidence: chemicalFormEvidence ? normalizeWhitespace(chemicalFormEvidence) : chemicalForm,
       chemicalFormConfidence,
       chemicalFormSource,
-      deliveryForm: null,
+      deliveryForm,
       evidenceText: evidenceText ? normalizeWhitespace(evidenceText) : null,
       source: "lnhpd" as const,
       confidence: active.lnhpdMeta ? 0.9 : 0.7,
