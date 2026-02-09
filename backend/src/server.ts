@@ -737,14 +737,25 @@ const buildFastFailureBundle = (skeleton: AnalysisBundle): AnalysisBundle => ({
   },
 });
 
+const pickPrimaryLabelDosingRawText = (digest: FactsDigest): string | null => {
+  const rawTexts = digest.labelDosing
+    .map((dose) => (typeof dose.rawText === "string" ? dose.rawText.trim() : ""))
+    .filter(Boolean);
+  if (!rawTexts.length) return null;
+  // Prefer an "Adults:" dosing line when present, otherwise take the first available line.
+  const adults = rawTexts.find((text) => /\badult(s)?\b/i.test(text));
+  return (adults ?? rawTexts[0] ?? null) || null;
+};
+
 const buildUsageDosageField = (digest: FactsDigest): { text: string; basisTags: BasisTag[] } | null => {
-  const raw = digest.labelDosing.map((dose) => dose.rawText).filter(Boolean)[0];
-  if (!raw) return null;
-  return { text: raw, basisTags: ["label_fact"] };
+  const raw = pickPrimaryLabelDosingRawText(digest);
+  if (raw) return { text: raw, basisTags: ["label_fact"] };
+  // Avoid empty/missing dosage fields; keep copy non-negative.
+  return { text: "Follow label directions.", basisTags: ["general_advice"] };
 };
 
 const buildLabelDosingText = (digest: FactsDigest): string | null => {
-  const raw = digest.labelDosing.map((dose) => dose.rawText).filter(Boolean)[0];
+  const raw = pickPrimaryLabelDosingRawText(digest);
   if (raw) return raw;
   const first = digest.labelDosing[0];
   if (!first) return null;
@@ -760,6 +771,87 @@ const buildLabelDosingText = (digest: FactsDigest): string | null => {
 const UNKNOWN_DOSE_RE = /\b(unknown|not detailed|not specified|not provided|unspecified|no specific)\b/i;
 
 const normalizeIngredientName = (name: string) => name.toLowerCase().replace(/\s+/g, " ").trim();
+
+const buildLnhpdDeterministicTiming = (labelDosingText: string | null): { text: string; basisTags: BasisTag[] } => {
+  const raw = (labelDosingText ?? "").trim();
+  const lower = raw.toLowerCase();
+
+  // Explicit label time-of-day / meal timing words (label_fact).
+  const explicit: Array<{ re: RegExp; text: string }> = [
+    { re: /\b(with|after|before)\s+breakfast\b/i, text: "With breakfast." },
+    { re: /\b(with|after|before)\s+lunch\b/i, text: "With lunch." },
+    { re: /\b(with|after|before)\s+dinner\b/i, text: "With dinner." },
+    { re: /\bafter\s+meals?\b/i, text: "After meals." },
+    { re: /\bwith\s+meals?\b/i, text: "With meals." },
+    { re: /\bbefore\s+meals?\b/i, text: "Before meals." },
+    { re: /\bbedtime\b|\bbefore\s+bed\b|\bat\s+night\b/i, text: "At bedtime." },
+    { re: /\bmorning\b/i, text: "In the morning." },
+    { re: /\bevening\b/i, text: "In the evening." },
+  ];
+  for (const item of explicit) {
+    if (item.re.test(raw)) {
+      return { text: item.text, basisTags: ["label_fact"] };
+    }
+  }
+
+  // Frequency templates (general_advice). Keep conservative language (suggestion, not an instruction).
+  const timesMatch = lower.match(/\b(\d+)\s*(?:times|x)\s*(?:per\s*)?(?:day|daily)\b/);
+  const times = timesMatch ? Number(timesMatch[1]) : NaN;
+  if (Number.isFinite(times) && times > 0) {
+    if (times === 1) {
+      return { text: "Once daily; choose a consistent time.", basisTags: ["general_advice"] };
+    }
+    if (times === 2) {
+      return {
+        text: "Twice daily; spacing doses across the day is common (e.g., morning and evening).",
+        basisTags: ["general_advice"],
+      };
+    }
+    if (times === 3) {
+      return {
+        text: "Three times daily; spacing doses across the day is common (e.g., morning, midday, and evening).",
+        basisTags: ["general_advice"],
+      };
+    }
+    return { text: `${times} times daily; spacing doses across the day is common.`, basisTags: ["general_advice"] };
+  }
+
+  if (/\bdaily\b/i.test(raw)) {
+    return { text: "Once daily; choose a consistent time.", basisTags: ["general_advice"] };
+  }
+
+  return { text: "Choose a consistent time that fits your routine.", basisTags: ["general_advice"] };
+};
+
+const buildLnhpdDeterministicWithFood = (
+  labelDosingText: string | null,
+  actives: FactsDigest["actives"],
+): { value: boolean | null; text: string | null; basisTags: BasisTag[] } => {
+  const raw = (labelDosingText ?? "").trim();
+  if (/\b(with food|with meals?|with a meal)\b/i.test(raw)) {
+    return { value: true, text: "With food.", basisTags: ["label_fact"] };
+  }
+  if (/\bafter\s+meals?\b/i.test(raw)) {
+    return { value: true, text: "After meals.", basisTags: ["label_fact"] };
+  }
+  if (/\b(on an empty stomach|empty stomach)\b/i.test(raw)) {
+    return { value: false, text: "On an empty stomach.", basisTags: ["label_fact"] };
+  }
+  if (/\bbefore\s+meals?\b/i.test(raw)) {
+    return { value: false, text: "Before meals.", basisTags: ["label_fact"] };
+  }
+
+  const activeNames = actives.map((a) => normalizeIngredientName(a.name));
+  const hasStomachSensitiveMineral = activeNames.some((name) => ["zinc", "iron", "magnesium"].includes(name));
+  if (hasStomachSensitiveMineral) {
+    return {
+      value: null,
+      text: "Optional; take with food if it upsets your stomach.",
+      basisTags: ["general_advice"],
+    };
+  }
+  return { value: null, text: "Optional; follow the label directions.", basisTags: ["general_advice"] };
+};
 
 const DsldDetailMinimalSchema = z.object({
   items: z.array(
@@ -1111,7 +1203,7 @@ const mergeFastAnalysisBundle = (params: {
 
   const usageRaw = (fastOutput?.usage ?? {}) as Record<string, unknown>;
   const usageBulletsRaw = Array.isArray(usageRaw.bullets) ? usageRaw.bullets : [];
-  const usageBullets = usageBulletsRaw
+  const usageBulletsFromModel = usageBulletsRaw
     .map((item) => ({
       text: typeof item?.text === "string" ? item.text : "",
       basisTags: normalizeBasisTags(item?.basisTags, "general_advice"),
@@ -1128,7 +1220,7 @@ const mergeFastAnalysisBundle = (params: {
         }
       : null;
   const withFoodRaw = usageRaw.withFood && typeof usageRaw.withFood === "object" ? usageRaw.withFood as Record<string, unknown> : null;
-  const withFood = withFoodRaw
+  const withFoodFromModel = withFoodRaw
     ? {
         value: typeof withFoodRaw.value === "boolean" || withFoodRaw.value === null ? withFoodRaw.value as boolean | null : null,
         text: typeof withFoodRaw.text === "string" ? withFoodRaw.text : null,
@@ -1136,6 +1228,20 @@ const mergeFastAnalysisBundle = (params: {
       }
     : null;
   const dosageField = buildUsageDosageField(digest);
+  const labelDosingText = buildLabelDosingText(digest);
+  const isLnhpd = digest.sourceType === "lnhpd";
+  const bestTimeToTakeFinal =
+    isLnhpd
+      ? buildLnhpdDeterministicTiming(labelDosingText)
+      : bestTimeToTake && bestTimeToTake.text
+        ? bestTimeToTake
+        : null;
+  const withFoodFinal =
+    isLnhpd
+      ? buildLnhpdDeterministicWithFood(labelDosingText, digest.actives)
+      : withFoodFromModel;
+  // Since the UI shows dosage/bestTime/withFood as fixed rows, avoid template repetition in LNHPD usage bullets.
+  const usageBulletsFinal = isLnhpd ? [] : usageBulletsFromModel;
 
   const safetyRaw = (fastOutput?.safety ?? {}) as Record<string, unknown>;
   const safetyVerdict =
@@ -1160,7 +1266,8 @@ const mergeFastAnalysisBundle = (params: {
         : [];
 
   const overviewStatus = overviewBulletsFinal.length > 0 ? "complete" : "limited";
-  const usageStatus = usageBullets.length > 0 || bestTimeToTake || withFood || dosageField ? "complete" : "limited";
+  const usageStatus =
+    usageBulletsFinal.length > 0 || bestTimeToTakeFinal || withFoodFinal || dosageField ? "complete" : "limited";
   const safetyStatus = digest.warnings.missingFlag ? "not_provided" : safetyBulletsFinal.length > 0 ? "complete" : "limited";
   const safetyTag = resolveSourceBasisTag(digest.sourceType);
 
@@ -1188,9 +1295,9 @@ const mergeFastAnalysisBundle = (params: {
       usage: {
         ...skeleton.sections.usage,
         cover: {
-          bullets: usageBullets,
-          bestTimeToTake: bestTimeToTake && bestTimeToTake.text ? bestTimeToTake : null,
-          withFood: withFood,
+          bullets: usageBulletsFinal,
+          bestTimeToTake: bestTimeToTakeFinal,
+          withFood: withFoodFinal,
           dosage: dosageField ?? null,
         },
         detail: {

@@ -3,6 +3,7 @@ import RNEventSource from 'react-native-sse';
 
 import { Config } from '@/constants/Config';
 import { withAuthHeaders } from '@/lib/auth-token';
+import { AUTH_DISABLED } from '@/lib/auth-mode';
 import { buildBarcodeSnapshot } from '@/lib/snapshot';
 import type { SupplementSnapshot } from '@/types/supplementSnapshot';
 import type { AnalysisBundle } from '@/types/analysisBundle';
@@ -223,6 +224,12 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
             });
             if (!isActive) return;
 
+            console.log('[SSE] Init:', {
+                apiUrl: API_URL,
+                authDisabled: AUTH_DISABLED,
+                hasBearer: Boolean(headers.Authorization),
+            });
+
             // Initialize SSE connection (POST method)
             const es = new RNEventSource(`${API_URL}/api/enrich-stream`, {
                 method: 'POST',
@@ -430,7 +437,7 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
             // Error
             es.addEventListener('error', (event: any) => {
                 console.error('[SSE] Error:', event);
-                if (event.type === 'error' && event.data) {
+                if (event?.type === 'error' && event?.data) {
                     try {
                         const errorData = JSON.parse(event.data);
                         if (errorData?.message === 'Product not found') {
@@ -450,6 +457,17 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
                     } catch {
                         setState(prev => ({ ...prev, status: 'error', error: 'Connection failed' }));
                     }
+                } else {
+                    // react-native-sse reports transport failures (DNS/TLS/blocked/401 in some cases) via
+                    // an "error" event without `data`. Ensure we still transition out of loading.
+                    const xhrStatus = typeof event?.xhrStatus === 'number' ? event.xhrStatus : null;
+                    const message =
+                        typeof event?.message === 'string' && event.message
+                            ? event.message
+                            : xhrStatus === 401
+                                ? 'Unauthorized (please sign in or enable dev auth bypass)'
+                                : 'Could not connect to the server';
+                    setState(prev => ({ ...prev, status: 'error', error: message }));
                 }
                 es.close();
             });
