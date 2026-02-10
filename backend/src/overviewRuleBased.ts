@@ -55,7 +55,7 @@ export const buildRuleBasedOverview = (params: {
 
   const doseText = computeDoseText(params.productName, params.dosageText);
 
-  let timing = "Morning (with breakfast)";
+  let timing = "Anytime (with meals)";
   let withFood = true;
   let coreBenefits: string[] = ["General wellness support"];
   let overviewSummary = `${params.productName}${doseText} is a dietary supplement designed to support a common wellness goal. Follow the product label for dosing.`;
@@ -122,9 +122,8 @@ export const buildRuleBasedOverview = (params: {
   return {
     overviewSummary,
     coreBenefits,
-    timing: safeTrim(timing) || "Morning (with breakfast)",
+    timing: safeTrim(timing) || "Anytime (with meals)",
     withFood,
     usageSummary: usageSummaryFromWithFood(withFood),
   };
 };
-

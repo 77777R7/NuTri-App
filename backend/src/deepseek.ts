@@ -181,7 +181,15 @@ CRITICAL INSTRUCTIONS:
 2. "overviewSummary" MUST be EXACTLY TWO sentences in English. Keep it general and product-oriented.
 3. Do not make medical claims (no diagnosis, treatment, or disease claims). Use general wellness language.
 4. "withFood" MUST be true or false (never null). If uncertain, choose the safer/more tolerable option.
-5. "timing" MUST be a short phrase like "Morning (with breakfast)" or "Bedtime (30–60 min before sleep)". No long rationales.
+5. "timing" MUST be a short phrase (no long rationales). Prefer one of:
+   - "Morning (with breakfast)"
+   - "Morning (before breakfast)"
+   - "With meals (morning or dinner)"
+   - "Evening (after dinner)"
+   - "Bedtime (30–60 min before sleep)"
+   - "Anytime (with meals)"
+   - "Anytime"
+   If uncertain, choose "Anytime (with meals)" instead of defaulting to "Morning".
 6. If dosage is not provided, do not guess. If dosage is provided, you may mention it once.
 
 Return a SINGLE JSON object with exactly these keys:

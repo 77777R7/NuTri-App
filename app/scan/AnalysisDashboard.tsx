@@ -942,6 +942,25 @@ const AnalysisBundleDashboard: React.FC<{
 
     const fetchIngredientsDetail = useCallback(async (attempt = 0) => {
         if (detailLoading) return;
+        const coverTotalCount =
+            bundleState.sections.ingredients.cover?.totalCount ??
+            bundleState.sections.ingredients.cover?.items?.length ??
+            0;
+        // If we don't have any actives, detail is not applicable and we must not hammer the API.
+        if (coverTotalCount <= 0) {
+            setDetailError('No ingredient list available from the source.');
+            setBundleState((prev) => ({
+                ...prev,
+                sections: {
+                    ...prev.sections,
+                    ingredients: {
+                        ...prev.sections.ingredients,
+                        dataStatus: 'not_provided',
+                    },
+                },
+            }));
+            return;
+        }
         setDetailLoading(true);
         setDetailError(null);
         // Align loading copy with dataStatus: only show "Generating..." when pending.
@@ -1027,7 +1046,14 @@ const AnalysisBundleDashboard: React.FC<{
                 return;
             }
             if (!response.ok) {
-                setDetailError('Detail unavailable');
+                if (response.status === 429) {
+                    const retryAfter = response.headers.get('retry-after');
+                    const retryAfterSec = retryAfter ? Number.parseInt(retryAfter, 10) : NaN;
+                    const hint = Number.isFinite(retryAfterSec) ? ` Try again in ~${retryAfterSec}s.` : ' Try again shortly.';
+                    setDetailError(`Rate limited.${hint}`);
+                } else {
+                    setDetailError('Detail unavailable');
+                }
                 setBundleState((prev) => {
                     if (isBundleV4(prev)) {
                         return {
@@ -1057,35 +1083,34 @@ const AnalysisBundleDashboard: React.FC<{
             }
             const payload = await response.json();
             const detail = (payload?.detail ?? null) as IngredientsDetail | null;
-            if (detail) {
-                setBundleState((prev) => {
-                    const nextStatus = (payload?.dataStatus ?? prev.sections.ingredients.dataStatus) as DataStatus;
-                    if (isBundleV4(prev)) {
-                        return {
-                            ...prev,
-                            sections: {
-                                ...prev.sections,
-                                ingredients: {
-                                    ...prev.sections.ingredients,
-                                    detail: detail as IngredientsDetailV4,
-                                    dataStatus: nextStatus,
-                                },
-                            },
-                        };
-                    }
+            setBundleState((prev) => {
+                const nextStatus = (payload?.dataStatus ?? prev.sections.ingredients.dataStatus) as DataStatus;
+                const nextDetail = detail ?? prev.sections.ingredients.detail ?? null;
+                if (isBundleV4(prev)) {
                     return {
                         ...prev,
                         sections: {
                             ...prev.sections,
                             ingredients: {
                                 ...prev.sections.ingredients,
-                                detail: detail as IngredientsDetailV3,
+                                detail: nextDetail as IngredientsDetailV4 | null,
                                 dataStatus: nextStatus,
                             },
                         },
                     };
-                });
-            }
+                }
+                return {
+                    ...prev,
+                    sections: {
+                        ...prev.sections,
+                        ingredients: {
+                            ...prev.sections.ingredients,
+                            detail: nextDetail as IngredientsDetailV3 | null,
+                            dataStatus: nextStatus,
+                        },
+                    },
+                };
+            });
         } catch (err) {
             setDetailError('Detail unavailable');
             setBundleState((prev) => {
@@ -1119,8 +1144,14 @@ const AnalysisBundleDashboard: React.FC<{
 
     useEffect(() => {
         if (selectedTile?.type === 'science') {
-            const hasDetail = bundleState.sections.ingredients.detail?.items?.length ?? 0;
-            if (!hasDetail && !detailLoading) {
+            const coverTotalCount =
+                bundleState.sections.ingredients.cover?.totalCount ??
+                bundleState.sections.ingredients.cover?.items?.length ??
+                0;
+            const hasDetail = (bundleState.sections.ingredients.detail?.items?.length ?? 0) > 0;
+            const status = bundleState.sections.ingredients.dataStatus;
+            const isTerminal = status === 'not_provided' || status === 'limited' || status === 'error';
+            if (coverTotalCount > 0 && !hasDetail && !detailLoading && !isTerminal) {
                 fetchIngredientsDetail();
             }
         }

@@ -11,6 +11,7 @@ import { apiClient, type NutriTipsData } from '@/lib/api-client';
 import { buildCheckInKey } from '@/lib/check-ins';
 import { useTranslation } from '@/lib/i18n';
 import { selectDailyTip, type NutriTipSelection } from '@/lib/nutri-tips';
+import { formatDoseForPill } from '@/lib/supplementDisplay';
 import type { RoutinePreferences } from '@/types/saved-supplements';
 import type { ScanHistoryItem } from '@/types/scan-history';
 import { BlurView } from 'expo-blur';
@@ -786,7 +787,7 @@ const SavedSupplements = ({ selectedDateKey, pageX }: { selectedDateKey: string;
         supplementId: item.supplementId,
         checkInKey: buildCheckInKey({ supplementId: item.supplementId, localId: item.id }),
         name: item.productName,
-        dose: item.dosageText,
+        dose: formatDoseForPill(item.dosageText) ?? '',
         ...theme,
       };
     });
@@ -1469,7 +1470,7 @@ const RecentlyScanned = () => {
       barcode: item.barcode ?? null,
       productName: item.productName,
       brandName: item.brandName,
-      dosageText: item.dosageText || '',
+      dosageText: formatDoseForPill(item.dosageText) ?? '',
     });
 
     setTimeout(() => {

@@ -17,6 +17,7 @@ import { consumeScanSession, type ScanSession } from '@/lib/scan/session';
 import { requestLabelAnalysis } from '@/lib/scan/service';
 import { getBarcodeQuality, getLabelDraftQuality } from '@/lib/scan/quality';
 import { resolveScoreQueryFromSnapshot } from '@/lib/score-v4';
+import { formatDoseForPill } from '@/lib/supplementDisplay';
 import type { LabelDraft } from '@/backend/src/labelAnalysis';
 import type { ScoreBundleResponse } from '@/types/scoreBundle';
 import { AnalysisDashboard } from './AnalysisDashboard';
@@ -428,18 +429,9 @@ export default function ScanResultScreen() {
     );
   };
 
-  const extractDoseFromText = useCallback(
-    (text?: string | null) => {
-      if (!text) return null;
-      const match = text.match(/(\d+(?:\.\d+)?)\s?(mcg|μg|ug|mg|g|iu|ml|oz)/i);
-      if (!match) return null;
-      const value = match[1];
-      const unitRaw = match[2].toLowerCase();
-      const unit = unitRaw === 'μg' || unitRaw === 'ug' ? 'mcg' : unitRaw;
-      return formatDose(value, unit);
-    },
-    [formatDose]
-  );
+  const extractDoseFromText = useCallback((text?: string | null) => {
+    return formatDoseForPill(text);
+  }, []);
 
   const formatDraftIngredient = (ingredient: LabelDraft['ingredients'][number]) => {
     let line = ingredient.name;
@@ -540,7 +532,7 @@ export default function ScanResultScreen() {
       const productInfo = analysis.productInfo ?? {};
       const labelName = labelProductName;
       const labelDose =
-        getDraftDose(session.result.draft) ??
+        formatDoseForPill(getDraftDose(session.result.draft)) ??
         extractDoseFromText(productInfo.name ?? null) ??
         null;
 
@@ -559,28 +551,32 @@ export default function ScanResultScreen() {
     if (status === 'error' || !productInfo) return;
 
     const supplementId = snapshot?.product?.entityRefs?.supplementId ?? null;
-    const primaryDose = formatDose(
-      efficacy?.primaryActive?.dosageValue ?? null,
-      efficacy?.primaryActive?.dosageUnit ?? null,
+    const primaryDose = formatDoseForPill(
+      formatDose(efficacy?.primaryActive?.dosageValue ?? null, efficacy?.primaryActive?.dosageUnit ?? null),
     );
     const ingredientDose = (() => {
       const firstWithDose = efficacy?.ingredients?.find(
         (ingredient) => ingredient.dosageValue != null,
       );
-      return formatDose(firstWithDose?.dosageValue ?? null, firstWithDose?.dosageUnit ?? null);
+      const raw = formatDose(firstWithDose?.dosageValue ?? null, firstWithDose?.dosageUnit ?? null);
+      return formatDoseForPill(raw);
     })();
-    const usageDose = (usage as { dosage?: string } | null)?.dosage ?? null;
-    const activeIngredientAmount = efficacy?.activeIngredients?.[0]?.amount ?? null;
+    const usageDoseRaw = (usage as { dosage?: string } | null)?.dosage ?? null;
+    const usageDose = formatDoseForPill(usageDoseRaw);
+    const activeIngredientAmountRaw = efficacy?.activeIngredients?.[0]?.amount ?? null;
+    const activeIngredientDose = typeof activeIngredientAmountRaw === 'string'
+      ? formatDoseForPill(activeIngredientAmountRaw)
+      : null;
     const summaryDose =
       extractDoseFromText((usage as { summary?: string } | null)?.summary ?? null) ??
       extractDoseFromText(efficacy?.overviewSummary ?? null) ??
       extractDoseFromText(efficacy?.overallAssessment ?? null);
     const dosageText =
-      usageDose ??
       primaryDose ??
       ingredientDose ??
-      activeIngredientAmount ??
+      activeIngredientDose ??
       summaryDose ??
+      usageDose ??
       '';
 
     if (!addedRef.current) {

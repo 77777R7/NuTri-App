@@ -969,7 +969,7 @@ export default function ProgressScreen() {
               <View style={styles.todayContent}>
                 <View style={styles.todayHeaderRow}>
                   <View style={styles.todayHeaderLeft}>
-                    <Text style={styles.todayTitle}>Today's Progress</Text>
+                    <Text style={styles.todayTitle}>{"Today's Progress"}</Text>
                     <Text style={styles.todaySubtitle}>
                       {totalCount === 0
                         ? 'No items scheduled'

@@ -41,6 +41,7 @@ import { useScanHistory } from "@/contexts/ScanHistoryContext";
 import { useSavedSupplements } from "@/contexts/SavedSupplementsContext";
 import { useScreenTokens } from "@/hooks/useScreenTokens";
 import { withAuthHeaders } from "@/lib/auth-token";
+import { formatBrandForPill, formatDoseForPill } from "@/lib/supplementDisplay";
 import { supabase } from "@/lib/supabase";
 import type { RoutinePreferences, SavedSupplement } from "@/types/saved-supplements";
 
@@ -315,7 +316,7 @@ const buildLocalOverviewFallback = (params: { productName: string; dosageText?: 
   const name = params.productName.toLowerCase();
   const has = (tokens: string[]) => tokens.some((token) => name.includes(token));
 
-  let timing = "Morning (with breakfast)";
+  let timing = "Anytime (with meals)";
   let withFood = true;
   let benefitPhrase = "general wellness";
 
@@ -461,7 +462,12 @@ const getTimeCategory = (time?: string) => {
 
 const analysisCache = new Map<string, AnalysisPayload>();
 
-type EnsureOverviewResponse = { supplementId: string; analysisReady: boolean };
+type EnsureOverviewResponse = {
+  supplementId: string;
+  analysisReady: boolean;
+  source?: "deepseek" | "rule" | "cache" | "none";
+  analysisData?: AnalysisPayload | null;
+};
 
 const ensureOverview = async (params: {
   supplementId?: string | null;
@@ -475,9 +481,12 @@ const ensureOverview = async (params: {
   if (!apiBase) return null;
 
   const headers = await withAuthHeaders({ "Content-Type": "application/json" });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 6_500);
   const response = await fetch(`${apiBase}/api/ensure-overview`, {
     method: "POST",
     headers,
+    signal: controller.signal,
     body: JSON.stringify({
       supplementId: params.supplementId ?? null,
       barcode: params.barcode ?? null,
@@ -486,7 +495,7 @@ const ensureOverview = async (params: {
       dosageText: params.dosageText ?? null,
       userSupplementId: params.userSupplementId ?? null,
     }),
-  });
+  }).finally(() => clearTimeout(timeout));
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
@@ -756,21 +765,33 @@ const CollectionCard = React.memo(
                 )}
               </View>
 
-              <View style={styles.cardMeta}>
-                <View style={styles.tagRow}>
-                  <View style={[styles.tagPill, { borderColor: theme.tagBorderColor }]}>
-                    <Text style={[styles.tagText, { color: theme.textColor }]} numberOfLines={1} ellipsizeMode="tail">
-                      {item.brandName}
-                    </Text>
-                  </View>
-                  {item.dosageText?.trim() ? (
-                    <View style={[styles.tagPill, { borderColor: theme.tagBorderColor }]}>
-                      <Text style={[styles.tagText, { color: theme.textColor }]} numberOfLines={1} ellipsizeMode="tail">
-                        {item.dosageText}
-                      </Text>
-                    </View>
-                  ) : null}
-                </View>
+	              <View style={styles.cardMeta}>
+	                <View style={styles.tagRow}>
+	                  <View style={[styles.tagPill, styles.brandPillClamp, { borderColor: theme.tagBorderColor }]}>
+	                    <Text
+	                      style={[styles.tagText, styles.pillTextClamp, { color: theme.textColor }]}
+	                      numberOfLines={1}
+	                      ellipsizeMode="tail"
+	                    >
+	                      {formatBrandForPill(item.brandName)}
+	                    </Text>
+	                  </View>
+	                  {(() => {
+	                    const dose = formatDoseForPill(item.dosageText);
+	                    if (!dose) return null;
+	                    return (
+	                      <View style={[styles.tagPill, styles.dosePillClamp, { borderColor: theme.tagBorderColor }]}>
+	                        <Text
+	                          style={[styles.tagText, styles.pillTextClamp, { color: theme.textColor }]}
+	                          numberOfLines={1}
+	                          ellipsizeMode="tail"
+	                        >
+	                          {dose}
+	                        </Text>
+	                      </View>
+	                    );
+	                  })()}
+	                </View>
 
                 {customTags.length > 0 ? (
                   <View style={styles.customTagRow}>
@@ -847,6 +868,9 @@ function DetailSheet({
   const [time, setTime] = useState(item.routine?.time ?? "08:00");
   const [withFood, setWithFood] = useState(item.routine?.withFood ?? false);
   const [analysisData, setAnalysisData] = useState<AnalysisPayload | null>(null);
+  const [overviewPhase, setOverviewPhase] = useState<"loading" | "ready" | "fallback">("loading");
+  const overviewPhaseRef = useRef<"loading" | "ready" | "fallback">("loading");
+  const [overviewRetryNonce, setOverviewRetryNonce] = useState(0);
   const [saveState, setSaveState] = useState<"idle" | "saved">(
     item.routine?.note || item.routine?.time || item.routine?.withFood !== undefined ? "saved" : "idle",
   );
@@ -874,90 +898,148 @@ function DetailSheet({
     let isActive = true;
     const userSupplementId = isUuid(item.id) ? item.id : null;
 
-    const load = async () => {
+    // Reset Overview state for each open and for each manual retry.
+    setAnalysisData(null);
+    overviewPhaseRef.current = "loading";
+    setOverviewPhase("loading");
+
+    const fallbackTimer = setTimeout(() => {
+      if (!isActive) return;
+      if (overviewPhaseRef.current !== "loading") return;
+      overviewPhaseRef.current = "fallback";
+      setOverviewPhase("fallback");
+    }, 7_000);
+
+    const finalizeReady = (supplementId: string, payload: AnalysisPayload) => {
+      analysisCache.set(supplementId, payload);
+      overviewPhaseRef.current = "ready";
+      setOverviewPhase("ready");
+      setAnalysisData(payload);
+    };
+
+    const finalizeFallback = () => {
+      overviewPhaseRef.current = "fallback";
+      setOverviewPhase("fallback");
       setAnalysisData(null);
+    };
+
+    const fetchLatest = async (supplementId: string): Promise<AnalysisPayload | null> => {
+      const { data, error } = await supabase
+        .from("ai_analyses")
+        .select("analysis_data, created_at")
+        .eq("supplement_id", supplementId)
+        .is("user_id", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return (data?.analysis_data ?? null) as AnalysisPayload | null;
+    };
+
+    const load = async () => {
+      const dosageShort = formatDoseForPill(item.dosageText) ?? null;
 
       let supplementId = item.supplementId ?? null;
 
-      // Backfill supplementId when older local items are missing it.
+      // Backfill supplementId when older local items are missing it (detail-open only).
       if (!supplementId) {
         const ensured = await ensureOverview({
           supplementId: null,
           barcode: item.barcode ?? null,
           brandName: item.brandName ?? null,
           productName: item.productName,
-          dosageText: item.dosageText ?? null,
+          dosageText: dosageShort,
           userSupplementId,
         });
+
         supplementId = ensured?.supplementId ?? null;
+
         if (supplementId && item.supplementId !== supplementId) {
           await updateSupplement(item.id, { supplementId });
         }
+
+        if (!isActive || overviewPhaseRef.current !== "loading") return;
+
+        const ensuredPayload = ensured?.analysisData ?? null;
+        if (supplementId && ensuredPayload) {
+          finalizeReady(supplementId, ensuredPayload);
+          return;
+        }
+
+        if (ensured && !ensured.analysisReady) {
+          finalizeFallback();
+          return;
+        }
       }
 
-      if (!isActive) return;
+      if (!isActive || overviewPhaseRef.current !== "loading") return;
 
       if (!supplementId) {
-        setAnalysisData(null);
+        finalizeFallback();
         return;
       }
 
       const cached = analysisCache.get(supplementId);
       if (cached) {
-        setAnalysisData(cached);
+        finalizeReady(supplementId, cached);
         return;
       }
 
-      const fetchLatest = async (): Promise<AnalysisPayload | null> => {
-        const { data, error } = await supabase
-          .from("ai_analyses")
-          .select("analysis_data, created_at")
-          .eq("supplement_id", supplementId)
-          .is("user_id", null)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (error) {
-          throw new Error(error.message);
-        }
-
-        const payload = (data?.analysis_data ?? null) as AnalysisPayload | null;
-        if (payload) {
-          analysisCache.set(supplementId, payload);
-        }
-        return payload;
-      };
-
       try {
-        let payload = await fetchLatest();
-
-        if (!payload) {
-          await ensureOverview({
-            supplementId,
-            barcode: item.barcode ?? null,
-            brandName: item.brandName ?? null,
-            productName: item.productName,
-            dosageText: item.dosageText ?? null,
-            userSupplementId,
-          });
-          payload = await fetchLatest();
+        let payload = await fetchLatest(supplementId);
+        if (payload) {
+          if (!isActive || overviewPhaseRef.current !== "loading") return;
+          finalizeReady(supplementId, payload);
+          return;
         }
 
-        if (!isActive) return;
-        setAnalysisData(payload);
+        const ensured = await ensureOverview({
+          supplementId,
+          barcode: item.barcode ?? null,
+          brandName: item.brandName ?? null,
+          productName: item.productName,
+          dosageText: dosageShort,
+          userSupplementId,
+        });
+
+        if (!isActive || overviewPhaseRef.current !== "loading") return;
+
+        const ensuredPayload = ensured?.analysisData ?? null;
+        if (ensuredPayload) {
+          finalizeReady(supplementId, ensuredPayload);
+          return;
+        }
+
+        if (!ensured || !ensured.analysisReady) {
+          finalizeFallback();
+          return;
+        }
+
+        payload = await fetchLatest(supplementId);
+        if (!isActive || overviewPhaseRef.current !== "loading") return;
+        if (payload) {
+          finalizeReady(supplementId, payload);
+          return;
+        }
+
+        finalizeFallback();
       } catch (error) {
-        if (!isActive) return;
+        if (!isActive || overviewPhaseRef.current !== "loading") return;
         const message = error instanceof Error ? error.message : "Unknown error";
         console.warn("[supplement-overview] Failed to load analysis", message);
-        setAnalysisData(null);
+        finalizeFallback();
       }
     };
 
-    void load();
+    void load().finally(() => clearTimeout(fallbackTimer));
 
     return () => {
       isActive = false;
+      clearTimeout(fallbackTimer);
     };
   }, [
     item.id,
@@ -967,6 +1049,7 @@ function DetailSheet({
     item.productName,
     item.dosageText,
     updateSupplement,
+    overviewRetryNonce,
   ]);
 
   useEffect(() => {
@@ -1002,7 +1085,7 @@ function DetailSheet({
 
   const fallback = buildLocalOverviewFallback({
     productName: item.productName,
-    dosageText: item.dosageText ?? null,
+    dosageText: formatDoseForPill(item.dosageText) ?? null,
   });
 
   const coreBenefits = Array.isArray(efficacy?.coreBenefits)
@@ -1015,14 +1098,22 @@ function DetailSheet({
       )
     : "";
 
-  const summaryText = pickFirstText(
-    efficacy?.overviewSummary ? normalizeTwoSentenceSummary(efficacy.overviewSummary) : "",
-    benefitSummary,
-    fallback.summary,
-  );
+  const isOverviewReady = overviewPhase === "ready" && !!analysisData;
 
-  const whenToTakeText = pickFirstText(usage?.timing, fallback.timing);
-  const resolvedWithFood = typeof usage?.withFood === "boolean" ? usage.withFood : fallback.withFood;
+  const summaryText = isOverviewReady
+    ? pickFirstText(
+        efficacy?.overviewSummary ? normalizeTwoSentenceSummary(efficacy.overviewSummary) : "",
+        benefitSummary,
+        fallback.summary,
+      )
+    : fallback.summary;
+
+  const whenToTakeText = isOverviewReady ? pickFirstText(usage?.timing, fallback.timing) : fallback.timing;
+  const resolvedWithFood = isOverviewReady
+    ? typeof usage?.withFood === "boolean"
+      ? usage.withFood
+      : fallback.withFood
+    : fallback.withFood;
   const howToTakeText = resolvedWithFood ? "Take with food" : "Take on an empty stomach";
 
   const overviewBullets = [
@@ -1065,20 +1156,30 @@ function DetailSheet({
 
                 <Text style={[styles.sheetTitle, { color: theme.textColor }]}>{item.productName}</Text>
 
-                <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-                  <View style={[styles.sheetTag, { borderColor: theme.tagBorderColor }]}>
-                    <Text style={[styles.sheetTagText, { color: theme.textColor }]} numberOfLines={1}>
-                      {item.brandName}
-                    </Text>
-                  </View>
-                  {item.dosageText?.trim() ? (
-                    <View style={[styles.sheetTag, { borderColor: theme.tagBorderColor }]}>
-                      <Text style={[styles.sheetTagText, { color: theme.textColor }]} numberOfLines={1}>
-                        {item.dosageText}
-                      </Text>
-                    </View>
-                  ) : null}
-                </View>
+	                <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+	                  <View style={[styles.sheetTag, styles.brandPillClamp, { borderColor: theme.tagBorderColor }]}>
+	                    <Text
+	                      style={[styles.sheetTagText, styles.pillTextClamp, { color: theme.textColor }]}
+	                      numberOfLines={1}
+	                    >
+	                      {formatBrandForPill(item.brandName)}
+	                    </Text>
+	                  </View>
+	                  {(() => {
+	                    const dose = formatDoseForPill(item.dosageText);
+	                    if (!dose) return null;
+	                    return (
+	                      <View style={[styles.sheetTag, styles.dosePillClamp, { borderColor: theme.tagBorderColor }]}>
+	                        <Text
+	                          style={[styles.sheetTagText, styles.pillTextClamp, { color: theme.textColor }]}
+	                          numberOfLines={1}
+	                        >
+	                          {dose}
+	                        </Text>
+	                      </View>
+	                    );
+	                  })()}
+	                </View>
               </View>
             </View>
 
@@ -1107,19 +1208,47 @@ function DetailSheet({
                   </View>
 
                   <View style={styles.overviewContent}>
-                    <Text style={styles.overviewSummary}>{summaryText}</Text>
-
-                    <View style={styles.overviewBullets}>
-                      {overviewBullets.map((bullet) => (
-                        <View key={bullet.label} style={styles.overviewBulletRow}>
+                    {overviewPhase === "loading" ? (
+                      <View style={{ gap: 12 }}>
+                        <Text style={styles.overviewPlaceholder}>Generating overview...</Text>
+                        <View style={styles.overviewSkeletonLine} />
+                        <View style={[styles.overviewSkeletonLine, { width: "72%" }]} />
+                        <View style={{ height: 8 }} />
+                        <View style={styles.overviewSkeletonBulletRow}>
                           <View style={styles.overviewBulletDot} />
-                          <Text style={styles.overviewBulletText}>
-                            <Text style={styles.overviewBulletLabel}>{bullet.label}: </Text>
-                            {formatSentence(bullet.text)}
-                          </Text>
+                          <View style={[styles.overviewSkeletonLine, { height: 14, width: "62%" }]} />
                         </View>
-                      ))}
-                    </View>
+                        <View style={styles.overviewSkeletonBulletRow}>
+                          <View style={styles.overviewBulletDot} />
+                          <View style={[styles.overviewSkeletonLine, { height: 14, width: "50%" }]} />
+                        </View>
+                      </View>
+                    ) : (
+                      <>
+                        <Text style={styles.overviewSummary}>{summaryText}</Text>
+
+                        <View style={styles.overviewBullets}>
+                          {overviewBullets.map((bullet) => (
+                            <View key={bullet.label} style={styles.overviewBulletRow}>
+                              <View style={styles.overviewBulletDot} />
+                              <Text style={styles.overviewBulletText}>
+                                <Text style={styles.overviewBulletLabel}>{bullet.label}: </Text>
+                                {formatSentence(bullet.text)}
+                              </Text>
+                            </View>
+                          ))}
+                        </View>
+
+                        {overviewPhase === "fallback" ? (
+                          <Pressable
+                            onPress={() => setOverviewRetryNonce((n) => n + 1)}
+                            style={styles.overviewRetryBtn}
+                          >
+                            <Text style={styles.overviewRetryText}>Retry</Text>
+                          </Pressable>
+                        ) : null}
+                      </>
+                    )}
                   </View>
                 </View>
               </View>
@@ -1339,7 +1468,6 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
   const pillWidthRef = useRef(84);
   const [pillWidth, setPillWidth] = useState(84);
   const updatedDosageRef = useRef(new Map<string, string>());
-  const overviewBackfillStartedRef = useRef(false);
   const filterTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const filterScrollRef = useRef<ScrollView>(null);
   const filterWrapRef = useRef<View>(null);
@@ -1495,15 +1623,16 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
           ? scanDoseLookup.categoryByNameKey.get(nameKey)
           : undefined);
 
-      const normalizedCurrent = normalizeKey(current);
-      const normalizedCategory = category ? normalizeKey(category) : "";
-      const cleanedCurrent = normalizedCategory && normalizedCurrent === normalizedCategory ? "" : current;
+	      const normalizedCurrent = normalizeKey(current);
+	      const normalizedCategory = category ? normalizeKey(category) : "";
+	      const cleanedCurrent = normalizedCategory && normalizedCurrent === normalizedCategory ? "" : current;
 
-      if (cleanedCurrent) return cleanedCurrent;
-      return scanDose || cleanedCurrent;
-    },
-    [scanDoseLookup],
-  );
+	      // Keep dosageText clean: never persist or display full directions here.
+	      const preferredRaw = cleanedCurrent || scanDose || "";
+	      return formatDoseForPill(preferredRaw) ?? "";
+	    },
+	    [scanDoseLookup],
+	  );
 
   const resolvedData = useMemo(
     () => data.map((item) => ({ ...item, dosageText: resolveDosageText(item) })),
@@ -1534,47 +1663,6 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
       });
     });
   }, [dataById, resolvedData, updateSupplement]);
-
-  // One-time backfill for older saved items that predate supplementId + public overview caching.
-  useEffect(() => {
-    if (overviewBackfillStartedRef.current) return;
-    const candidates = data
-      .filter((item) => !item.supplementId && isNonEmptyString(item.productName))
-      .slice(0, 10);
-    if (candidates.length === 0) return;
-
-    overviewBackfillStartedRef.current = true;
-    let cancelled = false;
-
-    const run = async () => {
-      for (const item of candidates) {
-        if (cancelled) break;
-        try {
-          const ensured = await ensureOverview({
-            supplementId: null,
-            barcode: item.barcode ?? null,
-            brandName: item.brandName ?? null,
-            productName: item.productName,
-            dosageText: item.dosageText ?? null,
-            userSupplementId: isUuid(item.id) ? item.id : null,
-          });
-          if (ensured?.supplementId) {
-            await updateSupplement(item.id, { supplementId: ensured.supplementId });
-          }
-        } catch {
-          // ignore and continue
-        }
-
-        // Light spacing to avoid spiky network usage on app start.
-        await new Promise((resolve) => setTimeout(resolve, 150));
-      }
-    };
-
-    void run();
-    return () => {
-      cancelled = true;
-    };
-  }, [data, updateSupplement]);
 
   const sorted = useMemo(() => [...resolvedData].sort((a, b) => isoDesc(a.createdAt, b.createdAt)), [resolvedData]);
 
@@ -2770,6 +2858,9 @@ const styles = StyleSheet.create({
   tagRow: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
   customTagRow: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
   tagPill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, borderCurve: "continuous", borderWidth: 1 },
+  brandPillClamp: { maxWidth: 240, flexShrink: 1 },
+  dosePillClamp: { maxWidth: 180, flexShrink: 1 },
+  pillTextClamp: { flexShrink: 1 },
   tagText: { fontSize: 12, lineHeight: 16, fontWeight: "600", includeFontPadding: false },
 
   arrowWrap: {
@@ -2901,6 +2992,20 @@ const styles = StyleSheet.create({
   overviewContent: { minHeight: 220, paddingHorizontal: 32, paddingVertical: 32, justifyContent: "center" },
   overviewSummary: { fontSize: 17, lineHeight: 26, fontWeight: "600", color: "#1f2937", includeFontPadding: false },
   overviewPlaceholder: { fontSize: 15, lineHeight: 22, fontWeight: "600", color: "#94a3b8", includeFontPadding: false },
+  overviewSkeletonLine: { height: 16, borderRadius: 10, backgroundColor: "rgba(148,163,184,0.35)", width: "92%" },
+  overviewSkeletonBulletRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  overviewRetryBtn: {
+    marginTop: 16,
+    alignSelf: "flex-start",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderCurve: "continuous",
+    borderWidth: 1,
+    borderColor: "rgba(148,163,184,0.35)",
+    backgroundColor: "rgba(255,255,255,0.55)",
+  },
+  overviewRetryText: { fontSize: 13, lineHeight: 18, fontWeight: "800", color: "#0f172a", includeFontPadding: false },
   overviewBullets: { marginTop: 18, gap: 10 },
   overviewBulletRow: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
   overviewBulletDot: { width: 6, height: 6, borderRadius: 999, backgroundColor: "#94a3b8", marginTop: 8 },

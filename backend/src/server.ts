@@ -5227,13 +5227,27 @@ const resolveSupplementIdForOverview = async (params: {
   return { supplementId: inserted?.id ?? null, fingerprint };
 };
 
+type EnsurePublicOverviewSource = "cache" | "deepseek" | "rule" | "none";
+
+type EnsurePublicOverviewResult = {
+  analysisReady: boolean;
+  source: EnsurePublicOverviewSource;
+  analysisData?: Partial<AiSupplementAnalysis> | null;
+};
+
+const inflightPublicOverviewBySupplementId = new Map<string, Promise<EnsurePublicOverviewResult>>();
+
 const ensurePublicOverview = async (params: {
   supplementId: string;
   productName: string;
   dosageText: string | null;
   brandName?: string | null;
   barcode?: string | null;
-}): Promise<boolean> => {
+}): Promise<EnsurePublicOverviewResult> => {
+  const inflight = inflightPublicOverviewBySupplementId.get(params.supplementId);
+  if (inflight) return inflight;
+
+  const promise = (async (): Promise<EnsurePublicOverviewResult> => {
   const { data, error } = await supabase
     .from("ai_analyses")
     .select("id")
@@ -5244,10 +5258,10 @@ const ensurePublicOverview = async (params: {
 
   if (error && !isNotFoundError(error)) {
     console.warn("[ensure-overview] ai_analyses lookup failed", error.message);
-    return false;
+    return { analysisReady: false, source: "none" };
   }
 
-  if (data?.id) return true;
+  if (data?.id) return { analysisReady: true, source: "cache" };
 
   const ruleOverview = buildRuleBasedOverview({
     productName: params.productName,
@@ -5282,26 +5296,27 @@ const ensurePublicOverview = async (params: {
   const cleanedDosage = safeTrim(params.dosageText) ?? null;
   if (cleanedDosage) contextLines.push(`Dosage: ${cleanedDosage}`);
 
-  const deepseekOverview =
-    deepseekKey && deepseekBreaker.canRequest()
+  const deepseekOverview = deepseekKey
+    ? deepseekBreaker.canRequest()
       ? await fetchMySupplementOverviewCard(contextLines.join("\n"), model, deepseekKey, {
           timeoutMs: MY_SUPP_OVERVIEW_TIMEOUT_MS,
           queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS,
           breaker: deepseekBreaker,
           semaphore: deepseekSemaphore,
         })
-      : null;
+      : null
+    : null;
+
+  // If DeepSeek is configured, ONLY cache DeepSeek output.
+  // Rule-based is used only when DeepSeek is not configured (local/dev environments).
+  if (deepseekKey && !deepseekOverview) {
+    return { analysisReady: false, source: "none" };
+  }
 
   const overview = deepseekOverview
     ? {
-        overviewSummary: normalizeTwoSentenceSummary(
-          deepseekOverview.overviewSummary,
-          ruleOverview.overviewSummary,
-        ),
-        coreBenefits:
-          deepseekOverview.coreBenefits.length > 0
-            ? deepseekOverview.coreBenefits
-            : ruleOverview.coreBenefits,
+        overviewSummary: normalizeTwoSentenceSummary(deepseekOverview.overviewSummary, ruleOverview.overviewSummary),
+        coreBenefits: deepseekOverview.coreBenefits.length > 0 ? deepseekOverview.coreBenefits : ruleOverview.coreBenefits,
         timing: safeTrim(deepseekOverview.timing) ?? ruleOverview.timing,
         withFood: deepseekOverview.withFood,
         usageSummary: deepseekOverview.withFood ? "Take with food." : "Take on an empty stomach.",
@@ -5341,12 +5356,24 @@ const ensurePublicOverview = async (params: {
   });
 
   if (insertError) {
-    if (isUniqueViolation(insertError)) return true;
+    if (isUniqueViolation(insertError)) return { analysisReady: true, source: "cache" };
     console.warn("[ensure-overview] ai_analyses insert failed", insertError.message);
-    return false;
+    return { analysisReady: false, source: "none" };
   }
 
-  return true;
+  return {
+    analysisReady: true,
+    source: deepseekOverview ? "deepseek" : "rule",
+    analysisData,
+  };
+  })();
+
+  inflightPublicOverviewBySupplementId.set(params.supplementId, promise);
+  try {
+    return await promise;
+  } finally {
+    inflightPublicOverviewBySupplementId.delete(params.supplementId);
+  }
 };
 
 const scoreSourceSchema = z.enum(["dsld", "lnhpd", "ocr", "manual"]);
@@ -12243,7 +12270,7 @@ app.post("/api/ensure-overview", verifySupabaseToken, async (req: Request, res: 
         .eq("user_id", user.id);
     }
 
-    const analysisReady = await ensurePublicOverview({
+    const overview = await ensurePublicOverview({
       supplementId,
       productName,
       dosageText,
@@ -12251,7 +12278,12 @@ app.post("/api/ensure-overview", verifySupabaseToken, async (req: Request, res: 
       barcode,
     });
 
-    return res.json({ supplementId, analysisReady });
+    return res.json({
+      supplementId,
+      analysisReady: overview.analysisReady,
+      source: overview.source,
+      analysisData: overview.analysisData ?? null,
+    });
   } catch (error) {
     captureException(error, { route: "/api/ensure-overview" });
     console.error("/api/ensure-overview error", error);
