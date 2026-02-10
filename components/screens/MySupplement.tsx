@@ -492,19 +492,28 @@ const ensureOverview = async (params: {
   const headers = await withAuthHeaders({ "Content-Type": "application/json" });
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 6_500);
-  const response = await fetch(`${apiBase}/api/ensure-overview`, {
-    method: "POST",
-    headers,
-    signal: controller.signal,
-    body: JSON.stringify({
-      supplementId: params.supplementId ?? null,
-      barcode: params.barcode ?? null,
-      brandName: params.brandName ?? null,
-      productName: params.productName,
-      dosageText: params.dosageText ?? null,
-      userSupplementId: params.userSupplementId ?? null,
-    }),
-  }).finally(() => clearTimeout(timeout));
+  let response: Response;
+  try {
+    response = await fetch(`${apiBase}/api/ensure-overview`, {
+      method: "POST",
+      headers,
+      signal: controller.signal,
+      body: JSON.stringify({
+        supplementId: params.supplementId ?? null,
+        barcode: params.barcode ?? null,
+        brandName: params.brandName ?? null,
+        productName: params.productName,
+        dosageText: params.dosageText ?? null,
+        userSupplementId: params.userSupplementId ?? null,
+      }),
+    }).finally(() => clearTimeout(timeout));
+  } catch (error) {
+    const name = typeof (error as { name?: unknown } | null)?.name === "string" ? (error as any).name : "";
+    if (name === "AbortError") return null;
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.warn("[supplement-overview] ensure-overview fetch failed", message);
+    return null;
+  }
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
@@ -526,14 +535,23 @@ const fetchBarcodeMetadata = async (barcode: string): Promise<BarcodeMetadataRes
   const headers = await withAuthHeaders();
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 4_500);
-  const response = await fetch(
-    `${apiBase}/api/barcode-metadata?barcode=${encodeURIComponent(barcode)}`,
-    {
-      method: "GET",
-      headers,
-      signal: controller.signal,
-    },
-  ).finally(() => clearTimeout(timeout));
+  let response: Response;
+  try {
+    response = await fetch(
+      `${apiBase}/api/barcode-metadata?barcode=${encodeURIComponent(barcode)}`,
+      {
+        method: "GET",
+        headers,
+        signal: controller.signal,
+      },
+    ).finally(() => clearTimeout(timeout));
+  } catch (error) {
+    const name = typeof (error as { name?: unknown } | null)?.name === "string" ? (error as any).name : "";
+    if (name === "AbortError") return null;
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.warn("[supplement-dose] barcode-metadata fetch failed", message);
+    return null;
+  }
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
@@ -995,7 +1013,11 @@ function DetailSheet({
         supplementId = ensured?.supplementId ?? null;
 
         if (supplementId && item.supplementId !== supplementId) {
-          await updateSupplement(item.id, { supplementId });
+          // Best-effort sync; failure shouldn't block Overview rendering.
+          void updateSupplement(item.id, { supplementId }).catch((error) => {
+            const message = error instanceof Error ? error.message : "Unknown error";
+            console.warn("[supplement-overview] Failed to persist supplementId", message);
+          });
         }
 
         if (!isActive || overviewPhaseRef.current !== "loading") return;
@@ -1071,7 +1093,14 @@ function DetailSheet({
       }
     };
 
-    void load().finally(() => clearTimeout(fallbackTimer));
+    void load()
+      .catch((error) => {
+        if (!isActive || overviewPhaseRef.current !== "loading") return;
+        const message = error instanceof Error ? error.message : "Unknown error";
+        console.warn("[supplement-overview] Unhandled load error", message);
+        finalizeFallback();
+      })
+      .finally(() => clearTimeout(fallbackTimer));
 
     return () => {
       isActive = false;
