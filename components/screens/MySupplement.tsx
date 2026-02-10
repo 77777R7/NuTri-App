@@ -469,6 +469,15 @@ type EnsureOverviewResponse = {
   analysisData?: AnalysisPayload | null;
 };
 
+type BarcodeMetadataResponse = {
+  status: "ok" | "not_found";
+  barcodeGtin14: string;
+  productInfo: { brand: string | null; name: string | null };
+  primaryDoseText: string | null;
+  npn: string | null;
+  dsldLabelId: string | null;
+};
+
 const ensureOverview = async (params: {
   supplementId?: string | null;
   barcode?: string | null;
@@ -507,6 +516,33 @@ const ensureOverview = async (params: {
   if (!payload?.supplementId) {
     return null;
   }
+  return payload;
+};
+
+const fetchBarcodeMetadata = async (barcode: string): Promise<BarcodeMetadataResponse | null> => {
+  const apiBase = Config.apiBaseUrl?.replace(/\/$/, "");
+  if (!apiBase) return null;
+
+  const headers = await withAuthHeaders();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 4_500);
+  const response = await fetch(
+    `${apiBase}/api/barcode-metadata?barcode=${encodeURIComponent(barcode)}`,
+    {
+      method: "GET",
+      headers,
+      signal: controller.signal,
+    },
+  ).finally(() => clearTimeout(timeout));
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    console.warn("[supplement-dose] barcode-metadata failed", response.status, detail);
+    return null;
+  }
+
+  const payload = (await response.json().catch(() => null)) as BarcodeMetadataResponse | null;
+  if (!payload?.status) return null;
   return payload;
 };
 
@@ -1468,6 +1504,7 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
   const pillWidthRef = useRef(84);
   const [pillWidth, setPillWidth] = useState(84);
   const updatedDosageRef = useRef(new Map<string, string>());
+  const dosageMetadataBackfillStartedRef = useRef(false);
   const filterTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const filterScrollRef = useRef<ScrollView>(null);
   const filterWrapRef = useRef<View>(null);
@@ -1665,6 +1702,61 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
   }, [dataById, resolvedData, updateSupplement]);
 
   const sorted = useMemo(() => [...resolvedData].sort((a, b) => isoDesc(a.createdAt, b.createdAt)), [resolvedData]);
+
+  useEffect(() => {
+    if (dosageMetadataBackfillStartedRef.current) return;
+    if (sorted.length === 0) return;
+    dosageMetadataBackfillStartedRef.current = true;
+
+    const isStrengthDose = (dose: string) => /\b(mcg|mg|g|iu|cfu|ml|oz)\b/i.test(dose);
+    const isCountDose = (dose: string) =>
+      /\b(tablet|capsule|softgel|gummy|scoop|drop|packet|serving)\b/i.test(dose);
+
+    const candidates = sorted
+      .filter((item) => {
+        const barcode = item.barcode?.trim();
+        if (!barcode) return false;
+        const currentDose = formatDoseForPill(item.dosageText) ?? null;
+        if (!currentDose) return true;
+        if (isStrengthDose(currentDose)) return false;
+        return isCountDose(currentDose);
+      })
+      .slice(0, 10);
+
+    if (candidates.length === 0) return;
+
+    let cancelled = false;
+    const run = async () => {
+      for (const item of candidates) {
+        if (cancelled) break;
+        const barcode = item.barcode?.trim();
+        if (!barcode) continue;
+
+        const meta = await fetchBarcodeMetadata(barcode);
+        if (cancelled) break;
+        if (!meta || meta.status !== "ok") continue;
+
+        const nextDose = formatDoseForPill(meta.primaryDoseText);
+        if (!nextDose) continue;
+
+        const currentDose = formatDoseForPill(item.dosageText) ?? null;
+        if (currentDose && isStrengthDose(currentDose)) continue; // upgrade-only
+        if (nextDose === currentDose) continue;
+
+        try {
+          await updateSupplement(item.id, { dosageText: nextDose });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Unknown error";
+          console.warn("[supplement-dose] Failed to backfill dose", message);
+        }
+      }
+    };
+
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [sorted, updateSupplement]);
 
   const idToThemeMap = useMemo(() => {
     const map = new Map<string, Theme>();

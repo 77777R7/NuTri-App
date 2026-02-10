@@ -36,6 +36,7 @@ import {
   computeFactsDigestHash,
   type DsldFactsInput,
   type FactsDigest,
+  type FactsIdentityType,
   type LnhpdFactsInput,
 } from "./factsDigest.js";
 import { getAnalysisIdentityCache, getWebCanonicalMap, insertAnalysisIdentityPending, updateAnalysisIdentityCache, upsertAnalysisIdentityCache, upsertWebCanonicalMap } from "./analysisIdentityCache.js";
@@ -1193,11 +1194,317 @@ const mergeDsldWhatItDoes = (baseDetail: IngredientsDetail, minimal: DsldDetailM
   return { ...baseDetail, items, overallSummary, overlapNotes };
 };
 
+const resolveDsldWhatItDoesStatus = (
+  errorCode: string | null | undefined,
+): { status: "llm" | "skipped" | "failed"; reason: string | null } | null => {
+  if (!errorCode) return null;
+  const trimmed = String(errorCode).trim();
+  if (!trimmed) return null;
+  if (!trimmed.startsWith("DSLD_WHATITDOES_")) return null;
+  const suffix = trimmed.slice("DSLD_WHATITDOES_".length);
+  if (suffix === "llm") return { status: "llm", reason: null };
+  if (suffix === "skipped") return { status: "skipped", reason: null };
+  if (suffix === "failed") return { status: "failed", reason: null };
+  if (suffix.startsWith("skipped")) return { status: "skipped", reason: null };
+  if (suffix.startsWith("failed")) return { status: "failed", reason: null };
+  return { status: "skipped", reason: null };
+};
+
 const resolveFallbackUsed = (errorCode: string | null | undefined): "kb_dsld" | "skeleton" | null => {
   if (!errorCode) return null;
   if (errorCode === "FALLBACK_KB_DSLD") return "kb_dsld";
   if (errorCode === "FALLBACK_SKELETON") return "skeleton";
   return null;
+};
+
+type IdentityType = FactsIdentityType;
+type Locale = "en" | "zh";
+
+const queueDsldDetailEnrichment = (params: {
+  identityType: IdentityType;
+  identityValue: string;
+  locale: Locale;
+  promptVersionForCache: string;
+  factsDigestHash: string;
+  factsSourceVersion: string;
+  sectionKey: string;
+  rateKey: string;
+  digestRowFactsDigestJson: unknown;
+  digest: FactsDigest;
+  requestedLimit: number;
+  cursor: number;
+  model: string;
+  deepseekKey: string;
+}): void => {
+  const jobKey = `dsld:${params.rateKey}:${params.factsDigestHash}`;
+  if (dsldDetailEnrichInFlight.has(jobKey)) return;
+
+  const task = (async () => {
+    const nowMs = Date.now();
+    const cachedDetail = await getAnalysisIdentityCache(
+      {
+        identityType: params.identityType,
+        identityValue: params.identityValue,
+        locale: params.locale,
+        promptVersion: params.promptVersionForCache,
+        factsDigestHash: params.factsDigestHash,
+        section: params.sectionKey,
+      },
+      { timeoutMs: 800 },
+    ).catch(() => null);
+
+    if (cachedDetail?.status === "complete" && cachedDetail.payload) {
+      return;
+    }
+
+    const pendingAgeMs = cachedDetail?.updated_at
+      ? Math.max(0, nowMs - Date.parse(cachedDetail.updated_at))
+      : null;
+    const lockedUntilMs = cachedDetail?.locked_until ? Date.parse(cachedDetail.locked_until) : null;
+    const isStaleJob = cachedDetail
+      ? pendingAgeMs !== null && pendingAgeMs > ANALYSIS_DETAIL_STALE_MS
+        ? true
+        : lockedUntilMs !== null && Number.isFinite(lockedUntilMs) && lockedUntilMs <= nowMs
+      : false;
+
+    if ((cachedDetail?.status === "pending" || cachedDetail?.status === "running") && !isStaleJob) {
+      // Another instance is already working on it.
+      return;
+    }
+
+    const lockUntil = new Date(nowMs + ANALYSIS_DETAIL_LOCK_MS).toISOString();
+    const attempts = (cachedDetail?.attempts ?? 0) + 1;
+
+    let claimed = false;
+    if (cachedDetail) {
+      claimed = await updateAnalysisIdentityCache(
+        {
+          identityType: params.identityType,
+          identityValue: params.identityValue,
+          locale: params.locale,
+          promptVersion: params.promptVersionForCache,
+          factsDigestHash: params.factsDigestHash,
+          section: params.sectionKey,
+          status: "running",
+          payload: null,
+          attempts,
+          lockedUntil: lockUntil,
+          lastError: null,
+          errorCode: null,
+          expiresAt: new Date(Date.now() + ANALYSIS_IDENTITY_CACHE_TTL_MS).toISOString(),
+        },
+        { timeoutMs: 1200 },
+      ).catch(() => false);
+    } else {
+      claimed = await insertAnalysisIdentityPending(
+        {
+          identityType: params.identityType,
+          identityValue: params.identityValue,
+          locale: params.locale,
+          promptVersion: params.promptVersionForCache,
+          factsDigestHash: params.factsDigestHash,
+          factsSourceVersion: params.factsSourceVersion,
+          section: params.sectionKey,
+          status: "running",
+          attempts,
+          lockedUntil: lockUntil,
+          factsDigestJson: params.digestRowFactsDigestJson,
+          expiresAt: new Date(Date.now() + ANALYSIS_IDENTITY_CACHE_TTL_MS).toISOString(),
+        },
+        { timeoutMs: 1200 },
+      ).catch(() => false);
+    }
+
+    if (!claimed) {
+      return;
+    }
+
+    const totalActives = params.digest.actives.length;
+    const sliceStart = Math.min(params.cursor, totalActives);
+    const sliceEnd = Math.min(sliceStart + params.requestedLimit, totalActives);
+    const detailDigest: FactsDigest = { ...params.digest, actives: params.digest.actives.slice(sliceStart, sliceEnd) };
+
+    const buildDetailContext = (detailFacts: FactsDigest, limitValue: number) =>
+      `DETAIL_PAGE: ${JSON.stringify({
+        limit: limitValue,
+        cursor: sliceStart,
+        totalActives,
+      })}\nFACTS_DIGEST_JSON: ${JSON.stringify(detailFacts)}`;
+
+    const detailTimeoutMs = ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS_DSLD;
+    const detailMaxTokens = ANALYSIS_DETAIL_MAX_TOKENS_DSLD;
+    const detailRescueMaxTokens = ANALYSIS_DETAIL_RESCUE_MAX_TOKENS_DSLD;
+    const primaryPromptOverride = "dsld_short";
+    const rescuePromptOverride = "dsld_rescue";
+
+    const start = performance.now();
+    let dsldMinimal: DsldDetailMinimal | null = null;
+    let dsldLlmSkipReason: string | null = null;
+    let dsldLlmAttempted = false;
+
+    const getDebugErrorCode = (raw: Record<string, unknown> | null): string | null => {
+      if (!raw) return null;
+      if (typeof raw === "object" && "__deepseek_error" in raw) {
+        return String((raw as { __deepseek_error?: string }).__deepseek_error ?? "");
+      }
+      return null;
+    };
+    const isParseFailure = (code: string | null): boolean =>
+      Boolean(
+        code &&
+          (code === "detail_v3_content_parse_failed" ||
+            code === "detail_v3_response_parse_failed" ||
+            code === "detail_v3_missing_content"),
+      );
+
+    let detailRaw: Record<string, unknown> | null = null;
+    let dsldParsed: ReturnType<typeof DsldDetailMinimalSchema.safeParse> | null = null;
+    try {
+      let release: (() => void) | null = null;
+      try {
+        release = await deepseekDsldMinimalSemaphore.acquire({
+          timeoutMs: RESILIENCE_DEEPSEEK_DSLD_MIN_QUEUE_TIMEOUT_MS,
+        });
+      } catch {
+        dsldLlmSkipReason = "semaphore_busy";
+      }
+      if (release) {
+        dsldLlmAttempted = true;
+        try {
+          detailRaw = await fetchIngredientsDetailV3(
+            buildDetailContext(detailDigest, params.requestedLimit),
+            params.model,
+            params.deepseekKey,
+            {
+              breaker: deepseekBreaker,
+              timeoutMs: detailTimeoutMs,
+              retry: { maxAttempts: 1 },
+              maxTokens: detailMaxTokens,
+              debugOnError: true,
+              promptOverride: primaryPromptOverride,
+            },
+          );
+        } finally {
+          release();
+        }
+      }
+    } catch {
+      dsldLlmSkipReason = dsldLlmSkipReason ?? "LLM_REQUEST_FAILED";
+    }
+
+    if (detailRaw) {
+      dsldParsed = DsldDetailMinimalSchema.safeParse(detailRaw);
+      dsldMinimal = dsldParsed.success ? dsldParsed.data : null;
+    }
+
+    const debugErrorCode = getDebugErrorCode(detailRaw);
+    const shouldRescue = !dsldMinimal && (isParseFailure(debugErrorCode) || (detailRaw !== null && !dsldParsed?.success));
+    if (shouldRescue) {
+      const rescueLimit = Math.min(params.requestedLimit, ANALYSIS_DETAIL_LIMIT_RESCUE);
+      const rescueSliceEnd = Math.min(sliceStart + rescueLimit, totalActives);
+      const rescueDigest: FactsDigest = {
+        ...params.digest,
+        actives: params.digest.actives.slice(sliceStart, rescueSliceEnd),
+      };
+      try {
+        let release: (() => void) | null = null;
+        try {
+          release = await deepseekDsldMinimalSemaphore.acquire({
+            timeoutMs: RESILIENCE_DEEPSEEK_DSLD_MIN_QUEUE_TIMEOUT_MS,
+          });
+        } catch {
+          // no-op
+        }
+        if (release) {
+          try {
+            const rescueRaw = await fetchIngredientsDetailV3(
+              buildDetailContext(rescueDigest, rescueLimit),
+              params.model,
+              params.deepseekKey,
+              {
+                breaker: deepseekBreaker,
+                timeoutMs: detailTimeoutMs,
+                retry: { maxAttempts: 1 },
+                maxTokens: detailRescueMaxTokens,
+                debugOnError: true,
+                promptOverride: rescuePromptOverride,
+              },
+            );
+            if (rescueRaw) {
+              const rescueParsed = DsldDetailMinimalSchema.safeParse(rescueRaw);
+              if (rescueParsed.success) {
+                dsldMinimal = rescueParsed.data;
+              }
+            }
+          } finally {
+            release();
+          }
+        }
+      } catch {
+        // swallow
+      }
+    }
+
+    const dsldBase = buildDsldKbFallbackDetail(detailDigest);
+    const detailPayload = mergeDsldWhatItDoes(dsldBase.detail, dsldMinimal);
+
+    const dsldWhatItDoesUsed = Boolean(dsldMinimal);
+    const dsldWhatItDoesStatus: "llm" | "skipped" | "failed" = dsldWhatItDoesUsed
+      ? "llm"
+      : dsldLlmSkipReason
+        ? "skipped"
+        : dsldLlmAttempted
+          ? "failed"
+          : "skipped";
+    const dsldWhatItDoesReason = dsldWhatItDoesUsed
+      ? null
+      : dsldLlmSkipReason ?? (detailRaw && debugErrorCode ? debugErrorCode : null) ?? "LLM_UNAVAILABLE";
+
+    const shouldUseShortTtl = !dsldWhatItDoesUsed;
+    const detailExpiresAt = new Date(
+      Date.now() + (shouldUseShortTtl ? ANALYSIS_DETAIL_FALLBACK_TTL_MS : ANALYSIS_IDENTITY_CACHE_TTL_MS),
+    ).toISOString();
+    const timingMs = Math.round(performance.now() - start);
+
+    void upsertAnalysisIdentityCache(
+      {
+        identityType: params.identityType,
+        identityValue: params.identityValue,
+        locale: params.locale,
+        promptVersion: params.promptVersionForCache,
+        factsDigestHash: params.factsDigestHash,
+        factsSourceVersion: params.factsSourceVersion,
+        section: params.sectionKey,
+        status: "complete",
+        payload: detailPayload,
+        factsDigestJson: params.digestRowFactsDigestJson,
+        attempts,
+        lockedUntil: null,
+        lastError: dsldWhatItDoesUsed ? null : dsldWhatItDoesReason,
+        errorCode: dsldWhatItDoesUsed ? null : `DSLD_WHATITDOES_${dsldWhatItDoesStatus}`,
+        expiresAt: detailExpiresAt,
+      },
+      { timeoutMs: 1200 },
+    );
+
+    // Best-effort observability.
+    if (!dsldWhatItDoesUsed && dsldWhatItDoesReason) {
+      console.warn("[analysis-section] dsld enrichment completed without LLM", {
+        reason: dsldWhatItDoesReason,
+        timingMs,
+        identity: `${params.identityType}:${params.identityValue}`,
+        section: params.sectionKey,
+      });
+    }
+  })()
+    .catch((error) => {
+      console.warn("[analysis-section] dsld enrichment task crashed", error);
+    })
+    .finally(() => {
+      dsldDetailEnrichInFlight.delete(jobKey);
+    });
+
+  dsldDetailEnrichInFlight.set(jobKey, task);
 };
 
 const applyFormExplainGuard = (detail: IngredientsDetail, detailDigest: FactsDigest): IngredientsDetail => {
@@ -1303,7 +1610,7 @@ const buildAnalysisBundleSkeleton = (params: {
         layout: "ingredients_list",
         cover: buildIngredientsCover(digest),
         detail: null,
-        dataStatus: digest.actives.length > 0 ? "complete" : "limited",
+        dataStatus: digest.actives.length > 0 ? "complete" : "not_provided",
       },
       usage: {
         layout: "usage_bullets",
@@ -1567,11 +1874,81 @@ const pickScalarField = (
   return null;
 };
 
+const coerceJsonListPayload = (payload: unknown, hintKeys: string[]): unknown[] => {
+  if (Array.isArray(payload)) return payload;
+  if (!payload) return [];
+
+  if (typeof payload === "string") {
+    const trimmed = payload.trim();
+    if (!trimmed) return [];
+    try {
+      const parsed = JSON.parse(trimmed);
+      return coerceJsonListPayload(parsed, hintKeys);
+    } catch {
+      return [];
+    }
+  }
+
+  if (!payload || typeof payload !== "object") return [];
+  const record = payload as Record<string, unknown>;
+
+  // Common wrappers: { items: [...] }, { data: [...] }, etc.
+  for (const key of [
+    "items",
+    "data",
+    "values",
+    "value",
+    "ingredients",
+    "ingredient",
+    "medicinalIngredient",
+    "medicinalIngredients",
+    "nonMedicinalIngredient",
+    "nonMedicinalIngredients",
+    "purposes",
+    "routes",
+    "doses",
+  ]) {
+    const value = record[key];
+    if (Array.isArray(value)) return value;
+  }
+
+  // Numeric-key object: { "0": {...}, "1": {...} } (common in some exports)
+  const entries = Object.entries(record);
+  const numericEntries = entries.filter(([k]) => /^[0-9]+$/.test(k));
+  if (numericEntries.length >= 1 && numericEntries.length >= Math.max(2, Math.ceil(entries.length * 0.6))) {
+    return numericEntries
+      .sort((a, b) => Number(a[0]) - Number(b[0]))
+      .map(([, v]) => v);
+  }
+
+  // If this object itself looks like one list item (has hint keys), treat as a single-item list.
+  const lowerKeys = new Set(Object.keys(record).map((k) => k.toLowerCase()));
+  const hasHintKey = hintKeys.some((k) => lowerKeys.has(k.toLowerCase()));
+  if (hasHintKey) return [payload];
+
+  // Otherwise, if the values look like item records, treat them as the list.
+  const values = Object.values(record);
+  const objectValues = values.filter((v) => v && typeof v === "object") as Array<Record<string, unknown>>;
+  const allObjects = objectValues.length > 0 && objectValues.length === values.length;
+  if (allObjects) {
+    const hasItemLike = objectValues.some((item) => {
+      const keys = Object.keys(item).map((k) => k.toLowerCase());
+      const set = new Set(keys);
+      return hintKeys.some((k) => set.has(k.toLowerCase()));
+    });
+    if (hasItemLike) return objectValues;
+  }
+
+  // Last-resort: treat as a single record (best effort).
+  return [payload];
+};
+
 const extractTextList = (payload: unknown, nameKeys: string[]): string[] => {
-  if (!Array.isArray(payload)) return [];
+  const items = coerceJsonListPayload(payload, nameKeys);
+  if (items.length === 0) return [];
   const seen = new Set<string>();
   const output: string[] = [];
-  payload.forEach((item) => {
+  items.forEach((item) => {
     if (!item || typeof item !== 'object') return;
     const name = pickNameField(item as Record<string, unknown>, nameKeys);
     if (!name) return;
@@ -1588,9 +1965,10 @@ const extractLnhpdIngredients = (payload: unknown, options: {
   amountKeys: string[];
   unitKeys: string[];
 }): { name: string; amount: number | null; unit: string | null; lnhpdMeta?: LnhpdIngredientMeta | null }[] => {
-  if (!Array.isArray(payload)) return [];
+  const items = coerceJsonListPayload(payload, options.nameKeys);
+  if (items.length === 0) return [];
   const map = new Map<string, { name: string; amount: number | null; unit: string | null; lnhpdMeta?: LnhpdIngredientMeta | null }>();
-  payload.forEach((item) => {
+  items.forEach((item) => {
     if (!item || typeof item !== 'object') return;
     const record = item as Record<string, unknown>;
     const name = pickNameField(record, options.nameKeys);
@@ -4425,6 +4803,13 @@ const barcodeEnrichBackground = new Map<string, Promise<void>>();
 const barcodeShadowInFlight = new Map<string, Promise<void>>();
 const barcodeSecondaryBackfill = new Map<string, Promise<void>>();
 const analysisSectionRateLimit = new Map<string, { count: number; windowStart: number }>();
+// End-user guardrail: prevents accidental hot-loops from clients. This should be high enough to
+// tolerate legitimate UI flows (open/close, retries) and low enough to stop runaway spam.
+const ANALYSIS_SECTION_RATE_LIMIT_PER_MINUTE = Math.max(
+  6,
+  Number(process.env.ANALYSIS_SECTION_RATE_LIMIT_PER_MINUTE ?? 30),
+);
+const dsldDetailEnrichInFlight = new Map<string, Promise<void>>();
 
 const queueShadowCompare = (params: {
   barcodeGtin14: string;
@@ -5822,41 +6207,112 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       promptVersionForCache = `${promptVersion}|kb:${pkgSha.trim().slice(0, 12)}`;
     }
   }
-  const requestedLimit =
-    isDsldDetail ? Math.min(rawRequestedLimit, ANALYSIS_DETAIL_LIMIT_DSLD) : rawRequestedLimit;
-  const sectionKey = `${section}:${requestedLimit}:${cursor}`;
-  const rateKey = `${identity.type}:${identity.value}:${locale}:${promptVersionForCache}:${sectionKey}`;
-  // Rate limiting is for end-users. CI/regression calls can legitimately issue many requests in a tight window
-  // (primary+fallback barcodes, pagination, retries). Don't allow the limiter to introduce flaky 429s in CI.
-  if (!isRegressionRequest) {
-    const now = Date.now();
-    const existingRate = analysisSectionRateLimit.get(rateKey);
+	  const requestedLimit =
+	    isDsldDetail ? Math.min(rawRequestedLimit, ANALYSIS_DETAIL_LIMIT_DSLD) : rawRequestedLimit;
+	  const sectionKey = `${section}:${requestedLimit}:${cursor}`;
+	  const rateKey = `${identity.type}:${identity.value}:${locale}:${promptVersionForCache}:${sectionKey}`;
+	  const totalActives = digest.actives.length;
+	  const buildDetailPage = (returnedCount: number) => {
+	    const nextCursor = cursor + returnedCount;
+	    const hasMore = totalActives > nextCursor;
+	    return {
+	      limit: requestedLimit,
+	      cursor,
+	      nextCursor: hasMore ? nextCursor : null,
+	      hasMore,
+	      totalActives,
+	    };
+	  };
+
+	  // Rate limiting is for end-users. CI/regression calls can legitimately issue many requests in a tight window
+	  // (primary+fallback barcodes, pagination, retries). Don't allow the limiter to introduce flaky 429s in CI.
+	  if (!isRegressionRequest) {
+	    const now = Date.now();
+	    const existingRate = analysisSectionRateLimit.get(rateKey);
     if (!existingRate || now - existingRate.windowStart > 60_000) {
       analysisSectionRateLimit.set(rateKey, { count: 1, windowStart: now });
     } else {
-      existingRate.count += 1;
-      if (existingRate.count > 6) {
-        res.status(429).json({ error: "rate_limited" } satisfies ErrorResponse);
-        return;
-      }
-    }
-  }
-  const totalActives = digest.actives.length;
-  const buildDetailPage = (returnedCount: number) => {
-    const nextCursor = cursor + returnedCount;
-    const hasMore = totalActives > nextCursor;
-    return {
-      limit: requestedLimit,
-      cursor,
-      nextCursor: hasMore ? nextCursor : null,
-      hasMore,
-      totalActives,
-    };
-  };
+	      existingRate.count += 1;
+	      if (existingRate.count > ANALYSIS_SECTION_RATE_LIMIT_PER_MINUTE) {
+	        const retryAfterSec = Math.max(
+	          1,
+	          Math.ceil((existingRate.windowStart + 60_000 - now) / 1000),
+	        );
+	        res.setHeader("Retry-After", String(retryAfterSec));
+	        // End-user UX: never return 429 for analysis-section. The client can accidentally spam this endpoint
+	        // (open/close modal, retries, auto-refresh) and a hard 429 results in blank cards.
+	        // Instead: return a cheap limited response (no LLM) and tell the UI when to retry.
+	        if (totalActives === 0) {
+	          res.status(200).json({
+	            section: "ingredients",
+	            detail: null,
+	            dataStatus: "not_provided",
+	            page: buildDetailPage(0),
+	            meta: {
+	              bundleId: randomUUID(),
+	              revision: 2,
+	              factsDigestHash,
+	              fallbackUsed: "skeleton",
+	              fallbackReason: "rate_limited",
+	              retryAfterMs: retryAfterSec * 1000,
+	              requestId,
+	            },
+	            timingMs: 0,
+	          });
+	          return;
+	        }
 
-  if (totalActives === 0) {
-    res.status(200).json({
-      section: "ingredients",
+	        const sliceStart = Math.min(cursor, totalActives);
+	        const sliceEnd = Math.min(sliceStart + requestedLimit, totalActives);
+	        const detailDigest: FactsDigest = { ...digest, actives: digest.actives.slice(sliceStart, sliceEnd) };
+
+	        if (isDsldDetail) {
+	          const dsldBase = buildDsldKbFallbackDetail(detailDigest);
+	          res.status(200).json({
+	            section: "ingredients",
+	            detail: dsldBase.detail,
+	            dataStatus: "limited",
+	            page: buildDetailPage(dsldBase.detail.items.length),
+	            meta: {
+	              bundleId: randomUUID(),
+	              revision: 2,
+	              factsDigestHash,
+	              fallbackUsed: "kb_dsld",
+	              fallbackReason: "rate_limited",
+	              retryAfterMs: retryAfterSec * 1000,
+	              requestId,
+	            },
+	            timingMs: 0,
+	          });
+	          return;
+	        }
+
+	        const labelDosingText = buildLabelDosingText(digest);
+	        const skeletonDetail = buildDetailSkeleton(detailDigest, labelDosingText);
+	        res.status(200).json({
+	          section: "ingredients",
+	          detail: skeletonDetail,
+	          dataStatus: "limited",
+	          page: buildDetailPage(Array.isArray(skeletonDetail.items) ? skeletonDetail.items.length : 0),
+	          meta: {
+	            bundleId: randomUUID(),
+	            revision: 2,
+	            factsDigestHash,
+	            fallbackUsed: "skeleton",
+	            fallbackReason: "rate_limited",
+	            retryAfterMs: retryAfterSec * 1000,
+	            requestId,
+	          },
+	          timingMs: 0,
+	        });
+	        return;
+	      }
+	    }
+	  }
+
+	  if (totalActives === 0) {
+	    res.status(200).json({
+	      section: "ingredients",
       detail: null,
       dataStatus: "not_provided",
       page: buildDetailPage(0),
@@ -6071,10 +6527,17 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
         };
       }
     }
+    const dsldWhatItDoesStatusFromCache = isDsldDetail
+      ? resolveDsldWhatItDoesStatus(cachedDetail.error_code ?? null)
+      : null;
+    const dsldTreatAsLimited =
+      isDsldDetail && dsldWhatItDoesStatusFromCache && dsldWhatItDoesStatusFromCache.status !== "llm";
+
     res.json({
       section: "ingredients",
       detail: detailPayload,
-      dataStatus: hideDsldFallbackMarker ? "complete" : cachedFallback ? "limited" : "complete",
+      dataStatus:
+        hideDsldFallbackMarker ? "complete" : cachedFallback || dsldTreatAsLimited ? "limited" : "complete",
       page: buildDetailPage(Array.isArray(detailPayload.items) ? detailPayload.items.length : cachedItemsCount),
       meta: {
         bundleId: randomUUID(),
@@ -6086,10 +6549,100 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
           : cachedFallback
             ? cachedDetail.last_error ?? cachedDetail.error_code ?? null
             : undefined,
+        whatItDoesStatus: dsldWhatItDoesStatusFromCache?.status,
+        whatItDoesReason:
+          dsldWhatItDoesStatusFromCache && dsldWhatItDoesStatusFromCache.status !== "llm"
+            ? (cachedDetail.last_error ?? null)
+            : undefined,
       },
       timingMs: 0,
       debug,
     });
+    return;
+  }
+
+  if (isDsldDetail) {
+    // P0 UX: DSLD ingredients detail must always return readable content immediately (no 202 loop).
+    // We return a KB-first Base page (limited) and queue an async enrichment job (whatItDoes/summary)
+    // to be filled into the identity cache.
+    const sliceStart = Math.min(cursor, totalActives);
+    const sliceEnd = Math.min(sliceStart + requestedLimit, totalActives);
+    const detailDigest: FactsDigest = { ...digest, actives: digest.actives.slice(sliceStart, sliceEnd) };
+    const dsldBase = buildDsldKbFallbackDetail(detailDigest);
+
+    let debug: Record<string, unknown> | undefined;
+    if (allowInternalDebug) {
+      const byName = new Map<string, IngredientsDetail["items"][number]>();
+      for (const item of dsldBase.detail.items) {
+        byName.set(normalizeIngredientName(item.name), item);
+      }
+      const sentenceIds: Record<string, string | null> = {};
+      const excerptIds: Record<string, string | null> = {};
+      const referenceIds: Record<string, string | null> = {};
+      const evidenceGrades: Record<string, string | null> = {};
+      const supportStrengths: Record<string, "strong" | "moderate" | "weak" | null> = {};
+      for (const [name, sentenceId] of Object.entries(dsldBase.formSentenceIds)) {
+        const item = byName.get(normalizeIngredientName(name));
+        const tags = item?.chemicalFormExplain?.basisTags;
+        const isKbSentence = Array.isArray(tags) && tags.includes("ingredient_inference");
+        sentenceIds[name] = isKbSentence ? sentenceId ?? null : null;
+        excerptIds[name] = isKbSentence ? dsldBase.formExcerptIds[name] ?? null : null;
+        referenceIds[name] = isKbSentence ? dsldBase.formReferenceIds[name] ?? null : null;
+        evidenceGrades[name] = isKbSentence ? dsldBase.formEvidenceGrades[name] ?? null : null;
+        supportStrengths[name] = isKbSentence ? dsldBase.formSupportStrengths[name] ?? null : null;
+      }
+      debug = {
+        formResolveSources: dsldBase.formResolveSources,
+        formEvidenceTexts: dsldBase.formEvidenceTexts,
+        formSentenceIds: sentenceIds,
+        formExcerptIds: excerptIds,
+        formReferenceIds: referenceIds,
+        formEvidenceGrades: evidenceGrades,
+        formSupportStrengths: supportStrengths,
+      };
+    }
+
+    res.status(200).json({
+      section: "ingredients",
+      detail: dsldBase.detail,
+      dataStatus: "limited",
+      page: buildDetailPage(dsldBase.detail.items.length),
+      meta: {
+        bundleId: randomUUID(),
+        revision: 2,
+        factsDigestHash,
+        jobId,
+        jobStatus: cachedDetail?.status ?? (deepseekKey ? "pending" : "skipped"),
+        attempts: cachedDetail?.attempts ?? 0,
+        updatedAt: cachedDetail?.updated_at ?? null,
+        pendingAgeMs,
+        fallbackUsed: "kb_dsld",
+        fallbackReason: deepseekKey ? "enrichment_queued" : "deepseek_api_key_missing",
+        whatItDoesStatus: deepseekKey ? "queued" : "skipped",
+        whatItDoesReason: deepseekKey ? undefined : "DEEPSEEK_API_KEY_MISSING",
+      },
+      timingMs: 0,
+      ...(allowInternalDebug ? { debug } : {}),
+    });
+
+    if (deepseekKey) {
+      queueDsldDetailEnrichment({
+        identityType: identity.type,
+        identityValue: identity.value,
+        locale,
+        promptVersionForCache,
+        factsDigestHash,
+        factsSourceVersion: digestRow.facts_source_version ?? "",
+        sectionKey,
+        rateKey,
+        digestRowFactsDigestJson: digestRow.facts_digest_json,
+        digest,
+        requestedLimit,
+        cursor,
+        model: process.env.DEEPSEEK_MODEL || "deepseek-chat",
+        deepseekKey,
+      });
+    }
     return;
   }
 
@@ -6118,15 +6671,36 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 
   if (cachedDetail?.status === "pending" || cachedDetail?.status === "running") {
     if (!isStaleJob) {
-      res.status(202).json({
-        status: "pending",
-        jobId,
-        retryAfterMs: 2000,
-        jobStatus: cachedDetail.status,
-        attempts: cachedDetail.attempts ?? 0,
-        updatedAt: cachedDetail.updated_at,
-        pendingAgeMs,
-        meta: { requestId },
+      // Never return 202 to end-users. A 202 "pending" loop is easy to accidentally DDoS from the client
+      // (auto-refresh effects, retries, modal open/close, etc) and quickly trips rate limiting.
+      //
+      // Instead: return a limited skeleton immediately + include job status so the UI can optionally
+      // refresh once (or show a small "more insights may load" hint) without spamming.
+      const labelDosingText = buildLabelDosingText(digest);
+      const sliceStart = Math.min(cursor, totalActives);
+      const sliceEnd = Math.min(sliceStart + requestedLimit, totalActives);
+      const detailDigest: FactsDigest = { ...digest, actives: digest.actives.slice(sliceStart, sliceEnd) };
+      const skeletonDetail = buildDetailSkeleton(detailDigest, labelDosingText);
+      res.status(200).json({
+        section: "ingredients",
+        detail: skeletonDetail,
+        dataStatus: "limited",
+        page: buildDetailPage(Array.isArray(skeletonDetail.items) ? skeletonDetail.items.length : 0),
+        meta: {
+          bundleId: randomUUID(),
+          revision: 2,
+          factsDigestHash,
+          jobId,
+          jobStatus: cachedDetail.status,
+          attempts: cachedDetail.attempts ?? 0,
+          updatedAt: cachedDetail.updated_at,
+          pendingAgeMs,
+          retryAfterMs: 2000,
+          fallbackUsed: "skeleton",
+          fallbackReason: "job_pending",
+          requestId,
+        },
+        timingMs: 0,
       });
       return;
     }
@@ -7213,11 +7787,15 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 
 	    // Stage 0 helpers (first-party resolution). These are safe to prefetch in parallel.
 	    // Hard rule: negative cache has NO termination authority in Stage 0.
-    const regulatoryMapPromise = getBarcodeRegulatoryMap(barcodeGtin14, barcodeRawDigits, {
-      ...supabaseReadResilience,
-      timeoutMs: 1200,
-      includeExpired: true,
-    });
+	    const regulatoryMapPromise = getBarcodeRegulatoryMap(barcodeGtin14, barcodeRawDigits, {
+	      ...supabaseReadResilience,
+	      // Stage0 is the authoritative fork. If we miss the mapping due to a short queue timeout,
+	      // we incorrectly fall back to Web Stage1 ("marketplace_only" etc) and the UI looks broken.
+	      // So: allow this critical read to wait longer for the supabase read semaphore.
+	      queueTimeoutMs: Math.max(RESILIENCE_SUPABASE_READ_QUEUE_TIMEOUT_MS, 1200),
+	      timeoutMs: 2000,
+	      includeExpired: true,
+	    });
 	    const negativeCachePromise = getNegativeCache(barcodeGtin14, barcodeRawDigits, {
 	      ...supabaseReadResilience,
 	      timeoutMs: 350,
@@ -12288,6 +12866,177 @@ app.post("/api/ensure-overview", verifySupabaseToken, async (req: Request, res: 
     captureException(error, { route: "/api/ensure-overview" });
     console.error("/api/ensure-overview error", error);
     return res.status(500).json({ error: "ensure_overview_failed" } satisfies ErrorResponse);
+  }
+});
+
+// ============================================================================
+// Lightweight barcode metadata (deterministic, no LLM)
+// ============================================================================
+
+app.get("/api/barcode-metadata", verifySupabaseToken, async (req: Request, res: Response) => {
+  const barcodeRaw = typeof req.query.barcode === "string" ? req.query.barcode : "";
+  const normalized = normalizeBarcodeInput(barcodeRaw);
+
+  if (!normalized) {
+    return res.status(400).json({ error: "invalid_barcode" } satisfies ErrorResponse);
+  }
+
+  const barcode = normalized.code;
+  const barcodeGtin14 = barcode.padStart(14, "0");
+  const barcodeRawDigits = barcode;
+  const cacheKey = buildBarcodeCacheKey(barcode);
+
+  const extractPrimaryDoseText = (snapshot: SupplementSnapshot): string | null => {
+    for (const active of snapshot.label.actives) {
+      if (active.amountUnknown) continue;
+      if (active.isProprietaryBlend) continue;
+      if (active.amount == null) continue;
+      const unit =
+        active.amountUnitNormalized ??
+        active.amountUnit ??
+        active.amountUnitRaw ??
+        null;
+      if (!unit) continue;
+      // Return as raw text; the client display formatter will normalize/compact if needed.
+      return `${active.amount} ${unit}`.trim();
+    }
+    return null;
+  };
+
+  try {
+    const cached = await getSnapshotCache(
+      { key: cacheKey, source: "barcode" },
+      {
+        timeoutMs: 1200,
+      },
+    ).catch(() => null);
+
+    if (cached?.snapshot) {
+      const snapshot = cached.snapshot;
+      return res.json({
+        status: "ok",
+        barcodeGtin14,
+        productInfo: {
+          brand: snapshot.product.brand ?? null,
+          name: snapshot.product.name ?? null,
+        },
+        primaryDoseText: extractPrimaryDoseText(snapshot),
+        npn: snapshot.regulatory.npn ?? null,
+        dsldLabelId: snapshot.regulatory.dsldLabelId ?? null,
+      });
+    }
+
+    const map = await getBarcodeRegulatoryMap(barcodeGtin14, barcodeRawDigits, {
+      timeoutMs: 1200,
+      includeExpired: true,
+    }).catch(() => null);
+
+    const npn = map?.npn ?? null;
+    if (!npn) {
+      return res.json({
+        status: "not_found",
+        barcodeGtin14,
+        productInfo: { brand: null, name: null },
+        primaryDoseText: null,
+        npn: null,
+        dsldLabelId: null,
+      });
+    }
+
+    const lnhpdTimeoutSignal = createTimeoutSignal(RESILIENCE_LNHPD_TIMEOUT_MS);
+    const { signal: lnhpdSignal, cleanup } = combineSignals([lnhpdTimeoutSignal]);
+    try {
+      const facts = await fetchLnhpdFactsByNpn(npn, lnhpdSignal);
+      if (!facts) {
+        return res.json({
+          status: "not_found",
+          barcodeGtin14,
+          productInfo: { brand: null, name: null },
+          primaryDoseText: null,
+          npn,
+          dsldLabelId: null,
+        });
+      }
+
+      const lnhpdLabelFacts = toLabelFactsFromLnhpd(facts);
+      const labelExtraction: LabelExtractionMeta = {
+        source: "lnhpd",
+        fetchedAt: facts.extractedAt ?? nowIso(),
+        datasetVersion: facts.datasetVersion ?? null,
+      };
+      const labelAnalysis = buildLabelOnlyAnalysis(lnhpdLabelFacts);
+
+      const lnhpdProductInfo = {
+        brand: facts.brandName ?? null,
+        name: facts.productName ?? null,
+        category: null,
+        image: null,
+      };
+
+      const analysisPayload: SnapshotAnalysisPayload = {
+        ...labelAnalysis,
+        brandExtraction: {
+          brand: lnhpdProductInfo.brand,
+          product: lnhpdProductInfo.name,
+          category: null,
+          confidence: "high",
+          source: "rule",
+        },
+        productInfo: lnhpdProductInfo,
+        sources: [],
+      };
+
+      let snapshot = buildBarcodeSnapshot({
+        barcode,
+        productInfo: lnhpdProductInfo,
+        sources: [],
+        efficacy: (analysisPayload as any).efficacy ?? null,
+        safety: (analysisPayload as any).safety ?? null,
+        usagePayload: (analysisPayload as any).usagePayload ?? null,
+      });
+      snapshot = applyLnhpdFactsToSnapshot(snapshot, facts);
+
+      const analysisStatus = buildAnalysisStatus({
+        hasLabelFacts: hasLabelFacts(snapshot),
+        hasAi: hasAiPayload(analysisPayload),
+        dsldLabelId: null,
+      });
+      const analysisMeta = buildAnalysisMeta({ status: analysisStatus, labelExtraction });
+      analysisPayload.analysis = analysisMeta;
+      snapshot.status = "resolved";
+      snapshot.analysis = analysisMeta;
+      snapshot.updatedAt = nowIso();
+
+      const expiresAt = computeExpiresAt(analysisStatus);
+      void storeSnapshotCache(
+        {
+          key: cacheKey,
+          source: "barcode",
+          snapshot,
+          analysisPayload,
+          expiresAt,
+        },
+        { timeoutMs: 1500 },
+      );
+
+      return res.json({
+        status: "ok",
+        barcodeGtin14,
+        productInfo: {
+          brand: snapshot.product.brand ?? null,
+          name: snapshot.product.name ?? null,
+        },
+        primaryDoseText: extractPrimaryDoseText(snapshot),
+        npn: snapshot.regulatory.npn ?? npn,
+        dsldLabelId: snapshot.regulatory.dsldLabelId ?? null,
+      });
+    } finally {
+      cleanup();
+    }
+  } catch (error) {
+    captureException(error, { route: "/api/barcode-metadata" });
+    console.error("/api/barcode-metadata error", error);
+    return res.status(500).json({ error: "barcode_metadata_failed" } satisfies ErrorResponse);
   }
 });
 

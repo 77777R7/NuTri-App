@@ -35,6 +35,15 @@ test('formatBrandForPill: extracts consumer brand from corporate chains', () => 
   assert.equal(formatBrandForPill('Genestra Brands'), 'Genestra');
 });
 
+test('formatBrandForPill: dba group lists prefer parent company (avoid mislabel)', () => {
+  assert.equal(
+    formatBrandForPill(
+      "Nestle Canada Inc dba Atrium Innovations Genestra Brands Pure Encapsulations Garden of Life Canada Trophic Canada SISU Wobenzym Bountiful Canada Vitamins Nature's Bounty Vital Proteins Canada",
+    ),
+    'Nestle Canada',
+  );
+});
+
 test('formatBrandForPill: keeps normal brands stable', () => {
   assert.equal(formatBrandForPill('The Vitamin Shoppe Brands'), 'The Vitamin Shoppe');
   assert.equal(formatBrandForPill('Sports Research'), 'Sports Research');

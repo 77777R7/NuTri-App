@@ -107,13 +107,33 @@ export function formatBrandForPill(raw: string): string {
 
   let candidate = original;
 
-  // If we have "dba"/"doing business as", show the final "as" segment which is usually user-friendly.
-  const dbaMatch = candidate.match(/\b(?:dba|doing\s+business\s+as)\b/i);
+  // If we have "dba"/"doing business as", we *usually* want the tail segment (consumer-facing brand).
+  // Exception: some datasets encode a huge corporate/group list after dba. In that case, prefer the
+  // parent company (head) to avoid mislabeling the brand (e.g. "... Vital Proteins ...").
+  const dbaRegex = /\b(?:dba|doing\s+business\s+as)\b/i;
+  const dbaMatch = candidate.match(dbaRegex);
   if (dbaMatch) {
-    // Take the substring after the last occurrence.
-    const parts = candidate.split(/\b(?:dba|doing\s+business\s+as)\b/i);
-    const tail = collapseSpaces(parts[parts.length - 1] ?? '');
-    if (tail) candidate = tail;
+    // Take the substring after the last occurrence, but also capture the head (before first) for fallback.
+    const parts = candidate.split(dbaRegex);
+    const headRaw = collapseSpaces(parts[0] ?? '');
+    const tailRaw = collapseSpaces(parts[parts.length - 1] ?? '');
+
+    const tailForChecks = tailRaw.replace(/｜/g, '|');
+    const tailTokenCount = tailForChecks.split(' ').filter(Boolean).length;
+    const tailHasListSeparators = /[\/|;]/.test(tailForChecks);
+    const tailCanadaCount = (tailForChecks.match(/\bcanada\b/gi) ?? []).length;
+    const tailLooksLikeGroupList =
+      tailTokenCount >= 8 || tailHasListSeparators || tailCanadaCount >= 2;
+
+    if (tailLooksLikeGroupList && headRaw) {
+      // Clean the head and return it directly (we intentionally preserve country tokens like "Canada").
+      let head = collapseSpaces(headRaw.replace(/\([^)]*\)/g, ' '));
+      head = stripTrailingLegalSuffixes(head);
+      head = collapseSpaces(head);
+      if (head) return head;
+    }
+
+    if (tailRaw) candidate = tailRaw;
   }
 
   // Remove bracketed legal noise like "(Canada)".

@@ -1,0 +1,67 @@
+name: Bulk Barcode E2E (Nightly)
+
+on:
+  workflow_dispatch:
+    inputs:
+      render_base_url:
+        description: "Optional override for Render base URL"
+        required: false
+        type: string
+  schedule:
+    - cron: "10 10 * * *" # nightly 10:10 UTC
+
+concurrency:
+  group: bulk-barcode-e2e-nightly-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bulk_e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Wait for Render Deploy Commit
+        env:
+          RENDER_BASE_URL: ${{ github.event.inputs.render_base_url != '' && github.event.inputs.render_base_url || secrets.RENDER_BASE_URL }}
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          RENDER_REGRESSION_TOKEN: ${{ secrets.RENDER_REGRESSION_TOKEN }}
+          RENDER_DEPLOY_WAIT_TIMEOUT_MS: "900000"
+          RENDER_DEPLOY_WAIT_INTERVAL_MS: "15000"
+          # Render free-tier cold starts can exceed 30s. Avoid false failures in the deploy-wait probe.
+          RENDER_DEPLOY_REQUEST_TIMEOUT_MS: "90000"
+          RENDER_COMMIT_PROBE_BARCODE: "00029537001069"
+        run: node scripts/ci/wait-render-commit.mjs
+
+      - name: Prepare Artifact Directory
+        id: artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          ARTIFACT_DIR="artifacts/bulk-barcode-e2e-nightly/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "$ARTIFACT_DIR"
+          echo "artifact_dir=$ARTIFACT_DIR" >> "$GITHUB_OUTPUT"
+
+      - name: Run Bulk Barcode E2E (No DB Writes)
+        env:
+          RENDER_BASE_URL: ${{ github.event.inputs.render_base_url != '' && github.event.inputs.render_base_url || secrets.RENDER_BASE_URL }}
+          RENDER_REGRESSION_TOKEN: ${{ secrets.RENDER_REGRESSION_TOKEN }}
+          BULK_E2E_UPSERT_MAP: "0"
+          BULK_E2E_OUT_DIR: ${{ steps.artifact.outputs.artifact_dir }}
+        run: node scripts/maintainer/bulk-barcode-e2e.mjs
+
+      - name: Upload Artifact
+        if: always() && steps.artifact.outputs.artifact_dir != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: bulk-barcode-e2e-nightly-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ steps.artifact.outputs.artifact_dir }}
+          if-no-files-found: warn
+

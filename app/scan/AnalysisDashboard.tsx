@@ -11,7 +11,7 @@ import {
 } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     Modal,
     Pressable,
@@ -902,7 +902,40 @@ const AnalysisBundleDashboard: React.FC<{
     const tileWidth: DimensionValue = tilesContainerW > 0 ? tilesContainerW : '100%';
 
     useEffect(() => {
-        setBundleState(bundle);
+        // Never clobber on-demand detail fields (e.g. ingredients.detail) when a newer analysis_bundle
+        // arrives over SSE. The SSE bundle typically carries cover + meta only, while detail is fetched
+        // separately via /api/analysis-section. If we overwrite state here, we can re-trigger the
+        // auto-fetch loop and hit backend 429s.
+        setBundleState((prev) => {
+            const sameKey =
+                prev?.meta?.schemaVersion === bundle?.meta?.schemaVersion &&
+                prev?.meta?.factsDigestHash === bundle?.meta?.factsDigestHash &&
+                prev?.meta?.promptVersion === bundle?.meta?.promptVersion &&
+                prev?.meta?.locale === bundle?.meta?.locale &&
+                prev?.meta?.authoritativeIdentity?.type === bundle?.meta?.authoritativeIdentity?.type &&
+                prev?.meta?.authoritativeIdentity?.value === bundle?.meta?.authoritativeIdentity?.value;
+            if (!sameKey) return bundle;
+
+            const prevIngredients = prev.sections?.ingredients;
+            const nextIngredients = bundle.sections?.ingredients;
+            const shouldPreserveIngredientsDetail =
+                nextIngredients?.detail == null && prevIngredients?.detail != null;
+
+            return {
+                ...bundle,
+                sections: {
+                    ...bundle.sections,
+                    ingredients: shouldPreserveIngredientsDetail
+                        ? {
+                            ...nextIngredients,
+                            detail: prevIngredients.detail,
+                            // Preserve the terminal status so we don't auto-refetch on every SSE update.
+                            dataStatus: prevIngredients.dataStatus ?? nextIngredients.dataStatus,
+                        }
+                        : nextIngredients,
+                },
+            };
+        });
     }, [bundle]);
 
     const onTilesGridLayout = useCallback((e: LayoutChangeEvent) => {
@@ -921,13 +954,26 @@ const AnalysisBundleDashboard: React.FC<{
 
     const ingredientsCover = bundleState.sections.ingredients.cover;
     const ingredientsItems = ingredientsCover?.items ?? [];
-    const ingredientMechanisms: Mechanism[] = ingredientsItems.slice(0, 3).map((item) => ({
-        name: item.name,
-        amount: item.dose ?? 'Dose unknown',
-        fill: item.dose ? 0.75 : 0.4,
-        mode: item.dose ? 'actual' : 'unknown',
-        showInfo: item.basisTags.length > 0,
-    }));
+    const ingredientMechanisms: Mechanism[] = ingredientsItems.length
+        ? ingredientsItems.slice(0, 3).map((item) => ({
+            name: item.name,
+            amount: item.dose ?? '',
+            fill: item.dose ? 0.75 : 0.4,
+            mode: item.dose ? 'actual' : 'unknown',
+            showInfo: item.basisTags.length > 0,
+        }))
+        : [
+            {
+                name:
+                    bundleState.sections.ingredients.dataStatus === 'not_provided'
+                        ? 'Not provided by source'
+                        : 'No ingredient list available',
+                amount: '',
+                fill: 0.35,
+                mode: 'unknown',
+                showInfo: false,
+            },
+        ];
 
     const usageCover = bundleState.sections.usage.cover;
     const usageBullets = (usageCover?.bullets ?? []).map((bullet) => ({
@@ -1009,39 +1055,11 @@ const AnalysisBundleDashboard: React.FC<{
                 }),
             });
             if (response.status === 202) {
-                const payload = await response.json();
-                const retryMs = typeof payload?.retryAfterMs === 'number' ? payload.retryAfterMs : 2000;
-                if (attempt < 2) {
-                    setTimeout(() => {
-                        fetchIngredientsDetail(attempt + 1);
-                    }, retryMs);
-                } else {
-                    setDetailError('Still generating. Please try again.');
-                    setBundleState((prev) => {
-                        if (isBundleV4(prev)) {
-                            return {
-                                ...prev,
-                                sections: {
-                                    ...prev.sections,
-                                    ingredients: {
-                                        ...prev.sections.ingredients,
-                                        dataStatus: 'limited',
-                                    },
-                                },
-                            };
-                        }
-                        return {
-                            ...prev,
-                            sections: {
-                                ...prev.sections,
-                                ingredients: {
-                                    ...prev.sections.ingredients,
-                                    dataStatus: 'limited',
-                                },
-                            },
-                        };
-                    });
-                }
+                // Server-side contract for v4: avoid 202 loops (server should return 200+limited skeleton instead).
+                // Keep this branch for backwards compatibility only, but NEVER auto-retry from the client.
+                const payload = await response.json().catch(() => null);
+                const retryMs = typeof (payload as any)?.retryAfterMs === 'number' ? (payload as any).retryAfterMs : 2000;
+                setDetailError(`Still generating. Try again in ~${Math.round(retryMs / 1000)}s.`);
                 setDetailLoading(false);
                 return;
             }
@@ -1142,18 +1160,26 @@ const AnalysisBundleDashboard: React.FC<{
         }
     }, [bundleState, detailLoading]);
 
+    const autoFetchKeyRef = useRef<string | null>(null);
     useEffect(() => {
-        if (selectedTile?.type === 'science') {
-            const coverTotalCount =
-                bundleState.sections.ingredients.cover?.totalCount ??
-                bundleState.sections.ingredients.cover?.items?.length ??
-                0;
-            const hasDetail = (bundleState.sections.ingredients.detail?.items?.length ?? 0) > 0;
-            const status = bundleState.sections.ingredients.dataStatus;
-            const isTerminal = status === 'not_provided' || status === 'limited' || status === 'error';
-            if (coverTotalCount > 0 && !hasDetail && !detailLoading && !isTerminal) {
-                fetchIngredientsDetail();
-            }
+        if (selectedTile?.type !== 'science') {
+            autoFetchKeyRef.current = null;
+            return;
+        }
+        const coverTotalCount =
+            bundleState.sections.ingredients.cover?.totalCount ??
+            bundleState.sections.ingredients.cover?.items?.length ??
+            0;
+        const hasDetail = (bundleState.sections.ingredients.detail?.items?.length ?? 0) > 0;
+        const status = bundleState.sections.ingredients.dataStatus;
+        const isTerminal = status === 'not_provided' || status === 'limited' || status === 'error' || status === 'pending';
+
+        const key = `${bundleState.meta.schemaVersion}|${bundleState.meta.promptVersion}|${bundleState.meta.locale}|${bundleState.meta.factsDigestHash}|${bundleState.meta.authoritativeIdentity.type}:${bundleState.meta.authoritativeIdentity.value}`;
+        if (autoFetchKeyRef.current === key) return;
+
+        if (coverTotalCount > 0 && !hasDetail && !detailLoading && !isTerminal) {
+            autoFetchKeyRef.current = key;
+            fetchIngredientsDetail();
         }
     }, [selectedTile, bundleState, detailLoading, fetchIngredientsDetail]);
 
@@ -1188,7 +1214,11 @@ const AnalysisBundleDashboard: React.FC<{
                         </Text>
                     ))
                 ) : (
-                    <Text style={styles.modalParagraphSmall}>{t.analysisPlaceholderUnknown}</Text>
+                    <Text style={styles.modalParagraphSmall}>
+                        {bundleState.sections.ingredients.dataStatus === 'not_provided'
+                            ? 'Not provided by source.'
+                            : t.analysisPlaceholderUnknown}
+                    </Text>
                 )}
             </View>
             {bundleState.sections.ingredients.dataStatus === 'pending' && (

@@ -551,6 +551,16 @@ export default function ScanResultScreen() {
     if (status === 'error' || !productInfo) return;
 
     const supplementId = snapshot?.product?.entityRefs?.supplementId ?? null;
+    const bundleActiveDose = (() => {
+      const items = (analysisBundle as any)?.sections?.ingredients?.cover?.items;
+      if (!Array.isArray(items)) return null;
+      for (const item of items) {
+        const raw = typeof item?.dose === 'string' ? item.dose : null;
+        const parsed = formatDoseForPill(raw);
+        if (parsed) return parsed;
+      }
+      return null;
+    })();
     const primaryDose = formatDoseForPill(
       formatDose(efficacy?.primaryActive?.dosageValue ?? null, efficacy?.primaryActive?.dosageUnit ?? null),
     );
@@ -572,6 +582,7 @@ export default function ScanResultScreen() {
       extractDoseFromText(efficacy?.overviewSummary ?? null) ??
       extractDoseFromText(efficacy?.overallAssessment ?? null);
     const dosageText =
+      bundleActiveDose ??
       primaryDose ??
       ingredientDose ??
       activeIngredientDose ??
@@ -617,6 +628,7 @@ export default function ScanResultScreen() {
     }
   }, [
     addScan,
+    analysisBundle,
     barcode,
     efficacy,
     extractDoseFromText,
