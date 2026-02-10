@@ -153,7 +153,9 @@ const LABEL_SCAN_OUTPUT_RULES = `LABEL-SCAN OUTPUT RULES:
 const RESILIENCE_TOTAL_BUDGET_MS = Number(process.env.RESILIENCE_TOTAL_BUDGET_MS ?? 25_000);
 const RESILIENCE_CATALOG_TIMEOUT_MS = Number(process.env.RESILIENCE_CATALOG_TIMEOUT_MS ?? 900);
 const RESILIENCE_SNAPSHOT_TIMEOUT_MS = Number(process.env.RESILIENCE_SNAPSHOT_TIMEOUT_MS ?? 900);
-const RESILIENCE_LNHPD_TIMEOUT_MS = Number(process.env.RESILIENCE_LNHPD_TIMEOUT_MS ?? 900);
+// LNHPD fetch is a first-party, authoritative lookup. A too-short timeout causes us to incorrectly
+// fall back to Web Stage1 (often "marketplace_only") which looks broken to users.
+const RESILIENCE_LNHPD_TIMEOUT_MS = Number(process.env.RESILIENCE_LNHPD_TIMEOUT_MS ?? 2500);
 const RESILIENCE_GOOGLE_TIMEOUT_MS = Number(process.env.RESILIENCE_GOOGLE_TIMEOUT_MS ?? 2500);
 const RESILIENCE_DEEPSEEK_TIMEOUT_MS = Number(process.env.RESILIENCE_DEEPSEEK_TIMEOUT_MS ?? 10_000);
 const MY_SUPP_OVERVIEW_TIMEOUT_MS = Number(process.env.MY_SUPP_OVERVIEW_TIMEOUT_MS ?? 4_000);
@@ -2579,6 +2581,80 @@ const parseBoolean = (value: unknown): boolean | null => {
   return null;
 };
 
+const pickFirstExistingJsonField = (
+  record: Record<string, unknown>,
+  keys: string[],
+): unknown => {
+  for (const key of keys) {
+    if (Object.prototype.hasOwnProperty.call(record, key)) {
+      return record[key];
+    }
+  }
+  const lower = new Map<string, unknown>();
+  Object.entries(record).forEach(([key, value]) => lower.set(key.toLowerCase(), value));
+  for (const key of keys) {
+    const value = lower.get(key.toLowerCase());
+    if (value !== undefined) return value;
+  }
+  return undefined;
+};
+
+const findFirstPayloadThatExtractsLnhpdIngredients = (
+  factsJson: Record<string, unknown>,
+  params: {
+    kind: "medicinal" | "non_medicinal";
+    knownKeys: string[];
+    extract: (payload: unknown) => unknown[];
+  },
+): unknown => {
+  const candidates: Array<{ source: string; payload: unknown }> = [];
+  const seen = new Set<unknown>();
+  const push = (source: string, payload: unknown) => {
+    if (payload == null) return;
+    if (seen.has(payload)) return;
+    seen.add(payload);
+    candidates.push({ source, payload });
+  };
+
+  // Known keys first.
+  params.knownKeys.forEach((key) => {
+    if (Object.prototype.hasOwnProperty.call(factsJson, key) && factsJson[key] != null) {
+      push(`known:${key}`, factsJson[key]);
+    }
+  });
+
+  // Common dataset variants: scan keys that mention medicinal/non-medicinal + ingredient(s).
+  const kindToken = params.kind === "medicinal" ? "medicinal" : "non";
+  Object.entries(factsJson).forEach(([key, value]) => {
+    const lower = key.toLowerCase();
+    if (!lower.includes("ingredient")) return;
+    if (params.kind === "medicinal") {
+      if (lower.includes("nonmedicinal") || lower.includes("non_medicinal")) return;
+      if (!lower.includes("medicinal")) return;
+      push(`scan:${key}`, value);
+      return;
+    }
+    // non-medicinal
+    if (!(lower.includes("nonmedicinal") || lower.includes("non_medicinal") || (lower.includes(kindToken) && lower.includes("medicinal")))) {
+      return;
+    }
+    push(`scan:${key}`, value);
+  });
+
+  // Try each candidate and return the first that yields at least 1 ingredient.
+  for (const candidate of candidates) {
+    try {
+      const extracted = params.extract(candidate.payload);
+      if (Array.isArray(extracted) && extracted.length > 0) return candidate.payload;
+    } catch {
+      // ignore
+    }
+  }
+
+  // No successful extract. Return the first candidate payload (best-effort) to keep behavior stable.
+  return candidates[0]?.payload ?? undefined;
+};
+
 const buildLnhpdFactsFromRecord = (record: LnhpdFactsRecord): LnhpdFacts | null => {
   const lnhpdId = parseNumber(record.lnhpd_id);
   if (!lnhpdId || !record.facts_json || typeof record.facts_json !== 'object') return null;
@@ -2594,15 +2670,62 @@ const buildLnhpdFactsFromRecord = (record: LnhpdFactsRecord): LnhpdFacts | null 
     routes?: unknown;
   };
 
-  const actives = extractLnhpdIngredients(factsJson.medicinalIngredients, {
+  const medicinalPayload =
+    findFirstPayloadThatExtractsLnhpdIngredients(factsJson as unknown as Record<string, unknown>, {
+      kind: "medicinal",
+      knownKeys: [
+        "medicinalIngredients",
+        "medicinal_ingredients",
+        "medicinalIngredient",
+        "medicinal_ingredient",
+      ],
+      extract: (payload) =>
+        extractLnhpdIngredients(payload, {
+          nameKeys: LNHPD_MEDICINAL_NAME_KEYS,
+          amountKeys: LNHPD_AMOUNT_KEYS,
+          unitKeys: LNHPD_UNIT_KEYS,
+        }),
+    }) ?? factsJson.medicinalIngredients;
+
+  const nonMedicinalPayload =
+    findFirstPayloadThatExtractsLnhpdIngredients(factsJson as unknown as Record<string, unknown>, {
+      kind: "non_medicinal",
+      knownKeys: [
+        "nonMedicinalIngredients",
+        "non_medicinal_ingredients",
+        "nonMedicinalIngredient",
+        "non_medicinal_ingredient",
+        "nonmedicinalIngredients",
+      ],
+      extract: (payload) => extractTextList(payload, LNHPD_NON_MEDICINAL_NAME_KEYS),
+    }) ?? factsJson.nonMedicinalIngredients;
+
+  const dosesPayload = pickFirstExistingJsonField(factsJson as unknown as Record<string, unknown>, [
+    "doses",
+    "dose",
+    "dosage",
+    "dosages",
+  ]) ?? factsJson.doses;
+  const purposesPayload = pickFirstExistingJsonField(factsJson as unknown as Record<string, unknown>, [
+    "purposes",
+    "purpose",
+    "claims",
+    "claim",
+  ]) ?? factsJson.purposes;
+  const routesPayload = pickFirstExistingJsonField(factsJson as unknown as Record<string, unknown>, [
+    "routes",
+    "route",
+  ]) ?? factsJson.routes;
+
+  const actives = extractLnhpdIngredients(medicinalPayload, {
     nameKeys: LNHPD_MEDICINAL_NAME_KEYS,
     amountKeys: LNHPD_AMOUNT_KEYS,
     unitKeys: LNHPD_UNIT_KEYS,
   });
-  const inactive = extractTextList(factsJson.nonMedicinalIngredients, LNHPD_NON_MEDICINAL_NAME_KEYS);
-  const purposes = extractTextList(factsJson.purposes, LNHPD_PURPOSE_KEYS);
-  const routes = extractTextList(factsJson.routes, LNHPD_ROUTE_KEYS);
-  const doses = extractLnhpdDoses(factsJson.doses);
+  const inactive = extractTextList(nonMedicinalPayload, LNHPD_NON_MEDICINAL_NAME_KEYS);
+  const purposes = extractTextList(purposesPayload, LNHPD_PURPOSE_KEYS);
+  const routes = extractTextList(routesPayload, LNHPD_ROUTE_KEYS);
+  const doses = extractLnhpdDoses(dosesPayload);
   const isOnMarket = record.is_on_market ?? parseBoolean(factsJson.isOnMarket);
 
   return {
@@ -8525,9 +8648,16 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 	        ...supabaseReadResilience,
 	        timeoutMs: 250,
 	      }).catch(() => null);
-	      if (npnNegative) {
+	      const npnNegativeIsBlocking =
+	        Boolean(npnNegative) && npnNegative?.reason_code !== "lnhpd_timeout";
+	      if (npnNegativeIsBlocking) {
 	        npnNegativeCacheHit = true;
 	      } else {
+	        // Older deployments wrote timeouts into the negative cache, which can "poison" Stage0
+	        // and make a known-good NPN fall back to Web. Ignore (and best-effort clear) timeouts.
+	        if (npnNegative?.reason_code === "lnhpd_timeout") {
+	          void clearNpnNegativeCache(candidate.npn, { ...supabaseReadResilience, timeoutMs: 500 });
+	        }
 	        const lnhpdTimeoutSignal = createTimeoutSignal(RESILIENCE_LNHPD_TIMEOUT_MS);
 	        const { signal: lnhpdSignal, cleanup } = combineSignals([requestSignal, lnhpdTimeoutSignal]);
 	        try {
@@ -8733,11 +8863,11 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 	              });
 	            }
 
-	            if (lnhpdFetchStatus === "timeout" || lnhpdFetchStatus === "not_found") {
+	            if (lnhpdFetchStatus === "not_found") {
 	              void recordNpnNegativeAttempt(
 	                {
 	                  npn: candidate.npn,
-	                  reasonCode: lnhpdFetchStatus === "timeout" ? "lnhpd_timeout" : "lnhpd_not_found",
+	                  reasonCode: "lnhpd_not_found",
 	                  windowMs: NPN_NEGATIVE_CACHE_WINDOW_HOURS * 60 * 60 * 1000,
 	                  threshold: NPN_NEGATIVE_CACHE_THRESHOLD,
 	                  ttlMs: NPN_NEGATIVE_CACHE_TTL_MS,
@@ -10046,11 +10176,11 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
                   barcodeRaw: rawBarcode,
                 });
               }
-              if (lnhpdFetchStatus === "timeout" || lnhpdFetchStatus === "not_found") {
+              if (lnhpdFetchStatus === "not_found") {
                 void recordNpnNegativeAttempt(
                   {
                     npn: npnCandidate,
-                    reasonCode: lnhpdFetchStatus === "timeout" ? "lnhpd_timeout" : "lnhpd_not_found",
+                    reasonCode: "lnhpd_not_found",
                     windowMs: NPN_NEGATIVE_CACHE_WINDOW_HOURS * 60 * 60 * 1000,
                     threshold: NPN_NEGATIVE_CACHE_THRESHOLD,
                     ttlMs: NPN_NEGATIVE_CACHE_TTL_MS,
@@ -12055,11 +12185,11 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
               barcodeRaw: rawBarcode,
             });
           }
-          if (lnhpdFetchStatus === "timeout" || lnhpdFetchStatus === "not_found") {
+          if (lnhpdFetchStatus === "not_found") {
             void recordNpnNegativeAttempt(
               {
                 npn: npnCandidate,
-                reasonCode: lnhpdFetchStatus === "timeout" ? "lnhpd_timeout" : "lnhpd_not_found",
+                reasonCode: "lnhpd_not_found",
                 windowMs: NPN_NEGATIVE_CACHE_WINDOW_HOURS * 60 * 60 * 1000,
                 threshold: NPN_NEGATIVE_CACHE_THRESHOLD,
                 ttlMs: NPN_NEGATIVE_CACHE_TTL_MS,
