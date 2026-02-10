@@ -17,6 +17,7 @@ import {
   fetchAnalysisBundleFastV3,
   fetchIngredientsDetailV3,
   fetchMySupplementOverviewCard,
+  fetchMySupplementOverviewV2,
   prepareContextSources,
 } from "./deepseek.js";
 import { getKbRuntime, lookupKbFormExplain } from "./kbRuntime.js";
@@ -39,6 +40,8 @@ import {
   type FactsIdentityType,
   type LnhpdFactsInput,
 } from "./factsDigest.js";
+import { buildMySupplementFactsV1, type MySupplementFactsV1 } from "./mySupplementFacts.js";
+import { getMySupplementOverviewV2GateReason } from "./mySupplementOverviewGate.js";
 import { getAnalysisIdentityCache, getWebCanonicalMap, insertAnalysisIdentityPending, updateAnalysisIdentityCache, upsertAnalysisIdentityCache, upsertWebCanonicalMap } from "./analysisIdentityCache.js";
 import {
   clearNegativeCache,
@@ -5802,12 +5805,179 @@ type EnsurePublicOverviewResult = {
 
 const inflightPublicOverviewBySupplementId = new Map<string, Promise<EnsurePublicOverviewResult>>();
 
+const MY_SUPP_OVERVIEW_V2_PROMPT_VERSION = "my_supp_overview_v2:v1";
+const MY_SUPP_OVERVIEW_V2_GATE_SECTION = "my_supp_overview_v2_gate";
+const MY_SUPP_OVERVIEW_V2_GATE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
+
+const buildMySupplementDigestForEnsureOverview = async (params: {
+  supplementId: string;
+  barcode: string | null;
+  brandName: string;
+  productName: string;
+}): Promise<{
+  digest: FactsDigest;
+  factsSourceVersion: string;
+  factsDigestHash: string;
+  labelDirectionsRawText: string | null;
+}> => {
+  const normalizedBarcode = params.barcode ? normalizeBarcodeInput(params.barcode) : null;
+  const barcodeDigits = normalizedBarcode?.code ?? null;
+  const barcodeGtin14 = barcodeDigits ? barcodeDigits.padStart(14, "0") : null;
+  const cacheKey = barcodeDigits ? buildBarcodeCacheKey(barcodeDigits) : null;
+
+  const snapshot = cacheKey
+    ? (await getSnapshotCache({ key: cacheKey, source: "barcode" }, { timeoutMs: 1200 }).catch(() => null))?.snapshot ??
+      null
+    : null;
+
+  const npnFromSnapshot = snapshot?.regulatory?.npn ?? null;
+  const map = barcodeGtin14
+    ? await getBarcodeRegulatoryMap(barcodeGtin14, barcodeDigits ?? "", {
+        timeoutMs: 1200,
+        includeExpired: true,
+      }).catch(() => null)
+    : null;
+  const npn = npnFromSnapshot ?? map?.npn ?? null;
+
+  if (npn) {
+    const lnhpdTimeoutSignal = createTimeoutSignal(RESILIENCE_LNHPD_TIMEOUT_MS);
+    const { signal: lnhpdSignal, cleanup } = combineSignals([lnhpdTimeoutSignal]);
+    try {
+      const facts = await fetchLnhpdFactsByNpn(npn, lnhpdSignal);
+      if (facts) {
+        const factsSourceVersion = `lnhpd:${facts.datasetVersion ?? facts.extractedAt ?? "unknown"}`;
+        const digest = buildFactsDigestFromLnhpd({
+          facts,
+          snapshot: snapshot ?? undefined,
+          identityValue: npn,
+          regionTags: snapshot?.regulatory?.regionTags ?? ["CA"],
+        });
+        const factsDigestHash = computeFactsDigestHash(digest);
+        const labelDirectionsRawText = buildLabelDosingText(digest);
+
+        // Best-effort: persist deterministic ingredient rows for future stack-safety modules.
+        const labelFacts = toLabelFactsFromLnhpd(facts);
+        void upsertProductIngredientsFromLabelFacts({
+          source: "lnhpd",
+          sourceId: npn,
+          canonicalSourceId: npn,
+          labelFacts,
+          basis: "label_serving",
+          parseConfidence: 0.9,
+        }).catch((error) => {
+          const message = error instanceof Error ? error.message : "Unknown error";
+          console.warn("[my-supp-facts] Failed to persist product ingredients from LNHPD", message);
+        });
+
+        return { digest, factsSourceVersion, factsDigestHash, labelDirectionsRawText };
+      }
+    } finally {
+      cleanup();
+    }
+  }
+
+  const dsldLabelId = snapshot?.regulatory?.dsldLabelId ?? null;
+  if (dsldLabelId) {
+    const idNum = Number(dsldLabelId);
+    const dsldTimeoutSignal = createTimeoutSignal(RESILIENCE_LNHPD_TIMEOUT_MS);
+    const { signal: dsldSignal, cleanup } = combineSignals([dsldTimeoutSignal]);
+    try {
+      const facts = Number.isFinite(idNum) ? await fetchDsldFactsByLabelId(idNum, dsldSignal) : null;
+      if (facts) {
+        const factsSourceVersion = `dsld:${facts.datasetVersion ?? facts.extractedAt ?? "unknown"}`;
+        const digest = buildFactsDigestFromDsld({
+          facts,
+          snapshot: snapshot ?? undefined,
+          identityValue: String(facts.dsldLabelId ?? dsldLabelId),
+          regionTags: snapshot?.regulatory?.regionTags ?? ["US"],
+        });
+        const factsDigestHash = computeFactsDigestHash(digest);
+        const labelDirectionsRawText = buildLabelDosingText(digest);
+        return { digest, factsSourceVersion, factsDigestHash, labelDirectionsRawText };
+      }
+    } finally {
+      cleanup();
+    }
+  }
+
+  // Snapshot fallback (no LNHPD/DSLD facts found). Prefer DSLD snapshot shape when possible.
+  if (snapshot) {
+    const source = snapshot.analysis?.labelExtraction?.source ?? null;
+    if (source === "dsld" || source === "label_scan") {
+      const fallbackFacts = buildDsldFactsInputFromSnapshot(snapshot);
+      const factsSourceVersion = `dsld:${snapshot.analysis?.labelExtraction?.datasetVersion ?? snapshot.analysis?.labelExtraction?.fetchedAt ?? "unknown"}`;
+      const digest = buildFactsDigestFromDsld({
+        facts: fallbackFacts,
+        snapshot,
+        identityValue: snapshot.regulatory.dsldLabelId ?? (barcodeGtin14 ?? params.supplementId),
+        regionTags: snapshot.regulatory.regionTags,
+      });
+      const factsDigestHash = computeFactsDigestHash(digest);
+      const labelDirectionsRawText = buildLabelDosingText(digest);
+      return { digest, factsSourceVersion, factsDigestHash, labelDirectionsRawText };
+    }
+
+    const fallbackFacts = buildLnhpdFactsInputFromSnapshot(snapshot);
+    const factsSourceVersion = `lnhpd:${snapshot.analysis?.labelExtraction?.datasetVersion ?? snapshot.analysis?.labelExtraction?.fetchedAt ?? "unknown"}`;
+    const digest = buildFactsDigestFromLnhpd({
+      facts: fallbackFacts,
+      snapshot,
+      identityValue: snapshot.regulatory.npn ?? (barcodeGtin14 ?? params.supplementId),
+      regionTags: snapshot.regulatory.regionTags,
+    });
+    const factsDigestHash = computeFactsDigestHash(digest);
+    const labelDirectionsRawText = buildLabelDosingText(digest);
+    return { digest, factsSourceVersion, factsDigestHash, labelDirectionsRawText };
+  }
+
+  // Minimal deterministic fallback: "web" digest with no extracted facts yet.
+  const identityType: FactsIdentityType = barcodeGtin14 ? "gtin14" : "webCanonicalId";
+  const identityValue = barcodeGtin14 ?? params.supplementId;
+  const factsSourceVersion = barcodeGtin14 ? "snapshot:miss" : "manual:missing_barcode";
+  const digest = buildFactsDigestFromWeb({
+    facts: {
+      barcode: barcodeGtin14 ?? "",
+      canonical: {
+        name: params.productName,
+        brand: params.brandName,
+        url: null,
+        domain: null,
+      },
+      identifiers: { npn: null },
+      textFacts: {
+        ingredientsText: null,
+        directionsText: null,
+        warningsText: null,
+        servingSizeText: null,
+      },
+      coverageScore: 0,
+      missingFields: [
+        "textFacts.ingredientsText",
+        "textFacts.directionsText",
+        "textFacts.warningsText",
+        "textFacts.servingSizeText",
+      ],
+    },
+    snapshot: undefined,
+    identityType,
+    identityValue,
+    regionTags: [],
+  });
+  const factsDigestHash = computeFactsDigestHash(digest);
+  const labelDirectionsRawText = buildLabelDosingText(digest);
+  return { digest, factsSourceVersion, factsDigestHash, labelDirectionsRawText };
+};
+
 const ensurePublicOverview = async (params: {
   supplementId: string;
   productName: string;
   dosageText: string | null;
   brandName?: string | null;
   barcode?: string | null;
+  digest: FactsDigest;
+  factsSourceVersion: string;
+  factsDigestHash: string;
+  labelDirectionsRawText: string | null;
 }): Promise<EnsurePublicOverviewResult> => {
   const inflight = inflightPublicOverviewBySupplementId.get(params.supplementId);
   if (inflight) return inflight;
@@ -5827,6 +5997,9 @@ const ensurePublicOverview = async (params: {
   }
 
   if (data?.id) return { analysisReady: true, source: "cache" };
+
+  const digest = params.digest;
+  const labelDirectionsRawText = safeTrim(params.labelDirectionsRawText) ?? null;
 
   const ruleOverview = buildRuleBasedOverview({
     productName: params.productName,
@@ -5850,68 +6023,181 @@ const ensurePublicOverview = async (params: {
     return `${first} Follow the product label for dosing.`;
   };
 
+  const buildDefaultCoreBenefits = (): string[] => {
+    const fromLabel = (digest.claims?.labelPurposes ?? []).filter(Boolean).slice(0, 3);
+    if (fromLabel.length > 0) return fromLabel;
+    const fromRule = ruleOverview.coreBenefits.filter(Boolean).slice(0, 3);
+    if (fromRule.length > 0) return fromRule;
+    const primary = digest.actives?.[0]?.name ?? null;
+    if (primary) return [`Supports nutrition related to ${primary}`];
+    return ["General wellness support"];
+  };
+
+  const getDeterministicLabelDosing = (): string | null => {
+    return labelDirectionsRawText ?? buildLabelDosingText(digest);
+  };
+
+  const labelDosingText = getDeterministicLabelDosing();
+  const timingField = buildLnhpdDeterministicTiming(labelDosingText);
+  const withFoodField = buildLnhpdDeterministicWithFood(labelDosingText, digest.actives);
+
+  const withFoodReason = (() => {
+    const raw = (labelDosingText ?? "").toLowerCase();
+    if (/\b(with food|with meals?|with a meal|after meals?)\b/i.test(raw)) return "label_says_with_meals";
+    const activeNames = digest.actives.map((a) => normalizeIngredientName(a.name));
+    if (activeNames.some((name) => name.includes("astaxanthin") || name.includes("vitamin d") || name === "vitamin d")) {
+      return "fat_soluble";
+    }
+    if (activeNames.some((name) => ["zinc", "iron", "magnesium"].includes(name))) return "reduce_nausea";
+    return "unknown";
+  })();
+
   const deepseekKey = process.env.DEEPSEEK_API_KEY ?? null;
   const model = process.env.DEEPSEEK_MODEL || "deepseek-chat";
 
-  const contextLines: string[] = [`Product name: ${params.productName}`];
-  const cleanedBrand = safeTrim(params.brandName) ?? null;
-  if (cleanedBrand && cleanedBrand !== DEFAULT_BRAND_NAME) contextLines.push(`Brand: ${cleanedBrand}`);
-  const cleanedBarcode = safeTrim(params.barcode) ?? null;
-  if (cleanedBarcode) contextLines.push(`Barcode: ${cleanedBarcode}`);
-  const cleanedDosage = safeTrim(params.dosageText) ?? null;
-  if (cleanedDosage) contextLines.push(`Dosage: ${cleanedDosage}`);
+  const maybeGateRow = deepseekKey
+    ? await getAnalysisIdentityCache(
+        {
+          identityType: digest.identity.type,
+          identityValue: digest.identity.value,
+          locale: "en",
+          promptVersion: MY_SUPP_OVERVIEW_V2_PROMPT_VERSION,
+          factsDigestHash: params.factsDigestHash,
+          section: MY_SUPP_OVERVIEW_V2_GATE_SECTION,
+        },
+        { timeoutMs: 650 },
+      ).catch(() => null)
+    : null;
 
-  const deepseekOverview = deepseekKey
+  const gatePayload = maybeGateRow?.payload as { ok?: unknown } | null;
+  if (deepseekKey && maybeGateRow?.status === "complete" && gatePayload && typeof gatePayload === "object" && gatePayload.ok === false) {
+    return { analysisReady: false, source: "none" };
+  }
+
+  const promptFacts = {
+    identity: digest.identity,
+    sourceType: digest.sourceType,
+    product: digest.product,
+    actives: digest.actives.slice(0, 14).map((active) => ({
+      name: active.name,
+      amountText: active.amountText ?? (active.amount != null && active.unit ? `${active.amount} ${active.unit}` : null),
+      source: active.source,
+      confidence: active.confidence ?? null,
+    })),
+    serving: digest.serving,
+    labelDosing: digest.labelDosing.map((d) => d.rawText).filter(Boolean).slice(0, 3),
+    claims: digest.claims,
+    warnings: digest.warnings,
+    quality: digest.quality,
+  };
+
+  const deepseekOverviewV2 = deepseekKey
     ? deepseekBreaker.canRequest()
-      ? await fetchMySupplementOverviewCard(contextLines.join("\n"), model, deepseekKey, {
-          timeoutMs: MY_SUPP_OVERVIEW_TIMEOUT_MS,
-          queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS,
-          breaker: deepseekBreaker,
-          semaphore: deepseekSemaphore,
-        })
+      ? await fetchMySupplementOverviewV2(
+          `FACTS_DIGEST_JSON: ${JSON.stringify(promptFacts)}\nLABEL_DIRECTIONS_RAW: ${labelDosingText ?? ""}`,
+          model,
+          deepseekKey,
+          {
+            timeoutMs: MY_SUPP_OVERVIEW_TIMEOUT_MS,
+            queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS,
+            breaker: deepseekBreaker,
+            semaphore: deepseekSemaphore,
+          },
+        )
       : null
     : null;
 
   // If DeepSeek is configured, ONLY cache DeepSeek output.
   // Rule-based is used only when DeepSeek is not configured (local/dev environments).
-  if (deepseekKey && !deepseekOverview) {
+  if (deepseekKey && !deepseekOverviewV2) {
     return { analysisReady: false, source: "none" };
   }
 
-  const overview = deepseekOverview
-    ? {
-        overviewSummary: normalizeTwoSentenceSummary(deepseekOverview.overviewSummary, ruleOverview.overviewSummary),
-        coreBenefits: deepseekOverview.coreBenefits.length > 0 ? deepseekOverview.coreBenefits : ruleOverview.coreBenefits,
-        timing: safeTrim(deepseekOverview.timing) ?? ruleOverview.timing,
-        withFood: deepseekOverview.withFood,
-        usageSummary: deepseekOverview.withFood ? "Take with food." : "Take on an empty stomach.",
-      }
-    : ruleOverview;
+  const coreBenefits = buildDefaultCoreBenefits();
 
-  // Ensure a stable shape even if DeepSeek returns an empty benefits list.
-  overview.coreBenefits = overview.coreBenefits.filter(Boolean).slice(0, 3);
-  if (overview.coreBenefits.length === 0) {
-    overview.coreBenefits = ruleOverview.coreBenefits.slice(0, 3);
+  if (deepseekOverviewV2) {
+    const rejectReason = getMySupplementOverviewV2GateReason({
+      actives: digest.actives,
+      oneLiner: deepseekOverviewV2.oneLiner,
+      whatItIs: deepseekOverviewV2.whatItIs,
+      tips: deepseekOverviewV2.tips,
+      whatYouMayNotice: deepseekOverviewV2.whatYouMayNotice,
+      watchOuts: deepseekOverviewV2.watchOuts,
+    });
+    if (rejectReason) {
+      void upsertAnalysisIdentityCache(
+        {
+          identityType: digest.identity.type,
+          identityValue: digest.identity.value,
+          locale: "en",
+          promptVersion: MY_SUPP_OVERVIEW_V2_PROMPT_VERSION,
+          factsDigestHash: params.factsDigestHash,
+          factsSourceVersion: params.factsSourceVersion,
+          section: MY_SUPP_OVERVIEW_V2_GATE_SECTION,
+          status: "complete",
+          payload: { ok: false, reason: rejectReason, generatedAt: nowIso() },
+          factsDigestJson: digest,
+          attempts: 1,
+          lockedUntil: null,
+          lastError: null,
+          errorCode: `GATE_${rejectReason.toUpperCase()}`,
+          expiresAt: new Date(Date.now() + MY_SUPP_OVERVIEW_V2_GATE_TTL_MS).toISOString(),
+        },
+        { timeoutMs: 1200 },
+      ).catch((error) => {
+        const message = error instanceof Error ? error.message : "Unknown error";
+        console.warn("[ensure-overview] Failed to persist gate negative cache", message);
+      });
+      return { analysisReady: false, source: "none" };
+    }
   }
+
+  const v2Meta = deepseekOverviewV2
+    ? {
+        promptVersion: MY_SUPP_OVERVIEW_V2_PROMPT_VERSION,
+        factsDigestHash: params.factsDigestHash,
+        factsSourceVersion: params.factsSourceVersion,
+        generatedAt: nowIso(),
+        model,
+      }
+    : null;
+
+  const overviewSummary = deepseekOverviewV2
+    ? normalizeTwoSentenceSummary(
+        `${deepseekOverviewV2.oneLiner} ${deepseekOverviewV2.whatItIs}`,
+        ruleOverview.overviewSummary,
+      )
+    : ruleOverview.overviewSummary;
 
   const analysisData = {
     efficacy: {
       score: 3 as RatingScore,
-      benefits: overview.coreBenefits,
+      benefits: coreBenefits,
       dosageAssessment: {
-        text: overview.usageSummary,
+        text: typeof withFoodField.value === "boolean"
+          ? withFoodField.value
+            ? "Take with food."
+            : "Take on an empty stomach."
+          : "Follow label directions.",
         isUnderDosed: false,
       },
-      overviewSummary: overview.overviewSummary,
-      coreBenefits: overview.coreBenefits,
+      overviewSummary,
+      coreBenefits,
     },
     usage: {
-      timing: overview.timing,
-      withFood: overview.withFood,
-      summary: overview.usageSummary,
+      timing: timingField.text,
+      withFood: withFoodField.value,
+      summary: withFoodField.text ?? "Follow label directions.",
       conflicts: [],
       sourceType: "general_knowledge",
+      withFoodReason,
     },
+    mySupplementOverviewV2: deepseekOverviewV2
+      ? {
+          ...deepseekOverviewV2,
+          meta: v2Meta,
+        }
+      : null,
   } satisfies Partial<AiSupplementAnalysis>;
 
   const { error: insertError } = await supabase.from("ai_analyses").insert({
@@ -5928,7 +6214,7 @@ const ensurePublicOverview = async (params: {
 
   return {
     analysisReady: true,
-    source: deepseekOverview ? "deepseek" : "rule",
+    source: deepseekOverviewV2 ? "deepseek" : "rule",
     analysisData,
   };
   })();
@@ -6553,29 +6839,6 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     return;
   }
 
-  if (!deepseekKey) {
-    const labelDosingText = buildLabelDosingText(digest);
-    const sliceStart = Math.min(cursor, totalActives);
-    const sliceEnd = Math.min(sliceStart + requestedLimit, totalActives);
-    const detailDigest: FactsDigest = { ...digest, actives: digest.actives.slice(sliceStart, sliceEnd) };
-    const skeletonDetail = buildDetailSkeleton(detailDigest, labelDosingText);
-    res.status(200).json({
-      section: "ingredients",
-      detail: skeletonDetail,
-      dataStatus: "limited",
-      page: buildDetailPage(Array.isArray(skeletonDetail.items) ? skeletonDetail.items.length : 0),
-      meta: {
-        bundleId: randomUUID(),
-        revision: 2,
-        factsDigestHash,
-        fallbackUsed: "skeleton",
-        fallbackReason: "deepseek_api_key_missing",
-      },
-      timingMs: 0,
-    });
-    return;
-  }
-
   const cachedDetail = await getAnalysisIdentityCache(
     {
       identityType: identity.type,
@@ -6585,7 +6848,8 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       factsDigestHash,
       section: sectionKey,
     },
-    { timeoutMs: 800 },
+    // DSLD must return a readable base page immediately; don't let cache reads block UX.
+    { timeoutMs: isDsldDetail ? 150 : 800 },
   ).catch(() => null);
 
   const nowMs = Date.now();
@@ -6824,6 +7088,34 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
         deepseekKey,
       });
     }
+    return;
+  }
+
+  if (!deepseekKey) {
+    const labelDosingText = buildLabelDosingText(digest);
+    const sliceStart = Math.min(cursor, totalActives);
+    const sliceEnd = Math.min(sliceStart + requestedLimit, totalActives);
+    const detailDigest: FactsDigest = { ...digest, actives: digest.actives.slice(sliceStart, sliceEnd) };
+    const skeletonDetail = buildDetailSkeleton(detailDigest, labelDosingText);
+    res.status(200).json({
+      section: "ingredients",
+      detail: skeletonDetail,
+      dataStatus: "limited",
+      page: buildDetailPage(Array.isArray(skeletonDetail.items) ? skeletonDetail.items.length : 0),
+      meta: {
+        bundleId: randomUUID(),
+        revision: 2,
+        factsDigestHash,
+        fallbackUsed: "skeleton",
+        fallbackReason: "deepseek_api_key_missing",
+        jobId,
+        jobStatus: cachedDetail?.status ?? "skipped",
+        attempts: cachedDetail?.attempts ?? 0,
+        updatedAt: cachedDetail?.updated_at ?? null,
+        pendingAgeMs,
+      },
+      timingMs: 0,
+    });
     return;
   }
 
@@ -13077,12 +13369,27 @@ app.post("/api/ensure-overview", verifySupabaseToken, async (req: Request, res: 
         .eq("user_id", user.id);
     }
 
+    const digestBundle = await buildMySupplementDigestForEnsureOverview({
+      supplementId,
+      barcode: barcode ?? null,
+      brandName,
+      productName,
+    });
+
+    const facts = buildMySupplementFactsV1({
+      digest: digestBundle.digest,
+      factsSourceVersion: digestBundle.factsSourceVersion,
+      factsDigestHash: digestBundle.factsDigestHash,
+      labelDirectionsRawText: digestBundle.labelDirectionsRawText,
+    });
+
     const overview = await ensurePublicOverview({
       supplementId,
       productName,
       dosageText,
       brandName,
       barcode,
+      ...digestBundle,
     });
 
     return res.json({
@@ -13090,6 +13397,7 @@ app.post("/api/ensure-overview", verifySupabaseToken, async (req: Request, res: 
       analysisReady: overview.analysisReady,
       source: overview.source,
       analysisData: overview.analysisData ?? null,
+      facts,
     });
   } catch (error) {
     captureException(error, { route: "/api/ensure-overview" });

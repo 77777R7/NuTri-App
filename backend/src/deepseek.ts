@@ -829,6 +829,33 @@ export type MySupplementOverviewCard = {
   withFood: boolean;
 };
 
+export type MySupplementOverviewV2 = {
+  oneLiner: string;
+  whatItIs: string;
+  tips: string[];
+  whatYouMayNotice: string[];
+  watchOuts: string[];
+};
+
+const PROMPT_MY_SUPPLEMENT_OVERVIEW_V2 = `You are NuTri-AI. Convert structured supplement facts into a helpful, user-facing overview.
+
+CRITICAL INSTRUCTIONS:
+1. OUTPUT JSON ONLY. NO MARKDOWN. NO TRAILING COMMAS.
+2. DO NOT invent label directions, timing, or "take with food" rules. Only use facts provided.
+3. Do not make medical claims (no diagnosis, treatment, cure, or disease claims). Use cautious language.
+4. Avoid generic filler like "overall wellness", "healthy lifestyle", "designed to support" unless you also mention at least ONE specific active ingredient by name.
+5. Keep sentences short and specific. Prefer concrete facts ("Vitamin C 1000 mg") over vague claims.
+
+Return a SINGLE JSON object with exactly these keys:
+{
+  "oneLiner": "A single sentence (<=120 chars) that includes at least one active name or dose when available.",
+  "whatItIs": "1-2 sentences explaining what this product is and typical, non-medical uses.",
+  "tips": ["1-3 short tips grounded in facts. Empty array if none."],
+  "whatYouMayNotice": ["0-3 cautious observations. Empty array if none."],
+  "watchOuts": ["0-4 cautious safety reminders (consult clinician wording). Empty array if none."]
+}
+`;
+
 export async function fetchMySupplementOverviewCard(
   context: string,
   model: string,
@@ -948,6 +975,133 @@ export async function fetchMySupplementOverviewCard(
       options.breaker?.recordFailure();
     }
     console.warn("[DeepSeek] MySupplement overview card generation failed", error);
+    return null;
+  } finally {
+    release?.();
+  }
+}
+
+export async function fetchMySupplementOverviewV2(
+  context: string,
+  model: string,
+  apiKey: string,
+  options: ResilienceOptions = {},
+): Promise<MySupplementOverviewV2 | null> {
+  let release: (() => void) | null = null;
+  try {
+    if (options.breaker && !options.breaker.canRequest()) {
+      return null;
+    }
+
+    const timeoutMs = options.timeoutMs ?? 5_500;
+    const budgetedTimeout = options.budget ? options.budget.msFor(timeoutMs) : timeoutMs;
+    if (budgetedTimeout <= 0) {
+      return null;
+    }
+
+    if (options.semaphore) {
+      try {
+        release = await options.semaphore.acquire({
+          timeoutMs: options.queueTimeoutMs ?? 0,
+          signal: options.signal,
+        });
+      } catch {
+        return null;
+      }
+    }
+
+    const retryConfig: RetryOptions = {
+      maxAttempts: options.retry?.maxAttempts ?? 1,
+      baseDelayMs: options.retry?.baseDelayMs ?? 350,
+      maxDelayMs: options.retry?.maxDelayMs ?? 1200,
+      jitterRatio: options.retry?.jitterRatio ?? 0.35,
+      shouldRetry: (error) => {
+        if (error instanceof TimeoutError) return true;
+        if (error instanceof HttpError) return isRetryableStatus(error.status);
+        if (isAbortError(error)) return false;
+        return error instanceof TypeError;
+      },
+      signal: options.signal,
+      budget: options.budget,
+    };
+
+    const response = await withRetry(async () => {
+      const timeoutSignal = createTimeoutSignal(budgetedTimeout);
+      const { signal, cleanup } = combineSignals([options.signal, timeoutSignal]);
+      try {
+        const result = await fetch("https://api.deepseek.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: "system", content: PROMPT_MY_SUPPLEMENT_OVERVIEW_V2 },
+              { role: "user", content: context },
+            ],
+            temperature: 0.1,
+            stream: false,
+            max_tokens: options.maxTokens ?? 900,
+            response_format: { type: "json_object" },
+          }),
+          signal,
+        });
+
+        if (!result.ok) {
+          throw new HttpError(result.status, `DeepSeek API error: ${result.status}`);
+        }
+
+        return result;
+      } catch (error) {
+        if (timeoutSignal.aborted && !options.signal?.aborted && isAbortError(error)) {
+          throw new TimeoutError();
+        }
+        throw error;
+      } finally {
+        cleanup();
+      }
+    }, retryConfig);
+
+    options.breaker?.recordSuccess();
+
+    const data = (await response.json()) as { choices?: { message?: { content?: string } }[] };
+    const content = data.choices?.[0]?.message?.content || "{}";
+    const parsed = tryParseJsonLenient(content);
+    if (!parsed || typeof parsed !== "object") {
+      return null;
+    }
+
+    const record = parsed as Record<string, unknown>;
+    const oneLiner = typeof record.oneLiner === "string" ? record.oneLiner.trim() : "";
+    const whatItIs = typeof record.whatItIs === "string" ? record.whatItIs.trim() : "";
+    const tips = Array.isArray(record.tips)
+      ? record.tips.filter((v) => typeof v === "string").map((v) => v.trim()).filter(Boolean).slice(0, 3)
+      : [];
+    const whatYouMayNotice = Array.isArray(record.whatYouMayNotice)
+      ? record.whatYouMayNotice.filter((v) => typeof v === "string").map((v) => v.trim()).filter(Boolean).slice(0, 3)
+      : [];
+    const watchOuts = Array.isArray(record.watchOuts)
+      ? record.watchOuts.filter((v) => typeof v === "string").map((v) => v.trim()).filter(Boolean).slice(0, 4)
+      : [];
+
+    if (!oneLiner || !whatItIs) {
+      return null;
+    }
+
+    return {
+      oneLiner,
+      whatItIs,
+      tips,
+      whatYouMayNotice,
+      watchOuts,
+    };
+  } catch (error) {
+    if (!isAbortError(error)) {
+      options.breaker?.recordFailure();
+    }
+    console.warn("[DeepSeek] MySupplement overview V2 generation failed", error);
     return null;
   } finally {
     release?.();

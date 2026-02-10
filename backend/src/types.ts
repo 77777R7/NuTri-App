@@ -143,8 +143,25 @@ export interface UsageAssessment {
   summary: string;
   timing: string | null;
   withFood: boolean | null;
+  // My Supplement UX hint: why we suggested with/without food (deterministic when possible).
+  withFoodReason?: "label_says_with_meals" | "reduce_nausea" | "fat_soluble" | "unknown";
   conflicts: string[];
   sourceType: "product_label" | "general_knowledge";
+}
+
+export interface MySupplementOverviewV2 {
+  oneLiner: string;
+  whatItIs: string;
+  tips: string[];
+  whatYouMayNotice: string[];
+  watchOuts: string[];
+  meta?: {
+    promptVersion?: string;
+    factsDigestHash?: string;
+    factsSourceVersion?: string;
+    generatedAt?: string;
+    model?: string;
+  } | null;
 }
 
 export interface AiSupplementAnalysisSuccess {
@@ -203,6 +220,8 @@ export interface AiSupplementAnalysisSuccess {
     tags: string[];
   };
   usage: UsageAssessment;
+  // Optional: facts-first My Supplement overview blocks (V2).
+  mySupplementOverviewV2?: MySupplementOverviewV2 | null;
   sources: { title: string; link: string }[];
   disclaimer: string;
   analysisIssues?: string[];

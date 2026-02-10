@@ -76,6 +76,7 @@ type AnalysisUsage = {
   summary?: string | null;
   timing?: string | null;
   withFood?: boolean | null;
+  withFoodReason?: string | null;
   frequency?: string | null;
   dosage?: string | null;
 };
@@ -87,14 +88,31 @@ type AnalysisEfficacy = {
   coreBenefits?: string[] | null;
 };
 
+type MySupplementOverviewV2 = {
+  oneLiner?: string | null;
+  whatItIs?: string | null;
+  tips?: string[] | null;
+  whatYouMayNotice?: string[] | null;
+  watchOuts?: string[] | null;
+  meta?: {
+    promptVersion?: string | null;
+    factsDigestHash?: string | null;
+    factsSourceVersion?: string | null;
+    generatedAt?: string | null;
+    model?: string | null;
+  } | null;
+};
+
 type AnalysisPayload = {
   efficacy?: AnalysisEfficacy | null;
   usage?: AnalysisUsage | null;
   usagePayload?: { usage?: AnalysisUsage | null } | null;
+  mySupplementOverviewV2?: MySupplementOverviewV2 | null;
   analysis?: {
     efficacy?: AnalysisEfficacy | null;
     usage?: AnalysisUsage | null;
     usagePayload?: { usage?: AnalysisUsage | null } | null;
+    mySupplementOverviewV2?: MySupplementOverviewV2 | null;
   } | null;
 };
 
@@ -298,6 +316,15 @@ const formatSentence = (value: string) => {
   return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
 };
 
+const sanitizeTiming = (timing: string | null | undefined): string | null => {
+  const t = typeof timing === "string" ? timing.trim() : "";
+  if (!t) return null;
+  // "Morning (with breakfast)" is currently a common low-signal default from AI output and
+  // makes the UI look buggy when it repeats across products.
+  if (/^morning\s*\(with breakfast\)\.?$/i.test(t)) return null;
+  return t;
+};
+
 const isUuid = (value: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 
@@ -328,6 +355,18 @@ const buildLocalOverviewFallback = (params: { productName: string; dosageText?: 
     timing = "Morning (before breakfast)";
     withFood = false;
     benefitPhrase = "gut microbiome balance";
+  } else if (has(["whey", "protein"])) {
+    timing = "Post-workout or between meals";
+    withFood = true;
+    benefitPhrase = "daily protein intake";
+  } else if (has(["astaxanthin"])) {
+    timing = "With meals";
+    withFood = true;
+    benefitPhrase = "antioxidant support";
+  } else if (has(["creatine"])) {
+    timing = "Anytime";
+    withFood = true;
+    benefitPhrase = "exercise performance";
   } else if (has(["magnesium"])) {
     timing = "Evening (after dinner)";
     withFood = true;
@@ -461,12 +500,62 @@ const getTimeCategory = (time?: string) => {
 };
 
 const analysisCache = new Map<string, AnalysisPayload>();
+const factsCache = new Map<string, MySupplementFactsV1>();
+
+type MySupplementFactsV1 = {
+  version: "facts_v1";
+  identity: { type: string; value: string };
+  factsSourceVersion: string;
+  factsDigestHash: string;
+  product: {
+    name: string | null;
+    brandDisplay: string | null;
+    dosageForm: string | null;
+  };
+  actives: Array<{
+    name: string;
+    amount: number | null;
+    unit: string | null;
+    amountText: string | null;
+    source: "label" | "dsld" | "lnhpd" | "web";
+    confidence: number | null;
+  }>;
+  directions: {
+    rawText: string | null;
+    parsed: {
+      perDoseCount: number | null;
+      countUnit:
+        | "tablet"
+        | "capsule"
+        | "softgel"
+        | "gummy"
+        | "scoop"
+        | "drop"
+        | "packet"
+        | "serving"
+        | null;
+      timesPerDay: number | null;
+      withMeals: boolean | null;
+      timingHints: Array<"morning" | "evening" | "bedtime" | "with_meals" | "before_meals" | "after_meals">;
+    };
+    parseConfidence: number;
+  };
+  warnings: {
+    bullets: string[];
+    missing: boolean;
+  };
+  claims: {
+    labelPurposes: string[];
+    webClaims: string[];
+  };
+};
 
 type EnsureOverviewResponse = {
   supplementId: string;
   analysisReady: boolean;
   source?: "deepseek" | "rule" | "cache" | "none";
   analysisData?: AnalysisPayload | null;
+  facts?: MySupplementFactsV1 | null;
 };
 
 type BarcodeMetadataResponse = {
@@ -921,6 +1010,7 @@ function DetailSheet({
   const [note, setNote] = useState(item.routine?.note ?? "");
   const [time, setTime] = useState(item.routine?.time ?? "08:00");
   const [withFood, setWithFood] = useState(item.routine?.withFood ?? false);
+  const [facts, setFacts] = useState<MySupplementFactsV1 | null>(null);
   const [analysisData, setAnalysisData] = useState<AnalysisPayload | null>(null);
   const [overviewPhase, setOverviewPhase] = useState<"loading" | "ready" | "fallback">("loading");
   const overviewPhaseRef = useRef<"loading" | "ready" | "fallback">("loading");
@@ -934,6 +1024,7 @@ function DetailSheet({
     time: item.routine?.time ?? "",
     withFood: item.routine?.withFood ?? false,
   });
+  const lastDetailItemIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     const next = {
@@ -952,7 +1043,13 @@ function DetailSheet({
     let isActive = true;
     const userSupplementId = isUuid(item.id) ? item.id : null;
 
-    // Reset Overview state for each open and for each manual retry.
+    const isNewItem = lastDetailItemIdRef.current !== item.id;
+    lastDetailItemIdRef.current = item.id;
+    if (isNewItem) {
+      setFacts(null);
+    }
+
+    // Reset AI enhancement state for each open and for each manual retry.
     setAnalysisData(null);
     overviewPhaseRef.current = "loading";
     setOverviewPhase("loading");
@@ -963,6 +1060,12 @@ function DetailSheet({
       overviewPhaseRef.current = "fallback";
       setOverviewPhase("fallback");
     }, 7_000);
+
+    const finalizeFacts = (supplementId: string, payload: MySupplementFactsV1) => {
+      factsCache.set(supplementId, payload);
+      if (!isActive) return;
+      setFacts(payload);
+    };
 
     const finalizeReady = (supplementId: string, payload: AnalysisPayload) => {
       analysisCache.set(supplementId, payload);
@@ -998,6 +1101,12 @@ function DetailSheet({
       const dosageShort = formatDoseForPill(item.dosageText) ?? null;
 
       let supplementId = item.supplementId ?? null;
+      if (supplementId) {
+        const cachedFacts = factsCache.get(supplementId);
+        if (cachedFacts && isActive) {
+          setFacts(cachedFacts);
+        }
+      }
 
       // Backfill supplementId when older local items are missing it (detail-open only).
       if (!supplementId) {
@@ -1011,6 +1120,9 @@ function DetailSheet({
         });
 
         supplementId = ensured?.supplementId ?? null;
+        if (supplementId && ensured?.facts) {
+          finalizeFacts(supplementId, ensured.facts);
+        }
 
         if (supplementId && item.supplementId !== supplementId) {
           // Best-effort sync; failure shouldn't block Overview rendering.
@@ -1043,6 +1155,27 @@ function DetailSheet({
 
       const cached = analysisCache.get(supplementId);
       if (cached) {
+        if (!factsCache.has(supplementId)) {
+          // Facts are independent from AI enhancement. If we already have analysis cached locally,
+          // fetch facts in the background without blocking the UI.
+          void ensureOverview({
+            supplementId,
+            barcode: item.barcode ?? null,
+            brandName: item.brandName ?? null,
+            productName: item.productName,
+            dosageText: dosageShort,
+            userSupplementId,
+          })
+            .then((ensured) => {
+              if (!isActive) return;
+              const ensuredFacts = ensured?.facts ?? null;
+              if (ensuredFacts) finalizeFacts(supplementId, ensuredFacts);
+            })
+            .catch((error) => {
+              const message = error instanceof Error ? error.message : "Unknown error";
+              console.warn("[supplement-overview] Failed to fetch facts in background", message);
+            });
+        }
         finalizeReady(supplementId, cached);
         return;
       }
@@ -1065,6 +1198,10 @@ function DetailSheet({
         });
 
         if (!isActive || overviewPhaseRef.current !== "loading") return;
+
+        if (ensured?.facts) {
+          finalizeFacts(supplementId, ensured.facts);
+        }
 
         const ensuredPayload = ensured?.analysisData ?? null;
         if (ensuredPayload) {
@@ -1136,12 +1273,17 @@ function DetailSheet({
     }
   };
 
-  const timeCategory = getTimeCategory(time);
+  const savedTime = item.routine?.time?.trim() ? item.routine.time : null;
+  const timeCategory = getTimeCategory(savedTime ?? undefined);
   const analysisRoot = (() => {
     const raw = analysisData ?? null;
     const nested = raw?.analysis ?? null;
     if (nested && (nested.efficacy || nested.usage || nested.usagePayload)) {
-      return nested;
+      // Some older payloads nest usage/efficacy under `analysis`. Keep V2 fields if they exist at the root.
+      return {
+        ...nested,
+        mySupplementOverviewV2: raw?.mySupplementOverviewV2 ?? nested.mySupplementOverviewV2 ?? null,
+      };
     }
     return raw;
   })();
@@ -1163,28 +1305,105 @@ function DetailSheet({
       )
     : "";
 
-  const isOverviewReady = overviewPhase === "ready" && !!analysisData;
+  const isAiReady = overviewPhase === "ready" && !!analysisData;
+  const aiV2 = (analysisRoot?.mySupplementOverviewV2 ?? null) as MySupplementOverviewV2 | null;
+  const aiTips = Array.isArray(aiV2?.tips) ? aiV2.tips.filter(isNonEmptyString).slice(0, 3) : [];
+  const aiNotice = Array.isArray(aiV2?.whatYouMayNotice)
+    ? aiV2.whatYouMayNotice.filter(isNonEmptyString).slice(0, 3)
+    : [];
+  const aiWatchOuts = Array.isArray(aiV2?.watchOuts) ? aiV2.watchOuts.filter(isNonEmptyString).slice(0, 4) : [];
 
-  const summaryText = isOverviewReady
-    ? pickFirstText(
-        efficacy?.overviewSummary ? normalizeTwoSentenceSummary(efficacy.overviewSummary) : "",
-        benefitSummary,
-        fallback.summary,
-      )
-    : fallback.summary;
+  const factsTimingHint = (() => {
+    const hints = facts?.directions?.parsed?.timingHints ?? [];
+    if (hints.includes("bedtime")) return "Bedtime";
+    if (hints.includes("evening")) return "Evening";
+    if (hints.includes("morning")) return "Morning";
+    if (hints.includes("with_meals") || hints.includes("after_meals")) return "With a meal";
+    if (hints.includes("before_meals")) return "Before meals";
+    return null;
+  })();
 
-  const whenToTakeText = isOverviewReady ? pickFirstText(usage?.timing, fallback.timing) : fallback.timing;
-  const resolvedWithFood = isOverviewReady
-    ? typeof usage?.withFood === "boolean"
+  const whenToTakeText = pickFirstText(sanitizeTiming(usage?.timing), factsTimingHint, fallback.timing);
+
+  const factsWithMeals = facts?.directions?.parsed?.withMeals ?? null;
+  const resolvedWithFood =
+    typeof usage?.withFood === "boolean"
       ? usage.withFood
-      : fallback.withFood
-    : fallback.withFood;
-  const howToTakeText = resolvedWithFood ? "Take with food" : "Take on an empty stomach";
+      : typeof factsWithMeals === "boolean"
+      ? factsWithMeals
+      : fallback.withFood;
 
-  const overviewBullets = [
-    { label: "When to take", text: whenToTakeText || fallback.timing },
-    { label: "How to take", text: howToTakeText },
-  ];
+  const resolvedWithFoodReason = (() => {
+    const fromAnalysis = typeof usage?.withFoodReason === "string" ? usage.withFoodReason.trim() : "";
+    if (fromAnalysis) return fromAnalysis;
+
+    const hints = facts?.directions?.parsed?.timingHints ?? [];
+    if (hints.includes("with_meals") || hints.includes("after_meals")) return "label_says_with_meals";
+
+    const names = (facts?.actives ?? [])
+      .map((a) => (a?.name ?? "").toLowerCase().trim())
+      .filter(Boolean);
+    if (names.some((n) => n.includes("astaxanthin") || n === "vitamin d" || n.includes("vitamin d"))) return "fat_soluble";
+    if (names.some((n) => n === "zinc" || n === "iron" || n === "magnesium")) return "reduce_nausea";
+
+    return "unknown";
+  })();
+
+  const withFoodReasonText = (() => {
+    switch (resolvedWithFoodReason) {
+      case "label_says_with_meals":
+        return "Label suggests taking with meals.";
+      case "fat_soluble":
+        return "Often taken with a meal (fat can help absorption).";
+      case "reduce_nausea":
+        return "Taking with food may reduce stomach upset.";
+      default:
+        return "";
+    }
+  })();
+
+  const labelDirectionsText = pickFirstText(facts?.directions?.rawText ?? "", "Follow label directions.");
+
+  const activesLines = (() => {
+    const lines = (facts?.actives ?? [])
+      .filter((a) => isNonEmptyString(a?.name))
+      .map((a) => {
+        const amt =
+          typeof a.amountText === "string" && a.amountText.trim()
+            ? a.amountText.trim()
+            : a.amount != null && a.unit
+            ? `${a.amount} ${a.unit}`
+            : "";
+        return amt ? `${a.name} - ${amt}` : a.name;
+      });
+    // Prefer the actives that actually have amounts.
+    lines.sort((a, b) => (/\d/.test(b) ? 1 : 0) - (/\d/.test(a) ? 1 : 0));
+    return lines;
+  })();
+
+  const localDose = formatDoseForPill(item.dosageText) ?? null;
+
+  const whatItDoesText = pickFirstText(
+    typeof aiV2?.whatItIs === "string" ? aiV2.whatItIs.trim() : "",
+    efficacy?.overviewSummary ? normalizeTwoSentenceSummary(efficacy.overviewSummary) : "",
+    benefitSummary,
+    fallback.summary,
+  );
+
+  const watchOutLines = (() => {
+    const fromFacts = (facts?.warnings?.bullets ?? []).filter(isNonEmptyString).slice(0, 6);
+    const merged = [...fromFacts, ...aiWatchOuts];
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const line of merged) {
+      const key = normalizeKey(line);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      out.push(line);
+      if (out.length >= 6) break;
+    }
+    return out;
+  })();
 
   return (
     <Modal visible transparent animationType="none" onRequestClose={onClose}>
@@ -1273,47 +1492,107 @@ function DetailSheet({
                   </View>
 
                   <View style={styles.overviewContent}>
-                    {overviewPhase === "loading" ? (
-                      <View style={{ gap: 12 }}>
-                        <Text style={styles.overviewPlaceholder}>Generating overview...</Text>
-                        <View style={styles.overviewSkeletonLine} />
-                        <View style={[styles.overviewSkeletonLine, { width: "72%" }]} />
-                        <View style={{ height: 8 }} />
-                        <View style={styles.overviewSkeletonBulletRow}>
-                          <View style={styles.overviewBulletDot} />
-                          <View style={[styles.overviewSkeletonLine, { height: 14, width: "62%" }]} />
-                        </View>
-                        <View style={styles.overviewSkeletonBulletRow}>
-                          <View style={styles.overviewBulletDot} />
-                          <View style={[styles.overviewSkeletonLine, { height: 14, width: "50%" }]} />
-                        </View>
+                    <View style={{ gap: 18 }}>
+                      <View style={{ gap: 10 }}>
+                        <Text style={styles.overviewSectionTitle}>What's inside</Text>
+                        {activesLines.length > 0 ? (
+                          <View style={{ gap: 10 }}>
+                            {activesLines.slice(0, 6).map((line) => (
+                              <View key={line} style={styles.overviewBulletRow}>
+                                <View style={styles.overviewBulletDot} />
+                                <Text style={styles.overviewBulletText}>{line}</Text>
+                              </View>
+                            ))}
+                            {activesLines.length > 6 ? (
+                              <Text style={styles.overviewMetaText}>+{activesLines.length - 6} more</Text>
+                            ) : null}
+                          </View>
+                        ) : (
+                          <Text style={styles.overviewBulletText}>
+                            <Text style={styles.overviewBulletLabel}>Dose: </Text>
+                            {localDose ?? "Follow the product label."}
+                          </Text>
+                        )}
                       </View>
-                    ) : (
-                      <>
-                        <Text style={styles.overviewSummary}>{summaryText}</Text>
 
-                        <View style={styles.overviewBullets}>
-                          {overviewBullets.map((bullet) => (
-                            <View key={bullet.label} style={styles.overviewBulletRow}>
-                              <View style={styles.overviewBulletDot} />
-                              <Text style={styles.overviewBulletText}>
-                                <Text style={styles.overviewBulletLabel}>{bullet.label}: </Text>
-                                {formatSentence(bullet.text)}
-                              </Text>
-                            </View>
-                          ))}
-                        </View>
+                      <View style={{ gap: 10 }}>
+                        <Text style={styles.overviewSectionTitle}>How to use</Text>
 
-                        {overviewPhase === "fallback" ? (
-                          <Pressable
-                            onPress={() => setOverviewRetryNonce((n) => n + 1)}
-                            style={styles.overviewRetryBtn}
-                          >
-                            <Text style={styles.overviewRetryText}>Retry</Text>
-                          </Pressable>
+                        <Text style={styles.overviewBulletText}>
+                          <Text style={styles.overviewBulletLabel}>Label: </Text>
+                          {labelDirectionsText}
+                        </Text>
+
+                        <Text style={styles.overviewBulletText}>
+                          <Text style={styles.overviewBulletLabel}>Suggested timing: </Text>
+                          {formatSentence(whenToTakeText || fallback.timing)}
+                        </Text>
+
+                        <Text style={styles.overviewBulletText}>
+                          <Text style={styles.overviewBulletLabel}>Suggested: </Text>
+                          {resolvedWithFood ? "Take with food." : "Take on an empty stomach."}{" "}
+                          {withFoodReasonText ? withFoodReasonText : ""}
+                        </Text>
+
+                        {aiTips.length > 0 ? (
+                          <View style={{ gap: 10 }}>
+                            {aiTips.map((tip) => (
+                              <View key={tip} style={styles.overviewBulletRow}>
+                                <View style={styles.overviewBulletDot} />
+                                <Text style={styles.overviewBulletText}>{formatSentence(tip)}</Text>
+                              </View>
+                            ))}
+                          </View>
                         ) : null}
-                      </>
-                    )}
+                      </View>
+
+                      <View style={{ gap: 10 }}>
+                        <Text style={styles.overviewSectionTitle}>What it does</Text>
+                        <Text style={styles.overviewSummary}>{whatItDoesText}</Text>
+                      </View>
+
+                      {aiNotice.length > 0 ? (
+                        <View style={{ gap: 10 }}>
+                          <Text style={styles.overviewSectionTitle}>What you may notice</Text>
+                          <View style={{ gap: 10 }}>
+                            {aiNotice.map((item) => (
+                              <View key={item} style={styles.overviewBulletRow}>
+                                <View style={styles.overviewBulletDot} />
+                                <Text style={styles.overviewBulletText}>{formatSentence(item)}</Text>
+                              </View>
+                            ))}
+                          </View>
+                        </View>
+                      ) : null}
+
+                      {watchOutLines.length > 0 ? (
+                        <View style={{ gap: 10 }}>
+                          <Text style={styles.overviewSectionTitle}>Watch outs</Text>
+                          <View style={{ gap: 10 }}>
+                            {watchOutLines.map((line) => (
+                              <View key={line} style={styles.overviewBulletRow}>
+                                <View style={styles.overviewBulletDot} />
+                                <Text style={styles.overviewBulletText}>{formatSentence(line)}</Text>
+                              </View>
+                            ))}
+                          </View>
+                        </View>
+                      ) : null}
+
+                      {overviewPhase === "loading" ? (
+                        <View style={{ gap: 12, marginTop: 6 }}>
+                          <Text style={styles.overviewPlaceholder}>Generating AI insights...</Text>
+                          <View style={styles.overviewSkeletonLine} />
+                          <View style={[styles.overviewSkeletonLine, { width: "70%" }]} />
+                        </View>
+                      ) : overviewPhase === "fallback" ? (
+                        <View style={{ marginTop: 6 }}>
+                          <Pressable onPress={() => setOverviewRetryNonce((n) => n + 1)} style={styles.overviewRetryBtn}>
+                            <Text style={styles.overviewRetryText}>Retry AI</Text>
+                          </Pressable>
+                        </View>
+                      ) : null}
+                    </View>
                   </View>
                 </View>
               </View>
@@ -1338,11 +1617,11 @@ function DetailSheet({
                   </View>
 
                   <View style={styles.routineContent}>
-                    <View style={styles.scheduleHeaderRow}>
-                      <View style={styles.scheduleTitleRow}>
-                        <Clock size={16} color="#94a3b8" />
-                        <Text style={styles.scheduleTitle}>Schedule</Text>
-                      </View>
+	                    <View style={styles.scheduleHeaderRow}>
+	                      <View style={styles.scheduleTitleRow}>
+	                        <Clock size={16} color="#94a3b8" />
+	                        <Text style={styles.scheduleTitle}>Schedule</Text>
+	                      </View>
                       <AnimatePresence>
                         {timeCategory ? (
                           <MotiView
@@ -1358,8 +1637,11 @@ function DetailSheet({
                       </AnimatePresence>
                     </View>
 
-                    <View style={{ gap: 20, marginTop: 16 }}>
-                      <TimePicker value={time} onChange={setTime} />
+	                    <View style={{ gap: 20, marginTop: 16 }}>
+	                      <Text style={styles.scheduleHintText}>
+	                        {savedTime ? "Saved" : "Not set (default shown)"}
+	                      </Text>
+	                      <TimePicker value={time} onChange={setTime} />
 
                       <Pressable
                         style={styles.foodToggleRow}
@@ -1781,7 +2063,10 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
       }
     };
 
-    void run();
+    void run().catch((error) => {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      console.warn("[supplement-dose] Unhandled dosage metadata backfill error", message);
+    });
     return () => {
       cancelled = true;
     };
@@ -3110,8 +3395,18 @@ const styles = StyleSheet.create({
   glassRing: { position: "absolute", top: 12, left: 12, right: 12, bottom: 12, borderRadius: 36, borderCurve: "continuous", overflow: "hidden", backgroundColor: "rgba(255,255,255,0.20)", shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 18, shadowOffset: { width: 0, height: 10 }, elevation: 2 },
   glassHighlightEdge: { ...StyleSheet.absoluteFillObject, borderRadius: 36, borderCurve: "continuous", borderWidth: 1, borderColor: "rgba(255,255,255,0.35)" },
   glassRingBorder: { ...StyleSheet.absoluteFillObject, borderWidth: 1, borderColor: "rgba(255,255,255,0.30)" },
-  overviewContent: { minHeight: 220, paddingHorizontal: 32, paddingVertical: 32, justifyContent: "center" },
+  overviewContent: { minHeight: 220, paddingHorizontal: 32, paddingVertical: 32, justifyContent: "flex-start" },
   overviewSummary: { fontSize: 17, lineHeight: 26, fontWeight: "600", color: "#1f2937", includeFontPadding: false },
+  overviewSectionTitle: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "900",
+    color: "#334155",
+    textTransform: "uppercase",
+    letterSpacing: 1.0,
+    includeFontPadding: false,
+  },
+  overviewMetaText: { fontSize: 12, lineHeight: 16, fontWeight: "700", color: "#64748b", includeFontPadding: false },
   overviewPlaceholder: { fontSize: 15, lineHeight: 22, fontWeight: "600", color: "#94a3b8", includeFontPadding: false },
   overviewSkeletonLine: { height: 16, borderRadius: 10, backgroundColor: "rgba(148,163,184,0.35)", width: "92%" },
   overviewSkeletonBulletRow: { flexDirection: "row", alignItems: "center", gap: 10 },
@@ -3140,6 +3435,7 @@ const styles = StyleSheet.create({
   scheduleHeaderRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   scheduleTitleRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   scheduleTitle: { fontSize: 12, fontWeight: "800", color: "#475569", textTransform: "uppercase", letterSpacing: 1.0, includeFontPadding: false },
+  scheduleHintText: { fontSize: 12, lineHeight: 16, fontWeight: "600", color: "#94a3b8", includeFontPadding: false },
   timeCategoryPill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, borderWidth: 1 },
   timeCategoryText: { fontSize: 11, fontWeight: "700", includeFontPadding: false },
 
