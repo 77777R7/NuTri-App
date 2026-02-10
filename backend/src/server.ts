@@ -1662,15 +1662,50 @@ const mergeFastAnalysisBundle = (params: {
       ? fallbackSummary
       : overviewSummaryCandidateRaw;
   const overviewBulletsRaw = Array.isArray(overviewRaw.bullets) ? overviewRaw.bullets : [];
-  const overviewBullets = overviewBulletsRaw
+  const overviewBulletsFromModel = overviewBulletsRaw
     .map((item) => ({
-      text: typeof item?.text === "string" ? item.text : "",
+      text: typeof item?.text === "string" ? clampText(item.text.trim(), 80) : "",
       basisTags: normalizeBasisTags(item?.basisTags, "ingredient_inference"),
     }))
     .filter((item) => item.text)
     .filter((item) => !hasForbiddenFormKeyword(item.text, allowedFormKeywords))
     .slice(0, 2);
-  const overviewBulletsFinal = overviewBullets.length > 0 ? overviewBullets : fallbackBullets;
+  const fallbackBulletsClamped = fallbackBullets
+    .map((bullet) => ({
+      ...bullet,
+      text: clampText(bullet.text.trim(), 80),
+    }))
+    .filter((bullet) => bullet.text)
+    .filter((bullet) => !hasForbiddenFormKeyword(bullet.text, allowedFormKeywords))
+    .slice(0, 2);
+  const overviewBulletsCandidate =
+    overviewBulletsFromModel.length > 0 ? overviewBulletsFromModel : fallbackBulletsClamped;
+  const overviewBulletsFinal = (() => {
+    // Contract: Overview always shows exactly 2 bullets (UI consistency).
+    // If model output is partial (1 bullet), fill deterministically from fallback bullets.
+    const out: Array<{ text: string; basisTags: BasisTag[] }> = [];
+    const seen = new Set<string>();
+
+    const add = (bullet: { text: string; basisTags: BasisTag[] }) => {
+      const text = clampText(bullet.text.trim(), 80);
+      if (!text) return;
+      if (hasForbiddenFormKeyword(text, allowedFormKeywords)) return;
+      const key = text.toLowerCase();
+      if (seen.has(key)) return;
+      seen.add(key);
+      out.push({ text, basisTags: bullet.basisTags });
+    };
+
+    for (const bullet of overviewBulletsCandidate) add(bullet);
+    for (const bullet of fallbackBulletsClamped) {
+      if (out.length >= 2) break;
+      add(bullet);
+    }
+    while (out.length < 2) {
+      add(buildSectionBullet("Details not provided by source.", ["not_provided"]));
+    }
+    return out.slice(0, 2);
+  })();
   const dsldNeedsInference =
     digest.sourceType === "dsld" &&
     overviewBulletsFinal.length > 0 &&
@@ -4647,6 +4682,9 @@ function mergeAndDedupe(
 
 const app = express();
 app.set("trust proxy", 1); // P1-2: Trust first proxy for correct client IP
+// React Native fetch can send If-None-Match and a 304 response has no body, which can blank the UI
+// if the client calls response.json(). Disable ETag to keep API responses simple and predictable.
+app.set("etag", false);
 app.use(cors());
 app.use(express.json({ limit: "10mb" })); // P0-2: Increased from 1mb for image base64
 
@@ -5833,6 +5871,7 @@ const coerceScoreExplain = (value: unknown): Record<string, unknown> | null => {
 app.get("/api/nutri-tips", async (_req: Request, res: Response) => {
   try {
     const data = await getNutriTipsData();
+    res.setHeader("Cache-Control", "no-store");
     return res.json({ success: true, data });
   } catch (error) {
     captureException(error, { route: "/api/nutri-tips" });
