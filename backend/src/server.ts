@@ -1986,6 +1986,15 @@ const extractTextList = (payload: unknown, nameKeys: string[]): string[] => {
   const seen = new Set<string>();
   const output: string[] = [];
   items.forEach((item) => {
+    if (typeof item === "string") {
+      const trimmed = item.trim();
+      if (!trimmed) return;
+      const normalized = normalizeMatchText(trimmed);
+      if (!normalized || seen.has(normalized)) return;
+      seen.add(normalized);
+      output.push(trimmed);
+      return;
+    }
     if (!item || typeof item !== 'object') return;
     const name = pickNameField(item as Record<string, unknown>, nameKeys);
     if (!name) return;
@@ -2006,6 +2015,16 @@ const extractLnhpdIngredients = (payload: unknown, options: {
   if (items.length === 0) return [];
   const map = new Map<string, { name: string; amount: number | null; unit: string | null; lnhpdMeta?: LnhpdIngredientMeta | null }>();
   items.forEach((item) => {
+    if (typeof item === "string") {
+      const trimmed = item.trim();
+      if (!trimmed) return;
+      const key = normalizeMatchText(trimmed);
+      if (!key) return;
+      if (!map.has(key)) {
+        map.set(key, { name: trimmed, amount: null, unit: null, lnhpdMeta: null });
+      }
+      return;
+    }
     if (!item || typeof item !== 'object') return;
     const record = item as Record<string, unknown>;
     const name = pickNameField(record, options.nameKeys);
@@ -7442,21 +7461,60 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       ...(extra ?? {}),
     });
 
-    const emitAnalysisBundleSequence = async (params: {
-      digest: FactsDigest;
-      identityType: FactsDigest["identity"]["type"];
-      identityValue: string;
-      factsSourceVersion: string;
-      allowAi: boolean;
-      apiKey: string | null;
-      signal?: AbortSignal;
-      llmSignal?: AbortSignal;
-    }): Promise<{ factsDigestHash: string } | null> => {
-      const factsDigestHash = computeFactsDigestHash(params.digest);
-      const canWrite = () => !params.signal?.aborted && !res.writableEnded;
-      const dataStatus = params.allowAi
-        ? { overview: "pending" as const, usage: "pending" as const, safety: "pending" as const }
-        : { overview: "limited" as const, usage: "limited" as const, safety: "limited" as const };
+	    const emitAnalysisBundleSequence = async (params: {
+	      digest: FactsDigest;
+	      identityType: FactsDigest["identity"]["type"];
+	      identityValue: string;
+	      factsSourceVersion: string;
+	      allowAi: boolean;
+	      apiKey: string | null;
+	      signal?: AbortSignal;
+	      llmSignal?: AbortSignal;
+	    }): Promise<{ factsDigestHash: string } | null> => {
+	      const factsDigestHash = computeFactsDigestHash(params.digest);
+	      const maybePrewarmDsldDetail = () => {
+	        // P0 UX: DSLD ingredients detail should feel "instant". We already return a 0-LLM Base page
+	        // on /api/analysis-section; here we opportunistically prewarm the optional minimal enrichment
+	        // (whatItDoes/summary) after fast_ai is emitted so the modal is likely complete when opened.
+	        if (params.digest.sourceType !== "dsld") return;
+	        if (!params.allowAi || !params.apiKey) return;
+	        if (!Array.isArray(params.digest.actives) || params.digest.actives.length === 0) return;
+
+	        const requestedLimit = ANALYSIS_DETAIL_LIMIT_DSLD;
+	        const cursor = 0;
+	        const sectionKey = `ingredients_detail:${requestedLimit}:${cursor}`;
+
+	        // Mirror /api/analysis-section caching dimension: incorporate production KB package signature so
+	        // detail pages can refresh when the shipped KB changes (even when the LLM output is unchanged).
+	        let promptVersionForCache = ANALYSIS_BUNDLE_PROMPT_VERSION;
+	        const kb = getKbRuntime();
+	        const pkgSha = kb?.runtime?.meta?.package_sha256;
+	        if (typeof pkgSha === "string" && pkgSha.trim()) {
+	          promptVersionForCache = `${promptVersionForCache}|kb:${pkgSha.trim().slice(0, 12)}`;
+	        }
+	        const rateKey = `${params.identityType}:${params.identityValue}:${locale}:${promptVersionForCache}:${sectionKey}`;
+
+	        queueDsldDetailEnrichment({
+	          identityType: params.identityType,
+	          identityValue: params.identityValue,
+	          locale,
+	          promptVersionForCache,
+	          factsDigestHash,
+	          factsSourceVersion: params.factsSourceVersion,
+	          sectionKey,
+	          rateKey,
+	          digestRowFactsDigestJson: params.digest,
+	          digest: params.digest,
+	          requestedLimit,
+	          cursor,
+	          model,
+	          deepseekKey: params.apiKey,
+	        });
+	      };
+	      const canWrite = () => !params.signal?.aborted && !res.writableEnded;
+	      const dataStatus = params.allowAi
+	        ? { overview: "pending" as const, usage: "pending" as const, safety: "pending" as const }
+	        : { overview: "limited" as const, usage: "limited" as const, safety: "limited" as const };
 
       const skeleton = buildAnalysisBundleSkeleton({
         digest: params.digest,
@@ -7507,26 +7565,27 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
         { timeoutMs: 700 },
       ).catch(() => null);
 
-      if (cachedFast?.payload && typeof cachedFast.payload === "object") {
-        let fastCandidate = {
-          ...(cachedFast.payload as AnalysisBundle),
-          meta: {
-            ...(cachedFast.payload as AnalysisBundle).meta,
-            bundleId,
-            revision: 1,
-            phase: "fast_ai",
-            factsDigestHash,
-            factsSourceVersion: params.factsSourceVersion,
-            serverCommitSha: SERVER_COMMIT_SHA,
-          },
-        } as AnalysisBundle;
-        fastCandidate = applyDsldInferenceGuard(fastCandidate, params.digest);
-        const parsed = safeParseAnalysisBundle(fastCandidate);
-        if (parsed.success && canWrite()) {
-          sendSSE(res, "analysis_bundle", parsed.data);
-          return { factsDigestHash };
-        }
-      }
+	      if (cachedFast?.payload && typeof cachedFast.payload === "object") {
+	        let fastCandidate = {
+	          ...(cachedFast.payload as AnalysisBundle),
+	          meta: {
+	            ...(cachedFast.payload as AnalysisBundle).meta,
+	            bundleId,
+	            revision: 1,
+	            phase: "fast_ai",
+	            factsDigestHash,
+	            factsSourceVersion: params.factsSourceVersion,
+	            serverCommitSha: SERVER_COMMIT_SHA,
+	          },
+	        } as AnalysisBundle;
+	        fastCandidate = applyDsldInferenceGuard(fastCandidate, params.digest);
+	        const parsed = safeParseAnalysisBundle(fastCandidate);
+	        if (parsed.success && canWrite()) {
+	          sendSSE(res, "analysis_bundle", parsed.data);
+	          maybePrewarmDsldDetail();
+	          return { factsDigestHash };
+	        }
+	      }
 
       const context = `FACTS_DIGEST_JSON: ${JSON.stringify(params.digest)}`;
       const canUseAi = params.allowAi && Boolean(params.apiKey);
@@ -7586,14 +7645,15 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
         }
       }
 
-      if (fastBundle && canWrite()) {
-        const adjustedBundle = applyDsldInferenceGuard(fastBundle, params.digest);
-        sendSSE(res, "analysis_bundle", adjustedBundle);
-        void upsertAnalysisIdentityCache(
-          {
-            identityType: params.identityType,
-            identityValue: params.identityValue,
-            locale,
+	      if (fastBundle && canWrite()) {
+	        const adjustedBundle = applyDsldInferenceGuard(fastBundle, params.digest);
+	        sendSSE(res, "analysis_bundle", adjustedBundle);
+	        maybePrewarmDsldDetail();
+	        void upsertAnalysisIdentityCache(
+	          {
+	            identityType: params.identityType,
+	            identityValue: params.identityValue,
+	            locale,
             promptVersion: ANALYSIS_BUNDLE_PROMPT_VERSION,
             factsDigestHash,
             factsSourceVersion: params.factsSourceVersion,
