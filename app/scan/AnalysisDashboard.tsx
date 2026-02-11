@@ -907,34 +907,73 @@ const AnalysisBundleDashboard: React.FC<{
         // separately via /api/analysis-section. If we overwrite state here, we can re-trigger the
         // auto-fetch loop and hit backend 429s.
         setBundleState((prev) => {
-            const sameKey =
-                prev?.meta?.schemaVersion === bundle?.meta?.schemaVersion &&
-                prev?.meta?.factsDigestHash === bundle?.meta?.factsDigestHash &&
-                prev?.meta?.promptVersion === bundle?.meta?.promptVersion &&
-                prev?.meta?.locale === bundle?.meta?.locale &&
-                prev?.meta?.authoritativeIdentity?.type === bundle?.meta?.authoritativeIdentity?.type &&
-                prev?.meta?.authoritativeIdentity?.value === bundle?.meta?.authoritativeIdentity?.value;
-            if (!sameKey) return bundle;
+            // v4 path
+            if (isBundleV4(prev) && isBundleV4(bundle)) {
+                const sameKey =
+                    prev.meta.factsDigestHash === bundle.meta.factsDigestHash &&
+                    prev.meta.promptVersion === bundle.meta.promptVersion &&
+                    prev.meta.locale === bundle.meta.locale &&
+                    prev.meta.authoritativeIdentity.type === bundle.meta.authoritativeIdentity.type &&
+                    prev.meta.authoritativeIdentity.value === bundle.meta.authoritativeIdentity.value;
+                if (!sameKey) return bundle;
 
-            const prevIngredients = prev.sections?.ingredients;
-            const nextIngredients = bundle.sections?.ingredients;
-            const shouldPreserveIngredientsDetail =
-                nextIngredients?.detail == null && prevIngredients?.detail != null;
+                const prevIngredients = prev.sections.ingredients;
+                const nextIngredients = bundle.sections.ingredients;
+                const shouldPreserveIngredientsDetail =
+                    nextIngredients.detail == null && prevIngredients.detail != null;
 
-            return {
-                ...bundle,
-                sections: {
-                    ...bundle.sections,
-                    ingredients: shouldPreserveIngredientsDetail
-                        ? {
-                            ...nextIngredients,
-                            detail: prevIngredients.detail,
-                            // Preserve the terminal status so we don't auto-refetch on every SSE update.
-                            dataStatus: prevIngredients.dataStatus ?? nextIngredients.dataStatus,
-                        }
-                        : nextIngredients,
-                },
-            };
+                const mergedIngredients = shouldPreserveIngredientsDetail
+                    ? {
+                        ...nextIngredients,
+                        detail: prevIngredients.detail,
+                        // Preserve the terminal status so we don't auto-refetch on every SSE update.
+                        dataStatus: prevIngredients.dataStatus ?? nextIngredients.dataStatus,
+                    }
+                    : nextIngredients;
+
+                return {
+                    ...bundle,
+                    sections: {
+                        ...bundle.sections,
+                        ingredients: mergedIngredients,
+                    },
+                };
+            }
+
+            // v3 path (kept for backwards compatibility with older servers)
+            if (!isBundleV4(prev) && !isBundleV4(bundle)) {
+                const sameKey =
+                    prev.meta.factsDigestHash === bundle.meta.factsDigestHash &&
+                    prev.meta.promptVersion === bundle.meta.promptVersion &&
+                    prev.meta.locale === bundle.meta.locale &&
+                    prev.meta.authoritativeIdentity.type === bundle.meta.authoritativeIdentity.type &&
+                    prev.meta.authoritativeIdentity.value === bundle.meta.authoritativeIdentity.value;
+                if (!sameKey) return bundle;
+
+                const prevIngredients = prev.sections.ingredients;
+                const nextIngredients = bundle.sections.ingredients;
+                const shouldPreserveIngredientsDetail =
+                    nextIngredients.detail == null && prevIngredients.detail != null;
+
+                const mergedIngredients = shouldPreserveIngredientsDetail
+                    ? {
+                        ...nextIngredients,
+                        detail: prevIngredients.detail,
+                        dataStatus: prevIngredients.dataStatus ?? nextIngredients.dataStatus,
+                    }
+                    : nextIngredients;
+
+                return {
+                    ...bundle,
+                    sections: {
+                        ...bundle.sections,
+                        ingredients: mergedIngredients,
+                    },
+                };
+            }
+
+            // Schema mismatch: accept the new bundle as-is.
+            return bundle;
         });
     }, [bundle]);
 
@@ -954,6 +993,12 @@ const AnalysisBundleDashboard: React.FC<{
 
     const ingredientsCover = bundleState.sections.ingredients.cover;
     const ingredientsItems = ingredientsCover?.items ?? [];
+    const ingredientsNotProvidedCopy =
+        bundleState.meta.sourceType === 'lnhpd'
+            ? 'Not provided by LNHPD for this NPN.'
+            : bundleState.meta.sourceType === 'dsld'
+              ? 'Not provided by DSLD for this label.'
+              : 'Not provided by source.';
     const ingredientMechanisms: Mechanism[] = ingredientsItems.length
         ? ingredientsItems.slice(0, 3).map((item) => ({
             name: item.name,
@@ -966,7 +1011,7 @@ const AnalysisBundleDashboard: React.FC<{
             {
                 name:
                     bundleState.sections.ingredients.dataStatus === 'not_provided'
-                        ? 'Not provided by source'
+                        ? ingredientsNotProvidedCopy.replace(/\.$/, '')
                         : 'No ingredient list available',
                 amount: '',
                 fill: 0.35,
@@ -982,9 +1027,8 @@ const AnalysisBundleDashboard: React.FC<{
     const usageRoutine = usageCover?.bestTimeToTake?.text ?? usageCover?.dosage?.text ?? null;
 
     const safetyCover = bundleState.sections.safety.cover;
-    const safetyBullets = (safetyCover?.bullets ?? []).map((bullet) => ({
-        text: formatTaggedText(bullet.text, bullet.basisTags),
-    }));
+    const safetyBullet0Text = normalizeText(safetyCover?.bullets?.[0]?.text ?? null);
+    const safetyBullet1Text = normalizeText(safetyCover?.bullets?.[1]?.text ?? null);
 
     const fetchIngredientsDetail = useCallback(async (attempt = 0) => {
         if (detailLoading) return;
@@ -995,16 +1039,30 @@ const AnalysisBundleDashboard: React.FC<{
         // If we don't have any actives, detail is not applicable and we must not hammer the API.
         if (coverTotalCount <= 0) {
             setDetailError('No ingredient list available from the source.');
-            setBundleState((prev) => ({
-                ...prev,
-                sections: {
-                    ...prev.sections,
-                    ingredients: {
-                        ...prev.sections.ingredients,
-                        dataStatus: 'not_provided',
+            setBundleState((prev) => {
+                if (isBundleV4(prev)) {
+                    return {
+                        ...prev,
+                        sections: {
+                            ...prev.sections,
+                            ingredients: {
+                                ...prev.sections.ingredients,
+                                dataStatus: 'not_provided',
+                            },
+                        },
+                    };
+                }
+                return {
+                    ...prev,
+                    sections: {
+                        ...prev.sections,
+                        ingredients: {
+                            ...prev.sections.ingredients,
+                            dataStatus: 'not_provided',
+                        },
                     },
-                },
-            }));
+                };
+            });
             return;
         }
         setDetailLoading(true);
@@ -1216,7 +1274,7 @@ const AnalysisBundleDashboard: React.FC<{
                 ) : (
                     <Text style={styles.modalParagraphSmall}>
                         {bundleState.sections.ingredients.dataStatus === 'not_provided'
-                            ? 'Not provided by source.'
+                            ? ingredientsNotProvidedCopy
                             : t.analysisPlaceholderUnknown}
                     </Text>
                 )}
@@ -1326,7 +1384,7 @@ const AnalysisBundleDashboard: React.FC<{
                 <View style={{ flex: 1 }}>
                     <Text style={styles.modalSafetyTitle}>{safetyCover?.verdict ?? 'Safety summary pending'}</Text>
                     <Text style={styles.modalSafetyText}>
-                        {safetyCover?.bullets?.[0]
+                        {safetyCover?.bullets?.[0] && safetyBullet0Text
                             ? formatTaggedText(safetyCover.bullets[0].text, safetyCover.bullets[0].basisTags)
                             : 'No safety details available.'}
                     </Text>
@@ -1413,12 +1471,12 @@ const AnalysisBundleDashboard: React.FC<{
             labelColor: '#6B5B4B',
             viewLabel: t.analysisView,
             eyebrow: t.analysisEyebrowSafetyNotes,
-            warning: safetyCover?.bullets?.[0]
+            warning: safetyCover?.bullets?.[0] && safetyBullet0Text
                 ? { text: formatTaggedText(safetyCover.bullets[0].text, safetyCover.bullets[0].basisTags) }
                 : bundleState.sections.safety.dataStatus === 'pending'
                     ? { text: 'Safety summary pending', isPlaceholder: true }
                     : { text: 'No safety details available.' },
-            tip: safetyCover?.bullets?.[1]
+            tip: safetyCover?.bullets?.[1] && safetyBullet1Text
                 ? { text: formatTaggedText(safetyCover.bullets[1].text, safetyCover.bullets[1].basisTags) }
                 : bundleState.sections.safety.dataStatus === 'pending'
                     ? { text: 'Safety tips pending', isPlaceholder: true }
