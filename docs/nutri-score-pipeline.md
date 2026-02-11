@@ -78,13 +78,22 @@ We want a repeatable, gated pipeline that:
 
 We added `product_scores_shadow` to compare baseline vs promotion without touching production scores.
 
-**Why**: Avoid overwriting baseline, enable safe regression testing.
+**Why**: Avoid touching production scores while running regression checks.
+
+Important reliability rule:
+- Do **not** trust A/B compare that reads baseline + promo from the same shadow table only by `score_version` when writes use `(source, source_id)` upsert.
+- Preferred compare modes are:
+  - `snapshot-vs-table` (export baseline snapshot JSONL, then run promo and compare snapshot A vs table B), or
+  - true `table-vs-table` (two physical tables).
+
+Missing gate reliability rule:
+- For scale/phase gate aggregation, `missingRatio` must use `uniqueMissingKeys / sampleSize`.
+- Keep `activeMissingRows / sampleSize` as an audit/debug metric only (it is sensitive to per-source row multiplicity and can overstate unresolved identity risk).
 
 ### Shadow Backfill Modes
-- **Baseline**: scoreVersion A (e.g., `v4.0.0-alpha.3`), written to `product_scores_shadow`.
-- **Shadow**: scoreVersion B with promotions (e.g., `phaseD-shadow-YYYYMMDD`), also to `product_scores_shadow`.
-
-We compare scores by version, not by table.
+- **Baseline**: scoreVersion A (e.g., `v4.0.0-alpha.3`) written first, then exported to snapshot JSONL.
+- **Shadow**: scoreVersion B with promotions (e.g., `phaseD-shadow-YYYYMMDD`) written after baseline.
+- **Compare**: snapshot A vs table B (or A-table vs B-table).
 
 ## 6) Phase D (Verified Promotion)
 
@@ -148,4 +157,3 @@ This makes the pipeline auditable and reversible.
 2. Targeted rebackfill on affected canonical_source_ids.
 3. Run final regression compare and archive evidence pack.
 4. Begin DSLD pipeline.
-

@@ -1,5 +1,6 @@
 import { supabase } from "./supabase.js";
 import { incrementMetric } from "./metrics.js";
+import { buildBarcodeVariants } from "./barcode.js";
 import {
   HttpError,
   combineSignals,
@@ -123,8 +124,22 @@ const selectResolutionCacheRow = async (
 };
 
 const buildBarcodeKeyList = (barcodeGtin14: string, barcodeRaw?: string | null): string[] => {
-  const keys = [barcodeGtin14, barcodeRaw].filter((value): value is string => Boolean(value));
-  return Array.from(new Set(keys));
+  const keys = new Set<string>();
+  const add = (value?: string | null) => {
+    if (!value) return;
+    const digits = String(value).replace(/\D/g, "").trim();
+    if (!digits) return;
+    keys.add(digits);
+    for (const variant of buildBarcodeVariants(digits)) {
+      keys.add(variant);
+    }
+    if (digits.length < 14) {
+      keys.add(digits.padStart(14, "0"));
+    }
+  };
+  add(barcodeGtin14);
+  add(barcodeRaw);
+  return Array.from(keys);
 };
 
 const selectNegativeCacheRow = async (
@@ -580,25 +595,32 @@ export async function getBarcodeRegulatoryMap(
   const { includeExpired, ...resilience } = options;
   return await runWithResilience(async (signal) => {
     const keys = buildBarcodeKeyList(barcodeGtin14, barcodeRaw);
-    let query = supabase
-      .from("barcode_regulatory_map")
-      .select("barcode_gtin14,barcode_raw,npn,confidence,source,last_seen_at,expires_at,created_at,updated_at")
-      .order("updated_at", { ascending: false })
-      .limit(1);
-    if (keys.length > 1) {
-      query = query.in("barcode_gtin14", keys);
-    } else if (keys.length === 1) {
-      query = query.eq("barcode_gtin14", keys[0]);
-    } else {
-      return null;
-    }
-    query = query.abortSignal(signal);
-    const { data, error } = await query.maybeSingle();
-    if (error && resilience.retry && shouldRetrySupabaseError(error)) {
-      const rawStatus = (error as { status?: number }).status;
-      const status = typeof rawStatus === "number" ? rawStatus : 503;
-      throw new HttpError(status, error.message ?? "barcode_regulatory_map_read_error");
-    }
+    if (!keys.length) return null;
+
+    const readBy = async (column: "barcode_gtin14" | "barcode_raw") => {
+      let query = supabase
+        .from("barcode_regulatory_map")
+        .select("barcode_gtin14,barcode_raw,npn,confidence,source,last_seen_at,expires_at,created_at,updated_at")
+        .order("updated_at", { ascending: false })
+        .limit(1);
+      if (keys.length > 1) {
+        query = query.in(column, keys);
+      } else {
+        query = query.eq(column, keys[0]);
+      }
+      const { data, error } = await query.abortSignal(signal).maybeSingle();
+      if (error && resilience.retry && shouldRetrySupabaseError(error)) {
+        const rawStatus = (error as { status?: number }).status;
+        const status = typeof rawStatus === "number" ? rawStatus : 503;
+        throw new HttpError(status, error.message ?? "barcode_regulatory_map_read_error");
+      }
+      return { data, error };
+    };
+
+    const byGtin = await readBy("barcode_gtin14");
+    const byRaw = byGtin?.data ? { data: null, error: null } : await readBy("barcode_raw");
+    const data = byGtin?.data ?? byRaw?.data ?? null;
+    const error = byGtin?.error ?? byRaw?.error ?? null;
     if (error || !data) return null;
     if (!includeExpired && isExpired(data.expires_at ?? null)) return null;
     return data as BarcodeRegulatoryMapRow;

@@ -48,6 +48,185 @@ const trgmMinConfidence = Math.min(
 const normalizeNameKey = (value: string): string =>
   value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 
+const STRIP_SUFFIX_TOKENS = new Set([
+  "extract",
+  "extracts",
+  "powder",
+  "liquid",
+  "dried",
+  "juice",
+  "concentrate",
+  "leaf",
+  "root",
+  "seed",
+  "bark",
+  "peel",
+  "flower",
+  "herb",
+  "oil",
+  "berry",
+  "fruit",
+  "capsule",
+  "tablets",
+  "tablet",
+  "softgels",
+  "softgel",
+  "tm",
+  "r",
+  "matrix",
+  "formula",
+]);
+
+const STRIP_PREFIX_TOKENS = new Set([
+  "organic",
+  "natural",
+  "pure",
+  "wild",
+  "wildcrafted",
+  "certified",
+  "fermented",
+  "raw",
+  "whole",
+  "premium",
+  "super",
+  "advanced",
+  "ultra",
+  "micronized",
+]);
+
+const STRIP_ANYWHERE_TOKENS = new Set([
+  "blend",
+  "complex",
+  "formula",
+  "controller",
+  "aid",
+  "rapid",
+  "rx",
+  "pro",
+  "ultra",
+  "elite",
+  "max",
+  "plus",
+  "advanced",
+  "phase",
+  "weight",
+  "loss",
+  "burn",
+  "burner",
+  "tm",
+  "original",
+  "consortium",
+  "system",
+  "maximizer",
+  "acceleration",
+  "accelerator",
+  "soothing",
+  "preload",
+  "contains",
+  "nutrients",
+  "transport",
+  "cellular",
+  "hydration",
+  "amplifier",
+  "activator",
+  "stack",
+  "facts",
+  "serving",
+  "per",
+  "legend",
+  "support",
+  "r",
+]);
+
+const COMMON_STOP_WORDS = new Set([
+  "and",
+  "of",
+  "from",
+  "the",
+  "with",
+  "for",
+  "in",
+  "to",
+  "by",
+  "as",
+]);
+
+const stripNameKeyVariants = (value: string): string[] => {
+  const normalized = normalizeNameKey(value);
+  if (!normalized) return [];
+  const variants = new Set<string>([normalized]);
+  const sourceTokens = normalized.split(/\s+/).filter(Boolean);
+  if (!sourceTokens.length) return Array.from(variants);
+
+  const dropDoseToken = (token: string): boolean => {
+    if (!token) return true;
+    if (/^\d+(?:\.\d+)?(?:mg|mcg|g|kg|iu|cfu|ml|oz)?$/i.test(token)) return true;
+    if (/^(mg|mcg|g|kg|iu|cfu|ml|oz)$/i.test(token)) return true;
+    return false;
+  };
+
+  const removePrefix = [...sourceTokens];
+  while (removePrefix.length && STRIP_PREFIX_TOKENS.has(removePrefix[0])) {
+    removePrefix.shift();
+  }
+  if (removePrefix.length) variants.add(removePrefix.join(" "));
+
+  const removeSuffix = [...removePrefix];
+  while (removeSuffix.length && STRIP_SUFFIX_TOKENS.has(removeSuffix[removeSuffix.length - 1])) {
+    removeSuffix.pop();
+  }
+  if (removeSuffix.length) variants.add(removeSuffix.join(" "));
+
+  const removeAnywhere = removeSuffix.filter((token) => !STRIP_ANYWHERE_TOKENS.has(token));
+  if (removeAnywhere.length) variants.add(removeAnywhere.join(" "));
+
+  const removeDose = removeAnywhere.filter((token) => !dropDoseToken(token));
+  if (removeDose.length) variants.add(removeDose.join(" "));
+
+  const removeStops = removeDose.filter((token) => !COMMON_STOP_WORDS.has(token));
+  if (removeStops.length) variants.add(removeStops.join(" "));
+
+  return Array.from(variants)
+    .map((item) => item.trim())
+    .filter((item) => item.length >= 2);
+};
+
+const buildLookupQueries = (row: ProductIngredientRow): string[] => {
+  const queries = new Set<string>();
+  const pushVariants = (value: string | null | undefined) => {
+    if (!value) return;
+    const raw = value.trim();
+    if (raw) queries.add(raw);
+    stripNameKeyVariants(raw).forEach((variant) => queries.add(variant));
+  };
+
+  pushVariants(row.name_raw);
+  pushVariants(row.name_key);
+
+  return Array.from(queries)
+    .map((value) => value.trim())
+    .filter((value) => value.length >= 2)
+    .slice(0, 8);
+};
+
+const parseMatchConfidence = (raw: number | string | null | undefined): number | null => {
+  const parsed =
+    typeof raw === "number" ? raw : typeof raw === "string" ? Number(raw) : null;
+  if (parsed == null || !Number.isFinite(parsed)) return null;
+  return parsed;
+};
+
+const methodRank = (method: string | null): number => {
+  if (!method) return 0;
+  if (method === "exact") return 60;
+  if (method === "synonym") return 55;
+  if (method === "canonical_key") return 52;
+  if (method === "constrained") return 50;
+  if (method === "ingredient_name") return 45;
+  if (method === "trgm") return 30;
+  return 20;
+};
+
 // Keep this conservative: we only skip obvious headings/marketing labels.
 // (If we mapped these to real ingredients, we'd risk affecting scoring.)
 const DSLD_EXCLUDED_KEY_PATTERNS: RegExp[] = [
@@ -75,6 +254,77 @@ const DSLD_EXCLUDED_KEY_PATTERNS: RegExp[] = [
   /\bmaximizer\b/,
   /\bmodule\b/,
   /\bbioaccelerators\b/,
+  /\balso contains\b/,
+  /\bhydration system\b/,
+  /\batp amplifier\b/,
+  /\bcellular transport(?:\s*&\s*|\s+)insulin activator\b/,
+  /\badvanced carbohydrate system\b/,
+  /\bamino stack\b/,
+  /\bamino hydrate system\b/,
+  /\benergized nutrients\b/,
+  /\bbioactive enzymes proteins\b/,
+  /\b100 whole food nutrients\b/,
+  /\bnutrition facts per serving\b/,
+  /\bpalatability and solubility factors\b/,
+  /\bwarrior (land force|waters|oceans)\b/,
+  /\belectrolytes\+*\b/,
+  /\bin a base of\b/,
+  /\beach serving\b/,
+  /\bnaturally occurring\b/,
+  /\bas directed\b/,
+  /\bactive cell count\b/,
+  /\bmay typically provide\b/,
+  /\bfollowing extracts?\b/,
+  /\bpump n o support\b/,
+  /\bmicronized amino acids?\b/,
+  /\bmicronized bcaa\b/,
+  /\bsaa sequenced proteins?\b/,
+  /\bplant source nutrients\b/,
+  /\bsuper fruit antioxidants\b/,
+  /\bpower healthy inflammatory support\b/,
+  /\bleucine anabolic trigger\b/,
+  /\bamino acids and enzymes\b/,
+  /\bnutrient dense plant concentrates\b/,
+  /\bcalories from (?:protein|carbohydrates?)\b/,
+  /\bactive constituents of\b/,
+  /\bfrom the land\b/,
+  /\bphenolics\b/,
+  /\bmchc\b/,
+  /\binsulogen\b/,
+  /\bcellular delivery system\b/,
+  /\bfrac r\b/,
+  /\bcore level process glands?\b/,
+  /\bnitroxen\b/,
+  /\bpreventium r\b/,
+  /\blipoic tech\b/,
+  /\baminogen r\b/,
+  /\bn o vasodilation amplifier\b/,
+  /\bmuscle buffering system\b/,
+  /\bother carbohydrates\b/,
+  /\btotal fat 0 none\b/,
+  /\btrans fat 0 none\b/,
+  /\bsugar 0 none\b/,
+  /\bosmodrol\b/,
+  /\binsulodrive\b/,
+  /\blignamax tm\b/,
+  /\bbiocore edge tm\b/,
+  /\biridoids phenolic compounds\b/,
+  /\belg stimulators\b/,
+  /\bprotein utilization enzymes\b/,
+  /\bq sorb\b/,
+  /\bcinnulin pf r\b/,
+  /\bcell signalling amplifier\b/,
+  /\bcellular transport amplifier\b/,
+  /\bpterosport tm\b/,
+  /\ba hd\b/,
+  /\banabolic peptide x\b/,
+  /\banticatabolic recovery\b/,
+  /\bsugars alcohols\b/,
+  /\bnano vapor r\b/,
+  /\bcarbogen\b/,
+  /\btruq10\b/,
+  /\bglutalean r\b/,
+  /\bimmunolin r\b/,
   // More section-heading tokens (not ingredients)
   /\bsystem\b/,
   /\bstack\b/,
@@ -83,6 +333,7 @@ const DSLD_EXCLUDED_KEY_PATTERNS: RegExp[] = [
   /\bhydrator\b/,
   /\bsupport\b/,
   /\blegend\b/,
+  /^(heart|kidney|muscle|lymph|hydration|electrolytes\+*|each serving|naturally occurring|total active cell count)$/,
 ];
 
 const isDsldExcludedKey = (key: string): boolean =>
@@ -251,29 +502,45 @@ const run = async () => {
 
   await runWithConcurrency(actionable, async (row) => {
     stats.attemptedRows += 1;
-    const query = row.name_raw?.trim();
-    if (!query) {
+    const lookupQueries = buildLookupQueries(row);
+    if (!lookupQueries.length) {
       stats.unresolvedRows += 1;
       return;
     }
 
-    const lookup = await resolveLookup(query, lookupCache);
-    const ingredientId = lookup?.ingredient_id ?? null;
-    if (!ingredientId) {
+    let selected:
+      | {
+          ingredientId: string;
+          matchMethod: string | null;
+          matchConfidence: number | null;
+          score: number;
+        }
+      | null = null;
+
+    for (const query of lookupQueries) {
+      const lookup = await resolveLookup(query, lookupCache);
+      const ingredientId = lookup?.ingredient_id ?? null;
+      if (!ingredientId) continue;
+
+      const matchMethod = lookup?.match_method ?? null;
+      const matchConfidence = parseMatchConfidence(lookup?.match_confidence);
+      const score = methodRank(matchMethod) * 100 + (matchConfidence ?? 0);
+      if (!selected || score > selected.score) {
+        selected = { ingredientId, matchMethod, matchConfidence, score };
+      }
+      if (matchMethod === "exact" || matchMethod === "synonym") {
+        break;
+      }
+    }
+
+    if (!selected?.ingredientId) {
       stats.unresolvedRows += 1;
       return;
     }
 
     stats.resolvedRows += 1;
-    const matchMethod = lookup?.match_method ?? null;
-    const rawConfidence = lookup?.match_confidence ?? null;
-    const parsedConfidence =
-      typeof rawConfidence === "number"
-        ? rawConfidence
-        : typeof rawConfidence === "string"
-          ? Number(rawConfidence)
-          : null;
-    const matchConfidence = Number.isFinite(parsedConfidence as number) ? (parsedConfidence as number) : null;
+    const matchMethod = selected.matchMethod;
+    const matchConfidence = selected.matchConfidence;
 
     const bucket = matchMethod ?? "unknown";
     stats.byMatchMethod[bucket] = (stats.byMatchMethod[bucket] ?? 0) + 1;
@@ -290,7 +557,7 @@ const run = async () => {
 
     const result = await updateRow({
       id: row.id,
-      ingredientId,
+      ingredientId: selected.ingredientId,
       matchMethod,
       matchConfidence,
     });
