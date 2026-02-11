@@ -7242,6 +7242,56 @@ const buildIdentityFallbackUsageSection = (): AnalysisBundle["sections"]["usage"
   dataStatus: "limited",
 });
 
+const enforceUsageSectionContract = (
+  usageSection: AnalysisBundle["sections"]["usage"],
+  digest: FactsDigest,
+): AnalysisBundle["sections"]["usage"] => {
+  const fallback = buildFallbackUsageSection(digest);
+  const cover = usageSection.cover ?? fallback.cover;
+  const fallbackBestTimeToTake = fallback.cover?.bestTimeToTake ?? {
+    text: "Anytime (with meals).",
+    basisTags: ["general_advice"] as BasisTag[],
+  };
+  const fallbackWithFood = fallback.cover?.withFood ?? {
+    value: true,
+    text: "Prefer with food unless label states otherwise.",
+    basisTags: ["general_advice"] as BasisTag[],
+  };
+
+  const bestTimeText =
+    typeof cover?.bestTimeToTake?.text === "string" && cover.bestTimeToTake.text.trim().length > 0
+      ? cover.bestTimeToTake.text.trim()
+      : fallbackBestTimeToTake.text;
+  const bestTimeToTake = {
+    ...(cover?.bestTimeToTake ?? fallbackBestTimeToTake),
+    text: bestTimeText,
+  };
+
+  const withFoodValue =
+    typeof cover?.withFood?.value === "boolean" ? cover.withFood.value : fallbackWithFood.value;
+  const withFoodText =
+    typeof cover?.withFood?.text === "string" && cover.withFood.text.trim().length > 0
+      ? cover.withFood.text
+      : fallbackWithFood.text;
+  const withFood = {
+    ...(cover?.withFood ?? fallbackWithFood),
+    value: withFoodValue,
+    text: withFoodText,
+  };
+
+  return {
+    ...usageSection,
+    cover: {
+      ...(cover ?? {}),
+      bestTimeToTake,
+      withFood,
+      dosage: cover?.dosage ?? fallback.cover?.dosage ?? null,
+      bullets: Array.isArray(cover?.bullets) ? cover.bullets : fallback.cover?.bullets ?? [],
+    },
+    detail: usageSection.detail ?? fallback.detail,
+  };
+};
+
 /**
  * On-demand analysis section endpoint (ingredients detail + overview + usage)
  */
@@ -7397,7 +7447,9 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   if (section === "overview" || section === "usage") {
     if (fastBundleForGate) {
       const sectionPayload =
-        section === "overview" ? fastBundleForGate.sections.overview : fastBundleForGate.sections.usage;
+        section === "overview"
+          ? fastBundleForGate.sections.overview
+          : enforceUsageSectionContract(fastBundleForGate.sections.usage, digest);
       res.status(200).json({
         section,
         cover: sectionPayload.cover,
@@ -7418,7 +7470,9 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     }
 
     const fallbackSection =
-      section === "overview" ? buildFallbackOverviewSection(digest) : buildFallbackUsageSection(digest);
+      section === "overview"
+        ? buildFallbackOverviewSection(digest)
+        : enforceUsageSectionContract(buildFallbackUsageSection(digest), digest);
     res.status(200).json({
       section,
       cover: fallbackSection.cover,
