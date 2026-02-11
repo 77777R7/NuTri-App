@@ -57,6 +57,40 @@ export type DatasetCache = {
 let cached: DatasetCache | null = null;
 let inflight: Promise<DatasetCache> | null = null;
 
+const PAGE_SIZE = 1000;
+
+const fetchAllPages = async <T>(
+  fetchPage: (
+    from: number,
+    to: number,
+  ) => Promise<{ data: T[] | null; error: { message?: string } | null }>,
+  label: string,
+): Promise<T[]> => {
+  const rows: T[] = [];
+  let offset = 0;
+  let warned = false;
+
+  while (true) {
+    const { data, error } = await fetchPage(offset, offset + PAGE_SIZE - 1);
+    if (error) {
+      console.error(`[v4DatasetCache] failed loading ${label}`, error);
+      throw error;
+    }
+
+    const page = (data ?? []) as T[];
+    rows.push(...page);
+
+    if (page.length < PAGE_SIZE) break;
+    if (!warned) {
+      warned = true;
+      console.warn(`[v4DatasetCache] pageSize hit; continuing pagination label=${label} pageSize=${PAGE_SIZE}`);
+    }
+    offset += PAGE_SIZE;
+  }
+
+  return rows;
+};
+
 const mapCitations = (rows: Array<{ evidence_id?: string | null; form_id?: string | null; citation_id?: string | null }>, key: "evidence_id" | "form_id") => {
   const map = new Map<string, Set<string>>();
   rows.forEach((row) => {
@@ -77,60 +111,94 @@ export const loadDatasetCache = async (): Promise<DatasetCache> => {
   if (inflight) return inflight;
 
   inflight = (async () => {
+    const datasetVersionResultPromise = supabase
+      .from("scoring_dataset_state")
+      .select("version")
+      .eq("key", "ingredient_dataset")
+      .maybeSingle();
+
+    const ingredientRowsPromise = fetchAllPages<IngredientMeta>(
+      async (from, to) =>
+        await supabase
+          .from("ingredients")
+          .select("id,unit,rda_adult,ul_adult,goals")
+          .order("id", { ascending: true })
+          .range(from, to),
+      "ingredients",
+    );
+
+    const evidenceRowsPromise = fetchAllPages<IngredientEvidenceRow>(
+      async (from, to) =>
+        await supabase
+          .from("ingredient_evidence")
+          .select("id,ingredient_id,goal,min_effective_dose,optimal_dose_range,evidence_grade,audit_status")
+          .order("id", { ascending: true })
+          .range(from, to),
+      "ingredient_evidence",
+    );
+
+    const formRowsPromise = fetchAllPages<IngredientFormRow>(
+      async (from, to) =>
+        await supabase
+          .from("ingredient_forms")
+          .select("id,ingredient_id,form_key,form_label,relative_factor,confidence,evidence_grade,audit_status")
+          .order("id", { ascending: true })
+          .range(from, to),
+      "ingredient_forms",
+    );
+
+    const aliasRowsPromise = fetchAllPages<IngredientFormAliasRow>(
+      async (from, to) =>
+        await supabase
+          .from("ingredient_form_aliases")
+          .select("id,alias_text,alias_norm,form_key,ingredient_id,confidence,audit_status,source")
+          .order("id", { ascending: true })
+          .range(from, to),
+      "ingredient_form_aliases",
+    );
+
+    const evidenceCitationRowsPromise = fetchAllPages<{ evidence_id?: string | null; citation_id?: string | null }>(
+      async (from, to) =>
+        await supabase
+          .from("ingredient_evidence_citations")
+          .select("evidence_id,citation_id")
+          .order("evidence_id", { ascending: true })
+          .order("citation_id", { ascending: true })
+          .range(from, to),
+      "ingredient_evidence_citations",
+    );
+
+    const formCitationRowsPromise = fetchAllPages<{ form_id?: string | null; citation_id?: string | null }>(
+      async (from, to) =>
+        await supabase
+          .from("ingredient_form_citations")
+          .select("form_id,citation_id")
+          .order("form_id", { ascending: true })
+          .order("citation_id", { ascending: true })
+          .range(from, to),
+      "ingredient_form_citations",
+    );
+
     const [
       datasetVersionResult,
-      ingredientResult,
-      evidenceResult,
-      formResult,
-      aliasResult,
-      evidenceCitationResult,
-      formCitationResult,
+      ingredientRows,
+      evidenceRows,
+      formRows,
+      aliasRows,
+      evidenceCitationRows,
+      formCitationRows,
     ] = await Promise.all([
-      supabase
-        .from("scoring_dataset_state")
-        .select("version")
-        .eq("key", "ingredient_dataset")
-        .maybeSingle(),
-      supabase
-        .from("ingredients")
-        .select("id,unit,rda_adult,ul_adult,goals"),
-      supabase
-        .from("ingredient_evidence")
-        .select("id,ingredient_id,goal,min_effective_dose,optimal_dose_range,evidence_grade,audit_status"),
-      supabase
-        .from("ingredient_forms")
-        .select("id,ingredient_id,form_key,form_label,relative_factor,confidence,evidence_grade,audit_status"),
-      supabase
-        .from("ingredient_form_aliases")
-        .select("id,alias_text,alias_norm,form_key,ingredient_id,confidence,audit_status,source"),
-      supabase
-        .from("ingredient_evidence_citations")
-        .select("evidence_id,citation_id"),
-      supabase
-        .from("ingredient_form_citations")
-        .select("form_id,citation_id"),
+      datasetVersionResultPromise,
+      ingredientRowsPromise,
+      evidenceRowsPromise,
+      formRowsPromise,
+      aliasRowsPromise,
+      evidenceCitationRowsPromise,
+      formCitationRowsPromise,
     ]);
 
     if (datasetVersionResult.error) {
       throw datasetVersionResult.error;
-    }
-    if (ingredientResult.error) {
-      throw ingredientResult.error;
-    }
-    if (evidenceResult.error) {
-      throw evidenceResult.error;
-    }
-    if (formResult.error) {
-      throw formResult.error;
-    }
-    if (aliasResult.error) {
-      throw aliasResult.error;
-    }
-    if (evidenceCitationResult.error) {
-      throw evidenceCitationResult.error;
-    }
-    if (formCitationResult.error) {
-      throw formCitationResult.error;
     }
 
     const datasetVersion =
@@ -140,7 +208,7 @@ export const loadDatasetCache = async (): Promise<DatasetCache> => {
         : null;
 
     const ingredientMetaById = new Map<string, IngredientMeta>();
-    (ingredientResult.data ?? []).forEach((row) => {
+    ingredientRows.forEach((row) => {
       if (!row?.id) return;
       ingredientMetaById.set(row.id as string, {
         id: row.id as string,
@@ -151,25 +219,25 @@ export const loadDatasetCache = async (): Promise<DatasetCache> => {
       });
     });
 
-    const evidenceRows = (evidenceResult.data ?? []) as IngredientEvidenceRow[];
+    const typedEvidenceRows = evidenceRows;
     const evidenceByIngredientId = new Map<string, IngredientEvidenceRow[]>();
-    evidenceRows.forEach((row) => {
+    typedEvidenceRows.forEach((row) => {
       if (!row?.ingredient_id) return;
       const bucket = evidenceByIngredientId.get(row.ingredient_id) ?? [];
       bucket.push(row);
       evidenceByIngredientId.set(row.ingredient_id, bucket);
     });
 
-    const formRows = (formResult.data ?? []) as IngredientFormRow[];
+    const typedFormRows = formRows;
     const formByIngredientId = new Map<string, IngredientFormRow[]>();
-    formRows.forEach((row) => {
+    typedFormRows.forEach((row) => {
       if (!row?.ingredient_id) return;
       const bucket = formByIngredientId.get(row.ingredient_id) ?? [];
       bucket.push(row);
       formByIngredientId.set(row.ingredient_id, bucket);
     });
 
-    const formAliases = (aliasResult.data ?? []) as IngredientFormAliasRow[];
+    const formAliases = aliasRows;
     const globalFormAliases = formAliases.filter((alias) => !alias.ingredient_id);
     const aliasesByIngredientId = new Map<string, IngredientFormAliasRow[]>();
     formAliases.forEach((alias) => {
@@ -180,26 +248,20 @@ export const loadDatasetCache = async (): Promise<DatasetCache> => {
     });
 
     const evidenceCitationsById = mapCitations(
-      (evidenceCitationResult.data ?? []) as Array<{
-        evidence_id?: string | null;
-        citation_id?: string | null;
-      }>,
+      evidenceCitationRows,
       "evidence_id",
     );
     const formCitationsById = mapCitations(
-      (formCitationResult.data ?? []) as Array<{
-        form_id?: string | null;
-        citation_id?: string | null;
-      }>,
+      formCitationRows,
       "form_id",
     );
 
     return {
       datasetVersion,
       ingredientMetaById,
-      evidenceRows,
+      evidenceRows: typedEvidenceRows,
       evidenceByIngredientId,
-      formRows,
+      formRows: typedFormRows,
       formByIngredientId,
       formAliases,
       globalFormAliases,

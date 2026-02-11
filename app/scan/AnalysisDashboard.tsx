@@ -1213,6 +1213,15 @@ const AnalysisBundleDashboard: React.FC<{
 
                 const payload = await response.json();
                 const detail = (payload?.detail ?? null) as IngredientsDetail | null;
+                const nextStatusRaw = String(payload?.dataStatus ?? '').trim().toLowerCase();
+                const retryAfterRaw = Number((payload as any)?.meta?.retryAfterMs ?? 0);
+                const retryAfterMs = Number.isFinite(retryAfterRaw) ? Math.max(0, Math.round(retryAfterRaw)) : 0;
+                if (nextStatusRaw === 'limited' && retryAfterMs > 0) {
+                    const retrySec = Math.max(1, Math.round(retryAfterMs / 1000));
+                    setDetailError(`Showing available data; retry in ~${retrySec}s.`);
+                } else {
+                    setDetailError(null);
+                }
                 setBundleState((prev) => {
                     const nextStatus = (payload?.dataStatus ?? prev.sections.ingredients.dataStatus) as DataStatus;
                     const nextDetail = detail ?? prev.sections.ingredients.detail ?? null;

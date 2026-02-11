@@ -325,6 +325,31 @@ const sanitizeTiming = (timing: string | null | undefined): string | null => {
   return t;
 };
 
+const computeFactsStatusClient = (facts: MySupplementFactsV1 | null | undefined): "full" | "partial" | "none" => {
+  if (!facts) return "none";
+  const hasActiveDose = (facts.actives ?? []).some((active) => {
+    const amountText = typeof active?.amountText === "string" ? active.amountText.trim() : "";
+    if (amountText) return true;
+    if (active?.amount != null && typeof active?.unit === "string" && active.unit.trim()) return true;
+    return false;
+  });
+  const hasDirections = typeof facts.directions?.rawText === "string" && facts.directions.rawText.trim().length > 0;
+  return hasActiveDose || hasDirections ? "full" : "partial";
+};
+
+const extractFactsDigestHashFromAnalysisPayload = (payload: AnalysisPayload | null): string | null => {
+  if (!payload || typeof payload !== "object") return null;
+  const root = payload as any;
+  const rootHash =
+    typeof root?.mySupplementOverviewV2?.meta?.factsDigestHash === "string" ? root.mySupplementOverviewV2.meta.factsDigestHash : null;
+  if (rootHash) return rootHash;
+  const nestedHash =
+    typeof root?.analysis?.mySupplementOverviewV2?.meta?.factsDigestHash === "string"
+      ? root.analysis.mySupplementOverviewV2.meta.factsDigestHash
+      : null;
+  return nestedHash ?? null;
+};
+
 const isUuid = (value: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 
@@ -499,7 +524,7 @@ const getTimeCategory = (time?: string) => {
   };
 };
 
-const analysisCache = new Map<string, AnalysisPayload>();
+const analysisCache = new Map<string, { factsDigestHash: string | null; data: AnalysisPayload }>();
 const factsCache = new Map<string, MySupplementFactsV1>();
 
 type MySupplementFactsV1 = {
@@ -556,6 +581,12 @@ type EnsureOverviewResponse = {
   source?: "deepseek" | "rule" | "cache" | "none";
   analysisData?: AnalysisPayload | null;
   facts?: MySupplementFactsV1 | null;
+  factsStatus?: "full" | "partial" | "none";
+  factsDigestHash?: string | null;
+  factsSourceVersion?: string | null;
+  aiStatus?: "ready" | "pending" | "blocked" | "none";
+  aiRetryAfterSec?: number | null;
+  aiBlockedReason?: string | null;
 };
 
 type BarcodeMetadataResponse = {
@@ -1011,10 +1042,18 @@ function DetailSheet({
   const [time, setTime] = useState(item.routine?.time ?? "08:00");
   const [withFood, setWithFood] = useState(item.routine?.withFood ?? false);
   const [facts, setFacts] = useState<MySupplementFactsV1 | null>(null);
+  const [factsStatus, setFactsStatus] = useState<"full" | "partial" | "none">("none");
+  const [factsDigestHash, setFactsDigestHash] = useState<string | null>(null);
+  const [factsSourceVersion, setFactsSourceVersion] = useState<string | null>(null);
   const [analysisData, setAnalysisData] = useState<AnalysisPayload | null>(null);
-  const [overviewPhase, setOverviewPhase] = useState<"loading" | "ready" | "fallback">("loading");
-  const overviewPhaseRef = useRef<"loading" | "ready" | "fallback">("loading");
+  const [aiStatus, setAiStatus] = useState<"ready" | "pending" | "blocked" | "none">("none");
+  const [aiRetryAfterSec, setAiRetryAfterSec] = useState(0);
+  const [aiBlockedReason, setAiBlockedReason] = useState<string | null>(null);
+  const [aiUiPhase, setAiUiPhase] = useState<"idle" | "pending" | "ready" | "timeout" | "blocked" | "none">("idle");
+  const aiUiPhaseRef = useRef<"idle" | "pending" | "ready" | "timeout" | "blocked" | "none">("idle");
   const [overviewRetryNonce, setOverviewRetryNonce] = useState(0);
+  const pollTimersRef = useRef<Array<ReturnType<typeof setTimeout>>>([]);
+  const factsDigestHashRef = useRef<string | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "saved">(
     item.routine?.note || item.routine?.time || item.routine?.withFood !== undefined ? "saved" : "idle",
   );
@@ -1041,60 +1080,246 @@ function DetailSheet({
 
   useEffect(() => {
     let isActive = true;
+    const clearPollTimers = () => {
+      for (const timer of pollTimersRef.current) clearTimeout(timer);
+      pollTimersRef.current = [];
+    };
     const userSupplementId = isUuid(item.id) ? item.id : null;
 
     const isNewItem = lastDetailItemIdRef.current !== item.id;
     lastDetailItemIdRef.current = item.id;
     if (isNewItem) {
       setFacts(null);
+      setFactsStatus("none");
+      setFactsDigestHash(null);
+      factsDigestHashRef.current = null;
+      setFactsSourceVersion(null);
     }
 
     // Reset AI enhancement state for each open and for each manual retry.
+    clearPollTimers();
     setAnalysisData(null);
-    overviewPhaseRef.current = "loading";
-    setOverviewPhase("loading");
+    setAiStatus("none");
+    setAiRetryAfterSec(0);
+    setAiBlockedReason(null);
+    aiUiPhaseRef.current = "idle";
+    setAiUiPhase("idle");
 
-    const fallbackTimer = setTimeout(() => {
-      if (!isActive) return;
-      if (overviewPhaseRef.current !== "loading") return;
-      overviewPhaseRef.current = "fallback";
-      setOverviewPhase("fallback");
-    }, 7_000);
-
-    const finalizeFacts = (supplementId: string, payload: MySupplementFactsV1) => {
+    const finalizeFacts = (
+      supplementId: string,
+      payload: MySupplementFactsV1,
+      meta?: {
+        factsStatus?: "full" | "partial" | "none";
+        factsDigestHash?: string | null;
+        factsSourceVersion?: string | null;
+      },
+    ) => {
       factsCache.set(supplementId, payload);
       if (!isActive) return;
       setFacts(payload);
+      setFactsStatus(meta?.factsStatus ?? computeFactsStatusClient(payload));
+      const nextHash = meta?.factsDigestHash ?? payload.factsDigestHash ?? null;
+      factsDigestHashRef.current = nextHash;
+      setFactsDigestHash(nextHash);
+      setFactsSourceVersion(meta?.factsSourceVersion ?? payload.factsSourceVersion ?? null);
     };
 
-    const finalizeReady = (supplementId: string, payload: AnalysisPayload) => {
-      analysisCache.set(supplementId, payload);
-      overviewPhaseRef.current = "ready";
-      setOverviewPhase("ready");
+    const finalizeReady = (supplementId: string, payload: AnalysisPayload, digestHash?: string | null) => {
+      const resolvedHash = digestHash ?? extractFactsDigestHashFromAnalysisPayload(payload);
+      analysisCache.set(supplementId, { factsDigestHash: resolvedHash, data: payload });
+      clearPollTimers();
+      if (!isActive) return;
       setAnalysisData(payload);
+      setAiStatus("ready");
+      setAiRetryAfterSec(0);
+      setAiBlockedReason(null);
+      aiUiPhaseRef.current = "ready";
+      setAiUiPhase("ready");
     };
 
-    const finalizeFallback = () => {
-      overviewPhaseRef.current = "fallback";
-      setOverviewPhase("fallback");
+    const finalizePending = () => {
+      if (!isActive) return;
+      setAiStatus("pending");
+      setAiRetryAfterSec(0);
+      setAiBlockedReason(null);
+      aiUiPhaseRef.current = "pending";
+      setAiUiPhase("pending");
+    };
+
+    const finalizeBlocked = (retryAfterSec: number, reason: string | null) => {
+      clearPollTimers();
+      if (!isActive) return;
+      setAiStatus("blocked");
+      setAiRetryAfterSec(Math.max(0, retryAfterSec));
+      setAiBlockedReason(reason);
+      aiUiPhaseRef.current = "blocked";
+      setAiUiPhase("blocked");
       setAnalysisData(null);
     };
 
-    const fetchLatest = async (supplementId: string): Promise<AnalysisPayload | null> => {
+    const finalizeNone = () => {
+      clearPollTimers();
+      if (!isActive) return;
+      setAiStatus("none");
+      setAiRetryAfterSec(0);
+      setAiBlockedReason(null);
+      aiUiPhaseRef.current = "none";
+      setAiUiPhase("none");
+      setAnalysisData(null);
+    };
+
+    const finalizeTimeout = () => {
+      clearPollTimers();
+      if (!isActive) return;
+      setAiStatus("pending");
+      setAiRetryAfterSec(0);
+      setAiBlockedReason(null);
+      aiUiPhaseRef.current = "timeout";
+      setAiUiPhase("timeout");
+      setAnalysisData(null);
+    };
+
+    const fetchLatestHashMatched = async (
+      supplementId: string,
+      currentFactsDigestHash: string | null,
+    ): Promise<AnalysisPayload | null> => {
+      if (!currentFactsDigestHash) return null;
       const { data, error } = await supabase
         .from("ai_analyses")
         .select("analysis_data, created_at")
         .eq("supplement_id", supplementId)
         .is("user_id", null)
         .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .limit(5);
 
       if (error) {
         throw new Error(error.message);
       }
 
-      return (data?.analysis_data ?? null) as AnalysisPayload | null;
+      const rows = Array.isArray(data) ? data : [];
+      for (const row of rows) {
+        const payload = ((row as any)?.analysis_data ?? null) as AnalysisPayload | null;
+        if (!payload) continue;
+        const hash = extractFactsDigestHashFromAnalysisPayload(payload);
+        if (hash && hash === currentFactsDigestHash) return payload;
+      }
+      return null;
+    };
+
+    const startPendingPoll = (supplementId: string, currentFactsDigestHash: string | null) => {
+      if (!currentFactsDigestHash) {
+        finalizeTimeout();
+        return;
+      }
+
+      finalizePending();
+      clearPollTimers();
+      factsDigestHashRef.current = currentFactsDigestHash;
+
+      const runAttempt = async (): Promise<boolean> => {
+        try {
+          if (factsDigestHashRef.current !== currentFactsDigestHash) return false;
+          const payload = await fetchLatestHashMatched(supplementId, currentFactsDigestHash);
+          if (factsDigestHashRef.current !== currentFactsDigestHash) return false;
+          if (!isActive || aiUiPhaseRef.current !== "pending") return false;
+          if (!payload) return false;
+          finalizeReady(supplementId, payload, currentFactsDigestHash);
+          return true;
+        } catch (error) {
+          if (!isActive || aiUiPhaseRef.current !== "pending") return false;
+          const message = error instanceof Error ? error.message : "Unknown error";
+          console.warn("[supplement-overview] Failed to poll analysis", message);
+          return false;
+        }
+      };
+
+      void runAttempt().then((hit) => {
+        if (!isActive || hit || aiUiPhaseRef.current !== "pending") return;
+        const scheduleMs = [1000, 2000, 3000, 4000];
+        let elapsed = 0;
+        scheduleMs.forEach((slot, index) => {
+          elapsed += slot;
+          const jitter = Math.floor(Math.random() * 401) - 200;
+          const delay = Math.max(0, elapsed + jitter);
+          const timer = setTimeout(async () => {
+            if (!isActive || aiUiPhaseRef.current !== "pending") return;
+            const found = await runAttempt();
+            if (found) return;
+            if (index === scheduleMs.length - 1) finalizeTimeout();
+          }, delay);
+          pollTimersRef.current.push(timer);
+        });
+      });
+    };
+
+    const applyEnsureResponse = async (
+      supplementId: string,
+      ensured: EnsureOverviewResponse | null,
+    ) => {
+      if (!ensured) {
+        finalizeTimeout();
+        return;
+      }
+
+      const responseFacts = ensured.facts ?? null;
+      const responseFactsDigestHash =
+        ensured.factsDigestHash ?? responseFacts?.factsDigestHash ?? null;
+      const responseFactsSourceVersion =
+        ensured.factsSourceVersion ?? responseFacts?.factsSourceVersion ?? null;
+      const responseFactsStatus = ensured.factsStatus ?? computeFactsStatusClient(responseFacts);
+
+      if (responseFacts) {
+        finalizeFacts(supplementId, responseFacts, {
+          factsStatus: responseFactsStatus,
+          factsDigestHash: responseFactsDigestHash,
+          factsSourceVersion: responseFactsSourceVersion,
+        });
+      } else if (isActive) {
+        setFactsStatus(responseFactsStatus);
+        factsDigestHashRef.current = responseFactsDigestHash;
+        setFactsDigestHash(responseFactsDigestHash);
+        setFactsSourceVersion(responseFactsSourceVersion);
+      }
+
+      const inlinePayload = ensured.analysisData ?? null;
+      const inlineHash = extractFactsDigestHashFromAnalysisPayload(inlinePayload);
+      if (inlinePayload && responseFactsDigestHash && inlineHash === responseFactsDigestHash) {
+        finalizeReady(supplementId, inlinePayload, responseFactsDigestHash);
+        return;
+      }
+
+      const derivedStatus: "ready" | "pending" | "blocked" | "none" =
+        ensured.aiStatus ?? (ensured.analysisReady ? "ready" : "none");
+
+      if (derivedStatus === "ready") {
+        const cached = analysisCache.get(supplementId);
+        if (cached && cached.factsDigestHash && cached.factsDigestHash === responseFactsDigestHash) {
+          finalizeReady(supplementId, cached.data, responseFactsDigestHash);
+          return;
+        }
+        const payload = await fetchLatestHashMatched(supplementId, responseFactsDigestHash);
+        if (payload) {
+          finalizeReady(supplementId, payload, responseFactsDigestHash);
+          return;
+        }
+        finalizeNone();
+        return;
+      }
+
+      if (derivedStatus === "blocked") {
+        finalizeBlocked(
+          typeof ensured.aiRetryAfterSec === "number" ? ensured.aiRetryAfterSec : 0,
+          typeof ensured.aiBlockedReason === "string" ? ensured.aiBlockedReason : null,
+        );
+        return;
+      }
+
+      if (derivedStatus === "pending") {
+        startPendingPoll(supplementId, responseFactsDigestHash);
+        return;
+      }
+
+      finalizeNone();
     };
 
     const load = async () => {
@@ -1104,7 +1329,11 @@ function DetailSheet({
       if (supplementId) {
         const cachedFacts = factsCache.get(supplementId);
         if (cachedFacts && isActive) {
-          setFacts(cachedFacts);
+          finalizeFacts(supplementId, cachedFacts, {
+            factsStatus: computeFactsStatusClient(cachedFacts),
+            factsDigestHash: cachedFacts.factsDigestHash ?? null,
+            factsSourceVersion: cachedFacts.factsSourceVersion ?? null,
+          });
         }
       }
 
@@ -1132,62 +1361,16 @@ function DetailSheet({
           });
         }
 
-        if (!isActive || overviewPhaseRef.current !== "loading") return;
-
-        const ensuredPayload = ensured?.analysisData ?? null;
-        if (supplementId && ensuredPayload) {
-          finalizeReady(supplementId, ensuredPayload);
+        if (!isActive) return;
+        if (!supplementId) {
+          finalizeTimeout();
           return;
         }
-
-        if (ensured && !ensured.analysisReady) {
-          finalizeFallback();
-          return;
-        }
-      }
-
-      if (!isActive || overviewPhaseRef.current !== "loading") return;
-
-      if (!supplementId) {
-        finalizeFallback();
-        return;
-      }
-
-      const cached = analysisCache.get(supplementId);
-      if (cached) {
-        if (!factsCache.has(supplementId)) {
-          // Facts are independent from AI enhancement. If we already have analysis cached locally,
-          // fetch facts in the background without blocking the UI.
-          void ensureOverview({
-            supplementId,
-            barcode: item.barcode ?? null,
-            brandName: item.brandName ?? null,
-            productName: item.productName,
-            dosageText: dosageShort,
-            userSupplementId,
-          })
-            .then((ensured) => {
-              if (!isActive) return;
-              const ensuredFacts = ensured?.facts ?? null;
-              if (ensuredFacts) finalizeFacts(supplementId, ensuredFacts);
-            })
-            .catch((error) => {
-              const message = error instanceof Error ? error.message : "Unknown error";
-              console.warn("[supplement-overview] Failed to fetch facts in background", message);
-            });
-        }
-        finalizeReady(supplementId, cached);
+        await applyEnsureResponse(supplementId, ensured);
         return;
       }
 
       try {
-        let payload = await fetchLatest(supplementId);
-        if (payload) {
-          if (!isActive || overviewPhaseRef.current !== "loading") return;
-          finalizeReady(supplementId, payload);
-          return;
-        }
-
         const ensured = await ensureOverview({
           supplementId,
           barcode: item.barcode ?? null,
@@ -1197,51 +1380,27 @@ function DetailSheet({
           userSupplementId,
         });
 
-        if (!isActive || overviewPhaseRef.current !== "loading") return;
-
-        if (ensured?.facts) {
-          finalizeFacts(supplementId, ensured.facts);
-        }
-
-        const ensuredPayload = ensured?.analysisData ?? null;
-        if (ensuredPayload) {
-          finalizeReady(supplementId, ensuredPayload);
-          return;
-        }
-
-        if (!ensured || !ensured.analysisReady) {
-          finalizeFallback();
-          return;
-        }
-
-        payload = await fetchLatest(supplementId);
-        if (!isActive || overviewPhaseRef.current !== "loading") return;
-        if (payload) {
-          finalizeReady(supplementId, payload);
-          return;
-        }
-
-        finalizeFallback();
+        if (!isActive) return;
+        await applyEnsureResponse(supplementId, ensured);
       } catch (error) {
-        if (!isActive || overviewPhaseRef.current !== "loading") return;
+        if (!isActive) return;
         const message = error instanceof Error ? error.message : "Unknown error";
         console.warn("[supplement-overview] Failed to load analysis", message);
-        finalizeFallback();
+        finalizeTimeout();
       }
     };
 
     void load()
       .catch((error) => {
-        if (!isActive || overviewPhaseRef.current !== "loading") return;
+        if (!isActive) return;
         const message = error instanceof Error ? error.message : "Unknown error";
         console.warn("[supplement-overview] Unhandled load error", message);
-        finalizeFallback();
-      })
-      .finally(() => clearTimeout(fallbackTimer));
+        finalizeTimeout();
+      });
 
     return () => {
       isActive = false;
-      clearTimeout(fallbackTimer);
+      clearPollTimers();
     };
   }, [
     item.id,
@@ -1305,13 +1464,14 @@ function DetailSheet({
       )
     : "";
 
-  const isAiReady = overviewPhase === "ready" && !!analysisData;
   const aiV2 = (analysisRoot?.mySupplementOverviewV2 ?? null) as MySupplementOverviewV2 | null;
   const aiTips = Array.isArray(aiV2?.tips) ? aiV2.tips.filter(isNonEmptyString).slice(0, 3) : [];
   const aiNotice = Array.isArray(aiV2?.whatYouMayNotice)
     ? aiV2.whatYouMayNotice.filter(isNonEmptyString).slice(0, 3)
     : [];
   const aiWatchOuts = Array.isArray(aiV2?.watchOuts) ? aiV2.watchOuts.filter(isNonEmptyString).slice(0, 4) : [];
+  const aiRetryHours =
+    aiRetryAfterSec > 0 ? Math.max(1, Math.ceil(aiRetryAfterSec / 3600)) : 0;
 
   const factsTimingHint = (() => {
     const hints = facts?.directions?.parsed?.timingHints ?? [];
@@ -1493,6 +1653,10 @@ function DetailSheet({
 
                   <View style={styles.overviewContent}>
                     <View style={{ gap: 18 }}>
+                      {factsStatus === "partial" ? (
+                        <Text style={styles.overviewMetaText}>{"We're still fetching label/regulatory data..."}</Text>
+                      ) : null}
+
                       <View style={{ gap: 10 }}>
                         <Text style={styles.overviewSectionTitle}>What's inside</Text>
                         {activesLines.length > 0 ? (
@@ -1579,14 +1743,30 @@ function DetailSheet({
                         </View>
                       ) : null}
 
-                      {overviewPhase === "loading" ? (
+                      {aiUiPhase === "pending" ? (
                         <View style={{ gap: 12, marginTop: 6 }}>
                           <Text style={styles.overviewPlaceholder}>Generating AI insights...</Text>
                           <View style={styles.overviewSkeletonLine} />
                           <View style={[styles.overviewSkeletonLine, { width: "70%" }]} />
                         </View>
-                      ) : overviewPhase === "fallback" ? (
+                      ) : aiUiPhase === "blocked" ? (
+                        <View style={{ gap: 8, marginTop: 6 }}>
+                          <Text style={styles.overviewMetaText}>
+                            {aiRetryHours > 0
+                              ? `AI insights temporarily unavailable. Try again in ~${aiRetryHours}h.`
+                              : "AI insights temporarily unavailable."}
+                          </Text>
+                          {aiBlockedReason ? (
+                            <Text style={styles.overviewMetaText}>Reason: {aiBlockedReason}</Text>
+                          ) : null}
+                        </View>
+                      ) : aiUiPhase === "timeout" || aiUiPhase === "none" ? (
                         <View style={{ marginTop: 6 }}>
+                          {aiUiPhase === "none" ? (
+                            <Text style={[styles.overviewMetaText, { marginBottom: 10 }]}>
+                              AI insights are currently unavailable. Facts are shown above.
+                            </Text>
+                          ) : null}
                           <Pressable onPress={() => setOverviewRetryNonce((n) => n + 1)} style={styles.overviewRetryBtn}>
                             <Text style={styles.overviewRetryText}>Retry AI</Text>
                           </Pressable>
