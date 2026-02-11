@@ -1,0 +1,101 @@
+name: Website SSE Contract (Nightly)
+
+on:
+  workflow_dispatch:
+    inputs:
+      render_base_url:
+        description: "Optional override for Render base URL"
+        required: false
+        type: string
+  schedule:
+    - cron: "25 10 * * *"
+
+concurrency:
+  group: website-sse-contract-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  website_sse_contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Wait for Render Deploy Commit
+        env:
+          RENDER_BASE_URL: ${{ github.event.inputs.render_base_url != '' && github.event.inputs.render_base_url || secrets.RENDER_BASE_URL }}
+          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          RENDER_REGRESSION_TOKEN: ${{ secrets.RENDER_REGRESSION_TOKEN }}
+          RENDER_DEPLOY_WAIT_TIMEOUT_MS: "900000"
+          RENDER_DEPLOY_WAIT_INTERVAL_MS: "15000"
+          RENDER_DEPLOY_REQUEST_TIMEOUT_MS: "90000"
+          RENDER_COMMIT_PROBE_BARCODE: "00029537001069"
+        run: node scripts/ci/wait-render-commit.mjs
+
+      - name: Prepare Artifact Directory
+        id: artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          ARTIFACT_DIR="artifacts/website-sse-contract/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "$ARTIFACT_DIR"
+          echo "artifact_dir=$ARTIFACT_DIR" >> "$GITHUB_OUTPUT"
+
+      - name: Run Website Barcode E2E (Web Fixture + SSE Contract)
+        env:
+          API_BASE_URL: ${{ github.event.inputs.render_base_url != '' && github.event.inputs.render_base_url || secrets.RENDER_BASE_URL }}
+          RENDER_REGRESSION_TOKEN: ${{ secrets.RENDER_REGRESSION_TOKEN }}
+          WEB_E2E_OUT_DIR: ${{ steps.artifact.outputs.artifact_dir }}
+          WEB_E2E_SSE_TIMEOUT_MS: "50000"
+          WEB_E2E_SSE_STOP_ON: "revision1"
+          WEB_E2E_SSE_STOP_TAIL_MS: "5000"
+          WEB_E2E_RETRIES: "2"
+        run: |
+          node scripts/maintainer/website-barcode-e2e.mjs \
+            --suite web \
+            --input scripts/maintainer/fixtures/web_only_barcodes.json \
+            --phase-mode phase1 \
+            --sse-stop-on revision1 \
+            --retries 2
+
+      - name: Assert SSE Contract Artifacts
+        env:
+          ARTIFACT_DIR: ${{ steps.artifact.outputs.artifact_dir }}
+        run: |
+          node -e '
+          const fs = require("fs");
+          const path = require("path");
+          const summaryPath = path.join(process.env.ARTIFACT_DIR, "sse_contract_summary.json");
+          const checklistPath = path.join(process.env.ARTIFACT_DIR, "checklist_10x.json");
+          const summary = JSON.parse(fs.readFileSync(summaryPath, "utf8"));
+          const checklist = JSON.parse(fs.readFileSync(checklistPath, "utf8"));
+          const failures = summary.failureCounts || {};
+          const mustZero = ["missing_revision1", "missing_done", "no_sse", "parse_error", "timeout"];
+          const bad = mustZero.filter((k) => Number(failures[k] || 0) > 0);
+          if (bad.length) {
+            throw new Error(`SSE contract failures detected: ${bad.map((k) => `${k}=${failures[k] || 0}`).join(", ")}`);
+          }
+          const scans = Array.isArray(checklist.scans) ? checklist.scans : [];
+          const okScans = scans.filter((row) => row && row.ok);
+          const rev0All = okScans.length === 10 && okScans.every((row) => Number.isFinite(row.tRevision0Ms));
+          const rev1All = okScans.length === 10 && okScans.every((row) => Number.isFinite(row.tRevision1Ms));
+          const doneAll = okScans.length === 10 && okScans.every((row) => Number.isFinite(row.doneMs));
+          if (!rev0All || !rev1All || !doneAll) {
+            throw new Error("Checklist 10x did not satisfy rev0/rev1/done contract for all scans.");
+          }
+          '
+
+      - name: Upload Artifact
+        if: always() && steps.artifact.outputs.artifact_dir != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: website-sse-contract-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ steps.artifact.outputs.artifact_dir }}
+          if-no-files-found: warn

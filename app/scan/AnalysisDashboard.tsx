@@ -325,6 +325,19 @@ const buildIngredientsDetailRequestKey = (bundle: AnalysisBundle) =>
         bundle.meta.factsDigestHash,
     ].join('|');
 
+const isIngredientsDetailReady = (bundle: AnalysisBundle) => {
+    const meta = bundle.meta;
+    const sourceTypeFinal = meta.sourceTypeFinal !== false;
+    const detailReady = meta.detailReady !== false;
+    return (
+        Number(meta.revision) >= 1 &&
+        meta.phase === 'fast_ai' &&
+        sourceTypeFinal &&
+        detailReady &&
+        bundle.sections.ingredients.dataStatus !== 'pending'
+    );
+};
+
 function shortenCompanyName(value?: string | null) {
     const normalized = normalizeText(value);
     if (!normalized) return null;
@@ -867,7 +880,13 @@ const mapBundleStatusToCover = (status: AnalysisBundle['sections']['overview']['
     return 'limited';
 };
 
-const buildBundleSources = (sourceType: AnalysisBundle['meta']['sourceType']): SourceRef[] => {
+const buildBundleSources = (
+    sourceType: AnalysisBundle['meta']['sourceType'] | null,
+    sourceTypeFinal: boolean
+): SourceRef[] => {
+    if (!sourceTypeFinal || !sourceType) {
+        return [];
+    }
     // Product trust framing: regulatory/label sources count as "connected" even if we didn't use web evidence.
     if (sourceType === 'lnhpd' || sourceType === 'dsld') {
         return [
@@ -883,11 +902,12 @@ const buildBundleSources = (sourceType: AnalysisBundle['meta']['sourceType']): S
 
 const buildBundleDataStatus = (
     status: AnalysisBundle['sections']['overview']['dataStatus'],
-    sourceType: AnalysisBundle['meta']['sourceType']
+    sourceType: AnalysisBundle['meta']['sourceType'] | null,
+    sourceTypeFinal: boolean
 ) => ({
     status: mapBundleStatusToCover(status),
     missingReasons: [],
-    sources: buildBundleSources(sourceType),
+    sources: buildBundleSources(sourceType, sourceTypeFinal),
 });
 
 const AnalysisBundleDashboard: React.FC<{
@@ -998,6 +1018,8 @@ const AnalysisBundleDashboard: React.FC<{
     const productInfo = analysis?.productInfo ?? { brand: null, name: null, category: null, image: null };
     const productTitle = productInfo.name || 'Supplement';
     const productSubtitle = [productInfo.brand, productInfo.category].filter(Boolean).join(' • ');
+    const bundleSourceTypeFinal = bundleState.meta.sourceTypeFinal !== false && Number(bundleState.meta.revision) >= 1;
+    const bundleSourceType = bundleSourceTypeFinal ? bundleState.meta.sourceType : null;
 
     const overviewCover = bundleState.sections.overview.cover;
     const overviewBullets = (overviewCover?.bullets ?? []).map((bullet) => ({
@@ -1007,9 +1029,9 @@ const AnalysisBundleDashboard: React.FC<{
     const ingredientsCover = bundleState.sections.ingredients.cover;
     const ingredientsItems = ingredientsCover?.items ?? [];
     const ingredientsNotProvidedCopy =
-        bundleState.meta.sourceType === 'lnhpd'
+        bundleSourceType === 'lnhpd'
             ? 'Not provided by LNHPD for this NPN.'
-            : bundleState.meta.sourceType === 'dsld'
+            : bundleSourceType === 'dsld'
               ? 'Not provided by DSLD for this label.'
               : 'Not provided by source.';
     const ingredientMechanisms: Mechanism[] = ingredientsItems.length
@@ -1044,6 +1066,9 @@ const AnalysisBundleDashboard: React.FC<{
     const safetyBullet1Text = normalizeText(safetyCover?.bullets?.[1]?.text ?? null);
 
     const fetchIngredientsDetail = useCallback(async () => {
+        if (!isIngredientsDetailReady(bundleState)) {
+            return;
+        }
         const requestKey = buildIngredientsDetailRequestKey(bundleState);
         if (detailLoadingRef.current && detailInFlightKeyRef.current === requestKey) return;
         if (detailLoadingRef.current) return;
@@ -1306,7 +1331,7 @@ const AnalysisBundleDashboard: React.FC<{
         }
         if (autoFetchKeyRef.current === key) return;
 
-        if (coverTotalCount > 0 && !hasDetail && !detailLoading && !isTerminal) {
+        if (coverTotalCount > 0 && !hasDetail && !detailLoading && !isTerminal && isIngredientsDetailReady(bundleState)) {
             autoFetchKeyRef.current = key;
             fetchIngredientsDetail();
         }
@@ -1494,7 +1519,11 @@ const AnalysisBundleDashboard: React.FC<{
             bullets: overviewBullets,
             bulletLimit: 2,
             bulletLines: 2,
-            dataStatus: buildBundleDataStatus(bundleState.sections.overview.dataStatus, bundleState.meta.sourceType),
+            dataStatus: buildBundleDataStatus(
+                bundleState.sections.overview.dataStatus,
+                bundleSourceType,
+                bundleSourceTypeFinal
+            ),
             content: overviewContent,
         },
         {
@@ -1510,7 +1539,11 @@ const AnalysisBundleDashboard: React.FC<{
             viewLabel: t.analysisView,
             eyebrow: t.analysisEyebrowKeyMechanism,
             mechanisms: ingredientMechanisms,
-            dataStatus: buildBundleDataStatus(bundleState.sections.ingredients.dataStatus, bundleState.meta.sourceType),
+            dataStatus: buildBundleDataStatus(
+                bundleState.sections.ingredients.dataStatus,
+                bundleSourceType,
+                bundleSourceTypeFinal
+            ),
             content: ingredientsContent,
         },
         {
@@ -1527,7 +1560,11 @@ const AnalysisBundleDashboard: React.FC<{
             eyebrow: t.analysisEyebrowDailyRoutine,
             routineLine: usageRoutine ? { text: usageRoutine } : undefined,
             bullets: usageBullets,
-            dataStatus: buildBundleDataStatus(bundleState.sections.usage.dataStatus, bundleState.meta.sourceType),
+            dataStatus: buildBundleDataStatus(
+                bundleState.sections.usage.dataStatus,
+                bundleSourceType,
+                bundleSourceTypeFinal
+            ),
             content: usageContent,
         },
         {
@@ -1552,7 +1589,11 @@ const AnalysisBundleDashboard: React.FC<{
                 : bundleState.sections.safety.dataStatus === 'pending'
                     ? { text: 'Safety tips pending', isPlaceholder: true }
                     : { text: 'General reminder: check the label and consult a clinician if needed.' },
-            dataStatus: buildBundleDataStatus(bundleState.sections.safety.dataStatus, bundleState.meta.sourceType),
+            dataStatus: buildBundleDataStatus(
+                bundleState.sections.safety.dataStatus,
+                bundleSourceType,
+                bundleSourceTypeFinal
+            ),
             content: safetyContent,
         },
     ];
