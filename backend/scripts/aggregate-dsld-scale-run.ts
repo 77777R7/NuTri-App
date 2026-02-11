@@ -28,7 +28,10 @@ type PartGateSummary = {
   coverage: number | null;
   failuresLines: number | null;
   missingRatio: number | null;
+  missingRatioMode: "uniqueMissingKeys/sampleSize" | "activeMissingRows/sampleSize" | null;
   activeMissingRows: number | null;
+  uniqueMissingKeys: number | null;
+  activeMissingRatio: number | null;
   sampleSize: number | null;
   taxonomyMismatchAmongResolved: number | null;
   changedToEmptyCount: number | null;
@@ -139,21 +142,85 @@ const extractFailuresLines = (payload: unknown): number | null => {
 
 const extractMissingMetrics = (
   payload: unknown,
-): { activeMissingRows: number | null; sampleSize: number | null; missingRatio: number | null } => {
+): {
+  activeMissingRows: number | null;
+  uniqueMissingKeys: number | null;
+  sampleSize: number | null;
+  activeMissingRatio: number | null;
+  missingRatio: number | null;
+  missingRatioMode: "uniqueMissingKeys/sampleSize" | "activeMissingRows/sampleSize" | null;
+} => {
   if (!payload || typeof payload !== "object") {
-    return { activeMissingRows: null, sampleSize: null, missingRatio: null };
+    return {
+      activeMissingRows: null,
+      uniqueMissingKeys: null,
+      sampleSize: null,
+      activeMissingRatio: null,
+      missingRatio: null,
+      missingRatioMode: null,
+    };
   }
   const record = payload as { summary?: unknown };
   if (!record.summary || typeof record.summary !== "object") {
-    return { activeMissingRows: null, sampleSize: null, missingRatio: null };
+    return {
+      activeMissingRows: null,
+      uniqueMissingKeys: null,
+      sampleSize: null,
+      activeMissingRatio: null,
+      missingRatio: null,
+      missingRatioMode: null,
+    };
   }
-  const summary = record.summary as { activeMissingRows?: unknown; sampleSize?: unknown };
+  const summary = record.summary as {
+    activeMissingRows?: unknown;
+    uniqueMissingKeys?: unknown;
+    sampleSize?: unknown;
+  };
   const activeMissingRows = toNumber(summary.activeMissingRows);
+  const uniqueMissingKeys = toNumber(summary.uniqueMissingKeys);
   const sampleSize = toNumber(summary.sampleSize);
-  if (activeMissingRows == null || sampleSize == null || sampleSize <= 0) {
-    return { activeMissingRows, sampleSize, missingRatio: null };
+  const activeMissingRatio =
+    activeMissingRows != null && sampleSize != null && sampleSize > 0
+      ? activeMissingRows / sampleSize
+      : null;
+  if (sampleSize == null || sampleSize <= 0) {
+    return {
+      activeMissingRows,
+      uniqueMissingKeys,
+      sampleSize,
+      activeMissingRatio,
+      missingRatio: null,
+      missingRatioMode: null,
+    };
   }
-  return { activeMissingRows, sampleSize, missingRatio: activeMissingRows / sampleSize };
+  if (uniqueMissingKeys != null) {
+    return {
+      activeMissingRows,
+      uniqueMissingKeys,
+      sampleSize,
+      activeMissingRatio,
+      missingRatio: uniqueMissingKeys / sampleSize,
+      missingRatioMode: "uniqueMissingKeys/sampleSize",
+    };
+  }
+  if (activeMissingRows != null) {
+    return {
+      activeMissingRows,
+      uniqueMissingKeys,
+      sampleSize,
+      activeMissingRatio,
+      missingRatio: activeMissingRows / sampleSize,
+      missingRatioMode: "activeMissingRows/sampleSize",
+    };
+  }
+  return {
+    activeMissingRows,
+    uniqueMissingKeys,
+    sampleSize,
+    activeMissingRatio,
+    missingRatio: null,
+    missingRatioMode: null,
+  };
 };
 
 const extractTaxonomyMismatchAmongResolved = (payload: unknown): number | null => {
@@ -264,7 +331,10 @@ const main = async () => {
       coverage,
       failuresLines,
       missingRatio: missing.missingRatio,
+      missingRatioMode: missing.missingRatioMode,
       activeMissingRows: missing.activeMissingRows,
+      uniqueMissingKeys: missing.uniqueMissingKeys,
+      activeMissingRatio: missing.activeMissingRatio,
       sampleSize: missing.sampleSize,
       taxonomyMismatchAmongResolved,
       changedToEmptyCount,

@@ -138,6 +138,11 @@ const STRIP_SUFFIX_TOKENS = new Set([
   "tablet",
   "softgels",
   "softgel",
+  "tm",
+  "r",
+  "brand",
+  "matrix",
+  "formula",
 ]);
 
 const STRIP_PREFIX_TOKENS = new Set([
@@ -150,6 +155,10 @@ const STRIP_PREFIX_TOKENS = new Set([
   "fermented",
   "raw",
   "whole",
+  "premium",
+  "super",
+  "advanced",
+  "ultra",
 ]);
 
 const STRIP_ANYWHERE_TOKENS = new Set([
@@ -180,7 +189,102 @@ const STRIP_ANYWHERE_TOKENS = new Set([
   "accelerator",
   "soothing",
   "preload",
+  "contains",
+  "nutrients",
+  "transport",
+  "cellular",
+  "hydration",
+  "amplifier",
+  "activator",
+  "stack",
+  "facts",
+  "serving",
+  "per",
+  "r",
 ]);
+
+const MARKETING_HEADING_EXACT = new Set([
+  "also contains",
+  "hydration system",
+  "atp amplifier",
+  "advanced carbohydrate system",
+  "amino stack",
+  "amino hydrate system",
+  "energized nutrients",
+  "bioactive enzymes proteins",
+  "100 whole food nutrients",
+  "nutrition facts per serving",
+  "palatability and solubility factors",
+  "electrolytes",
+  "electrolytes++",
+  "hydration",
+  "transport c plus",
+  "heart",
+  "kidney",
+  "muscle",
+  "lymph",
+  "each serving",
+  "naturally occurring",
+  "total active cell count",
+  "in a base of the following extracts",
+  "pump n o support",
+  "micronized amino acids",
+  "micronized bcaa",
+  "saa sequenced proteins tm",
+  "plant source nutrients",
+  "super fruit antioxidants",
+  "power healthy inflammatory support",
+  "leucine anabolic trigger",
+  "amino acids and enzymes",
+  "nutrient dense plant concentrates",
+  "calories from protein",
+  "calories from carbohydrates",
+  "active constituents of",
+  "from the land",
+]);
+
+const MARKETING_HEADING_PATTERNS: RegExp[] = [
+  /\balso contains\b/,
+  /\bhydration system\b/,
+  /\batp amplifier\b/,
+  /\bcellular transport(?:\s*&\s*|\s+)insulin activator\b/,
+  /\badvanced carbohydrate system\b/,
+  /\bamino stack\b/,
+  /\bamino hydrate system\b/,
+  /\benergized nutrients\b/,
+  /\bbioactive enzymes proteins\b/,
+  /\b100 whole food nutrients\b/,
+  /\bnutrition facts per serving\b/,
+  /\bpalatability and solubility factors\b/,
+  /\bwarrior (land force|waters|oceans)\b/,
+  /\bin a base of\b/,
+  /\beach serving\b/,
+  /\bnaturally occurring\b/,
+  /\bas directed\b/,
+  /\bactive cell count\b/,
+  /\bmay typically provide\b/,
+  /\bfollowing extracts?\b/,
+  /\bpump n o support\b/,
+  /\bmicronized amino acids?\b/,
+  /\bmicronized bcaa\b/,
+  /\bsaa sequenced proteins?\b/,
+  /\bplant source nutrients\b/,
+  /\bsuper fruit antioxidants\b/,
+  /\bpower healthy inflammatory support\b/,
+  /\bleucine anabolic trigger\b/,
+  /\bamino acids and enzymes\b/,
+  /\bnutrient dense plant concentrates\b/,
+  /\bcalories from (?:protein|carbohydrates?)\b/,
+  /\bactive constituents of\b/,
+  /\bfrom the land\b/,
+];
+
+const isMarketingHeading = (value: string): boolean => {
+  const normalized = normalizeText(value);
+  if (!normalized) return false;
+  if (MARKETING_HEADING_EXACT.has(normalized)) return true;
+  return MARKETING_HEADING_PATTERNS.some((pattern) => pattern.test(normalized));
+};
 
 const stripNameKeyVariants = (value: string): string[] => {
   const base = normalizeText(value);
@@ -559,6 +663,289 @@ const CURATED_SYNONYM_MAP: Record<
     keys: ["dimethylglycine"],
     reason: "curated_dimethylglycine",
     category: "chemical",
+  },
+  cholecalciferol: {
+    keys: ["vitamin_d"],
+    reason: "curated_cholecalciferol",
+    category: "vitamin",
+    baseUnit: "iu",
+  },
+  "dmae bitartrate": {
+    keys: ["dmae"],
+    reason: "curated_dmae_bitartrate_alias",
+    category: "chemical",
+  },
+  agmamax: {
+    keys: ["agmatine_sulfate"],
+    reason: "curated_agmamax",
+    category: "chemical",
+  },
+  agmapure: {
+    keys: ["agmatine_sulfate"],
+    reason: "curated_agmapure",
+    category: "chemical",
+  },
+  "ksm 66": {
+    keys: ["ashwagandha"],
+    reason: "curated_ksm66",
+    category: "botanical",
+  },
+  sensoril: {
+    keys: ["ashwagandha"],
+    reason: "curated_sensoril",
+    category: "botanical",
+  },
+  chromemate: {
+    keys: ["chromium"],
+    reason: "curated_chromemate",
+    category: "mineral",
+    baseUnit: "mcg",
+  },
+  ferrochel: {
+    keys: ["iron"],
+    reason: "curated_ferrochel",
+    category: "mineral",
+    baseUnit: "mg",
+  },
+  benfotiamine: {
+    keys: ["benfotiamine"],
+    reason: "curated_benfotiamine",
+    category: "chemical",
+    baseUnit: "mg",
+  },
+  genistein: {
+    keys: ["genistein"],
+    reason: "curated_genistein",
+    category: "chemical",
+    baseUnit: "mg",
+  },
+  xylanase: {
+    keys: ["xylanase"],
+    reason: "curated_xylanase",
+    category: "enzyme",
+    baseUnit: "mg",
+  },
+  "7 keto": {
+    keys: ["7_keto"],
+    reason: "curated_7_keto",
+    category: "chemical",
+    baseUnit: "mg",
+  },
+  fiber: {
+    keys: ["dietary_fiber", "fiber"],
+    reason: "curated_fiber",
+    category: "food",
+    baseUnit: "g",
+  },
+  "biocell collagen": {
+    keys: ["biocell_collagen", "collagen"],
+    reason: "curated_biocell_collagen",
+    category: "animal",
+    baseUnit: "mg",
+  },
+  "cluster dextrin": {
+    keys: ["cluster_dextrin", "dextrin"],
+    reason: "curated_cluster_dextrin",
+    category: "chemical",
+    baseUnit: "mg",
+  },
+  elevatp: {
+    keys: ["elevatp"],
+    reason: "curated_elevatp",
+    category: "chemical",
+    baseUnit: "mg",
+  },
+  apigenin: {
+    keys: ["apigenin"],
+    reason: "curated_apigenin",
+    category: "chemical",
+    baseUnit: "mg",
+  },
+  glycerol: {
+    keys: ["glycerol", "glycerin"],
+    reason: "curated_glycerol",
+    category: "chemical",
+    baseUnit: "mg",
+  },
+  glucuronolactone: {
+    keys: ["glucuronolactone"],
+    reason: "curated_glucuronolactone",
+    category: "chemical",
+    baseUnit: "mg",
+  },
+  alphasize: {
+    keys: ["alpha_gpc", "alphasize"],
+    reason: "curated_alphasize",
+    category: "chemical",
+    baseUnit: "mg",
+  },
+  "kre alkalyn": {
+    keys: ["creatine", "creatine_monohydrate"],
+    reason: "curated_kre_alkalyn",
+    category: "chemical",
+    baseUnit: "mg",
+  },
+  aminogen: {
+    keys: ["aminogen"],
+    reason: "curated_aminogen",
+    category: "enzyme",
+    baseUnit: "mg",
+  },
+  "dicaffeine malate": {
+    keys: ["dicaffeine_malate", "caffeine"],
+    reason: "curated_dicaffeine_malate",
+    category: "chemical",
+    baseUnit: "mg",
+  },
+  cocarboxylase: {
+    keys: ["cocarboxylase", "thiamine_pyrophosphate"],
+    reason: "curated_cocarboxylase",
+    category: "vitamin",
+    baseUnit: "mg",
+  },
+  pgx: {
+    keys: ["pgx"],
+    reason: "curated_pgx",
+    category: "food",
+    baseUnit: "mg",
+  },
+  enzyplex: {
+    keys: ["enzyplex"],
+    reason: "curated_enzyplex",
+    category: "enzyme",
+    baseUnit: "mg",
+  },
+  epicor: {
+    keys: ["epicor"],
+    reason: "curated_epicor",
+    category: "microbe",
+    baseUnit: "mg",
+  },
+  methylliberine: {
+    keys: ["methylliberine"],
+    reason: "curated_methylliberine",
+    category: "chemical",
+    baseUnit: "mg",
+  },
+  sytrinol: {
+    keys: ["sytrinol"],
+    reason: "curated_sytrinol",
+    category: "chemical",
+    baseUnit: "mg",
+  },
+  sunfiber: {
+    keys: ["sunfiber", "guar_fiber"],
+    reason: "curated_sunfiber",
+    category: "food",
+    baseUnit: "mg",
+  },
+  diosmin: {
+    keys: ["diosmin"],
+    reason: "curated_diosmin",
+    category: "chemical",
+    baseUnit: "mg",
+  },
+  fisetin: {
+    keys: ["fisetin"],
+    reason: "curated_fisetin",
+    category: "chemical",
+    baseUnit: "mg",
+  },
+  ostivone: {
+    keys: ["ostivone"],
+    reason: "curated_ostivone",
+    category: "chemical",
+    baseUnit: "mg",
+  },
+  rauwolscine: {
+    keys: ["rauwolscine", "alpha_yohimbine"],
+    reason: "curated_rauwolscine",
+    category: "chemical",
+    baseUnit: "mg",
+  },
+  sulbutiamine: {
+    keys: ["sulbutiamine"],
+    reason: "curated_sulbutiamine",
+    category: "chemical",
+    baseUnit: "mg",
+  },
+  "lutemax 2020": {
+    keys: ["lutemax_2020", "lutein"],
+    reason: "curated_lutemax_2020",
+    category: "chemical",
+    baseUnit: "mg",
+  },
+  biopqq: {
+    keys: ["pyrroloquinoline_quinone", "pqq"],
+    reason: "curated_biopqq",
+    category: "chemical",
+    baseUnit: "mg",
+  },
+  "ip 6": {
+    keys: ["inositol_hexaphosphate", "ip6"],
+    reason: "curated_ip6",
+    category: "chemical",
+    baseUnit: "mg",
+  },
+  mbp: {
+    keys: ["milk_basic_protein", "mbp"],
+    reason: "curated_mbp",
+    category: "animal",
+    baseUnit: "mg",
+  },
+  wellmune: {
+    keys: ["wellmune", "beta_glucan"],
+    reason: "curated_wellmune",
+    category: "food",
+    baseUnit: "mg",
+  },
+  "oregon grape": {
+    keys: ["oregon_grape", "mahonia_aquifolium"],
+    reason: "curated_oregon_grape",
+    category: "botanical",
+    baseUnit: "mg",
+  },
+  watercress: {
+    keys: ["watercress", "nasturtium_officinale"],
+    reason: "curated_watercress",
+    category: "botanical",
+    baseUnit: "mg",
+  },
+  banaba: {
+    keys: ["banaba", "lagerstroemia_speciosa"],
+    reason: "curated_banaba",
+    category: "botanical",
+    baseUnit: "mg",
+  },
+  guduchi: {
+    keys: ["guduchi", "tinospora_cordifolia"],
+    reason: "curated_guduchi",
+    category: "botanical",
+    baseUnit: "mg",
+  },
+  wormwood: {
+    keys: ["wormwood", "artemisia_absinthium"],
+    reason: "curated_wormwood",
+    category: "botanical",
+    baseUnit: "mg",
+  },
+  "tart cherry": {
+    keys: ["tart_cherry", "prunus_cerasus"],
+    reason: "curated_tart_cherry",
+    category: "botanical",
+    baseUnit: "mg",
+  },
+  celadrin: {
+    keys: ["celadrin"],
+    reason: "curated_celadrin",
+    category: "chemical",
+    baseUnit: "mg",
+  },
+  "advantra z": {
+    keys: ["advantra_z", "citrus_aurantium"],
+    reason: "curated_advantra_z",
+    category: "botanical",
+    baseUnit: "mg",
   },
   "folic acid 0": {
     keys: ["folic_acid"],
@@ -1924,6 +2311,18 @@ const resolveLatinBinomial = (
       }
     }
 
+    if (isMarketingHeading(nameKey)) {
+      manualQueue.push({
+        nameKey,
+        count: entry.count,
+        sourceCount: entry.sourceCount,
+        nameRawSamples,
+        sourceIdSamples,
+        reason: "marketing_heading_excluded",
+      });
+      return;
+    }
+
     if (isFoodPowder(nameKey)) {
       manualQueue.push({
         nameKey,
@@ -2138,7 +2537,7 @@ const resolveLatinBinomial = (
       return;
     }
 
-    if (isFoodPowder(nameKey) || isAnimalSource(nameKey)) {
+    if (isFoodPowder(nameKey) || isAnimalSource(nameKey) || isMarketingHeading(nameKey)) {
       return;
     }
 
@@ -2250,7 +2649,12 @@ const resolveLatinBinomial = (
       animal: manualQueue.filter((entry) => entry.reason === "animal_source_excluded").length,
       chemical: autoApply.filter((entry) => entry.mappingType === "curated_synonym").length,
       excluded: manualQueue.filter((entry) =>
-        ["food_powder_excluded", "animal_source_excluded", "no_safe_botanical"].includes(
+        [
+          "food_powder_excluded",
+          "animal_source_excluded",
+          "marketing_heading_excluded",
+          "no_safe_botanical",
+        ].includes(
           entry.reason,
         ),
       ).length,

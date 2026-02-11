@@ -56,6 +56,8 @@ const tableA = getArg("table-a") ?? "product_scores";
 const tableB = getArg("table-b") ?? "product_scores_shadow";
 const scoreVersionA = getArg("score-version-a");
 const scoreVersionB = getArg("score-version-b");
+const snapshotAJsonl = getArg("snapshot-a-jsonl");
+const snapshotBJsonl = getArg("snapshot-b-jsonl");
 const output = getArg("output") ?? "product_scores_compare.json";
 const batchSize = Math.max(1, Number(getArg("batch") ?? "500"));
 const topN = Math.max(1, Number(getArg("top-n") ?? "50"));
@@ -96,6 +98,61 @@ const readIds = async (filePath: string): Promise<string[]> => {
     .filter((item: unknown): item is string => typeof item === "string")
     .map((item) => item.trim())
     .filter(Boolean);
+};
+
+const parseJsonlRows = async (filePath: string): Promise<ScoreRow[]> => {
+  const raw = await readFile(filePath, "utf8");
+  const rows: ScoreRow[] = [];
+  raw
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .forEach((line, idx) => {
+      try {
+        const parsed = JSON.parse(line) as Record<string, unknown>;
+        const sourceId =
+          typeof parsed.source_id === "string" ? parsed.source_id.trim() : null;
+        if (!sourceId) return;
+        rows.push({
+          source_id: sourceId,
+          overall_score:
+            typeof parsed.overall_score === "number" ? parsed.overall_score : null,
+          effectiveness_score:
+            typeof parsed.effectiveness_score === "number"
+              ? parsed.effectiveness_score
+              : null,
+          safety_score:
+            typeof parsed.safety_score === "number" ? parsed.safety_score : null,
+          integrity_score:
+            typeof parsed.integrity_score === "number"
+              ? parsed.integrity_score
+              : null,
+          confidence:
+            typeof parsed.confidence === "number" ? parsed.confidence : null,
+          explain_json: parsed.explain_json ?? null,
+          flags_json: parsed.flags_json ?? null,
+        });
+      } catch (error) {
+        throw new Error(
+          `[compare-product-scores] invalid JSONL at ${filePath}:${idx + 1} (${error instanceof Error ? error.message : "parse error"})`,
+        );
+      }
+    });
+  return rows;
+};
+
+const loadScoresFromSnapshot = async (
+  ids: string[],
+  snapshotPath: string,
+): Promise<Map<string, ScoreRow>> => {
+  const rows = await parseJsonlRows(snapshotPath);
+  const idSet = new Set(ids);
+  const map = new Map<string, ScoreRow>();
+  rows.forEach((row) => {
+    if (!idSet.has(row.source_id)) return;
+    map.set(row.source_id, row);
+  });
+  return map;
 };
 
 const loadScores = async (ids: string[], table: string, scoreVersion?: string | null) => {
@@ -152,6 +209,13 @@ const loadExplainRows = async (
     });
   }
   return rows;
+};
+
+const loadExplainRowsFromSnapshot = async (
+  ids: string[],
+  snapshotPath: string,
+): Promise<Map<string, ScoreRow>> => {
+  return loadScoresFromSnapshot(ids, snapshotPath);
 };
 
 const loadIngredientFacts = async (ids: string[]) => {
@@ -294,8 +358,21 @@ const run = async () => {
     throw new Error(`[compare-product-scores] no ids loaded from ${sourceIdsFile}`);
   }
 
-  const scoresA = await loadScores(ids, tableA, scoreVersionA);
-  const scoresB = await loadScores(ids, tableB, scoreVersionB);
+  const sourceA = snapshotAJsonl
+    ? { mode: "snapshot" as const, path: snapshotAJsonl }
+    : { mode: "table" as const, table: tableA, scoreVersion: scoreVersionA };
+  const sourceB = snapshotBJsonl
+    ? { mode: "snapshot" as const, path: snapshotBJsonl }
+    : { mode: "table" as const, table: tableB, scoreVersion: scoreVersionB };
+
+  const scoresA =
+    sourceA.mode === "snapshot"
+      ? await loadScoresFromSnapshot(ids, sourceA.path)
+      : await loadScores(ids, sourceA.table, sourceA.scoreVersion);
+  const scoresB =
+    sourceB.mode === "snapshot"
+      ? await loadScoresFromSnapshot(ids, sourceB.path)
+      : await loadScores(ids, sourceB.table, sourceB.scoreVersion);
 
   const shouldCheckFactsHash =
     checkFactsHash ||
@@ -303,10 +380,14 @@ const run = async () => {
     factsHashFromIngredients ||
     Boolean(factsHashBreakdownPath);
   const explainRowsA = shouldCheckFactsHash
-    ? await loadExplainRows(ids, tableA, scoreVersionA)
+    ? sourceA.mode === "snapshot"
+      ? await loadExplainRowsFromSnapshot(ids, sourceA.path)
+      : await loadExplainRows(ids, sourceA.table, sourceA.scoreVersion)
     : new Map();
   const explainRowsB = shouldCheckFactsHash
-    ? await loadExplainRows(ids, tableB, scoreVersionB)
+    ? sourceB.mode === "snapshot"
+      ? await loadExplainRowsFromSnapshot(ids, sourceB.path)
+      : await loadExplainRows(ids, sourceB.table, sourceB.scoreVersion)
     : new Map();
   const ingredientFacts = factsHashFromIngredients
     ? await loadIngredientFacts(ids)
@@ -405,6 +486,28 @@ const run = async () => {
     tableB,
     scoreVersionA: scoreVersionA ?? null,
     scoreVersionB: scoreVersionB ?? null,
+    sourceA:
+      sourceA.mode === "snapshot"
+        ? {
+            mode: "snapshot",
+            path: sourceA.path,
+          }
+        : {
+            mode: "table",
+            table: sourceA.table,
+            scoreVersion: sourceA.scoreVersion ?? null,
+          },
+    sourceB:
+      sourceB.mode === "snapshot"
+        ? {
+            mode: "snapshot",
+            path: sourceB.path,
+          }
+        : {
+            mode: "table",
+            table: sourceB.table,
+            scoreVersion: sourceB.scoreVersion ?? null,
+          },
     sourceIdsFile,
     totalIds: ids.length,
     matchedBoth: deltas.length,
@@ -489,10 +592,14 @@ const run = async () => {
     );
 
     const explainA = includeExplainDiff
-      ? await loadExplainRows(outlierIds, tableA, scoreVersionA)
+      ? sourceA.mode === "snapshot"
+        ? await loadExplainRowsFromSnapshot(outlierIds, sourceA.path)
+        : await loadExplainRows(outlierIds, sourceA.table, sourceA.scoreVersion)
       : new Map();
     const explainB = includeExplainDiff
-      ? await loadExplainRows(outlierIds, tableB, scoreVersionB)
+      ? sourceB.mode === "snapshot"
+        ? await loadExplainRowsFromSnapshot(outlierIds, sourceB.path)
+        : await loadExplainRows(outlierIds, sourceB.table, sourceB.scoreVersion)
       : new Map();
 
     const writeOutliers = async (rows: DeltaRow[], path: string) => {
