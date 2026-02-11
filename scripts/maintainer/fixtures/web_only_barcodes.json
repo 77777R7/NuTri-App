@@ -1,0 +1,29 @@
+[
+  {
+    "barcode": "00654749351604",
+    "region": "CA",
+    "site": "fixture",
+    "expectedSourceType": "web",
+    "verifiedAt": "2026-02-11",
+    "sourceUrl": "https://www.nationalnutrition.ca/",
+    "notes": "Known web fallback sample from prior E2E"
+  },
+  {
+    "barcode": "00666183000154",
+    "region": "US",
+    "site": "fixture",
+    "expectedSourceType": "web",
+    "verifiedAt": "2026-02-11",
+    "sourceUrl": "https://www.swansonvitamins.com/",
+    "notes": "Known web fallback sample from prior E2E"
+  },
+  {
+    "barcode": "00733739081995",
+    "region": "US",
+    "site": "fixture",
+    "expectedSourceType": "web",
+    "verifiedAt": "2026-02-11",
+    "sourceUrl": "https://www.swansonvitamins.com/",
+    "notes": "Known web fallback sample from prior E2E"
+  }
+]
