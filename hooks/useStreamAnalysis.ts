@@ -206,12 +206,14 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
     const [serverSnapshot, setServerSnapshot] = useState<SupplementSnapshot | null>(null);
 
     const eventSourceRef = useRef<RNEventSource | null>(null);
+    const hasBundleRef = useRef(false);
 
     useEffect(() => {
         if (!barcode) return;
 
         setState(prev => ({ ...prev, status: 'loading', error: null, analysisBundle: null }));
         setServerSnapshot(null);
+        hasBundleRef.current = false;
 
         const rawBaseUrl = Config.searchApiBaseUrl;
         const API_URL = rawBaseUrl.endsWith('/') ? rawBaseUrl.slice(0, -1) : rawBaseUrl;
@@ -298,6 +300,7 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
             // Cached analysis payload (from snapshot.analysis_json)
             es.addEventListener('analysis_payload' as any, (event: any) => {
                 try {
+                    if (hasBundleRef.current) return;
                     const data = JSON.parse(event.data);
                     const nextBrandExtraction = data.brandExtraction ?? null;
                     const nextProductInfo = data.productInfo ?? null;
@@ -342,6 +345,14 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
                 try {
                     const data = JSON.parse(event.data) as AnalysisBundle;
                     if (!data?.meta || (data.meta.schemaVersion !== 3 && data.meta.schemaVersion !== 4)) return;
+                    hasBundleRef.current = true;
+                    console.log('[SSE] Analysis Bundle:', {
+                        schemaVersion: data.meta.schemaVersion,
+                        sourceType: data.meta.sourceType,
+                        phase: data.meta.phase,
+                        revision: data.meta.revision,
+                        identity: `${data.meta.authoritativeIdentity.type}:${data.meta.authoritativeIdentity.value}`,
+                    });
                     setState(prev => {
                         const prevBundle = prev.analysisBundle;
                         if (!prevBundle || data.meta.revision > prevBundle.meta.revision) {
@@ -357,6 +368,7 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
             // Efficacy Result (enhanced with ingredients)
             es.addEventListener('result_efficacy' as any, (event: any) => {
                 try {
+                    if (hasBundleRef.current) return;
                     const data = JSON.parse(event.data) as EfficacyAnalysis;
                     console.log('[SSE] Efficacy:', data);
                     setState(prev => ({ ...prev, efficacy: data }));
@@ -368,6 +380,7 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
             // Safety Result (enhanced with UL warnings)
             es.addEventListener('result_safety' as any, (event: any) => {
                 try {
+                    if (hasBundleRef.current) return;
                     const data = JSON.parse(event.data) as SafetyAnalysis;
                     console.log('[SSE] Safety:', data);
                     setState(prev => ({ ...prev, safety: data }));
@@ -379,6 +392,7 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
             // Usage/Value Result (split into usage, value, social)
             es.addEventListener('result_usage' as any, (event: any) => {
                 try {
+                    if (hasBundleRef.current) return;
                     const data = JSON.parse(event.data);
                     console.log('[SSE] Usage:', data);
                     setState(prev => ({

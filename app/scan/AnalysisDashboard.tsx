@@ -314,6 +314,17 @@ function clampTextWithEllipsis(value?: string | null, maxChars: number = 100) {
     return clipped ? `${clipped}…` : '';
 }
 
+const waitMs = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
+
+const buildIngredientsDetailRequestKey = (bundle: AnalysisBundle) =>
+    [
+        `${bundle.meta.authoritativeIdentity.type}:${bundle.meta.authoritativeIdentity.value}`,
+        'ingredients_detail',
+        bundle.meta.locale,
+        bundle.meta.promptVersion,
+        bundle.meta.factsDigestHash,
+    ].join('|');
+
 function shortenCompanyName(value?: string | null) {
     const normalized = normalizeText(value);
     if (!normalized) return null;
@@ -892,6 +903,8 @@ const AnalysisBundleDashboard: React.FC<{
     const [bundleState, setBundleState] = useState<AnalysisBundle>(bundle);
     const [detailLoading, setDetailLoading] = useState(false);
     const [detailError, setDetailError] = useState<string | null>(null);
+    const detailLoadingRef = useRef(false);
+    const detailInFlightKeyRef = useRef<string | null>(null);
     const scrollY = useSharedValue(0);
     const scrollHandler = useAnimatedScrollHandler((event) => {
         scrollY.value = event.contentOffset.y;
@@ -1030,8 +1043,10 @@ const AnalysisBundleDashboard: React.FC<{
     const safetyBullet0Text = normalizeText(safetyCover?.bullets?.[0]?.text ?? null);
     const safetyBullet1Text = normalizeText(safetyCover?.bullets?.[1]?.text ?? null);
 
-    const fetchIngredientsDetail = useCallback(async (attempt = 0) => {
-        if (detailLoading) return;
+    const fetchIngredientsDetail = useCallback(async () => {
+        const requestKey = buildIngredientsDetailRequestKey(bundleState);
+        if (detailLoadingRef.current && detailInFlightKeyRef.current === requestKey) return;
+        if (detailLoadingRef.current) return;
         const coverTotalCount =
             bundleState.sections.ingredients.cover?.totalCount ??
             bundleState.sections.ingredients.cover?.items?.length ??
@@ -1065,6 +1080,8 @@ const AnalysisBundleDashboard: React.FC<{
             });
             return;
         }
+        detailLoadingRef.current = true;
+        detailInFlightKeyRef.current = requestKey;
         setDetailLoading(true);
         setDetailError(null);
         // Align loading copy with dataStatus: only show "Generating..." when pending.
@@ -1099,39 +1116,42 @@ const AnalysisBundleDashboard: React.FC<{
             const rawBaseUrl = Config.searchApiBaseUrl;
             const API_URL = rawBaseUrl.endsWith('/') ? rawBaseUrl.slice(0, -1) : rawBaseUrl;
             const headers = await withAuthHeaders({ 'Content-Type': 'application/json' });
-            const response = await fetch(`${API_URL}/api/analysis-section`, {
-                method: 'POST',
-                headers,
-                body: JSON.stringify({
-                    identity: bundleState.meta.authoritativeIdentity,
-                    section: 'ingredients_detail',
-                    locale: bundleState.meta.locale,
-                    promptVersion: bundleState.meta.promptVersion,
-                    factsDigestHash: bundleState.meta.factsDigestHash,
-                    limit: 8,
-                    cursor: 0,
-                }),
-            });
-            if (response.status === 202) {
-                // Server-side contract for v4: avoid 202 loops (server should return 200+limited skeleton instead).
-                // Keep this branch for backwards compatibility only, but NEVER auto-retry from the client.
-                const payload = await response.json().catch(() => null);
-                const retryMs = typeof (payload as any)?.retryAfterMs === 'number' ? (payload as any).retryAfterMs : 2000;
-                setDetailError(`Still generating. Try again in ~${Math.round(retryMs / 1000)}s.`);
-                setDetailLoading(false);
-                return;
-            }
-            if (!response.ok) {
-                if (response.status === 429) {
-                    const retryAfter = response.headers.get('retry-after');
-                    const retryAfterSec = retryAfter ? Number.parseInt(retryAfter, 10) : NaN;
-                    const hint = Number.isFinite(retryAfterSec) ? ` Try again in ~${retryAfterSec}s.` : ' Try again shortly.';
-                    setDetailError(`Rate limited.${hint}`);
-                } else {
-                    setDetailError('Detail unavailable');
-                }
-                setBundleState((prev) => {
-                    if (isBundleV4(prev)) {
+            const body = {
+                identity: bundleState.meta.authoritativeIdentity,
+                section: 'ingredients_detail',
+                locale: bundleState.meta.locale,
+                promptVersion: bundleState.meta.promptVersion,
+                factsDigestHash: bundleState.meta.factsDigestHash,
+                limit: 8,
+                cursor: 0,
+            };
+            const retryBackoffMs = [500, 1000, 2000];
+            let attempt = 0;
+
+            while (true) {
+                const response = await fetch(`${API_URL}/api/analysis-section`, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(body),
+                });
+
+                if (response.status === 202) {
+                    const payload = await response.json().catch(() => null);
+                    const retryMs = typeof (payload as any)?.retryAfterMs === 'number' ? (payload as any).retryAfterMs : 2000;
+                    setDetailError(`Still generating. Try again in ~${Math.round(retryMs / 1000)}s.`);
+                    setBundleState((prev) => {
+                        if (isBundleV4(prev)) {
+                            return {
+                                ...prev,
+                                sections: {
+                                    ...prev.sections,
+                                    ingredients: {
+                                        ...prev.sections.ingredients,
+                                        dataStatus: 'limited',
+                                    },
+                                },
+                            };
+                        }
                         return {
                             ...prev,
                             sections: {
@@ -1142,6 +1162,72 @@ const AnalysisBundleDashboard: React.FC<{
                                 },
                             },
                         };
+                    });
+                    return;
+                }
+
+                if (response.status === 429 && attempt < retryBackoffMs.length) {
+                    const retryAfter = response.headers.get('retry-after');
+                    const retryAfterSec = retryAfter ? Number.parseInt(retryAfter, 10) : NaN;
+                    const delayMs = Number.isFinite(retryAfterSec)
+                        ? Math.max(retryBackoffMs[attempt], retryAfterSec * 1000)
+                        : retryBackoffMs[attempt];
+                    setDetailError(`Too many requests, retrying… (${Math.round(delayMs / 1000)}s)`);
+                    attempt += 1;
+                    await waitMs(delayMs);
+                    continue;
+                }
+
+                if (!response.ok) {
+                    if (response.status === 429) {
+                        setDetailError('Too many requests. Showing available data; try again shortly.');
+                    } else {
+                        setDetailError('Detail unavailable');
+                    }
+                    setBundleState((prev) => {
+                        if (isBundleV4(prev)) {
+                            return {
+                                ...prev,
+                                sections: {
+                                    ...prev.sections,
+                                    ingredients: {
+                                        ...prev.sections.ingredients,
+                                        dataStatus: 'limited',
+                                    },
+                                },
+                            };
+                        }
+                        return {
+                            ...prev,
+                            sections: {
+                                ...prev.sections,
+                                ingredients: {
+                                    ...prev.sections.ingredients,
+                                    dataStatus: 'limited',
+                                },
+                            },
+                        };
+                    });
+                    return;
+                }
+
+                const payload = await response.json();
+                const detail = (payload?.detail ?? null) as IngredientsDetail | null;
+                setBundleState((prev) => {
+                    const nextStatus = (payload?.dataStatus ?? prev.sections.ingredients.dataStatus) as DataStatus;
+                    const nextDetail = detail ?? prev.sections.ingredients.detail ?? null;
+                    if (isBundleV4(prev)) {
+                        return {
+                            ...prev,
+                            sections: {
+                                ...prev.sections,
+                                ingredients: {
+                                    ...prev.sections.ingredients,
+                                    detail: nextDetail as IngredientsDetailV4 | null,
+                                    dataStatus: nextStatus,
+                                },
+                            },
+                        };
                     }
                     return {
                         ...prev,
@@ -1149,44 +1235,14 @@ const AnalysisBundleDashboard: React.FC<{
                             ...prev.sections,
                             ingredients: {
                                 ...prev.sections.ingredients,
-                                dataStatus: 'limited',
-                            },
-                        },
-                    };
-                });
-                setDetailLoading(false);
-                return;
-            }
-            const payload = await response.json();
-            const detail = (payload?.detail ?? null) as IngredientsDetail | null;
-            setBundleState((prev) => {
-                const nextStatus = (payload?.dataStatus ?? prev.sections.ingredients.dataStatus) as DataStatus;
-                const nextDetail = detail ?? prev.sections.ingredients.detail ?? null;
-                if (isBundleV4(prev)) {
-                    return {
-                        ...prev,
-                        sections: {
-                            ...prev.sections,
-                            ingredients: {
-                                ...prev.sections.ingredients,
-                                detail: nextDetail as IngredientsDetailV4 | null,
+                                detail: nextDetail as IngredientsDetailV3 | null,
                                 dataStatus: nextStatus,
                             },
                         },
                     };
-                }
-                return {
-                    ...prev,
-                    sections: {
-                        ...prev.sections,
-                        ingredients: {
-                            ...prev.sections.ingredients,
-                            detail: nextDetail as IngredientsDetailV3 | null,
-                            dataStatus: nextStatus,
-                        },
-                    },
-                };
-            });
+                });
+                return;
+            }
         } catch (err) {
             setDetailError('Detail unavailable');
             setBundleState((prev) => {
@@ -1214,16 +1270,16 @@ const AnalysisBundleDashboard: React.FC<{
                 };
             });
         } finally {
+            if (detailInFlightKeyRef.current === requestKey) {
+                detailInFlightKeyRef.current = null;
+            }
+            detailLoadingRef.current = false;
             setDetailLoading(false);
         }
-    }, [bundleState, detailLoading]);
+    }, [bundleState]);
 
     const autoFetchKeyRef = useRef<string | null>(null);
     useEffect(() => {
-        if (selectedTile?.type !== 'science') {
-            autoFetchKeyRef.current = null;
-            return;
-        }
         const coverTotalCount =
             bundleState.sections.ingredients.cover?.totalCount ??
             bundleState.sections.ingredients.cover?.items?.length ??
@@ -1232,7 +1288,13 @@ const AnalysisBundleDashboard: React.FC<{
         const status = bundleState.sections.ingredients.dataStatus;
         const isTerminal = status === 'not_provided' || status === 'limited' || status === 'error' || status === 'pending';
 
-        const key = `${bundleState.meta.schemaVersion}|${bundleState.meta.promptVersion}|${bundleState.meta.locale}|${bundleState.meta.factsDigestHash}|${bundleState.meta.authoritativeIdentity.type}:${bundleState.meta.authoritativeIdentity.value}`;
+        const key = buildIngredientsDetailRequestKey(bundleState);
+        if (autoFetchKeyRef.current && autoFetchKeyRef.current !== key) {
+            autoFetchKeyRef.current = null;
+        }
+        if (selectedTile?.type !== 'science') {
+            return;
+        }
         if (autoFetchKeyRef.current === key) return;
 
         if (coverTotalCount > 0 && !hasDetail && !detailLoading && !isTerminal) {

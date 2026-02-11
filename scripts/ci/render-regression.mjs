@@ -452,9 +452,54 @@ function assertLnhpdLabelDosingCopied(fastBundle) {
   return errors;
 }
 
+function assertLnhpdDetailNoStorm(detailRequestMetrics) {
+  const errors = [];
+  if (!detailRequestMetrics) return errors;
+
+  const total = Number(detailRequestMetrics.totalRequests || 0);
+  const count429 = Number(detailRequestMetrics.status429Count || 0);
+  const perKey = detailRequestMetrics.byKey && typeof detailRequestMetrics.byKey === "object" ? detailRequestMetrics.byKey : {};
+
+  if (count429 > 0) {
+    errors.push(`lnhpd: analysis-section returned HTTP 429 ${count429} time(s)`);
+  }
+
+  const keys = Object.keys(perKey);
+  if (keys.length > 1) {
+    errors.push(`lnhpd: expected single detail request key, got ${keys.length}`);
+  }
+
+  for (const [key, count] of Object.entries(perKey)) {
+    if (Number(count) > 2) {
+      errors.push(`lnhpd: detail request storm for key=${key} count=${count} (>2)`);
+    }
+  }
+
+  if (total > 2) {
+    errors.push(`lnhpd: detail request count=${total} (>2)`);
+  }
+
+  return errors;
+}
+
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 let debugGateNegativeAssertionDone = false;
+
+const buildDetailRequestKey = (payload) =>
+  [
+    `${payload?.identity?.type || "unknown"}:${payload?.identity?.value || "unknown"}`,
+    payload?.section || "unknown",
+    payload?.locale || "unknown",
+    payload?.promptVersion || "unknown",
+    payload?.factsDigestHash || "unknown",
+  ].join("|");
+
+const createDetailRequestMetrics = () => ({
+  totalRequests: 0,
+  status429Count: 0,
+  byKey: {},
+});
 
 async function assertInternalDebugGated(fastBundle) {
   const errors = [];
@@ -500,6 +545,8 @@ async function fetchIngredientsDetailPage(fastBundle, cursor, opts = {}) {
     limit: DETAIL_LIMIT,
     cursor,
   };
+  const requestKey = buildDetailRequestKey(payload);
+  const requestMetrics = opts?.requestMetrics ?? null;
 
   const startedAt = Date.now();
   let pollAttempts = 0;
@@ -508,12 +555,20 @@ async function fetchIngredientsDetailPage(fastBundle, cursor, opts = {}) {
     const ctrl = new AbortController();
     const timeout = setTimeout(() => ctrl.abort(), DETAIL_TIMEOUT_MS);
 
+    if (requestMetrics) {
+      requestMetrics.totalRequests += 1;
+      requestMetrics.byKey[requestKey] = (requestMetrics.byKey[requestKey] || 0) + 1;
+    }
+
     const res = await fetch(`${BASE_URL}/api/analysis-section`, {
       method: "POST",
       headers: buildHeaders(false, includeRegressionDebug),
       body: JSON.stringify(payload),
       signal: ctrl.signal,
     });
+    if (requestMetrics && res.status === 429) {
+      requestMetrics.status429Count += 1;
+    }
 
     clearTimeout(timeout);
 
@@ -893,6 +948,7 @@ async function runCase(testCase) {
   const bundleEvents = getBundleEvents(events);
   const bundleCheck = assertBundleContract(bundleEvents, testCase.expectedSourceType);
 
+  const detailRequestMetrics = createDetailRequestMetrics();
   let detailResponse = { status: 0, payload: null, response: null };
   if (bundleCheck.fastBundle) {
     if (
@@ -911,14 +967,16 @@ async function runCase(testCase) {
     const targetKeyword = String(testCase.targetActiveKeyword ?? requiredKeyword).trim().toLowerCase();
     const shouldPage = testCase.id.startsWith("dsld_with_form") && Boolean(targetKeyword || requiredKeyword);
     if (!shouldPage) {
-      detailResponse = await fetchIngredientsDetailPage(bundleCheck.fastBundle, 0);
+      detailResponse = await fetchIngredientsDetailPage(bundleCheck.fastBundle, 0, { requestMetrics: detailRequestMetrics });
     } else {
       let cursor = 0;
       let pages = 0;
       let last = null;
       while (pages < DETAIL_MAX_PAGES) {
         // eslint-disable-next-line no-await-in-loop
-        const pageRes = await fetchIngredientsDetailPage(bundleCheck.fastBundle, cursor);
+        const pageRes = await fetchIngredientsDetailPage(bundleCheck.fastBundle, cursor, {
+          requestMetrics: detailRequestMetrics,
+        });
         last = pageRes;
         pages += 1;
 
@@ -955,6 +1013,7 @@ async function runCase(testCase) {
 
   const lnhpdUsageErrors =
     bundleCheck.fastBundle && testCase.id === "lnhpd" ? assertLnhpdLabelDosingCopied(bundleCheck.fastBundle) : [];
+  const lnhpdNoStormErrors = testCase.id === "lnhpd" ? assertLnhpdDetailNoStorm(detailRequestMetrics) : [];
 
   const detailErrors = bundleCheck.fastBundle ? assertDetailContract(detailResponse) : [];
 
@@ -968,9 +1027,19 @@ async function runCase(testCase) {
       ? assertLnhpdWithFormEvidence(detailResponse, testCase)
       : [];
 
-  const errors = [...bundleCheck.errors, ...lnhpdUsageErrors, ...detailErrors, ...dsldKbErrors, ...lnhpdKbErrors];
+  const errors = [
+    ...bundleCheck.errors,
+    ...lnhpdUsageErrors,
+    ...lnhpdNoStormErrors,
+    ...detailErrors,
+    ...dsldKbErrors,
+    ...lnhpdKbErrors,
+  ];
   const summary = {
     ...pickKeyFields({ case: testCase, fastBundle: bundleCheck.fastBundle, detailResponse }),
+    detailRequestCount: detailRequestMetrics.totalRequests,
+    detail429Count: detailRequestMetrics.status429Count,
+    detailRequestByKey: detailRequestMetrics.byKey,
     errors,
     pass: errors.length === 0,
   };
