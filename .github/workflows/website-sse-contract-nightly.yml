@@ -7,6 +7,10 @@ on:
         description: "Optional override for Render base URL"
         required: false
         type: string
+      expected_commit_sha:
+        description: "Optional override for expected deployed commit SHA"
+        required: false
+        type: string
   schedule:
     - cron: "25 10 * * *"
 
@@ -34,7 +38,7 @@ jobs:
       - name: Wait for Render Deploy Commit
         env:
           RENDER_BASE_URL: ${{ github.event.inputs.render_base_url != '' && github.event.inputs.render_base_url || secrets.RENDER_BASE_URL }}
-          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          EXPECTED_COMMIT_SHA: ${{ github.event.inputs.expected_commit_sha != '' && github.event.inputs.expected_commit_sha || github.sha }}
           RENDER_REGRESSION_TOKEN: ${{ secrets.RENDER_REGRESSION_TOKEN }}
           RENDER_DEPLOY_WAIT_TIMEOUT_MS: "900000"
           RENDER_DEPLOY_WAIT_INTERVAL_MS: "15000"
