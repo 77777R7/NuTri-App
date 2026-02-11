@@ -86,6 +86,8 @@ export type AnalysisBundleMetaV3 = {
   schemaVersion: 3;
   promptVersion: string;
   sourceType: 'lnhpd' | 'dsld' | 'web';
+  sourceTypeFinal?: boolean;
+  scoreAvailable?: boolean;
   authoritativeIdentity: { type: 'npn' | 'dsldLabelId' | 'webCanonicalId' | 'gtin14'; value: string };
   locale: 'zh' | 'en';
   phase: 'skeleton' | 'fast_ai' | 'full_ai';
@@ -93,6 +95,8 @@ export type AnalysisBundleMetaV3 = {
   revision: number;
   factsDigestHash: string;
   factsSourceVersion: string;
+  detailReady?: boolean;
+  fallbackReason?: string;
   serverCommitSha?: string | null;
 };
 

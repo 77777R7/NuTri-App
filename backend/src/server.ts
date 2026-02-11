@@ -287,6 +287,12 @@ const NPN_NEGATIVE_CACHE_THRESHOLD = Number(process.env.NPN_NEGATIVE_CACHE_THRES
 
 const ANALYSIS_BUNDLE_PROMPT_VERSION = process.env.ANALYSIS_BUNDLE_PROMPT_VERSION ?? "reg_v4.0";
 const ANALYSIS_BUNDLE_FAST_TIMEOUT_MS = Number(process.env.ANALYSIS_BUNDLE_FAST_TIMEOUT_MS ?? 3500);
+const SSE_FAST_GRACE_MS = Number(process.env.SSE_FAST_GRACE_MS ?? 500);
+const SSE_GLOBAL_STREAM_TIMEOUT_MS = Number(process.env.SSE_GLOBAL_STREAM_TIMEOUT_MS ?? 15000);
+const SSE_CLIENT_TIMEOUT_MS = Number(
+  process.env.SSE_CLIENT_TIMEOUT_MS ?? process.env.WEB_E2E_SSE_TIMEOUT_MS ?? 50000,
+);
+const SSE_TIMEOUT_SAFETY_MARGIN_MS = Number(process.env.SSE_TIMEOUT_SAFETY_MARGIN_MS ?? 3000);
 const ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS = Number(process.env.ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS ?? 7000);
 const ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS_DSLD = Number(
   process.env.ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS_DSLD ?? 4500,
@@ -309,6 +315,21 @@ const ANALYSIS_IDENTITY_CACHE_TTL_MS = Number(
 const WEB_CANONICAL_TTL_MS = Number(process.env.WEB_CANONICAL_TTL_MS ?? 30 * 24 * 60 * 60 * 1000);
 const SERVER_COMMIT_SHA =
   process.env.RENDER_GIT_COMMIT ?? process.env.GIT_COMMIT_SHA ?? process.env.COMMIT_SHA ?? null;
+
+if (
+  Number.isFinite(SSE_GLOBAL_STREAM_TIMEOUT_MS) &&
+  Number.isFinite(SSE_CLIENT_TIMEOUT_MS) &&
+  Number.isFinite(SSE_TIMEOUT_SAFETY_MARGIN_MS)
+) {
+  if (SSE_GLOBAL_STREAM_TIMEOUT_MS >= SSE_CLIENT_TIMEOUT_MS - SSE_TIMEOUT_SAFETY_MARGIN_MS) {
+    console.warn("[SSE] timeout safety violated", {
+      globalMs: SSE_GLOBAL_STREAM_TIMEOUT_MS,
+      clientMs: SSE_CLIENT_TIMEOUT_MS,
+      safetyMarginMs: SSE_TIMEOUT_SAFETY_MARGIN_MS,
+      suggestion: "Set SSE_GLOBAL_STREAM_TIMEOUT_MS < SSE_CLIENT_TIMEOUT_MS - SSE_TIMEOUT_SAFETY_MARGIN_MS",
+    });
+  }
+}
 
 const GUARDRAIL_SIMILARITY_THRESHOLD = Number(process.env.GUARDRAIL_SIMILARITY_THRESHOLD ?? 0.6);
 
@@ -746,6 +767,8 @@ const buildFastFailureBundle = (skeleton: AnalysisBundle): AnalysisBundle => ({
   ...skeleton,
   meta: {
     ...skeleton.meta,
+    sourceTypeFinal: Boolean(skeleton.meta.sourceTypeFinal),
+    detailReady: Boolean(skeleton.meta.detailReady),
     phase: "fast_ai",
     revision: skeleton.meta.revision + 1,
   },
@@ -1595,11 +1618,15 @@ const buildAnalysisBundleSkeleton = (params: {
   };
 }): AnalysisBundle => {
   const { digest } = params;
+  const isSkeleton = params.phase === "skeleton";
   return {
     meta: {
       schemaVersion: 4,
       promptVersion: ANALYSIS_BUNDLE_PROMPT_VERSION,
       sourceType: digest.sourceType,
+      sourceTypeFinal: !isSkeleton,
+      scoreAvailable: digest.sourceType !== "web",
+      detailReady: !isSkeleton && digest.actives.length > 0,
       authoritativeIdentity: { type: params.identityType, value: params.identityValue },
       locale: params.locale,
       phase: params.phase,
@@ -1618,9 +1645,9 @@ const buildAnalysisBundleSkeleton = (params: {
       },
       ingredients: {
         layout: "ingredients_list",
-        cover: buildIngredientsCover(digest),
+        cover: isSkeleton ? { items: [], totalCount: 0 } : buildIngredientsCover(digest),
         detail: null,
-        dataStatus: digest.actives.length > 0 ? "complete" : "not_provided",
+        dataStatus: isSkeleton ? "pending" : digest.actives.length > 0 ? "complete" : "not_provided",
       },
       usage: {
         layout: "usage_bullets",
@@ -1653,12 +1680,81 @@ const buildAnalysisBundleSkeleton = (params: {
   };
 };
 
+const buildProvisionalAnalysisBundle = (params: {
+  bundleId: string;
+  locale: "zh" | "en";
+  barcodeGtin14: string;
+  revision: number;
+  phase: "skeleton" | "fast_ai";
+  fallbackReason?: string;
+}): AnalysisBundle => {
+  const factsDigestHash = createHash("sha256")
+    .update(`provisional:${params.barcodeGtin14}:${params.bundleId}`)
+    .digest("hex");
+  const isSkeleton = params.phase === "skeleton";
+  return {
+    meta: {
+      schemaVersion: 4,
+      promptVersion: ANALYSIS_BUNDLE_PROMPT_VERSION,
+      sourceType: "web",
+      sourceTypeFinal: !isSkeleton,
+      scoreAvailable: false,
+      detailReady: false,
+      authoritativeIdentity: { type: "gtin14", value: params.barcodeGtin14 },
+      locale: params.locale,
+      phase: params.phase,
+      bundleId: params.bundleId,
+      revision: params.revision,
+      factsDigestHash,
+      factsSourceVersion: "provisional:pending",
+      fallbackReason: params.fallbackReason,
+      serverCommitSha: SERVER_COMMIT_SHA,
+    },
+    sections: {
+      overview: {
+        layout: "overview_card",
+        cover: null,
+        detail: null,
+        dataStatus: isSkeleton ? "pending" : "limited",
+      },
+      ingredients: {
+        layout: "ingredients_list",
+        cover: { items: [], totalCount: 0 },
+        detail: null,
+        dataStatus: isSkeleton ? "pending" : "limited",
+      },
+      usage: {
+        layout: "usage_bullets",
+        cover: null,
+        detail: {
+          timingRationale: null,
+          withFoodRationale: null,
+          scheduleFromLabel: [],
+        },
+        dataStatus: isSkeleton ? "pending" : "limited",
+      },
+      safety: {
+        layout: "safety_bullets",
+        cover: null,
+        detail: {
+          warnings: [],
+          consultDoctorIf: [],
+          redFlags: [],
+        },
+        dataStatus: isSkeleton ? "pending" : "limited",
+      },
+    },
+  };
+};
+
 const mergeFastAnalysisBundle = (params: {
   skeleton: AnalysisBundle;
   digest: FactsDigest;
   fastOutput: Record<string, unknown> | null;
 }): AnalysisBundle => {
   const { skeleton, digest, fastOutput } = params;
+  const ingredientsCover = buildIngredientsCover(digest);
+  const ingredientsDataStatus = digest.actives.length > 0 ? "complete" : "not_provided";
   const allowedFormKeywords = buildAllowedFormKeywordSet(digest);
   const fallbackSummary = buildFallbackOverviewSummary(digest);
   const fallbackBullets = buildFallbackOverviewBullets(digest);
@@ -1804,6 +1900,9 @@ const mergeFastAnalysisBundle = (params: {
     ...skeleton,
     meta: {
       ...skeleton.meta,
+      sourceType: digest.sourceType,
+      sourceTypeFinal: true,
+      detailReady: digest.actives.length > 0,
       phase: "fast_ai",
       revision: skeleton.meta.revision + 1,
     },
@@ -1820,7 +1919,12 @@ const mergeFastAnalysisBundle = (params: {
         },
         dataStatus: overviewStatus,
       },
-      ingredients: skeleton.sections.ingredients,
+      ingredients: {
+        ...skeleton.sections.ingredients,
+        cover: ingredientsCover,
+        detail: null,
+        dataStatus: ingredientsDataStatus,
+      },
       usage: {
         ...skeleton.sections.usage,
         cover: {
@@ -4946,9 +5050,74 @@ const parseRequestBody = <T>(schema: z.ZodType<T>, req: Request, res: Response):
 // SSE HELPER
 // ============================================================================
 
+const getScoreAvailableFromSourceType = (sourceType: unknown): boolean | null => {
+  if (sourceType === "web") return false;
+  if (sourceType === "dsld" || sourceType === "lnhpd") return true;
+  return null;
+};
+
+const normalizeAnalysisBundleForStream = (candidate: unknown): unknown => {
+  if (!candidate || typeof candidate !== "object") return candidate;
+  const bundle = candidate as Record<string, unknown>;
+  const meta = bundle.meta;
+  if (!meta || typeof meta !== "object") return candidate;
+  const metaRecord = meta as Record<string, unknown>;
+  const fromMeta = typeof metaRecord.scoreAvailable === "boolean" ? metaRecord.scoreAvailable : null;
+  const fromSource = getScoreAvailableFromSourceType(metaRecord.sourceType);
+  const resolved = fromMeta ?? fromSource;
+  if (resolved === null) return candidate;
+  if (fromMeta === resolved) return candidate;
+  return {
+    ...bundle,
+    meta: {
+      ...metaRecord,
+      scoreAvailable: resolved,
+    },
+  };
+};
+
+const buildPersistedEventFromBundle = (candidate: unknown): Record<string, unknown> | null => {
+  if (!candidate || typeof candidate !== "object") return null;
+  const bundle = candidate as Record<string, unknown>;
+  const meta = bundle.meta;
+  if (!meta || typeof meta !== "object") return null;
+  const metaRecord = meta as Record<string, unknown>;
+  const identity = metaRecord.authoritativeIdentity;
+  if (!identity || typeof identity !== "object") return null;
+  const identityRecord = identity as Record<string, unknown>;
+  if (typeof identityRecord.type !== "string" || typeof identityRecord.value !== "string") return null;
+  if (typeof metaRecord.factsDigestHash !== "string" || !metaRecord.factsDigestHash.trim()) return null;
+  const scoreAvailableFromMeta =
+    typeof metaRecord.scoreAvailable === "boolean" ? metaRecord.scoreAvailable : null;
+  const scoreAvailable = scoreAvailableFromMeta ?? getScoreAvailableFromSourceType(metaRecord.sourceType);
+  return {
+    identity: {
+      type: identityRecord.type,
+      value: identityRecord.value,
+    },
+    factsDigestHash: metaRecord.factsDigestHash,
+    promptVersion: typeof metaRecord.promptVersion === "string" ? metaRecord.promptVersion : null,
+    bundleId: typeof metaRecord.bundleId === "string" ? metaRecord.bundleId : null,
+    revision: typeof metaRecord.revision === "number" ? metaRecord.revision : null,
+    phase: typeof metaRecord.phase === "string" ? metaRecord.phase : null,
+    scoreAvailable: scoreAvailable ?? null,
+  };
+};
+
 const sendSSE = (res: Response, type: string, data: unknown) => {
+  if (res.writableEnded || (res as unknown as { destroyed?: boolean }).destroyed) {
+    return;
+  }
+  const payload = type === "analysis_bundle" ? normalizeAnalysisBundleForStream(data) : data;
   res.write(`event: ${type}\n`);
-  res.write(`data: ${JSON.stringify(data)}\n\n`);
+  res.write(`data: ${JSON.stringify(payload)}\n\n`);
+  if (type === "analysis_bundle") {
+    const persistedPayload = buildPersistedEventFromBundle(payload);
+    if (persistedPayload) {
+      res.write("event: persisted\n");
+      res.write(`data: ${JSON.stringify(persistedPayload)}\n\n`);
+    }
+  }
 };
 
 const createRequestAbort = (res: Response) => {
@@ -5575,7 +5744,7 @@ const analysisSectionBodySchema = z.object({
     type: z.enum(["npn", "dsldLabelId", "webCanonicalId", "gtin14"]),
     value: z.string().min(1),
   }),
-  section: z.enum(["ingredients_detail"]),
+  section: z.enum(["ingredients_detail", "overview", "usage"]),
   locale: z.enum(["zh", "en"]),
   promptVersion: z.string().min(1),
   factsDigestHash: z.string().min(8),
@@ -6902,8 +7071,74 @@ app.get("/api/score/v4/:source/:id", verifySupabaseToken, async (req: Request, r
   }
 });
 
+const buildFallbackOverviewSection = (digest: FactsDigest): AnalysisBundle["sections"]["overview"] => {
+  const summary = buildFallbackOverviewSummary(digest);
+  const bullets = buildFallbackOverviewBullets(digest);
+  return {
+    layout: "overview_card",
+    cover: {
+      summary,
+      bullets,
+    },
+    detail: {
+      summary,
+      bullets,
+    },
+    dataStatus: "limited",
+  };
+};
+
+const buildFallbackUsageSection = (digest: FactsDigest): AnalysisBundle["sections"]["usage"] => {
+  const labelDosingText = buildLabelDosingText(digest);
+  const scheduleFromLabel = digest.labelDosing.map((dose) => ({
+    population: dose.population ?? null,
+    age: dose.age ?? null,
+    dose: dose.dose ?? null,
+    frequency: dose.frequency ?? null,
+    rawText: dose.rawText ?? null,
+    basisTags: ["label_fact"] as BasisTag[],
+  }));
+  const timingText = scheduleFromLabel.length > 0 ? "Follow label schedule." : "Anytime (with meals).";
+  const withFoodText = scheduleFromLabel.length > 0
+    ? "Prefer with food unless label states otherwise."
+    : "Take with food unless label states otherwise.";
+  const bullets: Array<{ text: string; basisTags: BasisTag[] }> = [];
+  if (labelDosingText && labelDosingText !== "Follow label directions.") {
+    bullets.push(buildSectionBullet(labelDosingText, ["label_fact"]));
+  } else if (digest.actives.length > 0) {
+    bullets.push(buildSectionBullet(`Contains ${digest.actives[0].name}.`, [resolveSourceBasisTag(digest.sourceType)]));
+  }
+  return {
+    layout: "usage_bullets",
+    cover: {
+      bullets,
+      bestTimeToTake: {
+        text: timingText,
+        basisTags: ["general_advice"],
+      },
+      withFood: {
+        value: true,
+        text: withFoodText,
+        basisTags: ["general_advice"],
+      },
+      dosage: labelDosingText
+        ? {
+            text: labelDosingText,
+            basisTags: ["label_fact"],
+          }
+        : null,
+    },
+    detail: {
+      timingRationale: null,
+      withFoodRationale: null,
+      scheduleFromLabel,
+    },
+    dataStatus: "limited",
+  };
+};
+
 /**
- * On-demand analysis section endpoint (ingredients detail)
+ * On-demand analysis section endpoint (ingredients detail + overview + usage)
  */
 app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res: Response) => {
   const parsedBody = parseRequestBody(analysisSectionBodySchema, req, res);
@@ -6966,6 +7201,66 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       promptVersionForCache = `${promptVersion}|kb:${pkgSha.trim().slice(0, 12)}`;
     }
   }
+  const scoreAvailable = digest.sourceType !== "web";
+  const cachedFastBundleRow = await getAnalysisIdentityCache(
+    {
+      identityType: identity.type,
+      identityValue: identity.value,
+      locale,
+      promptVersion: promptVersionForCache,
+      factsDigestHash,
+      section: "bundle_fast",
+    },
+    { timeoutMs: 600 },
+  ).catch(() => null);
+  const parsedFastBundle = cachedFastBundleRow?.payload
+    ? safeParseAnalysisBundle(cachedFastBundleRow.payload)
+    : null;
+  const fastBundleForGate = parsedFastBundle?.success ? parsedFastBundle.data : null;
+
+  if (section === "overview" || section === "usage") {
+    if (fastBundleForGate) {
+      const sectionPayload =
+        section === "overview" ? fastBundleForGate.sections.overview : fastBundleForGate.sections.usage;
+      res.status(200).json({
+        section,
+        cover: sectionPayload.cover,
+        detail: sectionPayload.detail,
+        dataStatus: sectionPayload.dataStatus,
+        meta: {
+          bundleId: fastBundleForGate.meta.bundleId,
+          revision: fastBundleForGate.meta.revision,
+          factsDigestHash,
+          scoreAvailable:
+            fastBundleForGate.meta.scoreAvailable ??
+            getScoreAvailableFromSourceType(fastBundleForGate.meta.sourceType) ??
+            scoreAvailable,
+        },
+        timingMs: 0,
+      });
+      return;
+    }
+
+    const fallbackSection =
+      section === "overview" ? buildFallbackOverviewSection(digest) : buildFallbackUsageSection(digest);
+    res.status(200).json({
+      section,
+      cover: fallbackSection.cover,
+      detail: fallbackSection.detail,
+      dataStatus: fallbackSection.dataStatus,
+      meta: {
+        bundleId: randomUUID(),
+        revision: 1,
+        factsDigestHash,
+        fallbackUsed: "skeleton",
+        fallbackReason: "bundle_fast_missing",
+        scoreAvailable,
+      },
+      timingMs: 0,
+    });
+    return;
+  }
+
 	  const requestedLimit =
 	    isDsldDetail ? Math.min(rawRequestedLimit, ANALYSIS_DETAIL_LIMIT_DSLD) : rawRequestedLimit;
 	  const sectionKey = `${section}:${requestedLimit}:${cursor}`;
@@ -6982,6 +7277,33 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 	      totalActives,
 	    };
 	  };
+  const gateBundle = fastBundleForGate;
+  const isSkeletonBundleOnly = gateBundle
+    ? gateBundle.meta.revision < 1 ||
+      gateBundle.meta.phase === "skeleton" ||
+      gateBundle.meta.sourceTypeFinal === false ||
+      gateBundle.meta.detailReady === false ||
+      gateBundle.sections.ingredients.dataStatus === "pending"
+    : false;
+
+  if (gateBundle && isSkeletonBundleOnly) {
+    res.status(200).json({
+      section: "ingredients",
+      detail: null,
+      dataStatus: "pending",
+      page: buildDetailPage(0),
+      meta: {
+        bundleId: gateBundle.meta.bundleId ?? randomUUID(),
+        revision: gateBundle.meta.revision ?? 0,
+        factsDigestHash,
+        retryAfterMs: 1200,
+        fallbackUsed: "skeleton",
+        fallbackReason: "detail_not_ready_until_revision1",
+      },
+      timingMs: 0,
+    });
+    return;
+  }
 
 	  if (totalActives === 0) {
 	    res.status(200).json({
@@ -7977,13 +8299,171 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   res.on("close", clearKeepAlive);
   res.on("finish", clearKeepAlive);
 
+  const streamState = {
+    rev0Sent: false,
+    rev1Sent: false,
+    doneSent: false,
+    ended: false,
+    fallbackRev1Locked: false,
+    clientDisconnected: false,
+    tRev0: null as number | null,
+    tRev1: null as number | null,
+    tDone: null as number | null,
+    rev1Source: null as "fast_ai" | "fallback" | null,
+  };
+  let pendingDoneReason: string | null = null;
+  let streamAbortController: AbortController | null = null;
+  let latestSkeletonBundle: AnalysisBundle | null = null;
+  let streamBarcode: string | null = null;
+  let streamLocale = locale;
+  let cleanupRequestSignal: (() => void) | null = null;
+  let fastWatchdog: ReturnType<typeof setTimeout> | null = null;
+  let globalWatchdog: ReturnType<typeof setTimeout> | null = null;
+
+  const clearWatchdogs = () => {
+    if (fastWatchdog) {
+      clearTimeout(fastWatchdog);
+      fastWatchdog = null;
+    }
+    if (globalWatchdog) {
+      clearTimeout(globalWatchdog);
+      globalWatchdog = null;
+    }
+  };
+  const originalWrite = res.write.bind(res);
+  const originalEnd = res.end.bind(res);
+  const toChunkText = (chunk: unknown, encoding?: BufferEncoding): string => {
+    if (typeof chunk === "string") return chunk;
+    if (Buffer.isBuffer(chunk)) return chunk.toString(encoding ?? "utf8");
+    return "";
+  };
+  // Track lifecycle even when legacy branches still call sendSSE/res.end directly.
+  (res.write as unknown) = ((chunk: unknown, encoding?: BufferEncoding, cb?: (error?: Error | null) => void) => {
+    const text = toChunkText(chunk, encoding);
+    if (text.includes("event: done")) {
+      streamState.doneSent = true;
+      streamState.tDone = Date.now();
+    }
+    return originalWrite(chunk as Parameters<Response["write"]>[0], encoding as Parameters<Response["write"]>[1], cb as Parameters<Response["write"]>[2]);
+  }) as Response["write"];
+  (res.end as unknown) = ((chunk?: unknown, encoding?: BufferEncoding, cb?: () => void) => {
+    if (!streamState.ended) {
+      streamState.ended = true;
+      clearWatchdogs();
+      cleanupRequestSignal?.();
+      cleanupRequestSignal = null;
+      if (!streamState.doneSent && !res.writableEnded && !streamState.clientDisconnected) {
+        sendSSE(res, "done", {
+          barcode: streamBarcode,
+          reason: pendingDoneReason ?? "stream_end",
+        });
+        streamState.doneSent = true;
+        streamState.tDone = Date.now();
+      }
+    }
+    return originalEnd(chunk as Parameters<Response["end"]>[0], encoding as Parameters<Response["end"]>[1], cb as Parameters<Response["end"]>[2]);
+  }) as Response["end"];
+  const finalizeStream = (reason: string) => {
+    if (streamState.ended || res.writableEnded) return;
+    pendingDoneReason = reason;
+    res.end();
+  };
+  const emitRev0Once = (bundle: AnalysisBundle): boolean => {
+    if (streamState.rev0Sent || res.writableEnded || streamState.clientDisconnected) return false;
+    const normalized: AnalysisBundle = {
+      ...bundle,
+      meta: {
+        ...bundle.meta,
+        phase: "skeleton",
+        revision: 0,
+        sourceTypeFinal: false,
+        detailReady: false,
+      },
+      sections: {
+        ...bundle.sections,
+        ingredients: {
+          ...bundle.sections.ingredients,
+          cover: { items: [], totalCount: 0 },
+          detail: null,
+          dataStatus: "pending",
+        },
+      },
+    };
+    latestSkeletonBundle = normalized;
+    sendSSE(res, "analysis_bundle", normalized);
+    streamState.rev0Sent = true;
+    streamState.tRev0 = Date.now();
+    return true;
+  };
+  const emitRev1Once = (
+    bundle: AnalysisBundle,
+    source: "fast_ai" | "fallback",
+    fallbackReason?: string,
+  ): boolean => {
+    if (res.writableEnded || streamState.clientDisconnected) return false;
+    if (source === "fast_ai" && streamState.fallbackRev1Locked) {
+      console.info("[analysis_bundle] dropping late fast rev1 after fallback lock");
+      return false;
+    }
+    if (streamState.rev1Sent) return false;
+    const normalized: AnalysisBundle = {
+      ...bundle,
+      meta: {
+        ...bundle.meta,
+        phase: "fast_ai",
+        revision: 1,
+        sourceTypeFinal: source === "fast_ai" ? true : Boolean(bundle.meta.sourceTypeFinal),
+        detailReady: source === "fast_ai" ? Boolean(bundle.meta.detailReady) : false,
+        fallbackReason: source === "fallback" ? (fallbackReason ?? "watchdog_fast_timeout") : undefined,
+      },
+    };
+    sendSSE(res, "analysis_bundle", normalized);
+    streamState.rev1Sent = true;
+    streamState.tRev1 = Date.now();
+    streamState.rev1Source = source;
+    if (source === "fallback") {
+      streamState.fallbackRev1Locked = true;
+      streamAbortController?.abort(new Error("fallback_rev1_locked"));
+    }
+    return true;
+  };
+  const emitWatchdogFallbackRev1 = (fallbackReason: string) => {
+    const skeleton = latestSkeletonBundle ??
+      buildProvisionalAnalysisBundle({
+        bundleId,
+        locale: streamLocale,
+        barcodeGtin14: streamBarcode ?? "00000000000000",
+        revision: 0,
+        phase: "skeleton",
+      });
+    let fallback = applyFastFailureStatus(buildFastFailureBundle(skeleton));
+    fallback = {
+      ...fallback,
+      sections: {
+        ...fallback.sections,
+        ingredients: {
+          ...fallback.sections.ingredients,
+          dataStatus: fallback.sections.ingredients.dataStatus === "pending" ? "limited" : fallback.sections.ingredients.dataStatus,
+        },
+      },
+    };
+    emitRev1Once(fallback, "fallback", fallbackReason);
+  };
+
+  res.on("close", () => {
+    streamState.clientDisconnected = true;
+    clearWatchdogs();
+  });
+  res.on("finish", clearWatchdogs);
+
   try {
     if (!normalized) {
       sendSSE(res, "error", { message: "Invalid barcode provided" });
-      res.end();
+      finalizeStream("invalid_barcode");
       return;
     }
     const barcode = normalized.code;
+    streamBarcode = barcode;
     const cacheKey = buildBarcodeCacheKey(barcode);
     const barcodeGtin14 = normalized.code.padStart(14, "0");
     const barcodeRawDigits = normalized.code;
@@ -8004,6 +8484,48 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     const startedAt = performance.now();
     const budget = new DeadlineBudget(Date.now() + RESILIENCE_TOTAL_BUDGET_MS);
     const requestAbort = createRequestAbort(res);
+    const streamAbort = new AbortController();
+    streamAbortController = streamAbort;
+    const { signal: requestSignal, cleanup } = combineSignals([
+      requestAbort.signal,
+      streamAbort.signal,
+    ]);
+    cleanupRequestSignal = cleanup;
+    const armContractWatchdogs = () => {
+      if (!streamState.rev0Sent) {
+        setTimeout(() => {
+          if (streamState.rev0Sent || res.writableEnded || streamState.clientDisconnected) return;
+          emitRev0Once(
+            buildProvisionalAnalysisBundle({
+              bundleId,
+              locale: streamLocale,
+              barcodeGtin14,
+              revision: 0,
+              phase: "skeleton",
+            }),
+          );
+        }, 250);
+      }
+      if (!fastWatchdog) {
+        const fastMs = Math.max(250, ANALYSIS_BUNDLE_FAST_TIMEOUT_MS + SSE_FAST_GRACE_MS);
+        fastWatchdog = setTimeout(() => {
+          if (streamState.rev1Sent || res.writableEnded || streamState.clientDisconnected) return;
+          emitWatchdogFallbackRev1("watchdog_fast_timeout");
+          finalizeStream("watchdog_fast_timeout");
+        }, fastMs);
+      }
+      if (!globalWatchdog) {
+        const globalMs = Math.max(1000, SSE_GLOBAL_STREAM_TIMEOUT_MS);
+        globalWatchdog = setTimeout(() => {
+          if (streamState.ended || res.writableEnded || streamState.clientDisconnected) return;
+          if (!streamState.rev1Sent) {
+            emitWatchdogFallbackRev1("watchdog_global_timeout");
+          }
+          finalizeStream("global_timeout");
+        }, globalMs);
+      }
+    };
+    armContractWatchdogs();
     const requestId = String(res.getHeader("x-request-id") ?? "");
     const requestPath = req.path;
     const headerClientVersion =
@@ -8017,7 +8539,6 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     const shadowCompareEnabled =
       process.env.SHADOW_COMPARE_ENABLE === "1" || process.env.SHADOW_COMPARE_ENABLE === "true";
     const deviceId = parsedBody.deviceId ?? null;
-    const requestSignal = requestAbort.signal;
     const buildAuthorityMeta = (extra?: Record<string, unknown>) => ({
       reg_map_primary_status: regMapPrimaryStatus,
       reg_map_primary_attempted: regMapPrimaryAttempted,
@@ -8032,6 +8553,15 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       lnhpd_guardrail_score: lnhpdGuardrailScore,
       lnhpd_guardrail_pass: lnhpdGuardrailPass,
       lnhpd_fetch_status: lnhpdFetchStatus,
+      sse_contract: {
+        rev0_sent: streamState.rev0Sent,
+        rev1_sent: streamState.rev1Sent,
+        done_sent: streamState.doneSent,
+        rev1_source: streamState.rev1Source,
+        rev0_at_ms: streamState.tRev0,
+        rev1_at_ms: streamState.tRev1,
+        done_at_ms: streamState.tDone,
+      },
       ...(extra ?? {}),
     });
 
@@ -8122,7 +8652,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 
       const skeletonParsed = safeParseAnalysisBundle(skeleton);
       if (skeletonParsed.success && canWrite()) {
-        sendSSE(res, "analysis_bundle", skeletonParsed.data);
+        emitRev0Once(skeletonParsed.data);
       } else {
         console.warn("[analysis_bundle] skeleton validation failed", skeletonParsed.error?.message);
       }
@@ -8155,7 +8685,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 	        fastCandidate = applyDsldInferenceGuard(fastCandidate, params.digest);
 	        const parsed = safeParseAnalysisBundle(fastCandidate);
 	        if (parsed.success && canWrite()) {
-	          sendSSE(res, "analysis_bundle", parsed.data);
+	          emitRev1Once(parsed.data, parsed.data.meta?.fallbackReason ? "fallback" : "fast_ai", parsed.data.meta?.fallbackReason);
 	          maybePrewarmDsldDetail();
 	          return { factsDigestHash };
 	        }
@@ -8221,7 +8751,9 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 
 	      if (fastBundle && canWrite()) {
 	        const adjustedBundle = applyDsldInferenceGuard(fastBundle, params.digest);
-	        sendSSE(res, "analysis_bundle", adjustedBundle);
+          const rev1Source: "fast_ai" | "fallback" =
+            adjustedBundle.meta?.fallbackReason || fastFailed || !fastRaw ? "fallback" : "fast_ai";
+	        emitRev1Once(adjustedBundle, rev1Source, adjustedBundle.meta?.fallbackReason ?? (rev1Source === "fallback" ? "fast_generation_failed" : undefined));
 	        maybePrewarmDsldDetail();
 	        void upsertAnalysisIdentityCache(
 	          {

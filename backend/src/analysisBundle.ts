@@ -136,6 +136,9 @@ export const AnalysisBundleMetaSchema = z.object({
   schemaVersion: z.literal(ANALYSIS_BUNDLE_SCHEMA_VERSION),
   promptVersion: z.string(),
   sourceType: z.enum(["lnhpd", "dsld", "web"]),
+  sourceTypeFinal: z.boolean().optional(),
+  scoreAvailable: z.boolean().optional(),
+  detailReady: z.boolean().optional(),
   authoritativeIdentity: z.object({
     type: z.enum(["npn", "dsldLabelId", "webCanonicalId", "gtin14"]),
     value: z.string(),
@@ -146,6 +149,7 @@ export const AnalysisBundleMetaSchema = z.object({
   revision: z.number().int().min(0),
   factsDigestHash: z.string(),
   factsSourceVersion: z.string(),
+  fallbackReason: z.string().optional(),
   serverCommitSha: z.string().nullable().optional(),
 });
 
