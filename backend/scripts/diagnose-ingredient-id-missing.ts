@@ -11,6 +11,7 @@ type ProductScoreRow = {
 };
 
 type ProductIngredientRow = {
+  id: string;
   source_id: string;
   canonical_source_id: string | null;
   ingredient_id: string | null;
@@ -45,6 +46,7 @@ const limit = Math.max(1, Number(getArg("limit") ?? "1000"));
 const topN = Math.max(1, Number(getArg("top-n") ?? "200"));
 const sourceIdsFile = getArg("source-ids-file");
 const idColumn = (getArg("id-column") ?? "source_id").toLowerCase();
+const pageSize = Math.max(1, Number(getArg("page-size") ?? "1000"));
 const outPath =
   getArg("output") ??
   `output/ingredient-identity/ingredient-id-missing-${sourceArg}.json`;
@@ -193,6 +195,14 @@ const DSLD_EXCLUDED_KEY_PATTERNS: RegExp[] = [
   /\bmax\b/,
   /\bperformance\b/,
   /\benergy\b/,
+  // Section headings / marketing labels (not a single ingredient)
+  /\binfusions?\b/,
+  /\bagents?\b/,
+  /\bergogenics?\b/,
+  /\bintensifier\b/,
+  /\bmaximizer\b/,
+  /\bmodule\b/,
+  /\bbioaccelerators\b/,
 ];
 
 const isDsldExcludedKey = (key: string): boolean => {
@@ -248,15 +258,32 @@ const fetchIngredients = async (
 ): Promise<ProductIngredientRow[]> => {
   const rows: ProductIngredientRow[] = [];
   for (const chunk of chunkArray(sourceIds, 200)) {
-    const { data, error } = await supabase
-      .from("product_ingredients")
-      .select(
-        "source_id,canonical_source_id,ingredient_id,name_raw,name_key,is_active",
-      )
-      .eq("source", source)
-      .in(column, chunk);
-    if (error) throw error;
-    rows.push(...((data ?? []) as ProductIngredientRow[]));
+    let offset = 0;
+    let warned = false;
+    while (true) {
+      const { data, error } = await supabase
+        .from("product_ingredients")
+        .select(
+          "id,source_id,canonical_source_id,ingredient_id,name_raw,name_key,is_active",
+        )
+        .eq("source", source)
+        .eq("is_active", true)
+        .is("ingredient_id", null)
+        .in(column, chunk)
+        .order("id", { ascending: true })
+        .range(offset, offset + pageSize - 1);
+      if (error) throw error;
+      const page = (data ?? []) as ProductIngredientRow[];
+      rows.push(...page);
+      if (page.length < pageSize) break;
+      if (!warned) {
+        warned = true;
+        console.warn(
+          `[ingredient-missing] pageSize hit; continuing pagination (pageSize=${pageSize})`,
+        );
+      }
+      offset += pageSize;
+    }
   }
   return rows;
 };
@@ -281,7 +308,6 @@ const run = async () => {
   const ingredients = await fetchIngredients(source, column, sourceIds);
   let excludedRows = 0;
   const activeMissing = ingredients.filter((row) => {
-    if (!row.is_active || row.ingredient_id) return false;
     if (source === "dsld") {
       const key = normalizeNameKey(row.name_key ?? row.name_raw);
       if (key && isDsldExcludedKey(key)) {
@@ -301,7 +327,7 @@ const run = async () => {
       : row.source_id;
 
   activeMissing.forEach((row) => {
-    const key = row.name_key ?? normalizeNameKey(row.name_raw);
+    const key = normalizeNameKey(row.name_key ?? row.name_raw);
     if (!key) return;
     countsByNameKey.set(key, (countsByNameKey.get(key) ?? 0) + 1);
 

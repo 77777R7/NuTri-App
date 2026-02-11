@@ -1,4 +1,5 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import path from "node:path";
 
 import { supabase } from "../src/supabase.js";
 import { computeV4FactsHashFromRows } from "../src/scoring/v4ScoreEngine.js";
@@ -65,6 +66,12 @@ const checkFactsHash = hasFlag("check-facts-hash");
 const factsHashFromIngredients = hasFlag("facts-hash-from-ingredients");
 const factsHashMismatchPath = getArg("facts-hash-mismatch-jsonl");
 const factsHashBreakdownPath = getArg("facts-hash-breakdown-json");
+
+const ensureParentDir = async (filePath: string) => {
+  const dir = path.dirname(filePath);
+  if (!dir || dir === ".") return;
+  await mkdir(dir, { recursive: true });
+};
 
 if (!sourceIdsFile) {
   console.error("[compare-product-scores] missing --source-ids-file");
@@ -432,10 +439,12 @@ const run = async () => {
     timestamp: new Date().toISOString(),
   };
 
+  await ensureParentDir(output);
   await writeFile(output, JSON.stringify(payload, null, 2), "utf8");
   console.log(`[compare-product-scores] wrote ${output}`);
 
   if (factsHashMismatchPath && factsHashMismatches.length) {
+    await ensureParentDir(factsHashMismatchPath);
     await writeFile(
       factsHashMismatchPath,
       factsHashMismatches.map((row) => JSON.stringify(row)).join("\n"),
@@ -457,6 +466,7 @@ const run = async () => {
       derivedB: factsHashDerivedB,
       missingIngredients: factsHashMissingIngredients,
     };
+    await ensureParentDir(factsHashBreakdownPath);
     await writeFile(factsHashBreakdownPath, JSON.stringify(breakdown, null, 2), "utf8");
     console.log(`[compare-product-scores] wrote ${factsHashBreakdownPath}`);
   }
@@ -532,6 +542,7 @@ const run = async () => {
             : null,
         };
       });
+      await ensureParentDir(path);
       await writeFile(path, lines.map((row) => JSON.stringify(row)).join("\n"), "utf8");
       console.log(`[compare-product-scores] wrote ${path}`);
     };

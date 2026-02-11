@@ -12,6 +12,7 @@ type ProductScoreRow = {
 };
 
 type ProductIngredientRow = {
+  id: string;
   source_id: string;
   canonical_source_id: string | null;
   ingredient_id: string | null;
@@ -21,12 +22,14 @@ type ProductIngredientRow = {
 };
 
 type IngredientFormRow = {
+  id: string;
   ingredient_id: string;
   form_key: string;
   form_label: string;
 };
 
 type FormAliasRow = {
+  id: string;
   alias_text: string;
   alias_norm: string | null;
   form_key: string;
@@ -166,7 +169,64 @@ const DSLD_EXCLUDED_NAME_KEYS = new Set([
   "preforpro",
 ]);
 
-const isDsldExcludedKey = (key: string): boolean => DSLD_EXCLUDED_NAME_KEYS.has(key);
+const DSLD_EXCLUDED_KEY_PATTERNS: RegExp[] = [
+  /\bproprietary\b/,
+  /\bblend\b/,
+  /\bcomplex\b/,
+  /\bmatrix\b/,
+  /\bformula\b/,
+  /\bingredients?\b/,
+  /\bflavou?r(ing)?\b/,
+  /\bpatent\s+pending\b/,
+  /\bpre[\s-]?workout\b/,
+  /\bpowerhouse\b/,
+  /\boptimizer\b/,
+  /\benhancer\b/,
+  /\binterfusion\b/,
+  /\bcomposite\b/,
+  /\bprofile\b/,
+  /\bfoodstate\b/,
+  /\bvitamins?\b/,
+  /\bminerals?\b/,
+  /\btotal\s+cultures?\b/,
+  /\bprobiotic\s+cultures?\b/,
+  /\bnon\s+dairy\s+probiotic\s+cultures?\b/,
+  /\bactive\s+cofactors?\b/,
+  /\bexcipient\b/,
+  /\bq\s*s\b/,
+  /\b(amino\s+acid\s+profile|fatty\s+acid\s+composition)\b/,
+  /\b(distilled\s+water|water)\b/,
+  /\b(electrolyte\s+blend|food\s+blend|protein\s+blend)\b/,
+  /\bfatty\s+acids?\b/,
+  /\bpolyunsaturated\s+fat\b/,
+  /\bmonounsaturated\s+fat\b/,
+  /\bomega\s*\d+\b.*\b(fat|fatty\s+acid|fatty\s+acids)\b/,
+  /\balcohol\b/,
+  /\bweight\s+loss\b/,
+  /\bfat\s+burner\b/,
+  /\bburner\b/,
+  /\bthermogenic\b/,
+  /\bcarb\s+controller\b/,
+  /\brapid\b/,
+  /\brx\b/,
+  /\bpro\b/,
+  /\bultra\b/,
+  /\bmax\b/,
+  /\bperformance\b/,
+  /\benergy\b/,
+  // Section headings / marketing labels (not a single ingredient)
+  /\binfusions?\b/,
+  /\bagents?\b/,
+  /\bergogenics?\b/,
+  /\bintensifier\b/,
+  /\bmaximizer\b/,
+  /\bmodule\b/,
+  /\bbioaccelerators\b/,
+];
+
+const isDsldExcludedKey = (key: string): boolean =>
+  DSLD_EXCLUDED_NAME_KEYS.has(key) ||
+  DSLD_EXCLUDED_KEY_PATTERNS.some((pattern) => pattern.test(key));
 
 const isValidToken = (value: string): boolean => {
   if (!value) return false;
@@ -256,13 +316,27 @@ const fetchIngredients = async (
 ): Promise<ProductIngredientRow[]> => {
   const rows: ProductIngredientRow[] = [];
   for (const chunk of chunkArray(sourceIds, 200)) {
-    const { data, error } = await supabase
-      .from("product_ingredients")
-      .select("source_id,canonical_source_id,ingredient_id,name_raw,form_raw,is_active")
-      .eq("source", source)
-      .in(idColumn, chunk);
-    if (error) throw error;
-    rows.push(...((data ?? []) as ProductIngredientRow[]));
+    let offset = 0;
+    let warned = false;
+    while (true) {
+      const { data, error } = await supabase
+        .from("product_ingredients")
+        .select("id,source_id,canonical_source_id,ingredient_id,name_raw,form_raw,is_active")
+        .eq("source", source)
+        .eq("is_active", true)
+        .in(idColumn, chunk)
+        .order("id", { ascending: true })
+        .range(offset, offset + pageSize - 1);
+      if (error) throw error;
+      const page = (data ?? []) as ProductIngredientRow[];
+      rows.push(...page);
+      if (page.length < pageSize) break;
+      if (!warned) {
+        warned = true;
+        console.warn(`[diagnose] pageSize hit; continuing pagination (pageSize=${pageSize})`);
+      }
+      offset += pageSize;
+    }
   }
   return rows;
 };
@@ -270,32 +344,73 @@ const fetchIngredients = async (
 const fetchIngredientForms = async (ingredientIds: string[]): Promise<IngredientFormRow[]> => {
   const rows: IngredientFormRow[] = [];
   for (const chunk of chunkArray(ingredientIds, 200)) {
-    const { data, error } = await supabase
-      .from("ingredient_forms")
-      .select("ingredient_id,form_key,form_label")
-      .in("ingredient_id", chunk);
-    if (error) throw error;
-    rows.push(...((data ?? []) as IngredientFormRow[]));
+    let offset = 0;
+    let warned = false;
+    while (true) {
+      const { data, error } = await supabase
+        .from("ingredient_forms")
+        .select("id,ingredient_id,form_key,form_label")
+        .in("ingredient_id", chunk)
+        .order("id", { ascending: true })
+        .range(offset, offset + pageSize - 1);
+      if (error) throw error;
+      const page = (data ?? []) as IngredientFormRow[];
+      rows.push(...page);
+      if (page.length < pageSize) break;
+      if (!warned) {
+        warned = true;
+        console.warn(`[diagnose] pageSize hit; continuing pagination (pageSize=${pageSize})`);
+      }
+      offset += pageSize;
+    }
   }
   return rows;
 };
 
 const fetchAliases = async (ingredientIds: string[]): Promise<FormAliasRow[]> => {
   const rows: FormAliasRow[] = [];
-  const { data: globalAliases, error: globalError } = await supabase
-    .from("ingredient_form_aliases")
-    .select("alias_text,alias_norm,form_key,ingredient_id")
-    .is("ingredient_id", null);
-  if (globalError) throw globalError;
-  rows.push(...((globalAliases ?? []) as FormAliasRow[]));
+  {
+    let offset = 0;
+    let warned = false;
+    while (true) {
+      const { data: globalAliases, error: globalError } = await supabase
+        .from("ingredient_form_aliases")
+        .select("id,alias_text,alias_norm,form_key,ingredient_id")
+        .is("ingredient_id", null)
+        .order("id", { ascending: true })
+        .range(offset, offset + pageSize - 1);
+      if (globalError) throw globalError;
+      const page = (globalAliases ?? []) as FormAliasRow[];
+      rows.push(...page);
+      if (page.length < pageSize) break;
+      if (!warned) {
+        warned = true;
+        console.warn(`[diagnose] pageSize hit; continuing pagination (pageSize=${pageSize})`);
+      }
+      offset += pageSize;
+    }
+  }
 
   for (const chunk of chunkArray(ingredientIds, 200)) {
-    const { data, error } = await supabase
-      .from("ingredient_form_aliases")
-      .select("alias_text,alias_norm,form_key,ingredient_id")
-      .in("ingredient_id", chunk);
-    if (error) throw error;
-    rows.push(...((data ?? []) as FormAliasRow[]));
+    let offset = 0;
+    let warned = false;
+    while (true) {
+      const { data, error } = await supabase
+        .from("ingredient_form_aliases")
+        .select("id,alias_text,alias_norm,form_key,ingredient_id")
+        .in("ingredient_id", chunk)
+        .order("id", { ascending: true })
+        .range(offset, offset + pageSize - 1);
+      if (error) throw error;
+      const page = (data ?? []) as FormAliasRow[];
+      rows.push(...page);
+      if (page.length < pageSize) break;
+      if (!warned) {
+        warned = true;
+        console.warn(`[diagnose] pageSize hit; continuing pagination (pageSize=${pageSize})`);
+      }
+      offset += pageSize;
+    }
   }
   return rows;
 };
@@ -309,6 +424,7 @@ const limit = Math.max(1, Number(getArg("limit") ?? "1000"));
 const outDir = getArg("out-dir") ?? "output/form-taxonomy";
 const topN = Math.max(1, Number(getArg("top-n") ?? "50"));
 const sourceIdsFile = getArg("source-ids-file");
+const pageSize = Math.max(1, Number(getArg("page-size") ?? "1000"));
 const idColumnArg = (getArg("id-column") ?? "source_id").toLowerCase();
 const idColumn =
   idColumnArg === "canonical_source_id" ? "canonical_source_id" : "source_id";
