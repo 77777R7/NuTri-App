@@ -28,6 +28,9 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Install Dependencies
+        run: npm ci --ignore-scripts
+
       - name: Wait for Render Deploy Commit
         env:
           RENDER_BASE_URL: ${{ github.event.inputs.render_base_url != '' && github.event.inputs.render_base_url || secrets.RENDER_BASE_URL }}
