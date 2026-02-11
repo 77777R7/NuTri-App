@@ -680,10 +680,41 @@ const buildIngredientsCover = (
 };
 
 const buildFallbackOverviewSummary = (digest: FactsDigest): string => {
-  const primary = digest.actives[0]?.name ?? null;
-  if (primary) return `A supplement centered on ${primary}.`;
-  if (digest.product.name) return `${digest.product.name} supplement overview.`;
-  return "Supplement overview unavailable.";
+  const genericAnchorSet = new Set(["calories", "total fat", "cholesterol", "sodium", "carbohydrate", "protein"]);
+  const primary =
+    digest.actives
+      .map((active) => active.name?.trim() ?? "")
+      .find((name) => {
+        const normalized = normalizeOverviewAnchor(name);
+        return normalized.length >= 3 && !genericAnchorSet.has(normalized);
+      }) ??
+    digest.actives[0]?.name?.trim() ??
+    "";
+  const productName = digest.product.name?.trim() ?? "";
+  const anchor = primary || productName || "this supplement";
+  const sourcePhrase = digest.sourceType === "web" ? "available web information" : "label facts";
+  let summary = `This supplement centers on ${anchor} and is summarized from ${sourcePhrase}. Follow label directions and use this overview as general information.`;
+  if (summary.length < 40) {
+    summary = `${summary} Consult product labeling for product-specific guidance.`;
+  }
+  return summary;
+};
+
+const normalizeOverviewAnchor = (value: string | null | undefined): string =>
+  String(value ?? "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const hasOverviewAnchorToken = (summary: string, digest: FactsDigest): boolean => {
+  const normalizedSummary = normalizeOverviewAnchor(summary);
+  if (!normalizedSummary) return false;
+  const candidates = [digest.actives[0]?.name ?? null, digest.product.name ?? null]
+    .map((value) => normalizeOverviewAnchor(value))
+    .filter((value) => value.length >= 3);
+  if (candidates.length === 0) return false;
+  return candidates.some((token) => normalizedSummary.includes(token));
 };
 
 const buildDsldInferenceOverview = (digest: FactsDigest): { summary: string; bullets: Array<{ text: string; basisTags: BasisTag[] }> } => {
@@ -1763,8 +1794,10 @@ const mergeFastAnalysisBundle = (params: {
     typeof overviewRaw.summary === "string" && overviewRaw.summary.trim()
       ? clampText(overviewRaw.summary.trim(), 180)
       : fallbackSummary;
+  const overviewSummaryMeetsContract =
+    overviewSummaryCandidateRaw.length >= 40 && hasOverviewAnchorToken(overviewSummaryCandidateRaw, digest);
   const overviewSummaryCandidate =
-    hasForbiddenFormKeyword(overviewSummaryCandidateRaw, allowedFormKeywords)
+    hasForbiddenFormKeyword(overviewSummaryCandidateRaw, allowedFormKeywords) || !overviewSummaryMeetsContract
       ? fallbackSummary
       : overviewSummaryCandidateRaw;
   const overviewBulletsRaw = Array.isArray(overviewRaw.bullets) ? overviewRaw.bullets : [];
@@ -1847,6 +1880,16 @@ const mergeFastAnalysisBundle = (params: {
         basisTags: normalizeBasisTags(withFoodRaw.basisTags, "general_advice"),
       }
     : null;
+  const fallbackUsage = buildFallbackUsageSection(digest);
+  const fallbackBestTimeToTake = fallbackUsage.cover?.bestTimeToTake ?? {
+    text: "Anytime (with meals).",
+    basisTags: ["general_advice"] as BasisTag[],
+  };
+  const fallbackWithFood = fallbackUsage.cover?.withFood ?? {
+    value: true,
+    text: "Prefer with food unless label states otherwise.",
+    basisTags: ["general_advice"] as BasisTag[],
+  };
   const dosageField = buildUsageDosageField(digest);
   const labelDosingText = buildLabelDosingText(digest);
   const isLnhpd = digest.sourceType === "lnhpd";
@@ -1855,11 +1898,13 @@ const mergeFastAnalysisBundle = (params: {
       ? buildLnhpdDeterministicTiming(labelDosingText)
       : bestTimeToTake && bestTimeToTake.text
         ? bestTimeToTake
-        : null;
+        : fallbackBestTimeToTake;
   const withFoodFinal =
     isLnhpd
       ? buildLnhpdDeterministicWithFood(labelDosingText, digest.actives)
-      : withFoodFromModel;
+      : withFoodFromModel && typeof withFoodFromModel.value === "boolean"
+        ? withFoodFromModel
+        : fallbackWithFood;
   // Since the UI shows dosage/bestTime/withFood as fixed rows, avoid template repetition in LNHPD usage bullets.
   const usageBulletsFinal = isLnhpd ? [] : usageBulletsFromModel;
 
@@ -5087,6 +5132,8 @@ const buildPersistedEventFromBundle = (candidate: unknown): Record<string, unkno
   const identityRecord = identity as Record<string, unknown>;
   if (typeof identityRecord.type !== "string" || typeof identityRecord.value !== "string") return null;
   if (typeof metaRecord.factsDigestHash !== "string" || !metaRecord.factsDigestHash.trim()) return null;
+  const revision = typeof metaRecord.revision === "number" ? metaRecord.revision : null;
+  if (revision === null || revision < 1) return null;
   const scoreAvailableFromMeta =
     typeof metaRecord.scoreAvailable === "boolean" ? metaRecord.scoreAvailable : null;
   const scoreAvailable = scoreAvailableFromMeta ?? getScoreAvailableFromSourceType(metaRecord.sourceType);
@@ -5098,26 +5145,33 @@ const buildPersistedEventFromBundle = (candidate: unknown): Record<string, unkno
     factsDigestHash: metaRecord.factsDigestHash,
     promptVersion: typeof metaRecord.promptVersion === "string" ? metaRecord.promptVersion : null,
     bundleId: typeof metaRecord.bundleId === "string" ? metaRecord.bundleId : null,
-    revision: typeof metaRecord.revision === "number" ? metaRecord.revision : null,
+    revision,
     phase: typeof metaRecord.phase === "string" ? metaRecord.phase : null,
+    locale: typeof metaRecord.locale === "string" ? metaRecord.locale : null,
+    sourceType: typeof metaRecord.sourceType === "string" ? metaRecord.sourceType : null,
     scoreAvailable: scoreAvailable ?? null,
   };
 };
 
-const sendSSE = (res: Response, type: string, data: unknown) => {
+const buildSseFrame = (type: string, data: unknown): string =>
+  `event: ${type}\ndata: ${JSON.stringify(data)}\n\n`;
+
+const safeSendSse = (res: Response, type: string, data: unknown): boolean => {
   if (res.writableEnded || (res as unknown as { destroyed?: boolean }).destroyed) {
-    return;
+    return false;
   }
-  const payload = type === "analysis_bundle" ? normalizeAnalysisBundleForStream(data) : data;
-  res.write(`event: ${type}\n`);
-  res.write(`data: ${JSON.stringify(payload)}\n\n`);
-  if (type === "analysis_bundle") {
-    const persistedPayload = buildPersistedEventFromBundle(payload);
-    if (persistedPayload) {
-      res.write("event: persisted\n");
-      res.write(`data: ${JSON.stringify(persistedPayload)}\n\n`);
-    }
+  try {
+    const payload = type === "analysis_bundle" ? normalizeAnalysisBundleForStream(data) : data;
+    // Single-frame write keeps event/data boundary deterministic for SSE clients.
+    res.write(buildSseFrame(type, payload));
+    return !res.writableEnded;
+  } catch {
+    return false;
   }
+};
+
+const sendSSE = (res: Response, type: string, data: unknown) => {
+  void safeSendSse(res, type, data);
 };
 
 const createRequestAbort = (res: Response) => {
@@ -7137,6 +7191,57 @@ const buildFallbackUsageSection = (digest: FactsDigest): AnalysisBundle["section
   };
 };
 
+const buildIdentityFallbackOverviewSection = (
+  identity: { type: string; value: string },
+): AnalysisBundle["sections"]["overview"] => {
+  const identityLabel = identity.value?.trim() || "this product";
+  const summary = `Information for ${identityLabel} is still being prepared. Follow product label directions and use this as general guidance.`;
+  return {
+    layout: "overview_card",
+    cover: {
+      summary,
+      bullets: [
+        buildSectionBullet("Details are still syncing from source records.", ["not_provided"]),
+        buildSectionBullet("Review the package label for product-specific guidance.", ["general_advice"]),
+      ],
+    },
+    detail: {
+      summary,
+      bullets: [
+        buildSectionBullet("Details are still syncing from source records.", ["not_provided"]),
+        buildSectionBullet("Review the package label for product-specific guidance.", ["general_advice"]),
+      ],
+    },
+    dataStatus: "limited",
+  };
+};
+
+const buildIdentityFallbackUsageSection = (): AnalysisBundle["sections"]["usage"] => ({
+  layout: "usage_bullets",
+  cover: {
+    bullets: [buildSectionBullet("Follow package directions when available.", ["general_advice"])],
+    bestTimeToTake: {
+      text: "Anytime (with meals).",
+      basisTags: ["general_advice"],
+    },
+    withFood: {
+      value: true,
+      text: "Prefer with food unless label states otherwise.",
+      basisTags: ["general_advice"],
+    },
+    dosage: {
+      text: "Follow label directions.",
+      basisTags: ["not_provided"],
+    },
+  },
+  detail: {
+    timingRationale: null,
+    withFoodRationale: null,
+    scheduleFromLabel: [],
+  },
+  dataStatus: "limited",
+});
+
 /**
  * On-demand analysis section endpoint (ingredients detail + overview + usage)
  */
@@ -7160,7 +7265,9 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   // - With regression token only: no audit/debug fields
   const allowInternalDebug = isRegressionRequest && wantsRegressionDebug;
 
-  const { identity, section, locale, promptVersion, factsDigestHash } = parsedBody;
+  const { identity, section, locale, promptVersion } = parsedBody;
+  let { factsDigestHash } = parsedBody;
+  const requestedFactsDigestHash = factsDigestHash;
   const rawRequestedLimit = Math.min(
     Math.max(parsedBody.limit ?? ANALYSIS_DETAIL_LIMIT_DEFAULT, 1),
     ANALYSIS_DETAIL_LIMIT_MAX,
@@ -7170,7 +7277,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 
   const deepseekKey = process.env.DEEPSEEK_API_KEY ?? null;
 
-  const digestRow = await getAnalysisIdentityCache(
+  let digestRow = await getAnalysisIdentityCache(
     {
       identityType: identity.type,
       identityValue: identity.value,
@@ -7183,11 +7290,80 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   ).catch(() => null);
 
   if (!digestRow) {
-    res.status(404).json({ error: "facts_digest_missing" } satisfies ErrorResponse);
-    return;
+    const { data: latestDigestRow, error: latestDigestError } = await supabase
+      .from("analysis_identity_cache")
+      .select(
+        "identity_type,identity_value,locale,prompt_version,facts_digest_hash,facts_source_version,section,status,payload,facts_digest_json,attempts,locked_until,last_error,error_code,updated_at,created_at,expires_at",
+      )
+      .eq("identity_type", identity.type)
+      .eq("identity_value", identity.value)
+      .eq("locale", locale)
+      .eq("prompt_version", promptVersion)
+      .eq("section", "digest")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const latestDigestRowValid =
+      !latestDigestError &&
+      latestDigestRow &&
+      !isExpiredAt((latestDigestRow as { expires_at?: string | null }).expires_at);
+
+    if (latestDigestRowValid) {
+      digestRow = latestDigestRow as any;
+      factsDigestHash = latestDigestRow.facts_digest_hash;
+    } else {
+      if (section === "overview" || section === "usage") {
+        const identityFallbackSection =
+          section === "overview"
+            ? buildIdentityFallbackOverviewSection(identity)
+            : buildIdentityFallbackUsageSection();
+        const fallbackScoreAvailable = identity.type === "webCanonicalId" ? false : null;
+        res.status(200).json({
+          section,
+          cover: identityFallbackSection.cover,
+          detail: identityFallbackSection.detail,
+          dataStatus: identityFallbackSection.dataStatus,
+          meta: {
+            bundleId: randomUUID(),
+            revision: 1,
+            factsDigestHash: requestedFactsDigestHash,
+            fallbackUsed: "skeleton",
+            fallbackReason: "facts_digest_missing",
+            scoreAvailable: fallbackScoreAvailable,
+          },
+          timingMs: 0,
+        });
+        return;
+      }
+
+      res.status(200).json({
+        section: "ingredients",
+        detail: null,
+        dataStatus: "pending",
+        page: {
+          limit: rawRequestedLimit,
+          cursor,
+          nextCursor: null,
+          hasMore: false,
+          totalActives: 0,
+        },
+        meta: {
+          bundleId: randomUUID(),
+          revision: 0,
+          factsDigestHash: requestedFactsDigestHash,
+          retryAfterMs: 1200,
+          fallbackUsed: "skeleton",
+          fallbackReason: "facts_digest_missing",
+        },
+        timingMs: 0,
+      });
+      return;
+    }
   }
 
-  const digest = digestRow.facts_digest_json as FactsDigest;
+  const resolvedDigestRow = digestRow as NonNullable<typeof digestRow>;
+  const digest = resolvedDigestRow.facts_digest_json as FactsDigest;
   const isDsldDetail = digest.sourceType === "dsld";
   // DSLD detail is KB-first and can improve as the shipped KB package changes.
   // To avoid "locking in" stale detail pages for long TTLs, incorporate the production KB package
@@ -7456,7 +7632,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
             section: sectionKey,
             status: "complete",
             payload: detailPayload,
-            factsDigestJson: cachedDetail.facts_digest_json ?? digestRow.facts_digest_json,
+            factsDigestJson: cachedDetail.facts_digest_json ?? resolvedDigestRow.facts_digest_json,
             attempts: cachedDetail.attempts ?? 0,
             lockedUntil: null,
             lastError: cachedDetail.last_error ?? null,
@@ -7605,10 +7781,10 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
         locale,
         promptVersionForCache,
         factsDigestHash,
-        factsSourceVersion: digestRow.facts_source_version ?? "",
+        factsSourceVersion: resolvedDigestRow.facts_source_version ?? "",
         sectionKey,
         rateKey,
-        digestRowFactsDigestJson: digestRow.facts_digest_json,
+        digestRowFactsDigestJson: resolvedDigestRow.facts_digest_json,
         digest,
         requestedLimit,
         cursor,
@@ -7803,12 +7979,12 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
         locale,
         promptVersion: promptVersionForCache,
         factsDigestHash,
-        factsSourceVersion: digestRow.facts_source_version ?? "",
+        factsSourceVersion: resolvedDigestRow.facts_source_version ?? "",
         section: sectionKey,
         status: "running",
         attempts,
         lockedUntil: lockUntil,
-        factsDigestJson: digestRow.facts_digest_json,
+        factsDigestJson: resolvedDigestRow.facts_digest_json,
         expiresAt: new Date(Date.now() + ANALYSIS_IDENTITY_CACHE_TTL_MS).toISOString(),
       },
       { timeoutMs: 1200 },
@@ -8157,11 +8333,11 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       locale,
       promptVersion: promptVersionForCache,
       factsDigestHash,
-      factsSourceVersion: digestRow.facts_source_version ?? "",
+      factsSourceVersion: resolvedDigestRow.facts_source_version ?? "",
       section: sectionKey,
       status: detailStatus,
       payload: detailPayload,
-      factsDigestJson: digestRow.facts_digest_json,
+      factsDigestJson: resolvedDigestRow.facts_digest_json,
       attempts,
       lockedUntil: null,
       lastError: fallbackUsed
@@ -8275,42 +8451,44 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   let catalogLabelExtractionForAi: LabelExtractionMeta | null = null;
   let catalogLabelFactsForAi: LabelFacts | null = null;
 
+  let sseStarted = false;
   // Set SSE Headers
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
   res.setHeader("X-Accel-Buffering", "no");
   res.flushHeaders?.();
-
-  // Default to a short keepalive because some mobile SSE polyfills time out aggressively.
-  // Can be overridden via SSE_KEEPALIVE_MS (min 5000ms).
-  const keepAliveMsRaw = Number(process.env.SSE_KEEPALIVE_MS ?? "5000");
-  const keepAliveMs =
-    Number.isFinite(keepAliveMsRaw) && keepAliveMsRaw >= 5000 ? keepAliveMsRaw : 15000;
-  const keepAlive = setInterval(() => {
-    if (res.writableEnded) return;
-    // Some SSE clients (notably certain React Native polyfills) do not tolerate comment keepalives (": ping").
-    // Use a standard SSE event instead so both mobile clients and our CI parsers stay stable.
-    res.write("event: keepalive\n");
-    res.write(`data: ${JSON.stringify({ type: "ping" })}\n\n`);
-  }, keepAliveMs);
-  (keepAlive as any).unref?.();
-  const clearKeepAlive = () => clearInterval(keepAlive);
-  res.on("close", clearKeepAlive);
-  res.on("finish", clearKeepAlive);
+  sseStarted = true;
 
   const streamState = {
     rev0Sent: false,
     rev1Sent: false,
+    persistedSent: false,
     doneSent: false,
     ended: false,
     fallbackRev1Locked: false,
     clientDisconnected: false,
     tRev0: null as number | null,
     tRev1: null as number | null,
+    tPersisted: null as number | null,
     tDone: null as number | null,
     rev1Source: null as "fast_ai" | "fallback" | null,
   };
+  // Default to a short keepalive because some mobile SSE polyfills time out aggressively.
+  // Can be overridden via SSE_KEEPALIVE_MS (min 5000ms).
+  const keepAliveMsRaw = Number(process.env.SSE_KEEPALIVE_MS ?? "5000");
+  const keepAliveMs =
+    Number.isFinite(keepAliveMsRaw) && keepAliveMsRaw >= 5000 ? keepAliveMsRaw : 15000;
+  const keepAlive = setInterval(() => {
+    if (streamState.ended || streamState.doneSent || res.writableEnded) return;
+    // Some SSE clients (notably certain React Native polyfills) do not tolerate comment keepalives (": ping").
+    // Use a standard SSE event instead so both mobile clients and our CI parsers stay stable.
+    safeSendSse(res, "keepalive", { type: "ping" });
+  }, keepAliveMs);
+  (keepAlive as any).unref?.();
+  const clearKeepAlive = () => clearInterval(keepAlive);
+  res.on("close", clearKeepAlive);
+  res.on("finish", clearKeepAlive);
   let pendingDoneReason: string | null = null;
   let streamAbortController: AbortController | null = null;
   let latestSkeletonBundle: AnalysisBundle | null = null;
@@ -8340,26 +8518,42 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   // Track lifecycle even when legacy branches still call sendSSE/res.end directly.
   (res.write as unknown) = ((chunk: unknown, encoding?: BufferEncoding, cb?: (error?: Error | null) => void) => {
     const text = toChunkText(chunk, encoding);
+    const result = originalWrite(
+      chunk as Parameters<Response["write"]>[0],
+      encoding as Parameters<Response["write"]>[1],
+      cb as Parameters<Response["write"]>[2],
+    );
     if (text.includes("event: done")) {
       streamState.doneSent = true;
       streamState.tDone = Date.now();
     }
-    return originalWrite(chunk as Parameters<Response["write"]>[0], encoding as Parameters<Response["write"]>[1], cb as Parameters<Response["write"]>[2]);
+    return result;
   }) as Response["write"];
   (res.end as unknown) = ((chunk?: unknown, encoding?: BufferEncoding, cb?: () => void) => {
     if (!streamState.ended) {
       streamState.ended = true;
+      clearKeepAlive();
       clearWatchdogs();
       cleanupRequestSignal?.();
       cleanupRequestSignal = null;
-      if (!streamState.doneSent && !res.writableEnded && !streamState.clientDisconnected) {
-        sendSSE(res, "done", {
+      const headerContentType = String(res.getHeader("Content-Type") ?? res.getHeader("content-type") ?? "");
+      const isSseResponse = sseStarted || headerContentType.toLowerCase().includes("text/event-stream");
+      if (
+        !streamState.doneSent &&
+        !res.writableEnded &&
+        !streamState.clientDisconnected &&
+        isSseResponse
+      ) {
+        const emitted = safeSendSse(res, "done", {
           barcode: streamBarcode,
-          reason: pendingDoneReason ?? "stream_end",
+          reason: pendingDoneReason ?? "implicit_end_guard",
         });
-        streamState.doneSent = true;
-        streamState.tDone = Date.now();
+        if (emitted) {
+          streamState.doneSent = true;
+          streamState.tDone = Date.now();
+        }
       }
+      (res as unknown as { flush?: () => void }).flush?.();
     }
     return originalEnd(chunk as Parameters<Response["end"]>[0], encoding as Parameters<Response["end"]>[1], cb as Parameters<Response["end"]>[2]);
   }) as Response["end"];
@@ -8556,10 +8750,12 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       sse_contract: {
         rev0_sent: streamState.rev0Sent,
         rev1_sent: streamState.rev1Sent,
+        persisted_sent: streamState.persistedSent,
         done_sent: streamState.doneSent,
         rev1_source: streamState.rev1Source,
         rev0_at_ms: streamState.tRev0,
         rev1_at_ms: streamState.tRev1,
+        persisted_at_ms: streamState.tPersisted,
         done_at_ms: streamState.tDone,
       },
       ...(extra ?? {}),
@@ -8619,6 +8815,42 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 	      const dataStatus = params.allowAi
 	        ? { overview: "pending" as const, usage: "pending" as const, safety: "pending" as const }
 	        : { overview: "limited" as const, usage: "limited" as const, safety: "limited" as const };
+	      // shared-store contract:
+	      // - persisted is emitted only after bundle_fast is committed
+	      // - /api/analysis-section reads from the same shared store keyspace
+	      const emitPersistedWhenReady = async (bundle: AnalysisBundle): Promise<boolean> => {
+	        if (streamState.persistedSent || !canWrite()) return false;
+	        try {
+	          await upsertAnalysisIdentityCache(
+	            {
+	              identityType: params.identityType,
+	              identityValue: params.identityValue,
+	              locale,
+	              promptVersion: ANALYSIS_BUNDLE_PROMPT_VERSION,
+	              factsDigestHash,
+	              factsSourceVersion: params.factsSourceVersion,
+	              section: "bundle_fast",
+	              status: "complete",
+	              payload: bundle,
+	              factsDigestJson: params.digest,
+	              expiresAt: new Date(Date.now() + ANALYSIS_IDENTITY_CACHE_TTL_MS).toISOString(),
+	            },
+	            { timeoutMs: 900 },
+	          );
+	        } catch (error) {
+	          const message = error instanceof Error ? error.message : String(error);
+	          console.warn("[analysis_bundle] shared-store commit failed before persisted", message);
+	          return false;
+	        }
+
+	        if (!canWrite()) return false;
+	        const persistedPayload = buildPersistedEventFromBundle(bundle);
+	        if (!persistedPayload) return false;
+	        sendSSE(res, "persisted", persistedPayload);
+	        streamState.persistedSent = true;
+	        streamState.tPersisted = Date.now();
+	        return true;
+	      };
 
       const skeleton = buildAnalysisBundleSkeleton({
         digest: params.digest,
@@ -8685,7 +8917,14 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 	        fastCandidate = applyDsldInferenceGuard(fastCandidate, params.digest);
 	        const parsed = safeParseAnalysisBundle(fastCandidate);
 	        if (parsed.success && canWrite()) {
-	          emitRev1Once(parsed.data, parsed.data.meta?.fallbackReason ? "fallback" : "fast_ai", parsed.data.meta?.fallbackReason);
+	          const emittedRev1 = emitRev1Once(
+	            parsed.data,
+	            parsed.data.meta?.fallbackReason ? "fallback" : "fast_ai",
+	            parsed.data.meta?.fallbackReason,
+	          );
+	          if (emittedRev1) {
+	            await emitPersistedWhenReady(parsed.data);
+	          }
 	          maybePrewarmDsldDetail();
 	          return { factsDigestHash };
 	        }
@@ -8753,25 +8992,16 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 	        const adjustedBundle = applyDsldInferenceGuard(fastBundle, params.digest);
           const rev1Source: "fast_ai" | "fallback" =
             adjustedBundle.meta?.fallbackReason || fastFailed || !fastRaw ? "fallback" : "fast_ai";
-	        emitRev1Once(adjustedBundle, rev1Source, adjustedBundle.meta?.fallbackReason ?? (rev1Source === "fallback" ? "fast_generation_failed" : undefined));
+	        const emittedRev1 = emitRev1Once(
+	          adjustedBundle,
+	          rev1Source,
+	          adjustedBundle.meta?.fallbackReason ?? (rev1Source === "fallback" ? "fast_generation_failed" : undefined),
+	        );
 	        maybePrewarmDsldDetail();
-	        void upsertAnalysisIdentityCache(
-	          {
-	            identityType: params.identityType,
-	            identityValue: params.identityValue,
-	            locale,
-            promptVersion: ANALYSIS_BUNDLE_PROMPT_VERSION,
-            factsDigestHash,
-            factsSourceVersion: params.factsSourceVersion,
-            section: "bundle_fast",
-            status: "complete",
-            payload: adjustedBundle,
-            factsDigestJson: params.digest,
-            expiresAt: new Date(Date.now() + ANALYSIS_IDENTITY_CACHE_TTL_MS).toISOString(),
-          },
-          { timeoutMs: 900 },
-        );
-      }
+	        if (emittedRev1) {
+	          await emitPersistedWhenReady(adjustedBundle);
+	        }
+	      }
 
       return { factsDigestHash };
     };

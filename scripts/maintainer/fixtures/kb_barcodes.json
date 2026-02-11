@@ -1,9 +1,10 @@
 [
   {
-    "barcode": "00883196105021",
+    "barcode": "00883196112500",
     "region": "US",
     "site": "fixture",
     "expectedSourceType": "dsld",
+    "expectedScoreAvailable": true,
     "verifiedAt": "2026-02-11",
     "sourceUrl": "https://www.swansonvitamins.com/",
     "notes": "Known DSLD match from prior E2E"
@@ -13,6 +14,7 @@
     "region": "US",
     "site": "fixture",
     "expectedSourceType": "dsld",
+    "expectedScoreAvailable": true,
     "verifiedAt": "2026-02-11",
     "sourceUrl": "https://www.swansonvitamins.com/",
     "notes": "Known DSLD match from prior E2E"
@@ -22,6 +24,7 @@
     "region": "US",
     "site": "fixture",
     "expectedSourceType": "dsld",
+    "expectedScoreAvailable": true,
     "verifiedAt": "2026-02-11",
     "sourceUrl": "https://www.swansonvitamins.com/",
     "notes": "Known DSLD match from prior E2E"
@@ -31,6 +34,7 @@
     "region": "US",
     "site": "fixture",
     "expectedSourceType": "dsld",
+    "expectedScoreAvailable": true,
     "verifiedAt": "2026-02-11",
     "sourceUrl": "https://www.swansonvitamins.com/",
     "notes": "Known DSLD match from prior E2E"
@@ -40,6 +44,7 @@
     "region": "US",
     "site": "fixture",
     "expectedSourceType": "dsld",
+    "expectedScoreAvailable": true,
     "verifiedAt": "2026-02-11",
     "sourceUrl": "https://www.swansonvitamins.com/",
     "notes": "Known DSLD match from prior E2E"

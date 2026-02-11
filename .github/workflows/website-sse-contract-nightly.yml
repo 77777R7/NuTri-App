@@ -55,47 +55,41 @@ jobs:
           mkdir -p "$ARTIFACT_DIR"
           echo "artifact_dir=$ARTIFACT_DIR" >> "$GITHUB_OUTPUT"
 
-      - name: Run Website Barcode E2E (Web Fixture + SSE Contract)
+      - name: Run Website Barcode E2E (Phase1, Suite Both)
         env:
           API_BASE_URL: ${{ github.event.inputs.render_base_url != '' && github.event.inputs.render_base_url || secrets.RENDER_BASE_URL }}
           RENDER_REGRESSION_TOKEN: ${{ secrets.RENDER_REGRESSION_TOKEN }}
           WEB_E2E_OUT_DIR: ${{ steps.artifact.outputs.artifact_dir }}
           WEB_E2E_SSE_TIMEOUT_MS: "50000"
-          WEB_E2E_SSE_STOP_ON: "revision1"
+          WEB_E2E_SSE_STOP_ON: "persisted"
           WEB_E2E_SSE_STOP_TAIL_MS: "5000"
           WEB_E2E_RETRIES: "2"
         run: |
           node scripts/maintainer/website-barcode-e2e.mjs \
-            --suite web \
-            --input scripts/maintainer/fixtures/web_only_barcodes.json \
+            --suite both \
             --phase-mode phase1 \
-            --sse-stop-on revision1 \
+            --sse-stop-on persisted \
             --retries 2
 
-      - name: Assert SSE Contract Artifacts
+      - name: Assert Gate Summary (Single Source of Truth)
         env:
           ARTIFACT_DIR: ${{ steps.artifact.outputs.artifact_dir }}
         run: |
           node -e '
           const fs = require("fs");
           const path = require("path");
-          const summaryPath = path.join(process.env.ARTIFACT_DIR, "sse_contract_summary.json");
-          const checklistPath = path.join(process.env.ARTIFACT_DIR, "checklist_10x.json");
-          const summary = JSON.parse(fs.readFileSync(summaryPath, "utf8"));
-          const checklist = JSON.parse(fs.readFileSync(checklistPath, "utf8"));
-          const failures = summary.failureCounts || {};
-          const mustZero = ["missing_revision1", "missing_done", "no_sse", "parse_error", "timeout"];
-          const bad = mustZero.filter((k) => Number(failures[k] || 0) > 0);
-          if (bad.length) {
-            throw new Error(`SSE contract failures detected: ${bad.map((k) => `${k}=${failures[k] || 0}`).join(", ")}`);
-          }
-          const scans = Array.isArray(checklist.scans) ? checklist.scans : [];
-          const okScans = scans.filter((row) => row && row.ok);
-          const rev0All = okScans.length === 10 && okScans.every((row) => Number.isFinite(row.tRevision0Ms));
-          const rev1All = okScans.length === 10 && okScans.every((row) => Number.isFinite(row.tRevision1Ms));
-          const doneAll = okScans.length === 10 && okScans.every((row) => Number.isFinite(row.doneMs));
-          if (!rev0All || !rev1All || !doneAll) {
-            throw new Error("Checklist 10x did not satisfy rev0/rev1/done contract for all scans.");
+          const gatePath = path.join(process.env.ARTIFACT_DIR, "gate_summary.json");
+          const gate = JSON.parse(fs.readFileSync(gatePath, "utf8"));
+          const out = {
+            phaseMode: gate.phaseMode,
+            overall: gate.overall,
+            suiteA: gate.suiteA ? { pass: gate.suiteA.pass, failReasons: gate.suiteA.failReasons, warnings: gate.suiteA.warnings } : null,
+            suiteB: gate.suiteB ? { pass: gate.suiteB.pass, failReasons: gate.suiteB.failReasons, warnings: gate.suiteB.warnings } : null,
+            errorsByType: gate.errors?.byType || {},
+          };
+          console.log(JSON.stringify(out, null, 2));
+          if (!gate?.overall?.pass) {
+            throw new Error(`Gate failed: ${(gate?.overall?.failReasons || []).join(", ") || "unknown_reason"}`);
           }
           '
 

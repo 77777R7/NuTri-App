@@ -435,11 +435,18 @@ const parseBrand = (html) => {
 const normalizeFixtureEntry = (entry, index, defaults = {}) => {
   const barcode = toGtin14(entry?.barcode);
   if (!barcode) return null;
+  const expectedScoreAvailableRaw =
+    typeof entry?.expectedScoreAvailable === "boolean"
+      ? entry.expectedScoreAvailable
+      : typeof defaults.expectedScoreAvailable === "boolean"
+        ? defaults.expectedScoreAvailable
+        : null;
   return {
     barcode,
     region: String(entry?.region || defaults.region || "US").toUpperCase(),
     site: String(entry?.site || defaults.site || "fixture"),
     expectedSourceType: entry?.expectedSourceType ? String(entry.expectedSourceType).toLowerCase() : defaults.expectedSourceType ?? null,
+    expectedScoreAvailable: expectedScoreAvailableRaw,
     verifiedAt: entry?.verifiedAt ? String(entry.verifiedAt) : defaults.verifiedAt ?? new Date().toISOString().slice(0, 10),
     sourceUrl: entry?.sourceUrl ? String(entry.sourceUrl) : defaults.sourceUrl ?? null,
     notes: entry?.notes ? String(entry.notes) : defaults.notes ?? "",
@@ -476,8 +483,12 @@ const parseFixtureInput = async (inputPath) => {
     const kbList = Array.isArray(loaded.kb) ? loaded.kb : [];
     const webList = Array.isArray(loaded.web) ? loaded.web : [];
     const allList = Array.isArray(loaded.all) ? loaded.all : [...kbList, ...webList];
-    const kb = kbList.map((entry, idx) => normalizeFixtureEntry(entry, idx, { expectedSourceType: "dsld" })).filter(Boolean);
-    const web = webList.map((entry, idx) => normalizeFixtureEntry(entry, idx, { expectedSourceType: "web" })).filter(Boolean);
+    const kb = kbList
+      .map((entry, idx) => normalizeFixtureEntry(entry, idx, { expectedSourceType: "dsld", expectedScoreAvailable: true }))
+      .filter(Boolean);
+    const web = webList
+      .map((entry, idx) => normalizeFixtureEntry(entry, idx, { expectedSourceType: "web", expectedScoreAvailable: false }))
+      .filter(Boolean);
     const all = allList.map((entry, idx) => normalizeFixtureEntry(entry, idx)).filter(Boolean);
     return {
       all,
@@ -576,7 +587,10 @@ const harvestFromSite = async (config, targetCount) => {
 };
 
 const shouldStopOnEvent = (event, stopOn) => {
-  if (stopOn === "persisted") return event?.event === "persisted";
+  if (stopOn === "persisted") {
+    if (event?.event !== "persisted") return false;
+    return Number(event?.data?.revision) >= 1;
+  }
   if (event?.event !== "analysis_bundle") return false;
   if (!event.data || typeof event.data !== "object") return false;
   const meta = event.data.meta;
@@ -586,6 +600,48 @@ const shouldStopOnEvent = (event, stopOn) => {
   if (stopOn === "revision1") return Number(meta.revision) >= 1;
   return false;
 };
+
+const buildMetaFromPersistedEvent = (persistedData) => {
+  if (!persistedData || typeof persistedData !== "object") return null;
+  const identity = persistedData.identity;
+  if (!identity || typeof identity !== "object") return null;
+  if (typeof identity.type !== "string" || typeof identity.value !== "string") return null;
+  const factsDigestHash =
+    typeof persistedData.factsDigestHash === "string" && persistedData.factsDigestHash.trim()
+      ? persistedData.factsDigestHash
+      : null;
+  if (!factsDigestHash) return null;
+
+  const promptVersion =
+    typeof persistedData.promptVersion === "string" && persistedData.promptVersion.trim()
+      ? persistedData.promptVersion
+      : "reg_v4.0";
+  const locale =
+    typeof persistedData.locale === "string" && (persistedData.locale === "en" || persistedData.locale === "zh")
+      ? persistedData.locale
+      : "en";
+
+  return {
+    authoritativeIdentity: {
+      type: identity.type,
+      value: identity.value,
+    },
+    factsDigestHash,
+    promptVersion,
+    locale,
+    scoreAvailable: typeof persistedData.scoreAvailable === "boolean" ? persistedData.scoreAvailable : null,
+    sourceType: typeof persistedData.sourceType === "string" ? persistedData.sourceType : null,
+  };
+};
+
+let runPersistedReadinessProbe = async () => ({
+  attempted: false,
+  ready: true,
+  reason: null,
+  overviewStatus: null,
+  usageStatus: null,
+  contracts: null,
+});
 
 const fetchSseOnce = async (url, payload, options) => {
   const ctrl = new AbortController();
@@ -602,6 +658,14 @@ const fetchSseOnce = async (url, payload, options) => {
   let abortError = false;
   let doneSeen = false;
   let stopEvent = null;
+  let persistedProbe = {
+    attempted: false,
+    ready: null,
+    reason: null,
+    overviewStatus: null,
+    usageStatus: null,
+    contracts: null,
+  };
   const partial = () => ({
     events,
     stopEvent,
@@ -613,6 +677,7 @@ const fetchSseOnce = async (url, payload, options) => {
     timedOut,
     abortError,
     doneSeen,
+    persistedProbe,
   });
 
   try {
@@ -710,6 +775,19 @@ const fetchSseOnce = async (url, payload, options) => {
         break;
       }
 
+      if (sawStopMarker && options.stopOn === "persisted") {
+        if (!persistedProbe.attempted) {
+          persistedProbe = await runPersistedReadinessProbe(events, {
+            retries: options.retries ?? DEFAULT_RETRIES,
+          });
+        }
+        if (!persistedProbe.ready) {
+          // persisted was observed but not yet readable via analysis-section; keep consuming stream.
+          sawStopMarker = false;
+          stopEvent = null;
+        }
+      }
+
       // If a stop marker was seen (revision1/fast_ai/persisted), keep reading for a short tail so we
       // can still observe "done" and classify contract failures precisely.
       if (sawStopMarker && Number.isFinite(options.stopTailMs) && options.stopTailMs > 0) {
@@ -789,6 +867,14 @@ const fetchSse = async (url, payload, options = {}) => {
       timedOut: classifyErrorType(error) === "AbortError",
       abortError: classifyErrorType(error) === "AbortError",
       doneSeen: false,
+      persistedProbe: {
+        attempted: false,
+        ready: null,
+        reason: null,
+        overviewStatus: null,
+        usageStatus: null,
+        contracts: null,
+      },
     };
     return {
       ...partial,
@@ -987,6 +1073,7 @@ const evaluateContentContracts = (sections) => {
   const overviewSummary = getOverviewSummary(sections.overview);
   const usageTiming = getUsageTiming(sections.usage);
   const usageWithFoodValue = getUsageWithFoodValue(sections.usage);
+  const overviewStrongTokenPresent = hasOverviewStrongToken(overviewSummary, sections);
 
   const overviewPresent = typeof overviewSummary === "string" && overviewSummary.trim().length >= 40;
   const usageTimingPresent = typeof usageTiming === "string" && usageTiming.trim().length > 0;
@@ -998,15 +1085,95 @@ const evaluateContentContracts = (sections) => {
     usageTiming,
     usageWithFoodValue,
     overviewPresent,
+    overviewStrongTokenPresent,
     usagePresent,
     usageTimingPresent,
     usageWithFoodBoolean,
   };
 };
 
+const normalizeToken = (value) =>
+  String(value ?? "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const buildStrongOverviewTokens = (sections) => {
+  const items = sections?.ingredients_detail?.data?.detail?.items;
+  if (!Array.isArray(items)) return [];
+  const generic = new Set(["calories", "total fat", "cholesterol", "supplement", "ingredient", "ingredients"]);
+  const out = [];
+  for (const item of items) {
+    const name = normalizeToken(item?.name);
+    if (!name || name.length < 3 || generic.has(name)) continue;
+    out.push(name);
+    if (out.length >= 6) break;
+  }
+  return out;
+};
+
+const hasOverviewStrongToken = (overviewSummary, sections) => {
+  const summary = normalizeToken(overviewSummary);
+  if (!summary) return false;
+  const tokens = buildStrongOverviewTokens(sections);
+  if (!tokens.length) return true;
+  return tokens.some((token) => summary.includes(token));
+};
+
+runPersistedReadinessProbe = async (events, options = {}) => {
+  const picked = pickBundleEvents(events || []);
+  const probeMeta = picked.rev1?.data?.meta ?? buildMetaFromPersistedEvent(picked.persisted?.data) ?? null;
+  if (!probeMeta) {
+    return {
+      attempted: true,
+      ready: false,
+      reason: "identity_missing",
+      overviewStatus: null,
+      usageStatus: null,
+      contracts: null,
+    };
+  }
+
+  const overview = await fetchAnalysisSection(probeMeta, "overview", { retries: options.retries ?? DEFAULT_RETRIES });
+  const usage = await fetchAnalysisSection(probeMeta, "usage", { retries: options.retries ?? DEFAULT_RETRIES });
+  const contracts = evaluateContentContracts({
+    ingredients_detail: { data: null },
+    overview,
+    usage,
+  });
+  const probeReady =
+    overview.status >= 200 &&
+    overview.status < 300 &&
+    usage.status >= 200 &&
+    usage.status < 300 &&
+    contracts.overviewPresent &&
+    contracts.usagePresent;
+
+  let reason = null;
+  if (!probeReady) {
+    reason =
+      overview.errorType ||
+      usage.errorType ||
+      (contracts.overviewPresent ? null : "overview_contract_not_ready") ||
+      (contracts.usagePresent ? null : "usage_contract_not_ready") ||
+      "persisted_probe_not_ready";
+  }
+
+  return {
+    attempted: true,
+    ready: probeReady,
+    reason,
+    overviewStatus: overview.status,
+    usageStatus: usage.status,
+    contracts,
+  };
+};
+
 const runFullFlow = async (item, options) => {
   const startedAt = new Date().toISOString();
   const errors = [];
+  const fixtureInvalidReasons = [];
   const sse = await fetchSse(
     `${API_BASE_URL}/api/enrich-stream`,
     { barcode: item.barcode },
@@ -1019,13 +1186,18 @@ const runFullFlow = async (item, options) => {
 
   const picked = pickBundleEvents(sse.events);
   const rev1Meta = picked.rev1?.data?.meta ?? null;
-  const sourceType = rev1Meta?.sourceType ?? null;
+  const persistedMeta = buildMetaFromPersistedEvent(picked.persisted?.data) ?? null;
+  const sectionMeta = rev1Meta ?? persistedMeta ?? null;
+  const sourceType = rev1Meta?.sourceType ?? persistedMeta?.sourceType ?? null;
   const contractFailure = classifySseContractFailure({ sse, picked });
   if (contractFailure) {
     errors.push(contractFailure);
   }
   if (sse.terminalErrorType) {
     errors.push(sse.terminalErrorType);
+  }
+  if (item.expectedSourceType && sourceType !== item.expectedSourceType) {
+    fixtureInvalidReasons.push("source_type_mismatch");
   }
 
   const defaultSectionResult = {
@@ -1045,11 +1217,11 @@ const runFullFlow = async (item, options) => {
     usage: defaultSectionResult,
   };
 
-  if (rev1Meta) {
+  if (sectionMeta) {
     sections = {
-      ingredients_detail: await fetchAnalysisSection(rev1Meta, "ingredients_detail", { retries: options.retries }),
-      overview: await fetchAnalysisSection(rev1Meta, "overview", { retries: options.retries }),
-      usage: await fetchAnalysisSection(rev1Meta, "usage", { retries: options.retries }),
+      ingredients_detail: await fetchAnalysisSection(sectionMeta, "ingredients_detail", { retries: options.retries }),
+      overview: await fetchAnalysisSection(sectionMeta, "overview", { retries: options.retries }),
+      usage: await fetchAnalysisSection(sectionMeta, "usage", { retries: options.retries }),
     };
 
     if (sections.ingredients_detail.errorType) errors.push(sections.ingredients_detail.errorType);
@@ -1057,9 +1229,84 @@ const runFullFlow = async (item, options) => {
     if (sections.usage.errorType) errors.push(sections.usage.errorType);
   }
 
+  let finalProbe = {
+    attempted: false,
+    reason: null,
+    overviewStatus: null,
+    usageStatus: null,
+    contracts: null,
+  };
+
+  if (sse.doneSeen) {
+    if (!sectionMeta) {
+      finalProbe = {
+        attempted: true,
+        reason: "identity_missing",
+        overviewStatus: null,
+        usageStatus: null,
+        contracts: null,
+      };
+      errors.push("identity_missing");
+    } else {
+      const finalOverview = await fetchAnalysisSection(sectionMeta, "overview", { retries: options.retries });
+      const finalUsage = await fetchAnalysisSection(sectionMeta, "usage", { retries: options.retries });
+      if (finalOverview.errorType) errors.push(finalOverview.errorType);
+      if (finalUsage.errorType) errors.push(finalUsage.errorType);
+
+      sections = {
+        ...sections,
+        overview: finalOverview,
+        usage: finalUsage,
+      };
+
+      const finalContracts = evaluateContentContracts(sections);
+      const finalReady =
+        finalOverview.status >= 200 &&
+        finalOverview.status < 300 &&
+        finalUsage.status >= 200 &&
+        finalUsage.status < 300 &&
+        finalContracts.overviewPresent &&
+        finalContracts.usagePresent;
+
+      const finalReason = finalReady
+        ? null
+        : finalOverview.errorType ||
+          finalUsage.errorType ||
+          (finalContracts.overviewPresent ? null : "overview_contract_failed") ||
+          (finalContracts.usagePresent ? null : "usage_contract_failed") ||
+          "content_contract_failed";
+
+      finalProbe = {
+        attempted: true,
+        reason: finalReason,
+        overviewStatus: finalOverview.status,
+        usageStatus: finalUsage.status,
+        contracts: finalContracts,
+      };
+      if (finalReason) errors.push(finalReason);
+    }
+  }
+
   const contracts = evaluateContentContracts(sections);
-  if (rev1Meta && (!contracts.overviewPresent || !contracts.usagePresent)) {
+  const resolvedScoreAvailable =
+    typeof sectionMeta?.scoreAvailable === "boolean"
+      ? sectionMeta.scoreAvailable
+      : sourceType === "web"
+        ? false
+        : sourceType === "dsld" || sourceType === "lnhpd"
+          ? true
+          : null;
+  if (typeof item.expectedScoreAvailable === "boolean" &&
+      typeof resolvedScoreAvailable === "boolean" &&
+      item.expectedScoreAvailable !== resolvedScoreAvailable) {
+    fixtureInvalidReasons.push("score_available_mismatch");
+  }
+
+  if (sectionMeta && (!contracts.overviewPresent || !contracts.usagePresent)) {
     errors.push("content_contract_failed");
+  }
+  if (resolvedScoreAvailable === true && !contracts.overviewStrongTokenPresent) {
+    errors.push("overview_strong_token_missing");
   }
 
   return {
@@ -1078,18 +1325,11 @@ const runFullFlow = async (item, options) => {
       bestBundleMs: picked.best?.tMs ?? null,
       sourceType,
       sourceTypeFinal: rev1Meta?.sourceTypeFinal ?? null,
-      identityType: rev1Meta?.authoritativeIdentity?.type ?? null,
-      identityValue: rev1Meta?.authoritativeIdentity?.value ?? null,
-      factsDigestHash: rev1Meta?.factsDigestHash ?? picked.persisted?.data?.factsDigestHash ?? null,
-      promptVersion: rev1Meta?.promptVersion ?? picked.persisted?.data?.promptVersion ?? null,
-      scoreAvailable:
-        typeof rev1Meta?.scoreAvailable === "boolean"
-          ? rev1Meta.scoreAvailable
-          : sourceType === "web"
-            ? false
-            : sourceType === "dsld" || sourceType === "lnhpd"
-              ? true
-              : null,
+      identityType: sectionMeta?.authoritativeIdentity?.type ?? null,
+      identityValue: sectionMeta?.authoritativeIdentity?.value ?? null,
+      factsDigestHash: sectionMeta?.factsDigestHash ?? null,
+      promptVersion: sectionMeta?.promptVersion ?? null,
+      scoreAvailable: resolvedScoreAvailable,
       bytesReceived: sse.bytesReceived,
       lastEventType: sse.lastEventType,
       lastEventAtMs: sse.lastEventAtMs,
@@ -1103,9 +1343,18 @@ const runFullFlow = async (item, options) => {
       contractFailure,
       terminalErrorType: sse.terminalErrorType,
       fatalError: sse.fatalError ?? null,
+      persistedProbe: sse.persistedProbe ?? null,
+      expectedSourceType: item.expectedSourceType ?? null,
+      expectedScoreAvailable:
+        typeof item.expectedScoreAvailable === "boolean" ? item.expectedScoreAvailable : null,
     },
     sections,
     contracts,
+    finalProbe,
+    fixture: {
+      invalid: fixtureInvalidReasons.length > 0,
+      reasons: fixtureInvalidReasons,
+    },
     retry: {
       sse: sse.retryUsed,
       ingredients_detail: sections.ingredients_detail.retryUsed,
@@ -1141,9 +1390,11 @@ const percentile = (arr, p) => {
   return sorted[idx];
 };
 
-const evaluateSuiteGate = (suiteName, metrics) => {
+const evaluateSuiteGate = (suiteName, metrics, phaseMode) => {
   const reasons = [];
+  const warnings = [];
   const contract = metrics.contractFailureCounts || {};
+  const missingDoneCount = contract.missing_done || 0;
 
   if (suiteName === "A") {
     if (metrics.unknownRatio > 1 / 30) reasons.push("unknown_ratio_exceeds_1_over_30");
@@ -1154,8 +1405,13 @@ const evaluateSuiteGate = (suiteName, metrics) => {
       reasons.push("enrich_best_bundle_p90_over_5s");
     if (metrics.overviewPresentRatio < 0.95) reasons.push("overview_present_ratio_below_0_95");
     if (metrics.usagePresentRatio < 0.95) reasons.push("usage_present_ratio_below_0_95");
+    if (metrics.scoreAvailableTrueRatio < 0.95) reasons.push("score_available_true_ratio_below_0_95");
+    if (metrics.overviewStrongTokenRatio < 0.95) reasons.push("overview_strong_token_ratio_below_0_95");
     if ((contract.missing_revision1 || 0) > 0) reasons.push("sse_missing_revision1_non_zero");
-    if ((contract.missing_done || 0) > 0) reasons.push("sse_missing_done_non_zero");
+    if (missingDoneCount > 0) {
+      if (phaseMode === "phase1") warnings.push("sse_missing_done_warn_only_phase1");
+      else reasons.push("sse_missing_done_non_zero");
+    }
     if ((contract.no_sse || 0) > 0) reasons.push("sse_no_sse_non_zero");
     if ((contract.parse_error || 0) > 0) reasons.push("sse_parse_error_non_zero");
     if ((contract.timeout || 0) > 0) reasons.push("sse_timeout_non_zero");
@@ -1168,7 +1424,10 @@ const evaluateSuiteGate = (suiteName, metrics) => {
     if (metrics.overviewPresentRatio < 0.9) reasons.push("overview_present_ratio_below_0_9");
     if (metrics.usagePresentRatio < 0.9) reasons.push("usage_present_ratio_below_0_9");
     if ((contract.missing_revision1 || 0) > 0) reasons.push("sse_missing_revision1_non_zero");
-    if ((contract.missing_done || 0) > 0) reasons.push("sse_missing_done_non_zero");
+    if (missingDoneCount > 0) {
+      if (phaseMode === "phase1") warnings.push("sse_missing_done_warn_only_phase1");
+      else reasons.push("sse_missing_done_non_zero");
+    }
     if ((contract.no_sse || 0) > 0) reasons.push("sse_no_sse_non_zero");
     if ((contract.parse_error || 0) > 0) reasons.push("sse_parse_error_non_zero");
     if ((contract.timeout || 0) > 0) reasons.push("sse_timeout_non_zero");
@@ -1177,33 +1436,47 @@ const evaluateSuiteGate = (suiteName, metrics) => {
   return {
     pass: reasons.length === 0,
     failReasons: reasons,
+    warnings,
   };
 };
 
-const summarizeSuite = (suiteName, rows, expectedSourceType = null) => {
-  const total = rows.length;
-  const unknownCount = rows.filter((row) => !row.sse.sourceType || row.sse.sourceType === "unknown").length;
-  const sourceTypeCounts = countBy(rows, (row) => row.sse.sourceType || "unknown");
-  const contractFailureCounts = countBy(rows, (row) => row.sse.contractFailure || "none");
-  const errorsByType = countBy(rows.flatMap((row) => row.errors || []), (value) => value);
+const summarizeSuite = (suiteName, rows, expectedSourceType = null, phaseMode = DEFAULT_PHASE_MODE) => {
+  const sampledTotal = rows.length;
+  const fixtureInvalidRows = rows.filter((row) => row.fixture?.invalid);
+  const validRows = rows.filter((row) => !row.fixture?.invalid);
+  const total = validRows.length;
+  const unknownCount = validRows.filter((row) => !row.sse.sourceType || row.sse.sourceType === "unknown").length;
+  const sourceTypeCounts = countBy(validRows, (row) => row.sse.sourceType || "unknown");
+  const contractFailureCounts = countBy(validRows, (row) => row.sse.contractFailure || "none");
+  const errorsByType = countBy(validRows.flatMap((row) => row.errors || []), (value) => value);
+  const fixtureInvalidReasonCounts = countBy(
+    fixtureInvalidRows.flatMap((row) => row.fixture?.reasons || []),
+    (value) => value,
+  );
 
-  const revision1Count = rows.filter((row) => Number.isFinite(row.sse.revision1Ms)).length;
-  const detail2xxCount = rows.filter((row) => row.sections.ingredients_detail.status >= 200 && row.sections.ingredients_detail.status < 300).length;
-  const overviewPresentCount = rows.filter((row) => row.contracts.overviewPresent).length;
-  const usagePresentCount = rows.filter((row) => row.contracts.usagePresent).length;
+  const revision1Count = validRows.filter((row) => Number.isFinite(row.sse.revision1Ms)).length;
+  const detail2xxCount = validRows.filter((row) => row.sections.ingredients_detail.status >= 200 && row.sections.ingredients_detail.status < 300).length;
+  const overviewPresentCount = validRows.filter((row) => row.contracts.overviewPresent).length;
+  const overviewStrongTokenCount = validRows.filter((row) => row.contracts.overviewStrongTokenPresent).length;
+  const usagePresentCount = validRows.filter((row) => row.contracts.usagePresent).length;
+  const scoreAvailableTrueCount = validRows.filter((row) => row.sse.scoreAvailable === true).length;
 
-  const enrichTimes = rows.map((row) => row.sse.bestBundleMs).filter((value) => Number.isFinite(value) && value > 0);
-  const detailTimes = rows
+  const enrichTimes = validRows.map((row) => row.sse.bestBundleMs).filter((value) => Number.isFinite(value) && value > 0);
+  const detailTimes = validRows
     .map((row) => row.sections.ingredients_detail.timingMs)
     .filter((value) => Number.isFinite(value) && value > 0);
 
-  const retryUsedCount = rows.reduce((sum, row) => sum + (row.retry?.total || 0), 0);
-  const sourceTypeWebCount = rows.filter((row) => row.sse.sourceType === "web").length;
+  const retryUsedCount = validRows.reduce((sum, row) => sum + (row.retry?.total || 0), 0);
+  const sourceTypeWebCount = validRows.filter((row) => row.sse.sourceType === "web").length;
 
   const metrics = {
+    sampledTotal,
     total,
     expectedSourceType,
     sourceTypeCounts,
+    fixtureInvalidCount: fixtureInvalidRows.length,
+    fixtureInvalidRatio: sampledTotal > 0 ? fixtureInvalidRows.length / sampledTotal : 0,
+    fixtureInvalidReasonCounts,
     unknownCount,
     unknownRatio: total > 0 ? unknownCount / total : 1,
     abortErrorCount: errorsByType.AbortError || 0,
@@ -1217,8 +1490,12 @@ const summarizeSuite = (suiteName, rows, expectedSourceType = null) => {
     detailP90Ms: percentile(detailTimes, 90),
     overviewPresentCount,
     overviewPresentRatio: total > 0 ? overviewPresentCount / total : 0,
+    overviewStrongTokenCount,
+    overviewStrongTokenRatio: total > 0 ? overviewStrongTokenCount / total : 0,
     usagePresentCount,
     usagePresentRatio: total > 0 ? usagePresentCount / total : 0,
+    scoreAvailableTrueCount,
+    scoreAvailableTrueRatio: total > 0 ? scoreAvailableTrueCount / total : 0,
     sourceTypeWebCount,
     sourceTypeWebRatio: total > 0 ? sourceTypeWebCount / total : 0,
     retryUsedCount,
@@ -1226,12 +1503,17 @@ const summarizeSuite = (suiteName, rows, expectedSourceType = null) => {
     contractFailureCounts,
   };
 
-  const gate = evaluateSuiteGate(suiteName, metrics);
+  const gate = evaluateSuiteGate(suiteName, metrics, phaseMode);
+  const warnings = [...gate.warnings];
+  if (fixtureInvalidRows.length > 0) {
+    warnings.push("fixture_invalid_present");
+  }
 
   return {
     suite: suiteName,
     pass: gate.pass,
     failReasons: gate.failReasons,
+    warnings,
     metrics,
     generatedAt: new Date().toISOString(),
   };
@@ -1257,19 +1539,32 @@ const savePromotionState = async (statePath, state) => {
   });
 };
 
+const deriveSuiteGateForPhase = (suiteName, suiteSummary, phaseMode) => {
+  if (!suiteSummary) return null;
+  const gate = evaluateSuiteGate(suiteName, suiteSummary.metrics || {}, phaseMode);
+  return {
+    ...suiteSummary,
+    pass: gate.pass,
+    failReasons: gate.failReasons,
+    warnings: gate.warnings,
+  };
+};
+
 const buildGateSummary = async ({ suiteA, suiteB, phaseMode, outDir }) => {
+  const suiteAForPhase = deriveSuiteGateForPhase("A", suiteA, phaseMode);
+  const suiteBForPhase = deriveSuiteGateForPhase("B", suiteB, phaseMode);
   const promotionState = await loadPromotionState(PROMOTION_STATE_FILE);
   let consecutivePasses = promotionState.suiteBConsecutivePasses;
 
-  if (suiteB) {
-    consecutivePasses = suiteB.pass ? consecutivePasses + 1 : 0;
+  if (suiteBForPhase) {
+    consecutivePasses = suiteBForPhase.pass ? consecutivePasses + 1 : 0;
     await savePromotionState(PROMOTION_STATE_FILE, { suiteBConsecutivePasses: consecutivePasses });
   }
 
   const suiteARequired = true;
   const suiteBRequired = phaseMode === "phase2";
-  const suiteAPass = suiteA?.pass ?? false;
-  const suiteBPass = suiteB?.pass ?? false;
+  const suiteAPass = suiteAForPhase?.pass ?? false;
+  const suiteBPass = suiteBForPhase?.pass ?? false;
 
   const overallPass = suiteARequired
     ? suiteBRequired
@@ -1278,42 +1573,47 @@ const buildGateSummary = async ({ suiteA, suiteB, phaseMode, outDir }) => {
     : false;
 
   const warnings = [];
-  if (phaseMode === "phase1" && suiteB && !suiteB.pass) {
+  if (phaseMode === "phase1" && suiteBForPhase && !suiteBForPhase.pass) {
     warnings.push("suite_b_warn_only_in_phase1");
   }
+  if (suiteAForPhase?.warnings?.length) warnings.push(...suiteAForPhase.warnings);
+  if (suiteBForPhase?.warnings?.length) warnings.push(...suiteBForPhase.warnings);
 
   const failReasons = [];
   if (!suiteAPass) failReasons.push("suite_a_failed");
   if (suiteBRequired && !suiteBPass) failReasons.push("suite_b_failed");
 
   const combinedErrors = {
-    ...(suiteA?.metrics?.errorsByType || {}),
+    ...(suiteAForPhase?.metrics?.errorsByType || {}),
   };
-  for (const [k, v] of Object.entries(suiteB?.metrics?.errorsByType || {})) {
+  for (const [k, v] of Object.entries(suiteBForPhase?.metrics?.errorsByType || {})) {
     combinedErrors[k] = (combinedErrors[k] || 0) + v;
   }
 
   const gateSummary = {
     generatedAt: new Date().toISOString(),
     phaseMode,
-    suiteA: suiteA
+    suiteA: suiteAForPhase
       ? {
-          pass: suiteA.pass,
-          failReasons: suiteA.failReasons,
-          metrics: suiteA.metrics,
+          pass: suiteAForPhase.pass,
+          failReasons: suiteAForPhase.failReasons,
+          warnings: suiteAForPhase.warnings || [],
+          metrics: suiteAForPhase.metrics,
         }
       : null,
-    suiteB: suiteB
+    suiteB: suiteBForPhase
       ? {
-          pass: suiteB.pass,
-          failReasons: suiteB.failReasons,
-          metrics: suiteB.metrics,
+          pass: suiteBForPhase.pass,
+          failReasons: suiteBForPhase.failReasons,
+          warnings: suiteBForPhase.warnings || [],
+          metrics: suiteBForPhase.metrics,
         }
       : null,
     errors: {
       byType: combinedErrors,
     },
-    retryUsedCount: (suiteA?.metrics?.retryUsedCount || 0) + (suiteB?.metrics?.retryUsedCount || 0),
+    retryUsedCount:
+      (suiteAForPhase?.metrics?.retryUsedCount || 0) + (suiteBForPhase?.metrics?.retryUsedCount || 0),
     promotionSignal: {
       consecutivePasses,
       threshold: PROMOTION_PASS_THRESHOLD,
@@ -1361,13 +1661,18 @@ const writeOnePageReport = async (outDir, context) => {
     lines.push(`- enrich p90: ${m.enrichBestBundleP90Ms ?? "n/a"}ms`);
     lines.push(`- detail p90: ${m.detailP90Ms ?? "n/a"}ms`);
     lines.push(`- overview.presentRatio: ${(m.overviewPresentRatio * 100).toFixed(1)}%`);
+    lines.push(`- overview.strongTokenRatio: ${(m.overviewStrongTokenRatio * 100).toFixed(1)}%`);
     lines.push(`- usage.presentRatio: ${(m.usagePresentRatio * 100).toFixed(1)}%`);
+    lines.push(`- scoreAvailable.trueRatio: ${(m.scoreAvailableTrueRatio * 100).toFixed(1)}%`);
     if (title.includes("Suite B")) {
       lines.push(`- sourceType=web ratio: ${(m.sourceTypeWebRatio * 100).toFixed(1)}%`);
     }
     lines.push(`- retryUsedCount: ${m.retryUsedCount}`);
     if (suite.failReasons.length) {
       lines.push(`- failReasons: ${suite.failReasons.join(", ")}`);
+    }
+    if (Array.isArray(suite.warnings) && suite.warnings.length) {
+      lines.push(`- warnings: ${suite.warnings.join(", ")}`);
     }
     lines.push("");
   };
@@ -1422,6 +1727,18 @@ const writeOnePageReport = async (outDir, context) => {
     lines.push("");
   }
 
+  if (context.disconnectProbe) {
+    lines.push("## Client Disconnect Probe");
+    lines.push("");
+    lines.push(`- barcode: \`${context.disconnectProbe.barcode}\``);
+    lines.push(`- pass: ${context.disconnectProbe.pass ? "yes" : "no"}`);
+    lines.push(`- rev0 seen before abort: ${context.disconnectProbe.rev0Seen ? "yes" : "no"}`);
+    lines.push(`- disconnect triggered: ${context.disconnectProbe.disconnectTriggered ? "yes" : "no"}`);
+    lines.push(`- abort error observed: ${context.disconnectProbe.abortError ? "yes" : "no"}`);
+    lines.push(`- fatalError: ${context.disconnectProbe.fatalError ?? "none"}`);
+    lines.push("");
+  }
+
   await fs.promises.writeFile(path.join(outDir, "one_page_report.md"), lines.join("\n"), "utf8");
 };
 
@@ -1473,6 +1790,7 @@ const buildWebFixtureFromHarvest = async (harvested, options) => {
       accepted.push({
         ...normalized,
         expectedSourceType: "web",
+        expectedScoreAvailable: false,
         verifiedAt: new Date().toISOString().slice(0, 10),
         notes: normalized.notes || "generated_from_harvest_web_only",
       });
@@ -1523,7 +1841,11 @@ const buildCompatibilitySummary = (suiteAResults, suiteBResults) => {
       detailDataStatus: row.sections.ingredients_detail.dataStatus,
       detailTimingMs: row.sections.ingredients_detail.timingMs,
       overviewPresent: row.contracts.overviewPresent,
+      overviewStrongTokenPresent: row.contracts.overviewStrongTokenPresent,
       usagePresent: row.contracts.usagePresent,
+      scoreAvailable: row.sse.scoreAvailable,
+      finalProbeAttempted: row.finalProbe?.attempted ?? false,
+      finalProbeReason: row.finalProbe?.reason ?? null,
       errors: row.errors,
       sourceUrl: row.input.sourceUrl,
       title: row.input.title,
@@ -1594,6 +1916,7 @@ const runSuite = async (suiteName, entries, options) => {
     suiteName,
     rows,
     suiteName === "A" ? "kb" : "web",
+    options.phaseMode,
   );
 
   return { rows, summary };
@@ -1667,6 +1990,127 @@ const runChecklist = async (barcode, options) => {
   }
 
   return { barcode, scans, details };
+};
+
+const runClientDisconnectProbe = async (barcode) => {
+  if (!barcode) return null;
+
+  const ctrl = new AbortController();
+  const timeoutMs = Math.min(SSE_TIMEOUT_MS, 12_000);
+  const timeout = setTimeout(() => ctrl.abort(), timeoutMs);
+  const startedAt = performance.now();
+
+  let rev0Seen = false;
+  let doneSeen = false;
+  let streamClosed = false;
+  let bytesReceived = 0;
+  let lastEventType = null;
+  let lastEventAtMs = null;
+  let abortError = false;
+  let parseErrorCount = 0;
+  let disconnectTriggered = false;
+  let terminalErrorType = null;
+  let fatalError = null;
+
+  const payload = { barcode };
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/enrich-stream`, {
+      method: "POST",
+      headers: apiHeaders,
+      body: JSON.stringify(payload),
+      signal: ctrl.signal,
+    });
+
+    if (!response.ok) {
+      throw new E2eError(errorTypeFromStatus(response.status), `disconnect probe HTTP ${response.status}`, {
+        status: response.status,
+        retryable: false,
+      });
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new E2eError("parse_failed", "disconnect probe reader unavailable", { retryable: false });
+    }
+
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let currentEvent = null;
+    let currentData = "";
+    const flush = () => {
+      if (!currentEvent) return;
+      const payloadRaw = currentData.trim();
+      const tMs = Math.round(performance.now() - startedAt);
+      lastEventType = currentEvent;
+      lastEventAtMs = tMs;
+      if (currentEvent === "done") {
+        doneSeen = true;
+      }
+      if (currentEvent === "analysis_bundle" && payloadRaw) {
+        try {
+          const parsed = JSON.parse(payloadRaw);
+          if (Number(parsed?.meta?.revision) === 0 && !rev0Seen) {
+            rev0Seen = true;
+            disconnectTriggered = true;
+            ctrl.abort();
+          }
+        } catch {
+          parseErrorCount += 1;
+        }
+      }
+      currentEvent = null;
+      currentData = "";
+    };
+
+    while (true) {
+      // eslint-disable-next-line no-await-in-loop
+      const { value, done } = await reader.read();
+      if (done) {
+        streamClosed = true;
+        break;
+      }
+      if (value) bytesReceived += value.byteLength;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split(/\r?\n/);
+      buffer = lines.pop() || "";
+      for (const line of lines) {
+        if (!line.trim()) {
+          flush();
+          continue;
+        }
+        if (line.startsWith("event:")) currentEvent = line.slice(6).trim();
+        if (line.startsWith("data:")) currentData += line.slice(5).trim();
+      }
+    }
+
+    flush();
+  } catch (error) {
+    terminalErrorType = classifyErrorType(error);
+    abortError = terminalErrorType === "AbortError";
+    if (!abortError) {
+      fatalError = String(error?.message ?? error);
+    }
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  return {
+    barcode,
+    attempted: true,
+    disconnectTriggered,
+    rev0Seen,
+    doneSeen,
+    streamClosed,
+    abortError,
+    terminalErrorType,
+    fatalError,
+    bytesReceived,
+    lastEventType,
+    lastEventAtMs,
+    parseErrorCount,
+    pass: rev0Seen && disconnectTriggered && abortError && !fatalError,
+  };
 };
 
 const runGateOnly = async (outDir, phaseMode) => {
@@ -1819,7 +2263,13 @@ const main = async () => {
     await writeJson(path.join(OUT_DIR, "checklist_10x.json"), checklist);
   }
 
-  await writeOnePageReport(OUT_DIR, { gate, checklist, sseContract: sseContractSummary });
+  let disconnectProbe = null;
+  if (checklistBarcode) {
+    disconnectProbe = await runClientDisconnectProbe(checklistBarcode);
+    await writeJson(path.join(OUT_DIR, "client_disconnect_probe.json"), disconnectProbe);
+  }
+
+  await writeOnePageReport(OUT_DIR, { gate, checklist, sseContract: sseContractSummary, disconnectProbe });
 
   console.log(`[website-e2e] done. gate=${gate.overall.pass ? "PASS" : "FAIL"}`);
   console.log(`[website-e2e] artifacts: ${OUT_DIR}`);
