@@ -29,10 +29,9 @@ export function getMySupplementOverviewV2GateReason(input: MySupplementOverviewV
       })
     : false;
 
-  if (hasActives && !activeMentioned && !hasDose) return "missing_active_or_dose";
   if (hasGeneric && hasActives && !activeMentioned && !hasDose) return "generic_without_facts";
+  if (hasActives && !activeMentioned && !hasDose) return "missing_active_or_dose";
   if (input.oneLiner.length < 10 || input.whatItIs.length < 20) return "too_short";
 
   return null;
 }
-

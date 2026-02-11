@@ -12,7 +12,7 @@ test("Overview gate: rejects generic output that doesn't mention actives/dose", 
     whatYouMayNotice: [],
     watchOuts: [],
   });
-  assert.ok(reason, "expected a gate reject reason");
+  assert.equal(reason, "generic_without_facts");
 });
 
 test("Overview gate: rejects medical claim language", () => {
@@ -27,6 +27,18 @@ test("Overview gate: rejects medical claim language", () => {
   assert.equal(reason, "medical_claim_language");
 });
 
+test("Overview gate: rejects non-generic output that doesn't mention actives/dose", () => {
+  const reason = getMySupplementOverviewV2GateReason({
+    actives: [{ name: "Vitamin C" }],
+    oneLiner: "A daily vitamin supplement.",
+    whatItIs: "A supplement intended for nutrition support and convenience.",
+    tips: [],
+    whatYouMayNotice: [],
+    watchOuts: [],
+  });
+  assert.equal(reason, "missing_active_or_dose");
+});
+
 test("Overview gate: allows output that mentions an active or a dose", () => {
   const reason = getMySupplementOverviewV2GateReason({
     actives: [{ name: "Vitamin C" }],
@@ -38,4 +50,3 @@ test("Overview gate: allows output that mentions an active or a dose", () => {
   });
   assert.equal(reason, null);
 });
-
