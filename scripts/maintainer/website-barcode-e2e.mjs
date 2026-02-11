@@ -1189,7 +1189,7 @@ const runFullFlow = async (item, options) => {
   const persistedMeta = buildMetaFromPersistedEvent(picked.persisted?.data) ?? null;
   const sectionMeta = rev1Meta ?? persistedMeta ?? null;
   const sourceType = rev1Meta?.sourceType ?? persistedMeta?.sourceType ?? null;
-  const contractFailure = classifySseContractFailure({ sse, picked });
+  let contractFailure = classifySseContractFailure({ sse, picked });
   if (contractFailure) {
     errors.push(contractFailure);
   }
@@ -1235,9 +1235,16 @@ const runFullFlow = async (item, options) => {
     overviewStatus: null,
     usageStatus: null,
     contracts: null,
+    trigger: null,
   };
 
-  if (sse.doneSeen) {
+  const finalProbeTrigger = sse.doneSeen
+    ? "done"
+    : sse.stopEvent?.stopOn === "persisted"
+      ? "persisted"
+      : null;
+
+  if (finalProbeTrigger) {
     if (!sectionMeta) {
       finalProbe = {
         attempted: true,
@@ -1245,6 +1252,7 @@ const runFullFlow = async (item, options) => {
         overviewStatus: null,
         usageStatus: null,
         contracts: null,
+        trigger: finalProbeTrigger,
       };
       errors.push("identity_missing");
     } else {
@@ -1282,9 +1290,19 @@ const runFullFlow = async (item, options) => {
         overviewStatus: finalOverview.status,
         usageStatus: finalUsage.status,
         contracts: finalContracts,
+        trigger: finalProbeTrigger,
       };
       if (finalReason) errors.push(finalReason);
     }
+  }
+
+  if (
+    contractFailure === "missing_done" &&
+    sse.stopEvent?.stopOn === "persisted" &&
+    finalProbe.attempted &&
+    !finalProbe.reason
+  ) {
+    contractFailure = null;
   }
 
   const contracts = evaluateContentContracts(sections);
@@ -1372,7 +1390,7 @@ const runFullFlow = async (item, options) => {
         usage: sections.usage.retryLog,
       },
     },
-    errors: [...new Set(errors)],
+    errors: [...new Set(errors.filter((errorType) => errorType !== "missing_done" || contractFailure === "missing_done"))],
   };
 };
 
