@@ -1,0 +1,1627 @@
+{
+  "datasetVersion": "ocr_regression_set_v1_1",
+  "storageProvider": "web_http",
+  "storageBucket": null,
+  "generatedAt": "2026-02-12T19:34:44.370Z",
+  "requirements": {
+    "totalSamples": 60,
+    "perBucket": 10,
+    "buckets": [
+      "single_column",
+      "dual_column",
+      "glare_shadow",
+      "curved_perspective",
+      "small_text_multilang",
+      "non_table"
+    ]
+  },
+  "samples": [
+    {
+      "image_id": "off_suppl_001",
+      "bucket": "single_column",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "multivitamin"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/872/330/071/0784/ingredients_en.50.400.jpg",
+      "sha256": "f4c68aea6bbc543ac2cfe2563282506f4fb7f4caaa38dff752490f769c6027cc",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "8723300710784",
+        "product_name": "",
+        "brands": "Innovit (Action)",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/8723300710784",
+        "image_url": "https://images.openfoodfacts.org/images/products/872/330/071/0784/ingredients_en.50.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_002",
+      "bucket": "single_column",
+      "ingredient_count_gt": 2,
+      "key_ingredients_gt": [
+        "magnesium",
+        "vitamin b12"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/848/000/079/5946/ingredients_es.43.400.jpg",
+      "sha256": "9d5df9a86957bc3cb32715a711515babe215910a92eea4ecb7fba66705879666",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "8480000795946",
+        "product_name": "Magnesio + Vitaminas B1 B6 B12 sabor Naranja",
+        "brands": "Deliplus",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/8480000795946",
+        "image_url": "https://images.openfoodfacts.org/images/products/848/000/079/5946/ingredients_es.43.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_003",
+      "bucket": "single_column",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "vitamin b12"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/405/817/292/2077/ingredients_de.34.400.jpg",
+      "sha256": "76a681b14df25c65deb02537fd2200c343c0ec4458d6fb7abe1dcd6c10b80712",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "4058172922077",
+        "product_name": "Vitamin B12",
+        "brands": "Mivolis",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/4058172922077",
+        "image_url": "https://images.openfoodfacts.org/images/products/405/817/292/2077/ingredients_de.34.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_004",
+      "bucket": "single_column",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "multivitamin"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/871/883/639/5802/ingredients_fr.15.400.jpg",
+      "sha256": "3b29c0eb949b4fff67b8656dabb59423bee34fcbc7af42cd1d24dd4e3398cb4a",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "8718836395802",
+        "product_name": "Multivitamin",
+        "brands": "Bodymass",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/8718836395802",
+        "image_url": "https://images.openfoodfacts.org/images/products/871/883/639/5802/ingredients_fr.15.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_005",
+      "bucket": "single_column",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "multivitamin"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/872/330/071/0746/ingredients_de.23.400.jpg",
+      "sha256": "698c76b9ca78ed6587644f5a668d1ca7dfd5477e881430f0fd4bd7e732dc5baf",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "8723300710746",
+        "product_name": "Multi A-Z One-a-Day",
+        "brands": "innovit",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/8723300710746",
+        "image_url": "https://images.openfoodfacts.org/images/products/872/330/071/0746/ingredients_de.23.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_006",
+      "bucket": "single_column",
+      "ingredient_count_gt": null,
+      "key_ingredients_gt": [],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/872/330/071/0791/nutrition_xx.17.400.jpg",
+      "sha256": "a888c9bf4402db446b5856ca904a893affe5fb589f1eb4a54aa590ba03d3c1ec",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "8723300710791",
+        "product_name": "Vitamin C 1000 mg",
+        "brands": "",
+        "image_type": "nutrition",
+        "product_url": "https://world.openfoodfacts.org/product/8723300710791",
+        "image_url": "https://images.openfoodfacts.org/images/products/872/330/071/0791/nutrition_xx.17.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "nutrition_facts",
+      "eval_target": false,
+      "expected_behavior": "should_warn_or_abstain",
+      "has_table_evidence_gt": true
+    },
+    {
+      "image_id": "off_suppl_007",
+      "bucket": "single_column",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "multivitamin"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/770/256/002/6102/ingredients_es.7.400.jpg",
+      "sha256": "8a24cea41732fb187578b422440c599dfd3ad08da5377d55e8d768bd2007479e",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "7702560026102",
+        "product_name": "Kola Granulada Tarrito Rojo",
+        "brands": "JGB",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/7702560026102",
+        "image_url": "https://images.openfoodfacts.org/images/products/770/256/002/6102/ingredients_es.7.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_008",
+      "bucket": "single_column",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "zinc"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/840/200/100/1246/ingredients_en.5.400.jpg",
+      "sha256": "49cbf07deff83df285a2eeb855e353f7d319742b59084a6c541ede952e0eb0bf",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "8402001001246",
+        "product_name": "Vitamina C + Zinc sabor Limón",
+        "brands": "Deliplus",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/8402001001246",
+        "image_url": "https://images.openfoodfacts.org/images/products/840/200/100/1246/ingredients_en.5.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_009",
+      "bucket": "single_column",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "multivitamin"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/000/002/028/9119/ingredients_en.92.400.jpg",
+      "sha256": "6090bade8cc71d2ba825718406116501d27c5910e61e7e47f4776ad46fbe822c",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "20289119",
+        "product_name": "",
+        "brands": "Optisana,MinaVit",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/20289119",
+        "image_url": "https://images.openfoodfacts.org/images/products/000/002/028/9119/ingredients_en.92.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_010",
+      "bucket": "single_column",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "creatine"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/506/024/560/5397/ingredients_en.20.400.jpg",
+      "sha256": "20677e1ee41254fbc0e2fd8a6036bd7c7b1315c1741f99f40be6abc521716757",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "5060245605397",
+        "product_name": "Micronised Creatine Powder",
+        "brands": "Optimum Nutrition",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/5060245605397",
+        "image_url": "https://images.openfoodfacts.org/images/products/506/024/560/5397/ingredients_en.20.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_011",
+      "bucket": "dual_column",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "multivitamin"
+      ],
+      "has_two_lane_gt": true,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/063/165/661/0178/ingredients_en.8.400.jpg",
+      "sha256": "e8e34135c9ec1c626b76b2c787ed813578d3732056ce19396f7e232973f3c800",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "0631656610178",
+        "product_name": "MuscleTech, Platinum Multivitamin",
+        "brands": "Muscletech",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/0631656610178",
+        "image_url": "https://images.openfoodfacts.org/images/products/063/165/661/0178/ingredients_en.8.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_012",
+      "bucket": "dual_column",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "creatine"
+      ],
+      "has_two_lane_gt": true,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/063/165/670/5737/ingredients_en.41.400.jpg",
+      "sha256": "4847f6963958ed082905fd6c4382518bf0d8f24ee14a1b0a752638f3d4a2263b",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "0631656705737",
+        "product_name": "Platinum 100% Creatine",
+        "brands": "MuscleTech",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/0631656705737",
+        "image_url": "https://images.openfoodfacts.org/images/products/063/165/670/5737/ingredients_en.41.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_013",
+      "bucket": "dual_column",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "creatine"
+      ],
+      "has_two_lane_gt": true,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/360/841/889/8461/ingredients_fr.38.400.jpg",
+      "sha256": "035593322fbf61d4fdf4d7c9e27fd3e9e077e833c7c2d0e2d79c229d071f4595",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "3608418898461",
+        "product_name": "Creatine Creapure Powder 300 g - Unflavoured",
+        "brands": "Decathlon",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/3608418898461",
+        "image_url": "https://images.openfoodfacts.org/images/products/360/841/889/8461/ingredients_fr.38.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_014",
+      "bucket": "dual_column",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "supplement"
+      ],
+      "has_two_lane_gt": true,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/848/000/022/9861/ingredients_es.12.400.jpg",
+      "sha256": "d6c63b328fa7efd24a30871dfc3943f5b382a4d217593bf8492e061b1adec9f9",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "8480000229861",
+        "product_name": "Omega3",
+        "brands": "Deliplus",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/8480000229861",
+        "image_url": "https://images.openfoodfacts.org/images/products/848/000/022/9861/ingredients_es.12.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_015",
+      "bucket": "dual_column",
+      "ingredient_count_gt": 2,
+      "key_ingredients_gt": [
+        "collagen",
+        "probiotic"
+      ],
+      "has_two_lane_gt": true,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/085/177/000/8785/ingredients_en.10.400.jpg",
+      "sha256": "502f4844201385a3bff47e9c3e40d38f46ab122fe288b91ead47ed34ae734662",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "0851770008785",
+        "product_name": "COLLAGEN PEPTIDES +PROBIOTICS",
+        "brands": "Orgain",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/0851770008785",
+        "image_url": "https://images.openfoodfacts.org/images/products/085/177/000/8785/ingredients_en.10.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_016",
+      "bucket": "dual_column",
+      "ingredient_count_gt": null,
+      "key_ingredients_gt": [],
+      "has_two_lane_gt": true,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/085/177/000/3964/nutrition_en.20.400.jpg",
+      "sha256": "ab5af2ee9571e578d5f0b487577db123afaa7e5dd8c1584d4651610da5367055",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "0851770003964",
+        "product_name": "Organic Superfoods Probiotics Super Nutrition Powder",
+        "brands": "Orgain",
+        "image_type": "nutrition",
+        "product_url": "https://world.openfoodfacts.org/product/0851770003964",
+        "image_url": "https://images.openfoodfacts.org/images/products/085/177/000/3964/nutrition_en.20.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "nutrition_facts",
+      "eval_target": false,
+      "expected_behavior": "should_warn_or_abstain",
+      "has_table_evidence_gt": true
+    },
+    {
+      "image_id": "off_suppl_017",
+      "bucket": "dual_column",
+      "ingredient_count_gt": null,
+      "key_ingredients_gt": [],
+      "has_two_lane_gt": true,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/074/098/527/8482/nutrition_en.15.400.jpg",
+      "sha256": "6084dafa86428a654f7f1647149a5b099b7eb3f1b5f7c841c1c247bc74943874",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "0740985278482",
+        "product_name": "Cranberry Plus Probiotic",
+        "brands": "21st Century",
+        "image_type": "nutrition",
+        "product_url": "https://world.openfoodfacts.org/product/0740985278482",
+        "image_url": "https://images.openfoodfacts.org/images/products/074/098/527/8482/nutrition_en.15.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "nutrition_facts",
+      "eval_target": false,
+      "expected_behavior": "should_warn_or_abstain",
+      "has_table_evidence_gt": true
+    },
+    {
+      "image_id": "off_suppl_018",
+      "bucket": "dual_column",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "magnesium"
+      ],
+      "has_two_lane_gt": true,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/405/817/230/9250/ingredients_en.17.400.jpg",
+      "sha256": "5134006d4df7ac6305dc52b72e7fedcb41f3ef745fb03184289266da3b2ade07",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "4058172309250",
+        "product_name": "Magnesium",
+        "brands": "Mivolis",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/4058172309250",
+        "image_url": "https://images.openfoodfacts.org/images/products/405/817/230/9250/ingredients_en.17.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_019",
+      "bucket": "dual_column",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "magnesium"
+      ],
+      "has_two_lane_gt": true,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/871/883/639/3488/ingredients_fr.7.400.jpg",
+      "sha256": "5a218ad884033323320abc2722cecb3b5877e1a006b5acda884da15ceb7b74fb",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "8718836393488",
+        "product_name": "Magnesium citrate 200 mg",
+        "brands": "Bodymass",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/8718836393488",
+        "image_url": "https://images.openfoodfacts.org/images/products/871/883/639/3488/ingredients_fr.7.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_020",
+      "bucket": "dual_column",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "magnesium"
+      ],
+      "has_two_lane_gt": true,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/406/145/800/7696/ingredients_de.22.400.jpg",
+      "sha256": "578c6ed0b5a392f6eea5db0738b7a1fbe82c413e85674d3de5610602806290f6",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "4061458007696",
+        "product_name": "Magnesium Brausetabletten",
+        "brands": "Vitalis",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/4061458007696",
+        "image_url": "https://images.openfoodfacts.org/images/products/406/145/800/7696/ingredients_de.22.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_021",
+      "bucket": "glare_shadow",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "magnesium"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/430/561/561/4366/ingredients_de.16.400.jpg",
+      "sha256": "eda1b83044c4c2ac57a6c6f17fa28dfaa00a3d350db03ad7c7d08985d16f461a",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "4305615614366",
+        "product_name": "Magnesium",
+        "brands": "Rossmann, altapharma (ROSSMANN)",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/4305615614366",
+        "image_url": "https://images.openfoodfacts.org/images/products/430/561/561/4366/ingredients_de.16.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_022",
+      "bucket": "glare_shadow",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "magnesium"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/405/817/210/1410/ingredients_en.19.400.jpg",
+      "sha256": "bec1b88dc7d27f01d35885f4790de710cb0cfd6b6f8d729accffa1d19cdadcca",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "4058172101410",
+        "product_name": "Nahrungsergänzungsmittel Magnesium",
+        "brands": "Mivolis, dm",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/4058172101410",
+        "image_url": "https://images.openfoodfacts.org/images/products/405/817/210/1410/ingredients_en.19.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_023",
+      "bucket": "glare_shadow",
+      "ingredient_count_gt": 2,
+      "key_ingredients_gt": [
+        "magnesium",
+        "vitamin c"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/431/626/844/8833/ingredients_de.48.400.jpg",
+      "sha256": "5a5eea279a3e4055ac33c831888570e610bcb2c606e9aaa14e75b64ac415429d",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "4316268448833",
+        "product_name": "Magnesium + B-Komplex, Vitamin C & E - Brausetabletten",
+        "brands": "ProLife, Sunlife",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/4316268448833",
+        "image_url": "https://images.openfoodfacts.org/images/products/431/626/844/8833/ingredients_de.48.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_024",
+      "bucket": "glare_shadow",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "magnesium"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/400/823/304/2435/ingredients_de.21.400.jpg",
+      "sha256": "ea73d052a1c4eb47dc8282160eb197f31b88de1b971e582cbfb258f26fb0f668",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "4008233042435",
+        "product_name": "Magnesium Calium",
+        "brands": "Kneipl, Kneipp",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/4008233042435",
+        "image_url": "https://images.openfoodfacts.org/images/products/400/823/304/2435/ingredients_de.21.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_025",
+      "bucket": "glare_shadow",
+      "ingredient_count_gt": null,
+      "key_ingredients_gt": [],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/007/628/054/9010/front_en.3.400.jpg",
+      "sha256": "5d3b86409988b706695b063c171ca46ea8c4ff30a8e357404e32b24405ccaa5b",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "0076280549010",
+        "product_name": "Higher Absorption Magnesium Glycinate 350mg",
+        "brands": "Solaray",
+        "image_type": "front",
+        "product_url": "https://world.openfoodfacts.org/product/0076280549010",
+        "image_url": "https://images.openfoodfacts.org/images/products/007/628/054/9010/front_en.3.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "front_non_target",
+      "eval_target": false,
+      "expected_behavior": "should_warn_or_abstain",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_026",
+      "bucket": "glare_shadow",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "magnesium"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/376/019/653/0022/ingredients_fr.4.400.jpg",
+      "sha256": "75dbadd283afd0544010530d987c2ef9f7fd0c9f63cd6b1f3545acce7fd22c21",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "3760196530022",
+        "product_name": "Nhco Nutrition Magnesium Amino Chelate 84 Gelules",
+        "brands": "NHCO",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/3760196530022",
+        "image_url": "https://images.openfoodfacts.org/images/products/376/019/653/0022/ingredients_fr.4.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_027",
+      "bucket": "glare_shadow",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "magnesium"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/370/022/131/3695/ingredients_fr.21.400.jpg",
+      "sha256": "f9ce7b90ee5d8e7e205c7b141a0d403283f2a032a107b9e3af8c26791467f09d",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "3700221313695",
+        "product_name": "Magnesium 300 Marin",
+        "brands": "forté pharma",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/3700221313695",
+        "image_url": "https://images.openfoodfacts.org/images/products/370/022/131/3695/ingredients_fr.21.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_028",
+      "bucket": "glare_shadow",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "multivitamin"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/871/883/639/6366/ingredients_fr.5.400.jpg",
+      "sha256": "5bd2884d315c951b7ad5a87b237842b8181961b3b697c3f6e95fca2cbe5c68e1",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "8718836396366",
+        "product_name": "Skin Gummies 60 pièces",
+        "brands": "Innovit",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/8718836396366",
+        "image_url": "https://images.openfoodfacts.org/images/products/871/883/639/6366/ingredients_fr.5.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_029",
+      "bucket": "glare_shadow",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "zinc"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/611/800/003/2090/ingredients_fr.5.400.jpg",
+      "sha256": "17a975dbcbc805727898cd09815f859b33d4ab9ce956d1c83caf3ae75a42e54e",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "6118000032090",
+        "product_name": "Sulfate de zinc",
+        "brands": "",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/6118000032090",
+        "image_url": "https://images.openfoodfacts.org/images/products/611/800/003/2090/ingredients_fr.5.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_030",
+      "bucket": "glare_shadow",
+      "ingredient_count_gt": null,
+      "key_ingredients_gt": [],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/073/373/901/5525/nutrition_fr.5.400.jpg",
+      "sha256": "79c5aeb5cef02bd7a6abde22308f2b48d77a4e0aa7082cb881b8092a6c689bb1",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "0733739015525",
+        "product_name": "Zinc picolinate",
+        "brands": "Pure Encapsulations",
+        "image_type": "nutrition",
+        "product_url": "https://world.openfoodfacts.org/product/0733739015525",
+        "image_url": "https://images.openfoodfacts.org/images/products/073/373/901/5525/nutrition_fr.5.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "nutrition_facts",
+      "eval_target": false,
+      "expected_behavior": "should_warn_or_abstain",
+      "has_table_evidence_gt": true
+    },
+    {
+      "image_id": "off_suppl_031",
+      "bucket": "curved_perspective",
+      "ingredient_count_gt": null,
+      "key_ingredients_gt": [],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/074/098/528/0263/front_fr.9.400.jpg",
+      "sha256": "ceec577ca1f1e357b090549e82900a196521ad0d630286898d676c9eea679f06",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "0740985280263",
+        "product_name": "Zinc citrate, 50 mg",
+        "brands": "21st Century",
+        "image_type": "front",
+        "product_url": "https://world.openfoodfacts.org/product/0740985280263",
+        "image_url": "https://images.openfoodfacts.org/images/products/074/098/528/0263/front_fr.9.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "front_non_target",
+      "eval_target": false,
+      "expected_behavior": "should_warn_or_abstain",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_032",
+      "bucket": "curved_perspective",
+      "ingredient_count_gt": 2,
+      "key_ingredients_gt": [
+        "zinc",
+        "vitamin c"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/405/648/949/5147/ingredients_en.26.400.jpg",
+      "sha256": "644a2e6a95ab33f337c3a160827a5e772b62570fc5fa53598ea4c0ee177b5aad",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "4056489495147",
+        "product_name": "Effervescent Vitamin C + Zinc - Orange Flavour",
+        "brands": "MinaVit",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/4056489495147",
+        "image_url": "https://images.openfoodfacts.org/images/products/405/648/949/5147/ingredients_en.26.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_033",
+      "bucket": "curved_perspective",
+      "ingredient_count_gt": null,
+      "key_ingredients_gt": [],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/843/701/494/8325/front_es.3.400.jpg",
+      "sha256": "633327aefea3412df3818922da9ebb50f92230dceb9452bd8c40f0049eef86eb",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "8437014948325",
+        "product_name": "Vitamina C 500mg + zinc",
+        "brands": "Vive+",
+        "image_type": "front",
+        "product_url": "https://world.openfoodfacts.org/product/8437014948325",
+        "image_url": "https://images.openfoodfacts.org/images/products/843/701/494/8325/front_es.3.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "front_non_target",
+      "eval_target": false,
+      "expected_behavior": "should_warn_or_abstain",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_034",
+      "bucket": "curved_perspective",
+      "ingredient_count_gt": null,
+      "key_ingredients_gt": [],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/408/860/038/3620/front_en.3.400.jpg",
+      "sha256": "585e88c572332e982c5057f1d6305e032b15f7fa1dc62a1c01a21e88b70b8d21",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "4088600383620",
+        "product_name": "Vitamin C & Zinc Effervescent tablet",
+        "brands": "",
+        "image_type": "front",
+        "product_url": "https://world.openfoodfacts.org/product/4088600383620",
+        "image_url": "https://images.openfoodfacts.org/images/products/408/860/038/3620/front_en.3.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "front_non_target",
+      "eval_target": false,
+      "expected_behavior": "should_warn_or_abstain",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_035",
+      "bucket": "curved_perspective",
+      "ingredient_count_gt": 3,
+      "key_ingredients_gt": [
+        "zinc",
+        "vitamin d",
+        "calcium"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/074/098/522/2638/ingredients_fr.7.400.jpg",
+      "sha256": "ab772c21d1d96b58ec8e09f199e493e859ce71d03060c7dfa11263c1d1499758",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "0740985222638",
+        "product_name": "Zinc +D3 Calcium",
+        "brands": "21st Century",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/0740985222638",
+        "image_url": "https://images.openfoodfacts.org/images/products/074/098/522/2638/ingredients_fr.7.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_036",
+      "bucket": "curved_perspective",
+      "ingredient_count_gt": 3,
+      "key_ingredients_gt": [
+        "magnesium",
+        "zinc",
+        "calcium"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/003/398/400/5204/ingredients_fr.3.400.jpg",
+      "sha256": "bcd2e17c904e94138bf19da9d6dd8fcf854e651ea2cb021aca0dd3685a63719a",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "0033984005204",
+        "product_name": "Calcium Magnesium Plus Zinc - 100 Comprimés - Solgar",
+        "brands": "Solgar",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/0033984005204",
+        "image_url": "https://images.openfoodfacts.org/images/products/003/398/400/5204/ingredients_fr.3.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_037",
+      "bucket": "curved_perspective",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "zinc"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/003/398/403/7250/ingredients_fr.4.400.jpg",
+      "sha256": "43ce82aedd74eee95d8f84b0c0bd3e6f9c3c0f4db0ce9361f67a596f691dd0a4",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "0033984037250",
+        "product_name": "Zinc Picolinate 22 MG - 100 Tablets - Solgar",
+        "brands": "Solgar",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/0033984037250",
+        "image_url": "https://images.openfoodfacts.org/images/products/003/398/403/7250/ingredients_fr.4.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_038",
+      "bucket": "curved_perspective",
+      "ingredient_count_gt": null,
+      "key_ingredients_gt": [],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/073/373/901/5228/front_en.9.400.jpg",
+      "sha256": "abb0a6def434359a49d6c380f811989200acddf6e40d2b21e8f0c94bbaa9be8e",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "0733739015228",
+        "product_name": "Zinc 50 Mg",
+        "brands": "NOW",
+        "image_type": "front",
+        "product_url": "https://world.openfoodfacts.org/product/0733739015228",
+        "image_url": "https://images.openfoodfacts.org/images/products/073/373/901/5228/front_en.9.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "front_non_target",
+      "eval_target": false,
+      "expected_behavior": "should_warn_or_abstain",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_039",
+      "bucket": "curved_perspective",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "zinc"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/007/431/200/8368/ingredients_en.9.400.jpg",
+      "sha256": "447a57979f35a6182cfb13d374733c1ff4d82cafafd72769bf88e6028ea5c92b",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "0074312008368",
+        "product_name": "Zinc",
+        "brands": "",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/0074312008368",
+        "image_url": "https://images.openfoodfacts.org/images/products/007/431/200/8368/ingredients_en.9.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_040",
+      "bucket": "curved_perspective",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "zinc"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/316/092/064/4665/ingredients_fr.7.400.jpg",
+      "sha256": "a231d6517758ccdcb345c4138f0641588fa7af69040bfa969d77444c86e46051",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "3160920644665",
+        "product_name": "Levure de bière, 8 vitamines + zinc",
+        "brands": "Juvamine",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/3160920644665",
+        "image_url": "https://images.openfoodfacts.org/images/products/316/092/064/4665/ingredients_fr.7.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_041",
+      "bucket": "small_text_multilang",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "zinc"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/340/093/352/4784/ingredients_fr.7.400.jpg",
+      "sha256": "24c5eec798006f5514447f213bcebd6ff15bee2bb603d62eaad8d262eb15bffe",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "3400933524784",
+        "product_name": "Granions De Zinc 15 Mg / 2 Ml (gluconate De Zinc) 1 Boite De 30, Ampoules De 2 Ml, Solution Buvable",
+        "brands": "Zn",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/3400933524784",
+        "image_url": "https://images.openfoodfacts.org/images/products/340/093/352/4784/ingredients_fr.7.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_042",
+      "bucket": "small_text_multilang",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "zinc"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/370/019/566/0252/ingredients_fr.4.400.jpg",
+      "sha256": "03c7d412c468e8d9248eaa65a22bbea101e4307120605c38e32fabb99803dbfc",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "3700195660252",
+        "product_name": "Zinc 30MG - 100 Comprimés - Vitall+",
+        "brands": "Vit'All +",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/3700195660252",
+        "image_url": "https://images.openfoodfacts.org/images/products/370/019/566/0252/ingredients_fr.4.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_043",
+      "bucket": "small_text_multilang",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "zinc"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/376/019/653/0671/ingredients_fr.7.400.jpg",
+      "sha256": "2839fd9c38eba48066b3b6fe09c4e234258c4e95f90dc749a5ba1cb37ee925e0",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "3760196530671",
+        "product_name": "Zinc Amino-chélaté",
+        "brands": "",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/3760196530671",
+        "image_url": "https://images.openfoodfacts.org/images/products/376/019/653/0671/ingredients_fr.7.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_044",
+      "bucket": "small_text_multilang",
+      "ingredient_count_gt": null,
+      "key_ingredients_gt": [],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/007/431/204/2904/front_en.11.400.jpg",
+      "sha256": "bdd72d512df9632d849f17b20d15da012c3ffb628335e21c4a80fabe95f9cc41",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "0074312042904",
+        "product_name": "Calcium Magnesium Zinc",
+        "brands": "Nature's Bounty",
+        "image_type": "front",
+        "product_url": "https://world.openfoodfacts.org/product/0074312042904",
+        "image_url": "https://images.openfoodfacts.org/images/products/007/431/204/2904/front_en.11.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "front_non_target",
+      "eval_target": false,
+      "expected_behavior": "should_warn_or_abstain",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_045",
+      "bucket": "small_text_multilang",
+      "ingredient_count_gt": null,
+      "key_ingredients_gt": [],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/505/612/812/6493/nutrition_en.15.400.jpg",
+      "sha256": "32591d0faab9b231f1b5ad14d49266e1e31434f98fe8e2e5041f16ec6c6b7bfc",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "5056128126493",
+        "product_name": "Complement alimentaire calcium magnesium et zinc",
+        "brands": "WeightWorld",
+        "image_type": "nutrition",
+        "product_url": "https://world.openfoodfacts.org/product/5056128126493",
+        "image_url": "https://images.openfoodfacts.org/images/products/505/612/812/6493/nutrition_en.15.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "nutrition_facts",
+      "eval_target": false,
+      "expected_behavior": "should_warn_or_abstain",
+      "has_table_evidence_gt": true
+    },
+    {
+      "image_id": "off_suppl_046",
+      "bucket": "small_text_multilang",
+      "ingredient_count_gt": 3,
+      "key_ingredients_gt": [
+        "magnesium",
+        "zinc",
+        "calcium"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/003/160/401/8931/ingredients_en.8.400.jpg",
+      "sha256": "2bd1801f244f71355303c2174757f26407ca82829467548745e3264a85a22fb0",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "0031604018931",
+        "product_name": "Calcium magnesium zinc",
+        "brands": "Nature Made",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/0031604018931",
+        "image_url": "https://images.openfoodfacts.org/images/products/003/160/401/8931/ingredients_en.8.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_047",
+      "bucket": "small_text_multilang",
+      "ingredient_count_gt": null,
+      "key_ingredients_gt": [],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/003/160/401/2779/nutrition_en.23.400.jpg",
+      "sha256": "9dd1e3cac88b9eddf7e02075d9ec4c4bd9e604153542237fbd852ca3c5d5238a",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "0031604012779",
+        "product_name": "Zinc",
+        "brands": "Nature Made",
+        "image_type": "nutrition",
+        "product_url": "https://world.openfoodfacts.org/product/0031604012779",
+        "image_url": "https://images.openfoodfacts.org/images/products/003/160/401/2779/nutrition_en.23.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "nutrition_facts",
+      "eval_target": false,
+      "expected_behavior": "should_warn_or_abstain",
+      "has_table_evidence_gt": true
+    },
+    {
+      "image_id": "off_suppl_048",
+      "bucket": "small_text_multilang",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "zinc"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/370/113/640/0531/ingredients_fr.5.400.jpg",
+      "sha256": "30bfeaeb3400683e66e030c5bce7ffdaf27ff243c079b4b738067f1fca063334",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "3701136400531",
+        "product_name": "zinc actifs",
+        "brands": "",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/3701136400531",
+        "image_url": "https://images.openfoodfacts.org/images/products/370/113/640/0531/ingredients_fr.5.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_049",
+      "bucket": "small_text_multilang",
+      "ingredient_count_gt": 3,
+      "key_ingredients_gt": [
+        "magnesium",
+        "zinc",
+        "calcium"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/009/661/958/8152/ingredients_en.11.400.jpg",
+      "sha256": "df50b86ac5cec2a549c5b7a99d3ddca3f0f93fec6a6330ebb8821213c5facf62",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "0096619588152",
+        "product_name": "Calcium Citrate Magnesium and Zinc",
+        "brands": "Kirkland Signature",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/0096619588152",
+        "image_url": "https://images.openfoodfacts.org/images/products/009/661/958/8152/ingredients_en.11.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_050",
+      "bucket": "small_text_multilang",
+      "ingredient_count_gt": null,
+      "key_ingredients_gt": [],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/847/000/161/5633/nutrition_es.5.400.jpg",
+      "sha256": "12627b78e2389d8198c5a7ced0030e6821cf48561fdb06495003b675d4ddbac1",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "8470001615633",
+        "product_name": "Propólis con miel y zinc sabor eucalipto",
+        "brands": "Juanola",
+        "image_type": "nutrition",
+        "product_url": "https://world.openfoodfacts.org/product/8470001615633",
+        "image_url": "https://images.openfoodfacts.org/images/products/847/000/161/5633/nutrition_es.5.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "nutrition_facts",
+      "eval_target": false,
+      "expected_behavior": "should_warn_or_abstain",
+      "has_table_evidence_gt": true
+    },
+    {
+      "image_id": "off_suppl_051",
+      "bucket": "non_table",
+      "ingredient_count_gt": 2,
+      "key_ingredients_gt": [
+        "zinc",
+        "vitamin c"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/504/509/857/8852/ingredients_en.24.400.jpg",
+      "sha256": "8e35855b9effe9fa659c8178c616341ff2ee1802d6ce44172a11aa00b8ab08cf",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "5045098578852",
+        "product_name": "Vitamin C + Zinc (Slow Release)",
+        "brands": "Boots",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/5045098578852",
+        "image_url": "https://images.openfoodfacts.org/images/products/504/509/857/8852/ingredients_en.24.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_052",
+      "bucket": "non_table",
+      "ingredient_count_gt": 2,
+      "key_ingredients_gt": [
+        "magnesium",
+        "zinc"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/560/082/620/2944/ingredients_fr.11.400.jpg",
+      "sha256": "7910cca2f78a2f5be7ed69c0f3e02a7b9c753c36abdf67f193ee94b22f6a2f10",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "5600826202944",
+        "product_name": "ZMB6 : Zinc + Magnesium + Vitamines B6 - 120caps",
+        "brands": "Prozis",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/5600826202944",
+        "image_url": "https://images.openfoodfacts.org/images/products/560/082/620/2944/ingredients_fr.11.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_053",
+      "bucket": "non_table",
+      "ingredient_count_gt": 3,
+      "key_ingredients_gt": [
+        "magnesium",
+        "zinc",
+        "calcium"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/871/917/919/0185/ingredients_fr.8.400.jpg",
+      "sha256": "d9fda951402aa5ff798c67f9a9ef909098154ef8955533da1e3211991b2491ce",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "8719179190185",
+        "product_name": "Calcium magnesium zinc",
+        "brands": "Kruidvat",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/8719179190185",
+        "image_url": "https://images.openfoodfacts.org/images/products/871/917/919/0185/ingredients_fr.8.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_054",
+      "bucket": "non_table",
+      "ingredient_count_gt": null,
+      "key_ingredients_gt": [],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/540/700/315/1237/front_fr.3.400.jpg",
+      "sha256": "bed79ad6c52786d461a42b4ff2f9d41e6a3e4f653ba88cce2761422745ef3b42",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "5407003151237",
+        "product_name": "Zinc +",
+        "brands": "",
+        "image_type": "front",
+        "product_url": "https://world.openfoodfacts.org/product/5407003151237",
+        "image_url": "https://images.openfoodfacts.org/images/products/540/700/315/1237/front_fr.3.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "front_non_target",
+      "eval_target": false,
+      "expected_behavior": "should_warn_or_abstain",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_055",
+      "bucket": "non_table",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "zinc"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/842/748/300/5001/ingredients_es.5.400.jpg",
+      "sha256": "7d9a3d3b3cc4a0e8cec3e1ba4876e32ff003f2633c44a6cdfc64ef45aecd4d9f",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "8427483005001",
+        "product_name": "Zinc",
+        "brands": "",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/8427483005001",
+        "image_url": "https://images.openfoodfacts.org/images/products/842/748/300/5001/ingredients_es.5.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_056",
+      "bucket": "non_table",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "zinc"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/841/201/636/2966/ingredients_en.6.400.jpg",
+      "sha256": "e28a508e5da46e04ca54c2fd9e3e0c07b17c6bca8f6134f2909b9b2933f4c9c4",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "8412016362966",
+        "product_name": "Colágeno, ácido hialurónico, vitamina c y zinc",
+        "brands": "Naturtierra",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/8412016362966",
+        "image_url": "https://images.openfoodfacts.org/images/products/841/201/636/2966/ingredients_en.6.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_057",
+      "bucket": "non_table",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "zinc"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/004/810/720/5904/ingredients_en.7.400.jpg",
+      "sha256": "800683b89a9e3b4803a8cd3a8f8d7015e9d311650168b854c333103e2de503dc",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "0048107205904",
+        "product_name": "Zinc",
+        "brands": "Gnc",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/0048107205904",
+        "image_url": "https://images.openfoodfacts.org/images/products/004/810/720/5904/ingredients_en.7.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_058",
+      "bucket": "non_table",
+      "ingredient_count_gt": null,
+      "key_ingredients_gt": [],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/007/431/202/0605/front_en.10.400.jpg",
+      "sha256": "304464ef21af945bade6ee7b72b4c946611b6d4b4bba432a02759a3382a16594",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "0074312020605",
+        "product_name": "Zinc",
+        "brands": "Nature's Bounty, Kroger",
+        "image_type": "front",
+        "product_url": "https://world.openfoodfacts.org/product/0074312020605",
+        "image_url": "https://images.openfoodfacts.org/images/products/007/431/202/0605/front_en.10.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "front_non_target",
+      "eval_target": false,
+      "expected_behavior": "should_warn_or_abstain",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_059",
+      "bucket": "non_table",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "zinc"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/068/113/163/3284/ingredients_en.10.400.jpg",
+      "sha256": "daaff1db887bed8f072e4afd79544892fb1189ee800bffd67b047fe253cdd080",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "0681131633284",
+        "product_name": "Zinc 50mg",
+        "brands": "Spring Valley",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/0681131633284",
+        "image_url": "https://images.openfoodfacts.org/images/products/068/113/163/3284/ingredients_en.10.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    },
+    {
+      "image_id": "off_suppl_060",
+      "bucket": "non_table",
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "zinc"
+      ],
+      "has_two_lane_gt": null,
+      "storage_uri": "https://images.openfoodfacts.org/images/products/376/015/521/2426/ingredients_fr.6.400.jpg",
+      "sha256": "153f903d05d37003fa7822fa601c89a4b431e84cfaa09f41190a6b5808b7c84c",
+      "source": {
+        "provider": "openfoodfacts",
+        "product_code": "3760155212426",
+        "product_name": "ZINC",
+        "brands": "granions",
+        "image_type": "ingredients",
+        "product_url": "https://world.openfoodfacts.org/product/3760155212426",
+        "image_url": "https://images.openfoodfacts.org/images/products/376/015/521/2426/ingredients_fr.6.400.jpg",
+        "retrieved_at": "2026-02-12T19:34:44.370Z",
+        "license": "CC BY-SA (Open Food Facts user-contributed image)",
+        "attribution": "Open Food Facts contributors"
+      },
+      "panel_type": "ingredients_list",
+      "eval_target": true,
+      "expected_behavior": "parse_ingredients_list",
+      "has_table_evidence_gt": false
+    }
+  ],
+  "updatedAt": "2026-02-12T20:59:53.116Z"
+}

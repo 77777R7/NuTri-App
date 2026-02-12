@@ -1,0 +1,230 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_025",
+    "generatedAt": "2026-02-12T21:23:21.035Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "5d3b86409988b706695b063c171ca46ea8c4ff30a8e357404e32b24405ccaa5b",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/007/628/054/9010/front_en.3.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [
+      {
+        "name": "GLYCINATE",
+        "amount": 350,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.9698439637819926,
+        "rawLine": "GLYCINATE 350 mg"
+      }
+    ],
+    "parseCoverage": 1,
+    "confidenceScore": 0.8859531891345978,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.021790999999211635,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.07908300000053714,
+      "visionClientInitMs": 0,
+      "visionMs": 136.21216699999968,
+      "postprocessMs": 0.6037919999998849,
+      "llmMs": null,
+      "totalMs": 136.98641700000007
+    },
+    "image": {
+      "inputBytes": 25126,
+      "inputMime": "image/jpeg",
+      "inputWidth": 333,
+      "inputHeight": 400,
+      "preprocessedBytes": 25126,
+      "preprocessedWidth": 333,
+      "preprocessedHeight": 400
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 113,
+      "fullTextPreview": "Solaray\nNEW\nHIGHER ABSORPTION\nMAGNESIUM\nGLYCINATE\n+Bone\n+Muscle\n350 mg\n+Relaxation'\n120 VEGCAPS\nDETARY SUPPLEMENT",
+      "tokenCount": 19,
+      "avgTokenConfidence": 0.8647973082567516,
+      "p10TokenConfidence": 0.4846639633178711,
+      "p50TokenConfidence": 0.9612321853637695,
+      "p90TokenConfidence": 0.9893305897712708,
+      "medianTokenHeight": 12
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0
+    },
+    "completeness": {
+      "candidateAmountRows": 1,
+      "parsedIngredients": 1,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 1,
+        "parseCoverage": 1,
+        "confidenceScore": 0.8859531891345978,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 1,
+        "parseCoverage": 1,
+        "confidenceScore": 0.714,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "header_not_found",
+            "message": "Medicinal ingredients section not detected"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "a0e8e19c-0ca9-4262-bf00-959580b04a60",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:21.034Z",
+    "updatedAt": "2026-02-12T21:23:21.034Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [
+        {
+          "name": "GLYCINATE",
+          "ingredientId": null,
+          "amount": 350,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.9698439637819926
+        }
+      ],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 1,
+        "confidenceScore": 0.8859531891345978,
+        "issues": [
+          "missing_serving_size: Serving size not found"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "421b8468-35eb-43c8-a7d5-afbc6e9c3886",
+  "imageHash": "25d6bf2a-33504",
+  "flagVariant": "draft_first_async",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:20.897Z",
+    "draftReadyAt": "2026-02-12T21:23:21.034Z",
+    "tDecodeMs": 0.021790999999211635,
+    "tOcrMs": 136.21216699999968,
+    "tParseMs": 0.6037919999998849,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 137
+  }
+}

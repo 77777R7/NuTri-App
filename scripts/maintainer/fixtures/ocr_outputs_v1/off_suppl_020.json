@@ -1,0 +1,215 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_020",
+    "generatedAt": "2026-02-12T21:23:20.906Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "578c6ed0b5a392f6eea5db0738b7a1fbe82c413e85674d3de5610602806290f6",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/406/145/800/7696/ingredients_de.22.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [],
+    "parseCoverage": 0,
+    "confidenceScore": 0.3,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      },
+      {
+        "type": "low_coverage",
+        "message": "Only 0% of rows have valid amount/unit"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.016792000000350527,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.0681670000012673,
+      "visionClientInitMs": 0,
+      "visionMs": 161.17929200000071,
+      "postprocessMs": 1.0137919999997393,
+      "llmMs": null,
+      "totalMs": 162.41704200000095
+    },
+    "image": {
+      "inputBytes": 21726,
+      "inputMime": "image/jpeg",
+      "inputWidth": 400,
+      "inputHeight": 141,
+      "preprocessedBytes": 21726,
+      "preprocessedWidth": 400,
+      "preprocessedHeight": 141
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 476,
+      "fullTextPreview": "Zutaten: Säuerungsmittel: Citronensäure; Säureregulator: Natriumhydrogen-\ncarbonat; Magnesiumcarbonat; Maisstärke; L-Ascorbinsäure; Süßungsmittel:\nNatriumcyclamat; Rote Beete Saftpulver; Aroma; Inulin; DL-alpha-Tocophery-\nlacetat; Trennmittel: Tricalciumphosphat; Nicotinamid; Süßungsmittel:\nNatriumsaccharin; Calcium-D-Pantothenat; D-Biotin; Cyanocobalamin;\nRiboflavin-5'-phosphate; Natrium; Maltodextrin; Pyridoxinhydrochlorid;\nThiaminhydrochlorid; Pteroylmonoglutaminsäure.",
+      "tokenCount": 77,
+      "avgTokenConfidence": 0.9403471691267831,
+      "p10TokenConfidence": 0.8407596945762634,
+      "p50TokenConfidence": 0.9681131839752197,
+      "p90TokenConfidence": 0.9900543093681335,
+      "medianTokenHeight": 18
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0.48149458302810666
+    },
+    "completeness": {
+      "candidateAmountRows": 0,
+      "parsedIngredients": 0,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of rows have valid amount/unit"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of lines have valid amount/unit"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "1f35e878-2afe-4b58-8989-3823ff6a9eca",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:20.905Z",
+    "updatedAt": "2026-02-12T21:23:20.905Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          "missing_serving_size: Serving size not found",
+          "low_coverage: Only 0% of rows have valid amount/unit"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "07327d84-4630-42c7-80f5-9a0b9dff0793",
+  "imageHash": "5a71c398-28968",
+  "flagVariant": "draft_first_async",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:20.742Z",
+    "draftReadyAt": "2026-02-12T21:23:20.904Z",
+    "tDecodeMs": 0.016792000000350527,
+    "tOcrMs": 161.17929200000071,
+    "tParseMs": 1.0137919999997393,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 162
+  }
+}

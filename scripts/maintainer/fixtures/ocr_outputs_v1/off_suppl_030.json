@@ -1,0 +1,243 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_030",
+    "generatedAt": "2026-02-12T21:23:21.201Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "79c5aeb5cef02bd7a6abde22308f2b48d77a4e0aa7082cb881b8092a6c689bb1",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/073/373/901/5525/nutrition_fr.5.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [
+      {
+        "name": "Serving V",
+        "amount": 270,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.8782192587852478,
+        "rawLine": "Serving V Ercom 270 mg Zinc Picolinate ) 50 mg"
+      },
+      {
+        "name": "nidactured & Quality Tested by NOW FOODS",
+        "amount": 355,
+        "unit": "g",
+        "dvPercent": null,
+        "confidence": 0.8337271511554718,
+        "rawLine": "nidactured & Quality Tested by NOW FOODS 355 Glen Ellyn Rd . , Bloomingdale , IL 60108 , USA"
+      }
+    ],
+    "parseCoverage": 1,
+    "confidenceScore": 0.8517919614911079,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.014833000001090113,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.05424999999922875,
+      "visionClientInitMs": 0,
+      "visionMs": 145.48325000000114,
+      "postprocessMs": 2.0694170000006125,
+      "llmMs": null,
+      "totalMs": 148.1849999999995
+    },
+    "image": {
+      "inputBytes": 16660,
+      "inputMime": "image/jpeg",
+      "inputWidth": 204,
+      "inputHeight": 400,
+      "preprocessedBytes": 16660,
+      "preprocessedWidth": 204,
+      "preprocessedHeight": 400
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 548,
+      "fullTextPreview": "Minerals\nFamily owned since 1968\nSupplement Facts\nServing Size 1 Veg Capsule\nAmount\nPer Serving V\nErcom 270 mg Zinc Picolinate) 50 mg\ningredients: Rice Flour, Hypromellose ja\nand Stearic Acid (vegetable source\nnidactured & Quality Tested by NOW FOODS\n355 Glen Ellyn Rd., Bloomingdale, IL 60108, USA\nnowfoods.com\naufactured with yeast, wheat, gluten, soy\nith shellish or tree nut ingredients. Produced\nGMP facility that processes other ingrediens\nning these allergens.\nNl color variation may occur in ",
+      "tokenCount": 101,
+      "avgTokenConfidence": 0.8704037400755552,
+      "p10TokenConfidence": 0.6242673397064209,
+      "p50TokenConfidence": 0.9667911529541016,
+      "p90TokenConfidence": 0.991304874420166,
+      "medianTokenHeight": 11
+    },
+    "heuristics": {
+      "tableLikely": true,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0
+    },
+    "completeness": {
+      "candidateAmountRows": 2,
+      "parsedIngredients": 2,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 2,
+        "parseCoverage": 1,
+        "confidenceScore": 0.8517919614911079,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 2,
+        "parseCoverage": 1,
+        "confidenceScore": 0.9039999999999999,
+        "issues": []
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "6f1e2727-a2a5-4377-9aab-b310d56f8380",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:21.200Z",
+    "updatedAt": "2026-02-12T21:23:21.200Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [
+        {
+          "name": "Serving V",
+          "ingredientId": null,
+          "amount": 270,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.8782192587852478
+        },
+        {
+          "name": "nidactured & Quality Tested by NOW FOODS",
+          "ingredientId": null,
+          "amount": 355,
+          "amountUnit": "g",
+          "amountUnitRaw": "g",
+          "amountUnitNormalized": "g",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.8337271511554718
+        }
+      ],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 1,
+        "confidenceScore": 0.8517919614911079,
+        "issues": [
+          "missing_serving_size: Serving size not found"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "5a1ed090-85d9-4318-bac4-a85cd39aaa54",
+  "imageHash": "515c91f8-22216",
+  "flagVariant": "control",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:21.050Z",
+    "draftReadyAt": "2026-02-12T21:23:21.198Z",
+    "tDecodeMs": 0.014833000001090113,
+    "tOcrMs": 145.48325000000114,
+    "tParseMs": 2.0694170000006125,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 148
+  }
+}

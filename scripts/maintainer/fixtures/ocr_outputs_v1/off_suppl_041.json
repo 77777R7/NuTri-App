@@ -1,0 +1,388 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_041",
+    "generatedAt": "2026-02-12T21:23:21.762Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "24c5eec798006f5514447f213bcebd6ff15bee2bb603d62eaad8d262eb15bffe",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/340/093/352/4784/ingredients_fr.7.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [
+      {
+        "name": "POUR",
+        "amount": 100,
+        "unit": "ml",
+        "dvPercent": null,
+        "confidence": 0.9865683317184448,
+        "rawLine": "POUR 100 ml"
+      },
+      {
+        "name": "VALEUR",
+        "amount": 1394,
+        "unit": "kj",
+        "dvPercent": null,
+        "confidence": 0.9653446674346924,
+        "rawLine": "VALEUR 1394 kJ"
+      },
+      {
+        "name": "ENERGETIQUE",
+        "amount": 328,
+        "unit": "kcal",
+        "dvPercent": null,
+        "confidence": 0.9806227882703146,
+        "rawLine": "ENERGETIQUE 328 kcal"
+      },
+      {
+        "name": "Glucides",
+        "amount": 82,
+        "unit": "g",
+        "dvPercent": null,
+        "confidence": 0.9838598767916361,
+        "rawLine": "Glucides 82 g"
+      },
+      {
+        "name": "DILUE À 1 + 7  DILUE À 1 + 10",
+        "amount": 174,
+        "unit": "kj",
+        "dvPercent": null,
+        "confidence": 0.6923245827356975,
+        "rawLine": "DILUE À 1 + 7 * DILUE À 1 + 10 174 kJ 128 kJ"
+      },
+      {
+        "name": "41 kcal",
+        "amount": 30,
+        "unit": "kcal",
+        "dvPercent": null,
+        "confidence": 0.7806495070457459,
+        "rawLine": "41 kcal 30 kcal"
+      },
+      {
+        "name": "10,3 g",
+        "amount": 75,
+        "unit": "g",
+        "dvPercent": null,
+        "confidence": 0.7704187711079915,
+        "rawLine": "10,3 g 7,5g"
+      },
+      {
+        "name": "10,3 g",
+        "amount": 75,
+        "unit": "g",
+        "dvPercent": null,
+        "confidence": 0.7697107911109925,
+        "rawLine": "10,3 g 7,5 g"
+      }
+    ],
+    "parseCoverage": 1,
+    "confidenceScore": 1,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.01616699999976845,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.09174999999959255,
+      "visionClientInitMs": 0,
+      "visionMs": 160.69775000000118,
+      "postprocessMs": 3.795416999999361,
+      "llmMs": null,
+      "totalMs": 164.8919160000005
+    },
+    "image": {
+      "inputBytes": 18898,
+      "inputMime": "image/jpeg",
+      "inputWidth": 400,
+      "inputHeight": 245,
+      "preprocessedBytes": 18898,
+      "preprocessedWidth": 400,
+      "preprocessedHeight": 245
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 208,
+      "fullTextPreview": "POUR\n100 ml\nPOUR 100 ml |\nDE SIROP\nDILUE À 1+7*\nPOUR 100 ml\nDE SIROP\nDILUE À 1+10\nVALEUR\n1394 kJ\n174 kJ\n128 kJ\nENERGETIQUE 328 kcal\n41 kcal\n30 kcal\nGlucides\n82 g\n10,3 g\n7,5g\ndont sucres\n829\n10,3 g\n7,5 g\nConti",
+      "tokenCount": 53,
+      "avgTokenConfidence": 0.9318142347740677,
+      "p10TokenConfidence": 0.8575232028961182,
+      "p50TokenConfidence": 0.9837939739227295,
+      "p90TokenConfidence": 0.9915276765823364,
+      "medianTokenHeight": 19
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": true,
+      "applied": true,
+      "chosen": "lane_split",
+      "revertedReason": null,
+      "leftTokenCount": 16,
+      "rightTokenCount": 37,
+      "centerGapRatio": 0.5449033319995634
+    },
+    "completeness": {
+      "candidateAmountRows": 14,
+      "parsedIngredients": 8,
+      "completenessRatio": 0.5714285714285714,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 8,
+        "parseCoverage": 1,
+        "confidenceScore": 1,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 9,
+        "parseCoverage": 0.6428571428571429,
+        "confidenceScore": 0.5513333333333335,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 64% of lines have valid amount/unit"
+          },
+          {
+            "type": "header_not_found",
+            "message": "Medicinal ingredients section not detected"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "26de51c8-25e9-4f4a-90db-09d2a0755c0d",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:21.760Z",
+    "updatedAt": "2026-02-12T21:23:21.760Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [
+        {
+          "name": "POUR",
+          "ingredientId": null,
+          "amount": 100,
+          "amountUnit": "ml",
+          "amountUnitRaw": "ml",
+          "amountUnitNormalized": "ml",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.9865683317184448
+        },
+        {
+          "name": "VALEUR",
+          "ingredientId": null,
+          "amount": 1394,
+          "amountUnit": "kj",
+          "amountUnitRaw": "kj",
+          "amountUnitNormalized": null,
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.9653446674346924
+        },
+        {
+          "name": "ENERGETIQUE",
+          "ingredientId": null,
+          "amount": 328,
+          "amountUnit": "kcal",
+          "amountUnitRaw": "kcal",
+          "amountUnitNormalized": null,
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.9806227882703146
+        },
+        {
+          "name": "Glucides",
+          "ingredientId": null,
+          "amount": 82,
+          "amountUnit": "g",
+          "amountUnitRaw": "g",
+          "amountUnitNormalized": "g",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.9838598767916361
+        },
+        {
+          "name": "DILUE À 1 + 7  DILUE À 1 + 10",
+          "ingredientId": null,
+          "amount": 174,
+          "amountUnit": "kj",
+          "amountUnitRaw": "kj",
+          "amountUnitNormalized": null,
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.6923245827356975
+        },
+        {
+          "name": "41 kcal",
+          "ingredientId": null,
+          "amount": 30,
+          "amountUnit": "kcal",
+          "amountUnitRaw": "kcal",
+          "amountUnitNormalized": null,
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.7806495070457459
+        },
+        {
+          "name": "10,3 g",
+          "ingredientId": null,
+          "amount": 75,
+          "amountUnit": "g",
+          "amountUnitRaw": "g",
+          "amountUnitNormalized": "g",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.7704187711079915
+        },
+        {
+          "name": "10,3 g",
+          "ingredientId": null,
+          "amount": 75,
+          "amountUnit": "g",
+          "amountUnitRaw": "g",
+          "amountUnitNormalized": "g",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.7697107911109925
+        }
+      ],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 1,
+        "confidenceScore": 1,
+        "issues": [
+          "missing_serving_size: Serving size not found"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "38384927-111f-4729-8e6e-3adb31e5320e",
+  "imageHash": "114b1317-25200",
+  "flagVariant": "draft_first_async",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": true,
+  "laneSplitChosen": "lane_split",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:21.593Z",
+    "draftReadyAt": "2026-02-12T21:23:21.758Z",
+    "tDecodeMs": 0.01616699999976845,
+    "tOcrMs": 160.69775000000118,
+    "tParseMs": 3.795416999999361,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 165
+  }
+}

@@ -1,0 +1,256 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_026",
+    "generatedAt": "2026-02-12T21:23:21.049Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "75dbadd283afd0544010530d987c2ef9f7fd0c9f63cd6b1f3545acce7fd22c21",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/376/019/653/0022/ingredients_fr.4.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [
+      {
+        "name": "Ce produit convient aux végétariens . Sans gluten , sans lactose",
+        "amount": 2,
+        "unit": "g",
+        "dvPercent": null,
+        "confidence": 0.9753451281123691,
+        "rawLine": "Ce produit convient aux végétariens . Sans gluten , sans lactose Composition moyenne pour 2 gélules par jour"
+      },
+      {
+        "name": "Ingredient Dosage",
+        "amount": 250,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.9530468881130219,
+        "rawLine": "Ingredient Dosage Magnésium élément 250 mg"
+      }
+    ],
+    "parseCoverage": 1,
+    "confidenceScore": 0.8842588024338086,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.02070800000001327,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.06433300000026065,
+      "visionClientInitMs": 0,
+      "visionMs": 138.3157080000001,
+      "postprocessMs": 1.1150419999994483,
+      "llmMs": null,
+      "totalMs": 139.6175000000003
+    },
+    "image": {
+      "inputBytes": 26198,
+      "inputMime": "image/jpeg",
+      "inputWidth": 400,
+      "inputHeight": 270,
+      "preprocessedBytes": 26198,
+      "preprocessedWidth": 400,
+      "preprocessedHeight": 270
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 377,
+      "fullTextPreview": "Complément alimentaire\nIngrédients: Magnésium amino-chélaté\" (Magnesi\nstearate de Magnésium végétal. Gélule: hydroxy\nbisglycinate chélaté tamponné), anti-agglomérant\npropylmethylcellulose.\nCe produit convient aux végétariens. Sans gluten, sans lactose\nComposition moyenne pour 2 gélules par jour\nIngredient\nMagnésium élément\n*Valeurs Nutritionnelles de Référence.\nDosage\n250 mg",
+      "tokenCount": 59,
+      "avgTokenConfidence": 0.934957354755725,
+      "p10TokenConfidence": 0.8415112495422363,
+      "p50TokenConfidence": 0.972542405128479,
+      "p90TokenConfidence": 0.9906749725341797,
+      "medianTokenHeight": 18
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0.5658537600532759
+    },
+    "completeness": {
+      "candidateAmountRows": 2,
+      "parsedIngredients": 2,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 2,
+        "parseCoverage": 1,
+        "confidenceScore": 0.8842588024338086,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 1,
+        "parseCoverage": 0.5,
+        "confidenceScore": 0.519,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 50% of lines have valid amount/unit"
+          },
+          {
+            "type": "header_not_found",
+            "message": "Medicinal ingredients section not detected"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "c2c1b708-9cf6-4310-936d-05daf15ba6a4",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:21.048Z",
+    "updatedAt": "2026-02-12T21:23:21.048Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [
+        {
+          "name": "Ce produit convient aux végétariens . Sans gluten , sans lactose",
+          "ingredientId": null,
+          "amount": 2,
+          "amountUnit": "g",
+          "amountUnitRaw": "g",
+          "amountUnitNormalized": "g",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.9753451281123691
+        },
+        {
+          "name": "Ingredient Dosage",
+          "ingredientId": null,
+          "amount": 250,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.9530468881130219
+        }
+      ],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 1,
+        "confidenceScore": 0.8842588024338086,
+        "issues": [
+          "missing_serving_size: Serving size not found"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "7d15f4c5-0be7-4f58-a779-f4d804f2bfd1",
+  "imageHash": "7f8c6a49-34932",
+  "flagVariant": "draft_first_async",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:20.908Z",
+    "draftReadyAt": "2026-02-12T21:23:21.047Z",
+    "tDecodeMs": 0.02070800000001327,
+    "tOcrMs": 138.3157080000001,
+    "tParseMs": 1.1150419999994483,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 139
+  }
+}

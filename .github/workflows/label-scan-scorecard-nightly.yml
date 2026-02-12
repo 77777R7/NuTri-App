@@ -1,0 +1,87 @@
+name: Label Scan Scorecard (Nightly)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "20 9 * * *"
+
+jobs:
+  e2e-observe:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      LABEL_SCAN_REGRESSION_API_BASE: ${{ github.event.inputs.render_base_url != '' && github.event.inputs.render_base_url || secrets.RENDER_BASE_URL }}
+      LABEL_SCAN_REGRESSION_BEARER: ${{ secrets.RENDER_REGRESSION_TOKEN }}
+      LABEL_SCAN_REGRESSION_AUTH_BYPASS: "0"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fetch regression set
+        run: node scripts/maintainer/fetch-ocr-regression-set.mjs
+
+      - name: Run e2e regression observe
+        if: ${{ env.LABEL_SCAN_REGRESSION_API_BASE != '' }}
+        run: |
+          node scripts/maintainer/ocr-regression-runner.mjs \
+            --mode e2e \
+            --gate-mode observe \
+            --api-base "${LABEL_SCAN_REGRESSION_API_BASE}" \
+            --bearer "${LABEL_SCAN_REGRESSION_BEARER}"
+
+      - name: Skip e2e observe (missing API base)
+        if: ${{ env.LABEL_SCAN_REGRESSION_API_BASE == '' }}
+        run: echo "LABEL_SCAN_REGRESSION_API_BASE is empty; skipping e2e observe run."
+
+      - name: Upload e2e regression artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: label-scan-e2e-observe-${{ github.run_id }}
+          path: output/ocr-regression-run-*/
+          if-no-files-found: warn
+
+  scorecard:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    needs: [e2e-observe]
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      LABEL_SCAN_SCORECARD_HOURS: "24"
+      LABEL_SCAN_SCORECARD_MAX_ROWS: "5000"
+      LABEL_SCAN_SCORECARD_MIN_VARIANT_N: "200"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run label scan scorecard
+        run: node scripts/maintainer/label-scan-scorecard.mjs
+
+      - name: Upload scorecard artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: label-scan-scorecard-${{ github.run_id }}
+          path: output/label-scan-scorecard-*/
+          if-no-files-found: warn

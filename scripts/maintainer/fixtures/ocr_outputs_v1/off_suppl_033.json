@@ -1,0 +1,230 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_033",
+    "generatedAt": "2026-02-12T21:23:21.358Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "633327aefea3412df3818922da9ebb50f92230dceb9452bd8c40f0049eef86eb",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/843/701/494/8325/front_es.3.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [
+      {
+        "name": "Vitamina (",
+        "amount": 500,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.8587740461031595,
+        "rawLine": "Vitamina ( 500mg"
+      }
+    ],
+    "parseCoverage": 1,
+    "confidenceScore": 0.8526322138309479,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.013209000000642845,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.06616700000085984,
+      "visionClientInitMs": 0,
+      "visionMs": 140.82591599999978,
+      "postprocessMs": 1.1129999999993743,
+      "llmMs": null,
+      "totalMs": 142.199125000001
+    },
+    "image": {
+      "inputBytes": 8497,
+      "inputMime": "image/jpeg",
+      "inputWidth": 106,
+      "inputHeight": 400,
+      "preprocessedBytes": 8497,
+      "preprocessedWidth": 106,
+      "preprocessedHeight": 400
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 45,
+      "fullTextPreview": "Vive\nVitamina (\n500mg\nZinc\nistema Inmunita\n20",
+      "tokenCount": 8,
+      "avgTokenConfidence": 0.8185256794095039,
+      "p10TokenConfidence": 0.618709921836853,
+      "p50TokenConfidence": 0.6965186595916748,
+      "p90TokenConfidence": 0.9910888075828552,
+      "medianTokenHeight": 14
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0
+    },
+    "completeness": {
+      "candidateAmountRows": 1,
+      "parsedIngredients": 1,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 1,
+        "parseCoverage": 1,
+        "confidenceScore": 0.8526322138309479,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 1,
+        "parseCoverage": 1,
+        "confidenceScore": 0.7289999999999999,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "header_not_found",
+            "message": "Medicinal ingredients section not detected"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "67b1c687-7cbe-4268-912a-44019cb805a4",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:21.355Z",
+    "updatedAt": "2026-02-12T21:23:21.355Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [
+        {
+          "name": "Vitamina (",
+          "ingredientId": null,
+          "amount": 500,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.8587740461031595
+        }
+      ],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 1,
+        "confidenceScore": 0.8526322138309479,
+        "issues": [
+          "missing_serving_size: Serving size not found"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "a6006b12-eda9-4eea-a2ec-3cd0bf047220",
+  "imageHash": "41b4b79c-11332",
+  "flagVariant": "control",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:21.211Z",
+    "draftReadyAt": "2026-02-12T21:23:21.353Z",
+    "tDecodeMs": 0.013209000000642845,
+    "tOcrMs": 140.82591599999978,
+    "tParseMs": 1.1129999999993743,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 142
+  }
+}

@@ -1,0 +1,248 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_015",
+    "generatedAt": "2026-02-12T21:23:20.736Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "502f4844201385a3bff47e9c3e40d38f46ab122fe288b91ead47ed34ae734662",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/085/177/000/8785/ingredients_en.10.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [
+      {
+        "name": "Cholesterol Omg",
+        "amount": 25,
+        "unit": "mg",
+        "dvPercent": 0,
+        "confidence": 0.7916317085425059,
+        "rawLine": "Cholesterol Omg Sodium 25mg 0 %"
+      },
+      {
+        "name": "Includes Og Added",
+        "amount": 19,
+        "unit": "g",
+        "dvPercent": 0,
+        "confidence": 0.9019204825162888,
+        "rawLine": "Includes Og Added Protein 19g Sugars 0 %"
+      }
+    ],
+    "parseCoverage": 1,
+    "confidenceScore": 0.8490328286588191,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.014250000000174623,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.06604200000037963,
+      "visionClientInitMs": 0,
+      "visionMs": 232.45216700000128,
+      "postprocessMs": 2.865332999999737,
+      "llmMs": null,
+      "totalMs": 235.66995899999893
+    },
+    "image": {
+      "inputBytes": 28560,
+      "inputMime": "image/jpeg",
+      "inputWidth": 300,
+      "inputHeight": 400,
+      "preprocessedBytes": 28560,
+      "preprocessedWidth": 300,
+      "preprocessedHeight": 400
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 600,
+      "fullTextPreview": "Saturated Fat Og\nTrans Fat Og\n9\nCholesterol Omg\nSodium 25mg\n0%\nTotal Carbohydrate Og\n1%\nDietary Fiber Og\n0%\nTotal Sugars Og\nIncludes Og Added Sugars 0%\nProtein 19g\nVitamin D Omeg\nCalcium mg\nIron Omg\n0%\n096)\n0%\n0%\n0%\nPotassium Omg\nThe Daily Value DM you how much\nles a day is used for general nution ac\nINGREDIENTS: COLLAGEN\nPEPTIDES (BOVINE), PREBIOTIC\nXYLO-OLIGOSACCHARIDES).\nPROBIOTIC BLEND (BACILLUS\nCOAGULANS, LACTOBACILLUS\nPLANTARUM, BIFIDOBACTERIUM\nLONGUM, BIFIDOBACTERIUM\nBREVE, PEDIOCOCCUS\nAC",
+      "tokenCount": 123,
+      "avgTokenConfidence": 0.8182964765928625,
+      "p10TokenConfidence": 0.49414196610450745,
+      "p50TokenConfidence": 0.8989907503128052,
+      "p90TokenConfidence": 0.9848763346672058,
+      "medianTokenHeight": 8
+    },
+    "heuristics": {
+      "tableLikely": true,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0
+    },
+    "completeness": {
+      "candidateAmountRows": 2,
+      "parsedIngredients": 2,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 2,
+        "parseCoverage": 1,
+        "confidenceScore": 0.8490328286588191,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 2,
+        "parseCoverage": 1,
+        "confidenceScore": 0.7989999999999999,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "3a0909a5-a243-41d4-89de-39e0b677eb98",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:20.735Z",
+    "updatedAt": "2026-02-12T21:23:20.735Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [
+        {
+          "name": "Cholesterol Omg",
+          "ingredientId": null,
+          "amount": 25,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": 0,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.7916317085425059
+        },
+        {
+          "name": "Includes Og Added",
+          "ingredientId": null,
+          "amount": 19,
+          "amountUnit": "g",
+          "amountUnitRaw": "g",
+          "amountUnitNormalized": "g",
+          "dvPercent": 0,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.9019204825162888
+        }
+      ],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 1,
+        "confidenceScore": 0.8490328286588191,
+        "issues": [
+          "missing_serving_size: Serving size not found"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "00d02f19-df14-4d41-a452-580f4e7205f4",
+  "imageHash": "3900576f-38080",
+  "flagVariant": "draft_first_async",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:20.499Z",
+    "draftReadyAt": "2026-02-12T21:23:20.734Z",
+    "tDecodeMs": 0.014250000000174623,
+    "tOcrMs": 232.45216700000128,
+    "tParseMs": 2.865332999999737,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 235
+  }
+}

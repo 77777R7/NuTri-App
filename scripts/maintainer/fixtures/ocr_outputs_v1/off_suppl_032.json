@@ -1,0 +1,230 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_032",
+    "generatedAt": "2026-02-12T21:23:21.375Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "644a2e6a95ab33f337c3a160827a5e772b62570fc5fa53598ea4c0ee177b5aad",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/405/648/949/5147/ingredients_en.26.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [
+      {
+        "name": "Beetroot S",
+        "amount": 1000,
+        "unit": "mg",
+        "dvPercent": 250,
+        "confidence": 0.6482816338539124,
+        "rawLine": "Beetroot S 1000mg 250 %"
+      }
+    ],
+    "parseCoverage": 1,
+    "confidenceScore": 0.7894844901561737,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.031041000000186614,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.08658399999876565,
+      "visionClientInitMs": 0,
+      "visionMs": 160.15141700000095,
+      "postprocessMs": 1.8296250000003056,
+      "llmMs": null,
+      "totalMs": 162.29629199999908
+    },
+    "image": {
+      "inputBytes": 15838,
+      "inputMime": "image/jpeg",
+      "inputWidth": 185,
+      "inputHeight": 400,
+      "preprocessedBytes": 15838,
+      "preprocessedWidth": 185,
+      "preprocessedHeight": 400
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 147,
+      "fullTextPreview": "tablets a\nday. Do not\ndents Acid CA\nAgent Sorbitol Na\nnc Sulphate, Se\nBeetroot S\n1000mg 250%\nInstructions\nEACH OF CHILDREN\nBest T\nnancy\ndoctor 1\nge",
+      "tokenCount": 31,
+      "avgTokenConfidence": 0.6267480369537107,
+      "p10TokenConfidence": 0.4230717122554779,
+      "p50TokenConfidence": 0.6366640329360962,
+      "p90TokenConfidence": 0.8219119310379028,
+      "medianTokenHeight": 6
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0
+    },
+    "completeness": {
+      "candidateAmountRows": 1,
+      "parsedIngredients": 1,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 1,
+        "parseCoverage": 1,
+        "confidenceScore": 0.7894844901561737,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 1,
+        "parseCoverage": 1,
+        "confidenceScore": 0.7289999999999999,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "header_not_found",
+            "message": "Medicinal ingredients section not detected"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "d9d5229e-b1fd-4f97-9e12-b75b67629563",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:21.373Z",
+    "updatedAt": "2026-02-12T21:23:21.373Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [
+        {
+          "name": "Beetroot S",
+          "ingredientId": null,
+          "amount": 1000,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": 250,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.6482816338539124
+        }
+      ],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 1,
+        "confidenceScore": 0.7894844901561737,
+        "issues": [
+          "missing_serving_size: Serving size not found"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "38fa6412-a4da-4c81-b6c6-a55c69204a64",
+  "imageHash": "3decdf6a-21120",
+  "flagVariant": "control",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:21.209Z",
+    "draftReadyAt": "2026-02-12T21:23:21.371Z",
+    "tDecodeMs": 0.031041000000186614,
+    "tOcrMs": 160.15141700000095,
+    "tParseMs": 1.8296250000003056,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 162
+  }
+}

@@ -1,0 +1,345 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_017",
+    "generatedAt": "2026-02-12T21:23:20.742Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "6084dafa86428a654f7f1647149a5b099b7eb3f1b5f7c841c1c247bc74943874",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/074/098/527/8482/nutrition_en.15.400.jpg"
+  },
+  "status": "ok",
+  "draft": {
+    "servingSize": "Servings Per Container 30",
+    "ingredients": [
+      {
+        "name": "Total Carbohydrate",
+        "amount": 1,
+        "unit": "g",
+        "dvPercent": 1,
+        "confidence": 0.6998806794484457,
+        "rawLine": "Total Carbohydrate < 1g < 1 %"
+      },
+      {
+        "name": "Dietary Fiber",
+        "amount": 1,
+        "unit": "g",
+        "dvPercent": 2,
+        "confidence": 0.6918560663859049,
+        "rawLine": "Dietary Fiber < 1g 2 %"
+      },
+      {
+        "name": "Total Sugars",
+        "amount": 0.5,
+        "unit": "g",
+        "dvPercent": null,
+        "confidence": 0.8095310479402542,
+        "rawLine": "Total Sugars < 0.5g"
+      },
+      {
+        "name": "Vitamin C ( as Ascorbic Acid )",
+        "amount": 60,
+        "unit": "mg",
+        "dvPercent": 67,
+        "confidence": 0.955963080837613,
+        "rawLine": "Vitamin C ( as Ascorbic Acid ) 60 mg 67 %"
+      },
+      {
+        "name": "Calcium ( as Dicalcium Phosphate )",
+        "amount": 110,
+        "unit": "mg",
+        "dvPercent": 8,
+        "confidence": 0.9111644592550067,
+        "rawLine": "Calcium ( as Dicalcium Phosphate ) 110 mg 8 %"
+      },
+      {
+        "name": "Cranberry ( Vaccinium macrocarpon )",
+        "amount": 500,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.9193157941102982,
+        "rawLine": "Cranberry ( Vaccinium macrocarpon ) 500 mg"
+      },
+      {
+        "name": "Probiotic Proprietary Blend",
+        "amount": 30,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.9536667466163635,
+        "rawLine": "Probiotic Proprietary Blend 30 mg"
+      }
+    ],
+    "parseCoverage": 0.875,
+    "confidenceScore": 0.9546304803397379,
+    "issues": []
+  },
+  "debug": {
+    "timing": {
+      "decodeMs": 0.0150420000009035,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.05945799999972223,
+      "visionClientInitMs": 0,
+      "visionMs": 218.68554200000108,
+      "postprocessMs": 3.3441250000014406,
+      "llmMs": null,
+      "totalMs": 222.69733300000007
+    },
+    "image": {
+      "inputBytes": 30893,
+      "inputMime": "image/jpeg",
+      "inputWidth": 210,
+      "inputHeight": 400,
+      "preprocessedBytes": 30893,
+      "preprocessedWidth": 210,
+      "preprocessedHeight": 400
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 1402,
+      "fullTextPreview": "Directions: As a cranberry supplement, adults take\ntwo (2) tablets daily with water or as directed by a\nhealthcare provider. Do not exceed recommended\ndosage. Individual results may vary.\nSupplement Facts\nServing Size 2 Tablets\nServings Per Container 30\nAmount Per Serving\nCalories\n% Daily Value\n5\nTotal Carbohydrate\nDietary Fiber\nTotal Sugars\n<1g\n<1%\n<1g\n2%\n<0.5g\nIncludes 0 g Added Sugars\n0%\nVitamin C (as Ascorbic Acid)\n60 mg\n67%\nCalcium (as Dicalcium Phosphate)\n110 mg\n8%\nCranberry (Vaccinium mac",
+      "tokenCount": 261,
+      "avgTokenConfidence": 0.8914773034866742,
+      "p10TokenConfidence": 0.6813837885856628,
+      "p50TokenConfidence": 0.9532078504562378,
+      "p90TokenConfidence": 0.9897368550300598,
+      "medianTokenHeight": 8
+    },
+    "heuristics": {
+      "tableLikely": true,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0
+    },
+    "completeness": {
+      "candidateAmountRows": 0,
+      "parsedIngredients": 7,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 7,
+        "parseCoverage": 0.875,
+        "confidenceScore": 0.9546304803397379,
+        "issues": []
+      },
+      "text": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.45,
+        "issues": [
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of lines have valid amount/unit"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "1eaaf571-18d7-4566-9cf2-0d534bf736f0",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:20.741Z",
+    "updatedAt": "2026-02-12T21:23:20.741Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": "Servings Per Container 30",
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [
+        {
+          "name": "Total Carbohydrate",
+          "ingredientId": null,
+          "amount": 1,
+          "amountUnit": "g",
+          "amountUnitRaw": "g",
+          "amountUnitNormalized": "g",
+          "dvPercent": 1,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.6998806794484457
+        },
+        {
+          "name": "Dietary Fiber",
+          "ingredientId": null,
+          "amount": 1,
+          "amountUnit": "g",
+          "amountUnitRaw": "g",
+          "amountUnitNormalized": "g",
+          "dvPercent": 2,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.6918560663859049
+        },
+        {
+          "name": "Total Sugars",
+          "ingredientId": null,
+          "amount": 0.5,
+          "amountUnit": "g",
+          "amountUnitRaw": "g",
+          "amountUnitNormalized": "g",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.8095310479402542
+        },
+        {
+          "name": "Vitamin C ( as Ascorbic Acid )",
+          "ingredientId": null,
+          "amount": 60,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": 67,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.955963080837613
+        },
+        {
+          "name": "Calcium ( as Dicalcium Phosphate )",
+          "ingredientId": null,
+          "amount": 110,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": 8,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.9111644592550067
+        },
+        {
+          "name": "Cranberry ( Vaccinium macrocarpon )",
+          "ingredientId": null,
+          "amount": 500,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.9193157941102982
+        },
+        {
+          "name": "Probiotic Proprietary Blend",
+          "ingredientId": null,
+          "amount": 30,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.9536667466163635
+        }
+      ],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 0.875,
+        "confidenceScore": 0.9546304803397379,
+        "issues": null
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "80367d5b-d276-4f57-9276-9772e4089b94",
+  "imageHash": "2f39654b-41192",
+  "flagVariant": "draft_first_async",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:20.517Z",
+    "draftReadyAt": "2026-02-12T21:23:20.740Z",
+    "tDecodeMs": 0.0150420000009035,
+    "tOcrMs": 218.68554200000108,
+    "tParseMs": 3.3441250000014406,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 223
+  }
+}

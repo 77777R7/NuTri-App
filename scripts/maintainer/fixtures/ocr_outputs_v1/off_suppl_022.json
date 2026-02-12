@@ -1,0 +1,215 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_022",
+    "generatedAt": "2026-02-12T21:23:20.895Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "bec1b88dc7d27f01d35885f4790de710cb0cfd6b6f8d729accffa1d19cdadcca",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/405/817/210/1410/ingredients_en.19.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [],
+    "parseCoverage": 0,
+    "confidenceScore": 0.3,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      },
+      {
+        "type": "low_coverage",
+        "message": "Only 0% of rows have valid amount/unit"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.017541999999593827,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.057708000000275206,
+      "visionClientInitMs": 0,
+      "visionMs": 139.89316599999984,
+      "postprocessMs": 1.3218340000003082,
+      "llmMs": null,
+      "totalMs": 141.4339999999993
+    },
+    "image": {
+      "inputBytes": 24785,
+      "inputMime": "image/jpeg",
+      "inputWidth": 400,
+      "inputHeight": 163,
+      "preprocessedBytes": 24785,
+      "preprocessedWidth": 400,
+      "preprocessedHeight": 163
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 432,
+      "fullTextPreview": "Nahrungsergänzungsmittel mit Magnesium\nZutaten: Magnesiumcarbonat, Magnesiumoxid, Füllstoff Sorbit, Füllstoff\nMikrokristalline Cellulose, Trennmittel Siliciumdioxid und Magnesiumsalze\nder Speisefettsäuren. Gluten- und laktosefrei. Vegan.\nVerzehrempfehlung: 1 Tablette täglich. Bei erhöhtem Magnesium\nbedarf 2 Tabletten über den Tag verteilt mit reichlich Flüssigkeit einnehmen.\nVerzehrmenge darf nicht überschritten werden. Nahrungs",
+      "tokenCount": 57,
+      "avgTokenConfidence": 0.9297550080115335,
+      "p10TokenConfidence": 0.7620179057121277,
+      "p50TokenConfidence": 0.9781097769737244,
+      "p90TokenConfidence": 0.9892979860305786,
+      "medianTokenHeight": 16
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0.4988025872303263
+    },
+    "completeness": {
+      "candidateAmountRows": 0,
+      "parsedIngredients": 0,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of rows have valid amount/unit"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of lines have valid amount/unit"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "cd0431e2-5a31-445a-9c35-2d6142944487",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:20.894Z",
+    "updatedAt": "2026-02-12T21:23:20.894Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          "missing_serving_size: Serving size not found",
+          "low_coverage: Only 0% of rows have valid amount/unit"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "6887a5c0-40b0-4cee-9fc1-0e124e417c20",
+  "imageHash": "a631b2d3-33048",
+  "flagVariant": "draft_first_async",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:20.752Z",
+    "draftReadyAt": "2026-02-12T21:23:20.893Z",
+    "tDecodeMs": 0.017541999999593827,
+    "tOcrMs": 139.89316599999984,
+    "tParseMs": 1.3218340000003082,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 141
+  }
+}

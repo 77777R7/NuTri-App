@@ -1,0 +1,215 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_001",
+    "generatedAt": "2026-02-12T21:23:20.063Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "f4c68aea6bbc543ac2cfe2563282506f4fb7f4caaa38dff752490f769c6027cc",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/872/330/071/0784/ingredients_en.50.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [],
+    "parseCoverage": 0,
+    "confidenceScore": 0.3,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      },
+      {
+        "type": "low_coverage",
+        "message": "Only 0% of rows have valid amount/unit"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.03312499999992724,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.6745840000003227,
+      "visionClientInitMs": 38.10066700000061,
+      "visionMs": 228.16308299999946,
+      "postprocessMs": 6.805375000001732,
+      "llmMs": null,
+      "totalMs": 274.43316700000105
+    },
+    "image": {
+      "inputBytes": 22055,
+      "inputMime": "image/jpeg",
+      "inputWidth": 400,
+      "inputHeight": 206,
+      "preprocessedBytes": 22055,
+      "preprocessedWidth": 400,
+      "preprocessedHeight": 206
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 442,
+      "fullTextPreview": "ALIMENTAIRES NE REMPLACENT\nVARIEE INGREDIENTS OXYDE DE MAGNESIUM, AGENTS DE\nCHARGE (CELLULOSE MICROCRYSTALLINE, CARBONATE\nDE CALCIUM, CARBOXYMETHYLCELLULOSE DE SODIUM\nRETICULEE), HUILE DE COLZA TOTALEMENT HYDROGÉNÉE\n(BRASSICA RAPAL), STABILISANT (SELS DE MAGNESIUM\nDACIDES GRAS), AGENTS D'ENROBAGE (HYDROXY-\nPROPYLMETHYLCELLULOSE, GLYCEROL, CIRE DE\nCARNAUBA), ANTIAGGLOMÉRANT (TALC). A CONSOMMER\nDE PREFERENCE AVANT FIN/LOT NO VOIRALEXTÉRIEUR",
+      "tokenCount": 73,
+      "avgTokenConfidence": 0.9123058617115021,
+      "p10TokenConfidence": 0.7636432647705078,
+      "p50TokenConfidence": 0.9567887783050537,
+      "p90TokenConfidence": 0.990010142326355,
+      "medianTokenHeight": 18
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0.5236820985046886
+    },
+    "completeness": {
+      "candidateAmountRows": 0,
+      "parsedIngredients": 0,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of rows have valid amount/unit"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of lines have valid amount/unit"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "55d80aa2-34bb-4178-8633-b569821f2ebb",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:20.059Z",
+    "updatedAt": "2026-02-12T21:23:20.059Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          "missing_serving_size: Serving size not found",
+          "low_coverage: Only 0% of rows have valid amount/unit"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "8e6c8093-45d0-4b97-bd59-2ece1cfebb8a",
+  "imageHash": "cddc5663-29408",
+  "flagVariant": "control",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:19.766Z",
+    "draftReadyAt": "2026-02-12T21:23:20.041Z",
+    "tDecodeMs": 0.03312499999992724,
+    "tOcrMs": 228.16308299999946,
+    "tParseMs": 6.805375000001732,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 275
+  }
+}

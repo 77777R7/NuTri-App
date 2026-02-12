@@ -1,0 +1,213 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_006",
+    "generatedAt": "2026-02-12T21:23:20.235Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "a888c9bf4402db446b5856ca904a893affe5fb589f1eb4a54aa590ba03d3c1ec",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/872/330/071/0791/nutrition_xx.17.400.jpg"
+  },
+  "status": "ok",
+  "draft": {
+    "servingSize": "per tablet",
+    "ingredients": [
+      {
+        "name": "NOTYNAI TABLETU : / VALORES NUTRICIONALES POR COMPRIMIDO",
+        "amount": 1000,
+        "unit": "mg",
+        "dvPercent": 25,
+        "confidence": 0.8644111995343808,
+        "rawLine": "NOTYNAI TABLETU : / VALORES NUTRICIONALES POR COMPRIMIDO VITAMINE C / VITAMINE C / VITAMIN C / WITAMINA C / VITAMIN C / 1000 MG 25 %"
+      }
+    ],
+    "parseCoverage": 1,
+    "confidenceScore": 0.9593233598603141,
+    "issues": []
+  },
+  "debug": {
+    "timing": {
+      "decodeMs": 0.013209000000642845,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.08450000000084401,
+      "visionClientInitMs": 0,
+      "visionMs": 152.16741600000023,
+      "postprocessMs": 2.9088750000009895,
+      "llmMs": null,
+      "totalMs": 155.34137499999997
+    },
+    "image": {
+      "inputBytes": 15377,
+      "inputMime": "image/jpeg",
+      "inputWidth": 400,
+      "inputHeight": 111,
+      "preprocessedBytes": 15377,
+      "preprocessedWidth": 400,
+      "preprocessedHeight": 111
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 503,
+      "fullTextPreview": "VITAMIN C VOEDINGSWAARDEN PER TABLET/APPORT PAR COMPRIME\nRERTE PRO TABLETTE/WARTOŚCI ODŻYWCZE W TABLETCE/NUTRIČNÍ\nHODNOTY NA TABLETU/VALORI NUTRIZIONALI PER COMPRESSA/VÝŽIVOVÉ HOD-\nNOTYNAI TABLETU:/VALORES NUTRICIONALES POR COMPRIMIDO\nVITAMINE C/VITAMINE C/VITAMIN C/WITAMINA C/VITAMIN C/\nVITAMINA CIVITAMIN CIVITAMINAC\n1000 MG 25%\nREFERENTIE INNAMES/APPORTS DE RÉFÉRENCE/REFERENZMENGEN/REFERENCYJNE WARTO\nSPOZYCJA REFERENČNÍ HODNOTY PRUMU/CONSUMI DI RIFERIMENTO/REFERENČNÉ PRUMY!\nINGESTAS DE REFEREN",
+      "tokenCount": 86,
+      "avgTokenConfidence": 0.8680373638175255,
+      "p10TokenConfidence": 0.6231728792190552,
+      "p50TokenConfidence": 0.9169764518737793,
+      "p90TokenConfidence": 0.9855711460113525,
+      "medianTokenHeight": 10
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0.5005545014216161
+    },
+    "completeness": {
+      "candidateAmountRows": 1,
+      "parsedIngredients": 1,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 1,
+        "parseCoverage": 1,
+        "confidenceScore": 0.9593233598603141,
+        "issues": []
+      },
+      "text": {
+        "ingredientsCount": 1,
+        "parseCoverage": 1,
+        "confidenceScore": 0.8340000000000001,
+        "issues": [
+          {
+            "type": "header_not_found",
+            "message": "Medicinal ingredients section not detected"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "0260fcb9-12f2-43a4-8779-1f0a1cb267a5",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:20.234Z",
+    "updatedAt": "2026-02-12T21:23:20.234Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": "per tablet",
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [
+        {
+          "name": "NOTYNAI TABLETU : / VALORES NUTRICIONALES POR COMPRIMIDO",
+          "ingredientId": null,
+          "amount": 1000,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": 25,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.8644111995343808
+        }
+      ],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 1,
+        "confidenceScore": 0.9593233598603141,
+        "issues": null
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "7687201d-4a40-405b-96d4-ea0535114b6f",
+  "imageHash": "823ae3e5-20504",
+  "flagVariant": "control",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:20.078Z",
+    "draftReadyAt": "2026-02-12T21:23:20.234Z",
+    "tDecodeMs": 0.013209000000642845,
+    "tOcrMs": 152.16741600000023,
+    "tParseMs": 2.9088750000009895,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 156
+  }
+}

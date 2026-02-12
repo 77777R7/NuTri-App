@@ -1,0 +1,213 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_051",
+    "generatedAt": "2026-02-12T21:23:22.131Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "8e35855b9effe9fa659c8178c616341ff2ee1802d6ce44172a11aa00b8ab08cf",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/504/509/857/8852/ingredients_en.24.400.jpg"
+  },
+  "status": "ok",
+  "draft": {
+    "servingSize": "per tablet",
+    "ingredients": [
+      {
+        "name": "Per Tablet",
+        "amount": 15,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.8150756508111954,
+        "rawLine": "Per Tablet 15 mg"
+      }
+    ],
+    "parseCoverage": 1,
+    "confidenceScore": 0.9445226952433585,
+    "issues": []
+  },
+  "debug": {
+    "timing": {
+      "decodeMs": 0.01450000000113505,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.06845800000155577,
+      "visionClientInitMs": 0,
+      "visionMs": 155.8520840000001,
+      "postprocessMs": 0.8998339999998279,
+      "llmMs": null,
+      "totalMs": 156.93987500000003
+    },
+    "image": {
+      "inputBytes": 15176,
+      "inputMime": "image/jpeg",
+      "inputWidth": 185,
+      "inputHeight": 400,
+      "preprocessedBytes": 15176,
+      "preprocessedWidth": 185,
+      "preprocessedHeight": 400
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 278,
+      "fullTextPreview": "Per Tablet\n15 mg\nNutrient Reference Value\ngradients: Ascorbic Acid, Sorbito\ngymethylcellulose, Zinc Oxide\nSe de Magnesium Stearate, Anticidant ac\nArtificial Colours, Flavours and Preservat\nBut Company PLC\nEngland NG2 3AA\nin Ireland\nTablet S\nLID ON\nWidely Recycled\n5045098 578852",
+      "tokenCount": 46,
+      "avgTokenConfidence": 0.7230533167071964,
+      "p10TokenConfidence": 0.45463839173316956,
+      "p50TokenConfidence": 0.7284975647926331,
+      "p90TokenConfidence": 0.9061105251312256,
+      "medianTokenHeight": 9
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0
+    },
+    "completeness": {
+      "candidateAmountRows": 1,
+      "parsedIngredients": 1,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 1,
+        "parseCoverage": 1,
+        "confidenceScore": 0.9445226952433585,
+        "issues": []
+      },
+      "text": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.45,
+        "issues": [
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of lines have valid amount/unit"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "b74a6fd9-f9a9-4a2c-8bad-aa0443eadd04",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:22.130Z",
+    "updatedAt": "2026-02-12T21:23:22.130Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": "per tablet",
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [
+        {
+          "name": "Per Tablet",
+          "ingredientId": null,
+          "amount": 15,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.8150756508111954
+        }
+      ],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 1,
+        "confidenceScore": 0.9445226952433585,
+        "issues": null
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "3bf7d574-b6cb-4789-9e10-b01b9b15e1d8",
+  "imageHash": "12870e02-20236",
+  "flagVariant": "draft_first_async",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:21.972Z",
+    "draftReadyAt": "2026-02-12T21:23:22.129Z",
+    "tDecodeMs": 0.01450000000113505,
+    "tOcrMs": 155.8520840000001,
+    "tParseMs": 0.8998339999998279,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 157
+  }
+}

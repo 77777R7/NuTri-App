@@ -1,0 +1,202 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_057",
+    "generatedAt": "2026-02-12T21:23:22.369Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "800683b89a9e3b4803a8cd3a8f8d7015e9d311650168b854c333103e2de503dc",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/004/810/720/5904/ingredients_en.7.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": "Serving Size One Tablet F",
+    "ingredients": [],
+    "parseCoverage": 0,
+    "confidenceScore": 0.45,
+    "issues": [
+      {
+        "type": "low_coverage",
+        "message": "Only 0% of rows have valid amount/unit"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.01916700000037963,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.08887499999946158,
+      "visionClientInitMs": 0,
+      "visionMs": 173.25291599999946,
+      "postprocessMs": 1.4649170000011509,
+      "llmMs": null,
+      "totalMs": 175.3209999999999
+    },
+    "image": {
+      "inputBytes": 25882,
+      "inputMime": "image/jpeg",
+      "inputWidth": 400,
+      "inputHeight": 400,
+      "preprocessedBytes": 25882,
+      "preprocessedWidth": 400,
+      "preprocessedHeight": 400
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 554,
+      "fullTextPreview": "CODE 253923\nDIRECTIONS: As a dietary supplement, take one se\nSupplement F\nServing Size One Tablet\nAmount Per Serving\nZinc (as Zinc Gluconate)\nM\nOTHER INGREDIENTS: Microcrystalline Cellulose, Da\nCroscarmellose Sodium, Silicon Dioxide, Stearic Acid\nMagnesium Stearate Vegetable Source\nAll mineral amounts shown are elemental\nPotency verified by GNC procedure #4000\nConforms to USP <2091> for weight\nMeets USP <2040> disintegration\nNo Sugar, No Starch, No Artificial Colors, No Artifical\nNo Preservative",
+      "tokenCount": 102,
+      "avgTokenConfidence": 0.914801346320732,
+      "p10TokenConfidence": 0.7388157844543457,
+      "p50TokenConfidence": 0.9712600708007812,
+      "p90TokenConfidence": 0.9913010001182556,
+      "medianTokenHeight": 14
+    },
+    "heuristics": {
+      "tableLikely": true,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0
+    },
+    "completeness": {
+      "candidateAmountRows": 0,
+      "parsedIngredients": 0,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.45,
+        "issues": [
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of rows have valid amount/unit"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.45,
+        "issues": [
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of lines have valid amount/unit"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "b015d155-d2dc-4e98-8879-4d595964232a",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:22.368Z",
+    "updatedAt": "2026-02-12T21:23:22.368Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": "Serving Size One Tablet F",
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 0,
+        "confidenceScore": 0.45,
+        "issues": [
+          "low_coverage: Only 0% of rows have valid amount/unit"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "fc1ea984-d39d-40e5-b207-56c04def03a3",
+  "imageHash": "eb7d1a2e-34512",
+  "flagVariant": "draft_first_async",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:22.191Z",
+    "draftReadyAt": "2026-02-12T21:23:22.366Z",
+    "tDecodeMs": 0.01916700000037963,
+    "tOcrMs": 173.25291599999946,
+    "tParseMs": 1.4649170000011509,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 175
+  }
+}

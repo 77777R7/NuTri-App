@@ -1,0 +1,273 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_052",
+    "generatedAt": "2026-02-12T21:23:22.178Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "7910cca2f78a2f5be7ed69c0f3e02a7b9c753c36abdf67f193ee94b22f6a2f10",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/560/082/620/2944/ingredients_fr.11.400.jpg"
+  },
+  "status": "ok",
+  "draft": {
+    "servingSize": "Serving size: 2 Capsules",
+    "ingredients": [
+      {
+        "name": "Nutrient Reference Value",
+        "amount": 7.3,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.68,
+        "rawLine": "Nutrient Reference Value 7.3 mg $27%"
+      },
+      {
+        "name": "80%",
+        "amount": 20,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.45000000000000007,
+        "rawLine": "80% 20 mg"
+      },
+      {
+        "name": "100%",
+        "amount": 4,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.45000000000000007,
+        "rawLine": "100% 4.0 mg"
+      }
+    ],
+    "parseCoverage": 1,
+    "confidenceScore": 0.788,
+    "issues": [
+      {
+        "type": "header_not_found",
+        "message": "Medicinal ingredients section not detected"
+      }
+    ]
+  },
+  "debug": {
+    "timing": {
+      "decodeMs": 0.02916700000059791,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.07841699999880802,
+      "visionClientInitMs": 0,
+      "visionMs": 179.95974999999999,
+      "postprocessMs": 2.081832999998369,
+      "llmMs": null,
+      "totalMs": 182.39099999999962
+    },
+    "image": {
+      "inputBytes": 22697,
+      "inputMime": "image/jpeg",
+      "inputWidth": 400,
+      "inputHeight": 278,
+      "preprocessedBytes": 22697,
+      "preprocessedWidth": 400,
+      "preprocessedHeight": 278
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 503,
+      "fullTextPreview": "EN-FOOD SUPPLEMENT. ZMB6. 120 CAPSULES 57\nNUTRITIONAL INFORMATION\nServing size: 2 Capsules\nVitamin 86\nServings per container\nPer Serving\nMagnesium\nZinc\nVitamin D\nPantothenic Acid\nNutrient Reference Value\n7.3 mg $27%\n300\nmg\n80%\n20 mg\n200%\n5.0 pg\n100%\n4.0 mg\n67%\nINGREDIENTS: Magnesium Oxide, Gelatin, Thickener\ncrocrystalline Cellulose), Zinc L-Aspartate, Zinc Picolina\nAnti Caking Agent (Magnesium Stearate), Calcium D-Pantoth\nenate, Cholecalciferol. RECOMMENDED DAILY PORTION\nTake 2 capsules daily p",
+      "tokenCount": 97,
+      "avgTokenConfidence": 0.8884990242953154,
+      "p10TokenConfidence": 0.6691632270812988,
+      "p50TokenConfidence": 0.9477866888046265,
+      "p90TokenConfidence": 0.9903744459152222,
+      "medianTokenHeight": 11
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "text"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0
+    },
+    "completeness": {
+      "candidateAmountRows": 3,
+      "parsedIngredients": 3,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 2,
+        "parseCoverage": 0.6666666666666666,
+        "confidenceScore": 0.7372457435478766,
+        "issues": [
+          {
+            "type": "low_coverage",
+            "message": "Only 67% of rows have valid amount/unit"
+          },
+          {
+            "type": "header_not_found",
+            "message": "Table header not detected, column mapping may be inaccurate"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 3,
+        "parseCoverage": 1,
+        "confidenceScore": 0.788,
+        "issues": [
+          {
+            "type": "header_not_found",
+            "message": "Medicinal ingredients section not detected"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "44a0a427-bb53-4c5d-92c9-5e0b8d9dfdc7",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:22.177Z",
+    "updatedAt": "2026-02-12T21:23:22.177Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": "Serving size: 2 Capsules",
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [
+        {
+          "name": "Nutrient Reference Value",
+          "ingredientId": null,
+          "amount": 7.3,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.68
+        },
+        {
+          "name": "80%",
+          "ingredientId": null,
+          "amount": 20,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.45000000000000007
+        },
+        {
+          "name": "100%",
+          "ingredientId": null,
+          "amount": 4,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.45000000000000007
+        }
+      ],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 1,
+        "confidenceScore": 0.788,
+        "issues": [
+          "header_not_found: Medicinal ingredients section not detected"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "00294177-a890-43de-af61-fea855859f73",
+  "imageHash": "07c553de-30264",
+  "flagVariant": "draft_first_async",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:21.993Z",
+    "draftReadyAt": "2026-02-12T21:23:22.176Z",
+    "tDecodeMs": 0.02916700000059791,
+    "tOcrMs": 179.95974999999999,
+    "tParseMs": 2.081832999998369,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 183
+  }
+}

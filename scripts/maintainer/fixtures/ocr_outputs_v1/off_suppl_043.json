@@ -1,0 +1,215 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_043",
+    "generatedAt": "2026-02-12T21:23:21.820Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "2839fd9c38eba48066b3b6fe09c4e234258c4e95f90dc749a5ba1cb37ee925e0",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/376/019/653/0671/ingredients_fr.7.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [],
+    "parseCoverage": 0,
+    "confidenceScore": 0.3,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      },
+      {
+        "type": "low_coverage",
+        "message": "Only 0% of rows have valid amount/unit"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.02495900000030815,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.08175000000119326,
+      "visionClientInitMs": 0,
+      "visionMs": 144.63004100000035,
+      "postprocessMs": 0.8862090000002354,
+      "llmMs": null,
+      "totalMs": 145.75345800000105
+    },
+    "image": {
+      "inputBytes": 12357,
+      "inputMime": "image/jpeg",
+      "inputWidth": 400,
+      "inputHeight": 152,
+      "preprocessedBytes": 12357,
+      "preprocessedWidth": 400,
+      "preprocessedHeight": 152
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 231,
+      "fullTextPreview": "Complément alimentaire\nIngrédients : agent de charge: cellulose\nmicrocristalline, bisglycinate de Zinc, vitamine\nB5 (D-pantothenate de calcium), anti-agglomé\nrant: stearate de magnésium végétal. Gélule\nhydroxypropylméthylcellulose.",
+      "tokenCount": 38,
+      "avgTokenConfidence": 0.9430836643043318,
+      "p10TokenConfidence": 0.8657898902893066,
+      "p50TokenConfidence": 0.9738733172416687,
+      "p90TokenConfidence": 0.9901072978973389,
+      "medianTokenHeight": 21
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0
+    },
+    "completeness": {
+      "candidateAmountRows": 0,
+      "parsedIngredients": 0,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of rows have valid amount/unit"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of lines have valid amount/unit"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "c665e9c3-d252-44ea-8cd8-80bc4c2bfdc6",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:21.818Z",
+    "updatedAt": "2026-02-12T21:23:21.818Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          "missing_serving_size: Serving size not found",
+          "low_coverage: Only 0% of rows have valid amount/unit"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "78c71d54-7608-403e-9b65-5d3b9d5fd65e",
+  "imageHash": "57ee46ff-16476",
+  "flagVariant": "draft_first_async",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:21.672Z",
+    "draftReadyAt": "2026-02-12T21:23:21.818Z",
+    "tDecodeMs": 0.02495900000030815,
+    "tOcrMs": 144.63004100000035,
+    "tParseMs": 0.8862090000002354,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 146
+  }
+}

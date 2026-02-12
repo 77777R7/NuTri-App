@@ -1,0 +1,215 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_023",
+    "generatedAt": "2026-02-12T21:23:21.021Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "5a5eea279a3e4055ac33c831888570e610bcb2c606e9aaa14e75b64ac415429d",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/431/626/844/8833/ingredients_de.48.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [],
+    "parseCoverage": 0,
+    "confidenceScore": 0.3,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      },
+      {
+        "type": "low_coverage",
+        "message": "Only 0% of rows have valid amount/unit"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.01920799999970768,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.09041700000125275,
+      "visionClientInitMs": 0,
+      "visionMs": 154.4093329999996,
+      "postprocessMs": 0.6797920000008162,
+      "llmMs": null,
+      "totalMs": 155.2894580000011
+    },
+    "image": {
+      "inputBytes": 33198,
+      "inputMime": "image/jpeg",
+      "inputWidth": 400,
+      "inputHeight": 292,
+      "preprocessedBytes": 33198,
+      "preprocessedWidth": 400,
+      "preprocessedHeight": 292
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 268,
+      "fullTextPreview": "Nahrungsergänzungsmittel mit Süßungsm\nMit Magnesiumn und Vitaminen\nMagnesium trägt zu einer normalen Funk\nNervensystems und zu einer normalen Mus\nB12 tragen zu einem normalen Energiestof\nbel. Riboflavin (Vitamin B2), Vitamin B6\nund zur Verringerung von Müdigkeit und E",
+      "tokenCount": 42,
+      "avgTokenConfidence": 0.8993853131930033,
+      "p10TokenConfidence": 0.6442175507545471,
+      "p50TokenConfidence": 0.9725680947303772,
+      "p90TokenConfidence": 0.9905951023101807,
+      "medianTokenHeight": 32
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0.5755469755469755
+    },
+    "completeness": {
+      "candidateAmountRows": 0,
+      "parsedIngredients": 0,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of rows have valid amount/unit"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of lines have valid amount/unit"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "42490bf3-f75c-46ff-92e8-79bad9b68db4",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:21.019Z",
+    "updatedAt": "2026-02-12T21:23:21.019Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          "missing_serving_size: Serving size not found",
+          "low_coverage: Only 0% of rows have valid amount/unit"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "8b8284b8-08c9-426e-8e75-f8eb04644837",
+  "imageHash": "10c712a6-44264",
+  "flagVariant": "draft_first_async",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:20.864Z",
+    "draftReadyAt": "2026-02-12T21:23:21.019Z",
+    "tDecodeMs": 0.01920799999970768,
+    "tOcrMs": 154.4093329999996,
+    "tParseMs": 0.6797920000008162,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 155
+  }
+}
