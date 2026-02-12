@@ -1,0 +1,296 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_060",
+    "generatedAt": "2026-02-12T21:23:22.495Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "153f903d05d37003fa7822fa601c89a4b431e84cfaa09f41190a6b5808b7c84c",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/376/015/521/2426/ingredients_fr.6.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [
+      {
+        "name": "COMPOSITION / JOUR",
+        "amount": 1,
+        "unit": "g",
+        "dvPercent": null,
+        "confidence": 0.9131138750485012,
+        "rawLine": "COMPOSITION / JOUR ( 1 gélule )"
+      },
+      {
+        "name": "Zinc",
+        "amount": 15,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.9569114446640015,
+        "rawLine": "Zinc 15 mg"
+      },
+      {
+        "name": "D'UTILISATION",
+        "amount": 1,
+        "unit": "g",
+        "dvPercent": null,
+        "confidence": 0.9309777518113455,
+        "rawLine": "D'UTILISATION 1 gélule par jour ..."
+      }
+    ],
+    "parseCoverage": 1,
+    "confidenceScore": 0.7351003071523847,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      },
+      {
+        "type": "unit_boundary_suspect",
+        "message": "Unit may be part of a word (e.g. gelule) for COMPOSITION / JOUR"
+      },
+      {
+        "type": "unit_boundary_suspect",
+        "message": "Unit may be part of a word (e.g. gelule) for D'UTILISATION"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.039584000000104425,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.15154199999960838,
+      "visionClientInitMs": 0,
+      "visionMs": 133.10816700000032,
+      "postprocessMs": 2.103957999999693,
+      "llmMs": null,
+      "totalMs": 135.7704590000012
+    },
+    "image": {
+      "inputBytes": 18874,
+      "inputMime": "image/jpeg",
+      "inputWidth": 227,
+      "inputHeight": 400,
+      "preprocessedBytes": 18874,
+      "preprocessedWidth": 227,
+      "preprocessedHeight": 400
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 364,
+      "fullTextPreview": "COMPOSITION/JOUR\n(1 gélule)\nZinc\nIngrédients\n15 mg\n(150% AR')\nGluconate de\nzinc, agents de charge :\nlactose (lait) - amidon de\nblé (gluten). anti-agglomé-\nrants\nsilice [nano] - stéa-\nrate de magnésium. Enve-\nloppe d'origine végétale :\nhydroxypropylméthycellu-\nlose.\nAR: Apports de référence\nCONSEILS\nD'UTILISATION\n1 gélule par jour...\nle matin avec un\nverre d'eau.",
+      "tokenCount": 78,
+      "avgTokenConfidence": 0.9248023334986124,
+      "p10TokenConfidence": 0.8020346760749817,
+      "p50TokenConfidence": 0.97307288646698,
+      "p90TokenConfidence": 0.9900308847427368,
+      "medianTokenHeight": 12
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0
+    },
+    "completeness": {
+      "candidateAmountRows": 2,
+      "parsedIngredients": 3,
+      "completenessRatio": 1.5,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 3,
+        "parseCoverage": 1,
+        "confidenceScore": 0.7351003071523847,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "unit_boundary_suspect",
+            "message": "Unit may be part of a word (e.g. gelule) for COMPOSITION / JOUR"
+          },
+          {
+            "type": "unit_boundary_suspect",
+            "message": "Unit may be part of a word (e.g. gelule) for D'UTILISATION"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 2,
+        "parseCoverage": 1,
+        "confidenceScore": 0.5815,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "header_not_found",
+            "message": "Medicinal ingredients section not detected"
+          },
+          {
+            "type": "unit_boundary_suspect",
+            "message": "Unit may be part of a word (e.g. gelule) for COMPOSITION/JOUR ("
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "040bab90-c6a0-4a2a-91c0-fd5b7c6bef88",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:22.493Z",
+    "updatedAt": "2026-02-12T21:23:22.493Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [
+        {
+          "name": "COMPOSITION / JOUR",
+          "ingredientId": null,
+          "amount": 1,
+          "amountUnit": "g",
+          "amountUnitRaw": "g",
+          "amountUnitNormalized": "g",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.9131138750485012
+        },
+        {
+          "name": "Zinc",
+          "ingredientId": null,
+          "amount": 15,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.9569114446640015
+        },
+        {
+          "name": "D'UTILISATION",
+          "ingredientId": null,
+          "amount": 1,
+          "amountUnit": "g",
+          "amountUnitRaw": "g",
+          "amountUnitNormalized": "g",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.9309777518113455
+        }
+      ],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 1,
+        "confidenceScore": 0.7351003071523847,
+        "issues": [
+          "missing_serving_size: Serving size not found",
+          "unit_boundary_suspect: Unit may be part of a word (e.g. gelule) for COMPOSITION / JOUR",
+          "unit_boundary_suspect: Unit may be part of a word (e.g. gelule) for D'UTILISATION"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "1f618718-fbc3-44db-8173-3fe690332f8e",
+  "imageHash": "da77df9f-25168",
+  "flagVariant": "control",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:22.356Z",
+    "draftReadyAt": "2026-02-12T21:23:22.492Z",
+    "tDecodeMs": 0.039584000000104425,
+    "tOcrMs": 133.10816700000032,
+    "tParseMs": 2.103957999999693,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 136
+  }
+}

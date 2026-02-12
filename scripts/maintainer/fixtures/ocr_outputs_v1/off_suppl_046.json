@@ -1,0 +1,215 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_046",
+    "generatedAt": "2026-02-12T21:23:21.962Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "2bd1801f244f71355303c2174757f26407ca82829467548745e3264a85a22fb0",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/003/160/401/8931/ingredients_en.8.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [],
+    "parseCoverage": 0,
+    "confidenceScore": 0.3,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      },
+      {
+        "type": "low_coverage",
+        "message": "Only 0% of rows have valid amount/unit"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.025708000001031905,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.14424999999937427,
+      "visionClientInitMs": 0,
+      "visionMs": 186.16854199999943,
+      "postprocessMs": 1.4919579999987036,
+      "llmMs": null,
+      "totalMs": 188.0433749999993
+    },
+    "image": {
+      "inputBytes": 26786,
+      "inputMime": "image/jpeg",
+      "inputWidth": 400,
+      "inputHeight": 300,
+      "preprocessedBytes": 26786,
+      "preprocessedWidth": 400,
+      "preprocessedHeight": 300
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 457,
+      "fullTextPreview": "LDY\ndisease\nut your\nAdequate calcium and\nvitamin D throughout life, as\npart of a well-balanced diet,\nmay reduce the risk of\nosteoporosis.\nNo Synthetic Dyes-Color\nDerived from Natural Source\nNo Artificial Flavors\nGluten Free\nOTHER INGREDIENTS:\nCellulose Gel, Maltodextrin\nCroscarmellose Sodium\nVale Hypromellose, Silicon Dioxide\nColor Added, Magnesium\n2 Stearate, Polyethylene Glyc\n25 Triethyl Citrate, Polysorbate 80\nSodium Citrate, Gelatin\n2434997\nJUN 2024",
+      "tokenCount": 78,
+      "avgTokenConfidence": 0.8587537717360717,
+      "p10TokenConfidence": 0.612396776676178,
+      "p50TokenConfidence": 0.9149534702301025,
+      "p90TokenConfidence": 0.9870477318763733,
+      "medianTokenHeight": 17
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0
+    },
+    "completeness": {
+      "candidateAmountRows": 0,
+      "parsedIngredients": 0,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of rows have valid amount/unit"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of lines have valid amount/unit"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "0f6dcde9-c47e-4030-8055-75b639a0e993",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:21.961Z",
+    "updatedAt": "2026-02-12T21:23:21.961Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          "missing_serving_size: Serving size not found",
+          "low_coverage: Only 0% of rows have valid amount/unit"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "89a243c4-73f6-4ef8-a23f-0b638b4d2386",
+  "imageHash": "1e6dfe7b-35716",
+  "flagVariant": "draft_first_async",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:21.772Z",
+    "draftReadyAt": "2026-02-12T21:23:21.960Z",
+    "tDecodeMs": 0.025708000001031905,
+    "tOcrMs": 186.16854199999943,
+    "tParseMs": 1.4919579999987036,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 188
+  }
+}

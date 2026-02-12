@@ -1,0 +1,296 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_018",
+    "generatedAt": "2026-02-12T21:23:20.750Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "5134006d4df7ac6305dc52b72e7fedcb41f3ef745fb03184289266da3b2ade07",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/405/817/230/9250/ingredients_en.17.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [
+      {
+        "name": "6064 <",
+        "amount": 0.5,
+        "unit": "g",
+        "dvPercent": null,
+        "confidence": 0.5,
+        "rawLine": "6064 <0.5g"
+      },
+      {
+        "name": "pro",
+        "amount": 149,
+        "unit": "g",
+        "dvPercent": null,
+        "confidence": 0.63,
+        "rawLine": "pro 14,9 g"
+      },
+      {
+        "name": "2 Tabletten % NRV Magnesium",
+        "amount": 1875,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.68,
+        "rawLine": "2 Tabletten % NRV* Magnesium 187,5 mg 50 375 mg"
+      }
+    ],
+    "parseCoverage": 0.6,
+    "confidenceScore": 0.5309999999999999,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      },
+      {
+        "type": "low_coverage",
+        "message": "Only 60% of lines have valid amount/unit"
+      },
+      {
+        "type": "header_not_found",
+        "message": "Medicinal ingredients section not detected"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.02770799999962037,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.10287500000049477,
+      "visionClientInitMs": 0,
+      "visionMs": 164.05416700000023,
+      "postprocessMs": 1.488666999999623,
+      "llmMs": null,
+      "totalMs": 165.8255420000005
+    },
+    "image": {
+      "inputBytes": 26413,
+      "inputMime": "image/jpeg",
+      "inputWidth": 300,
+      "inputHeight": 400,
+      "preprocessedBytes": 26413,
+      "preprocessedWidth": 300,
+      "preprocessedHeight": 400
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 422,
+      "fullTextPreview": "9505\nEiweiß\nahren. Salz\nOllstoff\n2-\nZusammen- pro\nund setzung:\nn.\ntät\nland\n86 33\n6064\n<0.5g\n14,9 g\npro\n20.5g\n0,63 g\n100\nTablette % NRV\n2 Tabletten % NRV*\nMagnesium 187,5 mg 50 375 mg\nNährstoffbezugswerte (NRV) für die tägliche Zufuhr\ngemäß Lebensmittelinformationsverordnung\ndm-drogerie markt GmbH + Co. KG Vertrieb in Österreich:\nAm dm-Platz 1\nDE-76227 Karlsruhe\nwww.dm.de/mivolis\ndm drogerie markt\nAT-5071 Wals\nwww.dm.at",
+      "tokenCount": 82,
+      "avgTokenConfidence": 0.9108127508221603,
+      "p10TokenConfidence": 0.7068657279014587,
+      "p50TokenConfidence": 0.965999186038971,
+      "p90TokenConfidence": 0.9919975996017456,
+      "medianTokenHeight": 22
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "text"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0
+    },
+    "completeness": {
+      "candidateAmountRows": 5,
+      "parsedIngredients": 3,
+      "completenessRatio": 0.6,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 1,
+        "parseCoverage": 0.5,
+        "confidenceScore": 0.5876957336068154,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 50% of rows have valid amount/unit"
+          },
+          {
+            "type": "header_not_found",
+            "message": "Table header not detected, column mapping may be inaccurate"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 3,
+        "parseCoverage": 0.6,
+        "confidenceScore": 0.5309999999999999,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 60% of lines have valid amount/unit"
+          },
+          {
+            "type": "header_not_found",
+            "message": "Medicinal ingredients section not detected"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "b8b74597-d4c7-4eee-abb5-c024e43fa785",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:20.750Z",
+    "updatedAt": "2026-02-12T21:23:20.750Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [
+        {
+          "name": "6064 <",
+          "ingredientId": null,
+          "amount": 0.5,
+          "amountUnit": "g",
+          "amountUnitRaw": "g",
+          "amountUnitNormalized": "g",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.5
+        },
+        {
+          "name": "pro",
+          "ingredientId": null,
+          "amount": 149,
+          "amountUnit": "g",
+          "amountUnitRaw": "g",
+          "amountUnitNormalized": "g",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.63
+        },
+        {
+          "name": "2 Tabletten % NRV Magnesium",
+          "ingredientId": null,
+          "amount": 1875,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.68
+        }
+      ],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 0.6,
+        "confidenceScore": 0.5309999999999999,
+        "issues": [
+          "missing_serving_size: Serving size not found",
+          "low_coverage: Only 60% of lines have valid amount/unit",
+          "header_not_found: Medicinal ingredients section not detected"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "f1bddd3d-b837-4540-968f-ae763574a689",
+  "imageHash": "905984d4-35220",
+  "flagVariant": "draft_first_async",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:20.583Z",
+    "draftReadyAt": "2026-02-12T21:23:20.749Z",
+    "tDecodeMs": 0.02770799999962037,
+    "tOcrMs": 164.05416700000023,
+    "tParseMs": 1.488666999999623,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 166
+  }
+}

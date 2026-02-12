@@ -1,0 +1,215 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_044",
+    "generatedAt": "2026-02-12T21:23:21.809Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "bdd72d512df9632d849f17b20d15da012c3ffb628335e21c4a80fabe95f9cc41",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/007/431/204/2904/front_en.11.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [],
+    "parseCoverage": 0,
+    "confidenceScore": 0.3,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      },
+      {
+        "type": "low_coverage",
+        "message": "Only 0% of rows have valid amount/unit"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.01524999999855936,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.12920800000028976,
+      "visionClientInitMs": 0,
+      "visionMs": 118.7828329999993,
+      "postprocessMs": 0.8787499999998545,
+      "llmMs": null,
+      "totalMs": 120.14066600000115
+    },
+    "image": {
+      "inputBytes": 20082,
+      "inputMime": "image/jpeg",
+      "inputWidth": 234,
+      "inputHeight": 400,
+      "preprocessedBytes": 20082,
+      "preprocessedWidth": 234,
+      "preprocessedHeight": 400
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 125,
+      "fullTextPreview": "NATURE'S BOUNTY\nCalcium\nMagnesium\nZinc\nWith Vitamin D3\nRisk of Osteoporosis\nMay Reduce the\n100 Coated Caplets MINERAL SUPPLEM",
+      "tokenCount": 19,
+      "avgTokenConfidence": 0.9267495713735882,
+      "p10TokenConfidence": 0.6940088868141174,
+      "p50TokenConfidence": 0.973953366279602,
+      "p90TokenConfidence": 0.9941743016242981,
+      "medianTokenHeight": 15
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0
+    },
+    "completeness": {
+      "candidateAmountRows": 0,
+      "parsedIngredients": 0,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of rows have valid amount/unit"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of lines have valid amount/unit"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "f6a8ce43-2544-4d29-ac05-7e5ac8abf5f8",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:21.807Z",
+    "updatedAt": "2026-02-12T21:23:21.807Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          "missing_serving_size: Serving size not found",
+          "low_coverage: Only 0% of rows have valid amount/unit"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "07f1960b-390a-48e4-988d-a9ce8e8887c5",
+  "imageHash": "e2c95bdd-26776",
+  "flagVariant": "draft_first_async",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:21.685Z",
+    "draftReadyAt": "2026-02-12T21:23:21.805Z",
+    "tDecodeMs": 0.01524999999855936,
+    "tOcrMs": 118.7828329999993,
+    "tParseMs": 0.8787499999998545,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 120
+  }
+}

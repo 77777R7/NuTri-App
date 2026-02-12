@@ -1,0 +1,82 @@
+name: Label Scan Offline Regression
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "backend/src/labelAnalysis.ts"
+      - "backend/src/server.ts"
+      - "backend/src/ocrCache.ts"
+      - "backend/src/labelScanVersion.ts"
+      - "scripts/maintainer/fixtures/ocr_regression_set_v1.json"
+      - "scripts/maintainer/fixtures/ocr_outputs_v1/**"
+      - "scripts/maintainer/fetch-ocr-regression-set.mjs"
+      - "scripts/maintainer/ocr-regression-runner.mjs"
+      - "docs/local-vision-credentials.md"
+      - ".github/workflows/label-scan-offline-regression.yml"
+      - "supabase/migrations/**"
+
+jobs:
+  offline-regression:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Secret scan (service account markers)
+        run: |
+          set -euo pipefail
+          if git grep -n -I -E '"type"[[:space:]]*:[[:space:]]*"service_account"|BEGIN[[:space:]]+PRIVATE[[:space:]]+KEY' -- \
+            . \
+            ':!docs/**' \
+            ':!**/*.md' \
+            ':!**/*.example' \
+            ':!**/.env.example' \
+            ':!.github/workflows/**'
+          then
+            echo "[secret-scan] potential credential material detected in tracked files."
+            exit 1
+          fi
+          echo "[secret-scan] passed"
+
+      - name: Validate regression manifest shape
+        run: |
+          node -e 'const fs=require("fs");const m=JSON.parse(fs.readFileSync("scripts/maintainer/fixtures/ocr_regression_set_v1.json","utf8"));if(!Array.isArray(m.samples)||m.samples.length===0) throw new Error("manifest.samples must be non-empty array");if(!m.requirements||!Array.isArray(m.requirements.buckets)) throw new Error("manifest requirements missing");const bad=m.samples.find((s)=>!s.panel_type||typeof s.eval_target!=="boolean"||!s.expected_behavior||!s.source?.product_url||!s.source?.image_url||!s.source?.retrieved_at||!s.source?.license||!s.source?.attribution);if(bad) throw new Error(`sample missing v3.1 fields: ${bad.image_id}`);console.log(`[manifest] dataset=${m.datasetVersion} samples=${m.samples.length}`);'
+
+      - name: Fetch regression set (hash + attribution validation)
+        run: node scripts/maintainer/fetch-ocr-regression-set.mjs
+
+      - name: Ensure frozen OCR fixtures exist
+        run: |
+          set -euo pipefail
+          count=$(find scripts/maintainer/fixtures/ocr_outputs_v1 -type f -name '*.json' | wc -l | tr -d ' ')
+          if [ "$count" -le 0 ]; then
+            echo "Expected frozen OCR fixtures in scripts/maintainer/fixtures/ocr_outputs_v1/*.json"
+            exit 1
+          fi
+          echo "[fixtures] found $count frozen OCR fixtures"
+
+      - name: Run parser regression gate (required)
+        run: node scripts/maintainer/ocr-regression-runner.mjs --mode parser --gate-mode required --ocr-fixtures scripts/maintainer/fixtures/ocr_outputs_v1
+
+      - name: Upload offline regression artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: label-scan-offline-regression-${{ github.run_id }}
+          path: |
+            output/ocr-regression-run-*/
+            output/ocr-regression-set-*/
+          if-no-files-found: warn

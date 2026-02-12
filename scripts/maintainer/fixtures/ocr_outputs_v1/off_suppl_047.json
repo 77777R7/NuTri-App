@@ -1,0 +1,213 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_047",
+    "generatedAt": "2026-02-12T21:23:21.971Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "9dd1e3cac88b9eddf7e02075d9ec4c4bd9e604153542237fbd852ca3c5d5238a",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/003/160/401/2779/nutrition_en.23.400.jpg"
+  },
+  "status": "ok",
+  "draft": {
+    "servingSize": "Serving Size 1 Tablet SAUNA",
+    "ingredients": [
+      {
+        "name": "elas Zinc Gluconate )",
+        "amount": 30,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.7190830310185751,
+        "rawLine": "elas Zinc Gluconate ) 30 mg"
+      }
+    ],
+    "parseCoverage": 1,
+    "confidenceScore": 0.9157249093055725,
+    "issues": []
+  },
+  "debug": {
+    "timing": {
+      "decodeMs": 0.03441699999893899,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.12995799999953306,
+      "visionClientInitMs": 0,
+      "visionMs": 156.628917,
+      "postprocessMs": 0.9766250000011496,
+      "llmMs": null,
+      "totalMs": 157.95758299999943
+    },
+    "image": {
+      "inputBytes": 18971,
+      "inputMime": "image/jpeg",
+      "inputWidth": 300,
+      "inputHeight": 400,
+      "preprocessedBytes": 18971,
+      "preprocessedWidth": 300,
+      "preprocessedHeight": 400
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 522,
+      "fullTextPreview": "SUGGESTED USE: Adults, take 1 table\nwith water and a meal\nSightly closed, in a cool, dry place,\nach of children\nDate if seal under cap is\nkes or missing.\nSupplement Facts\nServing Size 1 Tablet\nAmount Per Tablet\nSAUNA\n% Daily Value\nelas Zinc Gluconate) 30 mg\nOTHER INGREDIENTS Cellulose Gel Calcu\nic Acid Croscarmellos Sodium, Hypro\nPthylene Glycol\nDISTRIBUTED BY:\nare Me Nutritional Products\n1-404-275378 www.NatureMade.com\nHillsA 91309-9903, USA\nret ingredients, potency and\nrds for Getary supplemen",
+      "tokenCount": 93,
+      "avgTokenConfidence": 0.7994033950631336,
+      "p10TokenConfidence": 0.5254206657409668,
+      "p50TokenConfidence": 0.8533126711845398,
+      "p90TokenConfidence": 0.975353479385376,
+      "medianTokenHeight": 9
+    },
+    "heuristics": {
+      "tableLikely": true,
+      "textLikely": true,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0
+    },
+    "completeness": {
+      "candidateAmountRows": 0,
+      "parsedIngredients": 1,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 1,
+        "parseCoverage": 1,
+        "confidenceScore": 0.9157249093055725,
+        "issues": []
+      },
+      "text": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.45,
+        "issues": [
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of lines have valid amount/unit"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "e658ad35-5bcf-4f93-a846-517cb97302eb",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:21.970Z",
+    "updatedAt": "2026-02-12T21:23:21.970Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": "Serving Size 1 Tablet SAUNA",
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [
+        {
+          "name": "elas Zinc Gluconate )",
+          "ingredientId": null,
+          "amount": 30,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.7190830310185751
+        }
+      ],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 1,
+        "confidenceScore": 0.9157249093055725,
+        "issues": null
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "f5ba320c-4c7f-4ada-8e08-c5cc99e6d1b8",
+  "imageHash": "714d98bb-25296",
+  "flagVariant": "draft_first_async",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:21.811Z",
+    "draftReadyAt": "2026-02-12T21:23:21.969Z",
+    "tDecodeMs": 0.03441699999893899,
+    "tOcrMs": 156.628917,
+    "tParseMs": 0.9766250000011496,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 158
+  }
+}

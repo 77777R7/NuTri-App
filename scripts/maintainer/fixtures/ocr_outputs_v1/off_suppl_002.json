@@ -1,0 +1,215 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_002",
+    "generatedAt": "2026-02-12T21:23:20.074Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "9d5df9a86957bc3cb32715a711515babe215910a92eea4ecb7fba66705879666",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/848/000/079/5946/ingredients_es.43.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [],
+    "parseCoverage": 0,
+    "confidenceScore": 0.3,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      },
+      {
+        "type": "low_coverage",
+        "message": "Only 0% of rows have valid amount/unit"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.01074999999946158,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.13720800000010058,
+      "visionClientInitMs": 0,
+      "visionMs": 260.8668749999997,
+      "postprocessMs": 3.1270000000004075,
+      "llmMs": null,
+      "totalMs": 264.39229199999863
+    },
+    "image": {
+      "inputBytes": 25509,
+      "inputMime": "image/jpeg",
+      "inputWidth": 400,
+      "inputHeight": 162,
+      "preprocessedBytes": 25509,
+      "preprocessedWidth": 400,
+      "preprocessedHeight": 162
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 542,
+      "fullTextPreview": "INGREDIENTES\nCarbonato de magnesio, acidulante (ácido málico), corrector de\nacidez (carbonato acido de sodio), acidulante (ácido citrico), preparado\nen polvo de zumo de remolacha (maltodextrina, zumo de remolacha\nconcentrado), almidón, aromas, edulcorante (ciclamato sódico), edul\ncorante (sacarina sódica), colorante (riboflavina-5'-fosfato), clorhidrato\nde piridoxina, clorhidrato de tiamina, cianocobalamina.\nCarbonato de magnésio, acidificante (ácido málico), regulador de\nacidez (hidrogenocarbon",
+      "tokenCount": 103,
+      "avgTokenConfidence": 0.9311961916465203,
+      "p10TokenConfidence": 0.8132940530776978,
+      "p50TokenConfidence": 0.9766691327095032,
+      "p90TokenConfidence": 0.9903531670570374,
+      "medianTokenHeight": 18
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0.4996226415094339
+    },
+    "completeness": {
+      "candidateAmountRows": 0,
+      "parsedIngredients": 0,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of rows have valid amount/unit"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of lines have valid amount/unit"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "385efedb-4287-437f-be8f-8776b1265abe",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:20.072Z",
+    "updatedAt": "2026-02-12T21:23:20.072Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          "missing_serving_size: Serving size not found",
+          "low_coverage: Only 0% of rows have valid amount/unit"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "a629bd6f-a679-48a2-85f4-af70614a34b6",
+  "imageHash": "22668496-34012",
+  "flagVariant": "control",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:19.807Z",
+    "draftReadyAt": "2026-02-12T21:23:20.071Z",
+    "tDecodeMs": 0.01074999999946158,
+    "tOcrMs": 260.8668749999997,
+    "tParseMs": 3.1270000000004075,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 264
+  }
+}

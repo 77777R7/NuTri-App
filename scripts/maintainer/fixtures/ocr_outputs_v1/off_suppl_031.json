@@ -1,0 +1,230 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_031",
+    "generatedAt": "2026-02-12T21:23:21.364Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "ceec577ca1f1e357b090549e82900a196521ad0d630286898d676c9eea679f06",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/074/098/528/0263/front_fr.9.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [
+      {
+        "name": "Zinc Citrate",
+        "amount": 50,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.9795282036066055,
+        "rawLine": "Zinc Citrate 50 mg"
+      }
+    ],
+    "parseCoverage": 1,
+    "confidenceScore": 0.8888584610819816,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.020375000000058208,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.12529100000028848,
+      "visionClientInitMs": 0,
+      "visionMs": 156.20570899999984,
+      "postprocessMs": 1.7512499999993452,
+      "llmMs": null,
+      "totalMs": 158.3714999999993
+    },
+    "image": {
+      "inputBytes": 15773,
+      "inputMime": "image/jpeg",
+      "inputWidth": 217,
+      "inputHeight": 400,
+      "preprocessedBytes": 15773,
+      "preprocessedWidth": 217,
+      "preprocessedHeight": 400
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 168,
+      "fullTextPreview": "21ST\nCENTURY.\nZinc Citrate\n50 mg\nAntioxidant &\nImmune Support'\nMINERAL SUPPLEMENT | GLUTEN FREE | NON-GMO\n11 21 21 21\n21 21 21 21 21 21\n21 21 21 260 TABLETS 21 21 21 21",
+      "tokenCount": 40,
+      "avgTokenConfidence": 0.819013062864542,
+      "p10TokenConfidence": 0.4586193561553955,
+      "p50TokenConfidence": 0.869909405708313,
+      "p90TokenConfidence": 0.9850068092346191,
+      "medianTokenHeight": 12
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0
+    },
+    "completeness": {
+      "candidateAmountRows": 1,
+      "parsedIngredients": 1,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 1,
+        "parseCoverage": 1,
+        "confidenceScore": 0.8888584610819816,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 1,
+        "parseCoverage": 1,
+        "confidenceScore": 0.7289999999999999,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "header_not_found",
+            "message": "Medicinal ingredients section not detected"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "3b68e3a2-a0d0-4f75-aecc-bd4311f41b8e",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:21.363Z",
+    "updatedAt": "2026-02-12T21:23:21.363Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [
+        {
+          "name": "Zinc Citrate",
+          "ingredientId": null,
+          "amount": 50,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.9795282036066055
+        }
+      ],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 1,
+        "confidenceScore": 0.8888584610819816,
+        "issues": [
+          "missing_serving_size: Serving size not found"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "aeff0ac5-4e2c-4dfe-aed7-8538b78cb316",
+  "imageHash": "17e708a1-21032",
+  "flagVariant": "control",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:21.203Z",
+    "draftReadyAt": "2026-02-12T21:23:21.361Z",
+    "tDecodeMs": 0.020375000000058208,
+    "tOcrMs": 156.20570899999984,
+    "tParseMs": 1.7512499999993452,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 158
+  }
+}

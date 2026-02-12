@@ -1,0 +1,428 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_036",
+    "generatedAt": "2026-02-12T21:23:21.633Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "bcd2e17c904e94138bf19da9d6dd8fcf854e651ea2cb021aca0dd3685a63719a",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/003/398/400/5204/ingredients_fr.3.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [
+      {
+        "name": "Trois ( 3 ) tablets fournissent : ANC",
+        "amount": 1000,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.9330165202801044,
+        "rawLine": "Trois ( 3 ) tablets fournissent : ANC Calcium ........ ..1000 mg 125"
+      },
+      {
+        "name": "( carbonate , gluconate , citrate )",
+        "amount": 400,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.9088766418005291,
+        "rawLine": "( carbonate , gluconate , citrate ) Magnésium ( oxyde , citrate , gluconate ) .......... 400 mg 107"
+      },
+      {
+        "name": "Agent liant : cellulose microcristalline",
+        "amount": 280,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.9121123194694519,
+        "rawLine": "Agent liant : cellulose microcristalline ..... 280 mg"
+      },
+      {
+        "name": "Zinc ( gluconate ) ............",
+        "amount": 15,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.9132812281449635,
+        "rawLine": "Zinc ( gluconate ) ............ 15 mg 150"
+      },
+      {
+        "name": "Gomme de cellulose",
+        "amount": 93,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.988117625315984,
+        "rawLine": "Gomme de cellulose 93 mg"
+      },
+      {
+        "name": "Agent de glaçage : ........",
+        "amount": 90,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.8144138753414154,
+        "rawLine": "Agent de glaçage : ........ ..90 mg"
+      },
+      {
+        "name": "hydroxypropylméthyl - cellulose",
+        "amount": 60,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.9033906327353584,
+        "rawLine": "hydroxypropylméthyl - cellulose Acide citrique ........ ....... 60 mg"
+      },
+      {
+        "name": "Couleur : dioxide de titane",
+        "amount": 50,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.9120161135991414,
+        "rawLine": "Couleur : dioxide de titane ...... 50 mg"
+      },
+      {
+        "name": "Agents anti - agglomérants ........",
+        "amount": 39,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.9160217583179474,
+        "rawLine": "Agents anti - agglomérants ........ .39 mg"
+      },
+      {
+        "name": "acide stéarique végétal",
+        "amount": 18,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.9035006165504456,
+        "rawLine": "acide stéarique végétal Glycérine végétale ...... .... 18 mg"
+      }
+    ],
+    "parseCoverage": 1,
+    "confidenceScore": 0.8681424199466602,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.02562500000021828,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.11487499999930151,
+      "visionClientInitMs": 0,
+      "visionMs": 259.02729100000033,
+      "postprocessMs": 2.5085420000013983,
+      "llmMs": null,
+      "totalMs": 262.0100419999999
+    },
+    "image": {
+      "inputBytes": 32054,
+      "inputMime": "image/jpeg",
+      "inputWidth": 400,
+      "inputHeight": 387,
+      "preprocessedBytes": 32054,
+      "preprocessedWidth": 400,
+      "preprocessedHeight": 387
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 858,
+      "fullTextPreview": "MODE OUTRATION Comme complement aimentaires pour\nadutes, une (1) tablet par jour à avaler de préférence pendant le\nrepas, ou sur recommandation d'un thérapeute. Respecter le mode\nd'utilisation.\nIngrédients\nTrois (3) tablets fournissent:\nCalcium........\n(carbonate, gluconate, citrate)\nMagnésium (oxyde, citrate, gluconate)..........400 mg\nAgent liant: cellulose microcristalline\nZinc (gluconate)............\nGomme de cellulose\nAgent de glaçage:........\nhydroxypropylméthyl-cellulose\nAcide citrique...",
+      "tokenCount": 155,
+      "avgTokenConfidence": 0.8719918973984256,
+      "p10TokenConfidence": 0.6185957789421082,
+      "p50TokenConfidence": 0.9507843255996704,
+      "p90TokenConfidence": 0.9875085949897766,
+      "medianTokenHeight": 13
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0.5417145884304664
+    },
+    "completeness": {
+      "candidateAmountRows": 0,
+      "parsedIngredients": 10,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 10,
+        "parseCoverage": 1,
+        "confidenceScore": 0.8681424199466602,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of lines have valid amount/unit"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "9716aa78-0797-4833-b218-6a805e832531",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:21.631Z",
+    "updatedAt": "2026-02-12T21:23:21.631Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [
+        {
+          "name": "Trois ( 3 ) tablets fournissent : ANC",
+          "ingredientId": null,
+          "amount": 1000,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.9330165202801044
+        },
+        {
+          "name": "( carbonate , gluconate , citrate )",
+          "ingredientId": null,
+          "amount": 400,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.9088766418005291
+        },
+        {
+          "name": "Agent liant : cellulose microcristalline",
+          "ingredientId": null,
+          "amount": 280,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.9121123194694519
+        },
+        {
+          "name": "Zinc ( gluconate ) ............",
+          "ingredientId": null,
+          "amount": 15,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.9132812281449635
+        },
+        {
+          "name": "Gomme de cellulose",
+          "ingredientId": null,
+          "amount": 93,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.988117625315984
+        },
+        {
+          "name": "Agent de glaçage : ........",
+          "ingredientId": null,
+          "amount": 90,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.8144138753414154
+        },
+        {
+          "name": "hydroxypropylméthyl - cellulose",
+          "ingredientId": null,
+          "amount": 60,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.9033906327353584
+        },
+        {
+          "name": "Couleur : dioxide de titane",
+          "ingredientId": null,
+          "amount": 50,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.9120161135991414
+        },
+        {
+          "name": "Agents anti - agglomérants ........",
+          "ingredientId": null,
+          "amount": 39,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.9160217583179474
+        },
+        {
+          "name": "acide stéarique végétal",
+          "ingredientId": null,
+          "amount": 18,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.9035006165504456
+        }
+      ],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 1,
+        "confidenceScore": 0.8681424199466602,
+        "issues": [
+          "missing_serving_size: Serving size not found"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "51d6ea4c-5118-4a6a-aa42-f955a1a0773f",
+  "imageHash": "dd278189-42740",
+  "flagVariant": "control",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:21.368Z",
+    "draftReadyAt": "2026-02-12T21:23:21.630Z",
+    "tDecodeMs": 0.02562500000021828,
+    "tOcrMs": 259.02729100000033,
+    "tParseMs": 2.5085420000013983,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 262
+  }
+}

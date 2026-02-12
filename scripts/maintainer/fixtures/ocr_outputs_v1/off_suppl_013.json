@@ -1,0 +1,215 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_013",
+    "generatedAt": "2026-02-12T21:23:20.511Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "035593322fbf61d4fdf4d7c9e27fd3e9e077e833c7c2d0e2d79c229d071f4595",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/360/841/889/8461/ingredients_fr.38.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [],
+    "parseCoverage": 0,
+    "confidenceScore": 0.3,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      },
+      {
+        "type": "low_coverage",
+        "message": "Only 0% of rows have valid amount/unit"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.012708000000202446,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.049082999999882304,
+      "visionClientInitMs": 0,
+      "visionMs": 124.92862500000047,
+      "postprocessMs": 0.8841670000001614,
+      "llmMs": null,
+      "totalMs": 125.99695800000154
+    },
+    "image": {
+      "inputBytes": 10079,
+      "inputMime": "image/jpeg",
+      "inputWidth": 400,
+      "inputHeight": 43,
+      "preprocessedBytes": 10079,
+      "preprocessedWidth": 400,
+      "preprocessedHeight": 43
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 273,
+      "fullTextPreview": "Ingrédients: Créatine monohydrate (100%). La créatine ne provient pas de France.\nFabriqué en France. Peut contenir des traces éventuelles de: gluten, ceuf, sulfites,\ncrustacés, poisson, céleri, fruits à coque, moutarde, soja, lait. I dose par jour à diluer\nQuant\ndrainomont",
+      "tokenCount": 58,
+      "avgTokenConfidence": 0.913831886032532,
+      "p10TokenConfidence": 0.7278485894203186,
+      "p50TokenConfidence": 0.970726490020752,
+      "p90TokenConfidence": 0.9887820482254028,
+      "medianTokenHeight": 16
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0.5167962423064464
+    },
+    "completeness": {
+      "candidateAmountRows": 0,
+      "parsedIngredients": 0,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of rows have valid amount/unit"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of lines have valid amount/unit"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "8ec65fb9-3ba9-4f62-9108-75dee0622ffd",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:20.511Z",
+    "updatedAt": "2026-02-12T21:23:20.511Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          "missing_serving_size: Serving size not found",
+          "low_coverage: Only 0% of rows have valid amount/unit"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "efc07464-9be9-45c3-96e4-769258ae2b6f",
+  "imageHash": "3d0f6402-13440",
+  "flagVariant": "draft_first_async",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:20.384Z",
+    "draftReadyAt": "2026-02-12T21:23:20.510Z",
+    "tDecodeMs": 0.012708000000202446,
+    "tOcrMs": 124.92862500000047,
+    "tParseMs": 0.8841670000001614,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 126
+  }
+}

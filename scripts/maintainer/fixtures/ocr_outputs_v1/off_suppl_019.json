@@ -1,0 +1,252 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_019",
+    "generatedAt": "2026-02-12T21:23:20.861Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "5a218ad884033323320abc2722cecb3b5877e1a006b5acda884da15ceb7b74fb",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/871/883/639/3488/ingredients_fr.7.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [
+      {
+        "name": "à une fonction musculare normale et à une synthèse preque",
+        "amount": 1440,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.7936945690049065,
+        "rawLine": "à une fonction musculare normale et à une synthèse preque edients : Magresium citrate 1440mg Substances de remplissage"
+      },
+      {
+        "name": "comento normal de los musculos y a la sintesis profeca carbonetice del cuerpo",
+        "amount": 140,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.7436683407196631,
+        "rawLine": "comento normal de los musculos y a la sintesis profeca carbonetice del cuerpo pieces agreso 140mg Antaglomerante relena celulosa talco microcristalina , estearato de magresio dom"
+      }
+    ],
+    "parseCoverage": 1,
+    "confidenceScore": 0.8256044364586854,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.023290999999517226,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.08508299999994051,
+      "visionClientInitMs": 0,
+      "visionMs": 192.89379100000042,
+      "postprocessMs": 2.8402079999996204,
+      "llmMs": null,
+      "totalMs": 196.4432909999996
+    },
+    "image": {
+      "inputBytes": 22144,
+      "inputMime": "image/jpeg",
+      "inputWidth": 300,
+      "inputHeight": 400,
+      "preprocessedBytes": 22144,
+      "preprocessedWidth": 300,
+      "preprocessedHeight": 400
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 1182,
+      "fullTextPreview": "Complément alimentaire. Le magnesium a plusieurs fonctions dans le com\nmagresum contribue à réduire la fatigue contribue à un metabolisme energ\neta fequibre electrolytique important pour les sportifs Le mag\nà une fonction musculare normale et à une synthèse preque\nedients: Magresium citrate 1440mg Substances de remplissage\ncostaline, carboxymethylcellulose hydroxypropylmethylcelluse Agent\npomerant: talc, stearate de magnesium, dioxyde de sicum Ponit\nAzurant polyethylene glycol Utilisation recomm",
+      "tokenCount": 184,
+      "avgTokenConfidence": 0.7556424584725628,
+      "p10TokenConfidence": 0.5115230083465576,
+      "p50TokenConfidence": 0.7863706350326538,
+      "p90TokenConfidence": 0.9647172689437866,
+      "medianTokenHeight": 16
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0.4856259009807397
+    },
+    "completeness": {
+      "candidateAmountRows": 1,
+      "parsedIngredients": 2,
+      "completenessRatio": 2,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 2,
+        "parseCoverage": 1,
+        "confidenceScore": 0.8256044364586854,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 1,
+        "parseCoverage": 1,
+        "confidenceScore": 0.7289999999999999,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "header_not_found",
+            "message": "Medicinal ingredients section not detected"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "bb9a2322-f675-4c4b-b7b1-eb4a7abb71a9",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:20.860Z",
+    "updatedAt": "2026-02-12T21:23:20.860Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [
+        {
+          "name": "à une fonction musculare normale et à une synthèse preque",
+          "ingredientId": null,
+          "amount": 1440,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.7936945690049065
+        },
+        {
+          "name": "comento normal de los musculos y a la sintesis profeca carbonetice del cuerpo",
+          "ingredientId": null,
+          "amount": 140,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.7436683407196631
+        }
+      ],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 1,
+        "confidenceScore": 0.8256044364586854,
+        "issues": [
+          "missing_serving_size: Serving size not found"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "a204478c-7b25-4b71-b41b-25096a775abb",
+  "imageHash": "b20bce75-29528",
+  "flagVariant": "draft_first_async",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:20.662Z",
+    "draftReadyAt": "2026-02-12T21:23:20.859Z",
+    "tDecodeMs": 0.023290999999517226,
+    "tOcrMs": 192.89379100000042,
+    "tParseMs": 2.8402079999996204,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 197
+  }
+}

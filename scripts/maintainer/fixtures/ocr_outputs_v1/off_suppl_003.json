@@ -1,0 +1,239 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_003",
+    "generatedAt": "2026-02-12T21:23:20.098Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "76a681b14df25c65deb02537fd2200c343c0ec4458d6fb7abe1dcd6c10b80712",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/405/817/292/2077/ingredients_de.34.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [
+      {
+        "name": "nghee Brusefoedette in einem Olas Wasser (",
+        "amount": 200,
+        "unit": "ml",
+        "dvPercent": null,
+        "confidence": 0.68,
+        "rawLine": "nghee Brusefoedette in einem Olas Wasser (200ml) quosen-artis"
+      }
+    ],
+    "parseCoverage": 1,
+    "confidenceScore": 0.7289999999999999,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      },
+      {
+        "type": "header_not_found",
+        "message": "Medicinal ingredients section not detected"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.02420899999924586,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.10687500000130967,
+      "visionClientInitMs": 0,
+      "visionMs": 282.7947920000006,
+      "postprocessMs": 3.52074999999968,
+      "llmMs": null,
+      "totalMs": 286.72129100000166
+    },
+    "image": {
+      "inputBytes": 20670,
+      "inputMime": "image/jpeg",
+      "inputWidth": 400,
+      "inputHeight": 143,
+      "preprocessedBytes": 20670,
+      "preprocessedWidth": 400,
+      "preprocessedHeight": 143
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 935,
+      "fullTextPreview": "nghee Brusefoedette in einem Olas Wasser (200ml) quosen-artis\nund schmeckt gut Bei erhöhtem Vitamin B12-Bedarf zwei Brausetabletten über den Tog vertet\neinnehmen. Die tagliche Verzehrmenge darf nicht überschritten werden. Nahrungsergänzungsmittel\nsollten nicht als Ersatz für eine abwechslungsreiche und ausgewogene Ernährung sowie eine gesunde\nLebensweise dienen. Hinweis: Außerhalb der Reichweite von kleinen Kindern aufbewahren.\nZutaten: Säuerungsmittel Citronensäure, Säureregulator Natriumhydrog",
+      "tokenCount": 138,
+      "avgTokenConfidence": 0.8563011614740759,
+      "p10TokenConfidence": 0.5978041887283325,
+      "p50TokenConfidence": 0.9030358791351318,
+      "p90TokenConfidence": 0.9877762794494629,
+      "medianTokenHeight": 9
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "text"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0.48700809809939627
+    },
+    "completeness": {
+      "candidateAmountRows": 1,
+      "parsedIngredients": 1,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of rows have valid amount/unit"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 1,
+        "parseCoverage": 1,
+        "confidenceScore": 0.7289999999999999,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "header_not_found",
+            "message": "Medicinal ingredients section not detected"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "22d6c2b4-3767-4bf2-94da-da1a3de5d7a9",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:20.094Z",
+    "updatedAt": "2026-02-12T21:23:20.094Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [
+        {
+          "name": "nghee Brusefoedette in einem Olas Wasser (",
+          "ingredientId": null,
+          "amount": 200,
+          "amountUnit": "ml",
+          "amountUnitRaw": "ml",
+          "amountUnitNormalized": "ml",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.68
+        }
+      ],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 1,
+        "confidenceScore": 0.7289999999999999,
+        "issues": [
+          "missing_serving_size: Serving size not found",
+          "header_not_found: Medicinal ingredients section not detected"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "98356fb0-e56c-404a-9dc5-5572fa26c9fa",
+  "imageHash": "473364c1-27560",
+  "flagVariant": "control",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:19.807Z",
+    "draftReadyAt": "2026-02-12T21:23:20.094Z",
+    "tDecodeMs": 0.02420899999924586,
+    "tOcrMs": 282.7947920000006,
+    "tParseMs": 3.52074999999968,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 287
+  }
+}

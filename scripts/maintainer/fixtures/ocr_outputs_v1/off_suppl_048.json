@@ -1,0 +1,215 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_048",
+    "generatedAt": "2026-02-12T21:23:21.992Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "30bfeaeb3400683e66e030c5bce7ffdaf27ff243c079b4b738067f1fca063334",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/370/113/640/0531/ingredients_fr.5.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [],
+    "parseCoverage": 0,
+    "confidenceScore": 0.3,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      },
+      {
+        "type": "low_coverage",
+        "message": "Only 0% of rows have valid amount/unit"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.02941599999940081,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.10512500000004366,
+      "visionClientInitMs": 0,
+      "visionMs": 166.51383299999907,
+      "postprocessMs": 1.0759159999997792,
+      "llmMs": null,
+      "totalMs": 167.8567920000005
+    },
+    "image": {
+      "inputBytes": 13453,
+      "inputMime": "image/jpeg",
+      "inputWidth": 400,
+      "inputHeight": 171,
+      "preprocessedBytes": 13453,
+      "preprocessedWidth": 400,
+      "preprocessedHeight": 171
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 265,
+      "fullTextPreview": "Ingredients: Maltodextrine; anti agglomerant\nde zinc vitamine 85; anti-agglomérant sels do n\n(dérivé de cellulose).\nlcium: minéraux: bysglycinate de zinc, picolinate\necides gras: vitamine 86; gélule d'origine végétale\nARAGAN - 42 rue Washington 75008 Paris - France",
+      "tokenCount": 50,
+      "avgTokenConfidence": 0.8064086383581162,
+      "p10TokenConfidence": 0.490878701210022,
+      "p50TokenConfidence": 0.8647592663764954,
+      "p90TokenConfidence": 0.9700161814689636,
+      "medianTokenHeight": 9
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0.5866678470254958
+    },
+    "completeness": {
+      "candidateAmountRows": 0,
+      "parsedIngredients": 0,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of rows have valid amount/unit"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of lines have valid amount/unit"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "2975830b-dc69-44b3-9b76-c2aed3572302",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:21.990Z",
+    "updatedAt": "2026-02-12T21:23:21.990Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          "missing_serving_size: Serving size not found",
+          "low_coverage: Only 0% of rows have valid amount/unit"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "b099b8dc-594d-4116-acfa-7fc70e65c42d",
+  "imageHash": "04044b19-17940",
+  "flagVariant": "draft_first_async",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:21.822Z",
+    "draftReadyAt": "2026-02-12T21:23:21.990Z",
+    "tDecodeMs": 0.02941599999940081,
+    "tOcrMs": 166.51383299999907,
+    "tParseMs": 1.0759159999997792,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 168
+  }
+}

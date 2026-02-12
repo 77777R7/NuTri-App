@@ -1,0 +1,215 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_035",
+    "generatedAt": "2026-02-12T21:23:21.536Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "ab772c21d1d96b58ec8e09f199e493e859ce71d03060c7dfa11263c1d1499758",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/074/098/522/2638/ingredients_fr.7.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [],
+    "parseCoverage": 0,
+    "confidenceScore": 0.3,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      },
+      {
+        "type": "low_coverage",
+        "message": "Only 0% of rows have valid amount/unit"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.02845800000068266,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.18066600000020117,
+      "visionClientInitMs": 0,
+      "visionMs": 165.59620899999936,
+      "postprocessMs": 1.853624999999738,
+      "llmMs": null,
+      "totalMs": 167.89408300000105
+    },
+    "image": {
+      "inputBytes": 22437,
+      "inputMime": "image/jpeg",
+      "inputWidth": 301,
+      "inputHeight": 400,
+      "preprocessedBytes": 22437,
+      "preprocessedWidth": 301,
+      "preprocessedHeight": 400
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 363,
+      "fullTextPreview": "21 ST\nCENTURY\nXXXX\n21st Century...for a healthier future.\nCal Mag Zinc+D3\nCalcium, Magnesium and Zinc plus Vitamin D, promotes\nstrong bones and teeth.\" This important trio + D, also helps\nto maintain normal heart and muscle functions.* 21st Century\noffers you 100% of recommended daily value in three\neasy-to-swallow Cal Mag Zinc+ D, tablets.\n1212\n7\n40985 22263 8",
+      "tokenCount": 80,
+      "avgTokenConfidence": 0.9297177381813526,
+      "p10TokenConfidence": 0.7674617767333984,
+      "p50TokenConfidence": 0.9761831760406494,
+      "p90TokenConfidence": 0.9916081428527832,
+      "medianTokenHeight": 11
+    },
+    "heuristics": {
+      "tableLikely": true,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0.4860143776474422
+    },
+    "completeness": {
+      "candidateAmountRows": 0,
+      "parsedIngredients": 0,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of rows have valid amount/unit"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of lines have valid amount/unit"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "ca8c9bbe-5634-4eec-a8d3-3858f9976dd0",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:21.534Z",
+    "updatedAt": "2026-02-12T21:23:21.534Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          "missing_serving_size: Serving size not found",
+          "low_coverage: Only 0% of rows have valid amount/unit"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "814e3177-4b95-45b1-994a-7f8f2c6477d9",
+  "imageHash": "d5be2e69-29916",
+  "flagVariant": "control",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:21.365Z",
+    "draftReadyAt": "2026-02-12T21:23:21.533Z",
+    "tDecodeMs": 0.02845800000068266,
+    "tOcrMs": 165.59620899999936,
+    "tParseMs": 1.853624999999738,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 168
+  }
+}

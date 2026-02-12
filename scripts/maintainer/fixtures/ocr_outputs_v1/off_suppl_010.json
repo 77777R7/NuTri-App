@@ -1,0 +1,215 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_010",
+    "generatedAt": "2026-02-12T21:23:20.438Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "20677e1ee41254fbc0e2fd8a6036bd7c7b1315c1741f99f40be6abc521716757",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/506/024/560/5397/ingredients_en.20.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [],
+    "parseCoverage": 0,
+    "confidenceScore": 0.3,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      },
+      {
+        "type": "low_coverage",
+        "message": "Only 0% of rows have valid amount/unit"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.014792000001762062,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.09745900000052643,
+      "visionClientInitMs": 0,
+      "visionMs": 169.62787500000013,
+      "postprocessMs": 1.2902089999988675,
+      "llmMs": null,
+      "totalMs": 171.1738750000004
+    },
+    "image": {
+      "inputBytes": 37108,
+      "inputMime": "image/jpeg",
+      "inputWidth": 400,
+      "inputHeight": 300,
+      "preprocessedBytes": 37108,
+      "preprocessedWidth": 400,
+      "preprocessedHeight": 300
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 372,
+      "fullTextPreview": "EN INGREDIENTS: Creatine Monohydrate. May\nContain: Milk, Gluten, Egg, Soy, Nuts and\nPeanuts. FR INGRÉDIENTS: Monohydrate de\ncréatine. Peut contenir du lait, du gluten, des\nœufs, du soja, des fruits à coque et des\narachides. DE ZUTATEN: Kreatinmonohydrat.\nKann enthalten: Milch, Gluten, Ei, Soja,\nSchalenfrüchte und Erdnüsse.\nEN STORE IN A COOL, DRY PLACE. BATCH NUMBER AND",
+      "tokenCount": 82,
+      "avgTokenConfidence": 0.9506499760034608,
+      "p10TokenConfidence": 0.8868306279182434,
+      "p50TokenConfidence": 0.9697225689888,
+      "p90TokenConfidence": 0.988764226436615,
+      "medianTokenHeight": 17
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0.5191200128700129
+    },
+    "completeness": {
+      "candidateAmountRows": 0,
+      "parsedIngredients": 0,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of rows have valid amount/unit"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of lines have valid amount/unit"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "8a5a0dcf-62c0-4886-9d7e-98548350c28c",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:20.437Z",
+    "updatedAt": "2026-02-12T21:23:20.437Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          "missing_serving_size: Serving size not found",
+          "low_coverage: Only 0% of rows have valid amount/unit"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "7df74cd4-62dd-4297-9296-eb20185345a9",
+  "imageHash": "7ff1be08-49480",
+  "flagVariant": "draft_first_async",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:20.265Z",
+    "draftReadyAt": "2026-02-12T21:23:20.436Z",
+    "tDecodeMs": 0.014792000001762062,
+    "tOcrMs": 169.62787500000013,
+    "tParseMs": 1.2902089999988675,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 171
+  }
+}

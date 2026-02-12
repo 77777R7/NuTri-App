@@ -1,0 +1,511 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_007",
+    "generatedAt": "2026-02-12T21:23:20.320Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "8a24cea41732fb187578b422440c599dfd3ad08da5377d55e8d768bd2007479e",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/770/256/002/6102/ingredients_es.7.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [
+      {
+        "name": "400 U. 100% 800 L",
+        "amount": 250,
+        "unit": "mcg",
+        "dvPercent": null,
+        "confidence": 0.5,
+        "rawLine": "400 U. 100% 800 L 250 mcg 63% 500 m"
+      },
+      {
+        "name": "5000 UL 100% 10000 ULL",
+        "amount": 5,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.68,
+        "rawLine": "5000 UL 100% 10000 ULL 5 mg 25% 10 mg"
+      },
+      {
+        "name": "tamina C",
+        "amount": 50,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.68,
+        "rawLine": "tamina C 50 mg 83%"
+      },
+      {
+        "name": "1%",
+        "amount": 100,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.45000000000000007,
+        "rawLine": "100 mg 1%"
+      },
+      {
+        "name": "amin85",
+        "amount": 5,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.63,
+        "rawLine": "amin85 5 mg 50%"
+      },
+      {
+        "name": "100%",
+        "amount": 10,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.45000000000000007,
+        "rawLine": "10 mg 100%"
+      },
+      {
+        "name": "tamina B6",
+        "amount": 0.5,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.68,
+        "rawLine": "tamina B6 0.5 mg 25%"
+      },
+      {
+        "name": "0%",
+        "amount": 1,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.45000000000000007,
+        "rawLine": "1mg 0%"
+      },
+      {
+        "name": "9%",
+        "amount": 3.2,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.45000000000000007,
+        "rawLine": "9% 3.2mg%"
+      },
+      {
+        "name": "Caldo",
+        "amount": 50,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.63,
+        "rawLine": "Caldo 50 mg"
+      },
+      {
+        "name": "5%",
+        "amount": 100,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.45000000000000007,
+        "rawLine": "5% 100 mg 10%"
+      },
+      {
+        "name": "Fictors",
+        "amount": 77.4,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.63,
+        "rawLine": "Fictors 77.4 mg 15"
+      },
+      {
+        "name": "4%",
+        "amount": 38.7,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.45000000000000007,
+        "rawLine": "38.7 mg 4%"
+      }
+    ],
+    "parseCoverage": 0.9285714285714286,
+    "confidenceScore": 0.6895384615384614,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      },
+      {
+        "type": "header_not_found",
+        "message": "Medicinal ingredients section not detected"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.28266700000131095,
+      "preprocessMs": 0,
+      "requestBodyMs": 5.728041000000303,
+      "visionClientInitMs": 0,
+      "visionMs": 210.85733299999993,
+      "postprocessMs": 1.8010419999991427,
+      "llmMs": null,
+      "totalMs": 219.56283299999996
+    },
+    "image": {
+      "inputBytes": 34388,
+      "inputMime": "image/jpeg",
+      "inputWidth": 400,
+      "inputHeight": 300,
+      "preprocessedBytes": 34388,
+      "preprocessedWidth": 400,
+      "preprocessedHeight": 300
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 520,
+      "fullTextPreview": "SUPLEMENTO MULTIVITA\nFelice\nA\n400 U. 100% 800 L\n250 mcg 63% 500 m\n5000 UL 100% 10000 ULL\n5 mg 25% 10 mg\ntamina C\n50 mg 83%\n100 mg 1%\namin85\n5 mg 50%\n10 mg 100%\ntamina B6\n0.5 mg 25%\n1mg 0%\n1.5 mg\n9%\n3.2mg%\nCaldo\n50 mg\n5%\n100 mg 10%\nFictors\n77.4 mg 15\n38.7 mg 4%\nSTROS INGREDIENTES: Sacarosa, Glucosa, Benale de Sad\nDiaddice, Citrato de Sodio, Carbene\ndica, Elvainillina, color rojo N°3 CL. 45430,\nde Kola\nExtracto Fluido de Nuez de Kola\n3\nalladas para extr\nsaludane\n10 PORCIÓN ADULTOS: 2 cuchadas d\nMA",
+      "tokenCount": 136,
+      "avgTokenConfidence": 0.7781396828153554,
+      "p10TokenConfidence": 0.5347046256065369,
+      "p50TokenConfidence": 0.8071926236152649,
+      "p90TokenConfidence": 0.9788743257522583,
+      "medianTokenHeight": 8
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "text"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0
+    },
+    "completeness": {
+      "candidateAmountRows": 14,
+      "parsedIngredients": 13,
+      "completenessRatio": 0.9285714285714286,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 4,
+        "parseCoverage": 0.5,
+        "confidenceScore": 0.41013066429822215,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "possible_missing_column",
+            "message": "Parsed 4/8 rows with dose values; possible missing column or lane"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 50% of rows have valid amount/unit"
+          },
+          {
+            "type": "header_not_found",
+            "message": "Table header not detected, column mapping may be inaccurate"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 13,
+        "parseCoverage": 0.9285714285714286,
+        "confidenceScore": 0.6895384615384614,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "header_not_found",
+            "message": "Medicinal ingredients section not detected"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "36351432-688c-46a1-a3ac-c0f6edb97427",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:20.319Z",
+    "updatedAt": "2026-02-12T21:23:20.319Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [
+        {
+          "name": "400 U. 100% 800 L",
+          "ingredientId": null,
+          "amount": 250,
+          "amountUnit": "mcg",
+          "amountUnitRaw": "mcg",
+          "amountUnitNormalized": "mcg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.5
+        },
+        {
+          "name": "5000 UL 100% 10000 ULL",
+          "ingredientId": null,
+          "amount": 5,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.68
+        },
+        {
+          "name": "tamina C",
+          "ingredientId": null,
+          "amount": 50,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.68
+        },
+        {
+          "name": "1%",
+          "ingredientId": null,
+          "amount": 100,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.45000000000000007
+        },
+        {
+          "name": "amin85",
+          "ingredientId": null,
+          "amount": 5,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.63
+        },
+        {
+          "name": "100%",
+          "ingredientId": null,
+          "amount": 10,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.45000000000000007
+        },
+        {
+          "name": "tamina B6",
+          "ingredientId": null,
+          "amount": 0.5,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.68
+        },
+        {
+          "name": "0%",
+          "ingredientId": null,
+          "amount": 1,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.45000000000000007
+        },
+        {
+          "name": "9%",
+          "ingredientId": null,
+          "amount": 3.2,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.45000000000000007
+        },
+        {
+          "name": "Caldo",
+          "ingredientId": null,
+          "amount": 50,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.63
+        },
+        {
+          "name": "5%",
+          "ingredientId": null,
+          "amount": 100,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.45000000000000007
+        },
+        {
+          "name": "Fictors",
+          "ingredientId": null,
+          "amount": 77.4,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.63
+        },
+        {
+          "name": "4%",
+          "ingredientId": null,
+          "amount": 38.7,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.45000000000000007
+        }
+      ],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 0.9285714285714286,
+        "confidenceScore": 0.6895384615384614,
+        "issues": [
+          "missing_serving_size: Serving size not found",
+          "header_not_found: Medicinal ingredients section not detected"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "ad9383d6-d981-48cb-98a9-1fd5701ca45e",
+  "imageHash": "78ef7399-45852",
+  "flagVariant": "control",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:20.099Z",
+    "draftReadyAt": "2026-02-12T21:23:20.318Z",
+    "tDecodeMs": 0.28266700000131095,
+    "tOcrMs": 210.85733299999993,
+    "tParseMs": 1.8010419999991427,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 219
+  }
+}

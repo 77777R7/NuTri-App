@@ -1,0 +1,252 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_037",
+    "generatedAt": "2026-02-12T21:23:21.522Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "43ce82aedd74eee95d8f84b0c0bd3e6f9c3c0f4db0ce9361f67a596f691dd0a4",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/003/398/403/7250/ingredients_fr.4.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [
+      {
+        "name": "cellulose microcristalline",
+        "amount": 2,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.8903348512119718,
+        "rawLine": "cellulose microcristalline Zinc ( picolinate ) ......... 2mg 220"
+      },
+      {
+        "name": "stéarate de magnésium végétal",
+        "amount": 6,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.9287172377109527,
+        "rawLine": "stéarate de magnésium végétal Gomme de cellulose .............. 6 mg"
+      }
+    ],
+    "parseCoverage": 1,
+    "confidenceScore": 0.8678578133384387,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.04008299999986775,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.1226249999999709,
+      "visionClientInitMs": 0,
+      "visionMs": 137.35079199999927,
+      "postprocessMs": 2.457125000000815,
+      "llmMs": null,
+      "totalMs": 140.4272920000003
+    },
+    "image": {
+      "inputBytes": 20989,
+      "inputMime": "image/jpeg",
+      "inputWidth": 400,
+      "inputHeight": 295,
+      "preprocessedBytes": 20989,
+      "preprocessedWidth": 400,
+      "preprocessedHeight": 295
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 336,
+      "fullTextPreview": "Ingrédients\nChaque tablet fournit:\nAgents liants..............\nphosphate dicalcique,\ncellulose microcristalline\nZinc (picolinate).........\nacide stéarique végétal,\n%CE\nANC\n.15% mg\n2mg 220\nAgents anti-agglomérants:......9.5-mg\nstéarate de magnésium végétal\nGomme de cellulose\n..............6 mg\nCE ANC=CE Apports Nutritionnels Conseillès",
+      "tokenCount": 56,
+      "avgTokenConfidence": 0.8810797759464809,
+      "p10TokenConfidence": 0.6525405645370483,
+      "p50TokenConfidence": 0.9580709338188171,
+      "p90TokenConfidence": 0.9903233051300049,
+      "medianTokenHeight": 22
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0.556511175898931
+    },
+    "completeness": {
+      "candidateAmountRows": 2,
+      "parsedIngredients": 2,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 2,
+        "parseCoverage": 1,
+        "confidenceScore": 0.8678578133384387,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 2,
+        "parseCoverage": 1,
+        "confidenceScore": 0.702,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "header_not_found",
+            "message": "Medicinal ingredients section not detected"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "0eaa66d3-7e98-459f-8e7a-ee276999003d",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:21.519Z",
+    "updatedAt": "2026-02-12T21:23:21.519Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [
+        {
+          "name": "cellulose microcristalline",
+          "ingredientId": null,
+          "amount": 2,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.8903348512119718
+        },
+        {
+          "name": "stéarate de magnésium végétal",
+          "ingredientId": null,
+          "amount": 6,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.9287172377109527
+        }
+      ],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 1,
+        "confidenceScore": 0.8678578133384387,
+        "issues": [
+          "missing_serving_size: Serving size not found"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "ccaa36d7-e1db-4847-9d20-efd6ef5313ac",
+  "imageHash": "41721d8a-27988",
+  "flagVariant": "control",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:21.377Z",
+    "draftReadyAt": "2026-02-12T21:23:21.518Z",
+    "tDecodeMs": 0.04008299999986775,
+    "tOcrMs": 137.35079199999927,
+    "tParseMs": 2.457125000000815,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 141
+  }
+}

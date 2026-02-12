@@ -1,0 +1,230 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_038",
+    "generatedAt": "2026-02-12T21:23:21.590Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "abb0a6def434359a49d6c380f811989200acddf6e40d2b21e8f0c94bbaa9be8e",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/073/373/901/5228/front_en.9.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [
+      {
+        "name": "Zinc",
+        "amount": 50,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.9697859684626261,
+        "rawLine": "Zinc 50 mg"
+      }
+    ],
+    "parseCoverage": 1,
+    "confidenceScore": 0.8859357905387878,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.024374999999054126,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.1069999999999709,
+      "visionClientInitMs": 0,
+      "visionMs": 144.644542,
+      "postprocessMs": 0.9369580000002316,
+      "llmMs": null,
+      "totalMs": 145.95433299999968
+    },
+    "image": {
+      "inputBytes": 17017,
+      "inputMime": "image/jpeg",
+      "inputWidth": 300,
+      "inputHeight": 400,
+      "preprocessedBytes": 17017,
+      "preprocessedWidth": 300,
+      "preprocessedHeight": 400
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 102,
+      "fullTextPreview": "(NW)\nZinc\n50 mg\nImmune Support\nSupports Enzyme Functions\n250 Tablets\nA Dietary Supplement Vegetarian S",
+      "tokenCount": 18,
+      "avgTokenConfidence": 0.8230945087141461,
+      "p10TokenConfidence": 0.40762028098106384,
+      "p50TokenConfidence": 0.955890953540802,
+      "p90TokenConfidence": 0.9805307984352112,
+      "medianTokenHeight": 12
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0
+    },
+    "completeness": {
+      "candidateAmountRows": 1,
+      "parsedIngredients": 1,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 1,
+        "parseCoverage": 1,
+        "confidenceScore": 0.8859357905387878,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 1,
+        "parseCoverage": 1,
+        "confidenceScore": 0.714,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "header_not_found",
+            "message": "Medicinal ingredients section not detected"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "2a0e468d-1a97-4855-9aae-3d51dbb1967c",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:21.587Z",
+    "updatedAt": "2026-02-12T21:23:21.587Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [
+        {
+          "name": "Zinc",
+          "ingredientId": null,
+          "amount": 50,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.9697859684626261
+        }
+      ],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 1,
+        "confidenceScore": 0.8859357905387878,
+        "issues": [
+          "missing_serving_size: Serving size not found"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "e0735929-b81b-4823-9b08-03f7f23de7e8",
+  "imageHash": "afbcda12-22692",
+  "flagVariant": "control",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:21.439Z",
+    "draftReadyAt": "2026-02-12T21:23:21.585Z",
+    "tDecodeMs": 0.024374999999054126,
+    "tOcrMs": 144.644542,
+    "tParseMs": 0.9369580000002316,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 146
+  }
+}

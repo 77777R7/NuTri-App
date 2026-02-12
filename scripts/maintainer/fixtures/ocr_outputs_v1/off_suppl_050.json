@@ -1,0 +1,525 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_050",
+    "generatedAt": "2026-02-12T21:23:22.116Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "12627b78e2389d8198c5a7ced0030e6821cf48561fdb06495003b675d4ddbac1",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/847/000/161/5633/nutrition_es.5.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [
+      {
+        "name": "Proteínas Por 1 pastilla (",
+        "amount": 2,
+        "unit": "g",
+        "dvPercent": null,
+        "confidence": 0.68,
+        "rawLine": "Proteínas Por 1 pastilla (2 g)"
+      },
+      {
+        "name": "Por",
+        "amount": 100,
+        "unit": "g",
+        "dvPercent": null,
+        "confidence": 0.63,
+        "rawLine": "Por 100 g"
+      },
+      {
+        "name": "/17 kJ",
+        "amount": 4,
+        "unit": "kcal",
+        "dvPercent": null,
+        "confidence": 0.5,
+        "rawLine": "4 kcal/17 kJ"
+      },
+      {
+        "name": "/841 kJ",
+        "amount": 205,
+        "unit": "kcal",
+        "dvPercent": null,
+        "confidence": 0.5,
+        "rawLine": "205 kcal/841 kJ"
+      },
+      {
+        "name": "<0.19 <",
+        "amount": 1,
+        "unit": "g",
+        "dvPercent": null,
+        "confidence": 0.5,
+        "rawLine": "<0.19 <0,1g"
+      },
+      {
+        "name": "47.9 <",
+        "amount": 1,
+        "unit": "g",
+        "dvPercent": null,
+        "confidence": 0.5,
+        "rawLine": "47.9 <0,1g"
+      },
+      {
+        "name": "439",
+        "amount": 8,
+        "unit": "g",
+        "dvPercent": null,
+        "confidence": 0.45000000000000007,
+        "rawLine": "439 0,8 g"
+      },
+      {
+        "name": "38 q <",
+        "amount": 1,
+        "unit": "g",
+        "dvPercent": null,
+        "confidence": 0.5,
+        "rawLine": "38 q <0,1g"
+      },
+      {
+        "name": "Sal",
+        "amount": 12,
+        "unit": "g",
+        "dvPercent": null,
+        "confidence": 0.63,
+        "rawLine": "Sal 12 g"
+      },
+      {
+        "name": "09",
+        "amount": 0,
+        "unit": "g",
+        "dvPercent": null,
+        "confidence": 0.45000000000000007,
+        "rawLine": "09 0g"
+      },
+      {
+        "name": "Extracto de própolis",
+        "amount": 60,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.68,
+        "rawLine": "Extracto de própolis 60 mg"
+      },
+      {
+        "name": "titulado",
+        "amount": 3000,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.63,
+        "rawLine": "titulado 3000 mg"
+      },
+      {
+        "name": "Miel",
+        "amount": 8,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.63,
+        "rawLine": "Miel 0,8 mg"
+      },
+      {
+        "name": "8% VRN (Valores de Referencia de Nutrientes)",
+        "amount": 500,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.68,
+        "rawLine": ": 8% VRN (Valores de Referencia de Nutrientes) 500 mg"
+      }
+    ],
+    "parseCoverage": 0.7,
+    "confidenceScore": 0.6955714285714285,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      },
+      {
+        "type": "header_not_found",
+        "message": "Medicinal ingredients section not detected"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.026874999999563443,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.10562500000014552,
+      "visionClientInitMs": 0,
+      "visionMs": 144.84758300000067,
+      "postprocessMs": 3.4682919999995647,
+      "llmMs": null,
+      "totalMs": 148.68183399999907
+    },
+    "image": {
+      "inputBytes": 22795,
+      "inputMime": "image/jpeg",
+      "inputWidth": 400,
+      "inputHeight": 336,
+      "preprocessedBytes": 22795,
+      "preprocessedWidth": 400,
+      "preprocessedHeight": 336
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 459,
+      "fullTextPreview": "INFORMACIÓN\nNUTRICIONAL\nValor energético\nGrasas\nde las cuales:\nSaturadas\nHidratos de carbono\nde los cuales:\nAzúcares:\nPolialcoholes:\nFibra alimentaria\nProteínas\nPor 1 pastilla (2 g)\nPor 100 g\n4 kcal/17 kJ\n205 kcal/841 kJ\n<0.1 g\n<0,5 g\n<0.19\n<0,1g\n19\n47.9\n<0,1g\n<0.5g\n0,9 g\n439\n0,8 g\n38 q\n<0,1g\n12 g\nSal\n09\n0g\nAPORTE DE NUTRIENTES\nExtracto de própolis\n60 mg\n3000 mg\ntitulado\nZinc\nMiel\n0,8 mg\n40 mg**\n10 mg\n500 mg\n*: 8% VRN (Valores de Referencia de Nutrientes)",
+      "tokenCount": 108,
+      "avgTokenConfidence": 0.8836368824596759,
+      "p10TokenConfidence": 0.5947740077972412,
+      "p50TokenConfidence": 0.9529159665107727,
+      "p90TokenConfidence": 0.9900006651878357,
+      "medianTokenHeight": 12
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "text"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0.5003538314814083
+    },
+    "completeness": {
+      "candidateAmountRows": 20,
+      "parsedIngredients": 14,
+      "completenessRatio": 0.7,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 11,
+        "parseCoverage": 0.9166666666666666,
+        "confidenceScore": 0.7865813436239828,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "header_not_found",
+            "message": "Table header not detected, column mapping may be inaccurate"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 14,
+        "parseCoverage": 0.7,
+        "confidenceScore": 0.6955714285714285,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "header_not_found",
+            "message": "Medicinal ingredients section not detected"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "1df71ece-b986-46aa-81b7-5388561d507f",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:22.114Z",
+    "updatedAt": "2026-02-12T21:23:22.114Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [
+        {
+          "name": "Proteínas Por 1 pastilla (",
+          "ingredientId": null,
+          "amount": 2,
+          "amountUnit": "g",
+          "amountUnitRaw": "g",
+          "amountUnitNormalized": "g",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.68
+        },
+        {
+          "name": "Por",
+          "ingredientId": null,
+          "amount": 100,
+          "amountUnit": "g",
+          "amountUnitRaw": "g",
+          "amountUnitNormalized": "g",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.63
+        },
+        {
+          "name": "/17 kJ",
+          "ingredientId": null,
+          "amount": 4,
+          "amountUnit": "kcal",
+          "amountUnitRaw": "kcal",
+          "amountUnitNormalized": null,
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.5
+        },
+        {
+          "name": "/841 kJ",
+          "ingredientId": null,
+          "amount": 205,
+          "amountUnit": "kcal",
+          "amountUnitRaw": "kcal",
+          "amountUnitNormalized": null,
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.5
+        },
+        {
+          "name": "<0.19 <",
+          "ingredientId": null,
+          "amount": 1,
+          "amountUnit": "g",
+          "amountUnitRaw": "g",
+          "amountUnitNormalized": "g",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.5
+        },
+        {
+          "name": "47.9 <",
+          "ingredientId": null,
+          "amount": 1,
+          "amountUnit": "g",
+          "amountUnitRaw": "g",
+          "amountUnitNormalized": "g",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.5
+        },
+        {
+          "name": "439",
+          "ingredientId": null,
+          "amount": 8,
+          "amountUnit": "g",
+          "amountUnitRaw": "g",
+          "amountUnitNormalized": "g",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.45000000000000007
+        },
+        {
+          "name": "38 q <",
+          "ingredientId": null,
+          "amount": 1,
+          "amountUnit": "g",
+          "amountUnitRaw": "g",
+          "amountUnitNormalized": "g",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.5
+        },
+        {
+          "name": "Sal",
+          "ingredientId": null,
+          "amount": 12,
+          "amountUnit": "g",
+          "amountUnitRaw": "g",
+          "amountUnitNormalized": "g",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.63
+        },
+        {
+          "name": "09",
+          "ingredientId": null,
+          "amount": 0,
+          "amountUnit": "g",
+          "amountUnitRaw": "g",
+          "amountUnitNormalized": "g",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.45000000000000007
+        },
+        {
+          "name": "Extracto de própolis",
+          "ingredientId": null,
+          "amount": 60,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.68
+        },
+        {
+          "name": "titulado",
+          "ingredientId": null,
+          "amount": 3000,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.63
+        },
+        {
+          "name": "Miel",
+          "ingredientId": null,
+          "amount": 8,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.63
+        },
+        {
+          "name": "8% VRN (Valores de Referencia de Nutrientes)",
+          "ingredientId": null,
+          "amount": 500,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.68
+        }
+      ],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 0.7,
+        "confidenceScore": 0.6955714285714285,
+        "issues": [
+          "missing_serving_size: Serving size not found",
+          "header_not_found: Medicinal ingredients section not detected"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "200823ee-7fd3-455e-8189-6146a3f1e2c7",
+  "imageHash": "d19d0b64-30396",
+  "flagVariant": "draft_first_async",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:21.965Z",
+    "draftReadyAt": "2026-02-12T21:23:22.113Z",
+    "tDecodeMs": 0.026874999999563443,
+    "tOcrMs": 144.84758300000067,
+    "tParseMs": 3.4682919999995647,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 148
+  }
+}

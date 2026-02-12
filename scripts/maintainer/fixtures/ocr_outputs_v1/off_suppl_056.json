@@ -1,0 +1,296 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_056",
+    "generatedAt": "2026-02-12T21:23:22.353Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "e28a508e5da46e04ca54c2fd9e3e0c07b17c6bca8f6134f2909b9b2933f4c9c4",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/841/201/636/2966/ingredients_en.6.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [
+      {
+        "name": "ingredientes ( 2 cápsulas )",
+        "amount": 400,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.9244877804409374,
+        "rawLine": "ingredientes ( 2 cápsulas ) Colágeno Zine hidrolizado 400 mg %"
+      },
+      {
+        "name": "Haluronato",
+        "amount": 21,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.8651371896266937,
+        "rawLine": "Haluronato 21 mg 210"
+      },
+      {
+        "name": "Teamina C Sódico",
+        "amount": 100,
+        "unit": "mg",
+        "dvPercent": 100,
+        "confidence": 0.9581289059585996,
+        "rawLine": "Teamina C Sódico 100 mg 100 %"
+      },
+      {
+        "name": "\" VRN",
+        "amount": 80,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.7943191602826118,
+        "rawLine": "\" VRN 80 mg"
+      }
+    ],
+    "parseCoverage": 1,
+    "confidenceScore": 0.8606554777231632,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.025583000000551692,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.10920900000019174,
+      "visionClientInitMs": 0,
+      "visionMs": 165.40866599999936,
+      "postprocessMs": 2.6011249999992287,
+      "llmMs": null,
+      "totalMs": 168.69545899999866
+    },
+    "image": {
+      "inputBytes": 40002,
+      "inputMime": "image/jpeg",
+      "inputWidth": 400,
+      "inputHeight": 339,
+      "preprocessedBytes": 40002,
+      "preprocessedWidth": 400,
+      "preprocessedHeight": 339
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 535,
+      "fullTextPreview": "Modo de empleo / Toma diaria recomendada:\nTomar 2 cápsulas al día. 1 cápsula en la comida y\n1 cápsula en la cena. No superar la dosis diaria\nexpresamente recomendada. Los complementos\nalimenticios no deben ser utilizados como\nsustitutos de una dieta variada y equilibrada y un\nestilo de vida saludable.\nMantener fuera del alcance de los niños.\nCantidad por día % VRN\nNutrientes e\ningredientes\n(2 cápsulas)\nColágeno hidrolizado\n400 mg\n210%\nZine\n21 mg\nTeamina C\nHaluronato Sódico\n100 mg\n100%\n80 mg\n\"VRN",
+      "tokenCount": 103,
+      "avgTokenConfidence": 0.9366724439037656,
+      "p10TokenConfidence": 0.7929880023002625,
+      "p50TokenConfidence": 0.9804738163948059,
+      "p90TokenConfidence": 0.9919437170028687,
+      "medianTokenHeight": 18
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0.5120950554134698
+    },
+    "completeness": {
+      "candidateAmountRows": 4,
+      "parsedIngredients": 4,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 4,
+        "parseCoverage": 1,
+        "confidenceScore": 0.8606554777231632,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 4,
+        "parseCoverage": 1,
+        "confidenceScore": 0.708,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "header_not_found",
+            "message": "Medicinal ingredients section not detected"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "ca5b627f-13f2-40cb-9ff3-50c8a1968e00",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:22.351Z",
+    "updatedAt": "2026-02-12T21:23:22.351Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [
+        {
+          "name": "ingredientes ( 2 cápsulas )",
+          "ingredientId": null,
+          "amount": 400,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.9244877804409374
+        },
+        {
+          "name": "Haluronato",
+          "ingredientId": null,
+          "amount": 21,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.8651371896266937
+        },
+        {
+          "name": "Teamina C Sódico",
+          "ingredientId": null,
+          "amount": 100,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": 100,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.9581289059585996
+        },
+        {
+          "name": "\" VRN",
+          "ingredientId": null,
+          "amount": 80,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.7943191602826118
+        }
+      ],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 1,
+        "confidenceScore": 0.8606554777231632,
+        "issues": [
+          "missing_serving_size: Serving size not found"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "913b401c-24d9-4346-8745-31f00e8a2917",
+  "imageHash": "074aa311-53336",
+  "flagVariant": "draft_first_async",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:22.180Z",
+    "draftReadyAt": "2026-02-12T21:23:22.349Z",
+    "tDecodeMs": 0.025583000000551692,
+    "tOcrMs": 165.40866599999936,
+    "tParseMs": 2.6011249999992287,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 169
+  }
+}

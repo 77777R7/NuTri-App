@@ -1,0 +1,230 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_008",
+    "generatedAt": "2026-02-12T21:23:20.263Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "49cbf07deff83df285a2eeb855e353f7d319742b59084a6c541ede952e0eb0bf",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/840/200/100/1246/ingredients_en.5.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [
+      {
+        "name": "FLUTC",
+        "amount": 354,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.8863265514373779,
+        "rawLine": "FLUTC 3,54 mg / m"
+      }
+    ],
+    "parseCoverage": 1,
+    "confidenceScore": 0.8608979654312133,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.787292000000889,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.08933299999989686,
+      "visionClientInitMs": 0,
+      "visionMs": 147.255083,
+      "postprocessMs": 0.5679579999996349,
+      "llmMs": null,
+      "totalMs": 148.9154579999995
+    },
+    "image": {
+      "inputBytes": 17408,
+      "inputMime": "image/jpeg",
+      "inputWidth": 225,
+      "inputHeight": 400,
+      "preprocessedBytes": 17408,
+      "preprocessedWidth": 225,
+      "preprocessedHeight": 400
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 26,
+      "fullTextPreview": "FLUTC\n3,54 mg/m\nJarabe\nLAT",
+      "tokenCount": 7,
+      "avgTokenConfidence": 0.8445957813944135,
+      "p10TokenConfidence": 0.6809327602386475,
+      "p50TokenConfidence": 0.8227314352989197,
+      "p90TokenConfidence": 0.9279952645301819,
+      "medianTokenHeight": 14
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0
+    },
+    "completeness": {
+      "candidateAmountRows": 1,
+      "parsedIngredients": 1,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 1,
+        "parseCoverage": 1,
+        "confidenceScore": 0.8608979654312133,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 1,
+        "parseCoverage": 1,
+        "confidenceScore": 0.714,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "header_not_found",
+            "message": "Medicinal ingredients section not detected"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "1fac5998-5244-4e3e-b6db-e7bb74e40adc",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:20.262Z",
+    "updatedAt": "2026-02-12T21:23:20.262Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [
+        {
+          "name": "FLUTC",
+          "ingredientId": null,
+          "amount": 354,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.8863265514373779
+        }
+      ],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 1,
+        "confidenceScore": 0.8608979654312133,
+        "issues": [
+          "missing_serving_size: Serving size not found"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "951e43f0-fedd-46dd-9703-1a772b26dc80",
+  "imageHash": "0baeae79-23212",
+  "flagVariant": "control",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:20.112Z",
+    "draftReadyAt": "2026-02-12T21:23:20.261Z",
+    "tDecodeMs": 0.787292000000889,
+    "tOcrMs": 147.255083,
+    "tParseMs": 0.5679579999996349,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 149
+  }
+}

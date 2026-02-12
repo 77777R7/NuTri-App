@@ -1,0 +1,230 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_005",
+    "generatedAt": "2026-02-12T21:23:20.368Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "698c76b9ca78ed6587644f5a668d1ca7dfd5477e881430f0fd4bd7e732dc5baf",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/872/330/071/0746/ingredients_de.23.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [
+      {
+        "name": "SOWIE WAHREND DER STILLPERIODE EINE TAGESDOSIS CYANOCOBALAMIN CHOLECALCIFEROL PYRIDOXINHYDRO",
+        "amount": 1500,
+        "unit": "mcg",
+        "dvPercent": null,
+        "confidence": 0.8944338383999738,
+        "rawLine": "SOWIE WAHREND DER STILLPERIODE EINE TAGESDOSIS CYANOCOBALAMIN CHOLECALCIFEROL PYRIDOXINHYDRO VON 1500 MCG RETINOL PRINZIPIELL NICHT ÜBERSCHRITTEN CHLORID RIBOFLAVIN , THIAMINMONONITRAT , PHYTOMENADE"
+      }
+    ],
+    "parseCoverage": 1,
+    "confidenceScore": 0.863330151519992,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.03633300000001327,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.16054199999962293,
+      "visionClientInitMs": 0,
+      "visionMs": 284.220292,
+      "postprocessMs": 5.145792000001165,
+      "llmMs": null,
+      "totalMs": 290.0830420000002
+    },
+    "image": {
+      "inputBytes": 39976,
+      "inputMime": "image/jpeg",
+      "inputWidth": 400,
+      "inputHeight": 270,
+      "preprocessedBytes": 39976,
+      "preprocessedWidth": 400,
+      "preprocessedHeight": 270
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 2729,
+      "fullTextPreview": "DE MULTIONE-A-DAY DOSIERUNG ERWACHSENE\nSCHLUCKEN SIE TAGLICH 1 TABLETTE ZU EINER MAHLZEIT\nÜBERSCHREITEN SIE DIE EMPFOHLENE TAGESDOSIS NICHT\nNICHT GEEIGNET FÜR KINDER UNTER 18 JAHREN BEI\nSCHWANGEREN UND FRAUEN IM GEBARFÄHIGEN ALTER DARF\nWEGEN DER GEFAHR VON KINDLICHEN MISSBILDUNGEN\nSOWIE WAHREND DER STILLPERIODE EINE TAGESDOSIS\nVON 1500 MCG RETINOL PRINZIPIELL NICHT ÜBERSCHRITTEN\nWERDEN WÄHREND DER SCHWANGERSCHAFT SOLLTE\nVITAMIN A NUR NACH ARZTLICHER RÜCKSPRACHE EIN\nGENOMMEN WERDEN. WAHREND DER B",
+      "tokenCount": 360,
+      "avgTokenConfidence": 0.8647090670963128,
+      "p10TokenConfidence": 0.6000060439109802,
+      "p50TokenConfidence": 0.9258565306663513,
+      "p90TokenConfidence": 0.9808606505393982,
+      "medianTokenHeight": 8
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0.5217720486301874
+    },
+    "completeness": {
+      "candidateAmountRows": 1,
+      "parsedIngredients": 1,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 1,
+        "parseCoverage": 1,
+        "confidenceScore": 0.863330151519992,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 1,
+        "parseCoverage": 1,
+        "confidenceScore": 0.714,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "header_not_found",
+            "message": "Medicinal ingredients section not detected"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "38575e8a-4cde-4a7e-8254-86b5bd0d851e",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:20.366Z",
+    "updatedAt": "2026-02-12T21:23:20.366Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [
+        {
+          "name": "SOWIE WAHREND DER STILLPERIODE EINE TAGESDOSIS CYANOCOBALAMIN CHOLECALCIFEROL PYRIDOXINHYDRO",
+          "ingredientId": null,
+          "amount": 1500,
+          "amountUnit": "mcg",
+          "amountUnitRaw": "mcg",
+          "amountUnitNormalized": "mcg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.8944338383999738
+        }
+      ],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 1,
+        "confidenceScore": 0.863330151519992,
+        "issues": [
+          "missing_serving_size: Serving size not found"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "3a7ec931-7d94-4d56-9fdd-2a7d5e9707c1",
+  "imageHash": "03e6ff6a-53304",
+  "flagVariant": "control",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:20.076Z",
+    "draftReadyAt": "2026-02-12T21:23:20.366Z",
+    "tDecodeMs": 0.03633300000001327,
+    "tOcrMs": 284.220292,
+    "tParseMs": 5.145792000001165,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 290
+  }
+}

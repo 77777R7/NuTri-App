@@ -1,0 +1,239 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_029",
+    "generatedAt": "2026-02-12T21:23:21.209Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "17a975dbcbc805727898cd09815f859b33d4ab9ce956d1c83caf3ae75a42e54e",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/611/800/003/2090/ingredients_fr.5.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [
+      {
+        "name": "comprimé effervescent Cette boite contient",
+        "amount": 900,
+        "unit": "mg",
+        "dvPercent": null,
+        "confidence": 0.53,
+        "rawLine": "comprimé effervescent Cette boite contient 900 mg de zinc."
+      }
+    ],
+    "parseCoverage": 1,
+    "confidenceScore": 0.6839999999999999,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      },
+      {
+        "type": "header_not_found",
+        "message": "Medicinal ingredients section not detected"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.013624999999592546,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.05049999999937427,
+      "visionClientInitMs": 0,
+      "visionMs": 168.83879100000013,
+      "postprocessMs": 1.344041999998808,
+      "llmMs": null,
+      "totalMs": 170.39800000000105
+    },
+    "image": {
+      "inputBytes": 13727,
+      "inputMime": "image/jpeg",
+      "inputWidth": 400,
+      "inputHeight": 174,
+      "preprocessedBytes": 13727,
+      "preprocessedWidth": 400,
+      "preprocessedHeight": 174
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 290,
+      "fullTextPreview": "45\nFORMULE:\nZine\n(\nsous forme de sulfate de zinc monohydraté)\nExcipients asp\nEXCIPIENTS A EFFET NOTOIRE:\nSodium-Saccharose\nVoir notice pour plus d'informations.\n900\n45 mo\ncomprimé effervescent\nCette boite contient 900 mg de zinc.\nNRQd/DMP/VHA/18\nAMM N 02/21\nLISTER\nUNIQUEMENT SUR ORDONNANCE",
+      "tokenCount": 56,
+      "avgTokenConfidence": 0.8652078232594899,
+      "p10TokenConfidence": 0.653383195400238,
+      "p50TokenConfidence": 0.9063392877578735,
+      "p90TokenConfidence": 0.9847374558448792,
+      "medianTokenHeight": 10
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "text"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0.4261523532265891
+    },
+    "completeness": {
+      "candidateAmountRows": 1,
+      "parsedIngredients": 1,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of rows have valid amount/unit"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 1,
+        "parseCoverage": 1,
+        "confidenceScore": 0.6839999999999999,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "header_not_found",
+            "message": "Medicinal ingredients section not detected"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "12aa4f70-8b9c-4676-9e43-e94a8cc58e22",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:21.208Z",
+    "updatedAt": "2026-02-12T21:23:21.208Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [
+        {
+          "name": "comprimé effervescent Cette boite contient",
+          "ingredientId": null,
+          "amount": 900,
+          "amountUnit": "mg",
+          "amountUnitRaw": "mg",
+          "amountUnitNormalized": "mg",
+          "dvPercent": null,
+          "form": null,
+          "isProprietaryBlend": false,
+          "amountUnknown": false,
+          "source": "label",
+          "confidence": 0.53
+        }
+      ],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 1,
+        "confidenceScore": 0.6839999999999999,
+        "issues": [
+          "missing_serving_size: Serving size not found",
+          "header_not_found: Medicinal ingredients section not detected"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "d050ec72-4595-4841-809c-eb2723fff6a9",
+  "imageHash": "d83ea220-18304",
+  "flagVariant": "draft_first_async",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:21.036Z",
+    "draftReadyAt": "2026-02-12T21:23:21.207Z",
+    "tDecodeMs": 0.013624999999592546,
+    "tOcrMs": 168.83879100000013,
+    "tParseMs": 1.344041999998808,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 171
+  }
+}

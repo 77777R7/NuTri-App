@@ -1,0 +1,215 @@
+{
+  "fixtureMeta": {
+    "imageId": "off_suppl_028",
+    "generatedAt": "2026-02-12T21:23:21.308Z",
+    "apiBase": "http://127.0.0.1:3001",
+    "preprocessProfile": "jpeg_1800_q82",
+    "imageSha256": "5bd2884d315c951b7ad5a87b237842b8181961b3b697c3f6e95fca2cbe5c68e1",
+    "sourceStorageUri": "https://images.openfoodfacts.org/images/products/871/883/639/6366/ingredients_fr.5.400.jpg"
+  },
+  "status": "needs_confirmation",
+  "draft": {
+    "servingSize": null,
+    "ingredients": [],
+    "parseCoverage": 0,
+    "confidenceScore": 0.3,
+    "issues": [
+      {
+        "type": "missing_serving_size",
+        "message": "Serving size not found"
+      },
+      {
+        "type": "low_coverage",
+        "message": "Only 0% of rows have valid amount/unit"
+      }
+    ]
+  },
+  "message": "Please review the extracted ingredients.",
+  "debug": {
+    "timing": {
+      "decodeMs": 0.017041999999491964,
+      "preprocessMs": 0,
+      "requestBodyMs": 0.07137499999953434,
+      "visionClientInitMs": 0,
+      "visionMs": 277.0089169999992,
+      "postprocessMs": 3.591167000000496,
+      "llmMs": null,
+      "totalMs": 281.59470899999906
+    },
+    "image": {
+      "inputBytes": 21186,
+      "inputMime": "image/jpeg",
+      "inputWidth": 300,
+      "inputHeight": 400,
+      "preprocessedBytes": 21186,
+      "preprocessedWidth": 300,
+      "preprocessedHeight": 400
+    },
+    "vision": {
+      "languageHints": [
+        "en",
+        "fr"
+      ],
+      "fullTextLength": 1286,
+      "fullTextPreview": "IN INGREDIENTS: GLUCOSE SYRUP, SUGAR, GLUCOSE, GELLING A\nLAGER ACDS TRIC ACID, SODIUM CITRATE VITAMIN CLASCORREND\nALPHA TOCOPHERYLACETATE), NATURAL RASPBERRY FLANDRING, REELING\nAREN ACETATE, ZINC CITRATE, COLOURING FOOD CONCENTRAS OF PAPLAN\nPYRIDOXINE HYDROCHLORIDE), GLAZING AGENT CA\nINGREDIENTEN: GLUCOSESTROOP SUIKER, GLUCOSE, GELERMO\nSOLLAGEEN VOEDINGSZUREN (CITROENZUUR, NATRIUMOTRAAT\nSNEZUR), VITAMINE EI ALFA-TOCOFERYLACETAAT R\nMAPLANTAARDIGE OLIE, VITAMA (RETINYLACESAAT ZE\nENSMODEL CONCENTRA",
+      "tokenCount": 210,
+      "avgTokenConfidence": 0.6610208376532509,
+      "p10TokenConfidence": 0.473967969417572,
+      "p50TokenConfidence": 0.6376091837882996,
+      "p90TokenConfidence": 0.8696330189704895,
+      "medianTokenHeight": 8
+    },
+    "heuristics": {
+      "tableLikely": false,
+      "textLikely": false,
+      "hasMedicinalSection": false,
+      "hasEachContainsAnchor": false,
+      "chosenPipeline": "table"
+    },
+    "laneSplit": {
+      "triggered": false,
+      "applied": false,
+      "chosen": "baseline",
+      "revertedReason": null,
+      "leftTokenCount": 0,
+      "rightTokenCount": 0,
+      "centerGapRatio": 0
+    },
+    "completeness": {
+      "candidateAmountRows": 0,
+      "parsedIngredients": 0,
+      "completenessRatio": 1,
+      "issueTriggered": false
+    },
+    "drafts": {
+      "table": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of rows have valid amount/unit"
+          }
+        ]
+      },
+      "text": {
+        "ingredientsCount": 0,
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          {
+            "type": "missing_serving_size",
+            "message": "Serving size not found"
+          },
+          {
+            "type": "low_coverage",
+            "message": "Only 0% of lines have valid amount/unit"
+          }
+        ]
+      }
+    }
+  },
+  "analysisStatus": "skipped",
+  "snapshot": {
+    "schemaVersion": 1,
+    "snapshotId": "31b191e8-ce20-4592-9753-d72c105042f8",
+    "status": "partial",
+    "source": "label",
+    "region": "global",
+    "createdAt": "2026-02-12T21:23:21.306Z",
+    "updatedAt": "2026-02-12T21:23:21.306Z",
+    "error": null,
+    "product": {
+      "brand": null,
+      "name": null,
+      "category": null,
+      "imageUrl": null,
+      "barcode": {
+        "raw": null,
+        "normalized": null,
+        "normalizedFormat": null,
+        "isChecksumValid": null,
+        "variants": null
+      },
+      "externalIds": {
+        "upc": null,
+        "ean": null,
+        "gtin": null,
+        "asin": null
+      },
+      "entityRefs": {
+        "supplementId": null,
+        "brandId": null
+      }
+    },
+    "label": {
+      "servingSize": null,
+      "servingsPerContainer": null,
+      "servingsPerContainerText": null,
+      "actives": [],
+      "inactive": [],
+      "proprietaryBlends": [],
+      "extraction": {
+        "parseCoverage": 0,
+        "confidenceScore": 0.3,
+        "issues": [
+          "missing_serving_size: Serving size not found",
+          "low_coverage: Only 0% of rows have valid amount/unit"
+        ]
+      }
+    },
+    "regulatory": {
+      "npn": null,
+      "npnStatus": null,
+      "npnVerifiedBy": null,
+      "dsldLabelId": null,
+      "regionTags": [],
+      "lastCheckedAt": null,
+      "sourceUrls": null
+    },
+    "trust": {
+      "overallStatus": "unknown",
+      "signals": [],
+      "claims": null
+    },
+    "listings": {
+      "items": [],
+      "bestOffer": null
+    },
+    "references": {
+      "items": []
+    }
+  },
+  "requestId": "83c13afd-8981-491d-a329-475ac813d9be",
+  "imageHash": "c6825127-28248",
+  "flagVariant": "draft_first_async",
+  "draftRevision": 1,
+  "analysisForDraftRevision": null,
+  "patchId": null,
+  "patchType": null,
+  "parserVersion": "v2.3.0",
+  "preprocessProfile": "jpeg_1800_q82",
+  "laneSplitTriggered": false,
+  "laneSplitChosen": "baseline",
+  "laneSplitRevertedReason": null,
+  "cacheLayerHits": {
+    "mode": "strict",
+    "ocr": false,
+    "parse": null,
+    "analysis": false
+  },
+  "timing": {
+    "serverReceivedAt": "2026-02-12T21:23:21.022Z",
+    "draftReadyAt": "2026-02-12T21:23:21.304Z",
+    "tDecodeMs": 0.017041999999491964,
+    "tOcrMs": 277.0089169999992,
+    "tParseMs": 3.591167000000496,
+    "tLlmMs": null,
+    "tFirstDraftServerMs": 282
+  }
+}
