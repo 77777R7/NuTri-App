@@ -107,10 +107,15 @@ const defaultHeaders = {
   Accept: "*/*",
 };
 
+const AUTH_DISABLED_HEADER =
+  process.env.RENDER_AUTH_DISABLED_HEADER ||
+  (REGRESSION_TOKEN ? null : "1");
+
 const apiHeaders = {
   "Content-Type": "application/json",
   Accept: "text/event-stream",
-  ...(REGRESSION_TOKEN ? { "x-regression-token": REGRESSION_TOKEN } : { "x-auth-disabled": "1" }),
+  ...(REGRESSION_TOKEN ? { "x-regression-token": REGRESSION_TOKEN } : {}),
+  ...(AUTH_DISABLED_HEADER ? { "x-auth-disabled": AUTH_DISABLED_HEADER } : {}),
 };
 
 const SITE_CONFIGS = [
@@ -1190,6 +1195,7 @@ const runFullFlow = async (item, options) => {
   const sectionMeta = rev1Meta ?? persistedMeta ?? null;
   const sourceType = rev1Meta?.sourceType ?? persistedMeta?.sourceType ?? null;
   let contractFailure = classifySseContractFailure({ sse, picked });
+  let missingDoneSuppressed = false;
   if (contractFailure) {
     errors.push(contractFailure);
   }
@@ -1303,6 +1309,7 @@ const runFullFlow = async (item, options) => {
     !finalProbe.reason
   ) {
     contractFailure = null;
+    missingDoneSuppressed = true;
   }
 
   const contracts = evaluateContentContracts(sections);
@@ -1359,6 +1366,7 @@ const runFullFlow = async (item, options) => {
       rev1Seen: Boolean(picked.rev1),
       doneSeen: Boolean(picked.done) || Boolean(sse.doneSeen),
       contractFailure,
+      missingDoneSuppressed,
       terminalErrorType: sse.terminalErrorType,
       fatalError: sse.fatalError ?? null,
       persistedProbe: sse.persistedProbe ?? null,
@@ -1478,6 +1486,7 @@ const summarizeSuite = (suiteName, rows, expectedSourceType = null, phaseMode = 
   const overviewStrongTokenCount = validRows.filter((row) => row.contracts.overviewStrongTokenPresent).length;
   const usagePresentCount = validRows.filter((row) => row.contracts.usagePresent).length;
   const scoreAvailableTrueCount = validRows.filter((row) => row.sse.scoreAvailable === true).length;
+  const rawMissingDoneSuppressedCount = validRows.filter((row) => row.sse.missingDoneSuppressed === true).length;
 
   const enrichTimes = validRows.map((row) => row.sse.bestBundleMs).filter((value) => Number.isFinite(value) && value > 0);
   const detailTimes = validRows
@@ -1514,6 +1523,7 @@ const summarizeSuite = (suiteName, rows, expectedSourceType = null, phaseMode = 
     usagePresentRatio: total > 0 ? usagePresentCount / total : 0,
     scoreAvailableTrueCount,
     scoreAvailableTrueRatio: total > 0 ? scoreAvailableTrueCount / total : 0,
+    rawMissingDoneSuppressedCount,
     sourceTypeWebCount,
     sourceTypeWebRatio: total > 0 ? sourceTypeWebCount / total : 0,
     retryUsedCount,
@@ -1630,6 +1640,15 @@ const buildGateSummary = async ({ suiteA, suiteB, phaseMode, outDir }) => {
     errors: {
       byType: combinedErrors,
     },
+    observability: {
+      rawMissingDoneSuppressedCount: {
+        suiteA: suiteAForPhase?.metrics?.rawMissingDoneSuppressedCount || 0,
+        suiteB: suiteBForPhase?.metrics?.rawMissingDoneSuppressedCount || 0,
+        total:
+          (suiteAForPhase?.metrics?.rawMissingDoneSuppressedCount || 0) +
+          (suiteBForPhase?.metrics?.rawMissingDoneSuppressedCount || 0),
+      },
+    },
     retryUsedCount:
       (suiteAForPhase?.metrics?.retryUsedCount || 0) + (suiteBForPhase?.metrics?.retryUsedCount || 0),
     promotionSignal: {
@@ -1682,6 +1701,7 @@ const writeOnePageReport = async (outDir, context) => {
     lines.push(`- overview.strongTokenRatio: ${(m.overviewStrongTokenRatio * 100).toFixed(1)}%`);
     lines.push(`- usage.presentRatio: ${(m.usagePresentRatio * 100).toFixed(1)}%`);
     lines.push(`- scoreAvailable.trueRatio: ${(m.scoreAvailableTrueRatio * 100).toFixed(1)}%`);
+    lines.push(`- rawMissingDoneSuppressedCount: ${m.rawMissingDoneSuppressedCount || 0}`);
     if (title.includes("Suite B")) {
       lines.push(`- sourceType=web ratio: ${(m.sourceTypeWebRatio * 100).toFixed(1)}%`);
     }
@@ -1884,6 +1904,7 @@ const buildSseContractSummary = (rows) => {
   const rev1Count = rows.filter((row) => row.sse.rev1Seen).length;
   const doneCount = rows.filter((row) => row.sse.doneSeen).length;
   const abortErrorCount = rows.filter((row) => row.sse.abortError).length;
+  const missingDoneSuppressedCount = rows.filter((row) => row.sse.missingDoneSuppressed === true).length;
   return {
     generatedAt: new Date().toISOString(),
     total,
@@ -1892,6 +1913,7 @@ const buildSseContractSummary = (rows) => {
       revision1Rate: total > 0 ? rev1Count / total : 0,
       doneRate: total > 0 ? doneCount / total : 0,
       abortErrorCount,
+      missingDoneSuppressedCount,
     },
     failureCounts: byFailure,
     failureRatios: Object.fromEntries(
@@ -1909,6 +1931,7 @@ const writeSseContractReport = async (outDir, summary) => {
   lines.push(`- rev1: ${(summary.contract.revision1Rate * 100).toFixed(1)}%`);
   lines.push(`- done: ${(summary.contract.doneRate * 100).toFixed(1)}%`);
   lines.push(`- AbortError: ${summary.contract.abortErrorCount}`);
+  lines.push(`- rawMissingDoneSuppressedCount: ${summary.contract.missingDoneSuppressedCount || 0}`);
   lines.push("");
   lines.push("## Failure Breakdown");
   lines.push("");

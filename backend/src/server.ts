@@ -7142,6 +7142,52 @@ const buildFallbackOverviewSection = (digest: FactsDigest): AnalysisBundle["sect
   };
 };
 
+const enforceOverviewSectionContract = (
+  overviewSection: AnalysisBundle["sections"]["overview"],
+  digest: FactsDigest,
+): AnalysisBundle["sections"]["overview"] => {
+  const fallback = buildFallbackOverviewSection(digest);
+  const cover = overviewSection.cover ?? fallback.cover;
+  const detail = overviewSection.detail ?? fallback.detail;
+  const fallbackSummary = fallback.cover?.summary ?? buildFallbackOverviewSummary(digest);
+  const fallbackBullets = fallback.cover?.bullets ?? [];
+
+  const coverSummaryRaw =
+    typeof cover?.summary === "string" && cover.summary.trim().length > 0
+      ? clampText(cover.summary.trim(), 180)
+      : fallbackSummary;
+  const coverSummary =
+    coverSummaryRaw.length >= 40 && hasOverviewAnchorToken(coverSummaryRaw, digest)
+      ? coverSummaryRaw
+      : fallbackSummary;
+
+  const detailSummaryRaw =
+    typeof detail?.summary === "string" && detail.summary.trim().length > 0
+      ? clampText(detail.summary.trim(), 180)
+      : coverSummary;
+  const detailSummary =
+    detailSummaryRaw.length >= 40 && hasOverviewAnchorToken(detailSummaryRaw, digest)
+      ? detailSummaryRaw
+      : coverSummary;
+
+  const coverBullets = Array.isArray(cover?.bullets) && cover.bullets.length > 0 ? cover.bullets : fallbackBullets;
+  const detailBullets = Array.isArray(detail?.bullets) && detail.bullets.length > 0 ? detail.bullets : coverBullets;
+
+  return {
+    ...overviewSection,
+    cover: {
+      ...(cover ?? {}),
+      summary: coverSummary,
+      bullets: coverBullets,
+    },
+    detail: {
+      ...(detail ?? {}),
+      summary: detailSummary,
+      bullets: detailBullets,
+    },
+  };
+};
+
 const buildFallbackUsageSection = (digest: FactsDigest): AnalysisBundle["sections"]["usage"] => {
   const labelDosingText = buildLabelDosingText(digest);
   const scheduleFromLabel = digest.labelDosing.map((dose) => ({
@@ -7448,7 +7494,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     if (fastBundleForGate) {
       const sectionPayload =
         section === "overview"
-          ? fastBundleForGate.sections.overview
+          ? enforceOverviewSectionContract(fastBundleForGate.sections.overview, digest)
           : enforceUsageSectionContract(fastBundleForGate.sections.usage, digest);
       res.status(200).json({
         section,

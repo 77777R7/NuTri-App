@@ -1,13 +1,13 @@
 [
   {
-    "barcode": "00883196112500",
-    "region": "US",
+    "barcode": "00628747108652",
+    "region": "CA",
     "site": "fixture",
-    "expectedSourceType": "dsld",
+    "expectedSourceType": "lnhpd",
     "expectedScoreAvailable": true,
-    "verifiedAt": "2026-02-11",
-    "sourceUrl": "https://www.swansonvitamins.com/",
-    "notes": "Known DSLD match from prior E2E"
+    "verifiedAt": "2026-02-12",
+    "sourceUrl": "https://newrootsherbal.com/",
+    "notes": "Known LNHPD match validated via enrich-stream probe"
   },
   {
     "barcode": "00883196112500",
