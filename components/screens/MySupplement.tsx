@@ -41,6 +41,8 @@ import { useScanHistory } from "@/contexts/ScanHistoryContext";
 import { useSavedSupplements } from "@/contexts/SavedSupplementsContext";
 import { useScreenTokens } from "@/hooks/useScreenTokens";
 import { withAuthHeaders } from "@/lib/auth-token";
+import { buildSuggestedRoutineV0 } from "@/lib/suggestedRoutine";
+import { buildWhatsInsideDisplay } from "@/lib/supplementFactsDisplay";
 import { formatBrandForPill, formatDoseForPill } from "@/lib/supplementDisplay";
 import { supabase } from "@/lib/supabase";
 import type { RoutinePreferences, SavedSupplement } from "@/types/saved-supplements";
@@ -323,6 +325,27 @@ const sanitizeTiming = (timing: string | null | undefined): string | null => {
   // makes the UI look buggy when it repeats across products.
   if (/^morning\s*\(with breakfast\)\.?$/i.test(t)) return null;
   return t;
+};
+
+const normalizeSuggestedTiming = (timing: string | null | undefined): string | null => {
+  const raw = typeof timing === "string" ? timing.trim() : "";
+  if (!raw) return null;
+
+  const normalized = raw.toLowerCase().replace(/[.!?]+$/g, "").trim();
+  const hasTimeWindow = /\b(morning|afternoon|evening|bedtime|night|dinner|lunch|breakfast|post-workout|anytime)\b/.test(
+    normalized,
+  );
+
+  if (!hasTimeWindow) {
+    if (/\bwith\b\s+(a\s+)?meals?\b/.test(normalized) || /\bafter\b\s+meals?\b/.test(normalized)) {
+      return "Anytime (with meals)";
+    }
+    if (/\bbefore\b\s+meals?\b/.test(normalized)) {
+      return "Anytime (before meals)";
+    }
+  }
+
+  return raw;
 };
 
 const computeFactsStatusClient = (facts: MySupplementFactsV1 | null | undefined): "full" | "partial" | "none" => {
@@ -1423,7 +1446,13 @@ function DetailSheet({
   }, [note, saveState, time, withFood]);
 
   const handleSave = async () => {
-    const prefs = { note, time, withFood };
+    const prefs: RoutinePreferences = {
+      note,
+      time,
+      withFood,
+      ...(item.routine?.whenToTake ? { whenToTake: item.routine.whenToTake } : {}),
+      ...(item.routine?.howToTake ? { howToTake: item.routine.howToTake } : {}),
+    };
     lastSavedRef.current = prefs;
     try {
       await onSaveRoutine?.(item.id, prefs);
@@ -1492,6 +1521,10 @@ function DetailSheet({
       : typeof factsWithMeals === "boolean"
       ? factsWithMeals
       : fallback.withFood;
+  const suggestedTimingText = pickFirstText(
+    normalizeSuggestedTiming(whenToTakeText),
+    resolvedWithFood ? "Anytime (with meals)" : "Anytime",
+  );
 
   const resolvedWithFoodReason = (() => {
     const fromAnalysis = typeof usage?.withFoodReason === "string" ? usage.withFoodReason.trim() : "";
@@ -1522,26 +1555,49 @@ function DetailSheet({
     }
   })();
 
-  const labelDirectionsText = pickFirstText(facts?.directions?.rawText ?? "", "Follow label directions.");
-
-  const activesLines = (() => {
-    const lines = (facts?.actives ?? [])
-      .filter((a) => isNonEmptyString(a?.name))
-      .map((a) => {
-        const amt =
-          typeof a.amountText === "string" && a.amountText.trim()
-            ? a.amountText.trim()
-            : a.amount != null && a.unit
-            ? `${a.amount} ${a.unit}`
-            : "";
-        return amt ? `${a.name} - ${amt}` : a.name;
-      });
-    // Prefer the actives that actually have amounts.
-    lines.sort((a, b) => (/\d/.test(b) ? 1 : 0) - (/\d/.test(a) ? 1 : 0));
-    return lines;
-  })();
-
   const localDose = formatDoseForPill(item.dosageText) ?? null;
+  const whatsInsideDisplay = buildWhatsInsideDisplay({
+    actives: facts?.actives ?? [],
+    dosageText: localDose,
+    productName: item.productName,
+  });
+  const labelDirectionsRaw = typeof facts?.directions?.rawText === "string" ? facts.directions.rawText.trim() : "";
+  const labelDirectionsPrimaryText = labelDirectionsRaw
+    ? labelDirectionsRaw
+    : factsStatus === "full"
+    ? "Not found for this barcode."
+    : "Still fetching label/regulatory data...";
+  const labelDirectionsMetaText =
+    !labelDirectionsRaw && factsStatus === "full"
+      ? "Check the bottle label. You can add your own note below."
+      : null;
+  const suggestedReasonText = withFoodReasonText ? formatSentence(withFoodReasonText) : "";
+  const suggestedRoutine = buildSuggestedRoutineV0({
+    parsed: facts?.directions?.parsed ?? null,
+    parseConfidence: facts?.directions?.parseConfidence ?? null,
+    rawDirectionsText: facts?.directions?.rawText ?? null,
+    withFoodFallback: resolvedWithFood,
+  });
+  const handleApplySuggestedRoutine = async () => {
+    if (!suggestedRoutine.slots.length) return;
+    const anchor = suggestedRoutine.slots[0];
+    const prefs: RoutinePreferences = {
+      note,
+      time: anchor.time,
+      withFood: anchor.withFood,
+      whenToTake: suggestedRoutine.whenToTake,
+      howToTake: suggestedRoutine.howToTake,
+    };
+
+    setTime(anchor.time);
+    setWithFood(anchor.withFood);
+    lastSavedRef.current = prefs;
+    try {
+      await onSaveRoutine?.(item.id, prefs);
+    } finally {
+      setSaveState("saved");
+    }
+  };
 
   const whatItDoesText = pickFirstText(
     typeof aiV2?.whatItIs === "string" ? aiV2.whatItIs.trim() : "",
@@ -1659,18 +1715,23 @@ function DetailSheet({
 
                       <View style={{ gap: 10 }}>
                         <Text style={styles.overviewSectionTitle}>What's inside</Text>
-                        {activesLines.length > 0 ? (
+                        {whatsInsideDisplay.source === "actives" || whatsInsideDisplay.source === "inferred" ? (
                           <View style={{ gap: 10 }}>
-                            {activesLines.slice(0, 6).map((line) => (
+                            {whatsInsideDisplay.lines.map((line) => (
                               <View key={line} style={styles.overviewBulletRow}>
                                 <View style={styles.overviewBulletDot} />
                                 <Text style={styles.overviewBulletText}>{line}</Text>
                               </View>
                             ))}
-                            {activesLines.length > 6 ? (
-                              <Text style={styles.overviewMetaText}>+{activesLines.length - 6} more</Text>
+                            {whatsInsideDisplay.hiddenCount > 0 ? (
+                              <Text style={styles.overviewMetaText}>+{whatsInsideDisplay.hiddenCount} more</Text>
+                            ) : null}
+                            {whatsInsideDisplay.metaText ? (
+                              <Text style={styles.overviewMetaText}>{whatsInsideDisplay.metaText}</Text>
                             ) : null}
                           </View>
+                        ) : whatsInsideDisplay.source === "dose" ? (
+                          <Text style={styles.overviewBulletText}>{whatsInsideDisplay.lines[0]}</Text>
                         ) : (
                           <Text style={styles.overviewBulletText}>
                             <Text style={styles.overviewBulletLabel}>Dose: </Text>
@@ -1684,19 +1745,22 @@ function DetailSheet({
 
                         <Text style={styles.overviewBulletText}>
                           <Text style={styles.overviewBulletLabel}>Label: </Text>
-                          {labelDirectionsText}
+                          {labelDirectionsPrimaryText}
                         </Text>
-
-                        <Text style={styles.overviewBulletText}>
-                          <Text style={styles.overviewBulletLabel}>Suggested timing: </Text>
-                          {formatSentence(whenToTakeText || fallback.timing)}
-                        </Text>
+                        {labelDirectionsMetaText ? (
+                          <Text style={styles.overviewMetaText}>{labelDirectionsMetaText}</Text>
+                        ) : null}
 
                         <Text style={styles.overviewBulletText}>
                           <Text style={styles.overviewBulletLabel}>Suggested: </Text>
-                          {resolvedWithFood ? "Take with food." : "Take on an empty stomach."}{" "}
-                          {withFoodReasonText ? withFoodReasonText : ""}
+                          {formatSentence(suggestedTimingText)}
                         </Text>
+                        {suggestedReasonText ? (
+                          <Text style={styles.overviewBulletText}>
+                            <Text style={styles.overviewBulletLabel}>Why: </Text>
+                            {suggestedReasonText}
+                          </Text>
+                        ) : null}
 
                         {aiTips.length > 0 ? (
                           <View style={{ gap: 10 }}>
@@ -1760,16 +1824,17 @@ function DetailSheet({
                             <Text style={styles.overviewMetaText}>Reason: {aiBlockedReason}</Text>
                           ) : null}
                         </View>
-                      ) : aiUiPhase === "timeout" || aiUiPhase === "none" ? (
+                      ) : aiUiPhase === "timeout" ? (
                         <View style={{ marginTop: 6 }}>
-                          {aiUiPhase === "none" ? (
-                            <Text style={[styles.overviewMetaText, { marginBottom: 10 }]}>
-                              AI insights are currently unavailable. Facts are shown above.
-                            </Text>
-                          ) : null}
                           <Pressable onPress={() => setOverviewRetryNonce((n) => n + 1)} style={styles.overviewRetryBtn}>
-                            <Text style={styles.overviewRetryText}>Retry AI</Text>
+                            <Text style={styles.overviewRetryText}>Retry AI insights</Text>
                           </Pressable>
+                        </View>
+                      ) : aiUiPhase === "none" ? (
+                        <View style={{ marginTop: 6 }}>
+                          <Text style={styles.overviewMetaText}>
+                            AI insights are currently unavailable. Facts are shown above.
+                          </Text>
                         </View>
                       ) : null}
                     </View>
@@ -1821,6 +1886,27 @@ function DetailSheet({
 	                      <Text style={styles.scheduleHintText}>
 	                        {savedTime ? "Saved" : "Not set (default shown)"}
 	                      </Text>
+                        <View style={styles.suggestedRoutineCard}>
+                          <View style={styles.suggestedRoutineHeader}>
+                            <Text style={styles.suggestedRoutineTitle}>Suggested plan</Text>
+                            <Text style={styles.suggestedRoutineMeta}>
+                              {suggestedRoutine.source === "label" ? "From label facts" : "Heuristic"}
+                              {" · "}
+                              {suggestedRoutine.confidence}
+                            </Text>
+                          </View>
+                          <Text style={styles.suggestedRoutineRationale}>{suggestedRoutine.rationale}</Text>
+                          <View style={styles.suggestedRoutineSlots}>
+                            {suggestedRoutine.slots.map((slot, idx) => (
+                              <Text key={`${slot.label}-${slot.time}-${idx}`} style={styles.suggestedRoutineSlotText}>
+                                {`${slot.label} · ${slot.time}${slot.withFood ? " · with food" : ""}`}
+                              </Text>
+                            ))}
+                          </View>
+                          <Pressable onPress={handleApplySuggestedRoutine} style={styles.applySuggestionBtn}>
+                            <Text style={styles.applySuggestionText}>Apply suggestion</Text>
+                          </Pressable>
+                        </View>
 	                      <TimePicker value={time} onChange={setTime} />
 
                       <Pressable
@@ -3616,6 +3702,34 @@ const styles = StyleSheet.create({
   scheduleTitleRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   scheduleTitle: { fontSize: 12, fontWeight: "800", color: "#475569", textTransform: "uppercase", letterSpacing: 1.0, includeFontPadding: false },
   scheduleHintText: { fontSize: 12, lineHeight: 16, fontWeight: "600", color: "#94a3b8", includeFontPadding: false },
+  suggestedRoutineCard: {
+    borderRadius: 18,
+    borderCurve: "continuous",
+    borderWidth: 1,
+    borderColor: "rgba(148,163,184,0.28)",
+    backgroundColor: "rgba(255,255,255,0.56)",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  suggestedRoutineHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
+  suggestedRoutineTitle: { fontSize: 13, lineHeight: 18, fontWeight: "800", color: "#334155", includeFontPadding: false },
+  suggestedRoutineMeta: { fontSize: 11, lineHeight: 14, fontWeight: "700", color: "#64748b", includeFontPadding: false, textTransform: "uppercase" },
+  suggestedRoutineRationale: { fontSize: 12, lineHeight: 16, fontWeight: "600", color: "#475569", includeFontPadding: false },
+  suggestedRoutineSlots: { gap: 6, marginTop: 2 },
+  suggestedRoutineSlotText: { fontSize: 12, lineHeight: 16, fontWeight: "700", color: "#334155", includeFontPadding: false },
+  applySuggestionBtn: {
+    marginTop: 6,
+    alignSelf: "flex-start",
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+    borderCurve: "continuous",
+    borderWidth: 1,
+    borderColor: "rgba(30,64,175,0.28)",
+    backgroundColor: "rgba(255,255,255,0.65)",
+  },
+  applySuggestionText: { fontSize: 12, lineHeight: 16, fontWeight: "800", color: "#1e3a8a", includeFontPadding: false },
   timeCategoryPill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, borderWidth: 1 },
   timeCategoryText: { fontSize: 11, fontWeight: "700", includeFontPadding: false },
 
