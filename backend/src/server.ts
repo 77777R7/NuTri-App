@@ -46,6 +46,7 @@ import {
   applyWebIngredientsDetailEvidenceGate,
 } from "./webEvidenceGate.js";
 import { applyWebVerifyRevise } from "./webVerifyRevise.js";
+import { finalizePipelineStepCodes } from "./pipelineMetrics.js";
 import { buildMySupplementFactsV1, type MySupplementFactsV1 } from "./mySupplementFacts.js";
 import { getMySupplementOverviewV2GateReason } from "./mySupplementOverviewGate.js";
 import {
@@ -324,7 +325,7 @@ const ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS = Number(process.env.ANALYSIS_BUNDLE_DET
 const ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS_DSLD = Number(
   process.env.ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS_DSLD ?? 4500,
 );
-const WEB_VERIFY_TIME_BUDGET_MS = Number(process.env.WEB_VERIFY_TIME_BUDGET_MS ?? 1200);
+const WEB_VERIFY_TIME_BUDGET_MS = Number(process.env.WEB_VERIFY_TIME_BUDGET_MS ?? 200);
 const ANALYSIS_DETAIL_LIMIT_DEFAULT = Number(process.env.ANALYSIS_DETAIL_LIMIT_DEFAULT ?? 8);
 const ANALYSIS_DETAIL_LIMIT_MAX = Number(process.env.ANALYSIS_DETAIL_LIMIT_MAX ?? 12);
 const ANALYSIS_DETAIL_LIMIT_RESCUE = Number(process.env.ANALYSIS_DETAIL_LIMIT_RESCUE ?? 6);
@@ -8814,7 +8815,16 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       ms: nextMs,
     });
   };
+  const finalizePipelineNotReachedCodes = () => {
+    if (!pipelineMetricsEnabled) return;
+    const finalized = finalizePipelineStepCodes(pipelineStepsOrder, pipelineState);
+    for (const step of pipelineStepsOrder) {
+      const item = finalized.get(step);
+      if (item) pipelineState.set(step, item);
+    }
+  };
   const buildStableWebPipeline = () =>
+    (finalizePipelineNotReachedCodes(),
     pipelineStepsOrder.map((step) => {
       const item = pipelineState.get(step);
       return {
@@ -8822,7 +8832,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
         status: item?.status ?? "degraded",
         code: item?.code,
       };
-    });
+    }));
   const attachWebPipelineMeta = (bundle: AnalysisBundle): AnalysisBundle => {
     if (!pipelineMetricsEnabled) return bundle;
     if (bundle.meta.sourceType !== "web") return bundle;
@@ -8830,6 +8840,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       ...bundle,
       meta: {
         ...bundle.meta,
+        webPipelineSchemaVersion: 1,
         webPipeline: buildStableWebPipeline(),
       },
     };
@@ -8842,6 +8853,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
         ? (streamState.latestSourceType as "lnhpd" | "dsld" | "web")
         : "web");
     if (!pipelineTouched && resolvedSourceType !== "web") return;
+    finalizePipelineNotReachedCodes();
     const steps = pipelineStepsOrder.map((step) => {
       const item = pipelineState.get(step);
       return {
@@ -8853,6 +8865,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     });
     const totalMs = Math.max(0, Math.round(performance.now() - pipelineStartedAt));
     const sent = safeSendSse(res, "pipeline_metrics", {
+      pipelineMetricsSchemaVersion: 1,
       requestId: requestId || null,
       barcode: streamBarcode ?? normalized?.code ?? "",
       sourceType: resolvedSourceType,
@@ -9396,6 +9409,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
             markPipelineStepStart("verify");
             const verifiedCached = applyWebVerifyRevise(fastCandidate, params.digest, {
               timeBudgetMs: WEB_VERIFY_TIME_BUDGET_MS,
+              includeBudgetMs: pipelineMetricsEnabled,
             });
             fastCandidate = verifiedCached.bundle;
             markPipelineStepEnd("verify", verifiedCached.verify.status, verifiedCached.verify.code);
@@ -9504,6 +9518,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
             markPipelineStepStart("verify");
             const verified = applyWebVerifyRevise(adjustedBundle, params.digest, {
               timeBudgetMs: WEB_VERIFY_TIME_BUDGET_MS,
+              includeBudgetMs: pipelineMetricsEnabled,
             });
             gatedBundle = verified.bundle;
             markPipelineStepEnd("verify", verified.verify.status, verified.verify.code);
