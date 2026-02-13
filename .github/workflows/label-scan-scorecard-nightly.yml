@@ -14,6 +14,7 @@ jobs:
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       LABEL_SCAN_REGRESSION_API_BASE: ${{ github.event.inputs.render_base_url != '' && github.event.inputs.render_base_url || secrets.RENDER_BASE_URL }}
       LABEL_SCAN_REGRESSION_BEARER: ${{ secrets.RENDER_REGRESSION_TOKEN }}
+      LABEL_SCAN_REGRESSION_TOKEN: ${{ secrets.RENDER_REGRESSION_TOKEN }}
       LABEL_SCAN_REGRESSION_AUTH_BYPASS: "0"
     steps:
       - name: Checkout
@@ -28,6 +29,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Preflight required secrets
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_URL:-}" ]; then
+            echo "SUPABASE_URL is missing. Configure repository secret SUPABASE_URL."
+            exit 1
+          fi
+          if [ -z "${LABEL_SCAN_REGRESSION_API_BASE:-}" ]; then
+            echo "LABEL_SCAN_REGRESSION_API_BASE is empty. Provide workflow input render_base_url or secret RENDER_BASE_URL."
+            exit 1
+          fi
+
       - name: Fetch regression set
         run: node scripts/maintainer/fetch-ocr-regression-set.mjs
 
@@ -38,7 +51,12 @@ jobs:
             --mode e2e \
             --gate-mode observe \
             --api-base "${LABEL_SCAN_REGRESSION_API_BASE}" \
-            --bearer "${LABEL_SCAN_REGRESSION_BEARER}"
+            --bearer "${LABEL_SCAN_REGRESSION_BEARER}" \
+            --regression-token "${LABEL_SCAN_REGRESSION_TOKEN}" \
+            --timeout-ms 25000 \
+            --concurrency 4 \
+            --max-samples 30 \
+            --auth-fail-fast 3
 
       - name: Skip e2e observe (missing API base)
         if: ${{ env.LABEL_SCAN_REGRESSION_API_BASE == '' }}
@@ -74,6 +92,18 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Preflight scorecard secrets
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_URL:-}" ]; then
+            echo "SUPABASE_URL is missing. Configure repository secret SUPABASE_URL."
+            exit 1
+          fi
+          if [ -z "${SUPABASE_SERVICE_ROLE_KEY:-}" ]; then
+            echo "SUPABASE_SERVICE_ROLE_KEY is missing. Configure repository secret SUPABASE_SERVICE_ROLE_KEY."
+            exit 1
+          fi
 
       - name: Run label scan scorecard
         run: node scripts/maintainer/label-scan-scorecard.mjs
