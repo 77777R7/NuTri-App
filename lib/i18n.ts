@@ -167,6 +167,10 @@ const en = {
     analysisScoreSafety: 'Safety',
     analysisScoreValue: 'Value',
     analysisScoreFormulaQuality: 'Formula Quality',
+    analysisScoreNotScored: 'Not scored',
+    analysisScoreNotScoredReasonWeb: 'Limited evidence (web fallback). We show only what the source supports.',
+    analysisScoreScoring: 'Scoring...',
+    analysisScoreScoringReason: 'Finishing verified facts.',
 };
 
 const translations = {

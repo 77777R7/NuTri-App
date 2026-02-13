@@ -8786,6 +8786,9 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   );
   let pipelineTouched = false;
   let pipelineMetricsEmitted = false;
+  let snapshotCacheHit = false;
+  let fastBundleReplacedCount = 0;
+  let fallbackRev1LockedCount = 0;
   const pipelineStatusRank = (status: PipelineStepStatus): number =>
     status === "failed" ? 3 : status === "degraded" ? 2 : 1;
   const markPipelineStepStart = (step: PipelineStepName) => {
@@ -8869,6 +8872,11 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       requestId: requestId || null,
       barcode: streamBarcode ?? normalized?.code ?? "",
       sourceType: resolvedSourceType,
+      cacheHit: snapshotCacheHit,
+      cancelCounts: {
+        fast_bundle_replaced_count: fastBundleReplacedCount,
+        fallback_rev1_locked_count: fallbackRev1LockedCount,
+      },
       steps,
       totalMs,
       emittedAt: new Date().toISOString(),
@@ -8940,6 +8948,9 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       rev1_sent: streamState.rev1Sent,
       persisted_sent: streamState.persistedSent,
       done_sent: streamState.doneSent,
+      snapshot_cache_hit: snapshotCacheHit,
+      fast_bundle_replaced_count: fastBundleReplacedCount,
+      fallback_rev1_locked_count: fallbackRev1LockedCount,
     };
     console.info("[sse_done]", { ...base, ...(extra ?? {}) });
   };
@@ -9107,6 +9118,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     streamState.rev1Source = source;
     if (source === "fallback") {
       streamState.fallbackRev1Locked = true;
+      fallbackRev1LockedCount += 1;
       streamAbortController?.abort(new Error("fallback_rev1_locked"));
     }
     return true;
@@ -9373,10 +9385,10 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       );
 
       const skeletonParsed = safeParseAnalysisBundle(skeleton);
-      if (skeletonParsed.success && canWrite()) {
-        emitRev0Once(skeletonParsed.data);
-      } else {
+      if (!skeletonParsed.success) {
         console.warn("[analysis_bundle] skeleton validation failed", skeletonParsed.error?.message);
+      } else if (canWrite()) {
+        emitRev0Once(skeletonParsed.data);
       }
 
       const cachedFast = await getAnalysisIdentityCache(
@@ -9579,7 +9591,10 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     const startStage0Bundle = (
       params: Omit<Parameters<typeof emitAnalysisBundleSequence>[0], "signal" | "llmSignal">,
     ) => {
-      stage0BundleAbort?.abort(new Error("fast_bundle_replaced"));
+      if (stage0BundleAbort) {
+        fastBundleReplacedCount += 1;
+        stage0BundleAbort.abort(new Error("fast_bundle_replaced"));
+      }
       stage0BundleAbort = new AbortController();
       stage0BundlePromise = emitAnalysisBundleSequence({
         ...params,
@@ -9593,7 +9608,10 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       // Hard rule: only emit ONE analysis_bundle sequence per request.
       // If Stage 0 already started (skeleton+fast), Stage 1 must not re-emit revision 0/1.
       if (stage0BundlePromise) return;
-      stage1BundleAbort?.abort(new Error("fast_bundle_replaced"));
+      if (stage1BundleAbort) {
+        fastBundleReplacedCount += 1;
+        stage1BundleAbort.abort(new Error("fast_bundle_replaced"));
+      }
       stage1BundleAbort = new AbortController();
       stage1BundlePromise = emitAnalysisBundleSequence({
         ...params,
@@ -9711,6 +9729,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 	    }, catalog?: CatalogResolved | null, options?: { mode?: CachedSnapshotSseMode }) => {
 	      const mode: CachedSnapshotSseMode = options?.mode ?? "full";
 	      console.log(`[Stream] Cache hit for barcode: ${barcode}`);
+	      snapshotCacheHit = true;
 	      const { snapshot, analysisPayload } = cached;
 	      let workingAnalysisPayload = analysisPayload ?? null;
       const labelFacts = buildLabelFactsFromSnapshot(snapshot);
