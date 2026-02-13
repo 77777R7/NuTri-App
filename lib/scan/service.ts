@@ -52,6 +52,8 @@ export async function submitLabelScan(input: {
   imageBase64: string;
   deviceId?: string;
   includeAnalysis?: boolean;
+  timeoutMs?: number;
+  signal?: AbortSignal;
 }): Promise<LabelScanResult> {
   const apiBase = getSearchApiBase();
   const imageHash = computeImageHash(input.imageBase64);
@@ -60,16 +62,40 @@ export async function submitLabelScan(input: {
     ? `${apiBase}/api/analyze-label?includeAnalysis=1`
     : `${apiBase}/api/analyze-label`;
   const headers = await withAuthHeaders({ 'Content-Type': 'application/json' });
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      imageBase64: input.imageBase64,
-      imageHash,
-      deviceId: input.deviceId,
-      includeAnalysis,
-    }),
-  });
+  const timeoutMs = Number.isFinite(input.timeoutMs) ? Math.max(1000, input.timeoutMs ?? 0) : 25_000;
+  const controller = new AbortController();
+  let timedOut = false;
+  const abortFromCaller = () => controller.abort();
+  const timeout = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
+  input.signal?.addEventListener('abort', abortFromCaller);
+
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      method: 'POST',
+      headers,
+      signal: controller.signal,
+      body: JSON.stringify({
+        imageBase64: input.imageBase64,
+        imageHash,
+        deviceId: input.deviceId,
+        includeAnalysis,
+      }),
+    });
+  } catch (error) {
+    if (timedOut) {
+      const timeoutError = new Error(`Label scan request timed out after ${Math.round(timeoutMs / 1000)}s`);
+      timeoutError.name = 'TimeoutError';
+      throw timeoutError;
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+    input.signal?.removeEventListener('abort', abortFromCaller);
+  }
 
   const payload = (await response.json().catch(() => null)) as AnalyzeLabelResponse | null;
   if (!response.ok) {
@@ -100,19 +126,46 @@ export async function requestLabelAnalysis(input: {
   imageHash: string;
   imageBase64?: string;
   deviceId?: string;
+  timeoutMs?: number;
+  signal?: AbortSignal;
 }): Promise<AnalyzeLabelResponse> {
   const apiBase = getSearchApiBase();
   const headers = await withAuthHeaders({ 'Content-Type': 'application/json' });
-  const response = await fetch(`${apiBase}/api/analyze-label?includeAnalysis=1`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      imageHash: input.imageHash,
-      imageBase64: input.imageBase64,
-      deviceId: input.deviceId,
-      includeAnalysis: true,
-    }),
-  });
+  const endpoint = `${apiBase}/api/analyze-label?includeAnalysis=1`;
+  const timeoutMs = Number.isFinite(input.timeoutMs) ? Math.max(1000, input.timeoutMs ?? 0) : 25_000;
+  const controller = new AbortController();
+  let timedOut = false;
+  const abortFromCaller = () => controller.abort();
+  const timeout = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
+  input.signal?.addEventListener('abort', abortFromCaller);
+
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      method: 'POST',
+      headers,
+      signal: controller.signal,
+      body: JSON.stringify({
+        imageHash: input.imageHash,
+        imageBase64: input.imageBase64,
+        deviceId: input.deviceId,
+        includeAnalysis: true,
+      }),
+    });
+  } catch (error) {
+    if (timedOut) {
+      const timeoutError = new Error(`Label analysis request timed out after ${Math.round(timeoutMs / 1000)}s`);
+      timeoutError.name = 'TimeoutError';
+      throw timeoutError;
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+    input.signal?.removeEventListener('abort', abortFromCaller);
+  }
 
   const payload = (await response.json().catch(() => null)) as AnalyzeLabelResponse | null;
   if (!response.ok) {
