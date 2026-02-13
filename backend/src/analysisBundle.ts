@@ -1,3 +1,7 @@
+// AUTO-GENERATED. DO NOT EDIT.
+// Source: shared/schema/analysisBundleV4.ts
+// Run: npx tsx scripts/ci/sync-analysis-bundle-schema.ts
+
 import { z } from "zod";
 
 export const ANALYSIS_BUNDLE_SCHEMA_VERSION = 4 as const;
@@ -132,6 +136,86 @@ export type SafetyDetail = z.infer<typeof SafetyDetailSchema>;
 export const DataStatusSchema = z.enum(["complete", "pending", "limited", "not_provided", "error"]);
 export type DataStatus = z.infer<typeof DataStatusSchema>;
 
+export const FallbackCodeSchema = z
+  .enum([
+    "facts_digest_missing",
+    "bundle_fast_missing",
+    "detail_not_ready_until_revision1",
+    "enrichment_queued",
+    "deepseek_api_key_missing",
+    "job_pending",
+    "rate_limited",
+    "cache_claim_failed",
+    "watchdog_fast_timeout",
+    "watchdog_global_timeout",
+    "fast_generation_failed",
+    "LLM_DETAIL_FAILED",
+    "verify_budget_exhausted",
+    "verify_failed",
+    "revise_failed",
+    "verify_claim_without_support",
+    "web_text_unusable",
+  ])
+  .or(z.string().regex(/^[A-Za-z0-9_]+$/));
+export type FallbackCode = z.infer<typeof FallbackCodeSchema>;
+
+export const FallbackMetaSchema = z.object({
+  code: FallbackCodeSchema,
+  detail: z.string().optional(),
+});
+export type FallbackMeta = z.infer<typeof FallbackMetaSchema>;
+
+export const WebPipelineStepSchema = z.object({
+  step: z.enum([
+    "retrieve",
+    "sanitize",
+    "select_evidence",
+    "draft",
+    "verify",
+    "revise",
+    "emit",
+  ]),
+  status: z.enum(["ok", "degraded", "failed"]),
+  code: z.string().optional(),
+});
+export type WebPipelineStep = z.infer<typeof WebPipelineStepSchema>;
+
+export const WebVerifyMetaSchema = z.object({
+  verifyStatus: z.enum(["ok", "degraded", "failed"]),
+  reviseStatus: z.enum(["ok", "degraded", "failed"]).optional(),
+  revisedClaimsCount: z.number().int().min(0),
+  droppedClaimsCount: z.number().int().min(0),
+  budgetUsedMs: z.number().int().min(0),
+  fallbackCode: FallbackCodeSchema.optional(),
+});
+export type WebVerifyMeta = z.infer<typeof WebVerifyMetaSchema>;
+
+export const PipelineMetricStepSchema = z.object({
+  step: z.enum([
+    "retrieve",
+    "sanitize",
+    "select_evidence",
+    "draft",
+    "verify",
+    "revise",
+    "emit",
+  ]),
+  status: z.enum(["ok", "degraded", "failed"]),
+  code: z.string().optional(),
+  ms: z.number().int().min(0).optional(),
+});
+export type PipelineMetricStep = z.infer<typeof PipelineMetricStepSchema>;
+
+export const PipelineMetricsEventSchema = z.object({
+  requestId: z.string().nullable(),
+  barcode: z.string(),
+  sourceType: z.enum(["lnhpd", "dsld", "web"]),
+  steps: z.array(PipelineMetricStepSchema),
+  totalMs: z.number().int().min(0),
+  emittedAt: z.string(),
+});
+export type PipelineMetricsEvent = z.infer<typeof PipelineMetricsEventSchema>;
+
 export const AnalysisBundleMetaSchema = z.object({
   schemaVersion: z.literal(ANALYSIS_BUNDLE_SCHEMA_VERSION),
   promptVersion: z.string(),
@@ -149,6 +233,9 @@ export const AnalysisBundleMetaSchema = z.object({
   revision: z.number().int().min(0),
   factsDigestHash: z.string(),
   factsSourceVersion: z.string(),
+  webPipeline: z.array(WebPipelineStepSchema).optional(),
+  webVerifyMeta: WebVerifyMetaSchema.optional(),
+  fallback: FallbackMetaSchema.optional(),
   fallbackReason: z.string().optional(),
   serverCommitSha: z.string().nullable().optional(),
 });

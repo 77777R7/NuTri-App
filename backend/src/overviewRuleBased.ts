@@ -76,7 +76,7 @@ export const buildRuleBasedOverview = (params: {
     coreBenefits = ["Supports muscle relaxation", "Supports stress response"];
     overviewSummary = `${params.productName}${doseText} is a magnesium supplement used to support muscle function and relaxation. Follow the product label and take it regularly as part of your routine.`;
   } else if (hasAny(["omega 3", "omega-3", "fish oil", "krill"])) {
-    timing = "With meals (morning or dinner)";
+    timing = "Breakfast or dinner (with a meal)";
     withFood = true;
     coreBenefits = ["Supports heart health", "Supports brain and eye health"];
     overviewSummary = `${params.productName}${doseText} provides omega-3 fatty acids to support heart, brain, and eye health. Follow the product label and take it with a meal for best tolerance.`;
