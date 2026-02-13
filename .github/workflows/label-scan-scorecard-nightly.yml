@@ -118,11 +118,17 @@ jobs:
       - name: Write scorecard sentinel (ci_smoke)
         run: |
           set -euo pipefail
-          curl -sS --max-time 10 \
+          resp="$(curl -sS --max-time 10 -w "\n%{http_code}" \
             -X POST "${LABEL_SCAN_REGRESSION_API_BASE%/}/api/label-scan/metrics/smoke" \
             -H "content-type: application/json" \
             -H "x-regression-token: ${LABEL_SCAN_REGRESSION_TOKEN}" \
-            --data "{\"runId\":\"${GITHUB_RUN_ID}\"}" >/dev/null
+            --data "{\"runId\":\"${GITHUB_RUN_ID}\"}")"
+          body="$(echo "$resp" | sed '$d')"
+          status="$(echo "$resp" | tail -n 1)"
+          if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+            echo "Smoke insert failed (http ${status}): ${body}"
+            exit 1
+          fi
 
       - name: Run label scan scorecard
         run: node scripts/maintainer/label-scan-scorecard.mjs
