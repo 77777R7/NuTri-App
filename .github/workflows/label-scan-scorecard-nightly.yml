@@ -2,6 +2,15 @@ name: Label Scan Scorecard (Nightly)
 
 on:
   workflow_dispatch:
+    inputs:
+      render_base_url:
+        description: "Optional override for Render base URL (e.g. https://nutri-app-qn0u.onrender.com)"
+        required: false
+        default: ""
+      max_samples:
+        description: "Max samples to run in e2e observe (schedule defaults to 30)"
+        required: false
+        default: "30"
   schedule:
     - cron: "20 9 * * *"
 
@@ -15,6 +24,7 @@ jobs:
       LABEL_SCAN_REGRESSION_API_BASE: ${{ github.event.inputs.render_base_url != '' && github.event.inputs.render_base_url || secrets.RENDER_BASE_URL }}
       LABEL_SCAN_REGRESSION_BEARER: ${{ secrets.RENDER_REGRESSION_TOKEN }}
       LABEL_SCAN_REGRESSION_TOKEN: ${{ secrets.RENDER_REGRESSION_TOKEN }}
+      LABEL_SCAN_REGRESSION_MAX_SAMPLES: ${{ github.event.inputs.max_samples || '30' }}
       LABEL_SCAN_REGRESSION_AUTH_BYPASS: "0"
     steps:
       - name: Checkout
@@ -55,7 +65,7 @@ jobs:
             --regression-token "${LABEL_SCAN_REGRESSION_TOKEN}" \
             --timeout-ms 25000 \
             --concurrency 4 \
-            --max-samples 30 \
+            --max-samples "${LABEL_SCAN_REGRESSION_MAX_SAMPLES}" \
             --auth-fail-fast 3
 
       - name: Skip e2e observe (missing API base)

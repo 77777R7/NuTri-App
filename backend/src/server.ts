@@ -16423,6 +16423,22 @@ app.post("/api/analyze-label", verifySupabaseToken, async (req: Request, res: Re
         suggestedUpdates: patchAnalysis ? { analysis: patchAnalysis } : undefined,
       } satisfies LabelAnalysisResponse;
 
+      const metricMeta: Record<string, unknown> = {
+        asyncRequested,
+        asyncApplied: asyncAnalysis,
+        includeAnalysisRequested:
+          typeof body.includeAnalysis === "string"
+            ? body.includeAnalysis === "true" || body.includeAnalysis === "1"
+            : body.includeAnalysis === true,
+        heuristics: responseDiagnostics?.heuristics ?? null,
+        laneSplit: responseDiagnostics?.laneSplit ?? null,
+        completeness: responseDiagnostics?.completeness ?? null,
+      };
+      // CI E2E requests (regression auth) should be counted as synthetic and excluded from KPI metrics.
+      if (authedReq.regressionAuth && typeof metricMeta.source !== "string") {
+        metricMeta.source = "ci_e2e";
+      }
+
       void logLabelScanMetric({
         requestId,
         imageHash,
@@ -16454,17 +16470,7 @@ app.post("/api/analyze-label", verifySupabaseToken, async (req: Request, res: Re
           tFirstDraftServerMs: enrichedPayload.timing?.tFirstDraftServerMs ?? null,
         },
         clientStartedAtMs,
-        meta: {
-          asyncRequested,
-          asyncApplied: asyncAnalysis,
-          includeAnalysisRequested:
-            typeof body.includeAnalysis === "string"
-              ? body.includeAnalysis === "true" || body.includeAnalysis === "1"
-              : body.includeAnalysis === true,
-          heuristics: responseDiagnostics?.heuristics ?? null,
-          laneSplit: responseDiagnostics?.laneSplit ?? null,
-          completeness: responseDiagnostics?.completeness ?? null,
-        },
+        meta: metricMeta,
       });
 
       return enrichedPayload;
@@ -17242,7 +17248,7 @@ app.post("/api/label-scan/metrics/smoke", verifySupabaseToken, async (req: Reque
         lane_split_chosen: null,
         lane_split_reverted_reason: null,
         locked_field_conflict_count: 0,
-        response_status: "ci_smoke",
+        response_status: "ok",
         analysis_status: null,
         parse_coverage: null,
         needs_confirmation: false,
