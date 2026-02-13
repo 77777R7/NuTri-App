@@ -808,7 +808,7 @@ const createDetailRequestMetrics = () => ({
 
 async function assertInternalDebugGated(fastBundle) {
   const errors = [];
-  const res = await fetchIngredientsDetailPage(fastBundle, 0, { includeRegressionDebug: false });
+  const res = await fetchIngredientsDetailPage(fastBundle, 0, { includeRegressionDebug: false, retryOn5xx: true });
   if (res.status !== 200) {
     errors.push(`debug gate check: expected HTTP 200 from analysis-section (got ${res.status})`);
     return errors;
@@ -841,6 +841,8 @@ async function fetchIngredientsDetailPage(fastBundle, cursor, opts = {}) {
   }
 
   const includeRegressionDebug = opts?.includeRegressionDebug !== false;
+  const retryOn5xx = opts?.retryOn5xx === true;
+  const max5xxRetries = Math.max(0, Number(opts?.max5xxRetries ?? (retryOn5xx ? 2 : 0)));
   const payload = {
     identity,
     section: "ingredients_detail",
@@ -855,6 +857,7 @@ async function fetchIngredientsDetailPage(fastBundle, cursor, opts = {}) {
 
   const startedAt = Date.now();
   let pollAttempts = 0;
+  let serverErrorRetries = 0;
   while (true) {
     pollAttempts += 1;
     const ctrl = new AbortController();
@@ -882,6 +885,19 @@ async function fetchIngredientsDetailPage(fastBundle, cursor, opts = {}) {
       json = await res.json();
     } catch {
       json = { parseError: "invalid_json" };
+    }
+
+    // Keep LNHPD "no-storm" assertions strict by default; only retry 5xx when explicitly enabled.
+    if (retryOn5xx && res.status >= 500 && res.status < 600 && serverErrorRetries < max5xxRetries) {
+      serverErrorRetries += 1;
+      const elapsed = Date.now() - startedAt;
+      if (elapsed >= DETAIL_TIMEOUT_MS) {
+        return { status: res.status, payload, response: json, pollAttempts };
+      }
+      // Deterministic backoff to reduce flaky 502/503/504 without masking persistent outages.
+      const delayMs = Math.min(2000, 300 * Math.pow(3, serverErrorRetries - 1)); // 300ms, 900ms, 2000ms
+      await sleep(delayMs);
+      continue;
     }
 
     if (res.status !== 202) {
@@ -1303,8 +1319,12 @@ async function runCase(testCase) {
     const requiredKeyword = String(testCase.requiredFormKeyword ?? "").trim().toLowerCase();
     const targetKeyword = String(testCase.targetActiveKeyword ?? requiredKeyword).trim().toLowerCase();
     const shouldPage = testCase.id.startsWith("dsld_with_form") && Boolean(targetKeyword || requiredKeyword);
+    const retryOn5xx = bundleCheck.fastBundle?.meta?.sourceType === "dsld";
     if (!shouldPage) {
-      detailResponse = await fetchIngredientsDetailPage(bundleCheck.fastBundle, 0, { requestMetrics: detailRequestMetrics });
+      detailResponse = await fetchIngredientsDetailPage(bundleCheck.fastBundle, 0, {
+        requestMetrics: detailRequestMetrics,
+        retryOn5xx,
+      });
     } else {
       let cursor = 0;
       let pages = 0;
@@ -1313,6 +1333,7 @@ async function runCase(testCase) {
         // eslint-disable-next-line no-await-in-loop
         const pageRes = await fetchIngredientsDetailPage(bundleCheck.fastBundle, cursor, {
           requestMetrics: detailRequestMetrics,
+          retryOn5xx,
         });
         last = pageRes;
         pages += 1;
