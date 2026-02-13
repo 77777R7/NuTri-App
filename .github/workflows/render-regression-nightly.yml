@@ -62,6 +62,48 @@ jobs:
           RENDER_DSLD_CREATINE_CITRATE_BARCODE: ${{ vars.RENDER_DSLD_CREATINE_CITRATE_BARCODE }}
         run: node scripts/ci/render-regression.mjs
 
+      - name: Print RAG Metrics Summary (observe-only)
+        if: always()
+        env:
+          SUMMARY_JSON: ${{ steps.artifact.outputs.artifact_dir }}/summary.json
+        run: |
+          node -e '
+          const fs = require("fs");
+          const p = process.env.SUMMARY_JSON;
+          if (!fs.existsSync(p)) {
+            console.log("[rag-metrics] summary.json not found");
+            process.exit(0);
+          }
+          const summary = JSON.parse(fs.readFileSync(p, "utf8"));
+          const rag = summary.ragQuadrantMetrics || {};
+          const pipe = summary.ssePipelineMetrics || {};
+          const topN = (obj, n=5) => {
+            const entries = Object.entries(obj || {}).sort((a,b) => (b[1]||0)-(a[1]||0));
+            return entries.slice(0,n).map(([k,v]) => `${k}=${v}`).join(", ");
+          };
+
+          console.log("[rag] Retrieval");
+          console.log(`- retrievalEvidenceHitRate: ${rag.retrievalEvidenceHitRate}`);
+          console.log(`- retrievalFailureCodeCounts: ${topN(rag.retrievalFailureCodeCounts) || "(none)"}`);
+
+          console.log("[rag] Abstain");
+          console.log(`- abstainCorrectnessRate: ${rag.abstainCorrectnessRate}`);
+          console.log(`- abstainTriggered/evaluated/correct/unknown: ${rag.abstainTriggeredCount}/${rag.abstainEvaluatedCount}/${rag.abstainCorrectCount}/${rag.abstainUnknownCount}`);
+          console.log(`- abstainUnknownReasonCounts: ${topN(rag.abstainUnknownReasonCounts) || "(none)"}`);
+          console.log(`- abstainFallbackHeuristicCount: ${rag.abstainFallbackHeuristicCount}`);
+
+          console.log("[rag] Output");
+          console.log(`- webUsefulOutputRate: ${rag.webUsefulOutputRate}`);
+
+          console.log("[pipeline] Timing");
+          console.log(`- samplesCount: ${pipe.samplesCount}`);
+          console.log(`- totalMsP50/P90: ${pipe.totalMsP50}/${pipe.totalMsP90}`);
+          console.log(`- metrics_invalid: ${pipe.metrics_invalid}`);
+          const prev = pipe.sortedPreviewMs || {};
+          console.log(`- sortedPreviewMs.head: ${(prev.head||[]).join(", ")}`);
+          console.log(`- sortedPreviewMs.tail: ${(prev.tail||[]).join(", ")}`);
+          '
+
       - name: Upload Regression Artifact
         if: always() && steps.artifact.outputs.artifact_dir != ''
         uses: actions/upload-artifact@v4
