@@ -19,7 +19,7 @@ function percentile(values, p) {
 }
 
 function ratio(numerator, denominator) {
-  if (!denominator) return 0;
+  if (!denominator) return null;
   return numerator / denominator;
 }
 
@@ -96,6 +96,13 @@ function createTimeoutFetch(timeoutMs) {
   };
 }
 
+function getMetaSource(row) {
+  const meta = row?.meta;
+  if (!meta || typeof meta !== "object") return null;
+  const source = meta.source;
+  return typeof source === "string" ? source : null;
+}
+
 async function main() {
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_READONLY_KEY;
@@ -108,9 +115,9 @@ async function main() {
     global: { fetch: createTimeoutFetch(QUERY_TIMEOUT_MS) },
   });
   const since = new Date(Date.now() - HOURS * 60 * 60 * 1000).toISOString();
+
   let rows = [];
   let queryAttempts = 0;
-
   try {
     for (let attempt = 1; attempt <= QUERY_MAX_ATTEMPTS; attempt += 1) {
       queryAttempts = attempt;
@@ -142,13 +149,12 @@ async function main() {
 
     const outputDir = path.join(process.cwd(), "output", `label-scan-scorecard-${Date.now()}`);
     await fs.mkdir(outputDir, { recursive: true });
+    const infraError = summarizeError(error);
 
     const degradedSummary = {
       generatedAt: new Date().toISOString(),
       status: "infra_degraded",
-      infraError: summarizeError(error),
       windowHours: HOURS,
-      sampleSize: 0,
       query: {
         since,
         timeoutMs: QUERY_TIMEOUT_MS,
@@ -156,6 +162,12 @@ async function main() {
         retryBaseMs: QUERY_RETRY_BASE_MS,
         attempts: queryAttempts || QUERY_MAX_ATTEMPTS,
       },
+      infraError,
+      sampleSize: 0,
+      sampleSizeTotal: 0,
+      sampleSizeNonSynthetic: 0,
+      sampleSizeSynthetic: 0,
+      syntheticBreakdown: {},
     };
 
     await fs.writeFile(
@@ -167,31 +179,50 @@ async function main() {
       [
         "# Label Scan Nightly Scorecard",
         "",
-        "- status: infra_degraded",
-        `- generatedAt: ${degradedSummary.generatedAt}`,
-        `- reason: ${degradedSummary.infraError}`,
-        `- query attempts: ${degradedSummary.query.attempts}/${degradedSummary.query.maxAttempts}`,
-        `- timeoutMs: ${degradedSummary.query.timeoutMs}`,
+        "- Status: infra_degraded",
+        `- Generated: ${degradedSummary.generatedAt}`,
+        `- Window: last ${HOURS}h`,
+        `- Query since: ${since}`,
+        `- Query attempts: ${degradedSummary.query.attempts}/${degradedSummary.query.maxAttempts} (timeout=${degradedSummary.query.timeoutMs}ms)`,
+        `- Reason: ${infraError}`,
         "",
-        "Nightly marked as infra degraded. Treat as platform/network incident, not product regression.",
+        "Nightly marked as infra degraded. Treat as platform/network/DB incident, not product regression.",
       ].join("\n"),
     );
 
     console.warn(`[label-scan-scorecard] infra_degraded wrote ${outputDir}`);
     return;
   }
-  const tFirstDraftProxy = rows.map((row) => toNumber(row.t_client_roundtrip_ms)).filter((v) => v != null);
-  const tDraftRender = rows.map((row) => toNumber(row.t_click_to_draft_render_ms)).filter((v) => v != null);
-  const tCompleteRender = rows.map((row) => toNumber(row.t_click_to_analysis_complete_render_ms)).filter((v) => v != null);
-  const tDraftResponse = rows.map((row) => toNumber(row.t_click_to_draft_response_ms)).filter((v) => v != null);
-  const tDecode = rows.map((row) => toNumber(row.t_decode_ms)).filter((v) => v != null);
-  const tOcr = rows.map((row) => toNumber(row.t_ocr_ms)).filter((v) => v != null);
-  const tParse = rows.map((row) => toNumber(row.t_parse_ms)).filter((v) => v != null);
-  const tLlm = rows.map((row) => toNumber(row.t_llm_ms)).filter((v) => v != null);
-  const tFirstDraftServer = rows.map((row) => toNumber(row.t_first_draft_server_ms)).filter((v) => v != null);
-  const parseCoverage = rows.map((row) => toNumber(row.parse_coverage)).filter((v) => v != null);
-  const ocrCallCount = rows.map((row) => toNumber(row.ocr_call_count)).filter((v) => v != null);
-  const analysisCacheRows = rows.filter((row) => typeof row.analysis_cache_hit === "boolean");
+  const sampleSizeTotal = rows.length;
+  const syntheticRows = rows.filter((row) => {
+    const source = getMetaSource(row);
+    return typeof source === "string" && source.startsWith("ci_");
+  });
+  const nonSyntheticRows = rows.filter((row) => {
+    const source = getMetaSource(row);
+    return !(typeof source === "string" && source.startsWith("ci_"));
+  });
+  const sampleSizeSynthetic = syntheticRows.length;
+  const sampleSizeNonSynthetic = nonSyntheticRows.length;
+  const syntheticBreakdown = toCountMap(
+    syntheticRows,
+    (row) => getMetaSource(row) ?? "unknown",
+  );
+
+  const kpiRows = nonSyntheticRows;
+
+  const tFirstDraftProxy = kpiRows.map((row) => toNumber(row.t_client_roundtrip_ms)).filter((v) => v != null);
+  const tDraftRender = kpiRows.map((row) => toNumber(row.t_click_to_draft_render_ms)).filter((v) => v != null);
+  const tCompleteRender = kpiRows.map((row) => toNumber(row.t_click_to_analysis_complete_render_ms)).filter((v) => v != null);
+  const tDraftResponse = kpiRows.map((row) => toNumber(row.t_click_to_draft_response_ms)).filter((v) => v != null);
+  const tDecode = kpiRows.map((row) => toNumber(row.t_decode_ms)).filter((v) => v != null);
+  const tOcr = kpiRows.map((row) => toNumber(row.t_ocr_ms)).filter((v) => v != null);
+  const tParse = kpiRows.map((row) => toNumber(row.t_parse_ms)).filter((v) => v != null);
+  const tLlm = kpiRows.map((row) => toNumber(row.t_llm_ms)).filter((v) => v != null);
+  const tFirstDraftServer = kpiRows.map((row) => toNumber(row.t_first_draft_server_ms)).filter((v) => v != null);
+  const parseCoverage = kpiRows.map((row) => toNumber(row.parse_coverage)).filter((v) => v != null);
+  const ocrCallCount = kpiRows.map((row) => toNumber(row.ocr_call_count)).filter((v) => v != null);
+  const analysisCacheRows = kpiRows.filter((row) => typeof row.analysis_cache_hit === "boolean");
   const analysisCacheHitCount = analysisCacheRows.filter((row) => row.analysis_cache_hit === true).length;
 
   let laneSplitTriggeredCount = 0;
@@ -199,7 +230,7 @@ async function main() {
   let rowsWithLockedConflict = 0;
   let lockedFieldConflictTotal = 0;
   const issueCounts = new Map();
-  for (const row of rows) {
+  for (const row of kpiRows) {
     const laneApplied = row.lane_split_chosen === "lane_split";
     laneSplitRows += 1;
     if (laneApplied || row.lane_split_triggered === true) laneSplitTriggeredCount += 1;
@@ -212,16 +243,16 @@ async function main() {
     }
   }
 
-  const pendingCount = rows.filter((row) => row.analysis_status === "pending").length;
-  const completeCount = rows.filter((row) => row.analysis_status === "complete" || row.analysis_status === "partial").length;
-  const failedCount = rows.filter((row) => row.response_status === "failed").length;
-  const needsConfirmCount = rows.filter((row) => row.needs_confirmation === true).length;
-  const ocrCacheHitCount = rows.filter((row) => row.ocr_cache_hit === true).length;
-  const parseCacheRows = rows.filter((row) => typeof row.parse_cache_hit === "boolean");
+  const pendingCount = kpiRows.filter((row) => row.analysis_status === "pending").length;
+  const completeCount = kpiRows.filter((row) => row.analysis_status === "complete" || row.analysis_status === "partial").length;
+  const failedCount = kpiRows.filter((row) => row.response_status === "failed").length;
+  const needsConfirmCount = kpiRows.filter((row) => row.needs_confirmation === true).length;
+  const ocrCacheHitCount = kpiRows.filter((row) => row.ocr_cache_hit === true).length;
+  const parseCacheRows = kpiRows.filter((row) => typeof row.parse_cache_hit === "boolean");
   const parseCacheHitCount = parseCacheRows.filter((row) => row.parse_cache_hit === true).length;
   const variantRows = {
-    control: rows.filter((row) => row.flag_variant === "control"),
-    draft_first_async: rows.filter((row) => row.flag_variant === "draft_first_async"),
+    control: kpiRows.filter((row) => row.flag_variant === "control"),
+    draft_first_async: kpiRows.filter((row) => row.flag_variant === "draft_first_async"),
   };
   const variantStats = Object.fromEntries(
     Object.entries(variantRows).map(([variant, variantSubset]) => {
@@ -271,7 +302,7 @@ async function main() {
   }
 
   const dimensionGroups = new Map();
-  for (const row of rows) {
+  for (const row of kpiRows) {
     const keyParts = [
       row.flag_variant ?? "unknown",
       row.parser_version ?? "unknown",
@@ -300,9 +331,11 @@ async function main() {
     };
   }).sort((a, b) => b.count - a.count);
 
+  const status = sampleSizeNonSynthetic > 0 ? "ok" : "insufficient_real_data";
+
   const summary = {
     generatedAt: new Date().toISOString(),
-    status: "ok",
+    status,
     query: {
       since,
       timeoutMs: QUERY_TIMEOUT_MS,
@@ -311,7 +344,11 @@ async function main() {
       attempts: queryAttempts,
     },
     windowHours: HOURS,
-    sampleSize: rows.length,
+    sampleSize: sampleSizeNonSynthetic,
+    sampleSizeTotal,
+    sampleSizeNonSynthetic,
+    sampleSizeSynthetic,
+    syntheticBreakdown,
     northStar: {
       metric: "t_click_to_draft_render_ms",
       sourceField: "t_click_to_draft_render_ms",
@@ -354,20 +391,20 @@ async function main() {
         p90: percentile(parseCoverage, 90),
         p95: percentile(parseCoverage, 95),
       },
-      needsConfirmationRatio: ratio(needsConfirmCount, rows.length),
-      pendingRatio: ratio(pendingCount, rows.length),
-      completeRatio: ratio(completeCount, rows.length),
-      failedRatio: ratio(failedCount, rows.length),
+      needsConfirmationRatio: ratio(needsConfirmCount, sampleSizeNonSynthetic),
+      pendingRatio: ratio(pendingCount, sampleSizeNonSynthetic),
+      completeRatio: ratio(completeCount, sampleSizeNonSynthetic),
+      failedRatio: ratio(failedCount, sampleSizeNonSynthetic),
     },
     buckets: {
-      laneSplitTriggeredRatio: laneSplitRows ? laneSplitTriggeredCount / laneSplitRows : 0,
-      flagVariantCounts: toCountMap(rows, (row) => row.flag_variant),
-      laneSplitChosenCounts: toCountMap(rows, (row) => row.lane_split_chosen ?? "unknown"),
-      laneSplitRevertedReasonCounts: toCountMap(rows, (row) => row.lane_split_reverted_reason ?? "none"),
-      cacheModeCounts: toCountMap(rows, (row) => row.cache_mode),
+      laneSplitTriggeredRatio: ratio(laneSplitTriggeredCount, laneSplitRows),
+      flagVariantCounts: toCountMap(kpiRows, (row) => row.flag_variant),
+      laneSplitChosenCounts: toCountMap(kpiRows, (row) => row.lane_split_chosen ?? "unknown"),
+      laneSplitRevertedReasonCounts: toCountMap(kpiRows, (row) => row.lane_split_reverted_reason ?? "none"),
+      cacheModeCounts: toCountMap(kpiRows, (row) => row.cache_mode),
     },
     cache: {
-      ocrCacheHitRatio: ratio(ocrCacheHitCount, rows.length),
+      ocrCacheHitRatio: ratio(ocrCacheHitCount, sampleSizeNonSynthetic),
       parseCacheHitRatio: ratio(parseCacheHitCount, parseCacheRows.length),
       analysisCacheHitRatio: ratio(analysisCacheHitCount, analysisCacheRows.length),
       ocrCallCount: {
@@ -379,7 +416,7 @@ async function main() {
     conflicts: {
       lockedFieldConflictTotal,
       rowsWithLockedConflict,
-      rowsWithLockedConflictRatio: ratio(rowsWithLockedConflict, rows.length),
+      rowsWithLockedConflictRatio: ratio(rowsWithLockedConflict, sampleSizeNonSynthetic),
     },
     issueCounts: Object.fromEntries(
       [...issueCounts.entries()].sort((a, b) => Number(b[1]) - Number(a[1])),
@@ -412,15 +449,24 @@ async function main() {
   await fs.mkdir(outputDir, { recursive: true });
   await fs.writeFile(path.join(outputDir, "label_scan_scorecard.json"), JSON.stringify(summary, null, 2));
 
+  const fmtPct = (value, digits = 1) =>
+    typeof value === "number" ? `${(value * 100).toFixed(digits)}%` : "n/a";
+
   const md = [
     "# Label Scan Nightly Scorecard",
     ``,
     `- Status: ${summary.status}`,
     `- Generated: ${summary.generatedAt}`,
     `- Window: last ${HOURS}h`,
-    `- Sample size: ${rows.length}`,
+    `- Query since: ${since}`,
     `- Query attempts: ${summary.query.attempts}/${summary.query.maxAttempts} (timeout=${summary.query.timeoutMs}ms)`,
+    `- Sample size (non-synthetic KPI rows): ${summary.sampleSizeNonSynthetic}`,
+    `- Sample size (synthetic): ${summary.sampleSizeSynthetic}`,
+    `- Sample size (total): ${summary.sampleSizeTotal}`,
+    `- Synthetic breakdown: ${JSON.stringify(summary.syntheticBreakdown)}`,
     ``,
+    "Synthetic rows (`meta.source` starts with `ci_`) are excluded from KPI calculations.",
+    "",
     "## North Star (Proxy)",
     `- p50: ${summary.northStar.p50 ?? "n/a"} ms`,
     `- p90: ${summary.northStar.p90 ?? "n/a"} ms`,
@@ -441,16 +487,16 @@ async function main() {
     ``,
     "## Quality",
     `- parseCoverage p50/p90/p95: ${summary.quality.parseCoverage.p50 ?? "n/a"} / ${summary.quality.parseCoverage.p90 ?? "n/a"} / ${summary.quality.parseCoverage.p95 ?? "n/a"}`,
-    `- needsConfirmation ratio: ${(summary.quality.needsConfirmationRatio * 100).toFixed(1)}%`,
-    `- complete ratio: ${(summary.quality.completeRatio * 100).toFixed(1)}%`,
-    `- failed ratio: ${(summary.quality.failedRatio * 100).toFixed(1)}%`,
-    `- laneSplit triggered ratio: ${(summary.buckets.laneSplitTriggeredRatio * 100).toFixed(1)}%`,
-    `- locked conflict rows ratio: ${(summary.conflicts.rowsWithLockedConflictRatio * 100).toFixed(2)}%`,
+    `- needsConfirmation ratio: ${fmtPct(summary.quality.needsConfirmationRatio)}`,
+    `- complete ratio: ${fmtPct(summary.quality.completeRatio)}`,
+    `- failed ratio: ${fmtPct(summary.quality.failedRatio)}`,
+    `- laneSplit triggered ratio: ${fmtPct(summary.buckets.laneSplitTriggeredRatio)}`,
+    `- locked conflict rows ratio: ${fmtPct(summary.conflicts.rowsWithLockedConflictRatio, 2)}`,
     ``,
     "## Cache",
-    `- ocr cache hit ratio: ${(summary.cache.ocrCacheHitRatio * 100).toFixed(1)}%`,
-    `- parse cache hit ratio: ${(summary.cache.parseCacheHitRatio * 100).toFixed(1)}%`,
-    `- analysis cache hit ratio: ${(summary.cache.analysisCacheHitRatio * 100).toFixed(1)}%`,
+    `- ocr cache hit ratio: ${fmtPct(summary.cache.ocrCacheHitRatio)}`,
+    `- parse cache hit ratio: ${fmtPct(summary.cache.parseCacheHitRatio)}`,
+    `- analysis cache hit ratio: ${fmtPct(summary.cache.analysisCacheHitRatio)}`,
     `- ocr call count p95: ${summary.cache.ocrCallCount.p95 ?? "n/a"}`,
     ``,
     "## Online Gate (Non-Blocking)",

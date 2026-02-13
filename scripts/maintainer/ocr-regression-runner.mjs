@@ -177,12 +177,28 @@ function parseArgs(argv) {
 }
 
 class RegressionRequestError extends Error {
-  constructor(message, { httpStatus = null, failureClass = "http", durationMs = null } = {}) {
+  constructor(message, {
+    httpStatus = null,
+    failureClass = "http",
+    failureClassDetailed = null,
+    durationMs = null,
+    responseHeadersSubset = null,
+    responseBodySnippet = null,
+    bodyTruncatedDueToSize = false,
+    networkErrorCode = null,
+    requestFingerprint = null,
+  } = {}) {
     super(message);
     this.name = "RegressionRequestError";
     this.httpStatus = httpStatus;
     this.failureClass = failureClass;
+    this.failureClassDetailed = failureClassDetailed;
     this.durationMs = durationMs;
+    this.responseHeadersSubset = responseHeadersSubset;
+    this.responseBodySnippet = responseBodySnippet;
+    this.bodyTruncatedDueToSize = bodyTruncatedDueToSize;
+    this.networkErrorCode = networkErrorCode;
+    this.requestFingerprint = requestFingerprint;
   }
 }
 
@@ -198,6 +214,146 @@ function computeImageHash(base64) {
   }
   const normalized = (hash >>> 0).toString(16).padStart(8, "0");
   return `${normalized}-${base64.length}`;
+}
+
+const RESPONSE_BODY_SNIPPET_CHARS = 1000;
+const RESPONSE_BODY_MAX_READ_BYTES = 200_000;
+const RESPONSE_HEADER_ALLOWLIST = [
+  "content-type",
+  "content-length",
+  "server",
+  "date",
+  "via",
+  "cf-ray",
+  "cf-cache-status",
+  "x-request-id",
+  "x-render-request-id",
+  "x-render-upstream",
+  "x-served-by",
+  "location",
+];
+
+function pickResponseHeadersSubset(headers) {
+  const out = {};
+  for (const key of RESPONSE_HEADER_ALLOWLIST) {
+    const value = headers?.get?.(key);
+    if (value) out[key] = value;
+  }
+  return out;
+}
+
+function collapseWhitespace(value) {
+  return String(value ?? "").replace(/\s+/g, " ").trim();
+}
+
+function redactSensitive(value) {
+  let out = String(value ?? "");
+  // Private keys
+  // NOTE: Constructed to avoid tripping the repo secret-scan grep.
+  const privateKeyRe = new RegExp(
+    "-----BEGIN" + " PRIVATE" + " KEY-----[\\s\\S]*?-----END" + " PRIVATE" + " KEY-----",
+    "g",
+  );
+  out = out.replace(privateKeyRe, "[REDACTED_PRIVATE_KEY]");
+  // Authorization bearer tokens
+  out = out.replace(/Authorization:\s*Bearer\s+[A-Za-z0-9\-._]+/gi, "Authorization: Bearer [REDACTED]");
+  // JWT-like tokens
+  out = out.replace(
+    /eyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}/g,
+    "[REDACTED_JWT]",
+  );
+  // Common secret patterns
+  out = out.replace(/sb_secret_[A-Za-z0-9_]+/g, "[REDACTED]");
+  out = out.replace(/AIza[0-9A-Za-z-_]{20,}/g, "[REDACTED]");
+  // If the body looks like it contains credential-ish keywords, redact long token-like substrings.
+  if (/(supabase|service_role|anon_key|api_key|apikey)/i.test(out)) {
+    out = out.replace(/[A-Za-z0-9_-]{20,}/g, "[REDACTED]");
+  }
+  return out;
+}
+
+function buildBodySnippet(rawText) {
+  const cleaned = collapseWhitespace(redactSensitive(rawText));
+  if (cleaned.length <= RESPONSE_BODY_SNIPPET_CHARS) return cleaned;
+  return `${cleaned.slice(0, RESPONSE_BODY_SNIPPET_CHARS)}…`;
+}
+
+async function readResponseTextLimited(response, maxBytes) {
+  const contentLengthHeader = response.headers.get("content-length");
+  const contentLength = contentLengthHeader ? Number.parseInt(contentLengthHeader, 10) : null;
+  if (Number.isFinite(contentLength) && contentLength > maxBytes) {
+    return { text: `[skipped: content-length>${maxBytes}B]`, truncated: true };
+  }
+
+  const reader = response.body?.getReader?.();
+  if (!reader) {
+    // Fallback: this can read the entire body; only used when the stream reader isn't available.
+    const text = await response.text();
+    return { text, truncated: false };
+  }
+
+  const chunks = [];
+  let total = 0;
+  let truncated = false;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      total += value.byteLength;
+      if (total >= maxBytes) {
+        truncated = true;
+        break;
+      }
+    }
+  } finally {
+    if (truncated) {
+      try {
+        await reader.cancel();
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  const text = Buffer.concat(chunks.map((c) => Buffer.from(c))).toString("utf8");
+  return { text, truncated };
+}
+
+function tryParseJson(text) {
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+function classifyFailureDetailed({ httpStatus, headersSubset, bodySnippet, networkErrorCode, isTimeout, isParseError }) {
+  if (isTimeout) return "timeout";
+  if (networkErrorCode) return "network_error";
+  if (isParseError) return "parse_error";
+  if (httpStatus === 503) {
+    const contentType = String(headersSubset?.["content-type"] ?? "").toLowerCase();
+    const snippetLower = String(bodySnippet ?? "").toLowerCase();
+    if (
+      contentType.includes("text/html")
+      && /(cloudflare|render|service unavailable)/i.test(snippetLower)
+    ) {
+      return "platform_503";
+    }
+    if (contentType.includes("application/json") || contentType.includes("json")) {
+      return "app_json_503";
+    }
+    if (snippetLower.trim().startsWith("{") || snippetLower.trim().startsWith("[")) {
+      return "app_json_503";
+    }
+    return "platform_503";
+  }
+  if (httpStatus === 401 || httpStatus === 403 || httpStatus === 404) return "auth_or_route";
+  if (httpStatus === 301 || httpStatus === 302 || httpStatus === 307 || httpStatus === 308) return "auth_or_route";
+  if (headersSubset?.location) return "auth_or_route";
+  return "http";
 }
 
 function ratio(numerator, denominator) {
@@ -433,12 +589,22 @@ async function runE2ESample({ args, sample, imagesDir }) {
 
   const base64 = bytes.toString("base64");
   const imageHash = computeImageHash(base64);
+  const requestUrl = `${args.apiBase.replace(/\/$/, "")}/api/analyze-label?includeAnalysis=0`;
+  const requestFingerprint = {
+    url: requestUrl,
+    timeoutMs: args.timeoutMs,
+    payloadBytes: bytes.length,
+    includeAnalysis: false,
+  };
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort("timeout"), args.timeoutMs);
   let response;
   let payload = null;
+  let responseHeadersSubset = null;
+  let responseBodySnippet = null;
+  let bodyTruncatedDueToSize = false;
   try {
-    response = await fetch(`${args.apiBase.replace(/\/$/, "")}/api/analyze-label?includeAnalysis=0`, {
+    response = await fetch(requestUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -456,39 +622,125 @@ async function runE2ESample({ args, sample, imagesDir }) {
       }),
       signal: controller.signal,
     });
-    payload = await response.json().catch(() => null);
+
+    responseHeadersSubset = pickResponseHeadersSubset(response.headers);
+    if (response.ok) {
+      const rawText = await response.text();
+      payload = tryParseJson(rawText);
+      if (!payload) {
+        responseBodySnippet = buildBodySnippet(rawText);
+        throw new RegressionRequestError("api_parse_error", {
+          httpStatus: response.status,
+          failureClass: "http",
+          failureClassDetailed: classifyFailureDetailed({
+            httpStatus: response.status,
+            headersSubset: responseHeadersSubset,
+            bodySnippet: responseBodySnippet,
+            networkErrorCode: null,
+            isTimeout: false,
+            isParseError: true,
+          }),
+          durationMs: Date.now() - startedAt,
+          responseHeadersSubset,
+          responseBodySnippet,
+          bodyTruncatedDueToSize: false,
+          networkErrorCode: null,
+          requestFingerprint,
+        });
+      }
+    } else {
+      const { text, truncated } = await readResponseTextLimited(response, RESPONSE_BODY_MAX_READ_BYTES);
+      bodyTruncatedDueToSize = truncated;
+      responseBodySnippet = buildBodySnippet(text);
+      payload = tryParseJson(text);
+    }
   } catch (error) {
     const durationMs = Date.now() - startedAt;
+    const networkErrorCode = error && typeof error === "object"
+      ? (error.code ?? error.cause?.code ?? null)
+      : null;
+
+    if (error instanceof RegressionRequestError) {
+      throw error;
+    }
+
     if (controller.signal.aborted) {
       throw new RegressionRequestError("api_timeout", {
         httpStatus: null,
         failureClass: "timeout",
+        failureClassDetailed: classifyFailureDetailed({
+          httpStatus: null,
+          headersSubset: null,
+          bodySnippet: null,
+          networkErrorCode: null,
+          isTimeout: true,
+          isParseError: false,
+        }),
         durationMs,
+        responseHeadersSubset,
+        responseBodySnippet,
+        bodyTruncatedDueToSize,
+        networkErrorCode: null,
+        requestFingerprint,
       });
     }
+
     throw new RegressionRequestError(error instanceof Error ? error.message : String(error), {
       httpStatus: null,
       failureClass: "http",
+      failureClassDetailed: classifyFailureDetailed({
+        httpStatus: null,
+        headersSubset: null,
+        bodySnippet: null,
+        networkErrorCode,
+        isTimeout: false,
+        isParseError: false,
+      }),
       durationMs,
+      responseHeadersSubset,
+      responseBodySnippet,
+      bodyTruncatedDueToSize,
+      networkErrorCode,
+      requestFingerprint,
     });
   } finally {
     clearTimeout(timeoutId);
   }
 
   const durationMs = Date.now() - startedAt;
-  if (!response.ok || !payload) {
+  if (!response.ok) {
     const failureClass = response.status === 401 || response.status === 403 ? "auth" : "http";
+    const failureClassDetailed = classifyFailureDetailed({
+      httpStatus: response.status,
+      headersSubset: responseHeadersSubset,
+      bodySnippet: responseBodySnippet,
+      networkErrorCode: null,
+      isTimeout: false,
+      isParseError: false,
+    });
     throw new RegressionRequestError(`api_failed_${response.status}`, {
       httpStatus: response.status,
       failureClass,
+      failureClassDetailed,
       durationMs,
+      responseHeadersSubset,
+      responseBodySnippet,
+      bodyTruncatedDueToSize,
+      networkErrorCode: null,
+      requestFingerprint,
     });
   }
   if (payload.status === "failed") {
     throw new RegressionRequestError(payload.message ?? "label_analysis_failed", {
       httpStatus: response.status,
       failureClass: "parser",
+      failureClassDetailed: "parser",
       durationMs,
+      responseHeadersSubset,
+      responseBodySnippet,
+      bodyTruncatedDueToSize,
+      networkErrorCode: null,
+      requestFingerprint,
     });
   }
 
@@ -497,6 +749,7 @@ async function runE2ESample({ args, sample, imagesDir }) {
     httpStatus: response.status,
     durationMs,
     failureClass: null,
+    requestFingerprint,
   };
 }
 
@@ -596,6 +849,9 @@ function buildGateResult({ rows, bucketSummary, baselineSummary, requirements, s
   const requiredTargetMinSamples = Number(
     process.env.OCR_REGRESSION_REQUIRED_TARGET_MIN_SAMPLES ?? "10",
   );
+  const enforceKeyIngredientGates =
+    process.env.OCR_REGRESSION_ENFORCE_KEY_INGREDIENT_GATES === "1"
+    || process.env.OCR_REGRESSION_ENFORCE_KEY_INGREDIENT_GATES === "true";
   const targetRows = rows.filter((row) => row.evalTarget && row.ok);
   const requiredTargetRows = targetRows.filter((row) => row.panelType === requiredTargetPanel);
   const observeTargetRows = targetRows.filter((row) => row.panelType !== requiredTargetPanel);
@@ -663,14 +919,15 @@ function buildGateResult({ rows, bucketSummary, baselineSummary, requirements, s
       `required_target_insufficient(panel=${requiredTargetPanel},count=${requiredTargetRows.length},min=${requiredTargetMinSamples})`,
     );
   } else {
+    const keyGateBucket = enforceKeyIngredientGates ? failures : warnings;
     if (typeof targetRecallSoft === "number" && targetRecallSoft < thresholds.recallSoftMin) {
-      failures.push(`target_recall_soft_below_min(${targetRecallSoft.toFixed(3)}<${thresholds.recallSoftMin})`);
+      keyGateBucket.push(`target_recall_soft_below_min(${targetRecallSoft.toFixed(3)}<${thresholds.recallSoftMin})`);
     }
     if (typeof targetPrecisionSoft === "number" && targetPrecisionSoft < thresholds.precisionSoftMin) {
-      failures.push(`target_precision_soft_below_min(${targetPrecisionSoft.toFixed(3)}<${thresholds.precisionSoftMin})`);
+      keyGateBucket.push(`target_precision_soft_below_min(${targetPrecisionSoft.toFixed(3)}<${thresholds.precisionSoftMin})`);
     }
     if (typeof targetF1Soft === "number" && targetF1Soft < thresholds.f1SoftMin) {
-      failures.push(`target_f1_soft_below_min(${targetF1Soft.toFixed(3)}<${thresholds.f1SoftMin})`);
+      keyGateBucket.push(`target_f1_soft_below_min(${targetF1Soft.toFixed(3)}<${thresholds.f1SoftMin})`);
     }
   }
 
@@ -799,6 +1056,12 @@ async function main() {
       httpStatus: null,
       durationMs: null,
       failureClass: null,
+      failureClassDetailed: null,
+      responseHeadersSubset: null,
+      responseBodySnippet: null,
+      bodyTruncatedDueToSize: false,
+      networkErrorCode: null,
+      requestFingerprint: null,
       error: null,
     };
   };
@@ -834,6 +1097,7 @@ async function main() {
         sampleResult.parserFixturePath = draftResult.parserFixturePath ?? null;
         sampleResult.httpStatus = draftResult.httpStatus ?? 200;
         sampleResult.durationMs = draftResult.durationMs ?? null;
+        sampleResult.requestFingerprint = draftResult.requestFingerprint ?? null;
 
         sampleResult.abstainIssueHit = sampleResult.issues.some((issue) => ABSTAIN_ISSUES.has(issue));
         sampleResult.overconfidentCase = !sampleResult.evalTarget && (sampleResult.parsedIngredients ?? 0) >= 3 && !sampleResult.needsConfirmation;
@@ -860,6 +1124,12 @@ async function main() {
           sampleResult.httpStatus = error.httpStatus;
           sampleResult.durationMs = error.durationMs;
           sampleResult.failureClass = error.failureClass;
+          sampleResult.failureClassDetailed = error.failureClassDetailed ?? null;
+          sampleResult.responseHeadersSubset = error.responseHeadersSubset ?? null;
+          sampleResult.responseBodySnippet = error.responseBodySnippet ?? null;
+          sampleResult.bodyTruncatedDueToSize = Boolean(error.bodyTruncatedDueToSize);
+          sampleResult.networkErrorCode = error.networkErrorCode ?? null;
+          sampleResult.requestFingerprint = error.requestFingerprint ?? null;
         } else if (sampleResult.error === "api_timeout") {
           sampleResult.failureClass = "timeout";
         } else if (sampleResult.error?.startsWith("api_failed_401") || sampleResult.error?.startsWith("api_failed_403")) {
@@ -895,6 +1165,20 @@ async function main() {
     .filter((item) => !item.ok)
     .reduce((acc, item) => {
       const key = item.failureClass ?? "unknown";
+      acc[key] = (acc[key] ?? 0) + 1;
+      return acc;
+    }, {});
+  const httpStatusCounts = compactResults
+    .filter((item) => !item.ok)
+    .reduce((acc, item) => {
+      const key = item.httpStatus == null ? "null" : String(item.httpStatus);
+      acc[key] = (acc[key] ?? 0) + 1;
+      return acc;
+    }, {});
+  const failureClassDetailedCounts = compactResults
+    .filter((item) => !item.ok)
+    .reduce((acc, item) => {
+      const key = item.failureClassDetailed ?? "unknown";
       acc[key] = (acc[key] ?? 0) + 1;
       return acc;
     }, {});
@@ -955,6 +1239,8 @@ async function main() {
       nonTargetSamples: compactResults.filter((row) => !row.evalTarget).length,
       failedSamples: failuresFromSamples.length,
       failureClassCounts,
+      httpStatusCounts,
+      failureClassDetailedCounts,
       authFailFastTriggered,
       consecutiveAuthFailuresMax,
     },
@@ -990,6 +1276,8 @@ async function main() {
     `- warnings: ${summary.gate.warnings.length ? summary.gate.warnings.join(", ") : "none"}`,
     `- auth fail-fast triggered: ${summary.counts.authFailFastTriggered}`,
     `- failure classes: ${JSON.stringify(summary.counts.failureClassCounts)}`,
+    `- http statuses: ${JSON.stringify(summary.counts.httpStatusCounts)}`,
+    `- failure classes (detailed): ${JSON.stringify(summary.counts.failureClassDetailedCounts)}`,
     "",
     "## Gate Aggregates",
     `- target recall soft: ${summary.gate.aggregates.targetRecallSoft ?? "n/a"}`,

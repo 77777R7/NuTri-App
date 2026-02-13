@@ -55,6 +55,11 @@ jobs:
           RENDER_REGRESSION_TOKEN: ${{ secrets.RENDER_REGRESSION_TOKEN }}
           RENDER_ARTIFACT_DIR: ${{ steps.artifact.outputs.artifact_dir }}
           RENDER_INCLUDE_NIGHTLY_CASES: "1"
+          # Use a real web-only barcode (with a fallback) so nightly can observe webPipeline/select_evidence,
+          # and make abstain correctness gating meaningful.
+          RENDER_WEB_BARCODE: "00654749351604"
+          RENDER_WEB_BARCODE2: "00666183000154"
+          RENDER_WEB_SSE_TAIL_MS: "15000"
           # Nightly-only: enable lexical groundedness checks for early signal without blocking merges.
           RENDER_GROUNDEDNESS_LEXICAL: "1"
           RENDER_GROUNDEDNESS_LEXICAL_REQUIRE_FORM: "0"
@@ -64,45 +69,71 @@ jobs:
 
       - name: Print RAG Metrics Summary (observe-only)
         if: always()
+        continue-on-error: true
         env:
           SUMMARY_JSON: ${{ steps.artifact.outputs.artifact_dir }}/summary.json
         run: |
-          node -e '
+          node - <<'NODE'
           const fs = require("fs");
-          const p = process.env.SUMMARY_JSON;
-          if (!fs.existsSync(p)) {
-            console.log("[rag-metrics] summary.json not found");
+
+          try {
+            const p = process.env.SUMMARY_JSON;
+            if (!p || !fs.existsSync(p)) {
+              console.log("[rag-metrics] summary.json not found, skip.");
+              process.exit(0);
+            }
+
+            const raw = fs.readFileSync(p, "utf8");
+            const summary = JSON.parse(raw);
+            const rag = summary.ragQuadrantMetrics || {};
+            const pipe = summary.ssePipelineMetrics || {};
+            const topN = (obj, n = 5) => {
+              const entries = Object.entries(obj || {}).sort(
+                (a, b) => (b[1] || 0) - (a[1] || 0),
+              );
+              return entries
+                .slice(0, n)
+                .map(([k, v]) => `${k}=${v}`)
+                .join(", ");
+            };
+
+            console.log("[rag] Retrieval");
+            console.log(`- retrievalEvidenceHitRate: ${rag.retrievalEvidenceHitRate}`);
+            console.log(
+              `- retrievalFailureCodeCounts: ${topN(rag.retrievalFailureCodeCounts) || "(none)"}`,
+            );
+
+            console.log("[rag] Abstain");
+            console.log(`- abstainCorrectnessRate: ${rag.abstainCorrectnessRate}`);
+            console.log(
+              `- abstainTriggered/evaluated/correct/unknown: ${rag.abstainTriggeredCount}/${rag.abstainEvaluatedCount}/${rag.abstainCorrectCount}/${rag.abstainUnknownCount}`,
+            );
+            console.log(
+              `- abstainUnknownReasonCounts: ${topN(rag.abstainUnknownReasonCounts) || "(none)"}`,
+            );
+            console.log(`- abstainFallbackHeuristicCount: ${rag.abstainFallbackHeuristicCount}`);
+
+            console.log("[rag] Output");
+            console.log(`- webUsefulOutputRate: ${rag.webUsefulOutputRate}`);
+
+            console.log("[pipeline] Timing");
+            console.log(`- samplesCount: ${pipe.samplesCount}`);
+            console.log(`- totalMsP50/P90: ${pipe.totalMsP50}/${pipe.totalMsP90}`);
+            console.log(`- metrics_invalid: ${pipe.metrics_invalid}`);
+            const prev = pipe.sortedPreviewMs || {};
+            console.log(`- sortedPreviewMs.head: ${(prev.head || []).join(", ")}`);
+            console.log(`- sortedPreviewMs.tail: ${(prev.tail || []).join(", ")}`);
+
+            console.log("[rag-metrics] ok");
+            process.exit(0);
+          } catch (e) {
+            console.error(
+              "[rag-metrics] best-effort print failed:",
+              e?.message || e,
+            );
             process.exit(0);
           }
-          const summary = JSON.parse(fs.readFileSync(p, "utf8"));
-          const rag = summary.ragQuadrantMetrics || {};
-          const pipe = summary.ssePipelineMetrics || {};
-          const topN = (obj, n=5) => {
-            const entries = Object.entries(obj || {}).sort((a,b) => (b[1]||0)-(a[1]||0));
-            return entries.slice(0,n).map(([k,v]) => `${k}=${v}`).join(", ");
-          };
-
-          console.log("[rag] Retrieval");
-          console.log(`- retrievalEvidenceHitRate: ${rag.retrievalEvidenceHitRate}`);
-          console.log(`- retrievalFailureCodeCounts: ${topN(rag.retrievalFailureCodeCounts) || "(none)"}`);
-
-          console.log("[rag] Abstain");
-          console.log(`- abstainCorrectnessRate: ${rag.abstainCorrectnessRate}`);
-          console.log(`- abstainTriggered/evaluated/correct/unknown: ${rag.abstainTriggeredCount}/${rag.abstainEvaluatedCount}/${rag.abstainCorrectCount}/${rag.abstainUnknownCount}`);
-          console.log(`- abstainUnknownReasonCounts: ${topN(rag.abstainUnknownReasonCounts) || "(none)"}`);
-          console.log(`- abstainFallbackHeuristicCount: ${rag.abstainFallbackHeuristicCount}`);
-
-          console.log("[rag] Output");
-          console.log(`- webUsefulOutputRate: ${rag.webUsefulOutputRate}`);
-
-          console.log("[pipeline] Timing");
-          console.log(`- samplesCount: ${pipe.samplesCount}`);
-          console.log(`- totalMsP50/P90: ${pipe.totalMsP50}/${pipe.totalMsP90}`);
-          console.log(`- metrics_invalid: ${pipe.metrics_invalid}`);
-          const prev = pipe.sortedPreviewMs || {};
-          console.log(`- sortedPreviewMs.head: ${(prev.head||[]).join(", ")}`);
-          console.log(`- sortedPreviewMs.tail: ${(prev.tail||[]).join(", ")}`);
-          '
+          NODE
 
       - name: Upload Regression Artifact
         if: always() && steps.artifact.outputs.artifact_dir != ''

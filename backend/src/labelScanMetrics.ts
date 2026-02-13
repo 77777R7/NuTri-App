@@ -1,10 +1,25 @@
 import { supabase } from "./supabase.js";
-import { combineSignals, createTimeoutSignal, isAbortError } from "./resilience.js";
+import { incrementMetric, recordLabelScanMetricsWriteRejected } from "./metrics.js";
+import { TimeoutError, combineSignals, createTimeoutSignal, isAbortError } from "./resilience.js";
 
-const LABEL_SCAN_METRICS_TIMEOUT_MS = Number(process.env.LABEL_SCAN_METRICS_TIMEOUT_MS ?? 1200);
+const LABEL_SCAN_METRICS_TIMEOUT_MS = Number(process.env.LABEL_SCAN_METRICS_TIMEOUT_MS ?? 5000);
 const LABEL_SCAN_CLIENT_TIMING_MAX_MS = Number(
   process.env.LABEL_SCAN_CLIENT_TIMING_MAX_MS ?? 30 * 60 * 1000,
 );
+
+function normalizeNonNegativeInt(value: unknown): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  if (value < 0) return null;
+  return Math.round(value);
+}
+
+function normalizeTimingMs(value: unknown): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  if (value < 0) return null;
+  // Some upstream timing uses seconds. Anything under 1 is almost certainly seconds, not ms.
+  const asMs = value > 0 && value < 1 ? value * 1000 : value;
+  return Math.round(asMs);
+}
 
 export interface LabelScanMetricInput {
   requestId: string;
@@ -75,36 +90,49 @@ export async function logLabelScanMetric(
         ocr_cache_hit: input.ocrCacheHit ?? false,
         parse_cache_hit: input.parseCacheHit ?? null,
         analysis_cache_hit: input.analysisCacheHit ?? null,
-        ocr_call_count: input.ocrCallCount ?? 0,
-        analysis_for_draft_revision: input.analysisForDraftRevision ?? null,
+        ocr_call_count: normalizeNonNegativeInt(input.ocrCallCount) ?? 0,
+        analysis_for_draft_revision: normalizeNonNegativeInt(input.analysisForDraftRevision) ?? null,
         patch_id: input.patchId ?? null,
         patch_type: input.patchType ?? null,
         lane_split_triggered: input.laneSplitTriggered ?? null,
         lane_split_chosen: input.laneSplitChosen ?? null,
         lane_split_reverted_reason: input.laneSplitRevertedReason ?? null,
-        locked_field_conflict_count: input.lockedFieldConflictCount ?? 0,
+        locked_field_conflict_count: normalizeNonNegativeInt(input.lockedFieldConflictCount) ?? 0,
         response_status: input.responseStatus,
         analysis_status: input.analysisStatus ?? null,
         parse_coverage: input.parseCoverage ?? null,
         needs_confirmation: input.needsConfirmation ?? false,
         issue_types: input.issueTypes ?? [],
-        t_decode_ms: input.timing.tDecodeMs ?? null,
-        t_ocr_ms: input.timing.tOcrMs ?? null,
-        t_parse_ms: input.timing.tParseMs ?? null,
-        t_llm_ms: input.timing.tLlmMs ?? null,
-        t_first_draft_server_ms: input.timing.tFirstDraftServerMs ?? null,
-        client_started_at_ms: input.clientStartedAtMs ?? null,
-        t_client_roundtrip_ms: clientRoundtripMs,
+        t_decode_ms: normalizeTimingMs(input.timing.tDecodeMs),
+        t_ocr_ms: normalizeTimingMs(input.timing.tOcrMs),
+        t_parse_ms: normalizeTimingMs(input.timing.tParseMs),
+        t_llm_ms: normalizeTimingMs(input.timing.tLlmMs),
+        t_first_draft_server_ms: normalizeTimingMs(input.timing.tFirstDraftServerMs),
+        client_started_at_ms: normalizeNonNegativeInt(input.clientStartedAtMs),
+        t_client_roundtrip_ms: normalizeTimingMs(clientRoundtripMs),
         meta: input.meta ?? null,
       })
       .abortSignal(signal);
     if (error) {
+      incrementMetric("label_scan_metrics_write_rejected");
+      recordLabelScanMetricsWriteRejected(
+        [error.message, error.details, error.hint].filter(Boolean).join(" | "),
+        error.code ?? null,
+      );
       console.warn("[LabelScanMetrics] write rejected", error.message);
-    }
-  } catch (error) {
-    if (timeoutSignal.aborted || signal.aborted || isAbortError(error)) {
       return;
     }
+    incrementMetric("label_scan_metrics_write_success");
+  } catch (error) {
+    if (timeoutSignal.aborted && timeoutSignal.reason instanceof TimeoutError) {
+      incrementMetric("label_scan_metrics_write_timeout");
+      return;
+    }
+    if (signal.aborted || isAbortError(error)) {
+      return;
+    }
+    incrementMetric("label_scan_metrics_write_rejected");
+    recordLabelScanMetricsWriteRejected(error instanceof Error ? error.message : String(error));
     console.warn("[LabelScanMetrics] write failed", error);
   } finally {
     cleanup();

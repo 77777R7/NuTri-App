@@ -1,5 +1,5 @@
 {
-  "datasetVersion": "ocr_regression_set_v1_1",
+  "datasetVersion": "ocr_regression_set_v1_2",
   "storageProvider": "web_http",
   "storageBucket": null,
   "generatedAt": "2026-02-12T19:34:44.370Z",
@@ -155,8 +155,10 @@
     {
       "image_id": "off_suppl_006",
       "bucket": "single_column",
-      "ingredient_count_gt": null,
-      "key_ingredients_gt": [],
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "vitamin c"
+      ],
       "has_two_lane_gt": null,
       "storage_uri": "https://images.openfoodfacts.org/images/products/872/330/071/0791/nutrition_xx.17.400.jpg",
       "sha256": "a888c9bf4402db446b5856ca904a893affe5fb589f1eb4a54aa590ba03d3c1ec",
@@ -172,9 +174,9 @@
         "license": "CC BY-SA (Open Food Facts user-contributed image)",
         "attribution": "Open Food Facts contributors"
       },
-      "panel_type": "nutrition_facts",
-      "eval_target": false,
-      "expected_behavior": "should_warn_or_abstain",
+      "panel_type": "supplement_facts",
+      "eval_target": true,
+      "expected_behavior": "parse_supplement_facts",
       "has_table_evidence_gt": true
     },
     {
@@ -334,10 +336,10 @@
         "license": "CC BY-SA (Open Food Facts user-contributed image)",
         "attribution": "Open Food Facts contributors"
       },
-      "panel_type": "ingredients_list",
+      "panel_type": "supplement_facts",
       "eval_target": true,
-      "expected_behavior": "parse_ingredients_list",
-      "has_table_evidence_gt": false
+      "expected_behavior": "parse_supplement_facts",
+      "has_table_evidence_gt": true
     },
     {
       "image_id": "off_suppl_013",
@@ -449,8 +451,13 @@
     {
       "image_id": "off_suppl_017",
       "bucket": "dual_column",
-      "ingredient_count_gt": null,
-      "key_ingredients_gt": [],
+      "ingredient_count_gt": 4,
+      "key_ingredients_gt": [
+        "vitamin c",
+        "calcium",
+        "cranberry",
+        "probiotic"
+      ],
       "has_two_lane_gt": true,
       "storage_uri": "https://images.openfoodfacts.org/images/products/074/098/527/8482/nutrition_en.15.400.jpg",
       "sha256": "6084dafa86428a654f7f1647149a5b099b7eb3f1b5f7c841c1c247bc74943874",
@@ -466,9 +473,9 @@
         "license": "CC BY-SA (Open Food Facts user-contributed image)",
         "attribution": "Open Food Facts contributors"
       },
-      "panel_type": "nutrition_facts",
-      "eval_target": false,
-      "expected_behavior": "should_warn_or_abstain",
+      "panel_type": "supplement_facts",
+      "eval_target": true,
+      "expected_behavior": "parse_supplement_facts",
       "has_table_evidence_gt": true
     },
     {
@@ -708,10 +715,10 @@
         "license": "CC BY-SA (Open Food Facts user-contributed image)",
         "attribution": "Open Food Facts contributors"
       },
-      "panel_type": "ingredients_list",
+      "panel_type": "supplement_facts",
       "eval_target": true,
-      "expected_behavior": "parse_ingredients_list",
-      "has_table_evidence_gt": false
+      "expected_behavior": "parse_supplement_facts",
+      "has_table_evidence_gt": null
     },
     {
       "image_id": "off_suppl_027",
@@ -797,8 +804,10 @@
     {
       "image_id": "off_suppl_030",
       "bucket": "glare_shadow",
-      "ingredient_count_gt": null,
-      "key_ingredients_gt": [],
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "zinc"
+      ],
       "has_two_lane_gt": null,
       "storage_uri": "https://images.openfoodfacts.org/images/products/073/373/901/5525/nutrition_fr.5.400.jpg",
       "sha256": "79c5aeb5cef02bd7a6abde22308f2b48d77a4e0aa7082cb881b8092a6c689bb1",
@@ -814,9 +823,9 @@
         "license": "CC BY-SA (Open Food Facts user-contributed image)",
         "attribution": "Open Food Facts contributors"
       },
-      "panel_type": "nutrition_facts",
-      "eval_target": false,
-      "expected_behavior": "should_warn_or_abstain",
+      "panel_type": "supplement_facts",
+      "eval_target": true,
+      "expected_behavior": "parse_supplement_facts",
       "has_table_evidence_gt": true
     },
     {
@@ -1249,8 +1258,10 @@
     {
       "image_id": "off_suppl_047",
       "bucket": "small_text_multilang",
-      "ingredient_count_gt": null,
-      "key_ingredients_gt": [],
+      "ingredient_count_gt": 1,
+      "key_ingredients_gt": [
+        "zinc"
+      ],
       "has_two_lane_gt": null,
       "storage_uri": "https://images.openfoodfacts.org/images/products/003/160/401/2779/nutrition_en.23.400.jpg",
       "sha256": "9dd1e3cac88b9eddf7e02075d9ec4c4bd9e604153542237fbd852ca3c5d5238a",
@@ -1266,9 +1277,9 @@
         "license": "CC BY-SA (Open Food Facts user-contributed image)",
         "attribution": "Open Food Facts contributors"
       },
-      "panel_type": "nutrition_facts",
-      "eval_target": false,
-      "expected_behavior": "should_warn_or_abstain",
+      "panel_type": "supplement_facts",
+      "eval_target": true,
+      "expected_behavior": "parse_supplement_facts",
       "has_table_evidence_gt": true
     },
     {
@@ -1357,8 +1368,8 @@
       "bucket": "non_table",
       "ingredient_count_gt": 2,
       "key_ingredients_gt": [
-        "zinc",
-        "vitamin c"
+        "vitamin c",
+        "zinc"
       ],
       "has_two_lane_gt": null,
       "storage_uri": "https://images.openfoodfacts.org/images/products/504/509/857/8852/ingredients_en.24.400.jpg",
@@ -1375,18 +1386,20 @@
         "license": "CC BY-SA (Open Food Facts user-contributed image)",
         "attribution": "Open Food Facts contributors"
       },
-      "panel_type": "ingredients_list",
+      "panel_type": "supplement_facts",
       "eval_target": true,
-      "expected_behavior": "parse_ingredients_list",
-      "has_table_evidence_gt": false
+      "expected_behavior": "parse_supplement_facts",
+      "has_table_evidence_gt": null
     },
     {
       "image_id": "off_suppl_052",
       "bucket": "non_table",
-      "ingredient_count_gt": 2,
+      "ingredient_count_gt": 4,
       "key_ingredients_gt": [
         "magnesium",
-        "zinc"
+        "zinc",
+        "vitamin d",
+        "pantothenic acid"
       ],
       "has_two_lane_gt": null,
       "storage_uri": "https://images.openfoodfacts.org/images/products/560/082/620/2944/ingredients_fr.11.400.jpg",
@@ -1403,10 +1416,10 @@
         "license": "CC BY-SA (Open Food Facts user-contributed image)",
         "attribution": "Open Food Facts contributors"
       },
-      "panel_type": "ingredients_list",
+      "panel_type": "supplement_facts",
       "eval_target": true,
-      "expected_behavior": "parse_ingredients_list",
-      "has_table_evidence_gt": false
+      "expected_behavior": "parse_supplement_facts",
+      "has_table_evidence_gt": true
     },
     {
       "image_id": "off_suppl_053",
@@ -1538,10 +1551,10 @@
         "license": "CC BY-SA (Open Food Facts user-contributed image)",
         "attribution": "Open Food Facts contributors"
       },
-      "panel_type": "ingredients_list",
+      "panel_type": "supplement_facts",
       "eval_target": true,
-      "expected_behavior": "parse_ingredients_list",
-      "has_table_evidence_gt": false
+      "expected_behavior": "parse_supplement_facts",
+      "has_table_evidence_gt": null
     },
     {
       "image_id": "off_suppl_058",
@@ -1617,11 +1630,11 @@
         "license": "CC BY-SA (Open Food Facts user-contributed image)",
         "attribution": "Open Food Facts contributors"
       },
-      "panel_type": "ingredients_list",
+      "panel_type": "supplement_facts",
       "eval_target": true,
-      "expected_behavior": "parse_ingredients_list",
-      "has_table_evidence_gt": false
+      "expected_behavior": "parse_supplement_facts",
+      "has_table_evidence_gt": null
     }
   ],
-  "updatedAt": "2026-02-12T20:59:53.116Z"
+  "updatedAt": "2026-02-13T03:54:34.349Z"
 }

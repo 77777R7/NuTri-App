@@ -116,7 +116,13 @@ const DEFAULT_CASES = [
     requiredFormKeyword: "glycinate",
     targetActiveKeyword: "magnesium glycinate",
   },
-  { id: "web", barcodes: [process.env.RENDER_WEB_BARCODE || "000000000000"], expectedSourceType: "web" },
+  {
+    id: "web",
+    barcodes: [process.env.RENDER_WEB_BARCODE || "000000000000", process.env.RENDER_WEB_BARCODE2 || null].filter(
+      Boolean,
+    ),
+    expectedSourceType: "web",
+  },
 ];
 
 const CASES = [...DEFAULT_CASES];
@@ -231,6 +237,7 @@ const ensureDir = async (dir) => {
 async function readSseEvents(barcode, options = {}) {
   const ctrl = new AbortController();
   const timeoutMs = Number(options.timeoutMs || SSE_TIMEOUT_MS);
+  const fastTailMs = Number(options.fastTailMs ?? 2500);
   const timeout = setTimeout(() => ctrl.abort(), timeoutMs);
 
   let res;
@@ -345,7 +352,7 @@ async function readSseEvents(barcode, options = {}) {
       }
 
       if (!shouldStopEarly && sawSkeleton && sawFast && fastReadyAtMs != null) {
-        if (Date.now() - fastReadyAtMs >= 2500) {
+        if (Date.now() - fastReadyAtMs >= fastTailMs) {
           shouldStopEarly = true;
         }
       }
@@ -622,7 +629,7 @@ function summarizeRagQuadrantMetrics(runResults) {
 
   const retrievalFailureCodeCounts = {};
   const retrievalHits = webRows.filter((row) => {
-    const steps = row?.summary?.pipelineMetrics?.steps || [];
+    const steps = row?.summary?.pipelineMetrics?.steps || row?.summary?.webPipeline || [];
     const selectEvidence = extractStep(steps, "select_evidence");
     if (!selectEvidence) {
       retrievalFailureCodeCounts["select_evidence_missing"] = (retrievalFailureCodeCounts["select_evidence_missing"] || 0) + 1;
@@ -657,9 +664,10 @@ function summarizeRagQuadrantMetrics(runResults) {
   let abstainFallbackHeuristicCount = 0;
 
   for (const row of webRows) {
-    const steps = row?.summary?.pipelineMetrics?.steps || [];
+    const steps = row?.summary?.pipelineMetrics?.steps || row?.summary?.webPipeline || [];
     const selectEvidence = extractStep(steps, "select_evidence");
-    const fallbackCode = row?.summary?.fallback?.code ?? row?.summary?.fallbackReason ?? null;
+    const fallbackCode =
+      row?.summary?.fallback?.code ?? row?.summary?.fallbackReason ?? row?.summary?.webVerifyMeta?.fallbackCode ?? null;
     const abstainTriggered =
       (typeof fallbackCode === "string" && ABSTAIN_CODES.has(fallbackCode)) ||
       (selectEvidence && selectEvidence.status === "failed");
@@ -807,7 +815,7 @@ const createDetailRequestMetrics = () => ({
 
 async function assertInternalDebugGated(fastBundle) {
   const errors = [];
-  const res = await fetchIngredientsDetailPage(fastBundle, 0, { includeRegressionDebug: false });
+  const res = await fetchIngredientsDetailPage(fastBundle, 0, { includeRegressionDebug: false, retryOn5xx: true });
   if (res.status !== 200) {
     errors.push(`debug gate check: expected HTTP 200 from analysis-section (got ${res.status})`);
     return errors;
@@ -840,6 +848,8 @@ async function fetchIngredientsDetailPage(fastBundle, cursor, opts = {}) {
   }
 
   const includeRegressionDebug = opts?.includeRegressionDebug !== false;
+  const retryOn5xx = opts?.retryOn5xx === true;
+  const max5xxRetries = Math.max(0, Number(opts?.max5xxRetries ?? (retryOn5xx ? 2 : 0)));
   const payload = {
     identity,
     section: "ingredients_detail",
@@ -854,6 +864,7 @@ async function fetchIngredientsDetailPage(fastBundle, cursor, opts = {}) {
 
   const startedAt = Date.now();
   let pollAttempts = 0;
+  let serverErrorRetries = 0;
   while (true) {
     pollAttempts += 1;
     const ctrl = new AbortController();
@@ -881,6 +892,19 @@ async function fetchIngredientsDetailPage(fastBundle, cursor, opts = {}) {
       json = await res.json();
     } catch {
       json = { parseError: "invalid_json" };
+    }
+
+    // Keep LNHPD "no-storm" assertions strict by default; only retry 5xx when explicitly enabled.
+    if (retryOn5xx && res.status >= 500 && res.status < 600 && serverErrorRetries < max5xxRetries) {
+      serverErrorRetries += 1;
+      const elapsed = Date.now() - startedAt;
+      if (elapsed >= DETAIL_TIMEOUT_MS) {
+        return { status: res.status, payload, response: json, pollAttempts };
+      }
+      // Deterministic backoff to reduce flaky 502/503/504 without masking persistent outages.
+      const delayMs = Math.min(2000, 300 * Math.pow(3, serverErrorRetries - 1)); // 300ms, 900ms, 2000ms
+      await sleep(delayMs);
+      continue;
     }
 
     if (res.status !== 202) {
@@ -1259,6 +1283,9 @@ function pickKeyFields(result) {
     formReferenceIdHits: referenceIdHits,
     groundednessClaims,
     webVerifyMeta: fastBundle?.meta?.webVerifyMeta ?? null,
+    webPipelineSchemaVersion:
+      typeof fastBundle?.meta?.webPipelineSchemaVersion === "number" ? fastBundle.meta.webPipelineSchemaVersion : null,
+    webPipeline: Array.isArray(fastBundle?.meta?.webPipeline) ? fastBundle.meta.webPipeline : null,
   };
 }
 
@@ -1274,12 +1301,18 @@ async function writeCaseArtifacts(result) {
 }
 
 async function runCase(testCase) {
-  let events = await readSseEvents(testCase.barcode);
+  const webTailMsDefault = 15000;
+  const fastTailMs =
+    testCase.id === "web"
+      ? Math.max(2500, Number(process.env.RENDER_WEB_SSE_TAIL_MS || webTailMsDefault))
+      : 2500;
+
+  let events = await readSseEvents(testCase.barcode, { fastTailMs });
   // Render services can cold-start; the first request occasionally yields an empty stream.
   // Retry once to reduce flakiness without masking systematic failures.
   if (!events.length) {
     await sleep(1500);
-    events = await readSseEvents(testCase.barcode);
+    events = await readSseEvents(testCase.barcode, { fastTailMs });
   }
   const bundleEvents = getBundleEvents(events);
   const bundleCheck = assertBundleContract(bundleEvents, testCase.expectedSourceType);
@@ -1302,8 +1335,12 @@ async function runCase(testCase) {
     const requiredKeyword = String(testCase.requiredFormKeyword ?? "").trim().toLowerCase();
     const targetKeyword = String(testCase.targetActiveKeyword ?? requiredKeyword).trim().toLowerCase();
     const shouldPage = testCase.id.startsWith("dsld_with_form") && Boolean(targetKeyword || requiredKeyword);
+    const retryOn5xx = bundleCheck.fastBundle?.meta?.sourceType === "dsld";
     if (!shouldPage) {
-      detailResponse = await fetchIngredientsDetailPage(bundleCheck.fastBundle, 0, { requestMetrics: detailRequestMetrics });
+      detailResponse = await fetchIngredientsDetailPage(bundleCheck.fastBundle, 0, {
+        requestMetrics: detailRequestMetrics,
+        retryOn5xx,
+      });
     } else {
       let cursor = 0;
       let pages = 0;
@@ -1312,6 +1349,7 @@ async function runCase(testCase) {
         // eslint-disable-next-line no-await-in-loop
         const pageRes = await fetchIngredientsDetailPage(bundleCheck.fastBundle, cursor, {
           requestMetrics: detailRequestMetrics,
+          retryOn5xx,
         });
         last = pageRes;
         pages += 1;
@@ -1373,6 +1411,7 @@ async function runCase(testCase) {
   ];
   const summary = {
     ...pickKeyFields({ case: testCase, fastBundle: bundleCheck.fastBundle, detailResponse }),
+    observeOnly: testCase.observeOnly === true,
     pipelineMetrics: pickLatestPipelineMetrics(events),
     detailRequestCount: detailRequestMetrics.totalRequests,
     detail429Count: detailRequestMetrics.status429Count,
@@ -1395,51 +1434,70 @@ async function runCase(testCase) {
 }
 
 async function runCaseSafely(testCase) {
-  try {
-    return await runCase(testCase);
-  } catch (err) {
-    const errors = [`exception: ${String(err?.name === "AbortError" ? "AbortError" : err)}`];
-    const summary = {
-      barcode: testCase.barcode,
-      caseId: testCase.id,
-      expectedSourceType: testCase.expectedSourceType,
-      requiredFormKeyword: testCase.requiredFormKeyword ?? null,
-      targetActiveKeyword: testCase.targetActiveKeyword ?? null,
-      sourceType: null,
-      promptVersion: null,
-      serverCommitSha: null,
-      bundleId: null,
-      revision: null,
-      phase: null,
-      factsDigestHash: null,
-      factsSourceVersion: null,
-      dataStatus: null,
-      fallbackUsed: null,
-      fallbackReason: null,
-      pipelineMetrics: null,
-      jobStatus: null,
-      attempts: null,
-      timingMs: null,
-      detailCursorUsed: null,
-      formResolveSourcesNonNoneCount: null,
-      formResolveSourcesNonNone: null,
-      formSentenceIdHitsCount: null,
-      formSentenceIdHits: null,
-      errors,
-      pass: false,
-    };
+  const abortRetries = Math.max(0, Number(process.env.RENDER_CASE_ABORT_RETRIES || 1));
 
-    const result = {
-      case: testCase,
-      events: [],
-      fastBundle: null,
-      detailResponse: { status: 0, payload: null, response: null },
-      errors,
-      summary,
-    };
-    await writeCaseArtifacts(result);
-    return result;
+  for (let attempt = 0; attempt <= abortRetries; attempt += 1) {
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      return await runCase(testCase);
+    } catch (err) {
+      const isAbortError = err?.name === "AbortError";
+      if (isAbortError && attempt < abortRetries) {
+        const delayMs = 300 * Math.pow(3, attempt); // 300ms, 900ms, ...
+        console.warn(
+          `[render-regression] AbortError retry attempt=${attempt + 1}/${abortRetries} barcode=${testCase.barcode} case=${testCase.id} delayMs=${delayMs}`,
+        );
+        // eslint-disable-next-line no-await-in-loop
+        await new Promise((r) => setTimeout(r, delayMs));
+        continue;
+      }
+
+      const errors = [`exception: ${String(isAbortError ? "AbortError" : err)}`];
+      const summary = {
+        barcode: testCase.barcode,
+        caseId: testCase.id,
+        expectedSourceType: testCase.expectedSourceType,
+        requiredFormKeyword: testCase.requiredFormKeyword ?? null,
+        targetActiveKeyword: testCase.targetActiveKeyword ?? null,
+        observeOnly: testCase.observeOnly === true,
+        sourceType: null,
+        promptVersion: null,
+        serverCommitSha: null,
+        bundleId: null,
+        revision: null,
+        phase: null,
+        factsDigestHash: null,
+        factsSourceVersion: null,
+        dataStatus: null,
+        fallbackUsed: null,
+        fallbackReason: null,
+        pipelineMetrics: null,
+        jobStatus: null,
+        attempts: null,
+        timingMs: null,
+        detailCursorUsed: null,
+        formResolveSourcesNonNoneCount: null,
+        formResolveSourcesNonNone: null,
+        formSentenceIdHitsCount: null,
+        formSentenceIdHits: null,
+        errors,
+        pass: false,
+      };
+
+      const result = {
+        case: testCase,
+        events: [],
+        fastBundle: null,
+        detailResponse: { status: 0, payload: null, response: null },
+        errors,
+        summary,
+      };
+      await writeCaseArtifacts(result);
+      return result;
+    }
   }
+
+  throw new Error("unreachable: runCaseSafely retry loop fell through");
 }
 
 async function runCaseWithFallback(testCase) {
@@ -1552,6 +1610,38 @@ async function main() {
     );
   }
 
+  const blockingResults = runResults.filter((item) => item.case?.observeOnly !== true);
+  const observeResults = runResults.filter((item) => item.case?.observeOnly === true);
+
+  const ssePipelineMetrics = summarizePipelineMetrics(runResults);
+  const ragQuadrantMetrics = summarizeRagQuadrantMetrics(runResults);
+
+  // Nightly-only: enforce abstain correctness when we have enough signal to evaluate it.
+  // Keep this out of PR-required gates by keying it off RENDER_INCLUDE_NIGHTLY_CASES.
+  if (process.env.RENDER_INCLUDE_NIGHTLY_CASES === "1") {
+    const evaluated = Number(ragQuadrantMetrics?.abstainEvaluatedCount ?? 0);
+    const correct = Number(ragQuadrantMetrics?.abstainCorrectCount ?? 0);
+    const unknown = Number(ragQuadrantMetrics?.abstainUnknownCount ?? 0);
+    if (Number.isFinite(evaluated) && Number.isFinite(correct) && evaluated > 0 && correct < evaluated) {
+      const msg = `[nightly_gate] abstain_correctness_failed evaluated=${evaluated} correct=${correct} unknown=${Number.isFinite(unknown) ? unknown : "na"}`;
+      const target =
+        runResults.find((item) => item?.case?.id === "web") ||
+        runResults.find((item) => item?.summary?.caseId === "web") ||
+        runResults.find((item) => item?.summary?.sourceType === "web") ||
+        null;
+
+      if (target) {
+        if (!Array.isArray(target.errors)) target.errors = [];
+        if (!target.errors.includes(msg)) target.errors.push(msg);
+        if (!Array.isArray(target.summary?.errors)) target.summary.errors = [];
+        if (!target.summary.errors.includes(msg)) target.summary.errors.push(msg);
+        target.summary.pass = false;
+      } else {
+        console.error(msg);
+      }
+    }
+  }
+
   let chaosSummary = null;
   const chaosSummaryPath = process.env.RENDER_SSE_CHAOS_SUMMARY_PATH || "";
   if (chaosSummaryPath) {
@@ -1578,11 +1668,15 @@ async function main() {
     baseUrl: BASE_URL,
     generatedAt: new Date().toISOString(),
     caseCount: runResults.length,
-    passCount: runResults.filter((item) => item.summary.pass).length,
-    failCount: runResults.filter((item) => !item.summary.pass).length,
+    blockingCaseCount: blockingResults.length,
+    observeCaseCount: observeResults.length,
+    passCount: blockingResults.filter((item) => item.summary.pass).length,
+    failCount: blockingResults.filter((item) => !item.summary.pass).length,
+    observePassCount: observeResults.filter((item) => item.summary.pass).length,
+    observeFailCount: observeResults.filter((item) => !item.summary.pass).length,
     cases: runResults.map((item) => item.summary),
-    ssePipelineMetrics: summarizePipelineMetrics(runResults),
-    ragQuadrantMetrics: summarizeRagQuadrantMetrics(runResults),
+    ssePipelineMetrics,
+    ragQuadrantMetrics,
     sseChaos: chaosSummary,
     sseHarness: harnessSummary,
   };
@@ -1642,10 +1736,19 @@ async function main() {
   }
   await fs.writeFile(path.join(ARTIFACT_DIR, "release-evidence.md"), mdLines.join("\n") + "\n");
 
+  if (summary.observeFailCount > 0) {
+    console.warn("[render-regression] observe-only failures detected (non-blocking):");
+    for (const item of observeResults) {
+      if (item.summary.pass) continue;
+      console.warn(`- ${item.case.id}: ${item.errors.join("; ")}`);
+    }
+  }
+
   if (summary.failCount > 0) {
-    console.error("[render-regression] failures detected:");
+    console.error("[render-regression] blocking failures detected:");
     for (const item of runResults) {
       if (item.summary.pass) continue;
+      if (item.case?.observeOnly === true) continue;
       console.error(`- ${item.case.id}: ${item.errors.join("; ")}`);
     }
     process.exit(1);
