@@ -34,4 +34,5 @@ test("my supplement source: no Label loading string regression", () => {
 
   assert.equal(source.includes("Label: Loading"), false);
   assert.equal(source.includes("We'll update this when available."), false);
+  assert.equal(source.includes("Retry AI insights"), false);
 });

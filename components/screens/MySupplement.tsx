@@ -1199,7 +1199,6 @@ function DetailSheet({
   const [aiBlockedReason, setAiBlockedReason] = useState<string | null>(null);
   const [aiUiPhase, setAiUiPhase] = useState<"idle" | "pending" | "ready" | "timeout" | "blocked" | "none">("idle");
   const aiUiPhaseRef = useRef<"idle" | "pending" | "ready" | "timeout" | "blocked" | "none">("idle");
-  const [overviewRetryNonce, setOverviewRetryNonce] = useState(0);
   const pollTimersRef = useRef<Array<ReturnType<typeof setTimeout>>>([]);
   const factsDigestHashRef = useRef<string | null>(null);
   const factsRefreshLoopActiveRef = useRef(false);
@@ -1601,7 +1600,6 @@ function DetailSheet({
     item.productName,
     item.dosageText,
     updateSupplement,
-    overviewRetryNonce,
   ]);
 
   useEffect(() => {
@@ -2248,12 +2246,11 @@ function DetailSheet({
       })
       .slice(0, 5);
   })();
-  const collapsedWatchOutLines = watchOutLines.slice(0, 1);
   const overviewDetailsLoading = (factsStatus === "partial" && !factsRefreshExhausted) || aiUiPhase === "pending";
   const overviewDetailsReady =
     !overviewDetailsLoading &&
     (foundationWhatItDoesBullets.length > 0 ||
-      watchOutLines.length > 1 ||
+      watchOutLines.length > 0 ||
       aiNotice.length > 0 ||
       aiTips.length > 0 ||
       stackOverlapLines.length > 0 ||
@@ -2261,8 +2258,7 @@ function DetailSheet({
   const showOverviewToggle =
     overviewDetailsLoading ||
     overviewDetailsReady ||
-    watchOutLines.length > 1 ||
-    aiUiPhase === "timeout" ||
+    watchOutLines.length > 0 ||
     aiUiPhase === "blocked" ||
     aiUiPhase === "none";
   const whatsInsideLinesForDisplay = overviewExpanded
@@ -2446,9 +2442,9 @@ function DetailSheet({
 
 	                      <View style={{ gap: 10 }}>
 	                        <Text style={styles.overviewSectionTitle}>What it does</Text>
-	                        <Text style={styles.overviewSummary} numberOfLines={overviewExpanded ? undefined : 1}>
-                            {whatItDoesText}
-                          </Text>
+		                        <Text style={styles.overviewSummary}>
+	                            {whatItDoesText}
+	                          </Text>
                         {overviewExpanded && foundationWhatItDoesBullets.length > 0 ? (
                           <View style={{ gap: 8 }}>
                             {foundationWhatItDoesBullets.map((line) => (
@@ -2458,25 +2454,6 @@ function DetailSheet({
                               </View>
                             ))}
                           </View>
-                        ) : null}
-                        {overviewExpanded && foundationSourceTitle ? (
-                          foundationSourceUrl ? (
-                            <Pressable
-                              onPress={() => {
-                                void Linking.openURL(foundationSourceUrl).catch((error) => {
-                                  const message = error instanceof Error ? error.message : "Unknown error";
-                                  console.warn("[ods-fallback] Failed to open source URL", message);
-                                });
-                              }}
-                              style={styles.overviewSourceLinkBtn}
-                            >
-                              <Text style={styles.overviewSourceLinkText}>{foundationSourceTitle}</Text>
-                            </Pressable>
-                          ) : (
-                            <View style={styles.overviewSourceLinkBtn}>
-                              <Text style={styles.overviewSourceLinkText}>{foundationSourceTitle}</Text>
-                            </View>
-                          )
                         ) : null}
 	                      </View>
 
@@ -2494,16 +2471,16 @@ function DetailSheet({
                         </View>
                       ) : null}
 
-	                      {(overviewExpanded ? watchOutLines.length > 0 : collapsedWatchOutLines.length > 0) ? (
-	                        <View style={{ gap: 10 }}>
-	                          <Text style={styles.overviewSectionTitle}>Watch outs</Text>
-	                          <View style={{ gap: 10 }}>
-	                            {(overviewExpanded ? watchOutLines : collapsedWatchOutLines).map((line) => (
-	                              <View key={line} style={styles.overviewBulletRow}>
-	                                <View style={styles.overviewBulletDot} />
-	                                <Text style={styles.overviewBulletText}>{formatSentence(line)}</Text>
-	                              </View>
-	                            ))}
+		                      {overviewExpanded && watchOutLines.length > 0 ? (
+		                        <View style={{ gap: 10 }}>
+		                          <Text style={styles.overviewSectionTitle}>Watch outs</Text>
+		                          <View style={{ gap: 10 }}>
+		                            {watchOutLines.map((line) => (
+		                              <View key={line} style={styles.overviewBulletRow}>
+		                                <View style={styles.overviewBulletDot} />
+		                                <Text style={styles.overviewBulletText}>{formatSentence(line)}</Text>
+		                              </View>
+		                            ))}
 	                          </View>
 	                        </View>
 	                      ) : null}
@@ -2522,11 +2499,11 @@ function DetailSheet({
 	                        </View>
 	                      ) : null}
 
-	                      {showOverviewToggle ? (
-	                        <Pressable
-	                          style={styles.overviewToggleBtn}
-	                          onPress={() => setOverviewExpanded((value) => !value)}
-	                        >
+		                      {showOverviewToggle ? (
+		                        <Pressable
+		                          style={styles.overviewToggleBtn}
+		                          onPress={() => setOverviewExpanded((value) => !value)}
+		                        >
 	                          <Text style={styles.overviewToggleText}>
 	                            {overviewExpanded
 	                              ? "Show less"
@@ -2535,13 +2512,33 @@ function DetailSheet({
 	                              : overviewDetailsReady
 	                              ? "Show more · Ready"
 	                              : "Show more"}
-	                          </Text>
-	                        </Pressable>
-	                      ) : null}
-                        {factsStatus === "partial" && factsRefreshExhausted ? (
-                          <Pressable onPress={handleCheckFactsAgain} style={styles.addLabelCtaBtn}>
-                            <Text style={styles.addLabelCtaText}>Check again</Text>
-                          </Pressable>
+		                          </Text>
+		                        </Pressable>
+		                      ) : null}
+
+		                      {overviewExpanded && foundationSourceTitle ? (
+		                        foundationSourceUrl ? (
+		                          <Pressable
+		                            onPress={() => {
+		                              void Linking.openURL(foundationSourceUrl).catch((error) => {
+		                                const message = error instanceof Error ? error.message : "Unknown error";
+		                                console.warn("[ods-fallback] Failed to open source URL", message);
+		                              });
+		                            }}
+		                            style={styles.overviewSourceLinkBtn}
+		                          >
+		                            <Text style={styles.overviewSourceLinkText}>{foundationSourceTitle}</Text>
+		                          </Pressable>
+		                        ) : (
+		                          <View style={styles.overviewSourceLinkBtn}>
+		                            <Text style={styles.overviewSourceLinkText}>{foundationSourceTitle}</Text>
+		                          </View>
+		                        )
+		                      ) : null}
+	                        {factsStatus === "partial" && factsRefreshExhausted ? (
+	                          <Pressable onPress={handleCheckFactsAgain} style={styles.addLabelCtaBtn}>
+	                            <Text style={styles.addLabelCtaText}>Check again</Text>
+	                          </Pressable>
                         ) : null}
 
 	                      {overviewExpanded && aiUiPhase === "pending" ? (
@@ -2563,13 +2560,7 @@ function DetailSheet({
                             <Text style={styles.overviewMetaText}>Reason: {aiBlockedReason}</Text>
                           ) : null}
                         </View>
-	                      ) : overviewExpanded && aiUiPhase === "timeout" ? (
-	                        <View style={{ marginTop: 6 }}>
-	                          <Pressable onPress={() => setOverviewRetryNonce((n) => n + 1)} style={styles.overviewRetryBtn}>
-	                            <Text style={styles.overviewRetryText}>Retry AI insights</Text>
-	                          </Pressable>
-	                        </View>
-	                      ) : overviewExpanded && aiUiPhase === "none" ? (
+		                      ) : overviewExpanded && aiUiPhase === "none" ? (
 	                        <View style={{ marginTop: 6 }}>
 	                          <Text style={styles.overviewMetaText}>
 	                            AI insights are currently unavailable. Facts are shown above.
