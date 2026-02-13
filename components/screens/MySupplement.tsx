@@ -1203,6 +1203,8 @@ function DetailSheet({
   const factsDigestHashRef = useRef<string | null>(null);
   const factsRefreshLoopActiveRef = useRef(false);
   const lastFactsRefreshAtRef = useRef(0);
+  const [unsaveArmed, setUnsaveArmed] = useState(false);
+  const unsaveArmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "saved">(
     item.routine?.note || item.routine?.time || item.routine?.withFood !== undefined ? "saved" : "idle",
   );
@@ -1245,6 +1247,9 @@ function DetailSheet({
     setTime(next.time || "08:00");
     setWithFood(!!next.withFood);
     setTimeTouched(false);
+    setUnsaveArmed(false);
+    if (unsaveArmTimerRef.current) clearTimeout(unsaveArmTimerRef.current);
+    unsaveArmTimerRef.current = null;
     setOverviewExpanded(false);
     setSelectedAnchorLabel(null);
     autoAnchorSyncedRef.current = null;
@@ -1254,6 +1259,25 @@ function DetailSheet({
     odsFirstPaintLoggedRef.current = false;
     setSaveState(next.note || next.time || next.withFood !== undefined ? "saved" : "idle");
   }, [item.id, item.routine?.note, item.routine?.time, item.routine?.timeUserSet, item.routine?.withFood]);
+
+  useEffect(() => {
+    if (!unsaveArmed) {
+      if (unsaveArmTimerRef.current) clearTimeout(unsaveArmTimerRef.current);
+      unsaveArmTimerRef.current = null;
+      return;
+    }
+
+    if (unsaveArmTimerRef.current) clearTimeout(unsaveArmTimerRef.current);
+    unsaveArmTimerRef.current = setTimeout(() => {
+      unsaveArmTimerRef.current = null;
+      setUnsaveArmed(false);
+    }, 3500);
+
+    return () => {
+      if (unsaveArmTimerRef.current) clearTimeout(unsaveArmTimerRef.current);
+      unsaveArmTimerRef.current = null;
+    };
+  }, [unsaveArmed]);
 
   useEffect(() => {
     let isActive = true;
@@ -1782,6 +1806,12 @@ function DetailSheet({
     if (noteChanged || timeChanged || foodChanged) setSaveState("idle");
   }, [note, saveState, time, withFood]);
 
+  useEffect(() => {
+    // Cancel "Unsave" confirmation if anything changes.
+    if (!unsaveArmed) return;
+    setUnsaveArmed(false);
+  }, [note, saveState, time, withFood]);
+
   const routineTimeUserSet = resolveRoutineTimeUserSet(item.routine);
   const savedTime = routineTimeUserSet && item.routine?.time?.trim() ? item.routine.time : null;
   const timeCategory = getTimeCategory(savedTime ?? undefined);
@@ -1811,6 +1841,38 @@ function DetailSheet({
       setSaveState("saved");
     }
   };
+
+  const handleUnsave = async () => {
+    const cleared: RoutinePreferences = {};
+    lastSavedRef.current = cleared;
+    try {
+      await onSaveRoutine?.(item.id, cleared);
+    } finally {
+      // Reset UI to a clean "Not set" baseline.
+      setNote("");
+      setTime("08:00");
+      setWithFood(false);
+      setTimeTouched(false);
+      setAnchorPrefilled(false);
+      setSaveState("idle");
+      setUnsaveArmed(false);
+      if (unsaveArmTimerRef.current) clearTimeout(unsaveArmTimerRef.current);
+      unsaveArmTimerRef.current = null;
+    }
+  };
+
+  const handleSavePillPress = () => {
+    if (saveState !== "saved") {
+      void handleSave();
+      return;
+    }
+    if (!unsaveArmed) {
+      setUnsaveArmed(true);
+      return;
+    }
+    void handleUnsave();
+  };
+
   const analysisRoot = (() => {
     const raw = analysisData ?? null;
     const nested = raw?.analysis ?? null;
@@ -2732,53 +2794,81 @@ function DetailSheet({
                       />
                     </View>
 
-                    <View style={styles.saveRow}>
-                      <View style={styles.saveShadow}>
-                        <Pressable onPress={handleSave}>
-                          <MotiView
-                            style={styles.saveBtn}
-                            animate={{
-                              backgroundColor: saveState === "saved" ? "rgba(34,197,94,0.18)" : "rgba(255,255,255,0.35)",
-                              borderColor: saveState === "saved" ? "rgba(34,197,94,0.55)" : "rgba(255,255,255,0.55)",
-                            }}
-                            transition={{ type: "timing", duration: 340 }}
-                          >
-                            <LinearGradient
-                              colors={
-                                saveState === "saved"
-                                  ? ["rgba(255,255,255,0.35)", "rgba(34,197,94,0.18)", "rgba(255,255,255,0.00)"]
-                                  : ["rgba(255,255,255,0.60)", "rgba(255,255,255,0.20)", "rgba(255,255,255,0.00)"]
-                              }
-                              start={{ x: 0, y: 0 }}
-                              end={{ x: 1, y: 1 }}
-                              style={StyleSheet.absoluteFillObject}
+	                    <View style={styles.saveRow}>
+	                      <View style={styles.saveShadow}>
+	                        <Pressable onPress={handleSavePillPress}>
+	                          <MotiView
+	                            style={styles.saveBtn}
+	                            animate={{
+	                              backgroundColor:
+	                                saveState === "saved"
+	                                  ? unsaveArmed
+	                                    ? "rgba(239,68,68,0.18)"
+	                                    : "rgba(34,197,94,0.18)"
+	                                  : "rgba(255,255,255,0.35)",
+	                              borderColor:
+	                                saveState === "saved"
+	                                  ? unsaveArmed
+	                                    ? "rgba(239,68,68,0.55)"
+	                                    : "rgba(34,197,94,0.55)"
+	                                  : "rgba(255,255,255,0.55)",
+	                            }}
+	                            transition={{ type: "timing", duration: 340 }}
+	                          >
+	                            <LinearGradient
+	                              colors={
+	                                saveState === "saved"
+	                                  ? unsaveArmed
+	                                    ? ["rgba(255,255,255,0.35)", "rgba(239,68,68,0.18)", "rgba(255,255,255,0.00)"]
+	                                    : ["rgba(255,255,255,0.35)", "rgba(34,197,94,0.18)", "rgba(255,255,255,0.00)"]
+	                                  : ["rgba(255,255,255,0.60)", "rgba(255,255,255,0.20)", "rgba(255,255,255,0.00)"]
+	                              }
+	                              start={{ x: 0, y: 0 }}
+	                              end={{ x: 1, y: 1 }}
+	                              style={StyleSheet.absoluteFillObject}
                             />
 
-                            <View style={styles.saveInner}>
-                              <MotiView
-                                animate={saveState === "saved" ? { opacity: 0, translateY: -4, scale: 0.98 } : { opacity: 1, translateY: 0, scale: 1 }}
-                                transition={{ type: "timing", duration: 280 }}
-                              >
-                                <Text style={styles.saveText}>Save</Text>
-                              </MotiView>
+	                            <View style={styles.saveInner}>
+	                              <MotiView
+	                                animate={saveState === "saved" ? { opacity: 0, translateY: -4, scale: 0.98 } : { opacity: 1, translateY: 0, scale: 1 }}
+	                                transition={{ type: "timing", duration: 280 }}
+	                              >
+	                                <Text style={styles.saveText}>Save</Text>
+	                              </MotiView>
 
-                              <MotiView
-                                style={styles.saveCheck}
-                                animate={saveState === "saved" ? { opacity: 1, translateY: 0, scale: 1 } : { opacity: 0, translateY: 6, scale: 0.96 }}
-                                transition={{ type: "timing", duration: 320, delay: saveState === "saved" ? 60 : 0 }}
-                              >
-                                <MotiView
-                                  animate={saveState === "saved" ? { scale: [0.9, 1.06, 1], rotate: ["-2deg", "0deg"] } : { scale: 1, rotate: "0deg" }}
-                                  transition={{ type: "timing", duration: 340 }}
-                                >
-                                  <Check size={20} color="#059669" />
-                                </MotiView>
-                              </MotiView>
-                            </View>
-                          </MotiView>
-                        </Pressable>
-                      </View>
-                    </View>
+	                              <MotiView
+	                                style={styles.saveCheck}
+	                                animate={
+	                                  saveState === "saved" && !unsaveArmed
+	                                    ? { opacity: 1, translateY: 0, scale: 1 }
+	                                    : { opacity: 0, translateY: 6, scale: 0.96 }
+	                                }
+	                                transition={{ type: "timing", duration: 320, delay: saveState === "saved" ? 60 : 0 }}
+	                              >
+	                                <MotiView
+	                                  animate={saveState === "saved" ? { scale: [0.9, 1.06, 1], rotate: ["-2deg", "0deg"] } : { scale: 1, rotate: "0deg" }}
+	                                  transition={{ type: "timing", duration: 340 }}
+	                                >
+	                                  <Check size={20} color="#059669" />
+	                                </MotiView>
+	                              </MotiView>
+
+	                              <MotiView
+	                                style={styles.saveCheck}
+	                                animate={
+	                                  saveState === "saved" && unsaveArmed
+	                                    ? { opacity: 1, translateY: 0, scale: 1 }
+	                                    : { opacity: 0, translateY: 6, scale: 0.96 }
+	                                }
+	                                transition={{ type: "timing", duration: 260 }}
+	                              >
+	                                <Text style={[styles.saveText, { color: "#dc2626" }]}>Unsave</Text>
+	                              </MotiView>
+	                            </View>
+	                          </MotiView>
+	                        </Pressable>
+	                      </View>
+	                    </View>
 
                     <Text style={styles.note}>Note: Always consult the product label for specific instructions.</Text>
                   </View>
