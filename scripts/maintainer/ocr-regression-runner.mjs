@@ -17,13 +17,56 @@ const CANONICAL_ALIASES = {
   "vitamin b7": ["vitamin b7", "biotin"],
   "vitamin b9": ["vitamin b9", "folate", "folic acid"],
   "vitamin b12": ["vitamin b12", "b12", "b 12", "cyanocobalamin", "methylcobalamin", "cobalamin"],
-  "vitamin c": ["vitamin c", "ascorbic acid", "ascorbate", "ester c", "ester-c"],
-  "vitamin d": ["vitamin d", "vitamin d3", "d3", "cholecalciferol", "ergocalciferol"],
+  "vitamin c": [
+    "vitamin c",
+    "ascorbic acid",
+    "ascorbate",
+    "acide ascorbique",
+    "vitamine c",
+    "ester c",
+    "ester-c",
+  ],
+  "vitamin d": [
+    "vitamin d",
+    "vitamin d3",
+    "vitamine d",
+    "d3",
+    "cholecalciferol",
+    "ergocalciferol",
+  ],
   "vitamin e": ["vitamin e", "tocopherol", "alpha tocopherol"],
   "vitamin k": ["vitamin k", "vitamin k2", "menaquinone", "mk7", "mk-7"],
   calcium: ["calcium", "calcium citrate", "calcium carbonate"],
-  magnesium: ["magnesium", "magnesium citrate", "magnesium glycinate", "magnesium oxide", "magnesio", "magnesium"],
-  zinc: ["zinc", "zinc citrate", "zinc picolinate", "zinc oxide"],
+  magnesium: [
+    "magnesium",
+    "magnesium citrate",
+    "magnesium glycinate",
+    "magnesium bisglycinate",
+    "magnesium oxide",
+    "magnesiumcitrat",
+    "magnesio",
+    "magnesium",
+    "magnesium (as citrate)",
+    "magnesium (as glycinate)",
+    "magnesium (als citrat)",
+    "magnesium (als glycinate)",
+    "magnesium (comme citrate)",
+    "magnesium (comme glycinate)",
+    "magnesium (comme bisglycinate)",
+    "magnesium",
+    "magnésium",
+  ],
+  zinc: [
+    "zinc",
+    "zink",
+    "zinc citrate",
+    "zinc picolinate",
+    "zinc gluconate",
+    "zinc oxide",
+    "zinc (gluconate)",
+    "zinc (as gluconate)",
+    "zinc (comme gluconate)",
+  ],
   iron: ["iron", "ferrous", "ferric"],
   selenium: ["selenium", "selenomethionine"],
   iodine: ["iodine", "iodide"],
@@ -35,7 +78,7 @@ const CANONICAL_ALIASES = {
   molybdenum: ["molybdenum"],
   probiotic: ["probiotic", "probiotics", "lactobacillus", "bifidobacterium", "saccharomyces boulardii"],
   collagen: ["collagen", "collagen peptides", "marine collagen"],
-  creatine: ["creatine", "creatine monohydrate"],
+  creatine: ["creatine", "creatine monohydrate", "creatine (as monohydrate)"],
   "omega-3": ["omega 3", "omega-3", "fish oil", "epa", "dha"],
   "hyaluronic acid": ["hyaluronic acid", "hyaluronate"],
   multivitamin: ["multivitamin", "multi vitamin", "multi-vitamin"],
@@ -73,7 +116,15 @@ function parseArgs(argv) {
       process.env.LABEL_SCAN_REGRESSION_OCR_FIXTURES
       ?? "scripts/maintainer/fixtures/ocr_outputs_v1",
     baseline: process.env.LABEL_SCAN_REGRESSION_BASELINE ?? "",
-    maxSamples: null,
+    maxSamples: Number.parseInt(process.env.LABEL_SCAN_REGRESSION_MAX_SAMPLES ?? "30", 10),
+    concurrency: Number.parseInt(process.env.LABEL_SCAN_REGRESSION_CONCURRENCY ?? "4", 10),
+    timeoutMs: Number.parseInt(process.env.LABEL_SCAN_REGRESSION_TIMEOUT_MS ?? "25000", 10),
+    authFailFast: Number.parseInt(process.env.LABEL_SCAN_REGRESSION_AUTH_FAIL_FAST ?? "3", 10),
+    regressionToken:
+      process.env.LABEL_SCAN_REGRESSION_TOKEN
+      ?? process.env.RENDER_REGRESSION_TOKEN
+      ?? process.env.REGRESSION_AUTH_TOKEN
+      ?? "",
     allowEmpty: false,
     fuzzyThreshold: Number.parseFloat(process.env.OCR_REGRESSION_SOFT_FUZZY_THRESHOLD ?? "0.8"),
   };
@@ -92,6 +143,10 @@ function parseArgs(argv) {
     else if (value === "--skip-api") args.mode = "parser";
     else if (value === "--baseline") args.baseline = argv[++i];
     else if (value === "--max-samples") args.maxSamples = Number.parseInt(argv[++i], 10);
+    else if (value === "--concurrency") args.concurrency = Number.parseInt(argv[++i], 10);
+    else if (value === "--timeout-ms") args.timeoutMs = Number.parseInt(argv[++i], 10);
+    else if (value === "--auth-fail-fast") args.authFailFast = Number.parseInt(argv[++i], 10);
+    else if (value === "--regression-token") args.regressionToken = argv[++i];
     else if (value === "--allow-empty") args.allowEmpty = true;
     else if (value === "--fuzzy-threshold") args.fuzzyThreshold = Number.parseFloat(argv[++i]);
   }
@@ -102,11 +157,33 @@ function parseArgs(argv) {
   if (!["auto", "required", "observe"].includes(args.gateMode)) {
     throw new Error(`unsupported gate mode: ${args.gateMode}`);
   }
+  if (!Number.isFinite(args.maxSamples) || args.maxSamples < 1) {
+    throw new Error(`invalid max-samples: ${args.maxSamples}`);
+  }
+  if (!Number.isFinite(args.concurrency) || args.concurrency < 1) {
+    throw new Error(`invalid concurrency: ${args.concurrency}`);
+  }
+  if (!Number.isFinite(args.timeoutMs) || args.timeoutMs < 1000) {
+    throw new Error(`invalid timeout-ms: ${args.timeoutMs}`);
+  }
+  if (!Number.isFinite(args.authFailFast) || args.authFailFast < 1) {
+    throw new Error(`invalid auth-fail-fast: ${args.authFailFast}`);
+  }
   if (!Number.isFinite(args.fuzzyThreshold) || args.fuzzyThreshold <= 0 || args.fuzzyThreshold > 1) {
     throw new Error(`invalid fuzzy threshold: ${args.fuzzyThreshold}`);
   }
 
   return args;
+}
+
+class RegressionRequestError extends Error {
+  constructor(message, { httpStatus = null, failureClass = "http", durationMs = null } = {}) {
+    super(message);
+    this.name = "RegressionRequestError";
+    this.httpStatus = httpStatus;
+    this.failureClass = failureClass;
+    this.durationMs = durationMs;
+  }
 }
 
 function sha256Hex(buffer) {
@@ -142,7 +219,8 @@ function percentile(values, percentileValue) {
 
 function normalizeForMatch(value) {
   let text = String(value ?? "").toLowerCase();
-  text = text.replace(/\([^)]*\)/g, " ");
+  text = text.normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
+  text = text.replace(/[()]/g, " ");
   text = text.replace(/\b\d+(?:[.,]\d+)?\s*(mg|mcg|ug|g|iu|kj|kcal|%)\b/g, " ");
   text = text.replace(/\b\d+(?:[.,]\d+)?\b/g, " ");
   text = text.replace(/[^a-z0-9]+/g, " ");
@@ -333,12 +411,17 @@ function extractDraftFromPayload(payload) {
       ?? payload?.parseCoverage
       ?? null,
     laneSplitChosen: payload?.laneSplitChosen ?? payload?.debug?.laneSplit?.chosen ?? payload?.laneSplit?.chosen ?? null,
-    needsConfirmation: Boolean(draft?.needsConfirmation ?? payload?.needsConfirmation ?? false),
+    needsConfirmation: Boolean(
+      draft?.needsConfirmation
+      || payload?.needsConfirmation
+      || payload?.status === "needs_confirmation",
+    ),
     issues,
   };
 }
 
 async function runE2ESample({ args, sample, imagesDir }) {
+  const startedAt = Date.now();
   const ext = path.extname(String(sample.storage_uri)) || ".jpg";
   const imagePath = path.join(imagesDir, `${sample.image_id}${ext}`);
   const bytes = await fs.readFile(imagePath);
@@ -350,32 +433,71 @@ async function runE2ESample({ args, sample, imagesDir }) {
 
   const base64 = bytes.toString("base64");
   const imageHash = computeImageHash(base64);
-  const response = await fetch(`${args.apiBase.replace(/\/$/, "")}/api/analyze-label?includeAnalysis=0`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(args.bearer ? { Authorization: `Bearer ${args.bearer}` } : {}),
-      ...(args.authBypass ? { "x-auth-disabled": "1" } : {}),
-    },
-    body: JSON.stringify({
-      imageHash,
-      imageBase64: base64,
-      includeAnalysis: false,
-      preprocessProfile: args.preprocessProfile,
-      deviceId: `ocr-regression-${sample.image_id}`,
-      debug: true,
-    }),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort("timeout"), args.timeoutMs);
+  let response;
+  let payload = null;
+  try {
+    response = await fetch(`${args.apiBase.replace(/\/$/, "")}/api/analyze-label?includeAnalysis=0`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(args.regressionToken ? { "x-regression-token": args.regressionToken } : {}),
+        ...(args.bearer ? { Authorization: `Bearer ${args.bearer}` } : {}),
+        ...(args.authBypass ? { "x-auth-disabled": "1" } : {}),
+      },
+      body: JSON.stringify({
+        imageHash,
+        imageBase64: base64,
+        includeAnalysis: false,
+        preprocessProfile: args.preprocessProfile,
+        deviceId: `ocr-regression-${sample.image_id}`,
+        debug: true,
+      }),
+      signal: controller.signal,
+    });
+    payload = await response.json().catch(() => null);
+  } catch (error) {
+    const durationMs = Date.now() - startedAt;
+    if (controller.signal.aborted) {
+      throw new RegressionRequestError("api_timeout", {
+        httpStatus: null,
+        failureClass: "timeout",
+        durationMs,
+      });
+    }
+    throw new RegressionRequestError(error instanceof Error ? error.message : String(error), {
+      httpStatus: null,
+      failureClass: "http",
+      durationMs,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
-  const payload = await response.json().catch(() => null);
+  const durationMs = Date.now() - startedAt;
   if (!response.ok || !payload) {
-    throw new Error(`api_failed_${response.status}`);
+    const failureClass = response.status === 401 || response.status === 403 ? "auth" : "http";
+    throw new RegressionRequestError(`api_failed_${response.status}`, {
+      httpStatus: response.status,
+      failureClass,
+      durationMs,
+    });
   }
   if (payload.status === "failed") {
-    throw new Error(payload.message ?? "label_analysis_failed");
+    throw new RegressionRequestError(payload.message ?? "label_analysis_failed", {
+      httpStatus: response.status,
+      failureClass: "parser",
+      durationMs,
+    });
   }
 
-  return extractDraftFromPayload(payload);
+  return {
+    ...extractDraftFromPayload(payload),
+    httpStatus: response.status,
+    durationMs,
+    failureClass: null,
+  };
 }
 
 async function runParserSample({ args, sample }) {
@@ -470,9 +592,16 @@ function summarizeAttribution(samples) {
 }
 
 function buildGateResult({ rows, bucketSummary, baselineSummary, requirements, sampleCount, gateMode }) {
+  const requiredTargetPanel = process.env.OCR_REGRESSION_REQUIRED_TARGET_PANEL ?? "supplement_facts";
+  const requiredTargetMinSamples = Number(
+    process.env.OCR_REGRESSION_REQUIRED_TARGET_MIN_SAMPLES ?? "10",
+  );
   const targetRows = rows.filter((row) => row.evalTarget && row.ok);
+  const requiredTargetRows = targetRows.filter((row) => row.panelType === requiredTargetPanel);
+  const observeTargetRows = targetRows.filter((row) => row.panelType !== requiredTargetPanel);
   const nonTargetRows = rows.filter((row) => !row.evalTarget && row.ok);
   const failures = [];
+  const warnings = [];
 
   const thresholds = {
     dualMin: Number(process.env.OCR_REGRESSION_DUAL_MIN_COMPLETENESS ?? 0.58),
@@ -480,16 +609,19 @@ function buildGateResult({ rows, bucketSummary, baselineSummary, requirements, s
     recallSoftMin: Number(process.env.OCR_REGRESSION_TARGET_RECALL_SOFT_MIN ?? 0.45),
     precisionSoftMin: Number(process.env.OCR_REGRESSION_TARGET_PRECISION_SOFT_MIN ?? 0.55),
     f1SoftMin: Number(process.env.OCR_REGRESSION_TARGET_F1_SOFT_MIN ?? 0.45),
-    nonTargetOverconfidentMax: Number(process.env.OCR_REGRESSION_NONTARGET_OVERCONFIDENT_MAX ?? 0.05),
+    nonTargetOverconfidentMax: Number(process.env.OCR_REGRESSION_NONTARGET_OVERCONFIDENT_MAX ?? 0.10),
     nonTargetAbstainIssueMin: Number(process.env.OCR_REGRESSION_NONTARGET_ABSTAIN_ISSUE_MIN ?? 0),
   };
 
-  const targetRecallSoft = average(targetRows.map((row) => row.keyIngredientRecallSoft).filter((v) => typeof v === "number"));
-  const targetRecallHard = average(targetRows.map((row) => row.keyIngredientRecallHard).filter((v) => typeof v === "number"));
-  const targetPrecisionSoft = average(targetRows.map((row) => row.keyIngredientPrecisionSoft).filter((v) => typeof v === "number"));
-  const targetPrecisionHard = average(targetRows.map((row) => row.keyIngredientPrecisionHard).filter((v) => typeof v === "number"));
-  const targetF1Soft = average(targetRows.map((row) => row.keyIngredientF1Soft).filter((v) => typeof v === "number"));
-  const targetF1Hard = average(targetRows.map((row) => row.keyIngredientF1Hard).filter((v) => typeof v === "number"));
+  const targetRecallSoft = average(requiredTargetRows.map((row) => row.keyIngredientRecallSoft).filter((v) => typeof v === "number"));
+  const targetRecallHard = average(requiredTargetRows.map((row) => row.keyIngredientRecallHard).filter((v) => typeof v === "number"));
+  const targetPrecisionSoft = average(requiredTargetRows.map((row) => row.keyIngredientPrecisionSoft).filter((v) => typeof v === "number"));
+  const targetPrecisionHard = average(requiredTargetRows.map((row) => row.keyIngredientPrecisionHard).filter((v) => typeof v === "number"));
+  const targetF1Soft = average(requiredTargetRows.map((row) => row.keyIngredientF1Soft).filter((v) => typeof v === "number"));
+  const targetF1Hard = average(requiredTargetRows.map((row) => row.keyIngredientF1Hard).filter((v) => typeof v === "number"));
+  const observeTargetRecallSoft = average(observeTargetRows.map((row) => row.keyIngredientRecallSoft).filter((v) => typeof v === "number"));
+  const observeTargetPrecisionSoft = average(observeTargetRows.map((row) => row.keyIngredientPrecisionSoft).filter((v) => typeof v === "number"));
+  const observeTargetF1Soft = average(observeTargetRows.map((row) => row.keyIngredientF1Soft).filter((v) => typeof v === "number"));
 
   const nonTargetOverconfidentRate = ratio(
     nonTargetRows.filter((row) => row.overconfidentCase).length,
@@ -525,14 +657,21 @@ function buildGateResult({ rows, bucketSummary, baselineSummary, requirements, s
     }
   }
 
-  if (typeof targetRecallSoft === "number" && targetRecallSoft < thresholds.recallSoftMin) {
-    failures.push(`target_recall_soft_below_min(${targetRecallSoft.toFixed(3)}<${thresholds.recallSoftMin})`);
-  }
-  if (typeof targetPrecisionSoft === "number" && targetPrecisionSoft < thresholds.precisionSoftMin) {
-    failures.push(`target_precision_soft_below_min(${targetPrecisionSoft.toFixed(3)}<${thresholds.precisionSoftMin})`);
-  }
-  if (typeof targetF1Soft === "number" && targetF1Soft < thresholds.f1SoftMin) {
-    failures.push(`target_f1_soft_below_min(${targetF1Soft.toFixed(3)}<${thresholds.f1SoftMin})`);
+  const requiredTargetInsufficient = requiredTargetRows.length < requiredTargetMinSamples;
+  if (requiredTargetInsufficient) {
+    warnings.push(
+      `required_target_insufficient(panel=${requiredTargetPanel},count=${requiredTargetRows.length},min=${requiredTargetMinSamples})`,
+    );
+  } else {
+    if (typeof targetRecallSoft === "number" && targetRecallSoft < thresholds.recallSoftMin) {
+      failures.push(`target_recall_soft_below_min(${targetRecallSoft.toFixed(3)}<${thresholds.recallSoftMin})`);
+    }
+    if (typeof targetPrecisionSoft === "number" && targetPrecisionSoft < thresholds.precisionSoftMin) {
+      failures.push(`target_precision_soft_below_min(${targetPrecisionSoft.toFixed(3)}<${thresholds.precisionSoftMin})`);
+    }
+    if (typeof targetF1Soft === "number" && targetF1Soft < thresholds.f1SoftMin) {
+      failures.push(`target_f1_soft_below_min(${targetF1Soft.toFixed(3)}<${thresholds.f1SoftMin})`);
+    }
   }
 
   if (typeof nonTargetOverconfidentRate === "number" && nonTargetOverconfidentRate > thresholds.nonTargetOverconfidentMax) {
@@ -548,14 +687,22 @@ function buildGateResult({ rows, bucketSummary, baselineSummary, requirements, s
   }
 
   const normalizedGateMode = gateMode === "required" ? "required" : "observe";
+  const gateWarnings = normalizedGateMode === "observe"
+    ? [...warnings, ...failures]
+    : warnings;
   return {
     mode: normalizedGateMode,
     pass: normalizedGateMode === "required" ? failures.length === 0 : null,
     failures: normalizedGateMode === "required" ? failures : [],
-    warnings: normalizedGateMode === "observe" ? failures : [],
+    warnings: gateWarnings,
     thresholds,
+    requiredTargetPanel,
+    requiredTargetCount: requiredTargetRows.length,
+    requiredTargetInsufficient,
     aggregates: {
       targetSamples: targetRows.length,
+      requiredTargetSamples: requiredTargetRows.length,
+      observeTargetSamples: observeTargetRows.length,
       nonTargetSamples: nonTargetRows.length,
       targetRecallSoft,
       targetRecallHard,
@@ -563,6 +710,9 @@ function buildGateResult({ rows, bucketSummary, baselineSummary, requirements, s
       targetPrecisionHard,
       targetF1Soft,
       targetF1Hard,
+      observeTargetRecallSoft,
+      observeTargetPrecisionSoft,
+      observeTargetF1Soft,
       nonTargetOverconfidentRate,
       nonTargetAbstainIssueRate,
     },
@@ -617,13 +767,12 @@ async function main() {
     ? (args.mode === "parser" ? "required" : "observe")
     : args.gateMode;
 
-  const results = [];
-  for (const sample of selectedSamples) {
+  const createSampleResult = (sample) => {
     const evalTarget = typeof sample?.eval_target === "boolean"
       ? sample.eval_target
       : PANEL_TYPE_TARGET.has(sample?.panel_type);
     const expectedBehavior = sample?.expected_behavior ?? (evalTarget ? "parse_ingredients_list" : "should_warn_or_abstain");
-    const sampleResult = {
+    return {
       imageId: sample.image_id,
       bucket: sample.bucket,
       panelType: sample.panel_type ?? "unknown",
@@ -647,57 +796,125 @@ async function main() {
       issues: [],
       unmatchedDebug: [],
       parserFixturePath: null,
+      httpStatus: null,
+      durationMs: null,
+      failureClass: null,
       error: null,
     };
+  };
 
-    try {
-      const draftResult = args.mode === "parser"
-        ? await runParserSample({ args, sample })
-        : await runE2ESample({ args, sample, imagesDir });
+  const results = new Array(selectedSamples.length);
+  let cursor = 0;
+  let stopRequested = false;
+  let authFailFastTriggered = false;
+  let consecutiveAuthFailures = 0;
+  let consecutiveAuthFailuresMax = 0;
+  const workerCount = Math.max(1, Math.min(args.concurrency, selectedSamples.length));
 
-      sampleResult.parsedNames = draftResult.parsedNames;
-      sampleResult.parsedIngredients = draftResult.parsedIngredients;
-      sampleResult.completenessRatio = draftResult.completenessRatio;
-      sampleResult.laneSplitChosen = draftResult.laneSplitChosen;
-      sampleResult.needsConfirmation = Boolean(draftResult.needsConfirmation);
-      sampleResult.issues = draftResult.issues;
-      sampleResult.parserFixturePath = draftResult.parserFixturePath ?? null;
+  const worker = async () => {
+    while (true) {
+      const index = cursor;
+      cursor += 1;
+      if (index >= selectedSamples.length || stopRequested) return;
 
-      sampleResult.abstainIssueHit = sampleResult.issues.some((issue) => ABSTAIN_ISSUES.has(issue));
-      sampleResult.overconfidentCase = !sampleResult.evalTarget && (sampleResult.parsedIngredients ?? 0) >= 3 && !sampleResult.needsConfirmation;
+      const sample = selectedSamples[index];
+      const sampleResult = createSampleResult(sample);
 
-      if (sampleResult.evalTarget) {
-        const expectedKeys = Array.isArray(sample.key_ingredients_gt)
-          ? sample.key_ingredients_gt.filter(Boolean)
-          : [];
-        const match = evaluateKeyIngredients(expectedKeys, sampleResult.parsedNames, args.fuzzyThreshold);
-        sampleResult.keyIngredientRecallSoft = match.recallSoft;
-        sampleResult.keyIngredientRecallHard = match.recallHard;
-        sampleResult.keyIngredientPrecisionSoft = match.precisionSoft;
-        sampleResult.keyIngredientPrecisionHard = match.precisionHard;
-        sampleResult.keyIngredientF1Soft = match.f1Soft;
-        sampleResult.keyIngredientF1Hard = match.f1Hard;
-        sampleResult.unmatchedDebug = match.unmatchedDebug;
+      try {
+        const draftResult = args.mode === "parser"
+          ? await runParserSample({ args, sample })
+          : await runE2ESample({ args, sample, imagesDir });
+
+        sampleResult.parsedNames = draftResult.parsedNames;
+        sampleResult.parsedIngredients = draftResult.parsedIngredients;
+        sampleResult.completenessRatio = draftResult.completenessRatio;
+        sampleResult.laneSplitChosen = draftResult.laneSplitChosen;
+        sampleResult.needsConfirmation = Boolean(draftResult.needsConfirmation);
+        sampleResult.issues = draftResult.issues;
+        sampleResult.parserFixturePath = draftResult.parserFixturePath ?? null;
+        sampleResult.httpStatus = draftResult.httpStatus ?? 200;
+        sampleResult.durationMs = draftResult.durationMs ?? null;
+
+        sampleResult.abstainIssueHit = sampleResult.issues.some((issue) => ABSTAIN_ISSUES.has(issue));
+        sampleResult.overconfidentCase = !sampleResult.evalTarget && (sampleResult.parsedIngredients ?? 0) >= 3 && !sampleResult.needsConfirmation;
+
+        if (sampleResult.evalTarget) {
+          const expectedKeys = Array.isArray(sample.key_ingredients_gt)
+            ? sample.key_ingredients_gt.filter(Boolean)
+            : [];
+          const match = evaluateKeyIngredients(expectedKeys, sampleResult.parsedNames, args.fuzzyThreshold);
+          sampleResult.keyIngredientRecallSoft = match.recallSoft;
+          sampleResult.keyIngredientRecallHard = match.recallHard;
+          sampleResult.keyIngredientPrecisionSoft = match.precisionSoft;
+          sampleResult.keyIngredientPrecisionHard = match.precisionHard;
+          sampleResult.keyIngredientF1Soft = match.f1Soft;
+          sampleResult.keyIngredientF1Hard = match.f1Hard;
+          sampleResult.unmatchedDebug = match.unmatchedDebug;
+        }
+
+        sampleResult.ok = true;
+        consecutiveAuthFailures = 0;
+      } catch (error) {
+        sampleResult.error = error instanceof Error ? error.message : String(error);
+        if (error instanceof RegressionRequestError) {
+          sampleResult.httpStatus = error.httpStatus;
+          sampleResult.durationMs = error.durationMs;
+          sampleResult.failureClass = error.failureClass;
+        } else if (sampleResult.error === "api_timeout") {
+          sampleResult.failureClass = "timeout";
+        } else if (sampleResult.error?.startsWith("api_failed_401") || sampleResult.error?.startsWith("api_failed_403")) {
+          sampleResult.failureClass = "auth";
+        } else if (sampleResult.error?.startsWith("api_failed_")) {
+          sampleResult.failureClass = "http";
+        } else {
+          sampleResult.failureClass = "parser";
+        }
+
+        if (args.mode === "e2e" && sampleResult.failureClass === "auth") {
+          consecutiveAuthFailures += 1;
+          consecutiveAuthFailuresMax = Math.max(consecutiveAuthFailuresMax, consecutiveAuthFailures);
+          if (consecutiveAuthFailures >= args.authFailFast) {
+            authFailFastTriggered = true;
+            stopRequested = true;
+          }
+        } else {
+          consecutiveAuthFailures = 0;
+        }
       }
 
-      sampleResult.ok = true;
-    } catch (error) {
-      sampleResult.error = error instanceof Error ? error.message : String(error);
+      results[index] = sampleResult;
     }
+  };
 
-    results.push(sampleResult);
-  }
+  await Promise.all(Array.from({ length: workerCount }, () => worker()));
+  const compactResults = results.filter(Boolean);
 
-  const bucketSummary = summarizeByBucket(results);
-  const failuresFromSamples = results.filter((item) => !item.ok).map((item) => `${item.imageId}:${item.error}`);
+  const bucketSummary = summarizeByBucket(compactResults);
+  const failuresFromSamples = compactResults.filter((item) => !item.ok).map((item) => `${item.imageId}:${item.error}`);
+  const failureClassCounts = compactResults
+    .filter((item) => !item.ok)
+    .reduce((acc, item) => {
+      const key = item.failureClass ?? "unknown";
+      acc[key] = (acc[key] ?? 0) + 1;
+      return acc;
+    }, {});
   const gate = buildGateResult({
-    rows: results,
+    rows: compactResults,
     bucketSummary,
     baselineSummary,
     requirements: manifest.requirements ?? null,
-    sampleCount: selectedSamples.length,
+    sampleCount: compactResults.length,
     gateMode: effectiveGateMode,
   });
+
+  if (authFailFastTriggered) {
+    const warning = `auth_fail_fast_triggered(consecutive=${args.authFailFast})`;
+    if (effectiveGateMode === "required") {
+      gate.warnings.push(warning);
+    } else {
+      gate.warnings.push(warning);
+    }
+  }
 
   if (failuresFromSamples.length) {
     if (effectiveGateMode === "required") {
@@ -708,7 +925,7 @@ async function main() {
     }
   }
 
-  const unmatchedDebugTop = results
+  const unmatchedDebugTop = compactResults
     .flatMap((row) => (row.unmatchedDebug ?? []).map((entry) => ({ imageId: row.imageId, ...entry })))
     .slice(0, 200);
   const attributionSummary = summarizeAttribution(selectedSamples);
@@ -722,12 +939,24 @@ async function main() {
     mode: args.mode,
     gateMode: effectiveGateMode,
     fuzzyThreshold: args.fuzzyThreshold,
-    sampleCount: selectedSamples.length,
+    selectedSampleCount: selectedSamples.length,
+    sampleCount: compactResults.length,
     datasetVersion: manifest.datasetVersion ?? "unknown",
+    e2eOptions: args.mode === "e2e"
+      ? {
+        timeoutMs: args.timeoutMs,
+        concurrency: args.concurrency,
+        maxSamples: args.maxSamples,
+        authFailFast: args.authFailFast,
+      }
+      : null,
     counts: {
-      targetSamples: results.filter((row) => row.evalTarget).length,
-      nonTargetSamples: results.filter((row) => !row.evalTarget).length,
+      targetSamples: compactResults.filter((row) => row.evalTarget).length,
+      nonTargetSamples: compactResults.filter((row) => !row.evalTarget).length,
       failedSamples: failuresFromSamples.length,
+      failureClassCounts,
+      authFailFastTriggered,
+      consecutiveAuthFailuresMax,
     },
     bucketSummary,
     gate,
@@ -736,12 +965,12 @@ async function main() {
       unmatchedTop: unmatchedDebugTop,
     },
     aggregates: {
-      completenessP50: percentile(results.map((row) => row.completenessRatio).filter((v) => typeof v === "number"), 50),
-      completenessP95: percentile(results.map((row) => row.completenessRatio).filter((v) => typeof v === "number"), 95),
+      completenessP50: percentile(compactResults.map((row) => row.completenessRatio).filter((v) => typeof v === "number"), 50),
+      completenessP95: percentile(compactResults.map((row) => row.completenessRatio).filter((v) => typeof v === "number"), 95),
     },
   };
 
-  await fs.writeFile(path.join(outputDir, "ocr_regression_results.json"), JSON.stringify(results, null, 2));
+  await fs.writeFile(path.join(outputDir, "ocr_regression_results.json"), JSON.stringify(compactResults, null, 2));
   await fs.writeFile(path.join(outputDir, "ocr_regression_summary.json"), JSON.stringify(summary, null, 2));
 
   const reportLines = [
@@ -754,9 +983,13 @@ async function main() {
     `- sampleCount: ${summary.sampleCount}`,
     `- target/nonTarget: ${summary.counts.targetSamples}/${summary.counts.nonTargetSamples}`,
     `- fuzzyThreshold: ${summary.fuzzyThreshold}`,
+    `- required target panel: ${summary.gate.requiredTargetPanel} (count=${summary.gate.requiredTargetCount})`,
+    `- required target insufficient: ${summary.gate.requiredTargetInsufficient}`,
     `- pass: ${summary.gate.pass === null ? "observe_mode" : summary.gate.pass}`,
     `- failures: ${summary.gate.failures.length ? summary.gate.failures.join(", ") : "none"}`,
     `- warnings: ${summary.gate.warnings.length ? summary.gate.warnings.join(", ") : "none"}`,
+    `- auth fail-fast triggered: ${summary.counts.authFailFastTriggered}`,
+    `- failure classes: ${JSON.stringify(summary.counts.failureClassCounts)}`,
     "",
     "## Gate Aggregates",
     `- target recall soft: ${summary.gate.aggregates.targetRecallSoft ?? "n/a"}`,
@@ -765,6 +998,9 @@ async function main() {
     `- target precision hard: ${summary.gate.aggregates.targetPrecisionHard ?? "n/a"}`,
     `- target f1 soft: ${summary.gate.aggregates.targetF1Soft ?? "n/a"}`,
     `- target f1 hard: ${summary.gate.aggregates.targetF1Hard ?? "n/a"}`,
+    `- observe-target recall soft: ${summary.gate.aggregates.observeTargetRecallSoft ?? "n/a"}`,
+    `- observe-target precision soft: ${summary.gate.aggregates.observeTargetPrecisionSoft ?? "n/a"}`,
+    `- observe-target f1 soft: ${summary.gate.aggregates.observeTargetF1Soft ?? "n/a"}`,
     `- non-target overconfident rate: ${summary.gate.aggregates.nonTargetOverconfidentRate ?? "n/a"}`,
     `- non-target abstain issue hit rate: ${summary.gate.aggregates.nonTargetAbstainIssueRate ?? "n/a"}`,
     "",

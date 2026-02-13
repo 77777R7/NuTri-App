@@ -40,12 +40,23 @@ import {
   type FactsIdentityType,
   type LnhpdFactsInput,
 } from "./factsDigest.js";
+import { sanitizeWebText } from "./webSanitizer.js";
+import {
+  applyWebBundleEvidenceGate,
+  applyWebIngredientsDetailEvidenceGate,
+} from "./webEvidenceGate.js";
+import { applyWebVerifyRevise } from "./webVerifyRevise.js";
 import { buildMySupplementFactsV1, type MySupplementFactsV1 } from "./mySupplementFacts.js";
 import { getMySupplementOverviewV2GateReason } from "./mySupplementOverviewGate.js";
 import {
   buildEnsureOverviewInflightKey,
   isRegulatoryMapMiss,
 } from "./overviewRuntime.js";
+import {
+  buildStackOverlapResult,
+  extractStackOverlapIngredientKeys,
+  type StackOverlapSupplementInput,
+} from "./stackOverlap.js";
 import { getAnalysisIdentityCache, getWebCanonicalMap, insertAnalysisIdentityPending, updateAnalysisIdentityCache, upsertAnalysisIdentityCache, upsertWebCanonicalMap } from "./analysisIdentityCache.js";
 import {
   clearNegativeCache,
@@ -64,8 +75,24 @@ import {
   upsertResolutionCacheStrongMatch,
   upsertSerpCache,
 } from "./barcodeResolutionDbCache.js";
-import { analyzeLabelDraft, analyzeLabelDraftWithDiagnostics, formatForDeepSeek, needsConfirmation, validateIngredient, type LabelAnalysisDiagnostics, type LabelDraft } from "./labelAnalysis.js";
-import { getCachedResult, hasCompletedAnalysis, setCachedResult, updateCachedAnalysis } from "./ocrCache.js";
+import { analyzeLabelDraftWithDiagnostics, formatForDeepSeek, needsConfirmation, validateIngredient, type LabelAnalysisDiagnostics, type LabelDraft } from "./labelAnalysis.js";
+import {
+  getAnalysisCachedResult,
+  getCachedResult,
+  getParseCachedResult,
+  hasCompletedAnalysis,
+  setAnalysisCachedResult,
+  setCachedResult,
+  setParseCachedResult,
+  updateCachedAnalysis,
+} from "./ocrCache.js";
+import { logLabelScanMetric, updateLabelScanClientTiming } from "./labelScanMetrics.js";
+import {
+  buildParseCacheKey,
+  LABEL_PARSER_VERSION,
+  buildVersionedOcrCacheKey,
+  normalizePreprocessProfile,
+} from "./labelScanVersion.js";
 import { upsertProductIngredientsFromDraft, upsertProductIngredientsFromLabelFacts } from "./productIngredients.js";
 import {
   BulkheadTimeoutError,
@@ -297,6 +324,7 @@ const ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS = Number(process.env.ANALYSIS_BUNDLE_DET
 const ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS_DSLD = Number(
   process.env.ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS_DSLD ?? 4500,
 );
+const WEB_VERIFY_TIME_BUDGET_MS = Number(process.env.WEB_VERIFY_TIME_BUDGET_MS ?? 1200);
 const ANALYSIS_DETAIL_LIMIT_DEFAULT = Number(process.env.ANALYSIS_DETAIL_LIMIT_DEFAULT ?? 8);
 const ANALYSIS_DETAIL_LIMIT_MAX = Number(process.env.ANALYSIS_DETAIL_LIMIT_MAX ?? 12);
 const ANALYSIS_DETAIL_LIMIT_RESCUE = Number(process.env.ANALYSIS_DETAIL_LIMIT_RESCUE ?? 6);
@@ -305,6 +333,9 @@ const ANALYSIS_DETAIL_MAX_TOKENS = Number(process.env.ANALYSIS_DETAIL_MAX_TOKENS
 const ANALYSIS_DETAIL_RESCUE_MAX_TOKENS = Number(process.env.ANALYSIS_DETAIL_RESCUE_MAX_TOKENS ?? 700);
 const ANALYSIS_DETAIL_MAX_TOKENS_DSLD = Number(process.env.ANALYSIS_DETAIL_MAX_TOKENS_DSLD ?? 500);
 const ANALYSIS_DETAIL_RESCUE_MAX_TOKENS_DSLD = Number(process.env.ANALYSIS_DETAIL_RESCUE_MAX_TOKENS_DSLD ?? 350);
+const ANALYSIS_SECTION_DIGEST_LOOKUP_TIMEOUT_MS = Number(
+  process.env.ANALYSIS_SECTION_DIGEST_LOOKUP_TIMEOUT_MS ?? 2500,
+);
 const ANALYSIS_DETAIL_LOCK_MS = Number(process.env.ANALYSIS_DETAIL_LOCK_MS ?? 45_000);
 const ANALYSIS_DETAIL_STALE_MS = Number(process.env.ANALYSIS_DETAIL_STALE_MS ?? 60_000);
 const ANALYSIS_DETAIL_ERROR_RETRY_MS = Number(process.env.ANALYSIS_DETAIL_ERROR_RETRY_MS ?? 0);
@@ -1738,6 +1769,7 @@ const buildProvisionalAnalysisBundle = (params: {
       revision: params.revision,
       factsDigestHash,
       factsSourceVersion: "provisional:pending",
+      fallback: params.fallbackReason ? { code: params.fallbackReason } : undefined,
       fallbackReason: params.fallbackReason,
       serverCommitSha: SERVER_COMMIT_SHA,
     },
@@ -5020,7 +5052,12 @@ const authDisabled =
 const allowAuthBypass =
   process.env.ALLOW_AUTH_BYPASS === "true" || process.env.ALLOW_AUTH_BYPASS === "1";
 const regressionAuthToken = process.env.REGRESSION_AUTH_TOKEN ?? null;
-const regressionAuthRoutes = new Set(["/api/enrich-stream", "/api/analysis-section"]);
+const regressionAuthRoutes = new Set([
+  "/api/enrich-stream",
+  "/api/analysis-section",
+  "/api/analyze-label",
+  "/api/label-scan/metrics",
+]);
 
 const verifySupabaseToken = async (req: Request, res: Response, next: NextFunction) => {
   if (authDisabled) {
@@ -6032,6 +6069,20 @@ type EnsurePublicOverviewResult = {
 };
 
 const inflightPublicOverviewByKey = new Map<string, Promise<EnsurePublicOverviewResult>>();
+const ensureOverviewStartCountByKey = new Map<string, { count: number; windowStartedAt: number }>();
+const ENSURE_OVERVIEW_START_WINDOW_MS = 10 * 60 * 1000;
+
+const trackEnsureOverviewStart = (inflightKey: string): number => {
+  const now = Date.now();
+  const existing = ensureOverviewStartCountByKey.get(inflightKey);
+  if (!existing || now - existing.windowStartedAt > ENSURE_OVERVIEW_START_WINDOW_MS) {
+    ensureOverviewStartCountByKey.set(inflightKey, { count: 1, windowStartedAt: now });
+    return 1;
+  }
+  const next = { ...existing, count: existing.count + 1 };
+  ensureOverviewStartCountByKey.set(inflightKey, next);
+  return next.count;
+};
 
 const MY_SUPP_OVERVIEW_V2_PROMPT_VERSION = "my_supp_overview_v2:v1";
 const MY_SUPP_OVERVIEW_V2_GATE_SECTION = "my_supp_overview_v2_gate";
@@ -6041,6 +6092,11 @@ const MY_SUPP_OVERVIEW_V2_GATE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
 const ENSURE_OVERVIEW_FACTS_BUDGET_MS = 1800;
 const ENSURE_OVERVIEW_SNAPSHOT_READ_MS = 600;
 const ENSURE_OVERVIEW_MAP_READ_MS = 600;
+const STACK_OVERLAP_MAX_SUPPLEMENTS_PER_REQUEST = 30;
+const STACK_OVERLAP_ACTIVES_PER_SUPPLEMENT = 6;
+const STACK_OVERLAP_MAX_ITEMS = 5;
+const STACK_OVERLAP_SNAPSHOT_TIMEOUT_MS = 650;
+const STACK_OVERLAP_SNAPSHOT_CONCURRENCY = 5;
 
 type EnsureOverviewFactsStatus = "full" | "partial" | "none";
 type EnsureOverviewAiStatus = "ready" | "pending" | "blocked" | "none";
@@ -6111,6 +6167,39 @@ const computeRetryAfterSeconds = (expiresAt: string | null | undefined): number 
   const leftMs = ms - Date.now();
   if (leftMs <= 0) return 0;
   return Math.ceil(leftMs / 1000);
+};
+
+const mapWithConcurrency = async <T, R>(
+  items: T[],
+  concurrency: number,
+  mapper: (item: T, index: number) => Promise<R>,
+): Promise<R[]> => {
+  const limit = Math.max(1, Math.min(concurrency, items.length || 1));
+  const results = new Array<R>(items.length);
+  let cursor = 0;
+
+  const workers = Array.from({ length: limit }, async () => {
+    while (true) {
+      const current = cursor;
+      cursor += 1;
+      if (current >= items.length) break;
+      results[current] = await mapper(items[current], current);
+    }
+  });
+
+  await Promise.all(workers);
+  return results;
+};
+
+const parseUserSupplementNotes = (rawNotes: string | null): Record<string, unknown> | null => {
+  if (!rawNotes) return null;
+  try {
+    const parsed = JSON.parse(rawNotes);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
+    return parsed as Record<string, unknown>;
+  } catch {
+    return null;
+  }
 };
 
 const inflightSnapshotPopulateByBarcode = new Map<string, Promise<void>>();
@@ -6504,7 +6593,34 @@ const ensurePublicOverview = async (params: {
 }): Promise<EnsurePublicOverviewResult> => {
   const inflightKey = buildEnsureOverviewInflightKey(params.supplementId, params.factsDigestHash);
   const inflight = inflightPublicOverviewByKey.get(inflightKey);
-  if (inflight) return inflight;
+  if (inflight) {
+    console.info("[ensure-overview-start]", {
+      supplementId: params.supplementId,
+      factsDigestHash: params.factsDigestHash,
+      inflightKey,
+      started: false,
+      reason: "inflight_reused",
+    });
+    return inflight;
+  }
+
+  const startCountInWindow = trackEnsureOverviewStart(inflightKey);
+  console.info("[ensure-overview-start]", {
+    supplementId: params.supplementId,
+    factsDigestHash: params.factsDigestHash,
+    inflightKey,
+    started: true,
+    startCountInWindow,
+    windowMs: ENSURE_OVERVIEW_START_WINDOW_MS,
+  });
+  if (startCountInWindow > 1) {
+    console.warn("[ensure-overview-start] duplicate background start detected", {
+      supplementId: params.supplementId,
+      factsDigestHash: params.factsDigestHash,
+      inflightKey,
+      startCountInWindow,
+    });
+  }
 
   const promise = (async (): Promise<EnsurePublicOverviewResult> => {
   const cached = await findMatchingPublicAnalysis({
@@ -7386,19 +7502,40 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   ).catch(() => null);
 
   if (!digestRow) {
-    const { data: latestDigestRow, error: latestDigestError } = await supabase
-      .from("analysis_identity_cache")
-      .select(
-        "identity_type,identity_value,locale,prompt_version,facts_digest_hash,facts_source_version,section,status,payload,facts_digest_json,attempts,locked_until,last_error,error_code,updated_at,created_at,expires_at",
-      )
-      .eq("identity_type", identity.type)
-      .eq("identity_value", identity.value)
-      .eq("locale", locale)
-      .eq("prompt_version", promptVersion)
-      .eq("section", "digest")
-      .order("updated_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    let latestDigestRow: Record<string, unknown> | null = null;
+    let latestDigestError: unknown = null;
+    try {
+      const latestDigestResult = (await withTimeoutPromise(
+        (async () =>
+          await supabase
+            .from("analysis_identity_cache")
+            .select(
+              "identity_type,identity_value,locale,prompt_version,facts_digest_hash,facts_source_version,section,status,payload,facts_digest_json,attempts,locked_until,last_error,error_code,updated_at,created_at,expires_at",
+            )
+            .eq("identity_type", identity.type)
+            .eq("identity_value", identity.value)
+            .eq("locale", locale)
+            .eq("prompt_version", promptVersion)
+            .eq("section", "digest")
+            .order("updated_at", { ascending: false })
+            .limit(1)
+            .maybeSingle())(),
+        ANALYSIS_SECTION_DIGEST_LOOKUP_TIMEOUT_MS,
+      )) as {
+        data: Record<string, unknown> | null;
+        error: unknown;
+      };
+      latestDigestRow = (latestDigestResult.data as Record<string, unknown> | null) ?? null;
+      latestDigestError = latestDigestResult.error ?? null;
+    } catch (error) {
+      latestDigestError = error;
+      console.warn("[analysis-section] digest lookup timeout/failure", {
+        identityType: identity.type,
+        identityValue: identity.value,
+        timeoutMs: ANALYSIS_SECTION_DIGEST_LOOKUP_TIMEOUT_MS,
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
 
     const latestDigestRowValid =
       !latestDigestError &&
@@ -7407,7 +7544,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 
     if (latestDigestRowValid) {
       digestRow = latestDigestRow as any;
-      factsDigestHash = latestDigestRow.facts_digest_hash;
+      factsDigestHash = String((latestDigestRow as { facts_digest_hash?: string }).facts_digest_hash ?? factsDigestHash);
     } else {
       if (section === "overview" || section === "usage") {
         const identityFallbackSection =
@@ -7420,14 +7557,15 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
           cover: identityFallbackSection.cover,
           detail: identityFallbackSection.detail,
           dataStatus: identityFallbackSection.dataStatus,
-          meta: {
-            bundleId: randomUUID(),
-            revision: 1,
-            factsDigestHash: requestedFactsDigestHash,
-            fallbackUsed: "skeleton",
-            fallbackReason: "facts_digest_missing",
-            scoreAvailable: fallbackScoreAvailable,
-          },
+        meta: {
+          bundleId: randomUUID(),
+          revision: 1,
+          factsDigestHash: requestedFactsDigestHash,
+          fallbackUsed: "skeleton",
+          fallback: { code: "facts_digest_missing" },
+          fallbackReason: "facts_digest_missing",
+          scoreAvailable: fallbackScoreAvailable,
+        },
           timingMs: 0,
         });
         return;
@@ -7450,6 +7588,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
           factsDigestHash: requestedFactsDigestHash,
           retryAfterMs: 1200,
           fallbackUsed: "skeleton",
+          fallback: { code: "facts_digest_missing" },
           fallbackReason: "facts_digest_missing",
         },
         timingMs: 0,
@@ -7529,6 +7668,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
         revision: 1,
         factsDigestHash,
         fallbackUsed: "skeleton",
+        fallback: { code: "bundle_fast_missing" },
         fallbackReason: "bundle_fast_missing",
         scoreAvailable,
       },
@@ -7574,6 +7714,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
         factsDigestHash,
         retryAfterMs: 1200,
         fallbackUsed: "skeleton",
+        fallback: { code: "detail_not_ready_until_revision1" },
         fallbackReason: "detail_not_ready_until_revision1",
       },
       timingMs: 0,
@@ -7682,6 +7823,10 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     const hideDsldFallbackMarker = isDsldDetail && cachedFallback === "kb_dsld";
     let detailPayload = cachedDetail.payload as IngredientsDetail;
     let debug: Record<string, unknown> | undefined;
+    const gateSliceStart = Math.min(cursor, totalActives);
+    const gateSliceEnd = Math.min(gateSliceStart + requestedLimit, totalActives);
+    const gateDetailDigest: FactsDigest = { ...digest, actives: digest.actives.slice(gateSliceStart, gateSliceEnd) };
+    let webDetailGateReason: string | null = null;
     if (isDsldDetail) {
       // DSLD detail is KB-first for dose/form fields. Even when we hit a cached LLM payload, we should
       // refresh KB-first fields so:
@@ -7775,6 +7920,12 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
           formSupportStrengths: supportStrengths,
         };
       }
+    } else if (digest.sourceType === "web") {
+      const gatedWebDetail = applyWebIngredientsDetailEvidenceGate(detailPayload, gateDetailDigest);
+      detailPayload = gatedWebDetail.value;
+      if (gatedWebDetail.reasons.length > 0) {
+        webDetailGateReason = gatedWebDetail.reasons[0] ?? "web_claim_without_evidence";
+      }
     }
     const dsldWhatItDoesStatusFromCache = isDsldDetail
       ? resolveDsldWhatItDoesStatus(cachedDetail.error_code ?? null)
@@ -7786,18 +7937,32 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       section: "ingredients",
       detail: detailPayload,
       dataStatus:
-        hideDsldFallbackMarker ? "complete" : cachedFallback || dsldTreatAsLimited ? "limited" : "complete",
+        hideDsldFallbackMarker
+          ? "complete"
+          : cachedFallback || dsldTreatAsLimited || Boolean(webDetailGateReason)
+            ? "limited"
+            : "complete",
       page: buildDetailPage(Array.isArray(detailPayload.items) ? detailPayload.items.length : cachedItemsCount),
       meta: {
         bundleId: randomUUID(),
         revision: 2,
         factsDigestHash,
         fallbackUsed: hideDsldFallbackMarker ? undefined : cachedFallback ?? undefined,
+        fallback:
+          hideDsldFallbackMarker || !cachedFallback
+            ? webDetailGateReason
+              ? {
+                  code: webDetailGateReason,
+                }
+              : undefined
+            : {
+                code: cachedDetail.last_error ?? cachedDetail.error_code ?? "cache_fallback",
+              },
         fallbackReason: hideDsldFallbackMarker
-          ? undefined
+          ? webDetailGateReason ?? undefined
           : cachedFallback
             ? cachedDetail.last_error ?? cachedDetail.error_code ?? null
-            : undefined,
+            : webDetailGateReason ?? undefined,
         whatItDoesStatus: dsldWhatItDoesStatusFromCache?.status,
         whatItDoesReason:
           dsldWhatItDoesStatusFromCache && dsldWhatItDoesStatusFromCache.status !== "llm"
@@ -7866,6 +8031,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
         updatedAt: cachedDetail?.updated_at ?? null,
         pendingAgeMs,
         fallbackUsed: "kb_dsld",
+        fallback: { code: deepseekKey ? "enrichment_queued" : "deepseek_api_key_missing" },
         fallbackReason: deepseekKey ? "enrichment_queued" : "deepseek_api_key_missing",
         whatItDoesStatus: deepseekKey ? "queued" : "skipped",
         whatItDoesReason: deepseekKey ? undefined : "DEEPSEEK_API_KEY_MISSING",
@@ -7911,6 +8077,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
         revision: 2,
         factsDigestHash,
         fallbackUsed: "skeleton",
+        fallback: { code: "deepseek_api_key_missing" },
         fallbackReason: "deepseek_api_key_missing",
         jobId,
         jobStatus: cachedDetail?.status ?? "skipped",
@@ -7974,6 +8141,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
           pendingAgeMs,
           retryAfterMs: 2000,
           fallbackUsed: "skeleton",
+          fallback: { code: "job_pending" },
           fallbackReason: "job_pending",
           requestId,
         },
@@ -8016,6 +8184,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
               revision: 2,
               factsDigestHash,
               fallbackUsed: "kb_dsld",
+              fallback: { code: "rate_limited" },
               fallbackReason: "rate_limited",
               retryAfterMs: retryAfterSec * 1000,
               requestId,
@@ -8037,6 +8206,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
             revision: 2,
             factsDigestHash,
             fallbackUsed: "skeleton",
+            fallback: { code: "rate_limited" },
             fallbackReason: "rate_limited",
             retryAfterMs: retryAfterSec * 1000,
             requestId,
@@ -8125,6 +8295,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
           revision: 2,
           factsDigestHash,
           fallbackUsed: "skeleton",
+          fallback: { code: "cache_claim_failed" },
           fallbackReason: "cache_claim_failed",
           jobId,
           jobStatus: cachedDetail?.status ?? "pending",
@@ -8158,6 +8329,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
         revision: 2,
         factsDigestHash,
         fallbackUsed: "skeleton",
+        fallback: { code: "cache_claim_failed" },
         fallbackReason: "cache_claim_failed",
         jobId,
         jobStatus: cachedDetail?.status ?? "pending",
@@ -8418,9 +8590,17 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       fallbackUsed = "skeleton";
     }
   }
+  let webGateReason: string | null = null;
+  if (digest.sourceType === "web" && detailPayload) {
+    const gatedWebDetail = applyWebIngredientsDetailEvidenceGate(detailPayload, detailDigest);
+    detailPayload = gatedWebDetail.value;
+    if (gatedWebDetail.reasons.length > 0) {
+      webGateReason = gatedWebDetail.reasons[0] ?? "web_claim_without_evidence";
+    }
+  }
 
   const detailStatus: "complete" | "error" = detailPayload ? "complete" : "error";
-  const detailDataStatus = fallbackUsed ? "limited" : detailPayload ? "complete" : "error";
+  const detailDataStatus = fallbackUsed || webGateReason ? "limited" : detailPayload ? "complete" : "error";
   const fallbackMarker =
     fallbackUsed === "kb_dsld" ? "FALLBACK_KB_DSLD" : fallbackUsed === "skeleton" ? "FALLBACK_SKELETON" : null;
   const shouldUseShortTtl = Boolean(fallbackUsed) || (isDsldDetail && !dsldWhatItDoesUsed);
@@ -8515,7 +8695,8 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       updatedAt: new Date().toISOString(),
       pendingAgeMs: null,
       fallbackUsed: fallbackUsed ?? undefined,
-      fallbackReason: fallbackReason ?? undefined,
+      fallback: fallbackReason || webGateReason ? { code: fallbackReason ?? webGateReason ?? "web_claim_without_evidence" } : undefined,
+      fallbackReason: fallbackReason ?? webGateReason ?? undefined,
       whatItDoesStatus: isDsldDetail ? dsldWhatItDoesStatus : undefined,
       whatItDoesReason: isDsldDetail && dsldWhatItDoesStatus !== "llm" ? dsldWhatItDoesReason : undefined,
     },
@@ -8544,6 +8725,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 	  const acceptLanguageHeader =
 	    typeof req.headers["accept-language"] === "string" ? req.headers["accept-language"] : null;
 	  const locale = resolveLocale(acceptLanguageHeader);
+  const isRegressionRequest = (req as AuthenticatedRequest).regressionAuth === true;
   const bundleId = randomUUID();
   let finishInFlight: ((error?: unknown) => void) | null = null;
   let catalogSnapshotForAi: SupplementSnapshot | null = null;
@@ -8573,7 +8755,115 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     tPersisted: null as number | null,
     tDone: null as number | null,
     rev1Source: null as "fast_ai" | "fallback" | null,
+    latestRevision: null as number | null,
+    latestSourceType: null as string | null,
+    latestIdentityType: null as string | null,
   };
+  type PipelineStepName = "retrieve" | "sanitize" | "select_evidence" | "draft" | "verify" | "revise" | "emit";
+  type PipelineStepStatus = "ok" | "degraded" | "failed";
+  type PipelineStepMetric = {
+    step: PipelineStepName;
+    status: PipelineStepStatus;
+    code?: string;
+    ms?: number;
+    startedAtMs?: number;
+  };
+  const pipelineStepsOrder: PipelineStepName[] = [
+    "retrieve",
+    "sanitize",
+    "select_evidence",
+    "draft",
+    "verify",
+    "revise",
+    "emit",
+  ];
+  const pipelineMetricsEnabled = isRegressionRequest;
+  const pipelineStartedAt = performance.now();
+  const pipelineState = new Map<PipelineStepName, PipelineStepMetric>(
+    pipelineStepsOrder.map((step) => [step, { step, status: "degraded", code: "not_reached" }]),
+  );
+  let pipelineTouched = false;
+  let pipelineMetricsEmitted = false;
+  const pipelineStatusRank = (status: PipelineStepStatus): number =>
+    status === "failed" ? 3 : status === "degraded" ? 2 : 1;
+  const markPipelineStepStart = (step: PipelineStepName) => {
+    if (!pipelineMetricsEnabled) return;
+    pipelineTouched = true;
+    const current = pipelineState.get(step);
+    pipelineState.set(step, {
+      step,
+      status: current?.status ?? "ok",
+      code: current?.code,
+      ms: current?.ms,
+      startedAtMs: performance.now(),
+    });
+  };
+  const markPipelineStepEnd = (step: PipelineStepName, status: PipelineStepStatus, code?: string) => {
+    if (!pipelineMetricsEnabled) return;
+    pipelineTouched = true;
+    const current = pipelineState.get(step);
+    const nextMs =
+      typeof current?.startedAtMs === "number" ? Math.max(0, Math.round(performance.now() - current.startedAtMs)) : current?.ms;
+    const existingStatus = current?.status ?? "degraded";
+    const keepExisting = pipelineStatusRank(existingStatus) > pipelineStatusRank(status);
+    pipelineState.set(step, {
+      step,
+      status: keepExisting ? existingStatus : status,
+      code: keepExisting ? current?.code : code ?? current?.code,
+      ms: nextMs,
+    });
+  };
+  const buildStableWebPipeline = () =>
+    pipelineStepsOrder.map((step) => {
+      const item = pipelineState.get(step);
+      return {
+        step,
+        status: item?.status ?? "degraded",
+        code: item?.code,
+      };
+    });
+  const attachWebPipelineMeta = (bundle: AnalysisBundle): AnalysisBundle => {
+    if (!pipelineMetricsEnabled) return bundle;
+    if (bundle.meta.sourceType !== "web") return bundle;
+    return {
+      ...bundle,
+      meta: {
+        ...bundle.meta,
+        webPipeline: buildStableWebPipeline(),
+      },
+    };
+  };
+  const emitPipelineMetrics = (sourceTypeHint?: "lnhpd" | "dsld" | "web") => {
+    if (!pipelineMetricsEnabled || pipelineMetricsEmitted) return;
+    const resolvedSourceType =
+      sourceTypeHint ??
+      (streamState.latestSourceType === "lnhpd" || streamState.latestSourceType === "dsld" || streamState.latestSourceType === "web"
+        ? (streamState.latestSourceType as "lnhpd" | "dsld" | "web")
+        : "web");
+    if (!pipelineTouched && resolvedSourceType !== "web") return;
+    const steps = pipelineStepsOrder.map((step) => {
+      const item = pipelineState.get(step);
+      return {
+        step,
+        status: item?.status ?? "degraded",
+        code: item?.code,
+        ms: item?.ms,
+      };
+    });
+    const totalMs = Math.max(0, Math.round(performance.now() - pipelineStartedAt));
+    const sent = safeSendSse(res, "pipeline_metrics", {
+      requestId: requestId || null,
+      barcode: streamBarcode ?? normalized?.code ?? "",
+      sourceType: resolvedSourceType,
+      steps,
+      totalMs,
+      emittedAt: new Date().toISOString(),
+    });
+    if (sent) {
+      pipelineMetricsEmitted = true;
+    }
+  };
+  markPipelineStepStart("retrieve");
   // Default to a short keepalive because some mobile SSE polyfills time out aggressively.
   // Can be overridden via SSE_KEEPALIVE_MS (min 5000ms).
   const keepAliveMsRaw = Number(process.env.SSE_KEEPALIVE_MS ?? "5000");
@@ -8593,6 +8883,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   let streamAbortController: AbortController | null = null;
   let latestSkeletonBundle: AnalysisBundle | null = null;
   let streamBarcode: string | null = null;
+  let requestId = "";
   let streamLocale = locale;
   let cleanupRequestSignal: (() => void) | null = null;
   let fastWatchdog: ReturnType<typeof setTimeout> | null = null;
@@ -8615,6 +8906,29 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     if (Buffer.isBuffer(chunk)) return chunk.toString(encoding ?? "utf8");
     return "";
   };
+  const logDoneEvent = (
+    eventKind: "attempt" | "success" | "skipped",
+    extra?: Record<string, unknown>,
+  ) => {
+    const base = {
+      request_id: requestId || null,
+      barcode: streamBarcode,
+      done_emit_attempt: eventKind === "attempt",
+      done_emit_success: eventKind === "success",
+      done_emit_skipped: eventKind === "skipped",
+      finalize_reason: pendingDoneReason ?? "unspecified",
+      res_writableEnded: res.writableEnded,
+      clientDisconnected: streamState.clientDisconnected,
+      identityType: streamState.latestIdentityType,
+      sourceType: streamState.latestSourceType,
+      revision: streamState.latestRevision,
+      rev0_sent: streamState.rev0Sent,
+      rev1_sent: streamState.rev1Sent,
+      persisted_sent: streamState.persistedSent,
+      done_sent: streamState.doneSent,
+    };
+    console.info("[sse_done]", { ...base, ...(extra ?? {}) });
+  };
   // Track lifecycle even when legacy branches still call sendSSE/res.end directly.
   (res.write as unknown) = ((chunk: unknown, encoding?: BufferEncoding, cb?: (error?: Error | null) => void) => {
     const text = toChunkText(chunk, encoding);
@@ -8626,6 +8940,8 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     if (text.includes("event: done")) {
       streamState.doneSent = true;
       streamState.tDone = Date.now();
+      markPipelineStepEnd("emit", "ok");
+      logDoneEvent("success", { emit_path: "write_wrapper_observed_done_event" });
     }
     return result;
   }) as Response["write"];
@@ -8638,6 +8954,10 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       cleanupRequestSignal = null;
       const headerContentType = String(res.getHeader("Content-Type") ?? res.getHeader("content-type") ?? "");
       const isSseResponse = sseStarted || headerContentType.toLowerCase().includes("text/event-stream");
+      logDoneEvent("attempt", {
+        emit_path: "res_end_guard",
+        isSseResponse,
+      });
       if (
         !streamState.doneSent &&
         !res.writableEnded &&
@@ -8651,15 +8971,52 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
         if (emitted) {
           streamState.doneSent = true;
           streamState.tDone = Date.now();
+          markPipelineStepEnd("emit", "ok");
+          logDoneEvent("success", { emit_path: "res_end_guard_send_done" });
+        } else {
+          markPipelineStepEnd("emit", "failed", "done_send_failed");
+          logDoneEvent("skipped", {
+            emit_path: "res_end_guard_send_done",
+            skip_reason: "safe_send_failed",
+          });
         }
+      } else {
+        logDoneEvent("skipped", {
+          emit_path: "res_end_guard",
+          skip_reason: streamState.doneSent
+            ? "done_already_sent"
+            : res.writableEnded
+              ? "response_already_closed"
+              : streamState.clientDisconnected
+                ? "client_disconnected"
+                : isSseResponse
+                  ? "unknown"
+                  : "not_sse_response",
+        });
       }
+      emitPipelineMetrics();
       (res as unknown as { flush?: () => void }).flush?.();
     }
     return originalEnd(chunk as Parameters<Response["end"]>[0], encoding as Parameters<Response["end"]>[1], cb as Parameters<Response["end"]>[2]);
   }) as Response["end"];
   const finalizeStream = (reason: string) => {
-    if (streamState.ended || res.writableEnded) return;
+    if (streamState.ended || res.writableEnded) {
+      pendingDoneReason = reason;
+      logDoneEvent("skipped", {
+        emit_path: "finalize_stream",
+        skip_reason: streamState.ended ? "stream_already_ended" : "response_already_closed",
+      });
+      return;
+    }
     pendingDoneReason = reason;
+    logDoneEvent("attempt", {
+      emit_path: "finalize_stream",
+    });
+    emitPipelineMetrics(
+      streamState.latestSourceType === "lnhpd" || streamState.latestSourceType === "dsld" || streamState.latestSourceType === "web"
+        ? (streamState.latestSourceType as "lnhpd" | "dsld" | "web")
+        : undefined,
+    );
     res.end();
   };
   const emitRev0Once = (bundle: AnalysisBundle): boolean => {
@@ -8684,6 +9041,13 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       },
     };
     latestSkeletonBundle = normalized;
+    streamState.latestRevision = Number(normalized.meta.revision);
+    streamState.latestSourceType =
+      typeof normalized.meta.sourceType === "string" ? normalized.meta.sourceType : streamState.latestSourceType;
+    streamState.latestIdentityType =
+      typeof normalized.meta.authoritativeIdentity?.type === "string"
+        ? normalized.meta.authoritativeIdentity.type
+        : streamState.latestIdentityType;
     sendSSE(res, "analysis_bundle", normalized);
     streamState.rev0Sent = true;
     streamState.tRev0 = Date.now();
@@ -8700,7 +9064,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       return false;
     }
     if (streamState.rev1Sent) return false;
-    const normalized: AnalysisBundle = {
+    const normalizedBase: AnalysisBundle = {
       ...bundle,
       meta: {
         ...bundle.meta,
@@ -8708,9 +9072,21 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
         revision: 1,
         sourceTypeFinal: source === "fast_ai" ? true : Boolean(bundle.meta.sourceTypeFinal),
         detailReady: source === "fast_ai" ? Boolean(bundle.meta.detailReady) : false,
+        fallback:
+          source === "fallback"
+            ? { code: fallbackReason ?? "watchdog_fast_timeout" }
+            : bundle.meta.fallback ?? undefined,
         fallbackReason: source === "fallback" ? (fallbackReason ?? "watchdog_fast_timeout") : undefined,
       },
     };
+    const normalized = attachWebPipelineMeta(normalizedBase);
+    streamState.latestRevision = Number(normalized.meta.revision);
+    streamState.latestSourceType =
+      typeof normalized.meta.sourceType === "string" ? normalized.meta.sourceType : streamState.latestSourceType;
+    streamState.latestIdentityType =
+      typeof normalized.meta.authoritativeIdentity?.type === "string"
+        ? normalized.meta.authoritativeIdentity.type
+        : streamState.latestIdentityType;
     sendSSE(res, "analysis_bundle", normalized);
     streamState.rev1Sent = true;
     streamState.tRev1 = Date.now();
@@ -8820,7 +9196,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       }
     };
     armContractWatchdogs();
-    const requestId = String(res.getHeader("x-request-id") ?? "");
+    requestId = String(res.getHeader("x-request-id") ?? "");
     const requestPath = req.path;
     const headerClientVersion =
       typeof req.headers["x-client-version"] === "string" ? req.headers["x-client-version"].trim() : "";
@@ -9015,6 +9391,29 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 	          },
 	        } as AnalysisBundle;
 	        fastCandidate = applyDsldInferenceGuard(fastCandidate, params.digest);
+          if (params.digest.sourceType === "web") {
+            markPipelineStepStart("verify");
+            const verifiedCached = applyWebVerifyRevise(fastCandidate, params.digest, {
+              timeBudgetMs: WEB_VERIFY_TIME_BUDGET_MS,
+            });
+            fastCandidate = verifiedCached.bundle;
+            markPipelineStepEnd("verify", verifiedCached.verify.status, verifiedCached.verify.code);
+
+            markPipelineStepStart("revise");
+            const gatedCached = applyWebBundleEvidenceGate(fastCandidate, params.digest);
+            fastCandidate = gatedCached.value;
+            const reviseStatus =
+              gatedCached.reasons.length > 0
+                ? verifiedCached.revise.status === "failed"
+                  ? "failed"
+                  : "degraded"
+                : verifiedCached.revise.status;
+            markPipelineStepEnd(
+              "revise",
+              reviseStatus,
+              gatedCached.reasons[0] ?? verifiedCached.revise.code,
+            );
+          }
 	        const parsed = safeParseAnalysisBundle(fastCandidate);
 	        if (parsed.success && canWrite()) {
 	          const emittedRev1 = emitRev1Once(
@@ -9037,6 +9436,9 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       let fastBundle: AnalysisBundle | null = null;
       try {
         if (canUseAi && params.apiKey) {
+          if (params.digest.sourceType === "web") {
+            markPipelineStepStart("draft");
+          }
           const combined = params.llmSignal ? combineSignals([params.signal, params.llmSignal]) : null;
           const llmSignal = combined?.signal ?? params.signal;
           try {
@@ -9052,11 +9454,17 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
             console.warn("[analysis_bundle] fast generation failed", error);
             fastFailed = true;
           } finally {
+            if (params.digest.sourceType === "web") {
+              markPipelineStepEnd("draft", fastRaw ? "ok" : "degraded", fastRaw ? undefined : "fast_generation_failed");
+            }
             combined?.cleanup();
           }
           if (!fastRaw) fastFailed = true;
         } else {
           fastFailed = true;
+          if (params.digest.sourceType === "web") {
+            markPipelineStepEnd("draft", "degraded", "fast_generation_skipped");
+          }
         }
 
         let fastCandidate = mergeFastAnalysisBundle({ skeleton, digest: params.digest, fastOutput: fastRaw });
@@ -9090,16 +9498,36 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 
 	      if (fastBundle && canWrite()) {
 	        const adjustedBundle = applyDsldInferenceGuard(fastBundle, params.digest);
+          let gatedBundle = adjustedBundle;
+          if (params.digest.sourceType === "web") {
+            markPipelineStepStart("verify");
+            const verified = applyWebVerifyRevise(adjustedBundle, params.digest, {
+              timeBudgetMs: WEB_VERIFY_TIME_BUDGET_MS,
+            });
+            gatedBundle = verified.bundle;
+            markPipelineStepEnd("verify", verified.verify.status, verified.verify.code);
+
+            markPipelineStepStart("revise");
+            const gated = applyWebBundleEvidenceGate(gatedBundle, params.digest);
+            gatedBundle = gated.value;
+            const reviseStatus =
+              gated.reasons.length > 0
+                ? verified.revise.status === "failed"
+                  ? "failed"
+                  : "degraded"
+                : verified.revise.status;
+            markPipelineStepEnd("revise", reviseStatus, gated.reasons[0] ?? verified.revise.code);
+          }
           const rev1Source: "fast_ai" | "fallback" =
-            adjustedBundle.meta?.fallbackReason || fastFailed || !fastRaw ? "fallback" : "fast_ai";
+            gatedBundle.meta?.fallbackReason || fastFailed || !fastRaw ? "fallback" : "fast_ai";
 	        const emittedRev1 = emitRev1Once(
-	          adjustedBundle,
+	          gatedBundle,
 	          rev1Source,
-	          adjustedBundle.meta?.fallbackReason ?? (rev1Source === "fallback" ? "fast_generation_failed" : undefined),
+	          gatedBundle.meta?.fallbackReason ?? (rev1Source === "fallback" ? "fast_generation_failed" : undefined),
 	        );
 	        maybePrewarmDsldDetail();
 	        if (emittedRev1) {
-	          await emitPersistedWhenReady(adjustedBundle);
+	          await emitPersistedWhenReady(gatedBundle);
 	        }
 	      }
 
@@ -12724,6 +13152,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
         serpTopk = toSerpEntriesForCache(initialItems);
 
 	        if (!initialItems.length) {
+            markPipelineStepEnd("retrieve", "failed", "no_serp");
 	          const stopReason = hedged.hardStop ? (hedged.errors[0] ?? null) : null;
 	          const reasonCode =
 	            stopReason === "BUDGET_EXHAUSTED" || stopReason === "BREAKER_OPEN" || stopReason === "TIMEOUT"
@@ -12784,9 +13213,12 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
       }
     }
 
-    const marketplaceOnly =
-      initialItems.length > 0 &&
-      initialItems.every((item) => isMarketplaceDomain(extractDomain(item.link)));
+	    const marketplaceOnly =
+	      initialItems.length > 0 &&
+	      initialItems.every((item) => isMarketplaceDomain(extractDomain(item.link)));
+    if (initialItems.length > 0) {
+      markPipelineStepEnd("retrieve", "ok");
+    }
 
     // Brand/product extraction: deterministic only (brand AI fallback removed).
     let extraction: BrandExtractionResult | null = null;
@@ -12850,6 +13282,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
     ): Promise<boolean> => {
       if (!deepseekKey || !initialItems.length) return false;
       if (budget.isExpired()) return false;
+      markPipelineStepEnd("select_evidence", "degraded", reasonCode.toLowerCase());
 
       const fallbackFacts = {
         barcode: barcodeGtin14,
@@ -12891,10 +13324,17 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
         .filter((value) => value.length > 0)
         .map((value) => truncateSnippet(value, 500))
         .slice(0, 4);
+      markPipelineStepStart("sanitize");
+      const sanitizedEvidenceSnippets = evidenceSnippets
+        .map((value) => sanitizeWebText(value, { maxChars: 500 }))
+        .map((result) => result.text)
+        .filter((value) => value.length > 0);
+      const sanitizeFailed = evidenceSnippets.length > 0 && sanitizedEvidenceSnippets.length === 0;
+      markPipelineStepEnd("sanitize", sanitizeFailed ? "failed" : "ok", sanitizeFailed ? "web_sanitize_failed" : undefined);
 
       const analysisContext = `Return json only.
 PRODUCT_FACTS_JSON: ${JSON.stringify(fallbackFacts)}
-EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
+EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
 `;
 
       const llmStart = performance.now();
@@ -12924,6 +13364,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
       }
 
       if (canRunLlm) {
+        markPipelineStepStart("draft");
         try {
           calls.deepseek_bundle += 1;
           bundle = await fetchAnalysisBundle(analysisContext, model, deepseekKey, fallbackResilience);
@@ -12934,6 +13375,8 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
           if (!isAbortError(error)) {
             console.warn("[ResolutionV2] serp fallback bundle failed", error);
           }
+        } finally {
+          markPipelineStepEnd("draft", bundle ? "ok" : "degraded", bundle ? undefined : "fast_generation_failed");
         }
         timing.llm_ms = Math.round(performance.now() - llmStart);
         if (!bundle) {
@@ -13984,6 +14427,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
       const bestFactsIndex = bestFacts ? factsList.indexOf(bestFacts) : -1;
       const bestCandidate = bestFactsIndex >= 0 ? factsCandidates[bestFactsIndex] : null;
 	    if (!bestFacts || bestFacts.coverageScore < RESOLUTION_FACTS_MIN_COVERAGE) {
+        markPipelineStepEnd("select_evidence", "failed", "no_text_facts");
 	      const anyExtractedText = factsCandidates.some(
 	        (candidate) => typeof candidate.extractedText === "string" && candidate.extractedText.trim().length > 0,
 	      );
@@ -14025,6 +14469,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
       finishInFlight?.(new Error("no_text_facts"));
       return;
     }
+    markPipelineStepEnd("select_evidence", "ok");
 
     if (bestFacts.identifiers.npn) {
       npnCandidateSource = "web";
@@ -14108,7 +14553,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
         : provisionalImage ?? null,
 	    };
 
-    const factsForAnalysis = allowCanonical
+    let factsForAnalysis = allowCanonical
       ? bestFacts
       : {
           ...bestFacts,
@@ -14120,6 +14565,51 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
             domain: null,
           },
         };
+    markPipelineStepStart("sanitize");
+    const sanitizeField = (value: string | null | undefined, maxChars: number) => {
+      if (!value || !value.trim()) {
+        return { text: null, redactions: [] as string[], injectionDetected: false };
+      }
+      const sanitized = sanitizeWebText(value, { maxChars });
+      return {
+        text: sanitized.text || null,
+        redactions: sanitized.redactions,
+        injectionDetected: sanitized.injectionDetected,
+      };
+    };
+    const sanitizedIngredients = sanitizeField(factsForAnalysis.textFacts?.ingredientsText ?? null, 1200);
+    const sanitizedDirections = sanitizeField(factsForAnalysis.textFacts?.directionsText ?? null, 900);
+    const sanitizedWarnings = sanitizeField(factsForAnalysis.textFacts?.warningsText ?? null, 900);
+    const sanitizedServing = sanitizeField(factsForAnalysis.textFacts?.servingSizeText ?? null, 300);
+    const sanitizeRedactions = [
+      ...sanitizedIngredients.redactions,
+      ...sanitizedDirections.redactions,
+      ...sanitizedWarnings.redactions,
+      ...sanitizedServing.redactions,
+    ];
+    const sanitizeInjected =
+      sanitizedIngredients.injectionDetected ||
+      sanitizedDirections.injectionDetected ||
+      sanitizedWarnings.injectionDetected ||
+      sanitizedServing.injectionDetected;
+    factsForAnalysis = {
+      ...factsForAnalysis,
+      textFacts: {
+        ...factsForAnalysis.textFacts,
+        ingredientsText: sanitizedIngredients.text,
+        directionsText: sanitizedDirections.text,
+        warningsText: sanitizedWarnings.text,
+        servingSizeText: sanitizedServing.text,
+      },
+    };
+    const hasSanitizedEvidence = Boolean(
+      factsForAnalysis.textFacts?.ingredientsText ||
+        factsForAnalysis.textFacts?.directionsText ||
+        factsForAnalysis.textFacts?.warningsText ||
+        factsForAnalysis.textFacts?.servingSizeText,
+    );
+    const sanitizeStatus: PipelineStepStatus = hasSanitizedEvidence ? "ok" : "failed";
+    markPipelineStepEnd("sanitize", sanitizeStatus, hasSanitizedEvidence ? undefined : "web_text_unusable");
 
 	    // Update product info with higher-confidence facts (if any).
 	    if (stage1SseEnabled && !brandExtractedSent && (finalProductInfo.brand || finalProductInfo.name)) {
@@ -14145,8 +14635,9 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
       .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
       .flatMap((text) => {
         const trimmed = text.trim();
-        if (trimmed.length <= 500) return [trimmed];
-        return [trimmed.slice(0, 500).trim()];
+        const cropped = trimmed.length <= 500 ? trimmed : trimmed.slice(0, 500).trim();
+        const sanitized = sanitizeWebText(cropped, { maxChars: 500 });
+        return sanitized.text ? [sanitized.text] : [];
       })
       .slice(0, 4);
 
@@ -14160,14 +14651,19 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
     let bundle: Awaited<ReturnType<typeof fetchAnalysisBundle>> | null = null;
     const llmTimeoutMs = deepseekResilience.timeoutMs ?? llmInteractiveTimeoutMs;
     const llmBudgetMs = budget.msFor(llmTimeoutMs);
-    const canRunLlm = !marketplaceOnly && llmBudgetMs > 0;
+    const canRunLlm = !marketplaceOnly && llmBudgetMs > 0 && hasSanitizedEvidence;
     if (marketplaceOnly) {
       mainDeepseekBundleSkippedReason = "marketplace_only";
+    } else if (!hasSanitizedEvidence) {
+      mainDeepseekBundleSkippedReason = sanitizeRedactions.length > 0 || sanitizeInjected
+        ? "web_sanitize_failed"
+        : "web_text_unusable";
     } else if (llmBudgetMs <= 0) {
       mainDeepseekBundleSkippedReason = "budget_reserved";
     }
 
     if (canRunLlm) {
+      markPipelineStepStart("draft");
       try {
         calls.deepseek_bundle += 1;
         bundle = await fetchAnalysisBundle(analysisContext, model, deepseekKey, deepseekResilience);
@@ -14178,6 +14674,8 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
         if (!isAbortError(error)) {
           console.warn("[ResolutionV2] analysis bundle failed", error);
         }
+      } finally {
+        markPipelineStepEnd("draft", bundle ? "ok" : "degraded", bundle ? undefined : "fast_generation_failed");
       }
       timing.llm_ms = Math.round(performance.now() - llmStart);
       if (!bundle) {
@@ -14185,6 +14683,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
           timing.llm_ms >= Math.max(200, llmTimeoutMs - 50) ? "llm_timeout" : "llm_failed";
       }
     } else {
+      markPipelineStepEnd("draft", "degraded", mainDeepseekBundleSkippedReason ?? "fast_generation_skipped");
       timing.llm_ms = 0;
     }
 
@@ -14497,7 +14996,21 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
         if (stage1SseEnabled && !streamAnalysisBundleOnly) {
           sendSSE(res, "snapshot", snapshot);
         }
-        sendSSE(res, "done", { barcode });
+        pendingDoneReason = "success_complete";
+        emitPipelineMetrics(
+          streamState.latestSourceType === "lnhpd" || streamState.latestSourceType === "dsld" || streamState.latestSourceType === "web"
+            ? (streamState.latestSourceType as "lnhpd" | "dsld" | "web")
+            : "web",
+        );
+        logDoneEvent("attempt", { emit_path: "success_complete" });
+        const doneEmitted = safeSendSse(res, "done", { barcode, reason: pendingDoneReason });
+        if (doneEmitted) {
+          streamState.doneSent = true;
+          streamState.tDone = Date.now();
+          logDoneEvent("success", { emit_path: "success_complete" });
+        } else {
+          logDoneEvent("skipped", { emit_path: "success_complete", skip_reason: "safe_send_failed" });
+        }
         res.end();
       }
     }
@@ -14543,6 +15056,8 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
     const message = error instanceof Error ? error.message : "Unknown error";
     if (!res.writableEnded) {
       sendSSE(res, "error", { message });
+      pendingDoneReason = "stream_error";
+      logDoneEvent("attempt", { emit_path: "stream_error" });
       res.end();
     }
   }
@@ -14737,6 +15252,156 @@ app.post("/api/ensure-overview", verifySupabaseToken, async (req: Request, res: 
 });
 
 // ============================================================================
+// User stack overlap (deterministic, read-only, no external fetch, no LLM)
+// ============================================================================
+
+app.get("/api/user-stack-overlap", verifySupabaseToken, async (req: Request, res: Response) => {
+  const startedAt = performance.now();
+  const user = (req as AuthenticatedRequest).user;
+  if (!user?.id) {
+    return res.status(401).json({ error: "unauthorized" } satisfies ErrorResponse);
+  }
+
+  type UserSupplementRow = {
+    id: string;
+    supplement_id: string | null;
+    notes: string | null;
+    supplements:
+      | {
+          id?: string | null;
+          name?: string | null;
+          barcode?: string | null;
+        }
+      | Array<{
+          id?: string | null;
+          name?: string | null;
+          barcode?: string | null;
+        }>
+      | null;
+  };
+
+  try {
+    const { data, error } = await supabase
+      .from("user_supplements")
+      .select("id, supplement_id, notes, supplements ( id, name, barcode )")
+      .eq("user_id", user.id)
+      .order("saved_at", { ascending: false })
+      .limit(STACK_OVERLAP_MAX_SUPPLEMENTS_PER_REQUEST + 1);
+
+    if (error) {
+      console.warn("[stack-overlap] user_supplements query failed", error.message);
+      return res.status(500).json({ error: "stack_overlap_failed" } satisfies ErrorResponse);
+    }
+
+    const rows = (Array.isArray(data) ? data : []) as UserSupplementRow[];
+    const truncated = rows.length > STACK_OVERLAP_MAX_SUPPLEMENTS_PER_REQUEST;
+    const selectedRows = rows.slice(0, STACK_OVERLAP_MAX_SUPPLEMENTS_PER_REQUEST);
+    let skippedSupplements = Math.max(0, rows.length - selectedRows.length);
+
+    type CandidateResult =
+      | { type: "processed"; value: StackOverlapSupplementInput }
+      | { type: "skipped" };
+
+    const candidates = await mapWithConcurrency(
+      selectedRows,
+      STACK_OVERLAP_SNAPSHOT_CONCURRENCY,
+      async (row): Promise<CandidateResult> => {
+        const linkedSupplement = Array.isArray(row.supplements)
+          ? row.supplements[0] ?? null
+          : row.supplements ?? null;
+        const notes = parseUserSupplementNotes(row.notes ?? null);
+
+        const supplementIdRaw =
+          row.supplement_id ??
+          (typeof linkedSupplement?.id === "string" ? linkedSupplement.id : null) ??
+          row.id;
+        const supplementId = safeTrim(supplementIdRaw);
+        if (!supplementId) return { type: "skipped" };
+
+        const notesProductName =
+          notes && typeof notes.productName === "string" ? safeTrim(notes.productName) : null;
+        const productName =
+          safeTrim(linkedSupplement?.name ?? null) ??
+          notesProductName ??
+          "Unknown supplement";
+
+        const barcode = safeTrim(linkedSupplement?.barcode ?? null);
+        if (!barcode) return { type: "skipped" };
+
+        const normalized = normalizeBarcodeInput(barcode);
+        if (!normalized) return { type: "skipped" };
+
+        const cacheKey = buildBarcodeCacheKey(normalized.code);
+        const cached = await getSnapshotCache(
+          { key: cacheKey, source: "barcode" },
+          { timeoutMs: STACK_OVERLAP_SNAPSHOT_TIMEOUT_MS },
+        ).catch(() => null);
+        const snapshot = cached?.snapshot ?? null;
+        if (!snapshot) return { type: "skipped" };
+
+        const ingredientNames = (snapshot.label.actives ?? [])
+          .map((active) => safeTrim(active.name))
+          .filter((name): name is string => Boolean(name))
+          .slice(0, 24);
+
+        const normalizedKeys = extractStackOverlapIngredientKeys(
+          ingredientNames,
+          STACK_OVERLAP_ACTIVES_PER_SUPPLEMENT,
+        );
+        if (normalizedKeys.length === 0) return { type: "skipped" };
+
+        return {
+          type: "processed",
+          value: {
+            supplementId,
+            productName,
+            ingredientNames,
+          },
+        };
+      },
+    );
+
+    const processedInputs = candidates
+      .filter((candidate): candidate is { type: "processed"; value: StackOverlapSupplementInput } => candidate.type === "processed")
+      .map((candidate) => candidate.value);
+    skippedSupplements += candidates.length - processedInputs.length;
+
+    const overlap = buildStackOverlapResult(processedInputs, {
+      maxPerSupplement: STACK_OVERLAP_ACTIVES_PER_SUPPLEMENT,
+      maxOverlaps: STACK_OVERLAP_MAX_ITEMS,
+    });
+    const processedSupplements = processedInputs.length;
+    const status = truncated || skippedSupplements > 0 ? "partial" : "ok";
+    const latencyMs = Math.round(performance.now() - startedAt);
+
+    console.info("[stack-overlap]", {
+      status,
+      processedSupplements,
+      skippedSupplements,
+      overlapCount: overlap.overlapCount,
+      truncated,
+      latencyMs,
+    });
+
+    return res.json({
+      status,
+      overlaps: overlap.overlaps,
+      summary: {
+        processedSupplements,
+        skippedSupplements,
+        overlapCount: overlap.overlapCount,
+        truncated,
+        hiddenOverlapCount: overlap.hiddenOverlapCount,
+      },
+    });
+  } catch (error) {
+    captureException(error, { route: "/api/user-stack-overlap" });
+    console.error("/api/user-stack-overlap error", error);
+    return res.status(500).json({ error: "stack_overlap_failed" } satisfies ErrorResponse);
+  }
+});
+
+// ============================================================================
 // Lightweight barcode metadata (deterministic, no LLM)
 // ============================================================================
 
@@ -14921,6 +15586,38 @@ const rateLimitDay = new Map<string, RateLimitEntry>();
 
 const OCR_RATE_LIMIT_PER_MINUTE = Number(process.env.OCR_RATE_LIMIT_PER_MINUTE ?? 10);
 const OCR_RATE_LIMIT_PER_DAY = Number(process.env.OCR_RATE_LIMIT_PER_DAY ?? 50);
+const LABEL_SCAN_DRAFT_ASYNC_PERCENT = Number(
+  process.env.LABEL_SCAN_DRAFT_ASYNC_PERCENT ?? process.env.EXPO_PUBLIC_LABEL_SCAN_DRAFT_ASYNC_PERCENT ?? 50,
+);
+const LABEL_SCAN_FORCE_CONTROL =
+  process.env.LABEL_SCAN_FORCE_CONTROL === "1" || process.env.LABEL_SCAN_FORCE_CONTROL === "true";
+const LABEL_SCAN_ASYNC_ANALYSIS_ENABLED = !(
+  process.env.LABEL_SCAN_ASYNC_ANALYSIS_ENABLED === "0"
+  || process.env.LABEL_SCAN_ASYNC_ANALYSIS_ENABLED === "false"
+);
+
+function stableBucketFromString(value: string): number {
+  let hash = 0;
+  for (let i = 0; i < value.length; i++) {
+    hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
+  }
+  return hash % 100;
+}
+
+function resolveLabelScanVariant(stableKey: string): "control" | "draft_first_async" {
+  if (LABEL_SCAN_FORCE_CONTROL) {
+    return "control";
+  }
+  if (!Number.isFinite(LABEL_SCAN_DRAFT_ASYNC_PERCENT) || LABEL_SCAN_DRAFT_ASYNC_PERCENT <= 0) {
+    return "control";
+  }
+  if (LABEL_SCAN_DRAFT_ASYNC_PERCENT >= 100) {
+    return "draft_first_async";
+  }
+  return stableBucketFromString(stableKey) < LABEL_SCAN_DRAFT_ASYNC_PERCENT
+    ? "draft_first_async"
+    : "control";
+}
 
 function checkRateLimit(userId: string): { allowed: boolean; retryAfter?: number } {
   const now = Date.now();
@@ -14976,6 +15673,7 @@ const validationIssueTypeSchema = z.enum([
   "header_not_found",
   "low_coverage",
   "incomplete_ingredients",
+  "possible_missing_column",
   "non_ingredient_line_detected",
   "unit_boundary_suspect",
   "dose_inconsistency_or_claim",
@@ -15012,6 +15710,8 @@ const analyzeLabelBodySchema = z
     debug: z.boolean().optional(),
     includeAnalysis: z.union([z.boolean(), z.string()]).optional(),
     async: z.union([z.boolean(), z.string()]).optional(),
+    preprocessProfile: z.string().optional(),
+    clientStartedAtMs: z.number().optional(),
   })
   .passthrough();
 
@@ -15019,6 +15719,22 @@ const analyzeLabelConfirmBodySchema = z
   .object({
     imageHash: z.string().min(1),
     confirmedDraft: labelDraftSchema,
+    preprocessProfile: z.string().optional(),
+  })
+  .passthrough();
+
+const labelScanClientMetricsBodySchema = z
+  .object({
+    requestId: z.string().min(1),
+    timingClient: z
+      .object({
+        tClickToDraftRenderMs: z.number().optional(),
+        tClickToAnalysisCompleteRenderMs: z.number().optional(),
+        tClickToDraftResponseMs: z.number().optional(),
+      })
+      .optional(),
+    lockedFieldConflictCount: z.number().int().min(0).optional(),
+    appState: z.enum(["active", "background", "inactive", "unknown"]).optional(),
   })
   .passthrough();
 
@@ -15026,15 +15742,48 @@ type AnalyzeLabelRequest = z.infer<typeof analyzeLabelBodySchema>;
 
 interface LabelAnalysisResponse {
   status: "ok" | "needs_confirmation" | "failed";
+  requestId?: string;
+  imageHash?: string;
+  jobId?: string;
+  flagVariant?: "control" | "draft_first_async";
+  draftRevision?: number | null;
+  analysisForDraftRevision?: number | null;
+  patchId?: string | null;
+  patchType?: "partial" | "final" | null;
+  parserVersion?: string;
+  preprocessProfile?: string;
+  laneSplitTriggered?: boolean;
+  laneSplitChosen?: "baseline" | "lane_split";
+  laneSplitRevertedReason?: string | null;
+  cacheLayerHits?: {
+    mode: "strict" | "legacy_read";
+    ocr: boolean;
+    parse: boolean | null;
+    analysis: boolean | null;
+  };
+  suggestedUpdates?: {
+    analysis?: AiSupplementAnalysis | null;
+  };
+  timing?: LabelScanTiming;
   draft?: LabelDraft;
   analysis?: AiSupplementAnalysis | null;
-  analysisStatus?: "complete" | "partial" | "pending" | "skipped" | "unavailable";
+  analysisStatus?: "complete" | "partial" | "pending" | "skipped" | "unavailable" | "failed" | "timeout";
   analysisIssues?: string[];
   message?: string;
   suggestion?: string;
   issues?: { type: string; message: string }[]; // P0-2: Return validation issues to frontend
   snapshot?: SupplementSnapshot;
   debug?: LabelAnalysisDebug;
+}
+
+interface LabelScanTiming {
+  serverReceivedAt: string;
+  draftReadyAt: string | null;
+  tDecodeMs: number | null;
+  tOcrMs: number | null;
+  tParseMs: number | null;
+  tLlmMs: number | null;
+  tFirstDraftServerMs: number | null;
 }
 
 interface LabelAnalysisDebug {
@@ -15069,6 +15818,8 @@ interface LabelAnalysisDebug {
     medianTokenHeight: number | null;
   };
   heuristics: LabelAnalysisDiagnostics["heuristics"] | null;
+  laneSplit: LabelAnalysisDiagnostics["laneSplit"] | null;
+  completeness: LabelAnalysisDiagnostics["completeness"] | null;
   drafts: LabelAnalysisDiagnostics["drafts"] | null;
 }
 
@@ -15081,6 +15832,15 @@ interface TokenStats {
   p50TokenConfidence: number | null;
   p90TokenConfidence: number | null;
   medianTokenHeight: number | null;
+}
+
+function hashPatchPayload(value: unknown): string {
+  const raw = JSON.stringify(value ?? null);
+  let hash = 0;
+  for (let i = 0; i < raw.length; i++) {
+    hash = (hash * 33 + raw.charCodeAt(i)) >>> 0;
+  }
+  return hash.toString(16).padStart(8, "0");
 }
 
 function percentile(values: number[], percentileValue: number): number | null {
@@ -15116,7 +15876,24 @@ function computeTokenStats(tokens: { confidence: number; height: number }[]): To
   };
 }
 
-const labelAnalysisInFlight = new Map<string, Promise<void>>();
+interface LabelAnalysisInFlightTask {
+  jobId: string;
+  promise: Promise<void>;
+  startedAt: string;
+}
+
+const labelAnalysisInFlight = new Map<string, LabelAnalysisInFlightTask>();
+const LABEL_FINAL_PATCH_TRACK_LIMIT = 4096;
+const labelFinalPatchByJob = new Map<string, string>();
+
+function recordFinalPatchForJob(jobId: string, patchId: string): void {
+  labelFinalPatchByJob.set(jobId, patchId);
+  if (labelFinalPatchByJob.size <= LABEL_FINAL_PATCH_TRACK_LIMIT) return;
+  const oldestKey = labelFinalPatchByJob.keys().next().value;
+  if (oldestKey) {
+    labelFinalPatchByJob.delete(oldestKey);
+  }
+}
 
 async function buildLabelScanAnalysis(options: {
   draft: LabelDraft;
@@ -15500,28 +16277,21 @@ ${LABEL_SCAN_OUTPUT_RULES}`;
 app.post("/api/analyze-label", verifySupabaseToken, async (req: Request, res: Response) => {
   try {
     const totalStart = performance.now();
+    const requestId = String(res.getHeader("x-request-id") ?? randomUUID());
+    const serverReceivedAt = new Date().toISOString();
     const parsedBody = parseRequestBody(analyzeLabelBodySchema, req, res);
     if (!parsedBody) {
       return;
     }
     const body: AnalyzeLabelRequest = parsedBody;
+    const authedReq = req as AuthenticatedRequest;
     const imageBase64 = body.imageBase64 ?? undefined;
     const { imageHash, deviceId } = body;
-    const labelBudget = new DeadlineBudget(Date.now() + RESILIENCE_TOTAL_BUDGET_MS);
-    const labelAbort = createRequestAbort(res);
-    const labelDeepseekResilience: DeepseekResilienceOptions = {
-      signal: labelAbort.signal,
-      budget: labelBudget,
-      breaker: deepseekBreaker,
-      semaphore: deepseekSemaphore,
-      timeoutMs: RESILIENCE_DEEPSEEK_TIMEOUT_MS,
-      queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS,
-    };
-    const debugEnabled =
-      body.debug === true
-      || (Array.isArray(req.query.debug)
-        ? req.query.debug.includes("true")
-        : req.query.debug === "true");
+    const preprocessProfile = normalizePreprocessProfile(body.preprocessProfile);
+    const clientStartedAtMs =
+      typeof body.clientStartedAtMs === "number" && Number.isFinite(body.clientStartedAtMs)
+        ? body.clientStartedAtMs
+        : null;
     const includeAnalysisQuery = Array.isArray(req.query.includeAnalysis)
       ? req.query.includeAnalysis
       : req.query.includeAnalysis
@@ -15544,8 +16314,172 @@ app.post("/api/analyze-label", verifySupabaseToken, async (req: Request, res: Re
       typeof body.async === "string"
         ? body.async === "true" || body.async === "1"
         : body.async === true;
-    const asyncAnalysis =
+    const asyncRequested =
       asyncBody || asyncQuery.some((value) => value === "true" || value === "1");
+    const stableUserId = authedReq.user?.id?.trim() || "";
+    const stableDeviceId = deviceId?.trim() || "";
+    const variantStableKey = stableUserId || stableDeviceId;
+    // P0 guard: missing userId/deviceId always falls back to control to avoid noisy bucket contamination.
+    const flagVariant = variantStableKey
+      ? resolveLabelScanVariant(variantStableKey)
+      : "control";
+    const asyncAnalysis = includeAnalysis
+      && LABEL_SCAN_ASYNC_ANALYSIS_ENABLED
+      && flagVariant === "draft_first_async";
+    const cacheKey = buildVersionedOcrCacheKey(imageHash, preprocessProfile);
+    const responseTiming: LabelScanTiming = {
+      serverReceivedAt,
+      draftReadyAt: null,
+      tDecodeMs: null,
+      tOcrMs: null,
+      tParseMs: null,
+      tLlmMs: null,
+      tFirstDraftServerMs: null,
+    };
+    let responseJobId: string | null = null;
+    let responseDraftRevision: number | null = null;
+    let responseDiagnostics: LabelAnalysisDiagnostics | null = null;
+    let responseCacheMode: "strict" | "legacy_read" = "strict";
+    let responseOcrCacheHit = false;
+    let responseParseCacheHit: boolean | null = null;
+    let responseAnalysisCacheHit: boolean | null = null;
+    let responseOcrCallCount = 0;
+
+    const baseJson = res.json.bind(res);
+    const enrichLabelResponse = (bodyValue: unknown): unknown => {
+      if (!bodyValue || typeof bodyValue !== "object") return bodyValue;
+      const maybeStatus = (bodyValue as { status?: unknown }).status;
+      if (typeof maybeStatus !== "string") return bodyValue;
+
+      const payload = bodyValue as LabelAnalysisResponse;
+      if (payload.draft && !responseTiming.draftReadyAt) {
+        responseTiming.draftReadyAt = new Date().toISOString();
+      }
+      if (responseTiming.draftReadyAt) {
+        const draftReadyMs = Date.parse(responseTiming.draftReadyAt);
+        const receivedMs = Date.parse(serverReceivedAt);
+        if (Number.isFinite(draftReadyMs) && Number.isFinite(receivedMs) && draftReadyMs >= receivedMs) {
+          responseTiming.tFirstDraftServerMs = draftReadyMs - receivedMs;
+        }
+      }
+
+      const draftRevision = payload.draftRevision ?? (payload.draft ? (responseDraftRevision ?? 1) : null);
+      let patchAnalysis = payload.suggestedUpdates?.analysis ?? payload.analysis ?? null;
+      const analysisForDraftRevision =
+        payload.analysisForDraftRevision
+        ?? (patchAnalysis ? (draftRevision ?? 1) : null);
+      // Keep patch identity monotonic across retries/polling for the same scan payload.
+      const patchJobId = payload.jobId ?? responseJobId ?? null;
+      const patchRevision = analysisForDraftRevision ?? draftRevision ?? 1;
+      let patchId =
+        payload.patchId
+        ?? (patchAnalysis ? `${patchJobId ?? imageHash}:${patchRevision}:${hashPatchPayload(patchAnalysis)}` : null);
+      let patchType =
+        payload.patchType
+        ?? (patchAnalysis
+          ? (payload.analysisStatus === "partial" ? "partial" : "final")
+          : null);
+      const existingFinalPatchId = patchJobId ? labelFinalPatchByJob.get(patchJobId) : null;
+      if (existingFinalPatchId) {
+        if (patchType !== "final" || patchId !== existingFinalPatchId) {
+          patchAnalysis = null;
+          patchId = existingFinalPatchId;
+          patchType = "final";
+        }
+      } else if (patchType === "final" && patchId && patchJobId) {
+        recordFinalPatchForJob(patchJobId, patchId);
+      }
+
+      const enrichedPayload = {
+        ...payload,
+        requestId,
+        imageHash,
+        jobId: patchJobId ?? undefined,
+        flagVariant,
+        draftRevision,
+        analysisForDraftRevision,
+        patchId,
+        patchType,
+        parserVersion: LABEL_PARSER_VERSION,
+        preprocessProfile,
+        laneSplitTriggered: responseDiagnostics?.laneSplit?.triggered ?? false,
+        laneSplitChosen: responseDiagnostics?.laneSplit?.chosen ?? "baseline",
+        laneSplitRevertedReason: responseDiagnostics?.laneSplit?.revertedReason ?? null,
+        cacheLayerHits: {
+          mode: responseCacheMode,
+          ocr: responseOcrCacheHit,
+          parse: responseParseCacheHit,
+          analysis: responseAnalysisCacheHit,
+        },
+        timing: payload.timing ?? responseTiming,
+        analysis: patchAnalysis ?? undefined,
+        suggestedUpdates: patchAnalysis ? { analysis: patchAnalysis } : undefined,
+      } satisfies LabelAnalysisResponse;
+
+      void logLabelScanMetric({
+        requestId,
+        imageHash,
+        jobId: enrichedPayload.jobId ?? null,
+        parserVersion: LABEL_PARSER_VERSION,
+        preprocessProfile,
+        flagVariant,
+        cacheMode: responseCacheMode,
+        ocrCacheHit: responseOcrCacheHit,
+        parseCacheHit: responseParseCacheHit,
+        analysisCacheHit: responseAnalysisCacheHit,
+        ocrCallCount: responseOcrCallCount,
+        analysisForDraftRevision: enrichedPayload.analysisForDraftRevision ?? null,
+        patchId: enrichedPayload.patchId ?? null,
+        patchType: enrichedPayload.patchType ?? null,
+        laneSplitTriggered: enrichedPayload.laneSplitTriggered ?? false,
+        laneSplitChosen: enrichedPayload.laneSplitChosen ?? null,
+        laneSplitRevertedReason: enrichedPayload.laneSplitRevertedReason ?? null,
+        responseStatus: enrichedPayload.status,
+        analysisStatus: enrichedPayload.analysisStatus ?? null,
+        parseCoverage: enrichedPayload.draft?.parseCoverage ?? null,
+        needsConfirmation: Boolean(enrichedPayload.draft && needsConfirmation(enrichedPayload.draft)),
+        issueTypes: (enrichedPayload.draft?.issues ?? enrichedPayload.issues ?? []).map((issue) => issue.type),
+        timing: {
+          tDecodeMs: enrichedPayload.timing?.tDecodeMs ?? null,
+          tOcrMs: enrichedPayload.timing?.tOcrMs ?? null,
+          tParseMs: enrichedPayload.timing?.tParseMs ?? null,
+          tLlmMs: enrichedPayload.timing?.tLlmMs ?? null,
+          tFirstDraftServerMs: enrichedPayload.timing?.tFirstDraftServerMs ?? null,
+        },
+        clientStartedAtMs,
+        meta: {
+          asyncRequested,
+          asyncApplied: asyncAnalysis,
+          includeAnalysisRequested:
+            typeof body.includeAnalysis === "string"
+              ? body.includeAnalysis === "true" || body.includeAnalysis === "1"
+              : body.includeAnalysis === true,
+          heuristics: responseDiagnostics?.heuristics ?? null,
+          laneSplit: responseDiagnostics?.laneSplit ?? null,
+          completeness: responseDiagnostics?.completeness ?? null,
+        },
+      });
+
+      return enrichedPayload;
+    };
+    (res as Response & { json: (body: unknown) => Response }).json = ((bodyValue: unknown) =>
+      baseJson(enrichLabelResponse(bodyValue))) as (body: unknown) => Response;
+
+    const labelBudget = new DeadlineBudget(Date.now() + RESILIENCE_TOTAL_BUDGET_MS);
+    const labelAbort = createRequestAbort(res);
+    const labelDeepseekResilience: DeepseekResilienceOptions = {
+      signal: labelAbort.signal,
+      budget: labelBudget,
+      breaker: deepseekBreaker,
+      semaphore: deepseekSemaphore,
+      timeoutMs: RESILIENCE_DEEPSEEK_TIMEOUT_MS,
+      queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS,
+    };
+    const debugEnabled =
+      body.debug === true
+      || (Array.isArray(req.query.debug)
+        ? req.query.debug.includes("true")
+        : req.query.debug === "true");
 
     // Validate input
     if (!imageHash) {
@@ -15556,7 +16490,7 @@ app.post("/api/analyze-label", verifySupabaseToken, async (req: Request, res: Re
     }
 
     // Rate limiting
-    const userId = deviceId ?? req.ip ?? "anonymous";
+    const userId = stableUserId || stableDeviceId || req.ip || imageHash;
     const rateCheck = checkRateLimit(userId);
     if (!rateCheck.allowed) {
       res.setHeader("Retry-After", String(rateCheck.retryAfter ?? 60));
@@ -15567,9 +16501,23 @@ app.post("/api/analyze-label", verifySupabaseToken, async (req: Request, res: Re
       } satisfies LabelAnalysisResponse);
     }
 
-    const cached = !debugEnabled ? await getCachedResult(imageHash) : null;
+    const cached = !debugEnabled ? await getCachedResult(imageHash, { preprocessProfile }) : null;
+    const parseCacheKey = buildParseCacheKey(cacheKey);
+    const cachedParse = !debugEnabled ? await getParseCachedResult(cacheKey) : null;
+    if (cached) {
+      responseCacheMode = cached.cacheMode;
+      responseOcrCacheHit = true;
+      responseParseCacheHit = Boolean(cachedParse ?? cached.parsedIngredients);
+      responseAnalysisCacheHit = null;
+      responseOcrCallCount = 0;
+    } else {
+      responseCacheMode = "strict";
+      responseOcrCacheHit = false;
+      responseParseCacheHit = cachedParse ? true : null;
+      responseAnalysisCacheHit = null;
+    }
 
-    if (!imageBase64 && !cached) {
+    if (!imageBase64 && !cached && !cachedParse) {
       return res.status(400).json({
         status: "failed",
         message: "Missing required field: imageBase64",
@@ -15577,36 +16525,65 @@ app.post("/api/analyze-label", verifySupabaseToken, async (req: Request, res: Re
     }
 
     if (cached && !debugEnabled) {
+      const cachedDraft = cachedParse?.parsedIngredients ?? cached.parsedIngredients ?? null;
+      const cachedAnalysisLayer = await getAnalysisCachedResult(parseCacheKey);
+      responseAnalysisCacheHit = Boolean(cachedAnalysisLayer?.analysis);
+
       if (hasCompletedAnalysis(cached)) {
         console.log(`[LabelScan] Cache hit with analysis for ${imageHash.slice(0, 8)}...`);
+        responseTiming.tDecodeMs = 0;
+        responseTiming.tOcrMs = 0;
+        responseTiming.tParseMs = 0;
+        responseTiming.tLlmMs = 0;
+        responseTiming.draftReadyAt = new Date().toISOString();
+        responseDraftRevision = 1;
+        const layerAnalysis = cachedAnalysisLayer?.analysis ?? null;
+        const effectiveAnalysis = layerAnalysis ?? cached.analysis;
         const cachedAnalysisIssues =
-          (cached.analysis as { analysisIssues?: string[] } | null)?.analysisIssues ?? [];
-        const cachedAnalysisStatus = cachedAnalysisIssues.length ? "partial" : "complete";
-        if (cached.parsedIngredients) {
+          cachedAnalysisLayer?.analysisIssues
+          ?? ((effectiveAnalysis as { analysisIssues?: string[] } | null)?.analysisIssues ?? []);
+        const cachedAnalysisStatus =
+          cachedAnalysisLayer?.analysisStatus === "partial"
+            ? "partial"
+            : cachedAnalysisIssues.length
+              ? "partial"
+              : "complete";
+        if (cachedDraft) {
           void upsertProductIngredientsFromDraft({
             sourceId: imageHash,
-            draft: cached.parsedIngredients,
+            draft: cachedDraft,
             basis: "label_serving",
           });
         }
         const snapshot = await buildAndCacheLabelSnapshot({
           status: "ok",
-          draft: cached.parsedIngredients ?? null,
-          analysis: cached.analysis ?? null,
+          draft: cachedDraft ?? undefined,
+          analysis: effectiveAnalysis ?? null,
           imageHash,
         });
         return res.json({
           status: "ok",
-          draft: cached.parsedIngredients ?? undefined,
-          analysis: cached.analysis,
+          draft: cachedDraft ?? undefined,
+          analysis: effectiveAnalysis,
           analysisStatus: cachedAnalysisStatus,
           analysisIssues: cachedAnalysisIssues.length ? cachedAnalysisIssues : undefined,
           snapshot,
         } satisfies LabelAnalysisResponse);
       }
 
-      if (cached.parsedIngredients) {
-        const cachedDraft = cached.parsedIngredients;
+      if (cachedDraft) {
+        if (!cachedParse) {
+          await setParseCachedResult(cacheKey, {
+            parsedIngredients: cachedDraft,
+            diagnostics: null,
+          });
+        }
+        responseParseCacheHit = true;
+        responseTiming.tDecodeMs = 0;
+        responseTiming.tOcrMs = 0;
+        responseTiming.tParseMs = 0;
+        responseTiming.draftReadyAt = new Date().toISOString();
+        responseDraftRevision = 1;
         void upsertProductIngredientsFromDraft({
           sourceId: imageHash,
           draft: cachedDraft,
@@ -15655,8 +16632,9 @@ app.post("/api/analyze-label", verifySupabaseToken, async (req: Request, res: Re
 
         if (asyncAnalysis) {
           console.log(`[LabelScan] Deferring DeepSeek analysis for ${imageHash.slice(0, 8)}...`);
-          if (!labelAnalysisInFlight.has(imageHash)) {
-            const task = (async () => {
+          if (!labelAnalysisInFlight.has(cacheKey)) {
+            const jobId = randomUUID();
+            const taskPromise = (async () => {
               try {
                 const backgroundBudget = new DeadlineBudget(Date.now() + RESILIENCE_TOTAL_BUDGET_MS);
                 const backgroundResilience: DeepseekResilienceOptions = {
@@ -15673,15 +16651,22 @@ app.post("/api/analyze-label", verifySupabaseToken, async (req: Request, res: Re
                   apiKey: deepseekKey,
                   resilience: backgroundResilience,
                 });
-                await updateCachedAnalysis(imageHash, analysis);
+                await updateCachedAnalysis(imageHash, analysis, { preprocessProfile });
+                await setAnalysisCachedResult(parseCacheKey, {
+                  analysis,
+                  analysisStatus: "complete",
+                  analysisIssues: [],
+                  llmMs,
+                });
                 console.log(`[LabelScan] Async analysis complete for ${imageHash.slice(0, 8)} in ${Math.round(llmMs)}ms...`);
               } catch (error) {
                 console.error(`[LabelScan] Async analysis failed for ${imageHash.slice(0, 8)}:`, error);
               }
             })();
-            labelAnalysisInFlight.set(imageHash, task);
-            task.finally(() => labelAnalysisInFlight.delete(imageHash));
+            labelAnalysisInFlight.set(cacheKey, { jobId, promise: taskPromise, startedAt: new Date().toISOString() });
+            taskPromise.finally(() => labelAnalysisInFlight.delete(cacheKey));
           }
+          responseJobId = labelAnalysisInFlight.get(cacheKey)?.jobId ?? null;
           const snapshot = await buildAndCacheLabelSnapshot({
             status: cachedStatus,
             draft: cachedDraft,
@@ -15697,6 +16682,24 @@ app.post("/api/analyze-label", verifySupabaseToken, async (req: Request, res: Re
           } satisfies LabelAnalysisResponse);
         }
 
+        if (cachedAnalysisLayer?.analysis) {
+          const layerStatus = cachedAnalysisLayer.analysisStatus === "partial" ? "partial" : "complete";
+          const snapshot = await buildAndCacheLabelSnapshot({
+            status: cachedStatus,
+            draft: cachedDraft,
+            analysis: cachedAnalysisLayer.analysis,
+            imageHash,
+          });
+          return res.json({
+            status: cachedStatus,
+            draft: cachedDraft,
+            analysis: cachedAnalysisLayer.analysis,
+            analysisStatus: layerStatus,
+            analysisIssues: cachedAnalysisLayer.analysisIssues.length ? cachedAnalysisLayer.analysisIssues : undefined,
+            snapshot,
+          } satisfies LabelAnalysisResponse);
+        }
+
         console.log(`[LabelScan] Running DeepSeek analysis from cache...`);
         const { analysis, analysisIssues, analysisStatus, llmMs } = await buildLabelScanAnalysis({
           draft: cachedDraft,
@@ -15705,7 +16708,15 @@ app.post("/api/analyze-label", verifySupabaseToken, async (req: Request, res: Re
           apiKey: deepseekKey,
           resilience: labelDeepseekResilience,
         });
-        await updateCachedAnalysis(imageHash, analysis);
+        responseTiming.tLlmMs = llmMs;
+        responseAnalysisCacheHit = false;
+        await updateCachedAnalysis(imageHash, analysis, { preprocessProfile });
+        await setAnalysisCachedResult(parseCacheKey, {
+          analysis,
+          analysisStatus,
+          analysisIssues,
+          llmMs,
+        });
 
         console.log(`[LabelScan] Analysis complete for ${imageHash.slice(0, 8)} in ${Math.round(llmMs)}ms...`);
         const snapshot = await buildAndCacheLabelSnapshot({
@@ -15725,12 +16736,170 @@ app.post("/api/analyze-label", verifySupabaseToken, async (req: Request, res: Re
       }
     }
 
+    if (!cached && cachedParse && !debugEnabled) {
+      const draftFromParseCache = cachedParse.parsedIngredients;
+      const cachedAnalysisLayer = await getAnalysisCachedResult(parseCacheKey);
+      responseParseCacheHit = true;
+      responseAnalysisCacheHit = Boolean(cachedAnalysisLayer?.analysis);
+      responseTiming.tDecodeMs = 0;
+      responseTiming.tOcrMs = 0;
+      responseTiming.tParseMs = 0;
+      responseTiming.draftReadyAt = new Date().toISOString();
+      responseDraftRevision = 1;
+
+      void upsertProductIngredientsFromDraft({
+        sourceId: imageHash,
+        draft: draftFromParseCache,
+        basis: "label_serving",
+      });
+
+      const cachedNeedsConfirmation = needsConfirmation(draftFromParseCache);
+      const cachedStatus = cachedNeedsConfirmation ? "needs_confirmation" : "ok";
+
+      if (!includeAnalysis) {
+        const snapshot = await buildAndCacheLabelSnapshot({
+          status: cachedStatus,
+          draft: draftFromParseCache,
+          analysis: null,
+          message: cachedNeedsConfirmation ? "Please review the extracted ingredients." : undefined,
+          imageHash,
+        });
+        return res.json({
+          status: cachedStatus,
+          draft: draftFromParseCache,
+          message: cachedNeedsConfirmation ? "Please review the extracted ingredients." : undefined,
+          analysisStatus: "skipped",
+          snapshot,
+        } satisfies LabelAnalysisResponse);
+      }
+
+      if (cachedAnalysisLayer?.analysis) {
+        const layerStatus = cachedAnalysisLayer.analysisStatus === "partial" ? "partial" : "complete";
+        const snapshot = await buildAndCacheLabelSnapshot({
+          status: cachedStatus,
+          draft: draftFromParseCache,
+          analysis: cachedAnalysisLayer.analysis,
+          imageHash,
+        });
+        return res.json({
+          status: cachedStatus,
+          draft: draftFromParseCache,
+          analysis: cachedAnalysisLayer.analysis,
+          analysisStatus: layerStatus,
+          analysisIssues: cachedAnalysisLayer.analysisIssues.length ? cachedAnalysisLayer.analysisIssues : undefined,
+          snapshot,
+        } satisfies LabelAnalysisResponse);
+      }
+
+      const deepseekKey = process.env.DEEPSEEK_API_KEY;
+      const model = process.env.DEEPSEEK_MODEL || "deepseek-chat";
+      if (!deepseekKey) {
+        const snapshot = await buildAndCacheLabelSnapshot({
+          status: cachedStatus,
+          draft: draftFromParseCache,
+          analysis: null,
+          message: "Analysis service unavailable. Please try again later.",
+          imageHash,
+        });
+        return res.json({
+          status: cachedStatus,
+          draft: draftFromParseCache,
+          message: "Analysis service unavailable. Please try again later.",
+          analysisStatus: "unavailable",
+          snapshot,
+        } satisfies LabelAnalysisResponse);
+      }
+
+      if (asyncAnalysis) {
+        if (!labelAnalysisInFlight.has(cacheKey)) {
+          const jobId = randomUUID();
+          const taskPromise = (async () => {
+            try {
+              const backgroundBudget = new DeadlineBudget(Date.now() + RESILIENCE_TOTAL_BUDGET_MS);
+              const backgroundResilience: DeepseekResilienceOptions = {
+                budget: backgroundBudget,
+                breaker: deepseekBreaker,
+                semaphore: deepseekSemaphore,
+                timeoutMs: RESILIENCE_DEEPSEEK_TIMEOUT_MS,
+                queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS,
+              };
+              const { analysis, llmMs } = await buildLabelScanAnalysis({
+                draft: draftFromParseCache,
+                imageHash,
+                model,
+                apiKey: deepseekKey,
+                resilience: backgroundResilience,
+              });
+              await setAnalysisCachedResult(parseCacheKey, {
+                analysis,
+                analysisStatus: "complete",
+                analysisIssues: [],
+                llmMs,
+              });
+            } catch (error) {
+              console.error(`[LabelScan] Async parse-cache analysis failed for ${imageHash.slice(0, 8)}:`, error);
+            }
+          })();
+          labelAnalysisInFlight.set(cacheKey, { jobId, promise: taskPromise, startedAt: new Date().toISOString() });
+          taskPromise.finally(() => labelAnalysisInFlight.delete(cacheKey));
+        }
+        responseJobId = labelAnalysisInFlight.get(cacheKey)?.jobId ?? null;
+        const snapshot = await buildAndCacheLabelSnapshot({
+          status: cachedStatus,
+          draft: draftFromParseCache,
+          analysis: null,
+          message: cachedNeedsConfirmation ? "Please review the extracted ingredients." : undefined,
+          imageHash,
+        });
+        return res.json({
+          status: cachedStatus,
+          draft: draftFromParseCache,
+          analysisStatus: "pending",
+          snapshot,
+        } satisfies LabelAnalysisResponse);
+      }
+
+      const { analysis, analysisIssues, analysisStatus, llmMs } = await buildLabelScanAnalysis({
+        draft: draftFromParseCache,
+        imageHash,
+        model,
+        apiKey: deepseekKey,
+        resilience: labelDeepseekResilience,
+      });
+      responseTiming.tLlmMs = llmMs;
+      responseAnalysisCacheHit = false;
+      await setAnalysisCachedResult(parseCacheKey, {
+        analysis,
+        analysisStatus,
+        analysisIssues,
+        llmMs,
+      });
+      const snapshot = await buildAndCacheLabelSnapshot({
+        status: cachedStatus,
+        draft: draftFromParseCache,
+        analysis,
+        imageHash,
+      });
+      return res.json({
+        status: cachedStatus,
+        draft: draftFromParseCache,
+        analysis,
+        analysisStatus,
+        analysisIssues: analysisIssues.length ? analysisIssues : undefined,
+        snapshot,
+      } satisfies LabelAnalysisResponse);
+    }
+
     // Call Vision OCR
     console.log(`[LabelScan] Calling Vision OCR for ${imageHash.slice(0, 8)}...`);
+    responseOcrCallCount = 1;
+    responseAnalysisCacheHit = false;
     const requestBodyMs = performance.now() - totalStart;
     let visionResult;
     try {
       visionResult = await callVisionOcr({ imageBase64 }, { debug: debugEnabled });
+      responseTiming.tDecodeMs = visionResult.diagnostics?.timing.decodeMs ?? null;
+      responseTiming.tOcrMs = visionResult.diagnostics?.timing.visionMs ?? null;
     } catch (visionError) {
       console.error("[LabelScan] Vision OCR failed:", visionError);
       const snapshot = await buildAndCacheLabelSnapshot({
@@ -15792,6 +16961,8 @@ app.post("/api/analyze-label", verifySupabaseToken, async (req: Request, res: Re
           medianTokenHeight: tokenStats.medianTokenHeight,
         },
         heuristics: diagnostics?.heuristics ?? null,
+        laneSplit: diagnostics?.laneSplit ?? null,
+        completeness: diagnostics?.completeness ?? null,
         drafts: diagnostics?.drafts ?? null,
       };
     };
@@ -15816,16 +16987,14 @@ app.post("/api/analyze-label", verifySupabaseToken, async (req: Request, res: Re
     // Post-processing: infer rows and extract ingredients
     console.log(`[LabelScan] Processing ${visionResult.tokens.length} tokens...`);
     const postprocessStart = performance.now();
-    let draft: LabelDraft;
-    let analysisDiagnostics: LabelAnalysisDiagnostics | null = null;
-    if (debugEnabled) {
-      const analyzed = analyzeLabelDraftWithDiagnostics(visionResult.tokens, fullText);
-      draft = analyzed.draft;
-      analysisDiagnostics = analyzed.diagnostics;
-    } else {
-      draft = analyzeLabelDraft(visionResult.tokens, fullText);
-    }
+    const analyzed = analyzeLabelDraftWithDiagnostics(visionResult.tokens, fullText);
+    const draft: LabelDraft = analyzed.draft;
+    const analysisDiagnostics: LabelAnalysisDiagnostics | null = analyzed.diagnostics;
+    responseDiagnostics = analysisDiagnostics;
     const postprocessMs = performance.now() - postprocessStart;
+    responseTiming.tParseMs = postprocessMs;
+    responseTiming.draftReadyAt = new Date().toISOString();
+    responseDraftRevision = 1;
     let llmMs: number | null = null;
     let debugPayload = buildDebugPayload(postprocessMs, analysisDiagnostics, llmMs, requestBodyMs);
     console.log(`[LabelScan] Extracted ${draft.ingredients.length} ingredients, confidence: ${draft.confidenceScore.toFixed(2)}`);
@@ -15837,6 +17006,11 @@ app.post("/api/analyze-label", verifySupabaseToken, async (req: Request, res: Re
       visionRaw: shouldStoreVisionRaw ? visionResult.rawResponse : null,
       parsedIngredients: draft,
       confidence: draft.confidenceScore,
+      preprocessProfile,
+    });
+    await setParseCachedResult(cacheKey, {
+      parsedIngredients: draft,
+      diagnostics: analysisDiagnostics,
     });
     void upsertProductIngredientsFromDraft({
       sourceId: imageHash,
@@ -15905,8 +17079,9 @@ app.post("/api/analyze-label", verifySupabaseToken, async (req: Request, res: Re
 
     if (asyncAnalysis) {
       console.log(`[LabelScan] Deferring DeepSeek analysis for ${imageHash.slice(0, 8)}...`);
-      if (!labelAnalysisInFlight.has(imageHash)) {
-        const task = (async () => {
+      if (!labelAnalysisInFlight.has(cacheKey)) {
+        const jobId = randomUUID();
+        const taskPromise = (async () => {
           try {
             const backgroundBudget = new DeadlineBudget(Date.now() + RESILIENCE_TOTAL_BUDGET_MS);
             const backgroundResilience: DeepseekResilienceOptions = {
@@ -15923,15 +17098,22 @@ app.post("/api/analyze-label", verifySupabaseToken, async (req: Request, res: Re
               apiKey: deepseekKey,
               resilience: backgroundResilience,
             });
-            await updateCachedAnalysis(imageHash, analysis);
+            await updateCachedAnalysis(imageHash, analysis, { preprocessProfile });
+            await setAnalysisCachedResult(parseCacheKey, {
+              analysis,
+              analysisStatus: "complete",
+              analysisIssues: [],
+              llmMs: asyncLlmMs,
+            });
             console.log(`[LabelScan] Async analysis complete for ${imageHash.slice(0, 8)} in ${Math.round(asyncLlmMs)}ms...`);
           } catch (error) {
             console.error(`[LabelScan] Async analysis failed for ${imageHash.slice(0, 8)}:`, error);
           }
         })();
-        labelAnalysisInFlight.set(imageHash, task);
-        task.finally(() => labelAnalysisInFlight.delete(imageHash));
+        labelAnalysisInFlight.set(cacheKey, { jobId, promise: taskPromise, startedAt: new Date().toISOString() });
+        taskPromise.finally(() => labelAnalysisInFlight.delete(cacheKey));
       }
+      responseJobId = labelAnalysisInFlight.get(cacheKey)?.jobId ?? null;
       const snapshot = await buildAndCacheLabelSnapshot({
         status: needsReview ? "needs_confirmation" : "ok",
         draft,
@@ -15959,9 +17141,16 @@ app.post("/api/analyze-label", verifySupabaseToken, async (req: Request, res: Re
     });
 
     llmMs = resolvedLlmMs;
+    responseTiming.tLlmMs = resolvedLlmMs;
 
     // Update cache with analysis
-    await updateCachedAnalysis(imageHash, analysis);
+    await updateCachedAnalysis(imageHash, analysis, { preprocessProfile });
+    await setAnalysisCachedResult(parseCacheKey, {
+      analysis,
+      analysisStatus,
+      analysisIssues,
+      llmMs: resolvedLlmMs,
+    });
     debugPayload = buildDebugPayload(postprocessMs, analysisDiagnostics, llmMs, requestBodyMs);
 
     console.log(`[LabelScan] Analysis complete for ${imageHash.slice(0, 8)}...`);
@@ -15995,6 +17184,29 @@ app.post("/api/analyze-label", verifySupabaseToken, async (req: Request, res: Re
 });
 
 /**
+ * POST /api/label-scan/metrics
+ * Client-perceived timing + merge conflict telemetry (non-blocking UX metrics)
+ */
+app.post("/api/label-scan/metrics", verifySupabaseToken, async (req: Request, res: Response) => {
+  try {
+    const parsedBody = parseRequestBody(labelScanClientMetricsBodySchema, req, res);
+    if (!parsedBody) return;
+
+    await updateLabelScanClientTiming({
+      requestId: parsedBody.requestId,
+      appState: parsedBody.appState,
+      timingClient: parsedBody.timingClient,
+      lockedFieldConflictCount: parsedBody.lockedFieldConflictCount,
+    });
+
+    return res.json({ status: "ok" });
+  } catch (error) {
+    captureException(error, { route: "/api/label-scan/metrics" });
+    return res.status(500).json({ error: "label_scan_metrics_failed" } satisfies ErrorResponse);
+  }
+});
+
+/**
  * POST /api/analyze-label/confirm
  * Confirm edited ingredients and run DeepSeek analysis
  */
@@ -16005,6 +17217,9 @@ app.post("/api/analyze-label/confirm", verifySupabaseToken, async (req: Request,
       return;
     }
     const { imageHash, confirmedDraft } = parsedBody;
+    const preprocessProfile = normalizePreprocessProfile(parsedBody.preprocessProfile);
+    const ocrCacheKey = buildVersionedOcrCacheKey(imageHash, preprocessProfile);
+    const parseCacheKey = buildParseCacheKey(ocrCacheKey);
     const confirmBudget = new DeadlineBudget(Date.now() + RESILIENCE_TOTAL_BUDGET_MS);
     const confirmAbort = createRequestAbort(res);
     const confirmDeepseekResilience: DeepseekResilienceOptions = {
@@ -16057,6 +17272,10 @@ app.post("/api/analyze-label/confirm", verifySupabaseToken, async (req: Request,
       draft: confirmedDraft,
       basis: "label_serving",
     });
+    await setParseCachedResult(ocrCacheKey, {
+      parsedIngredients: confirmedDraft,
+      diagnostics: null,
+    });
 
     const deepseekKey = process.env.DEEPSEEK_API_KEY;
     const model = process.env.DEEPSEEK_MODEL || "deepseek-chat";
@@ -16088,7 +17307,13 @@ app.post("/api/analyze-label/confirm", verifySupabaseToken, async (req: Request,
     });
 
     // P1-1: Use updateCachedAnalysis instead of setCachedResult to preserve created_at (TTL)
-    await updateCachedAnalysis(imageHash, analysis);
+    await updateCachedAnalysis(imageHash, analysis, { preprocessProfile });
+    await setAnalysisCachedResult(parseCacheKey, {
+      analysis,
+      analysisStatus,
+      analysisIssues,
+      llmMs: null,
+    });
 
     console.log(`[LabelScan/Confirm] Complete for ${imageHash.slice(0, 8)}...`);
     const snapshot = await buildAndCacheLabelSnapshot({
