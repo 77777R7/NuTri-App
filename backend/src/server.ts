@@ -5057,6 +5057,7 @@ const regressionAuthRoutes = new Set([
   "/api/analysis-section",
   "/api/analyze-label",
   "/api/label-scan/metrics",
+  "/api/label-scan/metrics/smoke",
 ]);
 
 const verifySupabaseToken = async (req: Request, res: Response, next: NextFunction) => {
@@ -15738,6 +15739,12 @@ const labelScanClientMetricsBodySchema = z
   })
   .passthrough();
 
+const labelScanMetricsSmokeBodySchema = z
+  .object({
+    runId: z.string().min(1),
+  })
+  .passthrough();
+
 type AnalyzeLabelRequest = z.infer<typeof analyzeLabelBodySchema>;
 
 interface LabelAnalysisResponse {
@@ -17180,6 +17187,87 @@ app.post("/api/analyze-label", verifySupabaseToken, async (req: Request, res: Re
       message: "An unexpected error occurred.",
       suggestion: "Please try again. If the problem persists, try a different photo.",
     } satisfies LabelAnalysisResponse);
+  }
+});
+
+/**
+ * POST /api/label-scan/metrics/smoke
+ * Regression-only sentinel insert to prove scorecard write/query alignment.
+ */
+app.post("/api/label-scan/metrics/smoke", verifySupabaseToken, async (req: Request, res: Response) => {
+  try {
+    const parsedBody = parseRequestBody(labelScanMetricsSmokeBodySchema, req, res);
+    if (!parsedBody) return;
+
+    if (!(req as AuthenticatedRequest).regressionAuth) {
+      return res.status(403).json({ error: "forbidden" } satisfies ErrorResponse);
+    }
+
+    const requestId = `ci_smoke_${parsedBody.runId}`;
+
+    const { data: existing, error: selectError } = await supabase
+      .from("label_scan_metrics")
+      .select("request_id")
+      .eq("request_id", requestId)
+      .limit(1);
+    if (selectError) {
+      return res.status(500).json({
+        error: "label_scan_metrics_smoke_select_failed",
+        message: selectError.message,
+      });
+    }
+
+    if (Array.isArray(existing) && existing.length > 0) {
+      return res.json({ ok: true, requestId, idempotent: true });
+    }
+
+    const { error: insertError } = await supabase
+      .from("label_scan_metrics")
+      .insert({
+        request_id: requestId,
+        image_hash: requestId,
+        job_id: null,
+        parser_version: LABEL_PARSER_VERSION,
+        preprocess_profile: "ci_smoke",
+        flag_variant: "control",
+        cache_mode: "strict",
+        ocr_cache_hit: false,
+        parse_cache_hit: null,
+        analysis_cache_hit: null,
+        ocr_call_count: 0,
+        analysis_for_draft_revision: null,
+        patch_id: null,
+        patch_type: null,
+        lane_split_triggered: null,
+        lane_split_chosen: null,
+        lane_split_reverted_reason: null,
+        locked_field_conflict_count: 0,
+        response_status: "ci_smoke",
+        analysis_status: null,
+        parse_coverage: null,
+        needs_confirmation: false,
+        issue_types: [],
+        t_decode_ms: null,
+        t_ocr_ms: null,
+        t_parse_ms: null,
+        t_llm_ms: null,
+        t_first_draft_server_ms: null,
+        client_started_at_ms: null,
+        t_client_roundtrip_ms: null,
+        meta: { source: "ci_smoke", runId: parsedBody.runId, note: "scorecard_sentinel" },
+      });
+
+    if (insertError) {
+      return res.status(500).json({
+        error: "label_scan_metrics_smoke_insert_failed",
+        message: insertError.message,
+      });
+    }
+
+    return res.json({ ok: true, requestId, idempotent: false });
+  } catch (error) {
+    captureException(error, { route: "/api/label-scan/metrics/smoke" });
+    return res.status(500).json({ error: "label_scan_metrics_smoke_failed" } satisfies ErrorResponse);
   }
 });
 

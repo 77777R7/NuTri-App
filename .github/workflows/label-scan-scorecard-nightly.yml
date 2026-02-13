@@ -77,6 +77,8 @@ jobs:
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      LABEL_SCAN_REGRESSION_API_BASE: ${{ github.event.inputs.render_base_url != '' && github.event.inputs.render_base_url || secrets.RENDER_BASE_URL }}
+      LABEL_SCAN_REGRESSION_TOKEN: ${{ secrets.RENDER_REGRESSION_TOKEN }}
       LABEL_SCAN_SCORECARD_HOURS: "24"
       LABEL_SCAN_SCORECARD_MAX_ROWS: "5000"
       LABEL_SCAN_SCORECARD_MIN_VARIANT_N: "200"
@@ -102,6 +104,29 @@ jobs:
           fi
           if [ -z "${SUPABASE_SERVICE_ROLE_KEY:-}" ]; then
             echo "SUPABASE_SERVICE_ROLE_KEY is missing. Configure repository secret SUPABASE_SERVICE_ROLE_KEY."
+            exit 1
+          fi
+          if [ -z "${LABEL_SCAN_REGRESSION_API_BASE:-}" ]; then
+            echo "LABEL_SCAN_REGRESSION_API_BASE is empty. Provide workflow input render_base_url or secret RENDER_BASE_URL."
+            exit 1
+          fi
+          if [ -z "${LABEL_SCAN_REGRESSION_TOKEN:-}" ]; then
+            echo "LABEL_SCAN_REGRESSION_TOKEN is missing. Configure repository secret RENDER_REGRESSION_TOKEN."
+            exit 1
+          fi
+
+      - name: Write scorecard sentinel (ci_smoke)
+        run: |
+          set -euo pipefail
+          resp="$(curl -sS --max-time 10 -w "\n%{http_code}" \
+            -X POST "${LABEL_SCAN_REGRESSION_API_BASE%/}/api/label-scan/metrics/smoke" \
+            -H "content-type: application/json" \
+            -H "x-regression-token: ${LABEL_SCAN_REGRESSION_TOKEN}" \
+            --data "{\"runId\":\"${GITHUB_RUN_ID}\"}")"
+          body="$(echo "$resp" | sed '$d')"
+          status="$(echo "$resp" | tail -n 1)"
+          if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+            echo "Smoke insert failed (http ${status}): ${body}"
             exit 1
           fi
 
