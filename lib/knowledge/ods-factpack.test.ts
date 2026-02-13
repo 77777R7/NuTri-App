@@ -18,6 +18,13 @@ test("ods factpack: canonical keys map consistently", () => {
   assert.equal(canonicalizeKnowledgeKey("Ester‑C"), "vitamin c");
   assert.equal(canonicalizeKnowledgeKey("NAC"), "nac");
   assert.equal(canonicalizeKnowledgeKey("Methylcobalamin"), "vitamin b12");
+  assert.equal(canonicalizeKnowledgeKey("Pyridoxine HCl"), "vitamin b6");
+  assert.equal(canonicalizeKnowledgeKey("Vitamin B5"), "pantothenic acid");
+  assert.equal(canonicalizeKnowledgeKey("Choline"), "choline");
+  assert.equal(canonicalizeKnowledgeKey("Chromium (picolinate)"), "chromium");
+  assert.equal(canonicalizeKnowledgeKey("Copper (gluconate)"), "copper");
+  assert.equal(canonicalizeKnowledgeKey("Manganese (citrate)"), "manganese");
+  assert.equal(canonicalizeKnowledgeKey("Phosphorus"), "phosphorus");
   assert.equal(canonicalizeKnowledgeKey("Folic Acid"), "folate");
   assert.equal(canonicalizeKnowledgeKey("Vitamin K2"), "vitamin k");
   assert.equal(canonicalizeKnowledgeKey("Vitamin B3 (Niacinamide)"), "niacin");
@@ -32,7 +39,7 @@ test("ods factpack: pack meta and key lookup are stable", () => {
   assert.ok(vitaminC);
   assert.ok(Array.isArray(vitaminC?.whatItDoes));
   const entries = Object.keys((packData as { entries: Record<string, unknown> }).entries ?? {});
-  assert.ok(entries.length >= 20, `Expected at least 20 ODS entries, received ${entries.length}`);
+  assert.ok(entries.length >= 27, `Expected at least 27 ODS entries, received ${entries.length}`);
 });
 
 test("ods factpack: supplement lookup uses actives first then product name", () => {
@@ -76,6 +83,13 @@ test("ods factpack: low-quality overview falls back away from covid/nav text", (
 test("ods factpack: expanded core ingredient keys resolve", () => {
   const keyInputs = [
     ["Vitamin B12", "vitamin b12"],
+    ["Vitamin B6", "vitamin b6"],
+    ["Pantothenic acid", "pantothenic acid"],
+    ["Choline", "choline"],
+    ["Chromium", "chromium"],
+    ["Copper", "copper"],
+    ["Manganese", "manganese"],
+    ["Phosphorus", "phosphorus"],
     ["Calcium carbonate", "calcium"],
     ["Folate", "folate"],
     ["Potassium citrate", "potassium"],
