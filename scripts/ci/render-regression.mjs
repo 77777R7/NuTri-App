@@ -116,7 +116,13 @@ const DEFAULT_CASES = [
     requiredFormKeyword: "glycinate",
     targetActiveKeyword: "magnesium glycinate",
   },
-  { id: "web", barcodes: [process.env.RENDER_WEB_BARCODE || "000000000000"], expectedSourceType: "web" },
+  {
+    id: "web",
+    barcodes: [process.env.RENDER_WEB_BARCODE || "000000000000", process.env.RENDER_WEB_BARCODE2 || null].filter(
+      Boolean,
+    ),
+    expectedSourceType: "web",
+  },
 ];
 
 const CASES = [...DEFAULT_CASES];
@@ -231,6 +237,7 @@ const ensureDir = async (dir) => {
 async function readSseEvents(barcode, options = {}) {
   const ctrl = new AbortController();
   const timeoutMs = Number(options.timeoutMs || SSE_TIMEOUT_MS);
+  const fastTailMs = Number(options.fastTailMs ?? 2500);
   const timeout = setTimeout(() => ctrl.abort(), timeoutMs);
 
   let res;
@@ -345,7 +352,7 @@ async function readSseEvents(barcode, options = {}) {
       }
 
       if (!shouldStopEarly && sawSkeleton && sawFast && fastReadyAtMs != null) {
-        if (Date.now() - fastReadyAtMs >= 2500) {
+        if (Date.now() - fastReadyAtMs >= fastTailMs) {
           shouldStopEarly = true;
         }
       }
@@ -622,7 +629,7 @@ function summarizeRagQuadrantMetrics(runResults) {
 
   const retrievalFailureCodeCounts = {};
   const retrievalHits = webRows.filter((row) => {
-    const steps = row?.summary?.pipelineMetrics?.steps || [];
+    const steps = row?.summary?.pipelineMetrics?.steps || row?.summary?.webPipeline || [];
     const selectEvidence = extractStep(steps, "select_evidence");
     if (!selectEvidence) {
       retrievalFailureCodeCounts["select_evidence_missing"] = (retrievalFailureCodeCounts["select_evidence_missing"] || 0) + 1;
@@ -657,9 +664,10 @@ function summarizeRagQuadrantMetrics(runResults) {
   let abstainFallbackHeuristicCount = 0;
 
   for (const row of webRows) {
-    const steps = row?.summary?.pipelineMetrics?.steps || [];
+    const steps = row?.summary?.pipelineMetrics?.steps || row?.summary?.webPipeline || [];
     const selectEvidence = extractStep(steps, "select_evidence");
-    const fallbackCode = row?.summary?.fallback?.code ?? row?.summary?.fallbackReason ?? null;
+    const fallbackCode =
+      row?.summary?.fallback?.code ?? row?.summary?.fallbackReason ?? row?.summary?.webVerifyMeta?.fallbackCode ?? null;
     const abstainTriggered =
       (typeof fallbackCode === "string" && ABSTAIN_CODES.has(fallbackCode)) ||
       (selectEvidence && selectEvidence.status === "failed");
@@ -1275,6 +1283,9 @@ function pickKeyFields(result) {
     formReferenceIdHits: referenceIdHits,
     groundednessClaims,
     webVerifyMeta: fastBundle?.meta?.webVerifyMeta ?? null,
+    webPipelineSchemaVersion:
+      typeof fastBundle?.meta?.webPipelineSchemaVersion === "number" ? fastBundle.meta.webPipelineSchemaVersion : null,
+    webPipeline: Array.isArray(fastBundle?.meta?.webPipeline) ? fastBundle.meta.webPipeline : null,
   };
 }
 
@@ -1290,12 +1301,18 @@ async function writeCaseArtifacts(result) {
 }
 
 async function runCase(testCase) {
-  let events = await readSseEvents(testCase.barcode);
+  const webTailMsDefault = 15000;
+  const fastTailMs =
+    testCase.id === "web"
+      ? Math.max(2500, Number(process.env.RENDER_WEB_SSE_TAIL_MS || webTailMsDefault))
+      : 2500;
+
+  let events = await readSseEvents(testCase.barcode, { fastTailMs });
   // Render services can cold-start; the first request occasionally yields an empty stream.
   // Retry once to reduce flakiness without masking systematic failures.
   if (!events.length) {
     await sleep(1500);
-    events = await readSseEvents(testCase.barcode);
+    events = await readSseEvents(testCase.barcode, { fastTailMs });
   }
   const bundleEvents = getBundleEvents(events);
   const bundleCheck = assertBundleContract(bundleEvents, testCase.expectedSourceType);
