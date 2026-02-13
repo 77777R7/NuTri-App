@@ -1213,6 +1213,7 @@ function DetailSheet({
   const [savePillWidth, setSavePillWidth] = useState(108);
   const [detailKeyboardHeight, setDetailKeyboardHeight] = useState(0);
   const sheetScrollRef = useRef<ScrollView>(null);
+  const sheetScrollYRef = useRef(0);
   const noteInputRef = useRef<TextInput>(null);
   const noteSectionYRef = useRef(0);
   const timeSectionYRef = useRef(0);
@@ -2385,6 +2386,10 @@ function DetailSheet({
 	              ref={sheetScrollRef}
 	              style={{ flex: 1 }}
 	              showsVerticalScrollIndicator={false}
+	              onScroll={(event) => {
+	                sheetScrollYRef.current = event.nativeEvent.contentOffset.y;
+	              }}
+	              scrollEventThrottle={16}
 	              keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
 	              keyboardShouldPersistTaps="handled"
 	              contentContainerStyle={{ paddingBottom: 40 + insets.bottom + Math.max(0, detailKeyboardHeight) }}
@@ -2824,8 +2829,11 @@ function DetailSheet({
 	                    onChangeText={setNote}
 	                    onFocus={() => {
 	                      setTimeout(() => {
-	                        const scrollY = Math.max(0, noteSectionYRef.current - 80);
-	                        sheetScrollRef.current?.scrollTo({ y: scrollY, animated: true });
+	                        // Never scroll upwards on focus (can feel like it "jumps" to the top).
+	                        const targetY = Math.max(0, noteSectionYRef.current - 80);
+	                        const currentY = sheetScrollYRef.current;
+	                        if (targetY <= currentY + 4) return;
+	                        sheetScrollRef.current?.scrollTo({ y: targetY, animated: true });
 	                      }, 120);
 	                    }}
 	                    placeholder="Add your notes here (e.g. 'Avoid caffeine')..."
