@@ -1,7 +1,8 @@
 import { supabase } from "./supabase.js";
-import { combineSignals, createTimeoutSignal, isAbortError } from "./resilience.js";
+import { incrementMetric } from "./metrics.js";
+import { TimeoutError, combineSignals, createTimeoutSignal, isAbortError } from "./resilience.js";
 
-const LABEL_SCAN_METRICS_TIMEOUT_MS = Number(process.env.LABEL_SCAN_METRICS_TIMEOUT_MS ?? 1200);
+const LABEL_SCAN_METRICS_TIMEOUT_MS = Number(process.env.LABEL_SCAN_METRICS_TIMEOUT_MS ?? 5000);
 const LABEL_SCAN_CLIENT_TIMING_MAX_MS = Number(
   process.env.LABEL_SCAN_CLIENT_TIMING_MAX_MS ?? 30 * 60 * 1000,
 );
@@ -99,12 +100,20 @@ export async function logLabelScanMetric(
       })
       .abortSignal(signal);
     if (error) {
+      incrementMetric("label_scan_metrics_write_rejected");
       console.warn("[LabelScanMetrics] write rejected", error.message);
-    }
-  } catch (error) {
-    if (timeoutSignal.aborted || signal.aborted || isAbortError(error)) {
       return;
     }
+    incrementMetric("label_scan_metrics_write_success");
+  } catch (error) {
+    if (timeoutSignal.aborted && timeoutSignal.reason instanceof TimeoutError) {
+      incrementMetric("label_scan_metrics_write_timeout");
+      return;
+    }
+    if (signal.aborted || isAbortError(error)) {
+      return;
+    }
+    incrementMetric("label_scan_metrics_write_rejected");
     console.warn("[LabelScanMetrics] write failed", error);
   } finally {
     cleanup();

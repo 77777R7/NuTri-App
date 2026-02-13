@@ -10,6 +10,9 @@ export const METRIC_NAMES = [
   "training_write_breaker_open",
   "deepseek_bundle_success",
   "deepseek_bundle_fail_degraded",
+  "label_scan_metrics_write_success",
+  "label_scan_metrics_write_rejected",
+  "label_scan_metrics_write_timeout",
 ] as const;
 
 export type MetricName = (typeof METRIC_NAMES)[number];
