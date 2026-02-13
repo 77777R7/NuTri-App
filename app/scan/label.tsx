@@ -154,7 +154,7 @@ export default function LabelScanScreen() {
       const scanResult = await submitLabelScan({
         imageUri: previewUri,
         imageBase64: previewBase64,
-        includeAnalysis: true,
+        includeAnalysis: false,
         timeoutMs: 25_000,
         signal: controller.signal,
       });
@@ -298,7 +298,7 @@ export default function LabelScanScreen() {
 
   const isCameraPermissionLoading = !cameraPermission || cameraPermission.status === 'undetermined';
   const isProcessing = status === 'processing';
-  const processingLabel = previewUri ? 'Analyzing label...' : 'Capturing label...';
+  const processingLabel = previewUri ? 'Reading label...' : 'Capturing label...';
 
   if (isCameraPermissionLoading) {
     return (

@@ -142,7 +142,19 @@ export async function requestLabelAnalysis(input: {
   }, timeoutMs);
   input.signal?.addEventListener('abort', abortFromCaller);
 
+  const readPayload = async (response: Response): Promise<AnalyzeLabelResponse | null> => {
+    return (await response.json().catch(() => null)) as AnalyzeLabelResponse | null;
+  };
+
+  const shouldRetryWithBase64 = (response: Response, payload: AnalyzeLabelResponse | null): boolean => {
+    if (response.status !== 400) return false;
+    if (!input.imageBase64) return false;
+    const message = typeof payload?.message === 'string' ? payload.message : '';
+    return message.toLowerCase().includes('imagebase64');
+  };
+
   let response: Response;
+  let payload: AnalyzeLabelResponse | null = null;
   try {
     response = await fetch(endpoint, {
       method: 'POST',
@@ -150,11 +162,29 @@ export async function requestLabelAnalysis(input: {
       signal: controller.signal,
       body: JSON.stringify({
         imageHash: input.imageHash,
-        imageBase64: input.imageBase64,
+        // First attempt uses imageHash only to avoid re-uploading large base64 payloads.
+        // If the backend needs imageBase64 (cache miss), we retry once with the base64.
+        imageBase64: undefined,
         deviceId: input.deviceId,
         includeAnalysis: true,
       }),
     });
+    payload = await readPayload(response);
+
+    if (shouldRetryWithBase64(response, payload)) {
+      response = await fetch(endpoint, {
+        method: 'POST',
+        headers,
+        signal: controller.signal,
+        body: JSON.stringify({
+          imageHash: input.imageHash,
+          imageBase64: input.imageBase64,
+          deviceId: input.deviceId,
+          includeAnalysis: true,
+        }),
+      });
+      payload = await readPayload(response);
+    }
   } catch (error) {
     if (timedOut) {
       const timeoutError = new Error(`Label analysis request timed out after ${Math.round(timeoutMs / 1000)}s`);
@@ -167,7 +197,7 @@ export async function requestLabelAnalysis(input: {
     input.signal?.removeEventListener('abort', abortFromCaller);
   }
 
-  const payload = (await response.json().catch(() => null)) as AnalyzeLabelResponse | null;
+  payload = payload ?? null;
   if (!response.ok) {
     const message = payload?.message ?? `Analysis request failed (${response.status})`;
     throw new Error(message);
