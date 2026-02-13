@@ -35,4 +35,11 @@ test("my supplement source: no Label loading string regression", () => {
   assert.equal(source.includes("Label: Loading"), false);
   assert.equal(source.includes("We'll update this when available."), false);
   assert.equal(source.includes("Retry AI insights"), false);
+
+  // Save/Unsave pill guardrails (avoid wrapped "Unsav\ne" regressions).
+  assert.match(source, /width:\s*savePillWidth/);
+  assert.match(source, /numberOfLines=\{1\}[\s\S]{0,120}ellipsizeMode="clip"[\s\S]{0,120}Unsave/);
+
+  // Personal Note should avoid being covered by the keyboard in the detail sheet.
+  assert.match(source, /keyboardDismissMode=\{Platform\.OS === "ios" \? "interactive" : "on-drag"\}/);
 });

@@ -1182,6 +1182,7 @@ function DetailSheet({
 }) {
   const insets = useSafeAreaInsets();
   const screenHeight = Dimensions.get("window").height;
+  const screenWidth = Dimensions.get("window").width;
   const { updateSupplement } = useSavedSupplements();
   const [note, setNote] = useState(item.routine?.note ?? "");
   const [time, setTime] = useState(item.routine?.time ?? "08:00");
@@ -1208,6 +1209,9 @@ function DetailSheet({
   const [saveState, setSaveState] = useState<"idle" | "saved">(
     item.routine?.note || item.routine?.time || item.routine?.withFood !== undefined ? "saved" : "idle",
   );
+  const savePillWidthRef = useRef(108);
+  const [savePillWidth, setSavePillWidth] = useState(108);
+  const [detailKeyboardHeight, setDetailKeyboardHeight] = useState(0);
   const sheetScrollRef = useRef<ScrollView>(null);
   const noteInputRef = useRef<TextInput>(null);
   const noteSectionYRef = useRef(0);
@@ -1278,6 +1282,35 @@ function DetailSheet({
       unsaveArmTimerRef.current = null;
     };
   }, [unsaveArmed]);
+
+  const handleSavePillLabelLayout = useCallback(
+    (event: NativeSyntheticEvent<TextLayoutEventData>) => {
+      const line = event.nativeEvent.lines?.[0];
+      if (!line) return;
+      const labelPadding = 26 * 2; // matches styles.saveBtn paddingHorizontal
+      const minWidth = 108;
+      const maxWidth = Math.max(minWidth, Math.floor(screenWidth - 48));
+      const next = Math.min(maxWidth, Math.max(minWidth, Math.ceil(line.width + labelPadding)));
+      if (savePillWidthRef.current === next) return;
+      savePillWidthRef.current = next;
+      setSavePillWidth(next);
+    },
+    [screenWidth],
+  );
+
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const showSub = Keyboard.addListener(showEvent, (event) => {
+      setDetailKeyboardHeight(event.endCoordinates?.height ?? 0);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => setDetailKeyboardHeight(0));
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   useEffect(() => {
     let isActive = true;
@@ -2340,24 +2373,27 @@ function DetailSheet({
           from={{ translateY: screenHeight, opacity: 0 }}
           animate={{ translateY: 0, opacity: 1 }}
           exit={{ translateY: screenHeight, opacity: 0 }}
-          transition={{ type: "timing", duration: 320, easing: Easing.out(Easing.cubic) }}
-          style={styles.sheet}
-        >
-          <Pressable onPress={onClose} style={[styles.sheetClose, { top: insets.top + 12 }]}>
-            <X size={20} color="#ffffff" />
-          </Pressable>
+	          transition={{ type: "timing", duration: 320, easing: Easing.out(Easing.cubic) }}
+	          style={styles.sheet}
+	        >
+	          <Pressable onPress={onClose} style={[styles.sheetClose, { top: insets.top + 12 }]}>
+	            <X size={20} color="#ffffff" />
+	          </Pressable>
 
-          <ScrollView
-            ref={sheetScrollRef}
-            style={{ flex: 1 }}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}
-          >
-            <View style={[styles.sheetHeader, { backgroundColor: theme.bgHex, paddingTop: insets.top + 18 }]}>
-              <View style={{ gap: 12 }}>
-                <View style={styles.sheetHeaderRow}>
-                  {theme.icon === "sun" ? (
-                    <Sun size={18} color={theme.textColor} />
+	          <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+	            <ScrollView
+	              ref={sheetScrollRef}
+	              style={{ flex: 1 }}
+	              showsVerticalScrollIndicator={false}
+	              keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+	              keyboardShouldPersistTaps="handled"
+	              contentContainerStyle={{ paddingBottom: 40 + insets.bottom + Math.max(0, detailKeyboardHeight) }}
+	            >
+	            <View style={[styles.sheetHeader, { backgroundColor: theme.bgHex, paddingTop: insets.top + 18 }]}>
+	              <View style={{ gap: 12 }}>
+	                <View style={styles.sheetHeaderRow}>
+	                  {theme.icon === "sun" ? (
+	                    <Sun size={18} color={theme.textColor} />
                   ) : (
                     <Moon size={18} color={theme.textColor} />
                   )}
@@ -2779,32 +2815,48 @@ function DetailSheet({
                     >
                       <View style={styles.noteHeaderRow}>
                         <NotebookPen size={16} color="#94a3b8" />
-                        <Text style={styles.noteHeaderText}>Personal Note</Text>
-                      </View>
+	                    <Text style={styles.noteHeaderText}>Personal Note</Text>
+	                  </View>
 
-                      <TextInput
-                        ref={noteInputRef}
-                        value={note}
-                        onChangeText={setNote}
-                        placeholder="Add your notes here (e.g. 'Avoid caffeine')..."
-                        placeholderTextColor="#94a3b8"
-                        multiline
-                        textAlignVertical="top"
-                        style={styles.noteInput}
+	                  <TextInput
+	                    ref={noteInputRef}
+	                    value={note}
+	                    onChangeText={setNote}
+	                    onFocus={() => {
+	                      setTimeout(() => {
+	                        const scrollY = Math.max(0, noteSectionYRef.current - 80);
+	                        sheetScrollRef.current?.scrollTo({ y: scrollY, animated: true });
+	                      }, 120);
+	                    }}
+	                    placeholder="Add your notes here (e.g. 'Avoid caffeine')..."
+	                    placeholderTextColor="#94a3b8"
+	                    multiline
+	                    textAlignVertical="top"
+	                    style={styles.noteInput}
                       />
                     </View>
 
-	                    <View style={styles.saveRow}>
-	                      <View style={styles.saveShadow}>
-	                        <Pressable onPress={handleSavePillPress}>
-	                          <MotiView
-	                            style={styles.saveBtn}
-	                            animate={{
-	                              backgroundColor:
-	                                saveState === "saved"
-	                                  ? unsaveArmed
-	                                    ? "rgba(239,68,68,0.18)"
-	                                    : "rgba(34,197,94,0.18)"
+		                    <View style={styles.saveRow}>
+		                      <View style={styles.saveMeasureWrap} pointerEvents="none">
+		                        <Text
+		                          onTextLayout={handleSavePillLabelLayout}
+		                          style={styles.saveMeasureText}
+		                          numberOfLines={1}
+		                        >
+		                          {unsaveArmed ? "Unsave" : "Save"}
+		                        </Text>
+		                      </View>
+		                      <View style={styles.saveShadow}>
+		                        <Pressable onPress={handleSavePillPress}>
+		                          <MotiView
+		                            style={styles.saveBtn}
+		                            animate={{
+		                              width: savePillWidth,
+		                              backgroundColor:
+		                                saveState === "saved"
+		                                  ? unsaveArmed
+		                                    ? "rgba(239,68,68,0.18)"
+		                                    : "rgba(34,197,94,0.18)"
 	                                  : "rgba(255,255,255,0.35)",
 	                              borderColor:
 	                                saveState === "saved"
@@ -2828,13 +2880,15 @@ function DetailSheet({
 	                              style={StyleSheet.absoluteFillObject}
                             />
 
-	                            <View style={styles.saveInner}>
-	                              <MotiView
-	                                animate={saveState === "saved" ? { opacity: 0, translateY: -4, scale: 0.98 } : { opacity: 1, translateY: 0, scale: 1 }}
-	                                transition={{ type: "timing", duration: 280 }}
-	                              >
-	                                <Text style={styles.saveText}>Save</Text>
-	                              </MotiView>
+		                            <View style={styles.saveInner}>
+		                              <MotiView
+		                                animate={saveState === "saved" ? { opacity: 0, translateY: -4, scale: 0.98 } : { opacity: 1, translateY: 0, scale: 1 }}
+		                                transition={{ type: "timing", duration: 280 }}
+		                              >
+		                                <Text style={styles.saveText} numberOfLines={1}>
+		                                  Save
+		                                </Text>
+		                              </MotiView>
 
 	                              <MotiView
 	                                style={styles.saveCheck}
@@ -2853,33 +2907,40 @@ function DetailSheet({
 	                                </MotiView>
 	                              </MotiView>
 
-	                              <MotiView
-	                                style={styles.saveCheck}
-	                                animate={
-	                                  saveState === "saved" && unsaveArmed
-	                                    ? { opacity: 1, translateY: 0, scale: 1 }
+		                              <MotiView
+		                                style={styles.saveCheck}
+		                                animate={
+		                                  saveState === "saved" && unsaveArmed
+		                                    ? { opacity: 1, translateY: 0, scale: 1 }
 	                                    : { opacity: 0, translateY: 6, scale: 0.96 }
 	                                }
-	                                transition={{ type: "timing", duration: 260 }}
-	                              >
-	                                <Text style={[styles.saveText, { color: "#dc2626" }]}>Unsave</Text>
-	                              </MotiView>
-	                            </View>
-	                          </MotiView>
-	                        </Pressable>
-	                      </View>
-	                    </View>
+		                                transition={{ type: "timing", duration: 260 }}
+		                              >
+		                                <Text
+		                                  style={[styles.saveText, { color: "#dc2626" }]}
+		                                  numberOfLines={1}
+		                                  ellipsizeMode="clip"
+		                                >
+		                                  Unsave
+		                                </Text>
+		                              </MotiView>
+		                            </View>
+		                          </MotiView>
+		                        </Pressable>
+		                      </View>
+		                    </View>
 
-                    <Text style={styles.note}>Note: Always consult the product label for specific instructions.</Text>
-                  </View>
-                </View>
-              </View>
-            </View>
-          </ScrollView>
-        </MotiView>
-      </View>
-    </Modal>
-  );
+	                    <Text style={styles.note}>Note: Always consult the product label for specific instructions.</Text>
+	                  </View>
+	                </View>
+	              </View>
+	            </View>
+	          </ScrollView>
+	          </KeyboardAvoidingView>
+	        </MotiView>
+	      </View>
+	    </Modal>
+	  );
 }
 
 function NoteQuickView({
@@ -4976,9 +5037,21 @@ const styles = StyleSheet.create({
   },
 
   saveRow: { alignItems: "flex-end", marginTop: 24 },
+  saveMeasureWrap: {
+    position: "absolute",
+    left: -9999,
+    top: 0,
+    opacity: 0,
+  },
+  saveMeasureText: {
+    fontSize: 16,
+    lineHeight: 20,
+    fontWeight: "700",
+    includeFontPadding: false,
+  },
   saveShadow: { borderRadius: 999, borderCurve: "continuous", shadowColor: "#0f172a", shadowOpacity: 0.18, shadowRadius: 18, shadowOffset: { width: 0, height: 10 }, backgroundColor: "rgba(255,255,255,0.001)" },
   saveBtn: { height: 48, paddingHorizontal: 26, borderRadius: 999, borderCurve: "continuous", borderWidth: 1, overflow: "hidden", justifyContent: "center" },
-  saveInner: { minWidth: 56, height: 20, alignItems: "center", justifyContent: "center" },
+  saveInner: { flex: 1, minWidth: 56, height: 20, alignItems: "center", justifyContent: "center" },
   saveText: { fontSize: 16, lineHeight: 20, fontWeight: "700", color: "rgba(51,65,85,0.95)", includeFontPadding: false },
   saveCheck: { position: "absolute", alignItems: "center", justifyContent: "center" },
 
