@@ -36,3 +36,22 @@ jobs:
       - name: Run Backend Tests
         run: npm --prefix backend test
 
+      - name: Build KB PROV Index
+        env:
+          KB_PROV_INDEX_PATH: artifacts/kb-integrity/${{ github.run_id }}-${{ github.run_attempt }}/kb_prov_index.json
+        run: node scripts/kb/build_kb_prov_index.mjs
+
+      - name: Validate KB PROV Index
+        env:
+          KB_PROV_INDEX_PATH: artifacts/kb-integrity/${{ github.run_id }}-${{ github.run_attempt }}/kb_prov_index.json
+          KB_PROV_VALIDATE_REPORT_PATH: artifacts/kb-integrity/${{ github.run_id }}-${{ github.run_attempt }}/prov_validate_report.json
+          KB_PROV_VALIDATE_MODE: fail
+        run: node scripts/kb/prov_validate.mjs
+
+      - name: Upload KB PROV Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kb-prov-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/kb-integrity
+          if-no-files-found: warn
