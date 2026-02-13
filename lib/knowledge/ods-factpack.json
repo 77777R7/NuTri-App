@@ -1,0 +1,325 @@
+{
+  "packVersion": "ods-core-2026-02-13",
+  "updatedAt": "2025-06-18T00:00:00.000Z",
+  "entries": {
+    "vitamin c": {
+      "overview": "Vitamin C (ascorbic acid) is a water-soluble antioxidant nutrient that supports collagen formation and normal immune function.",
+      "curatedOverview": "Vitamin C (ascorbic acid) is a water-soluble antioxidant nutrient that supports collagen formation and normal immune function.",
+      "overviewSource": "curated",
+      "whatItDoes": [
+        "In the body, it acts as an antioxidant, helping to protect cells from the damage caused by free radicals.",
+        "The body also needs vitamin C to make collagen, a protein required to help wounds heal.",
+        "In addition, vitamin C improves the absorption of iron from plant-based foods and helps the immune system work properly to protect the body from disease."
+      ],
+      "watchOuts": [
+        "People with certain medical conditions such as severe malabsorption, some types of cancer, and kidney disease requiring hemodialysis.",
+        "Additional signs of scurvy include depression as well as swollen, bleeding gums and loosening or loss of teeth.",
+        "Cancer prevention and treatment People with high intakes of vitamin C from fruits and vegetables might have a lower risk of getting many types of cancer, such as lung, breast, and colon cancer."
+      ],
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/VitaminC-Consumer/"
+    },
+    "vitamin d": {
+      "overview": "Vitamin D supports calcium balance, bone health, and immune function, and is commonly used when sunlight exposure is limited.",
+      "curatedOverview": "Vitamin D supports calcium balance, bone health, and immune function, and is commonly used when sunlight exposure is limited.",
+      "overviewSource": "curated",
+      "whatItDoes": [
+        "It helps your body absorb calcium, one of the main building blocks for strong bones.",
+        "Together with calcium, vitamin D helps protect you from developing osteoporosis, a disease that thins and weakens the bones and makes them more likely to break.",
+        "Your body needs vitamin D for other functions too."
+      ],
+      "watchOuts": [
+        "Fatty fish (like trout, salmon, tuna, and mackerel) and fish liver oils are among the best natural sources of vitamin D.",
+        "Beef liver, egg yolks, and cheese have small amounts of vitamin D.",
+        "Millions of older women and men have osteoporosis or are at risk of developing this condition."
+      ],
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/VitaminD-Consumer/"
+    },
+    "omega-3": {
+      "overview": "Omega-3 fatty acids include ALA, EPA, and DHA, and are commonly used for heart and triglyceride support.",
+      "curatedOverview": "Omega-3 fatty acids include ALA, EPA, and DHA, and are commonly used for heart and triglyceride support.",
+      "overviewSource": "curated",
+      "whatItDoes": [
+        "Omega-3s are important components of the membranes that surround each cell in your body.",
+        "Omega-3s also provide calories to give your body energy and have many functions in your heart, blood vessels, lungs, immune system, and endocrine system (the network of hormone-producing glands).",
+        "However, it is not clear whether these health benefits come from simply eating these foods or from the omega-3s in these foods."
+      ],
+      "watchOuts": [
+        "The American Heart Association (AHA) recommends eating one to two servings of seafood per week to reduce your risk of some heart problems, especially if you consume the seafood in place of less healthy foods.",
+        "The AHA does not recommend omega-3 supplements for people who do not have a high risk of cardiovascular disease.",
+        "Infant health and development During pregnancy and breastfeeding, eating 8 to 12 ounces per week of fish and other seafood may improve your baby&rsquo;s health."
+      ],
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Omega3FattyAcids-Consumer/"
+    },
+    "magnesium": {
+      "overview": "Magnesium is an essential mineral involved in energy production, muscle and nerve function, and many enzyme reactions.",
+      "curatedOverview": "Magnesium is an essential mineral involved in energy production, muscle and nerve function, and many enzyme reactions.",
+      "overviewSource": "curated",
+      "whatItDoes": [
+        "Magnesium is a nutrient that the body needs to stay healthy.",
+        "Magnesium is important for many processes in the body, including regulating muscle and nerve function, blood sugar levels, and blood pressure and making protein, bone, and DNA.",
+        "Extreme magnesium deficiency can cause numbness, tingling, muscle cramps, seizures, personality changes, and an abnormal heart rhythm."
+      ],
+      "watchOuts": [
+        "When healthy people have low intakes, the kidneys help retain magnesium by limiting the amount lost in urine.",
+        "In addition, some medical conditions and medications interfere with the body&rsquo;s ability to absorb magnesium or increase the amount of magnesium that the body excretes, which can also lead to magnesium deficiency.",
+        "High blood pressure and heart disease High blood pressure is a major risk factor for cardiovascular disease and stroke."
+      ],
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Magnesium-Consumer/"
+    },
+    "zinc": {
+      "overview": "Zinc is a trace mineral needed for immune function, wound healing, and DNA/protein synthesis.",
+      "curatedOverview": "Zinc is a trace mineral needed for immune function, wound healing, and DNA/protein synthesis.",
+      "overviewSource": "curated",
+      "whatItDoes": [
+        "Zinc is a nutrient that people need to stay healthy.",
+        "It helps your immune system fight off invading bacteria and viruses.",
+        "Zinc also helps wounds heal and is important for the proper sense of taste."
+      ],
+      "watchOuts": [
+        "During pregnancy, infancy, childhood, and adolescence the body needs zinc to grow and develop properly.",
+        "Zinc is also found in some denture adhesive creams and over-the-counter products, including those labeled as homeopathic medications for colds.",
+        "Women who are pregnant or breastfeeding because they need more zinc for their growing baby and to make breast milk."
+      ],
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Zinc-Consumer/"
+    },
+    "iron": {
+      "overview": "Iron is essential for hemoglobin formation and oxygen transport, and is often supplemented when intake is insufficient.",
+      "curatedOverview": "Iron is essential for hemoglobin formation and oxygen transport, and is often supplemented when intake is insufficient.",
+      "overviewSource": "curated",
+      "whatItDoes": [
+        "Iron&rsquo;s most important contribution to health is preventing iron deficiency anemia and resulting problems.",
+        "In healthy people, taking high doses of iron supplements (especially on an empty stomach) can cause an upset stomach, constipation, nausea, abdominal pain, vomiting, and diarrhea.",
+        "Tell your doctor, pharmacist, and other health care providers about any dietary supplements and prescription or over-the-counter medicines you take."
+      ],
+      "watchOuts": [
+        "Accidental overdose of iron-containing products is a leading cause of fatal poisoning in children under 6.",
+        "The body uses its stored iron in the muscles, liver, spleen, and bone marrow.",
+        "Iron deficiency is not uncommon in the United States, especially among young children, women under 50, and pregnant women."
+      ],
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Iron-Consumer/"
+    },
+    "vitamin b12": {
+      "overview": "Vitamin B12 supports red blood cell formation, neurological function, and DNA synthesis.",
+      "curatedOverview": "Vitamin B12 supports red blood cell formation, neurological function, and DNA synthesis.",
+      "overviewSource": "curated",
+      "whatItDoes": [
+        "Vitamin B12 also helps prevent megaloblastic anemia, a blood condition that makes people tired and weak.",
+        "Manufacturers are not required to list vitamin B12 on the label if a food naturally contains this vitamin.",
+        "Vitamin B12 deficiency can damage the nervous system even in people who don&rsquo;t have megaloblastic anemia, so it&rsquo;s important to treat a deficiency as soon as possible."
+      ],
+      "watchOuts": [
+        "Clams, oysters, and beef liver are some of the best sources of vitamin B12.",
+        "When pregnant women and women who breastfeed their babies are strict vegetarians or vegans, their babies might also not get enough vitamin B12.",
+        "Cancer Some research shows that people with high levels of vitamin B12 have a higher risk of cancer."
+      ],
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/VitaminB12-Consumer/"
+    },
+    "calcium": {
+      "overview": "Calcium is essential for bone structure, muscle contraction, and nerve signaling.",
+      "curatedOverview": "Calcium is essential for bone structure, muscle contraction, and nerve signaling.",
+      "overviewSource": "curated",
+      "whatItDoes": [
+        "Calcium is a mineral your body needs to build and maintain strong bones and to carry out many important functions.",
+        "Calcium also helps blood vessels move blood throughout your body and helps release hormones that affect many functions in your body.",
+        "Vitamin D helps your body absorb calcium."
+      ],
+      "watchOuts": [
+        "Cancer Some research shows that people who have high intakes of calcium from food and supplements have a lower risk of cancers of the colon and rectum, but other studies do not.",
+        "Some studies have shown that men with high intakes of calcium from dairy foods have an increased risk of prostate cancer.",
+        "For other types of cancer, calcium does not appear to affect the risk of getting cancer or dying of cancer."
+      ],
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Calcium-Consumer/"
+    },
+    "folate": {
+      "overview": "Folate (vitamin B9) is important for cell division and DNA synthesis.",
+      "curatedOverview": "Folate (vitamin B9) is important for cell division and DNA synthesis.",
+      "overviewSource": "curated",
+      "whatItDoes": [
+        "Food and Drug Administration (FDA) has required food companies to add folic acid to enriched bread, flour, cornmeal, pasta, rice, and other grain products sold in the United States.",
+        "In addition, they might not respond as well to antidepressant treatment as people with normal folate levels.",
+        "However, whether supplements help both people with normal folate levels and those with folate deficiency isn&rsquo;t clear."
+      ],
+      "watchOuts": [
+        "All women and teen girls who could become pregnant should consume 400 mcg of folic acid daily from supplements, fortified foods, or both in addition to the folate they get from following a healthy eating pattern.",
+        "Women who don't get enough folate are at risk of having babies with neural tube defects, such as spina bifida.",
+        "Neural tube defects Taking folic acid before becoming pregnant and during early pregnancy helps prevent neural tube defects in babies."
+      ],
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Folate-Consumer/"
+    },
+    "potassium": {
+      "overview": "Potassium is an electrolyte involved in fluid balance, muscle contraction, and nerve signaling.",
+      "curatedOverview": "Potassium is an electrolyte involved in fluid balance, muscle contraction, and nerve signaling.",
+      "overviewSource": "curated",
+      "whatItDoes": [
+        "Talk to your health care provider before using salt substitutes.",
+        "More severe hypokalemia can cause increased urination, decreased brain function, high blood sugar levels, muscle paralysis, difficulty breathing, and irregular heartbeat.",
+        "Bone health People who have high intakes of potassium from fruits and vegetables seem to have stronger bones."
+      ],
+      "watchOuts": [
+        "Your body needs potassium for almost everything it does, including proper kidney and heart function, muscle contraction, and nerve transmission.",
+        "If you have kidney disease or if you take certain medications, these products could make your potassium levels too high.",
+        "Getting too little potassium can increase blood pressure, deplete calcium in bones, and increase the risk of kidney stones."
+      ],
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Potassium-Consumer/"
+    },
+    "selenium": {
+      "overview": "Selenium is a trace mineral involved in antioxidant defense and thyroid hormone metabolism.",
+      "curatedOverview": "Selenium is a trace mineral involved in antioxidant defense and thyroid hormone metabolism.",
+      "overviewSource": "curated",
+      "whatItDoes": [
+        "Selenium is a nutrient that the body needs to stay healthy.",
+        "Your thyroid gland needs selenium to produce hormones and function properly.",
+        "Selenium is also needed for reproduction, to make DNA, to help protect cells, and to resist infection."
+      ],
+      "watchOuts": [
+        "Selenium deficiency can make iodine deficiency worse, increasing the risk of thyroid disease.",
+        "Cancer Getting enough selenium from your diet may lower your risk of some forms of cancer, including colorectal, prostate, lung, bladder, skin, esophageal, and gastric cancers.",
+        "These studies have found that selenium supplements do not lower the risk of prostate cancer, especially in men who get enough selenium from their diet."
+      ],
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Selenium-Consumer/"
+    },
+    "iodine": {
+      "overview": "Iodine is required for thyroid hormone production and normal growth and metabolism.",
+      "curatedOverview": "Iodine is required for thyroid hormone production and normal growth and metabolism.",
+      "overviewSource": "curated",
+      "whatItDoes": [
+        "These hormones control the body's metabolism and many other important functions.",
+        "Cognitive function during childhood Severe iodine deficiency during childhood has harmful effects on the development of the brain and nervous system.",
+        "Giving iodine supplements to children with mild iodine deficiency improves their reasoning abilities and overall cognitive function."
+      ],
+      "watchOuts": [
+        "The body also needs thyroid hormones for proper bone and brain development during pregnancy and infancy.",
+        "Getting enough iodine is important for everyone, especially infants and women who are pregnant.",
+        "Women who are pregnant need about 50% more iodine than other women to provide enough iodine for their baby."
+      ],
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Iodine-Consumer/"
+    },
+    "vitamin a": {
+      "overview": "Vitamin A supports vision, immune function, and normal cell growth.",
+      "curatedOverview": "Vitamin A supports vision, immune function, and normal cell growth.",
+      "overviewSource": "curated",
+      "whatItDoes": [
+        "Vitamin A is important for normal vision, the immune system, reproduction, and growth and development.",
+        "Vitamin A also helps your heart, lungs, and other organs work properly.",
+        "However, studies do not show that vitamin A or beta-carotene supplements help prevent cancer or lower the chances of dying of cancer."
+      ],
+      "watchOuts": [
+        "There are two different sources for vitamin A: Preformed vitamin A is found in fish, organ meats (such as liver), dairy products, and eggs.",
+        "A long-term deficiency of vitamin A can also lead to a higher risk of respiratory diseases (such as pneumonia) and infections (such as measles and diarrhea).",
+        "Cancer People who eat a lot of foods containing vitamin A or beta-carotene might have a lower risk of certain kinds of cancer."
+      ],
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/VitaminA-Consumer/"
+    },
+    "vitamin e": {
+      "overview": "Vitamin E is a fat-soluble antioxidant that helps protect cell membranes.",
+      "curatedOverview": "Vitamin E is a fat-soluble antioxidant that helps protect cell membranes.",
+      "overviewSource": "curated",
+      "whatItDoes": [
+        "In the body, it acts as an antioxidant, helping to protect cells from the damage caused by free radicals.",
+        "It helps to widen blood vessels and keep blood from clotting within them.",
+        "In addition, cells use vitamin E to interact with each other and to carry out many important functions."
+      ],
+      "watchOuts": [
+        "Some people take large doses because they believe or hope that doing so will keep them healthy or lower their risk of certain diseases.",
+        "Vitamin E supplements do not seem to prevent heart disease, reduce its severity, or affect the risk of death from this disease.",
+        "Scientists do not know whether high intakes of vitamin E might protect the heart in younger, healthier people who do not have a high risk of heart disease."
+      ],
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/VitaminE-Consumer/"
+    },
+    "vitamin k": {
+      "overview": "Vitamin K is involved in normal blood clotting and bone metabolism.",
+      "curatedOverview": "Vitamin K is involved in normal blood clotting and bone metabolism.",
+      "overviewSource": "curated",
+      "whatItDoes": [
+        "It&rsquo;s important for blood clotting and healthy bones and also has other functions in the body.",
+        "If you are taking a blood thinner such as warfarin (Coumadin), it's very important to get about the same amount of vitamin K each day.",
+        "Osteoporosis Vitamin K is important for healthy bones."
+      ],
+      "watchOuts": [
+        "Severe vitamin K deficiency can cause bruising and bleeding problems because the blood will take longer to clot.",
+        "Vitamin K deficiency might reduce bone strength and increase the risk of getting osteoporosis because the body needs vitamin K for healthy bones.",
+        "More research is needed to better understand if vitamin K supplements can help improve bone health and reduce osteoporosis risk."
+      ],
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/VitaminK-Consumer/"
+    },
+    "niacin": {
+      "overview": "Niacin (vitamin B3) supports energy metabolism and normal nervous system function.",
+      "curatedOverview": "Niacin (vitamin B3) supports energy metabolism and normal nervous system function.",
+      "overviewSource": "curated",
+      "whatItDoes": [
+        "Niacin (also called vitamin B3) helps turn the food you eat into the energy you need.",
+        "Niacin is important for the development and function of the cells in your body.",
+        "Your health care provider should approve and supervise any use of very high doses of nicotinic acid (in the thousands of milligrams) to treat atherosclerosis."
+      ],
+      "watchOuts": [
+        "For example, when you eat turkey, which is high in tryptophan, some of this amino acid is converted to niacin in your liver.",
+        "Cardiovascular disease Scientists have studied the use of large doses of niacin in the form of nicotinic acid to help reduce the risk of heart attack and stroke in people with atherosclerosis.",
+        "However, these favorable effects on blood lipids (fats) don&rsquo;t affect the risk of having a cardiovascular event, such as heart attack, sudden cardiac death, or stroke."
+      ],
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Niacin-Consumer/"
+    },
+    "thiamin": {
+      "overview": "Thiamin (vitamin B1) is required for carbohydrate metabolism and nerve function.",
+      "curatedOverview": "Thiamin (vitamin B1) is required for carbohydrate metabolism and nerve function.",
+      "overviewSource": "curated",
+      "whatItDoes": [
+        "Thiamin (also called vitamin B1) helps turn the food you eat into the energy you need.",
+        "Thiamin is important for the growth, development, and function of the cells in your body.",
+        "They are also studying whether benfotiamine (a synthetic form of thiamin) supplements can help with nerve damage caused by diabetes."
+      ],
+      "watchOuts": [
+        "They can tell you if the dietary supplements might interact with your medicines or if the medicines might interfere with how your body absorbs, uses, or breaks down nutrients such as thiamin.",
+        "In some cases, fortified foods and dietary supplements are useful when it is not possible to meet needs for one or more nutrients (for example, during specific life stages such as pregnancy)."
+      ],
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Thiamin-Consumer/"
+    },
+    "riboflavin": {
+      "overview": "Riboflavin (vitamin B2) supports energy production and antioxidant enzyme function.",
+      "curatedOverview": "Riboflavin (vitamin B2) supports energy production and antioxidant enzyme function.",
+      "overviewSource": "curated",
+      "whatItDoes": [
+        "Riboflavin (also called vitamin B2) is important for the growth, development, and function of the cells in your body.",
+        "It also helps turn the food you eat into the energy you need.",
+        "Migraine headache Some studies show that riboflavin supplements might help prevent migraine headaches, but other studies do not."
+      ],
+      "watchOuts": [
+        "However, certain groups of people are more likely than others to have trouble getting enough riboflavin: Athletes who are vegetarians (especially strict vegetarians who avoid dairy foods and eggs).",
+        "Pregnant women and breastfeeding women and their babies.",
+        "Riboflavin deficiency can cause skin disorders, sores at the corners of your mouth, swollen and cracked lips, hair loss, sore throat, liver disorders, and problems with your reproductive and nervous systems."
+      ],
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Riboflavin-Consumer/"
+    },
+    "biotin": {
+      "overview": "Biotin (vitamin B7) supports nutrient metabolism and normal skin, hair, and nail physiology.",
+      "curatedOverview": "Biotin (vitamin B7) supports nutrient metabolism and normal skin, hair, and nail physiology.",
+      "overviewSource": "curated",
+      "whatItDoes": [
+        "Biotin helps turn the carbohydrates, fats, and proteins in the food you eat into the energy you need.",
+        "Hair, nail, and skin health Dietary supplements that contain biotin are often promoted to improve the health of your hair, skin, and nails, but there is little scientific evidence to support these claims.",
+        "Tell your doctor, pharmacist, and other health care providers about any dietary supplements and prescription or over-the-counter medicines you take."
+      ],
+      "watchOuts": [
+        "Yes, some medications you take may affect your biotin levels, and biotin may interact with certain medications.",
+        "For example, treatment for at least 1 year with antiseizure medications (used to treat epilepsy) can significantly lower biotin levels.",
+        "They can tell you if the dietary supplements might interact with your medicines or laboratory tests, or if the medicines might interfere with how your body absorbs, uses, or breaks down nutrients such as biotin."
+      ],
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Biotin-Consumer/"
+    },
+    "nac": {
+      "overview": "N-acetylcysteine (NAC) is a precursor to glutathione and is commonly used as a general antioxidant-support ingredient.",
+      "curatedOverview": "N-acetylcysteine (NAC) is a precursor to glutathione and is commonly used as a general antioxidant-support ingredient.",
+      "overviewSource": "curated",
+      "whatItDoes": [
+        "Provides cysteine for glutathione synthesis.",
+        "Is commonly used for antioxidant support goals.",
+        "May be used as part of broader respiratory or liver-support regimens under clinician guidance."
+      ],
+      "watchOuts": [
+        "Can cause stomach upset in some people.",
+        "Check total supplement stack to avoid unnecessary overlap with similar antioxidant products.",
+        "Consult a clinician if using prescription medications or managing chronic conditions."
+      ],
+      "sourceUrl": null
+    }
+  }
+}

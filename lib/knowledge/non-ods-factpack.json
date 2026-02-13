@@ -1,0 +1,126 @@
+{
+  "packVersion": "non-ods-minimal-2026-02-13",
+  "updatedAt": "2026-02-13T00:00:00.000Z",
+  "entries": {
+    "astaxanthin": {
+      "overview": "Astaxanthin is a carotenoid antioxidant commonly used to support skin, eye, and exercise-recovery goals.",
+      "whatItDoes": [
+        "Provides antioxidant activity in cell membranes.",
+        "Is commonly used for skin and eye support routines.",
+        "May be used for exercise-recovery support in some regimens."
+      ],
+      "watchOuts": [
+        "Mild stomach discomfort can occur in some people.",
+        "Check overlap if combining multiple antioxidant-focused products.",
+        "Consult a clinician if you use prescription medications or have chronic conditions."
+      ],
+      "sourceLabel": "About Astaxanthin (Curated)",
+      "sourceUrl": null
+    },
+    "ashwagandha": {
+      "overview": "Ashwagandha is an adaptogenic herb commonly used for stress and sleep-support routines.",
+      "whatItDoes": [
+        "Is commonly used for stress-management support.",
+        "May support sleep quality in some users.",
+        "Can be part of broader mood and resilience routines."
+      ],
+      "watchOuts": [
+        "Can cause stomach upset or drowsiness in some people.",
+        "Use caution in pregnancy unless advised by a clinician.",
+        "Consult a clinician if taking thyroid or sedative medications."
+      ],
+      "sourceLabel": "About Ashwagandha (Curated)",
+      "sourceUrl": null
+    },
+    "turmeric": {
+      "overview": "Turmeric and curcumin are commonly used for joint comfort and general inflammatory-balance support.",
+      "whatItDoes": [
+        "May support joint comfort in some users.",
+        "Provides polyphenol antioxidant activity.",
+        "Is commonly used in wellness routines for inflammatory-balance support."
+      ],
+      "watchOuts": [
+        "Can cause stomach upset at higher doses.",
+        "Use caution if taking blood-thinning medications.",
+        "Check with a clinician if you have gallbladder or liver conditions."
+      ],
+      "sourceLabel": "About Turmeric (Curated)",
+      "sourceUrl": null
+    },
+    "coq10": {
+      "overview": "CoQ10 is involved in cellular energy production and is commonly used for heart and energy-support routines.",
+      "whatItDoes": [
+        "Supports mitochondrial energy pathways.",
+        "Is commonly used for heart-health support routines.",
+        "May support exercise tolerance in some users."
+      ],
+      "watchOuts": [
+        "Can cause mild stomach upset in some people.",
+        "May interact with certain blood-thinning medications.",
+        "Discuss use with a clinician if you take chronic medications."
+      ],
+      "sourceLabel": "About CoQ10 (Curated)",
+      "sourceUrl": null
+    },
+    "probiotics": {
+      "overview": "Probiotics are live microorganisms commonly used to support digestive and gut-microbiome balance.",
+      "whatItDoes": [
+        "Supports gut-microbiome balance.",
+        "May help digestive comfort in some users.",
+        "Can be used after travel or antibiotic courses under guidance."
+      ],
+      "watchOuts": [
+        "Gas or bloating can occur during early use.",
+        "Use caution if you are immunocompromised.",
+        "Choose products with clear strain and CFU labeling."
+      ],
+      "sourceLabel": "About Probiotics (Curated)",
+      "sourceUrl": null
+    },
+    "whey protein": {
+      "overview": "Whey protein is a dairy-derived protein source commonly used to support daily protein intake and recovery.",
+      "whatItDoes": [
+        "Helps increase daily protein intake.",
+        "Supports muscle recovery routines after training.",
+        "Provides essential amino acids including leucine."
+      ],
+      "watchOuts": [
+        "May cause bloating or stomach discomfort in sensitive users.",
+        "Check for dairy allergens or lactose sensitivity.",
+        "Review total protein intake when stacking multiple products."
+      ],
+      "sourceLabel": "About Whey Protein (Curated)",
+      "sourceUrl": null
+    },
+    "creatine": {
+      "overview": "Creatine supports high-intensity exercise performance and is commonly used for strength-training routines.",
+      "whatItDoes": [
+        "Supports short-burst exercise performance.",
+        "Can help strength and lean-mass training goals.",
+        "Is often used in sports nutrition programs."
+      ],
+      "watchOuts": [
+        "Can cause temporary water retention in some users.",
+        "Stomach upset may occur if dose is too high at once.",
+        "Discuss use with a clinician if you have kidney concerns."
+      ],
+      "sourceLabel": "About Creatine (Curated)",
+      "sourceUrl": null
+    },
+    "melatonin": {
+      "overview": "Melatonin is a hormone-related supplement commonly used to support sleep timing and jet-lag routines.",
+      "whatItDoes": [
+        "Supports sleep-onset timing for some users.",
+        "May help with schedule shifts such as jet lag.",
+        "Is typically used close to bedtime."
+      ],
+      "watchOuts": [
+        "Can cause next-day drowsiness in some people.",
+        "Avoid driving-sensitive tasks if you feel sedated.",
+        "Discuss use with a clinician if taking sedatives or mood medications."
+      ],
+      "sourceLabel": "About Melatonin (Curated)",
+      "sourceUrl": null
+    }
+  }
+}

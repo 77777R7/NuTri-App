@@ -21,6 +21,7 @@ import {
   Keyboard,
   Dimensions,
   KeyboardAvoidingView,
+  Linking,
   Modal,
   NativeSyntheticEvent,
   Platform,
@@ -37,14 +38,34 @@ import { Easing } from "react-native-reanimated";
 
 import { AutoFitText } from "@/components/common/AutoFitText";
 import { Config } from "@/constants/Config";
+import { useAuth } from "@/contexts/AuthContext";
 import { useScanHistory } from "@/contexts/ScanHistoryContext";
 import { useSavedSupplements } from "@/contexts/SavedSupplementsContext";
 import { useScreenTokens } from "@/hooks/useScreenTokens";
 import { withAuthHeaders } from "@/lib/auth-token";
+import { resolveRoutineTimeUserSet } from "@/lib/routineIntent";
+import {
+  loadMealTimePrefs,
+  updateMealTimePrefSlot,
+  type MealTimePrefs,
+} from "@/lib/storage/meal-time-prefs";
 import { buildSuggestedRoutineV0 } from "@/lib/suggestedRoutine";
 import { buildWhatsInsideDisplay } from "@/lib/supplementFactsDisplay";
 import { formatBrandForPill, formatDoseForPill } from "@/lib/supplementDisplay";
 import { supabase } from "@/lib/supabase";
+import { buildTimingSuggestion } from "@/lib/timingSuggestion";
+import { getOdsFactForSupplement } from "@/lib/knowledge/ods-factpack";
+import { getNonOdsFactForSupplement } from "@/lib/knowledge/non-ods-factpack";
+import { pickMeaningfulOverviewText } from "@/lib/knowledge/what-it-does";
+import {
+  buildApplyCopy,
+  buildAutosyncPatch,
+  buildScheduleHintText,
+  isAnchorSlotActive,
+  shouldRunAnchorAutosync,
+  shouldShowSuggestedPlanCard,
+  shouldShowScheduleTimeCategoryPill,
+} from "@/lib/schedulePresentation";
 import type { RoutinePreferences, SavedSupplement } from "@/types/saved-supplements";
 
 type Props = {
@@ -318,34 +339,14 @@ const formatSentence = (value: string) => {
   return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
 };
 
-const sanitizeTiming = (timing: string | null | undefined): string | null => {
-  const t = typeof timing === "string" ? timing.trim() : "";
-  if (!t) return null;
-  // "Morning (with breakfast)" is currently a common low-signal default from AI output and
-  // makes the UI look buggy when it repeats across products.
-  if (/^morning\s*\(with breakfast\)\.?$/i.test(t)) return null;
-  return t;
-};
-
-const normalizeSuggestedTiming = (timing: string | null | undefined): string | null => {
-  const raw = typeof timing === "string" ? timing.trim() : "";
-  if (!raw) return null;
-
-  const normalized = raw.toLowerCase().replace(/[.!?]+$/g, "").trim();
-  const hasTimeWindow = /\b(morning|afternoon|evening|bedtime|night|dinner|lunch|breakfast|post-workout|anytime)\b/.test(
-    normalized,
-  );
-
-  if (!hasTimeWindow) {
-    if (/\bwith\b\s+(a\s+)?meals?\b/.test(normalized) || /\bafter\b\s+meals?\b/.test(normalized)) {
-      return "Anytime (with meals)";
-    }
-    if (/\bbefore\b\s+meals?\b/.test(normalized)) {
-      return "Anytime (before meals)";
-    }
+const formatRetryAfterLabel = (seconds: number): string | null => {
+  if (!Number.isFinite(seconds) || seconds <= 0) return null;
+  if (seconds < 3600) {
+    const mins = Math.max(1, Math.ceil(seconds / 60));
+    return `~${mins}m`;
   }
-
-  return raw;
+  const hours = Math.max(1, Math.ceil(seconds / 3600));
+  return `~${hours}h`;
 };
 
 const computeFactsStatusClient = (facts: MySupplementFactsV1 | null | undefined): "full" | "partial" | "none" => {
@@ -420,7 +421,7 @@ const buildLocalOverviewFallback = (params: { productName: string; dosageText?: 
     withFood = true;
     benefitPhrase = "muscle relaxation";
   } else if (has(["omega-3", "fish oil", "krill"])) {
-    timing = "With meals (morning or dinner)";
+    timing = "Breakfast or dinner (with a meal)";
     withFood = true;
     benefitPhrase = "heart health";
   } else if (has(["vitamin d", "d3"])) {
@@ -547,6 +548,49 @@ const getTimeCategory = (time?: string) => {
   };
 };
 
+const parseTimeToMinutes = (time: string | null | undefined): number | null => {
+  const value = typeof time === "string" ? time.trim() : "";
+  if (!/^\d{2}:\d{2}$/.test(value)) return null;
+  const [hoursText, minutesText] = value.split(":");
+  const hours = Number.parseInt(hoursText, 10);
+  const minutes = Number.parseInt(minutesText, 10);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null;
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
+  return hours * 60 + minutes;
+};
+
+const circularMinuteDistance = (a: number, b: number): number => {
+  const diff = Math.abs(a - b);
+  return Math.min(diff, 24 * 60 - diff);
+};
+
+const nearestMealSlotForTime = (
+  time: string,
+  mealTimePrefs?: MealTimePrefs | null,
+): "Breakfast" | "Lunch" | "Dinner" | "Bedtime" | null => {
+  const target = parseTimeToMinutes(time);
+  if (target == null) return null;
+  const seeds: Array<{ label: "Breakfast" | "Lunch" | "Dinner" | "Bedtime"; time: string }> = [
+    { label: "Breakfast", time: mealTimePrefs?.breakfast ?? "08:00" },
+    { label: "Lunch", time: mealTimePrefs?.lunch ?? "12:30" },
+    { label: "Dinner", time: mealTimePrefs?.dinner ?? "18:30" },
+    { label: "Bedtime", time: mealTimePrefs?.bedtime ?? "22:00" },
+  ];
+
+  let best: "Breakfast" | "Lunch" | "Dinner" | "Bedtime" | null = null;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (const seed of seeds) {
+    const minutes = parseTimeToMinutes(seed.time);
+    if (minutes == null) continue;
+    const distance = circularMinuteDistance(target, minutes);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      best = seed.label;
+    }
+  }
+  return best;
+};
+
 const analysisCache = new Map<string, { factsDigestHash: string | null; data: AnalysisPayload }>();
 const factsCache = new Map<string, MySupplementFactsV1>();
 
@@ -619,6 +663,25 @@ type BarcodeMetadataResponse = {
   primaryDoseText: string | null;
   npn: string | null;
   dsldLabelId: string | null;
+};
+
+type StackOverlapItem = {
+  ingredientKey: string;
+  ingredientDisplay: string;
+  count: number;
+  supplements: Array<{ supplementId: string; productName: string }>;
+};
+
+type StackOverlapResponse = {
+  status: "ok" | "partial";
+  overlaps: StackOverlapItem[];
+  summary: {
+    processedSupplements: number;
+    skippedSupplements: number;
+    overlapCount: number;
+    truncated: boolean;
+    hiddenOverlapCount: number;
+  };
 };
 
 const ensureOverview = async (params: {
@@ -704,6 +767,39 @@ const fetchBarcodeMetadata = async (barcode: string): Promise<BarcodeMetadataRes
 
   const payload = (await response.json().catch(() => null)) as BarcodeMetadataResponse | null;
   if (!payload?.status) return null;
+  return payload;
+};
+
+const fetchStackOverlap = async (): Promise<StackOverlapResponse | null> => {
+  const apiBase = Config.apiBaseUrl?.replace(/\/$/, "");
+  if (!apiBase) return null;
+
+  const headers = await withAuthHeaders();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 4_500);
+  let response: Response;
+  try {
+    response = await fetch(`${apiBase}/api/user-stack-overlap`, {
+      method: "GET",
+      headers,
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timeout));
+  } catch (error) {
+    const name = typeof (error as { name?: unknown } | null)?.name === "string" ? (error as any).name : "";
+    if (name === "AbortError") return null;
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.warn("[stack-overlap] fetch failed", message);
+    return null;
+  }
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    console.warn("[stack-overlap] failed", response.status, detail);
+    return null;
+  }
+
+  const payload = (await response.json().catch(() => null)) as StackOverlapResponse | null;
+  if (!payload || !Array.isArray(payload.overlaps)) return null;
   return payload;
 };
 
@@ -827,6 +923,7 @@ function TimePicker({
 const CollectionCard = React.memo(
   function CollectionCard({
     item,
+    overlapCount,
     index,
     theme,
     zIndex,
@@ -841,6 +938,7 @@ const CollectionCard = React.memo(
     onViewNote,
   }: {
     item: SavedSupplement;
+    overlapCount: number;
     index: number;
     theme: Theme;
     zIndex: number;
@@ -857,7 +955,9 @@ const CollectionCard = React.memo(
     const showHalo = !selectionMode && expanded;
     const noteText = item.routine?.note || "";
     const customTags = item.tags?.filter((tag) => !SMART_TAG_SET.has(tag)) ?? [];
-    const timeCategory = getTimeCategory(item.routine?.time);
+    const routineTimeUserSet = resolveRoutineTimeUserSet(item.routine);
+    const cardSavedTime = routineTimeUserSet && item.routine?.time?.trim() ? item.routine.time : null;
+    const timeCategory = getTimeCategory(cardSavedTime ?? undefined);
     const scheduleIcon =
       timeCategory?.label === "Morning" || timeCategory?.label === "Midday"
         ? "sun"
@@ -988,6 +1088,17 @@ const CollectionCard = React.memo(
 	                      </View>
 	                    );
 	                  })()}
+                    {overlapCount > 0 ? (
+                      <View style={[styles.tagPill, styles.overlapPill, { borderColor: theme.tagBorderColor }]}>
+                        <Text
+                          style={[styles.tagText, styles.pillTextClamp, { color: theme.textColor }]}
+                          numberOfLines={1}
+                          ellipsizeMode="tail"
+                        >
+                          Overlap {overlapCount}
+                        </Text>
+                      </View>
+                    ) : null}
 	                </View>
 
                 {customTags.length > 0 ? (
@@ -1038,6 +1149,7 @@ const CollectionCard = React.memo(
   },
   (prev, next) =>
     prev.item === next.item &&
+    prev.overlapCount === next.overlapCount &&
     prev.index === next.index &&
     prev.theme === next.theme &&
     prev.zIndex === next.zIndex &&
@@ -1050,11 +1162,21 @@ const CollectionCard = React.memo(
 function DetailSheet({
   item,
   theme,
+  stackOverlaps,
+  mealTimePrefs,
+  onLearnMealTimePref,
   onClose,
   onSaveRoutine,
 }: {
   item: SavedSupplement;
   theme: Theme;
+  stackOverlaps?: StackOverlapItem[];
+  mealTimePrefs?: MealTimePrefs | null;
+  onLearnMealTimePref?: (
+    label: "Breakfast" | "Lunch" | "Dinner" | "Bedtime",
+    time: string,
+    mode: "seed" | "manual",
+  ) => void | Promise<void>;
   onClose: () => void;
   onSaveRoutine?: (id: string, prefs: RoutinePreferences) => void | Promise<void>;
 }) {
@@ -1064,10 +1186,13 @@ function DetailSheet({
   const [note, setNote] = useState(item.routine?.note ?? "");
   const [time, setTime] = useState(item.routine?.time ?? "08:00");
   const [withFood, setWithFood] = useState(item.routine?.withFood ?? false);
+  const [timeTouched, setTimeTouched] = useState(false);
   const [facts, setFacts] = useState<MySupplementFactsV1 | null>(null);
   const [factsStatus, setFactsStatus] = useState<"full" | "partial" | "none">("none");
   const [factsDigestHash, setFactsDigestHash] = useState<string | null>(null);
   const [factsSourceVersion, setFactsSourceVersion] = useState<string | null>(null);
+  const [factsRefreshExhausted, setFactsRefreshExhausted] = useState(false);
+  const [factsRefreshRetryNonce, setFactsRefreshRetryNonce] = useState(0);
   const [analysisData, setAnalysisData] = useState<AnalysisPayload | null>(null);
   const [aiStatus, setAiStatus] = useState<"ready" | "pending" | "blocked" | "none">("none");
   const [aiRetryAfterSec, setAiRetryAfterSec] = useState(0);
@@ -1077,13 +1202,34 @@ function DetailSheet({
   const [overviewRetryNonce, setOverviewRetryNonce] = useState(0);
   const pollTimersRef = useRef<Array<ReturnType<typeof setTimeout>>>([]);
   const factsDigestHashRef = useRef<string | null>(null);
+  const factsRefreshLoopActiveRef = useRef(false);
+  const lastFactsRefreshAtRef = useRef(0);
   const [saveState, setSaveState] = useState<"idle" | "saved">(
     item.routine?.note || item.routine?.time || item.routine?.withFood !== undefined ? "saved" : "idle",
   );
+  const sheetScrollRef = useRef<ScrollView>(null);
+  const noteInputRef = useRef<TextInput>(null);
+  const noteSectionYRef = useRef(0);
+  const timeSectionYRef = useRef(0);
+  const timingSourceMetricKeyRef = useRef<string | null>(null);
+  const suggestedPlanMetricKeyRef = useRef<string | null>(null);
+  const odsFallbackMetricKeyRef = useRef<string | null>(null);
+  const timesPerDaySourceMetricKeyRef = useRef<string | null>(null);
+  const whatItDoesMetricKeyRef = useRef<string | null>(null);
+  const savedSuggestedHiddenMetricKeyRef = useRef<string | null>(null);
+  const factsRefreshSessionIdRef = useRef<string | null>(null);
+  const [overviewExpanded, setOverviewExpanded] = useState(false);
+  const [selectedAnchorLabel, setSelectedAnchorLabel] = useState<"Breakfast" | "Dinner" | null>(null);
+  const autoAnchorSyncedRef = useRef<string | null>(null);
+  const [anchorPrefilled, setAnchorPrefilled] = useState(false);
+  const autosyncedThisSessionRef = useRef(false);
+  const detailOpenedAtRef = useRef<number>(Date.now());
+  const odsFirstPaintLoggedRef = useRef(false);
 
   const lastSavedRef = useRef<RoutinePreferences>({
     note: item.routine?.note ?? "",
     time: item.routine?.time ?? "",
+    timeUserSet: item.routine?.timeUserSet ?? undefined,
     withFood: item.routine?.withFood ?? false,
   });
   const lastDetailItemIdRef = useRef<string | null>(null);
@@ -1092,14 +1238,23 @@ function DetailSheet({
     const next = {
       note: item.routine?.note ?? "",
       time: item.routine?.time ?? "",
+      timeUserSet: item.routine?.timeUserSet ?? undefined,
       withFood: item.routine?.withFood ?? false,
     };
     lastSavedRef.current = next;
     setNote(next.note ?? "");
     setTime(next.time || "08:00");
     setWithFood(!!next.withFood);
+    setTimeTouched(false);
+    setOverviewExpanded(false);
+    setSelectedAnchorLabel(null);
+    autoAnchorSyncedRef.current = null;
+    autosyncedThisSessionRef.current = false;
+    setAnchorPrefilled(false);
+    detailOpenedAtRef.current = Date.now();
+    odsFirstPaintLoggedRef.current = false;
     setSaveState(next.note || next.time || next.withFood !== undefined ? "saved" : "idle");
-  }, [item.id, item.routine?.note, item.routine?.time, item.routine?.withFood]);
+  }, [item.id, item.routine?.note, item.routine?.time, item.routine?.timeUserSet, item.routine?.withFood]);
 
   useEffect(() => {
     let isActive = true;
@@ -1117,6 +1272,11 @@ function DetailSheet({
       setFactsDigestHash(null);
       factsDigestHashRef.current = null;
       setFactsSourceVersion(null);
+      setFactsRefreshExhausted(false);
+      setFactsRefreshRetryNonce(0);
+      factsRefreshLoopActiveRef.current = false;
+      lastFactsRefreshAtRef.current = 0;
+      factsRefreshSessionIdRef.current = null;
     }
 
     // Reset AI enhancement state for each open and for each manual retry.
@@ -1140,8 +1300,16 @@ function DetailSheet({
       factsCache.set(supplementId, payload);
       if (!isActive) return;
       setFacts(payload);
-      setFactsStatus(meta?.factsStatus ?? computeFactsStatusClient(payload));
+      const nextFactsStatus = meta?.factsStatus ?? computeFactsStatusClient(payload);
+      setFactsStatus(nextFactsStatus);
       const nextHash = meta?.factsDigestHash ?? payload.factsDigestHash ?? null;
+      if (nextFactsStatus === "full") {
+        setFactsRefreshExhausted(false);
+        setFactsRefreshRetryNonce(0);
+      } else if (nextHash && nextHash !== factsDigestHashRef.current) {
+        setFactsRefreshExhausted(false);
+        setFactsRefreshRetryNonce(0);
+      }
       factsDigestHashRef.current = nextHash;
       setFactsDigestHash(nextHash);
       setFactsSourceVersion(meta?.factsSourceVersion ?? payload.factsSourceVersion ?? null);
@@ -1437,6 +1605,177 @@ function DetailSheet({
   ]);
 
   useEffect(() => {
+    let isActive = true;
+    const timers: Array<ReturnType<typeof setTimeout>> = [];
+
+    const barcode = item.barcode?.trim() ?? "";
+    if (
+      factsStatus !== "partial" ||
+      !barcode ||
+      (factsRefreshExhausted && factsRefreshRetryNonce === 0) ||
+      factsRefreshLoopActiveRef.current
+    ) {
+      return () => {
+        isActive = false;
+        timers.forEach((timer) => clearTimeout(timer));
+      };
+    }
+
+    factsRefreshLoopActiveRef.current = true;
+    const scheduleMs = [2000, 5000, 10000];
+    const expectedHash = factsDigestHash ?? null;
+    const dosageShort = formatDoseForPill(item.dosageText) ?? null;
+    const userSupplementId = isUuid(item.id) ? item.id : null;
+    const refreshStartedAt = Date.now();
+    let attemptsUsed = 0;
+    let exhaustedByAttempts = false;
+    const sessionId =
+      factsRefreshSessionIdRef.current ??
+      `${item.id}:${(factsDigestHash ?? "none").slice(0, 8)}:${refreshStartedAt.toString(36)}`;
+    factsRefreshSessionIdRef.current = sessionId;
+
+    const refreshOnce = async () => {
+      const now = Date.now();
+      if (now - lastFactsRefreshAtRef.current < 1500) {
+        return false;
+      }
+      lastFactsRefreshAtRef.current = now;
+      attemptsUsed += 1;
+      const attempt = attemptsUsed;
+      const aiPhaseBefore = aiUiPhaseRef.current;
+      let outcome: "no_facts" | "resolved_full" | "resolved_partial" | "hash_changed" | "error" = "resolved_partial";
+
+      try {
+        const ensured = await ensureOverview({
+          supplementId: item.supplementId ?? null,
+          barcode,
+          brandName: item.brandName ?? null,
+          productName: item.productName,
+          dosageText: dosageShort,
+          userSupplementId,
+        });
+        if (!ensured?.facts) {
+          outcome = "no_facts";
+          return false;
+        }
+        if (!isActive) return true;
+
+        const nextFacts = ensured.facts;
+        const nextFactsStatus = ensured.factsStatus ?? computeFactsStatusClient(nextFacts);
+        const nextHash = ensured.factsDigestHash ?? nextFacts.factsDigestHash ?? null;
+
+        if (expectedHash && factsDigestHashRef.current && factsDigestHashRef.current !== expectedHash) {
+          outcome = "hash_changed";
+          return true;
+        }
+
+        setFacts(nextFacts);
+        setFactsStatus(nextFactsStatus);
+        setFactsSourceVersion(ensured.factsSourceVersion ?? nextFacts.factsSourceVersion ?? null);
+        factsDigestHashRef.current = nextHash;
+        setFactsDigestHash(nextHash);
+        if (ensured.supplementId) {
+          factsCache.set(ensured.supplementId, nextFacts);
+        }
+
+        if (nextFactsStatus === "full") {
+          setFactsRefreshExhausted(false);
+          setFactsRefreshRetryNonce(0);
+          outcome = "resolved_full";
+          return true;
+        }
+        outcome = "resolved_partial";
+        return false;
+      } catch (error) {
+        outcome = "error";
+        throw error;
+      } finally {
+        console.info("[supplement-facts-refresh-attempt]", {
+          metric: "facts_refresh_attempt",
+          sessionId,
+          supplementId: item.supplementId ?? null,
+          factsDigestHash: expectedHash,
+          attempt,
+          aiPhaseBefore,
+          aiPhaseAfter: aiUiPhaseRef.current,
+          outcome,
+        });
+      }
+    };
+
+    const run = async () => {
+      for (let i = 0; i < scheduleMs.length; i += 1) {
+        if (!isActive) return;
+        await new Promise<void>((resolve) => {
+          const timer = setTimeout(resolve, scheduleMs[i]);
+          timers.push(timer);
+        });
+        if (!isActive) return;
+        const resolved = await refreshOnce().catch((error) => {
+          const message = error instanceof Error ? error.message : "Unknown error";
+          console.warn("[supplement-facts] refresh failed", message);
+          return false;
+        });
+        if (resolved || !isActive) return;
+      }
+      if (isActive) {
+        setFactsRefreshExhausted(true);
+        exhaustedByAttempts = true;
+        console.info("[supplement-facts-refresh]", {
+          metric: "facts_partial_session_stuck_rate",
+          sessionId,
+          supplementId: item.supplementId ?? null,
+          factsDigestHash: expectedHash,
+          attempts: attemptsUsed,
+          exhausted: true,
+          durationMs: Date.now() - refreshStartedAt,
+        });
+      }
+    };
+
+    void run()
+      .then(() => {
+        if (!isActive) return;
+        if (!exhaustedByAttempts) {
+          console.info("[supplement-facts-refresh]", {
+            metric: "facts_refresh_attempts_avg",
+            sessionId,
+            supplementId: item.supplementId ?? null,
+            factsDigestHash: expectedHash,
+            attempts: attemptsUsed,
+            exhausted: false,
+            durationMs: Date.now() - refreshStartedAt,
+          });
+        }
+      })
+      .catch((error) => {
+        if (!isActive) return;
+        const message = error instanceof Error ? error.message : "Unknown error";
+        console.warn("[supplement-facts-refresh] loop failed", message);
+      })
+      .finally(() => {
+        factsRefreshLoopActiveRef.current = false;
+      });
+
+    return () => {
+      isActive = false;
+      timers.forEach((timer) => clearTimeout(timer));
+      factsRefreshLoopActiveRef.current = false;
+    };
+  }, [
+    factsDigestHash,
+    factsRefreshExhausted,
+    factsRefreshRetryNonce,
+    factsStatus,
+    item.barcode,
+    item.brandName,
+    item.dosageText,
+    item.id,
+    item.productName,
+    item.supplementId,
+  ]);
+
+  useEffect(() => {
     if (saveState !== "saved") return;
     const last = lastSavedRef.current;
     const noteChanged = (last.note || "") !== (note || "");
@@ -1445,10 +1784,17 @@ function DetailSheet({
     if (noteChanged || timeChanged || foodChanged) setSaveState("idle");
   }, [note, saveState, time, withFood]);
 
+  const routineTimeUserSet = resolveRoutineTimeUserSet(item.routine);
+  const savedTime = routineTimeUserSet && item.routine?.time?.trim() ? item.routine.time : null;
+  const timeCategory = getTimeCategory(savedTime ?? undefined);
+  const showTimeCategoryPill = shouldShowScheduleTimeCategoryPill(savedTime, Boolean(timeCategory));
+
   const handleSave = async () => {
+    const nextTimeUserSet = Boolean(time?.trim()) && (timeTouched || routineTimeUserSet);
     const prefs: RoutinePreferences = {
       note,
       time,
+      timeUserSet: nextTimeUserSet,
       withFood,
       ...(item.routine?.whenToTake ? { whenToTake: item.routine.whenToTake } : {}),
       ...(item.routine?.howToTake ? { howToTake: item.routine.howToTake } : {}),
@@ -1456,13 +1802,17 @@ function DetailSheet({
     lastSavedRef.current = prefs;
     try {
       await onSaveRoutine?.(item.id, prefs);
+      if (timeTouched && suggestedRoutine.timingKind === "meal_based") {
+        const manualSlot = nearestMealSlotForTime(time, mealTimePrefs ?? null);
+        if (manualSlot) {
+          await onLearnMealTimePref?.(manualSlot, time, "manual");
+        }
+      }
     } finally {
+      setTimeTouched(false);
       setSaveState("saved");
     }
   };
-
-  const savedTime = item.routine?.time?.trim() ? item.routine.time : null;
-  const timeCategory = getTimeCategory(savedTime ?? undefined);
   const analysisRoot = (() => {
     const raw = analysisData ?? null;
     const nested = raw?.analysis ?? null;
@@ -1499,8 +1849,7 @@ function DetailSheet({
     ? aiV2.whatYouMayNotice.filter(isNonEmptyString).slice(0, 3)
     : [];
   const aiWatchOuts = Array.isArray(aiV2?.watchOuts) ? aiV2.watchOuts.filter(isNonEmptyString).slice(0, 4) : [];
-  const aiRetryHours =
-    aiRetryAfterSec > 0 ? Math.max(1, Math.ceil(aiRetryAfterSec / 3600)) : 0;
+  const aiRetryAfterLabel = formatRetryAfterLabel(aiRetryAfterSec);
 
   const factsTimingHint = (() => {
     const hints = facts?.directions?.parsed?.timingHints ?? [];
@@ -1512,44 +1861,34 @@ function DetailSheet({
     return null;
   })();
 
-  const whenToTakeText = pickFirstText(sanitizeTiming(usage?.timing), factsTimingHint, fallback.timing);
-
   const factsWithMeals = facts?.directions?.parsed?.withMeals ?? null;
-  const resolvedWithFood =
-    typeof usage?.withFood === "boolean"
-      ? usage.withFood
-      : typeof factsWithMeals === "boolean"
-      ? factsWithMeals
-      : fallback.withFood;
-  const suggestedTimingText = pickFirstText(
-    normalizeSuggestedTiming(whenToTakeText),
-    resolvedWithFood ? "Anytime (with meals)" : "Anytime",
-  );
+  const timingHints = facts?.directions?.parsed?.timingHints ?? [];
+  const labelHasWithMealsSignal = timingHints.includes("with_meals") || timingHints.includes("after_meals");
+  const activeNames = (facts?.actives ?? []).map((active) => active?.name ?? "").filter(isNonEmptyString);
+  const timingSuggestion = buildTimingSuggestion({
+    factsStatus,
+    labelRawText: facts?.directions?.rawText ?? null,
+    usageTiming: usage?.timing ?? null,
+    factsTimingHint,
+    fallbackTiming: fallback.timing,
+    usageWithFood: usage?.withFood ?? null,
+    factsWithMeals,
+    fallbackWithFood: fallback.withFood,
+    usageWithFoodReason: usage?.withFoodReason ?? null,
+    labelHasWithMealsSignal,
+    activeNames,
+  });
 
-  const resolvedWithFoodReason = (() => {
-    const fromAnalysis = typeof usage?.withFoodReason === "string" ? usage.withFoodReason.trim() : "";
-    if (fromAnalysis) return fromAnalysis;
-
-    const hints = facts?.directions?.parsed?.timingHints ?? [];
-    if (hints.includes("with_meals") || hints.includes("after_meals")) return "label_says_with_meals";
-
-    const names = (facts?.actives ?? [])
-      .map((a) => (a?.name ?? "").toLowerCase().trim())
-      .filter(Boolean);
-    if (names.some((n) => n.includes("astaxanthin") || n === "vitamin d" || n.includes("vitamin d"))) return "fat_soluble";
-    if (names.some((n) => n === "zinc" || n === "iron" || n === "magnesium")) return "reduce_nausea";
-
-    return "unknown";
-  })();
-
-  const withFoodReasonText = (() => {
-    switch (resolvedWithFoodReason) {
+  const suggestedTimingLabel = timingSuggestion.source === "label" ? "Suggested (label)" : "Suggested (general)";
+  const suggestedTimingText = formatSentence(timingSuggestion.text);
+  const suggestedReasonText = (() => {
+    switch (timingSuggestion.reasonKind) {
       case "label_says_with_meals":
-        return "Label suggests taking with meals.";
+        return "Why (label): Label suggests taking with meals.";
       case "fat_soluble":
-        return "Often taken with a meal (fat can help absorption).";
+        return "Why (general tip): Often taken with a meal (fat can help absorption).";
       case "reduce_nausea":
-        return "Taking with food may reduce stomach upset.";
+        return "Why (general tip): Taking with food may reduce stomach upset.";
       default:
         return "";
     }
@@ -1562,28 +1901,230 @@ function DetailSheet({
     productName: item.productName,
   });
   const labelDirectionsRaw = typeof facts?.directions?.rawText === "string" ? facts.directions.rawText.trim() : "";
-  const labelDirectionsPrimaryText = labelDirectionsRaw
-    ? labelDirectionsRaw
-    : factsStatus === "full"
-    ? "Not found for this barcode."
-    : "Still fetching label/regulatory data...";
-  const labelDirectionsMetaText =
-    !labelDirectionsRaw && factsStatus === "full"
-      ? "Check the bottle label. You can add your own note below."
-      : null;
-  const suggestedReasonText = withFoodReasonText ? formatSentence(withFoodReasonText) : "";
+  const showDirectionsRow = Boolean(labelDirectionsRaw) || factsStatus === "full";
+  const labelDirectionsPrimaryText = labelDirectionsRaw ? labelDirectionsRaw : "Directions not found for this product.";
+  const labelDirectionsMetaText = !labelDirectionsRaw && factsStatus === "full"
+    ? "Check the bottle label. You can add your own note below."
+    : null;
   const suggestedRoutine = buildSuggestedRoutineV0({
     parsed: facts?.directions?.parsed ?? null,
     parseConfidence: facts?.directions?.parseConfidence ?? null,
     rawDirectionsText: facts?.directions?.rawText ?? null,
-    withFoodFallback: resolvedWithFood,
+    withFoodFallback: timingSuggestion.withFood,
+    timingKind: timingSuggestion.kind,
+    existingRoutineTime: item.routine?.time ?? null,
+    existingTimeUserSet: routineTimeUserSet,
+    mealTimePrefs: mealTimePrefs ?? null,
   });
+  const mealChoiceSlots = suggestedRoutine.displayMode === "choice_slots"
+    ? suggestedRoutine.slots.filter((slot) => slot.label === "Breakfast" || slot.label === "Dinner")
+    : [];
+  const defaultChoiceLabel =
+    mealChoiceSlots.find((slot) => slot.label === suggestedRoutine.applyAnchor.label)?.label ?? mealChoiceSlots[0]?.label ?? null;
+  const selectedChoiceLabel = selectedAnchorLabel && mealChoiceSlots.some((slot) => slot.label === selectedAnchorLabel)
+    ? selectedAnchorLabel
+    : defaultChoiceLabel;
+  const selectedChoiceSlot = selectedChoiceLabel
+    ? mealChoiceSlots.find((slot) => slot.label === selectedChoiceLabel) ?? null
+    : null;
+  const effectiveApplyAnchor = suggestedRoutine.requiresManualTime
+    ? {
+        ...suggestedRoutine.applyAnchor,
+        time,
+        withFood,
+      }
+    : selectedChoiceSlot ?? suggestedRoutine.applyAnchor;
+  const applyCopy = buildApplyCopy({
+    requiresManualTime: suggestedRoutine.requiresManualTime,
+    timesPerDaySource: suggestedRoutine.timesPerDaySource,
+    timesPerDaySuggested: suggestedRoutine.timesPerDaySuggested,
+    displayMode: suggestedRoutine.displayMode,
+    anchor: effectiveApplyAnchor,
+  });
+  const applySuggestionButtonText = applyCopy.buttonText;
+  const effectiveApplyNotice = applyCopy.notice;
+  const showAddLabelDirectionsCta = !labelDirectionsRaw && factsStatus === "full";
+  const handleAddLabelDirections = () => {
+    if (!note.trim()) {
+      setNote("Label directions: ");
+    }
+    requestAnimationFrame(() => {
+      const scrollY = Math.max(0, noteSectionYRef.current - 24);
+      sheetScrollRef.current?.scrollTo({ y: scrollY, animated: true });
+      setTimeout(() => noteInputRef.current?.focus(), 160);
+    });
+  };
+  const handleChooseFlexibleTime = () => {
+    requestAnimationFrame(() => {
+      const scrollY = Math.max(0, timeSectionYRef.current - 24);
+      sheetScrollRef.current?.scrollTo({ y: scrollY, animated: true });
+    });
+  };
+  const handleCheckFactsAgain = () => {
+    setFactsRefreshExhausted(false);
+    setFactsRefreshRetryNonce((value) => value + 1);
+  };
+
+  const odsFactHit = getOdsFactForSupplement({
+    activeNames: (facts?.actives ?? []).map((active) => active?.name ?? ""),
+    productName: item.productName,
+  });
+  const hasOdsFoundation = Boolean(odsFactHit);
+  const nonOdsFactHit = !hasOdsFoundation
+    ? getNonOdsFactForSupplement({
+        activeNames: (facts?.actives ?? []).map((active) => active?.name ?? ""),
+        productName: item.productName,
+      })
+    : null;
+  const hasNonOdsFoundation = Boolean(nonOdsFactHit);
+  const foundationWhatItDoesBullets = (
+    hasOdsFoundation ? odsFactHit?.entry.whatItDoes : nonOdsFactHit?.entry.whatItDoes
+  )?.filter(isNonEmptyString).slice(0, 3) ?? [];
+  const foundationSourceUrl = hasOdsFoundation ? odsFactHit?.entry.sourceUrl ?? null : nonOdsFactHit?.entry.sourceUrl ?? null;
+  const foundationSourceTitle = hasOdsFoundation ? odsFactHit?.displayTitle ?? null : nonOdsFactHit?.entry.sourceLabel ?? null;
+  const showSuggestedPlanCard = shouldShowSuggestedPlanCard(savedTime);
+  const usingOdsOverview = hasOdsFoundation && !odsFactHit?.qualityRejected;
+
+  useEffect(() => {
+    const metricKey = `${item.id}:${factsDigestHash ?? "none"}:${timingSuggestion.source}`;
+    if (timingSourceMetricKeyRef.current === metricKey) return;
+    timingSourceMetricKeyRef.current = metricKey;
+    console.info("[timing-source-metric]", {
+      metric: "timing_source_rate",
+      supplementId: item.supplementId ?? null,
+      factsDigestHash: factsDigestHash ?? null,
+      source: timingSuggestion.source,
+      kind: timingSuggestion.kind,
+    });
+  }, [factsDigestHash, item.id, item.supplementId, timingSuggestion.kind, timingSuggestion.source]);
+
+  useEffect(() => {
+    const metricKey = `${item.id}:${factsDigestHash ?? "none"}:${suggestedRoutine.requiresManualTime ? "flex" : "meal"}`;
+    if (suggestedPlanMetricKeyRef.current === metricKey) return;
+    suggestedPlanMetricKeyRef.current = metricKey;
+    console.info("[suggested-plan-metric]", {
+      metric: "flexible_mode_rate",
+      supplementId: item.supplementId ?? null,
+      factsDigestHash: factsDigestHash ?? null,
+      requiresManualTime: suggestedRoutine.requiresManualTime,
+      timingKind: suggestedRoutine.timingKind,
+      source: suggestedRoutine.source,
+      confidence: suggestedRoutine.confidence,
+    });
+  }, [
+    factsDigestHash,
+    item.id,
+    item.supplementId,
+    suggestedRoutine.confidence,
+    suggestedRoutine.requiresManualTime,
+    suggestedRoutine.source,
+    suggestedRoutine.timingKind,
+  ]);
+
+  useEffect(() => {
+    const foundationResult = hasOdsFoundation ? "ods" : hasNonOdsFoundation ? "curated" : "miss";
+    const metricKey = `${item.id}:${factsDigestHash ?? "none"}:${foundationResult}`;
+    if (odsFallbackMetricKeyRef.current === metricKey) return;
+    odsFallbackMetricKeyRef.current = metricKey;
+    console.info("[ods-foundation-metric]", {
+      metric: hasOdsFoundation ? "ods_foundation_hit_rate" : hasNonOdsFoundation ? "non_ods_foundation_hit_rate" : "ods_foundation_miss_rate",
+      supplementId: item.supplementId ?? null,
+      factsDigestHash: factsDigestHash ?? null,
+      result: foundationResult,
+    });
+  }, [factsDigestHash, hasNonOdsFoundation, hasOdsFoundation, item.id, item.supplementId]);
+
+  useEffect(() => {
+    if ((!hasOdsFoundation && !hasNonOdsFoundation) || odsFirstPaintLoggedRef.current) return;
+    odsFirstPaintLoggedRef.current = true;
+    const firstPaintMs = Math.max(0, Date.now() - detailOpenedAtRef.current);
+    const late = firstPaintMs > 300;
+    console.info("[ods-first-paint]", {
+      metric: "ods_first_paint_ms",
+      supplementId: item.supplementId ?? null,
+      factsDigestHash: factsDigestHash ?? null,
+      valueMs: firstPaintMs,
+      thresholdMs: 300,
+    });
+    console.info("[ods-late-hit]", {
+      metric: "ods_late_hit_rate",
+      supplementId: item.supplementId ?? null,
+      factsDigestHash: factsDigestHash ?? null,
+      late,
+      valueMs: firstPaintMs,
+      thresholdMs: 300,
+    });
+  }, [factsDigestHash, hasNonOdsFoundation, hasOdsFoundation, item.supplementId]);
+
+  useEffect(() => {
+    const metricKey = `${item.id}:${factsDigestHash ?? "none"}:${showSuggestedPlanCard ? "show" : "hide"}`;
+    if (savedSuggestedHiddenMetricKeyRef.current === metricKey) return;
+    savedSuggestedHiddenMetricKeyRef.current = metricKey;
+    console.info("[saved-suggested-card-metric]", {
+      metric: "saved_item_suggested_hidden_rate",
+      supplementId: item.supplementId ?? null,
+      factsDigestHash: factsDigestHash ?? null,
+      hidden: !showSuggestedPlanCard,
+      saved: Boolean(savedTime),
+    });
+  }, [factsDigestHash, item.id, item.supplementId, savedTime, showSuggestedPlanCard]);
+
+  useEffect(() => {
+    const metricKey = `${item.id}:${factsDigestHash ?? "none"}:${suggestedRoutine.timesPerDaySource}`;
+    if (timesPerDaySourceMetricKeyRef.current === metricKey) return;
+    timesPerDaySourceMetricKeyRef.current = metricKey;
+    console.info("[times-per-day-source-metric]", {
+      metric: "times_per_day_label_source_rate",
+      supplementId: item.supplementId ?? null,
+      factsDigestHash: factsDigestHash ?? null,
+      timesPerDaySource: suggestedRoutine.timesPerDaySource,
+    });
+  }, [factsDigestHash, item.id, item.supplementId, suggestedRoutine.timesPerDaySource]);
+
+  useEffect(() => {
+    const autosync = shouldRunAnchorAutosync({
+      itemId: item.id,
+      factsDigestHash,
+      savedTime,
+      timeTouched,
+      requiresManualTime: suggestedRoutine.requiresManualTime,
+      anchor: effectiveApplyAnchor,
+      lastSyncKey: autoAnchorSyncedRef.current,
+    });
+    if (!autosync.shouldSync) return;
+    autoAnchorSyncedRef.current = autosync.syncKey;
+    autosyncedThisSessionRef.current = true;
+    setAnchorPrefilled(true);
+    const patch = buildAutosyncPatch(effectiveApplyAnchor);
+    setTime(patch.time);
+    setWithFood(patch.withFood);
+    console.info("[schedule-anchor-autosync]", {
+      metric: "schedule_anchor_autosync_rate",
+      supplementId: item.supplementId ?? null,
+      factsDigestHash: factsDigestHash ?? null,
+      anchorLabel: effectiveApplyAnchor.label,
+      anchorTime: effectiveApplyAnchor.time,
+      withFood: effectiveApplyAnchor.withFood,
+      displayMode: suggestedRoutine.displayMode,
+    });
+  }, [
+    effectiveApplyAnchor.label,
+    effectiveApplyAnchor.time,
+    effectiveApplyAnchor.withFood,
+    factsDigestHash,
+    item.id,
+    savedTime,
+    suggestedRoutine.requiresManualTime,
+    timeTouched,
+  ]);
+
   const handleApplySuggestedRoutine = async () => {
     if (!suggestedRoutine.slots.length) return;
-    const anchor = suggestedRoutine.slots[0];
+    const anchor = effectiveApplyAnchor;
     const prefs: RoutinePreferences = {
       note,
       time: anchor.time,
+      timeUserSet: true,
       withFood: anchor.withFood,
       whenToTake: suggestedRoutine.whenToTake,
       howToTake: suggestedRoutine.howToTake,
@@ -1591,24 +2132,56 @@ function DetailSheet({
 
     setTime(anchor.time);
     setWithFood(anchor.withFood);
+    setTimeTouched(true);
     lastSavedRef.current = prefs;
     try {
       await onSaveRoutine?.(item.id, prefs);
+      console.info("[schedule-apply-conversion]", {
+        metric: "schedule_apply_conversion",
+        supplementId: item.supplementId ?? null,
+        requiresManualTime: suggestedRoutine.requiresManualTime,
+        timingKind: suggestedRoutine.timingKind,
+        source: suggestedRoutine.source,
+        confidence: suggestedRoutine.confidence,
+        withFood: anchor.withFood,
+      });
+      console.info("[schedule-apply-autosync]", {
+        metric: "apply_after_autosync_rate",
+        supplementId: item.supplementId ?? null,
+        afterAutosync: autosyncedThisSessionRef.current,
+        displayMode: suggestedRoutine.displayMode,
+      });
+      if (
+        suggestedRoutine.timingKind === "meal_based" &&
+        (anchor.label === "Breakfast" || anchor.label === "Lunch" || anchor.label === "Dinner" || anchor.label === "Bedtime")
+      ) {
+        await onLearnMealTimePref?.(anchor.label, anchor.time, "seed");
+      }
     } finally {
       setSaveState("saved");
     }
   };
 
-  const whatItDoesText = pickFirstText(
-    typeof aiV2?.whatItIs === "string" ? aiV2.whatItIs.trim() : "",
-    efficacy?.overviewSummary ? normalizeTwoSentenceSummary(efficacy.overviewSummary) : "",
-    benefitSummary,
-    fallback.summary,
-  );
+  const whatItDoesCandidate = pickMeaningfulOverviewText({
+    productName: item.productName,
+    candidates: [
+      hasOdsFoundation ? odsFactHit?.entry.overview ?? "" : "",
+      hasNonOdsFoundation ? nonOdsFactHit?.entry.overview ?? "" : "",
+      typeof aiV2?.whatItIs === "string" ? aiV2.whatItIs.trim() : "",
+      efficacy?.overviewSummary ? normalizeTwoSentenceSummary(efficacy.overviewSummary) : "",
+      benefitSummary,
+      fallback.summary,
+    ],
+  });
+  const whatItDoesText = whatItDoesCandidate.text;
 
   const watchOutLines = (() => {
     const fromFacts = (facts?.warnings?.bullets ?? []).filter(isNonEmptyString).slice(0, 6);
-    const merged = [...fromFacts, ...aiWatchOuts];
+    const fromFoundation = (
+      hasOdsFoundation ? odsFactHit?.entry.watchOuts : nonOdsFactHit?.entry.watchOuts
+    )?.filter(isNonEmptyString) ?? [];
+    const fallbackWatchOuts = fromFacts.length > 0 ? [] : fromFoundation.length > 0 ? fromFoundation : aiWatchOuts;
+    const merged = [...fromFacts, ...fallbackWatchOuts];
     const seen = new Set<string>();
     const out: string[] = [];
     for (const line of merged) {
@@ -1620,6 +2193,84 @@ function DetailSheet({
     }
     return out;
   })();
+
+  useEffect(() => {
+    const metricKey = `${item.id}:${factsDigestHash ?? "none"}:${whatItDoesCandidate.usedPlaceholder ? "placeholder" : "resolved"}`;
+    if (whatItDoesMetricKeyRef.current === metricKey) return;
+    whatItDoesMetricKeyRef.current = metricKey;
+    console.info("[what-it-does-metric]", {
+      metric: "what_it_does_placeholder_rate",
+      supplementId: item.supplementId ?? null,
+      factsDigestHash: factsDigestHash ?? null,
+      placeholder: whatItDoesCandidate.usedPlaceholder,
+      source: usingOdsOverview ? "ods" : hasNonOdsFoundation ? "curated" : "fallback",
+    });
+    if (hasOdsFoundation) {
+      console.info("[ods-quality-metric]", {
+        metric: "ods_overview_reject_rate",
+        supplementId: item.supplementId ?? null,
+        factsDigestHash: factsDigestHash ?? null,
+        rejected: Boolean(odsFactHit?.qualityRejected),
+      });
+      console.info("[ods-quality-metric]", {
+        metric: "ods_bullet_reject_rate",
+        supplementId: item.supplementId ?? null,
+        factsDigestHash: factsDigestHash ?? null,
+        expected: 3,
+        rendered: foundationWhatItDoesBullets.length,
+      });
+    }
+  }, [
+    factsDigestHash,
+    foundationWhatItDoesBullets.length,
+    hasNonOdsFoundation,
+    hasOdsFoundation,
+    item.id,
+    item.supplementId,
+    odsFactHit?.qualityRejected,
+    usingOdsOverview,
+    whatItDoesCandidate.usedPlaceholder,
+  ]);
+
+  const stackOverlapLines = (() => {
+    const overlaps = Array.isArray(stackOverlaps) ? stackOverlaps : [];
+    return overlaps
+      .map((entry) => {
+        const currentSupplementId = item.supplementId ?? "";
+        const otherSupplements = entry.supplements.filter(
+          (supplement) => supplement.supplementId && supplement.supplementId !== currentSupplementId,
+        );
+        const otherCount = otherSupplements.length > 0 ? otherSupplements.length : Math.max(0, entry.count - 1);
+        if (otherCount <= 0) {
+          return `${entry.ingredientDisplay} appears in more than one saved supplement.`;
+        }
+        return `${entry.ingredientDisplay} also appears in ${otherCount} other saved supplement${otherCount === 1 ? "" : "s"}.`;
+      })
+      .slice(0, 5);
+  })();
+  const collapsedWatchOutLines = watchOutLines.slice(0, 1);
+  const overviewDetailsLoading = (factsStatus === "partial" && !factsRefreshExhausted) || aiUiPhase === "pending";
+  const overviewDetailsReady =
+    !overviewDetailsLoading &&
+    (foundationWhatItDoesBullets.length > 0 ||
+      watchOutLines.length > 1 ||
+      aiNotice.length > 0 ||
+      aiTips.length > 0 ||
+      stackOverlapLines.length > 0 ||
+      aiUiPhase === "ready");
+  const showOverviewToggle =
+    overviewDetailsLoading ||
+    overviewDetailsReady ||
+    watchOutLines.length > 1 ||
+    aiUiPhase === "timeout" ||
+    aiUiPhase === "blocked" ||
+    aiUiPhase === "none";
+  const whatsInsideLinesForDisplay = overviewExpanded
+    ? whatsInsideDisplay.lines
+    : whatsInsideDisplay.lines.slice(0, 1);
+  const whatsInsideExtraCount =
+    Math.max(0, whatsInsideDisplay.hiddenCount) +
+    Math.max(0, whatsInsideDisplay.lines.length - whatsInsideLinesForDisplay.length);
 
   return (
     <Modal visible transparent animationType="none" onRequestClose={onClose}>
@@ -1639,6 +2290,7 @@ function DetailSheet({
           </Pressable>
 
           <ScrollView
+            ref={sheetScrollRef}
             style={{ flex: 1 }}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}
@@ -1707,31 +2359,41 @@ function DetailSheet({
                     <View pointerEvents="none" style={styles.glassHighlightEdge} />
                   </View>
 
-                  <View style={styles.overviewContent}>
-                    <View style={{ gap: 18 }}>
-                      {factsStatus === "partial" ? (
-                        <Text style={styles.overviewMetaText}>{"We're still fetching label/regulatory data..."}</Text>
-                      ) : null}
-
-                      <View style={{ gap: 10 }}>
-                        <Text style={styles.overviewSectionTitle}>What's inside</Text>
-                        {whatsInsideDisplay.source === "actives" || whatsInsideDisplay.source === "inferred" ? (
-                          <View style={{ gap: 10 }}>
-                            {whatsInsideDisplay.lines.map((line) => (
-                              <View key={line} style={styles.overviewBulletRow}>
-                                <View style={styles.overviewBulletDot} />
-                                <Text style={styles.overviewBulletText}>{line}</Text>
-                              </View>
-                            ))}
-                            {whatsInsideDisplay.hiddenCount > 0 ? (
-                              <Text style={styles.overviewMetaText}>+{whatsInsideDisplay.hiddenCount} more</Text>
-                            ) : null}
-                            {whatsInsideDisplay.metaText ? (
-                              <Text style={styles.overviewMetaText}>{whatsInsideDisplay.metaText}</Text>
-                            ) : null}
+	                  <View style={styles.overviewContent}>
+	                    <View style={{ gap: 18 }}>
+	                      <View style={{ gap: 10 }}>
+	                        <View style={styles.overviewSectionTitleRow}>
+	                          <Text style={styles.overviewSectionTitle}>{"What's inside"}</Text>
+                          {whatsInsideDisplay.badgeLabel ? (
+                            <View style={styles.overviewInferredBadge}>
+                              <Text style={styles.overviewInferredBadgeText}>{whatsInsideDisplay.badgeLabel}</Text>
+                            </View>
+                          ) : null}
+                        </View>
+	                        {whatsInsideDisplay.source === "actives" || whatsInsideDisplay.source === "inferred" ? (
+	                          <View style={{ gap: 10 }}>
+	                            {whatsInsideLinesForDisplay.map((line) => (
+	                              <View key={line} style={styles.overviewBulletRow}>
+	                                <View style={styles.overviewBulletDot} />
+	                                <Text style={styles.overviewBulletText}>{line}</Text>
+	                              </View>
+	                            ))}
+	                            {whatsInsideExtraCount > 0 ? (
+	                              <Text style={styles.overviewMetaText}>+{whatsInsideExtraCount} more</Text>
+	                            ) : null}
+	                            {whatsInsideDisplay.metaText ? (
+	                              <Text style={styles.overviewMetaText}>{whatsInsideDisplay.metaText}</Text>
+	                            ) : null}
                           </View>
                         ) : whatsInsideDisplay.source === "dose" ? (
-                          <Text style={styles.overviewBulletText}>{whatsInsideDisplay.lines[0]}</Text>
+                          <View style={{ gap: 8 }}>
+                            <Text style={styles.overviewBulletText}>{whatsInsideDisplay.lines[0]}</Text>
+                            {factsStatus === "partial" ? (
+                              <Text style={styles.overviewMetaText}>
+                                Main ingredient is still loading from the label...
+                              </Text>
+                            ) : null}
+                          </View>
                         ) : (
                           <Text style={styles.overviewBulletText}>
                             <Text style={styles.overviewBulletLabel}>Dose: </Text>
@@ -1740,33 +2402,41 @@ function DetailSheet({
                         )}
                       </View>
 
-                      <View style={{ gap: 10 }}>
-                        <Text style={styles.overviewSectionTitle}>How to use</Text>
+	                      <View style={{ gap: 10 }}>
+	                        <Text style={styles.overviewSectionTitle}>How to use</Text>
 
-                        <Text style={styles.overviewBulletText}>
-                          <Text style={styles.overviewBulletLabel}>Label: </Text>
-                          {labelDirectionsPrimaryText}
-                        </Text>
-                        {labelDirectionsMetaText ? (
-                          <Text style={styles.overviewMetaText}>{labelDirectionsMetaText}</Text>
-                        ) : null}
+	                        {showDirectionsRow ? (
+	                          <>
+	                            <Text style={styles.overviewBulletText}>
+	                              <Text style={styles.overviewBulletLabel}>
+	                                {labelDirectionsRaw ? "Directions (from label): " : "Directions: "}
+	                              </Text>
+	                              {labelDirectionsPrimaryText}
+	                            </Text>
+	                            {labelDirectionsMetaText ? (
+	                              <Text style={styles.overviewMetaText}>{labelDirectionsMetaText}</Text>
+	                            ) : null}
+	                            {showAddLabelDirectionsCta ? (
+	                              <Pressable onPress={handleAddLabelDirections} style={styles.addLabelCtaBtn}>
+	                                <Text style={styles.addLabelCtaText}>Add label directions</Text>
+	                              </Pressable>
+	                            ) : null}
+	                          </>
+	                        ) : null}
 
-                        <Text style={styles.overviewBulletText}>
-                          <Text style={styles.overviewBulletLabel}>Suggested: </Text>
-                          {formatSentence(suggestedTimingText)}
-                        </Text>
-                        {suggestedReasonText ? (
-                          <Text style={styles.overviewBulletText}>
-                            <Text style={styles.overviewBulletLabel}>Why: </Text>
-                            {suggestedReasonText}
-                          </Text>
-                        ) : null}
+	                        <Text style={styles.overviewBulletText}>
+	                          <Text style={styles.overviewBulletLabel}>{suggestedTimingLabel}: </Text>
+	                          {suggestedTimingText}
+	                        </Text>
+	                        {suggestedReasonText ? (
+	                          <Text style={styles.overviewBulletText}>{formatSentence(suggestedReasonText)}</Text>
+	                        ) : null}
 
-                        {aiTips.length > 0 ? (
-                          <View style={{ gap: 10 }}>
-                            {aiTips.map((tip) => (
-                              <View key={tip} style={styles.overviewBulletRow}>
-                                <View style={styles.overviewBulletDot} />
+	                        {overviewExpanded && aiTips.length > 0 ? (
+	                          <View style={{ gap: 10 }}>
+	                            {aiTips.map((tip) => (
+	                              <View key={tip} style={styles.overviewBulletRow}>
+	                                <View style={styles.overviewBulletDot} />
                                 <Text style={styles.overviewBulletText}>{formatSentence(tip)}</Text>
                               </View>
                             ))}
@@ -1774,15 +2444,46 @@ function DetailSheet({
                         ) : null}
                       </View>
 
-                      <View style={{ gap: 10 }}>
-                        <Text style={styles.overviewSectionTitle}>What it does</Text>
-                        <Text style={styles.overviewSummary}>{whatItDoesText}</Text>
-                      </View>
+	                      <View style={{ gap: 10 }}>
+	                        <Text style={styles.overviewSectionTitle}>What it does</Text>
+	                        <Text style={styles.overviewSummary} numberOfLines={overviewExpanded ? undefined : 1}>
+                            {whatItDoesText}
+                          </Text>
+                        {overviewExpanded && foundationWhatItDoesBullets.length > 0 ? (
+                          <View style={{ gap: 8 }}>
+                            {foundationWhatItDoesBullets.map((line) => (
+                              <View key={line} style={styles.overviewBulletRow}>
+                                <View style={styles.overviewBulletDot} />
+                                <Text style={styles.overviewBulletText}>{formatSentence(line)}</Text>
+                              </View>
+                            ))}
+                          </View>
+                        ) : null}
+                        {overviewExpanded && foundationSourceTitle ? (
+                          foundationSourceUrl ? (
+                            <Pressable
+                              onPress={() => {
+                                void Linking.openURL(foundationSourceUrl).catch((error) => {
+                                  const message = error instanceof Error ? error.message : "Unknown error";
+                                  console.warn("[ods-fallback] Failed to open source URL", message);
+                                });
+                              }}
+                              style={styles.overviewSourceLinkBtn}
+                            >
+                              <Text style={styles.overviewSourceLinkText}>{foundationSourceTitle}</Text>
+                            </Pressable>
+                          ) : (
+                            <View style={styles.overviewSourceLinkBtn}>
+                              <Text style={styles.overviewSourceLinkText}>{foundationSourceTitle}</Text>
+                            </View>
+                          )
+                        ) : null}
+	                      </View>
 
-                      {aiNotice.length > 0 ? (
-                        <View style={{ gap: 10 }}>
-                          <Text style={styles.overviewSectionTitle}>What you may notice</Text>
-                          <View style={{ gap: 10 }}>
+	                      {overviewExpanded && aiNotice.length > 0 ? (
+	                        <View style={{ gap: 10 }}>
+	                          <Text style={styles.overviewSectionTitle}>What you may notice</Text>
+	                          <View style={{ gap: 10 }}>
                             {aiNotice.map((item) => (
                               <View key={item} style={styles.overviewBulletRow}>
                                 <View style={styles.overviewBulletDot} />
@@ -1793,47 +2494,85 @@ function DetailSheet({
                         </View>
                       ) : null}
 
-                      {watchOutLines.length > 0 ? (
-                        <View style={{ gap: 10 }}>
-                          <Text style={styles.overviewSectionTitle}>Watch outs</Text>
-                          <View style={{ gap: 10 }}>
-                            {watchOutLines.map((line) => (
+	                      {(overviewExpanded ? watchOutLines.length > 0 : collapsedWatchOutLines.length > 0) ? (
+	                        <View style={{ gap: 10 }}>
+	                          <Text style={styles.overviewSectionTitle}>Watch outs</Text>
+	                          <View style={{ gap: 10 }}>
+	                            {(overviewExpanded ? watchOutLines : collapsedWatchOutLines).map((line) => (
+	                              <View key={line} style={styles.overviewBulletRow}>
+	                                <View style={styles.overviewBulletDot} />
+	                                <Text style={styles.overviewBulletText}>{formatSentence(line)}</Text>
+	                              </View>
+	                            ))}
+	                          </View>
+	                        </View>
+	                      ) : null}
+
+	                      {overviewExpanded && stackOverlapLines.length > 0 ? (
+	                        <View style={{ gap: 10 }}>
+	                          <Text style={styles.overviewSectionTitle}>Stack overlaps</Text>
+	                          <View style={{ gap: 10 }}>
+                            {stackOverlapLines.map((line) => (
                               <View key={line} style={styles.overviewBulletRow}>
                                 <View style={styles.overviewBulletDot} />
-                                <Text style={styles.overviewBulletText}>{formatSentence(line)}</Text>
+                                <Text style={styles.overviewBulletText}>{line}</Text>
                               </View>
                             ))}
-                          </View>
-                        </View>
-                      ) : null}
+	                          </View>
+	                        </View>
+	                      ) : null}
 
-                      {aiUiPhase === "pending" ? (
-                        <View style={{ gap: 12, marginTop: 6 }}>
-                          <Text style={styles.overviewPlaceholder}>Generating AI insights...</Text>
-                          <View style={styles.overviewSkeletonLine} />
-                          <View style={[styles.overviewSkeletonLine, { width: "70%" }]} />
-                        </View>
-                      ) : aiUiPhase === "blocked" ? (
-                        <View style={{ gap: 8, marginTop: 6 }}>
-                          <Text style={styles.overviewMetaText}>
-                            {aiRetryHours > 0
-                              ? `AI insights temporarily unavailable. Try again in ~${aiRetryHours}h.`
-                              : "AI insights temporarily unavailable."}
+	                      {showOverviewToggle ? (
+	                        <Pressable
+	                          style={styles.overviewToggleBtn}
+	                          onPress={() => setOverviewExpanded((value) => !value)}
+	                        >
+	                          <Text style={styles.overviewToggleText}>
+	                            {overviewExpanded
+	                              ? "Show less"
+	                              : overviewDetailsLoading
+	                              ? "Show more (loading...)"
+	                              : overviewDetailsReady
+	                              ? "Show more · Ready"
+	                              : "Show more"}
+	                          </Text>
+	                        </Pressable>
+	                      ) : null}
+                        {factsStatus === "partial" && factsRefreshExhausted ? (
+                          <Pressable onPress={handleCheckFactsAgain} style={styles.addLabelCtaBtn}>
+                            <Text style={styles.addLabelCtaText}>Check again</Text>
+                          </Pressable>
+                        ) : null}
+
+	                      {overviewExpanded && aiUiPhase === "pending" ? (
+	                        <View style={{ gap: 12, marginTop: 6 }}>
+	                          <Text style={styles.overviewPlaceholder}>Generating AI insights...</Text>
+	                          <View style={styles.overviewSkeletonLine} />
+	                          <View style={[styles.overviewSkeletonLine, { width: "70%" }]} />
+	                        </View>
+	                      ) : overviewExpanded && overviewDetailsLoading ? (
+                        <Text style={styles.overviewMetaText}>Loading more details...</Text>
+	                      ) : overviewExpanded && aiUiPhase === "blocked" ? (
+	                        <View style={{ gap: 8, marginTop: 6 }}>
+	                          <Text style={styles.overviewMetaText}>
+	                            {aiRetryAfterLabel
+                              ? `AI insights temporarily unavailable. Try again in ${aiRetryAfterLabel}.`
+                              : "AI insights temporarily unavailable. Try again later."}
                           </Text>
                           {aiBlockedReason ? (
                             <Text style={styles.overviewMetaText}>Reason: {aiBlockedReason}</Text>
                           ) : null}
                         </View>
-                      ) : aiUiPhase === "timeout" ? (
-                        <View style={{ marginTop: 6 }}>
-                          <Pressable onPress={() => setOverviewRetryNonce((n) => n + 1)} style={styles.overviewRetryBtn}>
-                            <Text style={styles.overviewRetryText}>Retry AI insights</Text>
-                          </Pressable>
-                        </View>
-                      ) : aiUiPhase === "none" ? (
-                        <View style={{ marginTop: 6 }}>
-                          <Text style={styles.overviewMetaText}>
-                            AI insights are currently unavailable. Facts are shown above.
+	                      ) : overviewExpanded && aiUiPhase === "timeout" ? (
+	                        <View style={{ marginTop: 6 }}>
+	                          <Pressable onPress={() => setOverviewRetryNonce((n) => n + 1)} style={styles.overviewRetryBtn}>
+	                            <Text style={styles.overviewRetryText}>Retry AI insights</Text>
+	                          </Pressable>
+	                        </View>
+	                      ) : overviewExpanded && aiUiPhase === "none" ? (
+	                        <View style={{ marginTop: 6 }}>
+	                          <Text style={styles.overviewMetaText}>
+	                            AI insights are currently unavailable. Facts are shown above.
                           </Text>
                         </View>
                       ) : null}
@@ -1867,9 +2606,9 @@ function DetailSheet({
 	                        <Clock size={16} color="#94a3b8" />
 	                        <Text style={styles.scheduleTitle}>Schedule</Text>
 	                      </View>
-                      <AnimatePresence>
-                        {timeCategory ? (
-                          <MotiView
+	                      <AnimatePresence>
+	                        {showTimeCategoryPill && timeCategory ? (
+	                          <MotiView
                             from={{ opacity: 0, translateX: 10 }}
                             animate={{ opacity: 1, translateX: 0 }}
                             exit={{ opacity: 0, translateX: 10 }}
@@ -1877,37 +2616,91 @@ function DetailSheet({
                             style={[styles.timeCategoryPill, timeCategory.pillStyle]}
                           >
                             <Text style={[styles.timeCategoryText, { color: timeCategory.textColor }]}>{timeCategory.label}</Text>
-                          </MotiView>
-                        ) : null}
-                      </AnimatePresence>
-                    </View>
+	                          </MotiView>
+	                        ) : null}
+	                      </AnimatePresence>
+	                    </View>
 
 	                    <View style={{ gap: 20, marginTop: 16 }}>
 	                      <Text style={styles.scheduleHintText}>
-	                        {savedTime ? "Saved" : "Not set (default shown)"}
+	                        {buildScheduleHintText({ savedTime, autosyncedPrefill: anchorPrefilled })}
 	                      </Text>
-                        <View style={styles.suggestedRoutineCard}>
-                          <View style={styles.suggestedRoutineHeader}>
-                            <Text style={styles.suggestedRoutineTitle}>Suggested plan</Text>
+                        {showSuggestedPlanCard ? (
+                          <View style={styles.suggestedRoutineCard}>
+	                          <View style={styles.suggestedRoutineHeader}>
+	                            <Text style={styles.suggestedRoutineTitle}>Suggested plan</Text>
                             <Text style={styles.suggestedRoutineMeta}>
                               {suggestedRoutine.source === "label" ? "From label facts" : "Heuristic"}
                               {" · "}
                               {suggestedRoutine.confidence}
                             </Text>
                           </View>
-                          <Text style={styles.suggestedRoutineRationale}>{suggestedRoutine.rationale}</Text>
-                          <View style={styles.suggestedRoutineSlots}>
-                            {suggestedRoutine.slots.map((slot, idx) => (
-                              <Text key={`${slot.label}-${slot.time}-${idx}`} style={styles.suggestedRoutineSlotText}>
-                                {`${slot.label} · ${slot.time}${slot.withFood ? " · with food" : ""}`}
-                              </Text>
-                            ))}
-                          </View>
-                          <Pressable onPress={handleApplySuggestedRoutine} style={styles.applySuggestionBtn}>
-                            <Text style={styles.applySuggestionText}>Apply suggestion</Text>
-                          </Pressable>
+	                          <Text style={styles.suggestedRoutineRationale}>{suggestedRoutine.rationale}</Text>
+                            {suggestedRoutine.displayMode === "choice_slots" ? (
+                              <View style={styles.anchorChoiceRow}>
+                                {mealChoiceSlots.map((slot) => {
+                                  const isSelected = selectedChoiceLabel === slot.label;
+                                  return (
+                                    <Pressable
+                                      key={`anchor-choice-${slot.label}`}
+                                      style={[styles.anchorChoiceChip, isSelected && styles.anchorChoiceChipActive]}
+                                      onPress={() => {
+                                        setSelectedAnchorLabel(slot.label === "Breakfast" ? "Breakfast" : "Dinner");
+                                      }}
+                                    >
+                                      <Text style={[styles.anchorChoiceText, isSelected && styles.anchorChoiceTextActive]}>
+                                        {slot.label}
+                                      </Text>
+                                    </Pressable>
+                                  );
+                                })}
+                              </View>
+                            ) : null}
+	                          <View style={styles.suggestedRoutineSlots}>
+	                            {suggestedRoutine.requiresManualTime ? (
+	                              <Text style={styles.suggestedRoutineSlotText}>Flexible · choose time</Text>
+	                            ) : (
+	                              suggestedRoutine.slots.map((slot, idx) => (
+	                                  <Text
+                                    key={`${slot.label}-${slot.time}-${idx}`}
+                                    style={[
+                                      styles.suggestedRoutineSlotText,
+	                                      isAnchorSlotActive(slot, effectiveApplyAnchor)
+	                                        ? styles.suggestedRoutineSlotTextActive
+	                                        : null,
+                                    ]}
+                                  >
+	                                  {`${slot.label} · ${slot.time}${slot.withFood ? " · with food" : ""}`}
+	                                </Text>
+	                              ))
+	                            )}
+	                          </View>
+                          {suggestedRoutine.requiresManualTime ? (
+                            <Pressable onPress={handleChooseFlexibleTime} style={styles.chooseTimeBtn}>
+                              <Text style={styles.chooseTimeText}>Choose time</Text>
+	                            </Pressable>
+	                          ) : null}
+	                          <Pressable onPress={handleApplySuggestedRoutine} style={styles.applySuggestionBtn}>
+	                            <Text style={styles.applySuggestionText}>{applySuggestionButtonText}</Text>
+	                          </Pressable>
+	                          {effectiveApplyNotice ? (
+	                            <Text style={styles.suggestedRoutineNotice}>{effectiveApplyNotice}</Text>
+	                          ) : null}
+	                        </View>
+                        ) : null}
+                        <View
+                          onLayout={(event) => {
+                            timeSectionYRef.current = event.nativeEvent.layout.y;
+                          }}
+                        >
+	                      <TimePicker
+                            value={time}
+                            onChange={(nextTime) => {
+                              setTime(nextTime);
+                              setTimeTouched(true);
+                            }}
+                          />
                         </View>
-	                      <TimePicker value={time} onChange={setTime} />
 
                       <Pressable
                         style={styles.foodToggleRow}
@@ -1926,20 +2719,27 @@ function DetailSheet({
                       </Pressable>
                     </View>
 
-                    <View style={styles.noteHeaderRow}>
-                      <NotebookPen size={16} color="#94a3b8" />
-                      <Text style={styles.noteHeaderText}>Personal Note</Text>
-                    </View>
+                    <View
+                      onLayout={(event) => {
+                        noteSectionYRef.current = event.nativeEvent.layout.y;
+                      }}
+                    >
+                      <View style={styles.noteHeaderRow}>
+                        <NotebookPen size={16} color="#94a3b8" />
+                        <Text style={styles.noteHeaderText}>Personal Note</Text>
+                      </View>
 
-                    <TextInput
-                      value={note}
-                      onChangeText={setNote}
-                      placeholder="Add your notes here (e.g. 'Avoid caffeine')..."
-                      placeholderTextColor="#94a3b8"
-                      multiline
-                      textAlignVertical="top"
-                      style={styles.noteInput}
-                    />
+                      <TextInput
+                        ref={noteInputRef}
+                        value={note}
+                        onChangeText={setNote}
+                        placeholder="Add your notes here (e.g. 'Avoid caffeine')..."
+                        placeholderTextColor="#94a3b8"
+                        multiline
+                        textAlignVertical="top"
+                        style={styles.noteInput}
+                      />
+                    </View>
 
                     <View style={styles.saveRow}>
                       <View style={styles.saveShadow}>
@@ -2055,6 +2855,7 @@ function NoteQuickView({
 
 export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Props) {
   const tokens = useScreenTokens(NAV_HEIGHT);
+  const { user } = useAuth();
   const { scans } = useScanHistory();
   const { updateSupplement } = useSavedSupplements();
 
@@ -2077,6 +2878,13 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
   const [newTagText, setNewTagText] = useState("");
   const [isCreatingTag, setIsCreatingTag] = useState(false);
   const [assigningTag, setAssigningTag] = useState<string | null>(null);
+  const [stackOverlapBySupplementId, setStackOverlapBySupplementId] = useState<Map<string, StackOverlapItem[]>>(
+    () => new Map(),
+  );
+  const [stackOverlapCountBySupplementId, setStackOverlapCountBySupplementId] = useState<Map<string, number>>(
+    () => new Map(),
+  );
+  const [mealTimePrefs, setMealTimePrefs] = useState<MealTimePrefs | null>(null);
 
   const pillWidthRef = useRef(84);
   const [pillWidth, setPillWidth] = useState(84);
@@ -2098,11 +2906,43 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
     filterTimersRef.current = [];
   }, []);
 
+  const logStackOverlapEvent = useCallback(
+    (event: "stack_overlap_exposed" | "stack_overlap_clicked" | "stack_overlap_action_taken", payload: Record<string, unknown>) => {
+      console.info("[stack-overlap-event]", event, payload);
+    },
+    [],
+  );
+
   useEffect(() => () => clearFilterTimers(), [clearFilterTimers]);
 
   useEffect(() => {
     if (selectionMode) setExpandedId(null);
   }, [selectionMode]);
+
+  useEffect(() => {
+    let isActive = true;
+    if (!user?.id) {
+      setMealTimePrefs(null);
+      return () => {
+        isActive = false;
+      };
+    }
+
+    void loadMealTimePrefs(user.id)
+      .then((prefs) => {
+        if (!isActive) return;
+        setMealTimePrefs(prefs);
+      })
+      .catch((error) => {
+        if (!isActive) return;
+        const message = error instanceof Error ? error.message : "Unknown error";
+        console.warn("[meal-time-prefs] load failed", message);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [user?.id]);
 
   useEffect(() => {
     if (filterState !== "closed") setExpandedId(null);
@@ -2280,6 +3120,98 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
 
   const sorted = useMemo(() => [...resolvedData].sort((a, b) => isoDesc(a.createdAt, b.createdAt)), [resolvedData]);
 
+  const stackOverlapSeed = useMemo(
+    () =>
+      data
+        .map((item) => `${item.id}:${item.supplementId ?? ""}:${item.updatedAt}`)
+        .sort()
+        .join("|"),
+    [data],
+  );
+
+  useEffect(() => {
+    let isActive = true;
+
+    if (!user?.id || data.length === 0) {
+      setStackOverlapBySupplementId(new Map());
+      setStackOverlapCountBySupplementId(new Map());
+      return () => {
+        isActive = false;
+      };
+    }
+
+    const run = async () => {
+      const payload = await fetchStackOverlap();
+      if (!isActive || !payload) {
+        if (!payload) {
+          setStackOverlapBySupplementId(new Map());
+          setStackOverlapCountBySupplementId(new Map());
+        }
+        return;
+      }
+
+      const bySupplement = new Map<string, StackOverlapItem[]>();
+      const countBySupplement = new Map<string, number>();
+
+      for (const overlap of payload.overlaps) {
+        for (const supplement of overlap.supplements) {
+          const supplementId = supplement.supplementId?.trim();
+          if (!supplementId) continue;
+          const existing = bySupplement.get(supplementId) ?? [];
+          if (!existing.some((entry) => entry.ingredientKey === overlap.ingredientKey)) {
+            existing.push(overlap);
+            bySupplement.set(supplementId, existing);
+            countBySupplement.set(supplementId, (countBySupplement.get(supplementId) ?? 0) + 1);
+          }
+        }
+      }
+
+      setStackOverlapBySupplementId(bySupplement);
+      setStackOverlapCountBySupplementId(countBySupplement);
+      if (payload.overlaps.length > 0) {
+        logStackOverlapEvent("stack_overlap_exposed", {
+          overlapCount: payload.summary?.overlapCount ?? payload.overlaps.length,
+          truncated: payload.summary?.truncated ?? false,
+          hiddenOverlapCount: payload.summary?.hiddenOverlapCount ?? 0,
+        });
+      }
+    };
+
+    void run().catch((error) => {
+      if (!isActive) return;
+      const message = error instanceof Error ? error.message : "Unknown error";
+      console.warn("[stack-overlap] Unhandled fetch error", message);
+      setStackOverlapBySupplementId(new Map());
+      setStackOverlapCountBySupplementId(new Map());
+    });
+
+    return () => {
+      isActive = false;
+    };
+  }, [data.length, logStackOverlapEvent, stackOverlapSeed, user?.id]);
+
+  const handleLearnMealTimePref = useCallback(
+    async (label: "Breakfast" | "Lunch" | "Dinner" | "Bedtime", time: string, mode: "seed" | "manual") => {
+      if (!user?.id) return;
+      const slot =
+        label === "Breakfast"
+          ? "breakfast"
+          : label === "Lunch"
+          ? "lunch"
+          : label === "Dinner"
+          ? "dinner"
+          : "bedtime";
+      if (mode === "seed" && mealTimePrefs) {
+        return;
+      }
+      const next = await updateMealTimePrefSlot(user.id, slot, time, mealTimePrefs);
+      if (next) {
+        setMealTimePrefs(next);
+      }
+    },
+    [mealTimePrefs, user?.id],
+  );
+
   useEffect(() => {
     if (dosageMetadataBackfillStartedRef.current) return;
     if (sorted.length === 0) return;
@@ -2451,6 +3383,18 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
 
     if (selectedIds.size > 0) {
       const ids = Array.from(selectedIds);
+      const overlapDeleteCount = ids.reduce((count, id) => {
+        const supplementId = data.find((entry) => entry.id === id)?.supplementId ?? null;
+        if (!supplementId) return count;
+        return count + (stackOverlapCountBySupplementId.get(supplementId) ?? 0);
+      }, 0);
+      if (overlapDeleteCount > 0) {
+        logStackOverlapEvent("stack_overlap_action_taken", {
+          action: "delete",
+          selectedCount: ids.length,
+          overlapMentions: overlapDeleteCount,
+        });
+      }
       if (detailId && selectedIds.has(detailId)) setDetailId(null);
       await onDeleteSelected?.(ids);
       exitSelection();
@@ -2458,7 +3402,18 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
     }
 
     exitSelection();
-  }, [assigningTag, data, detailId, exitSelection, onDeleteSelected, selectedIds, selectionMode, updateSupplement]);
+  }, [
+    assigningTag,
+    data,
+    detailId,
+    exitSelection,
+    logStackOverlapEvent,
+    onDeleteSelected,
+    selectedIds,
+    selectionMode,
+    stackOverlapCountBySupplementId,
+    updateSupplement,
+  ]);
 
   const handleSaveRoutine = useCallback(
     async (id: string, prefs: RoutinePreferences) => {
@@ -3034,6 +3989,7 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
                 <CollectionCard
                   key={item.id}
                   item={item}
+                  overlapCount={item.supplementId ? stackOverlapCountBySupplementId.get(item.supplementId) ?? 0 : 0}
                   index={i}
                   theme={theme}
                   zIndex={i}
@@ -3049,6 +4005,16 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
                   }}
                   onOpenDetail={() => {
                     if (selectionMode) return;
+                    const overlapCount = item.supplementId
+                      ? stackOverlapCountBySupplementId.get(item.supplementId) ?? 0
+                      : 0;
+                    if (overlapCount > 0) {
+                      logStackOverlapEvent("stack_overlap_clicked", {
+                        supplementId: item.supplementId ?? null,
+                        productName: item.productName,
+                        overlapCount,
+                      });
+                    }
                     markAsViewed(item.id);
                     setExpandedId(null);
                     setDetailId(item.id);
@@ -3103,7 +4069,15 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
       ) : null}
 
       {detailItem && detailTheme ? (
-        <DetailSheet item={detailItem} theme={detailTheme} onClose={() => setDetailId(null)} onSaveRoutine={handleSaveRoutine} />
+        <DetailSheet
+          item={detailItem}
+          theme={detailTheme}
+          stackOverlaps={detailItem.supplementId ? stackOverlapBySupplementId.get(detailItem.supplementId) ?? [] : []}
+          mealTimePrefs={mealTimePrefs}
+          onLearnMealTimePref={handleLearnMealTimePref}
+          onClose={() => setDetailId(null)}
+          onSaveRoutine={handleSaveRoutine}
+        />
       ) : null}
 
       {viewingNoteItem ? (
@@ -3530,6 +4504,7 @@ const styles = StyleSheet.create({
   tagRow: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
   customTagRow: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
   tagPill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, borderCurve: "continuous", borderWidth: 1 },
+  overlapPill: { backgroundColor: "rgba(255,255,255,0.12)" },
   brandPillClamp: { maxWidth: 240, flexShrink: 1 },
   dosePillClamp: { maxWidth: 180, flexShrink: 1 },
   pillTextClamp: { flexShrink: 1 },
@@ -3663,6 +4638,7 @@ const styles = StyleSheet.create({
   glassRingBorder: { ...StyleSheet.absoluteFillObject, borderWidth: 1, borderColor: "rgba(255,255,255,0.30)" },
   overviewContent: { minHeight: 220, paddingHorizontal: 32, paddingVertical: 32, justifyContent: "flex-start" },
   overviewSummary: { fontSize: 17, lineHeight: 26, fontWeight: "600", color: "#1f2937", includeFontPadding: false },
+  overviewSectionTitleRow: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
   overviewSectionTitle: {
     fontSize: 12,
     lineHeight: 16,
@@ -3670,6 +4646,24 @@ const styles = StyleSheet.create({
     color: "#334155",
     textTransform: "uppercase",
     letterSpacing: 1.0,
+    includeFontPadding: false,
+  },
+  overviewInferredBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    borderCurve: "continuous",
+    borderWidth: 1,
+    borderColor: "rgba(59,130,246,0.28)",
+    backgroundColor: "rgba(59,130,246,0.10)",
+  },
+  overviewInferredBadgeText: {
+    fontSize: 10,
+    lineHeight: 12,
+    fontWeight: "800",
+    color: "#1d4ed8",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
     includeFontPadding: false,
   },
   overviewMetaText: { fontSize: 12, lineHeight: 16, fontWeight: "700", color: "#64748b", includeFontPadding: false },
@@ -3693,6 +4687,59 @@ const styles = StyleSheet.create({
   overviewBulletDot: { width: 6, height: 6, borderRadius: 999, backgroundColor: "#94a3b8", marginTop: 8 },
   overviewBulletText: { flex: 1, fontSize: 14, lineHeight: 20, fontWeight: "600", color: "#475569", includeFontPadding: false },
   overviewBulletLabel: { fontWeight: "700", color: "#334155" },
+  addLabelCtaBtn: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderCurve: "continuous",
+    borderWidth: 1,
+    borderColor: "rgba(59,130,246,0.28)",
+    backgroundColor: "rgba(255,255,255,0.66)",
+  },
+  addLabelCtaText: {
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: "800",
+    color: "#1d4ed8",
+    includeFontPadding: false,
+  },
+  overviewSourceLinkBtn: {
+    marginTop: 2,
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderCurve: "continuous",
+    borderWidth: 1,
+    borderColor: "rgba(15,23,42,0.16)",
+    backgroundColor: "rgba(255,255,255,0.55)",
+  },
+  overviewSourceLinkText: {
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: "700",
+    color: "#1e3a8a",
+    includeFontPadding: false,
+  },
+  overviewToggleBtn: {
+    marginTop: 4,
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderCurve: "continuous",
+    borderWidth: 1,
+    borderColor: "rgba(71,85,105,0.24)",
+    backgroundColor: "rgba(255,255,255,0.55)",
+  },
+  overviewToggleText: {
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: "800",
+    color: "#334155",
+    includeFontPadding: false,
+  },
 
   routineBlock: { minHeight: 600, borderRadius: 40, borderCurve: "continuous", overflow: "hidden", position: "relative" },
   routineRing: { position: "absolute", top: 12, left: 12, right: 12, bottom: 12, borderRadius: 36, borderCurve: "continuous", overflow: "hidden", backgroundColor: "rgba(255,255,255,0.20)", shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 18, shadowOffset: { width: 0, height: 10 }, elevation: 2 },
@@ -3716,8 +4763,25 @@ const styles = StyleSheet.create({
   suggestedRoutineTitle: { fontSize: 13, lineHeight: 18, fontWeight: "800", color: "#334155", includeFontPadding: false },
   suggestedRoutineMeta: { fontSize: 11, lineHeight: 14, fontWeight: "700", color: "#64748b", includeFontPadding: false, textTransform: "uppercase" },
   suggestedRoutineRationale: { fontSize: 12, lineHeight: 16, fontWeight: "600", color: "#475569", includeFontPadding: false },
+  anchorChoiceRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 2 },
+  anchorChoiceChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    borderCurve: "continuous",
+    borderWidth: 1,
+    borderColor: "rgba(148,163,184,0.35)",
+    backgroundColor: "rgba(255,255,255,0.46)",
+  },
+  anchorChoiceChipActive: {
+    borderColor: "rgba(30,64,175,0.35)",
+    backgroundColor: "rgba(219,234,254,0.55)",
+  },
+  anchorChoiceText: { fontSize: 11, lineHeight: 14, fontWeight: "700", color: "#64748b", includeFontPadding: false },
+  anchorChoiceTextActive: { color: "#1e3a8a" },
   suggestedRoutineSlots: { gap: 6, marginTop: 2 },
   suggestedRoutineSlotText: { fontSize: 12, lineHeight: 16, fontWeight: "700", color: "#334155", includeFontPadding: false },
+  suggestedRoutineSlotTextActive: { color: "#1e3a8a" },
   applySuggestionBtn: {
     marginTop: 6,
     alignSelf: "flex-start",
@@ -3730,6 +4794,25 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.65)",
   },
   applySuggestionText: { fontSize: 12, lineHeight: 16, fontWeight: "800", color: "#1e3a8a", includeFontPadding: false },
+  chooseTimeBtn: {
+    marginTop: 2,
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderCurve: "continuous",
+    borderWidth: 1,
+    borderColor: "rgba(71,85,105,0.28)",
+    backgroundColor: "rgba(255,255,255,0.55)",
+  },
+  chooseTimeText: {
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: "700",
+    color: "#334155",
+    includeFontPadding: false,
+  },
+  suggestedRoutineNotice: { fontSize: 11, lineHeight: 15, fontWeight: "700", color: "#64748b", includeFontPadding: false },
   timeCategoryPill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, borderWidth: 1 },
   timeCategoryText: { fontSize: 11, fontWeight: "700", includeFontPadding: false },
 
