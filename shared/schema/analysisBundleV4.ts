@@ -1,7 +1,3 @@
-// AUTO-GENERATED. DO NOT EDIT.
-// Source: shared/schema/analysisBundleV4.ts
-// Run: npx tsx scripts/ci/sync-analysis-bundle-schema.ts
-
 import { z } from "zod";
 
 export const ANALYSIS_BUNDLE_SCHEMA_VERSION = 4 as const;

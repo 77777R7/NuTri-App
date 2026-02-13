@@ -265,6 +265,9 @@ async function readSseEvents(barcode, options = {}) {
   let currentDataLines = [];
   let sawSkeleton = false;
   let sawFast = false;
+  let sawDone = false;
+  let sawPipelineMetrics = false;
+  let fastReadyAtMs = null;
   let shouldStopEarly = false;
 
   const flushEvent = () => {
@@ -284,14 +287,26 @@ async function readSseEvents(barcode, options = {}) {
     }
 
     events.push({ event: currentEvent, data: parsed, rawData: dataRaw });
+    if (currentEvent === "done") {
+      sawDone = true;
+    }
+    if (currentEvent === "pipeline_metrics") {
+      sawPipelineMetrics = true;
+    }
 
     if (currentEvent === "analysis_bundle" && parsed && typeof parsed === "object") {
       const rev = parsed?.meta?.revision;
       const phase = parsed?.meta?.phase;
       if (rev === 0 && phase === "skeleton") sawSkeleton = true;
       if (rev === 1 && phase === "fast_ai") sawFast = true;
-      // We only need revision 0 + 1 for regression assertions; don't wait for the full stream to finish.
-      if (sawSkeleton && sawFast) shouldStopEarly = true;
+      if (sawSkeleton && sawFast && fastReadyAtMs == null) {
+        fastReadyAtMs = Date.now();
+      }
+    }
+
+    // Prefer graceful stop after metrics/done so regression can observe pipeline_metrics.
+    if (sawSkeleton && sawFast && (sawDone || sawPipelineMetrics)) {
+      shouldStopEarly = true;
     }
 
     currentEvent = null;
@@ -326,6 +341,12 @@ async function readSseEvents(barcode, options = {}) {
         }
         if (line.startsWith("data:")) {
           currentDataLines.push(line.slice(5).trimStart());
+        }
+      }
+
+      if (!shouldStopEarly && sawSkeleton && sawFast && fastReadyAtMs != null) {
+        if (Date.now() - fastReadyAtMs >= 2500) {
+          shouldStopEarly = true;
         }
       }
     }
@@ -485,6 +506,289 @@ function assertLnhpdDetailNoStorm(detailRequestMetrics) {
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 let debugGateNegativeAssertionDone = false;
+
+const PIPELINE_STEP_NAMES = ["retrieve", "sanitize", "select_evidence", "draft", "verify", "revise", "emit"];
+const percentile = (arr, p) => {
+  if (!Array.isArray(arr) || arr.length === 0) return null;
+  const sorted = [...arr].sort((a, b) => a - b);
+  const idx = Math.max(0, Math.min(sorted.length - 1, Math.floor((p / 100) * (sorted.length - 1))));
+  return sorted[idx];
+};
+
+function pickLatestPipelineMetrics(events) {
+  const metricsEvents = (events || []).filter(
+    (entry) => entry?.event === "pipeline_metrics" && entry?.data && typeof entry.data === "object",
+  );
+  if (!metricsEvents.length) return null;
+  const latest = metricsEvents[metricsEvents.length - 1];
+  const raw = latest.data;
+  const steps = Array.isArray(raw?.steps)
+    ? raw.steps
+        .map((step) => ({
+          step: typeof step?.step === "string" ? step.step : null,
+          status: typeof step?.status === "string" ? step.status : null,
+          code: typeof step?.code === "string" ? step.code : null,
+          ms: Number.isFinite(step?.ms) ? Number(step.ms) : null,
+        }))
+        .filter((step) => step.step && step.status)
+    : [];
+  return {
+    requestId: typeof raw?.requestId === "string" ? raw.requestId : null,
+    barcode: typeof raw?.barcode === "string" ? raw.barcode : null,
+    sourceType: typeof raw?.sourceType === "string" ? raw.sourceType : null,
+    totalMs: Number.isFinite(raw?.totalMs) ? Number(raw.totalMs) : null,
+    emittedAt: typeof raw?.emittedAt === "string" ? raw.emittedAt : null,
+    steps,
+  };
+}
+
+function summarizePipelineMetrics(runResults) {
+  const rows = (runResults || [])
+    .map((item) => item?.summary?.pipelineMetrics)
+    .filter((metrics) => metrics && typeof metrics === "object");
+  const totalRuns = runResults.length;
+  const totalMsValues = rows
+    .map((metrics) => metrics.totalMs)
+    .filter((value) => Number.isFinite(value) && value >= 0);
+  const sortedMs = [...totalMsValues].sort((a, b) => a - b);
+  const previewHead = sortedMs.slice(0, 3);
+  const previewTail = sortedMs.slice(-3);
+  const failureCodeCounts = {};
+  for (const metrics of rows) {
+    const steps = Array.isArray(metrics.steps) ? metrics.steps : [];
+    for (const step of steps) {
+      if (step?.status !== "degraded" && step?.status !== "failed") continue;
+      const key = step?.code || `${step?.step}_${step?.status}`;
+      failureCodeCounts[key] = (failureCodeCounts[key] || 0) + 1;
+    }
+  }
+  const stepCoverage = Object.fromEntries(
+    PIPELINE_STEP_NAMES.map((stepName) => {
+      const seen = rows.filter((metrics) => {
+        const steps = Array.isArray(metrics.steps) ? metrics.steps : [];
+        return steps.some((step) => step?.step === stepName);
+      }).length;
+      return [stepName, {
+        count: seen,
+        ratio: rows.length > 0 ? seen / rows.length : 0,
+      }];
+    }),
+  );
+
+  const totalMsP10 = percentile(totalMsValues, 10);
+  const totalMsP50 = percentile(totalMsValues, 50);
+  const totalMsP90 = percentile(totalMsValues, 90);
+  const totalMsAvg =
+    totalMsValues.length > 0
+      ? Math.round(totalMsValues.reduce((sum, value) => sum + value, 0) / totalMsValues.length)
+      : null;
+  // Basic sanity: percentiles should be monotonic; if violated, treat metrics as invalid noise.
+  const metricsInvalid =
+    totalMsValues.length >= 2 &&
+    totalMsP10 != null &&
+    totalMsP50 != null &&
+    totalMsP90 != null &&
+    (totalMsP10 > totalMsP50 || totalMsP50 > totalMsP90);
+  const suspiciousMeanGtP90 = totalMsAvg != null && totalMsP90 != null && totalMsAvg > totalMsP90;
+
+  return {
+    totalRuns,
+    pipelineMetricsCount: rows.length,
+    coverageRatio: totalRuns > 0 ? rows.length / totalRuns : 0,
+    samplesCount: totalMsValues.length,
+    sortedPreviewMs: { head: previewHead, tail: previewTail },
+    metrics_invalid: metricsInvalid,
+    suspiciousMeanGtP90,
+    totalMsAvg: metricsInvalid ? null : totalMsAvg,
+    totalMsP10: metricsInvalid ? null : totalMsP10,
+    totalMsP50: metricsInvalid ? null : totalMsP50,
+    totalMsP90: metricsInvalid ? null : totalMsP90,
+    failureCodeCounts,
+    stepCoverage,
+  };
+}
+
+const average = (values) => {
+  const valid = values.filter((value) => Number.isFinite(value));
+  if (!valid.length) return null;
+  return Number((valid.reduce((sum, value) => sum + value, 0) / valid.length).toFixed(4));
+};
+
+function summarizeRagQuadrantMetrics(runResults) {
+  const webRows = (runResults || []).filter((item) => item?.summary?.sourceType === "web");
+  const webTotal = webRows.length;
+  const extractStep = (steps, stepName) =>
+    Array.isArray(steps) ? steps.find((step) => step?.step === stepName) || null : null;
+
+  const retrievalFailureCodeCounts = {};
+  const retrievalHits = webRows.filter((row) => {
+    const steps = row?.summary?.pipelineMetrics?.steps || [];
+    const selectEvidence = extractStep(steps, "select_evidence");
+    if (!selectEvidence) {
+      retrievalFailureCodeCounts["select_evidence_missing"] = (retrievalFailureCodeCounts["select_evidence_missing"] || 0) + 1;
+      return false;
+    }
+    if (selectEvidence.status === "ok") return true;
+    const key = selectEvidence.code || `${selectEvidence.step}_${selectEvidence.status}`;
+    retrievalFailureCodeCounts[key] = (retrievalFailureCodeCounts[key] || 0) + 1;
+    return false;
+  }).length;
+
+  const ABSTAIN_CODES = new Set(["web_text_unusable", "no_text_facts", "web_sanitize_failed"]);
+  const abstainUnknownReasonCounts = {};
+  const recordUnknown = (reason) => {
+    abstainUnknownReasonCounts[reason] = (abstainUnknownReasonCounts[reason] || 0) + 1;
+  };
+  const limitedOrNotProvided = (value) => value === "limited" || value === "not_provided";
+  const chemicalFormNotProvided = (items) =>
+    items.every((item) => {
+      const field = item?.chemicalFormExplain;
+      if (!field || typeof field !== "object") return false;
+      const text = typeof field.text === "string" ? field.text : "";
+      const tags = Array.isArray(field.basisTags) ? field.basisTags : [];
+      if (tags.includes("not_provided")) return true;
+      return /chemical form not provided/i.test(text);
+    });
+
+  let abstainTriggeredCount = 0;
+  let abstainEvaluatedCount = 0;
+  let abstainCorrectCount = 0;
+  let abstainUnknownCount = 0;
+  let abstainFallbackHeuristicCount = 0;
+
+  for (const row of webRows) {
+    const steps = row?.summary?.pipelineMetrics?.steps || [];
+    const selectEvidence = extractStep(steps, "select_evidence");
+    const fallbackCode = row?.summary?.fallback?.code ?? row?.summary?.fallbackReason ?? null;
+    const abstainTriggered =
+      (typeof fallbackCode === "string" && ABSTAIN_CODES.has(fallbackCode)) ||
+      (selectEvidence && selectEvidence.status === "failed");
+    if (!abstainTriggered) continue;
+
+    abstainTriggeredCount += 1;
+
+    const fastBundle = row?.fastBundle;
+    if (!fastBundle || typeof fastBundle !== "object") {
+      abstainUnknownCount += 1;
+      recordUnknown("fast_bundle_missing");
+      continue;
+    }
+
+    const overviewStatus = fastBundle?.sections?.overview?.dataStatus ?? null;
+    const ingredientsStatus = fastBundle?.sections?.ingredients?.dataStatus ?? null;
+
+    if (!limitedOrNotProvided(overviewStatus)) {
+      abstainEvaluatedCount += 1;
+      continue;
+    }
+
+    const items = fastBundle?.sections?.ingredients?.detail?.items;
+    if (Array.isArray(items)) {
+      abstainEvaluatedCount += 1;
+      if (items.length === 0 || chemicalFormNotProvided(items)) {
+        abstainCorrectCount += 1;
+      }
+      continue;
+    }
+
+    // Fallback heuristic: if both overview + ingredients are already degraded, count as correct
+    // even if ingredient detail items were omitted from the fast bundle.
+    if (limitedOrNotProvided(overviewStatus) && limitedOrNotProvided(ingredientsStatus)) {
+      abstainEvaluatedCount += 1;
+      abstainCorrectCount += 1;
+      abstainFallbackHeuristicCount += 1;
+      continue;
+    }
+
+    abstainUnknownCount += 1;
+    recordUnknown(ingredientsStatus == null ? "ingredients_section_missing" : "ingredients_detail_missing");
+  }
+
+  let noClaimsVerifiedCount = 0;
+
+  const supportProxyValues = webRows.map((row) => {
+    const meta = row?.summary?.webVerifyMeta;
+    const checked = Number(meta?.checkedClaimsCount ?? 0);
+    if (!Number.isFinite(checked) || checked <= 0) {
+      noClaimsVerifiedCount += 1;
+      return null;
+    }
+
+    const supportedRaw = meta?.supportedClaimsCount;
+    const unsupportedRaw = meta?.unsupportedClaimsCount;
+    const supported =
+      Number.isFinite(supportedRaw)
+        ? Number(supportedRaw)
+        : Number.isFinite(unsupportedRaw)
+          ? Math.max(0, checked - Number(unsupportedRaw))
+          : null;
+    if (supported == null) return null;
+    return supported / Math.max(1, checked);
+  });
+
+  const faithfulnessProxyValues = webRows.map((row) => {
+    const meta = row?.summary?.webVerifyMeta;
+    const checked = Number(meta?.checkedClaimsCount ?? 0);
+    if (!Number.isFinite(checked) || checked <= 0) return null;
+
+    const status = meta?.verifyStatus;
+    if (status === "ok") return 1;
+    if (status === "degraded") return 0.5;
+    if (status === "failed") return 0;
+    return null;
+  });
+  const faithfulnessProxyScoreValue = average(faithfulnessProxyValues);
+  const postRationalizationProxyRateValue =
+    faithfulnessProxyScoreValue == null ? null : Number((1 - faithfulnessProxyScoreValue).toFixed(4));
+
+  return {
+    sampleSize: webTotal,
+    retrievalEvidenceHitRate: webTotal > 0 ? Number((retrievalHits / webTotal).toFixed(4)) : null,
+    retrievalFailureCodeCounts,
+    abstainCorrectnessRate:
+      abstainEvaluatedCount > 0 ? Number((abstainCorrectCount / abstainEvaluatedCount).toFixed(4)) : null,
+    abstainTriggeredCount,
+    abstainEvaluatedCount,
+    abstainCorrectCount,
+    abstainUnknownCount,
+    abstainUnknownReasonCounts,
+    abstainFallbackHeuristicCount,
+    supportProxyScore: {
+      value: average(supportProxyValues),
+      isProxy: true,
+      sampleSize: webTotal,
+      noClaimsVerifiedCount,
+    },
+    faithfulnessProxyScore: {
+      value: faithfulnessProxyScoreValue,
+      isProxy: true,
+      sampleSize: webTotal,
+      noClaimsVerifiedCount,
+    },
+    postRationalizationProxyRate: {
+      value: postRationalizationProxyRateValue,
+      isProxy: true,
+      sampleSize: webTotal,
+      noClaimsVerifiedCount,
+    },
+    webUsefulOutputRate: (() => {
+      if (webTotal <= 0) return null;
+      const usefulCount = webRows.filter((row) => {
+        const b = row?.fastBundle;
+        if (!b || typeof b !== "object") return false;
+        const statuses = [
+          b?.sections?.overview?.dataStatus,
+          b?.sections?.ingredients?.dataStatus,
+          b?.sections?.usage?.dataStatus,
+          b?.sections?.safety?.dataStatus,
+        ];
+        const okCount = statuses.filter((s) => s === "complete" || s === "limited").length;
+        return okCount >= 2;
+      }).length;
+      return Number((usefulCount / webTotal).toFixed(4));
+    })(),
+  };
+}
 
 const buildDetailRequestKey = (payload) =>
   [
@@ -893,6 +1197,8 @@ function pickKeyFields(result) {
     if (!groundednessClaims.length) groundednessClaims = null;
   }
 
+  const fallbackCode = detail?.meta?.fallback?.code ?? detail?.meta?.fallbackReason ?? null;
+
   return {
     barcode: result.case.barcode,
     caseId: result.case.id,
@@ -909,7 +1215,8 @@ function pickKeyFields(result) {
     factsSourceVersion: fastBundle?.meta?.factsSourceVersion ?? null,
     dataStatus: detail?.dataStatus ?? null,
     fallbackUsed: detail?.meta?.fallbackUsed ?? null,
-    fallbackReason: detail?.meta?.fallbackReason ?? null,
+    fallback: detail?.meta?.fallback ?? (fallbackCode ? { code: fallbackCode } : null),
+    fallbackReason: fallbackCode,
     jobStatus: detail?.meta?.jobStatus ?? null,
     attempts: detail?.meta?.attempts ?? null,
     timingMs: detail?.timingMs ?? null,
@@ -923,6 +1230,7 @@ function pickKeyFields(result) {
     formReferenceIdHitsCount: referenceIdHits ? Object.keys(referenceIdHits).length : null,
     formReferenceIdHits: referenceIdHits,
     groundednessClaims,
+    webVerifyMeta: fastBundle?.meta?.webVerifyMeta ?? null,
   };
 }
 
@@ -1037,6 +1345,7 @@ async function runCase(testCase) {
   ];
   const summary = {
     ...pickKeyFields({ case: testCase, fastBundle: bundleCheck.fastBundle, detailResponse }),
+    pipelineMetrics: pickLatestPipelineMetrics(events),
     detailRequestCount: detailRequestMetrics.totalRequests,
     detail429Count: detailRequestMetrics.status429Count,
     detailRequestByKey: detailRequestMetrics.byKey,
@@ -1079,6 +1388,7 @@ async function runCaseSafely(testCase) {
       dataStatus: null,
       fallbackUsed: null,
       fallbackReason: null,
+      pipelineMetrics: null,
       jobStatus: null,
       attempts: null,
       timingMs: null,
@@ -1214,6 +1524,28 @@ async function main() {
     );
   }
 
+  let chaosSummary = null;
+  const chaosSummaryPath = process.env.RENDER_SSE_CHAOS_SUMMARY_PATH || "";
+  if (chaosSummaryPath) {
+    try {
+      const chaosRaw = await fs.readFile(chaosSummaryPath, "utf8");
+      chaosSummary = JSON.parse(String(chaosRaw));
+    } catch (error) {
+      console.warn(`[render-regression] failed to load chaos summary from ${chaosSummaryPath}: ${String(error)}`);
+    }
+  }
+
+  let harnessSummary = null;
+  const harnessSummaryPath = process.env.RENDER_SSE_HARNESS_SUMMARY_PATH || "";
+  if (harnessSummaryPath) {
+    try {
+      const harnessRaw = await fs.readFile(harnessSummaryPath, "utf8");
+      harnessSummary = JSON.parse(String(harnessRaw));
+    } catch (error) {
+      console.warn(`[render-regression] failed to load harness summary from ${harnessSummaryPath}: ${String(error)}`);
+    }
+  }
+
   const summary = {
     baseUrl: BASE_URL,
     generatedAt: new Date().toISOString(),
@@ -1221,6 +1553,10 @@ async function main() {
     passCount: runResults.filter((item) => item.summary.pass).length,
     failCount: runResults.filter((item) => !item.summary.pass).length,
     cases: runResults.map((item) => item.summary),
+    ssePipelineMetrics: summarizePipelineMetrics(runResults),
+    ragQuadrantMetrics: summarizeRagQuadrantMetrics(runResults),
+    sseChaos: chaosSummary,
+    sseHarness: harnessSummary,
   };
 
   await fs.writeFile(path.join(ARTIFACT_DIR, "summary.json"), JSON.stringify(summary, null, 2));
@@ -1241,12 +1577,14 @@ async function main() {
     detailDataStatus: item.detailResponse?.response?.dataStatus ?? null,
     detailCursorUsed: item.summary.detailCursorUsed ?? null,
     fallbackUsed: item.summary.fallbackUsed,
+    fallback: item.summary.fallback ?? null,
     fallbackReason: item.summary.fallbackReason,
     formResolveSourcesNonNone: item.summary.formResolveSourcesNonNone ?? null,
     formSentenceIdHits: item.summary.formSentenceIdHits ?? null,
     formExcerptIdHits: item.summary.formExcerptIdHits ?? null,
     formReferenceIdHits: item.summary.formReferenceIdHits ?? null,
     groundednessClaims: item.summary.groundednessClaims ?? null,
+    webVerifyMeta: item.summary.webVerifyMeta ?? null,
   }));
   await fs.writeFile(path.join(ARTIFACT_DIR, "release-evidence.json"), JSON.stringify(evidenceRows, null, 2));
 
