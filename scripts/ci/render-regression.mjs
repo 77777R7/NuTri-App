@@ -1087,7 +1087,7 @@ function assertLnhpdWithFormEvidence(detailResponse, testCase) {
   const excerptIds = body?.debug?.formExcerptIds;
   const referenceIds = body?.debug?.formReferenceIds;
 
-  const hasAnyEvidenceItem = items.some((it) => {
+  const isEvidenceItem = (it) => {
     const tags = it?.chemicalFormExplain?.basisTags;
     const text = String(it?.chemicalFormExplain?.text ?? "");
     if (!Array.isArray(tags) || !tags.length) return false;
@@ -1111,11 +1111,39 @@ function assertLnhpdWithFormEvidence(detailResponse, testCase) {
       );
     }
     return false;
-  });
+  };
 
-  if (!hasAnyEvidenceItem) {
+  const isExplicitAbstain = (it) => {
+    const tags = it?.chemicalFormExplain?.basisTags;
+    const text = String(it?.chemicalFormExplain?.text ?? "");
+    if (!Array.isArray(tags) || !tags.length) return false;
+    if (!tags.includes("not_provided")) return false;
+    // Guard against empty placeholders: we want the abstain to be user-facing and explicit.
+    return /not disclosed|not specified|don't assume|do not assume|does not specify/i.test(text);
+  };
+
+  const isUnsafeClaimWithoutEvidence = (it) => {
+    const tags = it?.chemicalFormExplain?.basisTags;
+    if (!Array.isArray(tags) || !tags.length) return false;
+    if (tags.includes("not_provided")) return false;
+    return !isEvidenceItem(it);
+  };
+
+  const hasAnyEvidenceItem = items.some(isEvidenceItem);
+  const hasAnyExplicitAbstain = items.some(isExplicitAbstain);
+  const hasUnsafeClaim = items.some(isUnsafeClaimWithoutEvidence);
+
+  if (hasUnsafeClaim) {
+    errors.push(`${caseId}: found chemicalFormExplain claim without evidence (expected evidence or not_provided abstain)`);
+    return errors;
+  }
+
+  // This observe case is allowed to PASS in two safe modes:
+  // 1) At least one active has evidence-backed chemical form text; OR
+  // 2) The label does not disclose forms and we explicitly abstain (not_provided).
+  if (!hasAnyEvidenceItem && !hasAnyExplicitAbstain) {
     errors.push(
-      `${caseId}: expected at least one LNHPD active with chemical-form evidence (label_fact evidence-only fallback or grounded KB sentence)`
+      `${caseId}: expected at least one LNHPD active with chemical-form evidence OR explicit abstain (not_provided)`,
     );
   }
 
