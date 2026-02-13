@@ -1596,6 +1596,35 @@ async function main() {
   const blockingResults = runResults.filter((item) => item.case?.observeOnly !== true);
   const observeResults = runResults.filter((item) => item.case?.observeOnly === true);
 
+  const ssePipelineMetrics = summarizePipelineMetrics(runResults);
+  const ragQuadrantMetrics = summarizeRagQuadrantMetrics(runResults);
+
+  // Nightly-only: enforce abstain correctness when we have enough signal to evaluate it.
+  // Keep this out of PR-required gates by keying it off RENDER_INCLUDE_NIGHTLY_CASES.
+  if (process.env.RENDER_INCLUDE_NIGHTLY_CASES === "1") {
+    const evaluated = Number(ragQuadrantMetrics?.abstainEvaluatedCount ?? 0);
+    const correct = Number(ragQuadrantMetrics?.abstainCorrectCount ?? 0);
+    const unknown = Number(ragQuadrantMetrics?.abstainUnknownCount ?? 0);
+    if (Number.isFinite(evaluated) && Number.isFinite(correct) && evaluated > 0 && correct < evaluated) {
+      const msg = `[nightly_gate] abstain_correctness_failed evaluated=${evaluated} correct=${correct} unknown=${Number.isFinite(unknown) ? unknown : "na"}`;
+      const target =
+        runResults.find((item) => item?.case?.id === "web") ||
+        runResults.find((item) => item?.summary?.caseId === "web") ||
+        runResults.find((item) => item?.summary?.sourceType === "web") ||
+        null;
+
+      if (target) {
+        if (!Array.isArray(target.errors)) target.errors = [];
+        if (!target.errors.includes(msg)) target.errors.push(msg);
+        if (!Array.isArray(target.summary?.errors)) target.summary.errors = [];
+        if (!target.summary.errors.includes(msg)) target.summary.errors.push(msg);
+        target.summary.pass = false;
+      } else {
+        console.error(msg);
+      }
+    }
+  }
+
   let chaosSummary = null;
   const chaosSummaryPath = process.env.RENDER_SSE_CHAOS_SUMMARY_PATH || "";
   if (chaosSummaryPath) {
@@ -1629,8 +1658,8 @@ async function main() {
     observePassCount: observeResults.filter((item) => item.summary.pass).length,
     observeFailCount: observeResults.filter((item) => !item.summary.pass).length,
     cases: runResults.map((item) => item.summary),
-    ssePipelineMetrics: summarizePipelineMetrics(runResults),
-    ragQuadrantMetrics: summarizeRagQuadrantMetrics(runResults),
+    ssePipelineMetrics,
+    ragQuadrantMetrics,
     sseChaos: chaosSummary,
     sseHarness: harnessSummary,
   };
