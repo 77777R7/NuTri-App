@@ -23,6 +23,7 @@ const loadJson = async (filePath) => {
 };
 
 const sha256 = (value) => crypto.createHash("sha256").update(value).digest("hex");
+const idSafe = (value) => String(value ?? "").replace(/[^A-Za-z0-9_.:-]+/g, "_");
 
 async function main() {
   const runtimeRaw = await fs.readFile(RUNTIME_PATH, "utf-8");
@@ -78,9 +79,171 @@ async function main() {
     }
   }
 
+  // Stable ordering for artifacts: avoid noisy diffs due to object traversal order.
+  edges.sort((a, b) => {
+    const ak = String(a.ingredientFormKey || "");
+    const bk = String(b.ingredientFormKey || "");
+    if (ak !== bk) return ak.localeCompare(bk);
+    const as = String(a.sentenceId || "");
+    const bs = String(b.sentenceId || "");
+    if (as !== bs) return as.localeCompare(bs);
+    const ax = String(a.excerptId || "");
+    const bx = String(b.excerptId || "");
+    if (ax !== bx) return ax.localeCompare(bx);
+    const ar = String(a.referenceId || "");
+    const br = String(b.referenceId || "");
+    return ar.localeCompare(br);
+  });
+
+  const generatedAt = new Date().toISOString();
+  const serverCommitSha =
+    process.env.RENDER_GIT_COMMIT ?? process.env.GITHUB_SHA ?? process.env.COMMIT_SHA ?? null;
+  const packageSha =
+    typeof runtime?.meta?.package_sha256 === "string" && runtime.meta.package_sha256.trim()
+      ? runtime.meta.package_sha256.trim()
+      : runtimeSha;
+  const packageVersion =
+    typeof runtime?.meta?.generated_at === "string" && runtime.meta.generated_at
+      ? `kb:${runtime.meta.generated_at}`
+      : `kb:${packageSha.slice(0, 12)}`;
+
+  const entityById = new Map();
+  const activityById = new Map();
+  const agentById = new Map();
+  const derivations = [];
+  const wasGeneratedBy = [];
+  const wasAssociatedWith = [];
+
+  const addNode = (store, id, node) => {
+    if (!id || store.has(id)) return;
+    store.set(id, { id, ...node });
+  };
+
+  const scriptAgentId = "agent:script:scripts/kb/build_kb_prov_index.mjs";
+  addNode(agentById, scriptAgentId, {
+    kind: "Agent",
+    role: "script",
+    label: "scripts/kb/build_kb_prov_index.mjs",
+  });
+  if (serverCommitSha) {
+    addNode(agentById, `agent:commit:${serverCommitSha}`, {
+      kind: "Agent",
+      role: "commit",
+      label: serverCommitSha,
+    });
+  }
+
+  const kbBuildActivityId = `activity:kb_build:${idSafe(packageVersion)}`;
+  const kbProvExportActivityId = `activity:kb_prov_export:${idSafe(generatedAt)}`;
+
+  addNode(activityById, kbBuildActivityId, {
+    kind: "Activity",
+    label: "KB Production Build",
+    startedAt: runtime?.meta?.generated_at ?? null,
+    endedAt: generatedAt,
+  });
+  addNode(activityById, kbProvExportActivityId, {
+    kind: "Activity",
+    label: "KB PROV Export",
+    startedAt: generatedAt,
+    endedAt: generatedAt,
+  });
+
+  wasAssociatedWith.push({
+    activity: kbProvExportActivityId,
+    agent: scriptAgentId,
+  });
+  if (serverCommitSha) {
+    wasAssociatedWith.push({
+      activity: kbProvExportActivityId,
+      agent: `agent:commit:${serverCommitSha}`,
+    });
+  }
+
+  const kbPackageEntityId = `entity:kb_package:${packageSha}`;
+  addNode(entityById, kbPackageEntityId, {
+    kind: "Entity",
+    entityType: "kb_package",
+    packageVersion,
+    packageSha256: packageSha,
+    runtimeSha256: runtimeSha,
+    evidenceSha256: evidenceSha,
+  });
+  wasGeneratedBy.push({
+    entity: kbPackageEntityId,
+    activity: kbProvExportActivityId,
+  });
+
+  for (const edge of edges) {
+    const ingredientFormId = `entity:ingredient_form_claim:${edge.ingredientFormKey}`;
+    const sentenceId = `entity:sentence:${edge.sentenceId}`;
+    const excerptId = `entity:excerpt:${edge.excerptId}`;
+    const referenceId = `entity:reference:${edge.referenceId}`;
+
+    addNode(entityById, ingredientFormId, {
+      kind: "Entity",
+      entityType: "ingredient_form_claim",
+      ingredientFormKey: edge.ingredientFormKey,
+      ingredientId: edge.ingredientId,
+      ingredient: edge.ingredient,
+      formKey: edge.formKey,
+      formDisplay: edge.formDisplay,
+      segment: edge.segment,
+      lang: edge.lang,
+      evidenceGrade: edge.evidenceGrade ?? null,
+    });
+    addNode(entityById, sentenceId, {
+      kind: "Entity",
+      entityType: "sentence",
+      sentenceId: edge.sentenceId,
+      segment: edge.segment,
+      lang: edge.lang,
+    });
+    addNode(entityById, excerptId, {
+      kind: "Entity",
+      entityType: "excerpt",
+      excerptId: edge.excerptId,
+      excerptStatus: edge.evidenceExcerptStatus ?? null,
+    });
+    addNode(entityById, referenceId, {
+      kind: "Entity",
+      entityType: "reference",
+      referenceId: edge.referenceId,
+      source: edge.source ?? null,
+      reviewStatus: edge.reviewStatus ?? null,
+    });
+
+    derivations.push({
+      generatedEntity: ingredientFormId,
+      usedEntity: sentenceId,
+      activity: kbBuildActivityId,
+      relation: "wasDerivedFrom",
+    });
+    derivations.push({
+      generatedEntity: sentenceId,
+      usedEntity: excerptId,
+      activity: kbBuildActivityId,
+      relation: "wasDerivedFrom",
+    });
+    derivations.push({
+      generatedEntity: excerptId,
+      usedEntity: referenceId,
+      activity: kbBuildActivityId,
+      relation: "wasDerivedFrom",
+    });
+    wasGeneratedBy.push({
+      entity: ingredientFormId,
+      activity: kbProvExportActivityId,
+    });
+  }
+
+  const sortById = (arr) => [...arr].sort((a, b) => String(a.id || "").localeCompare(String(b.id || "")));
+  const sortByKeys = (arr, keyFn) =>
+    [...arr].sort((a, b) => keyFn(a).localeCompare(keyFn(b)));
+
   const prov = {
     meta: {
-      generated_at: new Date().toISOString(),
+      generated_at: generatedAt,
       runtime: {
         path: RUNTIME_PATH,
         sha256: runtimeSha,
@@ -97,10 +260,25 @@ async function main() {
             source: evidence?.meta?.source ?? null,
           }
         : null,
+      anchors: {
+        packageVersion,
+        packageSha256: packageSha,
+        runtimeSha256: runtimeSha,
+        evidenceSha256: evidenceSha,
+        serverCommitSha,
+      },
       note:
-        "Graph-shaped provenance index from the shipped production KB. Edges connect ingredient|form -> sentence -> excerpt -> reference.",
+        "Graph-shaped provenance index from the shipped production KB. Includes compatibility edges and PROV-style nodes.",
     },
     edges,
+    prov: {
+      entities: sortById([...entityById.values()]),
+      activities: sortById([...activityById.values()]),
+      agents: sortById([...agentById.values()]),
+      derivations: sortByKeys(derivations, (d) => `${d.generatedEntity}|${d.usedEntity}|${d.activity}`),
+      wasGeneratedBy: sortByKeys(wasGeneratedBy, (e) => `${e.entity}|${e.activity}`),
+      wasAssociatedWith: sortByKeys(wasAssociatedWith, (e) => `${e.activity}|${e.agent}`),
+    },
   };
 
   await fs.mkdir(path.dirname(OUT_PATH), { recursive: true });
@@ -112,4 +290,3 @@ main().catch((err) => {
   console.error(`[kb] prov build failed: ${String(err)}`);
   process.exit(1);
 });
-
