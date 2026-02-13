@@ -40,6 +40,7 @@ export interface ValidationIssue {
         | 'header_not_found'
         | 'low_coverage'
         | 'incomplete_ingredients'
+        | 'possible_missing_column'
         | 'non_ingredient_line_detected'
         | 'unit_boundary_suspect'
         | 'dose_inconsistency_or_claim';
@@ -68,6 +69,21 @@ export interface LabelAnalysisDiagnostics {
         hasMedicinalSection: boolean;
         hasEachContainsAnchor: boolean;
         chosenPipeline: 'table' | 'text' | 'merge';
+    };
+    laneSplit: {
+        triggered: boolean;
+        applied: boolean;
+        chosen: 'baseline' | 'lane_split';
+        revertedReason: string | null;
+        leftTokenCount: number;
+        rightTokenCount: number;
+        centerGapRatio: number;
+    };
+    completeness: {
+        candidateAmountRows: number;
+        parsedIngredients: number;
+        completenessRatio: number;
+        issueTriggered: boolean;
     };
     drafts: {
         table: DraftSummary;
@@ -121,6 +137,8 @@ const SANITY_LIMITS: Record<string, { maxAmount: number; units: string[] }> = {
 
 const MIN_EXPECTED_MEDICINAL_CANDIDATES = 4;
 const MIN_PARSED_VALID_FOR_COMPLETENESS = 3;
+const MIN_COMPLETENESS_AMOUNT_ROWS = Number(process.env.LABEL_SCAN_MIN_COMPLETENESS_ROWS ?? 6);
+const MIN_COMPLETENESS_RATIO = Number(process.env.LABEL_SCAN_MIN_COMPLETENESS_RATIO ?? 0.6);
 
 // ============================================================================
 // ROW/COLUMN INFERENCE
@@ -229,6 +247,134 @@ function createCell(tokens: Token[]): Cell {
     };
 }
 
+interface LaneSplitDecision {
+    applied: boolean;
+    leftTokens: Token[];
+    rightTokens: Token[];
+    centerGapRatio: number;
+}
+
+function percentileValue(values: number[], ratio: number): number {
+    if (!values.length) return 0;
+    const sorted = [...values].sort((a, b) => a - b);
+    const index = Math.max(0, Math.min(sorted.length - 1, Math.round((sorted.length - 1) * ratio)));
+    return sorted[index] ?? 0;
+}
+
+function countAmountRows(tokens: Token[]): number {
+    if (!tokens.length) return 0;
+    const rows = inferTableRows(tokens);
+    let amountRows = 0;
+    for (const row of rows) {
+        const rowText = row.tokens.map((t) => t.text).join(' ');
+        if (isNonIngredientRow(rowText)) continue;
+        if (hasAmountCandidate(rowText)) amountRows += 1;
+    }
+    return amountRows;
+}
+
+function detectLaneSplit(tokens: Token[]): LaneSplitDecision {
+    if (tokens.length < 40) {
+        return { applied: false, leftTokens: tokens, rightTokens: [], centerGapRatio: 0 };
+    }
+
+    const xCenters = tokens.map((token) => (token.bbox.xMin + token.bbox.xMax) / 2);
+    const minX = Math.min(...xCenters);
+    const maxX = Math.max(...xCenters);
+    const width = maxX - minX;
+    if (!Number.isFinite(width) || width < 240) {
+        return { applied: false, leftTokens: tokens, rightTokens: [], centerGapRatio: 0 };
+    }
+
+    const mean = xCenters.reduce((sum, value) => sum + value, 0) / xCenters.length;
+    const sseSingle = xCenters.reduce((sum, value) => sum + (value - mean) ** 2, 0);
+    if (!Number.isFinite(sseSingle) || sseSingle <= 0) {
+        return { applied: false, leftTokens: tokens, rightTokens: [], centerGapRatio: 0 };
+    }
+
+    let c1 = percentileValue(xCenters, 0.25);
+    let c2 = percentileValue(xCenters, 0.75);
+    if (c1 > c2) {
+        [c1, c2] = [c2, c1];
+    }
+    if (Math.abs(c2 - c1) < width * 0.15) {
+        return { applied: false, leftTokens: tokens, rightTokens: [], centerGapRatio: 0 };
+    }
+
+    let left: number[] = [];
+    let right: number[] = [];
+    for (let i = 0; i < 10; i++) {
+        left = [];
+        right = [];
+        for (const value of xCenters) {
+            const d1 = Math.abs(value - c1);
+            const d2 = Math.abs(value - c2);
+            if (d1 <= d2) left.push(value);
+            else right.push(value);
+        }
+        if (!left.length || !right.length) {
+            return { applied: false, leftTokens: tokens, rightTokens: [], centerGapRatio: 0 };
+        }
+        c1 = left.reduce((sum, value) => sum + value, 0) / left.length;
+        c2 = right.reduce((sum, value) => sum + value, 0) / right.length;
+        if (c1 > c2) {
+            [c1, c2] = [c2, c1];
+            [left, right] = [right, left];
+        }
+    }
+
+    const leftRatio = left.length / xCenters.length;
+    const rightRatio = right.length / xCenters.length;
+    const centerGap = Math.abs(c2 - c1);
+    const centerGapRatio = width > 0 ? centerGap / width : 0;
+    const sseDouble = left.reduce((sum, value) => sum + (value - c1) ** 2, 0)
+        + right.reduce((sum, value) => sum + (value - c2) ** 2, 0);
+
+    const sseImprovement = (sseSingle - sseDouble) / sseSingle;
+    const shouldSplit = leftRatio >= 0.18
+        && rightRatio >= 0.18
+        && centerGapRatio >= 0.28
+        && centerGapRatio <= 0.9
+        && sseImprovement >= 0.35
+        && sseDouble <= sseSingle * 0.65;
+    if (!shouldSplit) {
+        return { applied: false, leftTokens: tokens, rightTokens: [], centerGapRatio };
+    }
+
+    const midpoint = (c1 + c2) / 2;
+    const leftTokens = tokens.filter((token) => ((token.bbox.xMin + token.bbox.xMax) / 2) <= midpoint);
+    const rightTokens = tokens.filter((token) => ((token.bbox.xMin + token.bbox.xMax) / 2) > midpoint);
+    if (leftTokens.length < 10 || rightTokens.length < 10) {
+        return { applied: false, leftTokens: tokens, rightTokens: [], centerGapRatio };
+    }
+
+    // Guard against 3+ column distributions where a strong amount/%DV column can fake a second "lane".
+    const laneAmountRowsLeft = countAmountRows(leftTokens);
+    const laneAmountRowsRight = countAmountRows(rightTokens);
+    const laneAmountRowsTotal = laneAmountRowsLeft + laneAmountRowsRight;
+    if (laneAmountRowsLeft < 2 || laneAmountRowsRight < 2) {
+        return { applied: false, leftTokens: tokens, rightTokens: [], centerGapRatio };
+    }
+    const dominantLaneRatio = laneAmountRowsTotal > 0
+        ? Math.max(laneAmountRowsLeft, laneAmountRowsRight) / laneAmountRowsTotal
+        : 1;
+    if (dominantLaneRatio > 0.85) {
+        return { applied: false, leftTokens: tokens, rightTokens: [], centerGapRatio };
+    }
+
+    const boundaryWindow = Math.max(width * 0.06, 36);
+    const boundaryTokens = tokens.filter((token) => {
+        const x = (token.bbox.xMin + token.bbox.xMax) / 2;
+        return Math.abs(x - midpoint) <= boundaryWindow;
+    });
+    const boundaryRatio = boundaryTokens.length / tokens.length;
+    if (boundaryRatio > 0.28) {
+        return { applied: false, leftTokens: tokens, rightTokens: [], centerGapRatio };
+    }
+
+    return { applied: true, leftTokens, rightTokens, centerGapRatio };
+}
+
 // ============================================================================
 // INGREDIENT EXTRACTION
 // ============================================================================
@@ -315,6 +461,27 @@ function determineTableStartRow(rows: Row[], headerRowIndex: number): number {
         }
     }
     return startRow;
+}
+
+function maybeAddCompletenessIssue(
+    issues: ValidationIssue[],
+    candidateAmountRows: number,
+    parsedWithAmountUnit: number,
+    scope: 'rows' | 'lines',
+): { completenessRatio: number; issueTriggered: boolean } {
+    const completenessRatio = candidateAmountRows > 0 ? parsedWithAmountUnit / candidateAmountRows : 1;
+    if (candidateAmountRows < MIN_COMPLETENESS_AMOUNT_ROWS || completenessRatio >= MIN_COMPLETENESS_RATIO) {
+        return { completenessRatio, issueTriggered: false };
+    }
+
+    const existing = issues.some((issue) => issue.type === 'possible_missing_column');
+    if (!existing) {
+        issues.push({
+            type: 'possible_missing_column',
+            message: `Parsed ${parsedWithAmountUnit}/${candidateAmountRows} ${scope} with dose values; possible missing column or lane`,
+        });
+    }
+    return { completenessRatio, issueTriggered: true };
 }
 
 /**
@@ -410,6 +577,7 @@ export function extractIngredients(rows: Row[]): LabelDraft {
 
     // Calculate coverage
     const parseCoverage = ingredientLikeRows > 0 ? parsedWithAmountUnit / ingredientLikeRows : 0;
+    maybeAddCompletenessIssue(issues, ingredientLikeRows, parsedWithAmountUnit, 'rows');
 
     if (parseCoverage < 0.7) {
         issues.push({
@@ -1515,6 +1683,7 @@ export function extractTextIngredients(
     }
 
     const parseCoverage = ingredientLikeLines > 0 ? parsedWithAmountUnit / ingredientLikeLines : 0;
+    maybeAddCompletenessIssue(issues, ingredientLikeLines, parsedWithAmountUnit, 'lines');
 
     if (parseCoverage < 0.7) {
         issues.push({
@@ -1735,6 +1904,7 @@ function scoreDraft(draft: LabelDraft): { score: number; valid: number; junkRati
             case 'unit_invalid':
             case 'value_anomaly':
             case 'incomplete_ingredients':
+            case 'possible_missing_column':
             case 'non_ingredient_line_detected':
             case 'unit_boundary_suspect':
             case 'dose_inconsistency_or_claim':
@@ -1787,10 +1957,42 @@ export function analyzeLabelDraftWithDiagnostics(tokens: Token[], fullText?: str
     draft: LabelDraft;
     diagnostics: LabelAnalysisDiagnostics;
 } {
+    const laneSplitDecision = detectLaneSplit(tokens);
     const rows = inferTableRows(tokens);
     const textLines = buildTextLines(tokens, fullText, rows);
+    const candidateAmountLineCount = countCandidateAmountLines(textLines);
     const headerRowIndex = findHeaderRowIndex(rows);
-    const tableDraft = extractIngredients(rows);
+    const baselineTableDraft = extractIngredients(rows);
+    let tableDraft = baselineTableDraft;
+    let laneSplitChosen: 'baseline' | 'lane_split' = 'baseline';
+    let laneSplitRevertedReason: string | null = null;
+    if (laneSplitDecision.applied) {
+        const leftDraft = extractIngredients(inferTableRows(laneSplitDecision.leftTokens));
+        const rightDraft = extractIngredients(inferTableRows(laneSplitDecision.rightTokens));
+        const laneMerged = mergeDrafts(leftDraft, rightDraft, true);
+        const baselineValidCount = baselineTableDraft.ingredients.filter((ing) => ing.amount !== null && ing.unit !== null).length;
+        const laneValidCount = laneMerged.ingredients.filter((ing) => ing.amount !== null && ing.unit !== null).length;
+        const baselineCompleteness = candidateAmountLineCount > 0 ? baselineValidCount / candidateAmountLineCount : 1;
+        const laneCompleteness = candidateAmountLineCount > 0 ? laneValidCount / candidateAmountLineCount : 1;
+        const baselineScore = scoreDraft(baselineTableDraft).score;
+        const laneScore = scoreDraft(laneMerged).score;
+        const improvedCompleteness =
+            (laneCompleteness - baselineCompleteness) >= 0.05
+            || laneValidCount >= baselineValidCount + 1;
+        const issueRegression = laneMerged.issues.length > baselineTableDraft.issues.length + 1;
+        const scoreRegression = laneScore < baselineScore - 0.05;
+
+        if (improvedCompleteness && !issueRegression && !scoreRegression) {
+            tableDraft = laneMerged;
+            laneSplitChosen = 'lane_split';
+        } else if (!improvedCompleteness) {
+            laneSplitRevertedReason = 'no_improvement';
+        } else if (issueRegression) {
+            laneSplitRevertedReason = 'more_issues';
+        } else if (scoreRegression) {
+            laneSplitRevertedReason = 'score_regression';
+        }
+    }
     const sectionInfo = detectSections(textLines);
     const textDraft = extractTextIngredients(tokens, fullText, {
         lines: textLines,
@@ -1867,8 +2069,8 @@ export function analyzeLabelDraftWithDiagnostics(tokens: Token[], fullText?: str
     }
 
     const hasMedicinalSignals = sectionInfo.hasMedicinal || hasEachContainsAnchor;
-    const candidateAmountLineCount = countCandidateAmountLines(textLines);
     const finalValidCount = draft.ingredients.filter((ing) => ing.amount !== null && ing.unit !== null).length;
+    const completenessRatio = candidateAmountLineCount > 0 ? finalValidCount / candidateAmountLineCount : 1;
     if (
         hasMedicinalSignals
         && candidateAmountLineCount >= MIN_EXPECTED_MEDICINAL_CANDIDATES
@@ -1893,6 +2095,23 @@ export function analyzeLabelDraftWithDiagnostics(tokens: Token[], fullText?: str
                 hasMedicinalSection: sectionInfo.hasMedicinal || hasEachContainsAnchor,
                 hasEachContainsAnchor,
                 chosenPipeline,
+            },
+            laneSplit: {
+                triggered: laneSplitDecision.applied,
+                applied: laneSplitDecision.applied,
+                chosen: laneSplitChosen,
+                revertedReason: laneSplitRevertedReason,
+                leftTokenCount: laneSplitDecision.applied ? laneSplitDecision.leftTokens.length : 0,
+                rightTokenCount: laneSplitDecision.applied ? laneSplitDecision.rightTokens.length : 0,
+                centerGapRatio: laneSplitDecision.centerGapRatio,
+            },
+            completeness: {
+                candidateAmountRows: candidateAmountLineCount,
+                parsedIngredients: finalValidCount,
+                completenessRatio,
+                issueTriggered: draft.issues.some(
+                    (issue) => issue.type === 'possible_missing_column' || issue.type === 'incomplete_ingredients',
+                ),
             },
             drafts: {
                 table: summarizeDraft(tableDraft),
@@ -2020,6 +2239,7 @@ function calculateConfidenceScore(
         header_not_found: 0.1,
         low_coverage: 0.2,
         incomplete_ingredients: 0.2,
+        possible_missing_column: 0.2,
         unit_invalid: 0.1,
         value_anomaly: 0.15,
         non_ingredient_line_detected: 0.2,
@@ -2032,6 +2252,7 @@ function calculateConfidenceScore(
         header_not_found: 0,
         low_coverage: 0,
         incomplete_ingredients: 0,
+        possible_missing_column: 0,
         unit_invalid: 0,
         value_anomaly: 0,
         non_ingredient_line_detected: 0,
@@ -2067,6 +2288,7 @@ export function needsConfirmation(draft: LabelDraft): boolean {
     if (draft.parseCoverage < 0.7) return true;
     if (draft.issues.some((i) => i.type === 'missing_serving_size')) return true;
     if (draft.issues.some((i) => i.type === 'incomplete_ingredients')) return true;
+    if (draft.issues.some((i) => i.type === 'possible_missing_column')) return true;
     if (draft.issues.some((i) => i.type === 'unit_invalid')) return true;
     if (draft.issues.some((i) => i.type === 'value_anomaly')) return true;
     if (draft.issues.some((i) => i.type === 'non_ingredient_line_detected')) return true;

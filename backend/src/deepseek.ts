@@ -184,7 +184,7 @@ CRITICAL INSTRUCTIONS:
 5. "timing" MUST be a short phrase (no long rationales). Prefer one of:
    - "Morning (with breakfast)"
    - "Morning (before breakfast)"
-   - "With meals (morning or dinner)"
+   - "Breakfast or dinner (with a meal)"
    - "Evening (after dinner)"
    - "Bedtime (30–60 min before sleep)"
    - "Anytime (with meals)"
