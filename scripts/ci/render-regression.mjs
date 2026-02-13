@@ -126,7 +126,6 @@ if (process.env.RENDER_INCLUDE_NIGHTLY_CASES === "1") {
     id: "lnhpd_with_form_observe",
     barcodes: [lnhpdWithFormBarcode, lnhpdWithFormBarcode2, lnhpdWithFormBarcode3],
     expectedSourceType: "lnhpd",
-    observeOnly: true,
   });
   CASES.splice(CASES.length - 1, 0, {
     id: "dsld_with_form_calcium_threonate",
