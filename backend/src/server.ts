@@ -46,6 +46,7 @@ import {
   applyWebIngredientsDetailEvidenceGate,
 } from "./webEvidenceGate.js";
 import { applyWebVerifyRevise } from "./webVerifyRevise.js";
+import { finalizePipelineStepCodes } from "./pipelineMetrics.js";
 import { buildMySupplementFactsV1, type MySupplementFactsV1 } from "./mySupplementFacts.js";
 import { getMySupplementOverviewV2GateReason } from "./mySupplementOverviewGate.js";
 import {
@@ -324,7 +325,7 @@ const ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS = Number(process.env.ANALYSIS_BUNDLE_DET
 const ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS_DSLD = Number(
   process.env.ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS_DSLD ?? 4500,
 );
-const WEB_VERIFY_TIME_BUDGET_MS = Number(process.env.WEB_VERIFY_TIME_BUDGET_MS ?? 1200);
+const WEB_VERIFY_TIME_BUDGET_MS = Number(process.env.WEB_VERIFY_TIME_BUDGET_MS ?? 200);
 const ANALYSIS_DETAIL_LIMIT_DEFAULT = Number(process.env.ANALYSIS_DETAIL_LIMIT_DEFAULT ?? 8);
 const ANALYSIS_DETAIL_LIMIT_MAX = Number(process.env.ANALYSIS_DETAIL_LIMIT_MAX ?? 12);
 const ANALYSIS_DETAIL_LIMIT_RESCUE = Number(process.env.ANALYSIS_DETAIL_LIMIT_RESCUE ?? 6);
@@ -5057,6 +5058,7 @@ const regressionAuthRoutes = new Set([
   "/api/analysis-section",
   "/api/analyze-label",
   "/api/label-scan/metrics",
+  "/api/label-scan/metrics/smoke",
 ]);
 
 const verifySupabaseToken = async (req: Request, res: Response, next: NextFunction) => {
@@ -8813,7 +8815,16 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       ms: nextMs,
     });
   };
+  const finalizePipelineNotReachedCodes = () => {
+    if (!pipelineMetricsEnabled) return;
+    const finalized = finalizePipelineStepCodes(pipelineStepsOrder, pipelineState);
+    for (const step of pipelineStepsOrder) {
+      const item = finalized.get(step);
+      if (item) pipelineState.set(step, item);
+    }
+  };
   const buildStableWebPipeline = () =>
+    (finalizePipelineNotReachedCodes(),
     pipelineStepsOrder.map((step) => {
       const item = pipelineState.get(step);
       return {
@@ -8821,7 +8832,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
         status: item?.status ?? "degraded",
         code: item?.code,
       };
-    });
+    }));
   const attachWebPipelineMeta = (bundle: AnalysisBundle): AnalysisBundle => {
     if (!pipelineMetricsEnabled) return bundle;
     if (bundle.meta.sourceType !== "web") return bundle;
@@ -8829,6 +8840,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       ...bundle,
       meta: {
         ...bundle.meta,
+        webPipelineSchemaVersion: 1,
         webPipeline: buildStableWebPipeline(),
       },
     };
@@ -8841,6 +8853,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
         ? (streamState.latestSourceType as "lnhpd" | "dsld" | "web")
         : "web");
     if (!pipelineTouched && resolvedSourceType !== "web") return;
+    finalizePipelineNotReachedCodes();
     const steps = pipelineStepsOrder.map((step) => {
       const item = pipelineState.get(step);
       return {
@@ -8852,6 +8865,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     });
     const totalMs = Math.max(0, Math.round(performance.now() - pipelineStartedAt));
     const sent = safeSendSse(res, "pipeline_metrics", {
+      pipelineMetricsSchemaVersion: 1,
       requestId: requestId || null,
       barcode: streamBarcode ?? normalized?.code ?? "",
       sourceType: resolvedSourceType,
@@ -9395,6 +9409,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
             markPipelineStepStart("verify");
             const verifiedCached = applyWebVerifyRevise(fastCandidate, params.digest, {
               timeBudgetMs: WEB_VERIFY_TIME_BUDGET_MS,
+              includeBudgetMs: pipelineMetricsEnabled,
             });
             fastCandidate = verifiedCached.bundle;
             markPipelineStepEnd("verify", verifiedCached.verify.status, verifiedCached.verify.code);
@@ -9503,6 +9518,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
             markPipelineStepStart("verify");
             const verified = applyWebVerifyRevise(adjustedBundle, params.digest, {
               timeBudgetMs: WEB_VERIFY_TIME_BUDGET_MS,
+              includeBudgetMs: pipelineMetricsEnabled,
             });
             gatedBundle = verified.bundle;
             markPipelineStepEnd("verify", verified.verify.status, verified.verify.code);
@@ -15738,6 +15754,12 @@ const labelScanClientMetricsBodySchema = z
   })
   .passthrough();
 
+const labelScanMetricsSmokeBodySchema = z
+  .object({
+    runId: z.string().min(1),
+  })
+  .passthrough();
+
 type AnalyzeLabelRequest = z.infer<typeof analyzeLabelBodySchema>;
 
 interface LabelAnalysisResponse {
@@ -17180,6 +17202,87 @@ app.post("/api/analyze-label", verifySupabaseToken, async (req: Request, res: Re
       message: "An unexpected error occurred.",
       suggestion: "Please try again. If the problem persists, try a different photo.",
     } satisfies LabelAnalysisResponse);
+  }
+});
+
+/**
+ * POST /api/label-scan/metrics/smoke
+ * Regression-only sentinel insert to prove scorecard write/query alignment.
+ */
+app.post("/api/label-scan/metrics/smoke", verifySupabaseToken, async (req: Request, res: Response) => {
+  try {
+    const parsedBody = parseRequestBody(labelScanMetricsSmokeBodySchema, req, res);
+    if (!parsedBody) return;
+
+    if (!(req as AuthenticatedRequest).regressionAuth) {
+      return res.status(403).json({ error: "forbidden" } satisfies ErrorResponse);
+    }
+
+    const requestId = `ci_smoke_${parsedBody.runId}`;
+
+    const { data: existing, error: selectError } = await supabase
+      .from("label_scan_metrics")
+      .select("request_id")
+      .eq("request_id", requestId)
+      .limit(1);
+    if (selectError) {
+      return res.status(500).json({
+        error: "label_scan_metrics_smoke_select_failed",
+        message: selectError.message,
+      });
+    }
+
+    if (Array.isArray(existing) && existing.length > 0) {
+      return res.json({ ok: true, requestId, idempotent: true });
+    }
+
+    const { error: insertError } = await supabase
+      .from("label_scan_metrics")
+      .insert({
+        request_id: requestId,
+        image_hash: requestId,
+        job_id: null,
+        parser_version: LABEL_PARSER_VERSION,
+        preprocess_profile: "ci_smoke",
+        flag_variant: "control",
+        cache_mode: "strict",
+        ocr_cache_hit: false,
+        parse_cache_hit: null,
+        analysis_cache_hit: null,
+        ocr_call_count: 0,
+        analysis_for_draft_revision: null,
+        patch_id: null,
+        patch_type: null,
+        lane_split_triggered: null,
+        lane_split_chosen: null,
+        lane_split_reverted_reason: null,
+        locked_field_conflict_count: 0,
+        response_status: "ci_smoke",
+        analysis_status: null,
+        parse_coverage: null,
+        needs_confirmation: false,
+        issue_types: [],
+        t_decode_ms: null,
+        t_ocr_ms: null,
+        t_parse_ms: null,
+        t_llm_ms: null,
+        t_first_draft_server_ms: null,
+        client_started_at_ms: null,
+        t_client_roundtrip_ms: null,
+        meta: { source: "ci_smoke", runId: parsedBody.runId, note: "scorecard_sentinel" },
+      });
+
+    if (insertError) {
+      return res.status(500).json({
+        error: "label_scan_metrics_smoke_insert_failed",
+        message: insertError.message,
+      });
+    }
+
+    return res.json({ ok: true, requestId, idempotent: false });
+  } catch (error) {
+    captureException(error, { route: "/api/label-scan/metrics/smoke" });
+    return res.status(500).json({ error: "label_scan_metrics_smoke_failed" } satisfies ErrorResponse);
   }
 });
 
