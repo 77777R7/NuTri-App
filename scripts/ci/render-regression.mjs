@@ -2,6 +2,7 @@
 /* eslint-disable no-console */
 import fs from "node:fs/promises";
 import path from "node:path";
+import { withEnrichStreamBoundedRetry } from "./enrich-stream-retry.mjs";
 
 const ENABLE_GROUNDEDNESS_LEXICAL = (process.env.RENDER_GROUNDEDNESS_LEXICAL || "0") === "1";
 const REQUIRE_FORM_TOKEN_IN_EXCERPT =
@@ -259,7 +260,9 @@ async function readSseEvents(barcode, options = {}) {
 
   if (!res.ok) {
     clearTimeout(timeout);
-    throw new Error(`enrich-stream HTTP ${res.status}`);
+    const err = new Error(`enrich-stream HTTP ${res.status}`);
+    err.httpStatus = res.status;
+    throw err;
   }
 
   const reader = res.body?.getReader();
@@ -639,7 +642,9 @@ const average = (values) => {
 };
 
 function summarizeRagQuadrantMetrics(runResults) {
-  const webRows = (runResults || []).filter((item) => item?.summary?.sourceType === "web");
+  // Important: include the web case even when it failed before a bundle exists (e.g. enrich-stream HTTP 503),
+  // because sourceType may be null in exception summaries.
+  const webRows = (runResults || []).filter((item) => item?.summary?.caseId === "web");
   const webTotal = webRows.length;
   const extractStep = (steps, stepName) =>
     Array.isArray(steps) ? steps.find((step) => step?.step === stepName) || null : null;
@@ -813,9 +818,15 @@ function summarizeRagQuadrantMetrics(runResults) {
   const infra503SeenCount = webRows.filter((row) => {
     const statuses = row?.summary?.analysisSectionSeen5xxStatuses;
     if (Array.isArray(statuses) && statuses.includes(503)) return true;
+    const sseStatuses = row?.summary?.enrichStreamSeen5xxStatuses;
+    if (Array.isArray(sseStatuses) && sseStatuses.includes(503)) return true;
     const errors = Array.isArray(row?.summary?.errors) ? row.summary.errors : [];
     return errors.some((e) => typeof e === "string" && /\bHTTP\s*503\b/.test(e));
   }).length;
+  const enrichStreamRetryUsedCount = webRows.reduce(
+    (acc, row) => acc + (Number(row?.summary?.enrichStreamRetryCount ?? 0) || 0),
+    0,
+  );
   const analysisSectionRetryUsedCount = webRows.reduce(
     (acc, row) => acc + (Number(row?.summary?.analysisSectionRetryCount ?? 0) || 0),
     0,
@@ -893,6 +904,7 @@ function summarizeRagQuadrantMetrics(runResults) {
     watchdogFastTimeoutRateAll,
     watchdogFastTimeoutRateNoCache,
     infra503SeenCount,
+    enrichStreamRetryUsedCount,
     analysisSectionRetryUsedCount,
     missingBundleSeenCount,
     sseRereadUsedCount,
@@ -1455,12 +1467,37 @@ async function runCase(testCase) {
       ? Math.max(2500, Number(process.env.RENDER_WEB_SSE_TAIL_MS || webTailMsDefault))
       : 2500;
 
-  let events = await readSseEvents(testCase.barcode, { fastTailMs });
+  let enrichStreamRetryCount = 0;
+  let enrichStreamSeen5xxStatuses = [];
+
+  const readEventsWithRetry = async () => {
+    try {
+      const { value, retryCount, seen5xxStatuses } = await withEnrichStreamBoundedRetry(
+        () => readSseEvents(testCase.barcode, { fastTailMs }),
+        { maxRetries: 2, retryHttpStatuses: [502, 503, 504], backoffMs: [500, 1500], sleepFn: sleep },
+      );
+      enrichStreamRetryCount += Number(retryCount || 0) || 0;
+      if (Array.isArray(seen5xxStatuses) && seen5xxStatuses.length) {
+        enrichStreamSeen5xxStatuses = [...enrichStreamSeen5xxStatuses, ...seen5xxStatuses];
+      }
+      return value;
+    } catch (err) {
+      // Preserve audit fields even on failure, so infra retries are not "washed away".
+      enrichStreamRetryCount += Number(err?.enrichStreamRetryCount ?? 0) || 0;
+      const seen = Array.isArray(err?.enrichStreamSeen5xxStatuses) ? err.enrichStreamSeen5xxStatuses : [];
+      if (seen.length) enrichStreamSeen5xxStatuses = [...enrichStreamSeen5xxStatuses, ...seen];
+      err.enrichStreamRetryCount = enrichStreamRetryCount;
+      err.enrichStreamSeen5xxStatuses = enrichStreamSeen5xxStatuses;
+      throw err;
+    }
+  };
+
+  let events = await readEventsWithRetry();
   // Render services can cold-start; the first request occasionally yields an empty stream.
   // Retry once to reduce flakiness without masking systematic failures.
   if (!events.length) {
     await sleep(1500);
-    events = await readSseEvents(testCase.barcode, { fastTailMs });
+    events = await readEventsWithRetry();
   }
   let bundleEvents = getBundleEvents(events);
   let bundleCheck = assertBundleContract(bundleEvents, testCase.expectedSourceType);
@@ -1607,6 +1644,8 @@ async function runCase(testCase) {
     doneReason,
     bundleFallbackCode,
     pipelineMetrics: pickLatestPipelineMetrics(events),
+    enrichStreamRetryCount,
+    enrichStreamSeen5xxStatuses,
     analysisSectionRetryCount,
     analysisSectionSeen5xxStatuses,
     missingFastBundleSeen,
@@ -1673,6 +1712,8 @@ async function runCaseSafely(testCase) {
         fallbackUsed: null,
         fallbackReason: null,
         pipelineMetrics: null,
+        enrichStreamRetryCount: Number(err?.enrichStreamRetryCount ?? 0) || 0,
+        enrichStreamSeen5xxStatuses: Array.isArray(err?.enrichStreamSeen5xxStatuses) ? err.enrichStreamSeen5xxStatuses : [],
         analysisSectionRetryCount: 0,
         analysisSectionSeen5xxStatuses: [],
         missingFastBundleSeen: false,
@@ -1719,7 +1760,15 @@ async function runCaseWithFallback(testCase) {
     // eslint-disable-next-line no-await-in-loop
     const result = await runCaseSafely({ ...testCase, barcode });
     result.summary.usedBarcode = barcode;
-    attempts.push({ barcode, pass: result.summary.pass, errors: result.errors });
+    attempts.push({
+      barcode,
+      pass: result.summary.pass,
+      errors: result.errors,
+      enrichStreamRetryCount: Number(result.summary.enrichStreamRetryCount ?? 0) || 0,
+      enrichStreamSeen5xxStatuses: Array.isArray(result.summary.enrichStreamSeen5xxStatuses)
+        ? result.summary.enrichStreamSeen5xxStatuses
+        : [],
+    });
     if (barcode === primaryBarcode) primaryResult = result;
     if (barcode === primaryBarcode) {
       result.summary.primaryBarcode = primaryBarcode;

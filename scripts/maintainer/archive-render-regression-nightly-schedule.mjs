@@ -238,6 +238,8 @@ function extractRagQuadrantMetricsSubset(summary) {
         ? rag.watchdogFastTimeoutRateNoCache
         : null,
     infra503SeenCount: typeof rag?.infra503SeenCount === "number" ? rag.infra503SeenCount : null,
+    enrichStreamRetryUsedCount:
+      typeof rag?.enrichStreamRetryUsedCount === "number" ? rag.enrichStreamRetryUsedCount : null,
     analysisSectionRetryUsedCount:
       typeof rag?.analysisSectionRetryUsedCount === "number" ? rag.analysisSectionRetryUsedCount : null,
     missingBundleSeenCount: typeof rag?.missingBundleSeenCount === "number" ? rag.missingBundleSeenCount : null,
