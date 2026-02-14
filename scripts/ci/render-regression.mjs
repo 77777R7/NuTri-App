@@ -237,6 +237,9 @@ const ensureDir = async (dir) => {
 async function readSseEvents(barcode, options = {}) {
   const ctrl = new AbortController();
   const timeoutMs = Number(options.timeoutMs || SSE_TIMEOUT_MS);
+  // Grace window after we observe done/pipeline_metrics to allow the other event to arrive.
+  // Some server paths emit done and pipeline_metrics very close together (order can vary),
+  // and canceling immediately on the first one can drop observability signals.
   const fastTailMs = Number(options.fastTailMs ?? 2500);
   const timeout = setTimeout(() => ctrl.abort(), timeoutMs);
 
@@ -270,12 +273,10 @@ async function readSseEvents(barcode, options = {}) {
   let buffer = "";
   let currentEvent = null;
   let currentDataLines = [];
-  let sawSkeleton = false;
-  let sawFast = false;
   let sawDone = false;
   let sawPipelineMetrics = false;
-  let fastReadyAtMs = null;
   let shouldStopEarly = false;
+  let stopAfterAtMs = null;
 
   const flushEvent = () => {
     if (!currentEvent) return;
@@ -296,23 +297,19 @@ async function readSseEvents(barcode, options = {}) {
     events.push({ event: currentEvent, data: parsed, rawData: dataRaw });
     if (currentEvent === "done") {
       sawDone = true;
+      if (!sawPipelineMetrics && stopAfterAtMs == null) {
+        stopAfterAtMs = Date.now() + fastTailMs;
+      }
     }
     if (currentEvent === "pipeline_metrics") {
       sawPipelineMetrics = true;
-    }
-
-    if (currentEvent === "analysis_bundle" && parsed && typeof parsed === "object") {
-      const rev = parsed?.meta?.revision;
-      const phase = parsed?.meta?.phase;
-      if (rev === 0 && phase === "skeleton") sawSkeleton = true;
-      if (rev === 1 && phase === "fast_ai") sawFast = true;
-      if (sawSkeleton && sawFast && fastReadyAtMs == null) {
-        fastReadyAtMs = Date.now();
+      if (!sawDone && stopAfterAtMs == null) {
+        stopAfterAtMs = Date.now() + fastTailMs;
       }
     }
 
-    // Prefer graceful stop after metrics/done so regression can observe pipeline_metrics.
-    if (sawSkeleton && sawFast && (sawDone || sawPipelineMetrics)) {
+    // Stop as soon as we observe both signals; otherwise wait for the grace window (fastTailMs).
+    if (sawDone && sawPipelineMetrics) {
       shouldStopEarly = true;
     }
 
@@ -351,10 +348,8 @@ async function readSseEvents(barcode, options = {}) {
         }
       }
 
-      if (!shouldStopEarly && sawSkeleton && sawFast && fastReadyAtMs != null) {
-        if (Date.now() - fastReadyAtMs >= fastTailMs) {
-          shouldStopEarly = true;
-        }
+      if (!shouldStopEarly && stopAfterAtMs != null && Date.now() >= stopAfterAtMs) {
+        shouldStopEarly = true;
       }
     }
 
@@ -543,10 +538,32 @@ function pickLatestPipelineMetrics(events) {
     requestId: typeof raw?.requestId === "string" ? raw.requestId : null,
     barcode: typeof raw?.barcode === "string" ? raw.barcode : null,
     sourceType: typeof raw?.sourceType === "string" ? raw.sourceType : null,
+    cacheHit: raw?.cacheHit === true,
+    cancelCounts:
+      raw?.cancelCounts && typeof raw.cancelCounts === "object"
+        ? {
+            fast_bundle_replaced_count: Number.isFinite(raw.cancelCounts.fast_bundle_replaced_count)
+              ? Number(raw.cancelCounts.fast_bundle_replaced_count)
+              : 0,
+            fallback_rev1_locked_count: Number.isFinite(raw.cancelCounts.fallback_rev1_locked_count)
+              ? Number(raw.cancelCounts.fallback_rev1_locked_count)
+              : 0,
+          }
+        : null,
     totalMs: Number.isFinite(raw?.totalMs) ? Number(raw.totalMs) : null,
     emittedAt: typeof raw?.emittedAt === "string" ? raw.emittedAt : null,
     steps,
   };
+}
+
+function pickDoneReason(events) {
+  const doneEvents = (events || []).filter((entry) => entry?.event === "done");
+  if (!doneEvents.length) return null;
+  const latest = doneEvents[doneEvents.length - 1];
+  const data = latest?.data;
+  if (data && typeof data === "object" && typeof data.reason === "string") return data.reason;
+  if (typeof data === "string") return data;
+  return null;
 }
 
 function summarizePipelineMetrics(runResults) {
@@ -749,6 +766,57 @@ function summarizeRagQuadrantMetrics(runResults) {
   const postRationalizationProxyRateValue =
     faithfulnessProxyScoreValue == null ? null : Number((1 - faithfulnessProxyScoreValue).toFixed(4));
 
+  // Web watchdog: quantify how often the fast path times out (without being diluted by cache hits).
+  const WATCHDOG_CODE = "watchdog_fast_timeout";
+  const isWatchdogRow = (row) =>
+    row?.summary?.doneReason === WATCHDOG_CODE || row?.summary?.bundleFallbackCode === WATCHDOG_CODE;
+  const watchdogFastTimeoutSeenInDoneReasonCount = webRows.filter((row) => row?.summary?.doneReason === WATCHDOG_CODE).length;
+  const watchdogFastTimeoutSeenInBundleCount = webRows.filter((row) => row?.summary?.bundleFallbackCode === WATCHDOG_CODE).length;
+  const watchdogFastTimeoutMismatchCount = webRows.filter((row) => {
+    const a = row?.summary?.doneReason === WATCHDOG_CODE;
+    const b = row?.summary?.bundleFallbackCode === WATCHDOG_CODE;
+    return a !== b;
+  }).length;
+  const watchdogMetricsInvalid = watchdogFastTimeoutMismatchCount > 0;
+  const watchdogFastTimeoutCount = webRows.filter((row) => isWatchdogRow(row)).length;
+
+  const cacheHitCount = webRows.filter((row) => row?.summary?.pipelineMetrics?.cacheHit === true).length;
+  const cacheHitRate = webTotal > 0 ? Number((cacheHitCount / webTotal).toFixed(4)) : null;
+  const watchdogFastTimeoutRateAll =
+    webTotal > 0 ? Number((watchdogFastTimeoutCount / webTotal).toFixed(4)) : null;
+  const denomNoCache = Math.max(1, webTotal - cacheHitCount);
+  const watchdogFastTimeoutRateNoCache =
+    webTotal > 0 ? Number((watchdogFastTimeoutCount / denomNoCache).toFixed(4)) : null;
+
+  const watchdogFastTimeoutBucketCounts = {};
+  for (const row of webRows.filter((row) => isWatchdogRow(row))) {
+    const steps = row?.summary?.pipelineMetrics?.steps || row?.summary?.webPipeline || [];
+    let bucket = null;
+    // 1) Failed step code
+    for (const stepName of PIPELINE_STEP_NAMES) {
+      const step = extractStep(steps, stepName);
+      if (!step) continue;
+      if (step.status === "failed") {
+        bucket = step.code || `${step.step}_failed`;
+        break;
+      }
+    }
+    // 2) Blocked-by root cause
+    if (!bucket) {
+      for (const stepName of PIPELINE_STEP_NAMES) {
+        const step = extractStep(steps, stepName);
+        const code = step?.code;
+        if (typeof code === "string" && code.startsWith("blocked_by:")) {
+          bucket = code.slice("blocked_by:".length) || "blocked_by_unknown";
+          break;
+        }
+      }
+    }
+    // 3) Time budget exhausted with no explicit root cause
+    if (!bucket) bucket = "time_budget_exhausted";
+    watchdogFastTimeoutBucketCounts[bucket] = (watchdogFastTimeoutBucketCounts[bucket] || 0) + 1;
+  }
+
   return {
     sampleSize: webTotal,
     retrievalEvidenceHitRate: webTotal > 0 ? Number((retrievalHits / webTotal).toFixed(4)) : null,
@@ -779,6 +847,16 @@ function summarizeRagQuadrantMetrics(runResults) {
       sampleSize: webTotal,
       noClaimsVerifiedCount,
     },
+    watchdogFastTimeoutSeenInDoneReasonCount,
+    watchdogFastTimeoutSeenInBundleCount,
+    watchdogFastTimeoutMismatchCount,
+    watchdogMetricsInvalid,
+    cacheHitCount,
+    cacheHitRate,
+    watchdogFastTimeoutCount,
+    watchdogFastTimeoutRateAll,
+    watchdogFastTimeoutRateNoCache,
+    watchdogFastTimeoutBucketCounts,
     webUsefulOutputRate: (() => {
       if (webTotal <= 0) return null;
       const usefulCount = webRows.filter((row) => {
@@ -1409,9 +1487,16 @@ async function runCase(testCase) {
     ...dsldKbErrors,
     ...lnhpdKbErrors,
   ];
+  const doneReason = pickDoneReason(events);
+  const bundleFallbackCode =
+    bundleCheck.fastBundle?.meta?.fallback?.code ??
+    bundleCheck.fastBundle?.meta?.fallbackReason ??
+    null;
   const summary = {
     ...pickKeyFields({ case: testCase, fastBundle: bundleCheck.fastBundle, detailResponse }),
     observeOnly: testCase.observeOnly === true,
+    doneReason,
+    bundleFallbackCode,
     pipelineMetrics: pickLatestPipelineMetrics(events),
     detailRequestCount: detailRequestMetrics.totalRequests,
     detail429Count: detailRequestMetrics.status429Count,
@@ -1460,6 +1545,8 @@ async function runCaseSafely(testCase) {
         requiredFormKeyword: testCase.requiredFormKeyword ?? null,
         targetActiveKeyword: testCase.targetActiveKeyword ?? null,
         observeOnly: testCase.observeOnly === true,
+        doneReason: null,
+        bundleFallbackCode: null,
         sourceType: null,
         promptVersion: null,
         serverCommitSha: null,

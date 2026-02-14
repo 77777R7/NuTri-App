@@ -116,6 +116,18 @@ jobs:
             console.log("[rag] Output");
             console.log(`- webUsefulOutputRate: ${rag.webUsefulOutputRate}`);
 
+            console.log("[web] Watchdog");
+            console.log(`- cacheHitRate: ${rag.cacheHitRate} (${rag.cacheHitCount}/${rag.sampleSize})`);
+            console.log(
+              `- watchdogFastTimeoutRateAll/NoCache: ${rag.watchdogFastTimeoutRateAll}/${rag.watchdogFastTimeoutRateNoCache}`,
+            );
+            console.log(
+              `- watchdogFastTimeoutCount: ${rag.watchdogFastTimeoutCount} (doneReason=${rag.watchdogFastTimeoutSeenInDoneReasonCount} bundle=${rag.watchdogFastTimeoutSeenInBundleCount} mismatch=${rag.watchdogFastTimeoutMismatchCount} invalid=${rag.watchdogMetricsInvalid})`,
+            );
+            console.log(
+              `- watchdogBucketCounts: ${topN(rag.watchdogFastTimeoutBucketCounts) || "(none)"}`,
+            );
+
             console.log("[pipeline] Timing");
             console.log(`- samplesCount: ${pipe.samplesCount}`);
             console.log(`- totalMsP50/P90: ${pipe.totalMsP50}/${pipe.totalMsP90}`);

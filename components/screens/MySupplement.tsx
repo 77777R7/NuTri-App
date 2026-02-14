@@ -1714,7 +1714,7 @@ function DetailSheet({
                       ) : null}
 
                       <View style={{ gap: 10 }}>
-                        <Text style={styles.overviewSectionTitle}>What's inside</Text>
+                        <Text style={styles.overviewSectionTitle}>{"What's inside"}</Text>
                         {whatsInsideDisplay.source === "actives" || whatsInsideDisplay.source === "inferred" ? (
                           <View style={{ gap: 10 }}>
                             {whatsInsideDisplay.lines.map((line) => (

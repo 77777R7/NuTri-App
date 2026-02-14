@@ -45,8 +45,14 @@ export class BulkheadTimeoutError extends Error {
 export const isAbortError = (error: unknown): boolean => {
   if (!error || typeof error !== "object") return false;
   if ("name" in error && (error as { name?: string }).name === "AbortError") return true;
-  // We use AbortController.abort(new Error("client_disconnected")) for SSE close events.
-  if ("message" in error && (error as { message?: string }).message === "client_disconnected") return true;
+  if ("message" in error) {
+    const message = (error as { message?: string }).message;
+    // We use AbortController.abort(new Error("client_disconnected")) for SSE close events.
+    if (message === "client_disconnected") return true;
+    // Expected internal cancels (avoid noisy error logs).
+    if (message === "fast_bundle_replaced") return true;
+    if (message === "fallback_rev1_locked") return true;
+  }
   return false;
 };
 

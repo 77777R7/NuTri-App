@@ -1598,16 +1598,54 @@ const AnalysisBundleDashboard: React.FC<{
         },
     ];
 
-    const ringScore = (value?: number | null) => {
-        if (typeof value !== 'number' || Number.isNaN(value)) return 50;
-        return Math.round(value * 10);
-    };
-    const ringScores = {
-        effectiveness: ringScore(analysis?.efficacy?.score),
-        safety: ringScore(analysis?.safety?.score),
-        value: ringScore(analysis?.value?.score),
-        overall: ringScore(analysis?.scores?.overall),
-    };
+    const hasNumber = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+    const scoresReady =
+        hasNumber(analysis?.efficacy?.score) &&
+        hasNumber(analysis?.safety?.score) &&
+        hasNumber(analysis?.value?.score) &&
+        hasNumber(analysis?.scores?.overall);
+
+    type ScoreUiMode = 'not_scored' | 'scoring' | 'scored';
+    const scoreUiMode: ScoreUiMode =
+        bundleState.meta.scoreAvailable === false
+            ? 'not_scored'
+            : isStreaming || scoreState === 'loading' || !scoresReady
+                ? 'scoring'
+                : 'scored';
+
+    const ringScore = (value: number) => Math.round(value * 10);
+    const ringScores =
+        scoreUiMode === 'scored'
+            ? {
+                effectiveness: ringScore(analysis.efficacy.score),
+                safety: ringScore(analysis.safety.score),
+                value: ringScore(analysis.value.score),
+                overall: ringScore(analysis.scores.overall),
+            }
+            : { effectiveness: 0, safety: 0, value: 0, overall: 0 };
+    const ringMuted = scoreUiMode !== 'scored' || scoreState === 'muted';
+    const ringDisplay =
+        scoreUiMode === 'not_scored'
+            ? {
+                overall: t.analysisScoreNotScored,
+                effectiveness: '--',
+                safety: '--',
+                value: '--',
+            }
+            : scoreUiMode === 'scoring'
+                ? {
+                    overall: t.analysisScoreScoring,
+                    effectiveness: '--',
+                    safety: '--',
+                    value: '--',
+                }
+                : undefined;
+    const ringMetaLines =
+        scoreUiMode === 'not_scored'
+            ? [t.analysisScoreNotScoredReasonWeb]
+            : scoreUiMode === 'scoring'
+                ? [t.analysisScoreScoringReason]
+                : [];
 
     return (
         <View style={styles.root}>
@@ -1636,11 +1674,13 @@ const AnalysisBundleDashboard: React.FC<{
                             value: ringScores.value,
                             overall: ringScores.overall,
                         }}
+                        display={ringDisplay}
                         descriptions={{
                             effectiveness: { verdict: '', highlights: [] },
                             safety: { verdict: '', highlights: [] },
                             practicality: { verdict: '', highlights: [] },
                         }}
+                        muted={ringMuted}
                         unknownCategories={{ effectiveness: false, safety: false, value: false }}
                         labels={{
                             overall: t.analysisScoreLabel,
@@ -1649,7 +1689,7 @@ const AnalysisBundleDashboard: React.FC<{
                             value: sourceType === 'label_scan' ? t.analysisScoreFormulaQuality : t.analysisScoreValue,
                             valueLabel: sourceType === 'label_scan' ? t.analysisScoreFormulaQuality : t.analysisScoreValue,
                         }}
-                        metaLines={[]}
+                        metaLines={ringMetaLines}
                         badgeText={scoreBadge}
                         sourceType={sourceType}
                     />
