@@ -185,6 +185,14 @@ jobs:
               `- watchdogBucketCounts: ${topN(rag.watchdogFastTimeoutBucketCounts) || "(none)"}`,
             );
 
+            console.log("[web] Infra (auditable, observe-only)");
+            console.log(
+              `- infra503SeenCount: ${rag.infra503SeenCount} (analysisSectionRetryUsedCount=${rag.analysisSectionRetryUsedCount})`,
+            );
+            console.log(
+              `- missingBundleSeenCount: ${rag.missingBundleSeenCount} (sseRereadUsedCount=${rag.sseRereadUsedCount})`,
+            );
+
             console.log("[pipeline] Timing");
             console.log(`- samplesCount: ${pipe.samplesCount}`);
             console.log(`- totalMsP50/P90: ${pipe.totalMsP50}/${pipe.totalMsP90}`);
