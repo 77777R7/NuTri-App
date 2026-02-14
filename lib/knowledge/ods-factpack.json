@@ -242,6 +242,118 @@
       ],
       "sourceUrl": "https://ods.od.nih.gov:443/factsheets/VitaminK-Consumer/"
     },
+    "vitamin b6": {
+      "overview": "Vitamin B6 supports amino acid metabolism, brain development, and normal immune function.",
+      "curatedOverview": "Vitamin B6 supports amino acid metabolism, brain development, and normal immune function.",
+      "overviewSource": "curated",
+      "whatItDoes": [
+        "However, studies to date have not shown that vitamin B6 supplements can help prevent cancer or lower the chances of dying from this disease.",
+        "Cognitive function Some research indicates that elderly people who have higher blood levels of vitamin B6 have better memory.",
+        "However, taking vitamin B6 supplements (alone or combined with vitamin B12 and/or folic acid) does not seem to improve cognitive function or mood in healthy people or in people with dementia."
+      ],
+      "watchOuts": [
+        "Vitamin B6 is also involved in brain development during pregnancy and infancy as well as immune function.",
+        "Although vitamin B supplements do lower blood homocysteine, research shows that they do not actually reduce the risk or severity of heart disease or stroke.",
+        "Cancer People with low levels of vitamin B6 in the blood might have a higher risk of certain kinds of cancer, such as colorectal cancer."
+      ],
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/VitaminB6-Consumer/"
+    },
+    "pantothenic acid": {
+      "overview": "Pantothenic acid (vitamin B5) helps convert food into energy and supports fat metabolism pathways.",
+      "curatedOverview": "Pantothenic acid (vitamin B5) helps convert food into energy and supports fat metabolism pathways.",
+      "overviewSource": "curated",
+      "whatItDoes": [
+        "Pantothenic acid (also called vitamin B5) helps turn the food you eat into the energy you need.",
+        "It&rsquo;s important for many functions in the body, especially making and breaking down fats.",
+        "However, people with a rare inherited disorder called pantothenate kinase-associated neurodegeneration can&rsquo;t use pantothenic acid properly."
+      ],
+      "watchOuts": [
+        "Pantothenic acid is not known to interact or interfere with any medicines.",
+        "They can tell you if those dietary supplements might interact with your medicines or if the medicines might interfere with how your body absorbs, uses, or breaks down nutrients.",
+        "In some cases, fortified foods and dietary supplements are useful when it is not possible to meet needs for one or more nutrients (for example, during specific life stages such as pregnancy)."
+      ],
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/PantothenicAcid-Consumer/"
+    },
+    "choline": {
+      "overview": "Choline supports cell membrane structure and normal brain and nervous system function.",
+      "curatedOverview": "Choline supports cell membrane structure and normal brain and nervous system function.",
+      "overviewSource": "curated",
+      "whatItDoes": [
+        "Your brain and nervous system need it to regulate memory, mood, muscle control, and other functions.",
+        "Cardiovascular disease Some research shows that getting enough choline might help keep the heart and blood vessels healthy, partly by reducing blood pressure.",
+        "Neurological disorders Some studies have found a link between higher intakes of choline (and higher blood levels of choline) and better cognitive function (such as verbal and visual memory)."
+      ],
+      "watchOuts": [
+        "You can make a small amount of choline in your liver, but most of the choline in your body comes from the food you eat.",
+        "Other research suggests that higher amounts of choline might increase cardiovascular disease risk.",
+        "More research is needed to understand whether getting more choline from the diet and supplements might raise or lower the risk of cardiovascular disease."
+      ],
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Choline-Consumer/"
+    },
+    "chromium": {
+      "overview": "Chromium is a trace mineral that may help the body use carbohydrates, fats, and proteins.",
+      "curatedOverview": "Chromium is a trace mineral that may help the body use carbohydrates, fats, and proteins.",
+      "overviewSource": "curated",
+      "whatItDoes": [
+        "Researchers do not fully understand what chromium does in your body, but it might help you use carbohydrates, fats, and proteins.",
+        "Scientists do not currently think that chromium is necessary for good health, and chromium deficiency has not been reported in healthy people.",
+        "This benefit is unlikely to make any difference in health or appearance."
+      ],
+      "watchOuts": [
+        "PCOS raises the risk of diabetes and heart disease.",
+        "More research is needed to understand whether taking chromium might help lower the risk of PCOS or improve symptoms.",
+        "High cholesterol levels High levels of LDL (bad) cholesterol can raise your risk of heart attack and stroke."
+      ],
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/chromium-Consumer/"
+    },
+    "copper": {
+      "overview": "Copper is a trace mineral involved in energy production, connective tissue, and nervous and immune function.",
+      "curatedOverview": "Copper is a trace mineral involved in energy production, connective tissue, and nervous and immune function.",
+      "overviewSource": "curated",
+      "whatItDoes": [
+        "Copper is a mineral that you need to stay healthy.",
+        "Your body uses copper to carry out many important functions, including making energy, connective tissues, and blood vessels.",
+        "Copper also helps maintain the nervous and immune systems and activates genes."
+      ],
+      "watchOuts": [
+        "Other effects of copper deficiency are weak and brittle bones, loss of balance and coordination, and increased risk of infection.",
+        "More research is needed to understand whether getting more copper from the diet or supplements might raise or lower the risk of cardiovascular disease.",
+        "Alzheimer&rsquo;s disease Some research shows that people with higher levels of copper in their blood have a lower risk of Alzheimer&rsquo;s disease."
+      ],
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Copper-Consumer/"
+    },
+    "manganese": {
+      "overview": "Manganese is a trace mineral involved in energy metabolism, antioxidant defense, and bone formation.",
+      "curatedOverview": "Manganese is a trace mineral involved in energy metabolism, antioxidant defense, and bone formation.",
+      "overviewSource": "curated",
+      "whatItDoes": [
+        "Manganese is a mineral that your body needs to stay healthy.",
+        "Your body also needs manganese for strong bones, reproduction, blood clotting, and a healthy immune system.",
+        "Bone health You need manganese in combination with other minerals and vitamins for healthy bone formation."
+      ],
+      "watchOuts": [
+        "Diabetes You need manganese to help break down the starches and sugars that you eat, but its effect on the risk of diabetes is unknown.",
+        "Studies have not shown any harm from the manganese in food and beverages, but some people have developed manganese toxicity by consuming water containing very high levels of manganese.",
+        "Another cause of manganese toxicity is inhaling large amounts of manganese dust from welding or mining work."
+      ],
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Manganese-Consumer/"
+    },
+    "phosphorus": {
+      "overview": "Phosphorus is a mineral involved in bone structure and cellular energy and signaling processes.",
+      "curatedOverview": "Phosphorus is a mineral involved in bone structure and cellular energy and signaling processes.",
+      "overviewSource": "curated",
+      "whatItDoes": [
+        "Your body needs phosphorus to make energy and to carry out many important chemical processes.",
+        "High phosphorus intakes seldom cause problems in healthy people.",
+        "Phosphorus and healthful eating People should get most of their nutrients from food and beverages, according to the federal government&rsquo;s Dietary Guidelines for Americans."
+      ],
+      "watchOuts": [
+        "Chronic kidney disease In severe chronic kidney disease, the kidneys stop working properly and can&rsquo;t get rid of excess phosphorus.",
+        "Phosphorus then builds up in the blood and can affect bone health and worsen kidney disease, and it might increase the risk of death.",
+        "Consuming less phosphorus and eating more foods containing calcium might help prevent the side effects of high phosphorus levels in people with severe chronic kidney disease."
+      ],
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Phosphorus-Consumer/"
+    },
     "niacin": {
       "overview": "Niacin (vitamin B3) supports energy metabolism and normal nervous system function.",
       "curatedOverview": "Niacin (vitamin B3) supports energy metabolism and normal nervous system function.",

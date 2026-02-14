@@ -273,6 +273,125 @@ const CORE_RECIPES = [
     ],
   },
   {
+    key: "vitamin b6",
+    resourceName: "VitaminB6",
+    fallbackUrl: "https://ods.od.nih.gov/factsheets/VitaminB6-Consumer/",
+    overview:
+      "Vitamin B6 supports amino acid metabolism, brain development, and normal immune function.",
+    whatItDoes: [
+      "Supports more than 100 enzyme reactions involved in metabolism.",
+      "Contributes to normal nervous system and immune function.",
+      "Helps maintain normal protein and amino acid metabolism.",
+    ],
+    watchOuts: [
+      "Very high long-term intakes can cause nerve-related side effects in some people.",
+      "Check overlap if using multiple B-complex or energy-focused products.",
+      "Consult a clinician if you take seizure medications or have chronic conditions.",
+    ],
+  },
+  {
+    key: "pantothenic acid",
+    resourceName: "PantothenicAcid",
+    fallbackUrl: "https://ods.od.nih.gov/factsheets/PantothenicAcid-Consumer/",
+    overview:
+      "Pantothenic acid (vitamin B5) helps convert food into energy and supports fat metabolism pathways.",
+    whatItDoes: [
+      "Helps turn food into usable energy.",
+      "Supports fat metabolism and coenzyme A pathways.",
+      "Contributes to broader B-complex metabolic functions.",
+    ],
+    watchOuts: [
+      "Supplement overlap is common in multivitamins and B-complex formulas.",
+      "Use label totals when combining fortified foods and multiple supplements.",
+      "Consult a clinician if you have chronic conditions or take medications.",
+    ],
+  },
+  {
+    key: "choline",
+    resourceName: "Choline",
+    fallbackUrl: "https://ods.od.nih.gov/factsheets/Choline-Consumer/",
+    overview:
+      "Choline supports cell membrane structure and normal brain and nervous system function.",
+    whatItDoes: [
+      "Supports cell membrane structure and signaling.",
+      "Contributes to normal nervous system and muscle control functions.",
+      "Plays a role in methylation-related metabolic pathways.",
+    ],
+    watchOuts: [
+      "High intakes can cause a fishy body odor or stomach upset in some people.",
+      "Check overlap if combining multiple brain or methylation-focused products.",
+      "Consult a clinician if pregnant or taking chronic medications.",
+    ],
+  },
+  {
+    key: "chromium",
+    resourceName: "Chromium",
+    fallbackUrl: "https://ods.od.nih.gov/factsheets/chromium-Consumer/",
+    overview:
+      "Chromium is a trace mineral that may help the body use carbohydrates, fats, and proteins.",
+    whatItDoes: [
+      "May help the body use carbohydrates, fats, and proteins.",
+      "Is commonly included in metabolic and blood-sugar support formulas.",
+      "Can be part of broader nutrition routines when intake is low.",
+    ],
+    watchOuts: [
+      "Researchers do not fully understand chromium’s role in the body.",
+      "Use caution if you have kidney or liver conditions.",
+      "Consult a clinician if you take diabetes medications.",
+    ],
+  },
+  {
+    key: "copper",
+    resourceName: "Copper",
+    fallbackUrl: "https://ods.od.nih.gov/factsheets/Copper-Consumer/",
+    overview:
+      "Copper is a trace mineral involved in energy production, connective tissue, and nervous and immune function.",
+    whatItDoes: [
+      "Supports energy production and antioxidant enzyme activity.",
+      "Contributes to connective tissue and blood vessel formation.",
+      "Helps maintain normal nervous and immune system function.",
+    ],
+    watchOuts: [
+      "Avoid stacking multiple high-dose copper products without checking totals.",
+      "Zinc supplementation can affect copper status over time.",
+      "Consult a clinician if you have liver disease or take chronic medications.",
+    ],
+  },
+  {
+    key: "manganese",
+    resourceName: "Manganese",
+    fallbackUrl: "https://ods.od.nih.gov/factsheets/Manganese-Consumer/",
+    overview:
+      "Manganese is a trace mineral involved in energy metabolism, antioxidant defense, and bone formation.",
+    whatItDoes: [
+      "Supports energy metabolism and antioxidant enzyme systems.",
+      "Contributes to normal bone formation and connective tissue pathways.",
+      "Helps maintain normal immune function in broader nutrient networks.",
+    ],
+    watchOuts: [
+      "Avoid stacking multiple manganese-containing products without checking totals.",
+      "Use caution with supplemental manganese if you have liver conditions.",
+      "Consult a clinician if you take long-term medications.",
+    ],
+  },
+  {
+    key: "phosphorus",
+    resourceName: "Phosphorus",
+    fallbackUrl: "https://ods.od.nih.gov/factsheets/Phosphorus-Consumer/",
+    overview:
+      "Phosphorus is a mineral involved in bone structure and cellular energy and signaling processes.",
+    whatItDoes: [
+      "Supports bone and teeth structure as part of mineral balance.",
+      "Plays a role in cellular energy pathways (ATP).",
+      "Contributes to normal cell membrane and signaling functions.",
+    ],
+    watchOuts: [
+      "Use caution with phosphorus supplements if you have kidney disease.",
+      "Overlap can occur in electrolyte and mineral blends; check totals.",
+      "Consult a clinician if managing chronic kidney or parathyroid conditions.",
+    ],
+  },
+  {
     key: "niacin",
     resourceName: "Niacin",
     fallbackUrl: "https://ods.od.nih.gov/factsheets/Niacin-Consumer/",

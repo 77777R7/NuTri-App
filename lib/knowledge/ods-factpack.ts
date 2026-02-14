@@ -43,6 +43,13 @@ export const canonicalizeKnowledgeKey = (rawName: string): string | null => {
   if (/\b(epa|eicosapentaenoic|dha|docosahexaenoic|omega\s*[-\s]?3|fish[-\s]+oil|krill)\b/.test(n)) return "omega-3";
   if (/\b(cholecalciferol|ergocalciferol|vitamin[-\s]*d3?|calcifediol)\b/.test(n)) return "vitamin d";
   if (/\b(ascorbic acid|vitamin[-\s]*c|ester[-\s]?c)\b/.test(n)) return "vitamin c";
+  if (/\b(vitamin[-\s]*b6|b6|pyridoxine|pyridoxal|pyridoxamine|p[-\s]*5[-\s]*p|pyridoxal[-\s]*5[-\s]*phosphate)\b/.test(n)) return "vitamin b6";
+  if (/\b(pantothenic acid|vitamin[-\s]*b5|pantothenate|calcium[-\s]*pantothenate)\b/.test(n)) return "pantothenic acid";
+  if (/\bcholine\b/.test(n)) return "choline";
+  if (/\bchromium\b/.test(n)) return "chromium";
+  if (/\bcopper\b/.test(n)) return "copper";
+  if (/\bmanganese\b/.test(n)) return "manganese";
+  if (/\bphosphorus\b/.test(n)) return "phosphorus";
   if (/\b(vitamin[-\s]*b12|b12|cobalamin|methylcobalamin|cyanocobalamin)\b/.test(n)) return "vitamin b12";
   if (/\bcalcium\b/.test(n)) return "calcium";
   if (/\b(folate|folic acid|methylfolate|5[-\s]*mthf)\b/.test(n)) return "folate";
@@ -102,6 +109,20 @@ const odsDisplayTitleForKey = (key: string): string => {
       return "About Vitamin C (NIH ODS)";
     case "vitamin b12":
       return "About Vitamin B12 (NIH ODS)";
+    case "vitamin b6":
+      return "About Vitamin B6 (NIH ODS)";
+    case "pantothenic acid":
+      return "About Pantothenic Acid (Vitamin B5) (NIH ODS)";
+    case "choline":
+      return "About Choline (NIH ODS)";
+    case "chromium":
+      return "About Chromium (NIH ODS)";
+    case "copper":
+      return "About Copper (NIH ODS)";
+    case "manganese":
+      return "About Manganese (NIH ODS)";
+    case "phosphorus":
+      return "About Phosphorus (NIH ODS)";
     case "calcium":
       return "About Calcium (NIH ODS)";
     case "folate":
