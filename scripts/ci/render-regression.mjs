@@ -809,6 +809,20 @@ function summarizeRagQuadrantMetrics(runResults) {
   const watchdogFastTimeoutRateNoCache =
     webTotal > 0 ? Number((watchdogFastTimeoutCount / denomNoCache).toFixed(4)) : null;
 
+  // Infra compensation counters (auditable): distinguish "recovered by bounded retry" from "washed away".
+  const infra503SeenCount = webRows.filter((row) => {
+    const statuses = row?.summary?.analysisSectionSeen5xxStatuses;
+    if (Array.isArray(statuses) && statuses.includes(503)) return true;
+    const errors = Array.isArray(row?.summary?.errors) ? row.summary.errors : [];
+    return errors.some((e) => typeof e === "string" && /\bHTTP\s*503\b/.test(e));
+  }).length;
+  const analysisSectionRetryUsedCount = webRows.reduce(
+    (acc, row) => acc + (Number(row?.summary?.analysisSectionRetryCount ?? 0) || 0),
+    0,
+  );
+  const missingBundleSeenCount = webRows.filter((row) => row?.summary?.missingFastBundleSeen === true).length;
+  const sseRereadUsedCount = webRows.filter((row) => row?.summary?.sseRereadUsed === true).length;
+
   const watchdogFastTimeoutBucketCounts = {};
   for (const row of webRows.filter((row) => isWatchdogRow(row))) {
     const steps = row?.summary?.pipelineMetrics?.steps || row?.summary?.webPipeline || [];
@@ -878,6 +892,10 @@ function summarizeRagQuadrantMetrics(runResults) {
     watchdogFastTimeoutCount,
     watchdogFastTimeoutRateAll,
     watchdogFastTimeoutRateNoCache,
+    infra503SeenCount,
+    analysisSectionRetryUsedCount,
+    missingBundleSeenCount,
+    sseRereadUsedCount,
     watchdogFastTimeoutBucketCounts,
     webUsefulOutputRate: (() => {
       if (webTotal <= 0) return null;
@@ -950,6 +968,12 @@ async function fetchIngredientsDetailPage(fastBundle, cursor, opts = {}) {
   const includeRegressionDebug = opts?.includeRegressionDebug !== false;
   const retryOn5xx = opts?.retryOn5xx === true;
   const max5xxRetries = Math.max(0, Number(opts?.max5xxRetries ?? (retryOn5xx ? 2 : 0)));
+  // Keep this narrow: only retry the common transient infra statuses (avoid masking real 500s).
+  const retryHttpStatusesRaw = Array.isArray(opts?.retryHttpStatuses) ? opts.retryHttpStatuses : null;
+  const retryHttpStatuses =
+    retryHttpStatusesRaw && retryHttpStatusesRaw.length
+      ? retryHttpStatusesRaw.map((n) => Number(n)).filter((n) => Number.isFinite(n))
+      : [502, 503, 504];
   const payload = {
     identity,
     section: "ingredients_detail",
@@ -965,6 +989,7 @@ async function fetchIngredientsDetailPage(fastBundle, cursor, opts = {}) {
   const startedAt = Date.now();
   let pollAttempts = 0;
   let serverErrorRetries = 0;
+  const serverErrorSeenStatuses = [];
   while (true) {
     pollAttempts += 1;
     const ctrl = new AbortController();
@@ -995,26 +1020,49 @@ async function fetchIngredientsDetailPage(fastBundle, cursor, opts = {}) {
     }
 
     // Keep LNHPD "no-storm" assertions strict by default; only retry 5xx when explicitly enabled.
-    if (retryOn5xx && res.status >= 500 && res.status < 600 && serverErrorRetries < max5xxRetries) {
+    const isRetryable5xx = retryOn5xx && retryHttpStatuses.includes(res.status);
+    if (isRetryable5xx && serverErrorRetries < max5xxRetries) {
       serverErrorRetries += 1;
+      serverErrorSeenStatuses.push(res.status);
       const elapsed = Date.now() - startedAt;
       if (elapsed >= DETAIL_TIMEOUT_MS) {
-        return { status: res.status, payload, response: json, pollAttempts };
+        return {
+          status: res.status,
+          payload,
+          response: json,
+          pollAttempts,
+          serverErrorRetryCount: serverErrorRetries,
+          serverErrorSeenStatuses,
+        };
       }
       // Deterministic backoff to reduce flaky 502/503/504 without masking persistent outages.
-      const delayMs = Math.min(2000, 300 * Math.pow(3, serverErrorRetries - 1)); // 300ms, 900ms, 2000ms
+      const delayMs = serverErrorRetries === 1 ? 500 : 1500;
       await sleep(delayMs);
       continue;
     }
 
     if (res.status !== 202) {
-      return { status: res.status, payload, response: json, pollAttempts };
+      return {
+        status: res.status,
+        payload,
+        response: json,
+        pollAttempts,
+        serverErrorRetryCount: serverErrorRetries,
+        serverErrorSeenStatuses,
+      };
     }
 
     const retryAfterMs = Number(json?.retryAfterMs ?? 2000);
     const elapsed = Date.now() - startedAt;
     if (elapsed >= DETAIL_TIMEOUT_MS) {
-      return { status: res.status, payload, response: json, pollAttempts };
+      return {
+        status: res.status,
+        payload,
+        response: json,
+        pollAttempts,
+        serverErrorRetryCount: serverErrorRetries,
+        serverErrorSeenStatuses,
+      };
     }
 
     await sleep(Math.min(Math.max(retryAfterMs, 250), 5000));
@@ -1414,11 +1462,33 @@ async function runCase(testCase) {
     await sleep(1500);
     events = await readSseEvents(testCase.barcode, { fastTailMs });
   }
-  const bundleEvents = getBundleEvents(events);
-  const bundleCheck = assertBundleContract(bundleEvents, testCase.expectedSourceType);
+  let bundleEvents = getBundleEvents(events);
+  let bundleCheck = assertBundleContract(bundleEvents, testCase.expectedSourceType);
+
+  const missingFastBundleError = "missing analysis_bundle revision=1 phase=fast_ai";
+  const missingFastBundleSeen = bundleCheck.errors.includes(missingFastBundleError);
+  let sseRereadUsed = false;
+  let sseRereadRecovered = false;
+  if (missingFastBundleSeen) {
+    // Some infra paths can drop rev1 fast_ai even when the backend becomes healthy moments later.
+    // Do a single bounded re-read (no infinite retry) to reduce false reds while staying auditable.
+    sseRereadUsed = true;
+    const events2 = await readSseEvents(testCase.barcode, { timeoutMs: 12_000, fastTailMs: 2500 });
+    const bundleEvents2 = getBundleEvents(events2);
+    const bundleCheck2 = assertBundleContract(bundleEvents2, testCase.expectedSourceType);
+    const stillMissingFast = bundleCheck2.errors.includes(missingFastBundleError);
+    if (bundleCheck2.fastBundle && !stillMissingFast) {
+      events = events2;
+      bundleEvents = bundleEvents2;
+      bundleCheck = bundleCheck2;
+      sseRereadRecovered = true;
+    }
+  }
 
   const detailRequestMetrics = createDetailRequestMetrics();
   let detailResponse = { status: 0, payload: null, response: null };
+  let analysisSectionRetryCount = 0;
+  let analysisSectionSeen5xxStatuses = [];
   if (bundleCheck.fastBundle) {
     if (
       ENFORCE_DEBUG_GATE_NEGATIVE_ASSERTION &&
@@ -1435,12 +1505,20 @@ async function runCase(testCase) {
     const requiredKeyword = String(testCase.requiredFormKeyword ?? "").trim().toLowerCase();
     const targetKeyword = String(testCase.targetActiveKeyword ?? requiredKeyword).trim().toLowerCase();
     const shouldPage = testCase.id.startsWith("dsld_with_form") && Boolean(targetKeyword || requiredKeyword);
-    const retryOn5xx = bundleCheck.fastBundle?.meta?.sourceType === "dsld";
+    const src = bundleCheck.fastBundle?.meta?.sourceType;
+    const retryOn5xx = src === "dsld" || src === "web";
+    const retryHttpStatuses = [502, 503, 504];
     if (!shouldPage) {
       detailResponse = await fetchIngredientsDetailPage(bundleCheck.fastBundle, 0, {
         requestMetrics: detailRequestMetrics,
         retryOn5xx,
+        max5xxRetries: 2,
+        retryHttpStatuses,
       });
+      analysisSectionRetryCount += Number(detailResponse?.serverErrorRetryCount ?? 0) || 0;
+      analysisSectionSeen5xxStatuses = Array.isArray(detailResponse?.serverErrorSeenStatuses)
+        ? detailResponse.serverErrorSeenStatuses
+        : [];
     } else {
       let cursor = 0;
       let pages = 0;
@@ -1450,8 +1528,17 @@ async function runCase(testCase) {
         const pageRes = await fetchIngredientsDetailPage(bundleCheck.fastBundle, cursor, {
           requestMetrics: detailRequestMetrics,
           retryOn5xx,
+          max5xxRetries: 2,
+          retryHttpStatuses,
         });
         last = pageRes;
+        analysisSectionRetryCount += Number(pageRes?.serverErrorRetryCount ?? 0) || 0;
+        if (Array.isArray(pageRes?.serverErrorSeenStatuses) && pageRes.serverErrorSeenStatuses.length) {
+          analysisSectionSeen5xxStatuses = [
+            ...analysisSectionSeen5xxStatuses,
+            ...pageRes.serverErrorSeenStatuses,
+          ];
+        }
         pages += 1;
 
         if (pageRes.status !== 200) {
@@ -1520,6 +1607,11 @@ async function runCase(testCase) {
     doneReason,
     bundleFallbackCode,
     pipelineMetrics: pickLatestPipelineMetrics(events),
+    analysisSectionRetryCount,
+    analysisSectionSeen5xxStatuses,
+    missingFastBundleSeen,
+    sseRereadUsed,
+    sseRereadRecovered,
     detailRequestCount: detailRequestMetrics.totalRequests,
     detail429Count: detailRequestMetrics.status429Count,
     detailRequestByKey: detailRequestMetrics.byKey,
@@ -1581,6 +1673,11 @@ async function runCaseSafely(testCase) {
         fallbackUsed: null,
         fallbackReason: null,
         pipelineMetrics: null,
+        analysisSectionRetryCount: 0,
+        analysisSectionSeen5xxStatuses: [],
+        missingFastBundleSeen: false,
+        sseRereadUsed: false,
+        sseRereadRecovered: false,
         jobStatus: null,
         attempts: null,
         timingMs: null,

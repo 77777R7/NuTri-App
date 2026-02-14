@@ -237,6 +237,11 @@ function extractRagQuadrantMetricsSubset(summary) {
       typeof rag?.watchdogFastTimeoutRateNoCache === "number"
         ? rag.watchdogFastTimeoutRateNoCache
         : null,
+    infra503SeenCount: typeof rag?.infra503SeenCount === "number" ? rag.infra503SeenCount : null,
+    analysisSectionRetryUsedCount:
+      typeof rag?.analysisSectionRetryUsedCount === "number" ? rag.analysisSectionRetryUsedCount : null,
+    missingBundleSeenCount: typeof rag?.missingBundleSeenCount === "number" ? rag.missingBundleSeenCount : null,
+    sseRereadUsedCount: typeof rag?.sseRereadUsedCount === "number" ? rag.sseRereadUsedCount : null,
     watchdogFastTimeoutBucketCounts:
       rag?.watchdogFastTimeoutBucketCounts && typeof rag.watchdogFastTimeoutBucketCounts === "object"
         ? rag.watchdogFastTimeoutBucketCounts
