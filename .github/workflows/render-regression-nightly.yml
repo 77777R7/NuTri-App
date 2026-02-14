@@ -59,9 +59,10 @@ jobs:
           RENDER_INCLUDE_NIGHTLY_CASES: "1"
           # Use a real web-only barcode (with a fallback) so nightly can observe webPipeline/select_evidence,
           # and make abstain correctness gating meaningful.
-          # Watchdog probe (temporary): pick a barcode that tends to hit the fast watchdog.
+          # Watchdog probe (temporary): try a known web-only fixture that is more likely to hit the fast watchdog,
+          # while still being stable enough to avoid 5xx flake.
           # This branch is not meant to merge; it is only for a one-off workflow_dispatch smoke.
-          RENDER_WEB_BARCODE: "850049609098"
+          RENDER_WEB_BARCODE: "00733739081995"
           RENDER_WEB_BARCODE2: "00654749351604"
           RENDER_WEB_SSE_TAIL_MS: "15000"
           # Nightly-only: enable lexical groundedness checks for early signal without blocking merges.
