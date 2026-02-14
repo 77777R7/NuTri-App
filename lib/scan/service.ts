@@ -148,9 +148,12 @@ export async function requestLabelAnalysis(input: {
 
   const shouldRetryWithBase64 = (response: Response, payload: AnalyzeLabelResponse | null): boolean => {
     if (response.status !== 400) return false;
-    if (!input.imageBase64) return false;
+    if (typeof input.imageBase64 !== 'string' || input.imageBase64.length === 0) return false;
     const message = typeof payload?.message === 'string' ? payload.message : '';
-    return message.toLowerCase().includes('imagebase64');
+    // Only retry when the backend explicitly says it needs the base64 payload (cache miss).
+    // Avoid retrying for other 400s (missing imageHash), 429s, 503s, etc.
+    const expected = 'Missing required field: imageBase64';
+    return message.trim() === expected || message.includes(expected);
   };
 
   let response: Response;
