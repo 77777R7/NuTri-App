@@ -31,7 +31,9 @@ jobs:
       - name: Wait for Render Deploy Commit
         env:
           RENDER_BASE_URL: ${{ github.event.inputs.render_base_url != '' && github.event.inputs.render_base_url || secrets.RENDER_BASE_URL }}
-          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          # Watchdog probe (temporary): this branch is not deployed to Render.
+          # Pin the expected SHA to the deployed main commit so we can run a one-off smoke.
+          EXPECTED_COMMIT_SHA: "8250806f5f13b2555df14db8701fbe7b58d9a240"
           RENDER_REGRESSION_TOKEN: ${{ secrets.RENDER_REGRESSION_TOKEN }}
           RENDER_DEPLOY_WAIT_TIMEOUT_MS: "900000"
           RENDER_DEPLOY_WAIT_INTERVAL_MS: "15000"
