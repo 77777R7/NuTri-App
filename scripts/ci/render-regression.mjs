@@ -729,6 +729,27 @@ function summarizeRagQuadrantMetrics(runResults) {
     recordUnknown(ingredientsStatus == null ? "ingredients_section_missing" : "ingredients_detail_missing");
   }
 
+  // Soft signal (observe-only): if a known "abstain sentinel" barcode is present in the run,
+  // but we didn't record any abstain trigger, we likely lost our guardrail signal.
+  //
+  // This must not fail runs by itself; it is printed in nightly summaries and recorded in artifacts.
+  const abstainSentinelBarcode =
+    process.env.RENDER_WEB_ABSTAIN_SENTINEL_BARCODE ||
+    // Default: keep the signal tied to the primary web barcode for schedule/nightly.
+    process.env.RENDER_WEB_BARCODE ||
+    "";
+  const abstainSentinelSeen =
+    Boolean(abstainSentinelBarcode) &&
+    webRows.some((row) => {
+      const s = row?.summary || {};
+      return (
+        s.usedBarcode === abstainSentinelBarcode ||
+        s.primaryBarcode === abstainSentinelBarcode ||
+        s.barcode === abstainSentinelBarcode
+      );
+    });
+  const abstainSignalLost = abstainSentinelSeen && abstainTriggeredCount === 0;
+
   let noClaimsVerifiedCount = 0;
 
   const supportProxyValues = webRows.map((row) => {
@@ -829,6 +850,7 @@ function summarizeRagQuadrantMetrics(runResults) {
     abstainUnknownCount,
     abstainUnknownReasonCounts,
     abstainFallbackHeuristicCount,
+    abstainSignalLost,
     supportProxyScore: {
       value: average(supportProxyValues),
       isProxy: true,
