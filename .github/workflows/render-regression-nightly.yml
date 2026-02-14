@@ -164,6 +164,7 @@ jobs:
             console.log(
               `- abstainTriggered/evaluated/correct/unknown: ${rag.abstainTriggeredCount}/${rag.abstainEvaluatedCount}/${rag.abstainCorrectCount}/${rag.abstainUnknownCount}`,
             );
+            console.log(`- abstainSignalLost: ${rag.abstainSignalLost}`);
             console.log(
               `- abstainUnknownReasonCounts: ${topN(rag.abstainUnknownReasonCounts) || "(none)"}`,
             );
