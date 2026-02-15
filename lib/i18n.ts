@@ -170,6 +170,7 @@ const en = {
     analysisScoreFormulaQuality: 'Formula Quality',
     analysisScoreNotScored: 'Not scored',
     analysisScoreNotScoredReasonWeb: 'Limited evidence (web fallback). We show only what the source supports.',
+    analysisScoreNotScoredReasonUnavailable: 'Score not available yet.',
     analysisScoreScoring: 'Scoring...',
     analysisScoreScoringReason: 'Finishing verified facts.',
 };

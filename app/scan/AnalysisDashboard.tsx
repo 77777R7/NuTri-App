@@ -1670,9 +1670,15 @@ const AnalysisBundleDashboard: React.FC<{
                 : shouldUseMissingDisplay
                     ? (missingDisplay as { overall?: string; effectiveness?: string; safety?: string; value?: string })
                     : undefined;
+    const notScoredReason =
+        bundleState.meta.scoreAvailable === false
+            ? t.analysisScoreNotScoredReasonWeb
+            : v4Response?.status === 'not_found'
+                ? t.analysisScoreNotScoredReasonUnavailable
+                : t.analysisScoreNotScoredReasonUnavailable;
     const ringMetaLines =
         scoreUiMode === 'not_scored'
-            ? [t.analysisScoreNotScoredReasonWeb]
+            ? [notScoredReason]
             : scoreUiMode === 'scoring'
                 ? [t.analysisScoreScoringReason]
                 : hasNumber(v4Bundle?.confidence)
