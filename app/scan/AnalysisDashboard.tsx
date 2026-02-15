@@ -52,6 +52,7 @@ import type {
     IngredientsDetailV3,
     IngredientsDetailV4,
 } from '@/types/analysisBundle';
+import type { ScoreBundleResponse } from '@/types/scoreBundle';
 import { computeSmartScores, type AnalysisInput } from '../../lib/scoring';
 type Analysis = any;
 type ScoreState = 'active' | 'muted' | 'loading';
@@ -78,6 +79,12 @@ type SourceRef = {
     id?: string;
     url?: string;
     title?: string;
+};
+
+type ScoreBundleV4State = {
+    status: 'idle' | 'loading' | 'ready' | 'error';
+    response: ScoreBundleResponse | null;
+    error: string | null;
 };
 
 type CoverLine = {
@@ -917,7 +924,8 @@ const AnalysisBundleDashboard: React.FC<{
     scoreBadge?: string;
     scoreState?: ScoreState;
     sourceType?: SourceType;
-}> = ({ bundle, analysis, isStreaming = false, scoreBadge, scoreState = 'active', sourceType = 'barcode' }) => {
+    scoreBundleV4State?: ScoreBundleV4State;
+}> = ({ bundle, analysis, isStreaming = false, scoreBadge, scoreState = 'active', sourceType = 'barcode', scoreBundleV4State }) => {
     const { t } = useTranslation();
     const [selectedTile, setSelectedTile] = useState<TileConfig | null>(null);
     const [bundleState, setBundleState] = useState<AnalysisBundle>(bundle);
@@ -1598,32 +1606,52 @@ const AnalysisBundleDashboard: React.FC<{
         },
     ];
 
-    const hasNumber = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
-    const scoresReady =
-        hasNumber(analysis?.efficacy?.score) &&
-        hasNumber(analysis?.safety?.score) &&
-        hasNumber(analysis?.value?.score) &&
-        hasNumber(analysis?.scores?.overall);
-
     type ScoreUiMode = 'not_scored' | 'scoring' | 'scored';
+    const v4Response =
+        scoreBundleV4State?.status === 'ready' ? scoreBundleV4State.response : null;
+    const v4Bundle = v4Response?.status === 'ok' ? v4Response.bundle : null;
+
     const scoreUiMode: ScoreUiMode =
         bundleState.meta.scoreAvailable === false
             ? 'not_scored'
-            : isStreaming || scoreState === 'loading' || !scoresReady
+            : !scoreBundleV4State || scoreBundleV4State.status !== 'ready'
                 ? 'scoring'
-                : 'scored';
+                : v4Response?.status === 'ok'
+                    ? 'scored'
+                    : v4Response?.status === 'pending'
+                        ? 'scoring'
+                        : v4Response?.status === 'not_found'
+                            ? 'not_scored'
+                            : 'scoring';
 
-    const ringScore = (value: number) => Math.round(value * 10);
+    const hasNumber = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+    const overallScore = hasNumber(v4Bundle?.overallScore) ? v4Bundle?.overallScore : null;
+    const effectivenessScore = hasNumber(v4Bundle?.pillars?.effectiveness) ? v4Bundle?.pillars?.effectiveness : null;
+    const safetyScore = hasNumber(v4Bundle?.pillars?.safety) ? v4Bundle?.pillars?.safety : null;
+    const integrityScore = hasNumber(v4Bundle?.pillars?.integrity) ? v4Bundle?.pillars?.integrity : null;
+
     const ringScores =
         scoreUiMode === 'scored'
             ? {
-                effectiveness: ringScore(analysis.efficacy.score),
-                safety: ringScore(analysis.safety.score),
-                value: ringScore(analysis.value.score),
-                overall: ringScore(analysis.scores.overall),
+                effectiveness: effectivenessScore ?? 0,
+                safety: safetyScore ?? 0,
+                value: integrityScore ?? 0,
+                overall: overallScore ?? 0,
             }
             : { effectiveness: 0, safety: 0, value: 0, overall: 0 };
     const ringMuted = scoreUiMode !== 'scored' || scoreState === 'muted';
+    const missingDisplay =
+        scoreUiMode === 'scored'
+            ? {
+                overall: overallScore == null ? '--' : undefined,
+                effectiveness: effectivenessScore == null ? '--' : undefined,
+                safety: safetyScore == null ? '--' : undefined,
+                value: integrityScore == null ? '--' : undefined,
+            }
+            : null;
+    const shouldUseMissingDisplay =
+        Boolean(missingDisplay) &&
+        Object.values(missingDisplay as Record<string, unknown>).some((value) => typeof value === 'string' && value.length > 0);
     const ringDisplay =
         scoreUiMode === 'not_scored'
             ? {
@@ -1639,13 +1667,56 @@ const AnalysisBundleDashboard: React.FC<{
                     safety: '--',
                     value: '--',
                 }
-                : undefined;
+                : shouldUseMissingDisplay
+                    ? (missingDisplay as { overall?: string; effectiveness?: string; safety?: string; value?: string })
+                    : undefined;
     const ringMetaLines =
         scoreUiMode === 'not_scored'
             ? [t.analysisScoreNotScoredReasonWeb]
             : scoreUiMode === 'scoring'
                 ? [t.analysisScoreScoringReason]
-                : [];
+                : hasNumber(v4Bundle?.confidence)
+                    ? [`${t.analysisConfidencePrefix}: ${Math.round((v4Bundle?.confidence ?? 0) * 100)}%`]
+                    : [];
+
+    const v4Highlights = (v4Bundle?.highlights ?? [])
+        .map((item) => item?.message)
+        .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+        .slice(0, 2);
+    const v4Flags = (v4Bundle?.flags ?? [])
+        .map((item) => item?.message)
+        .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+        .slice(0, 2);
+    const scoreDescriptions =
+        scoreUiMode === 'scored'
+            ? {
+                effectiveness: {
+                    verdict: 'Evidence-based effectiveness score.',
+                    highlights: v4Highlights,
+                },
+                safety: {
+                    verdict: 'Safety score reflects ingredient risks and UL guidance when available.',
+                    highlights: v4Highlights,
+                    warnings: v4Flags.length ? v4Flags : undefined,
+                },
+                practicality: {
+                    verdict: 'Integrity score reflects label disclosure and formulation transparency.',
+                    highlights: v4Highlights,
+                },
+            }
+            : {
+                effectiveness: { verdict: '', highlights: [] },
+                safety: { verdict: '', highlights: [] },
+                practicality: { verdict: '', highlights: [] },
+            };
+    const unknownCategories =
+        scoreUiMode === 'scored'
+            ? {
+                effectiveness: effectivenessScore == null,
+                safety: safetyScore == null,
+                value: integrityScore == null,
+            }
+            : { effectiveness: false, safety: false, value: false };
 
     return (
         <View style={styles.root}>
@@ -1675,19 +1746,15 @@ const AnalysisBundleDashboard: React.FC<{
                             overall: ringScores.overall,
                         }}
                         display={ringDisplay}
-                        descriptions={{
-                            effectiveness: { verdict: '', highlights: [] },
-                            safety: { verdict: '', highlights: [] },
-                            practicality: { verdict: '', highlights: [] },
-                        }}
+                        descriptions={scoreDescriptions}
                         muted={ringMuted}
-                        unknownCategories={{ effectiveness: false, safety: false, value: false }}
+                        unknownCategories={unknownCategories}
                         labels={{
                             overall: t.analysisScoreLabel,
                             effectiveness: t.analysisScoreEffectiveness,
                             safety: t.analysisScoreSafety,
-                            value: sourceType === 'label_scan' ? t.analysisScoreFormulaQuality : t.analysisScoreValue,
-                            valueLabel: sourceType === 'label_scan' ? t.analysisScoreFormulaQuality : t.analysisScoreValue,
+                            value: sourceType === 'label_scan' ? t.analysisScoreFormulaQuality : t.analysisScoreIntegrity,
+                            valueLabel: sourceType === 'label_scan' ? t.analysisScoreFormulaQuality : t.analysisScoreIntegrity,
                         }}
                         metaLines={ringMetaLines}
                         badgeText={scoreBadge}
@@ -1727,7 +1794,8 @@ export const AnalysisDashboard: React.FC<{
     scoreState?: ScoreState;
     sourceType?: SourceType;
     analysisBundle?: AnalysisBundle | null;
-}> = ({ analysis, isStreaming = false, scoreBadge, scoreState, sourceType, analysisBundle }) => {
+    scoreBundleV4State?: ScoreBundleV4State;
+}> = ({ analysis, isStreaming = false, scoreBadge, scoreState, sourceType, analysisBundle, scoreBundleV4State }) => {
     const [selectedTile, setSelectedTile] = useState<TileConfig | null>(null);
     const { t } = useTranslation();
     const scrollY = useSharedValue(0);
@@ -2753,6 +2821,7 @@ export const AnalysisDashboard: React.FC<{
                 scoreBadge={scoreBadge}
                 scoreState={scoreState}
                 sourceType={sourceType}
+                scoreBundleV4State={scoreBundleV4State}
             />
         );
     }

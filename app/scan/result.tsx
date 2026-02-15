@@ -16,12 +16,11 @@ import { useSavedSupplements } from '@/contexts/SavedSupplementsContext';
 import { consumeScanSession, type ScanSession } from '@/lib/scan/session';
 import { requestLabelAnalysis } from '@/lib/scan/service';
 import { getBarcodeQuality, getLabelDraftQuality } from '@/lib/scan/quality';
-import { resolveScoreQueryFromSnapshot } from '@/lib/score-v4';
 import { formatDoseForPill } from '@/lib/supplementDisplay';
 import type { LabelDraft } from '@/backend/src/labelAnalysis';
-import type { ScoreBundleResponse } from '@/types/scoreBundle';
 import { AnalysisDashboard } from './AnalysisDashboard';
 import { buildLabelInsights } from './labelInsights';
+import type { ScoreSource } from '@/types/scoreBundle';
 
 type LabelAnalysisStatus = 'complete' | 'partial' | 'skipped' | 'pending' | 'unavailable' | 'failed' | null;
 type LabelInsightsSnapshot = ReturnType<typeof buildLabelInsights> | null;
@@ -40,6 +39,20 @@ const normalizeBarcode = (value?: string | null) => {
   if (digits.length >= 14) return digits.slice(-14);
   if (digits.length >= 8) return digits.padStart(14, '0');
   return digits;
+};
+
+const resolveScoreQueryFromBundleMeta = (meta: any): { source: ScoreSource; sourceId: string } | null => {
+  if (!meta) return null;
+  if (meta.scoreAvailable === false) return null;
+  const sourceType = meta.sourceType;
+  const authoritative = meta.authoritativeIdentity;
+  if (sourceType === 'lnhpd' && authoritative?.type === 'npn' && typeof authoritative.value === 'string' && authoritative.value.trim()) {
+    return { source: 'lnhpd', sourceId: authoritative.value.trim() };
+  }
+  if (sourceType === 'dsld' && authoritative?.type === 'dsldLabelId' && typeof authoritative.value === 'string' && authoritative.value.trim()) {
+    return { source: 'dsld', sourceId: authoritative.value.trim() };
+  }
+  return null;
 };
 
 function buildLabelIngredientEntries(
@@ -350,16 +363,14 @@ export default function ScanResultScreen() {
     analysisBundle,
   } = useStreamAnalysis(barcode);
   const barcodeQuality = useMemo(() => getBarcodeQuality({ status, error }), [error, status]);
-  const scoreQuery = useMemo(() => resolveScoreQueryFromSnapshot(snapshot), [snapshot]);
+  const scoreQueryFromBundleMeta = useMemo(
+    () => resolveScoreQueryFromBundleMeta(analysisBundle?.meta ?? null),
+    [analysisBundle?.meta],
+  );
   const barcodeScoreState = useScoreBundleV4({
-    source: scoreQuery?.source ?? null,
-    sourceId: scoreQuery?.sourceId ?? null,
-    enabled: Boolean(scoreQuery) && !isLabel,
-  });
-  const labelScoreState = useScoreBundleV4({
-    source: isLabel ? "ocr" : null,
-    sourceId: isLabel ? labelResult?.imageHash ?? null : null,
-    enabled: Boolean(isLabel && labelResult?.imageHash),
+    source: scoreQueryFromBundleMeta?.source ?? null,
+    sourceId: scoreQueryFromBundleMeta?.sourceId ?? null,
+    enabled: Boolean(scoreQueryFromBundleMeta) && !isLabel,
   });
 
   const formatDose = useCallback((value?: number | string | null, unit?: string | null) => {
@@ -369,65 +380,6 @@ export default function ScanResultScreen() {
     const cleanUnit = unit?.trim() ?? '';
     return cleanUnit ? `${cleanValue} ${cleanUnit}` : String(cleanValue);
   }, []);
-
-  const formatScoreValue = (value: number | null | undefined) => {
-    if (typeof value !== 'number' || !Number.isFinite(value)) return '--';
-    return `${Math.round(value)}`;
-  };
-
-  const formatConfidence = (value: number | null | undefined) => {
-    if (typeof value !== 'number' || !Number.isFinite(value)) return '--';
-    return `${Math.round(value * 100)}%`;
-  };
-
-  const renderV4ScoreCard = (title: string, scoreState: { status: string; response: ScoreBundleResponse | null; error: string | null }) => {
-    if (scoreState.status === 'idle') return null;
-    const response = scoreState.response;
-    const isLoading = scoreState.status === 'loading';
-    const isError = scoreState.status === 'error';
-    const bundle = response?.status === 'ok' ? response.bundle : null;
-    const goalsText = bundle?.bestFitGoals?.length
-      ? bundle.bestFitGoals.map((goal) => `${goal.label ?? goal.goal} ${Math.round(goal.score)}`).join(' • ')
-      : 'No goal matches yet.';
-    const highlightsText = bundle?.highlights?.length
-      ? bundle.highlights.slice(0, 2).map((item) => item.message).join(' • ')
-      : 'No highlights yet.';
-    const flagsText = bundle?.flags?.length
-      ? bundle.flags.slice(0, 2).map((item) => item.message).join(' • ')
-      : null;
-
-    return (
-      <View style={styles.labelCard}>
-        <Text style={styles.labelCardTitle}>{title}</Text>
-        {isLoading ? (
-          <Text style={styles.labelMeta}>Loading v4 score...</Text>
-        ) : null}
-        {isError ? (
-          <Text style={styles.labelMeta}>Score unavailable: {scoreState.error ?? 'Unknown error'}</Text>
-        ) : null}
-        {response?.status === 'pending' ? (
-          <Text style={styles.labelMeta}>Score is being prepared. Check back shortly.</Text>
-        ) : null}
-        {response?.status === 'not_found' ? (
-          <Text style={styles.labelMeta}>Score not available for this product.</Text>
-        ) : null}
-        {bundle ? (
-          <View style={styles.labelMetaGroup}>
-            <Text style={styles.labelItem}>Overall Score: {formatScoreValue(bundle.overallScore)}</Text>
-            <Text style={styles.labelMetaTight}>
-              Effectiveness: {formatScoreValue(bundle.pillars.effectiveness)} • Safety: {formatScoreValue(bundle.pillars.safety)} • Integrity: {formatScoreValue(bundle.pillars.integrity)}
-            </Text>
-            <Text style={styles.labelMetaTight}>Confidence: {formatConfidence(bundle.confidence)}</Text>
-            <Text style={styles.labelMetaTight}>Best fit: {goalsText}</Text>
-            <Text style={styles.labelMetaTight}>Highlights: {highlightsText}</Text>
-            {flagsText ? (
-              <Text style={styles.labelMetaTight}>Flags: {flagsText}</Text>
-            ) : null}
-          </View>
-        ) : null}
-      </View>
-    );
-  };
 
   const extractDoseFromText = useCallback((text?: string | null) => {
     return formatDoseForPill(text);
@@ -804,8 +756,6 @@ export default function ScanResultScreen() {
           analysisBundle={analysisBundle}
         />
 
-        {renderV4ScoreCard('NuTri V4 Score', labelScoreState)}
-
         {!analysisComplete ? (
           <View style={styles.labelCard}>
             <Text style={styles.labelCardTitle}>AI Analysis</Text>
@@ -1000,9 +950,8 @@ export default function ScanResultScreen() {
         isStreaming={isStreaming}
         sourceType="barcode"
         analysisBundle={analysisBundle}
+        scoreBundleV4State={barcodeScoreState}
       />
-
-      {renderV4ScoreCard('NuTri V4 Score', barcodeScoreState)}
 
       {/* Optional: A small global spinner in the corner if streaming */}
       {isStreaming && (
