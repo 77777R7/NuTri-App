@@ -14,6 +14,58 @@ export function extractHttpStatus(err) {
   return Number.isFinite(direct) ? direct : null;
 }
 
+export function computeEnrichStreamRetryTotal(summary) {
+  const base = Number(summary?.enrichStreamRetryCount ?? 0) || 0;
+  const attempts = Array.isArray(summary?.fallbackAttempts) ? summary.fallbackAttempts : null;
+  if (!attempts || attempts.length === 0) return base;
+
+  const attemptsSum = attempts.reduce(
+    (acc, a) => acc + (Number(a?.enrichStreamRetryCount ?? 0) || 0),
+    0,
+  );
+
+  // When fallback succeeded, fallbackAttempts includes the primary + the successful fallback attempt.
+  // In that case, attemptsSum already includes the current attempt; do not add base again.
+  //
+  // When all attempts failed, the canonical summary is the primary attempt and fallbackAttempts excludes primary.
+  // In that case, total = base(primary) + sum(fallback attempts).
+  const primary = summary?.primaryBarcode ?? null;
+  const includesPrimary = typeof primary === "string" && attempts.some((a) => a?.barcode === primary);
+  return includesPrimary ? attemptsSum : base + attemptsSum;
+}
+
+export function collectEnrichStreamSeenStatuses(summary) {
+  const out = [];
+  const push = (arr) => {
+    if (!Array.isArray(arr)) return;
+    for (const v of arr) {
+      const n = Number(v);
+      if (Number.isFinite(n)) out.push(n);
+    }
+  };
+
+  push(summary?.enrichStreamSeen5xxStatuses);
+  const attempts = Array.isArray(summary?.fallbackAttempts) ? summary.fallbackAttempts : null;
+  if (attempts) {
+    for (const a of attempts) push(a?.enrichStreamSeen5xxStatuses);
+  }
+  return out;
+}
+
+export function collectEnrichStreamErrorStrings(summary) {
+  const out = [];
+  const push = (arr) => {
+    if (!Array.isArray(arr)) return;
+    for (const v of arr) if (typeof v === "string") out.push(v);
+  };
+  push(summary?.errors);
+  const attempts = Array.isArray(summary?.fallbackAttempts) ? summary.fallbackAttempts : null;
+  if (attempts) {
+    for (const a of attempts) push(a?.errors);
+  }
+  return out;
+}
+
 export async function withEnrichStreamBoundedRetry(
   fn,
   {
@@ -48,4 +100,3 @@ export async function withEnrichStreamBoundedRetry(
     }
   }
 }
-

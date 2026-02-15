@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { withEnrichStreamBoundedRetry } from "../../scripts/ci/enrich-stream-retry.mjs";
+import {
+  collectEnrichStreamErrorStrings,
+  collectEnrichStreamSeenStatuses,
+  computeEnrichStreamRetryTotal,
+  withEnrichStreamBoundedRetry,
+} from "../../scripts/ci/enrich-stream-retry.mjs";
 
 test("withEnrichStreamBoundedRetry counts retryable HTTP statuses and surfaces audit fields on failure", async () => {
   const sleepFn = async () => {};
@@ -43,3 +48,45 @@ test("withEnrichStreamBoundedRetry counts retryable HTTP statuses and surfaces a
   }
 });
 
+test("computeEnrichStreamRetryTotal sums retries across attempts without double-counting the successful fallback", () => {
+  // Fallback succeeded: fallbackAttempts includes primary + successful fallback.
+  {
+    const summary = {
+      primaryBarcode: "p",
+      usedBarcode: "f",
+      enrichStreamRetryCount: 2, // current attempt (fallback)
+      fallbackAttempts: [
+        { barcode: "p", enrichStreamRetryCount: 0 },
+        { barcode: "f", enrichStreamRetryCount: 2 },
+      ],
+    };
+    assert.equal(computeEnrichStreamRetryTotal(summary), 2);
+  }
+
+  // All failed: summary is primary attempt, fallbackAttempts excludes primary.
+  {
+    const summary = {
+      primaryBarcode: "p",
+      usedBarcode: "p",
+      enrichStreamRetryCount: 1,
+      fallbackAttempts: [{ barcode: "f", enrichStreamRetryCount: 2 }],
+    };
+    assert.equal(computeEnrichStreamRetryTotal(summary), 3);
+  }
+});
+
+test("collectEnrichStreamSeenStatuses + collectEnrichStreamErrorStrings include fallback attempts", () => {
+  const summary = {
+    enrichStreamSeen5xxStatuses: [503],
+    errors: ["exception: Error: enrich-stream HTTP 503"],
+    fallbackAttempts: [
+      {
+        barcode: "f",
+        enrichStreamSeen5xxStatuses: [503, 503],
+        errors: ["exception: Error: enrich-stream HTTP 503"],
+      },
+    ],
+  };
+  assert.deepEqual(collectEnrichStreamSeenStatuses(summary), [503, 503, 503]);
+  assert.equal(collectEnrichStreamErrorStrings(summary).length, 2);
+});

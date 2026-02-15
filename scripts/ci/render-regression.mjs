@@ -2,7 +2,12 @@
 /* eslint-disable no-console */
 import fs from "node:fs/promises";
 import path from "node:path";
-import { withEnrichStreamBoundedRetry } from "./enrich-stream-retry.mjs";
+import {
+  collectEnrichStreamErrorStrings,
+  collectEnrichStreamSeenStatuses,
+  computeEnrichStreamRetryTotal,
+  withEnrichStreamBoundedRetry,
+} from "./enrich-stream-retry.mjs";
 
 const ENABLE_GROUNDEDNESS_LEXICAL = (process.env.RENDER_GROUNDEDNESS_LEXICAL || "0") === "1";
 const REQUIRE_FORM_TOKEN_IN_EXCERPT =
@@ -818,13 +823,13 @@ function summarizeRagQuadrantMetrics(runResults) {
   const infra503SeenCount = webRows.filter((row) => {
     const statuses = row?.summary?.analysisSectionSeen5xxStatuses;
     if (Array.isArray(statuses) && statuses.includes(503)) return true;
-    const sseStatuses = row?.summary?.enrichStreamSeen5xxStatuses;
-    if (Array.isArray(sseStatuses) && sseStatuses.includes(503)) return true;
-    const errors = Array.isArray(row?.summary?.errors) ? row.summary.errors : [];
+    const sseStatuses = collectEnrichStreamSeenStatuses(row?.summary || {});
+    if (sseStatuses.includes(503)) return true;
+    const errors = collectEnrichStreamErrorStrings(row?.summary || {});
     return errors.some((e) => typeof e === "string" && /\bHTTP\s*503\b/.test(e));
   }).length;
   const enrichStreamRetryUsedCount = webRows.reduce(
-    (acc, row) => acc + (Number(row?.summary?.enrichStreamRetryCount ?? 0) || 0),
+    (acc, row) => acc + computeEnrichStreamRetryTotal(row?.summary || {}),
     0,
   );
   const analysisSectionRetryUsedCount = webRows.reduce(
