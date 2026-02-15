@@ -506,9 +506,32 @@ export const buildBarcodeSnapshot = (input: {
 
   const snapshotStatus: SnapshotStatus = hasError ? 'error' : (scores ? 'resolved' : 'partial');
 
+  // When we run the v4 dashboard in "analysis_bundle_only" mode, we may not receive a full
+  // server-provided snapshot. Still, we can derive authoritative regulatory IDs from the
+  // analysis bundle meta so downstream features (like v4 score fetch) work without needing
+  // legacy payloads.
+  const bundleMeta = input.analysis.analysisBundle?.meta ?? null;
+  const authoritative = bundleMeta?.authoritativeIdentity ?? null;
+  const inferredRegion: SupplementSnapshot['region'] | null =
+    bundleMeta?.sourceType === 'lnhpd' ? 'CA' : bundleMeta?.sourceType === 'dsld' ? 'US' : null;
+  const nextRegulatory = { ...base.regulatory };
+  if (authoritative?.type === 'npn' && typeof authoritative.value === 'string') {
+    nextRegulatory.npn = authoritative.value;
+    nextRegulatory.npnStatus = bundleMeta?.sourceType === 'lnhpd' ? 'verified' : (nextRegulatory.npnStatus ?? 'unknown');
+    nextRegulatory.npnVerifiedBy = bundleMeta?.sourceType === 'lnhpd' ? 'lnhpd_fetch' : null;
+    nextRegulatory.lastCheckedAt = timestamp;
+    if (!nextRegulatory.regionTags.includes('CA')) nextRegulatory.regionTags.push('CA');
+  }
+  if (authoritative?.type === 'dsldLabelId' && typeof authoritative.value === 'string') {
+    nextRegulatory.dsldLabelId = authoritative.value;
+    nextRegulatory.lastCheckedAt = timestamp;
+    if (!nextRegulatory.regionTags.includes('US')) nextRegulatory.regionTags.push('US');
+  }
+
   return {
     ...base,
     status: snapshotStatus,
+    region: inferredRegion ?? base.region,
     product: {
       ...base.product,
       brand: productInfo?.brand ?? null,
@@ -517,6 +540,7 @@ export const buildBarcodeSnapshot = (input: {
       imageUrl: productInfo?.image ?? null,
     },
     references: buildReferencesFromSources(input.analysis.sources ?? [], timestamp),
+    regulatory: nextRegulatory,
     scores,
   };
 };
