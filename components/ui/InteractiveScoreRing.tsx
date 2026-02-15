@@ -146,8 +146,13 @@ export const InteractiveScoreRing = ({
     const displayEffectiveness = display?.effectiveness ?? `${Math.round(scores.effectiveness)}`;
     const displaySafety = display?.safety ?? `${Math.round(scores.safety)}`;
     const displayValue = display?.value ?? `${Math.round(scores.value)}`;
-    const overallIsDash = displayOverall === '--';
-    const formatLegendScore = (value: string) => (value === '--' ? '--' : `${value}/100`);
+    const isNumericDisplay = (value: string) => {
+        const v = String(value ?? '').trim();
+        if (!v) return false;
+        return /^[0-9]+(\.[0-9]+)?$/.test(v);
+    };
+    const overallIsNumeric = isNumericDisplay(displayOverall);
+    const formatLegendScore = (value: string) => (isNumericDisplay(value) ? `${value}/100` : value);
     const track1 = muted || unknownEffectiveness ? 'rgba(148,163,184,0.2)' : 'rgba(250, 17, 79, 0.15)';
     const track2 = muted || unknownSafety ? 'rgba(148,163,184,0.2)' : 'rgba(166, 229, 51, 0.2)';
     const track3 = muted || unknownValue ? 'rgba(148,163,184,0.2)' : 'rgba(0, 219, 221, 0.15)';
@@ -172,7 +177,7 @@ export const InteractiveScoreRing = ({
                     <Text style={[styles.overallLabel, muted ? styles.mutedText : null]}>{overallLabel}</Text>
                     <Text style={[styles.overallValue, muted ? styles.mutedTextStrong : null]}>
                         {displayOverall}
-                        {!overallIsDash && <Text style={styles.overallMax}>/100</Text>}
+                        {overallIsNumeric && <Text style={styles.overallMax}>/100</Text>}
                     </Text>
                 </View>
             </View>

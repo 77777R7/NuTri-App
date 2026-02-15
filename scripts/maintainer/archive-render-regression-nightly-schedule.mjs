@@ -225,6 +225,42 @@ function extractCase(summary, caseId) {
   };
 }
 
+function extractRagQuadrantMetricsSubset(summary) {
+  const rag =
+    summary?.ragQuadrantMetrics && typeof summary.ragQuadrantMetrics === "object"
+      ? summary.ragQuadrantMetrics
+      : {};
+  return {
+    sampleSize: typeof rag?.sampleSize === "number" ? rag.sampleSize : null,
+    cacheHitRate: typeof rag?.cacheHitRate === "number" ? rag.cacheHitRate : null,
+    watchdogFastTimeoutRateNoCache:
+      typeof rag?.watchdogFastTimeoutRateNoCache === "number"
+        ? rag.watchdogFastTimeoutRateNoCache
+        : null,
+    infra503SeenCount: typeof rag?.infra503SeenCount === "number" ? rag.infra503SeenCount : null,
+    enrichStreamRetryUsedCount:
+      typeof rag?.enrichStreamRetryUsedCount === "number" ? rag.enrichStreamRetryUsedCount : null,
+    analysisSectionRetryUsedCount:
+      typeof rag?.analysisSectionRetryUsedCount === "number" ? rag.analysisSectionRetryUsedCount : null,
+    missingBundleSeenCount: typeof rag?.missingBundleSeenCount === "number" ? rag.missingBundleSeenCount : null,
+    sseRereadUsedCount: typeof rag?.sseRereadUsedCount === "number" ? rag.sseRereadUsedCount : null,
+    watchdogFastTimeoutBucketCounts:
+      rag?.watchdogFastTimeoutBucketCounts && typeof rag.watchdogFastTimeoutBucketCounts === "object"
+        ? rag.watchdogFastTimeoutBucketCounts
+        : {},
+    retrievalFailureCodeCounts:
+      rag?.retrievalFailureCodeCounts && typeof rag.retrievalFailureCodeCounts === "object"
+        ? rag.retrievalFailureCodeCounts
+        : {},
+    abstainTriggeredCount: typeof rag?.abstainTriggeredCount === "number" ? rag.abstainTriggeredCount : null,
+    abstainEvaluatedCount: typeof rag?.abstainEvaluatedCount === "number" ? rag.abstainEvaluatedCount : null,
+    abstainCorrectCount: typeof rag?.abstainCorrectCount === "number" ? rag.abstainCorrectCount : null,
+    abstainUnknownCount: typeof rag?.abstainUnknownCount === "number" ? rag.abstainUnknownCount : null,
+    abstainCorrectnessRate: typeof rag?.abstainCorrectnessRate === "number" ? rag.abstainCorrectnessRate : null,
+    abstainSignalLost: typeof rag?.abstainSignalLost === "boolean" ? rag.abstainSignalLost : null,
+  };
+}
+
 function stringifyErrors(errors) {
   if (!Array.isArray(errors)) return "";
   const strings = [];
@@ -295,6 +331,17 @@ function computeConsecutivePasses(runs) {
     const failCount = typeof r?.failCount === "number" ? r.failCount : null;
     const observeFailCount = typeof r?.observeFailCount === "number" ? r.observeFailCount : null;
     if (failCount === 0 && observeFailCount === 0) streak += 1;
+    else break;
+  }
+  return streak;
+}
+
+function computeConsecutiveAbstainSignalLost(runs) {
+  let streak = 0;
+  for (let i = runs.length - 1; i >= 0; i--) {
+    const r = runs[i];
+    const lost = r?.ragQuadrantMetricsSubset?.abstainSignalLost === true;
+    if (lost) streak += 1;
     else break;
   }
   return streak;
@@ -413,6 +460,7 @@ async function main() {
         observeFailCount: null,
         lnhpd_with_form_observe: null,
         dsld_with_form_bisglycinate: null,
+        ragQuadrantMetricsSubset: null,
         bucket: null,
         bucketDetails: null,
       };
@@ -428,6 +476,7 @@ async function main() {
         const counts = normalizeSummaryCounts(summary);
         const lnhpd = extractCase(summary, "lnhpd_with_form_observe");
         const bis = extractCase(summary, "dsld_with_form_bisglycinate");
+        const ragSubset = extractRagQuadrantMetricsSubset(summary);
         const bucketInfo = classifyRun({ waitStepConclusion, summary });
 
         record = {
@@ -436,6 +485,7 @@ async function main() {
           observeFailCount: counts.observeFailCount,
           lnhpd_with_form_observe: lnhpd,
           dsld_with_form_bisglycinate: bis,
+          ragQuadrantMetricsSubset: ragSubset,
           bucket: bucketInfo.bucket,
           bucketDetails: bucketInfo.details,
         };
@@ -455,9 +505,11 @@ async function main() {
   writeJson(runsPath, existingRuns);
 
   const streak = computeConsecutivePasses(existingRuns);
+  const signalLostStreak = computeConsecutiveAbstainSignalLost(existingRuns);
   console.log(
     `[archive-schedule] Done. Archived=${archived}. Total tracked=${existingRuns.length}. Consecutive PASS=${streak}.`,
   );
+  console.log(`[archive-schedule] Consecutive abstainSignalLost=${signalLostStreak}.`);
   console.log(`[archive-schedule] Evidence: ${evidenceRoot}`);
 }
 

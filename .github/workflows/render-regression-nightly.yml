@@ -7,6 +7,18 @@ on:
         description: "Optional override for Render base URL"
         required: false
         type: string
+      expected_commit_sha:
+        description: "Optional override for expected deployed commit SHA (deploy-wait)"
+        required: false
+        type: string
+      web_barcode:
+        description: "Optional override for web case primary barcode"
+        required: false
+        type: string
+      web_barcode2:
+        description: "Optional override for web case fallback barcode (set to 'none' to disable fallback)"
+        required: false
+        type: string
   schedule:
     - cron: "30 9 * * *" # nightly 09:30 UTC
 
@@ -31,7 +43,7 @@ jobs:
       - name: Wait for Render Deploy Commit
         env:
           RENDER_BASE_URL: ${{ github.event.inputs.render_base_url != '' && github.event.inputs.render_base_url || secrets.RENDER_BASE_URL }}
-          EXPECTED_COMMIT_SHA: ${{ github.sha }}
+          EXPECTED_COMMIT_SHA: ${{ github.event.inputs.expected_commit_sha != '' && github.event.inputs.expected_commit_sha || github.sha }}
           RENDER_REGRESSION_TOKEN: ${{ secrets.RENDER_REGRESSION_TOKEN }}
           RENDER_DEPLOY_WAIT_TIMEOUT_MS: "900000"
           RENDER_DEPLOY_WAIT_INTERVAL_MS: "15000"
@@ -49,6 +61,52 @@ jobs:
           mkdir -p "$ARTIFACT_DIR"
           echo "artifact_dir=$ARTIFACT_DIR" >> "$GITHUB_OUTPUT"
 
+      - name: Resolve Web Barcodes (dispatch override)
+        shell: bash
+        env:
+          EXPECTED_COMMIT_SHA_RESOLVED: ${{ github.event.inputs.expected_commit_sha != '' && github.event.inputs.expected_commit_sha || github.sha }}
+          WEB_BARCODE_INPUT: ${{ github.event.inputs.web_barcode }}
+          WEB_BARCODE2_INPUT: ${{ github.event.inputs.web_barcode2 }}
+          DEFAULT_WEB_BARCODE: "00654749351604"
+          DEFAULT_WEB_BARCODE2: "00666183000154"
+        run: |
+          set -euo pipefail
+
+          WEB1="${WEB_BARCODE_INPUT:-}"
+          if [[ -z "$WEB1" ]]; then
+            WEB1="$DEFAULT_WEB_BARCODE"
+          fi
+
+          WEB2_IN="${WEB_BARCODE2_INPUT:-}"
+          WEB2=""
+          if [[ "$WEB2_IN" == "none" ]]; then
+            WEB2=""
+          elif [[ -n "$WEB2_IN" ]]; then
+            WEB2="$WEB2_IN"
+          else
+            WEB2="$DEFAULT_WEB_BARCODE2"
+          fi
+
+          if [[ ! "$WEB1" =~ ^[0-9]+$ ]]; then
+            echo "Invalid web_barcode: must be digits. got='$WEB1'" >&2
+            exit 1
+          fi
+          if [[ -n "$WEB2" && ! "$WEB2" =~ ^[0-9]+$ ]]; then
+            echo "Invalid web_barcode2: must be digits or 'none'. got='$WEB2'" >&2
+            exit 1
+          fi
+
+          echo "RENDER_WEB_BARCODE=$WEB1" >> "$GITHUB_ENV"
+          echo "RENDER_WEB_BARCODE2=$WEB2" >> "$GITHUB_ENV"
+
+          echo "Resolved expectedCommitSha=$EXPECTED_COMMIT_SHA_RESOLVED"
+          echo "Resolved RENDER_WEB_BARCODE=$WEB1"
+          if [[ -n "$WEB2" ]]; then
+            echo "Resolved RENDER_WEB_BARCODE2=$WEB2"
+          else
+            echo "Resolved RENDER_WEB_BARCODE2=<none>"
+          fi
+
       - name: Run Render Regression Suite (Nightly Extras)
         env:
           RENDER_BASE_URL: ${{ github.event.inputs.render_base_url != '' && github.event.inputs.render_base_url || secrets.RENDER_BASE_URL }}
@@ -57,8 +115,6 @@ jobs:
           RENDER_INCLUDE_NIGHTLY_CASES: "1"
           # Use a real web-only barcode (with a fallback) so nightly can observe webPipeline/select_evidence,
           # and make abstain correctness gating meaningful.
-          RENDER_WEB_BARCODE: "00654749351604"
-          RENDER_WEB_BARCODE2: "00666183000154"
           RENDER_WEB_SSE_TAIL_MS: "15000"
           # Nightly-only: enable lexical groundedness checks for early signal without blocking merges.
           RENDER_GROUNDEDNESS_LEXICAL: "1"
@@ -108,6 +164,7 @@ jobs:
             console.log(
               `- abstainTriggered/evaluated/correct/unknown: ${rag.abstainTriggeredCount}/${rag.abstainEvaluatedCount}/${rag.abstainCorrectCount}/${rag.abstainUnknownCount}`,
             );
+            console.log(`- abstainSignalLost: ${rag.abstainSignalLost}`);
             console.log(
               `- abstainUnknownReasonCounts: ${topN(rag.abstainUnknownReasonCounts) || "(none)"}`,
             );
@@ -115,6 +172,26 @@ jobs:
 
             console.log("[rag] Output");
             console.log(`- webUsefulOutputRate: ${rag.webUsefulOutputRate}`);
+
+            console.log("[web] Watchdog");
+            console.log(`- cacheHitRate: ${rag.cacheHitRate} (${rag.cacheHitCount}/${rag.sampleSize})`);
+            console.log(
+              `- watchdogFastTimeoutRateAll/NoCache: ${rag.watchdogFastTimeoutRateAll}/${rag.watchdogFastTimeoutRateNoCache}`,
+            );
+            console.log(
+              `- watchdogFastTimeoutCount: ${rag.watchdogFastTimeoutCount} (doneReason=${rag.watchdogFastTimeoutSeenInDoneReasonCount} bundle=${rag.watchdogFastTimeoutSeenInBundleCount} mismatch=${rag.watchdogFastTimeoutMismatchCount} invalid=${rag.watchdogMetricsInvalid})`,
+            );
+            console.log(
+              `- watchdogBucketCounts: ${topN(rag.watchdogFastTimeoutBucketCounts) || "(none)"}`,
+            );
+
+            console.log("[web] Infra (auditable, observe-only)");
+            console.log(
+              `- infra503SeenCount: ${rag.infra503SeenCount} (analysisSectionRetryUsedCount=${rag.analysisSectionRetryUsedCount})`,
+            );
+            console.log(
+              `- missingBundleSeenCount: ${rag.missingBundleSeenCount} (sseRereadUsedCount=${rag.sseRereadUsedCount})`,
+            );
 
             console.log("[pipeline] Timing");
             console.log(`- samplesCount: ${pipe.samplesCount}`);
