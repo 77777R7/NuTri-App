@@ -9194,7 +9194,6 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 	    cleanupRequestSignal = cleanup;
 	    const watchdogStartMs = startedAt;
 	    let fastWatchdogDeadlineMs: number | null = null;
-	    let fastWatchdogBaseTimeoutMs: number = ANALYSIS_BUNDLE_FAST_TIMEOUT_MS;
 	    let fastWatchdogExtendedForAuthority = false;
 	
 	    const armFastWatchdog = (baseTimeoutMs: number) => {
@@ -9207,7 +9206,6 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 	      if (fastWatchdogDeadlineMs !== null && desiredDeadlineMs <= fastWatchdogDeadlineMs) return;
 	
 	      fastWatchdogDeadlineMs = desiredDeadlineMs;
-	      fastWatchdogBaseTimeoutMs = base;
 	
 	      if (fastWatchdog) {
 	        clearTimeout(fastWatchdog);
