@@ -41,8 +41,8 @@ export const canonicalizeKnowledgeKey = (rawName: string): string | null => {
   if (!n) return null;
 
   if (/\b(epa|eicosapentaenoic|dha|docosahexaenoic|omega\s*[-\s]?3|fish[-\s]+oil|krill)\b/.test(n)) return "omega-3";
-  if (/\b(cholecalciferol|ergocalciferol|vitamin[-\s]*d3?|calcifediol)\b/.test(n)) return "vitamin d";
-  if (/\b(ascorbic acid|vitamin[-\s]*c|ester[-\s]?c)\b/.test(n)) return "vitamin c";
+  if (/\b(cholecalciferol|ergocalciferol|vitamin[-\s]*d3?|vit[-\s]*d3?|calcifediol)\b/.test(n)) return "vitamin d";
+  if (/\b(ascorbic acid|vitamin[-\s]*c|vit[-\s]*c|ester[-\s]?c)\b/.test(n)) return "vitamin c";
   if (/\b(vitamin[-\s]*b6|b6|pyridoxine|pyridoxal|pyridoxamine|p[-\s]*5[-\s]*p|pyridoxal[-\s]*5[-\s]*phosphate)\b/.test(n)) return "vitamin b6";
   if (/\b(pantothenic acid|vitamin[-\s]*b5|pantothenate|calcium[-\s]*pantothenate)\b/.test(n)) return "pantothenic acid";
   if (/\bcholine\b/.test(n)) return "choline";

@@ -4,6 +4,7 @@ import RNEventSource from 'react-native-sse';
 import { Config } from '@/constants/Config';
 import { withAuthHeaders } from '@/lib/auth-token';
 import { AUTH_DISABLED } from '@/lib/auth-mode';
+import { resolveBrand } from '@/lib/brand/resolveBrand';
 import { buildBarcodeSnapshot } from '@/lib/snapshot';
 import type { SupplementSnapshot } from '@/types/supplementSnapshot';
 import type { AnalysisBundle } from '@/types/analysisBundle';
@@ -151,40 +152,6 @@ type AnalysisState = {
 
 type AnalysisStateWithSnapshot = AnalysisState & {
     snapshot: SupplementSnapshot | null;
-};
-
-const shouldPreferExtractedBrand = (brandExtraction?: BrandExtraction | null) =>
-    Boolean(brandExtraction?.brand) &&
-    (brandExtraction?.confidence === 'high' || brandExtraction?.confidence === 'medium');
-
-const sanitizeBrandCandidate = (value?: string | null) => {
-    if (!value) return null;
-    let cleaned = value.trim();
-    if (!cleaned) return null;
-    cleaned = cleaned.replace(/｜/g, '|');
-    if (cleaned.includes('|')) {
-        const [left] = cleaned.split('|');
-        cleaned = left?.trim() ?? '';
-    }
-    const dashSplit = cleaned.split(/\s[\-\u2013\u2014]\s/);
-    if (dashSplit.length > 1) {
-        cleaned = dashSplit[0]?.trim() ?? cleaned;
-    }
-    cleaned = cleaned.replace(/[^\p{L}\p{N}\s\-’'®]/gu, ' ').replace(/\s+/g, ' ').trim();
-    if (!cleaned || /^\d+$/.test(cleaned)) return null;
-    return cleaned;
-};
-
-const resolveBrand = (
-    brandExtraction: BrandExtraction | null | undefined,
-    ...candidates: Array<string | null | undefined>
-) => {
-    const preferred = shouldPreferExtractedBrand(brandExtraction) ? sanitizeBrandCandidate(brandExtraction?.brand) : null;
-    const ordered = [preferred, ...candidates.map(candidate => sanitizeBrandCandidate(candidate ?? null))];
-    for (const value of ordered) {
-        if (typeof value === 'string' && value.trim()) return value.trim();
-    }
-    return null;
 };
 
 export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {

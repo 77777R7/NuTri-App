@@ -16,6 +16,8 @@ test("ods factpack: canonical keys map consistently", () => {
   assert.equal(canonicalizeKnowledgeKey("Vitamin‑D3®"), "vitamin d");
   assert.equal(canonicalizeKnowledgeKey("Ester-C"), "vitamin c");
   assert.equal(canonicalizeKnowledgeKey("Ester‑C"), "vitamin c");
+  assert.equal(canonicalizeKnowledgeKey("Vit C"), "vitamin c");
+  assert.equal(canonicalizeKnowledgeKey("vitc"), "vitamin c");
   assert.equal(canonicalizeKnowledgeKey("NAC"), "nac");
   assert.equal(canonicalizeKnowledgeKey("Methylcobalamin"), "vitamin b12");
   assert.equal(canonicalizeKnowledgeKey("Pyridoxine HCl"), "vitamin b6");

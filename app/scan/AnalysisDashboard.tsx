@@ -39,9 +39,12 @@ import Animated, {
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { InteractiveScoreRing } from '@/components/ui/InteractiveScoreRing';
 import { ContentSection } from '@/components/ui/ScoreDetailCard';
+import { OdsFoundationPanel } from '@/components/ods/OdsFoundationPanel';
 import { useTranslation } from '@/lib/i18n';
 import { Config } from '@/constants/Config';
 import { withAuthHeaders } from '@/lib/auth-token';
+import { summarizeFoundationHits } from '@/lib/knowledge/foundationLookup';
+import { formatBrandForPill } from '@/lib/supplementDisplay';
 import type {
     AnalysisBundle,
     AnalysisBundleV4,
@@ -141,6 +144,7 @@ type TileConfig = {
         status: CoverStatus;
         missingReasons: MissingReason[];
         sources: SourceRef[];
+        notes?: string[];
     };
     content: React.ReactNode;
 };
@@ -792,6 +796,12 @@ const DashboardModal: React.FC<{
                                         ).join(' • ')
                                         : t.analysisDataStatusNoSources}
                                 </Text>
+                                {Array.isArray(dataStatus.notes) && dataStatus.notes.length > 0 ? (
+                                    <Text style={styles.dataStatusLine}>
+                                        {t.analysisDataStatusNotes}:{' '}
+                                        {Array.from(new Set(dataStatus.notes)).join(' • ')}
+                                    </Text>
+                                ) : null}
                                 <Text style={styles.dataStatusNote}>{t.analysisIntegrityNote}</Text>
                             </View>
                         )}
@@ -910,12 +920,67 @@ const buildBundleSources = (
 const buildBundleDataStatus = (
     status: AnalysisBundle['sections']['overview']['dataStatus'],
     sourceType: AnalysisBundle['meta']['sourceType'] | null,
-    sourceTypeFinal: boolean
+    sourceTypeFinal: boolean,
+    notes?: string[]
 ) => ({
     status: mapBundleStatusToCover(status),
     missingReasons: [],
     sources: buildBundleSources(sourceType, sourceTypeFinal),
+    notes: Array.isArray(notes) && notes.length > 0 ? notes : undefined,
 });
+
+type IngredientCoverItemLike = {
+    name?: string | null;
+    dose?: string | null;
+};
+
+const normalizeIngredientNameForBackground = (value?: string | null): string =>
+    String(value ?? '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '')
+        .trim();
+
+const isBlendLikeName = (name: string): boolean =>
+    /\b(proprietary|blend|matrix|complex)\b/i.test(name);
+
+const pickKeyIngredientsForBackground = (items: IngredientCoverItemLike[] | null | undefined): string[] => {
+    const list = Array.isArray(items) ? items : [];
+    const seen = new Set<string>();
+    const scored: Array<{
+        idx: number;
+        name: string;
+        key: string;
+        isBlend: boolean;
+        hasDose: boolean;
+    }> = [];
+
+    for (let idx = 0; idx < list.length; idx += 1) {
+        const item = list[idx];
+        const name = typeof item?.name === 'string' ? item.name.trim() : '';
+        if (!name) continue;
+        const key = normalizeIngredientNameForBackground(name);
+        if (!key) continue;
+        if (seen.has(key)) continue;
+        seen.add(key);
+
+        const dose = typeof item?.dose === 'string' ? item.dose.trim() : '';
+        scored.push({
+            idx,
+            name,
+            key,
+            isBlend: isBlendLikeName(name),
+            hasDose: Boolean(dose),
+        });
+    }
+
+    scored.sort((a, b) => {
+        if (a.isBlend !== b.isBlend) return a.isBlend ? 1 : -1; // downweight blends
+        if (a.hasDose !== b.hasDose) return a.hasDose ? -1 : 1; // prefer labeled dose
+        return a.idx - b.idx; // stable order
+    });
+
+    return scored.map((row) => row.name);
+};
 
 const AnalysisBundleDashboard: React.FC<{
     bundle: AnalysisBundle;
@@ -933,6 +998,7 @@ const AnalysisBundleDashboard: React.FC<{
     const [detailError, setDetailError] = useState<string | null>(null);
     const detailLoadingRef = useRef(false);
     const detailInFlightKeyRef = useRef<string | null>(null);
+    const foundationMetricLoggedRef = useRef<Set<string>>(new Set());
     const scrollY = useSharedValue(0);
     const scrollHandler = useAnimatedScrollHandler((event) => {
         scrollY.value = event.contentOffset.y;
@@ -1025,7 +1091,11 @@ const AnalysisBundleDashboard: React.FC<{
 
     const productInfo = analysis?.productInfo ?? { brand: null, name: null, category: null, image: null };
     const productTitle = productInfo.name || 'Supplement';
-    const productSubtitle = [productInfo.brand, productInfo.category].filter(Boolean).join(' • ');
+    const brandForSubtitle =
+        typeof productInfo.brand === 'string' && productInfo.brand.trim()
+            ? formatBrandForPill(productInfo.brand)
+            : null;
+    const productSubtitle = [brandForSubtitle, productInfo.category].filter(Boolean).join(' • ');
     const bundleSourceTypeFinal = bundleState.meta.sourceTypeFinal !== false && Number(bundleState.meta.revision) >= 1;
     const bundleSourceType = bundleSourceTypeFinal ? bundleState.meta.sourceType : null;
 
@@ -1063,15 +1133,62 @@ const AnalysisBundleDashboard: React.FC<{
             },
         ];
 
+    const keyIngredientsRanked = useMemo(
+        () => pickKeyIngredientsForBackground(ingredientsItems as unknown as IngredientCoverItemLike[]),
+        [ingredientsItems]
+    );
+    const keyIngredientsForIngredients = keyIngredientsRanked.slice(0, 3);
+    const keyIngredientsForSafety = keyIngredientsRanked.slice(0, 2);
+    const keyIngredientsForOverview = keyIngredientsRanked.slice(0, 2);
+    const keyIngredientKeySet = useMemo(
+        () => new Set(keyIngredientsForIngredients.map((name) => normalizeIngredientNameForBackground(name))),
+        [keyIngredientsForIngredients]
+    );
+    const foundationHitsForIngredients = useMemo(
+        () => summarizeFoundationHits(keyIngredientsForIngredients),
+        [keyIngredientsForIngredients.join('|')]
+    );
+    const foundationHitsForSafety = useMemo(
+        () => summarizeFoundationHits(keyIngredientsForSafety),
+        [keyIngredientsForSafety.join('|')]
+    );
+    const foundationHitsForOverview = useMemo(
+        () => summarizeFoundationHits(keyIngredientsForOverview),
+        [keyIngredientsForOverview.join('|')]
+    );
+
+    useEffect(() => {
+        if (!bundleSourceTypeFinal) return;
+        const digest = typeof bundleState.meta.factsDigestHash === 'string' ? bundleState.meta.factsDigestHash : '';
+        if (!digest) return;
+        if (foundationMetricLoggedRef.current.has(digest)) return;
+        foundationMetricLoggedRef.current.add(digest);
+
+        const hitSummary = summarizeFoundationHits(keyIngredientsForIngredients);
+        console.info('[foundation-overlay-metric]', {
+            ...hitSummary,
+            selectedIngredients: keyIngredientsForIngredients,
+        });
+    }, [bundleSourceTypeFinal, bundleState.meta.factsDigestHash, keyIngredientsForIngredients.join('|')]);
+
     const usageCover = bundleState.sections.usage.cover;
     const usageBullets = (usageCover?.bullets ?? []).map((bullet) => ({
         text: formatTaggedText(bullet.text, bullet.basisTags),
     }));
     const usageRoutine = usageCover?.bestTimeToTake?.text ?? usageCover?.dosage?.text ?? null;
+    const usageHasLabelSchedule = (bundleState.sections.usage.detail?.scheduleFromLabel?.length ?? 0) > 0;
+    const usageHasAnyGuidance =
+        usageHasLabelSchedule ||
+        (usageCover?.bullets?.length ?? 0) > 0 ||
+        Boolean(usageCover?.dosage?.text) ||
+        Boolean(usageCover?.bestTimeToTake?.text) ||
+        Boolean(usageCover?.withFood?.text);
+    const shouldShowUsageFallback = !usageHasAnyGuidance && bundleState.sections.usage.dataStatus !== 'pending';
 
     const safetyCover = bundleState.sections.safety.cover;
     const safetyBullet0Text = normalizeText(safetyCover?.bullets?.[0]?.text ?? null);
     const safetyBullet1Text = normalizeText(safetyCover?.bullets?.[1]?.text ?? null);
+    const showGeneralWatchOuts = !bundleState.sections.safety.detail?.warnings?.length && keyIngredientsForSafety.length > 0;
 
     const fetchIngredientsDetail = useCallback(async () => {
         if (!isIngredientsDetailReady(bundleState)) {
@@ -1360,6 +1477,27 @@ const AnalysisBundleDashboard: React.FC<{
                     <Text style={styles.modalParagraphSmall}>{t.analysisPlaceholderOverviewBenefits}</Text>
                 )}
             </View>
+            {keyIngredientsForOverview.length > 0 ? (
+                <View style={{ gap: 10 }}>
+                    <Text style={styles.modalBulletTitle}>Learn more about key ingredients (General)</Text>
+                    {keyIngredientsForOverview.map((name) => (
+                        <OdsFoundationPanel
+                            key={name}
+                            ingredientName={name}
+                            variant="full"
+                            maxBullets={2}
+                            maxWatchOuts={2}
+                        />
+                    ))}
+                    {foundationHitsForOverview.odsHitCount + foundationHitsForOverview.curatedHitCount === 0 ? (
+                        <View style={styles.foundationFallbackCard}>
+                            <Text style={styles.foundationFallbackTitle}>{t.analysisFoundationTitle}</Text>
+                            <Text style={styles.foundationFallbackDisclaimer}>{t.analysisGeneralBackgroundDisclaimer}</Text>
+                            <Text style={styles.foundationFallbackBody}>{t.analysisFoundationFallbackBody}</Text>
+                        </View>
+                    ) : null}
+                </View>
+            ) : null}
         </View>
     );
 
@@ -1389,6 +1527,20 @@ const AnalysisBundleDashboard: React.FC<{
             {detailError && (
                 <Text style={styles.modalParagraphSmall}>{detailError}</Text>
             )}
+            {!ingredientsDetail?.items?.length && keyIngredientsForIngredients.length > 0 ? (
+                <View style={{ gap: 10 }}>
+                    {keyIngredientsForIngredients.map((name) => (
+                        <OdsFoundationPanel key={name} ingredientName={name} variant="full" />
+                    ))}
+                    {foundationHitsForIngredients.odsHitCount + foundationHitsForIngredients.curatedHitCount === 0 ? (
+                        <View style={styles.foundationFallbackCard}>
+                            <Text style={styles.foundationFallbackTitle}>{t.analysisFoundationTitle}</Text>
+                            <Text style={styles.foundationFallbackDisclaimer}>{t.analysisGeneralBackgroundDisclaimer}</Text>
+                            <Text style={styles.foundationFallbackBody}>{t.analysisFoundationFallbackBody}</Text>
+                        </View>
+                    ) : null}
+                </View>
+            ) : null}
             {ingredientsDetail?.items?.length ? (
                 <View style={styles.modalCalloutCard}>
                     <Text style={styles.modalBulletTitle}>Ingredient Details</Text>
@@ -1414,6 +1566,11 @@ const AnalysisBundleDashboard: React.FC<{
                                         {formatTaggedText(item.deliveryFormExplain.text, item.deliveryFormExplain.basisTags)}
                                     </Text>
                                 ) : null}
+                                {keyIngredientKeySet.has(normalizeIngredientNameForBackground(item.name)) ? (
+                                    <View style={{ marginTop: 10 }}>
+                                        <OdsFoundationPanel ingredientName={item.name} variant="full" />
+                                    </View>
+                                ) : null}
                             </View>
                         ))
                         : (ingredientsDetail as IngredientsDetailV3).items.map((item, idx) => (
@@ -1424,6 +1581,14 @@ const AnalysisBundleDashboard: React.FC<{
                                 <Text style={styles.modalParagraphSmall}>{item.formExplain}</Text>
                             </View>
                         ))}
+                </View>
+            ) : null}
+            {ingredientsDetail?.items?.length && keyIngredientsForIngredients.length > 0 &&
+                foundationHitsForIngredients.odsHitCount + foundationHitsForIngredients.curatedHitCount === 0 ? (
+                <View style={styles.foundationFallbackCard}>
+                    <Text style={styles.foundationFallbackTitle}>{t.analysisFoundationTitle}</Text>
+                    <Text style={styles.foundationFallbackDisclaimer}>{t.analysisGeneralBackgroundDisclaimer}</Text>
+                    <Text style={styles.foundationFallbackBody}>{t.analysisFoundationFallbackBody}</Text>
                 </View>
             ) : null}
             {ingredientsDetail?.overallSummary?.text ? (
@@ -1478,6 +1643,12 @@ const AnalysisBundleDashboard: React.FC<{
                     ))}
                 </View>
             ) : null}
+            {shouldShowUsageFallback ? (
+                <View style={styles.modalCalloutCard}>
+                    <Text style={styles.modalBulletTitle}>Label directions</Text>
+                    <Text style={styles.modalParagraphSmall}>{t.analysisUsageFallbackDirections}</Text>
+                </View>
+            ) : null}
         </View>
     );
 
@@ -1504,8 +1675,48 @@ const AnalysisBundleDashboard: React.FC<{
                     ))}
                 </View>
             ) : null}
+            {showGeneralWatchOuts ? (
+                <View style={{ gap: 10 }}>
+                    <Text style={styles.modalBulletTitle}>General watch-outs (NIH ODS)</Text>
+                    <Text style={styles.modalParagraphSmall}>{t.analysisNoteNoLabelWarningsGeneralShown}</Text>
+                    {keyIngredientsForSafety.map((name) => (
+                        <OdsFoundationPanel
+                            key={name}
+                            ingredientName={name}
+                            variant="watch_outs_only"
+                            maxWatchOuts={2}
+                        />
+                    ))}
+                    {foundationHitsForSafety.odsHitCount + foundationHitsForSafety.curatedHitCount === 0 ? (
+                        <View style={styles.foundationFallbackCard}>
+                            <Text style={styles.foundationFallbackTitle}>{t.analysisFoundationTitle}</Text>
+                            <Text style={styles.foundationFallbackDisclaimer}>{t.analysisGeneralBackgroundDisclaimer}</Text>
+                            <Text style={styles.foundationFallbackBody}>{t.analysisFoundationFallbackBody}</Text>
+                        </View>
+                    ) : null}
+                </View>
+            ) : null}
         </View>
     );
+
+    const ingredientsNotes: string[] = [];
+    if (isV4 && (ingredientsDetail as IngredientsDetailV4 | null)?.items?.length) {
+        const items = (ingredientsDetail as IngredientsDetailV4).items ?? [];
+        const anyChemicalFormNotProvided = items.some((item) => {
+            const tags = item?.chemicalFormExplain?.basisTags ?? [];
+            if (Array.isArray(tags) && tags.includes('not_provided')) return true;
+            const text = typeof item?.chemicalFormExplain?.text === 'string' ? item.chemicalFormExplain.text : '';
+            return /not\s+provided/i.test(text);
+        });
+        if (anyChemicalFormNotProvided) {
+            ingredientsNotes.push(t.analysisNoteChemicalFormNotDisclosed);
+        }
+    }
+
+    const safetyNotes: string[] = [];
+    if (showGeneralWatchOuts) {
+        safetyNotes.push(t.analysisNoteNoLabelWarningsGeneralShown);
+    }
 
     const tiles: TileConfig[] = [
         {
@@ -1550,7 +1761,8 @@ const AnalysisBundleDashboard: React.FC<{
             dataStatus: buildBundleDataStatus(
                 bundleState.sections.ingredients.dataStatus,
                 bundleSourceType,
-                bundleSourceTypeFinal
+                bundleSourceTypeFinal,
+                ingredientsNotes
             ),
             content: ingredientsContent,
         },
@@ -1600,7 +1812,8 @@ const AnalysisBundleDashboard: React.FC<{
             dataStatus: buildBundleDataStatus(
                 bundleState.sections.safety.dataStatus,
                 bundleSourceType,
-                bundleSourceTypeFinal
+                bundleSourceTypeFinal,
+                safetyNotes
             ),
             content: safetyContent,
         },
@@ -2486,9 +2699,13 @@ export const AnalysisDashboard: React.FC<{
     const overviewSummaryDisplay = isRegulatoryLabel
         ? clampTextWithEllipsis(overviewSummary, 220)
         : overviewSummary;
-    const displayBrand = isRegulatoryLabel
+    const displayBrandRaw = isRegulatoryLabel
         ? (shortenCompanyName(productInfo.brand) ?? productInfo.brand)
         : productInfo.brand;
+    const displayBrand =
+        typeof displayBrandRaw === 'string' && displayBrandRaw.trim()
+            ? formatBrandForPill(displayBrandRaw)
+            : null;
     const overviewContent = (
         <View style={{ gap: 16 }}>
             <Text style={styles.modalParagraph}>
@@ -3359,6 +3576,32 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         padding: 14,
         gap: 6,
+    },
+    foundationFallbackCard: {
+        backgroundColor: '#FFFBEB',
+        borderRadius: 16,
+        padding: 14,
+        borderWidth: 1,
+        borderColor: '#FDE68A',
+        borderLeftWidth: 4,
+        borderLeftColor: '#F59E0B',
+        gap: 8,
+    },
+    foundationFallbackTitle: {
+        fontSize: 13,
+        fontWeight: '800',
+        color: '#92400E',
+    },
+    foundationFallbackDisclaimer: {
+        fontSize: 12,
+        lineHeight: 18,
+        color: '#78350F',
+        fontWeight: '600',
+    },
+    foundationFallbackBody: {
+        fontSize: 13,
+        lineHeight: 20,
+        color: '#78350F',
     },
     modalTagRow: {
         flexDirection: 'row',
