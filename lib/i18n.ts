@@ -166,6 +166,7 @@ const en = {
     analysisScoreEffectiveness: 'Effectiveness',
     analysisScoreSafety: 'Safety',
     analysisScoreValue: 'Value',
+    analysisScoreIntegrity: 'Integrity',
     analysisScoreFormulaQuality: 'Formula Quality',
     analysisScoreNotScored: 'Not scored',
     analysisScoreNotScoredReasonWeb: 'Limited evidence (web fallback). We show only what the source supports.',
