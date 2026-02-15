@@ -16,7 +16,7 @@ import * as SecureStore from 'expo-secure-store';
 import * as WebBrowser from 'expo-web-browser';
 import Constants from 'expo-constants';
 import { Session, User } from '@supabase/supabase-js';
-import { appleAuth, appleAuthAndroid } from '@invertase/react-native-apple-authentication';
+import { appleAuth, appleAuthAndroid } from '@/lib/appleAuth';
 
 import { supabase } from '@/lib/supabase';
 import { getAuthErrorMessage, RateLimitError } from '@/lib/errors';

@@ -15,3 +15,7 @@ declare namespace NodeJS {
     EAS_PROJECT_ID?: string;
   }
 }
+
+// expo-router's runtime entry file doesn't ship TypeScript typings.
+// Declaring it here keeps `App.tsx` type-safe without weakening project strictness.
+declare module "expo-router/entry";

@@ -1,6 +1,7 @@
 export type RoutinePreferences = {
   note?: string;
   time?: string;
+  timeUserSet?: boolean;
   withFood?: boolean;
   whenToTake?: string;
   howToTake?: string;

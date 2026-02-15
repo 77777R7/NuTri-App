@@ -7,6 +7,9 @@ import { createClient } from "@supabase/supabase-js";
 const HOURS = Number.parseInt(process.env.LABEL_SCAN_SCORECARD_HOURS ?? "24", 10);
 const MAX_ROWS = Number.parseInt(process.env.LABEL_SCAN_SCORECARD_MAX_ROWS ?? "5000", 10);
 const MIN_VARIANT_SAMPLE_SIZE = Number.parseInt(process.env.LABEL_SCAN_SCORECARD_MIN_VARIANT_N ?? "200", 10);
+const QUERY_TIMEOUT_MS = Number.parseInt(process.env.LABEL_SCAN_SCORECARD_QUERY_TIMEOUT_MS ?? "12000", 10);
+const QUERY_MAX_ATTEMPTS = Number.parseInt(process.env.LABEL_SCAN_SCORECARD_QUERY_MAX_ATTEMPTS ?? "3", 10);
+const QUERY_RETRY_BASE_MS = Number.parseInt(process.env.LABEL_SCAN_SCORECARD_QUERY_RETRY_BASE_MS ?? "800", 10);
 
 function percentile(values, p) {
   if (!values.length) return null;
@@ -33,6 +36,66 @@ function toCountMap(rows, selector) {
   return Object.fromEntries([...counts.entries()].sort((a, b) => Number(b[1]) - Number(a[1])));
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function summarizeError(error) {
+  const raw = String(error instanceof Error ? error.message : error ?? "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!raw) return "unknown_error";
+  return raw.length > 320 ? `${raw.slice(0, 320)}...` : raw;
+}
+
+function isInfraTransientError(error) {
+  const message = summarizeError(error).toLowerCase();
+  return [
+    "error 522",
+    "cloudflare",
+    "timed out",
+    "timeout",
+    "fetch failed",
+    "econn",
+    "etimedout",
+    "enotfound",
+    "eai_again",
+    "network",
+    "connection",
+  ].some((token) => message.includes(token));
+}
+
+function createTimeoutFetch(timeoutMs) {
+  return async (input, init = {}) => {
+    const controller = new AbortController();
+    const upstreamSignal = init?.signal;
+    const onAbort = () => controller.abort(upstreamSignal?.reason ?? new Error("upstream_aborted"));
+
+    if (upstreamSignal) {
+      if (upstreamSignal.aborted) onAbort();
+      else upstreamSignal.addEventListener("abort", onAbort, { once: true });
+    }
+
+    const timeoutHandle = setTimeout(() => {
+      controller.abort(new Error(`scorecard_fetch_timeout_${timeoutMs}ms`));
+    }, timeoutMs);
+
+    try {
+      return await fetch(input, { ...init, signal: controller.signal });
+    } catch (error) {
+      if (controller.signal.aborted && !upstreamSignal?.aborted) {
+        throw new Error(`scorecard_fetch_timeout_${timeoutMs}ms`);
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeoutHandle);
+      if (upstreamSignal) {
+        upstreamSignal.removeEventListener("abort", onAbort);
+      }
+    }
+  };
+}
+
 function getMetaSource(row) {
   const meta = row?.meta;
   if (!meta || typeof meta !== "object") return null;
@@ -47,33 +110,58 @@ async function main() {
     throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_READONLY_KEY) are required.");
   }
 
-  const client = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } });
+  const client = createClient(supabaseUrl, supabaseKey, {
+    auth: { persistSession: false },
+    global: { fetch: createTimeoutFetch(QUERY_TIMEOUT_MS) },
+  });
   const since = new Date(Date.now() - HOURS * 60 * 60 * 1000).toISOString();
 
   let rows = [];
+  let queryAttempts = 0;
   try {
-    const { data, error } = await client
-      .from("label_scan_metrics")
-      .select("*")
-      .gte("created_at", since)
-      .order("created_at", { ascending: false })
-      .limit(MAX_ROWS);
+    for (let attempt = 1; attempt <= QUERY_MAX_ATTEMPTS; attempt += 1) {
+      queryAttempts = attempt;
+      try {
+        const { data, error } = await client
+          .from("label_scan_metrics")
+          .select("*")
+          .gte("created_at", since)
+          .order("created_at", { ascending: false })
+          .limit(MAX_ROWS);
 
-    if (error) {
-      throw new Error(`label_scan_metrics query failed: ${error.message}`);
+        if (error) {
+          throw new Error(`label_scan_metrics query failed: ${error.message}`);
+        }
+
+        rows = data ?? [];
+        break;
+      } catch (error) {
+        if (attempt >= QUERY_MAX_ATTEMPTS || !isInfraTransientError(error)) {
+          throw error;
+        }
+        await sleep(Math.max(250, QUERY_RETRY_BASE_MS * attempt));
+      }
+    }
+  } catch (error) {
+    if (!isInfraTransientError(error)) {
+      throw error;
     }
 
-    rows = data ?? [];
-  } catch (error) {
     const outputDir = path.join(process.cwd(), "output", `label-scan-scorecard-${Date.now()}`);
     await fs.mkdir(outputDir, { recursive: true });
-    const infraError = String(error instanceof Error ? error.message : error ?? "unknown_error").trim();
+    const infraError = summarizeError(error);
 
     const degradedSummary = {
       generatedAt: new Date().toISOString(),
       status: "infra_degraded",
       windowHours: HOURS,
-      query: { since },
+      query: {
+        since,
+        timeoutMs: QUERY_TIMEOUT_MS,
+        maxAttempts: QUERY_MAX_ATTEMPTS,
+        retryBaseMs: QUERY_RETRY_BASE_MS,
+        attempts: queryAttempts || QUERY_MAX_ATTEMPTS,
+      },
       infraError,
       sampleSize: 0,
       sampleSizeTotal: 0,
@@ -95,7 +183,8 @@ async function main() {
         `- Generated: ${degradedSummary.generatedAt}`,
         `- Window: last ${HOURS}h`,
         `- Query since: ${since}`,
-        `- Reason: ${infraError || "unknown_error"}`,
+        `- Query attempts: ${degradedSummary.query.attempts}/${degradedSummary.query.maxAttempts} (timeout=${degradedSummary.query.timeoutMs}ms)`,
+        `- Reason: ${infraError}`,
         "",
         "Nightly marked as infra degraded. Treat as platform/network/DB incident, not product regression.",
       ].join("\n"),
@@ -247,6 +336,13 @@ async function main() {
   const summary = {
     generatedAt: new Date().toISOString(),
     status,
+    query: {
+      since,
+      timeoutMs: QUERY_TIMEOUT_MS,
+      maxAttempts: QUERY_MAX_ATTEMPTS,
+      retryBaseMs: QUERY_RETRY_BASE_MS,
+      attempts: queryAttempts,
+    },
     windowHours: HOURS,
     sampleSize: sampleSizeNonSynthetic,
     sampleSizeTotal,
@@ -362,6 +458,8 @@ async function main() {
     `- Status: ${summary.status}`,
     `- Generated: ${summary.generatedAt}`,
     `- Window: last ${HOURS}h`,
+    `- Query since: ${since}`,
+    `- Query attempts: ${summary.query.attempts}/${summary.query.maxAttempts} (timeout=${summary.query.timeoutMs}ms)`,
     `- Sample size (non-synthetic KPI rows): ${summary.sampleSizeNonSynthetic}`,
     `- Sample size (synthetic): ${summary.sampleSizeSynthetic}`,
     `- Sample size (total): ${summary.sampleSizeTotal}`,
