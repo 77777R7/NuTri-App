@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 
 import { supabase } from "../supabase.js";
 import type { DatasetCache } from "./v4DatasetCache.js";
+import type { DoseReasonCode, FormReasonCode } from "../insights/reasonCodes.js";
 import type { ScoreBundleV4, ScoreFlag, ScoreGoalFit, ScoreHighlight, ScoreSource } from "../types.js";
 
 export const V4_SCORE_VERSION = "v4.0.0-alpha.3";
@@ -74,12 +75,26 @@ type FormSignal = {
   formLabel: string;
   matchScore: number;
   effectiveFactor: number;
+  reasonCode: FormReasonCode;
   confidence: number | null;
   evidenceGrade: string | null;
   auditStatus: string | null;
   aliasText?: string | null;
   aliasSource?: string | null;
   aliasConfidence?: number | null;
+};
+
+type IngredientDoseSignal = {
+  ingredientId: string;
+  ingredientName: string;
+  perServingAmount: number | null;
+  dailyAmount: number | null;
+  unit: string | null;
+  rangeMin: number | null;
+  rangeMax: number | null;
+  rangeSource: "kb_curated" | "ods" | null;
+  status: "below_typical" | "within_typical" | "above_typical" | "unknown";
+  reasonCode: DoseReasonCode;
 };
 
 export type DailyMultiplierResult = {
@@ -430,6 +445,105 @@ const parseNumericRange = (
   return {
     min: Number.isFinite(min) ? min : null,
     max: Number.isFinite(max) ? max : null,
+  };
+};
+
+const classifyDoseSignal = (params: {
+  ingredientId: string;
+  ingredientName: string;
+  perServingAmount: number | null;
+  dailyAmount: number | null;
+  unit: string | null;
+  rangeMin: number | null;
+  rangeMax: number | null;
+  unitSupported: boolean;
+}): IngredientDoseSignal => {
+  if (!params.unitSupported || !params.unit) {
+    return {
+      ingredientId: params.ingredientId,
+      ingredientName: params.ingredientName,
+      perServingAmount: params.perServingAmount,
+      dailyAmount: params.dailyAmount,
+      unit: params.unit,
+      rangeMin: params.rangeMin,
+      rangeMax: params.rangeMax,
+      rangeSource: null,
+      status: "unknown",
+      reasonCode: "DOSE_UNIT_UNSUPPORTED",
+    };
+  }
+
+  if (params.rangeMin == null && params.rangeMax == null) {
+    return {
+      ingredientId: params.ingredientId,
+      ingredientName: params.ingredientName,
+      perServingAmount: params.perServingAmount,
+      dailyAmount: params.dailyAmount,
+      unit: params.unit,
+      rangeMin: params.rangeMin,
+      rangeMax: params.rangeMax,
+      rangeSource: null,
+      status: "unknown",
+      reasonCode: "DOSE_RANGE_MISSING",
+    };
+  }
+
+  if (params.dailyAmount == null) {
+    return {
+      ingredientId: params.ingredientId,
+      ingredientName: params.ingredientName,
+      perServingAmount: params.perServingAmount,
+      dailyAmount: params.dailyAmount,
+      unit: params.unit,
+      rangeMin: params.rangeMin,
+      rangeMax: params.rangeMax,
+      rangeSource: "kb_curated",
+      status: "unknown",
+      reasonCode: "DOSE_DAILY_MISSING_DIRECTIONS",
+    };
+  }
+
+  const min = params.rangeMin;
+  const max = params.rangeMax;
+  if (min != null && params.dailyAmount < min) {
+    return {
+      ingredientId: params.ingredientId,
+      ingredientName: params.ingredientName,
+      perServingAmount: params.perServingAmount,
+      dailyAmount: params.dailyAmount,
+      unit: params.unit,
+      rangeMin: min,
+      rangeMax: max,
+      rangeSource: "kb_curated",
+      status: "below_typical",
+      reasonCode: "DOSE_BELOW_TYPICAL",
+    };
+  }
+  if (max != null && params.dailyAmount > max) {
+    return {
+      ingredientId: params.ingredientId,
+      ingredientName: params.ingredientName,
+      perServingAmount: params.perServingAmount,
+      dailyAmount: params.dailyAmount,
+      unit: params.unit,
+      rangeMin: min,
+      rangeMax: max,
+      rangeSource: "kb_curated",
+      status: "above_typical",
+      reasonCode: "DOSE_ABOVE_TYPICAL",
+    };
+  }
+  return {
+    ingredientId: params.ingredientId,
+    ingredientName: params.ingredientName,
+    perServingAmount: params.perServingAmount,
+    dailyAmount: params.dailyAmount,
+    unit: params.unit,
+    rangeMin: min,
+    rangeMax: max,
+    rangeSource: "kb_curated",
+    status: "within_typical",
+    reasonCode: "DOSE_WITHIN_TYPICAL",
   };
 };
 
@@ -1056,6 +1170,7 @@ const computeScores = (
       formLabel: match.form.form_label,
       matchScore: roundScore(match.matchScore),
       effectiveFactor: roundScore(match.effectiveFactor),
+      reasonCode: "FORM_INFERRED_GATE_PASS",
       confidence: match.form.confidence ?? null,
       evidenceGrade: match.form.evidence_grade ?? null,
       auditStatus: match.form.audit_status ?? null,
@@ -1097,6 +1212,7 @@ const computeScores = (
   const evidenceAvailableIds = new Set<string>();
   const evidenceEligibleIds = new Set<string>();
   const usedEvidenceIds = new Set<string>();
+  const ingredientDoseSignalsById = new Map<string, IngredientDoseSignal>();
   const ingredientGoalScores = new Map<string, { goal: string; score: number }>();
   const ingredientGoalScoresRaw = new Map<string, { goal: string; score: number }>();
 
@@ -1111,21 +1227,32 @@ const computeScores = (
     const unitValue = row.unit_normalized ?? row.unit;
     const unitMatches = Boolean(metaUnit && unitValue && unitValue === metaUnit);
     const rowMultiplier = row.basis === "label_serving" ? dailyMultiplier.multiplier : 1;
-    const dailyAmountValue = amountValue == null ? null : amountValue * rowMultiplier;
+    const hasDailyUsage = row.basis !== "label_serving" || dailyMultiplier.reliability === "reliable";
+    const perServingAmount = amountValue;
+    const dailyAmountValue = amountValue == null ? null : hasDailyUsage ? amountValue * rowMultiplier : null;
     const doseEligible = dailyAmountValue != null && unitMatches;
     const goalSet = new Set((meta?.goals ?? []).map(normalizeGoalId).filter(Boolean));
     const formMatch = formMatches[index]?.match ?? null;
     const formFactor = formMatch?.effectiveFactor ?? 1;
     const adjustedAmount =
       dailyAmountValue == null ? null : dailyAmountValue * formFactor;
+    let bestRangeMin: number | null = null;
+    let bestRangeMax: number | null = null;
+    let bestRangeWeight = -1;
 
     entries.forEach((entry) => {
       const goalId = normalizeGoalId(entry.goal);
       if (!goalId) return;
       if (goalSet.size && !goalSet.has(goalId)) return;
       const evidenceWeight = resolveEvidenceWeight(entry.evidence_grade, entry.audit_status);
-      if (evidenceWeight <= 0 || !doseEligible) return;
+      if (evidenceWeight <= 0) return;
       const optimalRange = parseNumericRange(entry.optimal_dose_range);
+      if (evidenceWeight > bestRangeWeight) {
+        bestRangeWeight = evidenceWeight;
+        bestRangeMin = optimalRange.min ?? entry.min_effective_dose ?? null;
+        bestRangeMax = optimalRange.max ?? null;
+      }
+      if (!doseEligible) return;
       const rawAdequacy = computeDoseAdequacy({
         amount: dailyAmountValue,
         unitMatches,
@@ -1156,6 +1283,21 @@ const computeScores = (
         evidenceEligibleIds.add(row.ingredient_id);
       }
     });
+
+    const doseSignal = classifyDoseSignal({
+      ingredientId: row.ingredient_id,
+      ingredientName: row.name_raw,
+      perServingAmount,
+      dailyAmount: dailyAmountValue,
+      unit: unitValue,
+      rangeMin: bestRangeMin,
+      rangeMax: bestRangeMax,
+      unitSupported: isRecognizedUnit(unitValue, row.unit_kind),
+    });
+    const existingSignal = ingredientDoseSignalsById.get(row.ingredient_id);
+    if (!existingSignal || (doseSignal.dailyAmount != null && existingSignal.dailyAmount == null)) {
+      ingredientDoseSignalsById.set(row.ingredient_id, doseSignal);
+    }
   });
 
   const goalScoresMap = new Map<string, number[]>();
@@ -1219,6 +1361,7 @@ const computeScores = (
       goalDoseAdequacy,
       goalDoseAdequacyRaw,
       formSignals,
+      ingredientDoseSignals: [],
       usedEvidenceIds: Array.from(usedEvidenceIds),
       usedFormIds: Array.from(usedFormIds),
       dailyMultiplier,
@@ -1272,6 +1415,7 @@ const computeScores = (
     goalDoseAdequacy,
     goalDoseAdequacyRaw,
     formSignals,
+    ingredientDoseSignals: Array.from(ingredientDoseSignalsById.values()),
     usedEvidenceIds: Array.from(usedEvidenceIds),
     usedFormIds: Array.from(usedFormIds),
     dailyMultiplier,
@@ -1921,6 +2065,7 @@ const buildScoreBundleV4FromData = async (params: {
         formCoverageRatio: roundScore(metrics.formCoverageRatio),
         formSignals,
         formSignalsTruncatedCount,
+        ingredientDoseSignals: metrics.ingredientDoseSignals,
         goals: roundedGoalDoseAdequacy,
         audit: {
           verifiedEvidenceCount,

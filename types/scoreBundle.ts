@@ -1,4 +1,4 @@
-export type ScoreSource = "dsld" | "lnhpd" | "ocr" | "manual";
+export type ScoreSource = "dsld" | "lnhpd" | "ocr" | "manual" | "web";
 
 export type ScoreGoalFit = {
   goal: string;
@@ -52,9 +52,13 @@ export type ScoreBundleResponse =
       status: "pending";
       source: ScoreSource;
       sourceId: string;
+      reasonCode?: string;
+      message?: string;
     }
   | {
       status: "not_found";
       source: ScoreSource;
       sourceId: string;
+      reasonCode?: string;
+      message?: string;
     };

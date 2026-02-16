@@ -1,6 +1,8 @@
 import { supabase } from './supabase.js';
 import { extractErrorMeta, type RetryErrorMeta, withRetry } from './supabaseRetry.js';
 import type { LabelDraft } from './labelAnalysis.js';
+import { sanitizeFactsDTO, type FactsDTO } from './insights/dto.js';
+import { isActiveIngredient, isBlendPlaceholder } from './insights/ingredientPredicates.js';
 import { canonicalizeLnhpdFormTokens } from './formTaxonomy/lnhpdFormTokenMap.js';
 import {
   collectExplicitFormTokensWithRules,
@@ -75,7 +77,7 @@ const pickLnhpdMeta = (
 type UnitKind = 'mass' | 'volume' | 'iu' | 'cfu' | 'percent' | 'homeopathic' | 'unknown';
 
 type ProductIngredientRow = {
-  source: 'dsld' | 'lnhpd' | 'ocr' | 'manual';
+  source: 'dsld' | 'lnhpd' | 'ocr' | 'manual' | 'web';
   source_id: string;
   canonical_source_id: string | null;
   ingredient_id: string | null;
@@ -123,6 +125,7 @@ const FORM_RAW_IDEMPOTENT_SOURCES: ReadonlySet<ProductIngredientRow['source']> =
   'dsld',
   'ocr',
   'manual',
+  'web',
 ]);
 
 const normalizeNameKey = (value: string): string =>
@@ -1172,4 +1175,63 @@ export async function upsertProductIngredientsFromDraft(params: {
   });
 
   await upsertProductIngredientRows(rows, null, parsingRules);
+}
+
+export async function upsertProductIngredientsFromWebFacts(params: {
+  sourceId: string;
+  canonicalSourceId?: string | null;
+  facts: unknown;
+  parseConfidence?: number | null;
+}): Promise<UpsertResult> {
+  const parsedFacts: FactsDTO = sanitizeFactsDTO(params.facts);
+  const basis: Basis = 'label_serving';
+  const parsingRules = await loadParsingTokenRules();
+  const formRawTokensSorted = buildFormRawTokensSorted(parsingRules);
+
+  const rows: ProductIngredientRow[] = parsedFacts.ingredients.map((ingredient) => {
+    const normalized = normalizeAmountAndUnit(ingredient.amount ?? null, ingredient.unit ?? null);
+    const unitKind = classifyUnitKind(ingredient.unit ?? normalized.unit);
+    const amountMissing = normalized.amount == null;
+    const blendPlaceholder =
+      ingredient.isBlendPlaceholder ?? isBlendPlaceholder(ingredient.name);
+    const active = isActiveIngredient({
+      name: ingredient.name,
+      amount: normalized.amount,
+      unit: normalized.unit,
+      isBlendPlaceholder: blendPlaceholder,
+    });
+    const amountUnknown = amountMissing || !isDoseUnitKind(unitKind);
+    const formRaw =
+      ingredient.formText ??
+      extractFormRaw(ingredient.name, formRawTokensSorted);
+
+    return {
+      source: 'web',
+      source_id: params.sourceId,
+      canonical_source_id: params.canonicalSourceId ?? null,
+      ingredient_id: null,
+      name_raw: ingredient.name,
+      name_key: buildNameKey(ingredient.name),
+      amount: normalized.amount ?? null,
+      unit: normalized.unit,
+      unit_raw: ingredient.unit ?? null,
+      amount_normalized: null,
+      unit_normalized: null,
+      unit_kind: unitKind,
+      basis,
+      is_active: active,
+      is_proprietary_blend: blendPlaceholder,
+      amount_unknown: amountUnknown,
+      form_raw: formRaw,
+      parse_confidence: computeRowParseConfidence(params.parseConfidence ?? 0.65, {
+        amountMissing,
+        unitKind,
+        hasUnit: normalized.unit != null,
+      }),
+      match_method: null,
+      match_confidence: null,
+    };
+  });
+
+  return upsertProductIngredientRows(rows, null, parsingRules);
 }

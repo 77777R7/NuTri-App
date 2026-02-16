@@ -180,6 +180,8 @@ const en = {
     analysisScoreFormulaQuality: 'Formula Quality',
     analysisScoreNotScored: 'Not scored',
     analysisScoreNotScoredReasonWeb: 'Limited evidence (web fallback). We show only what the source supports.',
+    analysisScoreNotScoredReasonOwnership:
+      'We found potentially related web pages, but ownership could not be verified. We do not use this data.',
     analysisScoreNotScoredReasonUnavailable: 'Score not available yet.',
     analysisScoreScoring: 'Scoring...',
     analysisScoreScoringReason: 'Finishing verified facts.',

@@ -644,3 +644,99 @@ export const lookupKbFormExplain = (params: {
     evidenceText: null,
   };
 };
+
+export type RuntimeInsightSegmentKind = "absorption" | "solubility" | "tolerability" | "caveats";
+
+export type RuntimeInsightSegment = {
+  kind: RuntimeInsightSegmentKind;
+  text: string;
+  sentenceId: string | null;
+  excerptId: string | null;
+  referenceId: string | null;
+  evidenceGrade: string | null;
+};
+
+export const lookupKbRuntimeFormInsights = (params: {
+  ingredientId: string;
+  formKey: string;
+}): {
+  status: "ok" | "not_found";
+  reason: "no_runtime" | "ingredient_not_supported" | "no_entry_for_form_key" | null;
+  formDisplay: string | null;
+  segments: RuntimeInsightSegment[];
+  meta: {
+    packageSha256: string | null;
+    reviewedAt: string | null;
+    source: string | null;
+  };
+} => {
+  const kb = getKbRuntime();
+  const meta = {
+    packageSha256:
+      typeof kb?.runtime?.meta?.package_sha256 === "string" ? (kb.runtime.meta.package_sha256 as string) : null,
+    reviewedAt:
+      typeof kb?.runtime?.meta?.reviewed_at === "string" ? (kb.runtime.meta.reviewed_at as string) : null,
+    source:
+      typeof kb?.runtime?.meta?.source === "string" ? (kb.runtime.meta.source as string) : null,
+  };
+  if (!kb) {
+    return {
+      status: "not_found",
+      reason: "no_runtime",
+      formDisplay: null,
+      segments: [],
+      meta,
+    };
+  }
+
+  const key = `${params.ingredientId}|${params.formKey}`;
+  const entry = kb.runtime.ingredient_form_index?.[key];
+  if (!entry) {
+    const hasIngredient = Object.keys(kb.runtime.ingredient_form_index ?? {}).some((indexKey) =>
+      indexKey.startsWith(`${params.ingredientId}|`),
+    );
+    return {
+      status: "not_found",
+      reason: hasIngredient ? "no_entry_for_form_key" : "ingredient_not_supported",
+      formDisplay: null,
+      segments: [],
+      meta,
+    };
+  }
+
+  const readBucket = (
+    kind: RuntimeInsightSegmentKind,
+    bucket?: { en?: Array<KbSentence> },
+  ): RuntimeInsightSegment[] => {
+    if (!bucket?.en?.length) return [];
+    return bucket.en
+      .map((sentence) => {
+        const text = typeof sentence.text === "string" ? sentence.text.trim() : "";
+        if (!text) return null;
+        return {
+          kind,
+          text,
+          sentenceId: sentence.sentence_id ?? null,
+          excerptId: sentence.evidence_snippet_id ?? null,
+          referenceId: sentence.evidence_reference_id ?? null,
+          evidenceGrade: sentence.evidence_grade ?? null,
+        } satisfies RuntimeInsightSegment;
+      })
+      .filter((row): row is RuntimeInsightSegment => Boolean(row));
+  };
+
+  const segments = [
+    ...readBucket("absorption", entry.segments?.absorption),
+    ...readBucket("solubility", entry.segments?.solubility),
+    ...readBucket("tolerability", entry.segments?.tolerability),
+    ...readBucket("caveats", entry.segments?.caveats),
+  ];
+
+  return {
+    status: "ok",
+    reason: null,
+    formDisplay: entry.form_display ?? entry.form_key ?? null,
+    segments,
+    meta,
+  };
+};

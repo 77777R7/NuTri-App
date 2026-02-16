@@ -1887,7 +1887,9 @@ const AnalysisBundleDashboard: React.FC<{
         bundleState.meta.scoreAvailable === false
             ? t.analysisScoreNotScoredReasonWeb
             : v4Response?.status === 'not_found'
-                ? t.analysisScoreNotScoredReasonUnavailable
+                ? v4Response?.reasonCode === 'WEB_OWNERSHIP_FAILED'
+                    ? t.analysisScoreNotScoredReasonOwnership
+                    : t.analysisScoreNotScoredReasonUnavailable
                 : t.analysisScoreNotScoredReasonUnavailable;
     const ringMetaLines =
         scoreUiMode === 'not_scored'

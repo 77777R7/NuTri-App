@@ -32,7 +32,7 @@ export type OverlapLevel = "low" | "medium" | "high" | "unknown";
 
 export type NutrientCategory = "water_soluble_vitamin" | "fat_soluble_vitamin" | "essential_mineral" | "other";
 
-export type ScoreSource = "dsld" | "lnhpd" | "ocr" | "manual";
+export type ScoreSource = "dsld" | "lnhpd" | "ocr" | "manual" | "web";
 
 export interface SupplementMeta {
   evidenceLevel: EvidenceLevel;
@@ -119,12 +119,16 @@ export interface ScoreBundleResponsePending {
   status: "pending";
   source: ScoreSource;
   sourceId: string;
+  reasonCode?: string;
+  message?: string;
 }
 
 export interface ScoreBundleResponseNotFound {
   status: "not_found";
   source: ScoreSource;
   sourceId: string;
+  reasonCode?: string;
+  message?: string;
 }
 
 export type ScoreBundleResponse =

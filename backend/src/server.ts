@@ -20,7 +20,7 @@ import {
   fetchMySupplementOverviewV2,
   prepareContextSources,
 } from "./deepseek.js";
-import { getKbRuntime, lookupKbFormExplain } from "./kbRuntime.js";
+import { getKbRuntime, lookupKbFormExplain, lookupKbRuntimeFormInsights } from "./kbRuntime.js";
 import { buildRuleBasedOverview } from "./overviewRuleBased.js";
 import {
   IngredientsDetailSchema,
@@ -94,7 +94,15 @@ import {
   buildVersionedOcrCacheKey,
   normalizePreprocessProfile,
 } from "./labelScanVersion.js";
-import { upsertProductIngredientsFromDraft, upsertProductIngredientsFromLabelFacts } from "./productIngredients.js";
+import {
+  upsertProductIngredientsFromDraft,
+  upsertProductIngredientsFromLabelFacts,
+  upsertProductIngredientsFromWebFacts,
+} from "./productIngredients.js";
+import { sanitizeFactsDTO } from "./insights/dto.js";
+import { isActiveIngredient } from "./insights/ingredientPredicates.js";
+import { verifyWebOwnership } from "./insights/webOwnership.js";
+import { compileIngredientSummary, ingredientSummaryPacketSchema } from "./insights/summaryCompiler.js";
 import {
   BulkheadTimeoutError,
   CircuitBreaker,
@@ -177,6 +185,7 @@ const parseBooleanEnv = (value: string | undefined, fallback: boolean): boolean 
   if (normalized === "0" || normalized === "false" || normalized === "no") return false;
   return fallback;
 };
+const SCORE_V4_WEB_ENABLED = parseBooleanEnv(process.env.SCORE_V4_WEB_ENABLED, false);
 const LABEL_SCAN_OUTPUT_RULES = `LABEL-SCAN OUTPUT RULES:
 1) overviewSummary must include serving unit (e.g., per softgel/caplet/serving) and 2-3 key ingredients with doses if present.
 2) coreBenefits must list 3 items in "Ingredient - dose per unit" format; if dose missing, say "dose not specified".
@@ -5135,7 +5144,7 @@ const parseRequestBody = <T>(schema: z.ZodType<T>, req: Request, res: Response):
 // ============================================================================
 
 const getScoreAvailableFromSourceType = (sourceType: unknown): boolean | null => {
-  if (sourceType === "web") return false;
+  if (sourceType === "web") return SCORE_V4_WEB_ENABLED;
   if (sourceType === "dsld" || sourceType === "lnhpd") return true;
   return null;
 };
@@ -6860,7 +6869,40 @@ const ensurePublicOverview = async (params: {
   }
 };
 
-const scoreSourceSchema = z.enum(["dsld", "lnhpd", "ocr", "manual"]);
+const scoreSourceSchema = z.enum(["dsld", "lnhpd", "ocr", "manual", "web"]);
+const kbFormInsightsBatchBodySchema = z
+  .object({
+    locale: z.string().trim().min(2).max(8).optional().default("en"),
+    items: z
+      .array(
+        z
+          .object({
+            ingredientId: z.string().trim().min(1),
+            formKey: z.string().trim().min(1),
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(50),
+  })
+  .strict();
+
+const webScoreIngestBodySchema = z
+  .object({
+    facts: z.unknown(),
+    ownership: z
+      .object({
+        regId: z.string().trim().min(1).nullable().optional(),
+        evidenceText: z.string().trim().min(1).nullable().optional(),
+        candidateBrand: z.string().trim().min(1).nullable().optional(),
+        expectedBrand: z.string().trim().min(1).nullable().optional(),
+        candidateName: z.string().trim().min(1).nullable().optional(),
+        expectedName: z.string().trim().min(1).nullable().optional(),
+        variantCueMatch: z.number().finite().nullable().optional(),
+      })
+      .strict(),
+  })
+  .strict();
 
 const coerceScoreGoalFits = (value: unknown): ScoreGoalFit[] => {
   if (!Array.isArray(value)) return [];
@@ -7099,6 +7141,17 @@ app.get("/api/score/v4/:source/:id", verifySupabaseToken, async (req: Request, r
 
   const source = sourceParsed.data;
 
+  if (source === "web" && !SCORE_V4_WEB_ENABLED) {
+    const response: ScoreBundleResponse = {
+      status: "not_found",
+      source,
+      sourceId,
+      reasonCode: "WEB_DATA_UNAVAILABLE",
+      message: "Web scoring is currently disabled.",
+    };
+    return res.json(response);
+  }
+
   try {
     const selectScoreColumns =
       "source,source_id,canonical_source_id,score_version,overall_score,effectiveness_score,safety_score,integrity_score,confidence,best_fit_goals,flags_json,highlights_json,explain_json,inputs_hash,computed_at";
@@ -7228,6 +7281,55 @@ app.get("/api/score/v4/:source/:id", verifySupabaseToken, async (req: Request, r
       hasIngredients = Boolean(canonicalIngredientRow?.id);
     }
 
+    if (source === "web") {
+      if (!hasIngredients) {
+        const response: ScoreBundleResponse = {
+          status: "not_found",
+          source,
+          sourceId,
+          reasonCode: "WEB_DATA_UNAVAILABLE",
+          message: "No verified web ingredient facts are available for this barcode.",
+        };
+        return res.json(response);
+      }
+
+      const { data: webRows, error: webRowsError } = await supabase
+        .from("product_ingredients")
+        .select("name_raw,amount,unit,is_active,is_proprietary_blend")
+        .eq("source", source)
+        .or(`source_id.eq.${sourceId},canonical_source_id.eq.${sourceId}`)
+        .limit(100);
+      if (webRowsError) {
+        throw webRowsError;
+      }
+      const eligibleCount = (webRows ?? []).filter((row) =>
+        isActiveIngredient({
+          name: String(row?.name_raw ?? ""),
+          amount: typeof row?.amount === "number" ? row.amount : null,
+          unit: typeof row?.unit === "string" ? row.unit : null,
+          isBlendPlaceholder: Boolean(row?.is_proprietary_blend),
+        }),
+      ).length;
+      if (eligibleCount < 2) {
+        const response: ScoreBundleResponse = {
+          status: "not_found",
+          source,
+          sourceId,
+          reasonCode: "WEB_ELIGIBILITY_FAILED_INSUFFICIENT_ACTIVES",
+          message: "At least two active ingredients with amount+unit are required to score web sources.",
+        };
+        return res.json(response);
+      }
+
+      const response: ScoreBundleResponse = {
+        status: "pending",
+        source,
+        sourceId,
+        reasonCode: "WEB_SCORE_PENDING",
+      };
+      return res.json(response);
+    }
+
     const status: ScoreBundleResponse["status"] = hasIngredients ? "pending" : "not_found";
     const response: ScoreBundleResponse = {
       status,
@@ -7241,6 +7343,204 @@ app.get("/api/score/v4/:source/:id", verifySupabaseToken, async (req: Request, r
     const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
     return res.status(500).json({ error: "unexpected_error", detail } satisfies ErrorResponse);
   }
+});
+
+/**
+ * v4 web score ingestion + compute (ownership-gated)
+ */
+app.post("/api/score/v4/web/:id", verifySupabaseToken, async (req: Request, res: Response) => {
+  const sourceId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  if (!sourceId) {
+    return res
+      .status(400)
+      .json({ error: "invalid_request", detail: "Missing web source id" } satisfies ErrorResponse);
+  }
+
+  if (!SCORE_V4_WEB_ENABLED) {
+    const response: ScoreBundleResponse = {
+      status: "not_found",
+      source: "web",
+      sourceId,
+      reasonCode: "WEB_DATA_UNAVAILABLE",
+      message: "Web scoring is currently disabled.",
+    };
+    return res.json(response);
+  }
+
+  const parsed = parseRequestBody(webScoreIngestBodySchema, req, res);
+  if (!parsed) return;
+
+  let factsPayload: ReturnType<typeof sanitizeFactsDTO>;
+  try {
+    factsPayload = sanitizeFactsDTO(parsed.facts);
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    return res.status(400).json({ error: "invalid_facts_payload", detail } satisfies ErrorResponse);
+  }
+
+  const eligibleCount = factsPayload.ingredients.filter((ingredient) =>
+    isActiveIngredient({
+      name: ingredient.name,
+      amount: ingredient.amount,
+      unit: ingredient.unit,
+      isBlendPlaceholder: ingredient.isBlendPlaceholder ?? false,
+    }),
+  ).length;
+
+  if (eligibleCount < 2) {
+    const response: ScoreBundleResponse = {
+      status: "not_found",
+      source: "web",
+      sourceId,
+      reasonCode: "WEB_ELIGIBILITY_FAILED_INSUFFICIENT_ACTIVES",
+      message: "At least two active ingredients with amount+unit are required.",
+    };
+    return res.json(response);
+  }
+
+  const ownership = verifyWebOwnership({
+    barcode: sourceId,
+    regId: parsed.ownership.regId ?? null,
+    evidenceText: parsed.ownership.evidenceText ?? null,
+    candidateBrand: parsed.ownership.candidateBrand ?? null,
+    expectedBrand: parsed.ownership.expectedBrand ?? null,
+    candidateName: parsed.ownership.candidateName ?? null,
+    expectedName: parsed.ownership.expectedName ?? null,
+    variantCueMatch: parsed.ownership.variantCueMatch ?? 0,
+  });
+
+  if (!ownership.pass) {
+    const response: ScoreBundleResponse = {
+      status: "not_found",
+      source: "web",
+      sourceId,
+      reasonCode: "WEB_OWNERSHIP_FAILED",
+      message:
+        "We found potentially related web pages, but ownership could not be verified. We do not use this data.",
+    };
+    return res.json(response);
+  }
+
+  const upsertResult = await upsertProductIngredientsFromWebFacts({
+    sourceId,
+    canonicalSourceId: sourceId,
+    facts: factsPayload,
+    parseConfidence: ownership.confidence === "strong" ? 0.85 : 0.72,
+  });
+  if (!upsertResult.success) {
+    const response: ScoreBundleResponse = {
+      status: "not_found",
+      source: "web",
+      sourceId,
+      reasonCode: "WEB_PARSE_FAILED",
+      message: "Web facts could not be persisted for scoring.",
+    };
+    return res.json(response);
+  }
+
+  const computed = await computeScoreBundleV4({ source: "web", sourceId });
+  if (!computed) {
+    const response: ScoreBundleResponse = {
+      status: "pending",
+      source: "web",
+      sourceId,
+      reasonCode: "WEB_SCORE_PENDING",
+    };
+    return res.json(response);
+  }
+
+  const { bundle, inputsHash, canonicalSourceId, sourceIdForWrite } = computed;
+  const scorePayload = {
+    source: "web",
+    source_id: sourceIdForWrite,
+    canonical_source_id: canonicalSourceId,
+    score_version: V4_SCORE_VERSION,
+    overall_score: bundle.overallScore,
+    effectiveness_score: bundle.pillars.effectiveness,
+    safety_score: bundle.pillars.safety,
+    integrity_score: bundle.pillars.integrity,
+    confidence: bundle.confidence,
+    best_fit_goals: bundle.bestFitGoals,
+    flags_json: bundle.flags,
+    highlights_json: bundle.highlights,
+    explain_json: bundle.explain,
+    inputs_hash: inputsHash,
+    computed_at: bundle.provenance.computedAt,
+  };
+  const { error: upsertError } = await supabase
+    .from("product_scores")
+    .upsert(scorePayload, { onConflict: "source,source_id" });
+  if (upsertError) {
+    console.warn("[ScoreV4][web] Upsert failed", upsertError.message);
+  }
+
+  const response: ScoreBundleResponse = {
+    status: "ok",
+    source: "web",
+    sourceId,
+    bundle,
+  };
+  return res.json(response);
+});
+
+/**
+ * KB runtime form insights (batch)
+ */
+app.post("/api/kb/runtime/form-insights/batch", verifySupabaseToken, async (req: Request, res: Response) => {
+  const parsed = parseRequestBody(kbFormInsightsBatchBodySchema, req, res);
+  if (!parsed) return;
+
+  const locale = (parsed.locale ?? "en").toLowerCase();
+  const items = parsed.items.map((item) => {
+    const result = lookupKbRuntimeFormInsights({
+      ingredientId: item.ingredientId,
+      formKey: item.formKey,
+    });
+    return {
+      ingredientId: item.ingredientId,
+      formKey: item.formKey,
+      status: result.status,
+      reason: result.reason,
+      formDisplay: result.formDisplay,
+      segments: result.segments,
+      meta: result.meta,
+    };
+  });
+
+  const packageSha256 = items[0]?.meta?.packageSha256 ?? null;
+  const reviewedAt = items[0]?.meta?.reviewedAt ?? null;
+  const source = items[0]?.meta?.source ?? null;
+
+  const payload = {
+    status: "ok" as const,
+    locale,
+    packageSha256,
+    reviewedAt,
+    source,
+    items,
+  };
+
+  const etag = createHash("sha256").update(JSON.stringify(payload)).digest("hex");
+  if (req.headers["if-none-match"] === etag) {
+    res.status(304).end();
+    return;
+  }
+  res.setHeader("ETag", etag);
+  res.setHeader("Cache-Control", "private, max-age=300");
+  return res.json(payload);
+});
+
+/**
+ * Product-specific ingredient narrative compiler
+ */
+app.post("/api/summary/ingredient", verifySupabaseToken, async (req: Request, res: Response) => {
+  const packet = parseRequestBody(ingredientSummaryPacketSchema, req, res);
+  if (!packet) return;
+  const summary = compileIngredientSummary(packet);
+  return res.json({
+    status: "ok",
+    summary,
+  });
 });
 
 const buildFallbackOverviewSection = (digest: FactsDigest): AnalysisBundle["sections"]["overview"] => {
