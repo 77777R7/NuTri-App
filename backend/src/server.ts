@@ -8,6 +8,7 @@ import { z } from "zod";
 
 import { buildBarcodeSearchQueries, normalizeBarcodeInput, type NormalizedBarcode } from "./barcode.js";
 import { resolveCatalogByBarcode, type CatalogResolved } from "./catalogResolver.js";
+import { resolveAuthorityCandidate } from "./authorityCandidate.js";
 import { buildCatalogBarcodeSnapshot } from "./catalogSnapshot.js";
 import { logBarcodeScan } from "./scanLog.js";
 import { extractBrandProduct, type BrandExtractionResult } from "./brandExtractor.js";
@@ -3344,83 +3345,6 @@ const isExpiredAt = (value?: string | null): boolean => {
   const ms = Date.parse(value);
   if (Number.isNaN(ms)) return false;
   return ms <= Date.now();
-};
-
-type AuthorityCandidate = {
-  npn: string;
-  source: "map" | "map_stale" | "snapshot" | "scan_history";
-  isStale: boolean;
-  requiresGuardrail: boolean;
-  confidence: number | null;
-};
-
-const resolveAuthorityCandidate = (params: {
-  regulatoryMap: { npn: string; confidence: number; source: string; expires_at: string | null } | null;
-  snapshot: SupplementSnapshot | null;
-}): { candidate: AuthorityCandidate | null; mapStatus: "hit" | "stale" | "miss" } => {
-  const mapRow = params.regulatoryMap;
-  let mapStatus: "hit" | "stale" | "miss" = "miss";
-  let mapCandidate: AuthorityCandidate | null = null;
-
-  if (mapRow && mapRow.npn) {
-    const mapNpn = mapRow.npn.trim();
-    if (mapNpn) {
-      const expired = isExpiredAt(mapRow.expires_at);
-      mapStatus = expired ? "stale" : "hit";
-      const isConflict = mapRow.source === "conflict";
-      const hasMinConfidence =
-        Number.isFinite(mapRow.confidence) && mapRow.confidence >= REGULATORY_MAP_MIN_CONFIDENCE;
-      if (!isConflict && hasMinConfidence) {
-        if (!expired) {
-          mapCandidate = {
-            npn: mapNpn,
-            source: "map",
-            isStale: false,
-            requiresGuardrail: false,
-            confidence: mapRow.confidence,
-          };
-        } else if (mapRow.expires_at) {
-          const expiresMs = Date.parse(mapRow.expires_at);
-          const withinWindow =
-            Number.isFinite(expiresMs) && Date.now() - expiresMs <= REGULATORY_MAP_STALE_WINDOW_MS;
-          const isHighConfidence =
-            mapRow.source === "lnhpd" || mapRow.source === "snapshot_verified" || mapRow.confidence >= 0.9;
-          if (withinWindow && isHighConfidence) {
-            mapCandidate = {
-              npn: mapNpn,
-              source: "map_stale",
-              isStale: true,
-              requiresGuardrail: true,
-              confidence: mapRow.confidence,
-            };
-          }
-        }
-      }
-    }
-  }
-
-  if (mapCandidate) {
-    return { candidate: mapCandidate, mapStatus };
-  }
-
-  const snapshotNpn = params.snapshot?.regulatory?.npn?.trim() ?? null;
-  const snapshotVerified =
-    params.snapshot?.regulatory?.npnStatus === "verified" &&
-    params.snapshot?.regulatory?.npnVerifiedBy === "lnhpd_fetch";
-  if (snapshotNpn && snapshotVerified) {
-    return {
-      candidate: {
-        npn: snapshotNpn,
-        source: "snapshot",
-        isStale: true,
-        requiresGuardrail: true,
-        confidence: 0.9,
-      },
-      mapStatus,
-    };
-  }
-
-  return { candidate: null, mapStatus };
 };
 
 const buildCandidateEvidence = (params: {
@@ -10970,10 +10894,17 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 	      }
 	    }
 
-	    const authority = resolveAuthorityCandidate({
-	      regulatoryMap,
-	      snapshot: cachedFast?.snapshot ?? null,
-	    });
+	    let historicalLnhpd: Awaited<ReturnType<typeof getHistoricalLnhpdScanNpn>> | null = null;
+	    const resolveCandidate = (historicalNpn?: string | null) =>
+	      resolveAuthorityCandidate({
+	        regulatoryMap,
+	        snapshot: cachedFast?.snapshot ?? null,
+	        mapMinConfidence: REGULATORY_MAP_MIN_CONFIDENCE,
+	        staleWindowMs: REGULATORY_MAP_STALE_WINDOW_MS,
+	        historicalNpn: historicalNpn ?? null,
+	      });
+
+	    let authority = resolveCandidate();
 	    let candidate = authority.candidate;
 	    if (regulatoryMapStatus !== "timeout") {
 	      regulatoryMapStatus = authority.mapStatus;
@@ -10982,26 +10913,27 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 	    // Root-fix for cache resets: if map/snapshot are gone, recover LNHPD candidate
 	    // from prior successful scans of the same GTIN14 before falling into Web.
 	    if (!candidate && !requestSignal.aborted) {
-	      const historicalLnhpd = await getHistoricalLnhpdScanNpn(barcodeGtin14, barcodeRawDigits, {
+	      historicalLnhpd = await getHistoricalLnhpdScanNpn(barcodeGtin14, barcodeRawDigits, {
 	        ...supabaseReadResilience,
 	        timeoutMs: 500,
 	        queueTimeoutMs: 0,
 	        retry: { maxAttempts: 1 },
 	      }).catch(() => null);
 	      if (historicalLnhpd?.npn) {
-	        candidate = {
-	          npn: historicalLnhpd.npn,
-	          source: "scan_history",
-	          isStale: true,
-	          requiresGuardrail: false,
-	          confidence: 0.85,
-	        };
-	        console.info("[ResolutionV2] Recovered LNHPD candidate from scan history", {
-	          barcode: barcodeGtin14,
-	          npn: historicalLnhpd.npn,
-	          createdAt: historicalLnhpd.created_at,
-	        });
+	        authority = resolveCandidate(historicalLnhpd.npn);
+	        candidate = authority.candidate;
+	        if (regulatoryMapStatus !== "timeout") {
+	          regulatoryMapStatus = authority.mapStatus;
+	        }
 	      }
+	    }
+
+	    if (candidate?.source === "scan_history" && historicalLnhpd?.npn) {
+	      console.info("[ResolutionV2] Recovered LNHPD candidate from scan history", {
+	        barcode: barcodeGtin14,
+	        npn: historicalLnhpd.npn,
+	        createdAt: historicalLnhpd.created_at,
+	      });
 	    }
 
 	    if (candidate) {
