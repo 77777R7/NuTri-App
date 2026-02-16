@@ -934,11 +934,18 @@ type IngredientCoverItemLike = {
     dose?: string | null;
 };
 
-const normalizeIngredientNameForBackground = (value?: string | null): string =>
-    String(value ?? '')
+const normalizeIngredientNameForBackground = (value?: string | null): string => {
+    const raw = String(value ?? '').trim();
+    if (!raw) return '';
+    // Ingredient labels in UI can include display decorations (e.g. "Vitamin C — 1000 mg · label").
+    // Strip trailing metadata so lookup keys stay stable across cover/detail views.
+    const withoutSourceTag = raw.split(/\s+·\s+/)[0] ?? raw;
+    const withoutDoseDash = withoutSourceTag.split(/\s+[—–-]\s+/)[0] ?? withoutSourceTag;
+    return withoutDoseDash
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '')
         .trim();
+};
 
 const isBlendLikeName = (name: string): boolean =>
     /\b(proprietary|blend|matrix|complex)\b/i.test(name);
@@ -1503,6 +1510,14 @@ const AnalysisBundleDashboard: React.FC<{
 
     const ingredientsDetail = bundleState.sections.ingredients.detail;
     const isV4 = isBundleV4(bundleState);
+    const detailFoundationMatchCount = useMemo(() => {
+        if (!isV4) return 0;
+        const detailItems = (ingredientsDetail as IngredientsDetailV4 | null)?.items ?? [];
+        return detailItems.reduce((count, item) => {
+            const key = normalizeIngredientNameForBackground(item?.name);
+            return keyIngredientKeySet.has(key) ? count + 1 : count;
+        }, 0);
+    }, [isV4, keyIngredientKeySet, ingredientsDetail]);
     const ingredientsContent = (
         <View style={{ gap: 16 }}>
             <View style={styles.modalCalloutCard}>
@@ -1584,7 +1599,8 @@ const AnalysisBundleDashboard: React.FC<{
                 </View>
             ) : null}
             {ingredientsDetail?.items?.length && keyIngredientsForIngredients.length > 0 &&
-                foundationHitsForIngredients.odsHitCount + foundationHitsForIngredients.curatedHitCount === 0 ? (
+                (foundationHitsForIngredients.odsHitCount + foundationHitsForIngredients.curatedHitCount === 0 ||
+                    detailFoundationMatchCount === 0) ? (
                 <View style={styles.foundationFallbackCard}>
                     <Text style={styles.foundationFallbackTitle}>{t.analysisFoundationTitle}</Text>
                     <Text style={styles.foundationFallbackDisclaimer}>{t.analysisGeneralBackgroundDisclaimer}</Text>
