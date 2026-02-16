@@ -55,7 +55,7 @@ import type {
     IngredientsDetailV3,
     IngredientsDetailV4,
 } from '@/types/analysisBundle';
-import type { ScoreBundleResponse } from '@/types/scoreBundle';
+import type { ScoreBundleResponse, ScoreBundleV4 } from '@/types/scoreBundle';
 import { computeSmartScores, type AnalysisInput } from '../../lib/scoring';
 type Analysis = any;
 type ScoreState = 'active' | 'muted' | 'loading';
@@ -934,6 +934,158 @@ type IngredientCoverItemLike = {
     dose?: string | null;
 };
 
+type ProductSpecificInsight = {
+    formLabel: string | null;
+    matchScore: number | null;
+    evidenceGrade: string | null;
+    effectiveFactor: number | null;
+    rbfBand: 'high' | 'normal' | 'low' | 'unknown';
+    confidenceTier: 'high' | 'medium' | 'low' | 'none';
+    why: string;
+    doseSignal:
+        | {
+              status: string;
+              reasonCode: string | null;
+              perServingAmount: number | null;
+              dailyAmount: number | null;
+              unit: string | null;
+          }
+        | null;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+    typeof value === 'object' && value !== null;
+
+const normalizeEvidenceGrade = (value: unknown): string | null => {
+    if (typeof value !== 'string') return null;
+    const normalized = value.trim().toUpperCase();
+    return normalized || null;
+};
+
+const toRbfBand = (factor: number | null): ProductSpecificInsight['rbfBand'] => {
+    if (typeof factor !== 'number' || !Number.isFinite(factor)) return 'unknown';
+    if (factor >= 1.1) return 'high';
+    if (factor >= 0.9) return 'normal';
+    return 'low';
+};
+
+const toConfidenceTier = (matchScore: number | null, evidenceGrade: string | null): ProductSpecificInsight['confidenceTier'] => {
+    const score = typeof matchScore === 'number' && Number.isFinite(matchScore) ? matchScore : null;
+    const grade = normalizeEvidenceGrade(evidenceGrade);
+    if (score != null && score >= 0.55 && (grade === 'A' || grade === 'B')) return 'high';
+    if ((score != null && score >= 0.4) || grade === 'C') return 'medium';
+    if (score != null && score >= 0.35) return 'low';
+    return 'none';
+};
+
+const formatDoseSignalLine = (signal: ProductSpecificInsight['doseSignal']): string | null => {
+    if (!signal) return null;
+    const unit = typeof signal.unit === 'string' ? signal.unit : '';
+    const perServing =
+        typeof signal.perServingAmount === 'number' && Number.isFinite(signal.perServingAmount)
+            ? `${signal.perServingAmount} ${unit}`.trim()
+            : 'not available';
+    const daily =
+        typeof signal.dailyAmount === 'number' && Number.isFinite(signal.dailyAmount)
+            ? `${signal.dailyAmount} ${unit}`.trim()
+            : 'unknown';
+    const status = typeof signal.status === 'string' ? signal.status.replace(/_/g, ' ') : 'unknown';
+    return `Dose signal: ${status} (per serving ${perServing}; daily ${daily}).`;
+};
+
+const extractProductSpecificInsights = (bundle: ScoreBundleV4 | null): Map<string, ProductSpecificInsight> => {
+    const byIngredient = new Map<string, ProductSpecificInsight>();
+    if (!bundle || !isRecord(bundle.explain)) return byIngredient;
+    const evidence = isRecord(bundle.explain.evidence) ? bundle.explain.evidence : null;
+    if (!evidence) return byIngredient;
+
+    const rawDoseSignals = Array.isArray(evidence.ingredientDoseSignals) ? evidence.ingredientDoseSignals : [];
+    const doseByIngredient = new Map<
+        string,
+        {
+            status: string;
+            reasonCode: string | null;
+            perServingAmount: number | null;
+            dailyAmount: number | null;
+            unit: string | null;
+        }
+    >();
+    rawDoseSignals.forEach((row) => {
+        if (!isRecord(row)) return;
+        const ingredientName = typeof row.ingredientName === 'string' ? row.ingredientName : '';
+        const key = normalizeIngredientNameForBackground(ingredientName);
+        if (!key) return;
+        doseByIngredient.set(key, {
+            status: typeof row.status === 'string' ? row.status : 'unknown',
+            reasonCode: typeof row.reasonCode === 'string' ? row.reasonCode : null,
+            perServingAmount:
+                typeof row.perServingAmount === 'number' && Number.isFinite(row.perServingAmount)
+                    ? row.perServingAmount
+                    : null,
+            dailyAmount:
+                typeof row.dailyAmount === 'number' && Number.isFinite(row.dailyAmount) ? row.dailyAmount : null,
+            unit: typeof row.unit === 'string' ? row.unit : null,
+        });
+    });
+
+    const rawFormSignals = Array.isArray(evidence.formSignals) ? evidence.formSignals : [];
+    rawFormSignals.forEach((row) => {
+        if (!isRecord(row)) return;
+        const ingredientName = typeof row.ingredientName === 'string' ? row.ingredientName : '';
+        const key = normalizeIngredientNameForBackground(ingredientName);
+        if (!key) return;
+
+        const matchScore =
+            typeof row.matchScore === 'number' && Number.isFinite(row.matchScore) ? row.matchScore : null;
+        const effectiveFactor =
+            typeof row.effectiveFactor === 'number' && Number.isFinite(row.effectiveFactor)
+                ? row.effectiveFactor
+                : null;
+        const evidenceGrade = normalizeEvidenceGrade(row.evidenceGrade);
+        const confidenceTier = toConfidenceTier(matchScore, evidenceGrade);
+        const rbfBand = toRbfBand(effectiveFactor);
+        const reasonPieces = [
+            effectiveFactor != null ? `effectiveFactor=${effectiveFactor.toFixed(2)}` : null,
+            rbfBand !== 'unknown'
+                ? rbfBand === 'high'
+                    ? '>= 1.10 threshold'
+                    : rbfBand === 'normal'
+                      ? '0.90-1.09 threshold'
+                      : '< 0.90 threshold'
+                : null,
+            matchScore != null ? `matchScore=${matchScore.toFixed(2)}` : null,
+            evidenceGrade ? `grade=${evidenceGrade}` : null,
+        ].filter(Boolean);
+        const why = reasonPieces.length
+            ? `Dataset-derived form signal (${reasonPieces.join(', ')}).`
+            : 'No verified form signal available from dataset evidence.';
+
+        const nextInsight: ProductSpecificInsight = {
+            formLabel: typeof row.formLabel === 'string' ? row.formLabel : null,
+            matchScore,
+            evidenceGrade,
+            effectiveFactor,
+            rbfBand,
+            confidenceTier,
+            why,
+            doseSignal: doseByIngredient.get(key) ?? null,
+        };
+
+        const existing = byIngredient.get(key);
+        if (!existing) {
+            byIngredient.set(key, nextInsight);
+            return;
+        }
+        const existingScore = existing.matchScore ?? -1;
+        const nextScore = nextInsight.matchScore ?? -1;
+        if (nextScore > existingScore) {
+            byIngredient.set(key, nextInsight);
+        }
+    });
+
+    return byIngredient;
+};
+
 const normalizeIngredientNameForBackground = (value?: string | null): string => {
     const raw = String(value ?? '').trim();
     if (!raw) return '';
@@ -1162,6 +1314,13 @@ const AnalysisBundleDashboard: React.FC<{
     const foundationHitsForOverview = useMemo(
         () => summarizeFoundationHits(keyIngredientsForOverview),
         [keyIngredientsForOverview.join('|')]
+    );
+    const v4ResponseForInsights =
+        scoreBundleV4State?.status === 'ready' ? scoreBundleV4State.response : null;
+    const v4BundleForInsights = v4ResponseForInsights?.status === 'ok' ? v4ResponseForInsights.bundle : null;
+    const productSpecificInsightsByIngredient = useMemo(
+        () => extractProductSpecificInsights(v4BundleForInsights),
+        [v4BundleForInsights]
     );
 
     useEffect(() => {
@@ -1510,6 +1669,54 @@ const AnalysisBundleDashboard: React.FC<{
 
     const ingredientsDetail = bundleState.sections.ingredients.detail;
     const isV4 = isBundleV4(bundleState);
+    const renderProductSpecificInsightPanel = (ingredientName: string) => {
+        const key = normalizeIngredientNameForBackground(ingredientName);
+        const insight = key ? productSpecificInsightsByIngredient.get(key) ?? null : null;
+        const bandLabel =
+            insight?.rbfBand === 'high'
+                ? 'High'
+                : insight?.rbfBand === 'normal'
+                  ? 'Normal'
+                  : insight?.rbfBand === 'low'
+                    ? 'Low'
+                    : 'Unknown';
+        const confidenceLabel =
+            insight?.confidenceTier === 'high'
+                ? 'High'
+                : insight?.confidenceTier === 'medium'
+                  ? 'Medium'
+                  : insight?.confidenceTier === 'low'
+                    ? 'Low'
+                    : 'None';
+        const factorSuffix =
+            insight?.effectiveFactor != null ? ` (effectiveFactor ${insight.effectiveFactor.toFixed(2)})` : '';
+        const doseSignalLine = formatDoseSignalLine(insight?.doseSignal ?? null);
+
+        return (
+            <View style={styles.productInsightCard}>
+                <Text style={styles.productInsightTitle}>Product-specific insights (verified dataset)</Text>
+                <Text style={styles.productInsightDisclaimer}>Derived from verified facts + reviewed dataset; not ODS-only background.</Text>
+                <Text style={styles.modalParagraphSmall}>
+                    <Text style={{ fontWeight: '700' }}>Detected form: </Text>
+                    {insight?.formLabel ?? 'Not disclosed (we do not assume).'}
+                </Text>
+                <Text style={styles.modalParagraphSmall}>
+                    <Text style={{ fontWeight: '700' }}>Relative bioavailability: </Text>
+                    {bandLabel}
+                    {factorSuffix}
+                </Text>
+                <Text style={styles.modalParagraphSmall}>
+                    <Text style={{ fontWeight: '700' }}>Confidence: </Text>
+                    {confidenceLabel}
+                </Text>
+                <Text style={styles.modalParagraphSmall}>
+                    <Text style={{ fontWeight: '700' }}>Why: </Text>
+                    {insight?.why ?? 'No verified product-specific signal available for this ingredient yet.'}
+                </Text>
+                {doseSignalLine ? <Text style={styles.modalParagraphSmall}>{doseSignalLine}</Text> : null}
+            </View>
+        );
+    };
     const detailFoundationMatchCount = useMemo(() => {
         if (!isV4) return 0;
         const detailItems = (ingredientsDetail as IngredientsDetailV4 | null)?.items ?? [];
@@ -1545,7 +1752,10 @@ const AnalysisBundleDashboard: React.FC<{
             {!ingredientsDetail?.items?.length && keyIngredientsForIngredients.length > 0 ? (
                 <View style={{ gap: 10 }}>
                     {keyIngredientsForIngredients.map((name) => (
-                        <OdsFoundationPanel key={name} ingredientName={name} variant="full" />
+                        <View key={name} style={{ gap: 10 }}>
+                            <OdsFoundationPanel ingredientName={name} variant="full" />
+                            {renderProductSpecificInsightPanel(name)}
+                        </View>
                     ))}
                     {foundationHitsForIngredients.odsHitCount + foundationHitsForIngredients.curatedHitCount === 0 ? (
                         <View style={styles.foundationFallbackCard}>
@@ -1582,8 +1792,9 @@ const AnalysisBundleDashboard: React.FC<{
                                     </Text>
                                 ) : null}
                                 {keyIngredientKeySet.has(normalizeIngredientNameForBackground(item.name)) ? (
-                                    <View style={{ marginTop: 10 }}>
+                                    <View style={{ marginTop: 10, gap: 10 }}>
                                         <OdsFoundationPanel ingredientName={item.name} variant="full" />
+                                        {renderProductSpecificInsightPanel(item.name)}
                                     </View>
                                 ) : null}
                             </View>
@@ -3620,6 +3831,27 @@ const styles = StyleSheet.create({
         fontSize: 13,
         lineHeight: 20,
         color: '#78350F',
+    },
+    productInsightCard: {
+        backgroundColor: '#EFF6FF',
+        borderRadius: 16,
+        padding: 14,
+        borderWidth: 1,
+        borderColor: '#BFDBFE',
+        borderLeftWidth: 4,
+        borderLeftColor: '#3B82F6',
+        gap: 8,
+    },
+    productInsightTitle: {
+        fontSize: 13,
+        fontWeight: '800',
+        color: '#1E3A8A',
+    },
+    productInsightDisclaimer: {
+        fontSize: 12,
+        lineHeight: 18,
+        color: '#1D4ED8',
+        fontWeight: '600',
     },
     modalTagRow: {
         flexDirection: 'row',
