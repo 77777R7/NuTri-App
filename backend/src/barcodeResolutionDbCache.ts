@@ -70,6 +70,14 @@ export type BarcodeRegulatoryMapRow = {
   updated_at: string;
 };
 
+export type BarcodeHistoricalLnhpdCandidate = {
+  barcode_gtin14: string;
+  npn: string;
+  source: "barcode_scans";
+  created_at: string;
+  served_from: "lnhpd";
+};
+
 export type BarcodeResolutionTrainingRow = {
   id: number;
   barcode_gtin14: string;
@@ -659,6 +667,71 @@ export async function upsertBarcodeRegulatoryMap(
       const status = typeof rawStatus === "number" ? rawStatus : 503;
       throw new HttpError(status, error.message ?? "barcode_regulatory_map_write_error");
     }
+    return null;
+  }, options);
+}
+
+export async function getHistoricalLnhpdScanNpn(
+  barcodeGtin14: string,
+  barcodeRaw?: string | null,
+  options: ResilienceOptions = {},
+): Promise<BarcodeHistoricalLnhpdCandidate | null> {
+  return await runWithResilience(async (signal) => {
+    const keys = buildBarcodeKeyList(barcodeGtin14, barcodeRaw);
+    if (!keys.length) return null;
+
+    let query = supabase
+      .from("barcode_scans")
+      .select("barcode_gtin14,served_from,meta,created_at")
+      .eq("served_from", "lnhpd")
+      .order("created_at", { ascending: false })
+      .limit(30);
+
+    if (keys.length > 1) {
+      query = query.in("barcode_gtin14", keys);
+    } else {
+      query = query.eq("barcode_gtin14", keys[0]);
+    }
+
+    const { data, error } = await query.abortSignal(signal);
+    if (error && options.retry && shouldRetrySupabaseError(error)) {
+      const rawStatus = (error as { status?: number }).status;
+      const status = typeof rawStatus === "number" ? rawStatus : 503;
+      throw new HttpError(status, error.message ?? "barcode_scans_lnhpd_read_error");
+    }
+    if (error || !Array.isArray(data) || data.length === 0) return null;
+
+    for (const row of data as Array<Record<string, unknown>>) {
+      const meta =
+        row.meta && typeof row.meta === "object" ? (row.meta as Record<string, unknown>) : null;
+      const rawNpn = meta && typeof meta.npn === "string" ? meta.npn : "";
+      const npn = rawNpn.replace(/\D/g, "").trim();
+      if (!npn) continue;
+      if (npn.length < 6 || npn.length > 10) continue;
+
+      const lnhpdFetchStatus =
+        meta && typeof meta.lnhpd_fetch_status === "string" ? meta.lnhpd_fetch_status : null;
+      const stage0 = meta && typeof meta.stage0 === "string" ? meta.stage0.toLowerCase() : "";
+      // Accept historical rows only when they were actually resolved through LNHPD.
+      if (lnhpdFetchStatus && lnhpdFetchStatus !== "success") continue;
+      if (!lnhpdFetchStatus && !stage0.includes("lnhpd")) continue;
+
+      const createdAt =
+        typeof row.created_at === "string" && row.created_at.trim().length > 0
+          ? row.created_at
+          : new Date().toISOString();
+      return {
+        barcode_gtin14:
+          typeof row.barcode_gtin14 === "string" && row.barcode_gtin14.trim().length > 0
+            ? row.barcode_gtin14
+            : barcodeGtin14,
+        npn,
+        source: "barcode_scans",
+        created_at: createdAt,
+        served_from: "lnhpd",
+      };
+    }
+
     return null;
   }, options);
 }

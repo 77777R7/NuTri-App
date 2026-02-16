@@ -64,6 +64,7 @@ import {
   clearNpnNegativeCache,
   clearResolutionCacheBestUrl,
   getBarcodeRegulatoryMap,
+  getHistoricalLnhpdScanNpn,
   getNegativeCache,
   getNpnNegativeCache,
   getResolutionCache,
@@ -3347,7 +3348,7 @@ const isExpiredAt = (value?: string | null): boolean => {
 
 type AuthorityCandidate = {
   npn: string;
-  source: "map" | "map_stale" | "snapshot";
+  source: "map" | "map_stale" | "snapshot" | "scan_history";
   isStale: boolean;
   requiresGuardrail: boolean;
   confidence: number | null;
@@ -9470,7 +9471,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     let regMapSecondChanceAttempted = false;
     let regMapSecondChanceResult: "not_attempted" | "hit" | "miss" | "timeout" | "error" = "not_attempted";
     let regMapSecondChanceLatencyMs: number | null = null;
-    let npnCandidateSource: "map" | "snapshot" | "web" | null = null;
+    let npnCandidateSource: "map" | "snapshot" | "scan_history" | "web" | null = null;
     let npnCandidateStale = false;
     let npnNegativeCacheHit = false;
     let lnhpdGuardrailScore: number | null = null;
@@ -10505,7 +10506,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
           identityType,
           identityValue,
           factsSourceVersion,
-          allowAi: Boolean(deepseekKey),
+          allowAi: Boolean(deepseekKey) && identityType !== "npn",
           apiKey: deepseekKey,
         });
             await awaitStage0Bundle();
@@ -10969,16 +10970,47 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 	      }
 	    }
 
-	    const { candidate, mapStatus } = resolveAuthorityCandidate({
+	    const authority = resolveAuthorityCandidate({
 	      regulatoryMap,
 	      snapshot: cachedFast?.snapshot ?? null,
 	    });
+	    let candidate = authority.candidate;
 	    if (regulatoryMapStatus !== "timeout") {
-	      regulatoryMapStatus = mapStatus;
+	      regulatoryMapStatus = authority.mapStatus;
+	    }
+
+	    // Root-fix for cache resets: if map/snapshot are gone, recover LNHPD candidate
+	    // from prior successful scans of the same GTIN14 before falling into Web.
+	    if (!candidate && !requestSignal.aborted) {
+	      const historicalLnhpd = await getHistoricalLnhpdScanNpn(barcodeGtin14, barcodeRawDigits, {
+	        ...supabaseReadResilience,
+	        timeoutMs: 500,
+	        queueTimeoutMs: 0,
+	        retry: { maxAttempts: 1 },
+	      }).catch(() => null);
+	      if (historicalLnhpd?.npn) {
+	        candidate = {
+	          npn: historicalLnhpd.npn,
+	          source: "scan_history",
+	          isStale: true,
+	          requiresGuardrail: false,
+	          confidence: 0.85,
+	        };
+	        console.info("[ResolutionV2] Recovered LNHPD candidate from scan history", {
+	          barcode: barcodeGtin14,
+	          npn: historicalLnhpd.npn,
+	          createdAt: historicalLnhpd.created_at,
+	        });
+	      }
 	    }
 
 	    if (candidate) {
-	      npnCandidateSource = candidate.source === "snapshot" ? "snapshot" : "map";
+	      npnCandidateSource =
+	        candidate.source === "snapshot"
+	          ? "snapshot"
+	          : candidate.source === "scan_history"
+	            ? "scan_history"
+	            : "map";
 	      npnCandidateStale = candidate.isStale;
 
 	      const npnNegative = await getNpnNegativeCache(candidate.npn, {
@@ -11083,7 +11115,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
                 identityType: "npn",
                 identityValue: candidate.npn,
                 factsSourceVersion: lnhpdFactsSourceVersion,
-                allowAi: Boolean(deepseekKey),
+                allowAi: false,
                 apiKey: deepseekKey,
               });
 
@@ -11402,7 +11434,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
               identityType,
               identityValue,
               factsSourceVersion,
-              allowAi: Boolean(deepseekKey),
+              allowAi: Boolean(deepseekKey) && identityType !== "npn",
               apiKey: deepseekKey,
             });
           }
