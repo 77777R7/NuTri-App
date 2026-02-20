@@ -106,6 +106,12 @@ import { isActiveIngredient } from "./insights/ingredientPredicates.js";
 import { verifyWebOwnership } from "./insights/webOwnership.js";
 import { compileIngredientSummary, ingredientSummaryPacketSchema } from "./insights/summaryCompiler.js";
 import {
+  buildProviderVerdict,
+  isAuthoritativeWebCandidate,
+  resolveIdentityProviderLookup,
+  selectBestWebCandidates,
+} from "./webIdentityProviders.js";
+import {
   BulkheadTimeoutError,
   CircuitBreaker,
   DeadlineBudget,
@@ -187,6 +193,11 @@ const parseBooleanEnv = (value: string | undefined, fallback: boolean): boolean 
   if (normalized === "0" || normalized === "false" || normalized === "no") return false;
   return fallback;
 };
+const readScanTerminalLockEnabled = (): boolean =>
+  parseBooleanEnv(
+    process.env.SCAN_TERMINAL_LOCK_ENABLED ?? process.env.EXPO_PUBLIC_SCAN_TERMINAL_LOCK_ENABLED,
+    false,
+  );
 const SCORE_V4_WEB_ENABLED = parseBooleanEnv(process.env.SCORE_V4_WEB_ENABLED, false);
 const LABEL_SCAN_OUTPUT_RULES = `LABEL-SCAN OUTPUT RULES:
 1) overviewSummary must include serving unit (e.g., per softgel/caplet/serving) and 2-3 key ingredients with doses if present.
@@ -202,6 +213,9 @@ const RESILIENCE_SNAPSHOT_TIMEOUT_MS = Number(process.env.RESILIENCE_SNAPSHOT_TI
 // LNHPD fetch is a first-party, authoritative lookup. A too-short timeout causes us to incorrectly
 // fall back to Web Stage1 (often "marketplace_only") which looks broken to users.
 const RESILIENCE_LNHPD_TIMEOUT_MS = Number(process.env.RESILIENCE_LNHPD_TIMEOUT_MS ?? 2500);
+const RESILIENCE_LNHPD_SECOND_CHANCE_TIMEOUT_MS = Number(
+  process.env.RESILIENCE_LNHPD_SECOND_CHANCE_TIMEOUT_MS ?? 3200,
+);
 const RESILIENCE_GOOGLE_TIMEOUT_MS = Number(process.env.RESILIENCE_GOOGLE_TIMEOUT_MS ?? 2500);
 const RESILIENCE_DEEPSEEK_TIMEOUT_MS = Number(process.env.RESILIENCE_DEEPSEEK_TIMEOUT_MS ?? 10_000);
 const MY_SUPP_OVERVIEW_TIMEOUT_MS = Number(process.env.MY_SUPP_OVERVIEW_TIMEOUT_MS ?? 4_000);
@@ -215,6 +229,20 @@ const RESILIENCE_CONTEXT_FETCH_TIMEOUT_MS = Number(process.env.RESILIENCE_CONTEX
 const RESILIENCE_GOOGLE_QUEUE_TIMEOUT_MS = Number(process.env.RESILIENCE_GOOGLE_QUEUE_TIMEOUT_MS ?? 300);
 const RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS = Number(process.env.RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS ?? 300);
 const REG_MAP_SECOND_CHANCE_TIMEOUT_MS = Number(process.env.REG_MAP_SECOND_CHANCE_TIMEOUT_MS ?? 450);
+const AUTHORITY_REGRESSION_SAMPLE_ENABLED = parseBooleanEnv(
+  process.env.AUTHORITY_REGRESSION_SAMPLE_ENABLED,
+  true,
+);
+const authorityRegressionSampleBarcodeNormalized = normalizeBarcodeInput(
+  process.env.AUTHORITY_REGRESSION_SAMPLE_BARCODE ?? "00654749351604",
+);
+const AUTHORITY_REGRESSION_SAMPLE_BARCODE =
+  authorityRegressionSampleBarcodeNormalized?.code.padStart(14, "0") ?? "00654749351604";
+const AUTHORITY_REGRESSION_SAMPLE_HISTORICAL_NPN = String(
+  process.env.AUTHORITY_REGRESSION_SAMPLE_HISTORICAL_NPN ?? "80062961",
+)
+  .replace(/\D/g, "")
+  .trim();
 const RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS_DETAIL = Number(
   process.env.RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS_DETAIL ?? 1500,
 );
@@ -274,6 +302,13 @@ const SECONDARY_QUERY_TOKEN_LIMIT = Math.max(6, Number(process.env.SECONDARY_QUE
 const SECONDARY_EXCLUDE_RETAILERS = parseBooleanEnv(process.env.SECONDARY_EXCLUDE_RETAILERS, true);
 const SECONDARY_ALLOW_MARKETPLACE = parseBooleanEnv(process.env.SECONDARY_ALLOW_MARKETPLACE, false);
 const SECONDARY_NEEDS_JS_OVERRIDE_MIN = Number(process.env.SECONDARY_NEEDS_JS_OVERRIDE_MIN ?? 0.85);
+const WEB_IDENTITY_PROVIDER_ENABLED = parseBooleanEnv(process.env.WEB_IDENTITY_PROVIDER_ENABLED, false);
+const WEB_IDENTITY_PROVIDER_ORDER = (process.env.WEB_IDENTITY_PROVIDER_ORDER ?? "openfoodfacts,upcitemdb")
+  .split(",")
+  .map((entry) => entry.trim().toLowerCase())
+  .filter(Boolean);
+const WEB_IDENTITY_PROVIDER_TIMEOUT_MS = Number(process.env.WEB_IDENTITY_PROVIDER_TIMEOUT_MS ?? 1200);
+const UPCITEMDB_API_KEY = process.env.UPCITEMDB_API_KEY ?? null;
 
 const AUTHORITATIVE_CA_DOMAINS = [
   "costco.ca",
@@ -328,6 +363,25 @@ const ANALYSIS_BUNDLE_PROMPT_VERSION = process.env.ANALYSIS_BUNDLE_PROMPT_VERSIO
 const ANALYSIS_BUNDLE_FAST_TIMEOUT_MS = Number(process.env.ANALYSIS_BUNDLE_FAST_TIMEOUT_MS ?? 3500);
 const SSE_FAST_GRACE_MS = Number(process.env.SSE_FAST_GRACE_MS ?? 500);
 const SSE_GLOBAL_STREAM_TIMEOUT_MS = Number(process.env.SSE_GLOBAL_STREAM_TIMEOUT_MS ?? 15000);
+const ENRICH_STREAM_MAX_ACTIVE = Math.max(1, Number(process.env.ENRICH_STREAM_MAX_ACTIVE ?? 4));
+const ENRICH_STREAM_MAX_QUEUE = Math.max(0, Number(process.env.ENRICH_STREAM_MAX_QUEUE ?? 20));
+const ENRICH_STREAM_QUEUE_WAIT_MS = Math.max(0, Number(process.env.ENRICH_STREAM_QUEUE_WAIT_MS ?? 1500));
+const ENRICH_STREAM_QUEUE_WAIT_MS_BUNDLE_ONLY = Math.max(
+  0,
+  Number(process.env.ENRICH_STREAM_QUEUE_WAIT_MS_BUNDLE_ONLY ?? 5000),
+);
+const ENRICH_STREAM_BUNDLE_ONLY_DONE_DELAY_MS = Math.max(
+  0,
+  Number(process.env.ENRICH_STREAM_BUNDLE_ONLY_DONE_DELAY_MS ?? 250),
+);
+const ENRICH_STREAM_WEB_REV1_DONE_DELAY_MS = Math.max(
+  0,
+  Number(process.env.ENRICH_STREAM_WEB_REV1_DONE_DELAY_MS ?? 3500),
+);
+const ENRICH_STREAM_CLIENT_DISCONNECT_GRACE_MS = Math.max(
+  0,
+  Number(process.env.ENRICH_STREAM_CLIENT_DISCONNECT_GRACE_MS ?? 2500),
+);
 const SSE_CLIENT_TIMEOUT_MS = Number(
   process.env.SSE_CLIENT_TIMEOUT_MS ?? process.env.WEB_E2E_SSE_TIMEOUT_MS ?? 50000,
 );
@@ -2995,6 +3049,138 @@ const fetchLnhpdFactsByNpn = async (
   return buildLnhpdFactsFromRecord(record);
 };
 
+type LnhpdLookupStatus = "not_attempted" | "success" | "not_found" | "timeout" | "error";
+type AuthorityFailureReason =
+  | "negative_cache_blocked"
+  | "lnhpd_timeout_first"
+  | "lnhpd_timeout_second"
+  | "lnhpd_not_found"
+  | "guardrail_failed"
+  | "lnhpd_query_error";
+type LnhpdForcedFailureMode = "timeout" | "not_found";
+
+const fetchLnhpdFactsWithSecondChance = async (
+  npn: string | null | undefined,
+  requestSignal?: AbortSignal,
+  options?: {
+    firstTimeoutMs?: number;
+    secondTimeoutMs?: number;
+    forceMode?: LnhpdForcedFailureMode | null;
+  },
+): Promise<{
+  facts: LnhpdFacts | null;
+  attempt1Status: LnhpdLookupStatus;
+  attempt2Status: LnhpdLookupStatus;
+  finalStatus: Exclude<LnhpdLookupStatus, "not_attempted">;
+  secondChanceUsed: boolean;
+}> => {
+  const normalized = String(npn ?? "").trim();
+  if (!normalized) {
+    return {
+      facts: null,
+      attempt1Status: "not_attempted",
+      attempt2Status: "not_attempted",
+      finalStatus: "not_found",
+      secondChanceUsed: false,
+    };
+  }
+  if (options?.forceMode === "timeout") {
+    return {
+      facts: null,
+      attempt1Status: "timeout",
+      attempt2Status: "timeout",
+      finalStatus: "timeout",
+      secondChanceUsed: true,
+    };
+  }
+  if (options?.forceMode === "not_found") {
+    return {
+      facts: null,
+      attempt1Status: "not_found",
+      attempt2Status: "not_attempted",
+      finalStatus: "not_found",
+      secondChanceUsed: false,
+    };
+  }
+
+  const attemptFetch = async (timeoutMs: number): Promise<{ facts: LnhpdFacts | null; status: LnhpdLookupStatus }> => {
+    const timeoutSignal = createTimeoutSignal(timeoutMs);
+    const { signal, cleanup } = combineSignals([requestSignal, timeoutSignal]);
+    try {
+      const facts = await fetchLnhpdFactsByNpn(normalized, signal);
+      if (facts) {
+        return { facts, status: "success" };
+      }
+      if (timeoutSignal.aborted) {
+        return { facts: null, status: "timeout" };
+      }
+      return { facts: null, status: "not_found" };
+    } catch (error) {
+      if (timeoutSignal.aborted || isAbortError(error)) {
+        return { facts: null, status: "timeout" };
+      }
+      return { facts: null, status: "error" };
+    } finally {
+      cleanup();
+    }
+  };
+
+  const firstTimeoutMs = Math.max(1, Number(options?.firstTimeoutMs ?? RESILIENCE_LNHPD_TIMEOUT_MS));
+  const secondTimeoutMs = Math.max(
+    1,
+    Number(options?.secondTimeoutMs ?? RESILIENCE_LNHPD_SECOND_CHANCE_TIMEOUT_MS),
+  );
+
+  const attempt1 = await attemptFetch(firstTimeoutMs);
+  if (attempt1.facts) {
+    return {
+      facts: attempt1.facts,
+      attempt1Status: attempt1.status,
+      attempt2Status: "not_attempted",
+      finalStatus: "success",
+      secondChanceUsed: false,
+    };
+  }
+
+  if (attempt1.status === "error") {
+    return {
+      facts: null,
+      attempt1Status: attempt1.status,
+      attempt2Status: "not_attempted",
+      finalStatus: "error",
+      secondChanceUsed: false,
+    };
+  }
+
+  const attempt2 = await attemptFetch(secondTimeoutMs);
+  if (attempt2.facts) {
+    return {
+      facts: attempt2.facts,
+      attempt1Status: attempt1.status,
+      attempt2Status: attempt2.status,
+      finalStatus: "success",
+      secondChanceUsed: true,
+    };
+  }
+
+  const finalStatus: Exclude<LnhpdLookupStatus, "not_attempted"> =
+    attempt2.status === "timeout"
+      ? "timeout"
+      : attempt2.status === "error"
+        ? "error"
+        : attempt1.status === "timeout"
+          ? "timeout"
+          : "not_found";
+
+  return {
+    facts: null,
+    attempt1Status: attempt1.status,
+    attempt2Status: attempt2.status,
+    finalStatus,
+    secondChanceUsed: true,
+  };
+};
+
 const fetchLnhpdFactsByName = async (
   params: {
     brand?: string | null;
@@ -3753,6 +3939,18 @@ const hasCoreAnalysis = (analysisPayload?: SnapshotAnalysisPayload | null): bool
   if (!analysisPayload) return false;
   return Boolean(analysisPayload.efficacy && analysisPayload.safety && analysisPayload.usagePayload);
 };
+
+const hasAuthoritativeIdentityFromSnapshot = (snapshot: SupplementSnapshot): boolean => {
+  if (snapshot.regulatory.dsldLabelId) return true;
+  return Boolean(
+    snapshot.regulatory.npn &&
+      snapshot.regulatory.npnStatus === "verified" &&
+      snapshot.regulatory.npnVerifiedBy === "lnhpd_fetch",
+  );
+};
+
+const hasCoreFacts = (snapshot: SupplementSnapshot, analysisPayload?: SnapshotAnalysisPayload | null): boolean =>
+  hasLabelFacts(snapshot) || hasCoreAnalysis(analysisPayload);
 
 const resolveAnalysisMeta = (params: {
   snapshot: SupplementSnapshot;
@@ -5137,6 +5335,8 @@ const safeSendSse = (res: Response, type: string, data: unknown): boolean => {
     const payload = type === "analysis_bundle" ? normalizeAnalysisBundleForStream(data) : data;
     // Single-frame write keeps event/data boundary deterministic for SSE clients.
     res.write(buildSseFrame(type, payload));
+    // Best-effort flush helps reduce proxy/socket buffering of terminal frames.
+    (res as unknown as { flush?: () => void }).flush?.();
     return !res.writableEnded;
   } catch {
     return false;
@@ -5181,6 +5381,145 @@ const withTimeoutPromise = async <T>(
     cleanup();
   }
 };
+
+type EnrichStreamAdmissionRejectCode = "QUEUE_FULL" | "QUEUE_WAIT_TIMEOUT" | "ABORTED";
+
+class EnrichStreamAdmissionError extends Error {
+  readonly code: EnrichStreamAdmissionRejectCode;
+
+  constructor(code: EnrichStreamAdmissionRejectCode, message: string) {
+    super(message);
+    this.name = "EnrichStreamAdmissionError";
+    this.code = code;
+  }
+}
+
+type EnrichStreamAdmissionLease = {
+  release: () => void;
+  queuedMs: number;
+};
+
+type EnrichStreamAdmissionWaiter = {
+  enqueuedAt: number;
+  resolve: (lease: EnrichStreamAdmissionLease) => void;
+  reject: (error: EnrichStreamAdmissionError) => void;
+  timeout?: ReturnType<typeof setTimeout>;
+  cleanup?: () => void;
+};
+
+class EnrichStreamAdmissionGate {
+  private active = 0;
+  private readonly queue: EnrichStreamAdmissionWaiter[] = [];
+
+  constructor(
+    private readonly maxActive: number,
+    private readonly maxQueue: number,
+  ) {}
+
+  getState() {
+    return {
+      active: this.active,
+      queue: this.queue.length,
+      maxActive: this.maxActive,
+      maxQueue: this.maxQueue,
+    };
+  }
+
+  async acquire(options: { signal?: AbortSignal; waitMs?: number } = {}): Promise<EnrichStreamAdmissionLease> {
+    if (this.active < this.maxActive) {
+      this.active += 1;
+      return {
+        release: this.createRelease(),
+        queuedMs: 0,
+      };
+    }
+
+    if (this.queue.length >= this.maxQueue) {
+      throw new EnrichStreamAdmissionError("QUEUE_FULL", "enrich_stream_queue_full");
+    }
+
+    const waitMs = Math.max(0, Number(options.waitMs ?? ENRICH_STREAM_QUEUE_WAIT_MS));
+    if (waitMs <= 0) {
+      throw new EnrichStreamAdmissionError("QUEUE_WAIT_TIMEOUT", "enrich_stream_queue_wait_timeout");
+    }
+
+    return await new Promise<EnrichStreamAdmissionLease>((resolve, reject) => {
+      const waiter: EnrichStreamAdmissionWaiter = {
+        enqueuedAt: Date.now(),
+        resolve,
+        reject,
+      };
+
+      const clearWaiter = () => {
+        if (waiter.timeout) {
+          clearTimeout(waiter.timeout);
+        }
+        waiter.cleanup?.();
+      };
+
+      const removeWaiter = () => {
+        const index = this.queue.indexOf(waiter);
+        if (index >= 0) {
+          this.queue.splice(index, 1);
+        }
+      };
+
+      waiter.timeout = setTimeout(() => {
+        removeWaiter();
+        clearWaiter();
+        reject(new EnrichStreamAdmissionError("QUEUE_WAIT_TIMEOUT", "enrich_stream_queue_wait_timeout"));
+      }, waitMs);
+
+      if (options.signal) {
+        if (options.signal.aborted) {
+          clearWaiter();
+          reject(new EnrichStreamAdmissionError("ABORTED", "enrich_stream_request_aborted"));
+          return;
+        }
+        const onAbort = () => {
+          removeWaiter();
+          clearWaiter();
+          reject(new EnrichStreamAdmissionError("ABORTED", "enrich_stream_request_aborted"));
+        };
+        options.signal.addEventListener("abort", onAbort, { once: true });
+        waiter.cleanup = () => options.signal?.removeEventListener("abort", onAbort);
+      }
+
+      this.queue.push(waiter);
+    });
+  }
+
+  private createRelease(): () => void {
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      this.active = Math.max(0, this.active - 1);
+      this.dispatch();
+    };
+  }
+
+  private dispatch() {
+    while (this.active < this.maxActive && this.queue.length > 0) {
+      const waiter = this.queue.shift();
+      if (!waiter) return;
+      if (waiter.timeout) {
+        clearTimeout(waiter.timeout);
+      }
+      waiter.cleanup?.();
+      this.active += 1;
+      waiter.resolve({
+        release: this.createRelease(),
+        queuedMs: Math.max(0, Date.now() - waiter.enqueuedAt),
+      });
+    }
+  }
+}
+
+const enrichStreamAdmissionGate = new EnrichStreamAdmissionGate(
+  ENRICH_STREAM_MAX_ACTIVE,
+  ENRICH_STREAM_MAX_QUEUE,
+);
 
 const barcodeEnrichInFlight = new Map<string, Promise<void>>();
 const barcodeEnrichBackground = new Map<string, Promise<void>>();
@@ -8932,6 +9271,12 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   });
 });
 
+app.get("/api/client-runtime-flags", verifySupabaseToken, (_req: Request, res: Response) => {
+  res.json({
+    scanTerminalLockEnabled: readScanTerminalLockEnabled(),
+  });
+});
+
 /**
  * Main streaming endpoint: Two-step search + AI analysis
  */
@@ -8945,20 +9290,53 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 	    typeof (parsedBody as Record<string, unknown>)["streamMode"] === "string"
 	      ? String((parsedBody as Record<string, unknown>)["streamMode"]).trim()
 	      : null;
-	  const streamAnalysisBundleOnly =
-	    streamModeRaw === "analysis_bundle_only" || streamModeRaw === "bundle_only" || streamModeRaw === "analysis_bundle";
-	  const normalized = normalizeBarcodeInput(rawBarcode);
-	  const model = process.env.DEEPSEEK_MODEL || "deepseek-chat";
+  const streamAnalysisBundleOnly =
+    streamModeRaw === "analysis_bundle_only" || streamModeRaw === "bundle_only" || streamModeRaw === "analysis_bundle";
+  const streamAdmissionQueueWaitMs = streamAnalysisBundleOnly
+    ? Math.max(ENRICH_STREAM_QUEUE_WAIT_MS, ENRICH_STREAM_QUEUE_WAIT_MS_BUNDLE_ONLY)
+    : ENRICH_STREAM_QUEUE_WAIT_MS;
+  const normalized = normalizeBarcodeInput(rawBarcode);
+  const model = process.env.DEEPSEEK_MODEL || "deepseek-chat";
 	  const acceptLanguageHeader =
 	    typeof req.headers["accept-language"] === "string" ? req.headers["accept-language"] : null;
-	  const locale = resolveLocale(acceptLanguageHeader);
+  const locale = resolveLocale(acceptLanguageHeader);
+  const requestEntryAt = Date.now();
+  const globalStreamTimeoutMs =
+    Number.isFinite(SSE_GLOBAL_STREAM_TIMEOUT_MS) && SSE_GLOBAL_STREAM_TIMEOUT_MS > 0
+      ? SSE_GLOBAL_STREAM_TIMEOUT_MS
+      : 15000;
+  const globalDeadlineAt = requestEntryAt + Math.max(1000, globalStreamTimeoutMs);
   const isRegressionRequest = (req as AuthenticatedRequest).regressionAuth === true;
+  const authBypassHeader = req.headers["x-auth-disabled"];
+  const isAuthBypassRequest = Array.isArray(authBypassHeader)
+    ? authBypassHeader.includes("1")
+    : authBypassHeader === "1";
+  const authorityRegressionSampleHeaderRaw = req.headers["x-authority-regression-sample"];
+  const authorityRegressionSampleRequested = Array.isArray(authorityRegressionSampleHeaderRaw)
+    ? authorityRegressionSampleHeaderRaw.some((value) => String(value).trim().toLowerCase() === "1" || String(value).trim().toLowerCase() === "true")
+    : String(authorityRegressionSampleHeaderRaw ?? "").trim().toLowerCase() === "1" ||
+      String(authorityRegressionSampleHeaderRaw ?? "").trim().toLowerCase() === "true";
+  const isRegressionLikeRequest =
+    isRegressionRequest ||
+    (process.env.NODE_ENV !== "production" && isAuthBypassRequest && authorityRegressionSampleRequested);
+  const authorityFailModeHeaderRaw =
+    typeof req.headers["x-authority-fail-mode"] === "string"
+      ? req.headers["x-authority-fail-mode"].trim().toLowerCase()
+      : "";
+  const requestedAuthorityFailMode: LnhpdForcedFailureMode | null =
+    isRegressionRequest && (authorityFailModeHeaderRaw === "timeout" || authorityFailModeHeaderRaw === "not_found")
+      ? (authorityFailModeHeaderRaw as LnhpdForcedFailureMode)
+      : null;
+  let authorityFailMode: LnhpdForcedFailureMode | null = requestedAuthorityFailMode;
   const bundleId = randomUUID();
   let finishInFlight: ((error?: unknown) => void) | null = null;
+  let releaseAdmission: (() => void) | null = null;
   let catalogSnapshotForAi: SupplementSnapshot | null = null;
   let catalogAnalysisPayloadForAi: SnapshotAnalysisPayload | null = null;
   let catalogLabelExtractionForAi: LabelExtractionMeta | null = null;
   let catalogLabelFactsForAi: LabelFacts | null = null;
+  let stage0BundleAbort: AbortController | null = null;
+  let stage1BundleAbort: AbortController | null = null;
 
   let sseStarted = false;
   // Set SSE Headers
@@ -8967,7 +9345,9 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   res.setHeader("Connection", "keep-alive");
   res.setHeader("X-Accel-Buffering", "no");
   res.flushHeaders?.();
+  res.socket?.setNoDelay(true);
   sseStarted = true;
+  const requestAbort = createRequestAbort(res);
 
   const streamState = {
     rev0Sent: false,
@@ -8984,6 +9364,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     rev1Source: null as "fast_ai" | "fallback" | null,
     latestRevision: null as number | null,
     latestSourceType: null as string | null,
+    latestSourceTypeFinal: null as boolean | null,
     latestIdentityType: null as string | null,
   };
   type PipelineStepName = "retrieve" | "sanitize" | "select_evidence" | "draft" | "verify" | "revise" | "emit";
@@ -9131,10 +9512,15 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   let latestSkeletonBundle: AnalysisBundle | null = null;
   let streamBarcode: string | null = null;
   let requestId = "";
+  requestId = String(res.getHeader("x-request-id") ?? "");
   let streamLocale = locale;
   let cleanupRequestSignal: (() => void) | null = null;
   let fastWatchdog: ReturnType<typeof setTimeout> | null = null;
   let globalWatchdog: ReturnType<typeof setTimeout> | null = null;
+  let bundleOnlyDoneTimer: ReturnType<typeof setTimeout> | null = null;
+  let webRev1DoneTimer: ReturnType<typeof setTimeout> | null = null;
+  let disconnectReleaseTimer: ReturnType<typeof setTimeout> | null = null;
+  let pipelineAborted = false;
 
   const clearWatchdogs = () => {
     if (fastWatchdog) {
@@ -9145,6 +9531,32 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       clearTimeout(globalWatchdog);
       globalWatchdog = null;
     }
+    if (bundleOnlyDoneTimer) {
+      clearTimeout(bundleOnlyDoneTimer);
+      bundleOnlyDoneTimer = null;
+    }
+    if (webRev1DoneTimer) {
+      clearTimeout(webRev1DoneTimer);
+      webRev1DoneTimer = null;
+    }
+  };
+  const clearDisconnectReleaseTimer = () => {
+    if (!disconnectReleaseTimer) return;
+    clearTimeout(disconnectReleaseTimer);
+    disconnectReleaseTimer = null;
+  };
+  const abortPipelineOnce = (error?: unknown) => {
+    if (pipelineAborted) return;
+    pipelineAborted = true;
+    const reason =
+      error instanceof Error
+        ? error
+        : new Error(typeof error === "string" ? error : "stream_finalized");
+    streamAbortController?.abort(reason);
+    stage0BundleAbort?.abort(reason);
+    stage0BundleAbort = null;
+    stage1BundleAbort?.abort(reason);
+    stage1BundleAbort = null;
   };
   const originalWrite = res.write.bind(res);
   const originalEnd = res.end.bind(res);
@@ -9244,11 +9656,27 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
                   : "not_sse_response",
         });
       }
+      releaseInFlightOnce();
+      releaseAdmissionOnce();
       emitPipelineMetrics();
       (res as unknown as { flush?: () => void }).flush?.();
     }
     return originalEnd(chunk as Parameters<Response["end"]>[0], encoding as Parameters<Response["end"]>[1], cb as Parameters<Response["end"]>[2]);
   }) as Response["end"];
+  const releaseInFlightOnce = (error?: unknown) => {
+    clearDisconnectReleaseTimer();
+    const release = finishInFlight;
+    finishInFlight = null;
+    if (!release) return;
+    release(error);
+  };
+  const releaseAdmissionOnce = () => {
+    clearDisconnectReleaseTimer();
+    const release = releaseAdmission;
+    releaseAdmission = null;
+    if (!release) return;
+    release();
+  };
   const finalizeStream = (reason: string) => {
     if (streamState.ended || res.writableEnded) {
       pendingDoneReason = reason;
@@ -9262,12 +9690,148 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     logDoneEvent("attempt", {
       emit_path: "finalize_stream",
     });
+    if (!streamState.doneSent && !streamState.clientDisconnected) {
+      const emitted = safeSendSse(res, "done", {
+        barcode: streamBarcode,
+        reason: pendingDoneReason ?? "finalize_stream",
+      });
+      if (emitted) {
+        streamState.doneSent = true;
+        streamState.tDone = Date.now();
+        markPipelineStepEnd("emit", "ok");
+        logDoneEvent("success", { emit_path: "finalize_stream_send_done" });
+      } else {
+        markPipelineStepEnd("emit", "failed", "done_send_failed");
+        logDoneEvent("skipped", {
+          emit_path: "finalize_stream_send_done",
+          skip_reason: "safe_send_failed",
+        });
+      }
+    }
     emitPipelineMetrics(
       streamState.latestSourceType === "lnhpd" || streamState.latestSourceType === "dsld" || streamState.latestSourceType === "web"
         ? (streamState.latestSourceType as "lnhpd" | "dsld" | "web")
         : undefined,
     );
+    abortPipelineOnce(new Error("stream_finalized"));
+    clearWatchdogs();
     res.end();
+  };
+  const scheduleBundleOnlyFinalize = () => {
+    if (streamState.doneSent || streamState.ended || res.writableEnded || streamState.clientDisconnected) return;
+    if (!streamState.rev1Sent) return;
+
+    if (streamAnalysisBundleOnly) {
+      if (bundleOnlyDoneTimer) return;
+      bundleOnlyDoneTimer = setTimeout(() => {
+        bundleOnlyDoneTimer = null;
+        if (streamState.doneSent || streamState.ended || res.writableEnded || streamState.clientDisconnected) return;
+        finalizeStream("analysis_bundle_only_rev1_complete");
+      }, ENRICH_STREAM_BUNDLE_ONLY_DONE_DELAY_MS);
+      (bundleOnlyDoneTimer as { unref?: () => void }).unref?.();
+      return;
+    }
+
+    if (ENRICH_STREAM_WEB_REV1_DONE_DELAY_MS <= 0) return;
+    if (streamState.latestSourceType !== "web") return;
+    if (webRev1DoneTimer) return;
+
+    // For web flows, cap post-rev1 stream lifetime so clients that stop shortly after rev1
+    // still receive terminal done deterministically.
+    webRev1DoneTimer = setTimeout(() => {
+      webRev1DoneTimer = null;
+      if (streamState.doneSent || streamState.ended || res.writableEnded || streamState.clientDisconnected) return;
+      finalizeStream("web_rev1_watchdog_complete");
+    }, ENRICH_STREAM_WEB_REV1_DONE_DELAY_MS);
+    (webRev1DoneTimer as { unref?: () => void }).unref?.();
+  };
+  type NotFoundStage = "v2_gate" | "negative_cache" | "search" | "cheap_pass" | "facts";
+  const NOT_FOUND_ERROR_SCHEMA_VERSION = 1 as const;
+  const isRetryableNotFoundReason = (reasonCode: string | null | undefined): boolean => {
+    const normalizedReasonCode = String(reasonCode ?? "").trim().toUpperCase();
+    return (
+      normalizedReasonCode === "TIMEOUT" ||
+      normalizedReasonCode === "BUDGET_EXHAUSTED" ||
+      normalizedReasonCode === "BREAKER_OPEN" ||
+      normalizedReasonCode === "MARKETPLACE_ONLY_TIMEOUT"
+    );
+  };
+  const emitTerminalErrorAndFinalize = (params: {
+    code?: string;
+    stage?: string;
+    reasonCode?: string | null;
+    retryable?: boolean;
+    message: string;
+    finalizeReason: string;
+    releaseError?: unknown;
+    schemaVersion?: number;
+  }) => {
+    const terminalSnapshot = {
+      sourceType: streamState.latestSourceType,
+      sourceTypeFinal: streamState.latestSourceTypeFinal,
+      identityType: streamState.latestIdentityType,
+      revision: streamState.latestRevision,
+      rev0Sent: streamState.rev0Sent,
+      rev1Sent: streamState.rev1Sent,
+      persistedSent: streamState.persistedSent,
+      doneSent: streamState.doneSent,
+      finalizeReason: params.finalizeReason,
+    };
+    const payload: Record<string, unknown> = {
+      message: params.message,
+      requestId: requestId || null,
+      terminalSnapshot,
+    };
+    if (typeof params.schemaVersion === "number") {
+      payload.schemaVersion = params.schemaVersion;
+    }
+    if (typeof params.code === "string" && params.code.trim().length > 0) {
+      payload.code = params.code.trim();
+    }
+    if (typeof params.stage === "string" && params.stage.trim().length > 0) {
+      payload.stage = params.stage.trim();
+    }
+    if (params.reasonCode === null || typeof params.reasonCode === "string") {
+      payload.reasonCode = params.reasonCode;
+    }
+    if (typeof params.retryable === "boolean") {
+      payload.retryable = params.retryable;
+    }
+    sendSSE(res, "error", payload);
+    finalizeStream(params.finalizeReason);
+    releaseInFlightOnce(params.releaseError);
+    releaseAdmissionOnce();
+  };
+  const emitStreamBusyAndFinalize = (reasonCode: "QUEUE_FULL" | "QUEUE_WAIT_TIMEOUT") => {
+    emitTerminalErrorAndFinalize({
+      schemaVersion: 1,
+      code: "STREAM_BUSY",
+      stage: "admission",
+      reasonCode,
+      retryable: true,
+      message: "Server is busy, please retry shortly",
+      finalizeReason: `stream_busy_${reasonCode.toLowerCase()}`,
+      releaseError: new Error(`stream_busy:${reasonCode}`),
+    });
+  };
+  const emitProductNotFoundAndFinalize = (params: {
+    stage: NotFoundStage;
+    reasonCode?: string | null;
+  }) => {
+    const reasonCode =
+      typeof params.reasonCode === "string" && params.reasonCode.trim().length > 0
+        ? params.reasonCode.trim()
+        : null;
+    emitTerminalErrorAndFinalize({
+      schemaVersion: NOT_FOUND_ERROR_SCHEMA_VERSION,
+      code: "NOT_FOUND",
+      stage: params.stage,
+      reasonCode,
+      retryable: isRetryableNotFoundReason(reasonCode),
+      message: "Product not found",
+      finalizeReason: "product_not_found",
+      releaseError: new Error(reasonCode ? `product_not_found:${reasonCode}` : "product_not_found"),
+    });
   };
   const emitRev0Once = (bundle: AnalysisBundle): boolean => {
     if (streamState.rev0Sent || res.writableEnded || streamState.clientDisconnected) return false;
@@ -9294,6 +9858,10 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     streamState.latestRevision = Number(normalized.meta.revision);
     streamState.latestSourceType =
       typeof normalized.meta.sourceType === "string" ? normalized.meta.sourceType : streamState.latestSourceType;
+    streamState.latestSourceTypeFinal =
+      typeof normalized.meta.sourceTypeFinal === "boolean"
+        ? normalized.meta.sourceTypeFinal
+        : streamState.latestSourceTypeFinal;
     streamState.latestIdentityType =
       typeof normalized.meta.authoritativeIdentity?.type === "string"
         ? normalized.meta.authoritativeIdentity.type
@@ -9333,6 +9901,10 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     streamState.latestRevision = Number(normalized.meta.revision);
     streamState.latestSourceType =
       typeof normalized.meta.sourceType === "string" ? normalized.meta.sourceType : streamState.latestSourceType;
+    streamState.latestSourceTypeFinal =
+      typeof normalized.meta.sourceTypeFinal === "boolean"
+        ? normalized.meta.sourceTypeFinal
+        : streamState.latestSourceTypeFinal;
     streamState.latestIdentityType =
       typeof normalized.meta.authoritativeIdentity?.type === "string"
         ? normalized.meta.authoritativeIdentity.type
@@ -9341,53 +9913,78 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     streamState.rev1Sent = true;
     streamState.tRev1 = Date.now();
     streamState.rev1Source = source;
+    scheduleBundleOnlyFinalize();
     if (source === "fallback") {
       streamState.fallbackRev1Locked = true;
       fallbackRev1LockedCount += 1;
-      streamAbortController?.abort(new Error("fallback_rev1_locked"));
     }
     return true;
   };
-  const emitWatchdogFallbackRev1 = (fallbackReason: string) => {
-    const skeleton = latestSkeletonBundle ??
-      buildProvisionalAnalysisBundle({
-        bundleId,
-        locale: streamLocale,
-        barcodeGtin14: streamBarcode ?? "00000000000000",
-        revision: 0,
-        phase: "skeleton",
-      });
-    let fallback = applyFastFailureStatus(buildFastFailureBundle(skeleton));
-    fallback = {
-      ...fallback,
-      sections: {
-        ...fallback.sections,
-        ingredients: {
-          ...fallback.sections.ingredients,
-          dataStatus: fallback.sections.ingredients.dataStatus === "pending" ? "limited" : fallback.sections.ingredients.dataStatus,
-        },
-      },
-    };
-    emitRev1Once(fallback, "fallback", fallbackReason);
-  };
-
   res.on("close", () => {
     streamState.clientDisconnected = true;
+    abortPipelineOnce(new Error("client_disconnected"));
+    if (ENRICH_STREAM_CLIENT_DISCONNECT_GRACE_MS <= 0) {
+      releaseInFlightOnce(new Error("client_disconnected"));
+      releaseAdmissionOnce();
+    } else if (!disconnectReleaseTimer) {
+      disconnectReleaseTimer = setTimeout(() => {
+        disconnectReleaseTimer = null;
+        releaseInFlightOnce(new Error("client_disconnected"));
+        releaseAdmissionOnce();
+      }, ENRICH_STREAM_CLIENT_DISCONNECT_GRACE_MS);
+      (disconnectReleaseTimer as { unref?: () => void }).unref?.();
+    }
     clearWatchdogs();
   });
   res.on("finish", clearWatchdogs);
+  res.on("finish", clearDisconnectReleaseTimer);
 
-  try {
-    if (!normalized) {
-      sendSSE(res, "error", { message: "Invalid barcode provided" });
-      finalizeStream("invalid_barcode");
-      return;
-    }
+	  try {
+      const admissionWaitMs = Math.max(
+        0,
+        Math.min(streamAdmissionQueueWaitMs, globalDeadlineAt - Date.now()),
+      );
+      try {
+        const admissionLease = await enrichStreamAdmissionGate.acquire({
+          signal: requestAbort.signal,
+          waitMs: admissionWaitMs,
+        });
+        releaseAdmission = admissionLease.release;
+      } catch (error) {
+        if (error instanceof EnrichStreamAdmissionError && error.code === "ABORTED") {
+          return;
+        }
+        const reasonCode =
+          error instanceof EnrichStreamAdmissionError && error.code === "QUEUE_FULL"
+            ? "QUEUE_FULL"
+            : "QUEUE_WAIT_TIMEOUT";
+        emitStreamBusyAndFinalize(reasonCode);
+        return;
+      }
+
+	    if (!normalized) {
+	      emitTerminalErrorAndFinalize({
+	        code: "INVALID_BARCODE",
+	        stage: "input",
+	        reasonCode: "INVALID_BARCODE",
+	        retryable: false,
+	        message: "Invalid barcode provided",
+	        finalizeReason: "invalid_barcode",
+	      });
+	      return;
+	    }
     const barcode = normalized.code;
     streamBarcode = barcode;
     const cacheKey = buildBarcodeCacheKey(barcode);
     const barcodeGtin14 = normalized.code.padStart(14, "0");
     const barcodeRawDigits = normalized.code;
+    const authorityRegressionScenarioActive =
+      AUTHORITY_REGRESSION_SAMPLE_ENABLED &&
+      isRegressionLikeRequest &&
+      barcodeGtin14 === AUTHORITY_REGRESSION_SAMPLE_BARCODE;
+    if (authorityRegressionScenarioActive) {
+      authorityFailMode = "timeout";
+    }
 
     let regulatoryMapStatus: "hit" | "stale" | "miss" | "timeout" = "miss";
     let regMapPrimaryAttempted = false;
@@ -9400,14 +9997,19 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     let npnNegativeCacheHit = false;
     let lnhpdGuardrailScore: number | null = null;
     let lnhpdGuardrailPass: boolean | null = null;
-    let lnhpdFetchStatus: "success" | "not_found" | "timeout" | "error" | null = null;
+	    let lnhpdFetchStatus: "success" | "not_found" | "timeout" | "error" | null = null;
+    let authorityCandidateSource: "map" | "map_stale" | "snapshot" | "scan_history" | "web" | null = null;
+    let authorityLnhpdAttempt1Status: LnhpdLookupStatus = "not_attempted";
+    let authorityLnhpdAttempt2Status: LnhpdLookupStatus = "not_attempted";
+    let authorityFailureReason: AuthorityFailureReason | null = null;
+    let authorityNegativeCacheBypassed = false;
+    let authorityRegressionScenarioHistoricalNpn: string | null = null;
 
-    const startedAt = performance.now();
-    const budget = new DeadlineBudget(Date.now() + RESILIENCE_TOTAL_BUDGET_MS);
-    const requestAbort = createRequestAbort(res);
-    const streamAbort = new AbortController();
-    streamAbortController = streamAbort;
-    const { signal: requestSignal, cleanup } = combineSignals([
+	    const startedAt = performance.now();
+	    const budget = new DeadlineBudget(Date.now() + RESILIENCE_TOTAL_BUDGET_MS);
+	    const streamAbort = new AbortController();
+	    streamAbortController = streamAbort;
+	    const { signal: requestSignal, cleanup } = combineSignals([
       requestAbort.signal,
       streamAbort.signal,
     ]);
@@ -9431,21 +10033,45 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
         const fastMs = Math.max(250, ANALYSIS_BUNDLE_FAST_TIMEOUT_MS + SSE_FAST_GRACE_MS);
         fastWatchdog = setTimeout(() => {
           if (streamState.rev1Sent || res.writableEnded || streamState.clientDisconnected) return;
-          emitWatchdogFallbackRev1("watchdog_fast_timeout");
-          finalizeStream("watchdog_fast_timeout");
+          sendSSE(res, "status", {
+            stage: "watchdog_fast_timeout",
+            message: "Fast analysis timed out; waiting for remaining pipeline.",
+            retryable: true,
+          });
         }, fastMs);
       }
-      if (!globalWatchdog) {
-        const globalMs = Math.max(1000, SSE_GLOBAL_STREAM_TIMEOUT_MS);
-        globalWatchdog = setTimeout(() => {
-          if (streamState.ended || res.writableEnded || streamState.clientDisconnected) return;
-          if (!streamState.rev1Sent) {
-            emitWatchdogFallbackRev1("watchdog_global_timeout");
+	      if (!globalWatchdog) {
+          const remainingMs = globalDeadlineAt - Date.now();
+          if (remainingMs <= 0) {
+            emitTerminalErrorAndFinalize({
+              code: "STREAM_TIMEOUT",
+              stage: "watchdog",
+              reasonCode: "GLOBAL_TIMEOUT_REV0_ONLY",
+              retryable: true,
+              message: "Stream timed out before a usable result was produced.",
+              finalizeReason: "global_timeout_rev0_only",
+              releaseError: new Error("stream_timeout"),
+            });
+            return;
           }
-          finalizeStream("global_timeout");
-        }, globalMs);
-      }
-    };
+	        globalWatchdog = setTimeout(() => {
+	          if (streamState.ended || res.writableEnded || streamState.clientDisconnected) return;
+	          if (!streamState.rev1Sent) {
+	            emitTerminalErrorAndFinalize({
+	              code: "STREAM_TIMEOUT",
+	              stage: "watchdog",
+	              reasonCode: "GLOBAL_TIMEOUT_REV0_ONLY",
+	              retryable: true,
+	              message: "Stream timed out before a usable result was produced.",
+	              finalizeReason: "global_timeout_rev0_only",
+	              releaseError: new Error("stream_timeout"),
+	            });
+	            return;
+	          }
+	          finalizeStream("global_timeout_after_rev1");
+	        }, Math.max(1, remainingMs));
+	      }
+	    };
     armContractWatchdogs();
     requestId = String(res.getHeader("x-request-id") ?? "");
     const requestPath = req.path;
@@ -9474,6 +10100,18 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       lnhpd_guardrail_score: lnhpdGuardrailScore,
       lnhpd_guardrail_pass: lnhpdGuardrailPass,
       lnhpd_fetch_status: lnhpdFetchStatus,
+      authorityCandidateSource,
+      authorityLnhpdAttempt1Status,
+      authorityLnhpdAttempt2Status,
+      authorityFailureReason,
+      authorityNegativeCacheBypassed,
+      authorityFailMode,
+      authority_candidate_source: authorityCandidateSource,
+      authority_lnhpd_attempt_1_status: authorityLnhpdAttempt1Status,
+      authority_lnhpd_attempt_2_status: authorityLnhpdAttempt2Status,
+      authority_failure_reason: authorityFailureReason,
+      authority_negative_cache_bypassed: authorityNegativeCacheBypassed,
+      authority_regression_sample_active: authorityRegressionScenarioActive,
       sse_contract: {
         rev0_sent: streamState.rev0Sent,
         rev1_sent: streamState.rev1Sent,
@@ -9487,6 +10125,30 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       },
       ...(extra ?? {}),
     });
+    const withAuthorityDiagnostics = (bundle: AnalysisBundle): AnalysisBundle => {
+      const meta = {
+        ...bundle.meta,
+        authorityCandidateSource: authorityCandidateSource ?? undefined,
+        authorityLnhpdAttempt1Status,
+        authorityLnhpdAttempt2Status,
+        authorityFailureReason: authorityFailureReason ?? undefined,
+        authorityNegativeCacheBypassed,
+        authority_candidate_source: authorityCandidateSource ?? undefined,
+        authority_lnhpd_attempt_1_status: authorityLnhpdAttempt1Status,
+        authority_lnhpd_attempt_2_status: authorityLnhpdAttempt2Status,
+        authority_failure_reason: authorityFailureReason ?? undefined,
+        authority_negative_cache_bypassed: authorityNegativeCacheBypassed,
+        npn_candidate_source: npnCandidateSource ?? undefined,
+        reg_map_primary_status: regMapPrimaryStatus,
+        reg_map_second_chance_attempted: regMapSecondChanceAttempted,
+        reg_map_second_chance_result: regMapSecondChanceResult,
+        authority_regression_sample_active: authorityRegressionScenarioActive || undefined,
+      } as AnalysisBundle["meta"] & Record<string, unknown>;
+      return {
+        ...bundle,
+        meta,
+      };
+    };
 
 	    const emitAnalysisBundleSequence = async (params: {
 	      digest: FactsDigest;
@@ -9578,6 +10240,15 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 	        streamState.tPersisted = Date.now();
 	        return true;
 	      };
+	      const commitPersistedAfterRev1 = async (bundle: AnalysisBundle): Promise<void> => {
+	        // Web path must not keep the SSE stream open while waiting for shared-store commit.
+	        // Emit persisted best-effort in the background and let terminal done close promptly.
+	        if (params.digest.sourceType === "web") {
+	          void emitPersistedWhenReady(bundle);
+	          return;
+	        }
+	        await emitPersistedWhenReady(bundle);
+	      };
 
       const skeleton = buildAnalysisBundleSkeleton({
         digest: params.digest,
@@ -9667,14 +10338,15 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
             );
           }
 	        const parsed = safeParseAnalysisBundle(fastCandidate);
-	        if (parsed.success && canWrite()) {
+	          if (parsed.success && canWrite()) {
+	          const rev1Bundle = withAuthorityDiagnostics(parsed.data);
 	          const emittedRev1 = emitRev1Once(
-	            parsed.data,
-	            parsed.data.meta?.fallbackReason ? "fallback" : "fast_ai",
-	            parsed.data.meta?.fallbackReason,
+	            rev1Bundle,
+	            rev1Bundle.meta?.fallbackReason ? "fallback" : "fast_ai",
+	            rev1Bundle.meta?.fallbackReason,
 	          );
 	          if (emittedRev1) {
-	            await emitPersistedWhenReady(parsed.data);
+	            await commitPersistedAfterRev1(rev1Bundle);
 	          }
 	          maybePrewarmDsldDetail();
 	          return { factsDigestHash };
@@ -9771,23 +10443,23 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
                 : verified.revise.status;
             markPipelineStepEnd("revise", reviseStatus, gated.reasons[0] ?? verified.revise.code);
           }
-          const rev1Source: "fast_ai" | "fallback" =
-            gatedBundle.meta?.fallbackReason || fastFailed || !fastRaw ? "fallback" : "fast_ai";
+	          const rev1Source: "fast_ai" | "fallback" =
+	            gatedBundle.meta?.fallbackReason || fastFailed || !fastRaw ? "fallback" : "fast_ai";
+	        const rev1Bundle = withAuthorityDiagnostics(gatedBundle);
 	        const emittedRev1 = emitRev1Once(
-	          gatedBundle,
+	          rev1Bundle,
 	          rev1Source,
-	          gatedBundle.meta?.fallbackReason ?? (rev1Source === "fallback" ? "fast_generation_failed" : undefined),
+	          rev1Bundle.meta?.fallbackReason ?? (rev1Source === "fallback" ? "fast_generation_failed" : undefined),
 	        );
 	        maybePrewarmDsldDetail();
 	        if (emittedRev1) {
-	          await emitPersistedWhenReady(gatedBundle);
+	          await commitPersistedAfterRev1(rev1Bundle);
 	        }
 	      }
 
       return { factsDigestHash };
     };
     let stage0BundlePromise: Promise<{ factsDigestHash: string } | null> | null = null;
-    let stage0BundleAbort: AbortController | null = null;
     const awaitStage0Bundle = async () => {
       if (!stage0BundlePromise) return;
       try {
@@ -9797,7 +10469,6 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       }
     };
     let stage1BundlePromise: Promise<{ factsDigestHash: string } | null> | null = null;
-    let stage1BundleAbort: AbortController | null = null;
     const awaitStage1Bundle = async () => {
       if (!stage1BundlePromise) return;
       try {
@@ -9911,11 +10582,27 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       return null;
     };
 
+    const passesRuleBrandSanity = (value: string): boolean => {
+      const raw = value.replace(/\s+/g, " ").trim();
+      if (!raw) return false;
+      const tokenCount = raw.split(" ").filter(Boolean).length;
+      const hasDbaChain = /\b(?:dba|doing\s+business\s+as)\b/i.test(raw);
+      const hasListSeparators = /[|/;]/.test(raw);
+      return tokenCount <= 5 && !hasDbaChain && !hasListSeparators;
+    };
+
     const shouldPreferExtractedBrand = (
       brandExtraction?: SnapshotAnalysisPayload["brandExtraction"] | null,
-    ) =>
-      Boolean(brandExtraction?.brand) &&
-      (brandExtraction?.confidence === "high" || brandExtraction?.confidence === "medium");
+    ) => {
+      if (!brandExtraction?.brand) return false;
+      if (!(brandExtraction.confidence === "high" || brandExtraction.confidence === "medium")) return false;
+      if (brandExtraction.source === "ai") return true;
+      if (brandExtraction.source === "rule") {
+        const sanitized = sanitizeBrandCandidate(brandExtraction.brand);
+        return Boolean(sanitized && passesRuleBrandSanity(sanitized));
+      }
+      return false;
+    };
 
     const sanitizeBrandCandidate = (value?: string | null): string | null => {
       if (!value) return null;
@@ -10160,21 +10847,16 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 
 	    const cachedFast = await snapshotPromise.catch(() => null);
 	    let bypassCachedFastPathForAuthority = false;
-	    if (cachedFast && !forceStage1) {
+      let cachedLooksWebOnly = false;
+	    if (cachedFast) {
       const cachedLabelSource =
         cachedFast.snapshot.analysis?.labelExtraction?.source ??
         cachedFast.analysisPayload?.analysis?.labelExtraction?.source ??
         null;
-      const cachedHasDsldIdentity = Boolean(cachedFast.snapshot.regulatory.dsldLabelId);
-      const cachedHasVerifiedLnhpdIdentity =
-        Boolean(cachedFast.snapshot.regulatory.npn) &&
-        cachedFast.snapshot.regulatory.npnStatus === "verified" &&
-        cachedFast.snapshot.regulatory.npnVerifiedBy === "lnhpd_fetch";
-      const cachedLooksWebOnly =
-        !cachedHasDsldIdentity &&
-        !cachedHasVerifiedLnhpdIdentity &&
+      cachedLooksWebOnly =
+        !hasAuthoritativeIdentityFromSnapshot(cachedFast.snapshot) &&
         cachedLabelSource === null;
-      if (cachedLooksWebOnly) {
+      if (cachedLooksWebOnly && !forceStage1) {
         const [catalogProbe, regulatoryProbe] = await Promise.all([
           catalogPromise.catch(() => null),
           regulatoryMapPromise.catch(() => null),
@@ -10190,6 +10872,13 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       }
     }
 	    if (cachedFast && !bypassCachedFastPathForAuthority) {
+        if (cachedLooksWebOnly && !hasCoreFacts(cachedFast.snapshot, cachedFast.analysisPayload)) {
+          emitProductNotFoundAndFinalize({
+            stage: "facts",
+            reasonCode: "WEB_CACHE_EMPTY_CORE_FACTS",
+          });
+          return;
+        }
       const hasProductName = Boolean(
         cachedFast.analysisPayload?.productInfo?.name || cachedFast.snapshot.product.name,
       );
@@ -10436,8 +11125,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
             await awaitStage0Bundle();
           }
 
-          sendSSE(res, "done", { barcode });
-          res.end();
+	          finalizeStream("snapshot_verified_no_enrichment");
 
           const timingTotalMs = Math.round(performance.now() - startedAt);
 
@@ -10824,12 +11512,11 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
         });
       }
 
-      if (!forceStage1) {
-        await awaitStage0Bundle();
-        sendSSE(res, "done", { barcode });
-        res.end();
-        return;
-      }
+	      if (!forceStage1) {
+	        await awaitStage0Bundle();
+	        finalizeStream("catalog_stage0_complete");
+	        return;
+	      }
 	      console.log("[ResolutionV2] FORCE_STAGE1 enabled; continuing after catalog hit");
 	    }
 
@@ -10851,46 +11538,73 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 	      console.warn("[ResolutionV2] Regulatory map lookup failed", error);
 	    }
 
+	    if (authorityRegressionScenarioActive && !requestSignal.aborted) {
+	      const seededNpnFromMap =
+	        typeof regulatoryMap?.npn === "string" ? regulatoryMap.npn.replace(/\D/g, "").trim() : "";
+	      authorityRegressionScenarioHistoricalNpn =
+	        seededNpnFromMap.length >= 6
+	          ? seededNpnFromMap
+	          : AUTHORITY_REGRESSION_SAMPLE_HISTORICAL_NPN.length >= 6
+	            ? AUTHORITY_REGRESSION_SAMPLE_HISTORICAL_NPN
+	            : null;
+	      regulatoryMap = null;
+	      regulatoryMapStatus = "miss";
+	      regMapPrimaryStatus = "miss";
+	      console.info("[ResolutionV2] Applied authority regression sample", {
+	        barcode: barcodeGtin14,
+	        historicalNpn: authorityRegressionScenarioHistoricalNpn,
+	      });
+	    }
+
 	    // Stage0 hardening: if the first map read misses (or times out), do one direct second-chance
 	    // read without the shared read semaphore to avoid false Web fallback during transient queue pressure.
 	    // Safety rule: this must stay exact-match only (same gtin14 + same raw digits), no fuzzy lookup.
 	    if (!regulatoryMap && !requestSignal.aborted) {
 	      regMapSecondChanceAttempted = true;
-	      const secondChanceStartedAt = performance.now();
-	      try {
-	        const secondChance = await getBarcodeRegulatoryMap(barcodeGtin14, barcodeRawDigits, {
-	          ...supabaseReadResilience,
-	          semaphore: undefined,
-	          queueTimeoutMs: 0,
-	          timeoutMs: REG_MAP_SECOND_CHANCE_TIMEOUT_MS,
-	          includeExpired: true,
-	          retry: {
-	            maxAttempts: 1,
-	          },
+	      if (authorityRegressionScenarioActive) {
+	        regMapSecondChanceLatencyMs = 0;
+	        regMapSecondChanceResult = "timeout";
+	        regulatoryMapStatus = "timeout";
+	        console.info("[ResolutionV2] Forced map second-chance timeout for authority regression sample", {
+	          barcode: barcodeGtin14,
 	        });
-	        regMapSecondChanceLatencyMs = Math.round(performance.now() - secondChanceStartedAt);
-	        if (secondChance) {
-	          regMapSecondChanceResult = "hit";
-	          regulatoryMap = secondChance;
-	          console.info("[ResolutionV2] Regulatory map second-chance hit", {
-	            barcode: barcodeGtin14,
-	            npn: secondChance.npn,
-	            source: secondChance.source,
+	      } else {
+	        const secondChanceStartedAt = performance.now();
+	        try {
+	          const secondChance = await getBarcodeRegulatoryMap(barcodeGtin14, barcodeRawDigits, {
+	            ...supabaseReadResilience,
+	            semaphore: undefined,
+	            queueTimeoutMs: 0,
+	            timeoutMs: REG_MAP_SECOND_CHANCE_TIMEOUT_MS,
+	            includeExpired: true,
+	            retry: {
+	              maxAttempts: 1,
+	            },
 	          });
-	        } else {
-	          regMapSecondChanceResult = "miss";
+	          regMapSecondChanceLatencyMs = Math.round(performance.now() - secondChanceStartedAt);
+	          if (secondChance) {
+	            regMapSecondChanceResult = "hit";
+	            regulatoryMap = secondChance;
+	            console.info("[ResolutionV2] Regulatory map second-chance hit", {
+	              barcode: barcodeGtin14,
+	              npn: secondChance.npn,
+	              source: secondChance.source,
+	            });
+	          } else {
+	            regMapSecondChanceResult = "miss";
+	          }
+	        } catch (error) {
+	          regMapSecondChanceLatencyMs = Math.round(performance.now() - secondChanceStartedAt);
+	          if (error instanceof TimeoutError || isAbortError(error)) {
+	            regMapSecondChanceResult = "timeout";
+	          } else {
+	            regMapSecondChanceResult = "error";
+	          }
+	          if (regulatoryMapStatus !== "timeout") {
+	            regulatoryMapStatus = "timeout";
+	          }
+	          console.warn("[ResolutionV2] Regulatory map second-chance failed", error);
 	        }
-	      } catch (error) {
-	        regMapSecondChanceLatencyMs = Math.round(performance.now() - secondChanceStartedAt);
-	        if (error instanceof TimeoutError || isAbortError(error)) {
-	          regMapSecondChanceResult = "timeout";
-	        } else {
-	          regMapSecondChanceResult = "error";
-	        }
-	        if (regulatoryMapStatus !== "timeout") {
-	          regulatoryMapStatus = "timeout";
-	        }
-	        console.warn("[ResolutionV2] Regulatory map second-chance failed", error);
 	      }
 	    }
 
@@ -10913,12 +11627,22 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 	    // Root-fix for cache resets: if map/snapshot are gone, recover LNHPD candidate
 	    // from prior successful scans of the same GTIN14 before falling into Web.
 	    if (!candidate && !requestSignal.aborted) {
-	      historicalLnhpd = await getHistoricalLnhpdScanNpn(barcodeGtin14, barcodeRawDigits, {
-	        ...supabaseReadResilience,
-	        timeoutMs: 500,
-	        queueTimeoutMs: 0,
-	        retry: { maxAttempts: 1 },
-	      }).catch(() => null);
+	      if (authorityRegressionScenarioActive && authorityRegressionScenarioHistoricalNpn) {
+	        historicalLnhpd = {
+	          barcode_gtin14: barcodeGtin14,
+	          npn: authorityRegressionScenarioHistoricalNpn,
+	          source: "barcode_scans",
+	          created_at: new Date().toISOString(),
+	          served_from: "lnhpd",
+	        };
+	      } else {
+	        historicalLnhpd = await getHistoricalLnhpdScanNpn(barcodeGtin14, barcodeRawDigits, {
+	          ...supabaseReadResilience,
+	          timeoutMs: 500,
+	          queueTimeoutMs: 0,
+	          retry: { maxAttempts: 1 },
+	        }).catch(() => null);
+	      }
 	      if (historicalLnhpd?.npn) {
 	        authority = resolveCandidate(historicalLnhpd.npn);
 	        candidate = authority.candidate;
@@ -10943,30 +11667,57 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 	          : candidate.source === "scan_history"
 	            ? "scan_history"
 	            : "map";
+        authorityCandidateSource = candidate.source;
 	      npnCandidateStale = candidate.isStale;
 
 	      const npnNegative = await getNpnNegativeCache(candidate.npn, {
 	        ...supabaseReadResilience,
 	        timeoutMs: 250,
 	      }).catch(() => null);
+        const npnNegativeReasonCode =
+          typeof npnNegative?.reason_code === "string" ? npnNegative.reason_code : null;
+        const highConfidenceMapCandidate =
+          (candidate.source === "map" || candidate.source === "map_stale") &&
+          Number(candidate.confidence ?? 0) >= 0.9;
+        const shouldBypassAuthorityNegativeCache =
+          Boolean(npnNegative) &&
+          npnNegativeReasonCode === "lnhpd_not_found" &&
+          highConfidenceMapCandidate;
+        authorityNegativeCacheBypassed = shouldBypassAuthorityNegativeCache;
+        if (shouldBypassAuthorityNegativeCache) {
+          console.info("[ResolutionV2] Bypassing LNHPD negative cache for high-confidence map candidate", {
+            barcode: barcodeGtin14,
+            npn: candidate.npn,
+            source: candidate.source,
+            confidence: candidate.confidence ?? null,
+          });
+        }
 	      const npnNegativeIsBlocking =
-	        Boolean(npnNegative) && npnNegative?.reason_code !== "lnhpd_timeout";
+	        Boolean(npnNegative) &&
+          npnNegativeReasonCode !== "lnhpd_timeout" &&
+          !shouldBypassAuthorityNegativeCache;
 	      if (npnNegativeIsBlocking) {
 	        npnNegativeCacheHit = true;
+          authorityFailureReason = "negative_cache_blocked";
 	      } else {
 	        // Older deployments wrote timeouts into the negative cache, which can "poison" Stage0
 	        // and make a known-good NPN fall back to Web. Ignore (and best-effort clear) timeouts.
-	        if (npnNegative?.reason_code === "lnhpd_timeout") {
+	        if (npnNegativeReasonCode === "lnhpd_timeout") {
 	          void clearNpnNegativeCache(candidate.npn, { ...supabaseReadResilience, timeoutMs: 500 });
 	        }
-	        const lnhpdTimeoutSignal = createTimeoutSignal(RESILIENCE_LNHPD_TIMEOUT_MS);
-	        const { signal: lnhpdSignal, cleanup } = combineSignals([requestSignal, lnhpdTimeoutSignal]);
 	        try {
-	          const lnhpdFacts = await fetchLnhpdFactsByNpn(candidate.npn, lnhpdSignal);
-	          const timedOut = lnhpdTimeoutSignal.aborted;
+          const lnhpdLookup = await fetchLnhpdFactsWithSecondChance(candidate.npn, requestSignal, {
+            firstTimeoutMs: RESILIENCE_LNHPD_TIMEOUT_MS,
+            secondTimeoutMs: RESILIENCE_LNHPD_SECOND_CHANCE_TIMEOUT_MS,
+            forceMode: authorityFailMode,
+          });
+          authorityLnhpdAttempt1Status = lnhpdLookup.attempt1Status;
+          authorityLnhpdAttempt2Status = lnhpdLookup.attempt2Status;
+          lnhpdFetchStatus = lnhpdLookup.finalStatus;
+          const lnhpdFacts = lnhpdLookup.facts;
 
 	          if (lnhpdFacts) {
-	            lnhpdFetchStatus = "success";
+              authorityFailureReason = null;
 
 	            let guardrailPass = true;
 	            if (candidate.requiresGuardrail) {
@@ -10987,6 +11738,7 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 	            }
 
 	            if (!guardrailPass) {
+                authorityFailureReason = "guardrail_failed";
 	              void upsertBarcodeRegulatoryMap({
 	                barcodeGtin14,
 	                npn: candidate.npn,
@@ -11143,16 +11895,22 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 	                }),
 	              });
 
-	              if (!forceStage1) {
-	                await awaitStage0Bundle();
-	                sendSSE(res, "done", { barcode });
-	                res.end();
-	                return;
-	              }
+		              if (!forceStage1) {
+		                await awaitStage0Bundle();
+		                finalizeStream("lnhpd_stage0_complete");
+		                return;
+		              }
 	              console.log("[ResolutionV2] FORCE_STAGE1 enabled; continuing after LNHPD map hit");
 	            }
 	          } else {
-	            lnhpdFetchStatus = timedOut ? "timeout" : "not_found";
+              if (lnhpdLookup.finalStatus === "timeout") {
+                authorityFailureReason =
+                  lnhpdLookup.attempt2Status === "timeout" ? "lnhpd_timeout_second" : "lnhpd_timeout_first";
+              } else if (lnhpdLookup.finalStatus === "not_found") {
+                authorityFailureReason = "lnhpd_not_found";
+              } else {
+                authorityFailureReason = "lnhpd_query_error";
+              }
 	            if (lnhpdFetchStatus === "not_found") {
 	              void upsertBarcodeRegulatoryMap({
 	                barcodeGtin14,
@@ -11179,21 +11937,29 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 	          }
 	        } catch (error) {
 	          lnhpdFetchStatus = "error";
+            authorityFailureReason = "lnhpd_query_error";
+            authorityLnhpdAttempt1Status =
+              authorityLnhpdAttempt1Status === "not_attempted" ? "error" : authorityLnhpdAttempt1Status;
 	          console.warn("[ResolutionV2] LNHPD fetch failed", error);
-	        } finally {
-	          cleanup();
 	        }
 	      }
 	    }
 
 	    const aiRequired = !catalog;
 
-    if (!googleApiKey || !cx) {
-      if (aiRequired) {
-        sendSSE(res, "error", { message: "Google CSE not configured" });
-        res.end();
-        const timingTotalMs = Math.round(performance.now() - startedAt);
-        void logBarcodeScan({
+	    if (!googleApiKey || !cx) {
+	      if (aiRequired) {
+	        emitTerminalErrorAndFinalize({
+	          code: "CONFIG_ERROR",
+	          stage: "search",
+	          reasonCode: "GOOGLE_CSE_NOT_CONFIGURED",
+	          retryable: false,
+	          message: "Google CSE not configured",
+	          finalizeReason: "google_cse_not_configured",
+	          releaseError: new Error("google_cse_not_configured"),
+	        });
+	        const timingTotalMs = Math.round(performance.now() - startedAt);
+	        void logBarcodeScan({
           barcodeGtin14,
           barcodeRaw: rawBarcode,
           checksumValid: normalized.isValidChecksum ?? null,
@@ -11206,19 +11972,25 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
           timingTotalMs,
           meta: buildAuthorityMeta({ reason: "google_cse_env_not_set" }),
         });
-        return;
-      }
-      sendSSE(res, "done", { barcode });
-      res.end();
-      return;
-    }
+	        return;
+	      }
+	      finalizeStream("google_cse_missing_not_required");
+	      return;
+	    }
 
-    if (!deepseekKey) {
-      if (aiRequired) {
-        sendSSE(res, "error", { message: "DeepSeek API key missing" });
-        res.end();
-        const timingTotalMs = Math.round(performance.now() - startedAt);
-        void logBarcodeScan({
+	    if (!deepseekKey) {
+	      if (aiRequired) {
+	        emitTerminalErrorAndFinalize({
+	          code: "CONFIG_ERROR",
+	          stage: "draft",
+	          reasonCode: "DEEPSEEK_API_KEY_MISSING",
+	          retryable: false,
+	          message: "DeepSeek API key missing",
+	          finalizeReason: "deepseek_api_key_missing",
+	          releaseError: new Error("deepseek_api_key_missing"),
+	        });
+	        const timingTotalMs = Math.round(performance.now() - startedAt);
+	        void logBarcodeScan({
           barcodeGtin14,
           barcodeRaw: rawBarcode,
           checksumValid: normalized.isValidChecksum ?? null,
@@ -11231,12 +12003,11 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
           timingTotalMs,
           meta: buildAuthorityMeta({ reason: "deepseek_api_key_missing" }),
         });
-        return;
-      }
-      sendSSE(res, "done", { barcode });
-      res.end();
-      return;
-    }
+	        return;
+	      }
+	      finalizeStream("deepseek_missing_not_required");
+	      return;
+	    }
 
     // In-flight dedup：同一 gtin14 同时被扫，只允许一个请求跑 Google/DeepSeek
     const existing = barcodeEnrichInFlight.get(cacheKey);
@@ -11372,11 +12143,10 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
           }
         }
 
-	        emitCachedSnapshot(after, null, streamAnalysisBundleOnly ? { mode: "analysis_bundle_only" } : undefined);
-	        await awaitAnalysisBundle();
-	        sendSSE(res, "done", { barcode });
-	        res.end();
-        const timingTotalMs = Math.round(performance.now() - startedAt);
+		        emitCachedSnapshot(after, null, streamAnalysisBundleOnly ? { mode: "analysis_bundle_only" } : undefined);
+		        await awaitAnalysisBundle();
+		        finalizeStream("wait_inflight_snapshot_complete");
+	        const timingTotalMs = Math.round(performance.now() - startedAt);
         const brandName = after.snapshot.product.brand ?? after.analysisPayload?.productInfo?.brand ?? null;
         const productName = after.snapshot.product.name ?? after.analysisPayload?.productInfo?.name ?? null;
         void logBarcodeScan({
@@ -11462,6 +12232,10 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     let backgroundBackfillQueued = false;
     let secondaryBackfillQueued = false;
     let shadowCompareQueued = false;
+    let marketplaceRejectedCount = 0;
+    let ownershipVerdict: "strong" | "weak" | "failed" = "failed";
+    let providerUsed: string | null = null;
+    let providerGtinMatch = false;
 
     const barcodeVariants = Array.from(
       new Set(
@@ -11575,10 +12349,17 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       factsSummary?: Record<string, unknown> | null;
       factsCoverage?: number | null;
     }): void => {
+      if (streamAnalysisBundleOnly) {
+        return;
+      }
       const mergedSignals = {
         ...baseSignals,
         background_backfill_started: backgroundBackfillQueued,
         secondary_backfill_started: secondaryBackfillQueued,
+        ownership_verdict: ownershipVerdict,
+        marketplace_rejected_count: marketplaceRejectedCount,
+        provider_used: providerUsed,
+        provider_gtin_match: providerGtinMatch,
         ...(params.signals ?? {}),
       };
       void insertBarcodeResolutionTrainingRow(
@@ -12376,14 +13157,20 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
           npnCandidate = npnSeed.npn;
           npnSourceUrl = npnSeed.sourceUrl;
           npnCandidateSource = "web";
+          authorityCandidateSource = "web";
           npnCandidateStale = false;
-          const lnhpdTimeoutSignal = createTimeoutSignal(RESILIENCE_LNHPD_TIMEOUT_MS);
-          const { signal: lnhpdSignal, cleanup } = combineSignals([lnhpdTimeoutSignal]);
           try {
-            const lnhpdFacts = await fetchLnhpdFactsByNpn(npnCandidate, lnhpdSignal);
-            const timedOut = lnhpdTimeoutSignal.aborted;
+            const lnhpdLookup = await fetchLnhpdFactsWithSecondChance(npnCandidate, undefined, {
+              firstTimeoutMs: RESILIENCE_LNHPD_TIMEOUT_MS,
+              secondTimeoutMs: RESILIENCE_LNHPD_SECOND_CHANCE_TIMEOUT_MS,
+              forceMode: authorityFailMode,
+            });
+            authorityLnhpdAttempt1Status = lnhpdLookup.attempt1Status;
+            authorityLnhpdAttempt2Status = lnhpdLookup.attempt2Status;
+            lnhpdFetchStatus = lnhpdLookup.finalStatus;
+            const lnhpdFacts = lnhpdLookup.facts;
             if (lnhpdFacts) {
-              lnhpdFetchStatus = "success";
+              authorityFailureReason = null;
               lnhpdId = lnhpdFacts.lnhpdId;
               lnhpdBrand = lnhpdFacts.brandName ?? null;
               lnhpdProduct = lnhpdFacts.productName ?? null;
@@ -12465,7 +13252,14 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
               outcome = "SECONDARY_BACKFILL_LNHPD_SUCCESS";
               failureReason = null;
             } else {
-              lnhpdFetchStatus = timedOut ? "timeout" : "not_found";
+              if (lnhpdLookup.finalStatus === "timeout") {
+                authorityFailureReason =
+                  lnhpdLookup.attempt2Status === "timeout" ? "lnhpd_timeout_second" : "lnhpd_timeout_first";
+              } else if (lnhpdLookup.finalStatus === "not_found") {
+                authorityFailureReason = "lnhpd_not_found";
+              } else {
+                authorityFailureReason = "lnhpd_query_error";
+              }
               npnLookupFailed = true;
               if (lnhpdFetchStatus === "not_found") {
                 void upsertBarcodeRegulatoryMap({
@@ -12490,8 +13284,13 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
                 );
               }
             }
-          } finally {
-            cleanup();
+          } catch (error) {
+            lnhpdFetchStatus = "error";
+            authorityFailureReason = "lnhpd_query_error";
+            authorityLnhpdAttempt1Status =
+              authorityLnhpdAttempt1Status === "not_attempted" ? "error" : authorityLnhpdAttempt1Status;
+            npnLookupFailed = true;
+            console.warn("[ResolutionV2] Secondary LNHPD seed lookup failed", error);
           }
         }
 
@@ -13153,17 +13952,14 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
       });
       if (!stage0Delivered) {
         if (!shouldSuppressStage1Error()) {
-          sendSSE(res, "error", { message: "Product not found" });
-          res.end();
+          emitProductNotFoundAndFinalize({ stage: "v2_gate", reasonCode: "V2_DISABLED" });
         } else {
-          sendSSE(res, "done", { barcode });
-          res.end();
+          finalizeStream("stage1_not_found_suppressed");
         }
       } else {
-        sendSSE(res, "done", { barcode });
-        res.end();
+        finalizeStream("stage0_delivered");
       }
-      finishInFlight?.();
+      releaseInFlightOnce();
       return;
     }
 
@@ -13188,11 +13984,12 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
           },
         });
         if (!shouldSuppressStage1Error()) {
-          sendSSE(res, "error", { message: "Product not found" });
-          res.end();
+          emitProductNotFoundAndFinalize({
+            stage: "negative_cache",
+            reasonCode: negative.reason_code,
+          });
         } else {
-          sendSSE(res, "done", { barcode });
-          res.end();
+          finalizeStream("stage1_not_found_suppressed");
         }
         const timingTotalMs = Math.round(performance.now() - startedAt);
         void logBarcodeScan({
@@ -13208,7 +14005,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
           timingTotalMs,
           meta: buildAuthorityMeta({ reason: "negative_cache", reasonCode: negative.reason_code, until: negative.until }),
         });
-        finishInFlight?.(new Error("negative_cache"));
+        releaseInFlightOnce(new Error("negative_cache"));
         return;
       }
     }
@@ -13479,11 +14276,12 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
           });
 
           if (!shouldSuppressStage1Error()) {
-            sendSSE(res, "error", { message: "Product not found" });
-            res.end();
+            emitProductNotFoundAndFinalize({
+              stage: "search",
+              reasonCode,
+            });
           } else {
-            sendSSE(res, "done", { barcode });
-            res.end();
+            finalizeStream("stage1_not_found_suppressed");
           }
           const timingTotalMs = Math.round(performance.now() - startedAt);
           void logBarcodeScan({
@@ -13506,7 +14304,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
               timing,
             }),
           });
-          finishInFlight?.(new Error("product_not_found"));
+          releaseInFlightOnce(new Error("product_not_found"));
           return;
         }
       }
@@ -13812,6 +14610,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
 
       const backfillReason = deepseekBundleSkippedReason ?? (llmFailed ? "llm_failed" : null);
       const shouldQueueBackfill =
+        !streamAnalysisBundleOnly &&
         aiAvailable &&
         !bundle &&
         Boolean(backfillReason) &&
@@ -13851,7 +14650,8 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
       }
 
       const shouldSecondaryBackfill =
-        fallbackNeedsAuthoritativeBackfill || (!isCaRegion && marketplaceOnly);
+        !streamAnalysisBundleOnly &&
+        (fallbackNeedsAuthoritativeBackfill || (!isCaRegion && marketplaceOnly));
       if (shouldSecondaryBackfill) {
         const secondaryQueued = queueMarketplaceSecondaryBackfill({
           seedItems: initialItems,
@@ -13903,12 +14703,11 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
       });
       clearNegative();
 
-      await awaitAnalysisBundle();
-      sendSSE(res, "done", { barcode });
-      res.end();
-      finishInFlight?.();
-      return true;
-    };
+	      await awaitAnalysisBundle();
+	      finalizeStream("serp_fallback_complete");
+	      releaseInFlightOnce();
+	      return true;
+	    };
 
     // -------------------------------------------------------------------------
     // Cheap pass: validate candidate URLs quickly before deep fetch.
@@ -14294,12 +15093,44 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
       return score;
     };
 
-    const sorted = evidences.sort((a, b) => rankEvidence(b) - rankEvidence(a));
-    const nonMarketplaceCandidates = sorted.filter(
-      (entry) => !isMarketplaceDomain(entry.evidence.domain),
+    const scoredCandidates = evidences
+      .map((entry) => ({
+        entry,
+        rankScore: rankEvidence(entry),
+      }))
+      .sort((a, b) => b.rankScore - a.rankScore);
+
+    const selection = selectBestWebCandidates(
+      scoredCandidates.map((row) => {
+        const domain = row.entry.evidence.domain ?? extractDomain(row.entry.item.link);
+        const strongOwnership = Boolean(
+          row.entry.evidence.strongMatch ||
+            row.entry.evidence.npnCandidate ||
+            row.entry.evidence.jsonLdGtinMatch ||
+            row.entry.evidence.barcodeHitCount >= RESOLUTION_STRONG_MATCH_BARCODE_HITS_MIN,
+        );
+        return {
+          url: row.entry.evidence.url || row.entry.item.link,
+          domain,
+          isMarketplace: isMarketplaceDomain(domain),
+          isAuthoritative: isAuthoritativeWebCandidate(domain),
+          strongOwnership,
+          rankScore: row.rankScore,
+        };
+      }),
+      3,
     );
-    const candidatePool = nonMarketplaceCandidates.length ? nonMarketplaceCandidates : sorted;
-    const deepCandidates = candidatePool
+    marketplaceRejectedCount = selection.marketplaceRejectedCount;
+
+    const selectedCandidateUrlSet = new Set(
+      selection.selected.map((row) => canonicalizeUrl(row.url)).filter(Boolean),
+    );
+    const candidatePool = scoredCandidates
+      .map((row) => row.entry)
+      .filter((entry) => selectedCandidateUrlSet.has(canonicalizeUrl(entry.evidence.url || entry.item.link)));
+    const effectivePool = candidatePool.length > 0 ? candidatePool : scoredCandidates.map((row) => row.entry);
+
+    const deepCandidates = effectivePool
       .filter((entry) => {
         if (entry.evidence.onlyImages) return false;
         if (entry.evidence.needsJs && !allowNeedsJs) return false;
@@ -14343,11 +15174,12 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
       });
 
       if (!shouldSuppressStage1Error()) {
-        sendSSE(res, "error", { message: "Product not found" });
-        res.end();
+        emitProductNotFoundAndFinalize({
+          stage: "cheap_pass",
+          reasonCode,
+        });
       } else {
-        sendSSE(res, "done", { barcode });
-        res.end();
+        finalizeStream("stage1_not_found_suppressed");
       }
       const timingTotalMs = Math.round(performance.now() - startedAt);
       void logBarcodeScan({
@@ -14363,7 +15195,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
         timingTotalMs,
         meta: buildAuthorityMeta({ stage0Outcome, reason: reasonCode, profilesUsed, cacheHits, calls, timing }),
       });
-      finishInFlight?.(new Error("no_valid_url"));
+      releaseInFlightOnce(new Error("no_valid_url"));
       return;
     }
 
@@ -14373,14 +15205,20 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
       null;
     if (npnCandidate) {
       npnCandidateSource = "web";
+      authorityCandidateSource = "web";
       npnCandidateStale = false;
-      const lnhpdTimeoutSignal = createTimeoutSignal(RESILIENCE_LNHPD_TIMEOUT_MS);
-      const { signal: lnhpdSignal, cleanup } = combineSignals([requestSignal, lnhpdTimeoutSignal]);
       try {
-        const lnhpdFacts = await fetchLnhpdFactsByNpn(npnCandidate, lnhpdSignal);
-        const timedOut = lnhpdTimeoutSignal.aborted;
+        const lnhpdLookup = await fetchLnhpdFactsWithSecondChance(npnCandidate, requestSignal, {
+          firstTimeoutMs: RESILIENCE_LNHPD_TIMEOUT_MS,
+          secondTimeoutMs: RESILIENCE_LNHPD_SECOND_CHANCE_TIMEOUT_MS,
+          forceMode: authorityFailMode,
+        });
+        authorityLnhpdAttempt1Status = lnhpdLookup.attempt1Status;
+        authorityLnhpdAttempt2Status = lnhpdLookup.attempt2Status;
+        lnhpdFetchStatus = lnhpdLookup.finalStatus;
+        const lnhpdFacts = lnhpdLookup.facts;
 	        if (lnhpdFacts) {
-          lnhpdFetchStatus = "success";
+          authorityFailureReason = null;
           const lnhpdLabelFacts = toLabelFactsFromLnhpd(lnhpdFacts);
           const labelExtraction: LabelExtractionMeta = {
             source: "lnhpd",
@@ -14482,15 +15320,21 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
 
 	          clearNegative();
             void clearNpnNegativeCache(npnCandidate, { ...supabaseReadResilience, timeoutMs: 500 });
-	          if (!forceStage1) {
-	            sendSSE(res, "done", { barcode });
-	            res.end();
-	            finishInFlight?.();
-	            return;
-	          }
+		          if (!forceStage1) {
+		            finalizeStream("lnhpd_candidate_stage0_complete");
+		            releaseInFlightOnce();
+		            return;
+		          }
 	          console.log("[ResolutionV2] FORCE_STAGE1 enabled; continuing after LNHPD candidate hit");
         } else {
-          lnhpdFetchStatus = timedOut ? "timeout" : "not_found";
+          if (lnhpdLookup.finalStatus === "timeout") {
+            authorityFailureReason =
+              lnhpdLookup.attempt2Status === "timeout" ? "lnhpd_timeout_second" : "lnhpd_timeout_first";
+          } else if (lnhpdLookup.finalStatus === "not_found") {
+            authorityFailureReason = "lnhpd_not_found";
+          } else {
+            authorityFailureReason = "lnhpd_query_error";
+          }
           if (lnhpdFetchStatus === "not_found") {
             void upsertBarcodeRegulatoryMap({
               barcodeGtin14,
@@ -14514,8 +15358,12 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
             );
           }
         }
-      } finally {
-        cleanup();
+      } catch (error) {
+        lnhpdFetchStatus = "error";
+        authorityFailureReason = "lnhpd_query_error";
+        authorityLnhpdAttempt1Status =
+          authorityLnhpdAttempt1Status === "not_attempted" ? "error" : authorityLnhpdAttempt1Status;
+        console.warn("[ResolutionV2] Opportunistic LNHPD fetch failed", error);
       }
     }
 
@@ -14759,13 +15607,14 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
         },
       });
       if (!shouldSuppressStage1Error()) {
-        sendSSE(res, "error", { message: "Product not found" });
-        res.end();
+        emitProductNotFoundAndFinalize({
+          stage: "facts",
+          reasonCode,
+        });
       } else {
-        sendSSE(res, "done", { barcode });
-        res.end();
+        finalizeStream("stage1_not_found_suppressed");
       }
-      finishInFlight?.(new Error("no_text_facts"));
+      releaseInFlightOnce(new Error("no_text_facts"));
       return;
     }
     markPipelineStepEnd("select_evidence", "ok");
@@ -14783,10 +15632,32 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
       });
     }
 
-    const identityStrong = Boolean(
+    const providerResult = await resolveIdentityProviderLookup(barcodeGtin14, {
+      enabled: WEB_IDENTITY_PROVIDER_ENABLED,
+      order: WEB_IDENTITY_PROVIDER_ORDER,
+      timeoutMs: WEB_IDENTITY_PROVIDER_TIMEOUT_MS,
+      upcItemDbApiKey: UPCITEMDB_API_KEY,
+    });
+    providerUsed = providerResult?.provider ?? null;
+    providerGtinMatch = Boolean(providerResult?.gtinMatched);
+
+    const providerOwnership = buildProviderVerdict(
+      {
+        hasBarcodeMatch: Boolean(bestFacts.identifiers.gtinMatch || bestFacts.identifiers.upcMatch),
+        hasRegulatoryIdMatch: Boolean(bestFacts.identifiers.npn),
+        hasBrandSignal: Boolean(bestFacts.canonical.brand),
+        hasNameSignal: Boolean(bestFacts.canonical.name),
+        providerGtinMatch,
+      },
+      providerResult,
+    );
+    ownershipVerdict = providerOwnership.ownershipVerdict;
+
+    let identityStrong = Boolean(
       bestFacts.identifiers.npn ||
         bestFacts.identifiers.gtinMatch ||
-        bestFacts.identifiers.upcMatch,
+        bestFacts.identifiers.upcMatch ||
+        providerGtinMatch,
     );
     const identityConflict = Boolean(bestFacts.identifiers.identityConflict);
     const explicitGtinMatches = bestFacts.identifiers.gtinMatches ?? [];
@@ -14838,14 +15709,21 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
     const amazonCanonicalExceptionUsed =
       isAmazonCanonical && identityStrong && bestFacts.coverageScore >= RESOLUTION_FACTS_MIN_COVERAGE;
     const allowCanonical =
-      identityStrong && !identityConflict && (!isAmazonCanonical || amazonCanonicalExceptionUsed);
+      identityStrong &&
+      !identityConflict &&
+      ownershipVerdict === "strong" &&
+      (!isAmazonCanonical || amazonCanonicalExceptionUsed);
 
     const canonicalSourceDomain = allowCanonical ? canonicalDomain : null;
     const canonicalSourceUrl = allowCanonical ? bestFacts.canonical.url ?? null : null;
 
 	    const finalProductInfo = {
-	      brand: allowCanonical ? bestFacts.canonical.brand ?? provisionalBrand ?? null : provisionalBrand ?? null,
-	      name: allowCanonical ? bestFacts.canonical.name ?? provisionalName ?? null : provisionalName ?? null,
+	      brand: allowCanonical
+          ? bestFacts.canonical.brand ?? providerOwnership.providerBrand ?? provisionalBrand ?? null
+          : providerOwnership.providerBrand ?? provisionalBrand ?? null,
+	      name: allowCanonical
+          ? bestFacts.canonical.name ?? providerOwnership.providerProductName ?? provisionalName ?? null
+          : providerOwnership.providerProductName ?? provisionalName ?? null,
 	      category: provisionalCategory ?? null,
 	      image: allowCanonical
         ? provisionalImage ?? bestFacts.canonical.images?.[0] ?? null
@@ -14864,6 +15742,26 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
             domain: null,
           },
         };
+
+    if (ownershipVerdict !== "strong") {
+      identityStrong = false;
+      factsForAnalysis = {
+        ...factsForAnalysis,
+        textFacts: {
+          ingredientsText: null,
+          directionsText: null,
+          warningsText: null,
+          servingSizeText: null,
+        },
+        coverageScore: 0,
+        missingFields: [
+          "textFacts.ingredientsText",
+          "textFacts.directionsText",
+          "textFacts.warningsText",
+          "textFacts.servingSizeText",
+        ],
+      };
+    }
     markPipelineStepStart("sanitize");
     const sanitizeField = (value: string | null | undefined, maxChars: number) => {
       if (!value || !value.trim()) {
@@ -14907,8 +15805,14 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
         factsForAnalysis.textFacts?.warningsText ||
         factsForAnalysis.textFacts?.servingSizeText,
     );
+    const ownershipProtected = ownershipVerdict !== "strong";
     const sanitizeStatus: PipelineStepStatus = hasSanitizedEvidence ? "ok" : "failed";
-    markPipelineStepEnd("sanitize", sanitizeStatus, hasSanitizedEvidence ? undefined : "web_text_unusable");
+    const sanitizeFailureCode = ownershipProtected
+      ? "ownership_unverified"
+      : sanitizeRedactions.length > 0 || sanitizeInjected
+        ? "web_sanitize_failed"
+        : "web_text_unusable";
+    markPipelineStepEnd("sanitize", sanitizeStatus, hasSanitizedEvidence ? undefined : sanitizeFailureCode);
 
 	    // Update product info with higher-confidence facts (if any).
 	    if (stage1SseEnabled && !brandExtractedSent && (finalProductInfo.brand || finalProductInfo.name)) {
@@ -14953,6 +15857,8 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
     const canRunLlm = !marketplaceOnly && llmBudgetMs > 0 && hasSanitizedEvidence;
     if (marketplaceOnly) {
       mainDeepseekBundleSkippedReason = "marketplace_only";
+    } else if (ownershipProtected) {
+      mainDeepseekBundleSkippedReason = "ownership_unverified";
     } else if (!hasSanitizedEvidence) {
       mainDeepseekBundleSkippedReason = sanitizeRedactions.length > 0 || sanitizeInjected
         ? "web_sanitize_failed"
@@ -15169,6 +16075,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
 
     const mainBackfillReason = mainDeepseekBundleSkippedReason ?? (!bundle ? "llm_failed" : null);
     const shouldQueueMainBackfill =
+      !streamAnalysisBundleOnly &&
       aiAvailable &&
       !bundle &&
       Boolean(mainBackfillReason) &&
@@ -15212,7 +16119,8 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
     }
 
     const shouldSecondaryBackfill =
-      needsAuthoritativeBackfill || (!isCaRegion && marketplaceOnly);
+      !streamAnalysisBundleOnly &&
+      (needsAuthoritativeBackfill || (!isCaRegion && marketplaceOnly));
     if (shouldSecondaryBackfill) {
       const secondaryQueued = queueMarketplaceSecondaryBackfill({
         seedItems: initialItems,
@@ -15288,33 +16196,18 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
 
     clearNegative();
 
-    const canRespond = !requestSignal.aborted && !res.writableEnded;
-    if (canRespond) {
-      await awaitAnalysisBundle();
-      if (!requestSignal.aborted && !res.writableEnded) {
-        if (stage1SseEnabled && !streamAnalysisBundleOnly) {
-          sendSSE(res, "snapshot", snapshot);
-        }
-        pendingDoneReason = "success_complete";
-        emitPipelineMetrics(
-          streamState.latestSourceType === "lnhpd" || streamState.latestSourceType === "dsld" || streamState.latestSourceType === "web"
-            ? (streamState.latestSourceType as "lnhpd" | "dsld" | "web")
-            : "web",
-        );
-        logDoneEvent("attempt", { emit_path: "success_complete" });
-        const doneEmitted = safeSendSse(res, "done", { barcode, reason: pendingDoneReason });
-        if (doneEmitted) {
-          streamState.doneSent = true;
-          streamState.tDone = Date.now();
-          logDoneEvent("success", { emit_path: "success_complete" });
-        } else {
-          logDoneEvent("skipped", { emit_path: "success_complete", skip_reason: "safe_send_failed" });
-        }
-        res.end();
-      }
-    }
+	    const canRespond = !streamState.clientDisconnected && !res.writableEnded;
+	    if (canRespond) {
+	      await awaitAnalysisBundle();
+	      if (!streamState.clientDisconnected && !res.writableEnded) {
+	        if (stage1SseEnabled && !streamAnalysisBundleOnly) {
+	          sendSSE(res, "snapshot", snapshot);
+	        }
+          finalizeStream("success_complete");
+	      }
+	    }
 
-    finishInFlight?.();
+	    releaseInFlightOnce();
 
     const timingTotalMs = Math.round(performance.now() - startedAt);
     void logBarcodeScan({
@@ -15335,6 +16228,10 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
         serpTopk,
         cacheHits,
         calls,
+        ownership_verdict: ownershipVerdict,
+        marketplace_rejected_count: marketplaceRejectedCount,
+        provider_used: providerUsed,
+        provider_gtin_match: providerGtinMatch,
         deepseek_bundle_skipped_reason: mainDeepseekBundleSkippedReason,
         timing: {
           ...timing,
@@ -15346,20 +16243,18 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
 
     console.log(`[Stream] All analysis complete for barcode: ${barcode}`);
 
-  } catch (error: unknown) {
-    if (finishInFlight) {
-      finishInFlight(error);
-    }
-    captureException(error, { route: "/api/enrich-stream" });
-    console.error("Stream Error:", error);
-    const message = error instanceof Error ? error.message : "Unknown error";
-    if (!res.writableEnded) {
-      sendSSE(res, "error", { message });
-      pendingDoneReason = "stream_error";
-      logDoneEvent("attempt", { emit_path: "stream_error" });
-      res.end();
-    }
-  }
+	  } catch (error: unknown) {
+	    releaseInFlightOnce(error);
+	    captureException(error, { route: "/api/enrich-stream" });
+	    console.error("Stream Error:", error);
+	    const message = error instanceof Error ? error.message : "Unknown error";
+	    if (!res.writableEnded) {
+	      emitTerminalErrorAndFinalize({
+	        message,
+	        finalizeReason: "stream_error",
+	      });
+	    }
+	  }
 });
 
 // ============================================================================

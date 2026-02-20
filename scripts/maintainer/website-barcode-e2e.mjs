@@ -4,6 +4,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { performance } from "node:perf_hooks";
+import { spawnSync } from "node:child_process";
 
 import dotenv from "dotenv";
 
@@ -27,8 +28,17 @@ const DEFAULT_SSE_STOP_ON = process.env.WEB_E2E_SSE_STOP_ON || "revision1";
 const DEFAULT_SSE_STOP_TAIL_MS = Number(process.env.WEB_E2E_SSE_STOP_TAIL_MS || 5000);
 const DEFAULT_PHASE_MODE = (process.env.WEB_E2E_PHASE_MODE || "phase1").toLowerCase();
 const PROMOTION_PASS_THRESHOLD = Number(process.env.WEB_E2E_SUITE_B_PROMOTION_THRESHOLD || 10);
+const RAW_DONE_WARN_THRESHOLD = Number(process.env.WEB_E2E_RAW_DONE_WARN_THRESHOLD || 0.9);
+const RAW_DONE_SHADOW_HARD_THRESHOLD = Number(process.env.WEB_E2E_RAW_DONE_SHADOW_HARD_THRESHOLD || 0.9);
+const RAW_DONE_HARD_ENFORCE =
+  String(process.env.WEB_E2E_RAW_DONE_HARD_ENFORCE || "")
+    .trim()
+    .toLowerCase() === "true" ||
+  String(process.env.WEB_E2E_RAW_DONE_HARD_ENFORCE || "")
+    .trim() === "1";
 const PROMOTION_STATE_FILE =
   process.env.WEB_E2E_PROMOTION_STATE_FILE || path.join(ROOT_DIR, "output", "website-barcode-e2e-promotion-state.json");
+const BACKEND_HEALTH_CHECK_SCRIPT = path.join(ROOT_DIR, "scripts", "maintainer", "backend-health-check.sh");
 
 const FIXTURE_DIR = path.join(ROOT_DIR, "scripts", "maintainer", "fixtures");
 const DEFAULT_KB_FIXTURE = path.join(FIXTURE_DIR, "kb_barcodes.json");
@@ -154,12 +164,14 @@ const parseArgs = (argv) => {
     harvestOnly: false,
     buildWebFixture: false,
     gateOnly: false,
+    skipPostchecks: false,
     retries: DEFAULT_RETRIES,
     sseStopOn: DEFAULT_SSE_STOP_ON,
+    sseStopTailMs: DEFAULT_SSE_STOP_TAIL_MS,
     phaseMode: DEFAULT_PHASE_MODE,
   };
 
-  const withValue = new Set(["--suite", "--input", "--retries", "--sse-stop-on", "--phase-mode"]);
+  const withValue = new Set(["--suite", "--input", "--retries", "--sse-stop-on", "--sse-stop-tail-ms", "--phase-mode"]);
 
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
@@ -181,8 +193,10 @@ const parseArgs = (argv) => {
     else if (flag === "--harvest-only") options.harvestOnly = true;
     else if (flag === "--build-web-fixture") options.buildWebFixture = true;
     else if (flag === "--gate-only") options.gateOnly = true;
+    else if (flag === "--skip-postchecks") options.skipPostchecks = true;
     else if (flag === "--retries" && value != null) options.retries = Number(value);
     else if (flag === "--sse-stop-on" && value) options.sseStopOn = String(value).toLowerCase();
+    else if (flag === "--sse-stop-tail-ms" && value != null) options.sseStopTailMs = Number(value);
     else if (flag === "--phase-mode" && value) options.phaseMode = String(value).toLowerCase();
     else if (flag === "--help" || flag === "-h") {
       printUsage();
@@ -202,6 +216,9 @@ const parseArgs = (argv) => {
   if (!Number.isFinite(options.retries) || options.retries < 0) {
     throw new Error(`Invalid --retries: ${options.retries}`);
   }
+  if (!Number.isFinite(options.sseStopTailMs) || options.sseStopTailMs < 0) {
+    throw new Error(`Invalid --sse-stop-tail-ms: ${options.sseStopTailMs}`);
+  }
 
   return options;
 };
@@ -218,8 +235,10 @@ Options:
   --harvest-only
   --build-web-fixture
   --gate-only
+  --skip-postchecks
   --retries <n>
   --sse-stop-on revision1|fast_ai|persisted
+  --sse-stop-tail-ms <ms>
   --phase-mode phase1|phase2
 `);
 };
@@ -901,6 +920,35 @@ const pickBundleEvents = (events) => {
   return { rev0, rev1, best, persisted, done, count: bundles.length };
 };
 
+const pickTerminalErrorEvent = (events) => {
+  const errors = events.filter((event) => event?.event === "error");
+  if (!errors.length) return null;
+  return errors[errors.length - 1];
+};
+
+const asObject = (value) => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value;
+};
+
+const pickString = (...values) => {
+  for (const value of values) {
+    if (typeof value !== "string") continue;
+    const trimmed = value.trim();
+    if (trimmed) return trimmed;
+  }
+  return null;
+};
+
+const isDoneTerminalCode = (code) => code === "DONE" || code === "DONE_DERIVED";
+
+const deriveTerminalCode = ({ terminalCode, stopOnTriggered, finalProbe }) => {
+  if (terminalCode) return terminalCode;
+  if (!stopOnTriggered) return null;
+  if (finalProbe?.attempted && !finalProbe?.reason) return "DONE_DERIVED";
+  return null;
+};
+
 const classifySseContractFailure = ({ sse, picked }) => {
   if (!Array.isArray(sse.events) || sse.events.length === 0) return "no_sse";
   if (picked.rev0 && !picked.rev1) return "skeleton_only";
@@ -1184,7 +1232,7 @@ const runFullFlow = async (item, options) => {
     { barcode: item.barcode },
     {
       stopOn: options.sseStopOn,
-      stopTailMs: DEFAULT_SSE_STOP_TAIL_MS,
+      stopTailMs: options.sseStopTailMs,
       retries: options.retries,
     },
   );
@@ -1192,8 +1240,31 @@ const runFullFlow = async (item, options) => {
   const picked = pickBundleEvents(sse.events);
   const rev1Meta = picked.rev1?.data?.meta ?? null;
   const persistedMeta = buildMetaFromPersistedEvent(picked.persisted?.data) ?? null;
+  const bestMeta = picked.best?.data?.meta ?? rev1Meta ?? null;
   const sectionMeta = rev1Meta ?? persistedMeta ?? null;
   const sourceType = rev1Meta?.sourceType ?? persistedMeta?.sourceType ?? null;
+  const terminalErrorEvent = pickTerminalErrorEvent(sse.events);
+  const terminalErrorPayload = asObject(terminalErrorEvent?.data);
+  const fallbackReason = pickString(
+    bestMeta?.fallbackReason,
+    bestMeta?.fallback?.code,
+    terminalErrorPayload?.fallbackReason,
+    terminalErrorPayload?.fallback_reason,
+    null,
+  );
+  const authorityFailureReason = pickString(
+    bestMeta?.authorityFailureReason,
+    bestMeta?.authority_failure_reason,
+    terminalErrorPayload?.authorityFailureReason,
+    terminalErrorPayload?.authority_failure_reason,
+    null,
+  );
+  const terminalCode = pickString(terminalErrorPayload?.code) ?? (picked.done || sse.doneSeen ? "DONE" : null);
+  const errorReasonCode = pickString(terminalErrorPayload?.reasonCode, terminalErrorPayload?.reason_code);
+  const terminalStage = pickString(terminalErrorPayload?.stage);
+  const terminalRequestId = pickString(terminalErrorPayload?.requestId, terminalErrorPayload?.request_id);
+  const terminalRetryable =
+    typeof terminalErrorPayload?.retryable === "boolean" ? terminalErrorPayload.retryable : null;
   let contractFailure = classifySseContractFailure({ sse, picked });
   let missingDoneSuppressed = false;
   if (contractFailure) {
@@ -1244,11 +1315,7 @@ const runFullFlow = async (item, options) => {
     trigger: null,
   };
 
-  const finalProbeTrigger = sse.doneSeen
-    ? "done"
-    : sse.stopEvent?.stopOn === "persisted"
-      ? "persisted"
-      : null;
+  const finalProbeTrigger = sse.doneSeen ? "done" : sse.stopEvent?.stopOn ?? null;
 
   if (finalProbeTrigger) {
     if (!sectionMeta) {
@@ -1304,13 +1371,21 @@ const runFullFlow = async (item, options) => {
 
   if (
     contractFailure === "missing_done" &&
-    sse.stopEvent?.stopOn === "persisted" &&
+    sse.stopEvent?.stopOn &&
+    !sse.abortError &&
+    !sse.timedOut &&
     finalProbe.attempted &&
     !finalProbe.reason
   ) {
     contractFailure = null;
     missingDoneSuppressed = true;
   }
+
+  const derivedTerminalCode = deriveTerminalCode({
+    terminalCode,
+    stopOnTriggered: Boolean(finalProbeTrigger),
+    finalProbe,
+  });
 
   const contracts = evaluateContentContracts(sections);
   const resolvedScoreAvailable =
@@ -1355,6 +1430,14 @@ const runFullFlow = async (item, options) => {
       factsDigestHash: sectionMeta?.factsDigestHash ?? null,
       promptVersion: sectionMeta?.promptVersion ?? null,
       scoreAvailable: resolvedScoreAvailable,
+      terminalCode,
+      derivedTerminalCode,
+      errorReasonCode,
+      terminalStage,
+      terminalRequestId,
+      terminalRetryable,
+      fallbackReason,
+      authorityFailureReason,
       bytesReceived: sse.bytesReceived,
       lastEventType: sse.lastEventType,
       lastEventAtMs: sse.lastEventAtMs,
@@ -1408,6 +1491,72 @@ const countBy = (rows, keyFn) =>
     acc[key] = (acc[key] || 0) + 1;
     return acc;
   }, {});
+
+const mergeCountMaps = (...maps) => {
+  const merged = {};
+  for (const map of maps) {
+    if (!map || typeof map !== "object") continue;
+    for (const [key, value] of Object.entries(map)) {
+      if (!Number.isFinite(Number(value))) continue;
+      merged[key] = (merged[key] || 0) + Number(value);
+    }
+  }
+  return merged;
+};
+
+const topCountEntries = (counts, limit = 8) =>
+  Object.entries(counts || {})
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, Math.max(0, limit))
+    .map(([key, count]) => ({ key, count }));
+
+const normalizeAttributionToken = (value) => {
+  const normalized = String(value ?? "")
+    .toLowerCase()
+    .replace(/[^a-z0-9._:-]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  return normalized || "unknown";
+};
+
+const deriveRawDoneAttributionKey = (row) => {
+  if (row?.sse?.doneSeen === true) return "done_seen";
+
+  const errorReasonCode = row?.sse?.errorReasonCode;
+  const terminalCode = row?.sse?.terminalCode;
+  const terminalErrorType = row?.sse?.terminalErrorType;
+  const contractFailure = row?.sse?.contractFailure;
+  const finalProbeReason = row?.finalProbe?.reason;
+
+  if (row?.sse?.missingDoneSuppressed === true) {
+    if (typeof errorReasonCode === "string" && errorReasonCode.trim()) {
+      return `suppressed_reason_code:${normalizeAttributionToken(errorReasonCode)}`;
+    }
+    if (typeof terminalCode === "string" && terminalCode.trim()) {
+      return `suppressed_terminal_code:${normalizeAttributionToken(terminalCode)}`;
+    }
+    return "suppressed_probe_ready_missing_done";
+  }
+
+  if (typeof errorReasonCode === "string" && errorReasonCode.trim()) {
+    return `reason_code:${normalizeAttributionToken(errorReasonCode)}`;
+  }
+  if (typeof terminalCode === "string" && terminalCode.trim()) {
+    return `terminal_code:${normalizeAttributionToken(terminalCode)}`;
+  }
+  if (typeof terminalErrorType === "string" && terminalErrorType.trim()) {
+    return `terminal_error_type:${normalizeAttributionToken(terminalErrorType)}`;
+  }
+  if (typeof contractFailure === "string" && contractFailure.trim()) {
+    return `contract:${normalizeAttributionToken(contractFailure)}`;
+  }
+  if (row?.sse?.abortError || row?.sse?.timedOut) {
+    return "timeout_or_abort";
+  }
+  if (typeof finalProbeReason === "string" && finalProbeReason.trim()) {
+    return `final_probe:${normalizeAttributionToken(finalProbeReason)}`;
+  }
+  return "unknown_missing_done";
+};
 
 const percentile = (arr, p) => {
   if (!arr.length) return null;
@@ -1481,6 +1630,14 @@ const summarizeSuite = (suiteName, rows, expectedSourceType = null, phaseMode = 
   );
 
   const revision1Count = validRows.filter((row) => Number.isFinite(row.sse.revision1Ms)).length;
+  const doneSeenCount = validRows.filter((row) => row.sse.doneSeen === true).length;
+  const rawMissingDoneRows = validRows.filter((row) => row.sse.doneSeen !== true);
+  const rawMissingDoneCount = rawMissingDoneRows.length;
+  const rawNoTerminalCount = validRows.filter((row) => !row.sse.terminalCode).length;
+  const probeDoneCount = validRows.filter((row) => isDoneTerminalCode(row.sse.derivedTerminalCode)).length;
+  const probeNoTerminalCount = validRows.filter((row) => !row.sse.derivedTerminalCode).length;
+  const rawDoneAttributionCounts = countBy(rawMissingDoneRows, deriveRawDoneAttributionKey);
+  const rawDoneAttributionTop = topCountEntries(rawDoneAttributionCounts, 8);
   const detail2xxCount = validRows.filter((row) => row.sections.ingredients_detail.status >= 200 && row.sections.ingredients_detail.status < 300).length;
   const overviewPresentCount = validRows.filter((row) => row.contracts.overviewPresent).length;
   const overviewStrongTokenCount = validRows.filter((row) => row.contracts.overviewStrongTokenPresent).length;
@@ -1509,6 +1666,15 @@ const summarizeSuite = (suiteName, rows, expectedSourceType = null, phaseMode = 
     abortErrorCount: errorsByType.AbortError || 0,
     revision1ReachedCount: revision1Count,
     revision1Rate: total > 0 ? revision1Count / total : 0,
+    doneSeenCount,
+    doneSeenRate: total > 0 ? doneSeenCount / total : 0,
+    rawMissingDoneCount,
+    rawNoTerminalCount,
+    probeDoneCount,
+    probeDoneRate: total > 0 ? probeDoneCount / total : 0,
+    probeNoTerminalCount,
+    rawDoneAttributionCounts,
+    rawDoneAttributionTop,
     detail2xxCount,
     detail2xxRate: total > 0 ? detail2xxCount / total : 0,
     enrichBestBundleP50Ms: percentile(enrichTimes, 50),
@@ -1578,38 +1744,90 @@ const deriveSuiteGateForPhase = (suiteName, suiteSummary, phaseMode) => {
   };
 };
 
-const buildGateSummary = async ({ suiteA, suiteB, phaseMode, outDir }) => {
+const buildGateSummary = async ({
+  suiteA,
+  suiteB,
+  phaseMode,
+  outDir,
+  promotionUpdateEnabled = true,
+  promotionSkipReason = null,
+  backendHealth = null,
+}) => {
   const suiteAForPhase = deriveSuiteGateForPhase("A", suiteA, phaseMode);
   const suiteBForPhase = deriveSuiteGateForPhase("B", suiteB, phaseMode);
-  const promotionState = await loadPromotionState(PROMOTION_STATE_FILE);
-  let consecutivePasses = promotionState.suiteBConsecutivePasses;
-
-  if (suiteBForPhase) {
-    consecutivePasses = suiteBForPhase.pass ? consecutivePasses + 1 : 0;
-    await savePromotionState(PROMOTION_STATE_FILE, { suiteBConsecutivePasses: consecutivePasses });
-  }
-
-  const suiteARequired = true;
-  const suiteBRequired = phaseMode === "phase2";
+  const suiteARequired = Boolean(suiteAForPhase);
+  const suiteBRequired = phaseMode === "phase2" && Boolean(suiteBForPhase);
   const suiteAPass = suiteAForPhase?.pass ?? false;
   const suiteBPass = suiteBForPhase?.pass ?? false;
+  const healthStatus = backendHealth?.status === "healthy" ? "healthy" : "unhealthy";
+  const healthReason = healthStatus === "healthy" ? null : backendHealth?.reason || "backend_unhealthy";
 
-  const overallPass = suiteARequired
-    ? suiteBRequired
-      ? suiteAPass && suiteBPass
-      : suiteAPass
-    : false;
+  const gateTotals = {
+    total:
+      (suiteAForPhase?.metrics?.total || 0) + (suiteBForPhase?.metrics?.total || 0),
+    rawDoneCount:
+      (suiteAForPhase?.metrics?.doneSeenCount || 0) + (suiteBForPhase?.metrics?.doneSeenCount || 0),
+    rawMissingDoneCount:
+      (suiteAForPhase?.metrics?.rawMissingDoneCount || 0) + (suiteBForPhase?.metrics?.rawMissingDoneCount || 0),
+    probeDoneCount:
+      (suiteAForPhase?.metrics?.probeDoneCount || 0) + (suiteBForPhase?.metrics?.probeDoneCount || 0),
+    rawNoTerminalCount:
+      (suiteAForPhase?.metrics?.rawNoTerminalCount || 0) + (suiteBForPhase?.metrics?.rawNoTerminalCount || 0),
+    probeNoTerminalCount:
+      (suiteAForPhase?.metrics?.probeNoTerminalCount || 0) + (suiteBForPhase?.metrics?.probeNoTerminalCount || 0),
+  };
+  const rawDoneRate = gateTotals.total > 0 ? gateTotals.rawDoneCount / gateTotals.total : 0;
+  const probeDoneRate = gateTotals.total > 0 ? gateTotals.probeDoneCount / gateTotals.total : 0;
+  const rawDoneAttributionCounts = mergeCountMaps(
+    suiteAForPhase?.metrics?.rawDoneAttributionCounts,
+    suiteBForPhase?.metrics?.rawDoneAttributionCounts,
+  );
+  const rawDoneAttributionTop = topCountEntries(rawDoneAttributionCounts, 12);
+  const shadowRawDonePass = gateTotals.total > 0 ? rawDoneRate >= RAW_DONE_SHADOW_HARD_THRESHOLD : true;
+  const shadowRawDoneReason = shadowRawDonePass ? null : "raw_done_rate_below_shadow_hard_threshold";
+
+  const promotionState = await loadPromotionState(PROMOTION_STATE_FILE);
+  let consecutivePasses = promotionState.suiteBConsecutivePasses;
+  const suiteBPromotionPass = suiteBPass && (!RAW_DONE_HARD_ENFORCE || shadowRawDonePass);
+  const canUpdatePromotion = Boolean(suiteBForPhase) && promotionUpdateEnabled && healthStatus === "healthy";
+  if (canUpdatePromotion) {
+    consecutivePasses = suiteBPromotionPass ? consecutivePasses + 1 : 0;
+    await savePromotionState(PROMOTION_STATE_FILE, { suiteBConsecutivePasses: consecutivePasses });
+  }
+  const resolvedPromotionSkipReason = canUpdatePromotion
+    ? null
+    : promotionSkipReason ||
+      (healthStatus !== "healthy"
+        ? "backend_unhealthy"
+        : suiteBForPhase
+          ? "promotion_update_disabled"
+          : "suite_b_not_executed");
+
+  const requiredPasses = [];
+  if (suiteARequired) requiredPasses.push(suiteAPass);
+  if (suiteBRequired) requiredPasses.push(suiteBPass);
+  const requiredSuitesPass = healthStatus === "healthy" && requiredPasses.length > 0 ? requiredPasses.every(Boolean) : false;
+  const rawDoneHardFail = RAW_DONE_HARD_ENFORCE && gateTotals.total > 0 && !shadowRawDonePass;
 
   const warnings = [];
   if (phaseMode === "phase1" && suiteBForPhase && !suiteBForPhase.pass) {
     warnings.push("suite_b_warn_only_in_phase1");
   }
+  if (gateTotals.total > 0 && rawDoneRate < RAW_DONE_WARN_THRESHOLD) {
+    warnings.push("raw_done_rate_low_warn_only");
+  }
+  if (!shadowRawDonePass && !RAW_DONE_HARD_ENFORCE) {
+    warnings.push("raw_done_shadow_hard_would_fail");
+  }
   if (suiteAForPhase?.warnings?.length) warnings.push(...suiteAForPhase.warnings);
   if (suiteBForPhase?.warnings?.length) warnings.push(...suiteBForPhase.warnings);
 
   const failReasons = [];
-  if (!suiteAPass) failReasons.push("suite_a_failed");
+  if (healthStatus !== "healthy") failReasons.push("backend_unhealthy");
+  if (suiteARequired && !suiteAPass) failReasons.push("suite_a_failed");
   if (suiteBRequired && !suiteBPass) failReasons.push("suite_b_failed");
+  if (rawDoneHardFail) failReasons.push("raw_done_rate_below_hard_threshold");
+  const overallPass = requiredSuitesPass && !rawDoneHardFail;
 
   const combinedErrors = {
     ...(suiteAForPhase?.metrics?.errorsByType || {}),
@@ -1641,6 +1859,19 @@ const buildGateSummary = async ({ suiteA, suiteB, phaseMode, outDir }) => {
       byType: combinedErrors,
     },
     observability: {
+      doneRates: {
+        rawDoneRate,
+        probeDoneRate,
+      },
+      rawDone: {
+        rawMissingDoneCount: gateTotals.rawMissingDoneCount,
+        attributionCounts: rawDoneAttributionCounts,
+        attributionTop: rawDoneAttributionTop,
+      },
+      noTerminal: {
+        rawNoTerminalCount: gateTotals.rawNoTerminalCount,
+        probeNoTerminalCount: gateTotals.probeNoTerminalCount,
+      },
       rawMissingDoneSuppressedCount: {
         suiteA: suiteAForPhase?.metrics?.rawMissingDoneSuppressedCount || 0,
         suiteB: suiteBForPhase?.metrics?.rawMissingDoneSuppressedCount || 0,
@@ -1651,10 +1882,27 @@ const buildGateSummary = async ({ suiteA, suiteB, phaseMode, outDir }) => {
     },
     retryUsedCount:
       (suiteAForPhase?.metrics?.retryUsedCount || 0) + (suiteBForPhase?.metrics?.retryUsedCount || 0),
+    promotion: {
+      updateEnabled: canUpdatePromotion,
+      skipReason: resolvedPromotionSkipReason,
+    },
     promotionSignal: {
       consecutivePasses,
       threshold: PROMOTION_PASS_THRESHOLD,
       recommendPhase2: consecutivePasses >= PROMOTION_PASS_THRESHOLD,
+    },
+    health: {
+      status: healthStatus,
+      reason: healthReason,
+    },
+    shadowGate: {
+      rawDone: {
+        threshold: RAW_DONE_SHADOW_HARD_THRESHOLD,
+        actualRate: rawDoneRate,
+        pass: shadowRawDonePass,
+        reason: shadowRawDoneReason,
+        enforce: RAW_DONE_HARD_ENFORCE,
+      },
     },
     overall: {
       pass: overallPass,
@@ -1680,9 +1928,27 @@ const writeOnePageReport = async (outDir, context) => {
   lines.push("");
   lines.push(`- API Base: \`${API_BASE_URL}\``);
   lines.push(`- Phase Mode: **${context.gate.phaseMode.toUpperCase()}**`);
+  lines.push(`- Backend Health: **${String(context.gate.health?.status || "unknown").toUpperCase()}**`);
   lines.push(`- Overall Gate: **${context.gate.overall.pass ? "PASS" : "FAIL"}**`);
   lines.push(`- Suite A: ${context.gate.suiteA ? (context.gate.suiteA.pass ? "PASS" : "FAIL") : "N/A"}`);
   lines.push(`- Suite B: ${context.gate.suiteB ? (context.gate.suiteB.pass ? "PASS" : "FAIL") : "N/A"}`);
+  lines.push(
+    `- Done Rate (raw/probe): ${((context.gate.observability?.doneRates?.rawDoneRate || 0) * 100).toFixed(1)}% / ${((context.gate.observability?.doneRates?.probeDoneRate || 0) * 100).toFixed(1)}%`,
+  );
+  const rawAttributionTop = context.gate.observability?.rawDone?.attributionTop || [];
+  if (rawAttributionTop.length) {
+    const topText = rawAttributionTop
+      .slice(0, 3)
+      .map((entry) => `${entry.key}:${entry.count}`)
+      .join(", ");
+    lines.push(`- Raw missing done top causes: ${topText}`);
+  }
+  const shadowRawDone = context.gate.shadowGate?.rawDone;
+  if (shadowRawDone) {
+    lines.push(
+      `- Shadow rawDone hard gate: ${shadowRawDone.pass ? "PASS" : "FAIL"} (threshold=${(Number(shadowRawDone.threshold || 0) * 100).toFixed(1)}%, enforce=${shadowRawDone.enforce ? "on" : "off"})`,
+    );
+  }
   lines.push("");
 
   const addSuiteSection = (title, suite) => {
@@ -1781,12 +2047,122 @@ const writeOnePageReport = async (outDir, context) => {
 };
 
 const ensureBackendReachable = async () => {
-  try {
-    const res = await fetchWithTimeout(`${API_BASE_URL}/api/nutri-tips`, { headers: defaultHeaders }, REQUEST_TIMEOUT_MS);
-    return res.ok || res.status === 304;
-  } catch {
-    return false;
+  const timeoutMs = Math.min(5000, REQUEST_TIMEOUT_MS);
+  const baseUrl = API_BASE_URL.replace(/\/$/, "");
+  const probeUrls = [
+    `${baseUrl}/health`,
+    `${baseUrl}/api/nutri-tips`,
+    `${baseUrl}/internal/metrics`,
+  ];
+  const probeHeaders = {
+    ...defaultHeaders,
+    ...(REGRESSION_TOKEN ? { "x-regression-token": REGRESSION_TOKEN } : {}),
+    ...(AUTH_DISABLED_HEADER ? { "x-auth-disabled": AUTH_DISABLED_HEADER } : {}),
+  };
+
+  for (const probeUrl of probeUrls) {
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      const probe = await fetchWithTimeout(
+        probeUrl,
+        {
+          method: "GET",
+          headers: probeHeaders,
+        },
+        timeoutMs,
+      );
+      // Any non-5xx response means backend routing is reachable.
+      if (probe.status > 0 && probe.status < 500) return true;
+    } catch {
+      // continue trying remaining read-only probes
+    }
   }
+
+  return false;
+};
+
+const parseApiBaseForHealthProbe = () => {
+  try {
+    const parsed = new URL(API_BASE_URL);
+    const fallbackPort = parsed.protocol === "https:" ? 443 : 80;
+    const port = Number(parsed.port || fallbackPort);
+    return {
+      port: Number.isFinite(port) ? port : 3001,
+      url: `${API_BASE_URL.replace(/\/$/, "")}/health`,
+    };
+  } catch {
+    return {
+      port: 3001,
+      url: "http://127.0.0.1:3001/health",
+    };
+  }
+};
+
+const deriveBackendHealthReason = (health) => {
+  if (health.status === "healthy") return null;
+  if (typeof health.error === "string" && health.error.trim()) return health.error.trim();
+  if (typeof health.http === "string" && health.http && health.http !== "200") {
+    return `http_${health.http}`;
+  }
+  if (!health.pid) return "backend_pid_missing";
+  return "backend_unhealthy";
+};
+
+const runBackendHealthCheck = async (outDir) => {
+  const { port, url } = parseApiBaseForHealthProbe();
+  let payload = null;
+  let stderrText = "";
+  try {
+    const proc = spawnSync(BACKEND_HEALTH_CHECK_SCRIPT, [String(port), url], {
+      encoding: "utf8",
+    });
+    stderrText = String(proc.stderr ?? "").trim();
+    const stdoutText = String(proc.stdout ?? "").trim();
+    const line = stdoutText
+      .split(/\r?\n/)
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+      .at(-1);
+    if (line) {
+      try {
+        payload = JSON.parse(line);
+      } catch {
+        payload = null;
+      }
+    }
+    if (proc.status !== 0) {
+      payload = {
+        ...(payload && typeof payload === "object" ? payload : {}),
+        status: "unhealthy",
+        error:
+          (payload && typeof payload.error === "string" && payload.error.trim()) ||
+          stderrText ||
+          `backend_health_check_exit_${proc.status}`,
+      };
+    }
+  } catch (error) {
+    payload = {
+      status: "unhealthy",
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+
+  const normalized = {
+    ts: typeof payload?.ts === "string" ? payload.ts : new Date().toISOString(),
+    status: payload?.status === "healthy" ? "healthy" : "unhealthy",
+    port: Number.isFinite(Number(payload?.port)) ? Number(payload.port) : port,
+    pid: typeof payload?.pid === "string" ? payload.pid : "",
+    http: typeof payload?.http === "string" ? payload.http : "",
+    url: typeof payload?.url === "string" ? payload.url : url,
+    error:
+      typeof payload?.error === "string"
+        ? payload.error
+        : stderrText || "",
+  };
+  const reason = deriveBackendHealthReason(normalized);
+  const health = { ...normalized, reason };
+  await writeJson(path.join(outDir, "backend_health.json"), health);
+  return health;
 };
 
 const buildWebFixtureFromHarvest = async (harvested, options) => {
@@ -1815,7 +2191,7 @@ const buildWebFixtureFromHarvest = async (harvested, options) => {
       const sse = await fetchSse(
         `${API_BASE_URL}/api/enrich-stream`,
         { barcode: normalized.barcode },
-        { stopOn: options.sseStopOn, stopTailMs: DEFAULT_SSE_STOP_TAIL_MS, retries: options.retries },
+        { stopOn: options.sseStopOn, stopTailMs: options.sseStopTailMs, retries: options.retries },
       );
       const picked = pickBundleEvents(sse.events);
       sourceType = picked.rev1?.data?.meta?.sourceType ?? null;
@@ -1860,6 +2236,11 @@ const buildWebFixtureFromHarvest = async (harvested, options) => {
 const buildCompatibilitySummary = (suiteAResults, suiteBResults) => {
   const allRows = [...suiteAResults, ...suiteBResults];
   const sourceTypeCounts = countBy(allRows, (row) => row.sse.sourceType || "unknown");
+  const terminalCodeCounts = countBy(allRows, (row) => row.sse.terminalCode || "none");
+  const derivedTerminalCodeCounts = countBy(allRows, (row) => row.sse.derivedTerminalCode || "none");
+  const errorReasonCounts = countBy(allRows, (row) => row.sse.errorReasonCode || "none");
+  const fallbackReasonCounts = countBy(allRows, (row) => row.sse.fallbackReason || "none");
+  const authorityFailureReasonCounts = countBy(allRows, (row) => row.sse.authorityFailureReason || "none");
   const detailTimes = allRows
     .map((row) => row.sections.ingredients_detail.timingMs)
     .filter((v) => Number.isFinite(v) && v > 0);
@@ -1870,6 +2251,12 @@ const buildCompatibilitySummary = (suiteAResults, suiteBResults) => {
       site: row.input.site,
       barcode: row.input.barcode,
       sourceType: row.sse.sourceType,
+      sourceTypeFinal: row.sse.sourceTypeFinal,
+      terminalCode: row.sse.terminalCode,
+      derivedTerminalCode: row.sse.derivedTerminalCode,
+      errorReasonCode: row.sse.errorReasonCode,
+      fallbackReason: row.sse.fallbackReason,
+      authorityFailureReason: row.sse.authorityFailureReason,
       identityType: row.sse.identityType,
       identityValue: row.sse.identityValue,
       revision0Ms: row.sse.revision0Ms,
@@ -1891,6 +2278,11 @@ const buildCompatibilitySummary = (suiteAResults, suiteBResults) => {
     stats: {
       total: allRows.length,
       countsBySourceType: sourceTypeCounts,
+      countsByTerminalCode: terminalCodeCounts,
+      countsByDerivedTerminalCode: derivedTerminalCodeCounts,
+      countsByErrorReasonCode: errorReasonCounts,
+      countsByFallbackReason: fallbackReasonCounts,
+      countsByAuthorityFailureReason: authorityFailureReasonCounts,
       detailTimingP50Ms: percentile(detailTimes, 50),
       detailTimingP90Ms: percentile(detailTimes, 90),
     },
@@ -1983,7 +2375,7 @@ const runChecklist = async (barcode, options) => {
     const sse = await fetchSse(
       `${API_BASE_URL}/api/enrich-stream`,
       { barcode },
-      { stopOn: options.sseStopOn, stopTailMs: DEFAULT_SSE_STOP_TAIL_MS, retries: options.retries },
+      { stopOn: options.sseStopOn, stopTailMs: options.sseStopTailMs, retries: options.retries },
     );
     const picked = pickBundleEvents(sse.events);
     const errorType = sse.terminalErrorType ?? classifySseContractFailure({ sse, picked });
@@ -2011,7 +2403,7 @@ const runChecklist = async (barcode, options) => {
   const metaSse = await fetchSse(
     `${API_BASE_URL}/api/enrich-stream`,
     { barcode },
-    { stopOn: options.sseStopOn, stopTailMs: DEFAULT_SSE_STOP_TAIL_MS, retries: options.retries },
+    { stopOn: options.sseStopOn, stopTailMs: options.sseStopTailMs, retries: options.retries },
   );
   const meta = pickBundleEvents(metaSse.events).rev1?.data?.meta ?? null;
 
@@ -2154,21 +2546,33 @@ const runClientDisconnectProbe = async (barcode) => {
   };
 };
 
-const runGateOnly = async (outDir, phaseMode) => {
+const runGateOnly = async (
+  outDir,
+  phaseMode,
+  {
+    backendHealth = null,
+    promotionUpdateEnabled = false,
+    promotionSkipReason = "gate_only",
+  } = {},
+) => {
   const suiteASummaryPath = path.join(outDir, "suite_a_summary.json");
   const suiteBSummaryPath = path.join(outDir, "suite_b_summary.json");
 
   const suiteA = await readJson(suiteASummaryPath).catch(() => null);
   const suiteB = await readJson(suiteBSummaryPath).catch(() => null);
-  if (!suiteA && !suiteB) {
-    throw new Error(`No suite summary found under ${outDir}. Expected suite_a_summary.json or suite_b_summary.json.`);
-  }
+  const resolvedPromotionSkipReason =
+    !suiteA && !suiteB
+      ? "gate_only_no_suite_summaries"
+      : promotionSkipReason;
 
   const gate = await buildGateSummary({
     suiteA,
     suiteB,
     phaseMode,
     outDir,
+    promotionUpdateEnabled,
+    promotionSkipReason: resolvedPromotionSkipReason,
+    backendHealth,
   });
   await writeJson(path.join(outDir, "gate_summary.json"), gate);
   await writeOnePageReport(outDir, { gate });
@@ -2178,21 +2582,85 @@ const runGateOnly = async (outDir, phaseMode) => {
 const main = async () => {
   const options = parseArgs(process.argv.slice(2));
   await fs.promises.mkdir(OUT_DIR, { recursive: true });
+  let backendHealth = await runBackendHealthCheck(OUT_DIR);
+  let backendHealthy = backendHealth.status === "healthy";
+  let backendReachable = null;
+
+  if (!backendHealthy) {
+    backendReachable = await ensureBackendReachable();
+    if (backendReachable) {
+      backendHealthy = true;
+      backendHealth = {
+        ...backendHealth,
+        status: "healthy",
+        reason: "health_probe_unhealthy_but_readonly_reachable",
+        error: "",
+      };
+      await writeJson(path.join(OUT_DIR, "backend_health.json"), backendHealth);
+      console.warn("[website-e2e] health probe failed but read-only fallback probe succeeded; continuing.");
+    }
+  }
 
   if (options.gateOnly) {
-    await runGateOnly(OUT_DIR, options.phaseMode);
+    await runGateOnly(OUT_DIR, options.phaseMode, {
+      backendHealth,
+      promotionUpdateEnabled: false,
+      promotionSkipReason: backendHealthy ? "gate_only" : "gate_only_backend_unhealthy",
+    });
     return;
   }
 
-  const reachable = await ensureBackendReachable();
-  if (!reachable) {
-    throw new Error(
-      `Backend not reachable at ${API_BASE_URL}. Start local backend (npm --prefix backend run dev) or set API_BASE_URL/RENDER_BASE_URL.`,
-    );
+  if (!backendHealthy) {
+    const gate = await buildGateSummary({
+      suiteA: null,
+      suiteB: null,
+      phaseMode: options.phaseMode,
+      outDir: OUT_DIR,
+      promotionUpdateEnabled: false,
+      promotionSkipReason: "backend_unhealthy",
+      backendHealth,
+    });
+    await writeJson(path.join(OUT_DIR, "gate_summary.json"), gate);
+    await writeOnePageReport(OUT_DIR, { gate });
+    console.warn(`[website-e2e] backend unhealthy, round skipped (promotion not updated). reason=${backendHealth.reason || "unknown"}`);
+    console.log(`[website-e2e] artifacts: ${OUT_DIR}`);
+    return;
+  }
+
+  if (backendReachable == null) {
+    backendReachable = await ensureBackendReachable();
+  }
+  if (!backendReachable) {
+    const degradedHealth = {
+      ...backendHealth,
+      status: "unhealthy",
+      reason: backendHealth.reason || "backend_reachability_failed",
+      error: backendHealth.error || "backend_reachability_failed",
+    };
+    await writeJson(path.join(OUT_DIR, "backend_health.json"), degradedHealth);
+    const gate = await buildGateSummary({
+      suiteA: null,
+      suiteB: null,
+      phaseMode: options.phaseMode,
+      outDir: OUT_DIR,
+      promotionUpdateEnabled: false,
+      promotionSkipReason: "backend_unhealthy",
+      backendHealth: degradedHealth,
+    });
+    await writeJson(path.join(OUT_DIR, "gate_summary.json"), gate);
+    await writeOnePageReport(OUT_DIR, { gate });
+    console.warn(`[website-e2e] backend reachability check failed, round skipped.`);
+    console.log(`[website-e2e] artifacts: ${OUT_DIR}`);
+    return;
   }
 
   console.log(`[website-e2e] API_BASE_URL=${API_BASE_URL}`);
-  console.log(`[website-e2e] mode suite=${options.suite} stopOn=${options.sseStopOn} retries=${options.retries}`);
+  console.log(
+    `[website-e2e] mode suite=${options.suite} stopOn=${options.sseStopOn} tailMs=${options.sseStopTailMs} retries=${options.retries}`,
+  );
+  if (options.skipPostchecks) {
+    console.log("[website-e2e] skip-postchecks enabled (checklist + disconnect probe skipped)");
+  }
 
   let harvested = null;
   if (options.harvestOnly || options.buildWebFixture) {
@@ -2272,6 +2740,11 @@ const main = async () => {
     region: row.input.region,
     site: row.input.site,
     sourceType: row.sse.sourceType,
+    sourceTypeFinal: row.sse.sourceTypeFinal,
+    terminalCode: row.sse.terminalCode,
+    errorReasonCode: row.sse.errorReasonCode,
+    fallbackReason: row.sse.fallbackReason,
+    authorityFailureReason: row.sse.authorityFailureReason,
     revision0Ms: row.sse.revision0Ms,
     revision1Ms: row.sse.revision1Ms,
     doneMs: row.sse.doneMs,
@@ -2284,6 +2757,7 @@ const main = async () => {
     abortError: row.sse.abortError,
     contractFailure: row.sse.contractFailure,
     terminalErrorType: row.sse.terminalErrorType,
+    derivedTerminalCode: row.sse.derivedTerminalCode,
   })));
   await writeJson(path.join(OUT_DIR, "sse_contract_summary.json"), sseContractSummary);
   await writeSseContractReport(OUT_DIR, sseContractSummary);
@@ -2293,19 +2767,22 @@ const main = async () => {
     suiteB: suiteB?.summary || null,
     phaseMode: options.phaseMode,
     outDir: OUT_DIR,
+    promotionUpdateEnabled: backendHealthy,
+    promotionSkipReason: backendHealthy ? null : "backend_unhealthy",
+    backendHealth,
   });
   await writeJson(path.join(OUT_DIR, "gate_summary.json"), gate);
 
   const checklistBarcode = pickChecklistBarcode(suiteA?.rows || [], suiteB?.rows || []);
   let checklist = null;
-  if (checklistBarcode) {
+  if (checklistBarcode && !options.skipPostchecks) {
     console.log(`[website-e2e] checklist barcode=${checklistBarcode}`);
     checklist = await runChecklist(checklistBarcode, options);
     await writeJson(path.join(OUT_DIR, "checklist_10x.json"), checklist);
   }
 
   let disconnectProbe = null;
-  if (checklistBarcode) {
+  if (checklistBarcode && !options.skipPostchecks) {
     disconnectProbe = await runClientDisconnectProbe(checklistBarcode);
     await writeJson(path.join(OUT_DIR, "client_disconnect_probe.json"), disconnectProbe);
   }
