@@ -1857,6 +1857,135 @@ const AnalysisBundleDashboard: React.FC<{
         ? ['No label-specific warnings detected; general watch-outs shown.']
         : undefined;
 
+    const overviewDataStatus = useMemo(() => {
+        const missingReasons = new Set<MissingReason>();
+        const hasSummary = normalizeText(overviewCover?.summary ?? null).length > 0;
+        const hasBenefits = Array.isArray(overviewCover?.bullets)
+            && overviewCover.bullets.some((bullet) => normalizeText(bullet?.text ?? null).length > 0);
+        if (!hasSummary) missingReasons.add('MISSING_OVERVIEW_SUMMARY');
+        if (!hasBenefits) missingReasons.add('MISSING_OVERVIEW_BENEFITS');
+
+        return {
+            ...buildBundleDataStatus(
+                bundleState.sections.overview.dataStatus,
+                bundleSourceType,
+                bundleSourceTypeFinal
+            ),
+            missingReasons: Array.from(missingReasons),
+        };
+    }, [
+        bundleState.sections.overview.dataStatus,
+        bundleSourceType,
+        bundleSourceTypeFinal,
+        overviewCover?.summary,
+        overviewCover?.bullets,
+    ]);
+
+    const ingredientsDataStatus = useMemo(() => {
+        const missingReasons = new Set<MissingReason>();
+        const hasPrimary = ingredientsItems.length > 0;
+        const hasDoseRange = ingredientsItems.some(
+            (item) => typeof item?.dose === 'string' && item.dose.trim().length > 0
+        );
+
+        let hasEvidenceMapping = false;
+        let hasFormQuality = false;
+        for (const insight of productSpecificInsightsByIngredient.values()) {
+            if (!insight) continue;
+            const hasEvidenceSignal =
+                (typeof insight.matchScore === 'number' && Number.isFinite(insight.matchScore))
+                || (typeof insight.doseSignal?.status === 'string' && insight.doseSignal.status !== 'unknown');
+            const hasFormSignal = typeof insight.formLabel === 'string' && insight.formLabel.trim().length > 0;
+            if (hasEvidenceSignal) hasEvidenceMapping = true;
+            if (hasFormSignal) hasFormQuality = true;
+            if (hasEvidenceMapping && hasFormQuality) break;
+        }
+
+        if (!hasPrimary) missingReasons.add('MISSING_PRIMARY_ACTIVE');
+        if (!hasDoseRange) missingReasons.add('MISSING_DOSE_RANGE');
+        if (!hasEvidenceMapping) missingReasons.add('MISSING_EVIDENCE_MAPPING');
+        if (!hasFormQuality) missingReasons.add('MISSING_FORM_QUALITY');
+
+        return {
+            ...buildBundleDataStatus(
+                bundleState.sections.ingredients.dataStatus,
+                bundleSourceType,
+                bundleSourceTypeFinal,
+                ingredientsNotes
+            ),
+            missingReasons: Array.from(missingReasons),
+        };
+    }, [
+        bundleState.sections.ingredients.dataStatus,
+        bundleSourceType,
+        bundleSourceTypeFinal,
+        ingredientsItems,
+        productSpecificInsightsByIngredient,
+        ingredientsNotes,
+    ]);
+
+    const usageDataStatus = useMemo(() => {
+        const missingReasons = new Set<MissingReason>();
+        const hasUsageGuidance =
+            normalizeText(usageCover?.dosage?.text ?? null).length > 0
+            || normalizeText(usageCover?.bestTimeToTake?.text ?? null).length > 0
+            || normalizeText(bundleState.sections.usage.detail?.timingRationale?.text ?? null).length > 0;
+        const hasBestFor = Array.isArray(usageCover?.bullets)
+            && usageCover.bullets.some((bullet) => normalizeText(bullet?.text ?? null).length > 0);
+
+        if (!hasUsageGuidance) missingReasons.add('MISSING_USAGE_GUIDANCE');
+        if (!hasBestFor) missingReasons.add('MISSING_BEST_FOR');
+
+        return {
+            ...buildBundleDataStatus(
+                bundleState.sections.usage.dataStatus,
+                bundleSourceType,
+                bundleSourceTypeFinal
+            ),
+            missingReasons: Array.from(missingReasons),
+        };
+    }, [
+        bundleState.sections.usage.dataStatus,
+        bundleState.sections.usage.detail?.timingRationale?.text,
+        bundleSourceType,
+        bundleSourceTypeFinal,
+        usageCover?.dosage?.text,
+        usageCover?.bestTimeToTake?.text,
+        usageCover?.bullets,
+    ]);
+
+    const safetyDataStatus = useMemo(() => {
+        const missingReasons = new Set<MissingReason>();
+        const hasWarning =
+            Array.isArray(bundleState.sections.safety.detail?.warnings)
+            && bundleState.sections.safety.detail.warnings.some(
+                (warning) => normalizeText(warning?.text ?? null).length > 0
+            );
+        const hasSafetyTip =
+            normalizeText(safetyCover?.bullets?.[1]?.text ?? null).length > 0 || showGeneralWatchOuts;
+
+        if (!hasWarning) missingReasons.add('MISSING_SAFETY_WARNING');
+        if (!hasSafetyTip) missingReasons.add('MISSING_SAFETY_TIP');
+
+        return {
+            ...buildBundleDataStatus(
+                bundleState.sections.safety.dataStatus,
+                bundleSourceType,
+                bundleSourceTypeFinal,
+                safetyNotes
+            ),
+            missingReasons: Array.from(missingReasons),
+        };
+    }, [
+        bundleState.sections.safety.dataStatus,
+        bundleState.sections.safety.detail?.warnings,
+        bundleSourceType,
+        bundleSourceTypeFinal,
+        safetyCover?.bullets,
+        showGeneralWatchOuts,
+        safetyNotes,
+    ]);
+
     const fetchIngredientsDetail = useCallback(async () => {
         if (!isIngredientsDetailReady(bundleState)) {
             return;
@@ -2167,28 +2296,21 @@ const overviewContent = (
     </GlassCard>
 
     <GlassCard
-      title="Where to go next"
-      subtitle="Tap the dashboard cards for depth"
+      title="Data quality"
+      subtitle={`Status: ${COVER_STATUS_LABELS[overviewDataStatus.status]}`}
       accentColor="#2563EB"
     >
-      <View style={styles.nextStepsRow}>
-        <View style={styles.nextStepChip}>
-          <TrendingUp size={14} color="#111827" />
-          <Text style={styles.nextStepChipText}>Science</Text>
-        </View>
-        <View style={styles.nextStepChip}>
-          <Pill size={14} color="#111827" />
-          <Text style={styles.nextStepChipText}>Usage</Text>
-        </View>
-        <View style={styles.nextStepChip}>
-          <Shield size={14} color="#111827" />
-          <Text style={styles.nextStepChipText}>Safety</Text>
-        </View>
-      </View>
-
-      <Text style={styles.detailFootnoteText}>
-        Tip: The score explains <Text style={{ fontWeight: '700' }}>why</Text> at the top of the page — these cards explain <Text style={{ fontWeight: '700' }}>how</Text>.
+      <Text style={styles.detailBodyText}>
+        Missing: {formatMissingReasons(overviewDataStatus.missingReasons)}
       </Text>
+      <Text style={styles.detailMetaText}>
+        Sources: {formatSourceRefs(overviewDataStatus.sources)}
+      </Text>
+      {overviewDataStatus.notes?.length ? (
+        <Text style={styles.detailFootnoteText}>
+          Notes: {overviewDataStatus.notes.join(' • ')}
+        </Text>
+      ) : null}
     </GlassCard>
   </View>
 );
@@ -2627,30 +2749,6 @@ const ingredientsDetail = bundleState.sections.ingredients.detail;
       </View>
     </GlassCard>
 
-    <GlassCard
-      title="Ingredients list"
-      subtitle="Extracted from label facts"
-      accentColor="#D97706"
-      right={<GlassPill label={bundleSourceType === 'web' ? 'Web' : 'Label'} />}
-    >
-      <View style={styles.ingredientsList}>
-        {ingredientsItems.map((item) => (
-          <View key={item.name} style={styles.ingredientsListRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.ingredientsListName}>{item.name}</Text>
-              {item.dose ? (
-                <Text style={styles.ingredientsListDose}>
-                  {item.dose}
-                </Text>
-              ) : (
-                <Text style={styles.ingredientsListDoseMuted}>Dose not disclosed</Text>
-              )}
-            </View>
-          </View>
-        ))}
-      </View>
-    </GlassCard>
-
     {/* Module 1 */}
     <GlassCard
       title="General science background"
@@ -2674,6 +2772,30 @@ const ingredientsDetail = bundleState.sections.ingredients.detail;
       accentColor="#D97706"
       right={<GlassPill label="Verified dataset" />}
     >
+      <View style={{ marginBottom: 12 }}>
+        <Text style={styles.detailMetaLabel}>Label ingredient snapshot</Text>
+        <View style={styles.ingredientsList}>
+          {ingredientsItems.length > 0 ? (
+            ingredientsItems.slice(0, 5).map((item) => (
+              <View key={item.name} style={styles.ingredientsListRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.ingredientsListName}>{item.name}</Text>
+                  {item.dose ? (
+                    <Text style={styles.ingredientsListDose}>
+                      {item.dose}
+                    </Text>
+                  ) : (
+                    <Text style={styles.ingredientsListDoseMuted}>Dose not disclosed</Text>
+                  )}
+                </View>
+              </View>
+            ))
+          ) : (
+            <Text style={styles.detailPlaceholderText}>Ingredient list not provided by source.</Text>
+          )}
+        </View>
+      </View>
+
       {activeProductInsight ? (
         <View style={{ gap: 10 }}>
           <View style={styles.kvGrid}>
@@ -2805,6 +2927,24 @@ const ingredientsDetail = bundleState.sections.ingredients.detail;
       )}
     </GlassCard>
 
+    <GlassCard
+      title="Data quality"
+      subtitle={`Status: ${COVER_STATUS_LABELS[ingredientsDataStatus.status]}`}
+      accentColor="#D97706"
+    >
+      <Text style={styles.detailBodyText}>
+        Missing: {formatMissingReasons(ingredientsDataStatus.missingReasons)}
+      </Text>
+      <Text style={styles.detailMetaText}>
+        Sources: {formatSourceRefs(ingredientsDataStatus.sources)}
+      </Text>
+      {ingredientsDataStatus.notes?.length ? (
+        <Text style={styles.detailFootnoteText}>
+          Notes: {ingredientsDataStatus.notes.join(' • ')}
+        </Text>
+      ) : null}
+    </GlassCard>
+
     {detailError ? (
       <GlassCard title="Ingredient detail error" subtitle={detailError} accentColor="#EF4444">
         <Text style={styles.emptyStateText}>Some ingredient details could not be resolved. Try again or scan a label-based source.</Text>
@@ -2881,6 +3021,24 @@ const usageContent = (
         </View>
       ) : null}
     </GlassCard>
+
+    <GlassCard
+      title="Data quality"
+      subtitle={`Status: ${COVER_STATUS_LABELS[usageDataStatus.status]}`}
+      accentColor="#0EA5E9"
+    >
+      <Text style={styles.detailBodyText}>
+        Missing: {formatMissingReasons(usageDataStatus.missingReasons)}
+      </Text>
+      <Text style={styles.detailMetaText}>
+        Sources: {formatSourceRefs(usageDataStatus.sources)}
+      </Text>
+      {usageDataStatus.notes?.length ? (
+        <Text style={styles.detailFootnoteText}>
+          Notes: {usageDataStatus.notes.join(' • ')}
+        </Text>
+      ) : null}
+    </GlassCard>
   </View>
 );
 
@@ -2945,6 +3103,24 @@ const safetyContent = (
         )}
       </View>
     </GlassCard>
+
+    <GlassCard
+      title="Data quality"
+      subtitle={`Status: ${COVER_STATUS_LABELS[safetyDataStatus.status]}`}
+      accentColor="#EF4444"
+    >
+      <Text style={styles.detailBodyText}>
+        Missing: {formatMissingReasons(safetyDataStatus.missingReasons)}
+      </Text>
+      <Text style={styles.detailMetaText}>
+        Sources: {formatSourceRefs(safetyDataStatus.sources)}
+      </Text>
+      {safetyDataStatus.notes?.length ? (
+        <Text style={styles.detailFootnoteText}>
+          Notes: {safetyDataStatus.notes.join(' • ')}
+        </Text>
+      ) : null}
+    </GlassCard>
   </View>
 );
 
@@ -2968,11 +3144,7 @@ const tiles: TileConfig[] = [
             bullets: overviewBullets,
             bulletLimit: 2,
             bulletLines: 2,
-            dataStatus: buildBundleDataStatus(
-                bundleState.sections.overview.dataStatus,
-                bundleSourceType,
-                bundleSourceTypeFinal
-            ),
+            dataStatus: overviewDataStatus,
             content: overviewContent,
         },
         {
@@ -2988,12 +3160,7 @@ const tiles: TileConfig[] = [
             viewLabel: t.analysisView,
             eyebrow: t.analysisEyebrowKeyMechanism,
             mechanisms: ingredientMechanisms,
-            dataStatus: buildBundleDataStatus(
-                bundleState.sections.ingredients.dataStatus,
-                bundleSourceType,
-                bundleSourceTypeFinal,
-                ingredientsNotes
-            ),
+            dataStatus: ingredientsDataStatus,
             content: ingredientsContent,
         },
         {
@@ -3010,11 +3177,7 @@ const tiles: TileConfig[] = [
             eyebrow: t.analysisEyebrowDailyRoutine,
             routineLine: usageRoutine ? { text: usageRoutine } : undefined,
             bullets: usageBullets,
-            dataStatus: buildBundleDataStatus(
-                bundleState.sections.usage.dataStatus,
-                bundleSourceType,
-                bundleSourceTypeFinal
-            ),
+            dataStatus: usageDataStatus,
             content: usageContent,
         },
         {
@@ -3039,12 +3202,7 @@ const tiles: TileConfig[] = [
                 : bundleState.sections.safety.dataStatus === 'pending'
                     ? { text: 'Safety tips pending', isPlaceholder: true }
                     : { text: 'General reminder: check the label and consult a clinician if needed.' },
-            dataStatus: buildBundleDataStatus(
-                bundleState.sections.safety.dataStatus,
-                bundleSourceType,
-                bundleSourceTypeFinal,
-                safetyNotes
-            ),
+            dataStatus: safetyDataStatus,
             content: safetyContent,
         },
     ];
