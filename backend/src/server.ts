@@ -1,28 +1,11 @@
+import * as Sentry from "@sentry/node";
 import cors from "cors";
 import dotenv from "dotenv";
 import express, { NextFunction, Request, Response } from "express";
 import { createHash, randomUUID } from "node:crypto";
 import { performance } from "node:perf_hooks";
-import * as Sentry from "@sentry/node";
 import { z } from "zod";
 
-import { buildBarcodeSearchQueries, normalizeBarcodeInput, type NormalizedBarcode } from "./barcode.js";
-import { resolveCatalogByBarcode, type CatalogResolved } from "./catalogResolver.js";
-import { resolveAuthorityCandidate } from "./authorityCandidate.js";
-import { buildCatalogBarcodeSnapshot } from "./catalogSnapshot.js";
-import { logBarcodeScan } from "./scanLog.js";
-import { extractBrandProduct, type BrandExtractionResult } from "./brandExtractor.js";
-import {
-  buildCombinedContext,
-  fetchAnalysisBundle,
-  fetchAnalysisBundleFastV3,
-  fetchIngredientsDetailV3,
-  fetchMySupplementOverviewCard,
-  fetchMySupplementOverviewV2,
-  prepareContextSources,
-} from "./deepseek.js";
-import { getKbRuntime, lookupKbFormExplain, lookupKbRuntimeFormInsights } from "./kbRuntime.js";
-import { buildRuleBasedOverview } from "./overviewRuleBased.js";
 import {
   IngredientsDetailSchema,
   UsageFieldSchema,
@@ -31,35 +14,9 @@ import {
   type BasisTag,
   type IngredientsDetail,
 } from "./analysisBundle.js";
-import {
-  buildFactsDigestFromDsld,
-  buildFactsDigestFromLnhpd,
-  buildFactsDigestFromWeb,
-  computeFactsDigestHash,
-  type DsldFactsInput,
-  type FactsDigest,
-  type FactsIdentityType,
-  type LnhpdFactsInput,
-} from "./factsDigest.js";
-import { sanitizeWebText } from "./webSanitizer.js";
-import {
-  applyWebBundleEvidenceGate,
-  applyWebIngredientsDetailEvidenceGate,
-} from "./webEvidenceGate.js";
-import { applyWebVerifyRevise } from "./webVerifyRevise.js";
-import { finalizePipelineStepCodes } from "./pipelineMetrics.js";
-import { buildMySupplementFactsV1, type MySupplementFactsV1 } from "./mySupplementFacts.js";
-import { getMySupplementOverviewV2GateReason } from "./mySupplementOverviewGate.js";
-import {
-  buildEnsureOverviewInflightKey,
-  isRegulatoryMapMiss,
-} from "./overviewRuntime.js";
-import {
-  buildStackOverlapResult,
-  extractStackOverlapIngredientKeys,
-  type StackOverlapSupplementInput,
-} from "./stackOverlap.js";
 import { getAnalysisIdentityCache, getWebCanonicalMap, insertAnalysisIdentityPending, updateAnalysisIdentityCache, upsertAnalysisIdentityCache, upsertWebCanonicalMap } from "./analysisIdentityCache.js";
+import { resolveAuthorityCandidate } from "./authorityCandidate.js";
+import { buildBarcodeSearchQueries, normalizeBarcodeInput, type NormalizedBarcode } from "./barcode.js";
 import {
   clearNegativeCache,
   clearNpnNegativeCache,
@@ -78,7 +35,55 @@ import {
   upsertResolutionCacheStrongMatch,
   upsertSerpCache,
 } from "./barcodeResolutionDbCache.js";
+import { extractBrandProduct, type BrandExtractionResult } from "./brandExtractor.js";
+import { resolveCatalogByBarcode, type CatalogResolved } from "./catalogResolver.js";
+import { buildCatalogBarcodeSnapshot } from "./catalogSnapshot.js";
+import {
+  fetchAnalysisBundle,
+  fetchAnalysisBundleFastV3,
+  fetchIngredientsDetailV3,
+  fetchMySupplementOverviewV2,
+  prepareContextSources
+} from "./deepseek.js";
+import {
+  buildFactsDigestFromDsld,
+  buildFactsDigestFromLnhpd,
+  buildFactsDigestFromWeb,
+  computeFactsDigestHash,
+  type DsldFactsInput,
+  type FactsDigest,
+  type FactsIdentityType,
+  type LnhpdFactsInput,
+} from "./factsDigest.js";
+import { sanitizeFactsDTO } from "./insights/dto.js";
+import {
+  mapDsldFactsToFactsDTO,
+  mapLnhpdFactsToFactsDTO,
+  mapWebFactsToFactsDTO,
+} from "./insights/factsMapper.js";
+import {
+  fetchDsldFactsRecordByLabelId,
+  fetchDsldMetaByLabelId,
+  fetchLnhpdFactsRecordByNpn,
+  fetchWebIngredientsBySourceId,
+} from "./insights/factsRepository.js";
+import { isActiveIngredient } from "./insights/ingredientPredicates.js";
+import { factsDtoSchemaV2 } from "./insights/scanInsightsSchema.js";
+import { compileIngredientSummaryAsync, ingredientSummaryPacketSchema } from "./insights/summaryCompiler.js";
+import { verifyWebOwnership } from "./insights/webOwnership.js";
+import { getKbRuntime, lookupKbFormExplain, lookupKbRuntimeFormInsights } from "./kbRuntime.js";
 import { analyzeLabelDraftWithDiagnostics, formatForDeepSeek, needsConfirmation, validateIngredient, type LabelAnalysisDiagnostics, type LabelDraft } from "./labelAnalysis.js";
+import { logLabelScanMetric, updateLabelScanClientTiming } from "./labelScanMetrics.js";
+import {
+  LABEL_PARSER_VERSION,
+  buildParseCacheKey,
+  buildVersionedOcrCacheKey,
+  normalizePreprocessProfile,
+} from "./labelScanVersion.js";
+import { getMetricsSnapshot, incrementMetric, startMetricsFlush } from "./metrics.js";
+import { buildMySupplementFactsV1, type MySupplementFactsV1 } from "./mySupplementFacts.js";
+import { getMySupplementOverviewV2GateReason } from "./mySupplementOverviewGate.js";
+import { getNutriTipsData } from "./nutriTips.js";
 import {
   getAnalysisCachedResult,
   getCachedResult,
@@ -89,28 +94,18 @@ import {
   setParseCachedResult,
   updateCachedAnalysis,
 } from "./ocrCache.js";
-import { logLabelScanMetric, updateLabelScanClientTiming } from "./labelScanMetrics.js";
+import { buildRuleBasedOverview } from "./overviewRuleBased.js";
 import {
-  buildParseCacheKey,
-  LABEL_PARSER_VERSION,
-  buildVersionedOcrCacheKey,
-  normalizePreprocessProfile,
-} from "./labelScanVersion.js";
+  buildEnsureOverviewInflightKey,
+  isRegulatoryMapMiss,
+} from "./overviewRuntime.js";
+import { finalizePipelineStepCodes } from "./pipelineMetrics.js";
 import {
   upsertProductIngredientsFromDraft,
   upsertProductIngredientsFromLabelFacts,
   upsertProductIngredientsFromWebFacts,
 } from "./productIngredients.js";
-import { sanitizeFactsDTO } from "./insights/dto.js";
-import { isActiveIngredient } from "./insights/ingredientPredicates.js";
-import { verifyWebOwnership } from "./insights/webOwnership.js";
-import { compileIngredientSummary, ingredientSummaryPacketSchema } from "./insights/summaryCompiler.js";
-import {
-  buildProviderVerdict,
-  isAuthoritativeWebCandidate,
-  resolveIdentityProviderLookup,
-  selectBestWebCandidates,
-} from "./webIdentityProviders.js";
+import type { RetryOptions } from "./resilience.js";
 import {
   BulkheadTimeoutError,
   CircuitBreaker,
@@ -124,39 +119,53 @@ import {
   isRetryableStatus,
   withRetry,
 } from "./resilience.js";
-import type { RetryOptions } from "./resilience.js";
+import { logBarcodeScan } from "./scanLog.js";
+import type { SupplementSnapshot } from "./schemas/supplementSnapshot.js";
+import { V4_SCORE_VERSION, computeScoreBundleV4, computeV4InputsHash } from "./scoring/v4ScoreEngine.js";
 import {
-  constructFallbackQuery,
   extractDomain,
   getExtractabilityTier,
   getUrlSignalScore,
   isHighQualityDomain,
   isMarketplaceDomain,
   scoreSearchItem,
-  scoreSearchQuality,
+  scoreSearchQuality
 } from "./searchQuality.js";
-import { computeScoreBundleV4, computeV4InputsHash, V4_SCORE_VERSION } from "./scoring/v4ScoreEngine.js";
 import { buildBarcodeSnapshot, buildLabelSnapshot, validateSnapshotOrFallback, type SnapshotAnalysisPayload } from "./snapshot.js";
 import { getSnapshotCache, storeSnapshotCache } from "./snapshotCache.js";
-import type { SupplementSnapshot } from "./schemas/supplementSnapshot.js";
+import {
+  buildStackOverlapResult,
+  extractStackOverlapIngredientKeys,
+  type StackOverlapSupplementInput,
+} from "./stackOverlap.js";
 import { supabase } from "./supabase.js";
-import { getNutriTipsData } from "./nutriTips.js";
 import type {
   AiSupplementAnalysis,
   ErrorResponse,
   IngredientAnalysis,
   PrimaryActive,
   RatingScore,
-  SearchItem,
-  SearchResponse,
   ScoreBundleResponse,
   ScoreBundleV4,
+  ScoreFlag,
   ScoreGoalFit,
   ScoreHighlight,
-  ScoreFlag,
+  SearchItem,
+  SearchResponse,
 } from "./types.js";
 import { callVisionOcr } from "./visionOcr.js";
-import { getMetricsSnapshot, incrementMetric, startMetricsFlush } from "./metrics.js";
+import {
+  applyWebBundleEvidenceGate,
+  applyWebIngredientsDetailEvidenceGate,
+} from "./webEvidenceGate.js";
+import {
+  buildProviderVerdict,
+  isAuthoritativeWebCandidate,
+  resolveIdentityProviderLookup,
+  selectBestWebCandidates,
+} from "./webIdentityProviders.js";
+import { sanitizeWebText } from "./webSanitizer.js";
+import { applyWebVerifyRevise } from "./webVerifyRevise.js";
 
 dotenv.config();
 
@@ -1165,21 +1174,21 @@ const buildLnhpdIngredientsDetailKbFirst = (params: {
   const items: IngredientsDetail["items"] = digest.actives.map((active) => {
     const kbResult = kb
       ? lookupKbFormExplain({
-          ingredientName: active.name,
-          chemicalForm: active.chemicalForm ?? null,
-          chemicalFormConfidence: active.chemicalFormConfidence ?? null,
-          chemicalFormSource: active.chemicalFormSource ?? "none",
-          chemicalFormEvidence: active.chemicalFormEvidence ?? null,
-        })
+        ingredientName: active.name,
+        chemicalForm: active.chemicalForm ?? null,
+        chemicalFormConfidence: active.chemicalFormConfidence ?? null,
+        chemicalFormSource: active.chemicalFormSource ?? "none",
+        chemicalFormEvidence: active.chemicalFormEvidence ?? null,
+      })
       : {
-          sentence: null,
-          sentenceId: null,
-          excerptId: null,
-          referenceId: null,
-          evidenceGrade: null,
-          resolveSource: "none" as const,
-          evidenceText: null,
-        };
+        sentence: null,
+        sentenceId: null,
+        excerptId: null,
+        referenceId: null,
+        evidenceGrade: null,
+        resolveSource: "none" as const,
+        evidenceText: null,
+      };
 
     formResolveSources[active.name] = kbResult.resolveSource;
     formEvidenceTexts[active.name] = kbResult.evidenceText ?? active.chemicalFormEvidence ?? null;
@@ -1296,21 +1305,21 @@ const buildDsldKbFallbackDetail = (
       items: digest.actives.map((active) => {
         const kbResult = kb
           ? lookupKbFormExplain({
-              ingredientName: active.name,
-              chemicalForm: active.chemicalForm ?? null,
-              chemicalFormConfidence: active.chemicalFormConfidence ?? null,
-              chemicalFormSource: active.chemicalFormSource ?? "none",
-              chemicalFormEvidence: active.chemicalFormEvidence ?? null,
-            })
+            ingredientName: active.name,
+            chemicalForm: active.chemicalForm ?? null,
+            chemicalFormConfidence: active.chemicalFormConfidence ?? null,
+            chemicalFormSource: active.chemicalFormSource ?? "none",
+            chemicalFormEvidence: active.chemicalFormEvidence ?? null,
+          })
           : {
-              sentence: null,
-              sentenceId: null,
-              excerptId: null,
-              referenceId: null,
-              evidenceGrade: null,
-              resolveSource: "none" as const,
-              evidenceText: null,
-            };
+            sentence: null,
+            sentenceId: null,
+            excerptId: null,
+            referenceId: null,
+            evidenceGrade: null,
+            resolveSource: "none" as const,
+            evidenceText: null,
+          };
         formResolveSources[active.name] = kbResult.resolveSource;
         formEvidenceTexts[active.name] = kbResult.evidenceText;
         formSentenceIds[active.name] = kbResult.sentenceId ?? null;
@@ -1513,9 +1522,9 @@ const queueDsldDetailEnrichment = (params: {
     const isParseFailure = (code: string | null): boolean =>
       Boolean(
         code &&
-          (code === "detail_v3_content_parse_failed" ||
-            code === "detail_v3_response_parse_failed" ||
-            code === "detail_v3_missing_content"),
+        (code === "detail_v3_content_parse_failed" ||
+          code === "detail_v3_response_parse_failed" ||
+          code === "detail_v3_missing_content"),
       );
 
     let detailRaw: Record<string, unknown> | null = null;
@@ -1939,7 +1948,11 @@ const mergeFastAnalysisBundle = (params: {
       add(bullet);
     }
     while (out.length < 2) {
-      add(buildSectionBullet("Details not provided by source.", ["not_provided"]));
+      const anchor = digest.actives[0]?.name ?? digest.product.name ?? "this supplement";
+      add(buildSectionBullet(
+        `Review label directions for ${anchor}. Capture Supplement Facts to unlock deeper insights.`,
+        ["general_advice"],
+      ));
     }
     return out.slice(0, 2);
   })();
@@ -1964,19 +1977,19 @@ const mergeFastAnalysisBundle = (params: {
   const bestTimeToTake =
     usageRaw.bestTimeToTake && typeof usageRaw.bestTimeToTake === "object"
       ? {
-          text: typeof (usageRaw.bestTimeToTake as Record<string, unknown>).text === "string"
-            ? (usageRaw.bestTimeToTake as Record<string, unknown>).text as string
-            : "",
-          basisTags: normalizeBasisTags((usageRaw.bestTimeToTake as Record<string, unknown>).basisTags, "general_advice"),
-        }
+        text: typeof (usageRaw.bestTimeToTake as Record<string, unknown>).text === "string"
+          ? (usageRaw.bestTimeToTake as Record<string, unknown>).text as string
+          : "",
+        basisTags: normalizeBasisTags((usageRaw.bestTimeToTake as Record<string, unknown>).basisTags, "general_advice"),
+      }
       : null;
   const withFoodRaw = usageRaw.withFood && typeof usageRaw.withFood === "object" ? usageRaw.withFood as Record<string, unknown> : null;
   const withFoodFromModel = withFoodRaw
     ? {
-        value: typeof withFoodRaw.value === "boolean" || withFoodRaw.value === null ? withFoodRaw.value as boolean | null : null,
-        text: typeof withFoodRaw.text === "string" ? withFoodRaw.text : null,
-        basisTags: normalizeBasisTags(withFoodRaw.basisTags, "general_advice"),
-      }
+      value: typeof withFoodRaw.value === "boolean" || withFoodRaw.value === null ? withFoodRaw.value as boolean | null : null,
+      text: typeof withFoodRaw.text === "string" ? withFoodRaw.text : null,
+      basisTags: normalizeBasisTags(withFoodRaw.basisTags, "general_advice"),
+    }
     : null;
   const fallbackUsage = buildFallbackUsageSection(digest);
   const fallbackBestTimeToTake = fallbackUsage.cover?.bestTimeToTake ?? {
@@ -2024,20 +2037,34 @@ const mergeFastAnalysisBundle = (params: {
   const safetyBulletsFinal =
     safetyBullets.length > 0
       ? safetyBullets
-      : digest.warnings.missingFlag
-        ? [
-            buildSectionBullet(
-              "Not provided by source. General reminder: if pregnant/nursing, have a condition, or take medications, check with a clinician.",
-              ["general_advice"],
-            ),
-          ]
-        : [];
+      : [
+        buildSectionBullet(
+          digest.warnings.missingFlag
+            ? "Safety details are not available from this source. If pregnant, nursing, or taking medication, consult your clinician."
+            : "No specific warnings found. If pregnant, nursing, or taking medication, consult your clinician before use.",
+          ["general_advice"],
+        ),
+      ];
 
   const overviewStatus = overviewBulletsFinal.length > 0 ? "complete" : "limited";
   const usageStatus =
     usageBulletsFinal.length > 0 || bestTimeToTakeFinal || withFoodFinal || dosageField ? "complete" : "limited";
   const safetyStatus = digest.warnings.missingFlag ? "not_provided" : safetyBulletsFinal.length > 0 ? "complete" : "limited";
   const safetyTag = resolveSourceBasisTag(digest.sourceType);
+
+  // P0-0: Coverage snapshot for rev1 diagnostics
+  console.info("[analysis_bundle] cover_contract", {
+    source: digest.sourceType,
+    overviewHasSummary: Boolean(dsldInference?.summary ?? overviewSummaryCandidate),
+    overviewBulletCount: (dsldInference?.bullets ?? overviewBulletsFinal).length,
+    ingredientsCount: digest.actives.length,
+    usageHasDosage: Boolean(dosageField),
+    usageHasBestTime: Boolean(bestTimeToTakeFinal?.text),
+    usageBulletCount: usageBulletsFinal.length,
+    safetyBulletCount: safetyBulletsFinal.length,
+    safetyVerdictPresent: Boolean(safetyVerdict),
+    fastFailed: !fastOutput,
+  });
 
   return {
     ...skeleton,
@@ -2108,6 +2135,126 @@ const scoreTextMatch = (needle?: string | null, haystack?: string | null): numbe
   if (normalizedNeedle === normalizedHaystack) return 3;
   if (normalizedHaystack.includes(normalizedNeedle) || normalizedNeedle.includes(normalizedHaystack)) return 2;
   return 0;
+};
+
+const LNHDP_PRODUCT_STOP_TOKENS = new Set([
+  "count",
+  "ct",
+  "pack",
+  "packs",
+  "bottle",
+  "bottles",
+  "x",
+]);
+
+const tokenizeLnhpdName = (value?: string | null): string[] => {
+  if (!value) return [];
+  const normalized = normalizeMatchText(
+    value
+      .replace(/(\d+)\s*iu\b/gi, "$1 iu")
+      .replace(/\bd3\b/gi, "d"),
+  );
+  if (!normalized) return [];
+  return normalized
+    .split(" ")
+    .map((token) => token.trim())
+    .filter(Boolean)
+    .filter((token) => !LNHDP_PRODUCT_STOP_TOKENS.has(token))
+    .filter((token) => !/^\d{1,3}$/.test(token));
+};
+
+const extractLnhpdDoseIu = (value?: string | null): string | null => {
+  if (!value) return null;
+  const match = value.match(/\b(\d{2,6}(?:[.,]\d{1,2})?)\s*iu\b/i);
+  if (!match?.[1]) return null;
+  return match[1].replace(/,/g, "").trim() || null;
+};
+
+const extractLnhpdFormToken = (value?: string | null): string | null => {
+  if (!value) return null;
+  if (/\b(tablets?|tabs?)\b/i.test(value)) return "tablet";
+  if (/\b(capsules?|caps?)\b/i.test(value)) return "capsule";
+  if (/\bsoftgels?\b/i.test(value)) return "softgel";
+  if (/\b(gummies?|gummy)\b/i.test(value)) return "gummy";
+  if (/\b(chewables?|soft\s*chews?)\b/i.test(value)) return "chewable";
+  if (/\b(drops?|drop)\b/i.test(value)) return "drop";
+  if (/\b(mists?|sprays?)\b/i.test(value)) return "spray";
+  if (/\b(liquid|emulsion)\b/i.test(value)) return "liquid";
+  if (/\b(powder|scoop)\b/i.test(value)) return "powder";
+  return null;
+};
+
+const tokenOverlapRatio = (needle?: string | null, haystack?: string | null): number => {
+  const needleTokens = tokenizeLnhpdName(needle);
+  const haystackTokens = new Set(tokenizeLnhpdName(haystack));
+  if (needleTokens.length === 0 || haystackTokens.size === 0) return 0;
+  let hits = 0;
+  for (const token of needleTokens) {
+    if (haystackTokens.has(token)) hits += 1;
+  }
+  return hits / needleTokens.length;
+};
+
+const buildLnhpdProductHints = (product?: string | null): string[] => {
+  const raw = product?.trim() ?? "";
+  if (!raw) return [];
+  const hints: string[] = [];
+  const seen = new Set<string>();
+  const doseIu = extractLnhpdDoseIu(raw);
+  const formToken = extractLnhpdFormToken(raw);
+  const isVitaminD = /\bvitamin\s*d(?:\s*3)?\b/i.test(raw);
+  const add = (value?: string | null) => {
+    if (!value) return;
+    const trimmed = value.trim();
+    if (trimmed.length < 3) return;
+    const key = normalizeMatchText(trimmed);
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    hints.push(trimmed);
+  };
+
+  if (isVitaminD) {
+    if (doseIu) {
+      add(`Vitamin D ${doseIu}IU`);
+      add(`Vitamin D ${doseIu} IU`);
+      add(`Vitamin D3 ${doseIu}IU`);
+      add(`Vitamin D3 ${doseIu} IU`);
+      if (formToken) {
+        add(`Vitamin D ${doseIu}IU (${formToken})`);
+        add(`Vitamin D ${doseIu} IU (${formToken})`);
+      }
+    }
+  }
+
+  add(raw);
+
+  const compact = raw
+    .replace(/(\d+)\s*iu\b/gi, "$1IU")
+    .replace(/\s+/g, " ")
+    .trim();
+  add(compact);
+
+  const spaced = raw
+    .replace(/(\d+)\s*iu\b/gi, "$1 IU")
+    .replace(/\s+/g, " ")
+    .trim();
+  add(spaced);
+
+  const stripped = raw
+    .replace(/\b\d+\s*x\s*\d+\b/gi, " ")
+    .replace(/\b(tablets?|tablet|capsules?|caps?|softgels?|gummies?|count|ct|pack|packs|bottles?)\b/gi, " ")
+    .replace(/[-_/(),]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  add(stripped);
+
+  if (isVitaminD) {
+    add("Vitamin D");
+    add("Vitamin D3");
+  }
+
+  const maxHints = isVitaminD && doseIu ? 5 : 8;
+  return hints.slice(0, maxHints);
 };
 
 const pickStringField = (record: Record<string, unknown>, keys: string[]): string | null => {
@@ -3025,6 +3172,11 @@ const fetchLnhpdFactsByNpn = async (
   signal?: AbortSignal,
 ): Promise<LnhpdFacts | null> => {
   const normalized = npn?.trim() ?? '';
+  const debugNameMatch = process.env.DEBUG_LNHPD_NAME_MATCH === "1";
+  const debugLog = (event: string, payload: Record<string, unknown>) => {
+    if (!debugNameMatch) return;
+    console.info("[ResolutionV2] LNHPD by-npn", { event, ...payload });
+  };
   if (!normalized) return null;
 
   const runQuery = async (table: string) => {
@@ -3039,7 +3191,19 @@ const fetchLnhpdFactsByNpn = async (
     }
 
     const { data, error } = await (signal ? query.abortSignal(signal) : query);
-    if (error || !data || data.length === 0) return null;
+    if (error) {
+      debugLog("query_error", {
+        table,
+        npn: normalized,
+        message: error.message ?? "unknown_error",
+      });
+      return null;
+    }
+    if (!data || data.length === 0) {
+      debugLog("query_empty", { table, npn: normalized });
+      return null;
+    }
+    debugLog("query_hit", { table, npn: normalized });
     return data[0] as LnhpdFactsRecord;
   };
 
@@ -3190,16 +3354,28 @@ const fetchLnhpdFactsByName = async (
 ): Promise<LnhpdFacts | null> => {
   const brand = params.brand?.trim() ?? '';
   const product = params.product?.trim() ?? '';
+  const debugNameMatch = process.env.DEBUG_LNHPD_NAME_MATCH === "1";
+  const debugLog = (event: string, payload: Record<string, unknown>) => {
+    if (!debugNameMatch) return;
+    console.info("[ResolutionV2] LNHPD name-match", { event, ...payload });
+  };
+
+  debugLog("start", { brand, product });
   if (!brand && !product) return null;
 
-  const runQuery = async (table: string) => {
+  const runQuery = async (
+    table: string,
+    options: { productHint?: string | null; allowBrandOnly?: boolean; limit?: number } = {},
+  ) => {
+    const allowBrandOnly = Boolean(options.allowBrandOnly);
+    const limit = Math.max(1, Math.min(200, options.limit ?? (allowBrandOnly ? 80 : 40)));
     let query = supabase
       .from(table)
       .select('lnhpd_id,facts_json,dataset_version,extracted_at,brand_name,product_name,npn,is_on_market')
-      .limit(8);
+      .limit(limit);
 
-    if (product) {
-      query = query.ilike('product_name', `%${product}%`);
+    if (options.productHint) {
+      query = query.ilike('product_name', `%${options.productHint}%`);
     }
     if (brand) {
       query = query.ilike('brand_name', `%${brand}%`);
@@ -3209,31 +3385,190 @@ const fetchLnhpdFactsByName = async (
     }
 
     const { data, error } = await (signal ? query.abortSignal(signal) : query);
-    if (error || !data || data.length === 0) return null;
+    if (error) {
+      debugLog("query_error", {
+        table,
+        productHint: options.productHint ?? null,
+        allowBrandOnly,
+        message: error.message ?? "unknown_error",
+      });
+      return null;
+    }
+    if (!data || data.length === 0) {
+      debugLog("query_empty", {
+        table,
+        productHint: options.productHint ?? null,
+        allowBrandOnly,
+        limit,
+      });
+      return null;
+    }
+    debugLog("query_hit", {
+      table,
+      productHint: options.productHint ?? null,
+      allowBrandOnly,
+      limit,
+      rowCount: data.length,
+    });
     return data as LnhpdFactsRecord[];
   };
 
-  let records = await runQuery('lnhpd_facts_complete');
-  if (!records) {
-    records = await runQuery('lnhpd_facts');
+  const hints = buildLnhpdProductHints(product);
+  const targetDoseIu = extractLnhpdDoseIu(product);
+  const targetForm = extractLnhpdFormToken(product);
+  const targetHasVitaminD = /\bvitamin\s*d(?:\s*3)?\b/i.test(product);
+
+  const runAcrossTables = async (
+    productHint?: string | null,
+    allowBrandOnly = false,
+    limit = allowBrandOnly ? 80 : 40,
+  ) => {
+    // Prefer on-market LNHPD first; only fall back to complete when the on-market table misses.
+    const factsRows = await runQuery('lnhpd_facts', { productHint, allowBrandOnly, limit });
+    if (factsRows && factsRows.length > 0) return factsRows;
+    return await runQuery('lnhpd_facts_complete', { productHint, allowBrandOnly, limit });
+  };
+
+  const uniqueCandidates = new Map<string, LnhpdFactsRecord>();
+  const collectCandidates = (rows: LnhpdFactsRecord[] | null) => {
+    if (!rows || rows.length === 0) return;
+    for (const row of rows) {
+      const key =
+        (typeof row.npn === "string" && row.npn.trim().length > 0
+          ? `npn:${row.npn.trim()}`
+          : `name:${normalizeMatchText(row.brand_name ?? "")}:${normalizeMatchText(row.product_name ?? "")}`);
+      if (!uniqueCandidates.has(key)) uniqueCandidates.set(key, row);
+    }
+  };
+
+  for (const hint of hints) {
+    const hintTokenCount = tokenizeLnhpdName(hint).length;
+    const isBroadHint = hintTokenCount <= 2 || hint.length <= 10;
+    const hintLimit = isBroadHint ? 80 : 30;
+    const rows = await runAcrossTables(hint, false, hintLimit);
+    collectCandidates(rows);
+    if (targetDoseIu && uniqueCandidates.size >= 4) break;
+    if (uniqueCandidates.size >= 20) break;
   }
-  if (!records) return null;
+  if (uniqueCandidates.size === 0 && brand) {
+    collectCandidates(await runAcrossTables(null, true, 100));
+  }
+  const records = Array.from(uniqueCandidates.values());
+  if (!records || records.length === 0) {
+    debugLog("no_candidates", { brand, product, hintCount: hints.length });
+    return null;
+  }
 
   let bestRecord: LnhpdFactsRecord | null = null;
-  let bestScore = -1;
+  let bestScore = Number.NEGATIVE_INFINITY;
+  let bestOverlap = 0;
+  let bestBrandScore = 0;
+  let bestDose: string | null = null;
+  let bestForm: string | null = null;
+  let secondBestScore = Number.NEGATIVE_INFINITY;
+
   for (const record of records) {
-    const score =
-      scoreTextMatch(product, record.product_name) * 2 +
-      scoreTextMatch(brand, record.brand_name);
+    const productScore = scoreTextMatch(product, record.product_name) * 3;
+    const brandScore = scoreTextMatch(brand, record.brand_name) * 2;
+    const overlap = tokenOverlapRatio(product, record.product_name);
+    const overlapScore = Math.round(overlap * 12);
+
+    const candidateDoseIu = extractLnhpdDoseIu(record.product_name);
+    let doseScore = 0;
+    if (targetDoseIu && candidateDoseIu) {
+      doseScore = targetDoseIu === candidateDoseIu ? 7 : -4;
+    } else if (targetDoseIu && /\biu\b/i.test(record.product_name ?? "")) {
+      doseScore = -1;
+    }
+
+    const candidateForm = extractLnhpdFormToken(record.product_name);
+    let formScore = 0;
+    if (targetForm && candidateForm) {
+      formScore = targetForm === candidateForm ? 4 : -2;
+    } else if (targetForm && !candidateForm) {
+      formScore = -1;
+    }
+
+    let vitaminScore = 0;
+    if (targetHasVitaminD) {
+      vitaminScore = /\bvitamin\s*d(?:\s*3)?\b/i.test(record.product_name ?? "") ? 2 : -4;
+    }
+
+    const score = productScore + brandScore + overlapScore + doseScore + formScore + vitaminScore;
+    if (score > secondBestScore) secondBestScore = score;
     if (score > bestScore) {
+      secondBestScore = bestScore;
       bestScore = score;
       bestRecord = record;
+      bestOverlap = overlap;
+      bestBrandScore = brandScore;
+      bestDose = candidateDoseIu;
+      bestForm = candidateForm;
     }
   }
 
-  if (!bestRecord) return null;
-  if (product && bestScore < 2) return null;
+  if (!bestRecord) {
+    debugLog("no_best_record", { brand, product, candidateCount: records.length });
+    return null;
+  }
+  if (brand && bestBrandScore === 0) {
+    debugLog("reject_brand_zero", { bestNpn: bestRecord.npn, bestProduct: bestRecord.product_name, bestScore });
+    return null;
+  }
+  if (product && bestOverlap < 0.34 && bestScore < 10) {
+    debugLog("reject_low_overlap", {
+      bestNpn: bestRecord.npn,
+      bestProduct: bestRecord.product_name,
+      bestScore,
+      bestOverlap,
+    });
+    return null;
+  }
+  if (targetDoseIu && bestDose && targetDoseIu !== bestDose) {
+    debugLog("reject_dose_mismatch", {
+      bestNpn: bestRecord.npn,
+      bestProduct: bestRecord.product_name,
+      bestScore,
+      targetDoseIu,
+      bestDose,
+    });
+    return null;
+  }
+  if (targetForm && bestForm && targetForm !== bestForm) {
+    debugLog("reject_form_mismatch", {
+      bestNpn: bestRecord.npn,
+      bestProduct: bestRecord.product_name,
+      bestScore,
+      targetForm,
+      bestForm,
+    });
+    return null;
+  }
+  if (bestScore < 8) {
+    debugLog("reject_score_low", { bestNpn: bestRecord.npn, bestProduct: bestRecord.product_name, bestScore });
+    return null;
+  }
+  if (secondBestScore > Number.NEGATIVE_INFINITY && bestScore - secondBestScore <= 1 && bestScore < 12) {
+    debugLog("reject_ambiguous", {
+      bestNpn: bestRecord.npn,
+      bestProduct: bestRecord.product_name,
+      bestScore,
+      secondBestScore,
+    });
+    return null;
+  }
 
+  debugLog("selected", {
+    bestNpn: bestRecord.npn,
+    bestProduct: bestRecord.product_name,
+    bestScore,
+    secondBestScore,
+    candidateCount: records.length,
+    targetDoseIu,
+    bestDose,
+    targetForm,
+    bestForm,
+  });
   return buildLnhpdFactsFromRecord(bestRecord);
 };
 
@@ -3944,8 +4279,8 @@ const hasAuthoritativeIdentityFromSnapshot = (snapshot: SupplementSnapshot): boo
   if (snapshot.regulatory.dsldLabelId) return true;
   return Boolean(
     snapshot.regulatory.npn &&
-      snapshot.regulatory.npnStatus === "verified" &&
-      snapshot.regulatory.npnVerifiedBy === "lnhpd_fetch",
+    snapshot.regulatory.npnStatus === "verified" &&
+    snapshot.regulatory.npnVerifiedBy === "lnhpd_fetch",
   );
 };
 
@@ -5188,6 +5523,7 @@ const regressionAuthToken = process.env.REGRESSION_AUTH_TOKEN ?? null;
 const regressionAuthRoutes = new Set([
   "/api/enrich-stream",
   "/api/analysis-section",
+  "/api/summary/ingredient",
   "/api/analyze-label",
   "/api/label-scan/metrics",
   "/api/label-scan/metrics/smoke",
@@ -5414,7 +5750,7 @@ class EnrichStreamAdmissionGate {
   constructor(
     private readonly maxActive: number,
     private readonly maxQueue: number,
-  ) {}
+  ) { }
 
   getState() {
     return {
@@ -6606,9 +6942,9 @@ const buildMySupplementDigestQuick = async (params: {
 
   const snapshot = cacheKey && msLeft() > 0
     ? (await getSnapshotCache(
-        { key: cacheKey, source: "barcode" },
-        { timeoutMs: Math.min(ENSURE_OVERVIEW_SNAPSHOT_READ_MS, msLeft()) },
-      ).catch(() => null))?.snapshot ?? null
+      { key: cacheKey, source: "barcode" },
+      { timeoutMs: Math.min(ENSURE_OVERVIEW_SNAPSHOT_READ_MS, msLeft()) },
+    ).catch(() => null))?.snapshot ?? null
     : null;
 
   if (snapshot) {
@@ -6642,24 +6978,24 @@ const buildMySupplementDigestQuick = async (params: {
 
   const map = barcodeGtin14 && msLeft() > 0
     ? await getBarcodeRegulatoryMap(barcodeGtin14, barcodeDigits ?? "", {
-        timeoutMs: Math.min(ENSURE_OVERVIEW_MAP_READ_MS, msLeft()),
-        includeExpired: true,
-      }).catch(() => null)
+      timeoutMs: Math.min(ENSURE_OVERVIEW_MAP_READ_MS, msLeft()),
+      includeExpired: true,
+    }).catch(() => null)
     : null;
   const npn = map?.npn ?? null;
 
   const identityType: FactsIdentityType = npn
     ? "npn"
     : barcodeGtin14
-    ? "gtin14"
-    : "webCanonicalId";
+      ? "gtin14"
+      : "webCanonicalId";
   const identityValue = npn ?? barcodeGtin14 ?? params.supplementId;
 
   const factsSourceVersion = npn
     ? "lnhpd:map_only"
     : barcodeGtin14
-    ? "snapshot:miss"
-    : "manual:missing_barcode";
+      ? "snapshot:miss"
+      : "manual:missing_barcode";
 
   const digest = buildFactsDigestFromWeb({
     facts: {
@@ -6714,15 +7050,15 @@ const buildMySupplementDigestForEnsureOverview = async (params: {
 
   const snapshot = cacheKey
     ? (await getSnapshotCache({ key: cacheKey, source: "barcode" }, { timeoutMs: 1200 }).catch(() => null))?.snapshot ??
-      null
+    null
     : null;
 
   const npnFromSnapshot = snapshot?.regulatory?.npn ?? null;
   const map = barcodeGtin14
     ? await getBarcodeRegulatoryMap(barcodeGtin14, barcodeDigits ?? "", {
-        timeoutMs: 1200,
-        includeExpired: true,
-      }).catch(() => null)
+      timeoutMs: 1200,
+      includeExpired: true,
+    }).catch(() => null)
     : null;
   const npn = npnFromSnapshot ?? map?.npn ?? null;
 
@@ -6898,71 +7234,71 @@ const ensurePublicOverview = async (params: {
   }
 
   const promise = (async (): Promise<EnsurePublicOverviewResult> => {
-  const cached = await findMatchingPublicAnalysis({
-    supplementId: params.supplementId,
-    factsDigestHash: params.factsDigestHash,
-  });
-  if (cached) return { analysisReady: true, source: "cache", analysisData: cached };
+    const cached = await findMatchingPublicAnalysis({
+      supplementId: params.supplementId,
+      factsDigestHash: params.factsDigestHash,
+    });
+    if (cached) return { analysisReady: true, source: "cache", analysisData: cached };
 
-  const digest = params.digest;
-  const labelDirectionsRawText = safeTrim(params.labelDirectionsRawText) ?? null;
+    const digest = params.digest;
+    const labelDirectionsRawText = safeTrim(params.labelDirectionsRawText) ?? null;
 
-  const ruleOverview = buildRuleBasedOverview({
-    productName: params.productName,
-    dosageText: params.dosageText,
-  });
+    const ruleOverview = buildRuleBasedOverview({
+      productName: params.productName,
+      dosageText: params.dosageText,
+    });
 
-  const normalizeTwoSentenceSummary = (value: string, fallback: string): string => {
-    const pick = safeTrim(value) ?? safeTrim(fallback) ?? "";
-    if (!pick) {
-      return "This supplement is designed to support a common wellness goal. Follow the product label for dosing.";
-    }
+    const normalizeTwoSentenceSummary = (value: string, fallback: string): string => {
+      const pick = safeTrim(value) ?? safeTrim(fallback) ?? "";
+      if (!pick) {
+        return "This supplement is designed to support a common wellness goal. Follow the product label for dosing.";
+      }
 
-    const parts = pick
-      .split(/(?<=[.!?])\s+/)
-      .map((p) => p.trim())
-      .filter(Boolean);
+      const parts = pick
+        .split(/(?<=[.!?])\s+/)
+        .map((p) => p.trim())
+        .filter(Boolean);
 
-    if (parts.length >= 2) return `${parts[0]} ${parts[1]}`;
-    const only = parts[0] ?? pick;
-    const first = /[.!?]$/.test(only) ? only : `${only}.`;
-    return `${first} Follow the product label for dosing.`;
-  };
+      if (parts.length >= 2) return `${parts[0]} ${parts[1]}`;
+      const only = parts[0] ?? pick;
+      const first = /[.!?]$/.test(only) ? only : `${only}.`;
+      return `${first} Follow the product label for dosing.`;
+    };
 
-  const buildDefaultCoreBenefits = (): string[] => {
-    const fromLabel = (digest.claims?.labelPurposes ?? []).filter(Boolean).slice(0, 3);
-    if (fromLabel.length > 0) return fromLabel;
-    const fromRule = ruleOverview.coreBenefits.filter(Boolean).slice(0, 3);
-    if (fromRule.length > 0) return fromRule;
-    const primary = digest.actives?.[0]?.name ?? null;
-    if (primary) return [`Supports nutrition related to ${primary}`];
-    return ["General wellness support"];
-  };
+    const buildDefaultCoreBenefits = (): string[] => {
+      const fromLabel = (digest.claims?.labelPurposes ?? []).filter(Boolean).slice(0, 3);
+      if (fromLabel.length > 0) return fromLabel;
+      const fromRule = ruleOverview.coreBenefits.filter(Boolean).slice(0, 3);
+      if (fromRule.length > 0) return fromRule;
+      const primary = digest.actives?.[0]?.name ?? null;
+      if (primary) return [`Supports nutrition related to ${primary}`];
+      return ["General wellness support"];
+    };
 
-  const getDeterministicLabelDosing = (): string | null => {
-    return labelDirectionsRawText ?? buildLabelDosingText(digest);
-  };
+    const getDeterministicLabelDosing = (): string | null => {
+      return labelDirectionsRawText ?? buildLabelDosingText(digest);
+    };
 
-  const labelDosingText = getDeterministicLabelDosing();
-  const timingField = buildLnhpdDeterministicTiming(labelDosingText);
-  const withFoodField = buildLnhpdDeterministicWithFood(labelDosingText, digest.actives);
+    const labelDosingText = getDeterministicLabelDosing();
+    const timingField = buildLnhpdDeterministicTiming(labelDosingText);
+    const withFoodField = buildLnhpdDeterministicWithFood(labelDosingText, digest.actives);
 
-  const withFoodReason = (() => {
-    const raw = (labelDosingText ?? "").toLowerCase();
-    if (/\b(with food|with meals?|with a meal|after meals?)\b/i.test(raw)) return "label_says_with_meals";
-    const activeNames = digest.actives.map((a) => normalizeIngredientName(a.name));
-    if (activeNames.some((name) => name.includes("astaxanthin") || name.includes("vitamin d") || name === "vitamin d")) {
-      return "fat_soluble";
-    }
-    if (activeNames.some((name) => ["zinc", "iron", "magnesium"].includes(name))) return "reduce_nausea";
-    return "unknown";
-  })();
+    const withFoodReason = (() => {
+      const raw = (labelDosingText ?? "").toLowerCase();
+      if (/\b(with food|with meals?|with a meal|after meals?)\b/i.test(raw)) return "label_says_with_meals";
+      const activeNames = digest.actives.map((a) => normalizeIngredientName(a.name));
+      if (activeNames.some((name) => name.includes("astaxanthin") || name.includes("vitamin d") || name === "vitamin d")) {
+        return "fat_soluble";
+      }
+      if (activeNames.some((name) => ["zinc", "iron", "magnesium"].includes(name))) return "reduce_nausea";
+      return "unknown";
+    })();
 
-  const deepseekKey = process.env.DEEPSEEK_API_KEY ?? null;
-  const model = process.env.DEEPSEEK_MODEL || "deepseek-chat";
+    const deepseekKey = process.env.DEEPSEEK_API_KEY ?? null;
+    const model = process.env.DEEPSEEK_MODEL || "deepseek-chat";
 
-  const maybeGateRow = deepseekKey
-    ? await getAnalysisIdentityCache(
+    const maybeGateRow = deepseekKey
+      ? await getAnalysisIdentityCache(
         {
           identityType: digest.identity.type,
           identityValue: digest.identity.value,
@@ -6973,33 +7309,33 @@ const ensurePublicOverview = async (params: {
         },
         { timeoutMs: 650 },
       ).catch(() => null)
-    : null;
+      : null;
 
-  const gatePayload = maybeGateRow?.payload as { ok?: unknown } | null;
-  if (deepseekKey && maybeGateRow?.status === "complete" && gatePayload && typeof gatePayload === "object" && gatePayload.ok === false) {
-    return { analysisReady: false, source: "none" };
-  }
+    const gatePayload = maybeGateRow?.payload as { ok?: unknown } | null;
+    if (deepseekKey && maybeGateRow?.status === "complete" && gatePayload && typeof gatePayload === "object" && gatePayload.ok === false) {
+      return { analysisReady: false, source: "none" };
+    }
 
-  const promptFacts = {
-    identity: digest.identity,
-    sourceType: digest.sourceType,
-    product: digest.product,
-    actives: digest.actives.slice(0, 14).map((active) => ({
-      name: active.name,
-      amountText: active.amountText ?? (active.amount != null && active.unit ? `${active.amount} ${active.unit}` : null),
-      source: active.source,
-      confidence: active.confidence ?? null,
-    })),
-    serving: digest.serving,
-    labelDosing: digest.labelDosing.map((d) => d.rawText).filter(Boolean).slice(0, 3),
-    claims: digest.claims,
-    warnings: digest.warnings,
-    quality: digest.quality,
-  };
+    const promptFacts = {
+      identity: digest.identity,
+      sourceType: digest.sourceType,
+      product: digest.product,
+      actives: digest.actives.slice(0, 14).map((active) => ({
+        name: active.name,
+        amountText: active.amountText ?? (active.amount != null && active.unit ? `${active.amount} ${active.unit}` : null),
+        source: active.source,
+        confidence: active.confidence ?? null,
+      })),
+      serving: digest.serving,
+      labelDosing: digest.labelDosing.map((d) => d.rawText).filter(Boolean).slice(0, 3),
+      claims: digest.claims,
+      warnings: digest.warnings,
+      quality: digest.quality,
+    };
 
-  const deepseekOverviewV2 = deepseekKey
-    ? deepseekBreaker.canRequest()
-      ? await fetchMySupplementOverviewV2(
+    const deepseekOverviewV2 = deepseekKey
+      ? deepseekBreaker.canRequest()
+        ? await fetchMySupplementOverviewV2(
           `FACTS_DIGEST_JSON: ${JSON.stringify(promptFacts)}\nLABEL_DIRECTIONS_RAW: ${labelDosingText ?? ""}`,
           model,
           deepseekKey,
@@ -7010,119 +7346,119 @@ const ensurePublicOverview = async (params: {
             semaphore: deepseekSemaphore,
           },
         )
-      : null
-    : null;
+        : null
+      : null;
 
-  // If DeepSeek is configured, ONLY cache DeepSeek output.
-  // Rule-based is used only when DeepSeek is not configured (local/dev environments).
-  if (deepseekKey && !deepseekOverviewV2) {
-    return { analysisReady: false, source: "none" };
-  }
-
-  const coreBenefits = buildDefaultCoreBenefits();
-
-  if (deepseekOverviewV2) {
-    const rejectReason = getMySupplementOverviewV2GateReason({
-      actives: digest.actives,
-      oneLiner: deepseekOverviewV2.oneLiner,
-      whatItIs: deepseekOverviewV2.whatItIs,
-      tips: deepseekOverviewV2.tips,
-      whatYouMayNotice: deepseekOverviewV2.whatYouMayNotice,
-      watchOuts: deepseekOverviewV2.watchOuts,
-    });
-    if (rejectReason) {
-      void upsertAnalysisIdentityCache(
-        {
-          identityType: digest.identity.type,
-          identityValue: digest.identity.value,
-          locale: "en",
-          promptVersion: MY_SUPP_OVERVIEW_V2_PROMPT_VERSION,
-          factsDigestHash: params.factsDigestHash,
-          factsSourceVersion: params.factsSourceVersion,
-          section: MY_SUPP_OVERVIEW_V2_GATE_SECTION,
-          status: "complete",
-          payload: { ok: false, reason: rejectReason, generatedAt: nowIso() },
-          factsDigestJson: digest,
-          attempts: 1,
-          lockedUntil: null,
-          lastError: null,
-          errorCode: `GATE_${rejectReason.toUpperCase()}`,
-          expiresAt: new Date(Date.now() + MY_SUPP_OVERVIEW_V2_GATE_TTL_MS).toISOString(),
-        },
-        { timeoutMs: 1200 },
-      ).catch((error) => {
-        const message = error instanceof Error ? error.message : "Unknown error";
-        console.warn("[ensure-overview] Failed to persist gate negative cache", message);
-      });
+    // If DeepSeek is configured, ONLY cache DeepSeek output.
+    // Rule-based is used only when DeepSeek is not configured (local/dev environments).
+    if (deepseekKey && !deepseekOverviewV2) {
       return { analysisReady: false, source: "none" };
     }
-  }
 
-  const v2Meta = deepseekOverviewV2
-    ? {
+    const coreBenefits = buildDefaultCoreBenefits();
+
+    if (deepseekOverviewV2) {
+      const rejectReason = getMySupplementOverviewV2GateReason({
+        actives: digest.actives,
+        oneLiner: deepseekOverviewV2.oneLiner,
+        whatItIs: deepseekOverviewV2.whatItIs,
+        tips: deepseekOverviewV2.tips,
+        whatYouMayNotice: deepseekOverviewV2.whatYouMayNotice,
+        watchOuts: deepseekOverviewV2.watchOuts,
+      });
+      if (rejectReason) {
+        void upsertAnalysisIdentityCache(
+          {
+            identityType: digest.identity.type,
+            identityValue: digest.identity.value,
+            locale: "en",
+            promptVersion: MY_SUPP_OVERVIEW_V2_PROMPT_VERSION,
+            factsDigestHash: params.factsDigestHash,
+            factsSourceVersion: params.factsSourceVersion,
+            section: MY_SUPP_OVERVIEW_V2_GATE_SECTION,
+            status: "complete",
+            payload: { ok: false, reason: rejectReason, generatedAt: nowIso() },
+            factsDigestJson: digest,
+            attempts: 1,
+            lockedUntil: null,
+            lastError: null,
+            errorCode: `GATE_${rejectReason.toUpperCase()}`,
+            expiresAt: new Date(Date.now() + MY_SUPP_OVERVIEW_V2_GATE_TTL_MS).toISOString(),
+          },
+          { timeoutMs: 1200 },
+        ).catch((error) => {
+          const message = error instanceof Error ? error.message : "Unknown error";
+          console.warn("[ensure-overview] Failed to persist gate negative cache", message);
+        });
+        return { analysisReady: false, source: "none" };
+      }
+    }
+
+    const v2Meta = deepseekOverviewV2
+      ? {
         promptVersion: MY_SUPP_OVERVIEW_V2_PROMPT_VERSION,
         factsDigestHash: params.factsDigestHash,
         factsSourceVersion: params.factsSourceVersion,
         generatedAt: nowIso(),
         model,
       }
-    : null;
+      : null;
 
-  const overviewSummary = deepseekOverviewV2
-    ? normalizeTwoSentenceSummary(
+    const overviewSummary = deepseekOverviewV2
+      ? normalizeTwoSentenceSummary(
         `${deepseekOverviewV2.oneLiner} ${deepseekOverviewV2.whatItIs}`,
         ruleOverview.overviewSummary,
       )
-    : ruleOverview.overviewSummary;
+      : ruleOverview.overviewSummary;
 
-  const analysisData = {
-    efficacy: {
-      score: 3 as RatingScore,
-      benefits: coreBenefits,
-      dosageAssessment: {
-        text: typeof withFoodField.value === "boolean"
-          ? withFoodField.value
-            ? "Take with food."
-            : "Take on an empty stomach."
-          : "Follow label directions.",
-        isUnderDosed: false,
+    const analysisData = {
+      efficacy: {
+        score: 3 as RatingScore,
+        benefits: coreBenefits,
+        dosageAssessment: {
+          text: typeof withFoodField.value === "boolean"
+            ? withFoodField.value
+              ? "Take with food."
+              : "Take on an empty stomach."
+            : "Follow label directions.",
+          isUnderDosed: false,
+        },
+        overviewSummary,
+        coreBenefits,
       },
-      overviewSummary,
-      coreBenefits,
-    },
-    usage: {
-      timing: timingField.text,
-      withFood: withFoodField.value,
-      summary: withFoodField.text ?? "Follow label directions.",
-      conflicts: [],
-      sourceType: "general_knowledge",
-      withFoodReason,
-    },
-    mySupplementOverviewV2: deepseekOverviewV2
-      ? {
+      usage: {
+        timing: timingField.text,
+        withFood: withFoodField.value,
+        summary: withFoodField.text ?? "Follow label directions.",
+        conflicts: [],
+        sourceType: "general_knowledge",
+        withFoodReason,
+      },
+      mySupplementOverviewV2: deepseekOverviewV2
+        ? {
           ...deepseekOverviewV2,
           meta: v2Meta,
         }
-      : null,
-  } satisfies Partial<AiSupplementAnalysis>;
+        : null,
+    } satisfies Partial<AiSupplementAnalysis>;
 
-  const { error: insertError } = await supabase.from("ai_analyses").insert({
-    supplement_id: params.supplementId,
-    user_id: null,
-    analysis_data: analysisData,
-  });
+    const { error: insertError } = await supabase.from("ai_analyses").insert({
+      supplement_id: params.supplementId,
+      user_id: null,
+      analysis_data: analysisData,
+    });
 
-  if (insertError) {
-    if (isUniqueViolation(insertError)) return { analysisReady: true, source: "cache" };
-    console.warn("[ensure-overview] ai_analyses insert failed", insertError.message);
-    return { analysisReady: false, source: "none" };
-  }
+    if (insertError) {
+      if (isUniqueViolation(insertError)) return { analysisReady: true, source: "cache" };
+      console.warn("[ensure-overview] ai_analyses insert failed", insertError.message);
+      return { analysisReady: false, source: "none" };
+    }
 
-  return {
-    analysisReady: true,
-    source: deepseekOverviewV2 ? "deepseek" : "rule",
-    analysisData,
-  };
+    return {
+      analysisReady: true,
+      source: deepseekOverviewV2 ? "deepseek" : "rule",
+      analysisData,
+    };
   })();
 
   inflightPublicOverviewByKey.set(inflightKey, promise);
@@ -7134,22 +7470,28 @@ const ensurePublicOverview = async (params: {
 };
 
 const scoreSourceSchema = z.enum(["dsld", "lnhpd", "ocr", "manual", "web"]);
+const scanFactsSourceSchema = z.enum(["dsld", "lnhpd", "web"]);
+const kbFormInsightsItemSchema = z
+  .object({
+    ingredientId: z.string().trim().min(1),
+    formKey: z.string().trim().min(1),
+  })
+  .strict();
 const kbFormInsightsBatchBodySchema = z
   .object({
     locale: z.string().trim().min(2).max(8).optional().default("en"),
-    items: z
-      .array(
-        z
-          .object({
-            ingredientId: z.string().trim().min(1),
-            formKey: z.string().trim().min(1),
-          })
-          .strict(),
-      )
-      .min(1)
-      .max(50),
+    items: z.array(kbFormInsightsItemSchema).min(1).max(50).optional(),
+    requests: z.array(kbFormInsightsItemSchema).min(1).max(50).optional(),
   })
-  .strict();
+  .strict()
+  .refine((value) => Boolean(value.items?.length || value.requests?.length), {
+    message: "items or requests is required",
+    path: ["items"],
+  })
+  .transform((value) => ({
+    locale: value.locale,
+    items: value.items?.length ? value.items : (value.requests ?? []),
+  }));
 
 const webScoreIngestBodySchema = z
   .object({
@@ -7747,6 +8089,145 @@ app.post("/api/score/v4/web/:id", verifySupabaseToken, async (req: Request, res:
   return res.json(response);
 });
 
+app.get("/api/scan-facts/v1/:source/:id", verifySupabaseToken, async (req: Request, res: Response) => {
+  const sourceParsed = scanFactsSourceSchema.safeParse(req.params.source);
+  const sourceId = typeof req.params.id === "string" ? req.params.id.trim() : "";
+  if (!sourceParsed.success || !sourceId) {
+    return res
+      .status(400)
+      .json({ error: "invalid_request", detail: "Invalid source or id" } satisfies ErrorResponse);
+  }
+
+  const source = sourceParsed.data;
+  const requestSignal = createTimeoutSignal(4_500);
+
+  const parseMissingFields = (value: unknown): string[] => {
+    if (Array.isArray(value)) {
+      return value
+        .map((item) => (typeof item === "string" ? item.trim() : ""))
+        .filter(Boolean);
+    }
+    if (typeof value === "string" && value.trim()) {
+      return value
+        .split(/[;,]/)
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+    if (value && typeof value === "object") {
+      return Object.entries(value as Record<string, unknown>)
+        .filter(([, flag]) => Boolean(flag))
+        .map(([key]) => key.trim())
+        .filter(Boolean);
+    }
+    return [];
+  };
+
+  try {
+    if (source === "lnhpd") {
+      const facts = await fetchLnhpdFactsByNpn(sourceId, requestSignal);
+      if (!facts) {
+        return res.json({ status: "not_found", source, sourceId, facts: null });
+      }
+      const row = await fetchLnhpdFactsRecordByNpn(sourceId, requestSignal);
+      const dto = mapLnhpdFactsToFactsDTO({
+        npn: sourceId,
+        productName: facts.productName ?? null,
+        brandName: facts.brandName ?? null,
+        actives: facts.actives,
+        inactive: facts.inactive ?? [],
+        purposes: facts.purposes ?? [],
+        routes: facts.routes ?? [],
+        doses: facts.doses ?? [],
+        datasetVersion: facts.datasetVersion ?? row?.dataset_version ?? null,
+        extractedAt: facts.extractedAt ?? row?.extracted_at ?? null,
+        isComplete: typeof row?.is_complete === "boolean" ? row.is_complete : null,
+        missingFields: parseMissingFields(row?.missing_fields),
+        factsJson: row?.facts_json,
+      });
+      return res.json({ status: "ok", source, sourceId, facts: factsDtoSchemaV2.parse(dto) });
+    }
+
+    if (source === "dsld") {
+      const idNum = Number.parseInt(sourceId, 10);
+      if (!Number.isFinite(idNum) || idNum <= 0) {
+        return res.status(400).json({ error: "invalid_request", detail: "DSLD id must be numeric" } satisfies ErrorResponse);
+      }
+
+      const factsRecord = await fetchDsldFactsRecordByLabelId(idNum, requestSignal);
+      if (factsRecord?.facts_json && typeof factsRecord.facts_json === "object") {
+        const dsldFacts = factsRecord.facts_json as {
+          dsldLabelId?: number;
+          brandName?: string | null;
+          productName?: string | null;
+          servingSize?: string | null;
+          servingsPerContainer?: number | null;
+          actives?: Array<{ name: string; amount: number | null; unit: string | null; formRaw?: string | null }>;
+          inactive?: string[];
+          dsldPdf?: string | null;
+          dsldThumbnail?: string | null;
+        };
+        const dto = mapDsldFactsToFactsDTO({
+          dsldLabelId: dsldFacts.dsldLabelId ?? idNum,
+          productName: dsldFacts.productName ?? null,
+          brandName: dsldFacts.brandName ?? null,
+          actives: Array.isArray(dsldFacts.actives) ? dsldFacts.actives : [],
+          inactive: Array.isArray(dsldFacts.inactive) ? dsldFacts.inactive : [],
+          servingSize: dsldFacts.servingSize ?? null,
+          servingsPerContainer: dsldFacts.servingsPerContainer ?? null,
+          datasetVersion: factsRecord.dataset_version ?? null,
+          extractedAt: factsRecord.extracted_at ?? null,
+          dsldPdf: dsldFacts.dsldPdf ?? null,
+          dsldThumbnail: dsldFacts.dsldThumbnail ?? null,
+        });
+        return res.json({ status: "ok", source, sourceId, facts: factsDtoSchemaV2.parse(dto) });
+      }
+
+      const meta = await fetchDsldMetaByLabelId(idNum, requestSignal);
+      if (!meta) {
+        return res.json({ status: "not_found", source, sourceId, facts: null });
+      }
+      const dto = mapDsldFactsToFactsDTO({
+        dsldLabelId: meta.dsld_label_id,
+        productName: meta.product_name ?? null,
+        brandName: meta.brand ?? null,
+        servingSize: meta.serving_size_raw ?? null,
+        servingsPerContainer: meta.servings_per_container ?? null,
+        actives: parseDelimitedList(meta.active_ingredients_summary).map(parseActiveSummaryLine),
+        inactive: parseDelimitedList(meta.inactive_ingredients),
+        datasetVersion: meta.dsld_product_version_code ?? null,
+        extractedAt: null,
+        dsldPdf: meta.dsld_pdf ?? null,
+        dsldThumbnail: meta.dsld_thumbnail ?? null,
+      });
+      return res.json({ status: "ok", source, sourceId, facts: factsDtoSchemaV2.parse(dto) });
+    }
+
+    const webRows = await fetchWebIngredientsBySourceId(sourceId, requestSignal);
+    if (!webRows.length) {
+      return res.json({ status: "not_found", source, sourceId, facts: null });
+    }
+    const dto = mapWebFactsToFactsDTO({
+      sourceId,
+      productName: null,
+      brandName: null,
+      actives: webRows
+        .filter((row) => row.is_active)
+        .map((row) => ({
+          name: row.name_raw,
+          amount: typeof row.amount === "number" ? row.amount : null,
+          unit: typeof row.unit === "string" ? row.unit : null,
+        })),
+      inactives: webRows.filter((row) => !row.is_active).map((row) => row.name_raw),
+      extractedAt: null,
+      datasetVersion: null,
+    });
+    return res.json({ status: "ok", source, sourceId, facts: factsDtoSchemaV2.parse(dto) });
+  } catch (error) {
+    const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+    return res.status(500).json({ error: "unexpected_error", detail } satisfies ErrorResponse);
+  }
+});
+
 /**
  * KB runtime form insights (batch)
  */
@@ -7800,9 +8281,67 @@ app.post("/api/kb/runtime/form-insights/batch", verifySupabaseToken, async (req:
 app.post("/api/summary/ingredient", verifySupabaseToken, async (req: Request, res: Response) => {
   const packet = parseRequestBody(ingredientSummaryPacketSchema, req, res);
   if (!packet) return;
-  const summary = compileIngredientSummary(packet);
+
+  const deepseekKey = process.env.DEEPSEEK_API_KEY?.trim();
+  const deepseekModel = process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
+  const isRegressionRequest = (req as AuthenticatedRequest).regressionAuth === true;
+
+  const llmFn = deepseekKey
+    ? async (prompt: string): Promise<string> => {
+        const controller = new AbortController();
+        const timeoutMs = 9_000;
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+          const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${deepseekKey}`,
+            },
+            body: JSON.stringify({
+              model: deepseekModel,
+              messages: [
+                {
+                  role: "system",
+                  content:
+                    "Return ONLY a valid JSON object. No markdown. No commentary. No code fences.",
+                },
+                { role: "user", content: prompt },
+              ],
+              temperature: 0.1,
+              stream: false,
+              max_tokens: 450,
+              response_format: { type: "json_object" },
+            }),
+            signal: controller.signal,
+          });
+
+          if (!response.ok) {
+            throw new Error(`deepseek_http_${response.status}`);
+          }
+
+          const payload = (await response.json()) as {
+            choices?: Array<{ message?: { content?: string } }>;
+          };
+          const content = payload.choices?.[0]?.message?.content;
+          if (typeof content !== "string" || content.trim().length === 0) {
+            throw new Error("deepseek_empty_content");
+          }
+          return content;
+        } finally {
+          clearTimeout(timer);
+        }
+      }
+    : undefined;
+
+  const summary = await compileIngredientSummaryAsync(packet, {
+    llmFn,
+    regression: isRegressionRequest,
+  });
+
   return res.json({
     status: "ok",
+    ...summary,
     summary,
   });
 });
@@ -7905,9 +8444,9 @@ const buildFallbackUsageSection = (digest: FactsDigest): AnalysisBundle["section
       },
       dosage: labelDosingText
         ? {
-            text: labelDosingText,
-            basisTags: ["label_fact"],
-          }
+          text: labelDosingText,
+          basisTags: ["label_fact"],
+        }
         : null,
     },
     detail: {
@@ -8123,15 +8662,15 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
           cover: identityFallbackSection.cover,
           detail: identityFallbackSection.detail,
           dataStatus: identityFallbackSection.dataStatus,
-        meta: {
-          bundleId: randomUUID(),
-          revision: 1,
-          factsDigestHash: requestedFactsDigestHash,
-          fallbackUsed: "skeleton",
-          fallback: { code: "facts_digest_missing" },
-          fallbackReason: "facts_digest_missing",
-          scoreAvailable: fallbackScoreAvailable,
-        },
+          meta: {
+            bundleId: randomUUID(),
+            revision: 1,
+            factsDigestHash: requestedFactsDigestHash,
+            fallbackUsed: "skeleton",
+            fallback: { code: "facts_digest_missing" },
+            fallbackReason: "facts_digest_missing",
+            scoreAvailable: fallbackScoreAvailable,
+          },
           timingMs: 0,
         });
         return;
@@ -8243,29 +8782,29 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     return;
   }
 
-	  const requestedLimit =
-	    isDsldDetail ? Math.min(rawRequestedLimit, ANALYSIS_DETAIL_LIMIT_DSLD) : rawRequestedLimit;
-	  const sectionKey = `${section}:${requestedLimit}:${cursor}`;
-	  const rateKey = `${identity.type}:${identity.value}:${locale}:${promptVersionForCache}:${sectionKey}`;
-	  const totalActives = digest.actives.length;
-	  const buildDetailPage = (returnedCount: number) => {
-	    const nextCursor = cursor + returnedCount;
-	    const hasMore = totalActives > nextCursor;
-	    return {
-	      limit: requestedLimit,
-	      cursor,
-	      nextCursor: hasMore ? nextCursor : null,
-	      hasMore,
-	      totalActives,
-	    };
-	  };
+  const requestedLimit =
+    isDsldDetail ? Math.min(rawRequestedLimit, ANALYSIS_DETAIL_LIMIT_DSLD) : rawRequestedLimit;
+  const sectionKey = `${section}:${requestedLimit}:${cursor}`;
+  const rateKey = `${identity.type}:${identity.value}:${locale}:${promptVersionForCache}:${sectionKey}`;
+  const totalActives = digest.actives.length;
+  const buildDetailPage = (returnedCount: number) => {
+    const nextCursor = cursor + returnedCount;
+    const hasMore = totalActives > nextCursor;
+    return {
+      limit: requestedLimit,
+      cursor,
+      nextCursor: hasMore ? nextCursor : null,
+      hasMore,
+      totalActives,
+    };
+  };
   const gateBundle = fastBundleForGate;
   const isSkeletonBundleOnly = gateBundle
     ? gateBundle.meta.revision < 1 ||
-      gateBundle.meta.phase === "skeleton" ||
-      gateBundle.meta.sourceTypeFinal === false ||
-      gateBundle.meta.detailReady === false ||
-      gateBundle.sections.ingredients.dataStatus === "pending"
+    gateBundle.meta.phase === "skeleton" ||
+    gateBundle.meta.sourceTypeFinal === false ||
+    gateBundle.meta.detailReady === false ||
+    gateBundle.sections.ingredients.dataStatus === "pending"
     : false;
 
   if (gateBundle && isSkeletonBundleOnly) {
@@ -8288,9 +8827,9 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     return;
   }
 
-	  if (totalActives === 0) {
-	    res.status(200).json({
-	      section: "ingredients",
+  if (totalActives === 0) {
+    res.status(200).json({
+      section: "ingredients",
       detail: null,
       dataStatus: "not_provided",
       page: buildDetailPage(0),
@@ -8411,22 +8950,22 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       let changed = false;
       const patchedItems = Array.isArray(detailPayload.items)
         ? detailPayload.items.map((item) => {
-            const base = baseByName.get(normalizeIngredientName(item.name));
-            if (!base) return item;
-            const next = {
-              ...item,
-              doseContext: base.doseContext,
-              chemicalFormExplain: base.chemicalFormExplain,
-              deliveryFormExplain: base.deliveryFormExplain,
-            };
-            if (
-              item.doseContext?.text !== next.doseContext?.text ||
-              item.chemicalFormExplain?.text !== next.chemicalFormExplain?.text
-            ) {
-              changed = true;
-            }
-            return next;
-          })
+          const base = baseByName.get(normalizeIngredientName(item.name));
+          if (!base) return item;
+          const next = {
+            ...item,
+            doseContext: base.doseContext,
+            chemicalFormExplain: base.chemicalFormExplain,
+            deliveryFormExplain: base.deliveryFormExplain,
+          };
+          if (
+            item.doseContext?.text !== next.doseContext?.text ||
+            item.chemicalFormExplain?.text !== next.chemicalFormExplain?.text
+          ) {
+            changed = true;
+          }
+          return next;
+        })
         : detailPayload.items;
 
       detailPayload = { ...detailPayload, items: patchedItems };
@@ -8518,12 +9057,12 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
           hideDsldFallbackMarker || !cachedFallback
             ? webDetailGateReason
               ? {
-                  code: webDetailGateReason,
-                }
+                code: webDetailGateReason,
+              }
               : undefined
             : {
-                code: cachedDetail.last_error ?? cachedDetail.error_code ?? "cache_fallback",
-              },
+              code: cachedDetail.last_error ?? cachedDetail.error_code ?? "cache_fallback",
+            },
         fallbackReason: hideDsldFallbackMarker
           ? webDetailGateReason ?? undefined
           : cachedFallback
@@ -8957,9 +9496,9 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   const isParseFailure = (code: string | null): boolean =>
     Boolean(
       code &&
-        (code === "detail_v3_content_parse_failed" ||
-          code === "detail_v3_response_parse_failed" ||
-          code === "detail_v3_missing_content"),
+      (code === "detail_v3_content_parse_failed" ||
+        code === "detail_v3_response_parse_failed" ||
+        code === "detail_v3_missing_content"),
     );
 
   try {
@@ -9115,25 +9654,25 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     ? dsldWhatItDoesUsed
       ? null
       : dsldLlmSkipReason ??
-        errorCode ??
-        (detailDebug?.__deepseek_error ? String(detailDebug.__deepseek_error) : null) ??
-        "LLM_UNAVAILABLE"
+      errorCode ??
+      (detailDebug?.__deepseek_error ? String(detailDebug.__deepseek_error) : null) ??
+      "LLM_UNAVAILABLE"
     : null;
 
   const resolvedErrorCode = detailPayload
     ? null
     : errorCode ??
-      (detailDebug?.__deepseek_error
-        ? String(detailDebug.__deepseek_error)
-        : detailRaw
-          ? isDsldDetail
-            ? dsldParsed?.success
-              ? null
-              : "LLM_PARSE_FAILED"
-            : parsedDetail?.success
-              ? null
-              : "LLM_PARSE_FAILED"
-          : "LLM_EMPTY_RESPONSE");
+    (detailDebug?.__deepseek_error
+      ? String(detailDebug.__deepseek_error)
+      : detailRaw
+        ? isDsldDetail
+          ? dsldParsed?.success
+            ? null
+            : "LLM_PARSE_FAILED"
+          : parsedDetail?.success
+            ? null
+            : "LLM_PARSE_FAILED"
+        : "LLM_EMPTY_RESPONSE");
 
   let fallbackUsed: "kb_dsld" | "skeleton" | null = null;
   let fallbackReason: string | null = null;
@@ -9215,35 +9754,35 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
   const includeDebug = allowInternalDebug && deepseekDebugEnabled && detailDataStatus !== "complete";
   const debugPayload =
     includeDebug ||
-    includeFormResolve ||
-    includeFormEvidence ||
-    includeFormSentenceIds ||
-    includeFormExcerptIds ||
-    includeFormReferenceIds ||
-    includeFormEvidenceGrades ||
-    includeFormSupportStrengths
+      includeFormResolve ||
+      includeFormEvidence ||
+      includeFormSentenceIds ||
+      includeFormExcerptIds ||
+      includeFormReferenceIds ||
+      includeFormEvidenceGrades ||
+      includeFormSupportStrengths
       ? {
-          deepseekError: includeDebug ? (detailDebug?.__deepseek_error ?? null) : undefined,
-          snippet: includeDebug ? (detailDebug?.__deepseek_snippet ?? null) : undefined,
-          meta: includeDebug ? (detailDebug?.__deepseek_meta ?? null) : undefined,
-          parseIssues: includeDebug
-            ? isDsldDetail
-              ? dsldParsed?.success
-                ? null
-                : dsldParsed?.error?.issues ?? null
-              : parsedDetail?.success
-                ? null
-                : parsedDetail?.error?.issues ?? null
-            : undefined,
-          rescueAttempted: includeDebug ? rescueAttempted : undefined,
-          formResolveSources: includeFormResolve ? formResolveSources : undefined,
-          formEvidenceTexts: includeFormEvidence ? formEvidenceTexts : undefined,
-          formSentenceIds: includeFormSentenceIds ? formSentenceIds : undefined,
-          formExcerptIds: includeFormExcerptIds ? formExcerptIds : undefined,
-          formReferenceIds: includeFormReferenceIds ? formReferenceIds : undefined,
-          formEvidenceGrades: includeFormEvidenceGrades ? formEvidenceGrades : undefined,
-          formSupportStrengths: includeFormSupportStrengths ? formSupportStrengths : undefined,
-        }
+        deepseekError: includeDebug ? (detailDebug?.__deepseek_error ?? null) : undefined,
+        snippet: includeDebug ? (detailDebug?.__deepseek_snippet ?? null) : undefined,
+        meta: includeDebug ? (detailDebug?.__deepseek_meta ?? null) : undefined,
+        parseIssues: includeDebug
+          ? isDsldDetail
+            ? dsldParsed?.success
+              ? null
+              : dsldParsed?.error?.issues ?? null
+            : parsedDetail?.success
+              ? null
+              : parsedDetail?.error?.issues ?? null
+          : undefined,
+        rescueAttempted: includeDebug ? rescueAttempted : undefined,
+        formResolveSources: includeFormResolve ? formResolveSources : undefined,
+        formEvidenceTexts: includeFormEvidence ? formEvidenceTexts : undefined,
+        formSentenceIds: includeFormSentenceIds ? formSentenceIds : undefined,
+        formExcerptIds: includeFormExcerptIds ? formExcerptIds : undefined,
+        formReferenceIds: includeFormReferenceIds ? formReferenceIds : undefined,
+        formEvidenceGrades: includeFormEvidenceGrades ? formEvidenceGrades : undefined,
+        formSupportStrengths: includeFormSupportStrengths ? formSupportStrengths : undefined,
+      }
       : undefined;
 
   res.json({
@@ -9280,16 +9819,16 @@ app.get("/api/client-runtime-flags", verifySupabaseToken, (_req: Request, res: R
 /**
  * Main streaming endpoint: Two-step search + AI analysis
  */
-	app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Response) => {
-	  const parsedBody = parseRequestBody(enrichStreamBodySchema, req, res);
-	  if (!parsedBody) {
-	    return;
-	  }
-	  const rawBarcode = parsedBody.barcode;
-	  const streamModeRaw =
-	    typeof (parsedBody as Record<string, unknown>)["streamMode"] === "string"
-	      ? String((parsedBody as Record<string, unknown>)["streamMode"]).trim()
-	      : null;
+app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Response) => {
+  const parsedBody = parseRequestBody(enrichStreamBodySchema, req, res);
+  if (!parsedBody) {
+    return;
+  }
+  const rawBarcode = parsedBody.barcode;
+  const streamModeRaw =
+    typeof (parsedBody as Record<string, unknown>)["streamMode"] === "string"
+      ? String((parsedBody as Record<string, unknown>)["streamMode"]).trim()
+      : null;
   const streamAnalysisBundleOnly =
     streamModeRaw === "analysis_bundle_only" || streamModeRaw === "bundle_only" || streamModeRaw === "analysis_bundle";
   const streamAdmissionQueueWaitMs = streamAnalysisBundleOnly
@@ -9297,8 +9836,8 @@ app.get("/api/client-runtime-flags", verifySupabaseToken, (_req: Request, res: R
     : ENRICH_STREAM_QUEUE_WAIT_MS;
   const normalized = normalizeBarcodeInput(rawBarcode);
   const model = process.env.DEEPSEEK_MODEL || "deepseek-chat";
-	  const acceptLanguageHeader =
-	    typeof req.headers["accept-language"] === "string" ? req.headers["accept-language"] : null;
+  const acceptLanguageHeader =
+    typeof req.headers["accept-language"] === "string" ? req.headers["accept-language"] : null;
   const locale = resolveLocale(acceptLanguageHeader);
   const requestEntryAt = Date.now();
   const globalStreamTimeoutMs =
@@ -9315,7 +9854,7 @@ app.get("/api/client-runtime-flags", verifySupabaseToken, (_req: Request, res: R
   const authorityRegressionSampleRequested = Array.isArray(authorityRegressionSampleHeaderRaw)
     ? authorityRegressionSampleHeaderRaw.some((value) => String(value).trim().toLowerCase() === "1" || String(value).trim().toLowerCase() === "true")
     : String(authorityRegressionSampleHeaderRaw ?? "").trim().toLowerCase() === "1" ||
-      String(authorityRegressionSampleHeaderRaw ?? "").trim().toLowerCase() === "true";
+    String(authorityRegressionSampleHeaderRaw ?? "").trim().toLowerCase() === "true";
   const isRegressionLikeRequest =
     isRegressionRequest ||
     (process.env.NODE_ENV !== "production" && isAuthBypassRequest && authorityRegressionSampleRequested);
@@ -9433,7 +9972,7 @@ app.get("/api/client-runtime-flags", verifySupabaseToken, (_req: Request, res: R
     }
   };
   const buildStableWebPipeline = () =>
-    (finalizePipelineNotReachedCodes(),
+  (finalizePipelineNotReachedCodes(),
     pipelineStepsOrder.map((step) => {
       const item = pipelineState.get(step);
       return {
@@ -9939,40 +10478,40 @@ app.get("/api/client-runtime-flags", verifySupabaseToken, (_req: Request, res: R
   res.on("finish", clearWatchdogs);
   res.on("finish", clearDisconnectReleaseTimer);
 
-	  try {
-      const admissionWaitMs = Math.max(
-        0,
-        Math.min(streamAdmissionQueueWaitMs, globalDeadlineAt - Date.now()),
-      );
-      try {
-        const admissionLease = await enrichStreamAdmissionGate.acquire({
-          signal: requestAbort.signal,
-          waitMs: admissionWaitMs,
-        });
-        releaseAdmission = admissionLease.release;
-      } catch (error) {
-        if (error instanceof EnrichStreamAdmissionError && error.code === "ABORTED") {
-          return;
-        }
-        const reasonCode =
-          error instanceof EnrichStreamAdmissionError && error.code === "QUEUE_FULL"
-            ? "QUEUE_FULL"
-            : "QUEUE_WAIT_TIMEOUT";
-        emitStreamBusyAndFinalize(reasonCode);
+  try {
+    const admissionWaitMs = Math.max(
+      0,
+      Math.min(streamAdmissionQueueWaitMs, globalDeadlineAt - Date.now()),
+    );
+    try {
+      const admissionLease = await enrichStreamAdmissionGate.acquire({
+        signal: requestAbort.signal,
+        waitMs: admissionWaitMs,
+      });
+      releaseAdmission = admissionLease.release;
+    } catch (error) {
+      if (error instanceof EnrichStreamAdmissionError && error.code === "ABORTED") {
         return;
       }
+      const reasonCode =
+        error instanceof EnrichStreamAdmissionError && error.code === "QUEUE_FULL"
+          ? "QUEUE_FULL"
+          : "QUEUE_WAIT_TIMEOUT";
+      emitStreamBusyAndFinalize(reasonCode);
+      return;
+    }
 
-	    if (!normalized) {
-	      emitTerminalErrorAndFinalize({
-	        code: "INVALID_BARCODE",
-	        stage: "input",
-	        reasonCode: "INVALID_BARCODE",
-	        retryable: false,
-	        message: "Invalid barcode provided",
-	        finalizeReason: "invalid_barcode",
-	      });
-	      return;
-	    }
+    if (!normalized) {
+      emitTerminalErrorAndFinalize({
+        code: "INVALID_BARCODE",
+        stage: "input",
+        reasonCode: "INVALID_BARCODE",
+        retryable: false,
+        message: "Invalid barcode provided",
+        finalizeReason: "invalid_barcode",
+      });
+      return;
+    }
     const barcode = normalized.code;
     streamBarcode = barcode;
     const cacheKey = buildBarcodeCacheKey(barcode);
@@ -9992,24 +10531,24 @@ app.get("/api/client-runtime-flags", verifySupabaseToken, (_req: Request, res: R
     let regMapSecondChanceAttempted = false;
     let regMapSecondChanceResult: "not_attempted" | "hit" | "miss" | "timeout" | "error" = "not_attempted";
     let regMapSecondChanceLatencyMs: number | null = null;
-    let npnCandidateSource: "map" | "snapshot" | "scan_history" | "web" | null = null;
+    let npnCandidateSource: "map" | "snapshot" | "scan_history" | "name_match" | "web" | null = null;
     let npnCandidateStale = false;
     let npnNegativeCacheHit = false;
     let lnhpdGuardrailScore: number | null = null;
     let lnhpdGuardrailPass: boolean | null = null;
-	    let lnhpdFetchStatus: "success" | "not_found" | "timeout" | "error" | null = null;
-    let authorityCandidateSource: "map" | "map_stale" | "snapshot" | "scan_history" | "web" | null = null;
+    let lnhpdFetchStatus: "success" | "not_found" | "timeout" | "error" | null = null;
+    let authorityCandidateSource: "map" | "map_stale" | "snapshot" | "scan_history" | "name_match" | "web" | null = null;
     let authorityLnhpdAttempt1Status: LnhpdLookupStatus = "not_attempted";
     let authorityLnhpdAttempt2Status: LnhpdLookupStatus = "not_attempted";
     let authorityFailureReason: AuthorityFailureReason | null = null;
     let authorityNegativeCacheBypassed = false;
     let authorityRegressionScenarioHistoricalNpn: string | null = null;
 
-	    const startedAt = performance.now();
-	    const budget = new DeadlineBudget(Date.now() + RESILIENCE_TOTAL_BUDGET_MS);
-	    const streamAbort = new AbortController();
-	    streamAbortController = streamAbort;
-	    const { signal: requestSignal, cleanup } = combineSignals([
+    const startedAt = performance.now();
+    const budget = new DeadlineBudget(Date.now() + RESILIENCE_TOTAL_BUDGET_MS);
+    const streamAbort = new AbortController();
+    streamAbortController = streamAbort;
+    const { signal: requestSignal, cleanup } = combineSignals([
       requestAbort.signal,
       streamAbort.signal,
     ]);
@@ -10040,9 +10579,23 @@ app.get("/api/client-runtime-flags", verifySupabaseToken, (_req: Request, res: R
           });
         }, fastMs);
       }
-	      if (!globalWatchdog) {
-          const remainingMs = globalDeadlineAt - Date.now();
-          if (remainingMs <= 0) {
+      if (!globalWatchdog) {
+        const remainingMs = globalDeadlineAt - Date.now();
+        if (remainingMs <= 0) {
+          emitTerminalErrorAndFinalize({
+            code: "STREAM_TIMEOUT",
+            stage: "watchdog",
+            reasonCode: "GLOBAL_TIMEOUT_REV0_ONLY",
+            retryable: true,
+            message: "Stream timed out before a usable result was produced.",
+            finalizeReason: "global_timeout_rev0_only",
+            releaseError: new Error("stream_timeout"),
+          });
+          return;
+        }
+        globalWatchdog = setTimeout(() => {
+          if (streamState.ended || res.writableEnded || streamState.clientDisconnected) return;
+          if (!streamState.rev1Sent) {
             emitTerminalErrorAndFinalize({
               code: "STREAM_TIMEOUT",
               stage: "watchdog",
@@ -10054,24 +10607,10 @@ app.get("/api/client-runtime-flags", verifySupabaseToken, (_req: Request, res: R
             });
             return;
           }
-	        globalWatchdog = setTimeout(() => {
-	          if (streamState.ended || res.writableEnded || streamState.clientDisconnected) return;
-	          if (!streamState.rev1Sent) {
-	            emitTerminalErrorAndFinalize({
-	              code: "STREAM_TIMEOUT",
-	              stage: "watchdog",
-	              reasonCode: "GLOBAL_TIMEOUT_REV0_ONLY",
-	              retryable: true,
-	              message: "Stream timed out before a usable result was produced.",
-	              finalizeReason: "global_timeout_rev0_only",
-	              releaseError: new Error("stream_timeout"),
-	            });
-	            return;
-	          }
-	          finalizeStream("global_timeout_after_rev1");
-	        }, Math.max(1, remainingMs));
-	      }
-	    };
+          finalizeStream("global_timeout_after_rev1");
+        }, Math.max(1, remainingMs));
+      }
+    };
     armContractWatchdogs();
     requestId = String(res.getHeader("x-request-id") ?? "");
     const requestPath = req.path;
@@ -10150,105 +10689,105 @@ app.get("/api/client-runtime-flags", verifySupabaseToken, (_req: Request, res: R
       };
     };
 
-	    const emitAnalysisBundleSequence = async (params: {
-	      digest: FactsDigest;
-	      identityType: FactsDigest["identity"]["type"];
-	      identityValue: string;
-	      factsSourceVersion: string;
-	      allowAi: boolean;
-	      apiKey: string | null;
-	      signal?: AbortSignal;
-	      llmSignal?: AbortSignal;
-	    }): Promise<{ factsDigestHash: string } | null> => {
-	      const factsDigestHash = computeFactsDigestHash(params.digest);
-	      const maybePrewarmDsldDetail = () => {
-	        // P0 UX: DSLD ingredients detail should feel "instant". We already return a 0-LLM Base page
-	        // on /api/analysis-section; here we opportunistically prewarm the optional minimal enrichment
-	        // (whatItDoes/summary) after fast_ai is emitted so the modal is likely complete when opened.
-	        if (params.digest.sourceType !== "dsld") return;
-	        if (!params.allowAi || !params.apiKey) return;
-	        if (!Array.isArray(params.digest.actives) || params.digest.actives.length === 0) return;
+    const emitAnalysisBundleSequence = async (params: {
+      digest: FactsDigest;
+      identityType: FactsDigest["identity"]["type"];
+      identityValue: string;
+      factsSourceVersion: string;
+      allowAi: boolean;
+      apiKey: string | null;
+      signal?: AbortSignal;
+      llmSignal?: AbortSignal;
+    }): Promise<{ factsDigestHash: string } | null> => {
+      const factsDigestHash = computeFactsDigestHash(params.digest);
+      const maybePrewarmDsldDetail = () => {
+        // P0 UX: DSLD ingredients detail should feel "instant". We already return a 0-LLM Base page
+        // on /api/analysis-section; here we opportunistically prewarm the optional minimal enrichment
+        // (whatItDoes/summary) after fast_ai is emitted so the modal is likely complete when opened.
+        if (params.digest.sourceType !== "dsld") return;
+        if (!params.allowAi || !params.apiKey) return;
+        if (!Array.isArray(params.digest.actives) || params.digest.actives.length === 0) return;
 
-	        const requestedLimit = ANALYSIS_DETAIL_LIMIT_DSLD;
-	        const cursor = 0;
-	        const sectionKey = `ingredients_detail:${requestedLimit}:${cursor}`;
+        const requestedLimit = ANALYSIS_DETAIL_LIMIT_DSLD;
+        const cursor = 0;
+        const sectionKey = `ingredients_detail:${requestedLimit}:${cursor}`;
 
-	        // Mirror /api/analysis-section caching dimension: incorporate production KB package signature so
-	        // detail pages can refresh when the shipped KB changes (even when the LLM output is unchanged).
-	        let promptVersionForCache = ANALYSIS_BUNDLE_PROMPT_VERSION;
-	        const kb = getKbRuntime();
-	        const pkgSha = kb?.runtime?.meta?.package_sha256;
-	        if (typeof pkgSha === "string" && pkgSha.trim()) {
-	          promptVersionForCache = `${promptVersionForCache}|kb:${pkgSha.trim().slice(0, 12)}`;
-	        }
-	        const rateKey = `${params.identityType}:${params.identityValue}:${locale}:${promptVersionForCache}:${sectionKey}`;
+        // Mirror /api/analysis-section caching dimension: incorporate production KB package signature so
+        // detail pages can refresh when the shipped KB changes (even when the LLM output is unchanged).
+        let promptVersionForCache = ANALYSIS_BUNDLE_PROMPT_VERSION;
+        const kb = getKbRuntime();
+        const pkgSha = kb?.runtime?.meta?.package_sha256;
+        if (typeof pkgSha === "string" && pkgSha.trim()) {
+          promptVersionForCache = `${promptVersionForCache}|kb:${pkgSha.trim().slice(0, 12)}`;
+        }
+        const rateKey = `${params.identityType}:${params.identityValue}:${locale}:${promptVersionForCache}:${sectionKey}`;
 
-	        queueDsldDetailEnrichment({
-	          identityType: params.identityType,
-	          identityValue: params.identityValue,
-	          locale,
-	          promptVersionForCache,
-	          factsDigestHash,
-	          factsSourceVersion: params.factsSourceVersion,
-	          sectionKey,
-	          rateKey,
-	          digestRowFactsDigestJson: params.digest,
-	          digest: params.digest,
-	          requestedLimit,
-	          cursor,
-	          model,
-	          deepseekKey: params.apiKey,
-	        });
-	      };
-	      const canWrite = () => !params.signal?.aborted && !res.writableEnded;
-	      const dataStatus = params.allowAi
-	        ? { overview: "pending" as const, usage: "pending" as const, safety: "pending" as const }
-	        : { overview: "limited" as const, usage: "limited" as const, safety: "limited" as const };
-	      // shared-store contract:
-	      // - persisted is emitted only after bundle_fast is committed
-	      // - /api/analysis-section reads from the same shared store keyspace
-	      const emitPersistedWhenReady = async (bundle: AnalysisBundle): Promise<boolean> => {
-	        if (streamState.persistedSent || !canWrite()) return false;
-	        try {
-	          await upsertAnalysisIdentityCache(
-	            {
-	              identityType: params.identityType,
-	              identityValue: params.identityValue,
-	              locale,
-	              promptVersion: ANALYSIS_BUNDLE_PROMPT_VERSION,
-	              factsDigestHash,
-	              factsSourceVersion: params.factsSourceVersion,
-	              section: "bundle_fast",
-	              status: "complete",
-	              payload: bundle,
-	              factsDigestJson: params.digest,
-	              expiresAt: new Date(Date.now() + ANALYSIS_IDENTITY_CACHE_TTL_MS).toISOString(),
-	            },
-	            { timeoutMs: 900 },
-	          );
-	        } catch (error) {
-	          const message = error instanceof Error ? error.message : String(error);
-	          console.warn("[analysis_bundle] shared-store commit failed before persisted", message);
-	          return false;
-	        }
+        queueDsldDetailEnrichment({
+          identityType: params.identityType,
+          identityValue: params.identityValue,
+          locale,
+          promptVersionForCache,
+          factsDigestHash,
+          factsSourceVersion: params.factsSourceVersion,
+          sectionKey,
+          rateKey,
+          digestRowFactsDigestJson: params.digest,
+          digest: params.digest,
+          requestedLimit,
+          cursor,
+          model,
+          deepseekKey: params.apiKey,
+        });
+      };
+      const canWrite = () => !params.signal?.aborted && !res.writableEnded;
+      const dataStatus = params.allowAi
+        ? { overview: "pending" as const, usage: "pending" as const, safety: "pending" as const }
+        : { overview: "limited" as const, usage: "limited" as const, safety: "limited" as const };
+      // shared-store contract:
+      // - persisted is emitted only after bundle_fast is committed
+      // - /api/analysis-section reads from the same shared store keyspace
+      const emitPersistedWhenReady = async (bundle: AnalysisBundle): Promise<boolean> => {
+        if (streamState.persistedSent || !canWrite()) return false;
+        try {
+          await upsertAnalysisIdentityCache(
+            {
+              identityType: params.identityType,
+              identityValue: params.identityValue,
+              locale,
+              promptVersion: ANALYSIS_BUNDLE_PROMPT_VERSION,
+              factsDigestHash,
+              factsSourceVersion: params.factsSourceVersion,
+              section: "bundle_fast",
+              status: "complete",
+              payload: bundle,
+              factsDigestJson: params.digest,
+              expiresAt: new Date(Date.now() + ANALYSIS_IDENTITY_CACHE_TTL_MS).toISOString(),
+            },
+            { timeoutMs: 900 },
+          );
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          console.warn("[analysis_bundle] shared-store commit failed before persisted", message);
+          return false;
+        }
 
-	        if (!canWrite()) return false;
-	        const persistedPayload = buildPersistedEventFromBundle(bundle);
-	        if (!persistedPayload) return false;
-	        sendSSE(res, "persisted", persistedPayload);
-	        streamState.persistedSent = true;
-	        streamState.tPersisted = Date.now();
-	        return true;
-	      };
-	      const commitPersistedAfterRev1 = async (bundle: AnalysisBundle): Promise<void> => {
-	        // Web path must not keep the SSE stream open while waiting for shared-store commit.
-	        // Emit persisted best-effort in the background and let terminal done close promptly.
-	        if (params.digest.sourceType === "web") {
-	          void emitPersistedWhenReady(bundle);
-	          return;
-	        }
-	        await emitPersistedWhenReady(bundle);
-	      };
+        if (!canWrite()) return false;
+        const persistedPayload = buildPersistedEventFromBundle(bundle);
+        if (!persistedPayload) return false;
+        sendSSE(res, "persisted", persistedPayload);
+        streamState.persistedSent = true;
+        streamState.tPersisted = Date.now();
+        return true;
+      };
+      const commitPersistedAfterRev1 = async (bundle: AnalysisBundle): Promise<void> => {
+        // Web path must not keep the SSE stream open while waiting for shared-store commit.
+        // Emit persisted best-effort in the background and let terminal done close promptly.
+        if (params.digest.sourceType === "web") {
+          void emitPersistedWhenReady(bundle);
+          return;
+        }
+        await emitPersistedWhenReady(bundle);
+      };
 
       const skeleton = buildAnalysisBundleSkeleton({
         digest: params.digest,
@@ -10299,59 +10838,59 @@ app.get("/api/client-runtime-flags", verifySupabaseToken, (_req: Request, res: R
         { timeoutMs: 700 },
       ).catch(() => null);
 
-	      if (cachedFast?.payload && typeof cachedFast.payload === "object") {
-	        let fastCandidate = {
-	          ...(cachedFast.payload as AnalysisBundle),
-	          meta: {
-	            ...(cachedFast.payload as AnalysisBundle).meta,
-	            bundleId,
-	            revision: 1,
-	            phase: "fast_ai",
-	            factsDigestHash,
-	            factsSourceVersion: params.factsSourceVersion,
-	            serverCommitSha: SERVER_COMMIT_SHA,
-	          },
-	        } as AnalysisBundle;
-	        fastCandidate = applyDsldInferenceGuard(fastCandidate, params.digest);
-          if (params.digest.sourceType === "web") {
-            markPipelineStepStart("verify");
-            const verifiedCached = applyWebVerifyRevise(fastCandidate, params.digest, {
-              timeBudgetMs: WEB_VERIFY_TIME_BUDGET_MS,
-              includeBudgetMs: pipelineMetricsEnabled,
-            });
-            fastCandidate = verifiedCached.bundle;
-            markPipelineStepEnd("verify", verifiedCached.verify.status, verifiedCached.verify.code);
+      if (cachedFast?.payload && typeof cachedFast.payload === "object") {
+        let fastCandidate = {
+          ...(cachedFast.payload as AnalysisBundle),
+          meta: {
+            ...(cachedFast.payload as AnalysisBundle).meta,
+            bundleId,
+            revision: 1,
+            phase: "fast_ai",
+            factsDigestHash,
+            factsSourceVersion: params.factsSourceVersion,
+            serverCommitSha: SERVER_COMMIT_SHA,
+          },
+        } as AnalysisBundle;
+        fastCandidate = applyDsldInferenceGuard(fastCandidate, params.digest);
+        if (params.digest.sourceType === "web") {
+          markPipelineStepStart("verify");
+          const verifiedCached = applyWebVerifyRevise(fastCandidate, params.digest, {
+            timeBudgetMs: WEB_VERIFY_TIME_BUDGET_MS,
+            includeBudgetMs: pipelineMetricsEnabled,
+          });
+          fastCandidate = verifiedCached.bundle;
+          markPipelineStepEnd("verify", verifiedCached.verify.status, verifiedCached.verify.code);
 
-            markPipelineStepStart("revise");
-            const gatedCached = applyWebBundleEvidenceGate(fastCandidate, params.digest);
-            fastCandidate = gatedCached.value;
-            const reviseStatus =
-              gatedCached.reasons.length > 0
-                ? verifiedCached.revise.status === "failed"
-                  ? "failed"
-                  : "degraded"
-                : verifiedCached.revise.status;
-            markPipelineStepEnd(
-              "revise",
-              reviseStatus,
-              gatedCached.reasons[0] ?? verifiedCached.revise.code,
-            );
+          markPipelineStepStart("revise");
+          const gatedCached = applyWebBundleEvidenceGate(fastCandidate, params.digest);
+          fastCandidate = gatedCached.value;
+          const reviseStatus =
+            gatedCached.reasons.length > 0
+              ? verifiedCached.revise.status === "failed"
+                ? "failed"
+                : "degraded"
+              : verifiedCached.revise.status;
+          markPipelineStepEnd(
+            "revise",
+            reviseStatus,
+            gatedCached.reasons[0] ?? verifiedCached.revise.code,
+          );
+        }
+        const parsed = safeParseAnalysisBundle(fastCandidate);
+        if (parsed.success && canWrite()) {
+          const rev1Bundle = withAuthorityDiagnostics(parsed.data);
+          const emittedRev1 = emitRev1Once(
+            rev1Bundle,
+            rev1Bundle.meta?.fallbackReason ? "fallback" : "fast_ai",
+            rev1Bundle.meta?.fallbackReason,
+          );
+          if (emittedRev1) {
+            await commitPersistedAfterRev1(rev1Bundle);
           }
-	        const parsed = safeParseAnalysisBundle(fastCandidate);
-	          if (parsed.success && canWrite()) {
-	          const rev1Bundle = withAuthorityDiagnostics(parsed.data);
-	          const emittedRev1 = emitRev1Once(
-	            rev1Bundle,
-	            rev1Bundle.meta?.fallbackReason ? "fallback" : "fast_ai",
-	            rev1Bundle.meta?.fallbackReason,
-	          );
-	          if (emittedRev1) {
-	            await commitPersistedAfterRev1(rev1Bundle);
-	          }
-	          maybePrewarmDsldDetail();
-	          return { factsDigestHash };
-	        }
-	      }
+          maybePrewarmDsldDetail();
+          return { factsDigestHash };
+        }
+      }
 
       const context = `FACTS_DIGEST_JSON: ${JSON.stringify(params.digest)}`;
       const canUseAi = params.allowAi && Boolean(params.apiKey);
@@ -10420,42 +10959,42 @@ app.get("/api/client-runtime-flags", verifySupabaseToken, (_req: Request, res: R
         }
       }
 
-	      if (fastBundle && canWrite()) {
-	        const adjustedBundle = applyDsldInferenceGuard(fastBundle, params.digest);
-          let gatedBundle = adjustedBundle;
-          if (params.digest.sourceType === "web") {
-            markPipelineStepStart("verify");
-            const verified = applyWebVerifyRevise(adjustedBundle, params.digest, {
-              timeBudgetMs: WEB_VERIFY_TIME_BUDGET_MS,
-              includeBudgetMs: pipelineMetricsEnabled,
-            });
-            gatedBundle = verified.bundle;
-            markPipelineStepEnd("verify", verified.verify.status, verified.verify.code);
+      if (fastBundle && canWrite()) {
+        const adjustedBundle = applyDsldInferenceGuard(fastBundle, params.digest);
+        let gatedBundle = adjustedBundle;
+        if (params.digest.sourceType === "web") {
+          markPipelineStepStart("verify");
+          const verified = applyWebVerifyRevise(adjustedBundle, params.digest, {
+            timeBudgetMs: WEB_VERIFY_TIME_BUDGET_MS,
+            includeBudgetMs: pipelineMetricsEnabled,
+          });
+          gatedBundle = verified.bundle;
+          markPipelineStepEnd("verify", verified.verify.status, verified.verify.code);
 
-            markPipelineStepStart("revise");
-            const gated = applyWebBundleEvidenceGate(gatedBundle, params.digest);
-            gatedBundle = gated.value;
-            const reviseStatus =
-              gated.reasons.length > 0
-                ? verified.revise.status === "failed"
-                  ? "failed"
-                  : "degraded"
-                : verified.revise.status;
-            markPipelineStepEnd("revise", reviseStatus, gated.reasons[0] ?? verified.revise.code);
-          }
-	          const rev1Source: "fast_ai" | "fallback" =
-	            gatedBundle.meta?.fallbackReason || fastFailed || !fastRaw ? "fallback" : "fast_ai";
-	        const rev1Bundle = withAuthorityDiagnostics(gatedBundle);
-	        const emittedRev1 = emitRev1Once(
-	          rev1Bundle,
-	          rev1Source,
-	          rev1Bundle.meta?.fallbackReason ?? (rev1Source === "fallback" ? "fast_generation_failed" : undefined),
-	        );
-	        maybePrewarmDsldDetail();
-	        if (emittedRev1) {
-	          await commitPersistedAfterRev1(rev1Bundle);
-	        }
-	      }
+          markPipelineStepStart("revise");
+          const gated = applyWebBundleEvidenceGate(gatedBundle, params.digest);
+          gatedBundle = gated.value;
+          const reviseStatus =
+            gated.reasons.length > 0
+              ? verified.revise.status === "failed"
+                ? "failed"
+                : "degraded"
+              : verified.revise.status;
+          markPipelineStepEnd("revise", reviseStatus, gated.reasons[0] ?? verified.revise.code);
+        }
+        const rev1Source: "fast_ai" | "fallback" =
+          gatedBundle.meta?.fallbackReason || fastFailed || !fastRaw ? "fallback" : "fast_ai";
+        const rev1Bundle = withAuthorityDiagnostics(gatedBundle);
+        const emittedRev1 = emitRev1Once(
+          rev1Bundle,
+          rev1Source,
+          rev1Bundle.meta?.fallbackReason ?? (rev1Source === "fallback" ? "fast_generation_failed" : undefined),
+        );
+        maybePrewarmDsldDetail();
+        if (emittedRev1) {
+          await commitPersistedAfterRev1(rev1Bundle);
+        }
+      }
 
       return { factsDigestHash };
     };
@@ -10633,17 +11172,17 @@ app.get("/api/client-runtime-flags", verifySupabaseToken, (_req: Request, res: R
       return pickText(preferred, ...normalizedCandidates);
     };
 
-	    type CachedSnapshotSseMode = "full" | "analysis_bundle_only";
-	    const emitCachedSnapshot = (cached: {
-	      snapshot: SupplementSnapshot;
-	      analysisPayload: SnapshotAnalysisPayload | null;
-	      expiresAt?: string | null;
-	    }, catalog?: CatalogResolved | null, options?: { mode?: CachedSnapshotSseMode }) => {
-	      const mode: CachedSnapshotSseMode = options?.mode ?? "full";
-	      console.log(`[Stream] Cache hit for barcode: ${barcode}`);
-	      snapshotCacheHit = true;
-	      const { snapshot, analysisPayload } = cached;
-	      let workingAnalysisPayload = analysisPayload ?? null;
+    type CachedSnapshotSseMode = "full" | "analysis_bundle_only";
+    const emitCachedSnapshot = (cached: {
+      snapshot: SupplementSnapshot;
+      analysisPayload: SnapshotAnalysisPayload | null;
+      expiresAt?: string | null;
+    }, catalog?: CatalogResolved | null, options?: { mode?: CachedSnapshotSseMode }) => {
+      const mode: CachedSnapshotSseMode = options?.mode ?? "full";
+      console.log(`[Stream] Cache hit for barcode: ${barcode}`);
+      snapshotCacheHit = true;
+      const { snapshot, analysisPayload } = cached;
+      let workingAnalysisPayload = analysisPayload ?? null;
       const labelFacts = buildLabelFactsFromSnapshot(snapshot);
       if (labelFacts) {
         const labelAnalysis = buildLabelOnlyAnalysis(labelFacts);
@@ -10696,11 +11235,11 @@ app.get("/api/client-runtime-flags", verifySupabaseToken, (_req: Request, res: R
         isHighQuality: false,
       }));
 
-	      sendSSE(res, "product_info", { productInfo, sources });
+      sendSSE(res, "product_info", { productInfo, sources });
 
-	      if (mode === "full" && workingAnalysisPayload) {
-	        sendSSE(res, "analysis_payload", workingAnalysisPayload);
-	      }
+      if (mode === "full" && workingAnalysisPayload) {
+        sendSSE(res, "analysis_payload", workingAnalysisPayload);
+      }
 
       const analysisMeta = resolveAnalysisMeta({ snapshot, analysisPayload: workingAnalysisPayload, catalog });
       const snapshotToSend: SupplementSnapshot = {
@@ -10723,9 +11262,9 @@ app.get("/api/client-runtime-flags", verifySupabaseToken, (_req: Request, res: R
         productInfo.image !== snapshot.product.imageUrl;
       const payloadMismatch = payloadInfo
         ? payloadInfo.brand !== productInfo.brand ||
-          payloadInfo.name !== productInfo.name ||
-          payloadInfo.category !== productInfo.category ||
-          payloadInfo.image !== productInfo.image
+        payloadInfo.name !== productInfo.name ||
+        payloadInfo.category !== productInfo.category ||
+        payloadInfo.image !== productInfo.image
         : false;
 
       if (snapshotMismatch || payloadMismatch) {
@@ -10791,53 +11330,53 @@ app.get("/api/client-runtime-flags", verifySupabaseToken, (_req: Request, res: R
         }
         : null;
 
-	      if (mode === "full") {
-	        if (workingAnalysisPayload?.efficacy || fallbackEfficacy) {
-	          sendSSE(res, "result_efficacy", workingAnalysisPayload?.efficacy ?? fallbackEfficacy);
-	        }
-	        if (workingAnalysisPayload?.safety || fallbackSafety) {
-	          sendSSE(res, "result_safety", workingAnalysisPayload?.safety ?? fallbackSafety);
-	        }
-	        if (workingAnalysisPayload?.usagePayload || fallbackUsagePayload) {
-	          sendSSE(res, "result_usage", workingAnalysisPayload?.usagePayload ?? fallbackUsagePayload);
-	        }
+      if (mode === "full") {
+        if (workingAnalysisPayload?.efficacy || fallbackEfficacy) {
+          sendSSE(res, "result_efficacy", workingAnalysisPayload?.efficacy ?? fallbackEfficacy);
+        }
+        if (workingAnalysisPayload?.safety || fallbackSafety) {
+          sendSSE(res, "result_safety", workingAnalysisPayload?.safety ?? fallbackSafety);
+        }
+        if (workingAnalysisPayload?.usagePayload || fallbackUsagePayload) {
+          sendSSE(res, "result_usage", workingAnalysisPayload?.usagePayload ?? fallbackUsagePayload);
+        }
 
-	        sendSSE(res, "snapshot", snapshotToSend);
-	      }
-	    };
+        sendSSE(res, "snapshot", snapshotToSend);
+      }
+    };
 
     const catalogPromise = resolveCatalogByBarcode(normalized, {
       ...supabaseReadResilience,
       timeoutMs: RESILIENCE_CATALOG_TIMEOUT_MS,
     });
-	    const snapshotPromise = getSnapshotCache(
-	      { key: cacheKey, source: "barcode" },
-	      {
-	        ...supabaseReadResilience,
-	        timeoutMs: RESILIENCE_SNAPSHOT_TIMEOUT_MS,
-	      },
-	    );
+    const snapshotPromise = getSnapshotCache(
+      { key: cacheKey, source: "barcode" },
+      {
+        ...supabaseReadResilience,
+        timeoutMs: RESILIENCE_SNAPSHOT_TIMEOUT_MS,
+      },
+    );
 
-	    // Stage 0 helpers (first-party resolution). These are safe to prefetch in parallel.
-	    // Hard rule: negative cache has NO termination authority in Stage 0.
-	    const regulatoryMapPromise = getBarcodeRegulatoryMap(barcodeGtin14, barcodeRawDigits, {
-	      ...supabaseReadResilience,
-	      // Stage0 is the authoritative fork. If we miss the mapping due to a short queue timeout,
-	      // we incorrectly fall back to Web Stage1 ("marketplace_only" etc) and the UI looks broken.
-	      // So: allow this critical read to wait longer for the supabase read semaphore.
-	      queueTimeoutMs: Math.max(RESILIENCE_SUPABASE_READ_QUEUE_TIMEOUT_MS, 1200),
-	      timeoutMs: 2000,
-	      includeExpired: true,
-	    });
-	    const negativeCachePromise = getNegativeCache(barcodeGtin14, barcodeRawDigits, {
-	      ...supabaseReadResilience,
-	      timeoutMs: 350,
-	    });
+    // Stage 0 helpers (first-party resolution). These are safe to prefetch in parallel.
+    // Hard rule: negative cache has NO termination authority in Stage 0.
+    const regulatoryMapPromise = getBarcodeRegulatoryMap(barcodeGtin14, barcodeRawDigits, {
+      ...supabaseReadResilience,
+      // Stage0 is the authoritative fork. If we miss the mapping due to a short queue timeout,
+      // we incorrectly fall back to Web Stage1 ("marketplace_only" etc) and the UI looks broken.
+      // So: allow this critical read to wait longer for the supabase read semaphore.
+      queueTimeoutMs: Math.max(RESILIENCE_SUPABASE_READ_QUEUE_TIMEOUT_MS, 1200),
+      timeoutMs: 2000,
+      includeExpired: true,
+    });
+    const negativeCachePromise = getNegativeCache(barcodeGtin14, barcodeRawDigits, {
+      ...supabaseReadResilience,
+      timeoutMs: 350,
+    });
 
     const googleApiKey = process.env.GOOGLE_CSE_API_KEY ?? null;
     const cx = process.env.GOOGLE_CSE_CX ?? null;
     const deepseekKey = process.env.DEEPSEEK_API_KEY ?? null;
-	    const aiAvailable = Boolean(googleApiKey && cx && deepseekKey);
+    const aiAvailable = Boolean(googleApiKey && cx && deepseekKey);
     const forceStage1Raw = process.env.FORCE_STAGE1 === "1" || process.env.FORCE_STAGE1 === "true";
     const forceStage1 = process.env.NODE_ENV !== "production" && forceStage1Raw;
     const allowNeedsJs = process.env.ALLOW_NEEDS_JS === "1" || process.env.ALLOW_NEEDS_JS === "true";
@@ -10845,52 +11384,130 @@ app.get("/api/client-runtime-flags", verifySupabaseToken, (_req: Request, res: R
     let stage0Delivered = false;
     let stage0Source: Stage0Source = "none";
 
-	    const cachedFast = await snapshotPromise.catch(() => null);
-	    let bypassCachedFastPathForAuthority = false;
-      let cachedLooksWebOnly = false;
-	    if (cachedFast) {
+    const cachedFast = await snapshotPromise.catch(() => null);
+    let bypassCachedFastPathForAuthority = false;
+    let cachedLooksWebOnly = false;
+    let prefetchedNameMatchFacts: LnhpdFacts | null = null;
+    if (cachedFast) {
       const cachedLabelSource =
         cachedFast.snapshot.analysis?.labelExtraction?.source ??
         cachedFast.analysisPayload?.analysis?.labelExtraction?.source ??
         null;
+      const cachedSnapshotAnalysisMeta =
+        cachedFast.snapshot.analysis && typeof cachedFast.snapshot.analysis === "object"
+          ? (cachedFast.snapshot.analysis as Record<string, unknown>)
+          : null;
+      const cachedPayloadAnalysisMeta =
+        cachedFast.analysisPayload?.analysis && typeof cachedFast.analysisPayload.analysis === "object"
+          ? (cachedFast.analysisPayload.analysis as Record<string, unknown>)
+          : null;
+      const cachedSnapshotIdentity =
+        cachedSnapshotAnalysisMeta?.authoritativeIdentity &&
+          typeof cachedSnapshotAnalysisMeta.authoritativeIdentity === "object"
+          ? (cachedSnapshotAnalysisMeta.authoritativeIdentity as Record<string, unknown>)
+          : null;
+      const cachedPayloadIdentity =
+        cachedPayloadAnalysisMeta?.authoritativeIdentity &&
+          typeof cachedPayloadAnalysisMeta.authoritativeIdentity === "object"
+          ? (cachedPayloadAnalysisMeta.authoritativeIdentity as Record<string, unknown>)
+          : null;
+      const cachedIdentityType =
+        typeof cachedSnapshotIdentity?.type === "string"
+          ? cachedSnapshotIdentity.type
+          : typeof cachedPayloadIdentity?.type === "string"
+            ? cachedPayloadIdentity.type
+            : null;
+      const cachedSourceType =
+        typeof cachedSnapshotAnalysisMeta?.sourceType === "string"
+          ? cachedSnapshotAnalysisMeta.sourceType
+          : typeof cachedPayloadAnalysisMeta?.sourceType === "string"
+            ? cachedPayloadAnalysisMeta.sourceType
+            : null;
+      const cachedNpn = cachedFast.snapshot.regulatory.npn ?? null;
+      const cachedNpnStatus = cachedFast.snapshot.regulatory.npnStatus ?? null;
+      const cachedNpnVerifiedBy = cachedFast.snapshot.regulatory.npnVerifiedBy ?? null;
+      const cachedIsNpnVerified =
+        Boolean(cachedNpn) &&
+        cachedNpnStatus === "verified" &&
+        cachedNpnVerifiedBy === "lnhpd_fetch";
+      const cachedIsWebAuthority =
+        cachedSourceType === "web" || cachedIdentityType === "webCanonicalId";
+      const cachedNeedsAuthorityUpgrade = cachedIsWebAuthority && !cachedIsNpnVerified;
+
       cachedLooksWebOnly =
         !hasAuthoritativeIdentityFromSnapshot(cachedFast.snapshot) &&
         cachedLabelSource === null;
-      if (cachedLooksWebOnly && !forceStage1) {
+      if ((cachedLooksWebOnly || cachedNeedsAuthorityUpgrade) && !forceStage1) {
         const [catalogProbe, regulatoryProbe] = await Promise.all([
           catalogPromise.catch(() => null),
           regulatoryMapPromise.catch(() => null),
         ]);
-        if (catalogProbe || regulatoryProbe?.npn) {
+        const hintBrand =
+          cachedFast.analysisPayload?.productInfo?.brand ??
+          cachedFast.snapshot.product.brand ??
+          null;
+        const hintProduct =
+          cachedFast.analysisPayload?.productInfo?.name ??
+          cachedFast.snapshot.product.name ??
+          null;
+        const hasNameHints =
+          (hintBrand && hintBrand.trim().length > 0) || (hintProduct && hintProduct.trim().length > 0);
+        let hasNameMatchCandidate = false;
+
+        if (!catalogProbe && !regulatoryProbe?.npn && hasNameHints && !requestSignal.aborted) {
+          const timeoutSignal = createTimeoutSignal(1200);
+          const { signal, cleanup } = combineSignals([requestSignal, timeoutSignal]);
+          try {
+            prefetchedNameMatchFacts = await fetchLnhpdFactsByName(
+              { brand: hintBrand, product: hintProduct },
+              signal,
+            );
+            const prefetchedNpn = prefetchedNameMatchFacts?.npn?.replace(/\D/g, "").trim() ?? "";
+            hasNameMatchCandidate = prefetchedNpn.length >= 6;
+          } catch (error) {
+            console.warn("[ResolutionV2] Name-match prefetch probe failed", error);
+          } finally {
+            cleanup();
+          }
+        }
+
+        if (catalogProbe || regulatoryProbe?.npn || hasNameMatchCandidate) {
           bypassCachedFastPathForAuthority = true;
           console.info("[ResolutionV2] Bypassing web snapshot cache due to authoritative candidate", {
             barcode: barcodeGtin14,
+            cachedLooksWebOnly,
+            cachedNeedsAuthorityUpgrade,
+            cachedIsWebAuthority,
+            cachedIsNpnVerified,
+            cachedIdentityType,
+            cachedSourceType,
             hasCatalogCandidate: Boolean(catalogProbe),
             hasRegulatoryCandidate: Boolean(regulatoryProbe?.npn),
+            hasNameMatchCandidate,
           });
         }
       }
     }
-	    if (cachedFast && !bypassCachedFastPathForAuthority) {
-        if (cachedLooksWebOnly && !hasCoreFacts(cachedFast.snapshot, cachedFast.analysisPayload)) {
-          emitProductNotFoundAndFinalize({
-            stage: "facts",
-            reasonCode: "WEB_CACHE_EMPTY_CORE_FACTS",
-          });
-          return;
-        }
+    if (cachedFast && !bypassCachedFastPathForAuthority) {
+      if (cachedLooksWebOnly && !hasCoreFacts(cachedFast.snapshot, cachedFast.analysisPayload)) {
+        emitProductNotFoundAndFinalize({
+          stage: "facts",
+          reasonCode: "WEB_CACHE_EMPTY_CORE_FACTS",
+        });
+        return;
+      }
       const hasProductName = Boolean(
         cachedFast.analysisPayload?.productInfo?.name || cachedFast.snapshot.product.name,
       );
       const needsCatalogFast = !hasProductName || !cachedFast.snapshot.regulatory.dsldLabelId;
       const catalogFast = needsCatalogFast ? await catalogPromise.catch(() => null) : null;
-	      emitCachedSnapshot(
-	        cachedFast,
-	        catalogFast,
-	        streamAnalysisBundleOnly ? { mode: "analysis_bundle_only" } : undefined,
-	      );
-	      stage0Delivered = true;
-	      stage0Source = "snapshot";
+      emitCachedSnapshot(
+        cachedFast,
+        catalogFast,
+        streamAnalysisBundleOnly ? { mode: "analysis_bundle_only" } : undefined,
+      );
+      stage0Delivered = true;
+      stage0Source = "snapshot";
 
       const needsEnrichment = shouldReEnrich({
         snapshot: cachedFast.snapshot,
@@ -11114,25 +11731,25 @@ app.get("/api/client-runtime-flags", verifySupabaseToken, (_req: Request, res: R
           }
 
           if (digest) {
-        startStage0Bundle({
-          digest,
-          identityType,
-          identityValue,
-          factsSourceVersion,
-          allowAi: Boolean(deepseekKey) && identityType !== "npn",
-          apiKey: deepseekKey,
-        });
+            startStage0Bundle({
+              digest,
+              identityType,
+              identityValue,
+              factsSourceVersion,
+              allowAi: Boolean(deepseekKey) && identityType !== "npn",
+              apiKey: deepseekKey,
+            });
             await awaitStage0Bundle();
           }
 
-	          finalizeStream("snapshot_verified_no_enrichment");
+          finalizeStream("snapshot_verified_no_enrichment");
 
           const timingTotalMs = Math.round(performance.now() - startedAt);
 
           void (async () => {
             const { snapshot, analysisPayload } = cachedFast;
             const catalog = catalogFast ?? await catalogPromise.catch(() => null);
-	    if (catalog) {
+            if (catalog) {
               const before = {
                 brand: snapshot.product.brand,
                 name: snapshot.product.name,
@@ -11155,55 +11772,55 @@ app.get("/api/client-runtime-flags", verifySupabaseToken, (_req: Request, res: R
                 image: pickText(catalog.imageUrl, analysisPayload?.productInfo?.image, snapshot.product.imageUrl),
               };
 
-            snapshot.product.brand = finalProductInfo.brand;
-            snapshot.product.name = finalProductInfo.name;
-            snapshot.product.category = finalProductInfo.category;
-            snapshot.product.imageUrl = finalProductInfo.image;
-            snapshot.product.barcode.normalized = catalog.barcodeGtin14;
-            snapshot.product.barcode.normalizedFormat = "gtin14";
-            snapshot.regulatory.dsldLabelId = catalog.dsldLabelId
-              ? String(catalog.dsldLabelId)
-              : snapshot.regulatory.dsldLabelId;
+              snapshot.product.brand = finalProductInfo.brand;
+              snapshot.product.name = finalProductInfo.name;
+              snapshot.product.category = finalProductInfo.category;
+              snapshot.product.imageUrl = finalProductInfo.image;
+              snapshot.product.barcode.normalized = catalog.barcodeGtin14;
+              snapshot.product.barcode.normalizedFormat = "gtin14";
+              snapshot.regulatory.dsldLabelId = catalog.dsldLabelId
+                ? String(catalog.dsldLabelId)
+                : snapshot.regulatory.dsldLabelId;
 
-            const changed =
-              before.brand !== snapshot.product.brand ||
-              before.name !== snapshot.product.name ||
-              before.category !== snapshot.product.category ||
-              before.imageUrl !== snapshot.product.imageUrl ||
-              before.normalized !== snapshot.product.barcode.normalized ||
-              before.normalizedFormat !== snapshot.product.barcode.normalizedFormat ||
-              before.dsldLabelId !== snapshot.regulatory.dsldLabelId;
-            if (changed) {
-              snapshot.updatedAt = new Date().toISOString();
+              const changed =
+                before.brand !== snapshot.product.brand ||
+                before.name !== snapshot.product.name ||
+                before.category !== snapshot.product.category ||
+                before.imageUrl !== snapshot.product.imageUrl ||
+                before.normalized !== snapshot.product.barcode.normalized ||
+                before.normalizedFormat !== snapshot.product.barcode.normalizedFormat ||
+                before.dsldLabelId !== snapshot.regulatory.dsldLabelId;
+              if (changed) {
+                snapshot.updatedAt = new Date().toISOString();
+              }
+              if (analysisPayload) {
+                analysisPayload.productInfo = {
+                  brand: finalProductInfo.brand,
+                  name: finalProductInfo.name,
+                  category: finalProductInfo.category,
+                  image: finalProductInfo.image,
+                };
+              }
+
+              if (changed) {
+                void storeSnapshotCache({
+                  key: catalog.barcodeGtin14,
+                  source: "barcode",
+                  snapshot,
+                  analysisPayload,
+                  expiresAt: cachedFast.expiresAt,
+                });
+              }
             }
-            if (analysisPayload) {
-              analysisPayload.productInfo = {
-                brand: finalProductInfo.brand,
-                name: finalProductInfo.name,
-                category: finalProductInfo.category,
-                image: finalProductInfo.image,
-              };
-            }
 
-            if (changed) {
-              void storeSnapshotCache({
-                key: catalog.barcodeGtin14,
-                source: "barcode",
-                snapshot,
-                analysisPayload,
-                expiresAt: cachedFast.expiresAt,
-              });
-            }
-          }
+            const servedFrom = catalog
+              ? catalog.resolvedFrom === "override"
+                ? "override_snapshot_cache"
+                : "dsld_snapshot_cache"
+              : "snapshot_cache";
 
-          const servedFrom = catalog
-            ? catalog.resolvedFrom === "override"
-              ? "override_snapshot_cache"
-              : "dsld_snapshot_cache"
-            : "snapshot_cache";
-
-          const brandName = snapshot.product.brand ?? analysisPayload?.productInfo?.brand ?? null;
-          const productName = snapshot.product.name ?? analysisPayload?.productInfo?.name ?? null;
+            const brandName = snapshot.product.brand ?? analysisPayload?.productInfo?.brand ?? null;
+            const productName = snapshot.product.name ?? analysisPayload?.productInfo?.name ?? null;
 
             void logBarcodeScan({
               barcodeGtin14,
@@ -11401,14 +12018,14 @@ app.get("/api/client-runtime-flags", verifySupabaseToken, (_req: Request, res: R
           identityValue: dsldIdentityValue,
           regionTags: workingSnapshot.regulatory.regionTags,
         });
-            startStage0Bundle({
-              digest: dsldDigest,
-              identityType: dsldIdentityType,
-              identityValue: dsldIdentityValue,
-              factsSourceVersion: dsldFactsSourceVersion,
-              allowAi: Boolean(deepseekKey),
-              apiKey: deepseekKey,
-            });
+        startStage0Bundle({
+          digest: dsldDigest,
+          identityType: dsldIdentityType,
+          identityValue: dsldIdentityValue,
+          factsSourceVersion: dsldFactsSourceVersion,
+          allowAi: Boolean(deepseekKey),
+          apiKey: deepseekKey,
+        });
       }
 
       const payloadSources = workingAnalysisPayload.sources ?? [];
@@ -11512,200 +12129,245 @@ app.get("/api/client-runtime-flags", verifySupabaseToken, (_req: Request, res: R
         });
       }
 
-	      if (!forceStage1) {
-	        await awaitStage0Bundle();
-	        finalizeStream("catalog_stage0_complete");
-	        return;
-	      }
-	      console.log("[ResolutionV2] FORCE_STAGE1 enabled; continuing after catalog hit");
-	    }
+      if (!forceStage1) {
+        await awaitStage0Bundle();
+        finalizeStream("catalog_stage0_complete");
+        return;
+      }
+      console.log("[ResolutionV2] FORCE_STAGE1 enabled; continuing after catalog hit");
+    }
 
-	    // =========================================================================
-	    // Stage 0: LNHPD bootstrap (first-party resolver)
-	    // =========================================================================
-	    // Hard rule: Stage 1 web resolution must not start (or short-circuit) before we
-	    // give first-party resolvers (A/Catalog/LNHPD) a chance to terminate.
-	    let regulatoryMap: Awaited<ReturnType<typeof getBarcodeRegulatoryMap>> | null = null;
-	    regMapPrimaryAttempted = true;
-	    try {
-	      regulatoryMap = await regulatoryMapPromise;
-	      if (regulatoryMap) {
-	        regMapPrimaryStatus = isExpiredAt(regulatoryMap.expires_at) ? "stale" : "hit";
-	      }
-	    } catch (error) {
-	      regulatoryMapStatus = "timeout";
-	      regMapPrimaryStatus = "timeout";
-	      console.warn("[ResolutionV2] Regulatory map lookup failed", error);
-	    }
+    // =========================================================================
+    // Stage 0: LNHPD bootstrap (first-party resolver)
+    // =========================================================================
+    // Hard rule: Stage 1 web resolution must not start (or short-circuit) before we
+    // give first-party resolvers (A/Catalog/LNHPD) a chance to terminate.
+    let regulatoryMap: Awaited<ReturnType<typeof getBarcodeRegulatoryMap>> | null = null;
+    regMapPrimaryAttempted = true;
+    try {
+      regulatoryMap = await regulatoryMapPromise;
+      if (regulatoryMap) {
+        regMapPrimaryStatus = isExpiredAt(regulatoryMap.expires_at) ? "stale" : "hit";
+      }
+    } catch (error) {
+      regulatoryMapStatus = "timeout";
+      regMapPrimaryStatus = "timeout";
+      console.warn("[ResolutionV2] Regulatory map lookup failed", error);
+    }
 
-	    if (authorityRegressionScenarioActive && !requestSignal.aborted) {
-	      const seededNpnFromMap =
-	        typeof regulatoryMap?.npn === "string" ? regulatoryMap.npn.replace(/\D/g, "").trim() : "";
-	      authorityRegressionScenarioHistoricalNpn =
-	        seededNpnFromMap.length >= 6
-	          ? seededNpnFromMap
-	          : AUTHORITY_REGRESSION_SAMPLE_HISTORICAL_NPN.length >= 6
-	            ? AUTHORITY_REGRESSION_SAMPLE_HISTORICAL_NPN
-	            : null;
-	      regulatoryMap = null;
-	      regulatoryMapStatus = "miss";
-	      regMapPrimaryStatus = "miss";
-	      console.info("[ResolutionV2] Applied authority regression sample", {
-	        barcode: barcodeGtin14,
-	        historicalNpn: authorityRegressionScenarioHistoricalNpn,
-	      });
-	    }
+    if (authorityRegressionScenarioActive && !requestSignal.aborted) {
+      const seededNpnFromMap =
+        typeof regulatoryMap?.npn === "string" ? regulatoryMap.npn.replace(/\D/g, "").trim() : "";
+      authorityRegressionScenarioHistoricalNpn =
+        seededNpnFromMap.length >= 6
+          ? seededNpnFromMap
+          : AUTHORITY_REGRESSION_SAMPLE_HISTORICAL_NPN.length >= 6
+            ? AUTHORITY_REGRESSION_SAMPLE_HISTORICAL_NPN
+            : null;
+      regulatoryMap = null;
+      regulatoryMapStatus = "miss";
+      regMapPrimaryStatus = "miss";
+      console.info("[ResolutionV2] Applied authority regression sample", {
+        barcode: barcodeGtin14,
+        historicalNpn: authorityRegressionScenarioHistoricalNpn,
+      });
+    }
 
-	    // Stage0 hardening: if the first map read misses (or times out), do one direct second-chance
-	    // read without the shared read semaphore to avoid false Web fallback during transient queue pressure.
-	    // Safety rule: this must stay exact-match only (same gtin14 + same raw digits), no fuzzy lookup.
-	    if (!regulatoryMap && !requestSignal.aborted) {
-	      regMapSecondChanceAttempted = true;
-	      if (authorityRegressionScenarioActive) {
-	        regMapSecondChanceLatencyMs = 0;
-	        regMapSecondChanceResult = "timeout";
-	        regulatoryMapStatus = "timeout";
-	        console.info("[ResolutionV2] Forced map second-chance timeout for authority regression sample", {
-	          barcode: barcodeGtin14,
-	        });
-	      } else {
-	        const secondChanceStartedAt = performance.now();
-	        try {
-	          const secondChance = await getBarcodeRegulatoryMap(barcodeGtin14, barcodeRawDigits, {
-	            ...supabaseReadResilience,
-	            semaphore: undefined,
-	            queueTimeoutMs: 0,
-	            timeoutMs: REG_MAP_SECOND_CHANCE_TIMEOUT_MS,
-	            includeExpired: true,
-	            retry: {
-	              maxAttempts: 1,
-	            },
-	          });
-	          regMapSecondChanceLatencyMs = Math.round(performance.now() - secondChanceStartedAt);
-	          if (secondChance) {
-	            regMapSecondChanceResult = "hit";
-	            regulatoryMap = secondChance;
-	            console.info("[ResolutionV2] Regulatory map second-chance hit", {
-	              barcode: barcodeGtin14,
-	              npn: secondChance.npn,
-	              source: secondChance.source,
-	            });
-	          } else {
-	            regMapSecondChanceResult = "miss";
-	          }
-	        } catch (error) {
-	          regMapSecondChanceLatencyMs = Math.round(performance.now() - secondChanceStartedAt);
-	          if (error instanceof TimeoutError || isAbortError(error)) {
-	            regMapSecondChanceResult = "timeout";
-	          } else {
-	            regMapSecondChanceResult = "error";
-	          }
-	          if (regulatoryMapStatus !== "timeout") {
-	            regulatoryMapStatus = "timeout";
-	          }
-	          console.warn("[ResolutionV2] Regulatory map second-chance failed", error);
-	        }
-	      }
-	    }
-
-	    let historicalLnhpd: Awaited<ReturnType<typeof getHistoricalLnhpdScanNpn>> | null = null;
-	    const resolveCandidate = (historicalNpn?: string | null) =>
-	      resolveAuthorityCandidate({
-	        regulatoryMap,
-	        snapshot: cachedFast?.snapshot ?? null,
-	        mapMinConfidence: REGULATORY_MAP_MIN_CONFIDENCE,
-	        staleWindowMs: REGULATORY_MAP_STALE_WINDOW_MS,
-	        historicalNpn: historicalNpn ?? null,
-	      });
-
-	    let authority = resolveCandidate();
-	    let candidate = authority.candidate;
-	    if (regulatoryMapStatus !== "timeout") {
-	      regulatoryMapStatus = authority.mapStatus;
-	    }
-
-	    // Root-fix for cache resets: if map/snapshot are gone, recover LNHPD candidate
-	    // from prior successful scans of the same GTIN14 before falling into Web.
-	    if (!candidate && !requestSignal.aborted) {
-	      if (authorityRegressionScenarioActive && authorityRegressionScenarioHistoricalNpn) {
-	        historicalLnhpd = {
-	          barcode_gtin14: barcodeGtin14,
-	          npn: authorityRegressionScenarioHistoricalNpn,
-	          source: "barcode_scans",
-	          created_at: new Date().toISOString(),
-	          served_from: "lnhpd",
-	        };
-	      } else {
-	        historicalLnhpd = await getHistoricalLnhpdScanNpn(barcodeGtin14, barcodeRawDigits, {
-	          ...supabaseReadResilience,
-	          timeoutMs: 500,
-	          queueTimeoutMs: 0,
-	          retry: { maxAttempts: 1 },
-	        }).catch(() => null);
-	      }
-	      if (historicalLnhpd?.npn) {
-	        authority = resolveCandidate(historicalLnhpd.npn);
-	        candidate = authority.candidate;
-	        if (regulatoryMapStatus !== "timeout") {
-	          regulatoryMapStatus = authority.mapStatus;
-	        }
-	      }
-	    }
-
-	    if (candidate?.source === "scan_history" && historicalLnhpd?.npn) {
-	      console.info("[ResolutionV2] Recovered LNHPD candidate from scan history", {
-	        barcode: barcodeGtin14,
-	        npn: historicalLnhpd.npn,
-	        createdAt: historicalLnhpd.created_at,
-	      });
-	    }
-
-	    if (candidate) {
-	      npnCandidateSource =
-	        candidate.source === "snapshot"
-	          ? "snapshot"
-	          : candidate.source === "scan_history"
-	            ? "scan_history"
-	            : "map";
-        authorityCandidateSource = candidate.source;
-	      npnCandidateStale = candidate.isStale;
-
-	      const npnNegative = await getNpnNegativeCache(candidate.npn, {
-	        ...supabaseReadResilience,
-	        timeoutMs: 250,
-	      }).catch(() => null);
-        const npnNegativeReasonCode =
-          typeof npnNegative?.reason_code === "string" ? npnNegative.reason_code : null;
-        const highConfidenceMapCandidate =
-          (candidate.source === "map" || candidate.source === "map_stale") &&
-          Number(candidate.confidence ?? 0) >= 0.9;
-        const shouldBypassAuthorityNegativeCache =
-          Boolean(npnNegative) &&
-          npnNegativeReasonCode === "lnhpd_not_found" &&
-          highConfidenceMapCandidate;
-        authorityNegativeCacheBypassed = shouldBypassAuthorityNegativeCache;
-        if (shouldBypassAuthorityNegativeCache) {
-          console.info("[ResolutionV2] Bypassing LNHPD negative cache for high-confidence map candidate", {
-            barcode: barcodeGtin14,
-            npn: candidate.npn,
-            source: candidate.source,
-            confidence: candidate.confidence ?? null,
+    // Stage0 hardening: if the first map read misses (or times out), do one direct second-chance
+    // read without the shared read semaphore to avoid false Web fallback during transient queue pressure.
+    // Safety rule: this must stay exact-match only (same gtin14 + same raw digits), no fuzzy lookup.
+    if (!regulatoryMap && !requestSignal.aborted) {
+      regMapSecondChanceAttempted = true;
+      if (authorityRegressionScenarioActive) {
+        regMapSecondChanceLatencyMs = 0;
+        regMapSecondChanceResult = "timeout";
+        regulatoryMapStatus = "timeout";
+        console.info("[ResolutionV2] Forced map second-chance timeout for authority regression sample", {
+          barcode: barcodeGtin14,
+        });
+      } else {
+        const secondChanceStartedAt = performance.now();
+        try {
+          const secondChance = await getBarcodeRegulatoryMap(barcodeGtin14, barcodeRawDigits, {
+            ...supabaseReadResilience,
+            semaphore: undefined,
+            queueTimeoutMs: 0,
+            timeoutMs: REG_MAP_SECOND_CHANCE_TIMEOUT_MS,
+            includeExpired: true,
+            retry: {
+              maxAttempts: 1,
+            },
           });
+          regMapSecondChanceLatencyMs = Math.round(performance.now() - secondChanceStartedAt);
+          if (secondChance) {
+            regMapSecondChanceResult = "hit";
+            regulatoryMap = secondChance;
+            console.info("[ResolutionV2] Regulatory map second-chance hit", {
+              barcode: barcodeGtin14,
+              npn: secondChance.npn,
+              source: secondChance.source,
+            });
+          } else {
+            regMapSecondChanceResult = "miss";
+          }
+        } catch (error) {
+          regMapSecondChanceLatencyMs = Math.round(performance.now() - secondChanceStartedAt);
+          if (error instanceof TimeoutError || isAbortError(error)) {
+            regMapSecondChanceResult = "timeout";
+          } else {
+            regMapSecondChanceResult = "error";
+          }
+          if (regulatoryMapStatus !== "timeout") {
+            regulatoryMapStatus = "timeout";
+          }
+          console.warn("[ResolutionV2] Regulatory map second-chance failed", error);
         }
-	      const npnNegativeIsBlocking =
-	        Boolean(npnNegative) &&
-          npnNegativeReasonCode !== "lnhpd_timeout" &&
-          !shouldBypassAuthorityNegativeCache;
-	      if (npnNegativeIsBlocking) {
-	        npnNegativeCacheHit = true;
-          authorityFailureReason = "negative_cache_blocked";
-	      } else {
-	        // Older deployments wrote timeouts into the negative cache, which can "poison" Stage0
-	        // and make a known-good NPN fall back to Web. Ignore (and best-effort clear) timeouts.
-	        if (npnNegativeReasonCode === "lnhpd_timeout") {
-	          void clearNpnNegativeCache(candidate.npn, { ...supabaseReadResilience, timeoutMs: 500 });
-	        }
-	        try {
+      }
+    }
+
+    let historicalLnhpd: Awaited<ReturnType<typeof getHistoricalLnhpdScanNpn>> | null = null;
+    const resolveCandidate = (historicalNpn?: string | null) =>
+      resolveAuthorityCandidate({
+        regulatoryMap,
+        snapshot: cachedFast?.snapshot ?? null,
+        mapMinConfidence: REGULATORY_MAP_MIN_CONFIDENCE,
+        staleWindowMs: REGULATORY_MAP_STALE_WINDOW_MS,
+        historicalNpn: historicalNpn ?? null,
+      });
+
+    let authority = resolveCandidate();
+    let candidate = authority.candidate;
+    if (regulatoryMapStatus !== "timeout") {
+      regulatoryMapStatus = authority.mapStatus;
+    }
+
+    // Root-fix for cache resets: if map/snapshot are gone, recover LNHPD candidate
+    // from prior successful scans of the same GTIN14 before falling into Web.
+    if (!candidate && !requestSignal.aborted) {
+      if (authorityRegressionScenarioActive && authorityRegressionScenarioHistoricalNpn) {
+        historicalLnhpd = {
+          barcode_gtin14: barcodeGtin14,
+          npn: authorityRegressionScenarioHistoricalNpn,
+          source: "barcode_scans",
+          created_at: new Date().toISOString(),
+          served_from: "lnhpd",
+        };
+      } else {
+        historicalLnhpd = await getHistoricalLnhpdScanNpn(barcodeGtin14, barcodeRawDigits, {
+          ...supabaseReadResilience,
+          timeoutMs: 500,
+          queueTimeoutMs: 0,
+          retry: { maxAttempts: 1 },
+        }).catch(() => null);
+      }
+      if (historicalLnhpd?.npn) {
+        authority = resolveCandidate(historicalLnhpd.npn);
+        candidate = authority.candidate;
+        if (regulatoryMapStatus !== "timeout") {
+          regulatoryMapStatus = authority.mapStatus;
+        }
+      }
+    }
+
+    // Name/brand fallback: when barcode mapping misses but we still have stable product hints
+    // (usually from cached snapshot metadata), try a strict LNHPD name match before Web Stage 1.
+    if (!candidate && !requestSignal.aborted) {
+      const hintBrand =
+        cachedFast?.analysisPayload?.productInfo?.brand ??
+        cachedFast?.snapshot?.product?.brand ??
+        null;
+      const hintProduct =
+        cachedFast?.analysisPayload?.productInfo?.name ??
+        cachedFast?.snapshot?.product?.name ??
+        null;
+      if ((hintBrand && hintBrand.trim().length > 0) || (hintProduct && hintProduct.trim().length > 0)) {
+        try {
+          const nameMatchedFacts =
+            prefetchedNameMatchFacts ??
+            (await fetchLnhpdFactsByName(
+              { brand: hintBrand, product: hintProduct },
+              requestSignal,
+            ));
+          const matchedNpn = nameMatchedFacts?.npn?.replace(/\D/g, "").trim() ?? "";
+          if (matchedNpn.length >= 6) {
+            candidate = {
+              npn: matchedNpn,
+              source: "name_match",
+              isStale: true,
+              // Name-match now requires dose/form-aware scoring; treat as high-confidence to avoid
+              // dropping clear matches (e.g., Vitamin D 1000IU tablet variants) in sparse-label cases.
+              requiresGuardrail: false,
+              confidence: 0.9,
+            };
+            console.info("[ResolutionV2] Recovered LNHPD candidate from name match", {
+              barcode: barcodeGtin14,
+              npn: matchedNpn,
+              hintBrand,
+              hintProduct,
+            });
+          }
+        } catch (error) {
+          console.warn("[ResolutionV2] LNHPD name-match candidate lookup failed", error);
+        }
+      }
+    }
+
+    if (candidate?.source === "scan_history" && historicalLnhpd?.npn) {
+      console.info("[ResolutionV2] Recovered LNHPD candidate from scan history", {
+        barcode: barcodeGtin14,
+        npn: historicalLnhpd.npn,
+        createdAt: historicalLnhpd.created_at,
+      });
+    }
+
+    if (candidate) {
+      npnCandidateSource =
+        candidate.source === "snapshot"
+          ? "snapshot"
+          : candidate.source === "scan_history"
+            ? "scan_history"
+            : candidate.source === "name_match"
+              ? "name_match"
+              : "map";
+      authorityCandidateSource = candidate.source;
+      npnCandidateStale = candidate.isStale;
+
+      const npnNegative = await getNpnNegativeCache(candidate.npn, {
+        ...supabaseReadResilience,
+        timeoutMs: 250,
+      }).catch(() => null);
+      const npnNegativeReasonCode =
+        typeof npnNegative?.reason_code === "string" ? npnNegative.reason_code : null;
+      const highConfidenceMapCandidate =
+        (candidate.source === "map" || candidate.source === "map_stale") &&
+        Number(candidate.confidence ?? 0) >= 0.9;
+      const shouldBypassAuthorityNegativeCache =
+        Boolean(npnNegative) &&
+        npnNegativeReasonCode === "lnhpd_not_found" &&
+        highConfidenceMapCandidate;
+      authorityNegativeCacheBypassed = shouldBypassAuthorityNegativeCache;
+      if (shouldBypassAuthorityNegativeCache) {
+        console.info("[ResolutionV2] Bypassing LNHPD negative cache for high-confidence map candidate", {
+          barcode: barcodeGtin14,
+          npn: candidate.npn,
+          source: candidate.source,
+          confidence: candidate.confidence ?? null,
+        });
+      }
+      const npnNegativeIsBlocking =
+        Boolean(npnNegative) &&
+        npnNegativeReasonCode !== "lnhpd_timeout" &&
+        !shouldBypassAuthorityNegativeCache;
+      if (npnNegativeIsBlocking) {
+        npnNegativeCacheHit = true;
+        authorityFailureReason = "negative_cache_blocked";
+      } else {
+        // Older deployments wrote timeouts into the negative cache, which can "poison" Stage0
+        // and make a known-good NPN fall back to Web. Ignore (and best-effort clear) timeouts.
+        if (npnNegativeReasonCode === "lnhpd_timeout") {
+          void clearNpnNegativeCache(candidate.npn, { ...supabaseReadResilience, timeoutMs: 500 });
+        }
+        try {
           const lnhpdLookup = await fetchLnhpdFactsWithSecondChance(candidate.npn, requestSignal, {
             firstTimeoutMs: RESILIENCE_LNHPD_TIMEOUT_MS,
             secondTimeoutMs: RESILIENCE_LNHPD_SECOND_CHANCE_TIMEOUT_MS,
@@ -11715,77 +12377,88 @@ app.get("/api/client-runtime-flags", verifySupabaseToken, (_req: Request, res: R
           authorityLnhpdAttempt2Status = lnhpdLookup.attempt2Status;
           lnhpdFetchStatus = lnhpdLookup.finalStatus;
           const lnhpdFacts = lnhpdLookup.facts;
+          if (process.env.DEBUG_LNHPD_NAME_MATCH === "1") {
+            console.info("[ResolutionV2] LNHPD candidate fetch", {
+              barcode: barcodeGtin14,
+              npn: candidate.npn,
+              source: candidate.source,
+              attempt1Status: lnhpdLookup.attempt1Status,
+              attempt2Status: lnhpdLookup.attempt2Status,
+              finalStatus: lnhpdLookup.finalStatus,
+              hasFacts: Boolean(lnhpdFacts),
+            });
+          }
 
-	          if (lnhpdFacts) {
-              authorityFailureReason = null;
+          if (lnhpdFacts) {
+            authorityFailureReason = null;
 
-	            let guardrailPass = true;
-	            if (candidate.requiresGuardrail) {
-	              const evidence = buildCandidateEvidence({
-	                snapshot: cachedFast?.snapshot ?? null,
-	                analysisPayload: cachedFast?.analysisPayload ?? null,
-	                catalog,
-	              });
-	              const guardrail = computeGuardrailScore({
-	                lnhpdFacts,
-	                candidateBrands: evidence.brands,
-	                candidateNames: evidence.names,
-	                candidateIngredients: evidence.ingredients,
-	              });
-	              lnhpdGuardrailScore = guardrail.score;
-	              guardrailPass = guardrail.score >= GUARDRAIL_SIMILARITY_THRESHOLD;
-	              lnhpdGuardrailPass = guardrailPass;
-	            }
+            let guardrailPass = true;
+            if (candidate.requiresGuardrail) {
+              const evidence = buildCandidateEvidence({
+                snapshot: cachedFast?.snapshot ?? null,
+                analysisPayload: cachedFast?.analysisPayload ?? null,
+                catalog,
+              });
+              const guardrail = computeGuardrailScore({
+                lnhpdFacts,
+                candidateBrands: evidence.brands,
+                candidateNames: evidence.names,
+                candidateIngredients: evidence.ingredients,
+              });
+              lnhpdGuardrailScore = guardrail.score;
+              guardrailPass = guardrail.score >= GUARDRAIL_SIMILARITY_THRESHOLD;
+              lnhpdGuardrailPass = guardrailPass;
+            }
 
-	            if (!guardrailPass) {
-                authorityFailureReason = "guardrail_failed";
-	              void upsertBarcodeRegulatoryMap({
-	                barcodeGtin14,
-	                npn: candidate.npn,
-	                confidence: 0.2,
-	                source: "conflict",
-	                expiresAt: new Date(Date.now() + REGULATORY_MAP_CONFLICT_TTL_MS).toISOString(),
-	                barcodeRaw: rawBarcode,
-	              });
-	            } else {
-	              const lnhpdLabelFacts = toLabelFactsFromLnhpd(lnhpdFacts);
-	              const labelExtraction: LabelExtractionMeta = {
-	                source: "lnhpd",
-	                fetchedAt: lnhpdFacts.extractedAt ?? nowIso(),
-	                datasetVersion: lnhpdFacts.datasetVersion ?? null,
-	              };
+            if (!guardrailPass) {
+              authorityFailureReason = "guardrail_failed";
+              void upsertBarcodeRegulatoryMap({
+                barcodeGtin14,
+                npn: candidate.npn,
+                confidence: 0.2,
+                source: "conflict",
+                expiresAt: new Date(Date.now() + REGULATORY_MAP_CONFLICT_TTL_MS).toISOString(),
+                barcodeRaw: rawBarcode,
+              });
+            } else {
+              const lnhpdLabelFacts = toLabelFactsFromLnhpd(lnhpdFacts);
+              const labelExtraction: LabelExtractionMeta = {
+                source: "lnhpd",
+                fetchedAt: lnhpdFacts.extractedAt ?? nowIso(),
+                datasetVersion: lnhpdFacts.datasetVersion ?? null,
+              };
 
-	              const labelAnalysis = buildLabelOnlyAnalysis(lnhpdLabelFacts);
-	              const lnhpdProductInfo = {
-	                brand: lnhpdFacts.brandName ?? null,
-	                name: lnhpdFacts.productName ?? null,
-	                category: null,
-	                image: null,
-	              };
+              const labelAnalysis = buildLabelOnlyAnalysis(lnhpdLabelFacts);
+              const lnhpdProductInfo = {
+                brand: lnhpdFacts.brandName ?? null,
+                name: lnhpdFacts.productName ?? null,
+                category: null,
+                image: null,
+              };
 
-	              const lnhpdSources: { title: string; link: string; domain: string; isHighQuality: boolean }[] = [];
-	              const lnhpdAnalysisPayload: SnapshotAnalysisPayload = {
-	                ...labelAnalysis,
-	                brandExtraction: {
-	                  brand: lnhpdFacts.brandName ?? null,
-	                  product: lnhpdFacts.productName ?? null,
-	                  category: null,
-	                  confidence: "high",
-	                  source: "rule",
-	                },
-	                productInfo: lnhpdProductInfo,
-	                sources: lnhpdSources,
-	              };
+              const lnhpdSources: { title: string; link: string; domain: string; isHighQuality: boolean }[] = [];
+              const lnhpdAnalysisPayload: SnapshotAnalysisPayload = {
+                ...labelAnalysis,
+                brandExtraction: {
+                  brand: lnhpdFacts.brandName ?? null,
+                  product: lnhpdFacts.productName ?? null,
+                  category: null,
+                  confidence: "high",
+                  source: "rule",
+                },
+                productInfo: lnhpdProductInfo,
+                sources: lnhpdSources,
+              };
 
-	              let lnhpdSnapshot = buildBarcodeSnapshot({
-	                barcode,
-	                productInfo: lnhpdProductInfo,
-	                sources: [],
-	                efficacy: lnhpdAnalysisPayload.efficacy ?? null,
-	                safety: lnhpdAnalysisPayload.safety ?? null,
-	                usagePayload: lnhpdAnalysisPayload.usagePayload ?? null,
-	              });
-	              lnhpdSnapshot = applyLnhpdFactsToSnapshot(lnhpdSnapshot, lnhpdFacts);
+              let lnhpdSnapshot = buildBarcodeSnapshot({
+                barcode,
+                productInfo: lnhpdProductInfo,
+                sources: [],
+                efficacy: lnhpdAnalysisPayload.efficacy ?? null,
+                safety: lnhpdAnalysisPayload.safety ?? null,
+                usagePayload: lnhpdAnalysisPayload.usagePayload ?? null,
+              });
+              lnhpdSnapshot = applyLnhpdFactsToSnapshot(lnhpdSnapshot, lnhpdFacts);
 
               const lnhpdFactsSourceVersion = `lnhpd:${lnhpdFacts.datasetVersion ?? lnhpdFacts.extractedAt ?? "unknown"}`;
               const lnhpdDigest = buildFactsDigestFromLnhpd({
@@ -11803,163 +12476,163 @@ app.get("/api/client-runtime-flags", verifySupabaseToken, (_req: Request, res: R
                 apiKey: deepseekKey,
               });
 
-	              const analysisStatus = buildAnalysisStatus({
-	                hasLabelFacts: hasLabelFacts(lnhpdSnapshot),
-	                hasAi: hasAiPayload(lnhpdAnalysisPayload),
-	                dsldLabelId: null,
-	              });
-	              const analysisMeta = buildAnalysisMeta({ status: analysisStatus, labelExtraction });
-	              lnhpdAnalysisPayload.analysis = analysisMeta;
-	              lnhpdSnapshot.status = "resolved";
-	              lnhpdSnapshot.analysis = analysisMeta;
-	              lnhpdSnapshot.updatedAt = nowIso();
+              const analysisStatus = buildAnalysisStatus({
+                hasLabelFacts: hasLabelFacts(lnhpdSnapshot),
+                hasAi: hasAiPayload(lnhpdAnalysisPayload),
+                dsldLabelId: null,
+              });
+              const analysisMeta = buildAnalysisMeta({ status: analysisStatus, labelExtraction });
+              lnhpdAnalysisPayload.analysis = analysisMeta;
+              lnhpdSnapshot.status = "resolved";
+              lnhpdSnapshot.analysis = analysisMeta;
+              lnhpdSnapshot.updatedAt = nowIso();
 
-	              sendSSE(res, "brand_extracted", {
-	                brand: lnhpdFacts.brandName ?? null,
-	                product: lnhpdFacts.productName ?? null,
-	                category: null,
-	                confidence: "high",
-	                source: "rule",
-	              });
+              sendSSE(res, "brand_extracted", {
+                brand: lnhpdFacts.brandName ?? null,
+                product: lnhpdFacts.productName ?? null,
+                category: null,
+                confidence: "high",
+                source: "rule",
+              });
 
-	              sendSSE(res, "product_info", {
-	                productInfo: {
-	                  brand: lnhpdFacts.brandName ?? null,
-	                  name: lnhpdFacts.productName ?? null,
-	                  category: null,
-	                  image: null,
-	                },
-	                sources: [],
-	              });
+              sendSSE(res, "product_info", {
+                productInfo: {
+                  brand: lnhpdFacts.brandName ?? null,
+                  name: lnhpdFacts.productName ?? null,
+                  category: null,
+                  image: null,
+                },
+                sources: [],
+              });
 
-	              if (!streamAnalysisBundleOnly) {
-	                sendSSE(res, "result_efficacy", lnhpdAnalysisPayload.efficacy);
-	                sendSSE(res, "result_safety", lnhpdAnalysisPayload.safety);
-	                sendSSE(res, "result_usage", lnhpdAnalysisPayload.usagePayload);
-	                sendSSE(res, "snapshot", lnhpdSnapshot);
-	              }
-	              stage0Delivered = true;
-	              stage0Source = "lnhpd";
-
-	              const expiresAt = computeExpiresAt(analysisStatus);
-	              void storeSnapshotCache({
-	                key: barcodeGtin14,
-	                source: "barcode",
-	                snapshot: lnhpdSnapshot,
-	                analysisPayload: lnhpdAnalysisPayload,
-	                expiresAt,
-	              });
-
-	              void upsertBarcodeRegulatoryMap({
-	                barcodeGtin14,
-	                npn: candidate.npn,
-	                confidence: Math.max(0.9, candidate.confidence ?? 0),
-	                source: "lnhpd",
-	                expiresAt: new Date(Date.now() + REGULATORY_MAP_TTL_MS_LNHPD).toISOString(),
-	                barcodeRaw: rawBarcode,
-	              });
-
-	              void clearNpnNegativeCache(candidate.npn, { ...supabaseReadResilience, timeoutMs: 500 });
-
-	              if (aiAvailable && deepseekKey && analysisStatus !== "complete" && analysisStatus !== "ai_enriched") {
-	                queueFirstPartyAnalysisCompletion({
-	                  cacheKey: barcodeGtin14,
-	                  barcode,
-	                  model,
-	                  deepseekKey,
-	                  snapshot: lnhpdSnapshot,
-	                  analysisPayload: lnhpdAnalysisPayload,
-	                  labelFacts: lnhpdLabelFacts,
-	                });
-	              }
-
-	              const timingTotalMs = Math.round(performance.now() - startedAt);
-	              void logBarcodeScan({
-	                barcodeGtin14,
-	                barcodeRaw: rawBarcode,
-	                checksumValid: normalized.isValidChecksum ?? null,
-	                catalogHit: false,
-	                servedFrom: "lnhpd",
-	                dsldLabelId: null,
-	                snapshotId: lnhpdSnapshot.snapshotId,
-	                brandName: lnhpdFacts.brandName ?? null,
-	                productName: lnhpdFacts.productName ?? null,
-	                deviceId,
-	                requestId,
-	                timingTotalMs,
-	                meta: buildAuthorityMeta({
-	                  stage0: "lnhpd_map_hit",
-	                  npn: candidate.npn,
-	                  deepseek_bundle_skipped_reason: "stage0_hit",
-	                  timing: { stage0_ms: timingTotalMs },
-	                }),
-	              });
-
-		              if (!forceStage1) {
-		                await awaitStage0Bundle();
-		                finalizeStream("lnhpd_stage0_complete");
-		                return;
-		              }
-	              console.log("[ResolutionV2] FORCE_STAGE1 enabled; continuing after LNHPD map hit");
-	            }
-	          } else {
-              if (lnhpdLookup.finalStatus === "timeout") {
-                authorityFailureReason =
-                  lnhpdLookup.attempt2Status === "timeout" ? "lnhpd_timeout_second" : "lnhpd_timeout_first";
-              } else if (lnhpdLookup.finalStatus === "not_found") {
-                authorityFailureReason = "lnhpd_not_found";
-              } else {
-                authorityFailureReason = "lnhpd_query_error";
+              if (!streamAnalysisBundleOnly) {
+                sendSSE(res, "result_efficacy", lnhpdAnalysisPayload.efficacy);
+                sendSSE(res, "result_safety", lnhpdAnalysisPayload.safety);
+                sendSSE(res, "result_usage", lnhpdAnalysisPayload.usagePayload);
+                sendSSE(res, "snapshot", lnhpdSnapshot);
               }
-	            if (lnhpdFetchStatus === "not_found") {
-	              void upsertBarcodeRegulatoryMap({
-	                barcodeGtin14,
-	                npn: candidate.npn,
-	                confidence: 0.2,
-	                source: "lnhpd_not_found",
-	                expiresAt: new Date(Date.now() + REGULATORY_MAP_NOT_FOUND_TTL_MS).toISOString(),
-	                barcodeRaw: rawBarcode,
-	              });
-	            }
+              stage0Delivered = true;
+              stage0Source = "lnhpd";
 
-	            if (lnhpdFetchStatus === "not_found") {
-	              void recordNpnNegativeAttempt(
-	                {
-	                  npn: candidate.npn,
-	                  reasonCode: "lnhpd_not_found",
-	                  windowMs: NPN_NEGATIVE_CACHE_WINDOW_HOURS * 60 * 60 * 1000,
-	                  threshold: NPN_NEGATIVE_CACHE_THRESHOLD,
-	                  ttlMs: NPN_NEGATIVE_CACHE_TTL_MS,
-	                },
-	                { ...supabaseReadResilience, timeoutMs: 500 },
-	              );
-	            }
-	          }
-	        } catch (error) {
-	          lnhpdFetchStatus = "error";
-            authorityFailureReason = "lnhpd_query_error";
-            authorityLnhpdAttempt1Status =
-              authorityLnhpdAttempt1Status === "not_attempted" ? "error" : authorityLnhpdAttempt1Status;
-	          console.warn("[ResolutionV2] LNHPD fetch failed", error);
-	        }
-	      }
-	    }
+              const expiresAt = computeExpiresAt(analysisStatus);
+              void storeSnapshotCache({
+                key: barcodeGtin14,
+                source: "barcode",
+                snapshot: lnhpdSnapshot,
+                analysisPayload: lnhpdAnalysisPayload,
+                expiresAt,
+              });
 
-	    const aiRequired = !catalog;
+              void upsertBarcodeRegulatoryMap({
+                barcodeGtin14,
+                npn: candidate.npn,
+                confidence: Math.max(0.9, candidate.confidence ?? 0),
+                source: "lnhpd",
+                expiresAt: new Date(Date.now() + REGULATORY_MAP_TTL_MS_LNHPD).toISOString(),
+                barcodeRaw: rawBarcode,
+              });
 
-	    if (!googleApiKey || !cx) {
-	      if (aiRequired) {
-	        emitTerminalErrorAndFinalize({
-	          code: "CONFIG_ERROR",
-	          stage: "search",
-	          reasonCode: "GOOGLE_CSE_NOT_CONFIGURED",
-	          retryable: false,
-	          message: "Google CSE not configured",
-	          finalizeReason: "google_cse_not_configured",
-	          releaseError: new Error("google_cse_not_configured"),
-	        });
-	        const timingTotalMs = Math.round(performance.now() - startedAt);
-	        void logBarcodeScan({
+              void clearNpnNegativeCache(candidate.npn, { ...supabaseReadResilience, timeoutMs: 500 });
+
+              if (aiAvailable && deepseekKey && analysisStatus !== "complete" && analysisStatus !== "ai_enriched") {
+                queueFirstPartyAnalysisCompletion({
+                  cacheKey: barcodeGtin14,
+                  barcode,
+                  model,
+                  deepseekKey,
+                  snapshot: lnhpdSnapshot,
+                  analysisPayload: lnhpdAnalysisPayload,
+                  labelFacts: lnhpdLabelFacts,
+                });
+              }
+
+              const timingTotalMs = Math.round(performance.now() - startedAt);
+              void logBarcodeScan({
+                barcodeGtin14,
+                barcodeRaw: rawBarcode,
+                checksumValid: normalized.isValidChecksum ?? null,
+                catalogHit: false,
+                servedFrom: "lnhpd",
+                dsldLabelId: null,
+                snapshotId: lnhpdSnapshot.snapshotId,
+                brandName: lnhpdFacts.brandName ?? null,
+                productName: lnhpdFacts.productName ?? null,
+                deviceId,
+                requestId,
+                timingTotalMs,
+                meta: buildAuthorityMeta({
+                  stage0: "lnhpd_map_hit",
+                  npn: candidate.npn,
+                  deepseek_bundle_skipped_reason: "stage0_hit",
+                  timing: { stage0_ms: timingTotalMs },
+                }),
+              });
+
+              if (!forceStage1) {
+                await awaitStage0Bundle();
+                finalizeStream("lnhpd_stage0_complete");
+                return;
+              }
+              console.log("[ResolutionV2] FORCE_STAGE1 enabled; continuing after LNHPD map hit");
+            }
+          } else {
+            if (lnhpdLookup.finalStatus === "timeout") {
+              authorityFailureReason =
+                lnhpdLookup.attempt2Status === "timeout" ? "lnhpd_timeout_second" : "lnhpd_timeout_first";
+            } else if (lnhpdLookup.finalStatus === "not_found") {
+              authorityFailureReason = "lnhpd_not_found";
+            } else {
+              authorityFailureReason = "lnhpd_query_error";
+            }
+            if (lnhpdFetchStatus === "not_found") {
+              void upsertBarcodeRegulatoryMap({
+                barcodeGtin14,
+                npn: candidate.npn,
+                confidence: 0.2,
+                source: "lnhpd_not_found",
+                expiresAt: new Date(Date.now() + REGULATORY_MAP_NOT_FOUND_TTL_MS).toISOString(),
+                barcodeRaw: rawBarcode,
+              });
+            }
+
+            if (lnhpdFetchStatus === "not_found") {
+              void recordNpnNegativeAttempt(
+                {
+                  npn: candidate.npn,
+                  reasonCode: "lnhpd_not_found",
+                  windowMs: NPN_NEGATIVE_CACHE_WINDOW_HOURS * 60 * 60 * 1000,
+                  threshold: NPN_NEGATIVE_CACHE_THRESHOLD,
+                  ttlMs: NPN_NEGATIVE_CACHE_TTL_MS,
+                },
+                { ...supabaseReadResilience, timeoutMs: 500 },
+              );
+            }
+          }
+        } catch (error) {
+          lnhpdFetchStatus = "error";
+          authorityFailureReason = "lnhpd_query_error";
+          authorityLnhpdAttempt1Status =
+            authorityLnhpdAttempt1Status === "not_attempted" ? "error" : authorityLnhpdAttempt1Status;
+          console.warn("[ResolutionV2] LNHPD fetch failed", error);
+        }
+      }
+    }
+
+    const aiRequired = !catalog;
+
+    if (!googleApiKey || !cx) {
+      if (aiRequired) {
+        emitTerminalErrorAndFinalize({
+          code: "CONFIG_ERROR",
+          stage: "search",
+          reasonCode: "GOOGLE_CSE_NOT_CONFIGURED",
+          retryable: false,
+          message: "Google CSE not configured",
+          finalizeReason: "google_cse_not_configured",
+          releaseError: new Error("google_cse_not_configured"),
+        });
+        const timingTotalMs = Math.round(performance.now() - startedAt);
+        void logBarcodeScan({
           barcodeGtin14,
           barcodeRaw: rawBarcode,
           checksumValid: normalized.isValidChecksum ?? null,
@@ -11972,25 +12645,25 @@ app.get("/api/client-runtime-flags", verifySupabaseToken, (_req: Request, res: R
           timingTotalMs,
           meta: buildAuthorityMeta({ reason: "google_cse_env_not_set" }),
         });
-	        return;
-	      }
-	      finalizeStream("google_cse_missing_not_required");
-	      return;
-	    }
+        return;
+      }
+      finalizeStream("google_cse_missing_not_required");
+      return;
+    }
 
-	    if (!deepseekKey) {
-	      if (aiRequired) {
-	        emitTerminalErrorAndFinalize({
-	          code: "CONFIG_ERROR",
-	          stage: "draft",
-	          reasonCode: "DEEPSEEK_API_KEY_MISSING",
-	          retryable: false,
-	          message: "DeepSeek API key missing",
-	          finalizeReason: "deepseek_api_key_missing",
-	          releaseError: new Error("deepseek_api_key_missing"),
-	        });
-	        const timingTotalMs = Math.round(performance.now() - startedAt);
-	        void logBarcodeScan({
+    if (!deepseekKey) {
+      if (aiRequired) {
+        emitTerminalErrorAndFinalize({
+          code: "CONFIG_ERROR",
+          stage: "draft",
+          reasonCode: "DEEPSEEK_API_KEY_MISSING",
+          retryable: false,
+          message: "DeepSeek API key missing",
+          finalizeReason: "deepseek_api_key_missing",
+          releaseError: new Error("deepseek_api_key_missing"),
+        });
+        const timingTotalMs = Math.round(performance.now() - startedAt);
+        void logBarcodeScan({
           barcodeGtin14,
           barcodeRaw: rawBarcode,
           checksumValid: normalized.isValidChecksum ?? null,
@@ -12003,11 +12676,11 @@ app.get("/api/client-runtime-flags", verifySupabaseToken, (_req: Request, res: R
           timingTotalMs,
           meta: buildAuthorityMeta({ reason: "deepseek_api_key_missing" }),
         });
-	        return;
-	      }
-	      finalizeStream("deepseek_missing_not_required");
-	      return;
-	    }
+        return;
+      }
+      finalizeStream("deepseek_missing_not_required");
+      return;
+    }
 
     // In-flight dedup：同一 gtin14 同时被扫，只允许一个请求跑 Google/DeepSeek
     const existing = barcodeEnrichInFlight.get(cacheKey);
@@ -12018,7 +12691,7 @@ app.get("/api/client-runtime-flags", verifySupabaseToken, (_req: Request, res: R
         if (waitMs > 0) {
           await withTimeoutPromise(existing, waitMs, requestSignal);
         }
-      } catch {}
+      } catch { }
 
       if (requestSignal.aborted) {
         return;
@@ -12091,8 +12764,8 @@ app.get("/api/client-runtime-flags", verifySupabaseToken, (_req: Request, res: R
             const bestUrl = urls[0] ?? null;
             const webCanonicalId = bestUrl
               ? createHash("sha256")
-                  .update(`${bestUrl}|${RESOLUTION_ENGINE_VERSION}|${barcodeGtin14}`)
-                  .digest("hex")
+                .update(`${bestUrl}|${RESOLUTION_ENGINE_VERSION}|${barcodeGtin14}`)
+                .digest("hex")
               : barcodeGtin14;
             identityType = bestUrl ? "webCanonicalId" : "gtin14";
             identityValue = webCanonicalId;
@@ -12143,10 +12816,10 @@ app.get("/api/client-runtime-flags", verifySupabaseToken, (_req: Request, res: R
           }
         }
 
-		        emitCachedSnapshot(after, null, streamAnalysisBundleOnly ? { mode: "analysis_bundle_only" } : undefined);
-		        await awaitAnalysisBundle();
-		        finalizeStream("wait_inflight_snapshot_complete");
-	        const timingTotalMs = Math.round(performance.now() - startedAt);
+        emitCachedSnapshot(after, null, streamAnalysisBundleOnly ? { mode: "analysis_bundle_only" } : undefined);
+        await awaitAnalysisBundle();
+        finalizeStream("wait_inflight_snapshot_complete");
+        const timingTotalMs = Math.round(performance.now() - startedAt);
         const brandName = after.snapshot.product.brand ?? after.analysisPayload?.productInfo?.brand ?? null;
         const productName = after.snapshot.product.name ?? after.analysisPayload?.productInfo?.name ?? null;
         void logBarcodeScan({
@@ -12280,9 +12953,9 @@ app.get("/api/client-runtime-flags", verifySupabaseToken, (_req: Request, res: R
     const computeNegativeUntil = (reasonCode: string): string => {
       const ttlMs =
         reasonCode === "TIMEOUT" ||
-        reasonCode === "BUDGET_EXHAUSTED" ||
-        reasonCode === "BREAKER_OPEN" ||
-        reasonCode === "MARKETPLACE_ONLY_TIMEOUT"
+          reasonCode === "BUDGET_EXHAUSTED" ||
+          reasonCode === "BREAKER_OPEN" ||
+          reasonCode === "MARKETPLACE_ONLY_TIMEOUT"
           ? NEGATIVE_TTL_TIMEOUT_MS
           : reasonCode === "NO_SERP"
             ? NEGATIVE_TTL_NO_SERP_MS
@@ -12754,7 +13427,7 @@ app.get("/api/client-runtime-flags", verifySupabaseToken, (_req: Request, res: R
                 if (received >= maxBytes) {
                   try {
                     await reader.cancel();
-                  } catch {}
+                  } catch { }
                   break;
                 }
               }
@@ -13565,16 +14238,16 @@ app.get("/api/client-runtime-flags", verifySupabaseToken, (_req: Request, res: R
                     : [];
                   const identityStrongSecondary = Boolean(
                     bestFacts?.identifiers?.npn ||
-                      bestEvidence?.jsonLdGtinMatch ||
-                      explicitGtinMatches.length > 0 ||
-                      explicitUpcMatches.length > 0,
+                    bestEvidence?.jsonLdGtinMatch ||
+                    explicitGtinMatches.length > 0 ||
+                    explicitUpcMatches.length > 0,
                   );
                   const isAmazonSecondary = bestFacts ? isAmazonDomain(bestFacts.canonical.domain) : false;
                   const amazonCanonicalExceptionUsedSecondary =
                     Boolean(
                       isAmazonSecondary &&
-                        identityStrongSecondary &&
-                        (bestFacts?.coverageScore ?? 0) >= RESOLUTION_FACTS_MIN_COVERAGE,
+                      identityStrongSecondary &&
+                      (bestFacts?.coverageScore ?? 0) >= RESOLUTION_FACTS_MIN_COVERAGE,
                     );
                   const allowCanonicalSecondary =
                     Boolean(identityStrongSecondary && (!isAmazonSecondary || amazonCanonicalExceptionUsedSecondary));
@@ -13605,9 +14278,9 @@ app.get("/api/client-runtime-flags", verifySupabaseToken, (_req: Request, res: R
                     const hasIngredients = Boolean(bestFacts.textFacts.ingredientsText);
                     const hasAnyTextFacts = Boolean(
                       bestFacts.textFacts.ingredientsText ||
-                        bestFacts.textFacts.directionsText ||
-                        bestFacts.textFacts.warningsText ||
-                        bestFacts.textFacts.servingSizeText,
+                      bestFacts.textFacts.directionsText ||
+                      bestFacts.textFacts.warningsText ||
+                      bestFacts.textFacts.servingSizeText,
                     );
 
                     if (!hasAnyTextFacts) {
@@ -13661,17 +14334,17 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
                         const fallbackName = sanitizeProductNameCandidate(seed.rawTitle) ?? null;
                         const finalProductInfo = allowCanonicalSecondary
                           ? {
-                              brand: sanitizeBrandCandidate(bestFacts.canonical.brand ?? null),
-                              name: sanitizeProductNameCandidate(bestFacts.canonical.name ?? null),
-                              category: null,
-                              image: bestFacts.canonical.images?.[0] ?? null,
-                            }
+                            brand: sanitizeBrandCandidate(bestFacts.canonical.brand ?? null),
+                            name: sanitizeProductNameCandidate(bestFacts.canonical.name ?? null),
+                            category: null,
+                            image: bestFacts.canonical.images?.[0] ?? null,
+                          }
                           : {
-                              brand: fallbackBrand,
-                              name: fallbackName,
-                              category: null,
-                              image: null,
-                            };
+                            brand: fallbackBrand,
+                            name: fallbackName,
+                            category: null,
+                            image: null,
+                          };
                         const secondarySources = filteredResults.slice(0, MAX_RESULTS).map((item) => ({
                           title: item.title,
                           link: item.link,
@@ -13963,7 +14636,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
       return;
     }
 
-	    // Stage 1 negative short-circuit (ignored if Stage 0 had snapshot cache hit).
+    // Stage 1 negative short-circuit (ignored if Stage 0 had snapshot cache hit).
     if (!cachedFast && !forceStage1) {
       const negative = await negativeCachePromise.catch(() => null);
       const isActiveNegative = negative && Date.parse(negative.until) > Date.now();
@@ -14247,16 +14920,16 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
         initialItems = hedged.items.slice(0, MAX_RESULTS);
         serpTopk = toSerpEntriesForCache(initialItems);
 
-	        if (!initialItems.length) {
-            markPipelineStepEnd("retrieve", "failed", "no_serp");
-	          const stopReason = hedged.hardStop ? (hedged.errors[0] ?? null) : null;
-	          const reasonCode =
-	            stopReason === "BUDGET_EXHAUSTED" || stopReason === "BREAKER_OPEN" || stopReason === "TIMEOUT"
-	              ? stopReason
-	              : "NO_SERP";
-	          try {
-	            await writeNegative(reasonCode);
-	          } catch {}
+        if (!initialItems.length) {
+          markPipelineStepEnd("retrieve", "failed", "no_serp");
+          const stopReason = hedged.hardStop ? (hedged.errors[0] ?? null) : null;
+          const reasonCode =
+            stopReason === "BUDGET_EXHAUSTED" || stopReason === "BREAKER_OPEN" || stopReason === "TIMEOUT"
+              ? stopReason
+              : "NO_SERP";
+          try {
+            await writeNegative(reasonCode);
+          } catch { }
           const deepseekSkipReason =
             reasonCode === "NO_SERP"
               ? "no_serp"
@@ -14310,9 +14983,9 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
       }
     }
 
-	    const marketplaceOnly =
-	      initialItems.length > 0 &&
-	      initialItems.every((item) => isMarketplaceDomain(extractDomain(item.link)));
+    const marketplaceOnly =
+      initialItems.length > 0 &&
+      initialItems.every((item) => isMarketplaceDomain(extractDomain(item.link)));
     if (initialItems.length > 0) {
       markPipelineStepEnd("retrieve", "ok");
     }
@@ -14447,10 +15120,10 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
       const shouldRunLlm = !marketplaceOnly || marketplaceLlmEnabled;
       const fallbackResilience = marketplaceOnly
         ? {
-            ...deepseekResilience,
-            timeoutMs: Math.min(deepseekResilience.timeoutMs ?? marketplaceLlmTimeoutMs, marketplaceLlmTimeoutMs),
-            maxTokens: marketplaceLlmMaxTokens,
-          }
+          ...deepseekResilience,
+          timeoutMs: Math.min(deepseekResilience.timeoutMs ?? marketplaceLlmTimeoutMs, marketplaceLlmTimeoutMs),
+          maxTokens: marketplaceLlmMaxTokens,
+        }
         : deepseekResilience;
       const fallbackTimeoutMs = fallbackResilience.timeoutMs ?? llmInteractiveTimeoutMs;
       const canRunLlm = shouldRunLlm && budget.msFor(fallbackTimeoutMs) > 0;
@@ -14703,11 +15376,11 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
       });
       clearNegative();
 
-	      await awaitAnalysisBundle();
-	      finalizeStream("serp_fallback_complete");
-	      releaseInFlightOnce();
-	      return true;
-	    };
+      await awaitAnalysisBundle();
+      finalizeStream("serp_fallback_complete");
+      releaseInFlightOnce();
+      return true;
+    };
 
     // -------------------------------------------------------------------------
     // Cheap pass: validate candidate URLs quickly before deep fetch.
@@ -14950,7 +15623,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
           if (received >= maxBytes) {
             try {
               await reader.cancel();
-            } catch {}
+            } catch { }
             break;
           }
         }
@@ -15105,9 +15778,9 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
         const domain = row.entry.evidence.domain ?? extractDomain(row.entry.item.link);
         const strongOwnership = Boolean(
           row.entry.evidence.strongMatch ||
-            row.entry.evidence.npnCandidate ||
-            row.entry.evidence.jsonLdGtinMatch ||
-            row.entry.evidence.barcodeHitCount >= RESOLUTION_STRONG_MATCH_BARCODE_HITS_MIN,
+          row.entry.evidence.npnCandidate ||
+          row.entry.evidence.jsonLdGtinMatch ||
+          row.entry.evidence.barcodeHitCount >= RESOLUTION_STRONG_MATCH_BARCODE_HITS_MIN,
         );
         return {
           url: row.entry.evidence.url || row.entry.item.link,
@@ -15138,9 +15811,9 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
       })
       .slice(0, 2);
 
-	    if (deepCandidates.length === 0) {
-	      const onlyImagesCount = evidences.filter((e) => e.evidence.onlyImages).length;
-	      const needsJsCount = evidences.filter((e) => e.evidence.needsJs).length;
+    if (deepCandidates.length === 0) {
+      const onlyImagesCount = evidences.filter((e) => e.evidence.onlyImages).length;
+      const needsJsCount = evidences.filter((e) => e.evidence.needsJs).length;
       const reasonCode =
         evidences.length === 0
           ? budget.isExpired()
@@ -15160,7 +15833,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
 
       try {
         await writeNegative(reasonCode);
-      } catch {}
+      } catch { }
       insertTrainingRow({
         outcome: reasonCode,
         profilesUsed,
@@ -15217,7 +15890,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
         authorityLnhpdAttempt2Status = lnhpdLookup.attempt2Status;
         lnhpdFetchStatus = lnhpdLookup.finalStatus;
         const lnhpdFacts = lnhpdLookup.facts;
-	        if (lnhpdFacts) {
+        if (lnhpdFacts) {
           authorityFailureReason = null;
           const lnhpdLabelFacts = toLabelFactsFromLnhpd(lnhpdFacts);
           const labelExtraction: LabelExtractionMeta = {
@@ -15265,25 +15938,25 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
           lnhpdSnapshot.analysis = analysisMeta;
           lnhpdSnapshot.updatedAt = nowIso();
 
-	          if (stage1SseEnabled) {
-	            if (!brandExtractedSent) {
-	              sendSSE(res, "brand_extracted", {
-	                brand: lnhpdProductInfo.brand,
-	                product: lnhpdProductInfo.name,
-	                category: lnhpdProductInfo.category,
-	                confidence: "high",
-	                source: "rule",
-	              });
-	              brandExtractedSent = true;
-	            }
-	            sendSSE(res, "product_info", { productInfo: lnhpdProductInfo, sources: sourcesToSend });
-              if (!streamAnalysisBundleOnly) {
-                sendSSE(res, "result_efficacy", lnhpdAnalysisPayload.efficacy);
-                sendSSE(res, "result_safety", lnhpdAnalysisPayload.safety);
-                sendSSE(res, "result_usage", lnhpdAnalysisPayload.usagePayload);
-                sendSSE(res, "snapshot", lnhpdSnapshot);
-              }
-	          }
+          if (stage1SseEnabled) {
+            if (!brandExtractedSent) {
+              sendSSE(res, "brand_extracted", {
+                brand: lnhpdProductInfo.brand,
+                product: lnhpdProductInfo.name,
+                category: lnhpdProductInfo.category,
+                confidence: "high",
+                source: "rule",
+              });
+              brandExtractedSent = true;
+            }
+            sendSSE(res, "product_info", { productInfo: lnhpdProductInfo, sources: sourcesToSend });
+            if (!streamAnalysisBundleOnly) {
+              sendSSE(res, "result_efficacy", lnhpdAnalysisPayload.efficacy);
+              sendSSE(res, "result_safety", lnhpdAnalysisPayload.safety);
+              sendSSE(res, "result_usage", lnhpdAnalysisPayload.usagePayload);
+              sendSSE(res, "snapshot", lnhpdSnapshot);
+            }
+          }
           stage0Delivered = true;
           stage0Source = "lnhpd";
 
@@ -15318,14 +15991,14 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
             });
           }
 
-	          clearNegative();
-            void clearNpnNegativeCache(npnCandidate, { ...supabaseReadResilience, timeoutMs: 500 });
-		          if (!forceStage1) {
-		            finalizeStream("lnhpd_candidate_stage0_complete");
-		            releaseInFlightOnce();
-		            return;
-		          }
-	          console.log("[ResolutionV2] FORCE_STAGE1 enabled; continuing after LNHPD candidate hit");
+          clearNegative();
+          void clearNpnNegativeCache(npnCandidate, { ...supabaseReadResilience, timeoutMs: 500 });
+          if (!forceStage1) {
+            finalizeStream("lnhpd_candidate_stage0_complete");
+            releaseInFlightOnce();
+            return;
+          }
+          console.log("[ResolutionV2] FORCE_STAGE1 enabled; continuing after LNHPD candidate hit");
         } else {
           if (lnhpdLookup.finalStatus === "timeout") {
             authorityFailureReason =
@@ -15364,6 +16037,175 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
         authorityLnhpdAttempt1Status =
           authorityLnhpdAttempt1Status === "not_attempted" ? "error" : authorityLnhpdAttempt1Status;
         console.warn("[ResolutionV2] Opportunistic LNHPD fetch failed", error);
+      }
+    }
+
+    // Stage-0 style checkpoint using early web deterministic hints:
+    // when NPN was not extracted directly, still try LNHPD name match before deep fetch/LLM.
+    if (!stage0Delivered && !requestSignal.aborted) {
+      const nameHintBrand = typeof provisionalBrand === "string" ? provisionalBrand.trim() : "";
+      const nameHintProduct = typeof provisionalName === "string" ? provisionalName.trim() : "";
+      if (nameHintBrand || nameHintProduct) {
+        console.info("[ResolutionV2] Stage0 name-hint probe start", {
+          barcode: barcodeGtin14,
+          hintBrand: nameHintBrand || null,
+          hintProduct: nameHintProduct || null,
+        });
+        try {
+          const timeoutSignal = createTimeoutSignal(1200);
+          const { signal, cleanup } = combineSignals([requestSignal, timeoutSignal]);
+          let nameMatchedFacts: LnhpdFacts | null = null;
+          try {
+            nameMatchedFacts = await fetchLnhpdFactsByName(
+              { brand: nameHintBrand || null, product: nameHintProduct || null },
+              signal,
+            );
+          } finally {
+            cleanup();
+          }
+
+          const nameMatchedNpn = nameMatchedFacts?.npn?.replace(/\D/g, "").trim() ?? "";
+          if (nameMatchedFacts && nameMatchedNpn.length >= 6) {
+            console.info("[ResolutionV2] Stage0 name-hint probe hit", {
+              barcode: barcodeGtin14,
+              npn: nameMatchedNpn,
+              productName: nameMatchedFacts.productName ?? null,
+              brandName: nameMatchedFacts.brandName ?? null,
+            });
+            npnCandidateSource = "name_match";
+            authorityCandidateSource = "name_match";
+            npnCandidateStale = false;
+            lnhpdFetchStatus = "success";
+            authorityFailureReason = null;
+
+            const nameMatchLabelFacts = toLabelFactsFromLnhpd(nameMatchedFacts);
+            const labelExtraction: LabelExtractionMeta = {
+              source: "lnhpd",
+              fetchedAt: nameMatchedFacts.extractedAt ?? nowIso(),
+              datasetVersion: nameMatchedFacts.datasetVersion ?? null,
+            };
+            const nameMatchProductInfo = {
+              brand: nameMatchedFacts.brandName ?? provisionalBrand ?? null,
+              name: nameMatchedFacts.productName ?? provisionalName ?? null,
+              category: provisionalCategory ?? null,
+              image: provisionalImage ?? null,
+            };
+            const labelAnalysis = buildLabelOnlyAnalysis(nameMatchLabelFacts);
+            const nameMatchAnalysisPayload: SnapshotAnalysisPayload = {
+              ...labelAnalysis,
+              brandExtraction: {
+                brand: nameMatchProductInfo.brand,
+                product: nameMatchProductInfo.name,
+                category: nameMatchProductInfo.category,
+                confidence: "high",
+                source: "rule",
+              },
+              productInfo: nameMatchProductInfo,
+              sources: sourcesToSend,
+            };
+
+            let nameMatchSnapshot = buildBarcodeSnapshot({
+              barcode,
+              productInfo: nameMatchProductInfo,
+              sources: initialItems,
+              efficacy: nameMatchAnalysisPayload.efficacy ?? null,
+              safety: nameMatchAnalysisPayload.safety ?? null,
+              usagePayload: nameMatchAnalysisPayload.usagePayload ?? null,
+            });
+            nameMatchSnapshot = applyLnhpdFactsToSnapshot(nameMatchSnapshot, nameMatchedFacts);
+
+            const nameMatchFactsSourceVersion = `lnhpd:${nameMatchedFacts.datasetVersion ?? nameMatchedFacts.extractedAt ?? "unknown"}`;
+            const nameMatchDigest = buildFactsDigestFromLnhpd({
+              facts: nameMatchedFacts,
+              snapshot: nameMatchSnapshot,
+              identityValue: nameMatchedNpn,
+              regionTags: nameMatchSnapshot.regulatory.regionTags,
+            });
+            startStage0Bundle({
+              digest: nameMatchDigest,
+              identityType: "npn",
+              identityValue: nameMatchedNpn,
+              factsSourceVersion: nameMatchFactsSourceVersion,
+              allowAi: false,
+              apiKey: deepseekKey,
+            });
+
+            const analysisStatus = buildAnalysisStatus({
+              hasLabelFacts: hasLabelFacts(nameMatchSnapshot),
+              hasAi: hasAiPayload(nameMatchAnalysisPayload),
+              dsldLabelId: null,
+            });
+            const analysisMeta = buildAnalysisMeta({ status: analysisStatus, labelExtraction });
+            nameMatchAnalysisPayload.analysis = analysisMeta;
+            nameMatchSnapshot.status = "resolved";
+            nameMatchSnapshot.analysis = analysisMeta;
+            nameMatchSnapshot.updatedAt = nowIso();
+
+            if (stage1SseEnabled) {
+              if (!brandExtractedSent) {
+                sendSSE(res, "brand_extracted", {
+                  brand: nameMatchProductInfo.brand,
+                  product: nameMatchProductInfo.name,
+                  category: nameMatchProductInfo.category,
+                  confidence: "high",
+                  source: "rule",
+                });
+                brandExtractedSent = true;
+              }
+              sendSSE(res, "product_info", { productInfo: nameMatchProductInfo, sources: sourcesToSend });
+              if (!streamAnalysisBundleOnly) {
+                sendSSE(res, "result_efficacy", nameMatchAnalysisPayload.efficacy);
+                sendSSE(res, "result_safety", nameMatchAnalysisPayload.safety);
+                sendSSE(res, "result_usage", nameMatchAnalysisPayload.usagePayload);
+                sendSSE(res, "snapshot", nameMatchSnapshot);
+              }
+            }
+            stage0Delivered = true;
+            stage0Source = "lnhpd";
+
+            const expiresAt = computeExpiresAt(analysisStatus);
+            void storeSnapshotCache({
+              key: cacheKey,
+              source: "barcode",
+              snapshot: nameMatchSnapshot,
+              analysisPayload: nameMatchAnalysisPayload,
+              expiresAt,
+            });
+
+            void upsertBarcodeRegulatoryMap({
+              barcodeGtin14,
+              npn: nameMatchedNpn,
+              confidence: 0.9,
+              source: "name_match",
+              expiresAt: new Date(Date.now() + REGULATORY_MAP_TTL_MS_LNHPD).toISOString(),
+              barcodeRaw: rawBarcode,
+            });
+
+            if (aiAvailable && analysisStatus !== "complete" && analysisStatus !== "ai_enriched") {
+              queueFirstPartyAnalysisCompletion({
+                cacheKey,
+                barcode,
+                model,
+                deepseekKey,
+                snapshot: nameMatchSnapshot,
+                analysisPayload: nameMatchAnalysisPayload,
+                labelFacts: nameMatchLabelFacts,
+              });
+            }
+
+            clearNegative();
+            void clearNpnNegativeCache(nameMatchedNpn, { ...supabaseReadResilience, timeoutMs: 500 });
+            if (!forceStage1) {
+              await awaitStage0Bundle();
+              finalizeStream("lnhpd_name_hint_stage0_complete");
+              releaseInFlightOnce();
+              return;
+            }
+            console.log("[ResolutionV2] FORCE_STAGE1 enabled; continuing after LNHPD name-hint hit");
+          }
+        } catch (error) {
+          console.warn("[ResolutionV2] Opportunistic LNHPD name-hint fetch failed", error);
+        }
       }
     }
 
@@ -15559,25 +16401,25 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
       byUrl.set(canonicalizeUrl(src.link), src.extractedText ?? null);
     }
 
-	    const factsCandidates = deepCandidates.map((candidate) => ({
-	      item: candidate.item,
-	      evidence: candidate.evidence,
-	      extractedText: byUrl.get(canonicalizeUrl(candidate.item.link)) ?? null,
-	    }));
+    const factsCandidates = deepCandidates.map((candidate) => ({
+      item: candidate.item,
+      evidence: candidate.evidence,
+      extractedText: byUrl.get(canonicalizeUrl(candidate.item.link)) ?? null,
+    }));
 
-	    const factsList = factsCandidates.map(buildFactsFromCandidate);
-      const nonConflictFacts = factsList.filter((facts) => !facts.identifiers.identityConflict);
-      const rankedFacts = (nonConflictFacts.length ? nonConflictFacts : factsList).sort(
-        (a, b) => (b.coverageScore ?? 0) - (a.coverageScore ?? 0),
+    const factsList = factsCandidates.map(buildFactsFromCandidate);
+    const nonConflictFacts = factsList.filter((facts) => !facts.identifiers.identityConflict);
+    const rankedFacts = (nonConflictFacts.length ? nonConflictFacts : factsList).sort(
+      (a, b) => (b.coverageScore ?? 0) - (a.coverageScore ?? 0),
+    );
+    const bestFacts = rankedFacts[0] ?? null;
+    const bestFactsIndex = bestFacts ? factsList.indexOf(bestFacts) : -1;
+    const bestCandidate = bestFactsIndex >= 0 ? factsCandidates[bestFactsIndex] : null;
+    if (!bestFacts || bestFacts.coverageScore < RESOLUTION_FACTS_MIN_COVERAGE) {
+      markPipelineStepEnd("select_evidence", "failed", "no_text_facts");
+      const anyExtractedText = factsCandidates.some(
+        (candidate) => typeof candidate.extractedText === "string" && candidate.extractedText.trim().length > 0,
       );
-	    const bestFacts = rankedFacts[0] ?? null;
-      const bestFactsIndex = bestFacts ? factsList.indexOf(bestFacts) : -1;
-      const bestCandidate = bestFactsIndex >= 0 ? factsCandidates[bestFactsIndex] : null;
-	    if (!bestFacts || bestFacts.coverageScore < RESOLUTION_FACTS_MIN_COVERAGE) {
-        markPipelineStepEnd("select_evidence", "failed", "no_text_facts");
-	      const anyExtractedText = factsCandidates.some(
-	        (candidate) => typeof candidate.extractedText === "string" && candidate.extractedText.trim().length > 0,
-	      );
       const reasonCode = anyExtractedText
         ? "NO_TEXT_FACTS"
         : budget.isExpired()
@@ -15592,7 +16434,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
 
       try {
         await writeNegative(reasonCode);
-      } catch {}
+      } catch { }
       insertTrainingRow({
         outcome: reasonCode,
         profilesUsed,
@@ -15655,9 +16497,9 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
 
     let identityStrong = Boolean(
       bestFacts.identifiers.npn ||
-        bestFacts.identifiers.gtinMatch ||
-        bestFacts.identifiers.upcMatch ||
-        providerGtinMatch,
+      bestFacts.identifiers.gtinMatch ||
+      bestFacts.identifiers.upcMatch ||
+      providerGtinMatch,
     );
     const identityConflict = Boolean(bestFacts.identifiers.identityConflict);
     const explicitGtinMatches = bestFacts.identifiers.gtinMatches ?? [];
@@ -15717,31 +16559,31 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
     const canonicalSourceDomain = allowCanonical ? canonicalDomain : null;
     const canonicalSourceUrl = allowCanonical ? bestFacts.canonical.url ?? null : null;
 
-	    const finalProductInfo = {
-	      brand: allowCanonical
-          ? bestFacts.canonical.brand ?? providerOwnership.providerBrand ?? provisionalBrand ?? null
-          : providerOwnership.providerBrand ?? provisionalBrand ?? null,
-	      name: allowCanonical
-          ? bestFacts.canonical.name ?? providerOwnership.providerProductName ?? provisionalName ?? null
-          : providerOwnership.providerProductName ?? provisionalName ?? null,
-	      category: provisionalCategory ?? null,
-	      image: allowCanonical
+    const finalProductInfo = {
+      brand: allowCanonical
+        ? bestFacts.canonical.brand ?? providerOwnership.providerBrand ?? provisionalBrand ?? null
+        : providerOwnership.providerBrand ?? provisionalBrand ?? null,
+      name: allowCanonical
+        ? bestFacts.canonical.name ?? providerOwnership.providerProductName ?? provisionalName ?? null
+        : providerOwnership.providerProductName ?? provisionalName ?? null,
+      category: provisionalCategory ?? null,
+      image: allowCanonical
         ? provisionalImage ?? bestFacts.canonical.images?.[0] ?? null
         : provisionalImage ?? null,
-	    };
+    };
 
     let factsForAnalysis = allowCanonical
       ? bestFacts
       : {
-          ...bestFacts,
-          canonical: {
-            ...bestFacts.canonical,
-            brand: finalProductInfo.brand ?? null,
-            name: finalProductInfo.name ?? null,
-            url: null,
-            domain: null,
-          },
-        };
+        ...bestFacts,
+        canonical: {
+          ...bestFacts.canonical,
+          brand: finalProductInfo.brand ?? null,
+          name: finalProductInfo.name ?? null,
+          url: null,
+          domain: null,
+        },
+      };
 
     if (ownershipVerdict !== "strong") {
       identityStrong = false;
@@ -15801,9 +16643,9 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
     };
     const hasSanitizedEvidence = Boolean(
       factsForAnalysis.textFacts?.ingredientsText ||
-        factsForAnalysis.textFacts?.directionsText ||
-        factsForAnalysis.textFacts?.warningsText ||
-        factsForAnalysis.textFacts?.servingSizeText,
+      factsForAnalysis.textFacts?.directionsText ||
+      factsForAnalysis.textFacts?.warningsText ||
+      factsForAnalysis.textFacts?.servingSizeText,
     );
     const ownershipProtected = ownershipVerdict !== "strong";
     const sanitizeStatus: PipelineStepStatus = hasSanitizedEvidence ? "ok" : "failed";
@@ -15814,24 +16656,24 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
         : "web_text_unusable";
     markPipelineStepEnd("sanitize", sanitizeStatus, hasSanitizedEvidence ? undefined : sanitizeFailureCode);
 
-	    // Update product info with higher-confidence facts (if any).
-	    if (stage1SseEnabled && !brandExtractedSent && (finalProductInfo.brand || finalProductInfo.name)) {
-	      sendSSE(res, "brand_extracted", {
-	        brand: finalProductInfo.brand,
-	        product: finalProductInfo.name,
-	        category: finalProductInfo.category,
-	        confidence: "medium",
-	        source: "rule",
-	      });
-	      brandExtractedSent = true;
-	    }
-	    if (stage1SseEnabled) {
-	      sendSSE(res, "product_info", {
-	        productInfo: finalProductInfo,
-	        sources: sourcesToSend,
-	        sourceQuality: marketplaceOnly ? "marketplace_only" : "mixed",
-	      });
-	    }
+    // Update product info with higher-confidence facts (if any).
+    if (stage1SseEnabled && !brandExtractedSent && (finalProductInfo.brand || finalProductInfo.name)) {
+      sendSSE(res, "brand_extracted", {
+        brand: finalProductInfo.brand,
+        product: finalProductInfo.name,
+        category: finalProductInfo.category,
+        confidence: "medium",
+        source: "rule",
+      });
+      brandExtractedSent = true;
+    }
+    if (stage1SseEnabled) {
+      sendSSE(res, "product_info", {
+        productInfo: finalProductInfo,
+        sources: sourcesToSend,
+        sourceQuality: marketplaceOnly ? "marketplace_only" : "mixed",
+      });
+    }
 
     const evidenceSnippets = contextSources
       .map((source) => source.extractedText)
@@ -15901,12 +16743,12 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
     const llmFallback = bundle
       ? null
       : buildLowConfidenceAnalysis({
-          brand: finalProductInfo.brand,
-          name: finalProductInfo.name,
-          note: marketplaceOnly
-            ? "Marketplace-only analysis; no verified sources."
-            : "Analysis pending; limited verified data.",
-        });
+        brand: finalProductInfo.brand,
+        name: finalProductInfo.name,
+        note: marketplaceOnly
+          ? "Marketplace-only analysis; no verified sources."
+          : "Analysis pending; limited verified data.",
+      });
     const efficacyToSend = mergeEfficacyWithFallback(bundle?.efficacy ?? null, llmFallback?.efficacy ?? null);
     const safetyToSend = mergeSafetyWithFallback(bundle?.safety ?? null, llmFallback?.safety ?? null);
     const usageToSend = mergeUsagePayloadWithFallback(bundle?.usagePayload ?? null, llmFallback?.usagePayload ?? null);
@@ -16103,15 +16945,15 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
           calls: { ...calls },
           signals: bestEvidence
             ? {
-                ...baseSignals,
-                strongMatch: bestEvidence.strongMatch,
-                jsonLdGtinMatch: bestEvidence.jsonLdGtinMatch,
-                hasProductJsonLd: bestEvidence.hasProductJsonLd,
-                barcodeHitCount: bestEvidence.barcodeHitCount,
-                needsJs: bestEvidence.needsJs,
-                onlyImages: bestEvidence.onlyImages,
-                marketplaceOnly,
-              }
+              ...baseSignals,
+              strongMatch: bestEvidence.strongMatch,
+              jsonLdGtinMatch: bestEvidence.jsonLdGtinMatch,
+              hasProductJsonLd: bestEvidence.hasProductJsonLd,
+              barcodeHitCount: bestEvidence.barcodeHitCount,
+              needsJs: bestEvidence.needsJs,
+              onlyImages: bestEvidence.onlyImages,
+              marketplaceOnly,
+            }
             : { ...baseSignals, marketplaceOnly },
         },
       });
@@ -16151,41 +16993,41 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
       selectedDomain: bestEvidence?.domain ?? null,
       signals: bestEvidence
         ? {
-            strongMatch: bestEvidence.strongMatch,
-            jsonLdGtinMatch: bestEvidence.jsonLdGtinMatch,
-            hasProductJsonLd: bestEvidence.hasProductJsonLd,
-            barcodeHitCount: bestEvidence.barcodeHitCount,
-            needsJs: bestEvidence.needsJs,
-            onlyImages: bestEvidence.onlyImages,
-            identity_strong: identityStrong,
-            identity_conflict: identityConflict,
-            explicit_gtin_matches: explicitGtinMatches,
-            explicit_upc_matches: explicitUpcMatches,
-            npn_found: npnFound,
-            needs_authoritative_backfill: needsAuthoritativeBackfill,
-            needs_authoritative_reasons: needsAuthoritativeReasons,
-            amazon_canonical_exception_used: amazonCanonicalExceptionUsed,
-            no_authoritative_domain: noAuthoritativeDomain,
-            canonical_source_domain: canonicalSourceDomain,
-            canonical_source_url: canonicalSourceUrl,
-            deepseek_bundle_skipped_reason: mainDeepseekBundleSkippedReason,
-            background_backfill_started: backgroundBackfillQueued,
-          }
+          strongMatch: bestEvidence.strongMatch,
+          jsonLdGtinMatch: bestEvidence.jsonLdGtinMatch,
+          hasProductJsonLd: bestEvidence.hasProductJsonLd,
+          barcodeHitCount: bestEvidence.barcodeHitCount,
+          needsJs: bestEvidence.needsJs,
+          onlyImages: bestEvidence.onlyImages,
+          identity_strong: identityStrong,
+          identity_conflict: identityConflict,
+          explicit_gtin_matches: explicitGtinMatches,
+          explicit_upc_matches: explicitUpcMatches,
+          npn_found: npnFound,
+          needs_authoritative_backfill: needsAuthoritativeBackfill,
+          needs_authoritative_reasons: needsAuthoritativeReasons,
+          amazon_canonical_exception_used: amazonCanonicalExceptionUsed,
+          no_authoritative_domain: noAuthoritativeDomain,
+          canonical_source_domain: canonicalSourceDomain,
+          canonical_source_url: canonicalSourceUrl,
+          deepseek_bundle_skipped_reason: mainDeepseekBundleSkippedReason,
+          background_backfill_started: backgroundBackfillQueued,
+        }
         : {
-            identity_strong: identityStrong,
-            identity_conflict: identityConflict,
-            explicit_gtin_matches: explicitGtinMatches,
-            explicit_upc_matches: explicitUpcMatches,
-            npn_found: npnFound,
-            needs_authoritative_backfill: needsAuthoritativeBackfill,
-            needs_authoritative_reasons: needsAuthoritativeReasons,
-            amazon_canonical_exception_used: amazonCanonicalExceptionUsed,
-            no_authoritative_domain: noAuthoritativeDomain,
-            canonical_source_domain: canonicalSourceDomain,
-            canonical_source_url: canonicalSourceUrl,
-            deepseek_bundle_skipped_reason: mainDeepseekBundleSkippedReason,
-            background_backfill_started: backgroundBackfillQueued,
-          },
+          identity_strong: identityStrong,
+          identity_conflict: identityConflict,
+          explicit_gtin_matches: explicitGtinMatches,
+          explicit_upc_matches: explicitUpcMatches,
+          npn_found: npnFound,
+          needs_authoritative_backfill: needsAuthoritativeBackfill,
+          needs_authoritative_reasons: needsAuthoritativeReasons,
+          amazon_canonical_exception_used: amazonCanonicalExceptionUsed,
+          no_authoritative_domain: noAuthoritativeDomain,
+          canonical_source_domain: canonicalSourceDomain,
+          canonical_source_url: canonicalSourceUrl,
+          deepseek_bundle_skipped_reason: mainDeepseekBundleSkippedReason,
+          background_backfill_started: backgroundBackfillQueued,
+        },
       factsSummary: {
         missingFields: bestFacts.missingFields,
         canonical: factsForAnalysis.canonical,
@@ -16196,18 +17038,18 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
 
     clearNegative();
 
-	    const canRespond = !streamState.clientDisconnected && !res.writableEnded;
-	    if (canRespond) {
-	      await awaitAnalysisBundle();
-	      if (!streamState.clientDisconnected && !res.writableEnded) {
-	        if (stage1SseEnabled && !streamAnalysisBundleOnly) {
-	          sendSSE(res, "snapshot", snapshot);
-	        }
-          finalizeStream("success_complete");
-	      }
-	    }
+    const canRespond = !streamState.clientDisconnected && !res.writableEnded;
+    if (canRespond) {
+      await awaitAnalysisBundle();
+      if (!streamState.clientDisconnected && !res.writableEnded) {
+        if (stage1SseEnabled && !streamAnalysisBundleOnly) {
+          sendSSE(res, "snapshot", snapshot);
+        }
+        finalizeStream("success_complete");
+      }
+    }
 
-	    releaseInFlightOnce();
+    releaseInFlightOnce();
 
     const timingTotalMs = Math.round(performance.now() - startedAt);
     void logBarcodeScan({
@@ -16239,22 +17081,22 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
           stage1_ms: Math.round(performance.now() - stage1Start),
         },
       }),
-	    });
+    });
 
     console.log(`[Stream] All analysis complete for barcode: ${barcode}`);
 
-	  } catch (error: unknown) {
-	    releaseInFlightOnce(error);
-	    captureException(error, { route: "/api/enrich-stream" });
-	    console.error("Stream Error:", error);
-	    const message = error instanceof Error ? error.message : "Unknown error";
-	    if (!res.writableEnded) {
-	      emitTerminalErrorAndFinalize({
-	        message,
-	        finalizeReason: "stream_error",
-	      });
-	    }
-	  }
+  } catch (error: unknown) {
+    releaseInFlightOnce(error);
+    captureException(error, { route: "/api/enrich-stream" });
+    console.error("Stream Error:", error);
+    const message = error instanceof Error ? error.message : "Unknown error";
+    if (!res.writableEnded) {
+      emitTerminalErrorAndFinalize({
+        message,
+        finalizeReason: "stream_error",
+      });
+    }
+  }
 });
 
 // ============================================================================
@@ -16461,17 +17303,17 @@ app.get("/api/user-stack-overlap", verifySupabaseToken, async (req: Request, res
     supplement_id: string | null;
     notes: string | null;
     supplements:
-      | {
-          id?: string | null;
-          name?: string | null;
-          barcode?: string | null;
-        }
-      | Array<{
-          id?: string | null;
-          name?: string | null;
-          barcode?: string | null;
-        }>
-      | null;
+    | {
+      id?: string | null;
+      name?: string | null;
+      barcode?: string | null;
+    }
+    | Array<{
+      id?: string | null;
+      name?: string | null;
+      barcode?: string | null;
+    }>
+    | null;
   };
 
   try {
@@ -17222,8 +18064,8 @@ ${LABEL_SCAN_OUTPUT_RULES}`;
   const labelCoreBenefits = labelActivesSummary.map((active) => `${active.name} - ${active.doseText}`);
   const labelSummary = labelActivesSummary.length
     ? `Label-only summary${draft.servingSize ? ` (${draft.servingSize})` : ''}: ${labelActivesSummary
-        .map((active) => `${active.name} ${active.doseText}`)
-        .join(', ')}.`
+      .map((active) => `${active.name} ${active.doseText}`)
+      .join(', ')}.`
     : "Label-only summary based on listed ingredients.";
   const transparencyNote = draft.issues.some((issue) =>
     ["incomplete_ingredients", "header_not_found", "non_ingredient_line_detected", "unit_boundary_suspect", "dose_inconsistency_or_claim"].includes(issue.type)
@@ -17303,15 +18145,15 @@ ${LABEL_SCAN_OUTPUT_RULES}`;
   const llmPrimaryActive = normalizePrimaryActive(efficacy?.primaryActive);
   const labelPrimaryActive = labelPrimary
     ? normalizePrimaryActive({
-        name: labelPrimary.name,
-        form: null,
-        formQuality: "unknown",
-        formNote: null,
-        dosageValue: labelPrimary.dosageValue,
-        dosageUnit: labelPrimary.dosageUnit,
-        evidenceLevel: "none",
-        evidenceSummary: "Not specified on label",
-      })
+      name: labelPrimary.name,
+      form: null,
+      formQuality: "unknown",
+      formNote: null,
+      dosageValue: labelPrimary.dosageValue,
+      dosageUnit: labelPrimary.dosageUnit,
+      evidenceLevel: "none",
+      evidenceSummary: "Not specified on label",
+    })
     : null;
   const fillPrimaryFromLabel = (active: PrimaryActive | null) => {
     if (!active?.name) return active;
@@ -17397,8 +18239,8 @@ ${LABEL_SCAN_OUTPUT_RULES}`;
   const marketingBase = clampTextField(efficacy?.marketingVsReality);
   const marketingVsReality = marketingBase
     ? (marketingBase.toLowerCase().includes("label-only analysis")
-        ? marketingBase
-        : `${marketingBase} ${marketingRequirement}`)
+      ? marketingBase
+      : `${marketingBase} ${marketingRequirement}`)
     : marketingRequirement;
   const valueVerdict = clampTextField(usage?.value?.verdict) ?? transparencyVerdict;
   const valueAnalysis = clampTextField(usage?.value?.analysis) ?? transparencyAnalysis;

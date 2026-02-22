@@ -41,6 +41,12 @@ export const LLM_VERIFIER_REASON_CODES = [
   'LLM_VERIFIER_FAIL_UL_NOT_IN_INPUT',
   'LLM_VERIFIER_FAIL_NON_JSON',
   'LLM_FALLBACK_USED',
+  'LLM_OK',
+  'LLM_CALL_FAILED',
+  'LLM_PARSE_FAILED_NON_JSON',
+  'LLM_SCHEMA_INVALID',
+  'LLM_VERIFIER_REJECTED',
+  'FALLBACK_DETERMINISTIC',
 ] as const;
 
 export type FormReasonCode = (typeof FORM_REASON_CODES)[number];
@@ -49,40 +55,18 @@ export type DoseReasonCode = (typeof DOSE_REASON_CODES)[number];
 export type WebScoringReasonCode = (typeof WEB_SCORING_REASON_CODES)[number];
 export type LlmVerifierReasonCode = (typeof LLM_VERIFIER_REASON_CODES)[number];
 
-export type FactsDTO = {
-  source: 'label_scan' | 'lnhpd' | 'dsld' | 'web_verified';
-  sourceId: string;
-  canonicalSourceId?: string | null;
-  barcode: string;
-  product?: {
-    brandName?: string | null;
-    productName?: string | null;
-  };
-  usage?: {
-    servingsPerDay?: number | null;
-    directionsRaw?: string | null;
-  };
-  ingredients: Array<{
-    name: string;
-    amount: number | null;
-    unit: string | null;
-    formText?: string | null;
-    isBlendPlaceholder?: boolean;
-  }>;
-  provenance?: {
-    sourceUrl?: string | null;
-    extractedAt?: string | null;
-  };
-};
+export type {
+  FactsDTO,
+  InsightsDTO,
+  IngredientInsight,
+  IngredientSummaryLLMOutput,
+  MissingReason,
+  LayerTag,
+  FactSource,
+  FactSourceRef,
+} from '../shared/types/scan-insights';
 
-export type InsightsDTO = {
-  ingredientName: string;
-  formExplain?: string | null;
-  rbfBand?: 'high' | 'normal' | 'low' | 'unknown';
-  confidenceTier?: 'high' | 'medium' | 'low' | 'none';
-  reasonCode?: FormReasonCode | RbfReasonCode | DoseReasonCode;
-};
-
+// Kept for backward compatibility; newer flows should rely on `FactsDTO` and `InsightsDTO`.
 export type BackgroundDTO = {
   ingredientName: string;
   kind: 'ods' | 'curated';
