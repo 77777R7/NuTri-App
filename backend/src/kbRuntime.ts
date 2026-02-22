@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 
+import { getReviewedFormExplain } from "./insights/reviewedPackage.js";
+
 type AliasEntry = {
   // Some generated KB alias entries use null and rely on derived keys (token or ingredientId_token).
   form_key: string | null;
@@ -667,17 +669,69 @@ export const lookupKbRuntimeFormInsights = (params: {
   meta: {
     packageSha256: string | null;
     reviewedAt: string | null;
-    source: string | null;
+    source: "reviewed_package" | "kb_runtime" | null;
+    datasetVersion: string | null;
   };
 } => {
+  const reviewed = getReviewedFormExplain(params.ingredientId, params.formKey, "en");
+  if (reviewed) {
+    const toRuntimeSegments = (
+      kind: RuntimeInsightSegmentKind,
+      rows: Array<{
+        text: string;
+        sentenceId: string | null;
+        excerptId: string | null;
+        referenceId: string | null;
+        evidenceGrade: string | null;
+      }> | undefined,
+    ): RuntimeInsightSegment[] => {
+      if (!rows?.length) return [];
+      return rows
+        .map((row) => {
+          const text = typeof row.text === "string" ? row.text.trim() : "";
+          if (!text) return null;
+          return {
+            kind,
+            text,
+            sentenceId: row.sentenceId,
+            excerptId: row.excerptId,
+            referenceId: row.referenceId,
+            evidenceGrade: row.evidenceGrade,
+          } satisfies RuntimeInsightSegment;
+        })
+        .filter((row): row is RuntimeInsightSegment => Boolean(row));
+    };
+
+    const reviewedSegments = [
+      ...toRuntimeSegments("absorption", reviewed.segments.absorption),
+      ...toRuntimeSegments("solubility", reviewed.segments.solubility),
+      ...toRuntimeSegments("tolerability", reviewed.segments.tolerability),
+      ...toRuntimeSegments("caveats", reviewed.segments.caveats),
+    ];
+
+    return {
+      status: "ok",
+      reason: null,
+      formDisplay: reviewed.formLabel ?? params.formKey,
+      segments: reviewedSegments,
+      meta: {
+        packageSha256: reviewed.meta.packageSha256,
+        reviewedAt: reviewed.meta.reviewedAt,
+        source: "reviewed_package",
+        datasetVersion: reviewed.meta.datasetVersion,
+      },
+    };
+  }
+
   const kb = getKbRuntime();
   const meta = {
     packageSha256:
       typeof kb?.runtime?.meta?.package_sha256 === "string" ? (kb.runtime.meta.package_sha256 as string) : null,
     reviewedAt:
       typeof kb?.runtime?.meta?.reviewed_at === "string" ? (kb.runtime.meta.reviewed_at as string) : null,
-    source:
-      typeof kb?.runtime?.meta?.source === "string" ? (kb.runtime.meta.source as string) : null,
+    source: kb ? ("kb_runtime" as const) : null,
+    datasetVersion:
+      typeof kb?.runtime?.meta?.source_version === "string" ? (kb.runtime.meta.source_version as string) : null,
   };
   if (!kb) {
     return {
