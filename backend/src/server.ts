@@ -315,6 +315,11 @@ const NPN_NEGATIVE_CACHE_THRESHOLD = Number(process.env.NPN_NEGATIVE_CACHE_THRES
 
 const ANALYSIS_BUNDLE_PROMPT_VERSION = process.env.ANALYSIS_BUNDLE_PROMPT_VERSION ?? "reg_v4.0";
 const ANALYSIS_BUNDLE_FAST_TIMEOUT_MS = Number(process.env.ANALYSIS_BUNDLE_FAST_TIMEOUT_MS ?? 3500);
+// If we have a strong authoritative candidate (catalog or barcode->NPN map), give Stage0 enough time to win
+// over the fast watchdog; otherwise we can incorrectly fall back to Web and look "empty".
+const ANALYSIS_BUNDLE_FAST_TIMEOUT_AUTHORITY_MS = Number(
+  process.env.ANALYSIS_BUNDLE_FAST_TIMEOUT_AUTHORITY_MS ?? 9000,
+);
 const SSE_FAST_GRACE_MS = Number(process.env.SSE_FAST_GRACE_MS ?? 500);
 const SSE_GLOBAL_STREAM_TIMEOUT_MS = Number(process.env.SSE_GLOBAL_STREAM_TIMEOUT_MS ?? 15000);
 const SSE_CLIENT_TIMEOUT_MS = Number(
@@ -9180,17 +9185,55 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     const startedAt = performance.now();
     const budget = new DeadlineBudget(Date.now() + RESILIENCE_TOTAL_BUDGET_MS);
     const requestAbort = createRequestAbort(res);
-    const streamAbort = new AbortController();
-    streamAbortController = streamAbort;
-    const { signal: requestSignal, cleanup } = combineSignals([
-      requestAbort.signal,
-      streamAbort.signal,
-    ]);
-    cleanupRequestSignal = cleanup;
-    const armContractWatchdogs = () => {
-      if (!streamState.rev0Sent) {
-        setTimeout(() => {
-          if (streamState.rev0Sent || res.writableEnded || streamState.clientDisconnected) return;
+	    const streamAbort = new AbortController();
+	    streamAbortController = streamAbort;
+	    const { signal: requestSignal, cleanup } = combineSignals([
+	      requestAbort.signal,
+	      streamAbort.signal,
+	    ]);
+	    cleanupRequestSignal = cleanup;
+	    const watchdogStartMs = startedAt;
+	    let fastWatchdogDeadlineMs: number | null = null;
+	    let fastWatchdogExtendedForAuthority = false;
+	
+	    const armFastWatchdog = (baseTimeoutMs: number) => {
+	      if (streamState.rev1Sent || res.writableEnded || streamState.clientDisconnected) return;
+	      const base = Number.isFinite(baseTimeoutMs) && baseTimeoutMs > 0
+	        ? baseTimeoutMs
+	        : ANALYSIS_BUNDLE_FAST_TIMEOUT_MS;
+	      const totalMs = Math.max(250, base + SSE_FAST_GRACE_MS);
+	      const desiredDeadlineMs = watchdogStartMs + totalMs;
+	      if (fastWatchdogDeadlineMs !== null && desiredDeadlineMs <= fastWatchdogDeadlineMs) return;
+	
+	      fastWatchdogDeadlineMs = desiredDeadlineMs;
+	
+	      if (fastWatchdog) {
+	        clearTimeout(fastWatchdog);
+	        fastWatchdog = null;
+	      }
+	
+	      const remainingMs = Math.max(0, desiredDeadlineMs - performance.now());
+	      fastWatchdog = setTimeout(() => {
+	        if (streamState.rev1Sent || res.writableEnded || streamState.clientDisconnected) return;
+	        emitWatchdogFallbackRev1("watchdog_fast_timeout");
+	        finalizeStream("watchdog_fast_timeout");
+	      }, remainingMs);
+	    };
+	
+	    const extendFastWatchdogForAuthority = () => {
+	      if (fastWatchdogExtendedForAuthority) return;
+	      if (streamState.rev1Sent || res.writableEnded || streamState.clientDisconnected) return;
+	      fastWatchdogExtendedForAuthority = true;
+	      const authorityTimeoutMs = Math.max(
+	        ANALYSIS_BUNDLE_FAST_TIMEOUT_MS,
+	        ANALYSIS_BUNDLE_FAST_TIMEOUT_AUTHORITY_MS,
+	      );
+	      armFastWatchdog(authorityTimeoutMs);
+	    };
+	    const armContractWatchdogs = () => {
+	      if (!streamState.rev0Sent) {
+	        setTimeout(() => {
+	          if (streamState.rev0Sent || res.writableEnded || streamState.clientDisconnected) return;
           emitRev0Once(
             buildProvisionalAnalysisBundle({
               bundleId,
@@ -9200,20 +9243,15 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
               phase: "skeleton",
             }),
           );
-        }, 250);
-      }
-      if (!fastWatchdog) {
-        const fastMs = Math.max(250, ANALYSIS_BUNDLE_FAST_TIMEOUT_MS + SSE_FAST_GRACE_MS);
-        fastWatchdog = setTimeout(() => {
-          if (streamState.rev1Sent || res.writableEnded || streamState.clientDisconnected) return;
-          emitWatchdogFallbackRev1("watchdog_fast_timeout");
-          finalizeStream("watchdog_fast_timeout");
-        }, fastMs);
-      }
-      if (!globalWatchdog) {
-        const globalMs = Math.max(1000, SSE_GLOBAL_STREAM_TIMEOUT_MS);
-        globalWatchdog = setTimeout(() => {
-          if (streamState.ended || res.writableEnded || streamState.clientDisconnected) return;
+	        }, 250);
+	      }
+	      if (!fastWatchdog) {
+	        armFastWatchdog(ANALYSIS_BUNDLE_FAST_TIMEOUT_MS);
+	      }
+	      if (!globalWatchdog) {
+	        const globalMs = Math.max(1000, SSE_GLOBAL_STREAM_TIMEOUT_MS);
+	        globalWatchdog = setTimeout(() => {
+	          if (streamState.ended || res.writableEnded || streamState.clientDisconnected) return;
           if (!streamState.rev1Sent) {
             emitWatchdogFallbackRev1("watchdog_global_timeout");
           }
@@ -9924,14 +9962,31 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
 
     const googleApiKey = process.env.GOOGLE_CSE_API_KEY ?? null;
     const cx = process.env.GOOGLE_CSE_CX ?? null;
-    const deepseekKey = process.env.DEEPSEEK_API_KEY ?? null;
-	    const aiAvailable = Boolean(googleApiKey && cx && deepseekKey);
-    const forceStage1Raw = process.env.FORCE_STAGE1 === "1" || process.env.FORCE_STAGE1 === "true";
-    const forceStage1 = process.env.NODE_ENV !== "production" && forceStage1Raw;
-    const allowNeedsJs = process.env.ALLOW_NEEDS_JS === "1" || process.env.ALLOW_NEEDS_JS === "true";
-    type Stage0Source = "none" | "snapshot" | "catalog" | "lnhpd";
-    let stage0Delivered = false;
-    let stage0Source: Stage0Source = "none";
+	    const deepseekKey = process.env.DEEPSEEK_API_KEY ?? null;
+		    const aiAvailable = Boolean(googleApiKey && cx && deepseekKey);
+	    const forceStage1Raw = process.env.FORCE_STAGE1 === "1" || process.env.FORCE_STAGE1 === "true";
+	    const forceStage1 = process.env.NODE_ENV !== "production" && forceStage1Raw;
+	    const allowNeedsJs = process.env.ALLOW_NEEDS_JS === "1" || process.env.ALLOW_NEEDS_JS === "true";
+	
+	    // Root fix: if we have a strong first-party candidate (catalog hit or barcode->NPN map),
+	    // extend the fast watchdog so Stage0 can terminate before Web fallback locks rev1.
+	    if (!forceStage1) {
+	      void catalogPromise
+	        .then((catalog) => {
+	          if (!catalog) return;
+	          extendFastWatchdogForAuthority();
+	        })
+	        .catch(() => {});
+	      void regulatoryMapPromise
+	        .then((row) => {
+	          if (!row?.npn) return;
+	          extendFastWatchdogForAuthority();
+	        })
+	        .catch(() => {});
+	    }
+	    type Stage0Source = "none" | "snapshot" | "catalog" | "lnhpd";
+	    let stage0Delivered = false;
+	    let stage0Source: Stage0Source = "none";
 
 	    const cachedFast = await snapshotPromise.catch(() => null);
 	    let bypassCachedFastPathForAuthority = false;
