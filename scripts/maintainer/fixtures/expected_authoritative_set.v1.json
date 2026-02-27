@@ -1,0 +1,21 @@
+{
+  "version": "v1",
+  "generatedAt": "2026-02-24T00:00:00.000Z",
+  "barcodes": [
+    {
+      "barcode": "00084783891253",
+      "reason": "known_dsld_mapping",
+      "expectedFinal": true
+    },
+    {
+      "barcode": "00064642079992",
+      "reason": "known_lnhpd_mapping",
+      "expectedFinal": true
+    },
+    {
+      "barcode": "00690290532093",
+      "reason": "known_dsld_mapping",
+      "expectedFinal": true
+    }
+  ]
+}

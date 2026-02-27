@@ -40,13 +40,60 @@ const outPath = getArg("out") ?? null;
 const dryRun = hasFlag("dry-run");
 const concurrency = Math.max(1, Number(getArg("concurrency") ?? "6"));
 const pageSize = Math.max(1, Number(getArg("page-size") ?? "1000"));
-const trgmMinConfidence = Math.min(
-  1,
-  Math.max(0, Number(getArg("trgm-min-confidence") ?? "0.85")),
-);
+const trgmArgRaw = Number(getArg("trgm-min-confidence") ?? "0.85");
+const trgmMinConfidence = Math.min(1, Math.max(0, trgmArgRaw));
+const LOOKUP_QUERY_LIMIT = 12;
 
 const normalizeNameKey = (value: string): string =>
   value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+
+const HOMEOPATHIC_POTENCY_TOKEN =
+  /^(?:\d+(?:\.\d+)?(?:c|ck|ch|k|mk|x|d|dh|lm|q)|mt|tm)$/i;
+const HOMEOPATHIC_POTENCY_SEGMENT =
+  /\b(?:\d+(?:\.\d+)?\s*(?:c|ck|ch|k|mk|x|d|dh|lm|q)|mt|tm)\b/gi;
+const TRAILING_HOMEOPATHIC_MARKER =
+  /\b(?:\d+(?:\.\d+)?\s*(?:c|ck|ch|k|mk|x|d|dh|lm|q)|mt|tm)\b$/i;
+const TRAILING_HOMEOPATHIC_SCALE_ONLY = /\b(?:c|ck|ch|k|mk|x|d|dh|lm|q|mt|tm)\b$/i;
+const TRAILING_STRIP_SUFFIX =
+  /\b(?:extract(?:s)?|powder(?:s)?|liquid|juice|concentrate|tincture(?:s)?|mother(?:\s*tincture)?|trituration|dilution|triturate|pellet(?:s)?|granule(?:s)?)\b$/i;
+const BOTANICAL_QUALIFIER_TOKENS = new Set([
+  "l",
+  "sp",
+  "spp",
+  "ssp",
+  "subsp",
+  "var",
+  "cf",
+  "aff",
+]);
+const LATIN_PART_TOKENS = new Set([
+  "radix",
+  "rhizoma",
+  "folium",
+  "flos",
+  "fructus",
+  "semen",
+  "cortex",
+  "herba",
+  "pericarpium",
+  "bulbus",
+  "tuber",
+  "succus",
+  "oleoresin",
+  "oleum",
+]);
+const DOSAGE_FORM_TOKENS = new Set([
+  "tincture",
+  "mother",
+  "trituration",
+  "dilution",
+  "triturate",
+  "extractum",
+  "fluidextract",
+  "homeopathic",
+  "nosode",
+  "sarcode",
+]);
 
 const STRIP_SUFFIX_TOKENS = new Set([
   "extract",
@@ -75,6 +122,26 @@ const STRIP_SUFFIX_TOKENS = new Set([
   "r",
   "matrix",
   "formula",
+  "radix",
+  "rhizoma",
+  "folium",
+  "flos",
+  "fructus",
+  "semen",
+  "cortex",
+  "herba",
+  "pericarpium",
+  "bulbus",
+  "tuber",
+  "succus",
+  "oleoresin",
+  "oleum",
+  "tincture",
+  "mother",
+  "trituration",
+  "dilution",
+  "triturate",
+  "homeopathic",
 ]);
 
 const STRIP_PREFIX_TOKENS = new Set([
@@ -136,6 +203,26 @@ const STRIP_ANYWHERE_TOKENS = new Set([
   "legend",
   "support",
   "r",
+  "radix",
+  "rhizoma",
+  "folium",
+  "flos",
+  "fructus",
+  "semen",
+  "cortex",
+  "herba",
+  "pericarpium",
+  "bulbus",
+  "tuber",
+  "succus",
+  "oleoresin",
+  "oleum",
+  "tincture",
+  "mother",
+  "trituration",
+  "dilution",
+  "triturate",
+  "homeopathic",
 ]);
 
 const COMMON_STOP_WORDS = new Set([
@@ -151,10 +238,78 @@ const COMMON_STOP_WORDS = new Set([
   "as",
 ]);
 
+const removeHomeopathicPotency = (value: string): string =>
+  value
+    .replace(HOMEOPATHIC_POTENCY_SEGMENT, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const stripLookupTailVariants = (value: string): string[] => {
+  const initial = normalizeNameKey(value);
+  if (!initial) return [];
+
+  const variants: string[] = [];
+  const seen = new Set<string>();
+  const push = (candidate: string) => {
+    const normalized = normalizeNameKey(candidate);
+    if (!normalized || normalized.length < 2 || seen.has(normalized)) return;
+    seen.add(normalized);
+    variants.push(normalized);
+  };
+
+  let current = initial;
+  push(current);
+  for (let i = 0; i < 8; i += 1) {
+    const next = current
+      .replace(TRAILING_STRIP_SUFFIX, " ")
+      .replace(TRAILING_HOMEOPATHIC_MARKER, " ")
+      .replace(TRAILING_HOMEOPATHIC_SCALE_ONLY, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!next || next === current) break;
+    current = next;
+    push(current);
+  }
+
+  return variants;
+};
+
+const normalizePotencyVariants = (value: string): string[] => {
+  const normalized = normalizeNameKey(value);
+  if (!normalized) return [];
+
+  const variants = new Set<string>([normalized]);
+  const withoutPotencySegments = normalizeNameKey(removeHomeopathicPotency(normalized));
+  if (withoutPotencySegments) variants.add(withoutPotencySegments);
+
+  const tokens = normalized.split(/\s+/).filter(Boolean);
+  const noPotencyTokens = tokens.filter((token) => !HOMEOPATHIC_POTENCY_TOKEN.test(token));
+  if (noPotencyTokens.length) variants.add(noPotencyTokens.join(" "));
+
+  const noBotanicalQualifiers = noPotencyTokens.filter(
+    (token) => !BOTANICAL_QUALIFIER_TOKENS.has(token),
+  );
+  if (noBotanicalQualifiers.length) variants.add(noBotanicalQualifiers.join(" "));
+
+  const noLatinPartTokens = noBotanicalQualifiers.filter(
+    (token) => !LATIN_PART_TOKENS.has(token),
+  );
+  if (noLatinPartTokens.length) variants.add(noLatinPartTokens.join(" "));
+
+  const noDosageTokens = noLatinPartTokens.filter((token) => !DOSAGE_FORM_TOKENS.has(token));
+  if (noDosageTokens.length) variants.add(noDosageTokens.join(" "));
+
+  return Array.from(variants).filter((variant) => variant.length >= 2);
+};
+
 const stripNameKeyVariants = (value: string): string[] => {
   const normalized = normalizeNameKey(value);
   if (!normalized) return [];
-  const variants = new Set<string>([normalized]);
+  const variants = new Set<string>([
+    normalized,
+    ...normalizePotencyVariants(normalized),
+    ...stripLookupTailVariants(normalized),
+  ]);
   const sourceTokens = normalized.split(/\s+/).filter(Boolean);
   if (!sourceTokens.length) return Array.from(variants);
 
@@ -186,27 +341,55 @@ const stripNameKeyVariants = (value: string): string[] => {
   const removeStops = removeDose.filter((token) => !COMMON_STOP_WORDS.has(token));
   if (removeStops.length) variants.add(removeStops.join(" "));
 
+  const removePotency = removeStops.filter((token) => !HOMEOPATHIC_POTENCY_TOKEN.test(token));
+  if (removePotency.length) variants.add(removePotency.join(" "));
+
+  const removeLatinParts = removePotency.filter((token) => !LATIN_PART_TOKENS.has(token));
+  if (removeLatinParts.length) variants.add(removeLatinParts.join(" "));
+
+  const removeDosageForms = removeLatinParts.filter((token) => !DOSAGE_FORM_TOKENS.has(token));
+  if (removeDosageForms.length) variants.add(removeDosageForms.join(" "));
+
+  const removeBotanicalQualifiers = removeDosageForms.filter(
+    (token) => !BOTANICAL_QUALIFIER_TOKENS.has(token),
+  );
+  if (removeBotanicalQualifiers.length) variants.add(removeBotanicalQualifiers.join(" "));
+
   return Array.from(variants)
     .map((item) => item.trim())
     .filter((item) => item.length >= 2);
 };
 
 const buildLookupQueries = (row: ProductIngredientRow): string[] => {
-  const queries = new Set<string>();
+  const orderedQueries: string[] = [];
+  const seen = new Set<string>();
+  const pushQuery = (value: string | null | undefined) => {
+    if (!value) return;
+    const normalized = normalizeNameKey(value);
+    if (!normalized || normalized.length < 2 || seen.has(normalized)) return;
+    seen.add(normalized);
+    orderedQueries.push(normalized);
+  };
+
   const pushVariants = (value: string | null | undefined) => {
     if (!value) return;
     const raw = value.trim();
-    if (raw) queries.add(raw);
-    stripNameKeyVariants(raw).forEach((variant) => queries.add(variant));
+    if (!raw) return;
+
+    stripLookupTailVariants(raw).forEach(pushQuery);
+    normalizePotencyVariants(raw).forEach(pushQuery);
+    stripNameKeyVariants(raw).forEach(pushQuery);
+    pushQuery(raw);
   };
 
   pushVariants(row.name_raw);
   pushVariants(row.name_key);
 
-  return Array.from(queries)
-    .map((value) => value.trim())
+  return orderedQueries
+    .map((value) => removeHomeopathicPotency(value))
+    .map((value) => value.replace(/\s+/g, " ").trim())
     .filter((value) => value.length >= 2)
-    .slice(0, 8);
+    .slice(0, LOOKUP_QUERY_LIMIT);
 };
 
 const parseMatchConfidence = (raw: number | string | null | undefined): number | null => {
@@ -454,6 +637,12 @@ const runWithConcurrency = async <T>(
 };
 
 const run = async () => {
+  if (!dryRun && trgmMinConfidence < 0.85) {
+    throw new Error(
+      `[refresh-missing-ingredient-ids] refusing to run with trgm-min-confidence=${trgmMinConfidence}; minimum is 0.85 for apply mode`,
+    );
+  }
+
   const source: ScoreSource = sourceArg === "lnhpd" ? "lnhpd" : "dsld";
   const column = idColumn === "canonical_source_id" ? "canonical_source_id" : "source_id";
   if (!sourceIdsFile) {
@@ -528,7 +717,11 @@ const run = async () => {
       if (!selected || score > selected.score) {
         selected = { ingredientId, matchMethod, matchConfidence, score };
       }
-      if (matchMethod === "exact" || matchMethod === "synonym") {
+      if (
+        matchMethod === "exact" ||
+        matchMethod === "synonym" ||
+        matchMethod === "canonical_key"
+      ) {
         break;
       }
     }

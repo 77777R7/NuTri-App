@@ -25,6 +25,7 @@ const limit = Math.max(1, Number(getArg("limit") ?? "5000"));
 const output =
   getArg("output") ??
   "output/ingredient-forms/label_verified_forms_rebackfill.jsonl";
+const productIngredientsPageSize = 1000;
 
 const LABEL_VERIFIED_TOKENS = new Set([
   "root",
@@ -101,19 +102,28 @@ const buildRebackfillRunlist = async (
 ): Promise<Array<{ source: string; sourceId: string }>> => {
   const result = new Map<string, { source: string; sourceId: string }>();
   for (const chunk of chunkArray(ingredientIds, 200)) {
-    const { data, error } = await supabase
-      .from("product_ingredients")
-      .select("source,source_id")
-      .eq("source", source)
-      .in("ingredient_id", chunk);
-    if (error) throw error;
-    (data ?? []).forEach((row) => {
-      if (!row?.source_id || !row?.source) return;
-      const key = `${row.source}:${row.source_id}`;
-      if (!result.has(key)) {
-        result.set(key, { source: row.source, sourceId: row.source_id });
-      }
-    });
+    let offset = 0;
+    while (true) {
+      const { data, error } = await supabase
+        .from("product_ingredients")
+        .select("source,source_id")
+        .eq("source", source)
+        .in("ingredient_id", chunk)
+        // Stable ordering is required for reliable pagination.
+        .order("id", { ascending: true })
+        .range(offset, offset + productIngredientsPageSize - 1);
+      if (error) throw error;
+      const rows = data ?? [];
+      rows.forEach((row) => {
+        if (!row?.source_id || !row?.source) return;
+        const key = `${row.source}:${row.source_id}`;
+        if (!result.has(key)) {
+          result.set(key, { source: row.source, sourceId: row.source_id });
+        }
+      });
+      if (rows.length < productIngredientsPageSize) break;
+      offset += productIngredientsPageSize;
+    }
   }
   return Array.from(result.values());
 };

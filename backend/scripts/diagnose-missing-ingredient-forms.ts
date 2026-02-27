@@ -38,6 +38,7 @@ type MissingFormEntry = {
   formTokenSamples: Array<{ token: string; count: number }>;
   recommendedFormKey: string | null;
   recommendedFormLabel: string | null;
+  recommendedSource: "form_raw_token" | "canonical_key" | "none";
 };
 
 const args = process.argv.slice(2);
@@ -73,6 +74,9 @@ const titleCase = (value: string): string =>
     .filter(Boolean)
     .map((token) => token.charAt(0).toUpperCase() + token.slice(1))
     .join(" ");
+
+const canonicalKeyToLabel = (value: string): string =>
+  titleCase(value.replace(/[_-]+/g, " "));
 
 const ensureDir = async (filePath: string) => {
   const dir = path.dirname(filePath);
@@ -228,6 +232,8 @@ const run = async () => {
     .map((id) => {
       const count = countsByIngredient.get(id) ?? 0;
       const meta = metaMap.get(id);
+      const canonicalKey = meta?.canonical_key?.trim() || null;
+      const ingredientName = meta?.name?.trim() || null;
       const nameMap = nameCounts.get(id) ?? new Map<string, number>();
       const tokenMap = tokenCounts.get(id) ?? new Map<string, number>();
       const tokenSamples = Array.from(tokenMap.entries())
@@ -236,13 +242,23 @@ const run = async () => {
         .map(([token, tokenCount]) => ({ token, count: tokenCount }));
 
       const topToken = tokenSamples[0]?.token ?? null;
-      const recommendedFormKey = topToken ? topToken.replace(/\s+/g, "_") : null;
-      const recommendedFormLabel = topToken ? titleCase(topToken) : null;
+      let recommendedFormKey: string | null = null;
+      let recommendedFormLabel: string | null = null;
+      let recommendedSource: MissingFormEntry["recommendedSource"] = "none";
+      if (topToken) {
+        recommendedFormKey = topToken.replace(/\s+/g, "_");
+        recommendedFormLabel = titleCase(topToken);
+        recommendedSource = "form_raw_token";
+      } else if (canonicalKey) {
+        recommendedFormKey = canonicalKey;
+        recommendedFormLabel = ingredientName ?? canonicalKeyToLabel(canonicalKey);
+        recommendedSource = "canonical_key";
+      }
 
       return {
         ingredientId: id,
-        canonicalKey: meta?.canonical_key ?? null,
-        ingredientName: meta?.name ?? null,
+        canonicalKey,
+        ingredientName,
         category: meta?.category ?? null,
         unit: meta?.unit ?? null,
         count,
@@ -250,9 +266,18 @@ const run = async () => {
         formTokenSamples: tokenSamples,
         recommendedFormKey,
         recommendedFormLabel,
+        recommendedSource,
       };
     })
     .sort((a, b) => b.count - a.count);
+
+  const recommendedSourceCounts = missingEntries.reduce<Record<string, number>>((acc, entry) => {
+    acc[entry.recommendedSource] = (acc[entry.recommendedSource] ?? 0) + 1;
+    return acc;
+  }, {});
+  const recommendedFormKeyNonEmptyCount = missingEntries.filter((entry) =>
+    Boolean(entry.recommendedFormKey?.trim()),
+  ).length;
 
   const summary = {
     source,
@@ -262,6 +287,11 @@ const run = async () => {
     missingIngredientFormsRatio: Number(
       (missingEntries.length / (countsByIngredient.size || 1)).toFixed(4),
     ),
+    recommendedFormKeyNonEmptyCount,
+    recommendedFormKeyCoverage: Number(
+      (recommendedFormKeyNonEmptyCount / (missingEntries.length || 1)).toFixed(4),
+    ),
+    recommendedSourceCounts,
     generatedAt: new Date().toISOString(),
   };
 

@@ -9,6 +9,7 @@ type ScoreSource = "lnhpd" | "dsld" | "ocr" | "manual";
 
 type ScoreRow = {
   source_id: string | null;
+  canonical_source_id: string | null;
   explain_json: Record<string, unknown> | null;
 };
 
@@ -17,6 +18,9 @@ type IngredientRow = {
   ingredient_id: string | null;
   name_raw: string | null;
   form_raw: string | null;
+  amount: number | null;
+  amount_normalized: number | null;
+  amount_unknown: boolean | null;
   unit: string | null;
   unit_normalized: string | null;
   unit_kind: string | null;
@@ -46,15 +50,37 @@ type ProductReasonStats = {
   ingredientIdMissing: number;
   unitMissing: number;
   unitMismatch: number;
+  amountMissing: number;
   missingVerified: number;
   mismatch: number;
 };
+
+type ProductRowStats = {
+  totalRows: number;
+  activeRows: number;
+  inactiveRows: number;
+  activeRowsWithIngredientId: number;
+  activeRowsWithoutIngredientId: number;
+  activeRowsKnownDose: number;
+  activeRowsAmountMissing: number;
+  activeRowsAmountUnknownFlag: number;
+  activeRowsFormRawMissing: number;
+  activeRowsFormRawPresent: number;
+};
+
+type UnknownSubtype =
+  | "no_active_rows"
+  | "amount_missing_only"
+  | "zero_known_dose_unclassified"
+  | "unclassified";
 
 type ProductSummary = {
   sourceId: string;
   canonicalSourceId: string | null;
   primaryReason: string;
+  unknownSubtype: UnknownSubtype | null;
   counts: ProductReasonStats;
+  rowStats: ProductRowStats;
   ingredientNames: string[];
 };
 
@@ -78,6 +104,7 @@ const OUTPUT =
   getArg("output") ??
   `output/diagnostics/${SOURCE}_zero_coverage_root_causes.json`;
 const TOP_N = Math.max(1, Number(getArg("top-n") ?? "20"));
+const PAGE_SIZE = 1000;
 
 const ensureDir = async (filePath: string) => {
   const dir = path.dirname(filePath);
@@ -150,21 +177,46 @@ const sortUniqueIds = (ids: string[]): string[] =>
 const computePoolDigest = (ids: string[]): string =>
   createHash("sha256").update(ids.join("\n")).digest("hex");
 
-const fetchPoolSourceIdsFromDb = async (): Promise<string[]> => {
-  const { data, error } = await supabase
-    .from("product_scores")
-    .select("source_id")
-    .eq("source", SOURCE)
-    .eq("score_version", V4_SCORE_VERSION)
-    .order("source_id", { ascending: true })
-    .limit(SAMPLE_POOL);
-  if (error) throw error;
+const ratio = (count: number, total: number): number =>
+  total > 0 ? Number((count / total).toFixed(4)) : 0;
 
-  return sortUniqueIds(
-    (data ?? [])
-      .map((row) => row?.source_id)
-      .filter((value): value is string => typeof value === "string" && value.length > 0),
-  );
+const fetchPoolSourceIdsFromDb = async (): Promise<string[]> => {
+  const collected: string[] = [];
+  let cursor: string | null = null;
+
+  while (collected.length < SAMPLE_POOL) {
+    const remaining = SAMPLE_POOL - collected.length;
+    const batchSize = Math.max(1, Math.min(PAGE_SIZE, remaining));
+    const baseQuery = supabase
+      .from("product_scores")
+      .select("source_id")
+      .eq("source", SOURCE)
+      .eq("score_version", V4_SCORE_VERSION)
+      .order("source_id", { ascending: true })
+      .limit(batchSize);
+    const { data, error } = cursor
+      ? await baseQuery.gt("source_id", cursor)
+      : await baseQuery;
+    if (error) throw error;
+
+    const batch = sortUniqueIds(
+      (data ?? [])
+        .map((row) => row?.source_id)
+        .filter((value): value is string => typeof value === "string" && value.length > 0),
+    );
+    if (!batch.length) break;
+
+    for (const id of batch) {
+      if (collected.length >= SAMPLE_POOL) break;
+      if (collected[collected.length - 1] === id) continue;
+      collected.push(id);
+    }
+
+    cursor = batch[batch.length - 1] ?? cursor;
+    if (batch.length < batchSize) break;
+  }
+
+  return collected;
 };
 
 const fetchSourceIdsFromFile = async (filePath: string): Promise<string[]> => {
@@ -184,7 +236,7 @@ const fetchScores = async (sourceIds: string[]): Promise<ScoreRow[]> => {
   for (const chunk of chunkArray(sourceIds, 200)) {
     const { data, error } = await supabase
       .from("product_scores")
-      .select("source_id,explain_json")
+      .select("source_id,canonical_source_id,explain_json")
       .eq("source", SOURCE)
       .eq("score_version", V4_SCORE_VERSION)
       .in("source_id", chunk);
@@ -197,13 +249,25 @@ const fetchScores = async (sourceIds: string[]): Promise<ScoreRow[]> => {
 const fetchIngredients = async (sourceIds: string[]): Promise<IngredientRow[]> => {
   const rows: IngredientRow[] = [];
   for (const chunk of chunkArray(sourceIds, 200)) {
-    const { data, error } = await supabase
-      .from("product_ingredients")
-      .select("source_id,ingredient_id,name_raw,form_raw,unit,unit_normalized,unit_kind,is_active")
-      .eq("source", SOURCE)
-      .in("source_id", chunk);
-    if (error) throw error;
-    rows.push(...((data ?? []) as IngredientRow[]));
+    // PostgREST enforces `max_rows` (1000). For popular IDs we can exceed that limit,
+    // which silently truncates results and creates false `no_ingredient_rows` diagnoses.
+    let offset = 0;
+    while (true) {
+      const { data, error } = await supabase
+        .from("product_ingredients")
+        .select(
+          "id,source_id,ingredient_id,name_raw,form_raw,amount,amount_normalized,amount_unknown,unit,unit_normalized,unit_kind,is_active",
+        )
+        .eq("source", SOURCE)
+        .in("source_id", chunk)
+        .order("id", { ascending: true })
+        .range(offset, offset + PAGE_SIZE - 1);
+      if (error) throw error;
+      const page = (data ?? []) as IngredientRow[];
+      rows.push(...page);
+      if (page.length < PAGE_SIZE) break;
+      offset += PAGE_SIZE;
+    }
   }
   return rows;
 };
@@ -260,24 +324,59 @@ const fetchAliases = async (ingredientIds: string[]): Promise<FormAlias[]> => {
   return rows;
 };
 
-const resolvePrimaryReason = (counts: ProductReasonStats): string => {
+const resolvePrimaryReason = (product: Pick<ProductSummary, "counts" | "rowStats">): string => {
+  if (product.rowStats.totalRows === 0) return "no_ingredient_rows";
+  const counts = product.counts;
   if (counts.ingredientIdMissing > 0) return "ingredient_id_missing";
   if (counts.unitMissing > 0) return "unit_missing";
   if (counts.unitMismatch > 0) return "unit_mismatch";
+  if (counts.amountMissing > 0) return "amount_missing";
   if (counts.missingVerified > 0) return "missingVerified";
   if (counts.mismatch > 0) return "mismatch";
   return "unknown";
 };
 
+const resolveUnknownSubtype = (product: ProductSummary): UnknownSubtype | null => {
+  if (product.primaryReason !== "unknown") return null;
+  const { rowStats, counts } = product;
+  if (rowStats.activeRows === 0) return "no_active_rows";
+
+  if (
+    counts.amountMissing > 0 &&
+    counts.ingredientIdMissing === 0 &&
+    counts.unitMissing === 0 &&
+    counts.unitMismatch === 0 &&
+    counts.missingVerified === 0 &&
+    counts.mismatch === 0
+  ) {
+    return "amount_missing_only";
+  }
+
+  if (rowStats.activeRowsKnownDose === 0) {
+    return "zero_known_dose_unclassified";
+  }
+  return "unclassified";
+};
+
 const buildStats = (products: ProductSummary[]) => {
   const total = products.length;
+  const reasonOrder = [
+    "no_ingredient_rows",
+    "ingredient_id_missing",
+    "unit_missing",
+    "unit_mismatch",
+    "amount_missing",
+    "missingVerified",
+    "mismatch",
+    "unknown",
+  ];
   const counts: Record<string, number> = {};
   products.forEach((product) => {
     counts[product.primaryReason] = (counts[product.primaryReason] ?? 0) + 1;
   });
   const ratios: Record<string, number> = {};
   Object.entries(counts).forEach(([reason, count]) => {
-    ratios[reason] = total > 0 ? Number((count / total).toFixed(4)) : 0;
+    ratios[reason] = ratio(count, total);
   });
 
   const top20 = products
@@ -290,22 +389,103 @@ const buildStats = (products: ProductSummary[]) => {
     .slice(0, TOP_N);
 
   const top20ByReason: Record<string, ProductSummary[]> = {};
-  ["ingredient_id_missing", "unit_missing", "unit_mismatch", "missingVerified", "mismatch"].forEach(
-    (reason) => {
-      const items = products
-        .filter((product) => product.primaryReason === reason)
-        .slice(0, TOP_N);
-      if (items.length) top20ByReason[reason] = items;
+  reasonOrder.forEach((reason) => {
+    const items = products
+      .filter((product) => product.primaryReason === reason)
+      .slice(0, TOP_N);
+    if (items.length) top20ByReason[reason] = items;
+  });
+
+  const aggregate = products.reduce(
+    (acc, product) => {
+      acc.totalRows += product.rowStats.totalRows;
+      acc.activeRows += product.rowStats.activeRows;
+      acc.inactiveRows += product.rowStats.inactiveRows;
+      acc.activeRowsKnownDose += product.rowStats.activeRowsKnownDose;
+      acc.activeRowsAmountMissing += product.rowStats.activeRowsAmountMissing;
+      acc.activeRowsAmountUnknownFlag += product.rowStats.activeRowsAmountUnknownFlag;
+      if (product.rowStats.totalRows === 0) acc.productsWithNoRows += 1;
+      if (product.rowStats.activeRows === 0) acc.productsWithNoActiveRows += 1;
+      if (product.rowStats.activeRows > 0 && product.rowStats.activeRowsKnownDose === 0) {
+        acc.productsWithZeroKnownDose += 1;
+      }
+      return acc;
+    },
+    {
+      totalRows: 0,
+      activeRows: 0,
+      inactiveRows: 0,
+      activeRowsKnownDose: 0,
+      activeRowsAmountMissing: 0,
+      activeRowsAmountUnknownFlag: 0,
+      productsWithNoRows: 0,
+      productsWithNoActiveRows: 0,
+      productsWithZeroKnownDose: 0,
     },
   );
 
-  return { total, counts, ratios, top20, top20ByReason };
+  const unknownProducts = products.filter((product) => product.primaryReason === "unknown");
+  const unknownSubtypeCounts: Record<string, number> = {};
+  const unknownSubtypeRatios: Record<string, number> = {};
+  const unknownTopBySubtype: Record<
+    string,
+    Array<Pick<ProductSummary, "sourceId" | "canonicalSourceId" | "counts" | "rowStats" | "ingredientNames">>
+  > = {};
+
+  unknownProducts.forEach((product) => {
+    const subtype = product.unknownSubtype ?? "unclassified";
+    unknownSubtypeCounts[subtype] = (unknownSubtypeCounts[subtype] ?? 0) + 1;
+    if (!unknownTopBySubtype[subtype]) {
+      unknownTopBySubtype[subtype] = [];
+    }
+    if (unknownTopBySubtype[subtype].length < TOP_N) {
+      unknownTopBySubtype[subtype].push({
+        sourceId: product.sourceId,
+        canonicalSourceId: product.canonicalSourceId,
+        counts: product.counts,
+        rowStats: product.rowStats,
+        ingredientNames: product.ingredientNames,
+      });
+    }
+  });
+
+  Object.entries(unknownSubtypeCounts).forEach(([subtype, count]) => {
+    unknownSubtypeRatios[subtype] = ratio(count, unknownProducts.length);
+  });
+
+  return {
+    total,
+    counts,
+    ratios,
+    top20,
+    top20ByReason,
+    rowCoverage: {
+      totalRows: aggregate.totalRows,
+      activeRows: aggregate.activeRows,
+      inactiveRows: aggregate.inactiveRows,
+      activeRowRate: ratio(aggregate.activeRows, aggregate.totalRows),
+      knownDoseActiveRate: ratio(aggregate.activeRowsKnownDose, aggregate.activeRows),
+      amountMissingActiveRate: ratio(aggregate.activeRowsAmountMissing, aggregate.activeRows),
+      amountUnknownFlagRate: ratio(aggregate.activeRowsAmountUnknownFlag, aggregate.activeRows),
+      productsWithNoRows: aggregate.productsWithNoRows,
+      productsWithNoActiveRows: aggregate.productsWithNoActiveRows,
+      productsWithZeroKnownDose: aggregate.productsWithZeroKnownDose,
+    },
+    unknownExplainability: {
+      unknownCount: unknownProducts.length,
+      subtypeCounts: unknownSubtypeCounts,
+      subtypeRatios: unknownSubtypeRatios,
+      topBySubtype: unknownTopBySubtype,
+    },
+  };
 };
 
 const run = async () => {
   if (!SOURCE) throw new Error("Missing --source");
 
-  const sourceIds = SOURCE_IDS_FILE ? await fetchSourceIdsFromFile(SOURCE_IDS_FILE) : [];
+  const sourceIds = SOURCE_IDS_FILE
+    ? sortUniqueIds(await fetchSourceIdsFromFile(SOURCE_IDS_FILE))
+    : [];
   let sampleIds = sourceIds.length ? sourceIds : [];
   let poolIds: string[] = [];
   let poolDigest: string | null = null;
@@ -341,17 +521,56 @@ const run = async () => {
   }
 
   const scores = await fetchScores(sampleIds);
-  const zeroCoverageIds = scores
-    .filter((row) => {
-      const ratio = row.explain_json?.evidence?.formCoverageRatio;
-      return typeof ratio === "number" && ratio <= 0;
+  const zeroCoverageIds = sortUniqueIds(
+    scores
+      .filter((row) => {
+        const coverageRatio = row.explain_json?.evidence?.formCoverageRatio;
+        return typeof coverageRatio === "number" && coverageRatio <= 0;
+      })
+      .map((row) => row.source_id)
+      .filter((value): value is string => typeof value === "string"),
+  );
+
+  const scoreBySourceId = new Map<string, ScoreRow>();
+  scores.forEach((row) => {
+    if (!row.source_id) return;
+    scoreBySourceId.set(row.source_id, row);
+  });
+
+  const productMap = new Map<string, ProductSummary>();
+  zeroCoverageIds.forEach((sourceId) => {
+    productMap.set(sourceId, {
+      sourceId,
+      canonicalSourceId: scoreBySourceId.get(sourceId)?.canonical_source_id ?? null,
+      primaryReason: "unknown",
+      unknownSubtype: null,
+      counts: {
+        ingredientIdMissing: 0,
+        unitMissing: 0,
+        unitMismatch: 0,
+        amountMissing: 0,
+        missingVerified: 0,
+        mismatch: 0,
+      },
+      rowStats: {
+        totalRows: 0,
+        activeRows: 0,
+        inactiveRows: 0,
+        activeRowsWithIngredientId: 0,
+        activeRowsWithoutIngredientId: 0,
+        activeRowsKnownDose: 0,
+        activeRowsAmountMissing: 0,
+        activeRowsAmountUnknownFlag: 0,
+        activeRowsFormRawMissing: 0,
+        activeRowsFormRawPresent: 0,
+      },
+      ingredientNames: [],
     })
-    .map((row) => row.source_id)
-    .filter((value): value is string => typeof value === "string");
+  });
 
   const zeroCoverageSet = new Set(zeroCoverageIds);
   const ingredients = await fetchIngredients(zeroCoverageIds);
-  const activeRows = ingredients.filter((row) => row.is_active);
+  const activeRows = ingredients.filter((row) => row.is_active === true);
   const ingredientIds = Array.from(
     new Set(
       activeRows.map((row) => row.ingredient_id).filter((id): id is string => Boolean(id)),
@@ -382,42 +601,87 @@ const run = async () => {
     aliasesByIngredient.set(alias.ingredient_id, bucket);
   });
 
-  const productMap = new Map<string, ProductSummary>();
-  activeRows.forEach((row) => {
+  ingredients.forEach((row) => {
     const sourceId = row.source_id;
     if (!sourceId || !zeroCoverageSet.has(sourceId)) return;
     if (!productMap.has(sourceId)) {
       productMap.set(sourceId, {
         sourceId,
-        canonicalSourceId: null,
+        canonicalSourceId: scoreBySourceId.get(sourceId)?.canonical_source_id ?? null,
         primaryReason: "unknown",
+        unknownSubtype: null,
         counts: {
           ingredientIdMissing: 0,
           unitMissing: 0,
           unitMismatch: 0,
+          amountMissing: 0,
           missingVerified: 0,
           mismatch: 0,
+        },
+        rowStats: {
+          totalRows: 0,
+          activeRows: 0,
+          inactiveRows: 0,
+          activeRowsWithIngredientId: 0,
+          activeRowsWithoutIngredientId: 0,
+          activeRowsKnownDose: 0,
+          activeRowsAmountMissing: 0,
+          activeRowsAmountUnknownFlag: 0,
+          activeRowsFormRawMissing: 0,
+          activeRowsFormRawPresent: 0,
         },
         ingredientNames: [],
       });
     }
     const product = productMap.get(sourceId)!;
-    if (row.name_raw) product.ingredientNames.push(row.name_raw);
+    product.rowStats.totalRows += 1;
+    if (row.name_raw) {
+      product.ingredientNames.push(row.name_raw);
+    }
 
-    if (!row.ingredient_id) {
-      product.counts.ingredientIdMissing += 1;
+    if (row.is_active !== true) {
+      product.rowStats.inactiveRows += 1;
       return;
     }
 
+    product.rowStats.activeRows += 1;
+    const formRaw = row.form_raw?.trim() ?? "";
+    if (formRaw) {
+      product.rowStats.activeRowsFormRawPresent += 1;
+    } else {
+      product.rowStats.activeRowsFormRawMissing += 1;
+    }
+
+    const amountMissing = row.amount == null || row.amount_unknown === true;
+    if (row.amount_unknown === true) {
+      product.rowStats.activeRowsAmountUnknownFlag += 1;
+    }
+    if (amountMissing) {
+      product.counts.amountMissing += 1;
+      product.rowStats.activeRowsAmountMissing += 1;
+    }
+
+    if (!row.ingredient_id) {
+      product.counts.ingredientIdMissing += 1;
+      product.rowStats.activeRowsWithoutIngredientId += 1;
+      return;
+    }
+    product.rowStats.activeRowsWithIngredientId += 1;
+
     const unitValue = row.unit_normalized ?? row.unit;
     const unitKind = row.unit_kind ?? null;
-    if (!unitValue || !isRecognizedUnit(unitValue, unitKind)) {
+    const recognizedUnit = isRecognizedUnit(unitValue, unitKind);
+    if (!unitValue || !recognizedUnit) {
       product.counts.unitMissing += 1;
     }
 
     const metaUnit = metaMap.get(row.ingredient_id)?.unit ?? null;
+    const unitMatchesMeta = !metaUnit || Boolean(unitValue && unitValue === metaUnit);
     if (metaUnit && unitValue && unitValue !== metaUnit) {
       product.counts.unitMismatch += 1;
+    }
+    if (!amountMissing && recognizedUnit && unitMatchesMeta) {
+      product.rowStats.activeRowsKnownDose += 1;
     }
 
     const verifiedForms = formsByIngredient.get(row.ingredient_id) ?? [];
@@ -426,43 +690,53 @@ const run = async () => {
       return;
     }
 
-    const formRaw = row.form_raw?.trim() ?? "";
-    if (!formRaw) {
+    const candidateTexts = Array.from(
+      new Set([formRaw, row.name_raw?.trim() ?? ""]).values(),
+    ).filter((value) => value.length > 0);
+    if (!candidateTexts.length) {
       product.counts.mismatch += 1;
       return;
     }
 
-    const candidateNormalized = normalizeText(formRaw);
-    if (!candidateNormalized) {
+    const candidateNormalizedList = candidateTexts
+      .map((candidate) => normalizeText(candidate))
+      .filter((candidate) => candidate.length > 0);
+    if (!candidateNormalizedList.length) {
       product.counts.mismatch += 1;
       return;
     }
 
-    const formMatch = verifiedForms.some((form) =>
-      formMatchesCandidate(candidateNormalized, form),
+    const formMatch = candidateNormalizedList.some((candidateNormalized) =>
+      verifiedForms.some((form) =>
+        formMatchesCandidate(candidateNormalized, form),
+      ),
     );
     if (formMatch) return;
 
+    const verifiedFormKeys = new Set(verifiedForms.map((form) => form.form_key));
     const aliasList = [
       ...globalAliases,
       ...(aliasesByIngredient.get(row.ingredient_id) ?? []),
-    ];
-    const aliasMatch = aliasList.some((alias) =>
-      aliasMatchesCandidate(candidateNormalized, alias),
+    ].filter((alias) => verifiedFormKeys.has(alias.form_key));
+    const aliasMatch = candidateNormalizedList.some((candidateNormalized) =>
+      aliasList.some((alias) =>
+        aliasMatchesCandidate(candidateNormalized, alias),
+      ),
     );
     if (!aliasMatch) {
       product.counts.mismatch += 1;
-      return;
     }
-
-    product.counts.mismatch += 1;
   });
 
   const products = Array.from(productMap.values()).map((product) => ({
     ...product,
-    primaryReason: resolvePrimaryReason(product.counts),
+    primaryReason: resolvePrimaryReason(product),
+    unknownSubtype: null as UnknownSubtype | null,
     ingredientNames: Array.from(new Set(product.ingredientNames)).slice(0, 10),
   }));
+  products.forEach((product) => {
+    product.unknownSubtype = resolveUnknownSubtype(product);
+  });
 
   const summary = buildStats(products);
 
@@ -482,13 +756,25 @@ const run = async () => {
     summary,
     products,
     definitions: {
+      no_ingredient_rows:
+        "No rows exist in product_ingredients for this product/source_id.",
       ingredient_id_missing: "At least one active row missing ingredient_id.",
       unit_missing: "At least one active row missing a recognizable unit.",
       unit_mismatch: "At least one active row with unit not matching canonical unit.",
+      amount_missing:
+        "At least one active row has amount missing or amount_unknown=true (known dose cannot be computed).",
       missingVerified: "Active rows have no verified forms for their ingredient_id.",
       mismatch: "Form raw missing or does not match verified forms/aliases.",
+      unknown_subtypes: {
+        no_active_rows: "Ingredient rows exist but none are active.",
+        amount_missing_only:
+          "No higher-priority blockers; active rows mainly blocked by missing/unknown amount.",
+        zero_known_dose_unclassified:
+          "Active rows exist but none qualifies as known dose after unit + amount checks.",
+        unclassified: "Unknown after heuristics; inspect product rows directly.",
+      },
       primaryReason:
-        "Primary reason is assigned by precedence: ingredient_id_missing > unit_missing > unit_mismatch > missingVerified > mismatch.",
+        "Primary reason precedence: no_ingredient_rows > ingredient_id_missing > unit_missing > unit_mismatch > amount_missing > missingVerified > mismatch > unknown.",
     },
   };
 

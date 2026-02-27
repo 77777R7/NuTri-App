@@ -11,6 +11,12 @@ type PatchPayload = {
   ingredients?: PatchIngredient[];
 };
 
+type IngredientIdsPayload =
+  | string[]
+  | {
+      ingredientIds?: string[];
+    };
+
 type IngredientRow = {
   id: string;
   canonical_key: string | null;
@@ -25,12 +31,14 @@ const getArg = (flag: string) => {
 
 const formsPatch = getArg("forms") ?? "output/runs/phaseD/forms_promotion_patch.json";
 const evidencePatch = getArg("evidence") ?? "output/runs/phaseD/evidence_promotion_patch.json";
+const ingredientIdsFile = getArg("ingredient-ids-file");
 const output =
   getArg("output") ??
   "output/ingredient-forms/promotion_rebackfill_source_ids.json";
 const summary =
   getArg("summary") ??
   "output/ingredient-forms/promotion_rebackfill_summary.json";
+const pageSize = Math.max(1, Number(getArg("page-size") ?? "1000"));
 
 const chunk = <T>(items: T[], size: number): T[][] => {
   const chunks: T[][] = [];
@@ -53,51 +61,79 @@ const readPatchIngredients = async (filePath: string): Promise<string[]> => {
     .filter((value) => value.length > 0);
 };
 
+const readIngredientIds = async (filePath: string): Promise<string[]> => {
+  const raw = await readFile(filePath, "utf8");
+  const payload = JSON.parse(raw) as IngredientIdsPayload;
+  const values = Array.isArray(payload)
+    ? payload
+    : Array.isArray(payload.ingredientIds)
+    ? payload.ingredientIds
+    : [];
+  return values
+    .map((value) => (typeof value === "string" ? value.trim() : ""))
+    .filter((value) => value.length > 0);
+};
+
 const run = async () => {
-  const ingredientKeys = new Set<string>();
-  for (const key of await readPatchIngredients(formsPatch)) ingredientKeys.add(key);
-  for (const key of await readPatchIngredients(evidencePatch)) ingredientKeys.add(key);
-
-  const keys = Array.from(ingredientKeys);
-  if (!keys.length) {
-    throw new Error("[promotion-rebackfill] no ingredient keys found in patches");
-  }
-
   const ingredientIds = new Set<string>();
-  for (const group of chunk(keys, 200)) {
-    const { data, error } = await supabase
-      .from("ingredients")
-      .select("id,canonical_key")
-      .in("canonical_key", group);
-    if (error) {
-      throw new Error(`[promotion-rebackfill] ingredient lookup failed: ${error.message}`);
+  const ingredientKeys = new Set<string>();
+
+  if (ingredientIdsFile) {
+    for (const id of await readIngredientIds(ingredientIdsFile)) ingredientIds.add(id);
+  } else {
+    for (const key of await readPatchIngredients(formsPatch)) ingredientKeys.add(key);
+    for (const key of await readPatchIngredients(evidencePatch)) ingredientKeys.add(key);
+
+    const keys = Array.from(ingredientKeys);
+    if (!keys.length) {
+      throw new Error("[promotion-rebackfill] no ingredient keys found in patches");
     }
-    (data ?? []).forEach((row: IngredientRow) => {
-      if (row?.id) ingredientIds.add(row.id);
-    });
+
+    for (const group of chunk(keys, 200)) {
+      const { data, error } = await supabase
+        .from("ingredients")
+        .select("id,canonical_key")
+        .in("canonical_key", group);
+      if (error) {
+        throw new Error(`[promotion-rebackfill] ingredient lookup failed: ${error.message}`);
+      }
+      (data ?? []).forEach((row: IngredientRow) => {
+        if (row?.id) ingredientIds.add(row.id);
+      });
+    }
   }
 
   if (!ingredientIds.size) {
-    throw new Error("[promotion-rebackfill] no ingredient ids resolved from canonical keys");
+    throw new Error("[promotion-rebackfill] no ingredient ids resolved");
   }
 
   const sourceIds = new Set<string>();
   for (const group of chunk(Array.from(ingredientIds), 200)) {
-    const { data, error } = await supabase
-      .from("product_ingredients")
-      .select("source_id,canonical_source_id")
-      .eq("source", "lnhpd")
-      .in("ingredient_id", group);
-    if (error) {
-      throw new Error(`[promotion-rebackfill] product_ingredients lookup failed: ${error.message}`);
+    let offset = 0;
+    while (true) {
+      const { data, error } = await supabase
+        .from("product_ingredients")
+        .select("source_id,canonical_source_id")
+        .eq("source", "lnhpd")
+        .in("ingredient_id", group)
+        // Stable ordering is required for reliable pagination.
+        .order("id", { ascending: true })
+        .range(offset, offset + pageSize - 1);
+      if (error) {
+        throw new Error(`[promotion-rebackfill] product_ingredients lookup failed: ${error.message}`);
+      }
+      const rows = (data ?? []) as Array<{ source_id?: string | null; canonical_source_id?: string | null }>;
+      rows.forEach((row) => {
+        const canonical = row.canonical_source_id?.trim();
+        if (canonical) sourceIds.add(canonical);
+        else if (row.source_id) sourceIds.add(row.source_id.trim());
+      });
+      if (rows.length < pageSize) break;
+      offset += pageSize;
     }
-    (data ?? []).forEach((row: { source_id?: string | null; canonical_source_id?: string | null }) => {
-      const canonical = row.canonical_source_id?.trim();
-      if (canonical) sourceIds.add(canonical);
-      else if (row.source_id) sourceIds.add(row.source_id.trim());
-    });
   }
 
+  const keys = Array.from(ingredientKeys);
   const payload = {
     source: "lnhpd",
     ingredientKeys: keys,
@@ -113,6 +149,8 @@ const run = async () => {
     source: "lnhpd",
     formsPatch,
     evidencePatch,
+    ingredientIdsFile,
+    pageSize,
     ingredientKeyCount: keys.length,
     ingredientIdCount: ingredientIds.size,
     sourceIdCount: sourceIds.size,

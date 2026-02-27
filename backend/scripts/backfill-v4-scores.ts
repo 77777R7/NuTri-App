@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { supabase } from "../src/supabase.js";
 import { upsertProductIngredientsFromLabelFacts } from "../src/productIngredients.js";
+import { inferLnhpdActivesFromProductName } from "../src/lnhpd/inferredActives.js";
 import { loadDatasetCache, type DatasetCache } from "../src/scoring/v4DatasetCache.js";
 import {
   computeDailyMultiplierFromLnhpdFacts,
@@ -35,6 +36,7 @@ type LabelFactsInput = {
       driedHerbEquivalent?: string | number | null;
       ingredientName?: string | null;
       properName?: string | null;
+      inferenceSource?: string | null;
     } | null;
   }[];
   inactive: string[];
@@ -621,6 +623,11 @@ const LNHPD_POTENCY_CONSTITUENT_KEYS = ["potency_constituent", "potency_constitu
 const LNHPD_POTENCY_AMOUNT_KEYS = ["potency_amount", "potency_amount_value"];
 const LNHPD_POTENCY_UNIT_KEYS = ["potency_unit", "potency_unit_of_measure", "potency_uom"];
 const LNHPD_DHE_KEYS = ["dried_herb_equivalent", "dried_herb_equivalent_value"];
+const LNHPD_PRODUCT_NAME_KEYS = [
+  "productName",
+  "product_name",
+  "name",
+];
 
 const normalizeStringList = (value: unknown): string[] => {
   if (Array.isArray(value)) {
@@ -633,6 +640,35 @@ const normalizeStringList = (value: unknown): string[] => {
       .filter(Boolean);
   }
   return [];
+};
+
+const isTruthyFlag = (value: unknown): boolean => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value === 1;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    return normalized === "1" || normalized === "true" || normalized === "yes";
+  }
+  return false;
+};
+
+const extractPrimaryLnhpdProductName = (record: Record<string, unknown>): string | null => {
+  const direct = pickStringField(record, LNHPD_PRODUCT_NAME_KEYS);
+  if (direct) return direct;
+
+  const productLicencesPayload =
+    record.productLicences ??
+    record.product_licences ??
+    record.productLicence ??
+    record.product_licence;
+  if (!Array.isArray(productLicencesPayload)) return null;
+  const licences = productLicencesPayload
+    .filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object"));
+  if (!licences.length) return null;
+
+  const primary =
+    licences.find((item) => isTruthyFlag(item.flag_primary_name)) ?? licences[0];
+  return pickStringField(primary, ["product_name", "productName", "name"]);
 };
 
 const buildDsldLabelFacts = (factsJson: unknown): LabelFactsInput | null => {
@@ -680,15 +716,41 @@ const buildDsldLabelFacts = (factsJson: unknown): LabelFactsInput | null => {
 const buildLnhpdLabelFacts = (factsJson: unknown): LabelFactsInput | null => {
   if (!factsJson || typeof factsJson !== "object") return null;
   const record = factsJson as Record<string, unknown>;
-  const actives = extractLnhpdIngredients(record.medicinalIngredients, {
+  const extractedActives = extractLnhpdIngredients(record.medicinalIngredients, {
     nameKeys: LNHPD_MEDICINAL_NAME_KEYS,
     amountKeys: LNHPD_AMOUNT_KEYS,
     unitKeys: LNHPD_UNIT_KEYS,
   });
   const inactive = extractTextList(record.nonMedicinalIngredients, LNHPD_NON_MEDICINAL_NAME_KEYS);
+  const productName = extractPrimaryLnhpdProductName(record);
+  const inferredActives = extractedActives.length
+    ? []
+    : inferLnhpdActivesFromProductName(productName);
+  const mergedActives = [...extractedActives, ...inferredActives];
+  const dedupedActives = (() => {
+    const map = new Map<string, LabelFactsInput["actives"][number]>();
+    mergedActives.forEach((item) => {
+      const key = normalizeNameKey(item.name);
+      if (!key) return;
+      const existing = map.get(key);
+      if (!existing) {
+        map.set(key, item);
+        return;
+      }
+      const nextAmount = existing.amount ?? item.amount ?? null;
+      const nextUnit = existing.unit ?? item.unit ?? null;
+      map.set(key, {
+        ...existing,
+        amount: nextAmount,
+        unit: nextUnit,
+        lnhpdMeta: existing.lnhpdMeta ?? item.lnhpdMeta ?? null,
+      });
+    });
+    return Array.from(map.values());
+  })();
 
   return {
-    actives,
+    actives: dedupedActives,
     inactive,
     proprietaryBlends: [],
   };
@@ -1440,12 +1502,14 @@ const backfillDsld = async () => {
   );
 };
 
+const LNHPD_FACTS_TABLES = ["lnhpd_facts_complete", "lnhpd_facts"] as const;
+
 const resolveLnhpdTable = async (): Promise<string> => {
   const { data, error } = await supabase
     .from("lnhpd_facts_complete")
     .select("lnhpd_id")
     .limit(1);
-  if (!error && data) return "lnhpd_facts_complete";
+  if (!error && (data?.length ?? 0) > 0) return "lnhpd_facts_complete";
   return "lnhpd_facts";
 };
 
@@ -1550,7 +1614,7 @@ const fetchDsldRowById = async (labelId: number): Promise<DsldFactsRow | null> =
   return data as DsldFactsRow;
 };
 
-const fetchLnhpdRowByIdOrNpn = async (
+const queryLnhpdRowByIdOrNpn = async (
   table: string,
   lnhpdId: number | null,
   npn: string | null,
@@ -1570,6 +1634,20 @@ const fetchLnhpdRowByIdOrNpn = async (
       .eq("npn", npn)
       .maybeSingle();
     if (!error && data) return data as LnhpdFactsRow;
+  }
+  return null;
+};
+
+const fetchLnhpdRowByIdOrNpn = async (
+  table: string,
+  lnhpdId: number | null,
+  npn: string | null,
+): Promise<LnhpdFactsRow | null> => {
+  const tables = [table, ...LNHPD_FACTS_TABLES.filter((candidate) => candidate !== table)];
+  for (const candidateTable of tables) {
+    // eslint-disable-next-line no-await-in-loop
+    const row = await queryLnhpdRowByIdOrNpn(candidateTable, lnhpdId, npn);
+    if (row) return row;
   }
   return null;
 };

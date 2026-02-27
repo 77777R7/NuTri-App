@@ -1,0 +1,15 @@
+{
+  "generatedAt": "2026-02-17T23:09:20.868Z",
+  "latestBulkDir": "/Users/howard07/NuTriApp/nutri-app/output/bulk-barcode-e2e-1771335772121",
+  "sourceBarcodeTarget": 6,
+  "sourceBarcodeCount": 6,
+  "sampleCount": 12,
+  "sourceBarcodes": [
+    "00628747100045",
+    "00628747200097",
+    "00628747100113",
+    "00628747100168",
+    "00628747100212",
+    "00628747100229"
+  ]
+}

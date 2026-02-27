@@ -1,0 +1,57 @@
+{
+  "version": "v1",
+  "generatedAt": "2026-02-23T00:00:00.000Z",
+  "description": "Fixed mixed baseline for ODS UL visibility checks (5 LNHPD + 5 DSLD).",
+  "barcodes": [
+    {
+      "barcode": "00628747100212",
+      "expectedSource": "lnhpd",
+      "note": "LNHPD UL-positive anchor"
+    },
+    {
+      "barcode": "00628747100045",
+      "expectedSource": "lnhpd",
+      "note": "LNHPD baseline sample"
+    },
+    {
+      "barcode": "00628747200097",
+      "expectedSource": "lnhpd",
+      "note": "LNHPD baseline sample"
+    },
+    {
+      "barcode": "00628747101240",
+      "expectedSource": "lnhpd",
+      "note": "LNHPD baseline sample"
+    },
+    {
+      "barcode": "00628747101486",
+      "expectedSource": "lnhpd",
+      "note": "LNHPD baseline sample"
+    },
+    {
+      "barcode": "00851335007154",
+      "expectedSource": "dsld",
+      "note": "DSLD UL-positive anchor (contains supplements_only scope)"
+    },
+    {
+      "barcode": "00367703180065",
+      "expectedSource": "dsld",
+      "note": "DSLD UL-positive anchor (contains supplements_or_fortified_only scope)"
+    },
+    {
+      "barcode": "00819209022184",
+      "expectedSource": "dsld",
+      "note": "DSLD UL-positive sample"
+    },
+    {
+      "barcode": "00850002207323",
+      "expectedSource": "dsld",
+      "note": "DSLD UL-positive sample"
+    },
+    {
+      "barcode": "00084783891253",
+      "expectedSource": "dsld",
+      "note": "DSLD baseline sample"
+    }
+  ]
+}

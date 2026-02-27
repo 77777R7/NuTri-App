@@ -1,0 +1,452 @@
+[
+  {
+    "barcode": "00628747100045",
+    "region": "CA",
+    "expectedSourceType": "lnhpd",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-19",
+    "sourceUrl": "bulk-barcode-e2e",
+    "notes": "same-batch bulk baseline sample"
+  },
+  {
+    "barcode": "00628747200097",
+    "region": "CA",
+    "expectedSourceType": "lnhpd",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-19",
+    "sourceUrl": "bulk-barcode-e2e",
+    "notes": "same-batch bulk baseline sample"
+  },
+  {
+    "barcode": "00628747100113",
+    "region": "CA",
+    "expectedSourceType": "lnhpd",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-19",
+    "sourceUrl": "bulk-barcode-e2e",
+    "notes": "same-batch bulk baseline sample"
+  },
+  {
+    "barcode": "00628747100168",
+    "region": "CA",
+    "expectedSourceType": "lnhpd",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-19",
+    "sourceUrl": "bulk-barcode-e2e",
+    "notes": "same-batch bulk baseline sample"
+  },
+  {
+    "barcode": "00628747100212",
+    "region": "CA",
+    "expectedSourceType": "lnhpd",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-19",
+    "sourceUrl": "bulk-barcode-e2e",
+    "notes": "same-batch bulk baseline sample"
+  },
+  {
+    "barcode": "00628747100229",
+    "region": "CA",
+    "expectedSourceType": "lnhpd",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-19",
+    "sourceUrl": "bulk-barcode-e2e",
+    "notes": "same-batch bulk baseline sample"
+  },
+  {
+    "barcode": "00628747200264",
+    "region": "CA",
+    "expectedSourceType": "lnhpd",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-19",
+    "sourceUrl": "bulk-barcode-e2e",
+    "notes": "same-batch bulk baseline sample"
+  },
+  {
+    "barcode": "00628747000277",
+    "region": "CA",
+    "expectedSourceType": "lnhpd",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-19",
+    "sourceUrl": "bulk-barcode-e2e",
+    "notes": "same-batch bulk baseline sample"
+  },
+  {
+    "barcode": "00628747000307",
+    "region": "CA",
+    "expectedSourceType": "lnhpd",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-19",
+    "sourceUrl": "bulk-barcode-e2e",
+    "notes": "same-batch bulk baseline sample"
+  },
+  {
+    "barcode": "00628747000567",
+    "region": "CA",
+    "expectedSourceType": "lnhpd",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-19",
+    "sourceUrl": "bulk-barcode-e2e",
+    "notes": "same-batch bulk baseline sample"
+  },
+  {
+    "barcode": "00628747100892",
+    "region": "CA",
+    "expectedSourceType": "lnhpd",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-19",
+    "sourceUrl": "bulk-barcode-e2e",
+    "notes": "same-batch bulk baseline sample"
+  },
+  {
+    "barcode": "00628747108652",
+    "region": "CA",
+    "expectedSourceType": "lnhpd",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-19",
+    "sourceUrl": "bulk-barcode-e2e",
+    "notes": "same-batch bulk baseline sample"
+  },
+  {
+    "barcode": "00628747101240",
+    "region": "CA",
+    "expectedSourceType": "lnhpd",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-19",
+    "sourceUrl": "bulk-barcode-e2e",
+    "notes": "same-batch bulk baseline sample"
+  },
+  {
+    "barcode": "00628747201308",
+    "region": "CA",
+    "expectedSourceType": "lnhpd",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-19",
+    "sourceUrl": "bulk-barcode-e2e",
+    "notes": "same-batch bulk baseline sample"
+  },
+  {
+    "barcode": "00628747101486",
+    "region": "CA",
+    "expectedSourceType": "lnhpd",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-19",
+    "sourceUrl": "bulk-barcode-e2e",
+    "notes": "same-batch bulk baseline sample"
+  },
+  {
+    "barcode": "00883196120819",
+    "region": "US",
+    "expectedSourceType": "dsld",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-19",
+    "sourceUrl": "bulk-barcode-e2e",
+    "notes": "same-batch bulk baseline sample"
+  },
+  {
+    "barcode": "00064435131173",
+    "region": "US",
+    "expectedSourceType": "dsld",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-19",
+    "sourceUrl": "bulk-barcode-e2e",
+    "notes": "same-batch bulk baseline sample"
+  },
+  {
+    "barcode": "00649908268756",
+    "region": "US",
+    "expectedSourceType": "dsld",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-19",
+    "sourceUrl": "bulk-barcode-e2e",
+    "notes": "same-batch bulk baseline sample"
+  },
+  {
+    "barcode": "00074312131851",
+    "region": "US",
+    "expectedSourceType": "dsld",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-19",
+    "sourceUrl": "bulk-barcode-e2e",
+    "notes": "same-batch bulk baseline sample"
+  },
+  {
+    "barcode": "00819209022184",
+    "region": "US",
+    "expectedSourceType": "dsld",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-19",
+    "sourceUrl": "bulk-barcode-e2e",
+    "notes": "same-batch bulk baseline sample"
+  },
+  {
+    "barcode": "00818423021065",
+    "region": "US",
+    "expectedSourceType": "dsld",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-19",
+    "sourceUrl": "bulk-barcode-e2e",
+    "notes": "same-batch bulk baseline sample"
+  },
+  {
+    "barcode": "00035046009144",
+    "region": "US",
+    "expectedSourceType": "dsld",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-19",
+    "sourceUrl": "bulk-barcode-e2e",
+    "notes": "same-batch bulk baseline sample"
+  },
+  {
+    "barcode": "00782932123261",
+    "region": "US",
+    "expectedSourceType": "dsld",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-19",
+    "sourceUrl": "bulk-barcode-e2e",
+    "notes": "same-batch bulk baseline sample"
+  },
+  {
+    "barcode": "00064435130763",
+    "region": "US",
+    "expectedSourceType": "dsld",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-19",
+    "sourceUrl": "bulk-barcode-e2e",
+    "notes": "same-batch bulk baseline sample"
+  },
+  {
+    "barcode": "00812259003042",
+    "region": "US",
+    "expectedSourceType": "dsld",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-19",
+    "sourceUrl": "bulk-barcode-e2e",
+    "notes": "same-batch bulk baseline sample"
+  },
+  {
+    "barcode": "00367703180065",
+    "region": "US",
+    "expectedSourceType": "dsld",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-19",
+    "sourceUrl": "bulk-barcode-e2e",
+    "notes": "same-batch bulk baseline sample"
+  },
+  {
+    "barcode": "00850002207323",
+    "region": "US",
+    "expectedSourceType": "dsld",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-19",
+    "sourceUrl": "bulk-barcode-e2e",
+    "notes": "same-batch bulk baseline sample"
+  },
+  {
+    "barcode": "00851005007163",
+    "region": "US",
+    "expectedSourceType": "dsld",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-19",
+    "sourceUrl": "bulk-barcode-e2e",
+    "notes": "same-batch bulk baseline sample"
+  },
+  {
+    "barcode": "00851335007154",
+    "region": "US",
+    "expectedSourceType": "dsld",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-19",
+    "sourceUrl": "bulk-barcode-e2e",
+    "notes": "same-batch bulk baseline sample"
+  },
+  {
+    "barcode": "00084783891253",
+    "region": "US",
+    "expectedSourceType": "dsld",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-19",
+    "sourceUrl": "bulk-barcode-e2e",
+    "notes": "same-batch bulk baseline sample"
+  },
+  {
+    "barcode": "00883196112500",
+    "region": "US",
+    "expectedSourceType": "dsld",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-11",
+    "sourceUrl": "https://www.swansonvitamins.com/",
+    "notes": "Known DSLD match from prior E2E"
+  },
+  {
+    "barcode": "00883196115402",
+    "region": "US",
+    "expectedSourceType": "dsld",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-11",
+    "sourceUrl": "https://www.swansonvitamins.com/",
+    "notes": "Known DSLD match from prior E2E"
+  },
+  {
+    "barcode": "00087614023755",
+    "region": "US",
+    "expectedSourceType": "dsld",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-11",
+    "sourceUrl": "https://www.swansonvitamins.com/",
+    "notes": "Known DSLD match from prior E2E"
+  },
+  {
+    "barcode": "00740985229286",
+    "region": "US",
+    "expectedSourceType": "dsld",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-11",
+    "sourceUrl": "https://www.swansonvitamins.com/",
+    "notes": "Known DSLD match from prior E2E"
+  },
+  {
+    "barcode": "00883196105021",
+    "region": "CA",
+    "expectedSourceType": "dsld",
+    "expectedScoreAvailable": true,
+    "verifiedAt": "2026-02-19",
+    "sourceUrl": "historical website e2e",
+    "notes": "historical website e2e from website-barcode-e2e-1771483155156"
+  },
+  {
+    "barcode": "06111035000027",
+    "region": "US",
+    "expectedSourceType": "web",
+    "expectedScoreAvailable": false,
+    "verifiedAt": "2026-02-17",
+    "sourceUrl": "https://world.openfoodfacts.org/",
+    "notes": "probe_pool stable=1/1 quality=terminal_only webRate=1.00 doneRate=1.00 fallbackTop=none; stability=unobserved; stability observed=2 healthy=0 webRate=0.00 rev1Rate=0.00 doneRate=1.00 terminalErrRate=0.00 hardContractFailRate=1.00 abortTimeoutRate=0.00"
+  },
+  {
+    "barcode": "06111035000058",
+    "region": "US",
+    "expectedSourceType": "web",
+    "expectedScoreAvailable": false,
+    "verifiedAt": "2026-02-17",
+    "sourceUrl": "https://world.openfoodfacts.org/",
+    "notes": "probe_pool stable=1/1 quality=terminal_only webRate=1.00 doneRate=1.00 fallbackTop=none; stability=unobserved; stability observed=2 healthy=0 webRate=0.00 rev1Rate=0.00 doneRate=1.00 terminalErrRate=0.00 hardContractFailRate=1.00 abortTimeoutRate=0.00"
+  },
+  {
+    "barcode": "06111035000430",
+    "region": "US",
+    "expectedSourceType": "web",
+    "expectedScoreAvailable": false,
+    "verifiedAt": "2026-02-17",
+    "sourceUrl": "https://world.openfoodfacts.org/",
+    "notes": "probe_pool stable=1/1 quality=terminal_only webRate=1.00 doneRate=1.00 fallbackTop=none; stability=unobserved; stability observed=2 healthy=0 webRate=0.00 rev1Rate=0.00 doneRate=1.00 terminalErrRate=0.00 hardContractFailRate=1.00 abortTimeoutRate=0.00"
+  },
+  {
+    "barcode": "06111035002175",
+    "region": "US",
+    "expectedSourceType": "web",
+    "expectedScoreAvailable": false,
+    "verifiedAt": "2026-02-17",
+    "sourceUrl": "https://world.openfoodfacts.org/",
+    "notes": "probe_pool stable=1/1 quality=terminal_only webRate=1.00 doneRate=1.00 fallbackTop=none; stability=unobserved; stability observed=2 healthy=0 webRate=0.00 rev1Rate=0.00 doneRate=1.00 terminalErrRate=0.00 hardContractFailRate=1.00 abortTimeoutRate=0.00"
+  },
+  {
+    "barcode": "06111128000071",
+    "region": "US",
+    "expectedSourceType": "web",
+    "expectedScoreAvailable": false,
+    "verifiedAt": "2026-02-17",
+    "sourceUrl": "https://world.openfoodfacts.org/",
+    "notes": "probe_pool stable=1/1 quality=terminal_only webRate=1.00 doneRate=1.00 fallbackTop=none; stability=unobserved; stability observed=2 healthy=0 webRate=0.00 rev1Rate=0.00 doneRate=1.00 terminalErrRate=0.00 hardContractFailRate=1.00 abortTimeoutRate=0.00"
+  },
+  {
+    "barcode": "06111242100985",
+    "region": "US",
+    "expectedSourceType": "web",
+    "expectedScoreAvailable": false,
+    "verifiedAt": "2026-02-17",
+    "sourceUrl": "https://world.openfoodfacts.org/",
+    "notes": "probe_pool stable=1/1 quality=terminal_only webRate=1.00 doneRate=1.00 fallbackTop=none; stability=unobserved; stability observed=2 healthy=0 webRate=0.00 rev1Rate=0.00 doneRate=1.00 terminalErrRate=0.00 hardContractFailRate=1.00 abortTimeoutRate=0.00"
+  },
+  {
+    "barcode": "06111242100992",
+    "region": "US",
+    "expectedSourceType": "web",
+    "expectedScoreAvailable": false,
+    "verifiedAt": "2026-02-17",
+    "sourceUrl": "https://world.openfoodfacts.org/",
+    "notes": "probe_pool stable=1/1 quality=terminal_only webRate=1.00 doneRate=1.00 fallbackTop=none; stability=unobserved; stability observed=2 healthy=0 webRate=0.00 rev1Rate=0.00 doneRate=1.00 terminalErrRate=0.00 hardContractFailRate=1.00 abortTimeoutRate=0.00"
+  },
+  {
+    "barcode": "06111242101180",
+    "region": "US",
+    "expectedSourceType": "web",
+    "expectedScoreAvailable": false,
+    "verifiedAt": "2026-02-17",
+    "sourceUrl": "https://world.openfoodfacts.org/",
+    "notes": "probe_pool stable=1/1 quality=terminal_only webRate=1.00 doneRate=1.00 fallbackTop=none; stability=unobserved; stability observed=2 healthy=0 webRate=0.00 rev1Rate=0.00 doneRate=1.00 terminalErrRate=0.00 hardContractFailRate=1.00 abortTimeoutRate=0.00"
+  },
+  {
+    "barcode": "06111242106949",
+    "region": "US",
+    "expectedSourceType": "web",
+    "expectedScoreAvailable": false,
+    "verifiedAt": "2026-02-17",
+    "sourceUrl": "https://world.openfoodfacts.org/",
+    "notes": "probe_pool stable=1/1 quality=terminal_only webRate=1.00 doneRate=1.00 fallbackTop=none; stability=unobserved; stability observed=2 healthy=0 webRate=0.00 rev1Rate=0.00 doneRate=1.00 terminalErrRate=0.00 hardContractFailRate=1.00 abortTimeoutRate=0.00"
+  },
+  {
+    "barcode": "06111246721261",
+    "region": "US",
+    "expectedSourceType": "web",
+    "expectedScoreAvailable": false,
+    "verifiedAt": "2026-02-17",
+    "sourceUrl": "https://world.openfoodfacts.org/",
+    "notes": "probe_pool stable=1/1 quality=terminal_only webRate=1.00 doneRate=1.00 fallbackTop=none; stability=unobserved; stability observed=2 healthy=0 webRate=0.00 rev1Rate=0.00 doneRate=1.00 terminalErrRate=0.00 hardContractFailRate=1.00 abortTimeoutRate=0.00"
+  },
+  {
+    "barcode": "06111252421568",
+    "region": "US",
+    "expectedSourceType": "web",
+    "expectedScoreAvailable": false,
+    "verifiedAt": "2026-02-17",
+    "sourceUrl": "https://world.openfoodfacts.org/",
+    "notes": "probe_pool stable=1/1 quality=terminal_only webRate=1.00 doneRate=1.00 fallbackTop=none; stability=unobserved; stability observed=2 healthy=0 webRate=0.00 rev1Rate=0.00 doneRate=1.00 terminalErrRate=0.00 hardContractFailRate=1.00 abortTimeoutRate=0.00"
+  },
+  {
+    "barcode": "06111266962187",
+    "region": "US",
+    "expectedSourceType": "web",
+    "expectedScoreAvailable": false,
+    "verifiedAt": "2026-02-17",
+    "sourceUrl": "https://world.openfoodfacts.org/",
+    "notes": "probe_pool stable=1/1 quality=terminal_only webRate=1.00 doneRate=1.00 fallbackTop=none; stability=unobserved; stability observed=2 healthy=0 webRate=0.00 rev1Rate=0.00 doneRate=1.00 terminalErrRate=0.00 hardContractFailRate=1.00 abortTimeoutRate=0.00"
+  },
+  {
+    "barcode": "07622210449283",
+    "region": "US",
+    "expectedSourceType": "web",
+    "expectedScoreAvailable": false,
+    "verifiedAt": "2026-02-17",
+    "sourceUrl": "https://world.openfoodfacts.org/",
+    "notes": "probe_pool stable=1/1 quality=terminal_only webRate=1.00 doneRate=1.00 fallbackTop=none; stability=unobserved; stability observed=2 healthy=0 webRate=0.00 rev1Rate=0.00 doneRate=1.00 terminalErrRate=0.00 hardContractFailRate=1.00 abortTimeoutRate=0.00"
+  },
+  {
+    "barcode": "00068120237027",
+    "region": "CA",
+    "expectedSourceType": "web",
+    "expectedScoreAvailable": false,
+    "verifiedAt": "2026-02-17",
+    "sourceUrl": "website-barcode-e2e-50ca-stable:harvested",
+    "notes": "probe_pool stable=1/1 quality=terminal_only webRate=1.00 doneRate=1.00 fallbackTop=none; stability=unobserved; stability observed=2 healthy=0 webRate=0.00 rev1Rate=0.00 doneRate=1.00 terminalErrRate=0.00 hardContractFailRate=1.00 abortTimeoutRate=0.00"
+  },
+  {
+    "barcode": "00068120340017",
+    "region": "CA",
+    "expectedSourceType": "web",
+    "expectedScoreAvailable": false,
+    "verifiedAt": "2026-02-17",
+    "sourceUrl": "website-barcode-e2e-50ca-stable:harvested",
+    "notes": "probe_pool stable=1/1 quality=terminal_only webRate=1.00 doneRate=1.00 fallbackTop=none; stability=unobserved; stability observed=2 healthy=0 webRate=0.00 rev1Rate=0.00 doneRate=1.00 terminalErrRate=0.00 hardContractFailRate=1.00 abortTimeoutRate=0.00"
+  }
+]

@@ -1,0 +1,122 @@
+[
+  {
+    "barcode": "00628747100045",
+    "region": "CA",
+    "sourceTypeHint": "lnhpd",
+    "sourceUrl": "bulk-barcode-e2e",
+    "verifiedAt": "2026-02-17",
+    "notes": "authority candidate baseline from bulk summary; forced_mode=timeout",
+    "mode": "timeout",
+    "expectedAuthorityFailureReason": "lnhpd_timeout_second"
+  },
+  {
+    "barcode": "00628747100045",
+    "region": "CA",
+    "sourceTypeHint": "lnhpd",
+    "sourceUrl": "bulk-barcode-e2e",
+    "verifiedAt": "2026-02-17",
+    "notes": "authority candidate baseline from bulk summary; forced_mode=not_found",
+    "mode": "not_found",
+    "expectedAuthorityFailureReason": "lnhpd_not_found"
+  },
+  {
+    "barcode": "00628747200097",
+    "region": "CA",
+    "sourceTypeHint": "lnhpd",
+    "sourceUrl": "bulk-barcode-e2e",
+    "verifiedAt": "2026-02-17",
+    "notes": "authority candidate baseline from bulk summary; forced_mode=timeout",
+    "mode": "timeout",
+    "expectedAuthorityFailureReason": "lnhpd_timeout_second"
+  },
+  {
+    "barcode": "00628747200097",
+    "region": "CA",
+    "sourceTypeHint": "lnhpd",
+    "sourceUrl": "bulk-barcode-e2e",
+    "verifiedAt": "2026-02-17",
+    "notes": "authority candidate baseline from bulk summary; forced_mode=not_found",
+    "mode": "not_found",
+    "expectedAuthorityFailureReason": "lnhpd_not_found"
+  },
+  {
+    "barcode": "00628747100113",
+    "region": "CA",
+    "sourceTypeHint": "lnhpd",
+    "sourceUrl": "bulk-barcode-e2e",
+    "verifiedAt": "2026-02-17",
+    "notes": "authority candidate baseline from bulk summary; forced_mode=timeout",
+    "mode": "timeout",
+    "expectedAuthorityFailureReason": "lnhpd_timeout_second"
+  },
+  {
+    "barcode": "00628747100113",
+    "region": "CA",
+    "sourceTypeHint": "lnhpd",
+    "sourceUrl": "bulk-barcode-e2e",
+    "verifiedAt": "2026-02-17",
+    "notes": "authority candidate baseline from bulk summary; forced_mode=not_found",
+    "mode": "not_found",
+    "expectedAuthorityFailureReason": "lnhpd_not_found"
+  },
+  {
+    "barcode": "00628747100168",
+    "region": "CA",
+    "sourceTypeHint": "lnhpd",
+    "sourceUrl": "bulk-barcode-e2e",
+    "verifiedAt": "2026-02-17",
+    "notes": "authority candidate baseline from bulk summary; forced_mode=timeout",
+    "mode": "timeout",
+    "expectedAuthorityFailureReason": "lnhpd_timeout_second"
+  },
+  {
+    "barcode": "00628747100168",
+    "region": "CA",
+    "sourceTypeHint": "lnhpd",
+    "sourceUrl": "bulk-barcode-e2e",
+    "verifiedAt": "2026-02-17",
+    "notes": "authority candidate baseline from bulk summary; forced_mode=not_found",
+    "mode": "not_found",
+    "expectedAuthorityFailureReason": "lnhpd_not_found"
+  },
+  {
+    "barcode": "00628747100212",
+    "region": "CA",
+    "sourceTypeHint": "lnhpd",
+    "sourceUrl": "bulk-barcode-e2e",
+    "verifiedAt": "2026-02-17",
+    "notes": "authority candidate baseline from bulk summary; forced_mode=timeout",
+    "mode": "timeout",
+    "expectedAuthorityFailureReason": "lnhpd_timeout_second"
+  },
+  {
+    "barcode": "00628747100212",
+    "region": "CA",
+    "sourceTypeHint": "lnhpd",
+    "sourceUrl": "bulk-barcode-e2e",
+    "verifiedAt": "2026-02-17",
+    "notes": "authority candidate baseline from bulk summary; forced_mode=not_found",
+    "mode": "not_found",
+    "expectedAuthorityFailureReason": "lnhpd_not_found"
+  },
+  {
+    "barcode": "00628747100229",
+    "region": "CA",
+    "sourceTypeHint": "lnhpd",
+    "sourceUrl": "bulk-barcode-e2e",
+    "verifiedAt": "2026-02-17",
+    "notes": "authority candidate baseline from bulk summary; forced_mode=timeout",
+    "mode": "timeout",
+    "expectedAuthorityFailureReason": "lnhpd_timeout_second"
+  },
+  {
+    "barcode": "00628747100229",
+    "region": "CA",
+    "sourceTypeHint": "lnhpd",
+    "sourceUrl": "bulk-barcode-e2e",
+    "verifiedAt": "2026-02-17",
+    "notes": "authority candidate baseline from bulk summary; forced_mode=not_found",
+    "mode": "not_found",
+    "expectedAuthorityFailureReason": "lnhpd_not_found"
+  }
+]

@@ -40,13 +40,15 @@ const parseNumber = (value: string): number | null => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
-const resolveLnhpdTable = async (): Promise<string> => {
+const resolveLnhpdTables = async (): Promise<string[]> => {
   const { data, error } = await supabase
     .from("lnhpd_facts_complete")
     .select("lnhpd_id")
     .limit(1);
-  if (!error && data) return "lnhpd_facts_complete";
-  return "lnhpd_facts";
+  if (!error && data) {
+    return ["lnhpd_facts_complete", "lnhpd_facts"];
+  }
+  return ["lnhpd_facts"];
 };
 
 const chunk = <T>(items: T[], size: number): T[][] => {
@@ -71,7 +73,7 @@ const run = async () => {
 
   await ensureDir(outputDir);
 
-  const table = await resolveLnhpdTable();
+  const tables = await resolveLnhpdTables();
   const numericIds = ids
     .map((id) => ({ id, numeric: parseNumber(id) }))
     .filter((item) => item.numeric != null);
@@ -79,24 +81,26 @@ const run = async () => {
 
   const factsFound = new Set<string>();
 
-  for (const group of chunk(numericIds.map((item) => item.numeric as number), 500)) {
-    const { data, error } = await supabase.from(table).select("lnhpd_id").in("lnhpd_id", group);
-    if (error) {
-      throw new Error(`[diagnose-invalid-source-ids] ${table} query failed: ${error.message}`);
+  for (const table of tables) {
+    for (const group of chunk(numericIds.map((item) => item.numeric as number), 500)) {
+      const { data, error } = await supabase.from(table).select("lnhpd_id").in("lnhpd_id", group);
+      if (error) {
+        throw new Error(`[diagnose-invalid-source-ids] ${table} query failed: ${error.message}`);
+      }
+      (data ?? []).forEach((row: { lnhpd_id?: number | null }) => {
+        if (row?.lnhpd_id != null) factsFound.add(String(row.lnhpd_id));
+      });
     }
-    (data ?? []).forEach((row: { lnhpd_id?: number | null }) => {
-      if (row?.lnhpd_id != null) factsFound.add(String(row.lnhpd_id));
-    });
-  }
 
-  for (const group of chunk(stringIds, 500)) {
-    const { data, error } = await supabase.from(table).select("npn").in("npn", group);
-    if (error) {
-      throw new Error(`[diagnose-invalid-source-ids] ${table} query failed: ${error.message}`);
+    for (const group of chunk(stringIds, 500)) {
+      const { data, error } = await supabase.from(table).select("npn").in("npn", group);
+      if (error) {
+        throw new Error(`[diagnose-invalid-source-ids] ${table} query failed: ${error.message}`);
+      }
+      (data ?? []).forEach((row: { npn?: string | null }) => {
+        if (row?.npn) factsFound.add(row.npn.trim());
+      });
     }
-    (data ?? []).forEach((row: { npn?: string | null }) => {
-      if (row?.npn) factsFound.add(row.npn.trim());
-    });
   }
 
   const missingFacts = ids.filter((id) => !factsFound.has(id));
@@ -162,7 +166,7 @@ const run = async () => {
 
   const breakdown = {
     inputCount: ids.length,
-    factsTable: table,
+    factsTables: tables,
     missingFacts: missingFacts.length,
     missingIngredients: missingIngredients.length,
     emptyIngredients: emptyIngredients.length,

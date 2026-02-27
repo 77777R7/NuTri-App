@@ -498,6 +498,7 @@ const main = async () => {
   const applyConfirmed =
     applyRequested && confirmProd === APPLY_ACK && envAck === APPLY_ACK;
   const applyBlocked = applyRequested && !applyConfirmed;
+  const readOnlyEnforced = applyBlocked;
 
   const failureReasons: Record<string, number> = {};
   const deleteResult = {
@@ -605,7 +606,7 @@ const main = async () => {
     generatedAt: new Date().toISOString(),
     applyRequested,
     applyExecuted,
-    readOnlyEnforced: !applyExecuted,
+    readOnlyEnforced,
     before: {
       summaryPath: beforeDiagnose.summaryPath,
       mismatchCount: beforeMismatch,
@@ -636,7 +637,7 @@ const main = async () => {
     generatedAt: new Date().toISOString(),
     applyRequested,
     applyExecuted,
-    readOnlyEnforced: !applyExecuted,
+    readOnlyEnforced,
     confirm: {
       requiredToken: APPLY_ACK,
       confirmProd,
@@ -670,16 +671,16 @@ const main = async () => {
     source,
     idColumn,
     outDir,
-    status: applyExecuted
+    status: applyBlocked
+      ? "apply_blocked_read_only"
+      : applyRequested
       ? "apply_complete"
-      : applyBlocked
-        ? "apply_blocked_read_only"
-        : "dry_run_complete",
-    message: applyExecuted
+      : "dry_run_complete",
+    message: applyBlocked
+      ? "Apply was requested but confirmation guardrails failed; read-only flow completed."
+      : applyRequested
       ? "Alias cleanup apply flow completed."
-      : applyBlocked
-        ? "Apply was requested but confirmation guardrails failed; read-only flow completed."
-        : "Dry-run flow completed (no writes executed).",
+      : "Dry-run flow completed (no writes executed).",
     artifacts: {
       summary: summaryPath,
       applySummary: applySummaryPath,
