@@ -53,6 +53,7 @@ import { useTranslation } from '@/lib/i18n';
 import { summarizeFoundationHits } from '@/lib/knowledge/foundationLookup';
 import { resolveDataCeilingSignal } from '@/lib/scan/dataCeiling';
 import { buildGapActionSentences } from '@/lib/scan/gapActionSentenceLibrary';
+import { isNutritionLabelLikeIngredient } from '@/lib/scan/isNutritionLabelLikeIngredient';
 import { assembleInsightsDTO, buildWhyBullets } from '@/lib/scan/insightsAssembler';
 import { enforceNeverBlank, isPlaceholderText, sanitizeCoverBullets, sanitizeCoverLine } from '@/lib/scan/neverBlank';
 import { buildRecordFactsViewModel } from '@/lib/scan/recordFactsViewModel';
@@ -1839,6 +1840,10 @@ const AnalysisBundleDashboard: React.FC<{
         () => (Array.isArray(ingredientsCover?.items) ? ingredientsCover.items : []),
         [ingredientsCover?.items]
     );
+    const ingredientsItemsFiltered = useMemo(
+        () => ingredientsItems.filter((item) => !isNutritionLabelLikeIngredient(item?.name)),
+        [ingredientsItems],
+    );
     const recordFacts = useMemo(
         () =>
             buildRecordFactsViewModel({
@@ -1918,13 +1923,13 @@ const AnalysisBundleDashboard: React.FC<{
         ];
     const ingredientRowsForRanking = useMemo(
         () =>
-            ingredientsItems.length > 0
-                ? (ingredientsItems as unknown as IngredientCoverItemLike[])
+            ingredientsItemsFiltered.length > 0
+                ? (ingredientsItemsFiltered as unknown as IngredientCoverItemLike[])
                 : recordFacts.ingredientRows.map((row) => ({
                     name: row.name,
                     dose: row.doseLine ?? '',
-                })) as unknown as IngredientCoverItemLike[],
-        [ingredientsItems, recordFacts.ingredientRows],
+                })).filter((row) => !isNutritionLabelLikeIngredient(row.name)) as unknown as IngredientCoverItemLike[],
+        [ingredientsItemsFiltered, recordFacts.ingredientRows],
     );
 
     const keyIngredientsRanked = useMemo(
@@ -2060,13 +2065,13 @@ const AnalysisBundleDashboard: React.FC<{
     const scienceTopIngredients = useMemo(
         () =>
             [
-                ...(ingredientsItems.length > 0
-                    ? ingredientsItems
+                ...(ingredientsItemsFiltered.length > 0
+                    ? ingredientsItemsFiltered
                     : recordFacts.ingredientRows.map((row) => ({
                         name: row.name,
                         dose: row.doseLine ?? '',
                         basisTags: [] as BasisTag[],
-                    }))),
+                    })).filter((row) => !isNutritionLabelLikeIngredient(row.name))),
             ]
                 .sort((a, b) => {
                     const aHasDose = normalizeText(a?.dose ?? '').length > 0 ? 1 : 0;
@@ -2075,7 +2080,7 @@ const AnalysisBundleDashboard: React.FC<{
                     return normalizeText(a?.name ?? '').localeCompare(normalizeText(b?.name ?? ''));
                 })
                 .slice(0, 3),
-        [ingredientsItems, recordFacts.ingredientRows],
+        [ingredientsItemsFiltered, recordFacts.ingredientRows],
     );
     const safetyNotes = showGeneralWatchOuts
         ? ['No label-specific warnings detected; general watch-outs shown.']
@@ -2608,9 +2613,11 @@ const AnalysisBundleDashboard: React.FC<{
         const preferred = keyIngredientsForIngredients.length
             ? keyIngredientsForIngredients
             : (
-                ingredientsItems.length > 0
-                    ? ingredientsItems.map((i) => i.name).filter(Boolean)
-                    : recordFacts.ingredientRows.map((row) => row.name).filter(Boolean)
+                ingredientsItemsFiltered.length > 0
+                    ? ingredientsItemsFiltered.map((i) => i.name).filter(Boolean)
+                    : recordFacts.ingredientRows
+                        .map((row) => row.name)
+                        .filter((name): name is string => Boolean(name) && !isNutritionLabelLikeIngredient(name))
             );
 
         const deduped: string[] = [];
@@ -2623,7 +2630,7 @@ const AnalysisBundleDashboard: React.FC<{
             deduped.push(name);
         }
         return deduped.slice(0, 3);
-    }, [keyIngredientsForIngredients, ingredientsItems, recordFacts.ingredientRows]);
+    }, [keyIngredientsForIngredients, ingredientsItemsFiltered, recordFacts.ingredientRows]);
 
     const [activeIngredientName, setActiveIngredientName] = useState<string | null>(
         keyIngredientsForDetail[0] ?? null
@@ -2641,8 +2648,8 @@ const AnalysisBundleDashboard: React.FC<{
 
     const activeIngredientCover = useMemo(() => {
         if (!activeIngredientKey) return null;
-        return ingredientsItems.find((i) => normalizeIngredientNameForBackground(i.name) === activeIngredientKey) ?? null;
-    }, [ingredientsItems, activeIngredientKey]);
+        return ingredientsItemsFiltered.find((i) => normalizeIngredientNameForBackground(i.name) === activeIngredientKey) ?? null;
+    }, [ingredientsItemsFiltered, activeIngredientKey]);
     const activeIngredientRecord = useMemo(() => {
         if (!activeIngredientKey) return null;
         return (
