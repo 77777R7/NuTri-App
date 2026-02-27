@@ -3,7 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import express, { NextFunction, Request, Response } from "express";
 import { createHash, randomUUID } from "node:crypto";
-import { performance } from "node:perf_hooks";
+import { monitorEventLoopDelay, performance } from "node:perf_hooks";
 import { z } from "zod";
 
 import {
@@ -13,9 +13,11 @@ import {
   type AnalysisBundle,
   type BasisTag,
   type IngredientsDetail,
+  type SafetySignalItem,
+  type SafetySignalPack,
 } from "./analysisBundle.js";
 import { getAnalysisIdentityCache, getWebCanonicalMap, insertAnalysisIdentityPending, updateAnalysisIdentityCache, upsertAnalysisIdentityCache, upsertWebCanonicalMap } from "./analysisIdentityCache.js";
-import { resolveAuthorityCandidate } from "./authorityCandidate.js";
+import { resolveAuthorityCandidate, type AuthorityMapStatus } from "./authorityCandidate.js";
 import { buildBarcodeSearchQueries, normalizeBarcodeInput, type NormalizedBarcode } from "./barcode.js";
 import {
   clearNegativeCache,
@@ -38,6 +40,13 @@ import {
 import { extractBrandProduct, type BrandExtractionResult } from "./brandExtractor.js";
 import { resolveCatalogByBarcode, type CatalogResolved } from "./catalogResolver.js";
 import { buildCatalogBarcodeSnapshot } from "./catalogSnapshot.js";
+import {
+  buildNpnCandidates,
+  normalizeNpnValue,
+  type NpnCandidate,
+  type NpnCandidateSourceKind,
+  type NpnCandidateStableReason,
+} from "./npnCandidates.js";
 import {
   fetchAnalysisBundle,
   fetchAnalysisBundleFastV3,
@@ -62,13 +71,29 @@ import {
   mapWebFactsToFactsDTO,
 } from "./insights/factsMapper.js";
 import {
+  extractDeterministicSignalPack,
+  type DeterministicSignalPack,
+} from "./insights/deterministicSignalExtractor.js";
+import {
   fetchDsldFactsRecordByLabelId,
   fetchDsldMetaByLabelId,
   fetchLnhpdFactsRecordByNpn,
   fetchWebIngredientsBySourceId,
 } from "./insights/factsRepository.js";
 import { isActiveIngredient } from "./insights/ingredientPredicates.js";
+import { getIngredientFallbackText } from "./insights/ingredientKnowledgeMap.js";
+import {
+  INFERENCE_ONLY_SCORE_REASON_CODE,
+  inferLnhpdActivesFromProductName,
+  isOnlyInferredLnhpdDigestActives,
+} from "./lnhpd/inferredActives.js";
 import { factsDtoSchemaV2 } from "./insights/scanInsightsSchema.js";
+import {
+  compileSafetySummaryAsync,
+  compileUsageSummaryAsync,
+  safetySummaryPacketSchema,
+  usageSummaryPacketSchema,
+} from "./insights/sectionSummaryCompiler.js";
 import { compileIngredientSummaryAsync, ingredientSummaryPacketSchema } from "./insights/summaryCompiler.js";
 import { verifyWebOwnership } from "./insights/webOwnership.js";
 import { getKbRuntime, lookupKbFormExplain, lookupKbRuntimeFormInsights } from "./kbRuntime.js";
@@ -208,6 +233,59 @@ const readScanTerminalLockEnabled = (): boolean =>
     false,
   );
 const SCORE_V4_WEB_ENABLED = parseBooleanEnv(process.env.SCORE_V4_WEB_ENABLED, false);
+const BUNDLE_ONLY_SKIP_WEB_SEARCH = parseBooleanEnv(process.env.BUNDLE_ONLY_SKIP_WEB_SEARCH, true);
+const BUNDLE_ONLY_ALLOW_LABEL_RECORD_STAGE0 = parseBooleanEnv(
+  process.env.BUNDLE_ONLY_ALLOW_LABEL_RECORD_STAGE0,
+  true,
+);
+const STAGE0_AUTHORITATIVE_DETERMINISTIC_REV1 = parseBooleanEnv(
+  process.env.STAGE0_AUTHORITATIVE_DETERMINISTIC_REV1,
+  true,
+);
+const STAGE0_DSLD_BARCODE_FALLBACK_ENABLED = parseBooleanEnv(
+  process.env.STAGE0_DSLD_BARCODE_FALLBACK_ENABLED,
+  true,
+);
+const STAGE0_DSLD_BARCODE_FALLBACK_FULL_ENABLED = parseBooleanEnv(
+  process.env.STAGE0_DSLD_BARCODE_FALLBACK_FULL_ENABLED,
+  true,
+);
+const STAGE0_DSLD_SEEDED_LABEL_MAP_ENABLED = parseBooleanEnv(
+  process.env.STAGE0_DSLD_SEEDED_LABEL_MAP_ENABLED,
+  true,
+);
+const STAGE0_DSLD_SEEDED_LABEL_MAP = new Map<string, number>([
+  ["00084783891253", 200338],
+  ["00064435130763", 287952],
+  ["00074312131851", 62057],
+  ["00035046009144", 7444],
+  ["00649908268756", 329337],
+  ["00782932123261", 29906],
+  ["00812259003042", 260939],
+  ["00851005007163", 229055],
+  ["00851335007154", 256558],
+  ["00850002207323", 307265],
+  ["00819209022184", 251767],
+  ["00367703180065", 202305],
+  ["00818423021065", 207107],
+  ["00064435131173", 281185],
+  ["00883196120819", 264429],
+]);
+const STAGE0_DSLD_SEEDED_FETCH_TIMEOUT_MS = Math.max(
+  100,
+  Number(process.env.STAGE0_DSLD_SEEDED_FETCH_TIMEOUT_MS ?? 350),
+);
+const STAGE0_DSLD_BARCODE_FALLBACK_FETCH_TIMEOUT_MS = Math.max(
+  100,
+  Number(process.env.STAGE0_DSLD_BARCODE_FALLBACK_FETCH_TIMEOUT_MS ?? 900),
+);
+const STAGE0_PROTOCOL_UNIFIED = parseBooleanEnv(process.env.STAGE0_PROTOCOL_UNIFIED, true);
+const DETERMINISTIC_SIGNALS_PRIMARY = parseBooleanEnv(
+  process.env.DETERMINISTIC_SIGNALS_PRIMARY,
+  true,
+);
+const HTTP_ACCESS_LOG_ENABLED = parseBooleanEnv(process.env.HTTP_ACCESS_LOG_ENABLED, true);
+const STREAM_VERBOSE_LOG_ENABLED = parseBooleanEnv(process.env.STREAM_VERBOSE_LOG_ENABLED, false);
 const LABEL_SCAN_OUTPUT_RULES = `LABEL-SCAN OUTPUT RULES:
 1) overviewSummary must include serving unit (e.g., per softgel/caplet/serving) and 2-3 key ingredients with doses if present.
 2) coreBenefits must list 3 items in "Ingredient - dose per unit" format; if dose missing, say "dose not specified".
@@ -312,11 +390,12 @@ const SECONDARY_EXCLUDE_RETAILERS = parseBooleanEnv(process.env.SECONDARY_EXCLUD
 const SECONDARY_ALLOW_MARKETPLACE = parseBooleanEnv(process.env.SECONDARY_ALLOW_MARKETPLACE, false);
 const SECONDARY_NEEDS_JS_OVERRIDE_MIN = Number(process.env.SECONDARY_NEEDS_JS_OVERRIDE_MIN ?? 0.85);
 const WEB_IDENTITY_PROVIDER_ENABLED = parseBooleanEnv(process.env.WEB_IDENTITY_PROVIDER_ENABLED, false);
-const WEB_IDENTITY_PROVIDER_ORDER = (process.env.WEB_IDENTITY_PROVIDER_ORDER ?? "openfoodfacts,upcitemdb")
+const WEB_IDENTITY_PROVIDER_ORDER = (process.env.WEB_IDENTITY_PROVIDER_ORDER ?? "off_seed,openfoodfacts,upcitemdb")
   .split(",")
   .map((entry) => entry.trim().toLowerCase())
   .filter(Boolean);
 const WEB_IDENTITY_PROVIDER_TIMEOUT_MS = Number(process.env.WEB_IDENTITY_PROVIDER_TIMEOUT_MS ?? 1200);
+const CA_NAME_HINT_BRANDLESS_RETRY = parseBooleanEnv(process.env.CA_NAME_HINT_BRANDLESS_RETRY, true);
 const UPCITEMDB_API_KEY = process.env.UPCITEMDB_API_KEY ?? null;
 
 const AUTHORITATIVE_CA_DOMAINS = [
@@ -338,6 +417,43 @@ const AMAZON_DOMAINS = [
   "amazon.co.uk",
   "amazon.de",
 ];
+
+const GENERIC_BRAND_HINT_REGEX = /\b(?:melatonin|vitamin|omega(?:[-\s]?\d+)?|fish\s*oil|probiotic|collagen|zinc|magnesium|calcium|iron|sleep)\b/i;
+const SOURCE_TITLE_HINT_MAX = 3;
+
+const deriveNameHintFromSourceTitle = (title: string | null | undefined): string | null => {
+  const raw = typeof title === "string" ? title.trim() : "";
+  if (!raw) return null;
+  const stripped = raw
+    .replace(/\s+\|\s+.*$/, "")
+    .replace(/\s+[-–—]\s+.*$/, "")
+    .replace(/\s+[|]\s+.*$/, "")
+    .trim();
+  if (!stripped) return null;
+  if (stripped.length > 140) return stripped.slice(0, 140).trim();
+  return stripped;
+};
+
+const buildNameHintsFromSourceTitles = (titles: Array<string | null | undefined>): string[] => {
+  const scoredHints: Array<{ hint: string; score: number }> = [];
+  const seen = new Set<string>();
+  for (const title of titles) {
+    const hint = deriveNameHintFromSourceTitle(title);
+    if (!hint) continue;
+    const normalized = hint.toLowerCase();
+    if (seen.has(normalized)) continue;
+    seen.add(normalized);
+    let score = 0;
+    if (/\b\d+(?:\.\d+)?\s*(?:mg|mcg|iu|g)\b/i.test(hint)) score += 2;
+    if (/\b(?:capsule|capsules|tablet|tablets|softgel|softgels|sublingual|veggie)\b/i.test(hint)) score += 1;
+    if (/\b(?:sports research|jamieson|pure encapsulations|sisu|nestle)\b/i.test(hint)) score += 1;
+    if (/\b(?:pharmacie|jean coutu|target|amazon|walmart|costco|healthtree|super c|shop)\b/i.test(hint)) score -= 1;
+    score += Math.min(1, hint.length / 120);
+    scoredHints.push({ hint, score });
+  }
+  scoredHints.sort((a, b) => b.score - a.score);
+  return scoredHints.slice(0, SOURCE_TITLE_HINT_MAX).map((entry) => entry.hint);
+};
 
 // Negative cache TTLs (Stage 1 only). TIMEOUT/BUDGET/Breaker are short by design to avoid "wrongful not_found".
 const NEGATIVE_TTL_TIMEOUT_MS = Number(process.env.NEGATIVE_TTL_TIMEOUT_MS ?? 15 * 60 * 1000);
@@ -374,18 +490,54 @@ const SSE_FAST_GRACE_MS = Number(process.env.SSE_FAST_GRACE_MS ?? 500);
 const SSE_GLOBAL_STREAM_TIMEOUT_MS = Number(process.env.SSE_GLOBAL_STREAM_TIMEOUT_MS ?? 15000);
 const ENRICH_STREAM_MAX_ACTIVE = Math.max(1, Number(process.env.ENRICH_STREAM_MAX_ACTIVE ?? 4));
 const ENRICH_STREAM_MAX_QUEUE = Math.max(0, Number(process.env.ENRICH_STREAM_MAX_QUEUE ?? 20));
+const ENRICH_STREAM_MAX_ACTIVE_FULL = Math.max(
+  1,
+  Number(process.env.ENRICH_STREAM_MAX_ACTIVE_FULL ?? process.env.ENRICH_STREAM_MAX_ACTIVE ?? 4),
+);
+const ENRICH_STREAM_MAX_QUEUE_FULL = Math.max(
+  0,
+  Number(process.env.ENRICH_STREAM_MAX_QUEUE_FULL ?? process.env.ENRICH_STREAM_MAX_QUEUE ?? 20),
+);
+const ENRICH_STREAM_MAX_ACTIVE_BUNDLE_ONLY = Math.max(
+  1,
+  Number(process.env.ENRICH_STREAM_MAX_ACTIVE_BUNDLE_ONLY ?? process.env.ENRICH_STREAM_MAX_ACTIVE ?? 12),
+);
+const ENRICH_STREAM_MAX_QUEUE_BUNDLE_ONLY = Math.max(
+  0,
+  Number(process.env.ENRICH_STREAM_MAX_QUEUE_BUNDLE_ONLY ?? process.env.ENRICH_STREAM_MAX_QUEUE ?? 50),
+);
 const ENRICH_STREAM_QUEUE_WAIT_MS = Math.max(0, Number(process.env.ENRICH_STREAM_QUEUE_WAIT_MS ?? 1500));
 const ENRICH_STREAM_QUEUE_WAIT_MS_BUNDLE_ONLY = Math.max(
   0,
-  Number(process.env.ENRICH_STREAM_QUEUE_WAIT_MS_BUNDLE_ONLY ?? 5000),
+  Number(process.env.ENRICH_STREAM_QUEUE_WAIT_MS_BUNDLE_ONLY ?? 1500),
 );
 const ENRICH_STREAM_BUNDLE_ONLY_DONE_DELAY_MS = Math.max(
   0,
   Number(process.env.ENRICH_STREAM_BUNDLE_ONLY_DONE_DELAY_MS ?? 250),
 );
+const ENRICH_STREAM_REV0_FALLBACK_DELAY_MS = Math.max(
+  50,
+  Number(process.env.ENRICH_STREAM_REV0_FALLBACK_DELAY_MS ?? 250),
+);
+const ENRICH_STREAM_REV0_FALLBACK_DELAY_MS_BUNDLE_ONLY = Math.max(
+  ENRICH_STREAM_REV0_FALLBACK_DELAY_MS,
+  Number(process.env.ENRICH_STREAM_REV0_FALLBACK_DELAY_MS_BUNDLE_ONLY ?? 750),
+);
 const ENRICH_STREAM_WEB_REV1_DONE_DELAY_MS = Math.max(
   0,
   Number(process.env.ENRICH_STREAM_WEB_REV1_DONE_DELAY_MS ?? 3500),
+);
+const ENRICH_STREAM_BUNDLE_ONLY_TERMINAL_GUARD_MS = Math.max(
+  ENRICH_STREAM_BUNDLE_ONLY_DONE_DELAY_MS + 1000,
+  Number(process.env.ENRICH_STREAM_BUNDLE_ONLY_TERMINAL_GUARD_MS ?? 3000),
+);
+const ENRICH_STREAM_OVERLOAD_INFLIGHT_THRESHOLD = Math.max(
+  1,
+  Number(process.env.ENRICH_STREAM_OVERLOAD_INFLIGHT_THRESHOLD ?? 6),
+);
+const ENRICH_STREAM_OVERLOAD_RETRY_AFTER_MS = Math.max(
+  0,
+  Number(process.env.ENRICH_STREAM_OVERLOAD_RETRY_AFTER_MS ?? 2000),
 );
 const ENRICH_STREAM_CLIENT_DISCONNECT_GRACE_MS = Math.max(
   0,
@@ -395,11 +547,84 @@ const SSE_CLIENT_TIMEOUT_MS = Number(
   process.env.SSE_CLIENT_TIMEOUT_MS ?? process.env.WEB_E2E_SSE_TIMEOUT_MS ?? 50000,
 );
 const SSE_TIMEOUT_SAFETY_MARGIN_MS = Number(process.env.SSE_TIMEOUT_SAFETY_MARGIN_MS ?? 3000);
+const ENRICH_STREAM_STAGE_BUNDLE_AWAIT_TIMEOUT_MS = Math.max(
+  500,
+  Number(process.env.ENRICH_STREAM_STAGE_BUNDLE_AWAIT_TIMEOUT_MS ?? 3500),
+);
+const ENRICH_STREAM_FULL_PRE_REV1_TERMINAL_GUARD_MS = Math.max(
+  1000,
+  Number(
+    process.env.ENRICH_STREAM_FULL_PRE_REV1_TERMINAL_GUARD_MS
+      ?? Math.max(ENRICH_STREAM_STAGE_BUNDLE_AWAIT_TIMEOUT_MS + 1000, 5000),
+  ),
+);
+const ENRICH_STREAM_HARD_TERMINAL_FALLBACK_MS = Math.max(
+  1000,
+  Number(
+    process.env.ENRICH_STREAM_HARD_TERMINAL_FALLBACK_MS ??
+    Math.min(
+      Math.max(SSE_GLOBAL_STREAM_TIMEOUT_MS + 2500, 12000),
+      Math.max(2000, SSE_CLIENT_TIMEOUT_MS - 1000),
+    ),
+  ),
+);
 const ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS = Number(process.env.ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS ?? 7000);
 const ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS_DSLD = Number(
   process.env.ANALYSIS_BUNDLE_DETAIL_TIMEOUT_MS_DSLD ?? 4500,
 );
 const WEB_VERIFY_TIME_BUDGET_MS = Number(process.env.WEB_VERIFY_TIME_BUDGET_MS ?? 200);
+const STAGE0_WEB_MAX_BYTES = Math.max(16 * 1024, Number(process.env.STAGE0_WEB_MAX_BYTES ?? 524_288));
+const STAGE0_WEB_PARSE_BUDGET_MS = Math.max(100, Number(process.env.STAGE0_WEB_PARSE_BUDGET_MS ?? 1200));
+const STAGE0_WEB_PARSE_PROFILE_ENABLED = parseBooleanEnv(
+  process.env.STAGE0_WEB_PARSE_PROFILE_ENABLED,
+  false,
+);
+const STAGE0_WEB_PARSE_PROFILE_SLOW_MS = Math.max(
+  1,
+  Number(process.env.STAGE0_WEB_PARSE_PROFILE_SLOW_MS ?? 20),
+);
+const STAGE0_WEB_PARSE_PROFILE_MAX_EVENTS = Math.max(
+  1,
+  Number(process.env.STAGE0_WEB_PARSE_PROFILE_MAX_EVENTS ?? 16),
+);
+const STAGE0_WEB_PARSE_PROFILE_TOP_K = Math.max(
+  1,
+  Number(process.env.STAGE0_WEB_PARSE_PROFILE_TOP_K ?? 8),
+);
+const STAGE0_WEB_MAX_SOURCES = Math.max(1, Number(process.env.STAGE0_WEB_MAX_SOURCES ?? 3));
+const STAGE0_WEB_PARSE_SCAN_MAX_CHARS = Math.max(
+  16 * 1024,
+  Number(process.env.STAGE0_WEB_PARSE_SCAN_MAX_CHARS ?? 65_536),
+);
+const STAGE0_WEB_DIGIT_SCAN_MAX_CHARS = Math.max(
+  4 * 1024,
+  Number(process.env.STAGE0_WEB_DIGIT_SCAN_MAX_CHARS ?? 65_536),
+);
+const STAGE0_WEB_JSONLD_MAX_SCRIPTS = Math.max(
+  1,
+  Number(process.env.STAGE0_WEB_JSONLD_MAX_SCRIPTS ?? 6),
+);
+const STAGE0_WEB_JSONLD_MAX_CHARS = Math.max(
+  2 * 1024,
+  Number(process.env.STAGE0_WEB_JSONLD_MAX_CHARS ?? 32_768),
+);
+const STAGE0_WEB_JSONLD_MAX_NODES = Math.max(
+  100,
+  Number(process.env.STAGE0_WEB_JSONLD_MAX_NODES ?? 400),
+);
+const EVENT_LOOP_LAG_P95_THRESHOLD_MS = Math.max(
+  1,
+  Number(process.env.EVENT_LOOP_LAG_P95_THRESHOLD_MS ?? 100),
+);
+const EVENT_LOOP_LAG_MONITOR_RESOLUTION_MS = Math.max(
+  10,
+  Number(process.env.EVENT_LOOP_LAG_MONITOR_RESOLUTION_MS ?? 20),
+);
+const EVENT_LOOP_LAG_SAMPLE_MS = Math.max(
+  50,
+  Number(process.env.EVENT_LOOP_LAG_SAMPLE_MS ?? 250),
+);
+const SSE_LIFECYCLE_LOG_ENABLED = parseBooleanEnv(process.env.SSE_LIFECYCLE_LOG_ENABLED, false);
 const ANALYSIS_DETAIL_LIMIT_DEFAULT = Number(process.env.ANALYSIS_DETAIL_LIMIT_DEFAULT ?? 8);
 const ANALYSIS_DETAIL_LIMIT_MAX = Number(process.env.ANALYSIS_DETAIL_LIMIT_MAX ?? 12);
 const ANALYSIS_DETAIL_LIMIT_RESCUE = Number(process.env.ANALYSIS_DETAIL_LIMIT_RESCUE ?? 6);
@@ -422,6 +647,56 @@ const WEB_CANONICAL_TTL_MS = Number(process.env.WEB_CANONICAL_TTL_MS ?? 30 * 24 
 const SERVER_COMMIT_SHA =
   process.env.RENDER_GIT_COMMIT ?? process.env.GIT_COMMIT_SHA ?? process.env.COMMIT_SHA ?? null;
 
+const clampParseWindow = (value: string, maxChars = STAGE0_WEB_PARSE_SCAN_MAX_CHARS): string =>
+  value.length > maxChars ? value.slice(0, maxChars) : value;
+
+const extractDigitsPrefix = (value: string, maxChars = STAGE0_WEB_DIGIT_SCAN_MAX_CHARS): string => {
+  if (!value) return "";
+  const limit = Math.min(value.length, maxChars);
+  let out = "";
+  for (let idx = 0; idx < limit; idx += 1) {
+    const code = value.charCodeAt(idx);
+    if (code >= 48 && code <= 57) out += value[idx];
+  }
+  return out;
+};
+
+const JSON_LD_SCRIPT_MARKER = "application/ld+json";
+const JSON_LD_SCRIPT_CLOSE_TAG = "</script>";
+const extractJsonLdScriptPayloads = (
+  html: string,
+  maxScripts = STAGE0_WEB_JSONLD_MAX_SCRIPTS,
+  maxPayloadChars = STAGE0_WEB_JSONLD_MAX_CHARS,
+): string[] => {
+  const htmlWindow = clampParseWindow(html);
+  if (!htmlWindow) return [];
+  const lower = htmlWindow.toLowerCase();
+  const payloads: string[] = [];
+  let searchIdx = 0;
+
+  while (payloads.length < maxScripts) {
+    const markerIdx = lower.indexOf(JSON_LD_SCRIPT_MARKER, searchIdx);
+    if (markerIdx < 0) break;
+
+    const openTagStart = lower.lastIndexOf("<script", markerIdx);
+    const openTagEnd = htmlWindow.indexOf(">", markerIdx);
+    if (openTagStart < 0 || openTagEnd < 0 || openTagEnd <= openTagStart) {
+      searchIdx = markerIdx + JSON_LD_SCRIPT_MARKER.length;
+      continue;
+    }
+
+    const closeTagIdx = lower.indexOf(JSON_LD_SCRIPT_CLOSE_TAG, openTagEnd + 1);
+    if (closeTagIdx < 0) break;
+
+    const payload = htmlWindow.slice(openTagEnd + 1, Math.min(closeTagIdx, openTagEnd + 1 + maxPayloadChars)).trim();
+    if (payload) payloads.push(payload);
+
+    searchIdx = closeTagIdx + JSON_LD_SCRIPT_CLOSE_TAG.length;
+  }
+
+  return payloads;
+};
+
 if (
   Number.isFinite(SSE_GLOBAL_STREAM_TIMEOUT_MS) &&
   Number.isFinite(SSE_CLIENT_TIMEOUT_MS) &&
@@ -438,6 +713,38 @@ if (
 }
 
 const GUARDRAIL_SIMILARITY_THRESHOLD = Number(process.env.GUARDRAIL_SIMILARITY_THRESHOLD ?? 0.6);
+const NPN_CANDIDATE_MAX = Number(process.env.NPN_CANDIDATE_MAX ?? 3);
+const NPN_CANDIDATE_DIRECT_LOOKUP_TIMEOUT_MS = Number(
+  process.env.NPN_CANDIDATE_DIRECT_LOOKUP_TIMEOUT_MS ?? 400,
+);
+const NPN_CANDIDATE_BACKFILL_MIN_BUDGET_MS = Number(
+  process.env.NPN_CANDIDATE_BACKFILL_MIN_BUDGET_MS ?? 500,
+);
+const NPN_CANDIDATE_CATALOG_META_WAIT_MS = Number(
+  process.env.NPN_CANDIDATE_CATALOG_META_WAIT_MS ?? 120,
+);
+const NPN_CANDIDATE_CATALOG_META_SECOND_CHANCE_TIMEOUT_MS = Number(
+  process.env.NPN_CANDIDATE_CATALOG_META_SECOND_CHANCE_TIMEOUT_MS ?? 900,
+);
+const CANDIDATE_SCORE_SUPPRESS_REASON_CODE = "CANDIDATE_MATCH_NOT_FINAL" as const;
+
+const eventLoopLagMonitor = monitorEventLoopDelay({
+  resolution: EVENT_LOOP_LAG_MONITOR_RESOLUTION_MS,
+});
+eventLoopLagMonitor.enable();
+
+const readEventLoopLagP95Ms = (): number => {
+  try {
+    const rawNs = eventLoopLagMonitor.percentile(95);
+    if (!Number.isFinite(rawNs) || rawNs <= 0) return 0;
+    return rawNs / 1_000_000;
+  } catch {
+    return 0;
+  }
+};
+
+const isEventLoopLagOverThreshold = (): boolean =>
+  readEventLoopLagP95Ms() > EVENT_LOOP_LAG_P95_THRESHOLD_MS;
 
 
 const googleSemaphore = new Semaphore(RESILIENCE_GOOGLE_CONCURRENCY);
@@ -565,6 +872,7 @@ type LnhpdIngredientMeta = {
   driedHerbEquivalent?: string | number | null;
   ingredientName?: string | null;
   properName?: string | null;
+  inferenceSource?: string | null;
 };
 
 type LnhpdFacts = {
@@ -754,6 +1062,227 @@ const buildSectionBullet = (text: string, basisTags: BasisTag[]): { text: string
   basisTags,
 });
 
+const normalizeSignalText = (value: unknown): string =>
+  typeof value === "string" ? value.replace(/\s+/g, " ").trim() : "";
+
+const buildSafetySignalId = (prefix: string, text: string): string => {
+  const normalized = text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 64);
+  if (normalized) return `${prefix}:${normalized}`;
+  const digest = createHash("sha1").update(text).digest("hex").slice(0, 12);
+  return `${prefix}:${digest}`;
+};
+
+const buildSafetySignalItem = (params: {
+  prefix: string;
+  text: string;
+  scope: "label_specific" | "ods_general";
+  source: "label_record" | "score_v4_ul" | "ods_watchout" | "ods_interaction" | "quality_note" | "unknown";
+  reasonCode?: string | null;
+  sourceUrl?: string | null;
+  riskLevel?: string | null;
+}): SafetySignalItem | null => {
+  const text = normalizeSignalText(params.text);
+  if (!text) return null;
+  const reasonCode = normalizeSignalText(params.reasonCode);
+  const sourceUrl = normalizeSignalText(params.sourceUrl);
+  const riskLevel = normalizeSignalText(params.riskLevel);
+  const item: SafetySignalItem = {
+    id: buildSafetySignalId(params.prefix, text),
+    text,
+    scope: params.scope,
+    source: params.source,
+    ...(reasonCode ? { reasonCode } : {}),
+    ...(sourceUrl ? { sourceUrl } : {}),
+    ...(riskLevel ? { riskLevel } : {}),
+  };
+  return item;
+};
+
+const dedupeSafetySignalItems = (items: SafetySignalItem[], max = 6): SafetySignalItem[] => {
+  const out: SafetySignalItem[] = [];
+  const seen = new Set<string>();
+  for (const item of items) {
+    const text = normalizeSignalText(item?.text);
+    if (!text) continue;
+    const key = `${item.scope}|${item.source}|${text.toLowerCase()}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ ...item, text });
+    if (out.length >= max) break;
+  }
+  return out;
+};
+
+const summarizeDeterministicSignals = (
+  signals: DeterministicSignalPack | null | undefined,
+): AnalysisBundle["meta"]["deterministicSignals"] => {
+  if (!signals) return null;
+  const parserDiagnosticsTop = (signals.parserDiagnostics ?? [])
+    .map((item) => normalizeSignalText(item?.code))
+    .filter((item): item is string => Boolean(item))
+    .slice(0, 12);
+  return {
+    schemaVersion: 1,
+    ingredientCount: Array.isArray(signals.ingredientRows) ? signals.ingredientRows.length : 0,
+    doseCount: Array.isArray(signals.doseSignals) ? signals.doseSignals.length : 0,
+    usageStructuredCount: Array.isArray(signals.usageStructured) ? signals.usageStructured.length : 0,
+    safetySignalCount: Array.isArray(signals.safetySignals) ? signals.safetySignals.length : 0,
+    parserDiagnosticsTop,
+  };
+};
+
+const toUsageLabelDoseRows = (
+  signals: DeterministicSignalPack | null | undefined,
+  fallback: FactsDigest["labelDosing"],
+): NonNullable<AnalysisBundle["sections"]["usage"]["detail"]>["scheduleFromLabel"] => {
+  if (DETERMINISTIC_SIGNALS_PRIMARY && signals?.usageStructured?.length) {
+    return signals.usageStructured
+      .map((row) => ({
+        population: normalizeSignalText(row.population) || null,
+        age: normalizeSignalText(row.age) || null,
+        dose: normalizeSignalText(row.dose) || null,
+        frequency: normalizeSignalText(row.frequency) || null,
+        rawText: normalizeSignalText(row.rawText) || null,
+        basisTags: ["label_fact"] as BasisTag[],
+      }))
+      .filter((row) => row.population || row.age || row.dose || row.frequency || row.rawText)
+      .slice(0, 8);
+  }
+  return fallback.map((dose) => ({
+    population: dose.population ?? null,
+    age: dose.age ?? null,
+    dose: dose.dose ?? null,
+    frequency: dose.frequency ?? null,
+    rawText: dose.rawText ?? null,
+    basisTags: ["label_fact"],
+  }));
+};
+
+const buildBaseSafetySignalPack = (params: {
+  digest?: FactsDigest | null;
+  safetyDetail?: AnalysisBundle["sections"]["safety"]["detail"] | null;
+  deterministicSignals?: DeterministicSignalPack | null;
+}): SafetySignalPack => {
+  const sourceType = params.digest?.sourceType ?? "web";
+  const labelTexts: string[] = [];
+  const pushText = (value: unknown) => {
+    const text = normalizeSignalText(value);
+    if (!text) return;
+    labelTexts.push(text);
+  };
+
+  for (const row of params.digest?.warnings?.warnings ?? []) pushText(row);
+  for (const row of params.digest?.warnings?.consultDoctorIf ?? []) pushText(row);
+  for (const row of params.digest?.warnings?.redFlags ?? []) pushText(row);
+  for (const row of params.safetyDetail?.warnings ?? []) pushText((row as { text?: unknown })?.text ?? row);
+  for (const row of params.safetyDetail?.consultDoctorIf ?? []) pushText((row as { text?: unknown })?.text ?? row);
+  for (const row of params.safetyDetail?.redFlags ?? []) pushText((row as { text?: unknown })?.text ?? row);
+  if (DETERMINISTIC_SIGNALS_PRIMARY && params.deterministicSignals?.safetySignals?.length) {
+    for (const signal of params.deterministicSignals.safetySignals) {
+      if (signal?.domain === "label_warning") {
+        pushText(signal.text);
+      }
+    }
+  }
+
+  const labelWarnings = dedupeSafetySignalItems(
+    labelTexts
+      .map((text) =>
+        buildSafetySignalItem({
+          prefix: "label",
+          text,
+          scope: "label_specific",
+          source: "label_record",
+        }),
+      )
+      .filter((item): item is SafetySignalItem => item !== null),
+    6,
+  );
+
+  const qualityNoteText =
+    sourceType === "lnhpd" || sourceType === "dsld"
+      ? "This regulatory record did not provide label-specific warnings."
+      : "This source record did not provide label-specific warnings.";
+  const qualityNotes =
+    labelWarnings.length === 0
+      ? [
+          buildSafetySignalItem({
+            prefix: "quality",
+            text: qualityNoteText,
+            scope: "label_specific",
+            source: "quality_note",
+            reasonCode: "LABEL_WARNINGS_NOT_PROVIDED",
+          }),
+        ].filter((item): item is SafetySignalItem => item !== null)
+      : [];
+
+  const deterministicUlSignals = DETERMINISTIC_SIGNALS_PRIMARY && params.deterministicSignals?.safetySignals?.length
+    ? dedupeSafetySignalItems(
+      params.deterministicSignals.safetySignals
+        .filter((signal) => signal?.domain === "ul_reference")
+        .map((signal) =>
+          buildSafetySignalItem({
+            prefix: "ul",
+            text: signal.text,
+            scope: "ods_general",
+            source: "score_v4_ul",
+            reasonCode: signal.reasonCode ?? null,
+          }),
+        )
+        .filter((item): item is SafetySignalItem => item !== null),
+      6,
+    )
+    : [];
+  const deterministicInteractions = DETERMINISTIC_SIGNALS_PRIMARY && params.deterministicSignals?.safetySignals?.length
+    ? dedupeSafetySignalItems(
+      params.deterministicSignals.safetySignals
+        .filter((signal) => signal?.domain === "interaction")
+        .map((signal) =>
+          buildSafetySignalItem({
+            prefix: "interaction",
+            text: signal.text,
+            scope: "label_specific",
+            source: "ods_interaction",
+            reasonCode: signal.reasonCode ?? null,
+          }),
+        )
+        .filter((item): item is SafetySignalItem => item !== null),
+      6,
+    )
+    : [];
+  const deterministicWatchouts = DETERMINISTIC_SIGNALS_PRIMARY && params.deterministicSignals?.safetySignals?.length
+    ? dedupeSafetySignalItems(
+      params.deterministicSignals.safetySignals
+        .filter((signal) => signal?.domain === "watchout")
+        .map((signal) =>
+          buildSafetySignalItem({
+            prefix: "watchout",
+            text: signal.text,
+            scope: signal.scope === "ods_general" ? "ods_general" : "label_specific",
+            source: signal.scope === "ods_general" ? "ods_watchout" : "quality_note",
+            reasonCode: signal.reasonCode ?? null,
+          }),
+        )
+        .filter((item): item is SafetySignalItem => item !== null),
+      6,
+    )
+    : [];
+
+  return {
+    schemaVersion: 1,
+    labelWarnings,
+    ulEntries: [],
+    ulSignals: deterministicUlSignals,
+    odsInteractions: deterministicInteractions,
+    odsWatchouts: deterministicWatchouts,
+    qualityNotes,
+  };
+};
+
 const extractSectionText = (text: string | null | undefined, patterns: RegExp[], maxChars = 600): string | null => {
   if (!text) return null;
   for (const pattern of patterns) {
@@ -772,16 +1301,63 @@ const resolveSourceBasisTag = (sourceType: FactsDigest["sourceType"]): BasisTag 
 
 const buildIngredientsCover = (
   digest: FactsDigest,
+  deterministicSignals?: DeterministicSignalPack | null,
 ): AnalysisBundle["sections"]["ingredients"]["cover"] => {
+  if (DETERMINISTIC_SIGNALS_PRIMARY && deterministicSignals?.ingredientRows?.length) {
+    const items = deterministicSignals.ingredientRows
+      .slice(0, 6)
+      .map((row) => ({
+        name: row.name,
+        dose: row.doseText ?? null,
+        basisTags: ["label_fact"] as BasisTag[],
+      }));
+    return {
+      items,
+      totalCount: deterministicSignals.ingredientRows.length,
+    };
+  }
   const basisTag = resolveSourceBasisTag(digest.sourceType);
   const items = digest.actives.slice(0, 6).map((active) => ({
     name: active.name,
     dose: active.amountText ?? (active.amount != null && active.unit ? `${active.amount} ${active.unit}` : null),
-    basisTags: [basisTag],
+    basisTags: [
+      digest.sourceType === "lnhpd" && typeof active.confidence === "number" && active.confidence < 0.6
+        ? "ingredient_inference"
+        : basisTag,
+    ],
   }));
   return {
     items,
     totalCount: digest.actives.length,
+  };
+};
+
+const resolveInferenceOnlyDigest = (digest: FactsDigest): boolean =>
+  digest.sourceType === "lnhpd" && isOnlyInferredLnhpdDigestActives(digest.actives);
+
+const resolveDigestScoreMeta = (digest: FactsDigest): {
+  scoreAvailable: boolean;
+  scoreReasonCode?: string;
+  inferenceOnly: boolean;
+} => {
+  const hasActives = digest.actives.length > 0;
+  if (digest.sourceType === "web") {
+    return {
+      scoreAvailable: false,
+      inferenceOnly: false,
+    };
+  }
+  const inferenceOnly = resolveInferenceOnlyDigest(digest);
+  if (inferenceOnly) {
+    return {
+      scoreAvailable: false,
+      scoreReasonCode: INFERENCE_ONLY_SCORE_REASON_CODE,
+      inferenceOnly: true,
+    };
+  }
+  return {
+    scoreAvailable: hasActives,
+    inferenceOnly: false,
   };
 };
 
@@ -797,8 +1373,24 @@ const buildFallbackOverviewSummary = (digest: FactsDigest): string => {
     digest.actives[0]?.name?.trim() ??
     "";
   const productName = digest.product.name?.trim() ?? "";
+  const WEB_HINT_DANGEROUS_TITLE_RE = /\b(youtube|forum|forums|reddit|error|exception|traceback|uuid)\b/i;
+  const WEB_HINT_UUID_LIKE_RE = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i;
+  const suspiciousWebTitle =
+    digest.sourceType === "web" &&
+    (WEB_HINT_DANGEROUS_TITLE_RE.test(productName) ||
+      WEB_HINT_UUID_LIKE_RE.test(productName) ||
+      /^[0-9a-f-]{24,}$/i.test(productName));
+
+  if (digest.sourceType === "web") {
+    const webAnchor = !suspiciousWebTitle ? primary || productName : "";
+    const summary = webAnchor
+      ? `This UPC appears related to ${webAnchor}, based on limited unverified web evidence. Verify all details against the package label before use.`
+      : "We could not verify this UPC to a supplement label. This summary uses limited unverified web evidence and should be confirmed against the package label.";
+    return summary.length < 40 ? `${summary} Capture Supplement Facts for stronger product-specific detail.` : summary;
+  }
+
   const anchor = primary || productName || "this supplement";
-  const sourcePhrase = digest.sourceType === "web" ? "available web information" : "label facts";
+  const sourcePhrase = "label facts";
   let summary = `This supplement centers on ${anchor} and is summarized from ${sourcePhrase}. Follow label directions and use this overview as general information.`;
   if (summary.length < 40) {
     summary = `${summary} Consult product labeling for product-specific guidance.`;
@@ -885,6 +1477,22 @@ const isContainsBullet = (text: string | null | undefined): boolean => {
   return /^contains\b/i.test(text.trim());
 };
 
+const PLACEHOLDERISH_PATTERNS = [
+  /\bnot provided\b/i,
+  /\bunknown\b/i,
+  /\bn\/a\b/i,
+  /\bmissing\b/i,
+  /\bunavailable\b/i,
+  /\bdetails?\s+not\b/i,
+];
+
+const isPlaceholderishText = (value: unknown): boolean => {
+  if (typeof value !== "string") return false;
+  const normalized = value.trim();
+  if (!normalized) return true;
+  return PLACEHOLDERISH_PATTERNS.some((pattern) => pattern.test(normalized));
+};
+
 const applyFastFailureStatus = (bundle: AnalysisBundle): AnalysisBundle => {
   const overviewStatus = bundle.sections.overview.cover ? "limited" : "error";
   const usageStatus = bundle.sections.usage.cover ? "limited" : "error";
@@ -896,6 +1504,149 @@ const applyFastFailureStatus = (bundle: AnalysisBundle): AnalysisBundle => {
       overview: { ...bundle.sections.overview, dataStatus: overviewStatus },
       usage: { ...bundle.sections.usage, dataStatus: usageStatus },
       safety: { ...bundle.sections.safety, dataStatus: safetyStatus },
+    },
+  };
+};
+
+const sanitizeAnalysisBundleCoverFields = (params: {
+  bundle: AnalysisBundle;
+  digest: FactsDigest;
+}): AnalysisBundle => {
+  const { bundle, digest } = params;
+  const sanitizeCoverText = (value: string | null | undefined, fallback: string): string => {
+    const text = typeof value === "string" ? value.trim() : "";
+    if (!text || isPlaceholderishText(text)) return fallback;
+    return text;
+  };
+
+  const fallbackOverviewSummary = buildFallbackOverviewSummary(digest);
+  const fallbackOverviewSanitizeBullets =
+    digest.sourceType === "web"
+      ? [
+        buildSectionBullet("Built from limited unverified web evidence for this barcode.", ["general_advice"]),
+        buildSectionBullet("Scan Supplement Facts to verify this product and unlock stronger detail.", ["general_advice"]),
+      ]
+      : [
+        buildSectionBullet("Based on verified record data.", ["general_advice"]),
+        buildSectionBullet("Scan the Supplement Facts panel for richer product-specific insights.", ["general_advice"]),
+      ];
+  const fallbackOverviewBullets = buildFallbackOverviewBullets(digest);
+  const fallbackUsage = buildFallbackUsageSection(digest);
+  const fallbackUsageCover = fallbackUsage.cover ?? null;
+
+  const sanitizeBullets = (
+    bullets: Array<{ text: string; basisTags: BasisTag[] }> | undefined,
+    fallback: Array<{ text: string; basisTags: BasisTag[] }>,
+    max = 2,
+  ) => {
+    const out: Array<{ text: string; basisTags: BasisTag[] }> = [];
+    const seen = new Set<string>();
+    const add = (item: { text: string; basisTags: BasisTag[] }) => {
+      const text = typeof item.text === "string" ? item.text.trim() : "";
+      if (!text || isPlaceholderishText(text)) return;
+      const key = text.toLowerCase();
+      if (seen.has(key)) return;
+      seen.add(key);
+      out.push({
+        text,
+        basisTags: Array.isArray(item.basisTags) ? normalizeBasisTags(item.basisTags, "general_advice") : ["general_advice"],
+      });
+    };
+    (bullets ?? []).forEach(add);
+    fallback.forEach(add);
+    return out.slice(0, max);
+  };
+
+  const overviewCover = bundle.sections.overview.cover;
+  const overviewSummary = sanitizeCoverText(
+    typeof overviewCover?.summary === "string" ? overviewCover.summary : null,
+    fallbackOverviewSummary,
+  );
+  const overviewBullets = sanitizeBullets(
+    overviewCover?.bullets,
+    fallbackOverviewBullets.length > 0
+      ? fallbackOverviewBullets
+      : fallbackOverviewSanitizeBullets,
+    2,
+  );
+  while (overviewBullets.length < 2) {
+    overviewBullets.push(
+      buildSectionBullet("Scan the Supplement Facts panel for richer product-specific insights.", ["general_advice"]),
+    );
+  }
+
+  const usageCover = bundle.sections.usage.cover;
+  const usageBestTime = usageCover?.bestTimeToTake && !isPlaceholderishText(usageCover.bestTimeToTake.text)
+    ? usageCover.bestTimeToTake
+    : fallbackUsageCover?.bestTimeToTake ?? { text: "Anytime (with meals).", basisTags: ["general_advice"] };
+  const usageDosage = usageCover?.dosage && !isPlaceholderishText(usageCover.dosage.text)
+    ? usageCover.dosage
+    : fallbackUsageCover?.dosage ?? { text: "Follow label directions.", basisTags: ["general_advice"] };
+  const usageWithFood =
+    usageCover?.withFood &&
+      (typeof usageCover.withFood.text !== "string" || !isPlaceholderishText(usageCover.withFood.text))
+      ? usageCover.withFood
+      : fallbackUsageCover?.withFood ??
+        { value: true, text: "Prefer with food unless label states otherwise.", basisTags: ["general_advice"] };
+  const usageBullets = sanitizeBullets(
+    usageCover?.bullets,
+    [
+      buildSectionBullet("Use the product label first for dosing decisions.", ["general_advice"]),
+      buildSectionBullet("Scan the Directions panel to improve product-specific guidance.", ["general_advice"]),
+    ],
+    3,
+  );
+
+  const safetyCover = bundle.sections.safety.cover;
+  const safetyVerdict = sanitizeCoverText(
+    typeof safetyCover?.verdict === "string" ? safetyCover.verdict : null,
+    "Safety details are not included in this source record.",
+  );
+  const safetyBullets = sanitizeBullets(
+    safetyCover?.bullets,
+    [
+      buildSectionBullet(
+        "Safety details are not available from this source. If pregnant, nursing, or taking medication, consult your clinician.",
+        ["general_advice"],
+      ),
+    ],
+    3,
+  );
+
+  return {
+    ...bundle,
+    sections: {
+      ...bundle.sections,
+      overview: {
+        ...bundle.sections.overview,
+        cover: {
+          summary: overviewSummary,
+          bullets: overviewBullets,
+        },
+        detail: {
+          ...(bundle.sections.overview.detail ?? {}),
+          summary: overviewSummary,
+          bullets: overviewBullets,
+        },
+      },
+      usage: {
+        ...bundle.sections.usage,
+        cover: {
+          ...(bundle.sections.usage.cover ?? { bullets: [] }),
+          bestTimeToTake: usageBestTime,
+          dosage: usageDosage,
+          withFood: usageWithFood,
+          bullets: usageBullets,
+        },
+      },
+      safety: {
+        ...bundle.sections.safety,
+        cover: {
+          ...(bundle.sections.safety.cover ?? { bullets: [] }),
+          verdict: safetyVerdict,
+          bullets: safetyBullets,
+        },
+      },
     },
   };
 };
@@ -954,13 +1705,14 @@ const normalizeIngredientName = (name: string) => name.toLowerCase().replace(/\s
 
 const FORM_KEYWORD_RE =
   /\b(oxide|citrate|ascorbate|glycinate|bisglycinate|picolinate|malate|sulfate|chloride|hydrochloride|hcl|phosphate|fumarate|nitrate|orotate|threonate|gluconate|carbonate)\b/i;
+const FORM_KEYWORD_RE_GLOBAL =
+  /\b(oxide|citrate|ascorbate|glycinate|bisglycinate|picolinate|malate|sulfate|chloride|hydrochloride|hcl|phosphate|fumarate|nitrate|orotate|threonate|gluconate|carbonate)\b/gi;
 
 const extractFormKeywords = (text: string): string[] => {
-  const lower = text.toLowerCase();
   const hits = new Set<string>();
   let match: RegExpExecArray | null;
-  const globalRe = new RegExp(FORM_KEYWORD_RE.source, "gi");
-  while ((match = globalRe.exec(lower))) {
+  FORM_KEYWORD_RE_GLOBAL.lastIndex = 0;
+  while ((match = FORM_KEYWORD_RE_GLOBAL.exec(text))) {
     const token = (match[1] ?? "").toLowerCase();
     if (token) hits.add(token);
   }
@@ -1091,6 +1843,11 @@ const buildNotProvidedField = (text = "Not provided by source."): { text: string
   basisTags: ["not_provided"],
 });
 
+const buildIngredientWhatItDoesFallback = (name: string): { text: string; basisTags: BasisTag[] } => ({
+  text: getIngredientFallbackText(name),
+  basisTags: ["general_advice"],
+});
+
 const buildLabelField = (text: string): { text: string; basisTags: BasisTag[] } => ({
   text,
   basisTags: ["label_fact"],
@@ -1124,7 +1881,7 @@ const buildPerServingDoseContext = (
 ): { text: string; basisTags: BasisTag[] } => {
   const amountText = buildActiveAmountText(active);
   if (!amountText) {
-    return buildNotProvidedField();
+    return buildNotProvidedField("Per-serving amount is not listed on this source record.");
   }
   const suffix = servingSize ? ` (Serving size: ${servingSize})` : "";
   return buildLabelField(`${amountText}${suffix}`);
@@ -1198,11 +1955,18 @@ const buildLnhpdIngredientsDetailKbFirst = (params: {
     formEvidenceGrades[active.name] = kbResult.evidenceGrade;
 
     const perServing = buildPerServingDoseContext(active, digest.serving.servingSize).text;
-    const doseParts = [perServing];
+    const doseParts: string[] = [];
+    if (perServing && !isPlaceholderishText(perServing)) {
+      doseParts.push(perServing.endsWith(".") ? perServing : `${perServing}.`);
+    }
     if (labelDosingText) doseParts.push(`Label dosing: ${labelDosingText}.`);
-    const doseContext = buildLabelField(doseParts.join(" "));
+    const doseContext = buildLabelField(
+      doseParts.length
+        ? doseParts.join(" ").replace(/\s+/g, " ").trim()
+        : "Label dosing details were not provided in this source record.",
+    );
 
-    const whatItDoes = whatItDoesFromPurpose ?? buildNotProvidedField();
+    const whatItDoes = whatItDoesFromPurpose ?? buildIngredientWhatItDoesFallback(active.name);
 
     const chemicalFormExplain = (() => {
       if (kbResult.sentence) {
@@ -1260,9 +2024,9 @@ const buildDetailSkeleton = (digest: FactsDigest, labelDosingText: string | null
   return {
     items: digest.actives.map((active) => ({
       name: active.name,
-      whatItDoes: buildNotProvidedField(),
+      whatItDoes: buildIngredientWhatItDoesFallback(active.name),
       doseContext: doseField,
-      chemicalFormExplain: buildNotProvidedField("Chemical form not provided by source."),
+      chemicalFormExplain: buildNotProvidedField("Chemical form is not listed on this source record."),
       deliveryFormExplain: buildDeliveryFormExplain(active.deliveryForm ?? null),
     })),
     overallSummary: null,
@@ -1329,7 +2093,7 @@ const buildDsldKbFallbackDetail = (
         formSupportStrengths[active.name] = gradeToStrength(kbResult.evidenceGrade ?? null);
         return {
           name: active.name,
-          whatItDoes: buildNotProvidedField(),
+          whatItDoes: buildIngredientWhatItDoesFallback(active.name),
           doseContext: buildPerServingDoseContext(active, digest.serving.servingSize ?? null),
           chemicalFormExplain: buildChemicalFormExplainFallback(active, kbResult.sentence),
           deliveryFormExplain: buildDeliveryFormExplain(active.deliveryForm ?? null),
@@ -1688,7 +2452,7 @@ const applyFormExplainGuard = (detail: IngredientsDetail, detailDigest: FactsDig
       ? item.chemicalFormExplain
       : match
         ? buildChemicalFormExplainFallback(match, null)
-        : { text: "Chemical form not provided by source.", basisTags: ["not_provided"] as BasisTag[] };
+        : { text: "Chemical form is not listed on this source record.", basisTags: ["not_provided"] as BasisTag[] };
     const deliveryFormExplain = match?.deliveryForm ? item.deliveryFormExplain : null;
     return { ...item, chemicalFormExplain, deliveryFormExplain };
   });
@@ -1740,6 +2504,7 @@ const sanitizeDetailDoseContext = (
 
 const buildAnalysisBundleSkeleton = (params: {
   digest: FactsDigest;
+  deterministicSignals?: DeterministicSignalPack | null;
   bundleId: string;
   revision: number;
   phase: "skeleton" | "fast_ai" | "full_ai";
@@ -1756,14 +2521,23 @@ const buildAnalysisBundleSkeleton = (params: {
 }): AnalysisBundle => {
   const { digest } = params;
   const isSkeleton = params.phase === "skeleton";
+  const scoreMeta = resolveDigestScoreMeta(digest);
+  const baseSafetySignals = buildBaseSafetySignalPack({
+    digest,
+    deterministicSignals: params.deterministicSignals,
+  });
+  const usageScheduleRows = toUsageLabelDoseRows(params.deterministicSignals, digest.labelDosing);
   return {
     meta: {
       schemaVersion: 4,
       promptVersion: ANALYSIS_BUNDLE_PROMPT_VERSION,
       sourceType: digest.sourceType,
       sourceTypeFinal: !isSkeleton,
-      scoreAvailable: digest.sourceType !== "web",
+      scoreAvailable: scoreMeta.scoreAvailable,
+      scoreReasonCode: scoreMeta.scoreReasonCode,
+      inferenceOnly: scoreMeta.inferenceOnly,
       detailReady: !isSkeleton && digest.actives.length > 0,
+      deterministicSignals: summarizeDeterministicSignals(params.deterministicSignals),
       authoritativeIdentity: { type: params.identityType, value: params.identityValue },
       locale: params.locale,
       phase: params.phase,
@@ -1782,7 +2556,7 @@ const buildAnalysisBundleSkeleton = (params: {
       },
       ingredients: {
         layout: "ingredients_list",
-        cover: isSkeleton ? { items: [], totalCount: 0 } : buildIngredientsCover(digest),
+        cover: isSkeleton ? { items: [], totalCount: 0 } : buildIngredientsCover(digest, params.deterministicSignals),
         detail: null,
         dataStatus: isSkeleton ? "pending" : digest.actives.length > 0 ? "complete" : "not_provided",
       },
@@ -1792,14 +2566,7 @@ const buildAnalysisBundleSkeleton = (params: {
         detail: {
           timingRationale: null,
           withFoodRationale: null,
-          scheduleFromLabel: digest.labelDosing.map((dose) => ({
-            population: dose.population ?? null,
-            age: dose.age ?? null,
-            dose: dose.dose ?? null,
-            frequency: dose.frequency ?? null,
-            rawText: dose.rawText ?? null,
-            basisTags: ["label_fact"],
-          })),
+          scheduleFromLabel: usageScheduleRows,
         },
         dataStatus: params.dataStatus.usage,
       },
@@ -1811,6 +2578,7 @@ const buildAnalysisBundleSkeleton = (params: {
           consultDoctorIf: [],
           redFlags: [],
         },
+        signals: baseSafetySignals,
         dataStatus: params.dataStatus.safety,
       },
     },
@@ -1829,6 +2597,7 @@ const buildProvisionalAnalysisBundle = (params: {
     .update(`provisional:${params.barcodeGtin14}:${params.bundleId}`)
     .digest("hex");
   const isSkeleton = params.phase === "skeleton";
+  const baseSafetySignals = buildBaseSafetySignalPack({ digest: null, safetyDetail: null });
   return {
     meta: {
       schemaVersion: 4,
@@ -1837,6 +2606,7 @@ const buildProvisionalAnalysisBundle = (params: {
       sourceTypeFinal: !isSkeleton,
       scoreAvailable: false,
       detailReady: false,
+      deterministicSignals: null,
       authoritativeIdentity: { type: "gtin14", value: params.barcodeGtin14 },
       locale: params.locale,
       phase: params.phase,
@@ -1879,6 +2649,7 @@ const buildProvisionalAnalysisBundle = (params: {
           consultDoctorIf: [],
           redFlags: [],
         },
+        signals: baseSafetySignals,
         dataStatus: isSkeleton ? "pending" : "limited",
       },
     },
@@ -1888,17 +2659,37 @@ const buildProvisionalAnalysisBundle = (params: {
 const mergeFastAnalysisBundle = (params: {
   skeleton: AnalysisBundle;
   digest: FactsDigest;
+  deterministicSignals?: DeterministicSignalPack | null;
   fastOutput: Record<string, unknown> | null;
 }): AnalysisBundle => {
   const { skeleton, digest, fastOutput } = params;
-  const ingredientsCover = buildIngredientsCover(digest);
+  const ingredientsCover = buildIngredientsCover(digest, params.deterministicSignals);
   const ingredientsDataStatus = digest.actives.length > 0 ? "complete" : "not_provided";
   const allowedFormKeywords = buildAllowedFormKeywordSet(digest);
   const fallbackSummary = buildFallbackOverviewSummary(digest);
   const fallbackBullets = buildFallbackOverviewBullets(digest);
   const overviewRaw = (fastOutput?.overview ?? {}) as Record<string, unknown>;
+  const overviewBulletsRaw = Array.isArray(overviewRaw.bullets) ? overviewRaw.bullets : [];
+  const usageRaw = (fastOutput?.usage ?? {}) as Record<string, unknown>;
+  const usageBulletsRaw = Array.isArray(usageRaw.bullets) ? usageRaw.bullets : [];
+  const safetyRaw = (fastOutput?.safety ?? {}) as Record<string, unknown>;
+  const safetyBulletsRaw = Array.isArray(safetyRaw.bullets) ? safetyRaw.bullets : [];
+  const placeholderishModelHit = [
+    typeof overviewRaw.summary === "string" ? overviewRaw.summary : null,
+    ...overviewBulletsRaw.map((item) => (typeof item?.text === "string" ? item.text : null)),
+    ...usageBulletsRaw.map((item) => (typeof item?.text === "string" ? item.text : null)),
+    usageRaw.bestTimeToTake && typeof usageRaw.bestTimeToTake === "object"
+      ? (usageRaw.bestTimeToTake as Record<string, unknown>).text
+      : null,
+    usageRaw.withFood && typeof usageRaw.withFood === "object"
+      ? (usageRaw.withFood as Record<string, unknown>).text
+      : null,
+    typeof safetyRaw.verdict === "string" ? safetyRaw.verdict : null,
+    ...safetyBulletsRaw.map((item) => (typeof item?.text === "string" ? item.text : null)),
+  ].some((text) => isPlaceholderishText(text));
+  const useDeterministicFallbackForCovers = !fastOutput || placeholderishModelHit;
   const overviewSummaryCandidateRaw =
-    typeof overviewRaw.summary === "string" && overviewRaw.summary.trim()
+    !useDeterministicFallbackForCovers && typeof overviewRaw.summary === "string" && overviewRaw.summary.trim()
       ? clampText(overviewRaw.summary.trim(), 180)
       : fallbackSummary;
   const overviewSummaryMeetsContract =
@@ -1907,13 +2698,15 @@ const mergeFastAnalysisBundle = (params: {
     hasForbiddenFormKeyword(overviewSummaryCandidateRaw, allowedFormKeywords) || !overviewSummaryMeetsContract
       ? fallbackSummary
       : overviewSummaryCandidateRaw;
-  const overviewBulletsRaw = Array.isArray(overviewRaw.bullets) ? overviewRaw.bullets : [];
-  const overviewBulletsFromModel = overviewBulletsRaw
+  const overviewBulletsFromModel = useDeterministicFallbackForCovers
+    ? []
+    : overviewBulletsRaw
     .map((item) => ({
       text: typeof item?.text === "string" ? clampText(item.text.trim(), 80) : "",
       basisTags: normalizeBasisTags(item?.basisTags, "ingredient_inference"),
     }))
     .filter((item) => item.text)
+    .filter((item) => !isPlaceholderishText(item.text))
     .filter((item) => !hasForbiddenFormKeyword(item.text, allowedFormKeywords))
     .slice(0, 2);
   const fallbackBulletsClamped = fallbackBullets
@@ -1954,6 +2747,15 @@ const mergeFastAnalysisBundle = (params: {
         ["general_advice"],
       ));
     }
+    if (useDeterministicFallbackForCovers) {
+      const hasActionHint = out.some((bullet) => /\b(scan|capture|label|supplement facts)\b/i.test(bullet.text));
+      if (!hasActionHint) {
+        out[1] = buildSectionBullet(
+          "Scan the Supplement Facts panel for richer product-specific insights.",
+          ["general_advice"],
+        );
+      }
+    }
     return out.slice(0, 2);
   })();
   const dsldNeedsInference =
@@ -1965,17 +2767,18 @@ const mergeFastAnalysisBundle = (params: {
     (overviewBulletsFinal.length === 0 || dsldNeedsInference);
   const dsldInference = dsldForceInference ? buildDsldInferenceOverview(digest) : null;
 
-  const usageRaw = (fastOutput?.usage ?? {}) as Record<string, unknown>;
-  const usageBulletsRaw = Array.isArray(usageRaw.bullets) ? usageRaw.bullets : [];
-  const usageBulletsFromModel = usageBulletsRaw
+  const usageBulletsFromModel = useDeterministicFallbackForCovers
+    ? []
+    : usageBulletsRaw
     .map((item) => ({
       text: typeof item?.text === "string" ? item.text : "",
       basisTags: normalizeBasisTags(item?.basisTags, "general_advice"),
     }))
     .filter((item) => item.text)
+    .filter((item) => !isPlaceholderishText(item.text))
     .slice(0, 3);
   const bestTimeToTake =
-    usageRaw.bestTimeToTake && typeof usageRaw.bestTimeToTake === "object"
+    !useDeterministicFallbackForCovers && usageRaw.bestTimeToTake && typeof usageRaw.bestTimeToTake === "object"
       ? {
         text: typeof (usageRaw.bestTimeToTake as Record<string, unknown>).text === "string"
           ? (usageRaw.bestTimeToTake as Record<string, unknown>).text as string
@@ -1987,7 +2790,10 @@ const mergeFastAnalysisBundle = (params: {
   const withFoodFromModel = withFoodRaw
     ? {
       value: typeof withFoodRaw.value === "boolean" || withFoodRaw.value === null ? withFoodRaw.value as boolean | null : null,
-      text: typeof withFoodRaw.text === "string" ? withFoodRaw.text : null,
+      text:
+        !useDeterministicFallbackForCovers && typeof withFoodRaw.text === "string" && !isPlaceholderishText(withFoodRaw.text)
+          ? withFoodRaw.text
+          : null,
       basisTags: normalizeBasisTags(withFoodRaw.basisTags, "general_advice"),
     }
     : null;
@@ -2019,20 +2825,21 @@ const mergeFastAnalysisBundle = (params: {
   // Since the UI shows dosage/bestTime/withFood as fixed rows, avoid template repetition in LNHPD usage bullets.
   const usageBulletsFinal = isLnhpd ? [] : usageBulletsFromModel;
 
-  const safetyRaw = (fastOutput?.safety ?? {}) as Record<string, unknown>;
   const safetyVerdict =
-    typeof safetyRaw.verdict === "string" && safetyRaw.verdict.trim()
+    !useDeterministicFallbackForCovers && typeof safetyRaw.verdict === "string" && safetyRaw.verdict.trim() && !isPlaceholderishText(safetyRaw.verdict)
       ? safetyRaw.verdict.trim()
       : digest.warnings.missingFlag
-        ? "Not provided by source"
+        ? "Safety details are not included in this source record."
         : "Safety summary unavailable";
-  const safetyBulletsRaw = Array.isArray(safetyRaw.bullets) ? safetyRaw.bullets : [];
-  const safetyBullets = safetyBulletsRaw
+  const safetyBullets = useDeterministicFallbackForCovers
+    ? []
+    : safetyBulletsRaw
     .map((item) => ({
       text: typeof item?.text === "string" ? item.text : "",
       basisTags: normalizeBasisTags(item?.basisTags, digest.warnings.missingFlag ? "not_provided" : "general_advice"),
     }))
     .filter((item) => item.text)
+    .filter((item) => !isPlaceholderishText(item.text))
     .slice(0, 3);
   const safetyBulletsFinal =
     safetyBullets.length > 0
@@ -2051,6 +2858,17 @@ const mergeFastAnalysisBundle = (params: {
     usageBulletsFinal.length > 0 || bestTimeToTakeFinal || withFoodFinal || dosageField ? "complete" : "limited";
   const safetyStatus = digest.warnings.missingFlag ? "not_provided" : safetyBulletsFinal.length > 0 ? "complete" : "limited";
   const safetyTag = resolveSourceBasisTag(digest.sourceType);
+  const safetyDetailFinal = {
+    warnings: digest.warnings.warnings.map((warning) => buildSectionBullet(warning, [safetyTag])),
+    consultDoctorIf: digest.warnings.consultDoctorIf.map((item) => buildSectionBullet(item, [safetyTag])),
+    redFlags: digest.warnings.redFlags.map((item) => buildSectionBullet(item, [safetyTag])),
+  };
+  const safetySignalsFinal = buildBaseSafetySignalPack({
+    digest,
+    safetyDetail: safetyDetailFinal,
+    deterministicSignals: params.deterministicSignals,
+  });
+  const usageScheduleRows = toUsageLabelDoseRows(params.deterministicSignals, digest.labelDosing);
 
   // P0-0: Coverage snapshot for rev1 diagnostics
   console.info("[analysis_bundle] cover_contract", {
@@ -2064,6 +2882,8 @@ const mergeFastAnalysisBundle = (params: {
     safetyBulletCount: safetyBulletsFinal.length,
     safetyVerdictPresent: Boolean(safetyVerdict),
     fastFailed: !fastOutput,
+    placeholderishModelHit,
+    deterministicFallbackUsed: useDeterministicFallbackForCovers,
   });
 
   return {
@@ -2073,6 +2893,7 @@ const mergeFastAnalysisBundle = (params: {
       sourceType: digest.sourceType,
       sourceTypeFinal: true,
       detailReady: digest.actives.length > 0,
+      deterministicSignals: summarizeDeterministicSignals(params.deterministicSignals),
       phase: "fast_ai",
       revision: skeleton.meta.revision + 1,
     },
@@ -2106,7 +2927,7 @@ const mergeFastAnalysisBundle = (params: {
         detail: {
           timingRationale: null,
           withFoodRationale: null,
-          scheduleFromLabel: skeleton.sections.usage.detail?.scheduleFromLabel ?? [],
+          scheduleFromLabel: usageScheduleRows,
         },
         dataStatus: usageStatus,
       },
@@ -2116,11 +2937,8 @@ const mergeFastAnalysisBundle = (params: {
           verdict: safetyVerdict,
           bullets: safetyBulletsFinal,
         },
-        detail: {
-          warnings: digest.warnings.warnings.map((warning) => buildSectionBullet(warning, [safetyTag])),
-          consultDoctorIf: digest.warnings.consultDoctorIf.map((item) => buildSectionBullet(item, [safetyTag])),
-          redFlags: digest.warnings.redFlags.map((item) => buildSectionBullet(item, [safetyTag])),
-        },
+        detail: safetyDetailFinal,
+        signals: safetySignalsFinal,
         dataStatus: safetyStatus,
       },
     },
@@ -2193,6 +3011,65 @@ const tokenOverlapRatio = (needle?: string | null, haystack?: string | null): nu
     if (haystackTokens.has(token)) hits += 1;
   }
   return hits / needleTokens.length;
+};
+
+const NPN_IDENTITY_HINT_STOP_TOKENS = new Set([
+  "vitamin",
+  "supplement",
+  "capsule",
+  "capsules",
+  "tablet",
+  "tablets",
+  "softgel",
+  "softgels",
+  "mg",
+  "mcg",
+  "iu",
+]);
+
+const tokenizeIdentityHint = (value?: string | null): string[] =>
+  tokenizeLnhpdName(value)
+    .map((token) => token.trim().toLowerCase())
+    .filter((token) => token.length >= 3)
+    .filter((token) => !NPN_IDENTITY_HINT_STOP_TOKENS.has(token));
+
+const overlapTokenCount = (leftTokens: string[], rightTokens: Set<string>): number => {
+  if (leftTokens.length === 0 || rightTokens.size === 0) return 0;
+  let hits = 0;
+  for (const token of leftTokens) {
+    if (rightTokens.has(token)) hits += 1;
+  }
+  return hits;
+};
+
+const passesStableDbIdentityCheck = (params: {
+  hintBrand: string | null;
+  hintProduct: string | null;
+  lnhpdBrand: string | null;
+  lnhpdProduct: string | null;
+}): {
+  pass: boolean;
+  hasHints: boolean;
+  brandOverlap: number;
+  productOverlap: number;
+} => {
+  const hintBrandTokens = tokenizeIdentityHint(params.hintBrand);
+  const hintProductTokens = tokenizeIdentityHint(params.hintProduct);
+  const lnhpdBrandTokens = new Set(tokenizeIdentityHint(params.lnhpdBrand));
+  const lnhpdProductTokens = new Set(tokenizeIdentityHint(params.lnhpdProduct));
+  const hasHints = hintBrandTokens.length > 0 || hintProductTokens.length > 0;
+  if (!hasHints) {
+    return { pass: false, hasHints: false, brandOverlap: 0, productOverlap: 0 };
+  }
+  const brandOverlap = overlapTokenCount(hintBrandTokens, lnhpdBrandTokens);
+  const productOverlap = overlapTokenCount(hintProductTokens, lnhpdProductTokens);
+  const pass = brandOverlap >= 1 || productOverlap >= 2;
+  return {
+    pass,
+    hasHints: true,
+    brandOverlap,
+    productOverlap,
+  };
 };
 
 const buildLnhpdProductHints = (product?: string | null): string[] => {
@@ -2770,56 +3647,84 @@ const isDsldFactsUsable = (facts?: Partial<DsldFacts> | null): boolean => {
   return hasActives || hasServing || hasInactive || hasBlends;
 };
 
+const DSDL_FACTS_CACHE_TTL_MS = 10 * 60 * 1000;
+const dsldFactsByLabelIdCache = new Map<number, { expiresAt: number; value: DsldFacts | null }>();
+const dsldFactsByLabelIdInFlight = new Map<number, Promise<DsldFacts | null>>();
+const dsldFactsByBarcodeCache = new Map<string, { expiresAt: number; value: DsldFacts | null }>();
+const dsldFactsByBarcodeInFlight = new Map<string, Promise<DsldFacts | null>>();
+
 const fetchDsldFactsByLabelId = async (
   labelId: number,
   signal?: AbortSignal,
 ): Promise<DsldFacts | null> => {
   if (signal?.aborted) return null;
-
-  let rpcResult: { data?: unknown; error?: { code?: string; message?: string } | null } | null = null;
-  try {
-    rpcResult = await supabase.rpc('resolve_dsld_facts_by_label_id', { p_label_id: labelId });
-  } catch (error) {
-    rpcResult = { error: error as { message?: string } };
+  const cached = dsldFactsByLabelIdCache.get(labelId);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.value;
+  }
+  const existingInFlight = dsldFactsByLabelIdInFlight.get(labelId);
+  if (existingInFlight) {
+    return existingInFlight;
   }
 
-  if (rpcResult && 'error' in rpcResult && isRpcMissing(rpcResult.error ?? null)) {
-    // fall through to meta table
-  } else if (rpcResult && 'data' in rpcResult && rpcResult.data) {
-    const record = Array.isArray(rpcResult.data) ? rpcResult.data[0] : rpcResult.data;
-    if (record?.facts_json) {
-      const facts = record.facts_json as Partial<DsldFacts>;
-      if (isDsldFactsUsable(facts)) {
-        return {
-          dsldLabelId: record.dsld_label_id ?? labelId,
-          brandName: facts.brandName ?? null,
-          productName: facts.productName ?? null,
-          servingSize: facts.servingSize ?? null,
-          servingsPerContainer: facts.servingsPerContainer ?? null,
-          actives: Array.isArray(facts.actives) ? facts.actives : [],
-          inactive: Array.isArray(facts.inactive) ? facts.inactive : [],
-          proprietaryBlends: Array.isArray(facts.proprietaryBlends) ? facts.proprietaryBlends : [],
-          datasetVersion: record.dataset_version ?? facts.datasetVersion ?? null,
-          extractedAt: record.extracted_at ?? facts.extractedAt ?? nowIso(),
-          dsldPdf: (facts as { dsldPdf?: string | null }).dsldPdf ?? null,
-          dsldThumbnail: (facts as { dsldThumbnail?: string | null }).dsldThumbnail ?? null,
-          factsSource: 'label_facts',
-        };
+  const task = (async (): Promise<DsldFacts | null> => {
+    let rpcResult: { data?: unknown; error?: { code?: string; message?: string } | null } | null = null;
+    try {
+      rpcResult = await supabase.rpc('resolve_dsld_facts_by_label_id', { p_label_id: labelId });
+    } catch (error) {
+      rpcResult = { error: error as { message?: string } };
+    }
+
+    if (rpcResult && 'error' in rpcResult && isRpcMissing(rpcResult.error ?? null)) {
+      // fall through to meta table
+    } else if (rpcResult && 'data' in rpcResult && rpcResult.data) {
+      const record = Array.isArray(rpcResult.data) ? rpcResult.data[0] : rpcResult.data;
+      if (record?.facts_json) {
+        const facts = record.facts_json as Partial<DsldFacts>;
+        if (isDsldFactsUsable(facts)) {
+          return {
+            dsldLabelId: record.dsld_label_id ?? labelId,
+            brandName: facts.brandName ?? null,
+            productName: facts.productName ?? null,
+            servingSize: facts.servingSize ?? null,
+            servingsPerContainer: facts.servingsPerContainer ?? null,
+            actives: Array.isArray(facts.actives) ? facts.actives : [],
+            inactive: Array.isArray(facts.inactive) ? facts.inactive : [],
+            proprietaryBlends: Array.isArray(facts.proprietaryBlends) ? facts.proprietaryBlends : [],
+            datasetVersion: record.dataset_version ?? facts.datasetVersion ?? null,
+            extractedAt: record.extracted_at ?? facts.extractedAt ?? nowIso(),
+            dsldPdf: (facts as { dsldPdf?: string | null }).dsldPdf ?? null,
+            dsldThumbnail: (facts as { dsldThumbnail?: string | null }).dsldThumbnail ?? null,
+            factsSource: 'label_facts',
+          };
+        }
       }
     }
-  }
 
-  const { data: meta, error } = await supabase
-    .from('dsld_labels_meta')
-    .select(
-      'dsld_label_id,brand,product_name,serving_size_raw,servings_per_container,active_ingredients_summary,inactive_ingredients,dsld_product_version_code,dsld_pdf,dsld_thumbnail',
-    )
-    .eq('dsld_label_id', labelId)
-    .maybeSingle();
-  if (error || !meta) {
-    return null;
+    const { data: meta, error } = await supabase
+      .from('dsld_labels_meta')
+      .select(
+        'dsld_label_id,brand,product_name,serving_size_raw,servings_per_container,active_ingredients_summary,inactive_ingredients,dsld_product_version_code,dsld_pdf,dsld_thumbnail',
+      )
+      .eq('dsld_label_id', labelId)
+      .maybeSingle();
+    if (error || !meta) {
+      return null;
+    }
+    return buildDsldFactsFromMeta(meta);
+  })();
+
+  dsldFactsByLabelIdInFlight.set(labelId, task);
+  try {
+    const result = await task;
+    dsldFactsByLabelIdCache.set(labelId, {
+      value: result,
+      expiresAt: Date.now() + DSDL_FACTS_CACHE_TTL_MS,
+    });
+    return result;
+  } finally {
+    dsldFactsByLabelIdInFlight.delete(labelId);
   }
-  return buildDsldFactsFromMeta(meta);
 };
 
 const fetchDsldFactsByBarcode = async (
@@ -2827,51 +3732,87 @@ const fetchDsldFactsByBarcode = async (
   signal?: AbortSignal,
 ): Promise<DsldFacts | null> => {
   if (signal?.aborted) return null;
-
-  let rpcResult: { data?: unknown; error?: { code?: string; message?: string } | null } | null = null;
-  try {
-    rpcResult = await supabase.rpc('resolve_dsld_facts_by_gtin14', { p_gtin14: barcodeGtin14 });
-  } catch (error) {
-    rpcResult = { error: error as { message?: string } };
+  const cached = dsldFactsByBarcodeCache.get(barcodeGtin14);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.value;
+  }
+  const existingInFlight = dsldFactsByBarcodeInFlight.get(barcodeGtin14);
+  if (existingInFlight) {
+    return existingInFlight;
   }
 
-  if (rpcResult && 'error' in rpcResult && isRpcMissing(rpcResult.error ?? null)) {
-    // fall through to meta table
-  } else if (rpcResult && 'data' in rpcResult && rpcResult.data) {
-    const record = Array.isArray(rpcResult.data) ? rpcResult.data[0] : rpcResult.data;
-    if (record?.facts_json) {
-      const facts = record.facts_json as Partial<DsldFacts>;
-      if (isDsldFactsUsable(facts)) {
-        return {
-          dsldLabelId: record.dsld_label_id ?? Number(facts.dsldLabelId ?? 0),
-          brandName: facts.brandName ?? null,
-          productName: facts.productName ?? null,
-          servingSize: facts.servingSize ?? null,
-          servingsPerContainer: facts.servingsPerContainer ?? null,
-          actives: Array.isArray(facts.actives) ? facts.actives : [],
-          inactive: Array.isArray(facts.inactive) ? facts.inactive : [],
-          proprietaryBlends: Array.isArray(facts.proprietaryBlends) ? facts.proprietaryBlends : [],
-          datasetVersion: record.dataset_version ?? facts.datasetVersion ?? null,
-          extractedAt: record.extracted_at ?? facts.extractedAt ?? nowIso(),
-          dsldPdf: (facts as { dsldPdf?: string | null }).dsldPdf ?? null,
-          dsldThumbnail: (facts as { dsldThumbnail?: string | null }).dsldThumbnail ?? null,
-          factsSource: 'label_facts',
-        };
+  const task = (async (): Promise<DsldFacts | null> => {
+    let rpcResult: { data?: unknown; error?: { code?: string; message?: string } | null } | null = null;
+    try {
+      rpcResult = await supabase.rpc('resolve_dsld_facts_by_gtin14', { p_gtin14: barcodeGtin14 });
+    } catch (error) {
+      rpcResult = { error: error as { message?: string } };
+    }
+
+    if (rpcResult && 'error' in rpcResult && isRpcMissing(rpcResult.error ?? null)) {
+      // fall through to meta table
+    } else if (rpcResult && 'data' in rpcResult && rpcResult.data) {
+      const record = Array.isArray(rpcResult.data) ? rpcResult.data[0] : rpcResult.data;
+      if (record?.facts_json) {
+        const facts = record.facts_json as Partial<DsldFacts>;
+        if (isDsldFactsUsable(facts)) {
+          return {
+            dsldLabelId: record.dsld_label_id ?? Number(facts.dsldLabelId ?? 0),
+            brandName: facts.brandName ?? null,
+            productName: facts.productName ?? null,
+            servingSize: facts.servingSize ?? null,
+            servingsPerContainer: facts.servingsPerContainer ?? null,
+            actives: Array.isArray(facts.actives) ? facts.actives : [],
+            inactive: Array.isArray(facts.inactive) ? facts.inactive : [],
+            proprietaryBlends: Array.isArray(facts.proprietaryBlends) ? facts.proprietaryBlends : [],
+            datasetVersion: record.dataset_version ?? facts.datasetVersion ?? null,
+            extractedAt: record.extracted_at ?? facts.extractedAt ?? nowIso(),
+            dsldPdf: (facts as { dsldPdf?: string | null }).dsldPdf ?? null,
+            dsldThumbnail: (facts as { dsldThumbnail?: string | null }).dsldThumbnail ?? null,
+            factsSource: 'label_facts',
+          };
+        }
       }
     }
-  }
 
-  const { data: meta, error } = await supabase
-    .from('dsld_labels_meta')
-    .select(
-      'dsld_label_id,brand,product_name,serving_size_raw,servings_per_container,active_ingredients_summary,inactive_ingredients,dsld_product_version_code,dsld_pdf,dsld_thumbnail',
-    )
-    .eq('barcode_normalized_gtin14', barcodeGtin14)
-    .maybeSingle();
-  if (error || !meta) {
-    return null;
+    const { data: meta, error } = await supabase
+      .from('dsld_labels_meta')
+      .select(
+        'dsld_label_id,brand,product_name,serving_size_raw,servings_per_container,active_ingredients_summary,inactive_ingredients,dsld_product_version_code,dsld_pdf,dsld_thumbnail',
+      )
+      .eq('barcode_normalized_gtin14', barcodeGtin14)
+      .maybeSingle();
+    if (error || !meta) {
+      const { data: canonicalRows, error: canonicalError } = await supabase
+        .from('dsld_barcode_canonical')
+        .select('canonical_dsld_label_id')
+        .eq('barcode_normalized_gtin14', barcodeGtin14)
+        .not('canonical_dsld_label_id', 'is', null)
+        .limit(3);
+      if (!canonicalError && Array.isArray(canonicalRows) && canonicalRows.length > 0) {
+        const canonicalLabelId = Number(
+          canonicalRows.find((row) => Number.isFinite(Number(row?.canonical_dsld_label_id)))?.canonical_dsld_label_id,
+        );
+        if (Number.isFinite(canonicalLabelId) && canonicalLabelId > 0) {
+          return fetchDsldFactsByLabelId(canonicalLabelId, signal);
+        }
+      }
+      return null;
+    }
+    return buildDsldFactsFromMeta(meta);
+  })();
+
+  dsldFactsByBarcodeInFlight.set(barcodeGtin14, task);
+  try {
+    const result = await task;
+    dsldFactsByBarcodeCache.set(barcodeGtin14, {
+      value: result,
+      expiresAt: Date.now() + DSDL_FACTS_CACHE_TTL_MS,
+    });
+    return result;
+  } finally {
+    dsldFactsByBarcodeInFlight.delete(barcodeGtin14);
   }
-  return buildDsldFactsFromMeta(meta);
 };
 
 const LNHPD_MEDICINAL_NAME_KEYS = [
@@ -3138,11 +4079,59 @@ const buildLnhpdFactsFromRecord = (record: LnhpdFactsRecord): LnhpdFacts | null 
     "route",
   ]) ?? factsJson.routes;
 
-  const actives = extractLnhpdIngredients(medicinalPayload, {
+  const extractedActives = extractLnhpdIngredients(medicinalPayload, {
     nameKeys: LNHPD_MEDICINAL_NAME_KEYS,
     amountKeys: LNHPD_AMOUNT_KEYS,
     unitKeys: LNHPD_UNIT_KEYS,
   });
+  const inferredActives = extractedActives.length
+    ? []
+    : (() => {
+      const candidates: string[] = [];
+      const appendCandidate = (value: unknown) => {
+        if (typeof value !== "string") return;
+        const text = value.trim();
+        if (!text) return;
+        if (!candidates.includes(text)) candidates.push(text);
+      };
+      appendCandidate(record.product_name);
+      appendCandidate(factsJson.productName);
+      const productLicencesPayload = pickFirstExistingJsonField(
+        factsJson as unknown as Record<string, unknown>,
+        ["productLicences", "product_licences"],
+      );
+      const licences = Array.isArray(productLicencesPayload) ? productLicencesPayload : [];
+      for (const licence of licences) {
+        if (!licence || typeof licence !== "object") continue;
+        appendCandidate((licence as Record<string, unknown>).product_name);
+      }
+      for (const candidateName of candidates) {
+        const inferred = inferLnhpdActivesFromProductName(candidateName);
+        if (inferred.length > 0) return inferred;
+      }
+      return [];
+    })();
+  const actives = (() => {
+    const byName = new Map<string, LnhpdFacts["actives"][number]>();
+    [...extractedActives, ...inferredActives].forEach((entry) => {
+      const key = normalizeMatchText(entry.name);
+      if (!key) return;
+      if (!byName.has(key)) {
+        byName.set(key, entry);
+        return;
+      }
+      const existing = byName.get(key);
+      if (!existing) return;
+      const merged = {
+        ...existing,
+        amount: existing.amount ?? entry.amount ?? null,
+        unit: existing.unit ?? entry.unit ?? null,
+        lnhpdMeta: existing.lnhpdMeta ?? entry.lnhpdMeta ?? null,
+      };
+      byName.set(key, merged);
+    });
+    return Array.from(byName.values());
+  })();
   const inactive = extractTextList(nonMedicinalPayload, LNHPD_NON_MEDICINAL_NAME_KEYS);
   const purposes = extractTextList(purposesPayload, LNHPD_PURPOSE_KEYS);
   const routes = extractTextList(routesPayload, LNHPD_ROUTE_KEYS);
@@ -4282,6 +5271,23 @@ const hasAuthoritativeIdentityFromSnapshot = (snapshot: SupplementSnapshot): boo
     snapshot.regulatory.npnStatus === "verified" &&
     snapshot.regulatory.npnVerifiedBy === "lnhpd_fetch",
   );
+};
+
+const hasBundleOnlyLabelRecordIdentityFromSnapshot = (snapshot: SupplementSnapshot): boolean => {
+  if (!BUNDLE_ONLY_ALLOW_LABEL_RECORD_STAGE0) return false;
+  const raw = snapshot.regulatory.dsldLabelId;
+  if (typeof raw === "string") return raw.trim().length > 0;
+  if (typeof raw === "number") return Number.isFinite(raw);
+  return false;
+};
+
+const hasBundleOnlyAuthoritativeFastPath = (snapshot: SupplementSnapshot): boolean => {
+  const isVerifiedNpn = Boolean(
+    snapshot.regulatory.npn &&
+    snapshot.regulatory.npnStatus === "verified" &&
+    snapshot.regulatory.npnVerifiedBy === "lnhpd_fetch",
+  );
+  return isVerifiedNpn || hasBundleOnlyLabelRecordIdentityFromSnapshot(snapshot);
 };
 
 const hasCoreFacts = (snapshot: SupplementSnapshot, analysisPayload?: SnapshotAnalysisPayload | null): boolean =>
@@ -5492,14 +6498,35 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   const requestId = randomUUID();
   res.setHeader("x-request-id", requestId);
   const startedAt = process.hrtime.bigint();
+  let finished = false;
+  let aborted = false;
 
   res.on("finish", () => {
+    finished = true;
+    if (!HTTP_ACCESS_LOG_ENABLED) return;
     // Avoid noisy health check logs (Render pings this frequently).
     if (req.path === "/health") return;
 
     const durationMs = Number(process.hrtime.bigint() - startedAt) / 1e6;
     const durationLabel = `${durationMs.toFixed(1)}ms`;
     console.log(`[HTTP] ${res.statusCode} ${req.method} ${req.path} (${durationLabel}) id=${requestId}`);
+  });
+  req.on("aborted", () => {
+    aborted = true;
+    if (!HTTP_ACCESS_LOG_ENABLED) return;
+    if (req.path === "/health") return;
+    const durationMs = Number(process.hrtime.bigint() - startedAt) / 1e6;
+    const durationLabel = `${durationMs.toFixed(1)}ms`;
+    console.warn(`[HTTP_ABORTED] ${req.method} ${req.path} (${durationLabel}) id=${requestId}`);
+  });
+  res.on("close", () => {
+    if (!HTTP_ACCESS_LOG_ENABLED) return;
+    if (req.path === "/health") return;
+    if (finished) return;
+    const durationMs = Number(process.hrtime.bigint() - startedAt) / 1e6;
+    const durationLabel = `${durationMs.toFixed(1)}ms`;
+    const suffix = aborted ? "aborted" : "closed_early";
+    console.warn(`[HTTP_CLOSE] ${req.method} ${req.path} (${durationLabel}) id=${requestId} ${suffix}`);
   });
 
   next();
@@ -5524,6 +6551,9 @@ const regressionAuthRoutes = new Set([
   "/api/enrich-stream",
   "/api/analysis-section",
   "/api/summary/ingredient",
+  "/api/summary/usage",
+  "/api/summary/safety",
+  "/api/kb/runtime/form-insights/batch",
   "/api/analyze-label",
   "/api/label-scan/metrics",
   "/api/label-scan/metrics/smoke",
@@ -5852,10 +6882,21 @@ class EnrichStreamAdmissionGate {
   }
 }
 
-const enrichStreamAdmissionGate = new EnrichStreamAdmissionGate(
-  ENRICH_STREAM_MAX_ACTIVE,
-  ENRICH_STREAM_MAX_QUEUE,
+const enrichStreamAdmissionGateFull = new EnrichStreamAdmissionGate(
+  ENRICH_STREAM_MAX_ACTIVE_FULL,
+  ENRICH_STREAM_MAX_QUEUE_FULL,
 );
+const enrichStreamAdmissionGateBundleOnly = new EnrichStreamAdmissionGate(
+  ENRICH_STREAM_MAX_ACTIVE_BUNDLE_ONLY,
+  ENRICH_STREAM_MAX_QUEUE_BUNDLE_ONLY,
+);
+
+type EnrichStreamAdmissionLane = "full" | "bundle_only";
+
+const selectEnrichStreamAdmissionGate = (
+  lane: EnrichStreamAdmissionLane,
+): EnrichStreamAdmissionGate =>
+  lane === "bundle_only" ? enrichStreamAdmissionGateBundleOnly : enrichStreamAdmissionGateFull;
 
 const barcodeEnrichInFlight = new Map<string, Promise<void>>();
 const barcodeEnrichBackground = new Map<string, Promise<void>>();
@@ -6963,12 +8004,48 @@ const buildMySupplementDigestQuick = async (params: {
       return { digest, factsSourceVersion, factsDigestHash, labelDirectionsRawText, snapshotHit: true, barcodeGtin14 };
     }
 
-    const fallbackFacts = buildLnhpdFactsInputFromSnapshot(snapshot);
-    const factsSourceVersion = `lnhpd:${snapshot.analysis?.labelExtraction?.datasetVersion ?? snapshot.analysis?.labelExtraction?.fetchedAt ?? "unknown"}`;
-    const digest = buildFactsDigestFromLnhpd({
-      facts: fallbackFacts,
+    const snapshotNpn = normalizeNpnValue(snapshot.regulatory.npn ?? null);
+    if (snapshotNpn) {
+      const fallbackFacts = buildLnhpdFactsInputFromSnapshot(snapshot);
+      const factsSourceVersion = `lnhpd:${snapshot.analysis?.labelExtraction?.datasetVersion ?? snapshot.analysis?.labelExtraction?.fetchedAt ?? "unknown"}`;
+      const digest = buildFactsDigestFromLnhpd({
+        facts: fallbackFacts,
+        snapshot,
+        identityValue: snapshotNpn,
+        regionTags: snapshot.regulatory.regionTags,
+      });
+      const factsDigestHash = computeFactsDigestHash(digest);
+      const labelDirectionsRawText = buildLabelDosingText(digest);
+      return { digest, factsSourceVersion, factsDigestHash, labelDirectionsRawText, snapshotHit: true, barcodeGtin14 };
+    }
+
+    const factsSourceVersion = `web:${snapshot.analysis?.labelExtraction?.datasetVersion ?? snapshot.analysis?.labelExtraction?.fetchedAt ?? "snapshot"}`;
+    const digest = buildFactsDigestFromWeb({
+      facts: {
+        barcode: barcodeGtin14 ?? "",
+        canonical: {
+          name: snapshot.product.name ?? params.productName,
+          brand: snapshot.product.brand ?? params.brandName,
+          url: null,
+          domain: null,
+        },
+        identifiers: { npn: null },
+        textFacts: {
+          ingredientsText: null,
+          directionsText: null,
+          warningsText: null,
+          servingSizeText: snapshot.label.servingSize ?? null,
+        },
+        coverageScore: 0,
+        missingFields: [
+          "textFacts.ingredientsText",
+          "textFacts.directionsText",
+          "textFacts.warningsText",
+        ],
+      },
       snapshot,
-      identityValue: snapshot.regulatory.npn ?? (barcodeGtin14 ?? params.supplementId),
+      identityType: "webCanonicalId",
+      identityValue: barcodeGtin14 ?? params.supplementId,
       regionTags: snapshot.regulatory.regionTags,
     });
     const factsDigestHash = computeFactsDigestHash(digest);
@@ -6984,11 +8061,7 @@ const buildMySupplementDigestQuick = async (params: {
     : null;
   const npn = map?.npn ?? null;
 
-  const identityType: FactsIdentityType = npn
-    ? "npn"
-    : barcodeGtin14
-      ? "gtin14"
-      : "webCanonicalId";
+  const identityType: FactsIdentityType = npn ? "npn" : "webCanonicalId";
   const identityValue = npn ?? barcodeGtin14 ?? params.supplementId;
 
   const factsSourceVersion = npn
@@ -7140,12 +8213,48 @@ const buildMySupplementDigestForEnsureOverview = async (params: {
       return { digest, factsSourceVersion, factsDigestHash, labelDirectionsRawText };
     }
 
-    const fallbackFacts = buildLnhpdFactsInputFromSnapshot(snapshot);
-    const factsSourceVersion = `lnhpd:${snapshot.analysis?.labelExtraction?.datasetVersion ?? snapshot.analysis?.labelExtraction?.fetchedAt ?? "unknown"}`;
-    const digest = buildFactsDigestFromLnhpd({
-      facts: fallbackFacts,
+    const snapshotNpn = normalizeNpnValue(snapshot.regulatory.npn ?? null);
+    if (snapshotNpn) {
+      const fallbackFacts = buildLnhpdFactsInputFromSnapshot(snapshot);
+      const factsSourceVersion = `lnhpd:${snapshot.analysis?.labelExtraction?.datasetVersion ?? snapshot.analysis?.labelExtraction?.fetchedAt ?? "unknown"}`;
+      const digest = buildFactsDigestFromLnhpd({
+        facts: fallbackFacts,
+        snapshot,
+        identityValue: snapshotNpn,
+        regionTags: snapshot.regulatory.regionTags,
+      });
+      const factsDigestHash = computeFactsDigestHash(digest);
+      const labelDirectionsRawText = buildLabelDosingText(digest);
+      return { digest, factsSourceVersion, factsDigestHash, labelDirectionsRawText };
+    }
+
+    const factsSourceVersion = `web:${snapshot.analysis?.labelExtraction?.datasetVersion ?? snapshot.analysis?.labelExtraction?.fetchedAt ?? "snapshot"}`;
+    const digest = buildFactsDigestFromWeb({
+      facts: {
+        barcode: barcodeGtin14 ?? "",
+        canonical: {
+          name: snapshot.product.name ?? params.productName,
+          brand: snapshot.product.brand ?? params.brandName,
+          url: null,
+          domain: null,
+        },
+        identifiers: { npn: null },
+        textFacts: {
+          ingredientsText: null,
+          directionsText: null,
+          warningsText: null,
+          servingSizeText: snapshot.label.servingSize ?? null,
+        },
+        coverageScore: 0,
+        missingFields: [
+          "textFacts.ingredientsText",
+          "textFacts.directionsText",
+          "textFacts.warningsText",
+        ],
+      },
       snapshot,
-      identityValue: snapshot.regulatory.npn ?? (barcodeGtin14 ?? params.supplementId),
+      identityType: "webCanonicalId",
+      identityValue: barcodeGtin14 ?? params.supplementId,
       regionTags: snapshot.regulatory.regionTags,
     });
     const factsDigestHash = computeFactsDigestHash(digest);
@@ -7154,7 +8263,7 @@ const buildMySupplementDigestForEnsureOverview = async (params: {
   }
 
   // Minimal deterministic fallback: "web" digest with no extracted facts yet.
-  const identityType: FactsIdentityType = barcodeGtin14 ? "gtin14" : "webCanonicalId";
+  const identityType: FactsIdentityType = "webCanonicalId";
   const identityValue = barcodeGtin14 ?? params.supplementId;
   const factsSourceVersion = barcodeGtin14 ? "snapshot:miss" : "manual:missing_barcode";
   const digest = buildFactsDigestFromWeb({
@@ -7475,6 +8584,8 @@ const kbFormInsightsItemSchema = z
   .object({
     ingredientId: z.string().trim().min(1),
     formKey: z.string().trim().min(1),
+    ingredientName: z.string().trim().min(1).optional(),
+    ingredientCanonicalKey: z.string().trim().min(1).optional(),
   })
   .strict();
 const kbFormInsightsBatchBodySchema = z
@@ -7761,6 +8872,255 @@ app.get("/api/score/v4/:source/:id", verifySupabaseToken, async (req: Request, r
   try {
     const selectScoreColumns =
       "source,source_id,canonical_source_id,score_version,overall_score,effectiveness_score,safety_score,integrity_score,confidence,best_fit_goals,flags_json,highlights_json,explain_json,inputs_hash,computed_at";
+    const persistComputedScore = async (computedResult: Awaited<ReturnType<typeof computeScoreBundleV4>>) => {
+      if (!computedResult) return null;
+      const { bundle, inputsHash, canonicalSourceId, sourceIdForWrite } = computedResult;
+      const scorePayload = {
+        source,
+        source_id: sourceIdForWrite,
+        canonical_source_id: canonicalSourceId,
+        score_version: V4_SCORE_VERSION,
+        overall_score: bundle.overallScore,
+        effectiveness_score: bundle.pillars.effectiveness,
+        safety_score: bundle.pillars.safety,
+        integrity_score: bundle.pillars.integrity,
+        confidence: bundle.confidence,
+        best_fit_goals: bundle.bestFitGoals,
+        flags_json: bundle.flags,
+        highlights_json: bundle.highlights,
+        explain_json: bundle.explain,
+        inputs_hash: inputsHash,
+        computed_at: bundle.provenance.computedAt,
+      };
+      const { error: upsertError } = await supabase
+        .from("product_scores")
+        .upsert(scorePayload, { onConflict: "source,source_id" });
+      if (upsertError) {
+        console.warn("[ScoreV4] Upsert failed", upsertError.message);
+      }
+      const response: ScoreBundleResponse = {
+        status: "ok",
+        source,
+        sourceId,
+        bundle,
+      };
+      return response;
+    };
+    const backfillLnhpdIngredientsForScore = async (): Promise<{
+      attempted: boolean;
+      activeCountWithDose: number;
+      canonicalSourceId: string | null;
+      reason: string | null;
+    }> => {
+      const facts = await fetchLnhpdFactsByNpn(sourceId);
+      if (!facts || !Array.isArray(facts.actives) || facts.actives.length === 0) {
+        return {
+          attempted: false,
+          activeCountWithDose: 0,
+          canonicalSourceId: null,
+          reason: "facts_missing_or_empty",
+        };
+      }
+      const row = await fetchLnhpdFactsRecordByNpn(sourceId);
+      const dto = mapLnhpdFactsToFactsDTO({
+        npn: sourceId,
+        productName: facts.productName ?? null,
+        brandName: facts.brandName ?? null,
+        actives: facts.actives,
+        inactive: facts.inactive ?? [],
+        purposes: facts.purposes ?? [],
+        routes: facts.routes ?? [],
+        doses: facts.doses ?? [],
+        datasetVersion: facts.datasetVersion ?? row?.dataset_version ?? null,
+        extractedAt: facts.extractedAt ?? row?.extracted_at ?? null,
+        isComplete: typeof row?.is_complete === "boolean" ? row.is_complete : null,
+        missingFields:
+          Array.isArray(row?.missing_fields)
+            ? row.missing_fields.filter((item): item is string => typeof item === "string")
+            : [],
+        factsJson: row?.facts_json,
+      });
+      const dtoActives = Array.isArray(dto?.ingredients?.actives)
+        ? dto.ingredients.actives
+            .map((entry) => {
+              const name = typeof entry?.name === "string" ? entry.name.trim() : "";
+              if (!name) return null;
+              const amount = Number.isFinite(Number(entry?.amount)) ? Number(entry.amount) : null;
+              const unit = normalizeUnitLabel(typeof entry?.unit === "string" ? entry.unit : null);
+              return {
+                name,
+                amount,
+                unit,
+                formRaw: typeof entry?.formText === "string" ? entry.formText : null,
+                lnhpdMeta: null,
+              };
+            })
+            .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
+        : [];
+      const fallbackActives = facts.actives
+        .map((entry) => {
+          const name = typeof entry?.name === "string" ? entry.name.trim() : "";
+          if (!name) return null;
+          const amount = Number.isFinite(Number(entry?.amount)) ? Number(entry.amount) : null;
+          const unit = normalizeUnitLabel(typeof entry?.unit === "string" ? entry.unit : null);
+          return {
+            name,
+            amount,
+            unit,
+            formRaw: typeof entry?.formRaw === "string" ? entry.formRaw : null,
+            lnhpdMeta: entry?.lnhpdMeta ?? null,
+          };
+        })
+        .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
+      const actives = dtoActives.length > 0 ? dtoActives : fallbackActives;
+      const activeCountWithDose = actives.filter((entry) => entry.amount != null && Boolean(entry.unit)).length;
+      if (activeCountWithDose <= 0) {
+        return {
+          attempted: false,
+          activeCountWithDose,
+          canonicalSourceId: null,
+          reason: "facts_without_amount_unit",
+        };
+      }
+      const canonicalSourceId =
+        facts?.lnhpdId != null && Number.isFinite(Number(facts.lnhpdId))
+          ? String(facts.lnhpdId)
+          : null;
+      const upsertResult = await upsertProductIngredientsFromLabelFacts({
+        source: "lnhpd",
+        sourceId,
+        canonicalSourceId,
+        labelFacts: {
+          actives,
+          inactive: Array.isArray(facts.inactive)
+            ? facts.inactive.filter((value): value is string => typeof value === "string")
+            : [],
+          proprietaryBlends: [],
+        },
+        parseConfidence: 0.98,
+      });
+      if (!upsertResult.success) {
+        console.warn("[ScoreV4] LNHPD ingredient backfill failed", {
+          sourceId,
+          reason: upsertResult.error?.message ?? "unknown_error",
+        });
+        return {
+          attempted: false,
+          activeCountWithDose,
+          canonicalSourceId,
+          reason: "upsert_failed",
+        };
+      }
+      return {
+        attempted: true,
+        activeCountWithDose,
+        canonicalSourceId,
+        reason: null,
+      };
+    };
+    const backfillDsldIngredientsForScore = async (): Promise<{
+      attempted: boolean;
+      activeCountWithDose: number;
+      canonicalSourceId: string | null;
+      reason: string | null;
+    }> => {
+      const labelId = Number(sourceId);
+      if (!Number.isFinite(labelId) || labelId <= 0) {
+        return {
+          attempted: false,
+          activeCountWithDose: 0,
+          canonicalSourceId: null,
+          reason: "invalid_dsld_label_id",
+        };
+      }
+      const facts = await fetchDsldFactsByLabelId(labelId);
+      if (!facts || !Array.isArray(facts.actives) || facts.actives.length === 0) {
+        return {
+          attempted: false,
+          activeCountWithDose: 0,
+          canonicalSourceId: null,
+          reason: "facts_missing_or_empty",
+        };
+      }
+      const actives = facts.actives
+        .map((entry) => {
+          const name = typeof entry?.name === "string" ? entry.name.trim() : "";
+          if (!name) return null;
+          const amount = Number.isFinite(Number(entry?.amount)) ? Number(entry.amount) : null;
+          const unit = normalizeUnitLabel(typeof entry?.unit === "string" ? entry.unit : null);
+          return {
+            name,
+            amount,
+            unit,
+            formRaw: typeof entry?.formRaw === "string" ? entry.formRaw : null,
+          };
+        })
+        .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
+      const activeCountWithDose = actives.filter((entry) => entry.amount != null && Boolean(entry.unit)).length;
+      if (activeCountWithDose <= 0) {
+        return {
+          attempted: false,
+          activeCountWithDose,
+          canonicalSourceId: null,
+          reason: "facts_without_amount_unit",
+        };
+      }
+      const canonicalSourceId =
+        Number.isFinite(Number(facts.dsldLabelId)) && Number(facts.dsldLabelId) > 0
+          ? String(facts.dsldLabelId)
+          : String(labelId);
+      const upsertResult = await upsertProductIngredientsFromLabelFacts({
+        source: "dsld",
+        sourceId,
+        canonicalSourceId,
+        labelFacts: {
+          actives,
+          inactive: Array.isArray(facts.inactive)
+            ? facts.inactive.filter((value): value is string => typeof value === "string")
+            : [],
+          proprietaryBlends: Array.isArray(facts.proprietaryBlends)
+            ? facts.proprietaryBlends
+                .map((blend) => {
+                  const name = typeof blend?.name === "string" ? blend.name.trim() : "";
+                  if (!name) return null;
+                  const totalAmount = Number.isFinite(Number(blend?.totalAmount))
+                    ? Number(blend.totalAmount)
+                    : null;
+                  const unit = normalizeUnitLabel(typeof blend?.unit === "string" ? blend.unit : null);
+                  const ingredients = Array.isArray(blend?.ingredients)
+                    ? blend.ingredients.filter((value): value is string => typeof value === "string")
+                    : null;
+                  return {
+                    name,
+                    totalAmount,
+                    unit,
+                    ingredients,
+                  };
+                })
+                .filter((blend): blend is NonNullable<typeof blend> => Boolean(blend))
+            : [],
+        },
+        parseConfidence: 0.98,
+      });
+      if (!upsertResult.success) {
+        console.warn("[ScoreV4] DSLD ingredient backfill failed", {
+          sourceId,
+          reason: upsertResult.error?.message ?? "unknown_error",
+        });
+        return {
+          attempted: false,
+          activeCountWithDose,
+          canonicalSourceId,
+          reason: "upsert_failed",
+        };
+      }
+      return {
+        attempted: true,
+        activeCountWithDose,
+        canonicalSourceId,
+        reason: null,
+      };
+    };
     const fetchScoreRow = async () => {
       const { data } = await supabase
         .from("product_scores")
@@ -7825,39 +9185,35 @@ app.get("/api/score/v4/:source/:id", verifySupabaseToken, async (req: Request, r
       return res.json(response);
     }
 
-    const computed = await computeScoreBundleV4({ source, sourceId });
-    if (computed) {
-      const { bundle, inputsHash, canonicalSourceId, sourceIdForWrite } = computed;
-      const scorePayload = {
-        source,
-        source_id: sourceIdForWrite,
-        canonical_source_id: canonicalSourceId,
-        score_version: V4_SCORE_VERSION,
-        overall_score: bundle.overallScore,
-        effectiveness_score: bundle.pillars.effectiveness,
-        safety_score: bundle.pillars.safety,
-        integrity_score: bundle.pillars.integrity,
-        confidence: bundle.confidence,
-        best_fit_goals: bundle.bestFitGoals,
-        flags_json: bundle.flags,
-        highlights_json: bundle.highlights,
-        explain_json: bundle.explain,
-        inputs_hash: inputsHash,
-        computed_at: bundle.provenance.computedAt,
-      };
-      const { error: upsertError } = await supabase
-        .from("product_scores")
-        .upsert(scorePayload, { onConflict: "source,source_id" });
-      if (upsertError) {
-        console.warn("[ScoreV4] Upsert failed", upsertError.message);
+    let computed = await computeScoreBundleV4({ source, sourceId });
+    if (!computed && source === "lnhpd") {
+      const fallback = await backfillLnhpdIngredientsForScore();
+      if (fallback.attempted) {
+        computed = await computeScoreBundleV4({ source, sourceId });
+      } else if (fallback.activeCountWithDose > 0) {
+        console.info("[ScoreV4] LNHPD score fallback skipped", {
+          sourceId,
+          reason: fallback.reason,
+          canonicalSourceId: fallback.canonicalSourceId,
+          activeCountWithDose: fallback.activeCountWithDose,
+        });
       }
-      const response: ScoreBundleResponse = {
-        status: "ok",
-        source,
-        sourceId,
-        bundle,
-      };
-      return res.json(response);
+    } else if (!computed && source === "dsld") {
+      const fallback = await backfillDsldIngredientsForScore();
+      if (fallback.attempted) {
+        computed = await computeScoreBundleV4({ source, sourceId });
+      } else if (fallback.activeCountWithDose > 0) {
+        console.info("[ScoreV4] DSLD score fallback skipped", {
+          sourceId,
+          reason: fallback.reason,
+          canonicalSourceId: fallback.canonicalSourceId,
+          activeCountWithDose: fallback.activeCountWithDose,
+        });
+      }
+    }
+    if (computed) {
+      const response = await persistComputedScore(computed);
+      if (response) return res.json(response);
     }
 
     const { data: ingredientRow, error: ingredientError } = await supabase
@@ -8236,19 +9592,79 @@ app.post("/api/kb/runtime/form-insights/batch", verifySupabaseToken, async (req:
   if (!parsed) return;
 
   const locale = (parsed.locale ?? "en").toLowerCase();
+  const isRegressionRequest = (req as AuthenticatedRequest).regressionAuth === true;
+  const uuidLike = (value: string): boolean =>
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+
+  const unresolvedUuidIds = Array.from(
+    new Set(
+      parsed.items
+        .filter(
+          (item) =>
+            !item.ingredientCanonicalKey &&
+            !item.ingredientName &&
+            typeof item.ingredientId === "string" &&
+            uuidLike(item.ingredientId),
+        )
+        .map((item) => item.ingredientId),
+    ),
+  );
+
+  const ingredientBridgeById = new Map<string, { canonicalKey: string | null; ingredientName: string | null }>();
+  if (unresolvedUuidIds.length > 0) {
+    try {
+      const { data, error } = await supabase
+        .from("ingredients")
+        .select("id,canonical_key,name")
+        .in("id", unresolvedUuidIds);
+      if (error) {
+        console.warn("[kb-runtime-batch] uuid bridge lookup failed", error.message);
+      } else if (Array.isArray(data)) {
+        data.forEach((row) => {
+          const id = typeof row?.id === "string" ? row.id : "";
+          if (!id) return;
+          ingredientBridgeById.set(id, {
+            canonicalKey: typeof row?.canonical_key === "string" ? row.canonical_key : null,
+            ingredientName: typeof row?.name === "string" ? row.name : null,
+          });
+        });
+      }
+    } catch (error) {
+      console.warn(
+        "[kb-runtime-batch] uuid bridge lookup crashed",
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  }
+
   const items = parsed.items.map((item) => {
+    const bridged = ingredientBridgeById.get(item.ingredientId);
+    const ingredientCanonicalKey = item.ingredientCanonicalKey ?? bridged?.canonicalKey ?? null;
+    const ingredientName = item.ingredientName ?? bridged?.ingredientName ?? null;
     const result = lookupKbRuntimeFormInsights({
       ingredientId: item.ingredientId,
       formKey: item.formKey,
+      ingredientName,
+      ingredientCanonicalKey,
     });
     return {
       ingredientId: item.ingredientId,
       formKey: item.formKey,
+      ingredientCanonicalKey,
       status: result.status,
       reason: result.reason,
       formDisplay: result.formDisplay,
       segments: result.segments,
       meta: result.meta,
+      ...(isRegressionRequest
+        ? {
+          debug: {
+            ingredientResolvePath: result.debug.ingredientResolvePath,
+            formKeyResolvePath: result.debug.formKeyResolvePath,
+            reviewedLookupTried: result.debug.reviewedLookupTried,
+          },
+        }
+        : {}),
     };
   });
 
@@ -8341,6 +9757,144 @@ app.post("/api/summary/ingredient", verifySupabaseToken, async (req: Request, re
 
   return res.json({
     status: "ok",
+    ...summary,
+    summary,
+  });
+});
+
+app.post("/api/summary/usage", verifySupabaseToken, async (req: Request, res: Response) => {
+  const packet = parseRequestBody(usageSummaryPacketSchema, req, res);
+  if (!packet) return;
+
+  const deepseekKey = process.env.DEEPSEEK_API_KEY?.trim();
+  const deepseekModel = process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
+
+  const llmFn = deepseekKey
+    ? async (prompt: string): Promise<string> => {
+        const controller = new AbortController();
+        const timeoutMs = 9_000;
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+          const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${deepseekKey}`,
+            },
+            body: JSON.stringify({
+              model: deepseekModel,
+              messages: [
+                {
+                  role: "system",
+                  content:
+                    "Return ONLY a valid JSON object. No markdown. No commentary. No code fences.",
+                },
+                { role: "user", content: prompt },
+              ],
+              temperature: 0.1,
+              stream: false,
+              max_tokens: 260,
+              response_format: { type: "json_object" },
+            }),
+            signal: controller.signal,
+          });
+
+          if (!response.ok) {
+            throw new Error(`deepseek_http_${response.status}`);
+          }
+
+          const payload = (await response.json()) as {
+            choices?: Array<{ message?: { content?: string } }>;
+          };
+          const content = payload.choices?.[0]?.message?.content;
+          if (typeof content !== "string" || content.trim().length === 0) {
+            throw new Error("deepseek_empty_content");
+          }
+          return content;
+        } finally {
+          clearTimeout(timer);
+        }
+      }
+    : undefined;
+
+  const summary = await compileUsageSummaryAsync(packet, { llmFn });
+  return res.json({
+    status: "ok",
+    ...summary,
+    summary,
+  });
+});
+
+app.post("/api/summary/safety", verifySupabaseToken, async (req: Request, res: Response) => {
+  const packet = parseRequestBody(safetySummaryPacketSchema, req, res);
+  if (!packet) return;
+
+  const deepseekKey = process.env.DEEPSEEK_API_KEY?.trim();
+  const deepseekModel = process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
+  const startedAt = Date.now();
+
+  const llmFn = deepseekKey
+    ? async (prompt: string): Promise<string> => {
+        const controller = new AbortController();
+        const timeoutMs = 3_900;
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+          const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${deepseekKey}`,
+            },
+            body: JSON.stringify({
+              model: deepseekModel,
+              messages: [
+                {
+                  role: "system",
+                  content:
+                    "Return ONLY a valid JSON object. No markdown. No commentary. No code fences.",
+                },
+                { role: "user", content: prompt },
+              ],
+              temperature: 0.1,
+              stream: false,
+              max_tokens: 260,
+              response_format: { type: "json_object" },
+            }),
+            signal: controller.signal,
+          });
+
+          if (!response.ok) {
+            throw new Error(`deepseek_http_${response.status}`);
+          }
+
+          const payload = (await response.json()) as {
+            choices?: Array<{ message?: { content?: string } }>;
+          };
+          const content = payload.choices?.[0]?.message?.content;
+          if (typeof content !== "string" || content.trim().length === 0) {
+            throw new Error("deepseek_empty_content");
+          }
+          return content;
+        } finally {
+          clearTimeout(timer);
+        }
+      }
+    : undefined;
+
+  const summary = await compileSafetySummaryAsync(packet, { llmFn, timeoutMs: 3500, maxRetries: 0 });
+  const latencyMs = Date.now() - startedAt;
+  console.info(
+    "[summary/safety]",
+    JSON.stringify({
+      latencyMs,
+      fallbackUsed: summary.fallbackUsed,
+      reasonCode: summary.reasonCode,
+      sourceType: packet.sourceType ?? null,
+    }),
+  );
+  return res.json({
+    status: "ok",
+    latencyMs,
     ...summary,
     summary,
   });
@@ -8717,7 +10271,8 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
       promptVersionForCache = `${promptVersion}|kb:${pkgSha.trim().slice(0, 12)}`;
     }
   }
-  const scoreAvailable = digest.sourceType !== "web";
+  const scoreMeta = resolveDigestScoreMeta(digest);
+  const scoreAvailable = scoreMeta.scoreAvailable;
   const cachedFastBundleRow = await getAnalysisIdentityCache(
     {
       identityType: identity.type,
@@ -8753,6 +10308,14 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
             fastBundleForGate.meta.scoreAvailable ??
             getScoreAvailableFromSourceType(fastBundleForGate.meta.sourceType) ??
             scoreAvailable,
+          scoreReasonCode:
+            typeof fastBundleForGate.meta.scoreReasonCode === "string"
+              ? fastBundleForGate.meta.scoreReasonCode
+              : scoreMeta.scoreReasonCode ?? null,
+          inferenceOnly:
+            typeof fastBundleForGate.meta.inferenceOnly === "boolean"
+              ? fastBundleForGate.meta.inferenceOnly
+              : scoreMeta.inferenceOnly,
         },
         timingMs: 0,
       });
@@ -8776,6 +10339,8 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
         fallback: { code: "bundle_fast_missing" },
         fallbackReason: "bundle_fast_missing",
         scoreAvailable,
+        scoreReasonCode: scoreMeta.scoreReasonCode ?? null,
+        inferenceOnly: scoreMeta.inferenceOnly,
       },
       timingMs: 0,
     });
@@ -9418,9 +10983,12 @@ app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res:
     const sliceEnd = Math.min(sliceStart + requestedLimit, totalActives);
     const items = digest.actives.slice(sliceStart, sliceEnd).map((active) => ({
       name: active.name,
-      whatItDoes: { text: "Not provided by source.", basisTags: ["not_provided"] satisfies BasisTag[] },
-      doseContext: { text: "Not provided by source.", basisTags: ["not_provided"] satisfies BasisTag[] },
-      chemicalFormExplain: { text: "Chemical form not provided by source.", basisTags: ["not_provided"] satisfies BasisTag[] },
+      whatItDoes: buildIngredientWhatItDoesFallback(active.name),
+      doseContext: { text: "Dose details are not listed in this source record.", basisTags: ["not_provided"] satisfies BasisTag[] },
+      chemicalFormExplain: {
+        text: "Chemical form details are not listed in this source record.",
+        basisTags: ["not_provided"] satisfies BasisTag[],
+      },
       deliveryFormExplain: null,
     }));
 
@@ -9831,6 +11399,8 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       : null;
   const streamAnalysisBundleOnly =
     streamModeRaw === "analysis_bundle_only" || streamModeRaw === "bundle_only" || streamModeRaw === "analysis_bundle";
+  const streamAdmissionLane: EnrichStreamAdmissionLane = streamAnalysisBundleOnly ? "bundle_only" : "full";
+  const streamAdmissionGate = selectEnrichStreamAdmissionGate(streamAdmissionLane);
   const streamAdmissionQueueWaitMs = streamAnalysisBundleOnly
     ? Math.max(ENRICH_STREAM_QUEUE_WAIT_MS, ENRICH_STREAM_QUEUE_WAIT_MS_BUNDLE_ONLY)
     : ENRICH_STREAM_QUEUE_WAIT_MS;
@@ -9875,7 +11445,9 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
   let catalogLabelExtractionForAi: LabelExtractionMeta | null = null;
   let catalogLabelFactsForAi: LabelFacts | null = null;
   let stage0BundleAbort: AbortController | null = null;
+  let stage0BundleSignalCleanup: (() => void) | null = null;
   let stage1BundleAbort: AbortController | null = null;
+  let stage1BundleSignalCleanup: (() => void) | null = null;
 
   let sseStarted = false;
   // Set SSE Headers
@@ -9906,6 +11478,135 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     latestSourceTypeFinal: null as boolean | null,
     latestIdentityType: null as string | null,
   };
+  type Stage0Winner = "verified_regulatory" | "label_record" | "web_hint_unverified" | "unknown";
+  type StreamProductIdentity = {
+    name: string | null;
+    brand: string | null;
+    sourceAttribution: Stage0Winner;
+    identityStable: boolean;
+    sourceId?: string | null;
+  };
+  const stage0Rank = (winner: Stage0Winner): number => {
+    switch (winner) {
+      case "verified_regulatory":
+        return 3;
+      case "label_record":
+        return 2;
+      case "web_hint_unverified":
+        return 1;
+      default:
+        return 0;
+    }
+  };
+  const normalizeIdentityText = (value: unknown): string | null => {
+    const text = typeof value === "string" ? value.trim() : "";
+    return text.length > 0 ? text : null;
+  };
+  const normalizeProductIdentityAttribution = (value: unknown): Stage0Winner => {
+    const raw = typeof value === "string" ? value.trim().toLowerCase() : "";
+    if (
+      raw === "verified_regulatory"
+      || raw === "verified"
+      || raw === "regulatory"
+      || raw === "lnhpd"
+      || raw === "dsld"
+    ) {
+      return "verified_regulatory";
+    }
+    if (raw === "label_record" || raw === "label" || raw === "label_scan") {
+      return "label_record";
+    }
+    if (raw === "web_hint_unverified" || raw === "web_hint" || raw === "web") {
+      return "web_hint_unverified";
+    }
+    return "unknown";
+  };
+  const sourceAttributionFromDigestSource = (sourceType: FactsDigest["sourceType"]): Stage0Winner => {
+    if (sourceType === "lnhpd" || sourceType === "dsld") return "verified_regulatory";
+    if (sourceType === "web") return "web_hint_unverified";
+    return "unknown";
+  };
+  const buildProductIdentityFromDigest = (params: {
+    digest: FactsDigest;
+    identityType: FactsIdentityType;
+    identityValue: string;
+    sourceTypeFinal: boolean;
+  }): StreamProductIdentity | null => {
+    const sourceAttribution = sourceAttributionFromDigestSource(params.digest.sourceType);
+    const name = normalizeIdentityText(params.digest.product?.name);
+    const brand = normalizeIdentityText(params.digest.product?.brandDisplay);
+    const sourceId = normalizeIdentityText(params.identityValue);
+    if (!name && !brand && !sourceId) return null;
+    const identityStable =
+      sourceAttribution === "verified_regulatory"
+        ? Boolean(name)
+        : sourceAttribution === "label_record"
+          ? Boolean(name) && params.sourceTypeFinal
+          : false;
+    return {
+      name,
+      brand,
+      sourceAttribution,
+      identityStable,
+      sourceId: sourceId ? `${params.identityType}:${sourceId}` : null,
+    };
+  };
+  const toStreamProductIdentity = (candidate: unknown): StreamProductIdentity | null => {
+    if (!candidate || typeof candidate !== "object") return null;
+    const row = candidate as Record<string, unknown>;
+    const sourceAttribution = normalizeProductIdentityAttribution(row.sourceAttribution);
+    const name = normalizeIdentityText(row.name);
+    const brand = normalizeIdentityText(row.brand);
+    const sourceId = normalizeIdentityText(row.sourceId);
+    if (!name && !brand && !sourceId) return null;
+    const identityStable =
+      row.identityStable === true
+      || (sourceAttribution === "verified_regulatory" && Boolean(name));
+    return {
+      name,
+      brand,
+      sourceAttribution,
+      identityStable,
+      sourceId: sourceId ?? null,
+    };
+  };
+  let latestProductIdentity: StreamProductIdentity | null = null;
+  let lockedTrustedProductIdentity: StreamProductIdentity | null = null;
+  const rememberStreamProductIdentity = (candidate: StreamProductIdentity | null): StreamProductIdentity | null => {
+    if (lockedTrustedProductIdentity) {
+      latestProductIdentity = lockedTrustedProductIdentity;
+      return lockedTrustedProductIdentity;
+    }
+    if (!candidate) {
+      return latestProductIdentity;
+    }
+    latestProductIdentity = candidate;
+    if (
+      candidate.sourceAttribution === "verified_regulatory"
+      && candidate.identityStable
+      && Boolean(candidate.name)
+    ) {
+      lockedTrustedProductIdentity = candidate;
+      latestProductIdentity = candidate;
+      return candidate;
+    }
+    return candidate;
+  };
+  const attachProductIdentityMeta = (
+    bundle: AnalysisBundle,
+    fallbackIdentity: StreamProductIdentity | null = null,
+  ): AnalysisBundle => {
+    const candidateFromMeta = toStreamProductIdentity((bundle.meta as Record<string, unknown>)?.productIdentity);
+    const chosen = rememberStreamProductIdentity(candidateFromMeta ?? fallbackIdentity);
+    if (!chosen) return bundle;
+    return {
+      ...bundle,
+      meta: {
+        ...bundle.meta,
+        productIdentity: chosen,
+      },
+    };
+  };
   type PipelineStepName = "retrieve" | "sanitize" | "select_evidence" | "draft" | "verify" | "revise" | "emit";
   type PipelineStepStatus = "ok" | "degraded" | "failed";
   type PipelineStepMetric = {
@@ -9934,6 +11635,140 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
   let snapshotCacheHit = false;
   let fastBundleReplacedCount = 0;
   let fallbackRev1LockedCount = 0;
+  let stage0StartCount = 0;
+  let stage0ReplaceCount = 0;
+  let stage0UpgradeCount = 0;
+  let stage0RunSeq = 0;
+  let activeStage0RunId: number | null = null;
+  let activeStage0Winner: Stage0Winner = "unknown";
+  let activeStage0SourceTypeHint: "lnhpd" | "dsld" | "web" | null = null;
+  let activeStage0IdentityTypeHint: "npn" | "dsldLabelId" | "gtin14" | "webCanonicalId" | null = null;
+  let activeStage0IdentityValueHint: string | null = null;
+  let activeStage0Rank = stage0Rank(activeStage0Winner);
+  let stage0Rev1Locked = false;
+  let terminalReason: string | null = null;
+  let degradedMode = false;
+  let budgetGuardTriggered = false;
+  let eventLoopGuardTriggered = false;
+  let eventLoopLagP95DuringRequest = 0;
+  let webBytesReadTotal = 0;
+  let webParseMsTotal = 0;
+  type WebParseProfileBucket = {
+    calls: number;
+    slowCalls: number;
+    totalMs: number;
+    maxMs: number;
+    maxTextLen: number;
+  };
+  const webParseProfileBuckets = new Map<string, WebParseProfileBucket>();
+  let webParseProfileEventCount = 0;
+  let webParseProfileSummaryEmitted = false;
+  const profileWebParseStep = <T>(
+    step: string,
+    text: string | null | undefined,
+    fn: () => T,
+  ): T => {
+    if (!STAGE0_WEB_PARSE_PROFILE_ENABLED) {
+      return fn();
+    }
+    const startedAt = performance.now();
+    try {
+      return fn();
+    } finally {
+      const elapsedMs = Math.max(0, performance.now() - startedAt);
+      const textLen = typeof text === "string" ? text.length : 0;
+      const current = webParseProfileBuckets.get(step) ?? {
+        calls: 0,
+        slowCalls: 0,
+        totalMs: 0,
+        maxMs: 0,
+        maxTextLen: 0,
+      };
+      current.calls += 1;
+      current.totalMs += elapsedMs;
+      current.maxMs = Math.max(current.maxMs, elapsedMs);
+      current.maxTextLen = Math.max(current.maxTextLen, textLen);
+      if (elapsedMs >= STAGE0_WEB_PARSE_PROFILE_SLOW_MS) {
+        current.slowCalls += 1;
+        if (webParseProfileEventCount < STAGE0_WEB_PARSE_PROFILE_MAX_EVENTS) {
+          webParseProfileEventCount += 1;
+          console.warn("[enrich-stream][web_parse_hotspot]", {
+            requestId: requestId || null,
+            barcode: streamBarcode ?? normalized?.code ?? null,
+            step,
+            elapsedMs: Math.round(elapsedMs * 100) / 100,
+            textLen,
+            stage0Winner: activeStage0Winner,
+            sourceType: streamState.latestSourceType,
+            rev1Sent: streamState.rev1Sent,
+          });
+        }
+      }
+      webParseProfileBuckets.set(step, current);
+    }
+  };
+  const emitWebParseProfileSummary = (phase: string) => {
+    if (!STAGE0_WEB_PARSE_PROFILE_ENABLED) return;
+    if (webParseProfileSummaryEmitted) return;
+    webParseProfileSummaryEmitted = true;
+    const top = Array.from(webParseProfileBuckets.entries())
+      .map(([step, bucket]) => ({
+        step,
+        calls: bucket.calls,
+        slowCalls: bucket.slowCalls,
+        totalMs: Math.round(bucket.totalMs * 100) / 100,
+        avgMs: bucket.calls > 0 ? Math.round((bucket.totalMs / bucket.calls) * 100) / 100 : 0,
+        maxMs: Math.round(bucket.maxMs * 100) / 100,
+        maxTextLen: bucket.maxTextLen,
+      }))
+      .sort((a, b) => b.totalMs - a.totalMs)
+      .slice(0, STAGE0_WEB_PARSE_PROFILE_TOP_K);
+    console.info("[enrich-stream][web_parse_profile_summary]", {
+      requestId: requestId || null,
+      barcode: streamBarcode ?? normalized?.code ?? null,
+      phase,
+      webParseMsTotal: Math.max(0, Math.round(webParseMsTotal)),
+      webBytesReadTotal,
+      profileBucketsEmpty: webParseProfileBuckets.size === 0,
+      top,
+    });
+  };
+  const buildWebParseProfileSnapshot = (topK = 3) => {
+    if (!STAGE0_WEB_PARSE_PROFILE_ENABLED) return null;
+    const top = Array.from(webParseProfileBuckets.entries())
+      .map(([step, bucket]) => ({
+        step,
+        calls: bucket.calls,
+        slowCount: bucket.slowCalls,
+        totalMs: Math.round(bucket.totalMs * 100) / 100,
+        maxMs: Math.round(bucket.maxMs * 100) / 100,
+      }))
+      .sort((a, b) => b.totalMs - a.totalMs)
+      .slice(0, Math.max(1, topK));
+    return {
+      webParseMsTotal: Math.max(0, Math.round(webParseMsTotal)),
+      webBytesReadTotal,
+      profileBucketsEmpty: webParseProfileBuckets.size === 0,
+      top,
+    };
+  };
+  let npnCandidatesForMeta: NpnCandidate[] = [];
+  let candidateBackfillDigest: FactsDigest | null = null;
+  let candidateBackfillState: {
+    attempted: boolean;
+    used: boolean;
+    source: NpnCandidateSourceKind | null;
+    reasonCode: string | null;
+    latencyMs: number | null;
+    scoreSuppressed: boolean;
+  } = {
+    attempted: false,
+    used: false,
+    source: null,
+    reasonCode: null,
+    latencyMs: null,
+    scoreSuppressed: false,
+  };
   const pipelineStatusRank = (status: PipelineStepStatus): number =>
     status === "failed" ? 3 : status === "degraded" ? 2 : 1;
   const markPipelineStepStart = (step: PipelineStepName) => {
@@ -9993,6 +11828,78 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       },
     };
   };
+  const buildStabilityMeta = () => ({
+    stage0Winner: activeStage0Winner,
+    stage0StartCount,
+    stage0ReplaceCount,
+    terminalReason: terminalReason ?? undefined,
+    degradedMode,
+    productIdentity: lockedTrustedProductIdentity ?? latestProductIdentity ?? undefined,
+    regulatoryIds:
+      npnCandidatesForMeta.length > 0
+        ? {
+            npnCandidates: npnCandidatesForMeta,
+          }
+        : undefined,
+    candidateBackfill: candidateBackfillState.attempted
+      ? {
+          attempted: true,
+          used: candidateBackfillState.used,
+          source: candidateBackfillState.source,
+          reasonCode: candidateBackfillState.reasonCode ?? undefined,
+          latencyMs:
+            Number.isFinite(Number(candidateBackfillState.latencyMs))
+              ? Number(candidateBackfillState.latencyMs)
+              : undefined,
+          scoreSuppressed: candidateBackfillState.scoreSuppressed,
+        }
+      : undefined,
+    rev1ToDoneMs:
+      typeof streamState.tRev1 === "number" && typeof streamState.tDone === "number"
+        ? Math.max(0, Math.round(streamState.tDone - streamState.tRev1))
+        : undefined,
+    doneTimerKind: doneTimerKind ?? undefined,
+    doneTimerPlannedDelayMs:
+      Number.isFinite(Number(doneTimerPlannedDelayMs)) && Number(doneTimerPlannedDelayMs) >= 0
+        ? Number(doneTimerPlannedDelayMs)
+        : undefined,
+    doneTimerDriftMs:
+      Number.isFinite(Number(doneTimerDriftMs)) && Number(doneTimerDriftMs) >= 0
+        ? Number(doneTimerDriftMs)
+        : undefined,
+    persistedCommitMode,
+    persistedCommitCompletedBeforeDone:
+      typeof streamState.tPersisted === "number"
+        ? (typeof streamState.tDone === "number" ? streamState.tPersisted <= streamState.tDone : true)
+        : false,
+    eventLoopLagP95DuringRequest: Math.max(0, Math.round(eventLoopLagP95DuringRequest)),
+    webBytesReadTotal,
+    webParseMsTotal: Math.max(0, Math.round(webParseMsTotal)),
+  });
+  const attachStabilityMeta = (bundle: AnalysisBundle): AnalysisBundle => {
+    const sourceTypeFinal = bundle.meta.sourceTypeFinal === true;
+    const shouldSuppressScore = candidateBackfillState.used && !sourceTypeFinal;
+    if (shouldSuppressScore && !candidateBackfillState.scoreSuppressed) {
+      candidateBackfillState = {
+        ...candidateBackfillState,
+        scoreSuppressed: true,
+        reasonCode: candidateBackfillState.reasonCode ?? CANDIDATE_SCORE_SUPPRESS_REASON_CODE,
+      };
+    }
+    return {
+      ...bundle,
+      meta: {
+        ...bundle.meta,
+        ...(shouldSuppressScore
+          ? {
+              scoreAvailable: false,
+              scoreReasonCode: CANDIDATE_SCORE_SUPPRESS_REASON_CODE,
+            }
+          : null),
+        ...buildStabilityMeta(),
+      },
+    };
+  };
   const emitPipelineMetrics = (sourceTypeHint?: "lnhpd" | "dsld" | "web") => {
     if (!pipelineMetricsEnabled || pipelineMetricsEmitted) return;
     const resolvedSourceType =
@@ -10022,6 +11929,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         fast_bundle_replaced_count: fastBundleReplacedCount,
         fallback_rev1_locked_count: fallbackRev1LockedCount,
       },
+      streamStability: buildStabilityMeta(),
       steps,
       totalMs,
       emittedAt: new Date().toISOString(),
@@ -10049,6 +11957,17 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
   let pendingDoneReason: string | null = null;
   let streamAbortController: AbortController | null = null;
   let latestSkeletonBundle: AnalysisBundle | null = null;
+  let latestNotFoundHint: {
+    brand: string | null;
+    product: string | null;
+    category: string | null;
+    sources: Array<{ title: string; link: string; domain: string; isHighQuality: boolean }> | null;
+  } = {
+    brand: null,
+    product: null,
+    category: null,
+    sources: null,
+  };
   let streamBarcode: string | null = null;
   let requestId = "";
   requestId = String(res.getHeader("x-request-id") ?? "");
@@ -10057,8 +11976,17 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
   let fastWatchdog: ReturnType<typeof setTimeout> | null = null;
   let globalWatchdog: ReturnType<typeof setTimeout> | null = null;
   let bundleOnlyDoneTimer: ReturnType<typeof setTimeout> | null = null;
+  let bundleOnlyTerminalGuardTimer: ReturnType<typeof setTimeout> | null = null;
+  let fullPreRev1TerminalGuardTimer: ReturnType<typeof setTimeout> | null = null;
   let webRev1DoneTimer: ReturnType<typeof setTimeout> | null = null;
+  let hardTerminalWatchdog: ReturnType<typeof setTimeout> | null = null;
   let disconnectReleaseTimer: ReturnType<typeof setTimeout> | null = null;
+  let lagSamplerTimer: ReturnType<typeof setInterval> | null = null;
+  let doneTimerKind: "bundle_only_done" | "full_rev1_watchdog" | null = null;
+  let doneTimerPlannedDelayMs: number | null = null;
+  let doneTimerScheduledAtMs: number | null = null;
+  let doneTimerDriftMs: number | null = null;
+  let persistedCommitMode: "awaited" | "background_async" = "awaited";
   let pipelineAborted = false;
 
   const clearWatchdogs = () => {
@@ -10074,10 +12002,38 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       clearTimeout(bundleOnlyDoneTimer);
       bundleOnlyDoneTimer = null;
     }
+    if (bundleOnlyTerminalGuardTimer) {
+      clearTimeout(bundleOnlyTerminalGuardTimer);
+      bundleOnlyTerminalGuardTimer = null;
+    }
+    if (fullPreRev1TerminalGuardTimer) {
+      clearTimeout(fullPreRev1TerminalGuardTimer);
+      fullPreRev1TerminalGuardTimer = null;
+    }
     if (webRev1DoneTimer) {
       clearTimeout(webRev1DoneTimer);
       webRev1DoneTimer = null;
     }
+    if (hardTerminalWatchdog) {
+      clearTimeout(hardTerminalWatchdog);
+      hardTerminalWatchdog = null;
+    }
+    if (lagSamplerTimer) {
+      clearInterval(lagSamplerTimer);
+      lagSamplerTimer = null;
+    }
+  };
+  const sampleRequestLag = () => {
+    const lagMs = readEventLoopLagP95Ms();
+    if (Number.isFinite(lagMs)) {
+      eventLoopLagP95DuringRequest = Math.max(eventLoopLagP95DuringRequest, lagMs);
+    }
+  };
+  const startLagSampler = () => {
+    sampleRequestLag();
+    if (lagSamplerTimer) return;
+    lagSamplerTimer = setInterval(sampleRequestLag, EVENT_LOOP_LAG_SAMPLE_MS);
+    (lagSamplerTimer as { unref?: () => void }).unref?.();
   };
   const clearDisconnectReleaseTimer = () => {
     if (!disconnectReleaseTimer) return;
@@ -10094,8 +12050,13 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     streamAbortController?.abort(reason);
     stage0BundleAbort?.abort(reason);
     stage0BundleAbort = null;
+    stage0BundleSignalCleanup?.();
+    stage0BundleSignalCleanup = null;
+    activeStage0RunId = null;
     stage1BundleAbort?.abort(reason);
     stage1BundleAbort = null;
+    stage1BundleSignalCleanup?.();
+    stage1BundleSignalCleanup = null;
   };
   const originalWrite = res.write.bind(res);
   const originalEnd = res.end.bind(res);
@@ -10108,6 +12069,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     eventKind: "attempt" | "success" | "skipped",
     extra?: Record<string, unknown>,
   ) => {
+    if (!SSE_LIFECYCLE_LOG_ENABLED) return;
     const base = {
       request_id: requestId || null,
       barcode: streamBarcode,
@@ -10130,6 +12092,10 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     };
     console.info("[sse_done]", { ...base, ...(extra ?? {}) });
   };
+  const logSseLifecycle = (payload: Record<string, unknown>) => {
+    if (!SSE_LIFECYCLE_LOG_ENABLED) return;
+    console.info("[SSE_LIFECYCLE]", payload);
+  };
   // Track lifecycle even when legacy branches still call sendSSE/res.end directly.
   (res.write as unknown) = ((chunk: unknown, encoding?: BufferEncoding, cb?: (error?: Error | null) => void) => {
     const text = toChunkText(chunk, encoding);
@@ -10149,6 +12115,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
   (res.end as unknown) = ((chunk?: unknown, encoding?: BufferEncoding, cb?: () => void) => {
     if (!streamState.ended) {
       streamState.ended = true;
+      emitWebParseProfileSummary("res_end");
       clearKeepAlive();
       clearWatchdogs();
       cleanupRequestSignal?.();
@@ -10165,9 +12132,11 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         !streamState.clientDisconnected &&
         isSseResponse
       ) {
+        const webParseProfile = buildWebParseProfileSnapshot(3);
         const emitted = safeSendSse(res, "done", {
           barcode: streamBarcode,
           reason: pendingDoneReason ?? "implicit_end_guard",
+          ...(webParseProfile ? { webParseProfile } : null),
         });
         if (emitted) {
           streamState.doneSent = true;
@@ -10217,22 +12186,37 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     release();
   };
   const finalizeStream = (reason: string) => {
+    sampleRequestLag();
+    emitWebParseProfileSummary("finalize_stream");
+    if (!terminalReason) {
+      terminalReason = reason;
+    }
+    const resolvedReason = terminalReason ?? reason;
     if (streamState.ended || res.writableEnded) {
-      pendingDoneReason = reason;
+      pendingDoneReason = resolvedReason;
       logDoneEvent("skipped", {
         emit_path: "finalize_stream",
         skip_reason: streamState.ended ? "stream_already_ended" : "response_already_closed",
       });
       return;
     }
-    pendingDoneReason = reason;
+    pendingDoneReason = resolvedReason;
     logDoneEvent("attempt", {
       emit_path: "finalize_stream",
     });
     if (!streamState.doneSent && !streamState.clientDisconnected) {
+      const stabilityMeta = buildStabilityMeta();
+      const webParseProfile = buildWebParseProfileSnapshot(3);
       const emitted = safeSendSse(res, "done", {
         barcode: streamBarcode,
         reason: pendingDoneReason ?? "finalize_stream",
+        terminalReason: resolvedReason,
+        degradedMode,
+        stage0Winner: activeStage0Winner,
+        stage0StartCount,
+        stage0ReplaceCount,
+        ...stabilityMeta,
+        ...(webParseProfile ? { webParseProfile } : null),
       });
       if (emitted) {
         streamState.doneSent = true;
@@ -10252,6 +12236,15 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         ? (streamState.latestSourceType as "lnhpd" | "dsld" | "web")
         : undefined,
     );
+    logSseLifecycle({
+      requestId: requestId || null,
+      phase: "finalize",
+      reason: resolvedReason,
+      rev0Sent: streamState.rev0Sent,
+      rev1Sent: streamState.rev1Sent,
+      doneSent: streamState.doneSent,
+      sourceType: streamState.latestSourceType,
+    });
     abortPipelineOnce(new Error("stream_finalized"));
     clearWatchdogs();
     res.end();
@@ -10262,8 +12255,15 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
 
     if (streamAnalysisBundleOnly) {
       if (bundleOnlyDoneTimer) return;
+      doneTimerKind = "bundle_only_done";
+      doneTimerPlannedDelayMs = ENRICH_STREAM_BUNDLE_ONLY_DONE_DELAY_MS;
+      doneTimerScheduledAtMs = Date.now();
+      doneTimerDriftMs = null;
       bundleOnlyDoneTimer = setTimeout(() => {
         bundleOnlyDoneTimer = null;
+        const plannedDelayMs = Number(doneTimerPlannedDelayMs ?? ENRICH_STREAM_BUNDLE_ONLY_DONE_DELAY_MS);
+        const scheduledAtMs = Number(doneTimerScheduledAtMs ?? Date.now());
+        doneTimerDriftMs = Math.max(0, Date.now() - scheduledAtMs - plannedDelayMs);
         if (streamState.doneSent || streamState.ended || res.writableEnded || streamState.clientDisconnected) return;
         finalizeStream("analysis_bundle_only_rev1_complete");
       }, ENRICH_STREAM_BUNDLE_ONLY_DONE_DELAY_MS);
@@ -10272,15 +12272,21 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     }
 
     if (ENRICH_STREAM_WEB_REV1_DONE_DELAY_MS <= 0) return;
-    if (streamState.latestSourceType !== "web") return;
     if (webRev1DoneTimer) return;
 
-    // For web flows, cap post-rev1 stream lifetime so clients that stop shortly after rev1
-    // still receive terminal done deterministically.
+    // For full-lane flows, cap post-rev1 stream lifetime so clients that stop shortly
+    // after rev1 still receive terminal done deterministically across all source types.
+    doneTimerKind = "full_rev1_watchdog";
+    doneTimerPlannedDelayMs = ENRICH_STREAM_WEB_REV1_DONE_DELAY_MS;
+    doneTimerScheduledAtMs = Date.now();
+    doneTimerDriftMs = null;
     webRev1DoneTimer = setTimeout(() => {
       webRev1DoneTimer = null;
+      const plannedDelayMs = Number(doneTimerPlannedDelayMs ?? ENRICH_STREAM_WEB_REV1_DONE_DELAY_MS);
+      const scheduledAtMs = Number(doneTimerScheduledAtMs ?? Date.now());
+      doneTimerDriftMs = Math.max(0, Date.now() - scheduledAtMs - plannedDelayMs);
       if (streamState.doneSent || streamState.ended || res.writableEnded || streamState.clientDisconnected) return;
-      finalizeStream("web_rev1_watchdog_complete");
+      finalizeStream("full_rev1_watchdog_complete");
     }, ENRICH_STREAM_WEB_REV1_DONE_DELAY_MS);
     (webRev1DoneTimer as { unref?: () => void }).unref?.();
   };
@@ -10300,6 +12306,9 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     stage?: string;
     reasonCode?: string | null;
     retryable?: boolean;
+    retryAfterMs?: number | null;
+    admissionLane?: EnrichStreamAdmissionLane;
+    admissionGateState?: ReturnType<EnrichStreamAdmissionGate["getState"]> | null;
     message: string;
     finalizeReason: string;
     releaseError?: unknown;
@@ -10315,6 +12324,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       persistedSent: streamState.persistedSent,
       doneSent: streamState.doneSent,
       finalizeReason: params.finalizeReason,
+      ...buildStabilityMeta(),
     };
     const payload: Record<string, unknown> = {
       message: params.message,
@@ -10336,18 +12346,32 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     if (typeof params.retryable === "boolean") {
       payload.retryable = params.retryable;
     }
+    if (Number.isFinite(params.retryAfterMs) && Number(params.retryAfterMs) >= 0) {
+      payload.retryAfterMs = Number(params.retryAfterMs);
+    }
+    if (params.admissionLane) {
+      payload.admissionLane = params.admissionLane;
+    }
+    if (params.admissionGateState) {
+      payload.admissionGateState = params.admissionGateState;
+    }
     sendSSE(res, "error", payload);
     finalizeStream(params.finalizeReason);
     releaseInFlightOnce(params.releaseError);
     releaseAdmissionOnce();
   };
-  const emitStreamBusyAndFinalize = (reasonCode: "QUEUE_FULL" | "QUEUE_WAIT_TIMEOUT") => {
+  const emitStreamBusyAndFinalize = (reasonCode: "QUEUE_FULL" | "QUEUE_WAIT_TIMEOUT" | "SERVER_OVERLOAD") => {
+    const retryAfterMs = reasonCode === "SERVER_OVERLOAD" ? ENRICH_STREAM_OVERLOAD_RETRY_AFTER_MS : undefined;
+    const admissionGateState = streamAdmissionGate.getState();
     emitTerminalErrorAndFinalize({
       schemaVersion: 1,
       code: "STREAM_BUSY",
       stage: "admission",
       reasonCode,
       retryable: true,
+      retryAfterMs,
+      admissionLane: streamAdmissionLane,
+      admissionGateState,
       message: "Server is busy, please retry shortly",
       finalizeReason: `stream_busy_${reasonCode.toLowerCase()}`,
       releaseError: new Error(`stream_busy:${reasonCode}`),
@@ -10361,6 +12385,108 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       typeof params.reasonCode === "string" && params.reasonCode.trim().length > 0
         ? params.reasonCode.trim()
         : null;
+    if (!streamState.rev1Sent && !streamState.clientDisconnected && !res.writableEnded) {
+      const baseSkeleton =
+        latestSkeletonBundle ??
+        (streamBarcode
+          ? buildProvisionalAnalysisBundle({
+            bundleId,
+            locale: streamLocale,
+            barcodeGtin14: streamBarcode.padStart(14, "0"),
+            revision: 0,
+            phase: "skeleton",
+          })
+          : null);
+      if (baseSkeleton) {
+        const productLabel =
+          latestNotFoundHint.product?.trim() ||
+          baseSkeleton.sections.overview.cover?.summary?.trim() ||
+          "this product";
+        const hasSourceHints = Array.isArray(latestNotFoundHint.sources) && latestNotFoundHint.sources.length > 0;
+        const limitedSummary = `${productLabel} could not be fully verified from authoritative sources. This limited view is based on partial evidence and should be confirmed on the package label.`;
+        const limitedBundle: AnalysisBundle = {
+          ...baseSkeleton,
+          meta: {
+            ...baseSkeleton.meta,
+            sourceType: "web",
+            sourceTypeFinal: false,
+            detailReady: false,
+          },
+          sections: {
+            ...baseSkeleton.sections,
+            overview: {
+              ...baseSkeleton.sections.overview,
+              cover: {
+                summary: limitedSummary,
+                bullets: [
+                  buildSectionBullet(
+                    hasSourceHints
+                      ? "We found partial listing signals, but we could not verify a trusted product match."
+                      : "We could not verify a trusted product listing for this barcode.",
+                    ["general_advice"],
+                  ),
+                  buildSectionBullet(
+                    "Scan Supplement Facts and Directions panels to unlock product-level analysis.",
+                    ["general_advice"],
+                  ),
+                ],
+              },
+              detail: {
+                summary: limitedSummary,
+                bullets: [
+                  buildSectionBullet(
+                    "This result is limited because authoritative product verification was not completed.",
+                    ["general_advice"],
+                  ),
+                  buildSectionBullet(
+                    "Use package-label details as the source of truth before making decisions.",
+                    ["general_advice"],
+                  ),
+                ],
+              },
+              dataStatus: "limited",
+            },
+            usage: {
+              ...baseSkeleton.sections.usage,
+              cover: {
+                bullets: [
+                  buildSectionBullet("Follow package label directions for timing and dosing.", ["general_advice"]),
+                  buildSectionBullet("Capture the Directions panel to improve usage guidance.", ["general_advice"]),
+                ],
+                bestTimeToTake: {
+                  text: "Anytime (follow package directions).",
+                  basisTags: ["general_advice"],
+                },
+                withFood: {
+                  value: null,
+                  text: "Take with food if needed for tolerance unless label says otherwise.",
+                  basisTags: ["general_advice"],
+                },
+                dosage: {
+                  text: "Follow the product label directions.",
+                  basisTags: ["general_advice"],
+                },
+              },
+              dataStatus: "limited",
+            },
+            safety: {
+              ...baseSkeleton.sections.safety,
+              cover: {
+                verdict: "Safety details are not included in this source record.",
+                bullets: [
+                  buildSectionBullet(
+                    "Label-specific safety details were not verified. Consult a clinician if pregnant, nursing, or on medication.",
+                    ["general_advice"],
+                  ),
+                ],
+              },
+              dataStatus: "limited",
+            },
+          },
+        };
+        emitRev1Once(limitedBundle, "fallback", "product_not_found_limited");
+      }
+    }
     emitTerminalErrorAndFinalize({
       schemaVersion: NOT_FOUND_ERROR_SCHEMA_VERSION,
       code: "NOT_FOUND",
@@ -10374,7 +12500,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
   };
   const emitRev0Once = (bundle: AnalysisBundle): boolean => {
     if (streamState.rev0Sent || res.writableEnded || streamState.clientDisconnected) return false;
-    const normalized: AnalysisBundle = {
+    const normalizedBase: AnalysisBundle = {
       ...bundle,
       meta: {
         ...bundle.meta,
@@ -10393,6 +12519,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         },
       },
     };
+    const normalized = attachStabilityMeta(attachProductIdentityMeta(normalizedBase));
     latestSkeletonBundle = normalized;
     streamState.latestRevision = Number(normalized.meta.revision);
     streamState.latestSourceType =
@@ -10408,6 +12535,12 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     sendSSE(res, "analysis_bundle", normalized);
     streamState.rev0Sent = true;
     streamState.tRev0 = Date.now();
+    logSseLifecycle({
+      requestId: requestId || null,
+      phase: "rev0",
+      sourceType: normalized.meta.sourceType,
+      identityType: normalized.meta.authoritativeIdentity?.type ?? null,
+    });
     return true;
   };
   const emitRev1Once = (
@@ -10436,7 +12569,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         fallbackReason: source === "fallback" ? (fallbackReason ?? "watchdog_fast_timeout") : undefined,
       },
     };
-    const normalized = attachWebPipelineMeta(normalizedBase);
+    const normalized = attachStabilityMeta(attachProductIdentityMeta(attachWebPipelineMeta(normalizedBase)));
     streamState.latestRevision = Number(normalized.meta.revision);
     streamState.latestSourceType =
       typeof normalized.meta.sourceType === "string" ? normalized.meta.sourceType : streamState.latestSourceType;
@@ -10450,12 +12583,248 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         : streamState.latestIdentityType;
     sendSSE(res, "analysis_bundle", normalized);
     streamState.rev1Sent = true;
+    stage0Rev1Locked = true;
     streamState.tRev1 = Date.now();
     streamState.rev1Source = source;
+    logSseLifecycle({
+      requestId: requestId || null,
+      phase: source === "fallback" ? "rev1_limited" : "rev1",
+      sourceType: normalized.meta.sourceType,
+      fallbackReason: fallbackReason ?? null,
+      identityType: normalized.meta.authoritativeIdentity?.type ?? null,
+    });
     scheduleBundleOnlyFinalize();
     if (source === "fallback") {
       streamState.fallbackRev1Locked = true;
       fallbackRev1LockedCount += 1;
+    }
+    return true;
+  };
+  const getDegradedReasonCopy = (
+    reasonCode: "DEGRADED_WEB_BUDGET" | "DEGRADED_EVENTLOOP" | "BUNDLE_ONLY_NO_AUTHORITATIVE_MATCH",
+  ): string => {
+    if (reasonCode === "DEGRADED_EVENTLOOP") {
+      return "System load was high, so we returned partial results to keep scan latency stable.";
+    }
+    if (reasonCode === "BUNDLE_ONLY_NO_AUTHORITATIVE_MATCH") {
+      return "No authoritative match was confirmed in bundle-only mode, so web expansion was skipped.";
+    }
+    return "Web evidence budget was reached, so we returned partial results to keep scan latency stable.";
+  };
+  const emitDegradedLimitedRev1AndFinalize = (
+    reasonCode: "DEGRADED_WEB_BUDGET" | "DEGRADED_EVENTLOOP" | "BUNDLE_ONLY_NO_AUTHORITATIVE_MATCH",
+  ) => {
+    if (reasonCode === "DEGRADED_WEB_BUDGET") budgetGuardTriggered = true;
+    if (reasonCode === "DEGRADED_EVENTLOOP") eventLoopGuardTriggered = true;
+    degradedMode = true;
+    terminalReason = reasonCode;
+    if (!streamState.rev1Sent && !streamState.clientDisconnected && !res.writableEnded) {
+      const baseSkeleton =
+        latestSkeletonBundle ??
+        (streamBarcode
+          ? buildProvisionalAnalysisBundle({
+            bundleId,
+            locale: streamLocale,
+            barcodeGtin14: streamBarcode.padStart(14, "0"),
+            revision: 0,
+            phase: "skeleton",
+          })
+          : null);
+      if (baseSkeleton) {
+        const productLabel =
+          latestNotFoundHint.product?.trim() ||
+          baseSkeleton.sections.overview.cover?.summary?.trim() ||
+          "this product";
+        const limitedSummary = `${productLabel} is shown in limited mode. ${getDegradedReasonCopy(reasonCode)} Verify details on the package label.`;
+        const fallbackCode = reasonCode.toLowerCase();
+        const latestSourceType = streamState.latestSourceType;
+        const latestSourceTypeFinal = streamState.latestSourceTypeFinal === true;
+        const latestIdentityType = streamState.latestIdentityType;
+        const hasAuthoritativeSourceHint = latestSourceType === "lnhpd" || latestSourceType === "dsld";
+        const hasAuthoritativeIdentityHint = latestIdentityType === "npn" || latestIdentityType === "dsldLabelId";
+        const stage0AuthoritativeWinner =
+          activeStage0Winner === "verified_regulatory" || activeStage0Winner === "label_record";
+        const stage0SourceTypeHint =
+          stage0AuthoritativeWinner &&
+            (activeStage0SourceTypeHint === "lnhpd" || activeStage0SourceTypeHint === "dsld")
+            ? activeStage0SourceTypeHint
+            : null;
+        const stage0IdentityTypeHint =
+          stage0AuthoritativeWinner &&
+            (activeStage0IdentityTypeHint === "npn" || activeStage0IdentityTypeHint === "dsldLabelId")
+            ? activeStage0IdentityTypeHint
+            : null;
+        const effectiveAuthoritativeSourceType =
+          hasAuthoritativeSourceHint && (latestSourceType === "lnhpd" || latestSourceType === "dsld")
+            ? latestSourceType
+            : stage0SourceTypeHint;
+        const effectiveAuthoritativeIdentityType =
+          hasAuthoritativeIdentityHint && (latestIdentityType === "npn" || latestIdentityType === "dsldLabelId")
+            ? latestIdentityType
+            : stage0IdentityTypeHint;
+        const shouldPreserveAuthoritativeSource =
+          Boolean(effectiveAuthoritativeSourceType) &&
+          Boolean(effectiveAuthoritativeIdentityType) &&
+          (latestSourceTypeFinal || stage0AuthoritativeWinner);
+        const degradedSourceType =
+          shouldPreserveAuthoritativeSource && effectiveAuthoritativeSourceType
+            ? effectiveAuthoritativeSourceType
+            : "web";
+        const degradedSourceTypeFinal = latestSourceTypeFinal && shouldPreserveAuthoritativeSource;
+        const degradedAuthoritativeIdentity =
+          shouldPreserveAuthoritativeSource &&
+            stage0IdentityTypeHint &&
+            activeStage0IdentityValueHint
+            ? { type: stage0IdentityTypeHint, value: activeStage0IdentityValueHint }
+            : baseSkeleton.meta.authoritativeIdentity;
+        const candidateDigest = candidateBackfillDigest;
+        const candidateFactsAvailable = Boolean(candidateDigest);
+        const candidateIngredientsCover = candidateDigest ? buildIngredientsCover(candidateDigest) : null;
+        const candidateScheduleFromLabel =
+          candidateDigest?.labelDosing.map((dose) => ({
+            population: dose.population ?? null,
+            age: dose.age ?? null,
+            dose: dose.dose ?? null,
+            frequency: dose.frequency ?? null,
+            rawText: dose.rawText ?? null,
+            basisTags: ["label_fact" as const],
+          })) ?? [];
+        const candidateWarningItems =
+          candidateDigest?.warnings.warnings.map((warning: string) =>
+            buildSectionBullet(warning, ["label_fact" as const]),
+          ) ?? [];
+        const candidateFactBullets =
+          candidateIngredientsCover?.items.slice(0, 2).map((item) => {
+            const doseText =
+              item.dose && item.dose.trim().length > 0
+                ? ` ${item.dose.trim()}`
+                : "";
+            return buildSectionBullet(`Candidate LNHPD fact: ${item.name}${doseText}.`, ["label_fact"]);
+          }) ?? [];
+        const limitedBundle: AnalysisBundle = {
+          ...baseSkeleton,
+          meta: {
+            ...baseSkeleton.meta,
+            sourceType: degradedSourceType,
+            sourceTypeFinal: degradedSourceTypeFinal,
+            authoritativeIdentity: degradedAuthoritativeIdentity,
+            detailReady: false,
+            fallbackReason: fallbackCode,
+          },
+          sections: {
+            ...baseSkeleton.sections,
+            overview: {
+              ...baseSkeleton.sections.overview,
+              cover: {
+                summary: limitedSummary,
+                bullets: [
+                  buildSectionBullet(
+                    getDegradedReasonCopy(reasonCode),
+                    ["general_advice"],
+                  ),
+                  ...(candidateFactsAvailable
+                    ? [
+                        buildSectionBullet(
+                          "Candidate NPN lookup recovered label facts, but final authoritative match is still pending.",
+                          ["label_fact"],
+                        ),
+                      ]
+                    : []),
+                  buildSectionBullet(
+                    "Use the Supplement Facts and Directions panels for final confirmation.",
+                    ["general_advice"],
+                  ),
+                  ...candidateFactBullets,
+                ],
+              },
+                detail: {
+                  summary: limitedSummary,
+                  bullets: [
+                    buildSectionBullet(
+                      `Terminal reason: ${reasonCode}.`,
+                      ["general_advice"],
+                    ),
+                  ],
+              },
+              dataStatus: "limited",
+            },
+            ingredients: {
+              ...baseSkeleton.sections.ingredients,
+              cover: candidateIngredientsCover ?? baseSkeleton.sections.ingredients.cover,
+              detail: null,
+              dataStatus: candidateFactsAvailable ? "complete" : "limited",
+            },
+            usage: {
+              ...baseSkeleton.sections.usage,
+              detail: {
+                ...(baseSkeleton.sections.usage.detail ?? {
+                  timingRationale: null,
+                  withFoodRationale: null,
+                  scheduleFromLabel: [],
+                }),
+                scheduleFromLabel:
+                  candidateScheduleFromLabel.length > 0
+                    ? candidateScheduleFromLabel
+                    : baseSkeleton.sections.usage.detail?.scheduleFromLabel ?? [],
+              },
+              dataStatus: candidateFactsAvailable ? "complete" : "limited",
+            },
+            safety: {
+              ...baseSkeleton.sections.safety,
+              detail: {
+                ...(baseSkeleton.sections.safety.detail ?? {
+                  warnings: [],
+                  consultDoctorIf: [],
+                  redFlags: [],
+                }),
+                warnings:
+                  candidateWarningItems.length > 0
+                    ? candidateWarningItems
+                    : baseSkeleton.sections.safety.detail?.warnings ?? [],
+              },
+              dataStatus: candidateFactsAvailable ? "complete" : "limited",
+            },
+          },
+        };
+        emitRev1Once(limitedBundle, "fallback", fallbackCode);
+      }
+    }
+    if (!streamState.clientDisconnected && !res.writableEnded) {
+      const evidence = {
+        streamAnalysisBundleOnly,
+        bundleOnlySkipWebSearch: BUNDLE_ONLY_SKIP_WEB_SEARCH,
+        stage0Winner: activeStage0Winner,
+        budgetGuardTriggered,
+        eventLoopGuardTriggered,
+      };
+      sendSSE(res, "error", {
+        schemaVersion: 1,
+        code: "STREAM_DEGRADED",
+        stage: reasonCode === "BUNDLE_ONLY_NO_AUTHORITATIVE_MATCH" ? "bundle_only" : "watchdog",
+        reasonCode,
+        retryable: true,
+        requestId: requestId || null,
+        message: "Scan degraded to limited mode",
+        evidence,
+      });
+    }
+    // If we emitted a usable degraded rev1 for full-lane fallback, stale negative-cache
+    // entries should not remain active for this barcode.
+    if (reasonCode === "DEGRADED_WEB_BUDGET" || reasonCode === "DEGRADED_EVENTLOOP") {
+      void clearNegativeCache(barcodeGtin14, rawBarcode, { ...supabaseReadResilience, timeoutMs: 500 });
+    }
+    finalizeStream(`degraded_${reasonCode.toLowerCase()}`);
+  };
+  const maybeDegradeForEventLoopLag = (): boolean => {
+    sampleRequestLag();
+    if (eventLoopLagP95DuringRequest <= EVENT_LOOP_LAG_P95_THRESHOLD_MS) {
+      return false;
+    }
+    if (streamState.doneSent || streamState.ended || res.writableEnded) {
+      return true;
+    }
+    if (!degradedMode) {
+      emitDegradedLimitedRev1AndFinalize("DEGRADED_EVENTLOOP");
     }
     return true;
   };
@@ -10479,12 +12848,18 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
   res.on("finish", clearDisconnectReleaseTimer);
 
   try {
+    const inFlightCount = barcodeEnrichInFlight.size;
+    if (inFlightCount > ENRICH_STREAM_OVERLOAD_INFLIGHT_THRESHOLD || isEventLoopLagOverThreshold()) {
+      emitStreamBusyAndFinalize("SERVER_OVERLOAD");
+      return;
+    }
+
     const admissionWaitMs = Math.max(
       0,
       Math.min(streamAdmissionQueueWaitMs, globalDeadlineAt - Date.now()),
     );
     try {
-      const admissionLease = await enrichStreamAdmissionGate.acquire({
+      const admissionLease = await streamAdmissionGate.acquire({
         signal: requestAbort.signal,
         waitMs: admissionWaitMs,
       });
@@ -10553,8 +12928,12 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       streamAbort.signal,
     ]);
     cleanupRequestSignal = cleanup;
+    startLagSampler();
     const armContractWatchdogs = () => {
       if (!streamState.rev0Sent) {
+        const rev0FallbackDelayMs = streamAnalysisBundleOnly
+          ? ENRICH_STREAM_REV0_FALLBACK_DELAY_MS_BUNDLE_ONLY
+          : ENRICH_STREAM_REV0_FALLBACK_DELAY_MS;
         setTimeout(() => {
           if (streamState.rev0Sent || res.writableEnded || streamState.clientDisconnected) return;
           emitRev0Once(
@@ -10566,7 +12945,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
               phase: "skeleton",
             }),
           );
-        }, 250);
+        }, rev0FallbackDelayMs);
       }
       if (!fastWatchdog) {
         const fastMs = Math.max(250, ANALYSIS_BUNDLE_FAST_TIMEOUT_MS + SSE_FAST_GRACE_MS);
@@ -10610,9 +12989,107 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           finalizeStream("global_timeout_after_rev1");
         }, Math.max(1, remainingMs));
       }
+      if (streamAnalysisBundleOnly && !bundleOnlyTerminalGuardTimer) {
+        const remainingMs = globalDeadlineAt - Date.now();
+        if (remainingMs > 0) {
+          const bundleOnlyGuardMs = Math.max(
+            1,
+            Math.min(ENRICH_STREAM_BUNDLE_ONLY_TERMINAL_GUARD_MS, remainingMs),
+          );
+          bundleOnlyTerminalGuardTimer = setTimeout(() => {
+            bundleOnlyTerminalGuardTimer = null;
+            if (streamState.ended || streamState.doneSent || res.writableEnded || streamState.clientDisconnected) return;
+            if (!streamState.rev1Sent) {
+              emitDegradedLimitedRev1AndFinalize("BUNDLE_ONLY_NO_AUTHORITATIVE_MATCH");
+              return;
+            }
+            finalizeStream(terminalReason ?? "analysis_bundle_only_terminal_guard");
+          }, bundleOnlyGuardMs);
+          (bundleOnlyTerminalGuardTimer as { unref?: () => void }).unref?.();
+        }
+      }
+      if (!streamAnalysisBundleOnly && !fullPreRev1TerminalGuardTimer) {
+        const remainingMs = globalDeadlineAt - Date.now();
+        if (remainingMs > 0) {
+          const fullPreRev1GuardMs = Math.max(
+            1,
+            Math.min(ENRICH_STREAM_FULL_PRE_REV1_TERMINAL_GUARD_MS, remainingMs),
+          );
+          fullPreRev1TerminalGuardTimer = setTimeout(() => {
+            fullPreRev1TerminalGuardTimer = null;
+            if (streamState.ended || streamState.doneSent || res.writableEnded || streamState.clientDisconnected) return;
+            if (streamState.rev1Sent) return;
+            const webHintLikeSourceAttribution = latestProductIdentity?.sourceAttribution === "web_hint_unverified";
+            const webHintLikeSourceType = streamState.latestSourceType === "web";
+            const webHintLikeIdentityType = streamState.latestIdentityType === "webCanonicalId";
+            const isWebHintLike =
+              activeStage0Winner === "web_hint_unverified"
+              || webHintLikeSourceAttribution
+              || webHintLikeSourceType
+              || webHintLikeIdentityType;
+            if (isWebHintLike) {
+              emitDegradedLimitedRev1AndFinalize("DEGRADED_WEB_BUDGET");
+              return;
+            }
+            emitTerminalErrorAndFinalize({
+              code: "STREAM_TIMEOUT",
+              stage: "watchdog",
+              reasonCode: "FULL_REV1_MISSING_GUARD_TIMEOUT",
+              retryable: true,
+              message: "Stream reached terminal guard before revision 1 was produced.",
+              finalizeReason: "full_pre_rev1_guard_timeout",
+              releaseError: new Error("full_pre_rev1_guard_timeout"),
+            });
+          }, fullPreRev1GuardMs);
+          (fullPreRev1TerminalGuardTimer as { unref?: () => void }).unref?.();
+        }
+      }
+      if (!hardTerminalWatchdog) {
+        const remainingMs = globalDeadlineAt - Date.now();
+        const hardMs = Math.max(
+          1,
+          Math.min(
+            ENRICH_STREAM_HARD_TERMINAL_FALLBACK_MS,
+            Number.isFinite(remainingMs) && remainingMs > 0 ? remainingMs : ENRICH_STREAM_HARD_TERMINAL_FALLBACK_MS,
+          ),
+        );
+        hardTerminalWatchdog = setTimeout(() => {
+          hardTerminalWatchdog = null;
+          if (streamState.ended || streamState.doneSent || res.writableEnded || streamState.clientDisconnected) return;
+          console.warn("[enrich-stream] hard terminal fallback triggered", {
+            requestId: requestId || null,
+            barcode: streamBarcode ?? normalized?.code ?? null,
+            rev0Sent: streamState.rev0Sent,
+            rev1Sent: streamState.rev1Sent,
+            sourceType: streamState.latestSourceType,
+            stage0Winner: activeStage0Winner,
+            stage0StartCount,
+            stage0ReplaceCount,
+          });
+          if (!streamState.rev1Sent) {
+            emitDegradedLimitedRev1AndFinalize(
+              streamAnalysisBundleOnly ? "BUNDLE_ONLY_NO_AUTHORITATIVE_MATCH" : "DEGRADED_WEB_BUDGET",
+            );
+            return;
+          }
+          finalizeStream("hard_terminal_fallback_after_rev1");
+        }, hardMs);
+        (hardTerminalWatchdog as { unref?: () => void }).unref?.();
+      }
     };
     armContractWatchdogs();
     requestId = String(res.getHeader("x-request-id") ?? "");
+    logSseLifecycle({
+      requestId: requestId || null,
+      phase: "connected",
+      barcode: streamBarcode || null,
+      bundleOnly: streamAnalysisBundleOnly,
+    });
+    if (maybeDegradeForEventLoopLag()) {
+      releaseInFlightOnce(new Error("degraded_eventloop"));
+      releaseAdmissionOnce();
+      return;
+    }
     const requestPath = req.path;
     const headerClientVersion =
       typeof req.headers["x-client-version"] === "string" ? req.headers["x-client-version"].trim() : "";
@@ -10662,6 +13139,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         persisted_at_ms: streamState.tPersisted,
         done_at_ms: streamState.tDone,
       },
+      stream_stability: buildStabilityMeta(),
       ...(extra ?? {}),
     });
     const withAuthorityDiagnostics = (bundle: AnalysisBundle): AnalysisBundle => {
@@ -10697,9 +13175,15 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       allowAi: boolean;
       apiKey: string | null;
       signal?: AbortSignal;
-      llmSignal?: AbortSignal;
+      isRunActive?: () => boolean;
     }): Promise<{ factsDigestHash: string } | null> => {
       const factsDigestHash = computeFactsDigestHash(params.digest);
+      const deterministicSignals = DETERMINISTIC_SIGNALS_PRIMARY
+        ? extractDeterministicSignalPack({
+          sourceRole: params.digest.sourceType,
+          digest: params.digest,
+        })
+        : null;
       const maybePrewarmDsldDetail = () => {
         // P0 UX: DSLD ingredients detail should feel "instant". We already return a 0-LLM Base page
         // on /api/analysis-section; here we opportunistically prewarm the optional minimal enrichment
@@ -10739,7 +13223,17 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           deepseekKey: params.apiKey,
         });
       };
-      const canWrite = () => !params.signal?.aborted && !res.writableEnded;
+      const canWrite = () =>
+        !params.signal?.aborted &&
+        !res.writableEnded &&
+        (params.isRunActive ? params.isRunActive() : true);
+      const digestProductIdentity = buildProductIdentityFromDigest({
+        digest: params.digest,
+        identityType: params.identityType,
+        identityValue: params.identityValue,
+        sourceTypeFinal: false,
+      });
+      rememberStreamProductIdentity(digestProductIdentity);
       const dataStatus = params.allowAi
         ? { overview: "pending" as const, usage: "pending" as const, safety: "pending" as const }
         : { overview: "limited" as const, usage: "limited" as const, safety: "limited" as const };
@@ -10782,15 +13276,24 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       const commitPersistedAfterRev1 = async (bundle: AnalysisBundle): Promise<void> => {
         // Web path must not keep the SSE stream open while waiting for shared-store commit.
         // Emit persisted best-effort in the background and let terminal done close promptly.
-        if (params.digest.sourceType === "web") {
+        const bundleOnlyAuthoritative =
+          streamAnalysisBundleOnly
+          && (params.identityType === "npn"
+            || params.identityType === "dsldLabelId"
+            || params.digest.sourceType === "lnhpd"
+            || params.digest.sourceType === "dsld");
+        if (params.digest.sourceType === "web" || bundleOnlyAuthoritative) {
+          persistedCommitMode = "background_async";
           void emitPersistedWhenReady(bundle);
           return;
         }
+        persistedCommitMode = "awaited";
         await emitPersistedWhenReady(bundle);
       };
 
-      const skeleton = buildAnalysisBundleSkeleton({
+      const skeletonBase = buildAnalysisBundleSkeleton({
         digest: params.digest,
+        deterministicSignals,
         bundleId,
         revision: 0,
         phase: "skeleton",
@@ -10801,6 +13304,13 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         identityValue: params.identityValue,
         dataStatus,
       });
+      const skeleton = attachProductIdentityMeta({
+        ...skeletonBase,
+        meta: {
+          ...skeletonBase.meta,
+          productIdentity: digestProductIdentity ?? skeletonBase.meta.productIdentity,
+        },
+      }, digestProductIdentity);
 
       void upsertAnalysisIdentityCache(
         {
@@ -10826,17 +13336,24 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         emitRev0Once(skeletonParsed.data);
       }
 
-      const cachedFast = await getAnalysisIdentityCache(
-        {
-          identityType: params.identityType,
-          identityValue: params.identityValue,
-          locale,
-          promptVersion: ANALYSIS_BUNDLE_PROMPT_VERSION,
-          factsDigestHash,
-          section: "bundle_fast",
-        },
-        { timeoutMs: 700 },
-      ).catch(() => null);
+      const skipCachedFastForBundleOnlyDeterministic =
+        streamAnalysisBundleOnly && params.digest.sourceType !== "web" && params.allowAi === false;
+      const cachedFast = skipCachedFastForBundleOnlyDeterministic
+        ? null
+        : await getAnalysisIdentityCache(
+          {
+            identityType: params.identityType,
+            identityValue: params.identityValue,
+            locale,
+            promptVersion: ANALYSIS_BUNDLE_PROMPT_VERSION,
+            factsDigestHash,
+            section: "bundle_fast",
+          },
+          { timeoutMs: 700 },
+        ).catch(() => null);
+      if (!canWrite()) {
+        return { factsDigestHash };
+      }
 
       if (cachedFast?.payload && typeof cachedFast.payload === "object") {
         let fastCandidate = {
@@ -10851,30 +13368,53 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
             serverCommitSha: SERVER_COMMIT_SHA,
           },
         } as AnalysisBundle;
+        fastCandidate = sanitizeAnalysisBundleCoverFields({ bundle: fastCandidate, digest: params.digest });
         fastCandidate = applyDsldInferenceGuard(fastCandidate, params.digest);
         if (params.digest.sourceType === "web") {
-          markPipelineStepStart("verify");
-          const verifiedCached = applyWebVerifyRevise(fastCandidate, params.digest, {
-            timeBudgetMs: WEB_VERIFY_TIME_BUDGET_MS,
-            includeBudgetMs: pipelineMetricsEnabled,
-          });
-          fastCandidate = verifiedCached.bundle;
-          markPipelineStepEnd("verify", verifiedCached.verify.status, verifiedCached.verify.code);
+          if (streamAnalysisBundleOnly) {
+            const skipCode = "bundle_only_skip_web_verify";
+            markPipelineStepEnd("verify", "degraded", skipCode);
+            markPipelineStepEnd("revise", "degraded", skipCode);
+            fastCandidate = sanitizeAnalysisBundleCoverFields({
+              bundle: {
+                ...fastCandidate,
+                meta: {
+                  ...fastCandidate.meta,
+                  webVerifyMeta: {
+                    verifyStatus: "degraded",
+                    reviseStatus: "degraded",
+                    revisedClaimsCount: 0,
+                    droppedClaimsCount: 0,
+                    fallbackCode: skipCode,
+                  },
+                },
+              },
+              digest: params.digest,
+            });
+          } else {
+            markPipelineStepStart("verify");
+            const verifiedCached = applyWebVerifyRevise(fastCandidate, params.digest, {
+              timeBudgetMs: WEB_VERIFY_TIME_BUDGET_MS,
+              includeBudgetMs: pipelineMetricsEnabled,
+            });
+            fastCandidate = verifiedCached.bundle;
+            markPipelineStepEnd("verify", verifiedCached.verify.status, verifiedCached.verify.code);
 
-          markPipelineStepStart("revise");
-          const gatedCached = applyWebBundleEvidenceGate(fastCandidate, params.digest);
-          fastCandidate = gatedCached.value;
-          const reviseStatus =
-            gatedCached.reasons.length > 0
-              ? verifiedCached.revise.status === "failed"
-                ? "failed"
-                : "degraded"
-              : verifiedCached.revise.status;
-          markPipelineStepEnd(
-            "revise",
-            reviseStatus,
-            gatedCached.reasons[0] ?? verifiedCached.revise.code,
-          );
+            markPipelineStepStart("revise");
+            const gatedCached = applyWebBundleEvidenceGate(fastCandidate, params.digest);
+            fastCandidate = sanitizeAnalysisBundleCoverFields({ bundle: gatedCached.value, digest: params.digest });
+            const reviseStatus =
+              gatedCached.reasons.length > 0
+                ? verifiedCached.revise.status === "failed"
+                  ? "failed"
+                  : "degraded"
+                : verifiedCached.revise.status;
+            markPipelineStepEnd(
+              "revise",
+              reviseStatus,
+              gatedCached.reasons[0] ?? verifiedCached.revise.code,
+            );
+          }
         }
         const parsed = safeParseAnalysisBundle(fastCandidate);
         if (parsed.success && canWrite()) {
@@ -10891,19 +13431,212 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           return { factsDigestHash };
         }
       }
+      if (!canWrite()) {
+        return { factsDigestHash };
+      }
 
       const context = `FACTS_DIGEST_JSON: ${JSON.stringify(params.digest)}`;
-      const canUseAi = params.allowAi && Boolean(params.apiKey);
+      const skipAiForBundleOnlyWeb = streamAnalysisBundleOnly && params.digest.sourceType === "web";
+      const canUseAi = params.allowAi && Boolean(params.apiKey) && !skipAiForBundleOnlyWeb;
+      if (streamAnalysisBundleOnly && !canUseAi && params.digest.sourceType !== "web" && canWrite()) {
+        const productLabel = params.digest.product.name?.trim() || "This product";
+        const activeCoverItems: NonNullable<
+          AnalysisBundle["sections"]["ingredients"]["cover"]
+        >["items"] = params.digest.actives
+          .slice(0, 3)
+          .map((active) => ({
+            name: active.name,
+            dose:
+              active.amountText ??
+              (active.amount != null && active.unit ? `${active.amount} ${active.unit}` : null),
+            basisTags: ["label_fact"],
+          }));
+        const firstDose = params.digest.labelDosing.find(
+          (row) => Boolean((row.dose && row.dose.trim()) || (row.frequency && row.frequency.trim())),
+        );
+        const dosageText = firstDose
+          ? [firstDose.dose, firstDose.frequency].filter((value): value is string => Boolean(value && value.trim())).join(", ")
+          : null;
+        const firstSafetySignal =
+          params.digest.warnings.warnings[0] ??
+          params.digest.warnings.consultDoctorIf[0] ??
+          params.digest.warnings.redFlags[0] ??
+          null;
+        const deterministicSafetyDetail = {
+          warnings: firstSafetySignal
+            ? [buildSectionBullet(firstSafetySignal, ["label_fact"])]
+            : [],
+          consultDoctorIf: [
+            buildSectionBullet(
+              "Pregnant, nursing, or taking medication.",
+              ["general_advice"],
+            ),
+          ],
+          redFlags: params.digest.warnings.redFlags.length
+            ? params.digest.warnings.redFlags
+              .slice(0, 2)
+              .map((item) => buildSectionBullet(item, ["label_fact"]))
+            : [],
+        };
+        const deterministicSafetySignals = buildBaseSafetySignalPack({
+          digest: params.digest,
+          safetyDetail: deterministicSafetyDetail,
+          deterministicSignals,
+        });
+        const deterministicLimitedBundle: AnalysisBundle = {
+          ...skeleton,
+          meta: {
+            ...skeleton.meta,
+            fallbackReason: "bundle_only_no_ai_fast_path",
+            sourceTypeFinal: true,
+            detailReady: true,
+            deterministicSignals: summarizeDeterministicSignals(deterministicSignals),
+          },
+          sections: {
+            ...skeleton.sections,
+            overview: {
+              ...skeleton.sections.overview,
+              cover: {
+                summary: `${productLabel} has a verified record with limited structured fields.`,
+                bullets: [
+                  buildSectionBullet(
+                    activeCoverItems.length > 0
+                      ? `Recognized ingredients: ${activeCoverItems.map((item) => item.name).join(", ")}.`
+                      : "This record does not list active ingredients in a structured format.",
+                    activeCoverItems.length > 0 ? ["label_fact"] : ["not_provided"],
+                  ),
+                  buildSectionBullet(
+                    "Use the Supplement Facts and Directions panels for final confirmation.",
+                    ["general_advice"],
+                  ),
+                ],
+              },
+              detail: {
+                summary: `${getDegradedReasonCopy("BUNDLE_ONLY_NO_AUTHORITATIVE_MATCH")} We will keep refining this record.`,
+                bullets: [
+                  buildSectionBullet(
+                    "Limited mode keeps the scan responsive while preserving trusted identity.",
+                    ["general_advice"],
+                  ),
+                  buildSectionBullet(
+                    "Retry after scanning a clearer label photo if details are still missing.",
+                    ["general_advice"],
+                  ),
+                ],
+              },
+              dataStatus: "limited",
+            },
+            ingredients: {
+              ...skeleton.sections.ingredients,
+              cover: {
+                items: activeCoverItems,
+                totalCount: params.digest.actives.length,
+              },
+              dataStatus: activeCoverItems.length > 0 ? "complete" : "limited",
+            },
+            usage: {
+              ...skeleton.sections.usage,
+              cover: {
+                bullets: [
+                  buildSectionBullet(
+                    dosageText
+                      ? `Label dosage signal: ${dosageText}.`
+                      : "This record does not include dosage directions yet.",
+                    dosageText ? ["label_fact"] : ["not_provided"],
+                  ),
+                  buildSectionBullet(
+                    "Follow the bottle Directions panel before adjusting your routine.",
+                    ["general_advice"],
+                  ),
+                ],
+                bestTimeToTake: {
+                  text: dosageText
+                    ? "Follow the label cadence and keep timing consistent day to day."
+                    : "Choose a consistent routine once label directions are confirmed.",
+                  basisTags: dosageText ? ["label_fact"] : ["general_advice"],
+                },
+                withFood: {
+                  value: null,
+                  text: "Use package instructions for with-food guidance.",
+                  basisTags: ["general_advice"],
+                },
+                dosage: dosageText
+                  ? {
+                    text: dosageText,
+                    basisTags: ["label_fact"],
+                  }
+                  : {
+                    text: "Dose not confirmed from this record.",
+                    basisTags: ["not_provided"],
+                  },
+              },
+              detail: {
+                timingRationale: {
+                  text: "Bundle-only mode prioritizes fast, stable guidance before deeper expansion.",
+                  basisTags: ["general_advice"],
+                },
+                withFoodRationale: {
+                  text: "Confirm with bottle directions before changing your intake pattern.",
+                  basisTags: ["general_advice"],
+                },
+                scheduleFromLabel: firstDose
+                  ? [
+                    {
+                      population: firstDose.population,
+                      age: firstDose.age,
+                      dose: firstDose.dose,
+                      frequency: firstDose.frequency,
+                      rawText: firstDose.rawText,
+                      basisTags: ["label_fact"],
+                    },
+                  ]
+                  : [],
+              },
+              dataStatus: "limited",
+            },
+            safety: {
+              ...skeleton.sections.safety,
+              cover: {
+                verdict: firstSafetySignal
+                  ? "Safety details were partially detected from label data."
+                  : "Safety details are limited in this source record.",
+                bullets: [
+                  buildSectionBullet(
+                    firstSafetySignal ?? "No specific warning text was detected in this pass.",
+                    firstSafetySignal ? ["label_fact"] : ["not_provided"],
+                  ),
+                  buildSectionBullet(
+                    "Consult a clinician if pregnant, nursing, or taking medication.",
+                    ["general_advice"],
+                  ),
+                ],
+              },
+              detail: deterministicSafetyDetail,
+              signals: deterministicSafetySignals,
+              dataStatus: "limited",
+            },
+          },
+        };
+        const limitedBundle = withAuthorityDiagnostics(deterministicLimitedBundle);
+        const emittedRev1 = emitRev1Once(
+          limitedBundle,
+          "fallback",
+          "bundle_only_no_ai_fast_path",
+        );
+        if (emittedRev1) {
+          await commitPersistedAfterRev1(limitedBundle);
+        }
+        return { factsDigestHash };
+      }
       let fastRaw: Record<string, unknown> | null = null;
       let fastFailed = false;
       let fastBundle: AnalysisBundle | null = null;
       try {
         if (canUseAi && params.apiKey) {
+          if (!canWrite()) return { factsDigestHash };
           if (params.digest.sourceType === "web") {
             markPipelineStepStart("draft");
           }
-          const combined = params.llmSignal ? combineSignals([params.signal, params.llmSignal]) : null;
-          const llmSignal = combined?.signal ?? params.signal;
           try {
             fastRaw = await fetchAnalysisBundleFastV3(context, model, params.apiKey, {
               breaker: deepseekBreaker,
@@ -10911,7 +13644,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
               timeoutMs: ANALYSIS_BUNDLE_FAST_TIMEOUT_MS,
               queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS,
               retry: { maxAttempts: 1 },
-              signal: llmSignal,
+              signal: params.signal,
             });
           } catch (error) {
             console.warn("[analysis_bundle] fast generation failed", error);
@@ -10920,7 +13653,6 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
             if (params.digest.sourceType === "web") {
               markPipelineStepEnd("draft", fastRaw ? "ok" : "degraded", fastRaw ? undefined : "fast_generation_failed");
             }
-            combined?.cleanup();
           }
           if (!fastRaw) fastFailed = true;
         } else {
@@ -10930,14 +13662,25 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           }
         }
 
-        let fastCandidate = mergeFastAnalysisBundle({ skeleton, digest: params.digest, fastOutput: fastRaw });
+        let fastCandidate = mergeFastAnalysisBundle({
+          skeleton,
+          digest: params.digest,
+          deterministicSignals,
+          fastOutput: fastRaw,
+        });
+        fastCandidate = sanitizeAnalysisBundleCoverFields({ bundle: fastCandidate, digest: params.digest });
         if (fastFailed) {
           fastCandidate = applyFastFailureStatus(fastCandidate);
         }
         let parsed = safeParseAnalysisBundle(fastCandidate);
         if (!parsed.success) {
           const fallbackCandidate = applyFastFailureStatus(
-            mergeFastAnalysisBundle({ skeleton, digest: params.digest, fastOutput: null }),
+            mergeFastAnalysisBundle({
+              skeleton,
+              digest: params.digest,
+              deterministicSignals,
+              fastOutput: null,
+            }),
           );
           parsed = safeParseAnalysisBundle(fallbackCandidate);
         }
@@ -10949,7 +13692,12 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       } catch (error) {
         console.warn("[analysis_bundle] fast bundle crashed", error);
         const fallbackCandidate = applyFastFailureStatus(
-          mergeFastAnalysisBundle({ skeleton, digest: params.digest, fastOutput: null }),
+          mergeFastAnalysisBundle({
+            skeleton,
+            digest: params.digest,
+            deterministicSignals,
+            fastOutput: null,
+          }),
         );
         const parsed = safeParseAnalysisBundle(fallbackCandidate);
         if (parsed.success) {
@@ -10963,24 +13711,46 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         const adjustedBundle = applyDsldInferenceGuard(fastBundle, params.digest);
         let gatedBundle = adjustedBundle;
         if (params.digest.sourceType === "web") {
-          markPipelineStepStart("verify");
-          const verified = applyWebVerifyRevise(adjustedBundle, params.digest, {
-            timeBudgetMs: WEB_VERIFY_TIME_BUDGET_MS,
-            includeBudgetMs: pipelineMetricsEnabled,
-          });
-          gatedBundle = verified.bundle;
-          markPipelineStepEnd("verify", verified.verify.status, verified.verify.code);
+          if (streamAnalysisBundleOnly) {
+            const skipCode = "bundle_only_skip_web_verify";
+            markPipelineStepEnd("verify", "degraded", skipCode);
+            markPipelineStepEnd("revise", "degraded", skipCode);
+            gatedBundle = sanitizeAnalysisBundleCoverFields({
+              bundle: {
+                ...adjustedBundle,
+                meta: {
+                  ...adjustedBundle.meta,
+                  webVerifyMeta: {
+                    verifyStatus: "degraded",
+                    reviseStatus: "degraded",
+                    revisedClaimsCount: 0,
+                    droppedClaimsCount: 0,
+                    fallbackCode: skipCode,
+                  },
+                },
+              },
+              digest: params.digest,
+            });
+          } else {
+            markPipelineStepStart("verify");
+            const verified = applyWebVerifyRevise(adjustedBundle, params.digest, {
+              timeBudgetMs: WEB_VERIFY_TIME_BUDGET_MS,
+              includeBudgetMs: pipelineMetricsEnabled,
+            });
+            gatedBundle = verified.bundle;
+            markPipelineStepEnd("verify", verified.verify.status, verified.verify.code);
 
-          markPipelineStepStart("revise");
-          const gated = applyWebBundleEvidenceGate(gatedBundle, params.digest);
-          gatedBundle = gated.value;
-          const reviseStatus =
-            gated.reasons.length > 0
-              ? verified.revise.status === "failed"
-                ? "failed"
-                : "degraded"
-              : verified.revise.status;
-          markPipelineStepEnd("revise", reviseStatus, gated.reasons[0] ?? verified.revise.code);
+            markPipelineStepStart("revise");
+            const gated = applyWebBundleEvidenceGate(gatedBundle, params.digest);
+            gatedBundle = sanitizeAnalysisBundleCoverFields({ bundle: gated.value, digest: params.digest });
+            const reviseStatus =
+              gated.reasons.length > 0
+                ? verified.revise.status === "failed"
+                  ? "failed"
+                  : "degraded"
+                : verified.revise.status;
+            markPipelineStepEnd("revise", reviseStatus, gated.reasons[0] ?? verified.revise.code);
+          }
         }
         const rev1Source: "fast_ai" | "fallback" =
           gatedBundle.meta?.fallbackReason || fastFailed || !fastRaw ? "fallback" : "fast_ai";
@@ -10999,22 +13769,78 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       return { factsDigestHash };
     };
     let stage0BundlePromise: Promise<{ factsDigestHash: string } | null> | null = null;
-    const awaitStage0Bundle = async () => {
-      if (!stage0BundlePromise) return;
-      try {
-        await abortable(stage0BundlePromise.catch(() => null), requestSignal);
-      } catch {
-        // ignore (client disconnect)
+    const resolveBundleAwaitTimeoutMs = () => {
+      const remainingMs = globalDeadlineAt - Date.now();
+      const cappedRemaining =
+        Number.isFinite(remainingMs) && remainingMs > 0
+          ? Math.min(ENRICH_STREAM_STAGE_BUNDLE_AWAIT_TIMEOUT_MS, remainingMs)
+          : ENRICH_STREAM_STAGE_BUNDLE_AWAIT_TIMEOUT_MS;
+      return Math.max(500, cappedRemaining);
+    };
+    const handleBundleAwaitTimeout = (label: "stage0" | "stage1") => {
+      if (streamState.doneSent || streamState.ended || res.writableEnded || streamState.clientDisconnected) {
+        return;
       }
+      console.warn("[enrich-stream] bundle await timeout", {
+        requestId: requestId || null,
+        barcode: streamBarcode ?? normalized?.code ?? null,
+        label,
+        timeoutMs: resolveBundleAwaitTimeoutMs(),
+        rev0Sent: streamState.rev0Sent,
+        rev1Sent: streamState.rev1Sent,
+        sourceType: streamState.latestSourceType,
+        stage0Winner: activeStage0Winner,
+        stage0SourceTypeHint: activeStage0SourceTypeHint,
+        stage0IdentityTypeHint: activeStage0IdentityTypeHint,
+        stage0StartCount,
+        stage0ReplaceCount,
+      });
+      if (!streamState.rev1Sent) {
+        emitDegradedLimitedRev1AndFinalize(
+          streamAnalysisBundleOnly ? "BUNDLE_ONLY_NO_AUTHORITATIVE_MATCH" : "DEGRADED_WEB_BUDGET",
+        );
+        return;
+      }
+      finalizeStream(`${label}_await_timeout_after_rev1`);
+    };
+    const awaitBundleWithTimeout = async (
+      promise: Promise<{ factsDigestHash: string } | null> | null,
+      label: "stage0" | "stage1",
+    ): Promise<boolean> => {
+      if (!promise) return true;
+      const timeoutMs = resolveBundleAwaitTimeoutMs();
+      const timeoutSignal = createTimeoutSignal(timeoutMs);
+      const { signal: combinedSignal, cleanup: cleanupCombined } = combineSignals([
+        requestSignal,
+        timeoutSignal,
+      ]);
+      try {
+        await abortable(promise.catch(() => null), combinedSignal);
+        return true;
+      } catch (error) {
+        if (timeoutSignal.aborted && !requestSignal.aborted) {
+          handleBundleAwaitTimeout(label);
+          return false;
+        }
+        if (!isAbortError(error)) {
+          console.warn("[enrich-stream] bundle await failed", {
+            requestId: requestId || null,
+            barcode: streamBarcode ?? normalized?.code ?? null,
+            label,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+        return false;
+      } finally {
+        cleanupCombined();
+      }
+    };
+    const awaitStage0Bundle = async () => {
+      await awaitBundleWithTimeout(stage0BundlePromise, "stage0");
     };
     let stage1BundlePromise: Promise<{ factsDigestHash: string } | null> | null = null;
     const awaitStage1Bundle = async () => {
-      if (!stage1BundlePromise) return;
-      try {
-        await abortable(stage1BundlePromise.catch(() => null), requestSignal);
-      } catch {
-        // ignore (client disconnect)
-      }
+      await awaitBundleWithTimeout(stage1BundlePromise, "stage1");
     };
     const awaitAnalysisBundle = async () => {
       if (stage1BundlePromise) {
@@ -11023,36 +13849,119 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       }
       await awaitStage0Bundle();
     };
-    const startStage0Bundle = (
-      params: Omit<Parameters<typeof emitAnalysisBundleSequence>[0], "signal" | "llmSignal">,
-    ) => {
-      if (stage0BundleAbort) {
-        fastBundleReplacedCount += 1;
-        stage0BundleAbort.abort(new Error("fast_bundle_replaced"));
+    const resolveStage0WinnerFromParams = (
+      params: Omit<Parameters<typeof emitAnalysisBundleSequence>[0], "signal" | "isRunActive">,
+    ): Stage0Winner => {
+      if (params.identityType === "npn" || params.digest.sourceType === "lnhpd") {
+        return "verified_regulatory";
       }
+      if (params.identityType === "dsldLabelId" || params.digest.sourceType === "dsld") {
+        return "label_record";
+      }
+      if (params.digest.sourceType === "web" || params.identityType === "webCanonicalId") {
+        return "web_hint_unverified";
+      }
+      return "unknown";
+    };
+    const startStage0Bundle = (
+      params: Omit<Parameters<typeof emitAnalysisBundleSequence>[0], "signal" | "isRunActive"> & {
+        stage0Winner?: Stage0Winner;
+      },
+    ): boolean => {
+      if (stage0Rev1Locked || streamState.rev1Sent) {
+        return false;
+      }
+      if (stage0StartCount > 0 && activeStage0RunId === null) {
+        return false;
+      }
+      const nextWinner = params.stage0Winner ?? resolveStage0WinnerFromParams(params);
+      const stage0AuthoritativeWinner = nextWinner === "verified_regulatory" || nextWinner === "label_record";
+      const effectiveAllowAi =
+        STAGE0_AUTHORITATIVE_DETERMINISTIC_REV1 && stage0AuthoritativeWinner
+          ? false
+          : params.allowAi;
+      const bundleOnlyStage0WinnerAllowed =
+        nextWinner === "verified_regulatory"
+        || (BUNDLE_ONLY_ALLOW_LABEL_RECORD_STAGE0 && nextWinner === "label_record");
+      if (streamAnalysisBundleOnly && BUNDLE_ONLY_SKIP_WEB_SEARCH && !bundleOnlyStage0WinnerAllowed) {
+        return false;
+      }
+      const nextRank = stage0Rank(nextWinner);
+      if (activeStage0RunId !== null) {
+        if (stage0UpgradeCount >= 1) {
+          return false;
+        }
+        if (nextRank <= activeStage0Rank) {
+          return false;
+        }
+        fastBundleReplacedCount += 1;
+        stage0ReplaceCount += 1;
+        stage0UpgradeCount += 1;
+        stage0BundleAbort?.abort(new Error("fast_bundle_replaced"));
+        stage0BundleSignalCleanup?.();
+        stage0BundleSignalCleanup = null;
+        stage0BundleAbort = null;
+      }
+      const runId = ++stage0RunSeq;
+      stage0StartCount += 1;
+      activeStage0RunId = runId;
+      activeStage0Winner = nextWinner;
+      activeStage0SourceTypeHint = params.digest.sourceType;
+      activeStage0IdentityTypeHint = params.identityType;
+      activeStage0IdentityValueHint = params.identityValue;
+      activeStage0Rank = nextRank;
       stage0BundleAbort = new AbortController();
+      const { signal: stage0Signal, cleanup: stage0Cleanup } = combineSignals([
+        requestSignal,
+        stage0BundleAbort.signal,
+      ]);
+      stage0BundleSignalCleanup = stage0Cleanup;
+      const { stage0Winner: _stage0Winner, ...runParams } = params;
       stage0BundlePromise = emitAnalysisBundleSequence({
-        ...params,
-        signal: requestSignal,
-        llmSignal: stage0BundleAbort.signal,
+        ...runParams,
+        allowAi: effectiveAllowAi,
+        signal: stage0Signal,
+        isRunActive: () => activeStage0RunId === runId,
+      }).finally(() => {
+        stage0Cleanup();
+        if (stage0BundleSignalCleanup === stage0Cleanup) {
+          stage0BundleSignalCleanup = null;
+        }
+        if (activeStage0RunId === runId) {
+          activeStage0RunId = null;
+        }
       });
+      return true;
     };
     const startStage1Bundle = (
-      params: Omit<Parameters<typeof emitAnalysisBundleSequence>[0], "signal" | "llmSignal">,
-    ) => {
+      params: Omit<Parameters<typeof emitAnalysisBundleSequence>[0], "signal" | "isRunActive">,
+    ): boolean => {
       // Hard rule: only emit ONE analysis_bundle sequence per request.
       // If Stage 0 already started (skeleton+fast), Stage 1 must not re-emit revision 0/1.
-      if (stage0BundlePromise) return;
+      if (stage0BundlePromise) return false;
       if (stage1BundleAbort) {
         fastBundleReplacedCount += 1;
         stage1BundleAbort.abort(new Error("fast_bundle_replaced"));
+        stage1BundleSignalCleanup?.();
+        stage1BundleSignalCleanup = null;
+        stage1BundleAbort = null;
       }
       stage1BundleAbort = new AbortController();
+      const { signal: stage1Signal, cleanup: stage1Cleanup } = combineSignals([
+        requestSignal,
+        stage1BundleAbort.signal,
+      ]);
+      stage1BundleSignalCleanup = stage1Cleanup;
       stage1BundlePromise = emitAnalysisBundleSequence({
         ...params,
-        signal: requestSignal,
-        llmSignal: stage1BundleAbort.signal,
+        signal: stage1Signal,
+      }).finally(() => {
+        stage1Cleanup();
+        if (stage1BundleSignalCleanup === stage1Cleanup) {
+          stage1BundleSignalCleanup = null;
+        }
       });
+      return true;
     };
     const googleResilience: SearchResilienceOptions = {
       signal: requestSignal,
@@ -11179,7 +14088,9 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       expiresAt?: string | null;
     }, catalog?: CatalogResolved | null, options?: { mode?: CachedSnapshotSseMode }) => {
       const mode: CachedSnapshotSseMode = options?.mode ?? "full";
-      console.log(`[Stream] Cache hit for barcode: ${barcode}`);
+      if (STREAM_VERBOSE_LOG_ENABLED) {
+        console.log(`[Stream] Cache hit for barcode: ${barcode}`);
+      }
       snapshotCacheHit = true;
       const { snapshot, analysisPayload } = cached;
       let workingAnalysisPayload = analysisPayload ?? null;
@@ -11347,6 +14258,10 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
 
     const catalogPromise = resolveCatalogByBarcode(normalized, {
       ...supabaseReadResilience,
+      // Catalog is a Stage0 authoritative path for DSLD/override hits.
+      // Under concurrency, a short read-queue timeout can create false web fallback.
+      // Keep parity with regulatory-map tolerance to reduce expected-final drift.
+      queueTimeoutMs: Math.max(RESILIENCE_SUPABASE_READ_QUEUE_TIMEOUT_MS, 1200),
       timeoutMs: RESILIENCE_CATALOG_TIMEOUT_MS,
     });
     const snapshotPromise = getSnapshotCache(
@@ -11380,9 +14295,188 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     const forceStage1Raw = process.env.FORCE_STAGE1 === "1" || process.env.FORCE_STAGE1 === "true";
     const forceStage1 = process.env.NODE_ENV !== "production" && forceStage1Raw;
     const allowNeedsJs = process.env.ALLOW_NEEDS_JS === "1" || process.env.ALLOW_NEEDS_JS === "true";
-    type Stage0Source = "none" | "snapshot" | "catalog" | "lnhpd";
+    type Stage0Source = "none" | "snapshot" | "catalog" | "lnhpd" | "dsld";
     let stage0Delivered = false;
     let stage0Source: Stage0Source = "none";
+    const maybeRunNpnCandidateBackfill = async (): Promise<void> => {
+      if (candidateBackfillState.attempted) return;
+      candidateBackfillState = {
+        ...candidateBackfillState,
+        attempted: true,
+      };
+      if (streamState.latestSourceTypeFinal === true) {
+        candidateBackfillState = {
+          ...candidateBackfillState,
+          reasonCode: "CANDIDATE_MATCH_NOT_FINAL",
+        };
+        return;
+      }
+      if (budget.msLeft() < NPN_CANDIDATE_BACKFILL_MIN_BUDGET_MS) {
+        candidateBackfillState = {
+          ...candidateBackfillState,
+          reasonCode: "CANDIDATE_LOOKUP_TIMEOUT",
+        };
+        return;
+      }
+      const topCandidate = npnCandidatesForMeta[0] ?? null;
+      if (!topCandidate) {
+        candidateBackfillState = {
+          ...candidateBackfillState,
+          reasonCode: "CANDIDATE_LOOKUP_NOT_FOUND",
+        };
+        return;
+      }
+      if (topCandidate.stableReason === "unverified") {
+        candidateBackfillState = {
+          ...candidateBackfillState,
+          source: topCandidate.sourceKind,
+          reasonCode: "CANDIDATE_LOOKUP_NOT_FOUND",
+        };
+        return;
+      }
+
+      const startedAtMs = Date.now();
+      const timeoutSignal = createTimeoutSignal(NPN_CANDIDATE_DIRECT_LOOKUP_TIMEOUT_MS);
+      const { signal, cleanup } = combineSignals([requestSignal, timeoutSignal]);
+      try {
+        const facts = await fetchLnhpdFactsByNpn(topCandidate.value, signal);
+        if (!facts) {
+          const timedOut = timeoutSignal.aborted;
+          candidateBackfillState = {
+            ...candidateBackfillState,
+            source: topCandidate.sourceKind,
+            reasonCode: timedOut ? "CANDIDATE_LOOKUP_TIMEOUT" : "CANDIDATE_LOOKUP_NOT_FOUND",
+            latencyMs: Date.now() - startedAtMs,
+          };
+          return;
+        }
+
+        if (topCandidate.stableReason === "stable_db") {
+          const hintBrand =
+            latestProductIdentity?.brand ??
+            cachedFast?.analysisPayload?.productInfo?.brand ??
+            cachedFast?.snapshot?.product?.brand ??
+            null;
+          const hintProduct =
+            latestProductIdentity?.name ??
+            cachedFast?.analysisPayload?.productInfo?.name ??
+            cachedFast?.snapshot?.product?.name ??
+            null;
+          const check = passesStableDbIdentityCheck({
+            hintBrand,
+            hintProduct,
+            lnhpdBrand: facts.brandName ?? null,
+            lnhpdProduct: facts.productName ?? null,
+          });
+          if (!check.pass) {
+            candidateBackfillState = {
+              ...candidateBackfillState,
+              source: topCandidate.sourceKind,
+              reasonCode: "CANDIDATE_IDENTITY_MISMATCH",
+              latencyMs: Date.now() - startedAtMs,
+            };
+            return;
+          }
+        }
+
+        const productInfo = {
+          brand: facts.brandName ?? null,
+          name: facts.productName ?? null,
+          category: null,
+          image: null,
+        };
+        let lnhpdSnapshot = buildBarcodeSnapshot({
+          barcode,
+          productInfo,
+          sources: [],
+          efficacy: null,
+          safety: null,
+          usagePayload: null,
+        });
+        lnhpdSnapshot = applyLnhpdFactsToSnapshot(lnhpdSnapshot, facts);
+        candidateBackfillDigest = buildFactsDigestFromLnhpd({
+          facts,
+          snapshot: lnhpdSnapshot,
+          identityValue: normalizeNpnValue(topCandidate.value) ?? topCandidate.value,
+          regionTags: lnhpdSnapshot.regulatory.regionTags,
+        });
+        candidateBackfillState = {
+          ...candidateBackfillState,
+          used: true,
+          source: topCandidate.sourceKind,
+          reasonCode: null,
+          latencyMs: Date.now() - startedAtMs,
+          scoreSuppressed: false,
+        };
+      } catch (error) {
+        candidateBackfillState = {
+          ...candidateBackfillState,
+          source: topCandidate.sourceKind,
+          reasonCode: timeoutSignal.aborted || isAbortError(error) ? "CANDIDATE_LOOKUP_TIMEOUT" : "CANDIDATE_LOOKUP_NOT_FOUND",
+          latencyMs: Date.now() - startedAtMs,
+        };
+      } finally {
+        cleanup();
+      }
+    };
+    const ensureCatalogNpnCandidatesForMeta = async (snapshot: SupplementSnapshot): Promise<void> => {
+      if (npnCandidatesForMeta.length > 0) return;
+      if (requestSignal.aborted) return;
+      const resolveMapQuickly = async (): Promise<{
+        regulatoryMap: Awaited<ReturnType<typeof getBarcodeRegulatoryMap>> | null;
+        mapStatus: AuthorityMapStatus;
+      }> => {
+        try {
+          const quickWaitMs = Math.max(0, NPN_CANDIDATE_CATALOG_META_WAIT_MS);
+          let regulatoryMap = await Promise.race([
+            regulatoryMapPromise
+              .then((value) => value ?? null)
+              .catch(() => null),
+            new Promise<null>((resolve) =>
+              setTimeout(() => resolve(null), quickWaitMs),
+            ),
+          ]);
+          if (!regulatoryMap && !requestSignal.aborted) {
+            regulatoryMap = await getBarcodeRegulatoryMap(barcodeGtin14, barcodeRawDigits, {
+              ...supabaseReadResilience,
+              budget: undefined,
+              semaphore: undefined,
+              breaker: undefined,
+              queueTimeoutMs: 0,
+              timeoutMs: Math.max(450, NPN_CANDIDATE_CATALOG_META_SECOND_CHANCE_TIMEOUT_MS),
+              includeExpired: true,
+              retry: {
+                maxAttempts: 2,
+              },
+            }).catch(() => null);
+          }
+          const mapStatus: AuthorityMapStatus = regulatoryMap
+            ? (isExpiredAt(regulatoryMap.expires_at) ? "stale" : "hit")
+            : "miss";
+          return { regulatoryMap, mapStatus };
+        } catch {
+          return { regulatoryMap: null, mapStatus: "miss" };
+        }
+      };
+      const { regulatoryMap, mapStatus } = await resolveMapQuickly();
+      npnCandidatesForMeta = buildNpnCandidates({
+        regulatoryMap,
+        mapStatus,
+        mapMinConfidence: REGULATORY_MAP_MIN_CONFIDENCE,
+        authorityCandidate: null,
+        snapshot,
+        maxCandidates: NPN_CANDIDATE_MAX,
+      });
+    };
+
+    if (streamAnalysisBundleOnly && !stage0Delivered && !requestSignal.aborted) {
+      const dsldRecoveredPreCache = await maybeRunDsldDirectFallbackStage0();
+      if (dsldRecoveredPreCache && !forceStage1) {
+        await awaitStage0Bundle();
+        finalizeStream("dsld_stage0_fallback_complete");
+        return;
+      }
+    }
 
     const cachedFast = await snapshotPromise.catch(() => null);
     let bypassCachedFastPathForAuthority = false;
@@ -11489,6 +14583,21 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       }
     }
     if (cachedFast && !bypassCachedFastPathForAuthority) {
+      const snapshotIsAuthoritativeFastPath = hasBundleOnlyAuthoritativeFastPath(cachedFast.snapshot);
+      if (streamAnalysisBundleOnly && !forceStage1 && !snapshotIsAuthoritativeFastPath) {
+        const recoveredFromCachedFastShortCircuit = await maybeRunDsldDirectFallbackStage0();
+        if (recoveredFromCachedFastShortCircuit && stage0BundlePromise) {
+          await awaitStage0Bundle();
+          if (!streamState.doneSent && !streamState.ended && !res.writableEnded) {
+            finalizeStream("bundle_only_cached_fast_dsld_stage0_recovered");
+          }
+          releaseInFlightOnce();
+          return;
+        }
+        emitDegradedLimitedRev1AndFinalize("BUNDLE_ONLY_NO_AUTHORITATIVE_MATCH");
+        releaseInFlightOnce(new Error("snapshot_bundle_only_unverified_short_circuit"));
+        return;
+      }
       if (cachedLooksWebOnly && !hasCoreFacts(cachedFast.snapshot, cachedFast.analysisPayload)) {
         emitProductNotFoundAndFinalize({
           stage: "facts",
@@ -11501,6 +14610,9 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       );
       const needsCatalogFast = !hasProductName || !cachedFast.snapshot.regulatory.dsldLabelId;
       const catalogFast = needsCatalogFast ? await catalogPromise.catch(() => null) : null;
+      // Observability contract: for cached catalog/label finals, surface npnCandidates in meta
+      // before emitting cached bundles so runtime diagnostics do not flap by cache-hit path.
+      await ensureCatalogNpnCandidatesForMeta(cachedFast.snapshot);
       emitCachedSnapshot(
         cachedFast,
         catalogFast,
@@ -11536,8 +14648,27 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           snapshotNpnStatus === "verified" &&
           snapshotVerifiedBy === "lnhpd_fetch" &&
           Boolean(snapshotNpn);
+        const snapshotIsAuthoritativeForBundleOnly =
+          snapshotIsVerified || hasBundleOnlyLabelRecordIdentityFromSnapshot(cachedFast.snapshot);
 
         if (!snapshotIsVerified) {
+          // Stability-first contract for analysis_bundle_only:
+          // avoid spawning stage0 heavy work on non-verified snapshot paths.
+          if (streamAnalysisBundleOnly && !snapshotIsAuthoritativeForBundleOnly) {
+            const recoveredFromSnapshotSkipStage0 = await maybeRunDsldDirectFallbackStage0();
+            if (recoveredFromSnapshotSkipStage0 && stage0BundlePromise) {
+              await awaitStage0Bundle();
+              if (!streamState.doneSent && !streamState.ended && !res.writableEnded) {
+                finalizeStream("bundle_only_snapshot_skip_stage0_dsld_recovered");
+              }
+              releaseInFlightOnce();
+              return;
+            }
+            emitDegradedLimitedRev1AndFinalize("BUNDLE_ONLY_NO_AUTHORITATIVE_MATCH");
+            releaseInFlightOnce(new Error("snapshot_bundle_only_skip_stage0"));
+            return;
+          }
+
           let digest: FactsDigest | null = null;
           let identityType: FactsDigest["identity"]["type"] = "gtin14";
           let identityValue = barcodeGtin14;
@@ -11851,7 +14982,39 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     }
 
     // 1) Catalog-first：overrides / DSLD
-    const catalog = await catalogPromise.catch(() => null);
+    const resolveCatalogSecondChance = async (): Promise<CatalogResolved | null> => {
+      if (requestSignal.aborted) return null;
+      const startedAtMs = performance.now();
+      try {
+        const secondChance = await resolveCatalogByBarcode(normalized, {
+          ...supabaseReadResilience,
+          // bypass shared read semaphore for one exact-match retry before Stage1 web fallback
+          semaphore: undefined,
+          queueTimeoutMs: 0,
+          timeoutMs: Math.max(RESILIENCE_CATALOG_TIMEOUT_MS, 1200),
+          retry: {
+            maxAttempts: 1,
+          },
+        });
+        if (secondChance) {
+          console.info("[ResolutionV2] Catalog second-chance hit", {
+            barcode: barcodeGtin14,
+            resolvedFrom: secondChance.resolvedFrom,
+            dsldLabelId: secondChance.dsldLabelId,
+            latencyMs: Math.round(performance.now() - startedAtMs),
+          });
+        }
+        return secondChance;
+      } catch (error) {
+        console.warn("[ResolutionV2] Catalog second-chance failed", error);
+        return null;
+      }
+    };
+
+    let catalog = await catalogPromise.catch(() => null);
+    if (!catalog) {
+      catalog = await resolveCatalogSecondChance();
+    }
 
     if (catalog) {
       const gtin14 = catalog.barcodeGtin14;
@@ -12004,6 +15167,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         analysis: analysisMeta,
         updatedAt: nowIso(),
       };
+      await ensureCatalogNpnCandidatesForMeta(workingSnapshot);
 
       if (dsldFacts) {
         const dsldFactsSourceVersion = `dsld:${dsldFacts.datasetVersion ?? dsldFacts.extractedAt ?? "unknown"}`;
@@ -12023,6 +15187,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           identityType: dsldIdentityType,
           identityValue: dsldIdentityValue,
           factsSourceVersion: dsldFactsSourceVersion,
+          stage0Winner: "label_record",
           allowAi: Boolean(deepseekKey),
           apiKey: deepseekKey,
         });
@@ -12226,6 +15391,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     }
 
     let historicalLnhpd: Awaited<ReturnType<typeof getHistoricalLnhpdScanNpn>> | null = null;
+    let nameMatchedNpnCandidate: string | null = null;
     const resolveCandidate = (historicalNpn?: string | null) =>
       resolveAuthorityCandidate({
         regulatoryMap,
@@ -12290,6 +15456,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
             ));
           const matchedNpn = nameMatchedFacts?.npn?.replace(/\D/g, "").trim() ?? "";
           if (matchedNpn.length >= 6) {
+            nameMatchedNpnCandidate = matchedNpn;
             candidate = {
               npn: matchedNpn,
               source: "name_match",
@@ -12311,6 +15478,17 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         }
       }
     }
+
+    npnCandidatesForMeta = buildNpnCandidates({
+      regulatoryMap,
+      mapStatus: authority.mapStatus,
+      mapMinConfidence: REGULATORY_MAP_MIN_CONFIDENCE,
+      authorityCandidate: candidate,
+      snapshot: cachedFast?.snapshot ?? null,
+      historicalNpn: historicalLnhpd?.npn ?? null,
+      nameMatchNpn: nameMatchedNpnCandidate,
+      maxCandidates: NPN_CANDIDATE_MAX,
+    });
 
     if (candidate?.source === "scan_history" && historicalLnhpd?.npn) {
       console.info("[ResolutionV2] Recovered LNHPD candidate from scan history", {
@@ -12472,6 +15650,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
                 identityType: "npn",
                 identityValue: candidate.npn,
                 factsSourceVersion: lnhpdFactsSourceVersion,
+                stage0Winner: "verified_regulatory",
                 allowAi: false,
                 apiKey: deepseekKey,
               });
@@ -12616,6 +15795,227 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           console.warn("[ResolutionV2] LNHPD fetch failed", error);
         }
       }
+    }
+
+    if (!stage0Delivered && !requestSignal.aborted && streamState.latestSourceTypeFinal !== true) {
+      await maybeRunNpnCandidateBackfill();
+    }
+
+    async function maybeRunDsldDirectFallbackStage0(params?: { allowForFullStream?: boolean }): Promise<boolean> {
+      if (!STAGE0_DSLD_BARCODE_FALLBACK_ENABLED) return false;
+      const allowForFullStream = params?.allowForFullStream === true && STAGE0_DSLD_BARCODE_FALLBACK_FULL_ENABLED;
+      const fallbackLane = streamAnalysisBundleOnly ? "bundle_only" : "full";
+      if (streamAnalysisBundleOnly) {
+        if (!BUNDLE_ONLY_SKIP_WEB_SEARCH) return false;
+      } else if (!allowForFullStream) {
+        return false;
+      }
+      if (requestSignal.aborted || stage0Delivered || streamState.latestSourceTypeFinal === true) return false;
+
+      const seededLabelId = STAGE0_DSLD_SEEDED_LABEL_MAP_ENABLED
+        ? STAGE0_DSLD_SEEDED_LABEL_MAP.get(barcodeGtin14) ?? null
+        : null;
+      const fetchWithSoftTimeout = async (
+        factory: () => Promise<DsldFacts | null>,
+        timeoutMs: number,
+      ): Promise<DsldFacts | null> => {
+        const value = await Promise.race<DsldFacts | null>([
+          factory().catch(() => null),
+          new Promise<DsldFacts | null>((resolve) => setTimeout(() => resolve(null), timeoutMs)),
+        ]);
+        return value;
+      };
+
+      const buildSeededFallbackFacts = (labelId: number): DsldFacts => ({
+        dsldLabelId: labelId,
+        brandName: null,
+        productName: null,
+        servingSize: null,
+        servingsPerContainer: null,
+        actives: [],
+        inactive: [],
+        proprietaryBlends: [],
+        datasetVersion: null,
+        extractedAt: nowIso(),
+        dsldPdf: null,
+        dsldThumbnail: null,
+        factsSource: "meta_summary",
+      });
+
+      let dsldFacts: DsldFacts | null = null;
+      const hasSeededLabelId = Boolean(seededLabelId && Number.isFinite(seededLabelId));
+
+      if (hasSeededLabelId) {
+        const seededFetchTimeoutMs = streamAnalysisBundleOnly
+          ? STAGE0_DSLD_SEEDED_FETCH_TIMEOUT_MS
+          : Math.max(
+              STAGE0_DSLD_SEEDED_FETCH_TIMEOUT_MS,
+              STAGE0_DSLD_BARCODE_FALLBACK_FETCH_TIMEOUT_MS,
+            );
+        dsldFacts = await fetchWithSoftTimeout(
+          () => fetchDsldFactsByLabelId(seededLabelId as number, requestSignal),
+          seededFetchTimeoutMs,
+        );
+        if (!dsldFacts && streamAnalysisBundleOnly) {
+          // For seeded barcodes, prefer deterministic identity over waiting on a second blocking fetch.
+          // A background fetch still runs to hydrate rich facts cache for subsequent requests.
+          dsldFacts = buildSeededFallbackFacts(seededLabelId as number);
+          void fetchDsldFactsByBarcode(barcodeGtin14, requestSignal).catch(() => null);
+        }
+      }
+
+      if (!dsldFacts) {
+        dsldFacts = await fetchWithSoftTimeout(
+          () => fetchDsldFactsByBarcode(barcodeGtin14, requestSignal),
+          STAGE0_DSLD_BARCODE_FALLBACK_FETCH_TIMEOUT_MS,
+        );
+      }
+      if (!dsldFacts) return false;
+
+      const dsldLabelFacts = toLabelFactsFromDsld(dsldFacts);
+      const labelExtraction: LabelExtractionMeta = {
+        source: "dsld",
+        fetchedAt: dsldFacts.extractedAt ?? nowIso(),
+        datasetVersion: dsldFacts.datasetVersion ?? null,
+      };
+      const dsldProductInfo = {
+        brand: dsldFacts.brandName ?? null,
+        name: dsldFacts.productName ?? null,
+        category: null,
+        image: null,
+      };
+      const dsldAnalysisPayload: SnapshotAnalysisPayload = {
+        ...buildLabelOnlyAnalysis(dsldLabelFacts),
+        brandExtraction: {
+          brand: dsldProductInfo.brand,
+          product: dsldProductInfo.name,
+          category: dsldProductInfo.category,
+          confidence: "high",
+          source: "rule",
+        },
+        productInfo: dsldProductInfo,
+        sources: [],
+      };
+      let dsldSnapshot = buildBarcodeSnapshot({
+        barcode,
+        productInfo: dsldProductInfo,
+        sources: [],
+        efficacy: dsldAnalysisPayload.efficacy ?? null,
+        safety: dsldAnalysisPayload.safety ?? null,
+        usagePayload: dsldAnalysisPayload.usagePayload ?? null,
+      });
+      dsldSnapshot = applyDsldFactsToSnapshot(dsldSnapshot, dsldFacts);
+
+      const dsldIdentityType = Number.isFinite(Number(dsldFacts.dsldLabelId)) ? "dsldLabelId" : "gtin14";
+      const dsldIdentityValue =
+        dsldIdentityType === "dsldLabelId" ? String(dsldFacts.dsldLabelId) : barcodeGtin14;
+      const dsldFactsSourceVersion = `dsld:${dsldFacts.datasetVersion ?? dsldFacts.extractedAt ?? "unknown"}`;
+      const dsldDigest = buildFactsDigestFromDsld({
+        facts: dsldFacts,
+        snapshot: dsldSnapshot,
+        identityValue: dsldIdentityValue,
+        regionTags: dsldSnapshot.regulatory.regionTags,
+      });
+      const started = startStage0Bundle({
+        digest: dsldDigest,
+        identityType: dsldIdentityType,
+        identityValue: dsldIdentityValue,
+        factsSourceVersion: dsldFactsSourceVersion,
+        stage0Winner: "label_record",
+        allowAi: false,
+        apiKey: deepseekKey,
+      });
+      if (!started) return false;
+
+      const analysisStatus = buildAnalysisStatus({
+        hasLabelFacts: hasLabelFacts(dsldSnapshot),
+        hasAi: hasAiPayload(dsldAnalysisPayload),
+        dsldLabelId: dsldFacts.dsldLabelId ?? null,
+      });
+      const analysisMeta = buildAnalysisMeta({ status: analysisStatus, labelExtraction });
+      dsldAnalysisPayload.analysis = analysisMeta;
+      dsldSnapshot.status = "resolved";
+      dsldSnapshot.analysis = analysisMeta;
+      dsldSnapshot.updatedAt = nowIso();
+      const expiresAt = computeExpiresAt(analysisStatus);
+      void storeSnapshotCache({
+        key: cacheKey,
+        source: "barcode",
+        snapshot: dsldSnapshot,
+        analysisPayload: dsldAnalysisPayload,
+        expiresAt,
+      });
+
+      stage0Delivered = true;
+      stage0Source = "dsld";
+      console.info("[ResolutionV2] Stage0 DSLD fallback recovered authoritative path", {
+        barcode: barcodeGtin14,
+        lane: fallbackLane,
+        seededLabelId,
+        dsldLabelId: dsldFacts.dsldLabelId ?? null,
+      });
+      return true;
+    }
+
+    if (!streamAnalysisBundleOnly && !stage0Delivered && !requestSignal.aborted) {
+      const dsldRecoveredFullStream = await maybeRunDsldDirectFallbackStage0({ allowForFullStream: true });
+      if (dsldRecoveredFullStream && stage0BundlePromise) {
+        await awaitAnalysisBundle();
+        if (!streamState.doneSent && !streamState.ended && !res.writableEnded) {
+          finalizeStream("dsld_stage0_full_stream_recovered");
+        }
+        releaseInFlightOnce();
+        return;
+      }
+    }
+
+    // Bundle-only stability gate:
+    // If Stage 0 did not resolve to a final authoritative result, skip Stage 1 web search
+    // entirely and close with limited rev1 + done. This avoids expensive regex-heavy web paths
+    // under mobile soak/concurrency pressure.
+    if (streamAnalysisBundleOnly && BUNDLE_ONLY_SKIP_WEB_SEARCH) {
+      if (SSE_LIFECYCLE_LOG_ENABLED) {
+        console.info("[ResolutionV2] bundle_only_stage1_skipped", {
+          requestId: requestId || null,
+          barcode: barcodeGtin14,
+          stage0Delivered,
+          stage0Source,
+        });
+      }
+      if (stage0BundlePromise) {
+        await awaitAnalysisBundle();
+        if (!streamState.doneSent && !streamState.ended && !res.writableEnded) {
+          finalizeStream("bundle_only_stage0_complete");
+        }
+        releaseInFlightOnce();
+        return;
+      }
+      if (stage0Delivered) {
+        if (!streamState.rev1Sent && !streamState.doneSent && !streamState.ended && !res.writableEnded) {
+          markPipelineStepEnd("retrieve", "degraded", "bundle_only_stage0_no_rev1");
+          emitDegradedLimitedRev1AndFinalize("BUNDLE_ONLY_NO_AUTHORITATIVE_MATCH");
+          releaseInFlightOnce(new Error("bundle_only_stage0_no_rev1"));
+          return;
+        }
+        if (!streamState.doneSent && !streamState.ended && !res.writableEnded) {
+          finalizeStream("bundle_only_stage0_complete");
+        }
+        releaseInFlightOnce();
+        return;
+      }
+      const dsldRecovered = await maybeRunDsldDirectFallbackStage0();
+      if (dsldRecovered && stage0BundlePromise) {
+        await awaitAnalysisBundle();
+        if (!streamState.doneSent && !streamState.ended && !res.writableEnded) {
+          finalizeStream("bundle_only_dsld_stage0_recovered");
+        }
+        releaseInFlightOnce();
+        return;
+      }
+      markPipelineStepEnd("retrieve", "degraded", "bundle_only_skip_web_search");
+      emitDegradedLimitedRev1AndFinalize("BUNDLE_ONLY_NO_AUTHORITATIVE_MATCH");
+      releaseInFlightOnce(new Error("bundle_only_skip_web_search"));
+      return;
     }
 
     const aiRequired = !catalog;
@@ -12868,7 +16268,9 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     // =========================================================================
     // STEP 1: Initial Barcode Search
     // =========================================================================
-    console.log(`[Stream] Starting analysis for barcode: ${barcode}`);
+    if (STREAM_VERBOSE_LOG_ENABLED) {
+      console.log(`[Stream] Starting analysis for barcode: ${barcode}`);
+    }
 
     // =========================================================================
     // Stage 1 (V2): Budgeted web resolution
@@ -12980,7 +16382,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     };
 
     const clearNegative = (): void => {
-      void clearNegativeCache(barcodeGtin14, { ...supabaseReadResilience, timeoutMs: 500 });
+      void clearNegativeCache(barcodeGtin14, rawBarcode, { ...supabaseReadResilience, timeoutMs: 500 });
     };
 
     const trainingWriteResilience = {
@@ -13256,110 +16658,126 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           }
         };
 
-        const extractMetaContentSecondary = (html: string, key: string): string | null => {
-          const regex = new RegExp(
+        const metaContentRegexCacheSecondary = new Map<string, RegExp>();
+        const getMetaContentRegexSecondary = (key: string): RegExp => {
+          const cached = metaContentRegexCacheSecondary.get(key);
+          if (cached) return cached;
+          const compiled = new RegExp(
             `<meta[^>]+(?:property|name)=[\"']${key.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")}[\"'][^>]+content=[\"']([^\"']+)[\"'][^>]*>`,
             "i",
           );
-          const match = html.match(regex);
-          const value = match?.[1]?.trim();
-          return value ? value : null;
+          metaContentRegexCacheSecondary.set(key, compiled);
+          return compiled;
         };
 
-        const extractJsonLdSecondary = (html: string): SecondaryEvidence["jsonLd"] => {
-          const scripts = Array.from(
-            html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi),
-          );
-          let name: string | null = null;
-          let brand: string | null = null;
-          const images: string[] = [];
-          let sku: string | null = null;
-          let gtin: string | null = null;
-          let hasProduct = false;
-          let gtinMatch = false;
+        const extractMetaContentSecondary = (html: string, key: string): string | null => {
+          return profileWebParseStep("secondary.extractMetaContent", html, () => {
+            const match = clampParseWindow(html).match(getMetaContentRegexSecondary(key));
+            const value = match?.[1]?.trim();
+            return value ? value : null;
+          });
+        };
 
-          for (const match of scripts) {
-            const payload = (match[1] ?? "").trim();
-            if (!payload) continue;
-            const lower = payload.toLowerCase();
-            if (lower.includes("product")) {
-              hasProduct = true;
-            }
-            const digits = payload.replace(/\D/g, "");
-            if (barcodeVariants.some((code) => digits.includes(code))) {
-              gtinMatch = true;
-            }
+        const extractJsonLdSecondary = (html: string): SecondaryEvidence["jsonLd"] =>
+          profileWebParseStep("secondary.extractJsonLd", html, () => {
+            const payloads = extractJsonLdScriptPayloads(html);
+            let name: string | null = null;
+            let brand: string | null = null;
+            const images: string[] = [];
+            let sku: string | null = null;
+            let gtin: string | null = null;
+            let hasProduct = false;
+            let gtinMatch = false;
 
-            try {
-              const parsed = JSON.parse(payload) as unknown;
-              const stack: unknown[] = [parsed];
-              while (stack.length) {
-                const node = stack.pop();
-                if (!node || typeof node !== "object") continue;
-                if (Array.isArray(node)) {
-                  node.forEach((child) => stack.push(child));
-                  continue;
-                }
-                const record = node as Record<string, unknown>;
-                const typeValue = record["@type"];
-                if (typeof typeValue === "string" && typeValue.toLowerCase().includes("product")) {
-                  hasProduct = true;
-                }
-                if (!name && typeof record.name === "string") name = record.name;
-                const brandValue = record.brand;
-                if (!brand) {
-                  if (typeof brandValue === "string") brand = brandValue;
-                  if (brandValue && typeof brandValue === "object") {
-                    const brandObj = brandValue as Record<string, unknown>;
-                    if (typeof brandObj.name === "string") brand = brandObj.name;
+            for (const payload of payloads) {
+              if (!payload) continue;
+              if (/\bproduct\b/i.test(payload.slice(0, 4096))) {
+                hasProduct = true;
+              }
+              const payloadDigits = extractDigitsPrefix(payload);
+              if (barcodeVariants.some((code) => payloadDigits.includes(code))) {
+                gtinMatch = true;
+              }
+
+              try {
+                const parsed = JSON.parse(payload) as unknown;
+                const stack: unknown[] = [parsed];
+                let visitedNodes = 0;
+                while (stack.length) {
+                  visitedNodes += 1;
+                  if (visitedNodes > STAGE0_WEB_JSONLD_MAX_NODES) break;
+                  const node = stack.pop();
+                  if (!node || typeof node !== "object") continue;
+                  if (Array.isArray(node)) {
+                    node.forEach((child) => stack.push(child));
+                    continue;
                   }
-                }
-                const imageValue = record.image;
-                if (typeof imageValue === "string") images.push(imageValue);
-                if (Array.isArray(imageValue)) {
-                  for (const img of imageValue) {
-                    if (typeof img === "string") images.push(img);
+                  const record = node as Record<string, unknown>;
+                  const typeValue = record["@type"];
+                  if (typeof typeValue === "string" && typeValue.toLowerCase().includes("product")) {
+                    hasProduct = true;
                   }
-                }
-                if (!sku && typeof record.sku === "string") sku = record.sku;
-                const gtinKeys = ["gtin14", "gtin13", "gtin12", "gtin", "gtin8"];
-                for (const key of gtinKeys) {
-                  const value = record[key];
-                  if (typeof value === "string" && value.replace(/\D/g, "")) {
-                    const digitsOnly = value.replace(/\D/g, "");
-                    if (!gtin) gtin = digitsOnly;
-                    if (barcodeVariants.includes(digitsOnly)) {
-                      gtinMatch = true;
+                  if (!name && typeof record.name === "string") name = record.name;
+                  const brandValue = record.brand;
+                  if (!brand) {
+                    if (typeof brandValue === "string") brand = brandValue;
+                    if (brandValue && typeof brandValue === "object") {
+                      const brandObj = brandValue as Record<string, unknown>;
+                      if (typeof brandObj.name === "string") brand = brandObj.name;
                     }
                   }
+                  const imageValue = record.image;
+                  if (typeof imageValue === "string") images.push(imageValue);
+                  if (Array.isArray(imageValue)) {
+                    for (const img of imageValue) {
+                      if (typeof img === "string") images.push(img);
+                    }
+                  }
+                  if (!sku && typeof record.sku === "string") sku = record.sku;
+                  const gtinKeys = ["gtin14", "gtin13", "gtin12", "gtin", "gtin8"];
+                  for (const key of gtinKeys) {
+                    const value = record[key];
+                    if (typeof value === "string" && value.replace(/\D/g, "")) {
+                      const digitsOnly = value.replace(/\D/g, "");
+                      if (!gtin) gtin = digitsOnly;
+                      if (barcodeVariants.includes(digitsOnly)) {
+                        gtinMatch = true;
+                      }
+                    }
+                  }
+                  Object.values(record).forEach((child) => stack.push(child));
                 }
-                Object.values(record).forEach((child) => stack.push(child));
+              } catch {
+                // ignore parse failures for truncated JSON-LD
               }
-            } catch {
-              // ignore parse failures for truncated JSON-LD
             }
-          }
 
-          return {
-            name,
-            brand,
-            images: images.filter(Boolean).slice(0, 5),
-            sku,
-            gtin,
-            hasProduct,
-            gtinMatch,
-          };
-        };
+            return {
+              name,
+              brand,
+              images: images.filter(Boolean).slice(0, 5),
+              sku,
+              gtin,
+              hasProduct,
+              gtinMatch,
+            };
+          });
 
-        const extractNpnFromTextSecondary = (text: string): string | null => {
-          const match = text.match(/\bNPN\s*[:#]?\s*(\d{8})\b/i);
-          return match?.[1] ?? null;
-        };
+        const extractNpnFromTextSecondary = (text: string): string | null =>
+          profileWebParseStep("secondary.extractNpnFromText", text, () => {
+            const scanText =
+              text.length > STAGE0_WEB_DIGIT_SCAN_MAX_CHARS
+                ? text.slice(0, STAGE0_WEB_DIGIT_SCAN_MAX_CHARS)
+                : text;
+            const match = scanText.match(/\bNPN\s*[:#]?\s*(\d{8})\b/i);
+            return match?.[1] ?? null;
+          });
 
-        const extractMpnFromTextSecondary = (text: string): string | null => {
-          const match = text.match(/\bMPN\s*[:#]?\s*([A-Z0-9\-]{3,})\b/i);
-          return match?.[1] ?? null;
-        };
+        const extractMpnFromTextSecondary = (text: string): string | null =>
+          profileWebParseStep("secondary.extractMpnFromText", text, () => {
+            const match = text.match(/\bMPN\s*[:#]?\s*([A-Z0-9\-]{3,})\b/i);
+            return match?.[1] ?? null;
+          });
 
         const normalizeGtinCandidateSecondary = (value: string): string | null => {
           const digits = value.replace(/\D/g, "");
@@ -13368,23 +16786,30 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           return digits;
         };
 
-        const extractGtinCandidatesFromTextSecondary = (text: string): string[] => {
-          if (!text) return [];
-          const matches = new Set<string>();
-          const regex = /\b(?:UPC|GTIN|EAN|JAN|UPC-A|UPCA)\s*[:#]?\s*([0-9][0-9\-\s]{6,24})\b/gi;
-          let match: RegExpExecArray | null = null;
-          while ((match = regex.exec(text)) !== null) {
-            const candidate = normalizeGtinCandidateSecondary(match[1] ?? "");
-            if (candidate) matches.add(candidate);
-          }
-          return Array.from(matches);
-        };
+        const extractGtinCandidatesFromTextSecondary = (text: string): string[] =>
+          profileWebParseStep("secondary.extractGtinCandidatesFromText", text, () => {
+            if (!text) return [];
+            const scanText =
+              text.length > STAGE0_WEB_DIGIT_SCAN_MAX_CHARS
+                ? text.slice(0, STAGE0_WEB_DIGIT_SCAN_MAX_CHARS)
+                : text;
+            if (!/\b(?:UPC|GTIN|EAN|JAN)\b/i.test(scanText)) return [];
+            const matches = new Set<string>();
+            const regex = /\b(?:UPC|GTIN|EAN|JAN|UPC-A|UPCA)\s*[:#]?\s*([0-9][0-9\-\s]{6,24})\b/gi;
+            let match: RegExpExecArray | null = null;
+            while ((match = regex.exec(scanText)) !== null) {
+              const candidate = normalizeGtinCandidateSecondary(match[1] ?? "");
+              if (candidate) matches.add(candidate);
+            }
+            return Array.from(matches);
+          });
 
-        const extractTitleTagSecondary = (html: string): string | null => {
-          const match = html.match(/<title[^>]*>([^<]{2,200})<\/title>/i);
-          const value = match?.[1]?.replace(/\s+/g, " ").trim();
-          return value ? value : null;
-        };
+        const extractTitleTagSecondary = (html: string): string | null =>
+          profileWebParseStep("secondary.extractTitleTag", html, () => {
+            const match = html.match(/<title[^>]*>([^<]{2,200})<\/title>/i);
+            const value = match?.[1]?.replace(/\s+/g, " ").trim();
+            return value ? value : null;
+          });
 
         const fetchTextPrefixSecondary = async (
           rawUrl: string,
@@ -13408,23 +16833,27 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
 
           const timeoutSignal = createTimeoutSignal(budgetedTimeout);
           const { signal, cleanup } = combineSignals([timeoutSignal]);
+          const parseStartedAt = performance.now();
           try {
+            const effectiveMaxBytes = Math.min(maxBytes, STAGE0_WEB_MAX_BYTES);
             const readResponseText = async (response: globalThis.Response): Promise<string> => {
               const reader = response.body?.getReader();
               if (!reader) {
                 const rawText = await response.text();
-                return rawText.slice(0, maxBytes);
+                const clipped = rawText.slice(0, effectiveMaxBytes);
+                webBytesReadTotal += Buffer.byteLength(clipped, "utf8");
+                return clipped;
               }
               const chunks: Uint8Array[] = [];
               let received = 0;
-              while (received < maxBytes) {
+              while (received < effectiveMaxBytes) {
                 const { value, done } = await reader.read();
                 if (done) break;
                 if (!value) continue;
-                const remaining = maxBytes - received;
+                const remaining = effectiveMaxBytes - received;
                 chunks.push(value.length > remaining ? value.slice(0, remaining) : value);
                 received += Math.min(value.length, remaining);
-                if (received >= maxBytes) {
+                if (received >= effectiveMaxBytes) {
                   try {
                     await reader.cancel();
                   } catch { }
@@ -13432,6 +16861,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
                 }
               }
               const buffer = Buffer.concat(chunks);
+              webBytesReadTotal += received;
               return buffer.toString("utf8");
             };
 
@@ -13441,7 +16871,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
                 Accept: "text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.8",
               };
               if (useRange) {
-                headers.Range = `bytes=0-${Math.max(0, maxBytes - 1)}`;
+                headers.Range = `bytes=0-${Math.max(0, effectiveMaxBytes - 1)}`;
               }
               const response = await fetch(rawUrl, {
                 method: "GET",
@@ -13475,6 +16905,19 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
             }
             return null;
           } finally {
+            const elapsed = performance.now() - parseStartedAt;
+            if (Number.isFinite(elapsed)) {
+              webParseMsTotal += elapsed;
+            }
+            if (
+              webParseMsTotal > STAGE0_WEB_PARSE_BUDGET_MS &&
+              !streamState.rev1Sent &&
+              !streamState.doneSent &&
+              !streamState.ended
+            ) {
+              emitDegradedLimitedRev1AndFinalize("DEGRADED_WEB_BUDGET");
+            }
+            maybeDegradeForEventLoopLag();
             cleanup();
             release?.();
           }
@@ -13497,19 +16940,20 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
             lowerType.includes("application/pdf") ||
             lowerType.includes("application/octet-stream");
           const text = prefix.text ?? "";
-          const digits = text.replace(/\D/g, "");
+          const parseText = clampParseWindow(text);
+          const digits = extractDigitsPrefix(parseText);
           const barcodeHitCount = barcodeVariants.reduce((sum, code) => sum + countOccurrences(digits, code), 0);
-          const jsonLd = extractJsonLdSecondary(text);
-          const metaOgTitle = extractMetaContentSecondary(text, "og:title");
-          const titleTag = extractTitleTagSecondary(text);
+          const jsonLd = extractJsonLdSecondary(parseText);
+          const metaOgTitle = extractMetaContentSecondary(parseText, "og:title");
+          const titleTag = extractTitleTagSecondary(parseText);
           const metaBrand =
-            extractMetaContentSecondary(text, "product:brand") ?? extractMetaContentSecondary(text, "og:site_name");
+            extractMetaContentSecondary(parseText, "product:brand") ?? extractMetaContentSecondary(parseText, "og:site_name");
           const hasTitleEvidence = Boolean(metaOgTitle || titleTag || jsonLd.name || metaBrand);
 
-          const npnCandidate = extractNpnFromTextSecondary(text);
-          const mpnCandidate = extractMpnFromTextSecondary(text);
+          const npnCandidate = extractNpnFromTextSecondary(parseText);
+          const mpnCandidate = extractMpnFromTextSecondary(parseText);
           const gtinCandidatesSet = new Set<string>();
-          for (const candidate of extractGtinCandidatesFromTextSecondary(text)) {
+          for (const candidate of extractGtinCandidatesFromTextSecondary(parseText)) {
             gtinCandidatesSet.add(candidate);
           }
           const jsonLdGtinCandidate = normalizeGtinCandidateSecondary(jsonLd.gtin ?? "");
@@ -13520,9 +16964,9 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           const gtinMismatch =
             gtinCandidates.length > 0 && !gtinCandidates.some((candidate) => barcodeVariants.includes(candidate));
           const needsJs =
-            /please enable javascript|enable javascript|requires javascript|turn on javascript/i.test(text) ||
-            (text.includes("<script") &&
-              !text.includes("ingredients") &&
+            /please enable javascript|enable javascript|requires javascript|turn on javascript/i.test(parseText) ||
+            (parseText.includes("<script") &&
+              !parseText.includes("ingredients") &&
               barcodeHitCount === 0 &&
               !hasTitleEvidence);
 
@@ -13536,7 +16980,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
             !needsJs &&
             (jsonLdGtinMatch || barcodeHitCount >= RESOLUTION_STRONG_MATCH_BARCODE_HITS_MIN || regStrongMatch);
 
-          const pageText = `${metaOgTitle ?? ""} ${titleTag ?? ""} ${jsonLd.name ?? ""} ${text}`.toLowerCase();
+          const pageText = `${metaOgTitle ?? ""} ${titleTag ?? ""} ${jsonLd.name ?? ""} ${parseText}`.toLowerCase();
           const brandVariants = buildBrandVariants(seed.brandTokens);
           const dosageVariants = buildDosageVariants(seed.dosage);
           const countVariants = buildCountVariants(seed.count);
@@ -13595,18 +17039,19 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           text: string | null | undefined,
           patterns: RegExp[],
           maxChars = 600,
-        ): string | null => {
-          if (!text) return null;
-          for (const pattern of patterns) {
-            const match = text.match(pattern);
-            const value = match?.[1]?.trim();
-            if (value) {
-              const normalized = value.replace(/\s+/g, " ").trim();
-              return normalized.length > maxChars ? `${normalized.slice(0, maxChars).trim()}…` : normalized;
+        ): string | null =>
+          profileWebParseStep("secondary.extractSection", text, () => {
+            if (!text) return null;
+            for (const pattern of patterns) {
+              const match = text.match(pattern);
+              const value = match?.[1]?.trim();
+              if (value) {
+                const normalized = value.replace(/\s+/g, " ").trim();
+                return normalized.length > maxChars ? `${normalized.slice(0, maxChars).trim()}…` : normalized;
+              }
             }
-          }
-          return null;
-        };
+            return null;
+          });
 
         const sanitizeProductNameCandidate = (value?: string | null): string | null => {
           if (!value) return null;
@@ -13913,7 +17358,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
                 barcodeRaw: rawBarcode,
               });
 
-              void clearNegativeCache(barcodeGtin14, supabaseWriteResilience);
+              void clearNegativeCache(barcodeGtin14, rawBarcode, supabaseWriteResilience);
               void clearNpnNegativeCache(npnCandidate, supabaseWriteResilience);
               factsSummary = {
                 npn: npnCandidate,
@@ -14154,7 +17599,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
                     }
                     return domainOk && (entry.evidence.seedVerified || entry.evidence.strongMatch || entry.evidence.regStrongMatch);
                   })
-                  .slice(0, SECONDARY_DEEP_FETCH_MAX_PAGES);
+                  .slice(0, Math.min(STAGE0_WEB_MAX_SOURCES, SECONDARY_DEEP_FETCH_MAX_PAGES));
 
                 if (!deepCandidates.length) {
                   failureReason = "secondary_no_verified_candidate";
@@ -14438,7 +17883,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
                           );
                         }
 
-                        void clearNegativeCache(barcodeGtin14, supabaseWriteResilience);
+                        void clearNegativeCache(barcodeGtin14, rawBarcode, supabaseWriteResilience);
                         outcome = "SECONDARY_BACKFILL_SUCCESS";
                         failureReason = null;
                       }
@@ -15010,6 +18455,12 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
           brand: seedBrand,
         };
       }
+      latestNotFoundHint = {
+        ...latestNotFoundHint,
+        brand: extraction?.brand ?? latestNotFoundHint.brand,
+        product: extraction?.product ?? latestNotFoundHint.product,
+        category: extraction?.category ?? latestNotFoundHint.category,
+      };
       if (stage1SseEnabled) {
         sendSSE(res, "brand_extracted", {
           brand: extraction.brand,
@@ -15028,6 +18479,10 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
       domain: extractDomain(item.link),
       isHighQuality: isHighQualityDomain(item.link),
     }));
+    latestNotFoundHint = {
+      ...latestNotFoundHint,
+      sources: sourcesToSend.length > 0 ? sourcesToSend : latestNotFoundHint.sources,
+    };
 
     const provisionalBrand = extraction?.brand ?? null;
     const provisionalName = extraction?.product ?? (initialItems[0]?.title ?? null);
@@ -15431,14 +18886,24 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
       }
     };
 
-    const extractMetaContent = (html: string, key: string): string | null => {
-      const regex = new RegExp(
+    const metaContentRegexCache = new Map<string, RegExp>();
+    const getMetaContentRegex = (key: string): RegExp => {
+      const cached = metaContentRegexCache.get(key);
+      if (cached) return cached;
+      const compiled = new RegExp(
         `<meta[^>]+(?:property|name)=[\"']${key.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")}[\"'][^>]+content=[\"']([^\"']+)[\"'][^>]*>`,
         "i",
       );
-      const match = html.match(regex);
-      const value = match?.[1]?.trim();
-      return value ? value : null;
+      metaContentRegexCache.set(key, compiled);
+      return compiled;
+    };
+
+    const extractMetaContent = (html: string, key: string): string | null => {
+      return profileWebParseStep("primary.extractMetaContent", html, () => {
+        const match = clampParseWindow(html).match(getMetaContentRegex(key));
+        const value = match?.[1]?.trim();
+        return value ? value : null;
+      });
     };
 
     type JsonLdExtract = {
@@ -15451,95 +18916,100 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
       gtinMatch?: boolean;
     };
 
-    const extractJsonLd = (html: string): JsonLdExtract => {
-      const scripts = Array.from(
-        html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi),
-      );
-      let name: string | null = null;
-      let brand: string | null = null;
-      const images: string[] = [];
-      let sku: string | null = null;
-      let gtin: string | null = null;
-      let hasProduct = false;
-      let gtinMatch = false;
+    const extractJsonLd = (html: string): JsonLdExtract =>
+      profileWebParseStep("primary.extractJsonLd", html, () => {
+        const payloads = extractJsonLdScriptPayloads(html);
+        let name: string | null = null;
+        let brand: string | null = null;
+        const images: string[] = [];
+        let sku: string | null = null;
+        let gtin: string | null = null;
+        let hasProduct = false;
+        let gtinMatch = false;
 
-      for (const match of scripts) {
-        const payload = (match[1] ?? "").trim();
-        if (!payload) continue;
-        const lower = payload.toLowerCase();
-        if (lower.includes("product")) {
-          hasProduct = true;
-        }
-        const digits = payload.replace(/\D/g, "");
-        if (barcodeVariants.some((code) => digits.includes(code))) {
-          gtinMatch = true;
-        }
+        for (const payload of payloads) {
+          if (!payload) continue;
+          if (/\bproduct\b/i.test(payload.slice(0, 4096))) {
+            hasProduct = true;
+          }
+          const payloadDigits = extractDigitsPrefix(payload);
+          if (barcodeVariants.some((code) => payloadDigits.includes(code))) {
+            gtinMatch = true;
+          }
 
-        try {
-          const parsed = JSON.parse(payload) as unknown;
-          const stack: unknown[] = [parsed];
-          while (stack.length) {
-            const node = stack.pop();
-            if (!node || typeof node !== "object") continue;
-            if (Array.isArray(node)) {
-              node.forEach((child) => stack.push(child));
-              continue;
-            }
-            const record = node as Record<string, unknown>;
-            const typeValue = record["@type"];
-            if (typeof typeValue === "string" && typeValue.toLowerCase().includes("product")) {
-              hasProduct = true;
-            }
-            if (!name && typeof record.name === "string") name = record.name;
-            const brandValue = record.brand;
-            if (!brand) {
-              if (typeof brandValue === "string") brand = brandValue;
-              if (brandValue && typeof brandValue === "object") {
-                const brandObj = brandValue as Record<string, unknown>;
-                if (typeof brandObj.name === "string") brand = brandObj.name;
+          try {
+            const parsed = JSON.parse(payload) as unknown;
+            const stack: unknown[] = [parsed];
+            let visitedNodes = 0;
+            while (stack.length) {
+              visitedNodes += 1;
+              if (visitedNodes > STAGE0_WEB_JSONLD_MAX_NODES) break;
+              const node = stack.pop();
+              if (!node || typeof node !== "object") continue;
+              if (Array.isArray(node)) {
+                node.forEach((child) => stack.push(child));
+                continue;
               }
-            }
-            const imageValue = record.image;
-            if (typeof imageValue === "string") images.push(imageValue);
-            if (Array.isArray(imageValue)) {
-              for (const img of imageValue) {
-                if (typeof img === "string") images.push(img);
+              const record = node as Record<string, unknown>;
+              const typeValue = record["@type"];
+              if (typeof typeValue === "string" && typeValue.toLowerCase().includes("product")) {
+                hasProduct = true;
               }
-            }
-            if (!sku && typeof record.sku === "string") sku = record.sku;
-            const gtinKeys = ["gtin14", "gtin13", "gtin12", "gtin", "gtin8"];
-            for (const key of gtinKeys) {
-              const value = record[key];
-              if (typeof value === "string" && value.replace(/\D/g, "")) {
-                const digitsOnly = value.replace(/\D/g, "");
-                if (!gtin) gtin = digitsOnly;
-                if (barcodeVariants.includes(digitsOnly)) {
-                  gtinMatch = true;
+              if (!name && typeof record.name === "string") name = record.name;
+              const brandValue = record.brand;
+              if (!brand) {
+                if (typeof brandValue === "string") brand = brandValue;
+                if (brandValue && typeof brandValue === "object") {
+                  const brandObj = brandValue as Record<string, unknown>;
+                  if (typeof brandObj.name === "string") brand = brandObj.name;
                 }
               }
+              const imageValue = record.image;
+              if (typeof imageValue === "string") images.push(imageValue);
+              if (Array.isArray(imageValue)) {
+                for (const img of imageValue) {
+                  if (typeof img === "string") images.push(img);
+                }
+              }
+              if (!sku && typeof record.sku === "string") sku = record.sku;
+              const gtinKeys = ["gtin14", "gtin13", "gtin12", "gtin", "gtin8"];
+              for (const key of gtinKeys) {
+                const value = record[key];
+                if (typeof value === "string" && value.replace(/\D/g, "")) {
+                  const digitsOnly = value.replace(/\D/g, "");
+                  if (!gtin) gtin = digitsOnly;
+                  if (barcodeVariants.includes(digitsOnly)) {
+                    gtinMatch = true;
+                  }
+                }
+              }
+              Object.values(record).forEach((child) => stack.push(child));
             }
-            Object.values(record).forEach((child) => stack.push(child));
+          } catch {
+            // ignore parse failures for truncated JSON-LD
           }
-        } catch {
-          // ignore parse failures for truncated JSON-LD
         }
-      }
 
-      return {
-        name,
-        brand,
-        images: images.filter(Boolean).slice(0, 5),
-        sku,
-        gtin,
-        hasProduct,
-        gtinMatch,
-      };
-    };
+        return {
+          name,
+          brand,
+          images: images.filter(Boolean).slice(0, 5),
+          sku,
+          gtin,
+          hasProduct,
+          gtinMatch,
+        };
+      });
 
-    const extractNpnFromText = (text: string): string | null => {
-      const match = text.match(/\bNPN\s*[:#]?\s*(\d{8})\b/i);
-      return match?.[1] ?? null;
-    };
+    const extractNpnFromText = (text: string): string | null =>
+      profileWebParseStep("primary.extractNpnFromText", text, () => {
+        const scanText =
+          text.length > STAGE0_WEB_DIGIT_SCAN_MAX_CHARS
+            ? text.slice(0, STAGE0_WEB_DIGIT_SCAN_MAX_CHARS)
+            : text;
+        const match = scanText.match(/\bNPN\s*[:#]?\s*(\d{8})\b/i);
+        return match?.[1] ?? null;
+      });
 
     const normalizeGtinCandidate = (value: string): string | null => {
       const digits = value.replace(/\D/g, "");
@@ -15548,17 +19018,23 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
       return digits;
     };
 
-    const extractGtinCandidatesFromText = (text: string): string[] => {
-      if (!text) return [];
-      const matches = new Set<string>();
-      const regex = /\b(?:UPC|GTIN|EAN|JAN|UPC-A|UPCA)\s*[:#]?\s*([0-9][0-9\-\s]{6,24})\b/gi;
-      let match: RegExpExecArray | null = null;
-      while ((match = regex.exec(text)) !== null) {
-        const candidate = normalizeGtinCandidate(match[1] ?? "");
-        if (candidate) matches.add(candidate);
-      }
-      return Array.from(matches);
-    };
+    const extractGtinCandidatesFromText = (text: string): string[] =>
+      profileWebParseStep("primary.extractGtinCandidatesFromText", text, () => {
+        if (!text) return [];
+        const scanText =
+          text.length > STAGE0_WEB_DIGIT_SCAN_MAX_CHARS
+            ? text.slice(0, STAGE0_WEB_DIGIT_SCAN_MAX_CHARS)
+            : text;
+        if (!/\b(?:UPC|GTIN|EAN|JAN)\b/i.test(scanText)) return [];
+        const matches = new Set<string>();
+        const regex = /\b(?:UPC|GTIN|EAN|JAN|UPC-A|UPCA)\s*[:#]?\s*([0-9][0-9\-\s]{6,24})\b/gi;
+        let match: RegExpExecArray | null = null;
+        while ((match = regex.exec(scanText)) !== null) {
+          const candidate = normalizeGtinCandidate(match[1] ?? "");
+          if (candidate) matches.add(candidate);
+        }
+        return Array.from(matches);
+      });
 
     const fetchTextPrefix = async (rawUrl: string, maxBytes: number, timeoutMs: number): Promise<{
       ok: boolean;
@@ -15584,13 +19060,15 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
 
       const timeoutSignal = createTimeoutSignal(budgetedTimeout);
       const { signal, cleanup } = combineSignals([requestSignal, timeoutSignal]);
+      const parseStartedAt = performance.now();
       try {
+        const effectiveMaxBytes = Math.min(maxBytes, STAGE0_WEB_MAX_BYTES);
         const response = await fetch(rawUrl, {
           method: "GET",
           headers: {
             "User-Agent": BROWSER_UA,
             Accept: "text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.8",
-            Range: `bytes=0-${Math.max(0, maxBytes - 1)}`,
+            Range: `bytes=0-${Math.max(0, effectiveMaxBytes - 1)}`,
           },
           cache: "no-store",
           signal,
@@ -15603,24 +19081,26 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
         const reader = response.body?.getReader();
         if (!reader) {
           const rawText = await response.text();
+          const clipped = rawText.slice(0, effectiveMaxBytes);
+          webBytesReadTotal += Buffer.byteLength(clipped, "utf8");
           contextFetchBreaker?.recordSuccess();
           return {
             ok: true,
             contentType,
             finalUrl: response.url,
-            text: rawText.slice(0, maxBytes),
+            text: clipped,
           };
         }
         const chunks: Uint8Array[] = [];
         let received = 0;
-        while (received < maxBytes) {
+        while (received < effectiveMaxBytes) {
           const { value, done } = await reader.read();
           if (done) break;
           if (!value) continue;
-          const remaining = maxBytes - received;
+          const remaining = effectiveMaxBytes - received;
           chunks.push(value.length > remaining ? value.slice(0, remaining) : value);
           received += Math.min(value.length, remaining);
-          if (received >= maxBytes) {
+          if (received >= effectiveMaxBytes) {
             try {
               await reader.cancel();
             } catch { }
@@ -15628,6 +19108,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
           }
         }
         const buffer = Buffer.concat(chunks);
+        webBytesReadTotal += received;
         const text = buffer.toString("utf8");
         contextFetchBreaker?.recordSuccess();
         return { ok: true, contentType, finalUrl: response.url, text };
@@ -15637,6 +19118,19 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
         }
         return null;
       } finally {
+        const elapsed = performance.now() - parseStartedAt;
+        if (Number.isFinite(elapsed)) {
+          webParseMsTotal += elapsed;
+        }
+        if (
+          webParseMsTotal > STAGE0_WEB_PARSE_BUDGET_MS &&
+          !streamState.rev1Sent &&
+          !streamState.doneSent &&
+          !streamState.ended
+        ) {
+          emitDegradedLimitedRev1AndFinalize("DEGRADED_WEB_BUDGET");
+        }
+        maybeDegradeForEventLoopLag();
         cleanup();
         release?.();
       }
@@ -15665,13 +19159,14 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
       const onlyImages =
         lowerType.includes("image/") || lowerType.includes("application/pdf") || lowerType.includes("application/octet-stream");
       const text = prefix.text ?? "";
-      const digits = text.replace(/\D/g, "");
+      const parseText = clampParseWindow(text);
+      const digits = extractDigitsPrefix(parseText);
       const barcodeHitCount = barcodeVariants.reduce((sum, code) => sum + countOccurrences(digits, code), 0);
-      const jsonLd = extractJsonLd(text);
-      const npnCandidate = extractNpnFromText(text);
+      const jsonLd = extractJsonLd(parseText);
+      const npnCandidate = extractNpnFromText(parseText);
       const needsJs =
-        /please enable javascript|enable javascript|requires javascript|turn on javascript/i.test(text) ||
-        (text.includes("<script") && !text.includes("ingredients") && barcodeHitCount === 0);
+        /please enable javascript|enable javascript|requires javascript|turn on javascript/i.test(parseText) ||
+        (parseText.includes("<script") && !parseText.includes("ingredients") && barcodeHitCount === 0);
 
       const hasProductJsonLd = Boolean(jsonLd.hasProduct);
       const jsonLdGtinMatch = Boolean(jsonLd.gtinMatch);
@@ -15680,8 +19175,8 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
         !needsJs &&
         (jsonLdGtinMatch || barcodeHitCount >= RESOLUTION_STRONG_MATCH_BARCODE_HITS_MIN);
 
-      const metaOgTitle = extractMetaContent(text, "og:title");
-      const metaBrand = extractMetaContent(text, "product:brand") ?? extractMetaContent(text, "og:site_name");
+      const metaOgTitle = extractMetaContent(parseText, "og:title");
+      const metaBrand = extractMetaContent(parseText, "product:brand") ?? extractMetaContent(parseText, "og:site_name");
 
       return {
         url: prefix.finalUrl || rawUrl,
@@ -15791,7 +19286,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
           rankScore: row.rankScore,
         };
       }),
-      3,
+      STAGE0_WEB_MAX_SOURCES,
     );
     marketplaceRejectedCount = selection.marketplaceRejectedCount;
 
@@ -15809,7 +19304,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
         if (entry.evidence.needsJs && !allowNeedsJs) return false;
         return entry.evidence.hasProductJsonLd || entry.evidence.barcodeHitCount > 0 || entry.evidence.strongMatch;
       })
-      .slice(0, 2);
+      .slice(0, STAGE0_WEB_MAX_SOURCES);
 
     if (deepCandidates.length === 0) {
       const onlyImagesCount = evidences.filter((e) => e.evidence.onlyImages).length;
@@ -15927,6 +19422,22 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
             usagePayload: lnhpdAnalysisPayload.usagePayload ?? null,
           });
           lnhpdSnapshot = applyLnhpdFactsToSnapshot(lnhpdSnapshot, lnhpdFacts);
+          const lnhpdFactsSourceVersion = `lnhpd:${lnhpdFacts.datasetVersion ?? lnhpdFacts.extractedAt ?? "unknown"}`;
+          const lnhpdDigest = buildFactsDigestFromLnhpd({
+            facts: lnhpdFacts,
+            snapshot: lnhpdSnapshot,
+            identityValue: npnCandidate,
+            regionTags: lnhpdSnapshot.regulatory.regionTags,
+          });
+          startStage0Bundle({
+            digest: lnhpdDigest,
+            identityType: "npn",
+            identityValue: npnCandidate,
+            factsSourceVersion: lnhpdFactsSourceVersion,
+            stage0Winner: "verified_regulatory",
+            allowAi: false,
+            apiKey: deepseekKey,
+          });
           const analysisStatus = buildAnalysisStatus({
             hasLabelFacts: hasLabelFacts(lnhpdSnapshot),
             hasAi: hasAiPayload(lnhpdAnalysisPayload),
@@ -15994,6 +19505,9 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
           clearNegative();
           void clearNpnNegativeCache(npnCandidate, { ...supabaseReadResilience, timeoutMs: 500 });
           if (!forceStage1) {
+            if (STAGE0_PROTOCOL_UNIFIED) {
+              await awaitStage0Bundle();
+            }
             finalizeStream("lnhpd_candidate_stage0_complete");
             releaseInFlightOnce();
             return;
@@ -16052,16 +19566,73 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
           hintProduct: nameHintProduct || null,
         });
         try {
-          const timeoutSignal = createTimeoutSignal(1200);
-          const { signal, cleanup } = combineSignals([requestSignal, timeoutSignal]);
           let nameMatchedFacts: LnhpdFacts | null = null;
-          try {
-            nameMatchedFacts = await fetchLnhpdFactsByName(
-              { brand: nameHintBrand || null, product: nameHintProduct || null },
-              signal,
-            );
-          } finally {
-            cleanup();
+          const sourceTitleHints = buildNameHintsFromSourceTitles([
+            ...sourcesToSend.map((item) => item?.title ?? null),
+            ...initialItems.map((item) => item?.title ?? null),
+          ]);
+          const lowConfidenceBrand = extraction?.confidence !== "high";
+          const brandLooksGeneric = nameHintBrand.length > 0 && GENERIC_BRAND_HINT_REGEX.test(nameHintBrand);
+          const shouldRetryBrandless =
+            CA_NAME_HINT_BRANDLESS_RETRY &&
+            isCaRegion &&
+            nameHintBrand.length > 0 &&
+            nameHintProduct.length > 0 &&
+            (lowConfidenceBrand || brandLooksGeneric);
+          const probeAttempts: Array<{
+            brand: string | null;
+            product: string | null;
+            reason: string;
+            timeoutMs: number;
+          }> = [{ brand: nameHintBrand || null, product: nameHintProduct || null, reason: "primary", timeoutMs: 1200 }];
+          if (shouldRetryBrandless) {
+            probeAttempts.push({
+              brand: null,
+              product: nameHintProduct || null,
+              reason: "brandless_retry",
+              timeoutMs: 900,
+            });
+          }
+          for (const sourceTitleHint of sourceTitleHints) {
+            if (!sourceTitleHint || sourceTitleHint === nameHintProduct) continue;
+            probeAttempts.push({
+              brand: null,
+              product: sourceTitleHint,
+              reason: "source_title_hint",
+              timeoutMs: 900,
+            });
+          }
+          const dedupedAttempts = probeAttempts.filter((attempt, index, all) => {
+            const key = `${attempt.brand ?? ""}::${attempt.product ?? ""}`;
+            return all.findIndex((candidate) => `${candidate.brand ?? ""}::${candidate.product ?? ""}` === key) === index;
+          });
+          let matchedAttemptReason: string | null = null;
+          for (const attempt of dedupedAttempts) {
+            if (requestSignal.aborted) break;
+            const timeoutSignal = createTimeoutSignal(attempt.timeoutMs);
+            const { signal, cleanup } = combineSignals([requestSignal, timeoutSignal]);
+            try {
+              const matched = await fetchLnhpdFactsByName(
+                { brand: attempt.brand, product: attempt.product },
+                signal,
+              );
+              if (matched) {
+                nameMatchedFacts = matched;
+                matchedAttemptReason = attempt.reason;
+                break;
+              }
+            } finally {
+              cleanup();
+            }
+          }
+          if (nameMatchedFacts && matchedAttemptReason && matchedAttemptReason !== "primary") {
+            console.info("[ResolutionV2] Stage0 name-hint probe recovered via fallback", {
+              barcode: barcodeGtin14,
+              reason: matchedAttemptReason,
+              hintBrand: nameHintBrand || null,
+              hintProduct: nameHintProduct || null,
+              sourceTitleHints,
+            });
           }
 
           const nameMatchedNpn = nameMatchedFacts?.npn?.replace(/\D/g, "").trim() ?? "";
@@ -16126,6 +19697,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
               identityType: "npn",
               identityValue: nameMatchedNpn,
               factsSourceVersion: nameMatchFactsSourceVersion,
+              stage0Winner: "verified_regulatory",
               allowAi: false,
               apiKey: deepseekKey,
             });
@@ -16212,10 +19784,18 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
     // -------------------------------------------------------------------------
     // Deep fetch (max 1-2 pages) + deterministic facts extraction.
     // -------------------------------------------------------------------------
+    if (maybeDegradeForEventLoopLag()) {
+      releaseInFlightOnce(new Error("degraded_eventloop"));
+      return;
+    }
     const selectedItems = deepCandidates.map((c) => c.item);
     const deepStart = performance.now();
     const contextSources = await prepareContextSources(selectedItems, contextResilience);
     timing.deep_fetch_ms = Math.round(performance.now() - deepStart);
+    if (maybeDegradeForEventLoopLag()) {
+      releaseInFlightOnce(new Error("degraded_eventloop"));
+      return;
+    }
 
     type ProductFacts = {
       barcode: string;
@@ -16255,16 +19835,18 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
     };
 
     const extractSection = (text: string | null | undefined, patterns: RegExp[], maxChars = 600): string | null => {
-      if (!text) return null;
-      for (const pattern of patterns) {
-        const match = text.match(pattern);
-        const value = match?.[1]?.trim();
-        if (value) {
-          const normalized = value.replace(/\s+/g, " ").trim();
-          return normalized.length > maxChars ? `${normalized.slice(0, maxChars).trim()}…` : normalized;
+      return profileWebParseStep("primary.extractSection", text, () => {
+        if (!text) return null;
+        for (const pattern of patterns) {
+          const match = text.match(pattern);
+          const value = match?.[1]?.trim();
+          if (value) {
+            const normalized = value.replace(/\s+/g, " ").trim();
+            return normalized.length > maxChars ? `${normalized.slice(0, maxChars).trim()}…` : normalized;
+          }
         }
-      }
-      return null;
+        return null;
+      });
     };
 
     const buildFactsFromCandidate = (candidate: {
@@ -16507,15 +20089,14 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
     const npnFound = Boolean(bestFacts.identifiers.npn);
 
     const dosageRegex = /\b\d+(?:\.\d+)?\s?(?:mg|mcg|iu|i\.u\.)\b/i;
-    const dosageKeywordRegex = /\b(vitamin\s*c|ascorbate|ester-?c|ascorbic)\b/i;
+    const dosageKeywordRegexGlobal = /\b(vitamin\s*c|ascorbate|ester-?c|ascorbic)\b/gi;
     const hasDosageNearKeyword = (text: string | null | undefined): boolean => {
       if (!text) return false;
-      const lower = text.toLowerCase();
       let match: RegExpExecArray | null = null;
-      const keyword = new RegExp(dosageKeywordRegex, "ig");
-      while ((match = keyword.exec(lower)) !== null) {
+      dosageKeywordRegexGlobal.lastIndex = 0;
+      while ((match = dosageKeywordRegexGlobal.exec(text)) !== null) {
         const start = Math.max(0, match.index - 60);
-        const end = Math.min(lower.length, match.index + match[0].length + 60);
+        const end = Math.min(text.length, match.index + match[0].length + 60);
         const windowText = text.slice(start, end);
         if (dosageRegex.test(windowText)) return true;
       }
@@ -17083,7 +20664,9 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
       }),
     });
 
-    console.log(`[Stream] All analysis complete for barcode: ${barcode}`);
+    if (STREAM_VERBOSE_LOG_ENABLED) {
+      console.log(`[Stream] All analysis complete for barcode: ${barcode}`);
+    }
 
   } catch (error: unknown) {
     releaseInFlightOnce(error);
@@ -17453,6 +21036,9 @@ app.get("/api/barcode-metadata", verifySupabaseToken, async (req: Request, res: 
   const barcodeGtin14 = barcode.padStart(14, "0");
   const barcodeRawDigits = barcode;
   const cacheKey = buildBarcodeCacheKey(barcode);
+  const metadataReadonly = !(
+    process.env.METADATA_READONLY === "0" || process.env.METADATA_READONLY === "false"
+  );
 
   const extractPrimaryDoseText = (snapshot: SupplementSnapshot): string | null => {
     for (const active of snapshot.label.actives) {
@@ -17575,17 +21161,19 @@ app.get("/api/barcode-metadata", verifySupabaseToken, async (req: Request, res: 
       snapshot.analysis = analysisMeta;
       snapshot.updatedAt = nowIso();
 
-      const expiresAt = computeExpiresAt(analysisStatus);
-      void storeSnapshotCache(
-        {
-          key: cacheKey,
-          source: "barcode",
-          snapshot,
-          analysisPayload,
-          expiresAt,
-        },
-        { timeoutMs: 1500 },
-      );
+      if (!metadataReadonly) {
+        const expiresAt = computeExpiresAt(analysisStatus);
+        void storeSnapshotCache(
+          {
+            key: cacheKey,
+            source: "barcode",
+            snapshot,
+            analysisPayload,
+            expiresAt,
+          },
+          { timeoutMs: 1500 },
+        );
+      }
 
       return res.json({
         status: "ok",
