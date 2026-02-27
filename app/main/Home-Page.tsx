@@ -1448,30 +1448,59 @@ const RecentlyScanned = () => {
     next = next.replace(/\s*[-–—]+$/g, '');
     return next.trim() || trimmed;
   }, []);
-  const buildKey = useCallback(
-    (productName: string, brandName: string) => `name:${normalize(brandName)}:${normalize(productName)}`,
-    [normalize],
+  const normalizeBrandNameForKey = useCallback((value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return 'Unknown brand';
+    if (trimmed.toLowerCase() === 'unknown brand') return 'Unknown brand';
+    return trimmed;
+  }, []);
+  const buildNameKey = useCallback(
+    (productName: string, brandName: string) =>
+      `name:${normalize(normalizeBrandNameForKey(brandName))}:${normalize(productName)}`,
+    [normalize, normalizeBrandNameForKey],
+  );
+  const getSupplementKeys = useCallback(
+    (item: { supplementId?: string | null; barcode?: string | null; productName: string; brandName: string }) => {
+      const keys: string[] = [];
+      if (item.supplementId) keys.push(`supplement:${item.supplementId}`);
+      if (item.barcode) keys.push(`barcode:${item.barcode}`);
+      keys.push(buildNameKey(item.productName, item.brandName));
+      return keys;
+    },
+    [buildNameKey],
   );
 
-  const savedKeys = useMemo(
-    () => new Set(savedSupplements.map(item => buildKey(item.productName, item.brandName))),
-    [buildKey, savedSupplements],
+  const savedKeys = useMemo(() => {
+    const keys = new Set<string>();
+    savedSupplements.forEach((item) => {
+      getSupplementKeys(item).forEach((key) => keys.add(key));
+    });
+    return keys;
+  }, [getSupplementKeys, savedSupplements]);
+  const isItemSaved = useCallback(
+    (item: { supplementId?: string | null; barcode?: string | null; productName: string; brandName: string }) =>
+      getSupplementKeys(item).some((key) => savedKeys.has(key)),
+    [getSupplementKeys, savedKeys],
   );
 
   const items = useMemo(() => scans.slice(0, 3), [scans]);
 
   const handleSave = (item: ScanHistoryItem) => {
     if (savingIds[item.id]) return;
-    if (savedKeys.has(buildKey(item.productName, item.brandName))) return;
+    if (isItemSaved(item)) return;
 
     setSavingIds(prev => ({ ...prev, [item.id]: true }));
-    addSupplement({
+    const added = addSupplement({
       supplementId: item.supplementId ?? undefined,
       barcode: item.barcode ?? null,
       productName: item.productName,
       brandName: item.brandName,
       dosageText: formatDoseForPill(item.dosageText) ?? '',
     });
+    if (!added) {
+      setSavingIds(prev => ({ ...prev, [item.id]: false }));
+      return;
+    }
 
     setTimeout(() => {
       setSavingIds(prev => ({ ...prev, [item.id]: false }));
@@ -1506,7 +1535,7 @@ const RecentlyScanned = () => {
           </View>
         ) : (
           items.map((item, index) => {
-            const isSaved = savedKeys.has(buildKey(item.productName, item.brandName));
+            const isSaved = isItemSaved(item);
             const isSaving = savingIds[item.id];
             const isActive = isSaved || isSaving;
 
@@ -1538,6 +1567,7 @@ const RecentlyScanned = () => {
                 <Pressable
                   onPress={() => handleSave(item)}
                   disabled={isActive}
+                  hitSlop={10}
                   style={({ pressed }) => [
                     styles.recentActionPressable,
                     { opacity: pressed ? 0.7 : 1 },
@@ -2171,6 +2201,8 @@ const HomeTab = () => {
 
   const weekDays = useMemo(() => buildCalendarDays(baseDate, statusForDate), [baseDate, statusForDate]);
   const regionHint = draft?.location?.country ?? null;
+  const showOnboardingNudge =
+    draft?.onboardingVersion === 'v2' && savedSupplements.length === 0;
   const tipSelection = useMemo(
     () => (tipsPayload ? selectDailyTip(tipsPayload, baseDate, regionHint) : null),
     [tipsPayload, baseDate, regionHint],
@@ -2196,6 +2228,17 @@ const HomeTab = () => {
               NuTri
             </Text>
           </View>
+
+          {showOnboardingNudge ? (
+            <View style={styles.sectionBlock}>
+              <View style={styles.onboardingNudgeCard}>
+                <Text style={styles.onboardingNudgeTitle}>Day 0 reminder</Text>
+                <Text style={styles.onboardingNudgeBody}>
+                  Add your first supplement to activate Smart Filter and start daily check-ins.
+                </Text>
+              </View>
+            </View>
+          ) : null}
 
           <WeekdaySelector
             items={weekDays}
@@ -2415,6 +2458,26 @@ const styles = StyleSheet.create({
   },
   sectionBlock: {
     marginTop: SECTION_GAP,
+  },
+  onboardingNudgeCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 6,
+  },
+  onboardingNudgeTitle: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: '700',
+    color: '#166534',
+  },
+  onboardingNudgeBody: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: '#15803D',
   },
   stack16: {
     gap: STACK_GAP,
@@ -3109,15 +3172,15 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
   },
   recentActionPressable: {
-    width: 24,
-    height: 24,
+    width: 30,
+    height: 30,
     alignItems: 'center',
     justifyContent: 'center',
   },
   recentActionBubble: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     borderCurve: 'continuous',
     borderWidth: 1,
     alignItems: 'center',

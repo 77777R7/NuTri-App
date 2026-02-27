@@ -24,4 +24,5 @@ export const Config = {
     sentryDsn: ENV.sentryDsn,
     posthogApiKey: ENV.posthogApiKey,
   },
+  scanTerminalLockEnabled: ENV.scanTerminalLockEnabled,
 } as const;

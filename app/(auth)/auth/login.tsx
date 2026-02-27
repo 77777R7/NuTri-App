@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Alert, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import Toast from "react-native-toast-message";
 import * as AppleAuthentication from "expo-apple-authentication";
 
@@ -18,14 +18,6 @@ export const unstable_settings = { headerShown: false };
 
 export default function LoginScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ redirect?: string }>();
-  const redirectParam = useMemo(
-    () =>
-      typeof params.redirect === "string"
-        ? decodeURIComponent(params.redirect)
-        : null,
-    [params.redirect],
-  );
 
   const {
     session,
@@ -37,7 +29,6 @@ export default function LoginScreen() {
     isBiometricEnabled,
     error,
     clearError,
-    postAuthRedirect,
     setPostAuthRedirect,
   } = useAuth();
 
@@ -52,7 +43,7 @@ export default function LoginScreen() {
   useEffect(() => {
     if (!loading && session) {
       setPostAuthRedirect(null);
-      router.replace('/main');
+      router.replace('/');
     }
   }, [loading, session, router, setPostAuthRedirect]);
 
@@ -158,7 +149,7 @@ export default function LoginScreen() {
       const success = await authenticateWithBiometrics();
       if (success) {
         setPostAuthRedirect(null);
-        router.replace('/main');
+        router.replace('/');
       }
     } catch (err) {
       showInlineMessage(getAuthErrorMessage(err));

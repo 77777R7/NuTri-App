@@ -58,8 +58,6 @@ export default function RootLayout() {
                         <Stack screenOptions={{ headerShown: false }}>
                           <Stack.Screen name="index" options={{ gestureEnabled: false }} />
                           <Stack.Screen name="(auth)" />
-                          <Stack.Screen name="(tabs)" />
-                          <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal', headerShown: true }} />
                         </Stack>
                         <StatusBar style="auto" />
                         <Toast position="bottom" />

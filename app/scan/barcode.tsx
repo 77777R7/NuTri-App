@@ -1,8 +1,9 @@
 import { CameraView, useCameraPermissions, type BarcodeScanningResult, type BarcodeType } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
-import { Stack, router } from 'expo-router';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { CameraOff, Check, Flashlight, X } from 'lucide-react-native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigation, type NavigationProp } from '@react-navigation/native';
 import { ActivityIndicator, Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
   runOnJS,
@@ -16,6 +17,8 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ResponsiveScreen } from '@/components/common/ResponsiveScreen';
 import type { DesignTokens } from '@/constants/designTokens';
 import { useResponsiveTokens } from '@/hooks/useResponsiveTokens';
+import { trackOnboardingEvent } from '@/lib/analytics/onboarding';
+import { safeBack } from '@/lib/navigation/safeBack';
 import { ensureSessionId, setScanSession } from '@/lib/scan/session';
 
 const SUPPORTED_TYPES = ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'code39', 'qr'] as const;
@@ -47,8 +50,12 @@ const normalizeBarcodeCandidate = (raw: string): string | null => {
 };
 
 export default function BarcodeScanScreen() {
+  const params = useLocalSearchParams<{ source?: string }>();
+  const isOnboardingScan = params.source === 'onboarding';
+  const backFallback = isOnboardingScan ? '/onboarding/done' : '/main';
   const { tokens } = useResponsiveTokens();
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<NavigationProp<ReactNavigation.RootParamList>>();
   const styles = useMemo(() => createStyles(tokens, insets.top, insets.bottom), [tokens, insets.bottom, insets.top]);
   const [permission, requestPermission] = useCameraPermissions();
   const [torchEnabled, setTorchEnabled] = useState(false);
@@ -58,12 +65,6 @@ export default function BarcodeScanScreen() {
   // Animation values
   const checkmarkScale = useSharedValue(0);
   const checkmarkOpacity = useSharedValue(0);
-
-  useEffect(() => {
-    if (!permission || permission.status === 'undetermined') {
-      requestPermission().catch(() => undefined);
-    }
-  }, [permission, requestPermission]);
 
   useEffect(() => {
     // Reset state on mount
@@ -118,6 +119,10 @@ export default function BarcodeScanScreen() {
           input: { barcode: normalized },
           isLoading: true,
         });
+        trackOnboardingEvent('first_scan_completed', {
+          source: 'barcode_scan',
+          barcodeLength: normalized.length,
+        });
 
         // Delay navigation to let user see the checkmark
         setTimeout(() => {
@@ -146,7 +151,17 @@ export default function BarcodeScanScreen() {
     opacity: checkmarkOpacity.value,
   }));
 
-  const isPermissionLoading = !permission || permission.status === 'undetermined';
+  const handleRequestCameraPermission = useCallback(async () => {
+    trackOnboardingEvent('permission_prompted', { permission: 'camera', source: 'barcode_scan' });
+    const response = await requestPermission();
+    if (response.granted) {
+      trackOnboardingEvent('permission_granted', { permission: 'camera', source: 'barcode_scan' });
+    } else {
+      trackOnboardingEvent('permission_denied', { permission: 'camera', source: 'barcode_scan' });
+    }
+  }, [requestPermission]);
+
+  const isPermissionLoading = !permission;
 
   if (isPermissionLoading) {
     return (
@@ -167,7 +182,7 @@ export default function BarcodeScanScreen() {
           <Text style={styles.permissionCopy}>
             Allow camera access so we can scan the barcode on your supplement.
           </Text>
-          <TouchableOpacity style={styles.permissionButton} onPress={() => requestPermission()}>
+          <TouchableOpacity style={styles.permissionButton} onPress={() => handleRequestCameraPermission()}>
             <Text style={styles.permissionButtonText}>Enable camera</Text>
           </TouchableOpacity>
         </View>
@@ -206,7 +221,7 @@ export default function BarcodeScanScreen() {
       <SafeAreaView edges={['top']} style={styles.topControls}>
         <TouchableOpacity
           style={styles.iconButton}
-          onPress={() => router.back()}
+          onPress={() => safeBack(navigation, { fallback: backFallback })}
           activeOpacity={0.8}
         >
           <X size={24} color="#fff" />
@@ -229,7 +244,12 @@ export default function BarcodeScanScreen() {
         <TouchableOpacity
           style={styles.manualButton}
           activeOpacity={0.8}
-          onPress={() => router.push({ pathname: '/scan/label', params: { from: 'barcode' } })}
+          onPress={() =>
+            router.push({
+              pathname: '/scan/label',
+              params: isOnboardingScan ? { from: 'barcode', source: 'onboarding' } : { from: 'barcode' },
+            })
+          }
         >
           <Text style={styles.manualButtonText}>Enter code manually</Text>
         </TouchableOpacity>

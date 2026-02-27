@@ -90,9 +90,9 @@ export const ScoreDetailCard = ({
 const styles = StyleSheet.create({
     card: {
         backgroundColor: '#FFFFFF',
-        borderRadius: 20,
-        padding: 20,
-        marginBottom: 16,
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 0,
         borderWidth: 1,
         borderColor: '#f4f4f5',
         shadowColor: '#000',
@@ -103,8 +103,9 @@ const styles = StyleSheet.create({
     },
     header: {
         flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 16,
+        alignItems: 'flex-start',
+        marginBottom: 12,
+        gap: 8,
     },
     iconBox: {
         width: 40,
@@ -119,6 +120,8 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: '#111827',
         flex: 1,
+        flexShrink: 1,
+        minWidth: 0,
     },
     scoreBadge: {
         flexDirection: 'row',
@@ -127,6 +130,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         paddingVertical: 6,
         borderRadius: 10,
+        marginLeft: 4,
+        flexShrink: 0,
     },
     scoreValue: {
         fontSize: 18,
@@ -158,10 +163,10 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     verdict: {
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: '600',
         color: '#1f2937',
-        lineHeight: 24,
+        lineHeight: 22,
     },
     section: {
         gap: 8,
@@ -177,6 +182,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'flex-start',
         gap: 8,
+        width: '100%',
     },
     bulletIcon: {
         marginTop: 3,
@@ -186,11 +192,15 @@ const styles = StyleSheet.create({
         color: '#4b5563',
         lineHeight: 20,
         flex: 1,
+        flexShrink: 1,
+        minWidth: 0,
     },
     warningText: {
         fontSize: 14,
         color: '#b45309',
         lineHeight: 20,
         flex: 1,
+        flexShrink: 1,
+        minWidth: 0,
     },
 });

@@ -30,6 +30,7 @@ test('WHY bullets prefer reviewed segment sentence over deterministic fallback c
 
   assert.ok(result.bullets.length >= 3);
   assert.ok(result.bullets.some((line) => line.includes(reviewedSentence)));
+  assert.ok(result.layerTags.includes('ReviewedKB'));
   assert.ok(
     result.bullets.every(
       (line) => !line.includes('Why this band: this estimate comes from reviewed evidence for the detected form; individual response varies'),

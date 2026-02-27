@@ -23,14 +23,27 @@ export type FoundationLookupResult =
       watchOuts: [];
     };
 
-const normalizeMissKey = (raw: string): string =>
+const normalizeMissKey = (raw: unknown): string =>
   String(raw ?? "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "")
     .slice(0, 64);
 
-export const lookupFoundationForIngredient = (ingredientName: string): FoundationLookupResult => {
-  const odsHit = getOdsFactForSupplement({ activeNames: [ingredientName], productName: null });
+export const lookupFoundationForIngredient = (ingredientName: string | null | undefined): FoundationLookupResult => {
+  const name = typeof ingredientName === "string" ? ingredientName.trim() : "";
+  if (!name) {
+    return {
+      kind: "miss",
+      id: null,
+      title: null,
+      sourceUrl: null,
+      overview: "",
+      whatItDoes: [],
+      watchOuts: [],
+    };
+  }
+
+  const odsHit = getOdsFactForSupplement({ activeNames: [name], productName: null });
   if (odsHit) {
     return {
       kind: "ods",
@@ -43,7 +56,7 @@ export const lookupFoundationForIngredient = (ingredientName: string): Foundatio
     };
   }
 
-  const curatedHit = getNonOdsFactForSupplement({ activeNames: [ingredientName], productName: null });
+  const curatedHit = getNonOdsFactForSupplement({ activeNames: [name], productName: null });
   if (curatedHit) {
     return {
       kind: "curated",
@@ -96,4 +109,3 @@ export const summarizeFoundationHits = (ingredientNames: string[]) => {
     missCount,
   };
 };
-

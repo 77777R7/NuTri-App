@@ -78,6 +78,14 @@ type GetEnvValueOptions = {
   optional?: boolean;
 };
 
+const parseOptionalBoolean = (value: string | undefined | null, fallback: boolean): boolean => {
+  if (typeof value !== 'string') return fallback;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === '1' || normalized === 'true' || normalized === 'yes') return true;
+  if (normalized === '0' || normalized === 'false' || normalized === 'no') return false;
+  return fallback;
+};
+
 const getEnvValue = (key: string, options?: GetEnvValueOptions): string | undefined => {
   const extra = (Constants.expoConfig?.extra ?? {}) as Record<string, unknown>;
   const extraValue = extra[key];
@@ -114,9 +122,15 @@ const envValues = {
   apiBaseUrl: getEnvValue('apiBaseUrl', { fallback: fallbackApiBaseUrl }),
   sentryDsn: getEnvValue('sentryDsn', { optional: true }),
   posthogApiKey: getEnvValue('posthogApiKey', { optional: true }),
+  scanTerminalLockEnabled: getEnvValue('scanTerminalLockEnabled', { optional: true }),
 };
 
-const searchApiBaseUrlRaw = getEnvValue('searchApiBaseUrl', { optional: true });
+// Keep search endpoint aligned with the same localhost->LAN fallback logic as apiBaseUrl.
+// This prevents real-device SSE failures when .env still points to localhost.
+const searchApiBaseUrlRaw = getEnvValue('searchApiBaseUrl', {
+  optional: true,
+  fallback: envValues.apiBaseUrl,
+});
 const searchApiBaseUrl = searchApiBaseUrlRaw ?? envValues.apiBaseUrl;
 
 const ensureValidUrl = (value: string | undefined | null, label: string, required: boolean, errors: string[], warnings: string[]) => {
@@ -193,5 +207,6 @@ export const ENV = {
   sentryDsn: envValues.sentryDsn ?? null,
   posthogApiKey: envValues.posthogApiKey ?? null,
   searchApiBaseUrl: searchApiBaseUrl as string,
+  scanTerminalLockEnabled: parseOptionalBoolean(envValues.scanTerminalLockEnabled, false),
   validate: validateEnv,
 };

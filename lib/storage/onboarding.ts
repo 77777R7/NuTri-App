@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { OnboardingFlags, ProfileDraft, TrialStatus } from '@/types/onboarding';
+import { ONBOARDING_TOTAL_STEPS } from '@/lib/onboarding-v2';
 
 const STORAGE_KEYS = {
   draft: 'profileDraft',
@@ -71,11 +72,11 @@ export const getProgress = async (): Promise<number> => {
   if (!parsed || parsed < 1) {
     return 1;
   }
-  return parsed;
+  return Math.min(parsed, ONBOARDING_TOTAL_STEPS);
 };
 
 export const setProgress = async (progress: number) => {
-  const sanitized = Math.max(1, Math.min(progress, 7));
+  const sanitized = Math.max(1, Math.min(progress, ONBOARDING_TOTAL_STEPS));
   await AsyncStorage.setItem(withPrefix(STORAGE_KEYS.progress), String(sanitized));
 };
 

@@ -10,6 +10,7 @@ import {
 import type { ReactNode } from 'react';
 
 import { getDraft, getFlags, getProgress, saveDraft as persistDraft, setFlags, setProgress as persistProgress } from '@/lib/storage/onboarding';
+import { ONBOARDING_TOTAL_STEPS } from '@/lib/onboarding-v2';
 import type { OnboardingState, ProfileDraft, TrialState } from '@/types/onboarding';
 
 const DEFAULT_TRIAL_STATE: TrialState = { status: 'not_started' };
@@ -109,7 +110,7 @@ export const OnboardingProvider = ({ children }: OnboardingProviderProps) => {
   }, []);
 
   const setProgress = useCallback(async (value: number) => {
-    const sanitized = Math.max(1, Math.min(value, 7));
+    const sanitized = Math.max(1, Math.min(value, ONBOARDING_TOTAL_STEPS));
     setProgressState(sanitized);
     await persistProgress(sanitized);
   }, []);

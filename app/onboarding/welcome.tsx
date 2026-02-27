@@ -17,6 +17,8 @@ import { ProgressBar } from '@/components/onboarding/ProgressBar';
 import { PrimaryButton } from '@/components/ui/Buttons';
 import { BrandGradient } from '@/components/BrandGradient';
 import { useOnboarding } from '@/contexts/OnboardingContext';
+import { trackOnboardingEvent } from '@/lib/analytics/onboarding';
+import { ONBOARDING_TOTAL_STEPS } from '@/lib/onboarding-v2';
 import { colors, radii, spacing, type } from '@/lib/theme';
 
 // ✅ 用 primitives 作为宿主，生成动画组件，避免 AnimatedProps<{}> 导致的 JSX 报错
@@ -139,7 +141,8 @@ export default function WelcomeScreen() {
   const onGetStarted = () => {
     setProgress(2);
     setDirection('forward');
-    router.push('/onboarding/profile');
+    trackOnboardingEvent('onboarding_started', { version: 'v2' });
+    router.push('/onboarding/data-trust');
   };
 
   return (
@@ -183,7 +186,7 @@ export default function WelcomeScreen() {
           />
         </View>
 
-        <AppHeader showBack title="Step 1 of 7" fallbackHref="/" />
+        <AppHeader showBack title={`Step 1 of ${ONBOARDING_TOTAL_STEPS}`} fallbackHref="/" />
 
         {/* Progress indicator */}
         <AnimView
@@ -193,7 +196,7 @@ export default function WelcomeScreen() {
             transform: [{ translateY: progressSlide }],
           }}
         >
-          <ProgressBar step={1} total={7} />
+          <ProgressBar step={1} total={ONBOARDING_TOTAL_STEPS} />
         </AnimView>
 
         {/* Copy deck and centerpiece badge */}
@@ -227,7 +230,7 @@ export default function WelcomeScreen() {
               },
             ]}
           >
-            Let’s personalise your supplement routine in a few guided steps.
+            Let’s build your personalized supplement setup in about 2 minutes.
           </AnimText>
 
           <AnimView
@@ -293,9 +296,9 @@ export default function WelcomeScreen() {
             </Text>
             <View style={{ marginTop: spacing.md, gap: spacing.sm }}>
               {[
-                'A quick profile check so NuTri learns the basics.',
-                'Diet & activity questions to fine tune recommendations.',
-                'Optional goals and privacy preferences to finish strong.',
+                'A trust-first overview of how your data is protected.',
+                '7 focused Q&A prompts connected to Smart Filter and setup.',
+                'A personalized preview before your first supplement action.',
               ].map((item) => (
                 <View
                   key={item}

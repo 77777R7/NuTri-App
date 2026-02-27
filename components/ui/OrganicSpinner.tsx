@@ -1,5 +1,6 @@
+import Constants from 'expo-constants';
 import React, { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 import Animated, {
   Easing,
   Extrapolation,
@@ -20,6 +21,12 @@ type OrganicSpinnerProps = {
 };
 
 export const OrganicSpinner: React.FC<OrganicSpinnerProps> = ({ size = 40, color = '#ffffff' }) => {
+  const appOwnership = Constants.appOwnership;
+  const isIosDevClientBuild = __DEV__ && Platform.OS === 'ios' && appOwnership == null;
+  if (isIosDevClientBuild) {
+    return <ActivityIndicator size="small" color={color} />;
+  }
+
   const progress = useSharedValue(0);
 
   useEffect(() => {

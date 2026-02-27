@@ -7,6 +7,7 @@ declare namespace NodeJS {
     EXPO_PUBLIC_API_BASE_URL?: string;
     EXPO_PUBLIC_API_PORT?: string;
     EXPO_PUBLIC_SEARCH_API_BASE_URL?: string;
+    EXPO_PUBLIC_SCAN_TERMINAL_LOCK_ENABLED?: string;
     API_BASE_URL?: string;
     NEXT_PUBLIC_API_BASE_URL?: string;
     SEARCH_API_BASE_URL?: string;

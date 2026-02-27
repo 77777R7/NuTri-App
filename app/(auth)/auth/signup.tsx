@@ -339,7 +339,7 @@ export default function SignupScreen() {
 
       <TouchableOpacity
         activeOpacity={0.85}
-        onPress={() => router.replace('/main')}
+        onPress={() => router.replace('/')}
         style={styles.testButton}
         accessibilityLabel="Skip to main app (testing only)"
       >

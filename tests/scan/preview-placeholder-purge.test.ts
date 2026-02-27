@@ -32,3 +32,27 @@ test('preview placeholder purge falls back when all input lines are placeholders
   assert.ok(out.every((row) => !/not provided|unknown|n\/a|missing|unavailable/i.test(row.text)));
   assert.equal(out[0]?.text, fallback[0]);
 });
+
+test('preview placeholder purge handles usage and safety cover placeholders', () => {
+  const usageBullets = [
+    { text: 'Not provided.' },
+    { text: 'Use the product label first for dosing decisions.' },
+  ];
+  const safetyBullets = [
+    { text: 'Not provided by source.' },
+    { text: 'Unavailable' },
+  ];
+
+  const usageOut = sanitizeCoverBullets(usageBullets, [
+    'Usage guidance is limited by current source coverage.',
+    'Scan the Directions panel to improve product-specific guidance.',
+  ]);
+  const safetyOut = sanitizeCoverBullets(safetyBullets, [
+    'Safety data is limited in this source record.',
+    'Check the package warning panel and consult a clinician if needed.',
+  ]);
+
+  assert.ok(usageOut.every((row) => !/not provided|unknown|n\/a|missing|unavailable/i.test(row.text)));
+  assert.ok(safetyOut.every((row) => !/not provided|unknown|n\/a|missing|unavailable/i.test(row.text)));
+  assert.equal(safetyOut[0]?.text, 'Safety data is limited in this source record.');
+});

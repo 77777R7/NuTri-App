@@ -27,6 +27,17 @@ const OnboardingGate = () => {
       }}
     >
       <Stack.Screen name="welcome" />
+      <Stack.Screen name="data-trust" />
+      <Stack.Screen name="age-range" />
+      <Stack.Screen name="sex" />
+      <Stack.Screen name="experience" />
+      <Stack.Screen name="goals" />
+      <Stack.Screen name="types" />
+      <Stack.Screen name="blocker" />
+      <Stack.Screen name="setup" />
+      <Stack.Screen name="plan-preview" />
+      <Stack.Screen name="first-stack" />
+      <Stack.Screen name="done" />
     </Stack>
   );
 };

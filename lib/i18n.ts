@@ -150,6 +150,10 @@ const en = {
     analysisIntegrityNote: "We don't infer or fabricate; missing sources mean limited conclusions.",
     analysisNoteChemicalFormNotDisclosed: 'Chemical form not disclosed on the label.',
     analysisNoteNoLabelWarningsGeneralShown: 'No label-specific warnings detected; general watch-outs shown.',
+    analysisNoteProductSpecificSignalsMissing:
+      'Product-specific form/bioavailability/dose signals are unavailable; shown as limited.',
+    analysisOwnershipUnverified:
+      'We found potentially related web pages, but ownership could not be verified. We do not use this data.',
     analysisMissingPrimaryActive: 'Primary active not identified',
     analysisMissingEvidenceMapping: 'Evidence mapping missing',
     analysisMissingFormQuality: 'Form quality missing',
@@ -182,9 +186,14 @@ const en = {
     analysisScoreNotScoredReasonWeb: 'Limited evidence (web fallback). We show only what the source supports.',
     analysisScoreNotScoredReasonOwnership:
       'We found potentially related web pages, but ownership could not be verified. We do not use this data.',
-    analysisScoreNotScoredReasonUnavailable: 'Score not available yet.',
+    analysisScoreNotScoredReasonUnavailable: 'This record does not yet meet scoring requirements.',
+    analysisScoreNotScoredReasonPendingTimeout:
+      'Scoring took longer than expected after analysis completed. You can retry now.',
+    analysisScoreNotScoredReasonRequestFailed:
+      'Score request failed due to a temporary network or service issue. Please retry.',
+    analysisScoreRetryCta: 'Tap to retry score',
     analysisScoreScoring: 'Scoring...',
-    analysisScoreScoringReason: 'Finishing verified facts.',
+    analysisScoreScoringReason: 'Scoring is in progress from the available product facts.',
 };
 
 const translations = {

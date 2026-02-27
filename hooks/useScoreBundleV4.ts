@@ -15,6 +15,7 @@ export function useScoreBundleV4(params: {
   enabled?: boolean;
   pollMs?: number;
   maxAttempts?: number;
+  requestNonce?: number;
 }): ScoreBundleState {
   const {
     source = null,
@@ -22,6 +23,7 @@ export function useScoreBundleV4(params: {
     enabled = true,
     pollMs = 15000,
     maxAttempts = 4,
+    requestNonce = 0,
   } = params;
 
   const [state, setState] = useState<ScoreBundleState>({
@@ -84,7 +86,7 @@ export function useScoreBundleV4(params: {
       isActive = false;
       clearTimer();
     };
-  }, [enabled, maxAttempts, pollMs, source, sourceId]);
+  }, [enabled, maxAttempts, pollMs, requestNonce, source, sourceId]);
 
   return state;
 }

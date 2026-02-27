@@ -4,47 +4,70 @@ import { StyleSheet, Text, View } from "react-native";
 import { ExternalLink } from "@/components/external-link";
 import { useTranslation } from "@/lib/i18n";
 import { lookupFoundationForIngredient } from "@/lib/knowledge/foundationLookup";
+import { resolveOdsPanelSections, type OdsPanelMode } from "@/lib/scan/odsPanelMode";
 
 type Props = {
-  ingredientName: string;
-  variant: "full" | "watch_outs_only";
+  ingredientName?: string | null;
+  mode: OdsPanelMode;
+  interactionLines?: string[];
+  ulLines?: string[];
   maxBullets?: number;
   maxWatchOuts?: number;
 };
 
 export function OdsFoundationPanel({
   ingredientName,
-  variant,
+  mode,
+  interactionLines = [],
+  ulLines = [],
   maxBullets = 3,
   maxWatchOuts = 3,
 }: Props) {
   const { t } = useTranslation();
-  const hit = useMemo(() => lookupFoundationForIngredient(ingredientName), [ingredientName]);
+  const normalizedName = typeof ingredientName === "string" ? ingredientName.trim() : "";
+  const hit = useMemo(() => lookupFoundationForIngredient(normalizedName), [normalizedName]);
+  if (!normalizedName) return null;
   if (hit.kind === "miss") return null;
 
   const badgeText = hit.kind === "ods" ? t.analysisSourceOds : t.analysisFoundationBadgeCurated;
   const overview = typeof hit.overview === "string" ? hit.overview.trim() : "";
   const whatItDoes = (Array.isArray(hit.whatItDoes) ? hit.whatItDoes : []).filter(Boolean).slice(0, maxBullets);
   const watchOuts = (Array.isArray(hit.watchOuts) ? hit.watchOuts : []).filter(Boolean).slice(0, maxWatchOuts);
+  const interactions = interactionLines
+    .filter((line): line is string => typeof line === "string" && line.trim().length > 0)
+    .slice(0, maxWatchOuts);
+  const ulSignals = ulLines
+    .filter((line): line is string => typeof line === "string" && line.trim().length > 0)
+    .slice(0, maxWatchOuts);
 
-  const showOverview = variant === "full" && Boolean(overview);
-  const showWhatItDoes = variant === "full" && whatItDoes.length > 0;
-  const showWatchOuts = watchOuts.length > 0;
+  const sections = resolveOdsPanelSections({
+    mode,
+    hasOverview: Boolean(overview),
+    whatItDoesCount: whatItDoes.length,
+    watchOutsCount: watchOuts.length,
+    interactionCount: interactions.length,
+    ulCount: ulSignals.length,
+  });
+  const title = mode === "safety" ? "General watch-outs" : t.analysisFoundationTitle;
+  const disclaimer =
+    mode === "safety"
+      ? "General safety context — not product label warnings."
+      : t.analysisGeneralBackgroundDisclaimer;
 
   return (
     <View style={styles.card}>
       <View style={styles.headerRow}>
-        <Text style={styles.title}>{t.analysisFoundationTitle}</Text>
+        <Text style={styles.title}>{title}</Text>
         <View style={styles.badge}>
           <Text style={styles.badgeText}>{badgeText}</Text>
         </View>
       </View>
 
-      <Text style={styles.disclaimer}>{t.analysisGeneralBackgroundDisclaimer}</Text>
+      <Text style={styles.disclaimer}>{disclaimer}</Text>
 
-      {showOverview ? <Text style={styles.paragraph}>{overview}</Text> : null}
+      {sections.showOverview ? <Text style={styles.paragraph}>{overview}</Text> : null}
 
-      {showWhatItDoes ? (
+      {sections.showWhatItDoes ? (
         <View style={{ gap: 6 }}>
           <Text style={styles.sectionTitle}>{t.analysisFoundationWhatItDoes}</Text>
           {whatItDoes.map((line) => (
@@ -55,10 +78,32 @@ export function OdsFoundationPanel({
         </View>
       ) : null}
 
-      {showWatchOuts ? (
+      {sections.showWatchOuts ? (
         <View style={{ gap: 6 }}>
           <Text style={styles.sectionTitle}>{t.analysisFoundationWatchOuts}</Text>
           {watchOuts.map((line) => (
+            <Text key={line} style={styles.bullet}>
+              {"\u2022"} {line}
+            </Text>
+          ))}
+        </View>
+      ) : null}
+
+      {sections.showInteractions ? (
+        <View style={{ gap: 6 }}>
+          <Text style={styles.sectionTitle}>Interactions</Text>
+          {interactions.map((line) => (
+            <Text key={line} style={styles.bullet}>
+              {"\u2022"} {line}
+            </Text>
+          ))}
+        </View>
+      ) : null}
+
+      {sections.showUl ? (
+        <View style={{ gap: 6 }}>
+          <Text style={styles.sectionTitle}>UL guidance</Text>
+          {ulSignals.map((line) => (
             <Text key={line} style={styles.bullet}>
               {"\u2022"} {line}
             </Text>

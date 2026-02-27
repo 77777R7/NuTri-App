@@ -11,6 +11,12 @@
     "lint": "expo lint",
     "postinstall": "patch-package",
     "serve:backend": "cd backend && npx tsx src/server.ts",
+    "verify:db-contract": "node scripts/maintainer/verify-db-contract.mjs",
+    "gates:stable": "node scripts/maintainer/run-backend-gates-stable.mjs --manage-backend",
+    "gates:release-db": "node scripts/maintainer/run-release-db-gates.mjs",
+    "gates:shadow-watch": "node scripts/maintainer/run-shadow-watch-curve.mjs",
+    "gates:shadow-board": "node scripts/maintainer/shadow-realtime-board.mjs",
+    "maintainer:remediate-candidate-conflicts": "node scripts/maintainer/remediate-candidate-conflicts.mjs",
     "supabase:types": "supabase gen types typescript --project-id \"$PROJECT_ID\" > types/supabase.ts"
   },
   "dependencies": {

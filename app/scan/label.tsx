@@ -2,9 +2,10 @@ import { CameraView, useCameraPermissions, type CameraPictureOptions } from 'exp
 import { BlurView } from 'expo-blur';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useLocalSearchParams, type Href } from 'expo-router';
 import { ArrowLeft, Camera, Flashlight, ImageIcon, RefreshCcw, Crop } from 'lucide-react-native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigation, type NavigationProp } from '@react-navigation/native';
 import {
   ActivityIndicator,
   Image,
@@ -20,6 +21,8 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ResponsiveScreen } from '@/components/common/ResponsiveScreen';
 import type { DesignTokens } from '@/constants/designTokens';
 import { useResponsiveTokens } from '@/hooks/useResponsiveTokens';
+import { trackOnboardingEvent } from '@/lib/analytics/onboarding';
+import { safeBack } from '@/lib/navigation/safeBack';
 import { submitLabelScan } from '@/lib/scan/service';
 import { ensureSessionId, setScanSession } from '@/lib/scan/session';
 
@@ -29,8 +32,21 @@ const CAPTURE_OUTER = 78;
 const CAPTURE_INNER = 58;
 
 export default function LabelScanScreen() {
-  const params = useLocalSearchParams<{ mode?: string }>();
+  const params = useLocalSearchParams<{ mode?: string; source?: string; from?: string }>();
   const mode = params.mode === 'upload' ? 'upload' : 'capture';
+  const navigation = useNavigation<NavigationProp<ReactNavigation.RootParamList>>();
+  const backFallback = useMemo<Href>(() => {
+    const isOnboardingSource = params.source === 'onboarding';
+    const cameFromBarcode = params.from === 'barcode';
+
+    if (cameFromBarcode) {
+      return isOnboardingSource
+        ? ({ pathname: '/scan/barcode', params: { source: 'onboarding' } } as const)
+        : '/scan/barcode';
+    }
+
+    return isOnboardingSource ? '/onboarding/done' : '/main';
+  }, [params.from, params.source]);
 
   const { tokens } = useResponsiveTokens();
   const insets = useSafeAreaInsets();
@@ -53,12 +69,6 @@ export default function LabelScanScreen() {
   const cropStartRef = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
-    if (!cameraPermission || cameraPermission.status === 'undetermined') {
-      requestCameraPermission().catch(() => undefined);
-    }
-  }, [cameraPermission, requestCameraPermission]);
-
-  useEffect(() => {
     if (mode === 'upload') {
       pickFromLibrary();
     }
@@ -79,12 +89,15 @@ export default function LabelScanScreen() {
 
   const pickFromLibrary = useCallback(async () => {
     if (!galleryPermission?.granted) {
+      trackOnboardingEvent('permission_prompted', { permission: 'photos', source: 'label_scan_upload' });
       const response = await requestGalleryPermission();
       if (!response?.granted) {
+        trackOnboardingEvent('permission_denied', { permission: 'photos', source: 'label_scan_upload' });
         setErrorMessage('Gallery permission is required to upload an image.');
         setStatus('error');
         return;
       }
+      trackOnboardingEvent('permission_granted', { permission: 'photos', source: 'label_scan_upload' });
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -153,13 +166,16 @@ export default function LabelScanScreen() {
         input: { imageUri: previewUri, imageBase64: previewBase64 ?? undefined },
         result: scanResult,
       });
+      trackOnboardingEvent('first_scan_completed', {
+        source: mode === 'upload' ? 'label_upload' : 'label_capture',
+      });
       router.replace({ pathname: '/scan/result', params: { sessionId } });
     } catch (error) {
       console.warn('[scan] label processing failed', error);
       setErrorMessage('We could not read the label. Try retaking the photo.');
       setStatus('error');
     }
-  }, [previewBase64, previewUri, status]);
+  }, [mode, previewBase64, previewUri, status]);
 
   const handleRetry = useCallback(() => {
     setPreviewUri(null);
@@ -256,7 +272,17 @@ export default function LabelScanScreen() {
     }
   }, [cropDisplay, cropFrame.height, cropFrame.width, cropOffset.x, cropOffset.y, imageSize, previewUri]);
 
-  const isCameraPermissionLoading = !cameraPermission || cameraPermission.status === 'undetermined';
+  const handleRequestCameraPermission = useCallback(async () => {
+    trackOnboardingEvent('permission_prompted', { permission: 'camera', source: 'label_scan' });
+    const response = await requestCameraPermission();
+    if (response.granted) {
+      trackOnboardingEvent('permission_granted', { permission: 'camera', source: 'label_scan' });
+    } else {
+      trackOnboardingEvent('permission_denied', { permission: 'camera', source: 'label_scan' });
+    }
+  }, [requestCameraPermission]);
+
+  const isCameraPermissionLoading = !cameraPermission;
   const isProcessing = status === 'processing';
   const processingLabel = previewUri ? 'Analyzing label...' : 'Capturing label...';
 
@@ -276,7 +302,7 @@ export default function LabelScanScreen() {
           <Camera size={32} color={tokens.colors.textPrimary} />
           <Text style={styles.permissionTitle}>Camera access denied</Text>
           <Text style={styles.permissionCopy}>Enable access from settings or choose Upload Photo instead.</Text>
-          <TouchableOpacity style={styles.permissionButton} onPress={() => requestCameraPermission()}>
+          <TouchableOpacity style={styles.permissionButton} onPress={() => handleRequestCameraPermission()}>
             <Text style={styles.permissionButtonText}>Try again</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.altButton} onPress={pickFromLibrary}>
@@ -345,7 +371,7 @@ export default function LabelScanScreen() {
       )}
 
       <SafeAreaView edges={['top']} style={styles.topOverlay}>
-        <TouchableOpacity style={styles.iconButton} onPress={() => router.back()} activeOpacity={0.85}>
+        <TouchableOpacity style={styles.iconButton} onPress={() => safeBack(navigation, { fallback: backFallback })} activeOpacity={0.85}>
           <ArrowLeft size={20} color="#0f172a" />
         </TouchableOpacity>
         <Text style={styles.titleText}>Text Scan</Text>

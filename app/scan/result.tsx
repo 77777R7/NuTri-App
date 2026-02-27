@@ -1,9 +1,10 @@
 import { BlurView } from 'expo-blur';
+import Constants from 'expo-constants';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ArrowLeft, FileText } from 'lucide-react-native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { ResponsiveScreen } from '@/components/common/ResponsiveScreen';
 import { OrganicSpinner } from '@/components/ui/OrganicSpinner';
@@ -13,13 +14,14 @@ import { useResponsiveTokens } from '@/hooks/useResponsiveTokens';
 import { useScoreBundleV4 } from '@/hooks/useScoreBundleV4';
 import { useStreamAnalysis } from '@/hooks/useStreamAnalysis';
 import { useSavedSupplements } from '@/contexts/SavedSupplementsContext';
-import { consumeScanSession, type ScanSession } from '@/lib/scan/session';
+import { consumeScanSessionWithStatusAsync, ensureSessionId, type ScanSession } from '@/lib/scan/session';
 import { requestLabelAnalysis } from '@/lib/scan/service';
+import { resolveReasonCodeMessage } from '@/lib/scan/streamStateMachine';
 import { getBarcodeQuality, getLabelDraftQuality } from '@/lib/scan/quality';
+import { buildLabelInsights } from '@/lib/scan/labelInsights';
 import { formatDoseForPill } from '@/lib/supplementDisplay';
 import type { LabelDraft } from '@/backend/src/labelAnalysis';
-import { AnalysisDashboard } from './AnalysisDashboard';
-import { buildLabelInsights } from './labelInsights';
+import { AnalysisDashboard } from '@/components/scan/AnalysisDashboard';
 import type { ScoreSource } from '@/types/scoreBundle';
 
 type LabelAnalysisStatus = 'complete' | 'partial' | 'skipped' | 'pending' | 'unavailable' | 'failed' | null;
@@ -29,6 +31,25 @@ type LabelIngredientEntry = {
   name: string;
   dosageValue: number | null;
   dosageUnit: string | null;
+};
+
+const FORCE_LITE_DASHBOARD =
+  process.env.EXPO_PUBLIC_FORCE_LITE_DASHBOARD === 'true' ||
+  process.env.EXPO_PUBLIC_FORCE_LITE_DASHBOARD === '1';
+const FORCE_FULL_DASHBOARD =
+  process.env.EXPO_PUBLIC_FORCE_FULL_DASHBOARD === 'true' ||
+  process.env.EXPO_PUBLIC_FORCE_FULL_DASHBOARD === '1';
+const SHOW_SCAN_DEBUG =
+  process.env.EXPO_PUBLIC_SHOW_SCAN_DEBUG === 'true' ||
+  process.env.EXPO_PUBLIC_SHOW_SCAN_DEBUG === '1';
+
+const resolveDashboardRenderMode = (isExpoGo: boolean): 'full' | 'lite' => {
+  if (FORCE_LITE_DASHBOARD) return 'lite';
+  if (FORCE_FULL_DASHBOARD) return 'full';
+  // Default to full dashboard so latest UI can be tested.
+  // Expo Go-specific stability is handled inside AnalysisDashboard compat mode.
+  if (isExpoGo) return 'full';
+  return 'full';
 };
 
 const DV_UNIT = '% DV';
@@ -43,9 +64,37 @@ const normalizeBarcode = (value?: string | null) => {
 
 const resolveScoreQueryFromBundleMeta = (meta: any): { source: ScoreSource; sourceId: string } | null => {
   if (!meta) return null;
-  if (meta.scoreAvailable === false) return null;
-  const sourceType = meta.sourceType;
+  const revisionReady = typeof meta.revision !== 'number' || meta.revision >= 1;
+  if (!revisionReady) return null;
+
   const authoritative = meta.authoritativeIdentity;
+  const authoritativeType = typeof authoritative?.type === 'string' ? authoritative.type : null;
+  const authoritativeValue =
+    typeof authoritative?.value === 'string' && authoritative.value.trim().length > 0
+      ? authoritative.value.trim()
+      : null;
+
+  // Prefer regulatory identity directly when it exists.
+  // This avoids false negatives when `sourceType` is temporarily marked as `web`
+  // during degraded terminal paths but authoritative identity has already resolved.
+  if (authoritativeType === 'npn' && authoritativeValue) {
+    return { source: 'lnhpd', sourceId: authoritativeValue };
+  }
+  if (authoritativeType === 'dsldLabelId' && authoritativeValue) {
+    return { source: 'dsld', sourceId: authoritativeValue };
+  }
+
+  const sourceTypeFinal = meta.sourceTypeFinal !== false;
+  if (!sourceTypeFinal) return null;
+  const fallbackReason = typeof meta.fallbackReason === 'string' ? meta.fallbackReason.toLowerCase() : '';
+  if (
+    fallbackReason.includes('needs_js') ||
+    fallbackReason.includes('ownership_unverified') ||
+    fallbackReason.includes('web_text_unusable')
+  ) {
+    return null;
+  }
+  const sourceType = meta.sourceType;
   if (sourceType === 'lnhpd' && authoritative?.type === 'npn' && typeof authoritative.value === 'string' && authoritative.value.trim()) {
     return { source: 'lnhpd', sourceId: authoritative.value.trim() };
   }
@@ -54,6 +103,54 @@ const resolveScoreQueryFromBundleMeta = (meta: any): { source: ScoreSource; sour
   }
   return null;
 };
+
+type DashboardErrorBoundaryProps = {
+  children: React.ReactNode;
+  onError?: (message: string) => void;
+};
+
+type DashboardErrorBoundaryState = {
+  hasError: boolean;
+  message: string | null;
+};
+
+class DashboardErrorBoundary extends React.Component<
+  DashboardErrorBoundaryProps,
+  DashboardErrorBoundaryState
+> {
+  state: DashboardErrorBoundaryState = {
+    hasError: false,
+    message: null,
+  };
+
+  static getDerivedStateFromError(error: unknown): DashboardErrorBoundaryState {
+    const message =
+      error instanceof Error ? error.message : typeof error === 'string' ? error : 'Dashboard render failed';
+    return { hasError: true, message };
+  }
+
+  componentDidCatch(error: unknown) {
+    const message =
+      error instanceof Error ? error.message : typeof error === 'string' ? error : 'Dashboard render failed';
+    console.error('[ScanResult][DashboardErrorBoundary]', error);
+    this.props.onError?.(message);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={styles.fallbackContainer}>
+          <FileText size={48} color="#52525b" />
+          <Text style={styles.fallbackTitle}>Analysis temporarily unavailable</Text>
+          <Text style={styles.fallbackText}>
+            {this.state.message || 'The dashboard failed to render.'}
+          </Text>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 function buildLabelIngredientEntries(
   labelInsights: LabelInsightsSnapshot,
@@ -309,6 +406,8 @@ function mergeLabelAnalysis(base: any, fallback: any, productName: string) {
 export default function ScanResultScreen() {
   const { tokens } = useResponsiveTokens();
   const styles = useMemo(() => createStyles(tokens), [tokens]);
+  const appOwnership = Constants.appOwnership;
+  const isExpoGo = appOwnership === 'expo' || appOwnership === 'guest';
   const { addScan } = useScanHistory();
   const { savedSupplements, updateSupplement } = useSavedSupplements();
   const addedRef = useRef(false);
@@ -318,9 +417,10 @@ export default function ScanResultScreen() {
   const analysisRequestedRef = useRef(false);
 
   // Get session to retrieve barcode
-  const params = useLocalSearchParams<{ sessionId?: string }>();
+  const params = useLocalSearchParams<{ sessionId?: string; devBarcode?: string }>();
   const [session, setSession] = useState<ScanSession | null>(null);
   const [sessionResolved, setSessionResolved] = useState(false);
+  const [sessionState, setSessionState] = useState<'ok' | 'session_expired'>('ok');
   const isLabel = session?.mode === 'label';
   const labelResult = isLabel ? session.result : null;
   const barcode = session?.mode === 'barcode' ? session.input.barcode : '';
@@ -330,7 +430,12 @@ export default function ScanResultScreen() {
   const [labelAnalysisStatus, setLabelAnalysisStatus] = useState<LabelAnalysisStatus>(
     labelResult?.analysisStatus ?? (labelResult?.analysis ? 'complete' : null)
   );
+  const [dashboardRuntimeError, setDashboardRuntimeError] = useState<string | null>(null);
+  const [dashboardRenderMode, setDashboardRenderMode] = useState<'full' | 'lite'>(
+    () => resolveDashboardRenderMode(isExpoGo),
+  );
   const [evidenceExpanded, setEvidenceExpanded] = useState(false);
+  const [scoreRequestNonce, setScoreRequestNonce] = useState(0);
   const resolvedLabelAnalysis = labelAnalysis ?? labelResult?.analysis ?? null;
   const labelDraft = labelResult?.draft ?? null;
   const labelIssues = useMemo(
@@ -357,21 +462,108 @@ export default function ScanResultScreen() {
     value,
     social,
     status,
+    errorKind,
+    reasonCode,
+    stage,
+    requestId,
+    lastSseEventType,
+    watchdogReason,
+    displayIdentityMode,
+    displayIdentitySourceAttribution,
+    titleSanitized,
     error,
     analysisMeta,
     snapshot,
     analysisBundle,
   } = useStreamAnalysis(barcode);
-  const barcodeQuality = useMemo(() => getBarcodeQuality({ status, error }), [error, status]);
+  const barcodeQuality = useMemo(
+    () => getBarcodeQuality({
+      status,
+      error,
+      errorKind,
+      sessionState,
+    }),
+    [error, errorKind, sessionState, status],
+  );
   const scoreQueryFromBundleMeta = useMemo(
     () => resolveScoreQueryFromBundleMeta(analysisBundle?.meta ?? null),
     [analysisBundle?.meta],
   );
+  const retryScore = useCallback(() => {
+    setScoreRequestNonce((prev) => prev + 1);
+  }, []);
+  const debugPanelNode = SHOW_SCAN_DEBUG ? (
+    <DebugScanPanel
+      requestId={requestId}
+      lastEvent={lastSseEventType}
+      reasonCode={reasonCode}
+      stage={stage}
+      watchdogReason={watchdogReason}
+      displayIdentityMode={displayIdentityMode}
+      displayIdentitySourceAttribution={displayIdentitySourceAttribution}
+      titleSanitized={titleSanitized}
+      routeDecision={barcodeQuality.page}
+    />
+  ) : null;
   const barcodeScoreState = useScoreBundleV4({
     source: scoreQueryFromBundleMeta?.source ?? null,
     sourceId: scoreQueryFromBundleMeta?.sourceId ?? null,
     enabled: Boolean(scoreQueryFromBundleMeta) && !isLabel,
+    requestNonce: scoreRequestNonce,
   });
+  useEffect(() => {
+    if (!__DEV__) return;
+    console.log('[ScoreV4] query', {
+      enabled: Boolean(scoreQueryFromBundleMeta) && !isLabel,
+      source: scoreQueryFromBundleMeta?.source ?? null,
+      sourceId: scoreQueryFromBundleMeta?.sourceId ?? null,
+      bundleSourceType: analysisBundle?.meta?.sourceType ?? null,
+      bundleSourceTypeFinal: analysisBundle?.meta?.sourceTypeFinal ?? null,
+      authoritativeIdentity: analysisBundle?.meta?.authoritativeIdentity ?? null,
+    });
+  }, [analysisBundle?.meta, isLabel, scoreQueryFromBundleMeta]);
+
+  useEffect(() => {
+    if (!__DEV__) return;
+    console.log('[ScoreV4] state', {
+      status: barcodeScoreState.status,
+      responseStatus: barcodeScoreState.response?.status ?? null,
+      reasonCode:
+        barcodeScoreState.response && 'reasonCode' in barcodeScoreState.response
+          ? barcodeScoreState.response.reasonCode ?? null
+          : null,
+      error: barcodeScoreState.error ?? null,
+    });
+  }, [barcodeScoreState.error, barcodeScoreState.response, barcodeScoreState.status]);
+  // Full dashboard is the default path; Lite remains an emergency fallback.
+  // Expo Go stability protections are applied inside AnalysisDashboard/ScoreRing.
+  const useLiteBarcodeDashboard = dashboardRenderMode === 'lite';
+  const bundleRevision =
+    typeof analysisBundle?.meta?.revision === 'number' ? analysisBundle.meta.revision : null;
+  // Removed legacy full-screen "Analyzing supplement..." interstitial.
+  // We now render the dashboard skeleton immediately for a smoother UI.
+  const holdDashboardDuringSkeleton = false;
+
+  useEffect(() => {
+    if (!__DEV__) return;
+    console.log('[ScanResult] route state', {
+      sessionId: typeof params.sessionId === 'string' ? params.sessionId : null,
+      status,
+      errorKind,
+      page: barcodeQuality.page,
+      sessionState,
+      bundleRevision,
+      holdDashboardDuringSkeleton,
+    });
+  }, [
+    params.sessionId,
+    status,
+    errorKind,
+    barcodeQuality.page,
+    sessionState,
+    bundleRevision,
+    holdDashboardDuringSkeleton,
+  ]);
 
   const formatDose = useCallback((value?: number | string | null, unit?: string | null) => {
     if (value == null) return null;
@@ -445,20 +637,74 @@ export default function ScanResultScreen() {
   }, [handleGenerateAnalysis, isLabel, labelAnalysisLoading, labelResult, labelQuality, resolvedLabelAnalysis]);
 
   useEffect(() => {
-    const nextSession = consumeScanSession();
-    setSession(nextSession);
-    setSessionResolved(true);
-    analysisRequestedRef.current = false;
-    addedRef.current = false;
-    lastDosageRef.current = null;
-    lastSupplementIdRef.current = null;
-    setLabelAnalysis(null);
-    setLabelAnalysisError(null);
-    setLabelAnalysisLoading(false);
-    setEvidenceExpanded(false);
-    const nextLabelResult = nextSession?.mode === 'label' ? nextSession.result : null;
-    setLabelAnalysisStatus(nextLabelResult?.analysisStatus ?? (nextLabelResult?.analysis ? 'complete' : null));
-  }, [params.sessionId]);
+    let cancelled = false;
+    setSessionResolved(false);
+    const routeDevBarcode =
+      typeof params.devBarcode === 'string' ? normalizeBarcode(params.devBarcode) : '';
+    const envDevBarcode = (process.env.EXPO_PUBLIC_SCAN_RESULT_DEV_BARCODE ?? '').trim();
+    const devFixtureBarcode = routeDevBarcode || envDevBarcode;
+
+    const hydrateSession = async () => {
+      const consumeResult = await consumeScanSessionWithStatusAsync(
+        typeof params.sessionId === 'string' ? params.sessionId : null,
+      );
+      if (cancelled) return;
+
+      if (consumeResult.status === 'ok') {
+        setSession(consumeResult.session);
+        setSessionState('ok');
+      } else if (__DEV__ && devFixtureBarcode.length > 0) {
+        const fallbackSessionId =
+          typeof params.sessionId === 'string' && params.sessionId.trim().length > 0
+            ? params.sessionId.trim()
+            : ensureSessionId();
+        const fallbackSession: ScanSession = {
+          id: fallbackSessionId,
+          mode: 'barcode',
+          input: { barcode: devFixtureBarcode },
+        };
+        if (__DEV__) {
+          console.log('[ScanResult] using dev fixture barcode session', {
+            sessionId: fallbackSession.id,
+            barcode: devFixtureBarcode,
+          });
+        }
+        setSession(fallbackSession);
+        setSessionState('ok');
+      } else {
+        if (__DEV__) {
+          console.warn('[ScanResult] session hydrate failed', {
+            reasonCode: consumeResult.reasonCode,
+            sessionId: typeof params.sessionId === 'string' ? params.sessionId : null,
+          });
+        }
+        setSession(null);
+        setSessionState('session_expired');
+      }
+
+      setSessionResolved(true);
+      analysisRequestedRef.current = false;
+      addedRef.current = false;
+      lastDosageRef.current = null;
+      lastSupplementIdRef.current = null;
+      setLabelAnalysis(null);
+      setLabelAnalysisError(null);
+      setLabelAnalysisLoading(false);
+      setDashboardRuntimeError(null);
+      setDashboardRenderMode(resolveDashboardRenderMode(isExpoGo));
+      setEvidenceExpanded(false);
+      const nextLabelResult = consumeResult.status === 'ok' && consumeResult.session.mode === 'label'
+        ? consumeResult.session.result
+        : null;
+      setLabelAnalysisStatus(nextLabelResult?.analysisStatus ?? (nextLabelResult?.analysis ? 'complete' : null));
+    };
+
+    void hydrateSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isExpoGo, params.devBarcode, params.sessionId]);
 
   useEffect(() => {
     if (needsReview) {
@@ -466,12 +712,10 @@ export default function ScanResultScreen() {
     }
   }, [needsReview]);
 
-  useEffect(() => {
-    if (!sessionResolved) return;
-    if (!session) {
-      router.replace('/scan/label');
-    }
-  }, [session, sessionResolved]);
+  const handleDashboardRenderError = useCallback((message: string) => {
+    setDashboardRuntimeError(message);
+    setDashboardRenderMode((prev) => (prev === 'lite' ? prev : 'lite'));
+  }, []);
 
   useEffect(() => {
     if (!session) return;
@@ -500,7 +744,7 @@ export default function ScanResultScreen() {
       return;
     }
 
-    if (status === 'error' || !productInfo) return;
+    if (barcodeQuality.page !== 'dashboard' || !productInfo) return;
 
     const supplementId = snapshot?.product?.entityRefs?.supplementId ?? null;
     const bundleActiveDose = (() => {
@@ -581,6 +825,7 @@ export default function ScanResultScreen() {
   }, [
     addScan,
     analysisBundle,
+    barcodeQuality.page,
     barcode,
     efficacy,
     extractDoseFromText,
@@ -616,6 +861,46 @@ export default function ScanResultScreen() {
     lastBrandRef.current = brand;
   }, [barcode, productInfo?.brand, savedSupplements, updateSupplement]);
 
+  const liteOverviewSummary = useMemo(() => {
+    const raw = (analysisBundle as any)?.sections?.overview?.cover?.summary;
+    return typeof raw === 'string' && raw.trim().length > 0
+      ? raw.trim()
+      : (efficacy?.overviewSummary ?? 'Overview is loading...');
+  }, [analysisBundle, efficacy?.overviewSummary]);
+  const liteOverviewBullets = useMemo(() => {
+    const raw = (analysisBundle as any)?.sections?.overview?.cover?.bullets;
+    if (!Array.isArray(raw)) return [];
+    return raw
+      .map((b: any) => (typeof b?.text === 'string' ? b.text.trim() : null))
+      .filter((line: string | null): line is string => Boolean(line))
+      .slice(0, 4);
+  }, [analysisBundle]);
+  const liteDataStatus = useMemo(() => {
+    const sections = (analysisBundle as any)?.sections;
+    if (!sections || typeof sections !== 'object') return null;
+    const normalize = (value: unknown) => (typeof value === 'string' ? value : 'pending');
+    return {
+      overview: normalize(sections?.overview?.dataStatus),
+      ingredients: normalize(sections?.ingredients?.dataStatus),
+      usage: normalize(sections?.usage?.dataStatus),
+      safety: normalize(sections?.safety?.dataStatus),
+    };
+  }, [analysisBundle]);
+  useEffect(() => {
+    if (!__DEV__) return;
+    console.log('[ScanResult] dashboard mode', {
+      platform: Platform.OS,
+      lite: useLiteBarcodeDashboard,
+      appOwnership,
+      isExpoGo,
+      renderMode: dashboardRenderMode,
+      forceLiteFromEnv: FORCE_LITE_DASHBOARD,
+      forceFullFromEnv: FORCE_FULL_DASHBOARD,
+      bisectFlagsFromEnv: process.env.EXPO_PUBLIC_SCAN_DASHBOARD_BISECT ?? '',
+      bundleRevision,
+    });
+  }, [appOwnership, bundleRevision, dashboardRenderMode, isExpoGo, useLiteBarcodeDashboard]);
+
   const handleBack = () => {
     if (session?.mode === 'barcode') {
       router.replace('/scan/barcode');
@@ -624,7 +909,37 @@ export default function ScanResultScreen() {
     }
   };
 
-  if (!session) return null;
+  if (!sessionResolved) {
+    return (
+      <ResponsiveScreen contentStyle={styles.screen}>
+        <Header onBack={handleBack} title="Scan Result" />
+        <View style={styles.loadingContainer}>
+          <OrganicSpinner size={28} color="#52525b" />
+          <Text style={styles.loadingTitle}>Loading scan session…</Text>
+        </View>
+        {debugPanelNode}
+      </ResponsiveScreen>
+    );
+  }
+
+  if (!session) {
+    return (
+      <ResponsiveScreen contentStyle={styles.screen}>
+        <Header onBack={handleBack} title="Scan Result" />
+        <View style={styles.fallbackContainer}>
+          <FileText size={48} color="#52525b" />
+          <Text style={styles.fallbackTitle}>Session Expired</Text>
+          <Text style={styles.fallbackText}>
+            Your scan session is no longer available. Please scan again.
+          </Text>
+          <TouchableOpacity style={styles.secondaryActionButton} onPress={() => router.replace('/scan/barcode')}>
+            <Text style={styles.secondaryActionText}>Start New Scan</Text>
+          </TouchableOpacity>
+        </View>
+        {debugPanelNode}
+      </ResponsiveScreen>
+    );
+  }
 
   if (isLabel && labelResult) {
     const draft = labelDraft;
@@ -873,7 +1188,7 @@ export default function ScanResultScreen() {
             <OrganicSpinner size={24} color="rgba(255,255,255,0.9)" />
             <View style={{ top: 3 }}>
               <ShinyText
-                text="AI Analyzing"
+                text="Analyzing Your Supplement..."
                 speed={2}
                 style={{ ...styles.streamingText, color: '#FFFFFF' }}
               />
@@ -884,27 +1199,85 @@ export default function ScanResultScreen() {
     );
   }
 
-  // 1. Error State
-  if (barcodeQuality.errorState) {
+  // 1. Barcode Not Found
+  if (barcodeQuality.page === 'not_found') {
     return (
       <ResponsiveScreen contentStyle={styles.screen}>
         <Header onBack={handleBack} title="Scan Result" />
         <View style={styles.fallbackContainer}>
           <FileText size={48} color="#52525b" />
           <Text style={styles.fallbackTitle}>Not Found</Text>
-          <Text style={styles.fallbackText}>{error || 'We could not find this product.'}</Text>
+          <Text style={styles.fallbackText}>We could not find this product.</Text>
+          <Text style={styles.fallbackNote}>
+            {error || 'Try a clearer barcode image or scan another package side.'}
+          </Text>
+          <TouchableOpacity style={styles.secondaryActionButton} onPress={() => router.replace('/scan/barcode')}>
+            <Text style={styles.secondaryActionText}>Retry Scan</Text>
+          </TouchableOpacity>
         </View>
+        {debugPanelNode}
       </ResponsiveScreen>
     );
   }
 
-  // 2. Removed intermediate "Searching..." screen - go directly to dashboard
+  // 2. Recoverable Errors (network/auth/server)
+  if (barcodeQuality.page === 'recoverable_error') {
+    const reasonCodeMessage = resolveReasonCodeMessage(reasonCode);
+    const recoverableTitle =
+      barcodeQuality.failureKind === 'unauthorized'
+        ? 'Sign In Required'
+        : 'Connection Issue';
+    const recoverableText =
+      barcodeQuality.failureKind === 'unauthorized'
+        ? (error || 'Please sign in and retry the scan.')
+        : (error || reasonCodeMessage || 'We lost connection while analyzing. Please retry.');
+    return (
+      <ResponsiveScreen contentStyle={styles.screen}>
+        <Header onBack={handleBack} title="Scan Result" />
+        <View style={styles.fallbackContainer}>
+          <FileText size={48} color="#52525b" />
+          <Text style={styles.fallbackTitle}>{recoverableTitle}</Text>
+          <Text style={styles.fallbackText}>{recoverableText}</Text>
+          <TouchableOpacity style={styles.secondaryActionButton} onPress={() => router.replace('/scan/barcode')}>
+            <Text style={styles.secondaryActionText}>Retry Scan</Text>
+          </TouchableOpacity>
+        </View>
+        {debugPanelNode}
+      </ResponsiveScreen>
+    );
+  }
+
+  // 3. Session Expired (defensive fallback)
+  if (barcodeQuality.page === 'session_expired') {
+    return (
+      <ResponsiveScreen contentStyle={styles.screen}>
+        <Header onBack={handleBack} title="Scan Result" />
+        <View style={styles.fallbackContainer}>
+          <FileText size={48} color="#52525b" />
+          <Text style={styles.fallbackTitle}>Session Expired</Text>
+          <Text style={styles.fallbackText}>Please start a new scan.</Text>
+          <TouchableOpacity style={styles.secondaryActionButton} onPress={() => router.replace('/scan/barcode')}>
+            <Text style={styles.secondaryActionText}>Start New Scan</Text>
+          </TouchableOpacity>
+        </View>
+        {debugPanelNode}
+      </ResponsiveScreen>
+    );
+  }
+
+  // 4. Removed intermediate "Searching..." screen - go directly to dashboard
   // The AnalysisDashboard will show skeleton loading states for each section
 
-  // 4. Construct the composite analysis object for the Dashboard
+  // 5. Construct the composite analysis object for the Dashboard
   // The Dashboard will handle nulls/missing fields gracefully by showing defaults or skeletons
+  const safeProductInfo = productInfo ?? {
+    brand: null,
+    name: null,
+    category: null,
+    image: null,
+  };
   const compositeAnalysis = {
-    productInfo: productInfo,
+    productInfo: safeProductInfo,
     efficacy: efficacy || {}, // Empty obj means "loading" inside dashboard components if checked
     safety: safety || {},
     usage: usage || {},
@@ -945,13 +1318,59 @@ export default function ScanResultScreen() {
       {/* We render dashboard immediately. 
         As 'efficacy', 'safety' etc. arrive, this component re-renders and fills in the blanks.
       */}
-      <AnalysisDashboard
-        analysis={compositeAnalysis}
-        isStreaming={isStreaming}
-        sourceType="barcode"
-        analysisBundle={analysisBundle}
-        scoreBundleV4State={barcodeScoreState}
-      />
+      {useLiteBarcodeDashboard ? (
+        <ScrollView contentContainerStyle={styles.liteContent}>
+          <View style={styles.liteCard}>
+            <Text style={styles.liteEyebrow}>Quick Analysis</Text>
+            <Text style={styles.liteTitle}>{safeProductInfo.name ?? 'Supplement'}</Text>
+            <Text style={styles.liteMeta}>
+              {[safeProductInfo.brand, safeProductInfo.category].filter(Boolean).join(' • ') || 'Identifying product info...'}
+            </Text>
+          </View>
+
+          <View style={styles.liteCard}>
+            <Text style={styles.liteSectionTitle}>Overview</Text>
+            <Text style={styles.liteSummary}>{liteOverviewSummary}</Text>
+            {liteOverviewBullets.length > 0 ? (
+              <View style={styles.liteBulletList}>
+                {liteOverviewBullets.map((line, idx) => (
+                  <Text key={`${line}-${idx}`} style={styles.liteBullet}>
+                    {'\u2022'} {line}
+                  </Text>
+                ))}
+              </View>
+            ) : null}
+          </View>
+
+          <View style={styles.liteCard}>
+            <Text style={styles.liteSectionTitle}>Section Status</Text>
+            <Text style={styles.liteStatusLine}>Overview: {liteDataStatus?.overview ?? 'pending'}</Text>
+            <Text style={styles.liteStatusLine}>Ingredients: {liteDataStatus?.ingredients ?? 'pending'}</Text>
+            <Text style={styles.liteStatusLine}>Usage: {liteDataStatus?.usage ?? 'pending'}</Text>
+            <Text style={styles.liteStatusLine}>Safety: {liteDataStatus?.safety ?? 'pending'}</Text>
+          </View>
+        </ScrollView>
+      ) : (
+        <DashboardErrorBoundary onError={handleDashboardRenderError}>
+          <AnalysisDashboard
+            analysis={compositeAnalysis}
+            isStreaming={isStreaming}
+            sourceType="barcode"
+            analysisBundle={analysisBundle}
+            scoreBundleV4State={barcodeScoreState}
+            onRetryScore={retryScore}
+          />
+        </DashboardErrorBoundary>
+      )}
+
+      {dashboardRuntimeError ? (
+        <View style={styles.dashboardErrorBanner}>
+          <Text style={styles.dashboardErrorBannerText}>
+            Dashboard error captured: {dashboardRuntimeError}
+          </Text>
+        </View>
+      ) : null}
+      {debugPanelNode}
 
       {/* Optional: A small global spinner in the corner if streaming */}
       {isStreaming && (
@@ -959,7 +1378,7 @@ export default function ScanResultScreen() {
           <OrganicSpinner size={24} color="rgba(255,255,255,0.9)" />
           <View style={{ top: 3 }}>
             <ShinyText
-              text="AI Analyzing"
+              text="Analyzing Your Supplement..."
               speed={2}
               style={{ ...styles.streamingText, color: '#FFFFFF' }}
             />
@@ -979,6 +1398,43 @@ function Header({ onBack, title }: { onBack: () => void, title: string }) {
       </TouchableOpacity>
       <Text style={styles.headerTitle}>{title}</Text>
       <View style={{ width: 40 }} />
+    </View>
+  );
+}
+
+function DebugScanPanel({
+  requestId,
+  lastEvent,
+  reasonCode,
+  stage,
+  watchdogReason,
+  displayIdentityMode,
+  displayIdentitySourceAttribution,
+  titleSanitized,
+  routeDecision,
+}: {
+  requestId: string | null;
+  lastEvent: string | null;
+  reasonCode: string | null;
+  stage: string | null;
+  watchdogReason: string | null;
+  displayIdentityMode: string | null;
+  displayIdentitySourceAttribution: string | null;
+  titleSanitized: boolean;
+  routeDecision: string;
+}) {
+  return (
+    <View style={styles.debugPanel} testID="scan-debug-panel">
+      <Text style={styles.debugTitle}>Scan Debug</Text>
+      <Text style={styles.debugLine}>requestId: {requestId ?? 'missing'}</Text>
+      <Text style={styles.debugLine}>lastEvent: {lastEvent ?? 'missing'}</Text>
+      <Text style={styles.debugLine}>reasonCode: {reasonCode ?? 'none'}</Text>
+      <Text style={styles.debugLine}>stage: {stage ?? 'unknown'}</Text>
+      <Text style={styles.debugLine}>watchdogReason: {watchdogReason ?? 'none'}</Text>
+      <Text style={styles.debugLine}>displayIdentityMode: {displayIdentityMode ?? 'unknown'}</Text>
+      <Text style={styles.debugLine}>displayIdentitySource: {displayIdentitySourceAttribution ?? 'unknown'}</Text>
+      <Text style={styles.debugLine}>titleSanitized: {titleSanitized ? 'true' : 'false'}</Text>
+      <Text style={styles.debugLine}>route: {routeDecision}</Text>
     </View>
   );
 }
@@ -1068,6 +1524,63 @@ const styles = StyleSheet.create({
     color: '#b91c1c',
     marginBottom: 12,
   },
+  liteContent: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 36,
+    gap: 12,
+  },
+  liteCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#e4e4e7',
+    padding: 14,
+  },
+  liteEyebrow: {
+    fontSize: 12,
+    color: '#71717a',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  liteTitle: {
+    marginTop: 6,
+    fontSize: 20,
+    lineHeight: 26,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  liteMeta: {
+    marginTop: 4,
+    fontSize: 13,
+    color: '#6b7280',
+  },
+  liteSectionTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 8,
+  },
+  liteSummary: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#374151',
+  },
+  liteBulletList: {
+    marginTop: 8,
+    gap: 4,
+  },
+  liteBullet: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: '#4b5563',
+  },
+  liteStatusLine: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: '#4b5563',
+  },
   analysisButton: {
     marginTop: 8,
     backgroundColor: '#111827',
@@ -1133,7 +1646,46 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.9)',
     letterSpacing: 0.5,
     lineHeight: 16,
-  }
+  },
+  dashboardErrorBanner: {
+    position: 'absolute',
+    left: 12,
+    right: 12,
+    bottom: 10,
+    backgroundColor: 'rgba(153, 27, 27, 0.92)',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  dashboardErrorBannerText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  debugPanel: {
+    marginHorizontal: 16,
+    marginBottom: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#dbeafe',
+    backgroundColor: '#eff6ff',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 2,
+  },
+  debugTitle: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '800',
+    color: '#1e3a8a',
+    marginBottom: 2,
+  },
+  debugLine: {
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: '600',
+    color: '#1d4ed8',
+  },
 });
 
 const createStyles = (tokens: any) => styles;

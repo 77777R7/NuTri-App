@@ -21,6 +21,18 @@ test("resolveBrand: does not blindly trust rule extraction when it looks like a 
   assert.equal(next, "Ester-C");
 });
 
+test("resolveBrand: ignores noisy marketplace-like rule extraction and falls back to candidate brand", () => {
+  const next = resolveBrand(
+    {
+      brand: "10 BOTTLES), Ester-C Vitamin C 1000mg (180 Tablets), Exp ... - eBay",
+      confidence: "high",
+      source: "rule",
+    },
+    "American Health",
+  );
+  assert.equal(next, "American Health");
+});
+
 test("resolveBrand: allows rule extraction when it is short and sane", () => {
   const next = resolveBrand(
     { brand: "Sports Research", confidence: "high", source: "rule" },
@@ -34,4 +46,3 @@ test("sanitizeBrandCandidate: collapses obvious separators", () => {
   assert.equal(sanitizeBrandCandidate("Foo - Bar"), "Foo");
   assert.equal(sanitizeBrandCandidate("  "), null);
 });
-

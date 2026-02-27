@@ -1,8 +1,11 @@
+import { BlurView } from 'expo-blur';
+import Constants from 'expo-constants';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
     Activity,
     BarChart3,
-    ChevronRight,
     CheckCircle2,
+    ChevronRight,
     Clock,
     Pill,
     Shield,
@@ -10,17 +13,12 @@ import {
     X,
     Zap,
 } from 'lucide-react-native';
-import { BlurView } from 'expo-blur';
-import Constants from 'expo-constants';
-import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Image,
-    LayoutAnimation,
-    Platform,
-    UIManager,
     Modal,
+    Platform,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -34,9 +32,9 @@ import {
     type ViewStyle,
 } from 'react-native';
 import Animated, {
+    Easing,
     FadeInUp,
     FadeOutDown,
-    Easing,
     useAnimatedReaction,
     useAnimatedScrollHandler,
     useAnimatedStyle,
@@ -45,29 +43,38 @@ import Animated, {
     type SharedValue,
 } from 'react-native-reanimated';
 
-import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
+import { OdsFoundationPanel } from '@/components/ods/OdsFoundationPanel';
 import { InteractiveScoreRing } from '@/components/ui/InteractiveScoreRing';
 import { ContentSection } from '@/components/ui/ScoreDetailCard';
-import { OdsFoundationPanel } from '@/components/ods/OdsFoundationPanel';
-import { useTranslation } from '@/lib/i18n';
+import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { Config } from '@/constants/Config';
 import { withAuthHeaders } from '@/lib/auth-token';
+import { useTranslation } from '@/lib/i18n';
 import { summarizeFoundationHits } from '@/lib/knowledge/foundationLookup';
+import { resolveDataCeilingSignal } from '@/lib/scan/dataCeiling';
+import { buildGapActionSentences } from '@/lib/scan/gapActionSentenceLibrary';
+import { assembleInsightsDTO, buildWhyBullets } from '@/lib/scan/insightsAssembler';
+import { enforceNeverBlank, isPlaceholderText, sanitizeCoverBullets, sanitizeCoverLine } from '@/lib/scan/neverBlank';
+import { buildRecordFactsViewModel } from '@/lib/scan/recordFactsViewModel';
+import { buildSafetySignalPack, safetySignalsToPriorityLines } from '@/lib/scan/safetySignalPack';
+import { resolveTrustedDisplayIdentity } from '@/lib/scan/resolveTrustedDisplayIdentity';
+import { buildVerificationPresentation } from '@/lib/scan/verificationPresentation';
+import { resolveReasonCodeMessage } from '@/lib/scan/streamStateMachine';
+import { computeSmartScores, type AnalysisInput } from '@/lib/scoring';
 import { formatBrandForPill } from '@/lib/supplementDisplay';
+import type { FactsDTO } from '@/shared/types/scan-insights';
 import type {
     AnalysisBundle,
     AnalysisBundleV4,
     BasisTag,
-    Bullet,
     DataStatus,
     IngredientsDetail,
     IngredientsDetailItemV3,
     IngredientsDetailItemV4,
     IngredientsDetailV3,
-    IngredientsDetailV4,
+    IngredientsDetailV4
 } from '@/types/analysisBundle';
 import type { ScoreBundleResponse, ScoreBundleV4 } from '@/types/scoreBundle';
-import { computeSmartScores, type AnalysisInput } from '@/lib/scoring';
 type Analysis = any;
 type ScoreState = 'active' | 'muted' | 'loading';
 type SourceType = 'barcode' | 'label_scan';
@@ -98,6 +105,12 @@ type SourceRef = {
 type ScoreBundleV4State = {
     status: 'idle' | 'loading' | 'ready' | 'error';
     response: ScoreBundleResponse | null;
+    error: string | null;
+};
+
+type FactsDtoState = {
+    status: 'idle' | 'loading' | 'ready' | 'error';
+    data: FactsDTO | null;
     error: string | null;
 };
 
@@ -153,7 +166,7 @@ type TileConfig = {
     loading?: boolean;
     dataStatus?: {
         status: CoverStatus;
-        missingReasons: MissingReason[];
+        missingReasons: string[];
         sources: SourceRef[];
         notes?: string[];
     };
@@ -168,32 +181,61 @@ type WidgetTileProps = {
 const FORCE_FULL_DASHBOARD_EFFECTS =
     process.env.EXPO_PUBLIC_FORCE_FULL_DASHBOARD_EFFECTS === 'true' ||
     process.env.EXPO_PUBLIC_FORCE_FULL_DASHBOARD_EFFECTS === '1';
+const SHOW_SCAN_DEBUG =
+    process.env.EXPO_PUBLIC_SHOW_SCAN_DEBUG === 'true' ||
+    process.env.EXPO_PUBLIC_SHOW_SCAN_DEBUG === '1';
+const SCORE_PENDING_DONE_TIMEOUT_MS = Math.max(
+    8_000,
+    Math.min(
+        15_000,
+        Number(process.env.EXPO_PUBLIC_SCORE_PENDING_DONE_TIMEOUT_MS ?? 10_000) || 10_000,
+    ),
+);
+
+if (__DEV__) {
+    console.log('[dashboard-version] PR1PR2_SAFE_MERGE');
+}
+
 const appOwnership = Constants.appOwnership;
 const isExpoGo = appOwnership === 'expo' || appOwnership === 'guest';
+const isIosDevClientBuild = __DEV__ && Platform.OS === 'ios' && appOwnership == null;
+const FORCE_IOS_DEV_SCORE_RING =
+    process.env.EXPO_PUBLIC_FORCE_IOS_DEV_SCORE_RING === 'true' ||
+    process.env.EXPO_PUBLIC_FORCE_IOS_DEV_SCORE_RING === '1';
+const FORCE_IOS_DEV_DASHBOARD_ANIMATIONS =
+    process.env.EXPO_PUBLIC_FORCE_IOS_DEV_DASHBOARD_ANIMATIONS === 'true' ||
+    process.env.EXPO_PUBLIC_FORCE_IOS_DEV_DASHBOARD_ANIMATIONS === '1';
 const expoGoDashboardCompatMode = isExpoGo && !FORCE_FULL_DASHBOARD_EFFECTS;
 const DASHBOARD_BISECT_RAW = (process.env.EXPO_PUBLIC_SCAN_DASHBOARD_BISECT ?? '').trim();
 const DASHBOARD_BISECT_FLAGS = new Set(
     DASHBOARD_BISECT_RAW
         .split(',')
-        .map((flag) => flag.trim().toLowerCase())
+        .map((flag: string) => flag.trim().toLowerCase())
         .filter(Boolean),
 );
 const hasDashboardBisectFlag = (flag: string) => DASHBOARD_BISECT_FLAGS.has(flag);
-const forceLegacyDashboardFromEnv =
-    process.env.EXPO_PUBLIC_FORCE_LEGACY_DASHBOARD === 'true' ||
-    process.env.EXPO_PUBLIC_FORCE_LEGACY_DASHBOARD === '1';
-const forceLegacyDashboard =
-    hasDashboardBisectFlag('force_legacy_dashboard') ||
-    forceLegacyDashboardFromEnv;
+const safeRuntimeForAnimatedDashboard = !isExpoGo && !isIosDevClientBuild;
+const enableAnimatedDashboard =
+    FORCE_FULL_DASHBOARD_EFFECTS &&
+    safeRuntimeForAnimatedDashboard &&
+    !hasDashboardBisectFlag('force_static_dashboard');
 const disableDashboardBlur = expoGoDashboardCompatMode || hasDashboardBisectFlag('no_blur');
-const disableTileAnimation = expoGoDashboardCompatMode || hasDashboardBisectFlag('no_tile_anim');
-const disableReanimatedScroll = expoGoDashboardCompatMode || hasDashboardBisectFlag('no_reanimated_scroll');
-const disableMiniHeader = expoGoDashboardCompatMode || hasDashboardBisectFlag('no_mini_header');
+const disableIosDevDashboardAnimations = isIosDevClientBuild && !FORCE_IOS_DEV_DASHBOARD_ANIMATIONS;
+const disableTileAnimation = !enableAnimatedDashboard || disableIosDevDashboardAnimations || hasDashboardBisectFlag('no_tile_anim');
+const disableReanimatedScroll = !enableAnimatedDashboard || disableIosDevDashboardAnimations || hasDashboardBisectFlag('no_reanimated_scroll');
+const disableMiniHeader = !enableAnimatedDashboard || disableIosDevDashboardAnimations || hasDashboardBisectFlag('no_mini_header');
 const disableHeroHeader = hasDashboardBisectFlag('no_hero');
-const disableScoreRing = expoGoDashboardCompatMode || hasDashboardBisectFlag('no_ring');
-const disableInsightDeck = expoGoDashboardCompatMode || hasDashboardBisectFlag('no_insight_deck');
+const disableScoreRingByBisect = hasDashboardBisectFlag('no_ring') && !FORCE_IOS_DEV_SCORE_RING;
+const disableScoreRing = disableScoreRingByBisect;
+const disableInsightDeck = hasDashboardBisectFlag('no_insight_deck');
 const disableTilesGrid = hasDashboardBisectFlag('no_tiles');
 const disableModalPane = expoGoDashboardCompatMode || hasDashboardBisectFlag('no_modal');
+const scoreRingDisableNotice = (() => {
+    if (disableScoreRingByBisect) {
+        return 'Set by `no_ring` in `EXPO_PUBLIC_SCAN_DASHBOARD_BISECT`.';
+    }
+    return 'Disabled by dashboard compatibility mode.';
+})();
 const disableOdsPanel = hasDashboardBisectFlag('no_ods_panel');
 const TILE_GLASS_TINT: React.ComponentProps<typeof BlurView>['tint'] = expoGoDashboardCompatMode
     ? 'light'
@@ -312,9 +354,9 @@ function hexToRgb(hex: string) {
     const full =
         normalized.length === 3
             ? normalized
-                  .split('')
-                  .map((c) => c + c)
-                  .join('')
+                .split('')
+                .map((c) => c + c)
+                .join('')
             : normalized;
 
     const int = parseInt(full, 16);
@@ -460,21 +502,21 @@ const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
         tile.type === 'science' || tile.type === 'usage' || tile.type === 'safety'
             ? 'rgba(15, 23, 42, 0.6)'
             : tile.type === 'overview'
-              ? 'rgba(255, 255, 255, 0.7)'
-              : isDarkBase
-                ? 'rgba(255,255,255,0.7)'
-                : withAlpha(tColor, 0.6);
+                ? 'rgba(255, 255, 255, 0.7)'
+                : isDarkBase
+                    ? 'rgba(255,255,255,0.7)'
+                    : withAlpha(tColor, 0.6);
 
     const viewPillTextColor =
         tile.type === 'science'
             ? '#ea580c'
             : tile.type === 'overview'
-              ? '#FFFFFF'
-              : tile.type === 'usage'
-                ? '#000000'
-                : tile.type === 'safety'
-                  ? '#6B5B4D'
-                  : '#FFFFFF';
+                ? '#FFFFFF'
+                : tile.type === 'usage'
+                    ? '#000000'
+                    : tile.type === 'safety'
+                        ? '#6B5B4D'
+                        : '#FFFFFF';
 
     const placeholderColor = withAlpha(tColor, 0.6);
 
@@ -766,202 +808,214 @@ const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
 type PillarStatus = 'good' | 'ok' | 'warn' | 'unknown';
 
 const statusDotColor = (s: PillarStatus) => {
-  switch (s) {
-    case 'good':
-      return '#22C55E';
-    case 'ok':
-      return '#60A5FA';
-    case 'warn':
-      return '#F59E0B';
-    default:
-      return 'rgba(255,255,255,0.35)';
-  }
+    switch (s) {
+        case 'good':
+            return '#22C55E';
+        case 'ok':
+            return '#60A5FA';
+        case 'warn':
+            return '#F59E0B';
+        default:
+            return 'rgba(255,255,255,0.35)';
+    }
 };
 
 const GlassPill: React.FC<{ label: string; accentColor?: string; style?: any }> = ({ label, accentColor, style }) => {
-  return (
-    <View style={[styles.glassPill, style, accentColor ? { borderColor: `${accentColor}55` } : null]}>
-      <Text style={styles.glassPillText}>{label}</Text>
-    </View>
-  );
+    return (
+        <View style={[styles.glassPill, style, accentColor ? { borderColor: `${accentColor}55` } : null]}>
+            <Text style={styles.glassPillText}>{label}</Text>
+        </View>
+    );
 };
 
 const PillarTriad: React.FC<{
-  effectiveness: PillarStatus;
-  safety: PillarStatus;
-  integrity: PillarStatus;
+    effectiveness: PillarStatus;
+    safety: PillarStatus;
+    integrity: PillarStatus;
 }> = ({ effectiveness, safety, integrity }) => {
-  const short = (s: PillarStatus) => {
-    switch (s) {
-      case 'good':
-        return 'High';
-      case 'ok':
-        return 'Med';
-      case 'warn':
-        return 'Low';
-      default:
-        return '—';
-    }
-  };
+    const short = (s: PillarStatus) => {
+        switch (s) {
+            case 'good':
+                return 'High';
+            case 'ok':
+                return 'Med';
+            case 'warn':
+                return 'Low';
+            default:
+                return '—';
+        }
+    };
 
-  const render = (label: string, s: PillarStatus) => (
-    <View key={label} style={styles.pillarCol}>
-      <Text style={styles.pillarColLabel}>{label}</Text>
-      <View style={styles.pillarColValueRow}>
-        <View style={[styles.pillarDot, { backgroundColor: statusDotColor(s) }]} />
-        <Text style={styles.pillarColValueText}>{short(s)}</Text>
-      </View>
-    </View>
-  );
+    const render = (label: string, s: PillarStatus) => (
+        <View key={label} style={styles.pillarCol}>
+            <Text style={styles.pillarColLabel}>{label}</Text>
+            <View style={styles.pillarColValueRow}>
+                <View style={[styles.pillarDot, { backgroundColor: statusDotColor(s) }]} />
+                <Text style={styles.pillarColValueText}>{short(s)}</Text>
+            </View>
+        </View>
+    );
 
-  return (
-    <View style={styles.pillarTriadCols}>
-      {render('Effect', effectiveness)}
-      {render('Safety', safety)}
-      {render('Integrity', integrity)}
-    </View>
-  );
+    return (
+        <View style={styles.pillarTriadCols}>
+            {render('Effect', effectiveness)}
+            {render('Safety', safety)}
+            {render('Integrity', integrity)}
+        </View>
+    );
 };
 
 type GlassCardProps = {
-  title?: string;
-  subtitle?: string;
-  right?: React.ReactNode;
-  accentColor?: string;
-  children?: React.ReactNode;
-  style?: any;
-  contentStyle?: any;
+    title?: string;
+    subtitle?: string;
+    right?: React.ReactNode;
+    accentColor?: string;
+    children?: React.ReactNode;
+    style?: any;
+    contentStyle?: any;
 };
 
 const GlassCard: React.FC<GlassCardProps> = ({ title, subtitle, right, accentColor, children, style, contentStyle }) => {
-  return (
-    <View
-      style={[
-        styles.glassCard,
-        style,
-        accentColor ? { borderColor: `${accentColor}40` } : null,
-      ]}
-    >
-      <DashboardBlur intensity={20} tint="light" style={StyleSheet.absoluteFill} />
-      <View style={[styles.glassCardContent, contentStyle]}>
-        {(title || subtitle || right) ? (
-          <View style={styles.glassCardHeader}>
-            <View style={styles.glassCardHeaderLeft}>
-              {accentColor ? <View style={[styles.glassAccent, { backgroundColor: accentColor }]} /> : null}
-              <View>
-                {title ? <Text style={styles.glassCardTitle}>{title}</Text> : null}
-                {subtitle ? <Text style={styles.glassCardSubtitle}>{subtitle}</Text> : null}
-              </View>
+    return (
+        <View
+            style={[
+                styles.glassCard,
+                style,
+                accentColor ? { borderColor: `${accentColor}40` } : null,
+            ]}
+        >
+            <DashboardBlur intensity={20} tint="light" style={StyleSheet.absoluteFill} />
+            <View style={[styles.glassCardContent, contentStyle]}>
+                {(title || subtitle || right) ? (
+                    <View style={styles.glassCardHeader}>
+                        <View style={styles.glassCardHeaderLeft}>
+                            {accentColor ? <View style={[styles.glassAccent, { backgroundColor: accentColor }]} /> : null}
+                            <View>
+                                {title ? <Text style={styles.glassCardTitle}>{title}</Text> : null}
+                                {subtitle ? <Text style={styles.glassCardSubtitle}>{subtitle}</Text> : null}
+                            </View>
+                        </View>
+                        {right ? <View style={styles.glassCardHeaderRight}>{right}</View> : null}
+                    </View>
+                ) : null}
+                {children}
             </View>
-            {right ? <View style={styles.glassCardHeaderRight}>{right}</View> : null}
-          </View>
-        ) : null}
-        {children}
-      </View>
-    </View>
-  );
+        </View>
+    );
 };
 
 // ---------- Detail modal (refreshed, frosted, modular) ----------
 const DashboardModal: React.FC<{
-  visible: boolean;
-  onClose: () => void;
-  tile: TileConfig | null;
+    visible: boolean;
+    onClose: () => void;
+    tile: TileConfig | null;
 }> = ({ visible, onClose, tile }) => {
-  const { t } = useTranslation();
-  if (!tile) return null;
+    const { t } = useTranslation();
+    if (!tile) return null;
 
-  const accent = tile.backgroundColor || '#D1D5DB';
-  const ModalIcon = tile.icon;
-  const statusLine = tile.dataStatus
-    ? `Missing: ${formatMissingReasons(tile.dataStatus.missingReasons)}`
-    : undefined;
-  const sourceLine = formatSourceRefs(tile.dataStatus?.sources);
-  const notesLine = tile.dataStatus?.notes?.length ? tile.dataStatus.notes.join(' • ') : null;
+    const accent = tile.backgroundColor || '#D1D5DB';
+    const ModalIcon = tile.icon;
+    const statusLine = tile.dataStatus
+        ? `Missing: ${formatMissingReasons(tile.dataStatus.missingReasons)}`
+        : undefined;
+    const sourceLine = formatSourceRefs(tile.dataStatus?.sources);
+    const notesLine = tile.dataStatus?.notes?.length ? tile.dataStatus.notes.join(' • ') : null;
 
-  return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="none"
-      onRequestClose={onClose}
-      statusBarTranslucent
-    >
-      <View style={styles.modalOverlayGlass}>
-        {/* Backdrop */}
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose}>
-          <DashboardBlur intensity={22} tint="dark" style={StyleSheet.absoluteFill} />
-          <View style={styles.modalBackdropTint} />
-        </Pressable>
-
-        {/* Sheet */}
-        <Animated.View
-          entering={FadeInUp.duration(240).easing(Easing.out(Easing.cubic))}
-          exiting={FadeOutDown.duration(180).easing(Easing.in(Easing.cubic))}
-          style={[
-            styles.modalSheet,
-            { borderColor: `${accent}55` },
-          ]}
+    return (
+        <Modal
+            visible={visible}
+            transparent
+            animationType="none"
+            onRequestClose={onClose}
+            statusBarTranslucent
         >
-          <DashboardBlur intensity={26} tint="light" style={StyleSheet.absoluteFill} />
+            <View style={styles.modalOverlayGlass}>
+                {/* Backdrop */}
+                <Pressable style={StyleSheet.absoluteFill} onPress={onClose}>
+                    <DashboardBlur intensity={22} tint="dark" style={StyleSheet.absoluteFill} />
+                    <View style={styles.modalBackdropTint} />
+                </Pressable>
 
-          <View style={styles.modalHandle} />
+                {/* Sheet */}
+                <Animated.View
+                    entering={FadeInUp.duration(240).easing(Easing.out(Easing.cubic))}
+                    exiting={FadeOutDown.duration(180).easing(Easing.in(Easing.cubic))}
+                    style={[
+                        styles.modalSheet,
+                        { borderColor: `${accent}55` },
+                    ]}
+                >
+                    <DashboardBlur intensity={26} tint="light" style={StyleSheet.absoluteFill} />
 
-          <View style={styles.modalHeaderNew}>
-            <View style={styles.modalHeaderLeftNew}>
-              <View style={[styles.modalIconBubble, { backgroundColor: `${accent}22`, borderColor: `${accent}35` }]}>
-                <ModalIcon size={18} color={accent} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.modalTitleNew}>{tile.title}</Text>
-                <Text style={styles.modalSubtitleNew} numberOfLines={2}>
-                  {tile.summary?.text}
-                </Text>
-              </View>
+                    <View style={styles.modalHandle} />
+
+                    <View style={styles.modalHeaderNew}>
+                        <View style={styles.modalHeaderLeftNew}>
+                            <View style={[styles.modalIconBubble, { backgroundColor: `${accent}22`, borderColor: `${accent}35` }]}>
+                                <ModalIcon size={18} color={accent} />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.modalTitleNew}>{tile.title}</Text>
+                                <Text style={styles.modalSubtitleNew} numberOfLines={2}>
+                                    {tile.summary?.text}
+                                </Text>
+                            </View>
+                        </View>
+
+                        <Pressable style={styles.modalCloseButtonNew} onPress={onClose} accessibilityLabel="Close">
+                            <DashboardBlur intensity={18} tint="light" style={StyleSheet.absoluteFill} />
+                            <X size={18} color="#111827" />
+                        </Pressable>
+                    </View>
+
+                    <ScrollView
+                        style={styles.modalScrollNew}
+                        contentContainerStyle={styles.modalScrollContentNew}
+                        showsVerticalScrollIndicator={false}
+                    >
+                        {/* Main content */}
+                        {tile.content ? (
+                            tile.content
+                        ) : (
+                            <GlassCard
+                                title="Detail is loading"
+                                subtitle="This section is still resolving data."
+                                accentColor={accent}
+                            >
+                                <Text style={styles.detailBodyText}>
+                                    We are preparing this section. If it stays empty, try rescanning with a clear Supplement Facts panel.
+                                </Text>
+                            </GlassCard>
+                        )}
+
+                        {/* Data status (always visible, consistent) */}
+                        <GlassCard
+                            title={`Data status: ${COVER_STATUS_LABELS[tile.dataStatus?.status ?? 'limited']}`}
+                            subtitle={statusLine}
+                            accentColor={accent}
+                            style={{ marginTop: 14 }}
+                        >
+                            <View style={styles.dataStatusRowNew}>
+                                <Text style={styles.dataStatusSmallNew}>
+                                    Sources: {sourceLine}
+                                </Text>
+                            </View>
+                            {notesLine ? (
+                                <View style={{ marginTop: 8 }}>
+                                    <Text style={styles.dataStatusNoteNew}>Notes: {notesLine}</Text>
+                                </View>
+                            ) : null}
+                            <View style={{ marginTop: 10 }}>
+                                <Text style={styles.dataStatusDisclaimerNew}>{t.analysisIntegrityNote}</Text>
+                            </View>
+                        </GlassCard>
+
+                        <View style={{ height: 24 }} />
+                    </ScrollView>
+                </Animated.View>
             </View>
-
-            <Pressable style={styles.modalCloseButtonNew} onPress={onClose} accessibilityLabel="Close">
-              <DashboardBlur intensity={18} tint="light" style={StyleSheet.absoluteFill} />
-              <X size={18} color="#111827" />
-            </Pressable>
-          </View>
-
-          <ScrollView
-            style={styles.modalScrollNew}
-            contentContainerStyle={styles.modalScrollContentNew}
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Main content */}
-            {tile.content}
-
-            {/* Data status (always visible, consistent) */}
-            <GlassCard
-              title={`Data status: ${COVER_STATUS_LABELS[tile.dataStatus?.status ?? 'limited']}`}
-              subtitle={statusLine}
-              accentColor={accent}
-              style={{ marginTop: 14 }}
-            >
-              <View style={styles.dataStatusRowNew}>
-                <Text style={styles.dataStatusSmallNew}>
-                  Sources: {sourceLine}
-                </Text>
-              </View>
-              {notesLine ? (
-                <View style={{ marginTop: 8 }}>
-                  <Text style={styles.dataStatusNoteNew}>Notes: {notesLine}</Text>
-                </View>
-              ) : null}
-              <View style={{ marginTop: 10 }}>
-                <Text style={styles.dataStatusDisclaimerNew}>{t.analysisIntegrityNote}</Text>
-              </View>
-            </GlassCard>
-
-            <View style={{ height: 24 }} />
-          </ScrollView>
-        </Animated.View>
-      </View>
-    </Modal>
-  );
+        </Modal>
+    );
 };
 
 type IngredientDetail = {
@@ -1024,7 +1078,7 @@ const BASIS_TAG_LABELS: Record<BasisTag, string> = {
     ingredient_inference: 'inferred',
     web_evidence: 'web',
     general_advice: 'advice',
-    not_provided: 'not provided',
+    not_provided: 'limited source',
     conflict: 'conflict',
 };
 
@@ -1059,9 +1113,11 @@ const MISSING_REASON_LABELS: Record<MissingReason, string> = {
     MISSING_DOSE_RANGE: 'Dose range missing',
 };
 
-const formatMissingReasons = (reasons?: MissingReason[]) => {
+const formatMissingReasons = (reasons?: Array<MissingReason | string>) => {
     if (!Array.isArray(reasons) || reasons.length === 0) return 'None';
-    return reasons.map((reason) => MISSING_REASON_LABELS[reason] ?? reason).join(', ');
+    return reasons
+        .map((reason) => MISSING_REASON_LABELS[reason as MissingReason] ?? reason)
+        .join(', ');
 };
 
 const formatSourceRefs = (sources?: SourceRef[]) => {
@@ -1070,6 +1126,22 @@ const formatSourceRefs = (sources?: SourceRef[]) => {
         .map((source) => source.title || source.id || source.type)
         .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
         .join(' • ');
+};
+
+const toSentence = (value: string | null | undefined): string | null => {
+    if (typeof value !== 'string') return null;
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
+};
+
+const resolveFactsSourceFromIdentity = (
+    identity: AnalysisBundle['meta']['authoritativeIdentity'],
+): { source: 'lnhpd' | 'dsld' | 'web'; sourceId: string } | null => {
+    if (!identity?.value) return null;
+    if (identity.type === 'npn') return { source: 'lnhpd', sourceId: identity.value };
+    if (identity.type === 'dsldLabelId') return { source: 'dsld', sourceId: identity.value };
+    return { source: 'web', sourceId: identity.value };
 };
 
 const isBundleV4 = (bundle: AnalysisBundle): bundle is AnalysisBundleV4 =>
@@ -1113,9 +1185,6 @@ const buildBundleDataStatus = (
     notes: Array.isArray(notes) && notes.length > 0 ? notes : undefined,
 });
 
-const isScoreBlockedDataStatus = (status: DataStatus): boolean =>
-    status === 'limited' || status === 'not_provided' || status === 'error';
-
 type IngredientCoverItemLike = {
     name?: string | null;
     dose?: string | null;
@@ -1123,6 +1192,7 @@ type IngredientCoverItemLike = {
 
 type ProductSpecificInsight = {
     formLabel: string | null;
+    reasonCode: string | null;
     matchScore: number | null;
     evidenceGrade: string | null;
     effectiveFactor: number | null;
@@ -1130,17 +1200,18 @@ type ProductSpecificInsight = {
     confidenceTier: 'high' | 'medium' | 'low' | 'none';
     why: string;
     doseSignal:
-        | {
-              status: string;
-              reasonCode: string | null;
-              perServingAmount: number | null;
-              dailyAmount: number | null;
-              unit: string | null;
-          }
-        | null;
+    | {
+        status: string;
+        reasonCode: string | null;
+        perServingAmount: number | null;
+        dailyAmount: number | null;
+        unit: string | null;
+    }
+    | null;
 
     // Extra fields to support runtime KB + evidence display (optional)
     ingredientId: string | null;
+    ingredientCanonicalKey: string | null;
     formKey: string | null;
     candidateText: string | null;
     aliasText: string | null;
@@ -1159,6 +1230,49 @@ type RuntimeKbNotesState = {
     };
 };
 
+const FACTS_STATUS_TO_COVER: Record<string, CoverStatus> = {
+    complete: 'complete',
+    limited: 'limited',
+    not_provided: 'limited',
+};
+
+const FACTS_MISSING_REASON_TO_TILE: Record<string, MissingReason> = {
+    missing_directions: 'MISSING_USAGE_GUIDANCE',
+    missing_warnings: 'MISSING_SAFETY_WARNING',
+    missing_amounts: 'MISSING_DOSE_RANGE',
+    missing_units: 'MISSING_DOSE_RANGE',
+    missing_form: 'MISSING_FORM_QUALITY',
+    partial_record: 'MISSING_OVERVIEW_SUMMARY',
+};
+
+const mapFactsMissingReasonsToTile = (reasons?: string[] | null): string[] => {
+    if (!Array.isArray(reasons) || reasons.length === 0) return [];
+    const mapped = reasons
+        .map((reason) => FACTS_MISSING_REASON_TO_TILE[reason] ?? reason)
+        .filter((reason) => typeof reason === 'string' && reason.trim().length > 0) as string[];
+    return Array.from(new Set(mapped));
+};
+
+const buildUnifiedTileDataStatus = (
+    legacyDataStatus: NonNullable<TileConfig['dataStatus']>,
+    factsDataQuality?: FactsDTO['dataQuality'] | null,
+): NonNullable<TileConfig['dataStatus']> => {
+    if (!factsDataQuality) return legacyDataStatus;
+    const factsStatusRaw = typeof factsDataQuality.overallStatus === 'string' ? factsDataQuality.overallStatus : '';
+    const status = FACTS_STATUS_TO_COVER[factsStatusRaw] ?? legacyDataStatus.status;
+    const missingReasons = mapFactsMissingReasonsToTile(factsDataQuality.missingReasons) || [];
+    const notes =
+        Array.isArray(factsDataQuality.notes) && factsDataQuality.notes.length > 0
+            ? factsDataQuality.notes
+            : legacyDataStatus.notes;
+    return {
+        ...legacyDataStatus,
+        status,
+        missingReasons: missingReasons.length > 0 ? missingReasons : legacyDataStatus.missingReasons,
+        notes,
+    };
+};
+
 // Ingredient summary (DeepSeek-backed when available; deterministic fallback otherwise)
 type IngredientSummaryState = {
     status: 'idle' | 'loading' | 'ok' | 'error';
@@ -1167,6 +1281,19 @@ type IngredientSummaryState = {
     highlights?: string[];
     caveats?: string[];
     confidence_note?: string;
+    error?: string;
+};
+
+type SafetySummaryState = {
+    status: 'idle' | 'loading' | 'ok' | 'error';
+    startedAt?: number;
+    source?: 'api' | 'fallback';
+    phase?: 'instant_fallback' | 'upgraded';
+    tldr?: string;
+    riskLine?: string;
+    contextLine?: string;
+    actionLine?: string;
+    reasonCode?: string | null;
     error?: string;
 };
 
@@ -1207,6 +1334,12 @@ const toConfidenceTier = (matchScore: number | null, evidenceGrade: string | nul
     if ((score != null && score >= 0.4) || grade === 'C') return 'medium';
     if (score != null && score >= 0.35) return 'low';
     return 'none';
+};
+
+const isUnspecifiedFormSignal = (formKey?: string | null, reasonCode?: string | null): boolean => {
+    const normalizedKey = String(formKey ?? '').trim().toLowerCase();
+    const normalizedReason = String(reasonCode ?? '').trim().toUpperCase();
+    return normalizedKey === 'unspecified' || normalizedReason === 'FORM_NOT_DISCLOSED';
 };
 
 const extractProductSpecificInsights = (bundle: ScoreBundleV4 | null): Map<string, ProductSpecificInsight> => {
@@ -1260,24 +1393,31 @@ const extractProductSpecificInsights = (bundle: ScoreBundleV4 | null): Map<strin
         const evidenceGrade = normalizeEvidenceGrade(row.evidenceGrade);
         const confidenceTier = toConfidenceTier(matchScore, evidenceGrade);
         const rbfBand = toRbfBand(effectiveFactor);
+        const formKey = typeof row.formKey === 'string' ? row.formKey : null;
+        const reasonCode = typeof row.reasonCode === 'string' ? row.reasonCode : null;
+        const isUnspecified = isUnspecifiedFormSignal(formKey, reasonCode);
+        const rawFormLabel = typeof row.formLabel === 'string' ? row.formLabel : null;
         const reasonPieces = [
             effectiveFactor != null ? `effectiveFactor=${effectiveFactor.toFixed(2)}` : null,
             rbfBand !== 'unknown'
                 ? rbfBand === 'high'
                     ? '>= 1.10 threshold'
                     : rbfBand === 'normal'
-                      ? '0.90-1.09 threshold'
-                      : '< 0.90 threshold'
+                        ? '0.90-1.09 threshold'
+                        : '< 0.90 threshold'
                 : null,
             matchScore != null ? `matchScore=${matchScore.toFixed(2)}` : null,
             evidenceGrade ? `grade=${evidenceGrade}` : null,
         ].filter(Boolean);
-        const why = reasonPieces.length
-            ? `Dataset-derived form signal (${reasonPieces.join(', ')}).`
-            : 'No verified form signal available from dataset evidence.';
+        const why = isUnspecified
+            ? 'Form not disclosed on label; scoring uses a conservative neutral form assumption.'
+            : reasonPieces.length
+                ? `Dataset-derived form signal (${reasonPieces.join(', ')}).`
+                : 'No verified form signal available from dataset evidence.';
 
         const nextInsight: ProductSpecificInsight = {
-            formLabel: typeof row.formLabel === 'string' ? row.formLabel : null,
+            formLabel: isUnspecified ? null : rawFormLabel,
+            reasonCode,
             matchScore,
             evidenceGrade,
             effectiveFactor,
@@ -1286,7 +1426,9 @@ const extractProductSpecificInsights = (bundle: ScoreBundleV4 | null): Map<strin
             why,
             doseSignal: doseByIngredient.get(key) ?? null,
             ingredientId: typeof row.ingredientId === 'string' ? row.ingredientId : null,
-            formKey: typeof row.formKey === 'string' ? row.formKey : null,
+            ingredientCanonicalKey:
+                typeof row.ingredientCanonicalKey === 'string' ? row.ingredientCanonicalKey : null,
+            formKey,
             candidateText: typeof row.candidateText === 'string' ? row.candidateText : null,
             aliasText: typeof row.aliasText === 'string' ? row.aliasText : null,
         };
@@ -1361,256 +1503,45 @@ const pickKeyIngredientsForBackground = (items: IngredientCoverItemLike[] | null
     return scored.map((row) => row.name);
 };
 
-// ---------- Score explainability (distinct from the 4 content cards) ----------
-const scoreStatusFromScore = (score?: number): PillarStatus => {
-  if (score === null || score === undefined || !Number.isFinite(score)) return 'unknown';
-  if (score >= 80) return 'good';
-  if (score >= 60) return 'ok';
-  return 'warn';
-};
-
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 
 const MiniScoreHeader: React.FC<{
-  scrollY: SharedValue<number>;
-  overallScore: number;
-  title: string;
-  subtitle?: string;
-  muted?: boolean;
+    scrollY: SharedValue<number>;
+    overallScore: number;
+    title: string;
+    subtitle?: string;
+    muted?: boolean;
 }> = ({ scrollY, overallScore, title, subtitle, muted }) => {
-  const animatedStyle = useAnimatedStyle(() => {
-    const p = clamp01((scrollY.value - 210) / 70); // appears after user scrolls a bit
-    return {
-      opacity: p,
-      transform: [{ translateY: (1 - p) * -66 }],
-    };
-  }, []);
+    const animatedStyle = useAnimatedStyle(() => {
+        const p = clamp01((scrollY.value - 210) / 70); // appears after user scrolls a bit
+        return {
+            opacity: p,
+            transform: [{ translateY: (1 - p) * -66 }],
+        };
+    }, []);
 
-  return (
-    <Animated.View style={[styles.miniHeader, animatedStyle]} pointerEvents="none">
-      <DashboardBlur intensity={22} tint="light" style={StyleSheet.absoluteFill} />
-      <View style={styles.miniHeaderTint} />
+    return (
+        <Animated.View style={[styles.miniHeader, animatedStyle]} pointerEvents="none">
+            <DashboardBlur intensity={22} tint="light" style={StyleSheet.absoluteFill} />
+            <View style={styles.miniHeaderTint} />
 
-      <View style={styles.miniHeaderContent}>
-        <View style={[styles.miniScoreBubble, muted ? styles.miniScoreBubbleMuted : null]}>
-          <Text style={styles.miniScoreText}>{Math.round(overallScore)}</Text>
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.miniHeaderTitle} numberOfLines={1}>
-            {title}
-          </Text>
-          {subtitle ? (
-            <Text style={styles.miniHeaderSubtitle} numberOfLines={1}>
-              {subtitle}
-            </Text>
-          ) : null}
-        </View>
-      </View>
-    </Animated.View>
-  );
-};
-
-const ScoreInsightDeck: React.FC<{
-  display: any;
-  scores: any;
-  muted: boolean;
-  sourceType: 'label' | 'web';
-  dataStatus?: DataStatus;
-}> = ({ display, scores, muted, sourceType, dataStatus }) => {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-      UIManager.setLayoutAnimationEnabledExperimental(true);
-    }
-  }, []);
-
-  const breakdownCards = (display as any)?.breakdownCards;
-
-  const topReasonLines: string[] = useMemo(() => {
-    const out: string[] = [];
-    if (!Array.isArray(breakdownCards)) return out;
-    for (const c of breakdownCards) {
-      const bullets = (c as any)?.bullets;
-      if (Array.isArray(bullets)) {
-        for (const b of bullets) {
-          if (typeof b === 'string') out.push(b);
-          if (out.length >= 6) return out;
-        }
-      }
-    }
-    return out;
-  }, [breakdownCards]);
-
-    const factors = useMemo(() => {
-      const eff = scoreStatusFromScore(scores?.effectiveness);
-      const saf = scoreStatusFromScore(scores?.safety);
-      const integ = scoreStatusFromScore(scores?.integrity);
-
-    const integrityFromDataStatus = (ds?: DataStatus): PillarStatus => {
-      if (!ds) return integ;
-      if (ds === 'complete') return 'good';
-      if (ds === 'limited') return 'ok';
-      return 'warn';
-    };
-
-    const integrityStatus = integrityFromDataStatus(dataStatus);
-
-    return [
-      {
-        id: 'dose',
-        title: 'Dose & evidence fit',
-        summary:
-          sourceType === 'web'
-            ? 'Web listings often miss dose details.'
-            : 'Compares label doses vs typical evidence ranges (when available).',
-        triad: { effectiveness: eff, safety: 'ok' as PillarStatus, integrity: integrityStatus },
-      },
-      {
-        id: 'form',
-        title: 'Form & absorption signals',
-        summary:
-          sourceType === 'web'
-            ? 'Form is rarely disclosed on marketplaces.'
-            : 'Uses verified form + reviewed dataset factors (RBF) when disclosed.',
-        triad: { effectiveness: eff, safety: 'unknown' as PillarStatus, integrity: integrityStatus },
-      },
-      {
-        id: 'safety',
-        title: 'Safety limits & watch-outs',
-        summary:
-          'Checks label warnings first; uses UL/watch-outs only when sourced from trusted references.',
-        triad: { effectiveness: 'ok' as PillarStatus, safety: saf, integrity: integrityStatus },
-      },
-      {
-        id: 'integrity',
-        title: 'Data integrity',
-        summary:
-          sourceType === 'web'
-            ? 'We avoid scoring unless we can verify product ownership & label coverage.'
-            : 'LNHPD/DSLD + label facts take precedence; we do not assume missing fields.',
-        triad: { effectiveness: 'ok' as PillarStatus, safety: 'ok' as PillarStatus, integrity: integrityStatus },
-      },
-    ] as {
-      id: string;
-      title: string;
-      summary: string;
-      triad: { effectiveness: PillarStatus; safety: PillarStatus; integrity: PillarStatus };
-    }[];
-  }, [scores, sourceType, dataStatus]);
-
-  const toggle = (id: string) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setExpandedId((prev) => (prev === id ? null : id));
-  };
-
-  const scoreBadgeText = (display as any)?.badgeText;
-
-  return (
-    <View style={styles.scoreInsightDeck}>
-      <View style={styles.scoreInsightHeader}>
-        <Text style={styles.scoreInsightTitle}>Why this score</Text>
-        <Text style={styles.scoreInsightSubtitle}>
-          Built from verified facts + deterministic rules. We don&apos;t assume missing label fields.
-        </Text>
-      </View>
-
-      {muted ? (
-        <GlassCard
-          title="Score is limited right now"
-          subtitle={
-            sourceType === 'web'
-              ? 'We found a likely match, but could not fully verify ownership / label coverage from web evidence.'
-              : 'Some required facts are missing, so we keep conclusions conservative.'
-          }
-          accentColor="#64748B"
-          style={{ marginBottom: 12 }}
-        >
-          {scoreBadgeText ? (
-            <Text style={styles.scoreInsightNote}>Status: {scoreBadgeText}</Text>
-          ) : null}
-        </GlassCard>
-      ) : null}
-
-      <View style={styles.scoreInsightList}>
-        {factors.map((f) => {
-          const expanded = expandedId === f.id;
-          return (
-            <Pressable
-              key={f.id}
-              onPress={() => toggle(f.id)}
-              style={({ pressed }) => [
-                styles.scoreInsightItem,
-                pressed ? { opacity: 0.92 } : null,
-              ]}
-            >
-              <DashboardBlur intensity={18} tint="light" style={StyleSheet.absoluteFill} />
-
-              <View style={styles.scoreInsightItemTop}>
-                <View style={styles.scoreInsightItemLeft}>
-                  <View style={styles.scoreInsightIconBubble}>
-                    <BarChart3 size={16} color="#111827" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.scoreInsightItemTitle}>{f.title}</Text>
-                    <Text style={styles.scoreInsightItemSummary} numberOfLines={2}>
-                      {f.summary}
+            <View style={styles.miniHeaderContent}>
+                <View style={[styles.miniScoreBubble, muted ? styles.miniScoreBubbleMuted : null]}>
+                    <Text style={styles.miniScoreText}>{Math.round(overallScore)}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                    <Text style={styles.miniHeaderTitle} numberOfLines={1}>
+                        {title}
                     </Text>
-                  </View>
+                    {subtitle ? (
+                        <Text style={styles.miniHeaderSubtitle} numberOfLines={1}>
+                            {subtitle}
+                        </Text>
+                    ) : null}
                 </View>
-
-                <View style={styles.scoreInsightItemRight}>
-                  <PillarTriad
-                    effectiveness={f.triad.effectiveness}
-                    safety={f.triad.safety}
-                    integrity={f.triad.integrity}
-                  />
-                  <View style={{ marginLeft: 10, transform: [{ rotate: expanded ? '90deg' : '0deg' }] }}>
-                    <ChevronRight size={16} color="rgba(17,24,39,0.55)" />
-                  </View>
-                </View>
-              </View>
-
-              {expanded ? (
-                <View style={styles.scoreInsightExpanded}>
-                  <View style={styles.scoreMiniGrid}>
-                    <View style={styles.scoreMiniCell}>
-                      <Text style={styles.scoreMiniLabel}>Effectiveness</Text>
-                      <Text style={styles.scoreMiniValue}>{Math.round(scores?.effectiveness ?? 0)}</Text>
-                    </View>
-                    <View style={styles.scoreMiniCell}>
-                      <Text style={styles.scoreMiniLabel}>Safety</Text>
-                      <Text style={styles.scoreMiniValue}>{Math.round(scores?.safety ?? 0)}</Text>
-                    </View>
-                    <View style={styles.scoreMiniCell}>
-                      <Text style={styles.scoreMiniLabel}>Integrity</Text>
-                      <Text style={styles.scoreMiniValue}>{Math.round(scores?.integrity ?? 0)}</Text>
-                    </View>
-                  </View>
-
-                  {topReasonLines.length ? (
-                    <View style={{ marginTop: 10 }}>
-                      <Text style={styles.scoreInsightDetailTitle}>Key signals</Text>
-                      {topReasonLines.map((line, idx) => (
-                        <View key={`${f.id}-r-${idx}`} style={styles.scoreReasonRow}>
-                          <View style={styles.scoreReasonDot} />
-                          <Text style={styles.scoreReasonText}>{line}</Text>
-                        </View>
-                      ))}
-                    </View>
-                  ) : (
-                    <Text style={styles.scoreInsightNote}>
-                      We&apos;ll show more drivers here as soon as the V4 explain bundle provides structured reasons.
-                    </Text>
-                  )}
-                </View>
-              ) : null}
-            </Pressable>
-          );
-        })}
-      </View>
-    </View>
-  );
+            </View>
+        </Animated.View>
+    );
 };
 
 const AnalysisBundleDashboard: React.FC<{
@@ -1621,12 +1552,27 @@ const AnalysisBundleDashboard: React.FC<{
     scoreState?: ScoreState;
     sourceType?: SourceType;
     scoreBundleV4State?: ScoreBundleV4State;
-}> = ({ bundle, analysis, isStreaming = false, scoreBadge, scoreState = 'active', sourceType = 'barcode', scoreBundleV4State }) => {
+    onRetryScore?: () => void;
+}> = ({
+    bundle,
+    analysis,
+    isStreaming = false,
+    scoreBadge,
+    scoreState = 'active',
+    sourceType = 'barcode',
+    scoreBundleV4State,
+    onRetryScore,
+}) => {
     const { t } = useTranslation();
-    const [selectedTile, setSelectedTile] = useState<TileConfig | null>(null);
+    const [selectedTileType, setSelectedTileType] = useState<TileType | null>(null);
     const [bundleState, setBundleState] = useState<AnalysisBundle>(bundle);
     const [detailLoading, setDetailLoading] = useState(false);
     const [detailError, setDetailError] = useState<string | null>(null);
+    const [factsDtoState, setFactsDtoState] = useState<FactsDtoState>({
+        status: 'idle',
+        data: null,
+        error: null,
+    });
     const detailLoadingRef = useRef(false);
     const detailInFlightKeyRef = useRef<string | null>(null);
     const foundationMetricLoggedRef = useRef<Set<string>>(new Set());
@@ -1651,12 +1597,11 @@ const AnalysisBundleDashboard: React.FC<{
             isExpoGo,
             compatMode: expoGoDashboardCompatMode,
             forceFullDashboardEffects: FORCE_FULL_DASHBOARD_EFFECTS,
-            forceLegacyDashboard,
-            forceLegacyDashboardFromEnv,
             disableMiniHeader,
             disableScoreRing,
             disableInsightDeck,
             disableModalPane,
+            renderMode: 'modern',
             bisectRaw: DASHBOARD_BISECT_RAW,
             bisectFlags: Array.from(DASHBOARD_BISECT_FLAGS),
         });
@@ -1738,38 +1683,210 @@ const AnalysisBundleDashboard: React.FC<{
         });
     }, [bundle]);
 
+    useEffect(() => {
+        const sourceTarget = resolveFactsSourceFromIdentity(bundleState.meta.authoritativeIdentity);
+        if (!sourceTarget) {
+            setFactsDtoState({ status: 'error', data: null, error: 'Missing authoritative identity' });
+            return;
+        }
+
+        let cancelled = false;
+        const run = async () => {
+            setFactsDtoState((prev) => ({
+                status: 'loading',
+                data: prev.data,
+                error: null,
+            }));
+            try {
+                const baseUrl = String(Config.searchApiBaseUrl).replace(/\/$/, '');
+                const headers = await withAuthHeaders();
+                const res = await fetch(
+                    `${baseUrl}/api/scan-facts/v1/${encodeURIComponent(sourceTarget.source)}/${encodeURIComponent(sourceTarget.sourceId)}`,
+                    {
+                        method: 'GET',
+                        headers,
+                    },
+                );
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}`);
+                }
+                const payload = await res.json();
+                if (cancelled) return;
+                if (payload?.status !== 'ok' || !payload?.facts) {
+                    setFactsDtoState({
+                        status: 'error',
+                        data: null,
+                        error: typeof payload?.message === 'string' ? payload.message : 'Facts unavailable',
+                    });
+                    return;
+                }
+                setFactsDtoState({
+                    status: 'ready',
+                    data: payload.facts as FactsDTO,
+                    error: null,
+                });
+            } catch (error) {
+                if (cancelled) return;
+                const message = error instanceof Error ? error.message : 'Facts unavailable';
+                setFactsDtoState({ status: 'error', data: null, error: message });
+            }
+        };
+        run();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [
+        bundleState.meta.authoritativeIdentity.type,
+        bundleState.meta.authoritativeIdentity.value,
+    ]);
+
     const onTilesGridLayout = useCallback((e: LayoutChangeEvent) => {
         const nextWidth = e.nativeEvent.layout.width;
         setTilesContainerW((prev) => (Math.abs(prev - nextWidth) < 1 ? prev : nextWidth));
     }, []);
 
     const productInfo = analysis?.productInfo ?? { brand: null, name: null, category: null, image: null };
-    const productTitle = productInfo.name || 'Supplement';
     const brandForSubtitle =
         typeof productInfo.brand === 'string' && productInfo.brand.trim()
             ? formatBrandForPill(productInfo.brand)
             : null;
-    const productSubtitle = [brandForSubtitle, productInfo.category].filter(Boolean).join(' • ');
+    const rawProductSubtitle = [brandForSubtitle, productInfo.category].filter(Boolean).join(' • ');
+    const trustedDisplayIdentity = useMemo(
+        () =>
+            resolveTrustedDisplayIdentity({
+                bundleMeta: bundleState.meta,
+                productName: productInfo.name || 'Supplement',
+                productSubtitle: rawProductSubtitle,
+                authoritativeIdentity: bundleState?.meta?.authoritativeIdentity ?? null,
+                barcode: bundleState?.meta?.authoritativeIdentity?.value ?? null,
+                sources: (Array.isArray(analysis?.sources) ? analysis.sources : []).map((source: any) => ({
+                    domain: typeof source?.domain === 'string' ? source.domain : null,
+                    url: typeof source?.url === 'string' ? source.url : typeof source?.link === 'string' ? source.link : null,
+                    link: typeof source?.link === 'string' ? source.link : null,
+                })),
+                showDebugWebHintSource: SHOW_SCAN_DEBUG,
+            }),
+        [
+            analysis?.sources,
+            bundleState.meta,
+            productInfo.name,
+            rawProductSubtitle,
+        ],
+    );
+    const productTitle = trustedDisplayIdentity.title;
+    const productSubtitle = trustedDisplayIdentity.subtitle;
     const bundleSourceTypeFinal = bundleState.meta.sourceTypeFinal !== false && Number(bundleState.meta.revision) >= 1;
-    const bundleSourceType = bundleSourceTypeFinal ? bundleState.meta.sourceType : null;
+    const bundleSourceType = typeof bundleState.meta.sourceType === 'string' ? bundleState.meta.sourceType : null;
+    const verificationPresentation = useMemo(
+        () =>
+            buildVerificationPresentation({
+                meta: bundleState.meta,
+                trustedIdentity: trustedDisplayIdentity,
+                isStreaming,
+            }),
+        [bundleState.meta, isStreaming, trustedDisplayIdentity],
+    );
+    const sourceCopy = verificationPresentation.copyTokens.sourceCopy;
+    const sourceBullets = verificationPresentation.copyTokens.sourceBullets;
+    const sourceBadgeLabel = verificationPresentation.copyTokens.badgeLabel;
+    const scrubConflictingSourceLine = useCallback(
+        (value?: string | null): string | null => {
+            const text = normalizeText(value);
+            if (!text) return null;
+            if (
+                verificationPresentation.verificationStatus === 'final' &&
+                /unverified web hints?|web evidence budget was reached|shown in limited mode/i.test(text)
+            ) {
+                return null;
+            }
+            return text;
+        },
+        [verificationPresentation.verificationStatus],
+    );
 
     const overviewCover = bundleState.sections.overview.cover;
-    const overviewBullets = (overviewCover?.bullets ?? []).map((bullet) => ({
-        text: formatTaggedText(bullet.text, bullet.basisTags),
-    }));
+    const overviewSummarySeed = scrubConflictingSourceLine(overviewCover?.summary);
+    const overviewSummaryText = sanitizeCoverLine(
+        overviewSummarySeed,
+        sourceCopy,
+    );
+    const rawOverviewBullets = Array.isArray(overviewCover?.bullets)
+        ? overviewCover.bullets
+              .map((bullet) => {
+                  if (!bullet || typeof bullet !== 'object') return null;
+                  const nextText = scrubConflictingSourceLine((bullet as { text?: string | null }).text);
+                  if (!nextText) return null;
+                  return {
+                      ...(bullet as Record<string, unknown>),
+                      text: nextText,
+                  };
+              })
+              .filter((bullet): bullet is { text: string; basisTags?: BasisTag[] } => Boolean(bullet?.text))
+        : [];
+    const overviewBullets = sanitizeCoverBullets(
+        rawOverviewBullets,
+        sourceBullets,
+        2,
+    ).map((line) => {
+        if (line.isPlaceholder) return { text: line.text };
+        const raw = rawOverviewBullets.find((bullet) => bullet?.text?.trim() === line.text);
+        return { text: formatTaggedText(line.text, raw?.basisTags) };
+    });
 
     const ingredientsCover = bundleState.sections.ingredients.cover;
     const ingredientsItems = useMemo(
         () => (Array.isArray(ingredientsCover?.items) ? ingredientsCover.items : []),
         [ingredientsCover?.items]
     );
+    const recordFacts = useMemo(
+        () =>
+            buildRecordFactsViewModel({
+                bundle: bundleState,
+                facts: factsDtoState.data,
+            }),
+        [bundleState, factsDtoState.data],
+    );
+    const dataCeilingSignal = useMemo(
+        () =>
+            resolveDataCeilingSignal({
+                bundle: bundleState,
+                recordFacts,
+            }),
+        [bundleState, recordFacts],
+    );
+    const isDataCeiling = dataCeilingSignal.isDataCeiling;
+    const dataCeilingReasonNote = useMemo(() => {
+        switch (dataCeilingSignal.reason) {
+            case 'MISSING_MEDICINAL_INGREDIENTS':
+                return 'This source record does not include medicinal ingredient fields.';
+            case 'MISSING_AMOUNT_FIELDS':
+                return 'This source record includes ingredient names, but amount fields are missing.';
+            case 'PARSER_GAP_FIXABLE':
+                return 'Source fields appear present, but ingredient amounts could not be parsed yet.';
+            case 'MAPPING_GAP_NO_BARCODE':
+                return 'A source record was found, but barcode mapping is incomplete for full ingredient detail.';
+            default:
+                return 'This verified source record is missing ingredient amount fields.';
+        }
+    }, [dataCeilingSignal.reason]);
+    const dataCeilingOverviewLine = isDataCeiling
+        ? 'We found a verified record, but it doesn’t include ingredient amounts.'
+        : null;
+    const dataCeilingActionLine = isDataCeiling
+        ? 'Scan the Supplement Facts label for full details.'
+        : null;
+    const dataCeilingScienceLead = isDataCeiling ? 'Ingredients aren’t available in this record.' : null;
+    const dataCeilingScienceAction = isDataCeiling ? 'Try label scan to identify ingredients and amounts.' : null;
     const ingredientsNotProvidedCopy =
-        bundleSourceType === 'lnhpd'
-            ? 'Not provided by LNHPD for this NPN.'
+        isDataCeiling
+            ? 'Ingredients aren’t available in this record. Try label scan to identify ingredients and amounts.'
+            : bundleSourceType === 'lnhpd'
+            ? 'Ingredients are not listed in the LNHPD record for this NPN. Capture the Supplement Facts panel to unlock ingredient analysis.'
             : bundleSourceType === 'dsld'
-              ? 'Not provided by DSLD for this label.'
-              : 'Not provided by source.';
-    const ingredientMechanisms: Mechanism[] = ingredientsItems.length
+                ? 'Ingredients are not listed in the DSLD record for this label. Capture the Supplement Facts panel to unlock ingredient analysis.'
+                : 'Ingredient information is not available from this source. Scan the Supplement Facts panel.';
+    const ingredientMechanisms: Mechanism[] = ingredientsItems.length > 0
         ? ingredientsItems.slice(0, 3).map((item) => ({
             name: item.name,
             amount: item.dose ?? '',
@@ -1777,22 +1894,42 @@ const AnalysisBundleDashboard: React.FC<{
             mode: item.dose ? 'actual' : 'unknown',
             showInfo: item.basisTags.length > 0,
         }))
+        : recordFacts.ingredientRows.length > 0
+            ? recordFacts.ingredientRows.slice(0, 3).map((item) => ({
+                name: item.name,
+                amount: item.doseLine ?? '',
+                fill: item.doseLine ? 0.75 : 0.4,
+                mode: item.doseLine ? 'actual' : 'unknown',
+                showInfo: false,
+            }))
         : [
             {
                 name:
                     bundleState.sections.ingredients.dataStatus === 'not_provided'
-                        ? ingredientsNotProvidedCopy.replace(/\.$/, '')
-                        : 'No ingredient list available',
+                        ? (isDataCeiling
+                            ? 'Ingredients aren’t available in this record'
+                            : ingredientsNotProvidedCopy.replace(/\.$/, ''))
+                        : 'Ingredient list not available — scan a Supplement Facts panel to unlock.',
                 amount: '',
                 fill: 0.35,
                 mode: 'unknown',
                 showInfo: false,
             },
         ];
+    const ingredientRowsForRanking = useMemo(
+        () =>
+            ingredientsItems.length > 0
+                ? (ingredientsItems as unknown as IngredientCoverItemLike[])
+                : recordFacts.ingredientRows.map((row) => ({
+                    name: row.name,
+                    dose: row.doseLine ?? '',
+                })) as unknown as IngredientCoverItemLike[],
+        [ingredientsItems, recordFacts.ingredientRows],
+    );
 
     const keyIngredientsRanked = useMemo(
-        () => pickKeyIngredientsForBackground(ingredientsItems as unknown as IngredientCoverItemLike[]),
-        [ingredientsItems]
+        () => pickKeyIngredientsForBackground(ingredientRowsForRanking),
+        [ingredientRowsForRanking]
     );
     const keyIngredientsForIngredients = useMemo(
         () => keyIngredientsRanked.slice(0, 3),
@@ -1802,12 +1939,48 @@ const AnalysisBundleDashboard: React.FC<{
         () => keyIngredientsRanked.slice(0, 2),
         [keyIngredientsRanked]
     );
+    const [activeSafetyIngredientName, setActiveSafetyIngredientName] = useState<string | null>(
+        keyIngredientsForSafety[0] ?? null,
+    );
+    useEffect(() => {
+        const nextKeys = keyIngredientsForSafety.map((name) => normalizeIngredientNameForBackground(name));
+        const activeKey = activeSafetyIngredientName ? normalizeIngredientNameForBackground(activeSafetyIngredientName) : null;
+        if (!activeKey || !nextKeys.includes(activeKey)) {
+            setActiveSafetyIngredientName(keyIngredientsForSafety[0] ?? null);
+        }
+    }, [keyIngredientsForSafety, activeSafetyIngredientName]);
+    const activeSafetyIngredientKey = activeSafetyIngredientName
+        ? normalizeIngredientNameForBackground(activeSafetyIngredientName)
+        : null;
     const v4ResponseForInsights =
         scoreBundleV4State?.status === 'ready' ? scoreBundleV4State.response : null;
     const v4BundleForInsights = v4ResponseForInsights?.status === 'ok' ? v4ResponseForInsights.bundle : null;
     const productSpecificInsightsByIngredient = useMemo(
         () => extractProductSpecificInsights(v4BundleForInsights),
         [v4BundleForInsights]
+    );
+    // P0-2: Moved state declaration up so assembledInsights useMemo can reference it
+    const [runtimeKbNotesByKey, setRuntimeKbNotesByKey] = useState<Record<string, RuntimeKbNotesState>>({});
+    const assembledInsights = useMemo(
+        () => {
+            // P0-2: runtimeKbNotesByKey now uses normalizedIngredientName|formKey keys.
+            const reviewedSegmentsByIngredient: Record<string, Record<string, string[]> | null> = {};
+            for (const [compositeKey, notes] of Object.entries(runtimeKbNotesByKey)) {
+                if (notes?.status !== 'ok' || !notes.segmentsByBucket) continue;
+                const [ingredientKey] = compositeKey.split('|');
+                if (!ingredientKey) continue;
+                reviewedSegmentsByIngredient[ingredientKey] = notes.segmentsByBucket;
+            }
+
+            return assembleInsightsDTO({
+                facts: factsDtoState.data,
+                scoreBundle: v4BundleForInsights,
+                reviewedSegmentsByIngredient: Object.keys(reviewedSegmentsByIngredient).length > 0
+                    ? reviewedSegmentsByIngredient
+                    : undefined,
+            });
+        },
+        [factsDtoState.data, v4BundleForInsights, runtimeKbNotesByKey],
     );
 
     useEffect(() => {
@@ -1825,14 +1998,42 @@ const AnalysisBundleDashboard: React.FC<{
     }, [bundleSourceTypeFinal, bundleState.meta.factsDigestHash, keyIngredientsForIngredients]);
 
     const usageCover = bundleState.sections.usage.cover;
-    const usageBullets = (usageCover?.bullets ?? []).map((bullet) => ({
-        text: formatTaggedText(bullet.text, bullet.basisTags),
-    }));
-    const usageRoutine = usageCover?.bestTimeToTake?.text ?? usageCover?.dosage?.text ?? null;
+    const rawUsageBullets = usageCover?.bullets ?? [];
+    const usageBullets = sanitizeCoverBullets(
+        rawUsageBullets,
+        [
+            'Use the product label first for dosing decisions.',
+            'Scan the Directions panel to unlock more product-specific usage guidance.',
+        ],
+        3,
+    ).map((line) => {
+        if (line.isPlaceholder) return { text: line.text };
+        const raw = rawUsageBullets.find((bullet) => bullet?.text?.trim() === line.text);
+        return { text: formatTaggedText(line.text, raw?.basisTags) };
+    });
+    const usageRoutine = sanitizeCoverLine(
+        usageCover?.bestTimeToTake?.text ?? usageCover?.dosage?.text ?? null,
+        'Follow the package label directions for timing and dose.',
+    );
 
     const safetyCover = bundleState.sections.safety.cover;
-    const safetyBullet0Text = normalizeText(safetyCover?.bullets?.[0]?.text ?? null);
-    const safetyBullet1Text = normalizeText(safetyCover?.bullets?.[1]?.text ?? null);
+    const safetyPending = bundleState.sections.safety.dataStatus === 'pending';
+    const safetyBullet0Raw = safetyCover?.bullets?.[0];
+    const safetyBullet1Raw = safetyCover?.bullets?.[1];
+    const safetyWarningCoverText = sanitizeCoverLine(
+        safetyBullet0Raw ? formatTaggedText(safetyBullet0Raw.text, safetyBullet0Raw.basisTags) : null,
+        safetyPending
+            ? 'Safety summary pending.'
+            : 'Safety data is limited for this source. Consult your clinician for personal guidance.',
+    );
+    const safetyTipCoverText = sanitizeCoverLine(
+        safetyBullet1Raw ? formatTaggedText(safetyBullet1Raw.text, safetyBullet1Raw.basisTags) : null,
+        safetyPending
+            ? 'Safety tips pending.'
+            : 'General reminder: check the label and consult a clinician if needed.',
+    );
+    const safetyBullet0Text = normalizeText(safetyWarningCoverText);
+    const safetyBullet1Text = normalizeText(safetyTipCoverText);
     const showGeneralWatchOuts = !bundleState.sections.safety.detail?.warnings?.length && keyIngredientsForSafety.length > 0;
     const hasAnyProductSpecificSignal = useMemo(() => {
         for (const ingredientName of keyIngredientsForIngredients) {
@@ -1840,7 +2041,10 @@ const AnalysisBundleDashboard: React.FC<{
             if (!key) continue;
             const insight = productSpecificInsightsByIngredient.get(key);
             if (!insight) continue;
-            const hasForm = typeof insight.formLabel === 'string' && insight.formLabel.trim().length > 0;
+            const hasForm =
+                typeof insight.formLabel === 'string'
+                && insight.formLabel.trim().length > 0
+                && !isUnspecifiedFormSignal(insight.formKey, insight.reasonCode);
             const hasRbf = typeof insight.effectiveFactor === 'number' && Number.isFinite(insight.effectiveFactor);
             const hasDose =
                 typeof insight.doseSignal?.status === 'string' &&
@@ -1853,6 +2057,26 @@ const AnalysisBundleDashboard: React.FC<{
     const ingredientsNotes = hasAnyProductSpecificSignal
         ? undefined
         : ['Product-specific signals are limited for current evidence set.'];
+    const scienceTopIngredients = useMemo(
+        () =>
+            [
+                ...(ingredientsItems.length > 0
+                    ? ingredientsItems
+                    : recordFacts.ingredientRows.map((row) => ({
+                        name: row.name,
+                        dose: row.doseLine ?? '',
+                        basisTags: [] as BasisTag[],
+                    }))),
+            ]
+                .sort((a, b) => {
+                    const aHasDose = normalizeText(a?.dose ?? '').length > 0 ? 1 : 0;
+                    const bHasDose = normalizeText(b?.dose ?? '').length > 0 ? 1 : 0;
+                    if (aHasDose !== bHasDose) return bHasDose - aHasDose;
+                    return normalizeText(a?.name ?? '').localeCompare(normalizeText(b?.name ?? ''));
+                })
+                .slice(0, 3),
+        [ingredientsItems, recordFacts.ingredientRows],
+    );
     const safetyNotes = showGeneralWatchOuts
         ? ['No label-specific warnings detected; general watch-outs shown.']
         : undefined;
@@ -1895,7 +2119,10 @@ const AnalysisBundleDashboard: React.FC<{
             const hasEvidenceSignal =
                 (typeof insight.matchScore === 'number' && Number.isFinite(insight.matchScore))
                 || (typeof insight.doseSignal?.status === 'string' && insight.doseSignal.status !== 'unknown');
-            const hasFormSignal = typeof insight.formLabel === 'string' && insight.formLabel.trim().length > 0;
+            const hasFormSignal =
+                typeof insight.formLabel === 'string'
+                && insight.formLabel.trim().length > 0
+                && !isUnspecifiedFormSignal(insight.formKey, insight.reasonCode);
             if (hasEvidenceSignal) hasEvidenceMapping = true;
             if (hasFormSignal) hasFormQuality = true;
             if (hasEvidenceMapping && hasFormQuality) break;
@@ -1985,6 +2212,22 @@ const AnalysisBundleDashboard: React.FC<{
         showGeneralWatchOuts,
         safetyNotes,
     ]);
+    const unifiedOverviewDataStatus = useMemo(
+        () => buildUnifiedTileDataStatus(overviewDataStatus, factsDtoState.data?.dataQuality),
+        [overviewDataStatus, factsDtoState.data?.dataQuality],
+    );
+    const unifiedIngredientsDataStatus = useMemo(
+        () => buildUnifiedTileDataStatus(ingredientsDataStatus, factsDtoState.data?.dataQuality),
+        [ingredientsDataStatus, factsDtoState.data?.dataQuality],
+    );
+    const unifiedUsageDataStatus = useMemo(
+        () => buildUnifiedTileDataStatus(usageDataStatus, factsDtoState.data?.dataQuality),
+        [usageDataStatus, factsDtoState.data?.dataQuality],
+    );
+    const unifiedSafetyDataStatus = useMemo(
+        () => buildUnifiedTileDataStatus(safetyDataStatus, factsDtoState.data?.dataQuality),
+        [safetyDataStatus, factsDtoState.data?.dataQuality],
+    );
 
     const fetchIngredientsDetail = useCallback(async () => {
         if (!isIngredientsDetailReady(bundleState)) {
@@ -1999,7 +2242,7 @@ const AnalysisBundleDashboard: React.FC<{
             0;
         // If we don't have any actives, detail is not applicable and we must not hammer the API.
         if (coverTotalCount <= 0) {
-            setDetailError('No ingredient list available from the source.');
+            setDetailError('Ingredient list not available from this source. Scan the Supplement Facts panel for ingredient-level analysis.');
             setBundleState((prev) => {
                 if (isBundleV4(prev)) {
                     return {
@@ -2247,7 +2490,7 @@ const AnalysisBundleDashboard: React.FC<{
         if (autoFetchKeyRef.current && autoFetchKeyRef.current !== key) {
             autoFetchKeyRef.current = null;
         }
-        if (selectedTile?.type !== 'science') {
+        if (selectedTileType !== 'science') {
             return;
         }
         if (autoFetchKeyRef.current === key) return;
@@ -2256,73 +2499,119 @@ const AnalysisBundleDashboard: React.FC<{
             autoFetchKeyRef.current = key;
             fetchIngredientsDetail();
         }
-    }, [selectedTile, bundleState, detailLoading, fetchIngredientsDetail]);
+    }, [selectedTileType, bundleState, detailLoading, fetchIngredientsDetail]);
 
-const overviewContent = (
-  <View style={styles.detailStack}>
-    <GlassCard
-      title="At a glance"
-      subtitle="Summarized from facts (not vibes)"
-      accentColor="#2563EB"
-      right={<GlassPill label={bundleSourceType === 'web' ? 'Web evidence' : 'Label facts'} />}
-    >
-      <Text style={styles.detailLeadText}>
-        {safeBundleRead(() => {
-          const summary = typeof overviewCover?.summary === 'string' ? overviewCover.summary.trim() : '';
-          return summary || 'Overview summary pending.';
-        }, 'Overview summary pending.')}
-      </Text>
-    </GlassCard>
+    const overviewFacts = factsDtoState.data;
+    const overviewGapNotes = buildGapActionSentences(overviewFacts?.dataQuality?.missingReasons, 'overview');
+    const overviewWhatIsLines = enforceNeverBlank({
+        lines: [
+            toSentence(
+                `${overviewFacts?.product?.name ?? productTitle} by ${overviewFacts?.product?.brand ?? (brandForSubtitle ?? 'Unknown brand')
+                } — ${verificationPresentation.copyTokens.overviewLead}`,
+            ),
+            isDataCeiling ? dataCeilingOverviewLine : overviewSummarySeed,
+            isDataCeiling
+                ? dataCeilingActionLine
+                : (
+                    recordFacts.topIngredient?.name
+                        ? `Key ingredient detected: ${recordFacts.topIngredient.name}.`
+                        : null
+                ),
+        ],
+        fallback: [
+            verificationPresentation.copyTokens.sourceCopy,
+            'Add clearer label evidence to improve product-level context.',
+        ],
+    });
 
-    <GlassCard
-      title="Highlights"
-      subtitle="What this product may help with"
-      accentColor="#2563EB"
-    >
-      {Array.isArray(overviewCover?.bullets) && overviewCover.bullets.length > 0 ? (
-        <View style={{ gap: 10 }}>
-          {overviewCover.bullets.slice(0, 4).map((b, idx) => (
-            <View key={`ov-b-${idx}`} style={styles.bulletRow}>
-              <View style={styles.bulletDot} />
-              <Text style={styles.bulletText}>
-                {formatTaggedText(b.text, b.basisTags)}
-              </Text>
-            </View>
-          ))}
+    const overviewVerifiedLines = enforceNeverBlank({
+        lines: [
+            isDataCeiling
+                ? 'Active ingredients were not provided in this verified record.'
+                : `Active ingredients detected: ${recordFacts.ingredientCount}.`,
+            recordFacts.servingSizeText
+                ? `Serving size on record: ${recordFacts.servingSizeText}.`
+                : null,
+            overviewFacts?.usage?.dosageForm ? `Dosage form on record: ${overviewFacts.usage.dosageForm}.` : null,
+            recordFacts.perServingDoseLine
+                ? `Per-serving dose from record: ${recordFacts.perServingDoseLine}.`
+                : isDataCeiling
+                    ? 'Per-serving dose from record is unavailable.'
+                    : null,
+            isDataCeiling ? `Reason: ${dataCeilingReasonNote}` : null,
+        ],
+        fallback: [
+            'Ingredient-level verification is available for this product.',
+            'When dosage form or serving fields are missing, we keep guidance conservative.',
+        ],
+    });
+
+    const overviewQualityLines = enforceNeverBlank({
+        lines: [
+            `Data quality status: ${overviewFacts?.dataQuality?.overallStatus ?? COVER_STATUS_LABELS[unifiedOverviewDataStatus.status]}.`,
+            isDataCeiling ? dataCeilingOverviewLine : null,
+            isDataCeiling ? dataCeilingActionLine : null,
+            ...(overviewFacts?.dataQuality?.notes ?? []),
+            ...overviewGapNotes,
+        ],
+        fallback: [
+            'Some expected fields are missing in this source record.',
+            'Capture Supplement Facts + Directions panels to improve product-specific detail.',
+        ],
+    });
+
+    const overviewContent = (
+        <View style={styles.detailStack}>
+            <GlassCard
+                title="What this product is"
+                subtitle={verificationPresentation.copyTokens.overviewSubtitle}
+                accentColor="#2563EB"
+                right={<GlassPill label={verificationPresentation.copyTokens.evidencePillLabel} />}
+            >
+                <View style={{ gap: 10 }}>
+                    {overviewWhatIsLines.map((line, idx) => (
+                        <Text key={`ov-what-${idx}`} style={idx === 0 ? styles.detailLeadText : styles.detailBodyText}>
+                            {line}
+                        </Text>
+                    ))}
+                </View>
+            </GlassCard>
+
+            <GlassCard title={verificationPresentation.copyTokens.factsCardTitle} subtitle="Facts-first checks" accentColor="#2563EB">
+                <View style={{ gap: 10 }}>
+                    {overviewVerifiedLines.map((line, idx) => (
+                        <View key={`ov-ver-${idx}`} style={styles.bulletRow}>
+                            <View style={styles.bulletDot} />
+                            <Text style={styles.bulletText}>{line}</Text>
+                        </View>
+                    ))}
+                </View>
+            </GlassCard>
+
+            <GlassCard title="Context notes" subtitle="What is missing and why" accentColor="#2563EB">
+                <View style={{ gap: 10 }}>
+                    {overviewQualityLines.map((line, idx) => (
+                        <Text key={`ov-qual-${idx}`} style={styles.detailBodyText}>
+                            {line}
+                        </Text>
+                    ))}
+                </View>
+            </GlassCard>
         </View>
-      ) : (
-        <Text style={styles.detailPlaceholderText}>Overview summary pending.</Text>
-      )}
-    </GlassCard>
+    );
 
-    <GlassCard
-      title="Data quality"
-      subtitle={`Status: ${COVER_STATUS_LABELS[overviewDataStatus.status]}`}
-      accentColor="#2563EB"
-    >
-      <Text style={styles.detailBodyText}>
-        Missing: {formatMissingReasons(overviewDataStatus.missingReasons)}
-      </Text>
-      <Text style={styles.detailMetaText}>
-        Sources: {formatSourceRefs(overviewDataStatus.sources)}
-      </Text>
-      {overviewDataStatus.notes?.length ? (
-        <Text style={styles.detailFootnoteText}>
-          Notes: {overviewDataStatus.notes.join(' • ')}
-        </Text>
-      ) : null}
-    </GlassCard>
-  </View>
-);
-
-const ingredientsDetail = bundleState.sections.ingredients.detail;
+    const ingredientsDetail = bundleState.sections.ingredients.detail;
 
 
     // --- Science & Ingredients: per-ingredient detail view state ---
     const keyIngredientsForDetail = useMemo(() => {
         const preferred = keyIngredientsForIngredients.length
             ? keyIngredientsForIngredients
-            : ingredientsItems.map((i) => i.name).filter(Boolean);
+            : (
+                ingredientsItems.length > 0
+                    ? ingredientsItems.map((i) => i.name).filter(Boolean)
+                    : recordFacts.ingredientRows.map((row) => row.name).filter(Boolean)
+            );
 
         const deduped: string[] = [];
         const seen = new Set<string>();
@@ -2334,7 +2623,7 @@ const ingredientsDetail = bundleState.sections.ingredients.detail;
             deduped.push(name);
         }
         return deduped.slice(0, 3);
-    }, [keyIngredientsForIngredients, ingredientsItems]);
+    }, [keyIngredientsForIngredients, ingredientsItems, recordFacts.ingredientRows]);
 
     const [activeIngredientName, setActiveIngredientName] = useState<string | null>(
         keyIngredientsForDetail[0] ?? null
@@ -2354,6 +2643,14 @@ const ingredientsDetail = bundleState.sections.ingredients.detail;
         if (!activeIngredientKey) return null;
         return ingredientsItems.find((i) => normalizeIngredientNameForBackground(i.name) === activeIngredientKey) ?? null;
     }, [ingredientsItems, activeIngredientKey]);
+    const activeIngredientRecord = useMemo(() => {
+        if (!activeIngredientKey) return null;
+        return (
+            recordFacts.ingredientRows.find(
+                (item) => normalizeIngredientNameForBackground(item.name) === activeIngredientKey,
+            ) ?? null
+        );
+    }, [activeIngredientKey, recordFacts.ingredientRows]);
 
     const activeIngredientDetail = useMemo(() => {
         if (!activeIngredientKey) return null;
@@ -2367,21 +2664,25 @@ const ingredientsDetail = bundleState.sections.ingredients.detail;
     }, [productSpecificInsightsByIngredient, activeIngredientKey]);
 
     const activeIngredientLabelLine = useMemo(() => {
-        const selectedName = activeIngredientName ? capitalizeSentences(activeIngredientName) : 'No ingredient selected';
-        const labelDose =
-            typeof activeIngredientCover?.dose === 'string' ? activeIngredientCover.dose.trim() : '';
+        const selectedName = activeIngredientName
+            ? capitalizeSentences(activeIngredientName)
+            : (isDataCeiling ? 'Ingredients unavailable in this record' : 'No ingredient selected');
+        const labelDose = normalizeText(
+            typeof activeIngredientCover?.dose === 'string'
+                ? activeIngredientCover.dose
+                : activeIngredientRecord?.doseLine,
+        );
         if (labelDose) {
             return `${selectedName} • ${labelDose}`;
         }
-        return `${selectedName} • Dose not disclosed on label`;
-    }, [activeIngredientName, activeIngredientCover?.dose]);
+        return `${selectedName} • ${isDataCeiling ? 'Scan Supplement Facts to continue' : 'Dose not disclosed on label'}`;
+    }, [activeIngredientName, activeIngredientCover?.dose, activeIngredientRecord?.doseLine, isDataCeiling]);
 
-    // Runtime KB notes cache (ingredientId+formKey)
-    const [runtimeKbNotesByKey, setRuntimeKbNotesByKey] = useState<Record<string, RuntimeKbNotesState>>({});
+    // Runtime KB notes cache keyed by normalizedIngredientName|formKey.
 
     const activeRuntimeKey =
-        activeProductInsight?.ingredientId && activeProductInsight?.formKey
-            ? `${activeProductInsight.ingredientId}|${activeProductInsight.formKey}`
+        activeIngredientKey && activeProductInsight?.formKey
+            ? `${activeIngredientKey}|${activeProductInsight.formKey}`
             : null;
 
     const activeRuntimeNotes = activeRuntimeKey ? runtimeKbNotesByKey[activeRuntimeKey] : undefined;
@@ -2389,13 +2690,14 @@ const ingredientsDetail = bundleState.sections.ingredients.detail;
 
     useEffect(() => {
         const FORM_MATCH_GATE = 0.35;
-        if (selectedTile?.type !== 'science') return;
+        if (selectedTileType !== 'science') return;
+        if (!activeIngredientKey) return;
         if (!activeProductInsight?.ingredientId || !activeProductInsight?.formKey) return;
         if ((activeProductInsight.matchScore ?? 0) < FORM_MATCH_GATE) return;
 
         if (activeRuntimeStatus && ['loading', 'ok', 'not_found', 'error'].includes(activeRuntimeStatus)) return;
 
-        const key = `${activeProductInsight.ingredientId}|${activeProductInsight.formKey}`;
+        const key = `${activeIngredientKey}|${activeProductInsight.formKey}`;
 
         const run = async () => {
             try {
@@ -2414,10 +2716,12 @@ const ingredientsDetail = bundleState.sections.ingredients.detail;
                     },
                     body: JSON.stringify({
                         locale: 'en',
-                        requests: [
+                        items: [
                             {
                                 ingredientId: activeProductInsight.ingredientId,
                                 formKey: activeProductInsight.formKey,
+                                ingredientName: activeIngredientName ?? undefined,
+                                ingredientCanonicalKey: activeProductInsight.ingredientCanonicalKey ?? undefined,
                             },
                         ],
                     }),
@@ -2460,8 +2764,8 @@ const ingredientsDetail = bundleState.sections.ingredients.detail;
                             typeof seg?.kind === 'string'
                                 ? seg.kind
                                 : typeof seg?.bucket === 'string'
-                                  ? seg.bucket
-                                  : null;
+                                    ? seg.bucket
+                                    : null;
                         const t = typeof seg?.text === 'string' ? seg.text : null;
                         if (!bucket || !t) continue;
                         if (!segmentsByBucket[bucket]) segmentsByBucket[bucket] = [];
@@ -2469,11 +2773,32 @@ const ingredientsDetail = bundleState.sections.ingredients.detail;
                     }
                 }
 
+                const nestedMeta = (match?.meta && typeof match.meta === 'object') ? match.meta : null;
                 const meta = {
-                    source: typeof match?.source === 'string' ? match.source : undefined,
-                    packageSha256: typeof match?.packageSha256 === 'string' ? match.packageSha256 : undefined,
-                    reviewedAt: typeof match?.reviewedAt === 'string' ? match.reviewedAt : undefined,
-                    formDisplay: typeof match?.formDisplay === 'string' ? match.formDisplay : undefined,
+                    source:
+                        (nestedMeta && typeof (nestedMeta as any).source === 'string'
+                            ? (nestedMeta as any).source
+                            : typeof match?.source === 'string'
+                                ? match.source
+                                : undefined),
+                    packageSha256:
+                        (nestedMeta && typeof (nestedMeta as any).packageSha256 === 'string'
+                            ? (nestedMeta as any).packageSha256
+                            : typeof match?.packageSha256 === 'string'
+                                ? match.packageSha256
+                                : undefined),
+                    reviewedAt:
+                        (nestedMeta && typeof (nestedMeta as any).reviewedAt === 'string'
+                            ? (nestedMeta as any).reviewedAt
+                            : typeof match?.reviewedAt === 'string'
+                                ? match.reviewedAt
+                                : undefined),
+                    formDisplay:
+                        (nestedMeta && typeof (nestedMeta as any).formDisplay === 'string'
+                            ? (nestedMeta as any).formDisplay
+                            : typeof match?.formDisplay === 'string'
+                                ? match.formDisplay
+                                : undefined),
                 };
 
                 if (statusRaw !== 'ok') {
@@ -2507,8 +2832,11 @@ const ingredientsDetail = bundleState.sections.ingredients.detail;
 
         run();
     }, [
-        selectedTile?.type,
+        selectedTileType,
+        activeIngredientKey,
+        activeIngredientName,
         activeProductInsight?.ingredientId,
+        activeProductInsight?.ingredientCanonicalKey,
         activeProductInsight?.formKey,
         activeProductInsight?.matchScore,
         activeRuntimeStatus,
@@ -2526,9 +2854,97 @@ const ingredientsDetail = bundleState.sections.ingredients.detail;
     const activeSummaryStatus = activeSummary?.status;
     const activeRuntimeSegments = activeRuntimeNotes?.segmentsByBucket ?? null;
     const activeIngredientDose = activeIngredientCover?.dose ?? null;
+    const activeFactsIngredient = useMemo(() => {
+        if (!activeIngredientKey) return null;
+        const actives = factsDtoState.data?.ingredients?.actives ?? [];
+        return (
+            actives.find((item) => normalizeIngredientNameForBackground(item.name) === activeIngredientKey) ?? null
+        );
+    }, [activeIngredientKey, factsDtoState.data?.ingredients?.actives]);
+
+    const activeInsightFromDto = useMemo(() => {
+        if (!activeIngredientKey) return null;
+        return (
+            assembledInsights?.keyIngredientsInsights?.find(
+                (item) => normalizeIngredientNameForBackground(item.name) === activeIngredientKey,
+            ) ?? null
+        );
+    }, [activeIngredientKey, assembledInsights]);
+    const hasInferredSpecificForm = Boolean(
+        activeProductInsight?.formLabel
+        && activeProductInsight.formLabel.trim().length > 0
+        && !isUnspecifiedFormSignal(activeProductInsight.formKey, activeProductInsight.reasonCode),
+    );
+
+    const activeWhyPayload = useMemo(() => {
+        if (!activeIngredientName) return null;
+        return buildWhyBullets({
+            ingredientName: activeIngredientName,
+            formText: activeFactsIngredient?.formText ?? null,
+            formSource: activeFactsIngredient?.formText ? 'facts' : hasInferredSpecificForm ? 'inferred' : 'none',
+            formKey: activeProductInsight?.formKey ?? null,
+            reasonCode: activeProductInsight?.reasonCode ?? null,
+            formLabel: activeProductInsight?.formLabel ?? null,
+            matchScore: activeProductInsight?.matchScore ?? null,
+            evidenceGrade: activeProductInsight?.evidenceGrade ?? null,
+            rbfFactor: activeProductInsight?.effectiveFactor ?? null,
+            rbfBand: activeProductInsight?.rbfBand ?? 'unknown',
+            doseSignal: activeProductInsight?.doseSignal ?? null,
+            reviewedSegments: activeRuntimeSegments,
+        });
+    }, [
+        activeIngredientName,
+        activeFactsIngredient?.formText,
+        activeProductInsight?.formLabel,
+        activeProductInsight?.formKey,
+        activeProductInsight?.reasonCode,
+        activeProductInsight?.matchScore,
+        activeProductInsight?.evidenceGrade,
+        activeProductInsight?.effectiveFactor,
+        activeProductInsight?.rbfBand,
+        activeProductInsight?.doseSignal,
+        activeRuntimeSegments,
+        hasInferredSpecificForm,
+    ]);
+    const hasFactsSpecificForm = Boolean(activeFactsIngredient?.formText && activeFactsIngredient.formText.trim().length > 0);
+    const hasSpecificFormSignal = hasFactsSpecificForm || hasInferredSpecificForm;
+    const hasUnspecifiedFormFallback = isUnspecifiedFormSignal(
+        activeProductInsight?.formKey,
+        activeProductInsight?.reasonCode,
+    );
+    const activeFormDisplayText =
+        activeFactsIngredient?.formText ??
+        (hasInferredSpecificForm ? activeProductInsight?.formLabel : null) ??
+        activeInsightFromDto?.form?.text ??
+        'Form not disclosed on label; we do not assume.';
+    const activeRbfFactor =
+        activeInsightFromDto?.rbf?.factor ??
+        (hasUnspecifiedFormFallback ? null : activeProductInsight?.effectiveFactor ?? null);
+    const activeRbfBand =
+        activeInsightFromDto?.rbf?.band ??
+        (hasUnspecifiedFormFallback ? 'unknown' : activeProductInsight?.rbfBand ?? 'unknown');
+    const activeConfidenceText = activeInsightFromDto
+        ? activeInsightFromDto.confidenceNote
+        : `Confidence: ${activeProductInsight?.confidenceTier ?? 'none'}.`;
+    const scienceDatasetSubtitle =
+        verificationPresentation.verificationStatus === 'final'
+            ? 'Verified dataset (when available)'
+            : verificationPresentation.verificationStatus === 'likely'
+                ? 'Likely matched dataset (verify on label)'
+                : verificationPresentation.verificationStatus === 'pending'
+                    ? 'Dataset verification in progress'
+                    : 'Dataset signals are limited for this source';
+    const scienceDatasetPill =
+        verificationPresentation.verificationStatus === 'final'
+            ? 'Verified dataset'
+            : verificationPresentation.verificationStatus === 'likely'
+                ? 'Likely dataset'
+                : verificationPresentation.verificationStatus === 'pending'
+                    ? 'Verifying dataset'
+                    : 'Limited dataset';
 
     useEffect(() => {
-        if (selectedTile?.type !== 'science') return;
+        if (selectedTileType !== 'science') return;
         if (!activeIngredientName || !activeIngredientKey) return;
 
         if (activeSummaryStatus && ['loading', 'ok'].includes(activeSummaryStatus)) return;
@@ -2552,7 +2968,7 @@ const ingredientsDetail = bundleState.sections.ingredients.detail;
                 highlights.push(`Label dose: ${coverDose}.`);
             }
 
-            if (activeProductInsight?.effectiveFactor) {
+            if (activeProductInsight?.effectiveFactor && !hasUnspecifiedFormFallback) {
                 const factor = activeProductInsight.effectiveFactor.toFixed(2);
                 highlights.push(`Reviewed dataset suggests this form trends ${activeProductInsight.rbfBand.toLowerCase()} on relative bioavailability (RBF ${factor}).`);
             }
@@ -2575,9 +2991,9 @@ const ingredientsDetail = bundleState.sections.ingredients.detail;
                 : null;
             const formFromLabel = Boolean(
                 chemicalFormExplain &&
-                    !(chemicalFormExplain.basisTags ?? []).includes('not_provided')
+                !(chemicalFormExplain.basisTags ?? []).includes('not_provided')
             );
-            if (!formFromLabel && !activeProductInsight?.formLabel) {
+            if (!formFromLabel && !hasInferredSpecificForm) {
                 caveats.push('Chemical form was not disclosed by the source, so absorption-specific insights are limited.');
             }
 
@@ -2616,17 +3032,26 @@ const ingredientsDetail = bundleState.sections.ingredients.detail;
                 const packet = {
                     locale: 'en',
                     ingredientName: activeIngredientName,
-                    product: {
-                        identity: bundleState.meta.authoritativeIdentity,
-                        name: productInfo?.name ?? null,
-                        brand: productInfo?.brand ?? null,
-                        sourceType: bundleSourceType,
+                    facts: {
+                        amount: activeFactsIngredient?.amount ?? null,
+                        unit: activeFactsIngredient?.unit ?? null,
+                        formText: activeFactsIngredient?.formText ?? null,
                     },
-                    labelFacts: {
-                        dose: activeIngredientDose,
+                    insight: {
+                        rbfBand: activeProductInsight?.rbfBand ?? 'unknown',
+                        rbfFactor: activeProductInsight?.effectiveFactor ?? null,
+                        confidenceTier: activeProductInsight?.confidenceTier ?? 'none',
+                        whyBullets: activeWhyPayload?.bullets ?? [],
+                        doseStatus:
+                            activeProductInsight?.doseSignal?.status === 'below_typical' ||
+                                activeProductInsight?.doseSignal?.status === 'within_typical' ||
+                                activeProductInsight?.doseSignal?.status === 'above_typical'
+                                ? activeProductInsight.doseSignal.status
+                                : 'unknown',
+                        dailyAmount: activeProductInsight?.doseSignal?.dailyAmount ?? null,
+                        dailyUnit: activeProductInsight?.doseSignal?.unit ?? null,
                     },
-                    productSignals: activeProductInsight ?? null,
-                    runtimeNotes: activeRuntimeSegments,
+                    reviewedKbBullets: Object.values(activeRuntimeSegments ?? {}).flat().slice(0, 4),
                 };
 
                 const res = await fetch(`${baseUrl}/api/summary/ingredient`, {
@@ -2657,8 +3082,8 @@ const ingredientsDetail = bundleState.sections.ingredients.detail;
                 const highlights = Array.isArray(json?.highlights)
                     ? json.highlights.filter((x: any) => typeof x === 'string')
                     : Array.isArray(json?.bullets)
-                      ? json.bullets.filter((x: any) => typeof x === 'string')
-                      : null;
+                        ? json.bullets.filter((x: any) => typeof x === 'string')
+                        : null;
 
                 const caveats = Array.isArray(json?.caveats)
                     ? json.caveats.filter((x: any) => typeof x === 'string')
@@ -2695,7 +3120,7 @@ const ingredientsDetail = bundleState.sections.ingredients.detail;
 
         run();
     }, [
-        selectedTile?.type,
+        selectedTileType,
         activeIngredientKey,
         activeIngredientName,
         activeSummaryStatus,
@@ -2710,421 +3135,838 @@ const ingredientsDetail = bundleState.sections.ingredients.detail;
     ]);
 
     const ingredientsContent = (
-  <View style={styles.detailStack}>
-    <GlassCard
-      title="Key ingredient focus"
-      subtitle="Switch the context for the modules below"
-      accentColor="#D97706"
-      right={<GlassPill label="Science" />}
-    >
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.ingredientSelectorRow}
-      >
-        {keyIngredientsForDetail.map((name) => {
-          const key = normalizeIngredientNameForBackground(name);
-          const isActive = key === activeIngredientKey;
-          return (
-            <Pressable
-              key={key}
-              onPress={() => setActiveIngredientName(name)}
-              style={[
-                styles.ingredientChip,
-                isActive ? styles.ingredientChipActive : null,
-              ]}
+        <View style={styles.detailStack}>
+            <GlassCard
+                title="Key ingredient focus"
+                subtitle="Switch the context for the modules below"
+                accentColor="#D97706"
+                right={<GlassPill label="Science" />}
             >
-              <DashboardBlur intensity={isActive ? 22 : 14} tint="light" style={StyleSheet.absoluteFill} />
-              <Text style={[styles.ingredientChipText, isActive ? styles.ingredientChipTextActive : null]} numberOfLines={1}>
-                {capitalizeSentences(name)}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.ingredientSelectorRow}
+                >
+                    {keyIngredientsForDetail.map((name) => {
+                        const key = normalizeIngredientNameForBackground(name);
+                        const isActive = key === activeIngredientKey;
+                        return (
+                            <Pressable
+                                key={key}
+                                onPress={() => setActiveIngredientName(name)}
+                                style={[
+                                    styles.ingredientChip,
+                                    isActive ? styles.ingredientChipActive : null,
+                                ]}
+                            >
+                                <DashboardBlur intensity={isActive ? 22 : 14} tint="light" style={StyleSheet.absoluteFill} />
+                                <Text style={[styles.ingredientChipText, isActive ? styles.ingredientChipTextActive : null]} numberOfLines={1}>
+                                    {capitalizeSentences(name)}
+                                </Text>
+                            </Pressable>
+                        );
+                    })}
+                </ScrollView>
 
-      <View style={{ marginTop: 10 }}>
-        <Text style={styles.detailMetaLabel}>Current selection</Text>
-        <Text style={styles.detailMetaText}>{activeIngredientLabelLine}</Text>
-      </View>
-    </GlassCard>
-
-    {/* Module 1 */}
-    <GlassCard
-      title="General science background"
-      subtitle="NIH ODS (general; not product-specific)"
-      accentColor="#D97706"
-      right={<GlassPill label="NIH ODS" />}
-    >
-      <View style={styles.embeddedPanel}>
-        {disableOdsPanel ? (
-          <Text style={styles.detailBodyText}>ODS panel disabled by dashboard bisection flag.</Text>
-        ) : (
-          <OdsFoundationPanel ingredientName={activeIngredientName} variant="full" />
-        )}
-      </View>
-    </GlassCard>
-
-    {/* Module 2 */}
-    <GlassCard
-      title="Form & bioavailability signals"
-      subtitle="Verified dataset (when available)"
-      accentColor="#D97706"
-      right={<GlassPill label="Verified dataset" />}
-    >
-      <View style={{ marginBottom: 12 }}>
-        <Text style={styles.detailMetaLabel}>Label ingredient snapshot</Text>
-        <View style={styles.ingredientsList}>
-          {ingredientsItems.length > 0 ? (
-            ingredientsItems.slice(0, 5).map((item) => (
-              <View key={item.name} style={styles.ingredientsListRow}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.ingredientsListName}>{item.name}</Text>
-                  {item.dose ? (
-                    <Text style={styles.ingredientsListDose}>
-                      {item.dose}
-                    </Text>
-                  ) : (
-                    <Text style={styles.ingredientsListDoseMuted}>Dose not disclosed</Text>
-                  )}
+                <View style={{ marginTop: 10 }}>
+                    <Text style={styles.detailMetaLabel}>Current selection</Text>
+                    <Text style={styles.detailMetaText}>{activeIngredientLabelLine}</Text>
                 </View>
-              </View>
-            ))
-          ) : (
-            <Text style={styles.detailPlaceholderText}>Ingredient list not provided by source.</Text>
-          )}
-        </View>
-      </View>
+            </GlassCard>
 
-      {activeProductInsight ? (
-        <View style={{ gap: 10 }}>
-          <View style={styles.kvGrid}>
-            <View style={styles.kvRow}>
-              <Text style={styles.kvLabel}>Detected form</Text>
-              <Text style={styles.kvValue}>{activeProductInsight.formLabel}</Text>
-            </View>
+            {/* Module 1 */}
+            <GlassCard
+                title="General science background"
+                subtitle="NIH ODS (general; not product-specific)"
+                accentColor="#D97706"
+                right={<GlassPill label="NIH ODS" />}
+            >
+                <View style={styles.embeddedPanel}>
+                    {disableOdsPanel ? (
+                        <Text style={styles.detailBodyText}>ODS panel disabled by dashboard bisection flag.</Text>
+                    ) : (
+                        <OdsFoundationPanel ingredientName={activeIngredientName} mode="science" />
+                    )}
+                </View>
+            </GlassCard>
 
-            <View style={styles.kvRow}>
-              <Text style={styles.kvLabel}>Relative bioavailability</Text>
-              <Text style={styles.kvValue}>
-                {activeProductInsight.effectiveFactor}× ({activeProductInsight.rbfBand})
-              </Text>
-            </View>
+            {/* Module 2 */}
+            <GlassCard
+                title="Form & bioavailability signals"
+                subtitle={scienceDatasetSubtitle}
+                accentColor="#D97706"
+                right={<GlassPill label={scienceDatasetPill} />}
+            >
+                <View style={{ marginBottom: 12 }}>
+                    <Text style={styles.detailMetaLabel}>Label ingredient snapshot</Text>
+                    <View style={styles.ingredientsList}>
+                        {scienceTopIngredients.length > 0 ? (
+                            scienceTopIngredients.map((item) => (
+                                <View key={item.name} style={styles.ingredientsListRow}>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={styles.ingredientsListName}>{item.name}</Text>
+                                        {item.dose ? (
+                                            <Text style={styles.ingredientsListDose}>
+                                                {item.dose}
+                                            </Text>
+                                        ) : (
+                                            <Text style={styles.ingredientsListDoseMuted}>Dose not disclosed</Text>
+                                        )}
+                                    </View>
+                                </View>
+                            ))
+                        ) : (
+                            <Text style={styles.detailPlaceholderText}>
+                                {isDataCeiling && dataCeilingScienceLead && dataCeilingScienceAction
+                                    ? `${dataCeilingScienceLead} ${dataCeilingScienceAction}`
+                                    : 'Scan the Supplement Facts panel to unlock ingredient analysis.'}
+                            </Text>
+                        )}
+                    </View>
+                </View>
 
-            <View style={styles.kvRow}>
-              <Text style={styles.kvLabel}>Confidence</Text>
-              <Text style={styles.kvValue}>{activeProductInsight.confidenceTier}</Text>
-            </View>
+                {activeProductInsight || activeInsightFromDto ? (
+                    <View style={{ gap: 10 }}>
+                        <View style={styles.kvGrid}>
+                            <View style={styles.kvRow}>
+                                <Text style={styles.kvLabel}>{hasSpecificFormSignal ? 'Detected form' : 'Form status'}</Text>
+                                <Text style={styles.kvValue}>{activeFormDisplayText}</Text>
+                            </View>
 
-            {activeProductInsight.doseSignal ? (
-              <View style={styles.kvRow}>
-                <Text style={styles.kvLabel}>Dose check</Text>
-                <Text style={styles.kvValue}>
-                  {`${activeProductInsight.doseSignal.status}${
-                    typeof activeProductInsight.doseSignal.dailyAmount === 'number' && activeProductInsight.doseSignal.unit
-                      ? ` (daily ${activeProductInsight.doseSignal.dailyAmount} ${activeProductInsight.doseSignal.unit})`
-                      : ''
-                  }`}
-                </Text>
-              </View>
+                            <View style={styles.kvRow}>
+                                <Text style={styles.kvLabel}>Relative bioavailability factor</Text>
+                                <Text style={styles.kvValue}>
+                                    {typeof activeRbfFactor === 'number'
+                                        ? `${activeRbfFactor.toFixed(2)} (${activeRbfBand})`
+                                        : 'Unknown'}
+                                </Text>
+                            </View>
+
+                            <View style={styles.kvRow}>
+                                <Text style={styles.kvLabel}>Confidence</Text>
+                                <Text style={styles.kvValue}>
+                                    {activeInsightFromDto?.form?.matchScore != null
+                                        ? `${activeInsightFromDto.form.matchScore.toFixed(2)} / ${activeInsightFromDto.form.evidenceGrade ?? 'n/a'}`
+                                        : activeProductInsight?.confidenceTier ?? 'none'}
+                                </Text>
+                            </View>
+
+                            {activeProductInsight?.doseSignal ? (
+                                <View style={styles.kvRow}>
+                                    <Text style={styles.kvLabel}>Dose check</Text>
+                                    <Text style={styles.kvValue}>
+                                        {`${activeProductInsight.doseSignal.status}${typeof activeProductInsight.doseSignal.dailyAmount === 'number' && activeProductInsight.doseSignal.unit
+                                            ? ` (daily ${activeProductInsight.doseSignal.dailyAmount} ${activeProductInsight.doseSignal.unit})`
+                                            : ''
+                                            }`}
+                                    </Text>
+                                </View>
+                            ) : null}
+                        </View>
+
+                        <View style={styles.reasonBlock}>
+                            <Text style={styles.reasonTitle}>Why this band</Text>
+                            <Text style={styles.reasonText}>
+                                {`Band thresholds: High>=1.10, Normal 0.90-1.09, Low<0.90. Not a guarantee of individual outcomes.`}
+                            </Text>
+                        </View>
+
+                        {activeWhyPayload?.bullets?.length ? (
+                            <View style={styles.reasonBlock}>
+                                <Text style={styles.reasonTitle}>Why this matters</Text>
+                                <View style={{ marginTop: 8, gap: 8 }}>
+                                    {activeWhyPayload.bullets.map((line, idx) => (
+                                        <View key={`why-${idx}`} style={styles.bulletRow}>
+                                            <View style={styles.bulletDot} />
+                                            <Text style={styles.bulletText}>{line}</Text>
+                                        </View>
+                                    ))}
+                                </View>
+                                <Text style={[styles.reasonText, { marginTop: 8 }]}>{activeConfidenceText}</Text>
+                            </View>
+                        ) : null}
+
+                        {activeRuntimeNotes ? (
+                            <View style={styles.reasonBlock}>
+                                <View style={styles.reasonHeaderRow}>
+                                    <Text style={styles.reasonTitle}>Extra context</Text>
+                                    {activeRuntimeNotes.meta?.source ? <GlassPill label={`KB: ${activeRuntimeNotes.meta.source}`} /> : null}
+                                </View>
+                                <View style={{ marginTop: 8, gap: 8 }}>
+                                    {(
+                                        Object.values(activeRuntimeNotes.segmentsByBucket ?? {}).flat()
+                                            .slice(0, 6)
+                                    ).map((r: string, idx: number) => (
+                                        <View key={`kb-${idx}`} style={styles.bulletRow}>
+                                            <View style={styles.bulletDot} />
+                                            <Text style={styles.bulletText}>{r}</Text>
+                                        </View>
+                                    ))}
+                                </View>
+                            </View>
+                        ) : null}
+                    </View>
+                ) : (
+                    <View style={styles.emptyStateBox}>
+                        <Text style={styles.emptyStateTitle}>
+                            {bundleSourceType === 'web' ? 'Not available for web listings yet' : 'No verified dataset signals for this ingredient'}
+                        </Text>
+                        <Text style={styles.emptyStateText}>
+                            {bundleSourceType === 'web'
+                                ? 'Product-specific form signals are not available for most web listings yet.'
+                                : 'No verified dataset signals were found for this ingredient.'}
+                        </Text>
+                    </View>
+                )}
+            </GlassCard>
+
+            {/* Module 3 */}
+            <GlassCard
+                title="Ingredient summary"
+                subtitle="DeepSeek (grounded to facts + dataset + ODS)"
+                accentColor="#D97706"
+                right={<GlassPill label="AI" />}
+            >
+                {deepseekLoading ? (
+                    <View style={styles.inlineLoadingRow}>
+                        <ActivityIndicator />
+                        <Text style={styles.inlineLoadingText}>Generating summary…</Text>
+                    </View>
+                ) : deepseekError ? (
+                    <View style={styles.emptyStateBox}>
+                        <Text style={styles.emptyStateTitle}>Summary unavailable</Text>
+                        <Text style={styles.emptyStateText}>{deepseekError}</Text>
+                    </View>
+                ) : activeSummary?.status === 'ok' ? (
+                    <View style={{ gap: 12 }}>
+                        <Text style={styles.summaryMainText}>{activeSummary.tldr}</Text>
+
+                        {Array.isArray(activeSummary.highlights) && activeSummary.highlights.length > 0 ? (
+                            <View style={{ gap: 8 }}>
+                                <Text style={styles.summarySectionTitle}>Highlights</Text>
+                                {activeSummary.highlights.slice(0, 4).map((b: string, idx: number) => (
+                                    <View key={`sum-h-${idx}`} style={styles.bulletRow}>
+                                        <View style={styles.bulletDot} />
+                                        <Text style={styles.bulletText}>{b}</Text>
+                                    </View>
+                                ))}
+                            </View>
+                        ) : null}
+
+                        {Array.isArray(activeSummary.caveats) && activeSummary.caveats.length > 0 ? (
+                            <View style={{ gap: 8 }}>
+                                <Text style={styles.summarySectionTitle}>Caveats</Text>
+                                {activeSummary.caveats.slice(0, 4).map((b: string, idx: number) => (
+                                    <View key={`sum-c-${idx}`} style={styles.bulletRow}>
+                                        <View style={styles.bulletDot} />
+                                        <Text style={styles.bulletText}>{b}</Text>
+                                    </View>
+                                ))}
+                            </View>
+                        ) : null}
+
+                        {activeSummary.confidence_note ? (
+                            <View style={styles.summaryFootnote}>
+                                <Text style={styles.summaryFootnoteText}>{activeSummary.confidence_note}</Text>
+                            </View>
+                        ) : null}
+                    </View>
+                ) : (
+                    <Text style={styles.detailPlaceholderText}>Ingredient summary is pending.</Text>
+                )}
+            </GlassCard>
+
+            {detailError ? (
+                <GlassCard title="Ingredient detail error" subtitle={detailError} accentColor="#EF4444">
+                    <Text style={styles.emptyStateText}>Some ingredient details could not be resolved. Try again or scan a label-based source.</Text>
+                </GlassCard>
             ) : null}
-          </View>
-
-          {!!activeProductInsight.why && (
-            <View style={styles.reasonBlock}>
-              <Text style={styles.reasonTitle}>Why this matters</Text>
-              <Text style={styles.reasonText}>{activeProductInsight.why}</Text>
-            </View>
-          )}
-
-          {activeRuntimeNotes ? (
-            <View style={styles.reasonBlock}>
-              <View style={styles.reasonHeaderRow}>
-                <Text style={styles.reasonTitle}>Extra context</Text>
-                {activeRuntimeNotes.meta?.source ? <GlassPill label={`KB: ${activeRuntimeNotes.meta.source}`} /> : null}
-              </View>
-              <View style={{ marginTop: 8, gap: 8 }}>
-                {(
-                  Object.values(activeRuntimeNotes.segmentsByBucket ?? {}).flat()
-                    .slice(0, 6)
-                ).map((r: string, idx: number) => (
-                  <View key={`kb-${idx}`} style={styles.bulletRow}>
-                    <View style={styles.bulletDot} />
-                    <Text style={styles.bulletText}>{r}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          ) : null}
         </View>
-      ) : (
-        <View style={styles.emptyStateBox}>
-          <Text style={styles.emptyStateTitle}>
-            {bundleSourceType === 'web' ? 'Not available for web listings yet' : 'No verified dataset signals for this ingredient'}
-          </Text>
-          <Text style={styles.emptyStateText}>
-            {bundleSourceType === 'web'
-              ? 'Product-specific form signals are not available for most web listings yet.'
-              : 'No verified dataset signals were found for this ingredient.'}
-          </Text>
-        </View>
-      )}
-    </GlassCard>
+    );
 
-    {/* Module 3 */}
-    <GlassCard
-      title="Ingredient summary"
-      subtitle="DeepSeek (grounded to facts + dataset + ODS)"
-      accentColor="#D97706"
-      right={<GlassPill label="AI" />}
-    >
-      {deepseekLoading ? (
-        <View style={styles.inlineLoadingRow}>
-          <ActivityIndicator />
-          <Text style={styles.inlineLoadingText}>Generating summary…</Text>
-        </View>
-      ) : deepseekError ? (
-        <View style={styles.emptyStateBox}>
-          <Text style={styles.emptyStateTitle}>Summary unavailable</Text>
-          <Text style={styles.emptyStateText}>{deepseekError}</Text>
-        </View>
-      ) : activeSummary?.status === 'ok' ? (
-        <View style={{ gap: 12 }}>
-          <Text style={styles.summaryMainText}>{activeSummary.tldr}</Text>
+    const usageFacts = factsDtoState.data;
+    const usageGapLines = buildGapActionSentences(usageFacts?.dataQuality?.missingReasons, 'usage');
+    const usageScheduleRows = Array.isArray(bundleState?.sections?.usage?.detail?.scheduleFromLabel)
+        ? bundleState.sections.usage.detail.scheduleFromLabel
+        : [];
+    const usageScheduleLines = usageScheduleRows
+        .slice(0, 2)
+        .map((row) => {
+            const population = normalizeText(row?.population ?? '');
+            const dose = normalizeText(row?.dose ?? '');
+            const frequency = normalizeText(row?.frequency ?? '');
+            const rawText = normalizeText(row?.rawText ?? '');
+            const parts = [population, dose, frequency].filter(Boolean);
+            if (parts.length > 0) return `Label schedule: ${parts.join(' ')}.`;
+            if (rawText) return `Label schedule: ${rawText}`;
+            return null;
+        })
+        .filter((line): line is string => Boolean(line));
+    const usageDosageRaw = usageCover?.dosage;
+    const usageBestTimeRaw = usageCover?.bestTimeToTake;
+    const usageDosageText = normalizeText(
+        typeof usageDosageRaw === 'string'
+            ? usageDosageRaw
+            : usageDosageRaw?.text ?? '',
+    );
+    const usageBestTimeText = normalizeText(
+        typeof usageBestTimeRaw === 'string'
+            ? usageBestTimeRaw
+            : usageBestTimeRaw?.text ?? '',
+    );
+    const usageDirectionsFromRecord = normalizeText(usageFacts?.usage?.directionsText ?? '');
+    const dosageTextConfirmed = usageDosageText.length > 0 && !/dose not confirmed/i.test(usageDosageText);
+    const perServingDoseFromFacts = (() => {
+        const actives = usageFacts?.ingredients?.actives ?? [];
+        const primary = actives.find(
+            (row) =>
+                typeof row?.amount === 'number' &&
+                Number.isFinite(row.amount) &&
+                typeof row?.unit === 'string' &&
+                row.unit.trim().length > 0 &&
+                typeof row?.name === 'string' &&
+                row.name.trim().length > 0,
+        );
+        if (!primary) return '';
+        return `${primary.name} ${primary.amount} ${primary.unit}`;
+    })();
+    const directionsSummaryLine = usageDirectionsFromRecord
+        ? `Directions from record: ${usageDirectionsFromRecord}`
+        : usageScheduleLines.length > 0
+            ? `Directions from record: ${usageScheduleLines[0]?.replace(/^Label schedule:\s*/i, '') ?? ''}`
+            : 'Directions from record: Not available in this source.';
+    const perServingSummaryLine = perServingDoseFromFacts
+        ? `Per-serving dose from record: ${perServingDoseFromFacts}.`
+        : dosageTextConfirmed
+            ? `Per-serving dose from record: ${usageDosageText}.`
+            : 'Per-serving dose from record: Not confirmed in this source.';
+    const usageStructuredLines = [
+        isDataCeiling ? 'This verified source includes limited structured fields and does not provide ingredient amount rows.' : null,
+        directionsSummaryLine,
+        perServingSummaryLine,
+        usageFacts?.serving?.servingSizeText
+            ? `Serving size: ${usageFacts.serving.servingSizeText}${usageFacts.serving.servingsPerContainer != null
+                ? `; servings per container: ${usageFacts.serving.servingsPerContainer}`
+                : ''
+            }.`
+            : null,
+        usageBestTimeText ? `Timing from label: ${usageBestTimeText}` : null,
+        usageScheduleLines.length > 1 ? usageScheduleLines[1] : null,
+    ].filter((line): line is string => Boolean(line && line.trim().length > 0));
+    const usageRecordLines = enforceNeverBlank({
+        lines: [
+            ...usageStructuredLines,
+            usageStructuredLines.length === 0
+                ? 'Label directions were not available from this source.'
+                : null,
+        ],
+        fallback: [
+            'Follow the product label first for timing and frequency.',
+            'If directions are missing, keep usage conservative until label details are confirmed.',
+        ],
+    });
+    const usageGuidanceLines = enforceNeverBlank({
+        lines: [
+            'Follow the product label first.',
+            'If you are new to this product, start at the lowest suggested label amount.',
+            'If you use medications, are pregnant/breastfeeding, or have chronic conditions, check with a clinician.',
+        ],
+        fallback: [
+            'Use conservative dosing when evidence is incomplete.',
+            'Seek clinician advice for personalized use decisions.',
+        ],
+    });
+    const usageAccuracyLines = enforceNeverBlank({
+        lines: usageGapLines,
+        fallback: [
+            'Adding a clear photo of the Supplement Facts and Directions panel improves product-specific guidance.',
+            'We keep this section conservative until those fields are verified.',
+        ],
+    });
+    const summaryIdentityKey = useMemo(
+        () =>
+            [
+                `${bundleState.meta.authoritativeIdentity.type}:${bundleState.meta.authoritativeIdentity.value}`,
+                bundleState.meta.sourceType ?? 'unknown',
+                bundleState.meta.sourceTypeFinal === false ? '0' : '1',
+            ].join('|'),
+        [
+            bundleState.meta.authoritativeIdentity.type,
+            bundleState.meta.authoritativeIdentity.value,
+            bundleState.meta.sourceType,
+            bundleState.meta.sourceTypeFinal,
+        ],
+    );
 
-          {Array.isArray(activeSummary.highlights) && activeSummary.highlights.length > 0 ? (
-            <View style={{ gap: 8 }}>
-              <Text style={styles.summarySectionTitle}>Highlights</Text>
-              {activeSummary.highlights.slice(0, 4).map((b: string, idx: number) => (
-                <View key={`sum-h-${idx}`} style={styles.bulletRow}>
-                  <View style={styles.bulletDot} />
-                  <Text style={styles.bulletText}>{b}</Text>
+    const usageContent = (
+        <View style={styles.detailStack}>
+            <GlassCard title="What the record says" subtitle="Label/source directions" accentColor="#0EA5E9" right={<GlassPill label="Practical" />}>
+                <View style={{ gap: 10 }}>
+                    {usageRecordLines.map((line, idx) => (
+                        <Text key={`usage-rec-${idx}`} style={idx === 0 ? styles.detailLeadText : styles.detailBodyText}>
+                            {line}
+                        </Text>
+                    ))}
                 </View>
-              ))}
-            </View>
-          ) : null}
+            </GlassCard>
 
-          {Array.isArray(activeSummary.caveats) && activeSummary.caveats.length > 0 ? (
-            <View style={{ gap: 8 }}>
-              <Text style={styles.summarySectionTitle}>Caveats</Text>
-              {activeSummary.caveats.slice(0, 4).map((b: string, idx: number) => (
-                <View key={`sum-c-${idx}`} style={styles.bulletRow}>
-                  <View style={styles.bulletDot} />
-                  <Text style={styles.bulletText}>{b}</Text>
+            <GlassCard title="Conservative usage guidance" subtitle="Safe default guidance" accentColor="#0EA5E9">
+                <View style={{ gap: 10 }}>
+                    {usageGuidanceLines.map((line, idx) => (
+                        <View key={`usage-guide-${idx}`} style={styles.bulletRow}>
+                            <View style={styles.bulletDot} />
+                            <Text style={styles.bulletText}>{line}</Text>
+                        </View>
+                    ))}
                 </View>
-              ))}
-            </View>
-          ) : null}
+            </GlassCard>
 
-          {activeSummary.confidence_note ? (
-            <View style={styles.summaryFootnote}>
-              <Text style={styles.summaryFootnoteText}>{activeSummary.confidence_note}</Text>
-            </View>
-          ) : null}
+            <GlassCard title="What would improve accuracy" subtitle="Missing fields lower confidence" accentColor="#0EA5E9">
+                <View style={{ gap: 10 }}>
+                    {usageAccuracyLines.map((line, idx) => (
+                        <Text key={`usage-acc-${idx}`} style={styles.detailBodyText}>
+                            {line}
+                        </Text>
+                    ))}
+                </View>
+            </GlassCard>
+
         </View>
-      ) : (
-        <Text style={styles.detailPlaceholderText}>Ingredient summary is pending.</Text>
-      )}
-    </GlassCard>
+    );
 
-    <GlassCard
-      title="Data quality"
-      subtitle={`Status: ${COVER_STATUS_LABELS[ingredientsDataStatus.status]}`}
-      accentColor="#D97706"
-    >
-      <Text style={styles.detailBodyText}>
-        Missing: {formatMissingReasons(ingredientsDataStatus.missingReasons)}
-      </Text>
-      <Text style={styles.detailMetaText}>
-        Sources: {formatSourceRefs(ingredientsDataStatus.sources)}
-      </Text>
-      {ingredientsDataStatus.notes?.length ? (
-        <Text style={styles.detailFootnoteText}>
-          Notes: {ingredientsDataStatus.notes.join(' • ')}
-        </Text>
-      ) : null}
-    </GlassCard>
+    const safetyFacts = factsDtoState.data;
+    const safetyGapLines = buildGapActionSentences(safetyFacts?.dataQuality?.missingReasons, 'safety');
+    const safetySignalPack = useMemo(
+        () =>
+            buildSafetySignalPack({
+                bundle: bundleState,
+                scoreBundle: v4BundleForInsights,
+                facts: safetyFacts,
+                ingredientNames: keyIngredientsForSafety,
+            }),
+        [bundleState, v4BundleForInsights, safetyFacts, keyIngredientsForSafety],
+    );
+    const safetyPriorityLines = safetySignalsToPriorityLines(safetySignalPack);
+    const safetyOdsInteractionLines = safetySignalPack.odsInteractions.map((item) => item.text);
+    const safetyUlEntryLines = Array.isArray(safetySignalPack.ulEntries)
+        ? safetySignalPack.ulEntries.map((item) => item.explainLine)
+        : [];
+    const safetyUlSignalLines = safetyUlEntryLines.length > 0
+        ? safetyUlEntryLines
+        : safetySignalPack.ulSignals.map((item) => item.text);
+    const matchesSafetyIngredient = useCallback(
+        (line: string): boolean => {
+            if (!activeSafetyIngredientKey) return true;
+            const normalizedLine = normalizeIngredientNameForBackground(line);
+            return normalizedLine.includes(activeSafetyIngredientKey);
+        },
+        [activeSafetyIngredientKey],
+    );
+    const selectedSafetyOdsInteractionLines = useMemo(() => {
+        const filtered = safetyOdsInteractionLines.filter((line) => matchesSafetyIngredient(line));
+        return filtered.length > 0 ? filtered : safetyOdsInteractionLines.slice(0, 3);
+    }, [safetyOdsInteractionLines, matchesSafetyIngredient]);
+    const selectedSafetyUlSignalLines = useMemo(() => {
+        const filtered = safetyUlSignalLines.filter((line) => matchesSafetyIngredient(line));
+        return filtered.length > 0 ? filtered : safetyUlSignalLines.slice(0, 3);
+    }, [safetyUlSignalLines, matchesSafetyIngredient]);
+    const hasComparableUlSignals = safetyUlEntryLines.length > 0;
+    const hasReferenceOnlyUlSignals =
+        !hasComparableUlSignals
+        && selectedSafetyUlSignalLines.some((line) => /upper limit \(ul\):/i.test(line));
+    const safetyLabelLines = enforceNeverBlank({
+        lines: [
+            ...safetyPriorityLines,
+            safetyPriorityLines.length === 0
+                ? 'No label-specific warnings were provided by this source.'
+                : null,
+        ],
+        fallback: [
+            'No label-specific warnings were provided by this source.',
+            'General watch-outs are shown for key ingredients and are not product-label warnings.',
+        ],
+    });
+    const [safetySummaryByRequestKey, setSafetySummaryByRequestKey] = useState<Record<string, SafetySummaryState>>({});
+    const safetySummaryFallback = useMemo(() => {
+        const riskLine = ensurePeriod(
+            normalizeText(
+                safetyLabelLines[0] ??
+                'Label-specific warnings were limited, so this summary stays conservative.',
+            ),
+        );
+        const contextLine = ensurePeriod(
+            normalizeText(
+                safetyUlSignalLines[0] ??
+                safetyOdsInteractionLines[0] ??
+                'General watch-outs provide ingredient-level context but do not replace product-label warnings.',
+            ),
+        );
+        const actionLine = ensurePeriod(
+            normalizeText(
+                safetyGapLines[0] ??
+                'Review the product label and consult a clinician for personal risk factors.',
+            ),
+        );
+        const tldr = [riskLine, contextLine, actionLine]
+            .map((line) => normalizeText(line))
+            .filter((line) => line.length > 0)
+            .slice(0, 3)
+            .join(' ');
+        return { riskLine, contextLine, actionLine, tldr };
+    }, [safetyGapLines, safetyLabelLines, safetyOdsInteractionLines, safetyUlSignalLines]);
+    const safetySummaryPayloadFingerprint = useMemo(
+        () =>
+            JSON.stringify({
+                sourceType: bundleSourceType ?? null,
+                productName: productInfo?.name ?? null,
+                labelLines: safetyLabelLines.slice(0, 4),
+                ulLines: safetyUlSignalLines.slice(0, 3),
+                interactionLines: safetyOdsInteractionLines.slice(0, 3),
+                missingLines: safetyGapLines.slice(0, 2),
+            }),
+        [
+            bundleSourceType,
+            productInfo?.name,
+            safetyLabelLines,
+            safetyUlSignalLines,
+            safetyOdsInteractionLines,
+            safetyGapLines,
+        ],
+    );
+    const safetySummaryRequestKey = useMemo(
+        () => `${summaryIdentityKey}|safety|${safetySummaryPayloadFingerprint}`,
+        [summaryIdentityKey, safetySummaryPayloadFingerprint],
+    );
+    const safetySummaryState = safetySummaryByRequestKey[safetySummaryRequestKey];
+    const safetySummaryStatus = safetySummaryState?.status ?? 'idle';
 
-    {detailError ? (
-      <GlassCard title="Ingredient detail error" subtitle={detailError} accentColor="#EF4444">
-        <Text style={styles.emptyStateText}>Some ingredient details could not be resolved. Try again or scan a label-based source.</Text>
-      </GlassCard>
-    ) : null}
-  </View>
-);
+    useEffect(() => {
+        if (selectedTileType !== 'safety') return;
+        if (!safetySummaryRequestKey) return;
+        if (safetySummaryStatus === 'ok' || safetySummaryStatus === 'loading') return;
 
-const usageContent = (
-  <View style={styles.detailStack}>
-    <GlassCard
-      title="Suggested routine"
-      subtitle={usageCover?.bestTimeToTake?.text ?? 'Use label timing guidance when available.'}
-      accentColor="#0EA5E9"
-      right={<GlassPill label="Practical" />}
-    >
-      <Text style={styles.detailLeadText}>
-        {usageCover?.dosage?.text ?? 'Follow the product label for dosage guidance.'}
-      </Text>
-    </GlassCard>
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3_800);
+        let cancelled = false;
 
-    <GlassCard
-      title="Dosage"
-      subtitle="From label facts (when available)"
-      accentColor="#0EA5E9"
-    >
-      <Text style={styles.detailBodyText}>
-        {usageCover?.dosage?.text ?? 'Dosage details are not provided in this source.'}
-      </Text>
-    </GlassCard>
+        const run = async () => {
+            setSafetySummaryByRequestKey((prev) => ({
+                ...prev,
+                [safetySummaryRequestKey]: {
+                    status: 'loading',
+                    startedAt: Date.now(),
+                    source: 'fallback',
+                    phase: 'instant_fallback',
+                    tldr: safetySummaryFallback.tldr,
+                    riskLine: safetySummaryFallback.riskLine,
+                    contextLine: safetySummaryFallback.contextLine,
+                    actionLine: safetySummaryFallback.actionLine,
+                    reasonCode: 'FALLBACK_DETERMINISTIC',
+                },
+            }));
+            try {
+                const baseUrl = String(Config.searchApiBaseUrl).replace(/\/$/, '');
+                const payload = JSON.parse(safetySummaryPayloadFingerprint) as {
+                    sourceType: string | null;
+                    productName: string | null;
+                    labelLines: string[];
+                    ulLines: string[];
+                    interactionLines: string[];
+                    missingLines: string[];
+                };
+                const response = await fetch(`${baseUrl}/api/summary/safety`, {
+                    method: 'POST',
+                    headers: {
+                        ...(await withAuthHeaders({
+                            'Content-Type': 'application/json',
+                        })),
+                    },
+                    body: JSON.stringify({
+                        locale: 'en',
+                        sourceType: payload.sourceType,
+                        productName: payload.productName,
+                        labelLines: payload.labelLines,
+                        ulLines: payload.ulLines,
+                        interactionLines: payload.interactionLines,
+                        missingLines: payload.missingLines,
+                    }),
+                    signal: controller.signal,
+                });
+                if (!response.ok) {
+                    if (cancelled) return;
+                    setSafetySummaryByRequestKey((prev) => ({
+                        ...prev,
+                        [safetySummaryRequestKey]: {
+                            status: 'ok',
+                            source: 'fallback',
+                            phase: 'instant_fallback',
+                            tldr: safetySummaryFallback.tldr,
+                            riskLine: safetySummaryFallback.riskLine,
+                            contextLine: safetySummaryFallback.contextLine,
+                            actionLine: safetySummaryFallback.actionLine,
+                            reasonCode: 'FALLBACK_DETERMINISTIC',
+                            startedAt: undefined,
+                        },
+                    }));
+                    return;
+                }
+                const json = await response.json();
+                const riskLine = ensurePeriod(
+                    normalizeText(
+                        (typeof json?.riskLine === 'string' && json.riskLine) ||
+                        (typeof json?.summary?.riskLine === 'string' && json.summary.riskLine) ||
+                        '',
+                    ),
+                );
+                const contextLine = ensurePeriod(
+                    normalizeText(
+                        (typeof json?.contextLine === 'string' && json.contextLine) ||
+                        (typeof json?.summary?.contextLine === 'string' && json.summary.contextLine) ||
+                        '',
+                    ),
+                );
+                const actionLine = ensurePeriod(
+                    normalizeText(
+                        (typeof json?.actionLine === 'string' && json.actionLine) ||
+                        (typeof json?.summary?.actionLine === 'string' && json.summary.actionLine) ||
+                        '',
+                    ),
+                );
+                const tldr = normalizeText(
+                    (typeof json?.tldr === 'string' && json.tldr) ||
+                    (typeof json?.summary?.tldr === 'string' && json.summary.tldr) ||
+                    [riskLine, contextLine, actionLine].filter(Boolean).join(' '),
+                );
+                const reasonCode =
+                    typeof json?.reasonCode === 'string'
+                        ? json.reasonCode
+                        : typeof json?.summary?.reasonCode === 'string'
+                            ? json.summary.reasonCode
+                            : null;
+                if (cancelled) return;
+                const hasStructuredLines = riskLine.length > 0 && contextLine.length > 0 && actionLine.length > 0;
+                if (!hasStructuredLines || tldr.length < 20) {
+                    setSafetySummaryByRequestKey((prev) => ({
+                        ...prev,
+                        [safetySummaryRequestKey]: {
+                            status: 'ok',
+                            source: 'fallback',
+                            phase: 'instant_fallback',
+                            tldr: safetySummaryFallback.tldr,
+                            riskLine: safetySummaryFallback.riskLine,
+                            contextLine: safetySummaryFallback.contextLine,
+                            actionLine: safetySummaryFallback.actionLine,
+                            reasonCode: 'FALLBACK_DETERMINISTIC',
+                            startedAt: undefined,
+                        },
+                    }));
+                    return;
+                }
+                setSafetySummaryByRequestKey((prev) => ({
+                    ...prev,
+                    [safetySummaryRequestKey]: {
+                        status: 'ok',
+                        source: json?.fallbackUsed ? 'fallback' : 'api',
+                        phase: json?.fallbackUsed ? 'instant_fallback' : 'upgraded',
+                        tldr,
+                        riskLine,
+                        contextLine,
+                        actionLine,
+                        reasonCode,
+                        startedAt: undefined,
+                    },
+                }));
+            } catch (error) {
+                if (cancelled) return;
+                setSafetySummaryByRequestKey((prev) => ({
+                    ...prev,
+                    [safetySummaryRequestKey]: {
+                        status: 'ok',
+                        source: 'fallback',
+                        phase: 'instant_fallback',
+                        tldr: safetySummaryFallback.tldr,
+                        riskLine: safetySummaryFallback.riskLine,
+                        contextLine: safetySummaryFallback.contextLine,
+                        actionLine: safetySummaryFallback.actionLine,
+                        reasonCode: 'FALLBACK_DETERMINISTIC',
+                        error: error instanceof Error ? error.message : 'safety_summary_fetch_failed',
+                        startedAt: undefined,
+                    },
+                }));
+            } finally {
+                clearTimeout(timeoutId);
+            }
+        };
 
-    <GlassCard
-      title="Timing"
-      subtitle="How to take it for comfort & consistency"
-      accentColor="#0EA5E9"
-    >
-      <Text style={styles.detailBodyText}>
-        {bundleState?.sections?.usage?.detail?.timingRationale?.text
-          ?? usageCover?.bestTimeToTake?.text
-          ?? 'Timing guidance is unavailable.'}
-      </Text>
-    </GlassCard>
+        run();
+        return () => {
+            cancelled = true;
+            controller.abort();
+            clearTimeout(timeoutId);
+        };
+    }, [
+        selectedTileType,
+        safetySummaryRequestKey,
+        safetySummaryStatus,
+        safetySummaryPayloadFingerprint,
+        safetySummaryFallback,
+    ]);
 
-    <GlassCard
-      title="Who this is for"
-      subtitle="Practical fit"
-      accentColor="#0EA5E9"
-    >
-      <Text style={styles.detailBodyText}>
-        {bundleState?.sections?.usage?.detail?.scheduleFromLabel?.[0]?.population
-          ?? 'Population guidance was not provided by the source.'}
-      </Text>
-    </GlassCard>
+    useEffect(() => {
+        if (selectedTileType !== 'safety') return;
+        if (safetySummaryStatus !== 'loading') return;
+        if (!safetySummaryRequestKey) return;
+        const watchdogId = setTimeout(() => {
+            setSafetySummaryByRequestKey((prev) => {
+                const current = prev[safetySummaryRequestKey];
+                if (!current || current.status !== 'loading') return prev;
+                return {
+                    ...prev,
+                    [safetySummaryRequestKey]: {
+                        status: 'ok',
+                        source: 'fallback',
+                        phase: 'instant_fallback',
+                        tldr: safetySummaryFallback.tldr,
+                        riskLine: safetySummaryFallback.riskLine,
+                        contextLine: safetySummaryFallback.contextLine,
+                        actionLine: safetySummaryFallback.actionLine,
+                        reasonCode: 'FALLBACK_DETERMINISTIC',
+                        startedAt: undefined,
+                    },
+                };
+            });
+        }, 4_200);
+        return () => clearTimeout(watchdogId);
+    }, [selectedTileType, safetySummaryStatus, safetySummaryRequestKey, safetySummaryFallback]);
 
-    <GlassCard
-      title="Notes"
-      subtitle="Things people often miss"
-      accentColor="#0EA5E9"
-    >
-      <Text style={styles.detailBodyText}>
-        {bundleState?.sections?.usage?.detail?.withFoodRationale?.text
-          ?? usageCover?.withFood?.text
-          ?? 'No additional notes available.'}
-      </Text>
+    const safetySummaryText = safetySummaryState?.tldr ?? safetySummaryFallback.tldr;
+    const safetySummaryLines = useMemo(() => {
+        const candidateLines = [
+            safetySummaryState?.riskLine,
+            safetySummaryState?.contextLine,
+            safetySummaryState?.actionLine,
+        ]
+            .map((line) => normalizeText(line))
+            .filter((line) => line.length > 0);
+        if (candidateLines.length >= 3) {
+            return candidateLines.slice(0, 3);
+        }
+        return safetySummaryText
+            .split(/(?<=[.!?])\s+/)
+            .map((line) => normalizeText(line))
+            .filter((line) => line.length > 0)
+            .slice(0, 3);
+    }, [
+        safetySummaryState?.riskLine,
+        safetySummaryState?.contextLine,
+        safetySummaryState?.actionLine,
+        safetySummaryText,
+    ]);
 
-      {Array.isArray(usageCover?.bullets) && usageCover.bullets.length > 0 ? (
-        <View style={{ marginTop: 12, gap: 10 }}>
-          {usageCover.bullets.slice(0, 4).map((b, idx) => (
-            <View key={`us-b-${idx}`} style={styles.bulletRow}>
-              <View style={styles.bulletDot} />
-              <Text style={styles.bulletText}>{formatTaggedText(b.text, b.basisTags)}</Text>
-            </View>
-          ))}
+    const safetyContent = (
+        <View style={styles.detailStack}>
+            <GlassCard title="Label warnings" subtitle="Label first, then general watch-outs" accentColor="#EF4444" right={<GlassPill label="Safety" />}>
+                <View style={{ gap: 10 }}>
+                    {safetyLabelLines.map((line, idx) => (
+                        <View key={`safe-label-${idx}`} style={styles.bulletRow}>
+                            <View style={styles.bulletDot} />
+                            <Text style={styles.bulletText}>{line}</Text>
+                        </View>
+                    ))}
+                </View>
+            </GlassCard>
+
+            <GlassCard
+                title="General watch-outs"
+                subtitle="NIH ODS (not label-specific)"
+                accentColor="#EF4444"
+                right={<GlassPill label="NIH ODS" />}
+            >
+                {keyIngredientsForSafety.length > 0 ? (
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.ingredientSelectorRow}
+                    >
+                        {keyIngredientsForSafety.map((name) => {
+                            const key = normalizeIngredientNameForBackground(name);
+                            const isActive = key === activeSafetyIngredientKey;
+                            return (
+                                <Pressable
+                                    key={`safety-${key}`}
+                                    onPress={() => setActiveSafetyIngredientName(name)}
+                                    style={[
+                                        styles.ingredientChip,
+                                        isActive ? styles.ingredientChipActive : null,
+                                    ]}
+                                >
+                                    <DashboardBlur intensity={isActive ? 22 : 14} tint="light" style={StyleSheet.absoluteFill} />
+                                    <Text style={[styles.ingredientChipText, isActive ? styles.ingredientChipTextActive : null]} numberOfLines={1}>
+                                        {capitalizeSentences(name)}
+                                    </Text>
+                                </Pressable>
+                            );
+                        })}
+                    </ScrollView>
+                ) : null}
+
+                <View style={styles.embeddedPanel}>
+                    {disableOdsPanel ? (
+                        <Text style={styles.detailBodyText}>ODS panel disabled by dashboard bisection flag.</Text>
+                    ) : (
+                        <OdsFoundationPanel
+                            ingredientName={activeSafetyIngredientName}
+                            mode="safety"
+                            interactionLines={selectedSafetyOdsInteractionLines}
+                            ulLines={selectedSafetyUlSignalLines}
+                        />
+                    )}
+                </View>
+                {hasReferenceOnlyUlSignals ? (
+                    <Text style={styles.detailBodyText}>
+                        Reference UL shown. Personalized comparison needs daily directions.
+                    </Text>
+                ) : null}
+            </GlassCard>
+
+            <GlassCard title="Safety summary" subtitle="DeepSeek (grounded to warnings + UL + missing fields)" accentColor="#EF4444" right={<GlassPill label="AI" />}>
+                <View style={{ gap: 10 }}>
+                    {safetySummaryLines.map((line, idx) => (
+                        <Text key={`safe-summary-${idx}`} style={styles.detailBodyText}>
+                            {line}
+                        </Text>
+                    ))}
+                    {safetySummaryStatus === 'loading' ? (
+                        <View style={styles.inlineLoadingRow}>
+                            <ActivityIndicator size="small" />
+                            <Text style={styles.inlineLoadingText}>Refining summary...</Text>
+                        </View>
+                    ) : null}
+                </View>
+            </GlassCard>
         </View>
-      ) : null}
-    </GlassCard>
+    );
 
-    <GlassCard
-      title="Data quality"
-      subtitle={`Status: ${COVER_STATUS_LABELS[usageDataStatus.status]}`}
-      accentColor="#0EA5E9"
-    >
-      <Text style={styles.detailBodyText}>
-        Missing: {formatMissingReasons(usageDataStatus.missingReasons)}
-      </Text>
-      <Text style={styles.detailMetaText}>
-        Sources: {formatSourceRefs(usageDataStatus.sources)}
-      </Text>
-      {usageDataStatus.notes?.length ? (
-        <Text style={styles.detailFootnoteText}>
-          Notes: {usageDataStatus.notes.join(' • ')}
-        </Text>
-      ) : null}
-    </GlassCard>
-  </View>
-);
+    const [scorePendingTimedOutAfterDone, setScorePendingTimedOutAfterDone] = useState(false);
+    const scoreResponseStatus =
+        scoreBundleV4State?.status === 'ready' ? scoreBundleV4State.response?.status ?? null : null;
+    const scoreLoadingAfterDone = scoreBundleV4State?.status === 'loading';
+    useEffect(() => {
+        if (isStreaming) {
+            setScorePendingTimedOutAfterDone(false);
+            return;
+        }
+        if (!scoreLoadingAfterDone && scoreResponseStatus !== 'pending') {
+            setScorePendingTimedOutAfterDone(false);
+            return;
+        }
+        const timeoutId = setTimeout(() => {
+            setScorePendingTimedOutAfterDone(true);
+        }, SCORE_PENDING_DONE_TIMEOUT_MS);
+        return () => clearTimeout(timeoutId);
+    }, [bundleState.meta.factsDigestHash, isStreaming, scoreLoadingAfterDone, scoreResponseStatus]);
 
-const safetySummaryText =
-    safetyCover?.bullets?.[0]
-        ? formatTaggedText(safetyCover.bullets[0].text, safetyCover.bullets[0].basisTags)
-        : 'Use caution and follow label guidance, especially with existing conditions.';
-
-const safetyContent = (
-  <View style={styles.detailStack}>
-    <GlassCard
-      title="Safety verdict"
-      subtitle="High-level, conservative"
-      accentColor="#EF4444"
-      right={<GlassPill label="Safety" />}
-    >
-      <View style={styles.verdictRow}>
-        <View style={[styles.verdictIconBubble, { backgroundColor: 'rgba(239,68,68,0.18)', borderColor: 'rgba(239,68,68,0.25)' }]}>
-          <Shield size={18} color="#111827" />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.verdictTitleText}>
-            {safetyCover?.verdict ?? 'Safety summary pending.'}
-          </Text>
-          <Text style={styles.verdictSubtitleText}>
-            {safetySummaryText}
-          </Text>
-        </View>
-      </View>
-    </GlassCard>
-
-    <GlassCard
-      title="Warnings & who should be cautious"
-      subtitle="Label warnings first (then references)"
-      accentColor="#EF4444"
-    >
-      {bundleState?.sections?.safety?.detail?.warnings?.length ? (
-        <View style={{ gap: 10 }}>
-          {bundleState.sections.safety.detail.warnings.slice(0, 8).map((w: Bullet, idx: number) => (
-            <View key={`warn-${idx}`} style={styles.bulletRow}>
-              <View style={styles.bulletDot} />
-              <Text style={styles.bulletText}>{formatTaggedText(w.text, w.basisTags)}</Text>
-            </View>
-          ))}
-        </View>
-      ) : (
-        <Text style={styles.detailBodyText}>No specific warnings were provided by this source.</Text>
-      )}
-    </GlassCard>
-
-    <GlassCard
-      title="Upper limits & watch-outs"
-      subtitle="NIH ODS (general; not product-specific)"
-      accentColor="#EF4444"
-      right={<GlassPill label="NIH ODS" />}
-    >
-      <View style={styles.embeddedPanel}>
-        {disableOdsPanel ? (
-          <Text style={styles.detailBodyText}>ODS panel disabled by dashboard bisection flag.</Text>
-        ) : (
-          <OdsFoundationPanel ingredientName={activeIngredientName} variant="watch_outs_only" />
-        )}
-      </View>
-    </GlassCard>
-
-    <GlassCard
-      title="Data quality"
-      subtitle={`Status: ${COVER_STATUS_LABELS[safetyDataStatus.status]}`}
-      accentColor="#EF4444"
-    >
-      <Text style={styles.detailBodyText}>
-        Missing: {formatMissingReasons(safetyDataStatus.missingReasons)}
-      </Text>
-      <Text style={styles.detailMetaText}>
-        Sources: {formatSourceRefs(safetyDataStatus.sources)}
-      </Text>
-      {safetyDataStatus.notes?.length ? (
-        <Text style={styles.detailFootnoteText}>
-          Notes: {safetyDataStatus.notes.join(' • ')}
-        </Text>
-      ) : null}
-    </GlassCard>
-  </View>
-);
-
-const tiles: TileConfig[] = [
+    const tiles: TileConfig[] = [
         {
             id: 1,
             type: 'overview',
@@ -3137,14 +3979,12 @@ const tiles: TileConfig[] = [
             labelColor: '#D6E5FF',
             viewLabel: t.analysisView,
             eyebrow: t.analysisEyebrowCoreBenefits,
-            summary: overviewCover?.summary
-                ? { text: overviewCover.summary }
-                : { text: t.analysisPlaceholderOverviewSummary, isPlaceholder: true },
+            summary: { text: overviewSummaryText },
             summaryLines: 2,
             bullets: overviewBullets,
             bulletLimit: 2,
             bulletLines: 2,
-            dataStatus: overviewDataStatus,
+            dataStatus: unifiedOverviewDataStatus,
             content: overviewContent,
         },
         {
@@ -3160,7 +4000,7 @@ const tiles: TileConfig[] = [
             viewLabel: t.analysisView,
             eyebrow: t.analysisEyebrowKeyMechanism,
             mechanisms: ingredientMechanisms,
-            dataStatus: ingredientsDataStatus,
+            dataStatus: unifiedIngredientsDataStatus,
             content: ingredientsContent,
         },
         {
@@ -3177,7 +4017,7 @@ const tiles: TileConfig[] = [
             eyebrow: t.analysisEyebrowDailyRoutine,
             routineLine: usageRoutine ? { text: usageRoutine } : undefined,
             bullets: usageBullets,
-            dataStatus: usageDataStatus,
+            dataStatus: unifiedUsageDataStatus,
             content: usageContent,
         },
         {
@@ -3192,32 +4032,30 @@ const tiles: TileConfig[] = [
             labelColor: '#6B5B4B',
             viewLabel: t.analysisView,
             eyebrow: t.analysisEyebrowSafetyNotes,
-            warning: safetyCover?.bullets?.[0] && safetyBullet0Text
-                ? { text: formatTaggedText(safetyCover.bullets[0].text, safetyCover.bullets[0].basisTags) }
-                : bundleState.sections.safety.dataStatus === 'pending'
-                    ? { text: 'Safety summary pending', isPlaceholder: true }
-                    : { text: 'No safety details available.' },
-            tip: safetyCover?.bullets?.[1] && safetyBullet1Text
-                ? { text: formatTaggedText(safetyCover.bullets[1].text, safetyCover.bullets[1].basisTags) }
-                : bundleState.sections.safety.dataStatus === 'pending'
-                    ? { text: 'Safety tips pending', isPlaceholder: true }
-                    : { text: 'General reminder: check the label and consult a clinician if needed.' },
-            dataStatus: safetyDataStatus,
+            warning: { text: safetyWarningCoverText, isPlaceholder: safetyPending && isPlaceholderText(safetyWarningCoverText) },
+            tip: { text: safetyTipCoverText, isPlaceholder: safetyPending && isPlaceholderText(safetyTipCoverText) },
+            dataStatus: unifiedSafetyDataStatus,
             content: safetyContent,
         },
     ];
+    const selectedTile = useMemo(
+        () => (selectedTileType ? tiles.find((tile) => tile.type === selectedTileType) ?? null : null),
+        [selectedTileType, tiles],
+    );
 
     type ScoreUiMode = 'not_scored' | 'scoring' | 'scored';
+    type ScoreNotScoredCause =
+        | 'pending_timeout_after_done'
+        | 'score_request_failed'
+        | 'not_initiated_or_not_eligible';
     const v4Response =
         scoreBundleV4State?.status === 'ready' ? scoreBundleV4State.response : null;
     const v4Bundle = v4Response?.status === 'ok' ? v4Response.bundle : null;
-    const bundleSectionStatuses: DataStatus[] = [
-        bundleState.sections.overview.dataStatus,
-        bundleState.sections.ingredients.dataStatus,
-        bundleState.sections.usage.dataStatus,
-        bundleState.sections.safety.dataStatus,
-    ];
-    const bundleHasBlockedDataStatus = bundleSectionStatuses.some((status) => isScoreBlockedDataStatus(status));
+    const scoreRequestFailed = scoreBundleV4State?.status === 'error';
+    const scorePendingAfterDone =
+        !isStreaming &&
+        scorePendingTimedOutAfterDone &&
+        (v4Response?.status === 'pending' || scoreLoadingAfterDone);
     const bundleScoreSourceAuthoritative = bundleSourceType === 'lnhpd' || bundleSourceType === 'dsld';
     const bundleMetaFallback =
         (bundleState.meta as { fallback?: { code?: string } | null }).fallback ?? null;
@@ -3227,26 +4065,46 @@ const tiles: TileConfig[] = [
     const bundleFallbackOwnershipBlocked = bundleFallbackCode.includes('ownership_unverified');
     const bundleFallbackWebLimited =
         bundleFallbackCode.includes('needs_js') || bundleFallbackCode.includes('web_text_unusable');
-    const bundleScoreHardBlocked =
+    const bundleScoreEligible =
         bundleSourceTypeFinal &&
-        (!bundleScoreSourceAuthoritative ||
-            bundleState.meta.scoreAvailable === false ||
-            bundleHasBlockedDataStatus ||
-            bundleFallbackOwnershipBlocked ||
-            bundleFallbackWebLimited);
+        bundleScoreSourceAuthoritative &&
+        !bundleFallbackOwnershipBlocked &&
+        !bundleFallbackWebLimited;
+    const bundleScoreReasonCode =
+        typeof (bundleState.meta as { scoreReasonCode?: string | null }).scoreReasonCode === 'string'
+            ? ((bundleState.meta as { scoreReasonCode?: string | null }).scoreReasonCode as string)
+            : null;
+    const v4ResponseReasonCode =
+        v4Response && 'reasonCode' in v4Response && typeof v4Response.reasonCode === 'string'
+            ? v4Response.reasonCode
+            : null;
+    const v4ResponseMessage =
+        v4Response && 'message' in v4Response && typeof v4Response.message === 'string'
+            ? v4Response.message.trim()
+            : '';
+    const scoreReasonCode =
+        v4ResponseReasonCode
+            ? v4ResponseReasonCode
+            : (isDataCeiling
+                ? 'INSUFFICIENT_RECORD_DATA'
+                : bundleScoreReasonCode || (typeof bundleState.meta.fallbackReason === 'string' ? bundleState.meta.fallbackReason : null));
+    const scoreReasonMessage =
+        v4ResponseMessage.length > 0
+            ? v4ResponseMessage
+            : resolveReasonCodeMessage(scoreReasonCode);
 
-    const scoreUiMode: ScoreUiMode =
-        bundleScoreHardBlocked
-            ? 'not_scored'
-            : !scoreBundleV4State || scoreBundleV4State.status !== 'ready'
-                ? 'scoring'
-                : v4Response?.status === 'ok'
-                    ? 'scored'
-                    : v4Response?.status === 'pending'
-                        ? 'scoring'
-                        : v4Response?.status === 'not_found'
-                            ? 'not_scored'
-                            : 'scoring';
+    const scoreUiMode: ScoreUiMode = (() => {
+        if (v4Response?.status === 'ok') return 'scored';
+        if (scorePendingAfterDone) return 'not_scored';
+        if (scoreRequestFailed && !isStreaming) return 'not_scored';
+        if ((!bundleScoreEligible && !isStreaming) || (!isStreaming && scoreBundleV4State?.status === 'idle')) {
+            return 'not_scored';
+        }
+        if (!scoreBundleV4State || scoreBundleV4State.status !== 'ready') return 'scoring';
+        if (v4Response?.status === 'pending') return 'scoring';
+        if (v4Response?.status === 'not_found') return 'not_scored';
+        return !isStreaming ? 'not_scored' : 'scoring';
+    })();
 
     const hasNumber = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
     const overallScore = hasNumber(v4Bundle?.overallScore) ? v4Bundle?.overallScore : null;
@@ -3259,10 +4117,11 @@ const tiles: TileConfig[] = [
             ? {
                 effectiveness: effectivenessScore ?? 0,
                 safety: safetyScore ?? 0,
+                integrity: integrityScore,
                 value: integrityScore ?? 0,
                 overall: overallScore ?? 0,
             }
-            : { effectiveness: 0, safety: 0, value: 0, overall: 0 };
+            : { effectiveness: 0, safety: 0, integrity: null, value: 0, overall: 0 };
     const ringMuted = scoreUiMode !== 'scored' || scoreState === 'muted';
     const missingDisplay =
         scoreUiMode === 'scored'
@@ -3294,20 +4153,35 @@ const tiles: TileConfig[] = [
                     : shouldUseMissingDisplay
                         ? (missingDisplay as { overall?: string; effectiveness?: string; safety?: string; value?: string })
                         : undefined;
+    const scoreNotScoredCause: ScoreNotScoredCause | null =
+        scoreUiMode !== 'not_scored'
+            ? null
+            : scorePendingAfterDone
+                ? 'pending_timeout_after_done'
+                : scoreRequestFailed
+                    ? 'score_request_failed'
+                    : 'not_initiated_or_not_eligible';
     const notScoredReason =
-        bundleFallbackOwnershipBlocked ||
-        (v4Response?.status === 'not_found' && v4Response?.reasonCode === 'WEB_OWNERSHIP_FAILED')
+        scoreNotScoredCause === 'pending_timeout_after_done'
+            ? t.analysisScoreNotScoredReasonPendingTimeout
+            : scoreNotScoredCause === 'score_request_failed'
+                ? t.analysisScoreNotScoredReasonRequestFailed
+                : bundleFallbackOwnershipBlocked ||
+                    (v4Response?.status === 'not_found' && v4Response?.reasonCode === 'WEB_OWNERSHIP_FAILED')
             ? t.analysisScoreNotScoredReasonOwnership
             : bundleSourceType === 'web' || bundleFallbackWebLimited
                 ? t.analysisScoreNotScoredReasonWeb
-                : bundleState.meta.scoreAvailable === false
-                    ? t.analysisScoreNotScoredReasonUnavailable
-                    : bundleHasBlockedDataStatus
-                        ? t.analysisScoreNotScoredReasonUnavailable
-                        : v4Response?.status === 'not_found'
-                            ? t.analysisScoreNotScoredReasonUnavailable
-                            : t.analysisScoreNotScoredReasonUnavailable;
-    const ringMetaLines =
+                : scoreReasonMessage || t.analysisScoreNotScoredReasonUnavailable;
+    const showScoreRetryCta = Boolean(onRetryScore)
+        && scoreUiMode === 'not_scored'
+        && (scoreNotScoredCause === 'pending_timeout_after_done' || scoreNotScoredCause === 'score_request_failed');
+    const scoreMetaBlockedReasons = new Set<string>([
+        t.analysisScoreNotScoredReasonUnavailable,
+        t.analysisScoreNotScoredReasonWeb,
+        t.analysisScoreNotScoredReasonOwnership,
+        t.analysisScoreScoringReason,
+    ]);
+    const ringMetaLinesRaw =
         scoreUiMode === 'not_scored'
             ? [notScoredReason]
             : scoreUiMode === 'scoring'
@@ -3315,6 +4189,10 @@ const tiles: TileConfig[] = [
                 : hasNumber(v4Bundle?.confidence)
                     ? [`${t.analysisConfidencePrefix}: ${Math.round((v4Bundle?.confidence ?? 0) * 100)}%`]
                     : [];
+    const ringMetaLines =
+        scoreUiMode === 'scored'
+            ? ringMetaLinesRaw.filter((line) => !scoreMetaBlockedReasons.has(line))
+            : ringMetaLinesRaw;
 
     const v4Highlights = (v4Bundle?.highlights ?? [])
         .map((item) => item?.message)
@@ -3354,7 +4232,6 @@ const tiles: TileConfig[] = [
                 value: integrityScore == null,
             }
             : { effectiveness: false, safety: false, value: false };
-
     return (
         <View style={styles.root}>
             {!disableMiniHeader ? (
@@ -3411,7 +4288,7 @@ const tiles: TileConfig[] = [
                             </View>
 
                             <View style={styles.heroPillsRow}>
-                                <GlassPill label={bundleSourceType === 'web' ? 'Web source' : 'Verified source'} />
+                                <GlassPill label={sourceBadgeLabel} />
                                 {scoreBadge ? <GlassPill label={scoreBadge} accentColor={ringMuted ? '#9CA3AF' : '#111827'} /> : null}
                                 {ringMuted ? <GlassPill label="Limited confidence" /> : null}
                             </View>
@@ -3422,37 +4299,40 @@ const tiles: TileConfig[] = [
                 <View style={styles.scoreSection}>
                     <View style={styles.scoreHeroCard}>
                         {!disableScoreRing ? (
-                            <InteractiveScoreRing
-                                scores={{
-                                    overall: ringScores.overall,
-                                    effectiveness: ringScores.effectiveness,
-                                    safety: ringScores.safety,
-                                    value: ringScores.value,
-                                }}
-                                descriptions={scoreDescriptions}
-                                display={ringDisplay}
-                                muted={ringMuted}
-                                badgeText={scoreBadge}
-                                sourceType={sourceType}
-                                unknownCategories={unknownCategories}
-                                metaLines={ringMetaLines}
-                            />
+                            <>
+                                <InteractiveScoreRing
+                                    scores={{
+                                        overall: ringScores.overall,
+                                        effectiveness: ringScores.effectiveness,
+                                        safety: ringScores.safety,
+                                        value: ringScores.value,
+                                    }}
+                                    labels={{
+                                        value: t.analysisScoreIntegrity,
+                                        valueLabel: t.analysisScoreIntegrity,
+                                    }}
+                                    descriptions={scoreDescriptions}
+                                    display={ringDisplay}
+                                    muted={ringMuted}
+                                    badgeText={scoreBadge}
+                                    sourceType={sourceType}
+                                    unknownCategories={unknownCategories}
+                                    metaLines={ringMetaLines}
+                                    showStaticModeHint={SHOW_SCAN_DEBUG}
+                                />
+                                {showScoreRetryCta ? (
+                                    <Pressable onPress={onRetryScore} style={styles.scoreRetryButton}>
+                                        <Text style={styles.scoreRetryButtonText}>{t.analysisScoreRetryCta}</Text>
+                                    </Pressable>
+                                ) : null}
+                            </>
                         ) : (
                             <View style={styles.bisectNoticeCard}>
                                 <Text style={styles.bisectNoticeTitle}>Score Ring disabled</Text>
-                                <Text style={styles.bisectNoticeText}>Set by `no_ring` in `EXPO_PUBLIC_SCAN_DASHBOARD_BISECT`.</Text>
+                                <Text style={styles.bisectNoticeText}>{scoreRingDisableNotice}</Text>
                             </View>
                         )}
 
-                        {!disableInsightDeck ? (
-                            <ScoreInsightDeck
-                                display={ringDisplay}
-                                scores={ringScores}
-                                muted={ringMuted}
-                                sourceType={bundleSourceType === 'web' ? 'web' : 'label'}
-                                dataStatus={bundleState.sections.overview.dataStatus}
-                            />
-                        ) : null}
                     </View>
                 </View>
 
@@ -3468,7 +4348,7 @@ const tiles: TileConfig[] = [
                                 <TileRenderer
                                     key={tile.id}
                                     tile={tile}
-                                    onPress={() => setSelectedTile(tile)}
+                                    onPress={() => setSelectedTileType(tile.type)}
                                     scrollY={scrollY}
                                     viewportHeight={viewportHeight}
                                     tileWidth={tileWidth}
@@ -3486,7 +4366,12 @@ const tiles: TileConfig[] = [
             </ScrollContainer>
 
             {!disableModalPane ? (
-                <DashboardModal visible={!!selectedTile} tile={selectedTile} onClose={() => setSelectedTile(null)} />
+                <DashboardModal
+                    key={selectedTileType ?? 'closed'}
+                    visible={!!selectedTile}
+                    tile={selectedTile}
+                    onClose={() => setSelectedTileType(null)}
+                />
             ) : null}
         </View>
     );
@@ -3500,7 +4385,8 @@ export const AnalysisDashboard: React.FC<{
     sourceType?: SourceType;
     analysisBundle?: AnalysisBundle | null;
     scoreBundleV4State?: ScoreBundleV4State;
-}> = ({ analysis, isStreaming = false, scoreBadge, scoreState, sourceType, analysisBundle, scoreBundleV4State }) => {
+    onRetryScore?: () => void;
+}> = ({ analysis, isStreaming = false, scoreBadge, scoreState, sourceType, analysisBundle, scoreBundleV4State, onRetryScore }) => {
     const [selectedTile, setSelectedTile] = useState<TileConfig | null>(null);
     const { t } = useTranslation();
     const scrollY = useSharedValue(0);
@@ -3558,8 +4444,8 @@ export const AnalysisDashboard: React.FC<{
         availableScoreCount === 0
             ? 'limited'
             : availableScoreCount === 3
-              ? 'complete'
-              : 'partial';
+                ? 'complete'
+                : 'partial';
     const scoreConfidence: CoverStatus =
         scoreState === 'muted' || scoreState === 'loading' ? 'limited' : derivedScoreConfidence;
     const provisionalScore = 50;
@@ -3965,10 +4851,9 @@ export const AnalysisDashboard: React.FC<{
             [
                 primaryName
                     ? ensurePeriod(
-                        `Focused on ${primaryName}${
-                            hasNumericDose(primaryActive?.dosageValue) && primaryDoseLabel
-                                ? ` ${primaryDoseLabel}`
-                                : ''
+                        `Focused on ${primaryName}${hasNumericDose(primaryActive?.dosageValue) && primaryDoseLabel
+                            ? ` ${primaryDoseLabel}`
+                            : ''
                         }`
                     )
                     : '',
@@ -4288,45 +5173,45 @@ export const AnalysisDashboard: React.FC<{
                     <Text style={styles.modalParagraphSmall}>{scienceSummary}</Text>
 
                     {/* NEW: Enhanced Ingredient Analysis */}
-                            {scienceIngredients.length > 0 && (
-                                <View style={styles.modalCalloutCard}>
-                                    <Text style={styles.modalBulletTitle}>Ingredient Analysis</Text>
-                                    {scienceIngredients.slice(0, 4).map((ingredient: any, idx: number) => {
-                                        const doseLabel = formatDose(ingredient.dosageValue, ingredient.dosageUnit);
-                                        return (
-                                            <View key={idx} style={{ marginTop: idx > 0 ? 12 : 4 }}>
-                                                <Text
-                                                    style={[styles.modalParagraphSmall, { fontWeight: '600' }]}
-                                                    numberOfLines={2}
-                                                    ellipsizeMode="tail"
-                                                >
-                                                    {ingredient.name}
-                                                    {ingredient.form && ` (${ingredient.form})`}
-                                                </Text>
-                                                {ingredient.formQuality && ingredient.formQuality !== 'unknown' && (
-                                                    <Text style={styles.modalParagraphSmall}>
-                                                        Form quality: {ingredient.formQuality.charAt(0).toUpperCase() + ingredient.formQuality.slice(1)}
-                                                        {ingredient.formNote && ` — ${ingredient.formNote}`}
-                                                    </Text>
+                    {scienceIngredients.length > 0 && (
+                        <View style={styles.modalCalloutCard}>
+                            <Text style={styles.modalBulletTitle}>Ingredient Analysis</Text>
+                            {scienceIngredients.slice(0, 4).map((ingredient: any, idx: number) => {
+                                const doseLabel = formatDose(ingredient.dosageValue, ingredient.dosageUnit);
+                                return (
+                                    <View key={idx} style={{ marginTop: idx > 0 ? 12 : 4 }}>
+                                        <Text
+                                            style={[styles.modalParagraphSmall, { fontWeight: '600' }]}
+                                            numberOfLines={2}
+                                            ellipsizeMode="tail"
+                                        >
+                                            {ingredient.name}
+                                            {ingredient.form && ` (${ingredient.form})`}
+                                        </Text>
+                                        {ingredient.formQuality && ingredient.formQuality !== 'unknown' && (
+                                            <Text style={styles.modalParagraphSmall}>
+                                                Form quality: {ingredient.formQuality.charAt(0).toUpperCase() + ingredient.formQuality.slice(1)}
+                                                {ingredient.formNote && ` — ${ingredient.formNote}`}
+                                            </Text>
+                                        )}
+                                        {doseLabel && (
+                                            <Text style={styles.modalParagraphSmall}>
+                                                Dose: {doseLabel}
+                                                {ingredient.dosageAssessment && ingredient.dosageAssessment !== 'unknown' && (
+                                                    ` (${ingredient.dosageAssessment})`
                                                 )}
-                                                {doseLabel && (
-                                                    <Text style={styles.modalParagraphSmall}>
-                                                        Dose: {doseLabel}
-                                                        {ingredient.dosageAssessment && ingredient.dosageAssessment !== 'unknown' && (
-                                                            ` (${ingredient.dosageAssessment})`
-                                                        )}
-                                                    </Text>
-                                                )}
-                                                {ingredient.evidenceLevel && ingredient.evidenceLevel !== 'none' && (
-                                                    <Text style={styles.modalParagraphSmall}>
-                                                        Evidence: {ingredient.evidenceLevel.charAt(0).toUpperCase() + ingredient.evidenceLevel.slice(1)}
-                                                    </Text>
-                                                )}
-                                            </View>
-                                        );
-                                    })}
-                                </View>
-                            )}
+                                            </Text>
+                                        )}
+                                        {ingredient.evidenceLevel && ingredient.evidenceLevel !== 'none' && (
+                                            <Text style={styles.modalParagraphSmall}>
+                                                Evidence: {ingredient.evidenceLevel.charAt(0).toUpperCase() + ingredient.evidenceLevel.slice(1)}
+                                            </Text>
+                                        )}
+                                    </View>
+                                );
+                            })}
+                        </View>
+                    )}
 
                     {/* Marketing vs Reality - NEW */}
                     {efficacy.marketingVsReality && (
@@ -4523,7 +5408,7 @@ export const AnalysisDashboard: React.FC<{
         },
     ];
 
-    if (!forceLegacyDashboard && (analysisBundle?.meta?.schemaVersion === 3 || analysisBundle?.meta?.schemaVersion === 4)) {
+    if (analysisBundle?.meta?.schemaVersion === 3 || analysisBundle?.meta?.schemaVersion === 4) {
         return (
             <AnalysisBundleDashboard
                 bundle={analysisBundle}
@@ -4533,17 +5418,36 @@ export const AnalysisDashboard: React.FC<{
                 scoreState={scoreState}
                 sourceType={sourceType}
                 scoreBundleV4State={scoreBundleV4State}
+                onRetryScore={onRetryScore}
             />
         );
     }
 
-    const productTitle = productInfo.name || 'Supplement';
-    const productSubtitle = [
-        displayBrand,
-        ...(isRegulatoryLabel ? [] : [productInfo.category]),
-    ]
-        .filter(Boolean)
-        .join(' • ');
+    const fallbackMeta = (analysisBundle?.meta ?? null) as any;
+    const trustedFallbackIdentity = resolveTrustedDisplayIdentity({
+        bundleMeta: fallbackMeta,
+        sourceAttributionHint: sourceType === 'label_scan' || isRegulatoryLabel ? 'label_record' : null,
+        sourceTypeHint: isRegulatoryLabel ? 'lnhpd' : sourceType === 'label_scan' ? 'label_scan' : null,
+        productName: productInfo.name || 'Supplement',
+        productSubtitle: [
+            displayBrand,
+            ...(isRegulatoryLabel ? [] : [productInfo.category]),
+        ]
+            .filter(Boolean)
+            .join(' • '),
+        authoritativeIdentity:
+            fallbackMeta?.authoritativeIdentity ?? null,
+        barcode:
+            fallbackMeta?.authoritativeIdentity?.value ?? null,
+        sources: (Array.isArray(analysis.sources) ? analysis.sources : []).map((source: any) => ({
+            domain: typeof source?.domain === 'string' ? source.domain : null,
+            url: typeof source?.url === 'string' ? source.url : typeof source?.link === 'string' ? source.link : null,
+            link: typeof source?.link === 'string' ? source.link : null,
+        })),
+        showDebugWebHintSource: SHOW_SCAN_DEBUG,
+    });
+    const productTitle = trustedFallbackIdentity.title;
+    const productSubtitle = trustedFallbackIdentity.subtitle;
 
     return (
         <View style={styles.root}>
@@ -4589,17 +5493,18 @@ export const AnalysisDashboard: React.FC<{
                                 overall: t.analysisScoreLabel,
                                 effectiveness: t.analysisScoreEffectiveness,
                                 safety: t.analysisScoreSafety,
-                                value: sourceType === 'label_scan' ? t.analysisScoreFormulaQuality : t.analysisScoreValue,
-                                valueLabel: sourceType === 'label_scan' ? t.analysisScoreFormulaQuality : t.analysisScoreValue,
+                                value: sourceType === 'label_scan' ? t.analysisScoreFormulaQuality : t.analysisScoreIntegrity,
+                                valueLabel: sourceType === 'label_scan' ? t.analysisScoreFormulaQuality : t.analysisScoreIntegrity,
                             }}
                             metaLines={scoreMetaLines}
                             badgeText={badgeTextSafe}
                             sourceType={sourceType}
+                            showStaticModeHint={SHOW_SCAN_DEBUG}
                         />
                     ) : (
                         <View style={styles.bisectNoticeCard}>
                             <Text style={styles.bisectNoticeTitle}>Score Ring disabled</Text>
-                            <Text style={styles.bisectNoticeText}>Set by `no_ring` in `EXPO_PUBLIC_SCAN_DASHBOARD_BISECT`.</Text>
+                            <Text style={styles.bisectNoticeText}>{scoreRingDisableNotice}</Text>
                         </View>
                     )}
                 </View>
@@ -5556,727 +6461,744 @@ const styles = StyleSheet.create({
     },
 
 
-// ---------- New glass / iOS-like primitives ----------
-detailStack: {
-    gap: 14,
-},
-detailLeadText: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: '#111827',
-},
-detailBodyText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: 'rgba(17,24,39,0.82)',
-},
-detailMetaLabel: {
-    fontSize: 12,
-    color: 'rgba(17,24,39,0.55)',
-    fontWeight: '600',
-},
-detailMetaText: {
-    marginTop: 4,
-    fontSize: 13,
-    color: 'rgba(17,24,39,0.82)',
-},
-detailPlaceholderText: {
-    fontSize: 14,
-    color: 'rgba(17,24,39,0.55)',
-    lineHeight: 20,
-},
-detailFootnoteText: {
-    marginTop: 12,
-    fontSize: 12,
-    color: 'rgba(17,24,39,0.55)',
-    lineHeight: 18,
-},
+    // ---------- New glass / iOS-like primitives ----------
+    detailStack: {
+        gap: 14,
+    },
+    detailLeadText: {
+        fontSize: 15,
+        lineHeight: 22,
+        color: '#111827',
+    },
+    detailBodyText: {
+        fontSize: 14,
+        lineHeight: 20,
+        color: 'rgba(17,24,39,0.82)',
+    },
+    detailMetaLabel: {
+        fontSize: 12,
+        color: 'rgba(17,24,39,0.55)',
+        fontWeight: '600',
+    },
+    detailMetaText: {
+        marginTop: 4,
+        fontSize: 13,
+        color: 'rgba(17,24,39,0.82)',
+    },
+    detailPlaceholderText: {
+        fontSize: 14,
+        color: 'rgba(17,24,39,0.55)',
+        lineHeight: 20,
+    },
+    detailFootnoteText: {
+        marginTop: 12,
+        fontSize: 12,
+        color: 'rgba(17,24,39,0.55)',
+        lineHeight: 18,
+    },
 
-glassCard: {
-    borderRadius: 22,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.28)',
-    backgroundColor: 'rgba(255,255,255,0.35)',
-},
-glassCardContent: {
-    padding: 14,
-},
-glassCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-    gap: 12,
-},
-glassCardHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    flex: 1,
-},
-glassCardHeaderRight: {
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-},
-glassAccent: {
-    width: 4,
-    height: 18,
-    borderRadius: 3,
-    marginTop: 2,
-},
-glassCardTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#111827',
-    lineHeight: 20,
-},
-glassCardSubtitle: {
-    marginTop: 2,
-    fontSize: 12,
-    color: 'rgba(17,24,39,0.55)',
-    lineHeight: 16,
-},
+    glassCard: {
+        borderRadius: 22,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.28)',
+        backgroundColor: 'rgba(255,255,255,0.35)',
+    },
+    glassCardContent: {
+        padding: 14,
+    },
+    glassCardHeader: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        marginBottom: 10,
+        gap: 12,
+    },
+    glassCardHeaderLeft: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 10,
+        flex: 1,
+    },
+    glassCardHeaderRight: {
+        alignItems: 'flex-end',
+        justifyContent: 'center',
+    },
+    glassAccent: {
+        width: 4,
+        height: 18,
+        borderRadius: 3,
+        marginTop: 2,
+    },
+    glassCardTitle: {
+        fontSize: 15,
+        fontWeight: '700',
+        color: '#111827',
+        lineHeight: 20,
+    },
+    glassCardSubtitle: {
+        marginTop: 2,
+        fontSize: 12,
+        color: 'rgba(17,24,39,0.55)',
+        lineHeight: 16,
+    },
 
-glassPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.22)',
-    backgroundColor: 'rgba(255,255,255,0.34)',
-},
-glassPillText: {
-    fontSize: 12,
-    color: 'rgba(17,24,39,0.72)',
-    fontWeight: '600',
-},
+    glassPill: {
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.22)',
+        backgroundColor: 'rgba(255,255,255,0.34)',
+    },
+    glassPillText: {
+        fontSize: 12,
+        color: 'rgba(17,24,39,0.72)',
+        fontWeight: '600',
+    },
 
-bulletRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-},
-bulletDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginTop: 7,
-    backgroundColor: 'rgba(17,24,39,0.40)',
-},
-bulletText: {
-    flex: 1,
-    fontSize: 13,
-    lineHeight: 19,
-    color: 'rgba(17,24,39,0.82)',
-},
+    bulletRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 10,
+    },
+    bulletDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        marginTop: 7,
+        backgroundColor: 'rgba(17,24,39,0.40)',
+    },
+    bulletText: {
+        flex: 1,
+        fontSize: 13,
+        lineHeight: 19,
+        color: 'rgba(17,24,39,0.82)',
+    },
 
-nextStepsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginTop: 2,
-},
-nextStepChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.24)',
-    backgroundColor: 'rgba(255,255,255,0.30)',
-},
-nextStepChipText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: 'rgba(17,24,39,0.75)',
-},
+    nextStepsRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 10,
+        marginTop: 2,
+    },
+    nextStepChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.24)',
+        backgroundColor: 'rgba(255,255,255,0.30)',
+    },
+    nextStepChipText: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: 'rgba(17,24,39,0.75)',
+    },
 
-// ---------- Hero header ----------
-heroHeader: {
-    marginTop: 10,
-    marginBottom: 14,
-    paddingHorizontal: 20,
-},
-heroCard: {
-    borderRadius: 26,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.26)',
-    padding: 16,
-},
-heroTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-},
-heroImage: {
-    width: 54,
-    height: 54,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.35)',
-},
-heroImagePlaceholder: {
-    width: 54,
-    height: 54,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.32)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.35)',
-    alignItems: 'center',
-    justifyContent: 'center',
-},
-heroTextBlock: {
-    flex: 1,
-},
-heroEyebrow: {
-    fontSize: 12,
-    color: 'rgba(17,24,39,0.55)',
-    fontWeight: '700',
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
-},
-heroTitle: {
-    marginTop: 4,
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#111827',
-    lineHeight: 24,
-},
-heroSubtitle: {
-    marginTop: 6,
-    fontSize: 13,
-    color: 'rgba(17,24,39,0.60)',
-    lineHeight: 18,
-},
-heroPillsRow: {
-    marginTop: 12,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-},
+    // ---------- Hero header ----------
+    heroHeader: {
+        marginTop: 10,
+        marginBottom: 14,
+        paddingHorizontal: 20,
+    },
+    heroCard: {
+        borderRadius: 26,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.26)',
+        padding: 16,
+    },
+    heroTopRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    heroImage: {
+        width: 54,
+        height: 54,
+        borderRadius: 16,
+        backgroundColor: 'rgba(255,255,255,0.25)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.35)',
+    },
+    heroImagePlaceholder: {
+        width: 54,
+        height: 54,
+        borderRadius: 16,
+        backgroundColor: 'rgba(255,255,255,0.32)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.35)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    heroTextBlock: {
+        flex: 1,
+    },
+    heroEyebrow: {
+        fontSize: 12,
+        color: 'rgba(17,24,39,0.55)',
+        fontWeight: '700',
+        letterSpacing: 0.6,
+        textTransform: 'uppercase',
+    },
+    heroTitle: {
+        marginTop: 4,
+        fontSize: 20,
+        fontWeight: '800',
+        color: '#111827',
+        lineHeight: 24,
+    },
+    heroSubtitle: {
+        marginTop: 6,
+        fontSize: 13,
+        color: 'rgba(17,24,39,0.60)',
+        lineHeight: 18,
+    },
+    heroPillsRow: {
+        marginTop: 12,
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 10,
+    },
 
-// ---------- Score hero + mini header ----------
-scoreHeroCard: {
-    borderRadius: 26,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.26)',
-    backgroundColor: 'rgba(255,255,255,0.30)',
-    paddingVertical: 14,
-},
+    // ---------- Score hero + mini header ----------
+    scoreHeroCard: {
+        borderRadius: 26,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.26)',
+        backgroundColor: 'rgba(255,255,255,0.30)',
+        paddingVertical: 14,
+    },
+    scoreRetryButton: {
+        marginTop: 8,
+        alignSelf: 'center',
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: 'rgba(17,24,39,0.18)',
+        backgroundColor: 'rgba(255,255,255,0.75)',
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+    },
+    scoreRetryButtonText: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#111827',
+    },
 
-miniHeader: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    top: 10,
-    borderRadius: 18,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.28)',
-    backgroundColor: 'rgba(255,255,255,0.35)',
-    zIndex: 50,
-},
-miniHeaderTint: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-},
-miniHeaderContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-},
-miniScoreBubble: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(17,24,39,0.12)',
-    backgroundColor: 'rgba(255,255,255,0.55)',
-},
-miniScoreBubbleMuted: {
-    borderColor: 'rgba(17,24,39,0.08)',
-    backgroundColor: 'rgba(255,255,255,0.40)',
-},
-miniScoreText: {
-    fontSize: 14,
-    fontWeight: '900',
-    color: '#111827',
-},
-miniHeaderTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#111827',
-},
-miniHeaderSubtitle: {
-    marginTop: 2,
-    fontSize: 11,
-    color: 'rgba(17,24,39,0.55)',
-    fontWeight: '600',
-},
+    miniHeader: {
+        position: 'absolute',
+        left: 16,
+        right: 16,
+        top: 10,
+        borderRadius: 18,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.28)',
+        backgroundColor: 'rgba(255,255,255,0.35)',
+        zIndex: 50,
+    },
+    miniHeaderTint: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(255,255,255,0.15)',
+    },
+    miniHeaderContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+    },
+    miniScoreBubble: {
+        width: 36,
+        height: 36,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(17,24,39,0.12)',
+        backgroundColor: 'rgba(255,255,255,0.55)',
+    },
+    miniScoreBubbleMuted: {
+        borderColor: 'rgba(17,24,39,0.08)',
+        backgroundColor: 'rgba(255,255,255,0.40)',
+    },
+    miniScoreText: {
+        fontSize: 14,
+        fontWeight: '900',
+        color: '#111827',
+    },
+    miniHeaderTitle: {
+        fontSize: 13,
+        fontWeight: '800',
+        color: '#111827',
+    },
+    miniHeaderSubtitle: {
+        marginTop: 2,
+        fontSize: 11,
+        color: 'rgba(17,24,39,0.55)',
+        fontWeight: '600',
+    },
 
-// ---------- Score insight deck ----------
-scoreInsightDeck: {
-    paddingHorizontal: 16,
-    paddingBottom: 2,
-    marginTop: 6,
-},
-scoreInsightHeader: {
-    marginBottom: 10,
-    paddingHorizontal: 4,
-},
-scoreInsightTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#111827',
-},
-scoreInsightSubtitle: {
-    marginTop: 4,
-    fontSize: 12,
-    lineHeight: 16,
-    color: 'rgba(17,24,39,0.55)',
-},
-scoreInsightList: {
-    gap: 10,
-},
-scoreInsightItem: {
-    borderRadius: 20,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.26)',
-    backgroundColor: 'rgba(255,255,255,0.28)',
-    padding: 12,
-},
-scoreInsightItemTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-},
-scoreInsightItemLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    flex: 1,
-},
-scoreInsightIconBubble: {
-    width: 28,
-    height: 28,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.55)',
-    borderWidth: 1,
-    borderColor: 'rgba(17,24,39,0.10)',
-},
-scoreInsightItemTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#111827',
-},
-scoreInsightItemSummary: {
-    marginTop: 2,
-    fontSize: 12,
-    color: 'rgba(17,24,39,0.55)',
-    lineHeight: 16,
-},
-scoreInsightItemRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-},
-scoreInsightExpanded: {
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.25)',
-},
-scoreMiniGrid: {
-    flexDirection: 'row',
-    gap: 10,
-},
-scoreMiniCell: {
-    flex: 1,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.26)',
-    backgroundColor: 'rgba(255,255,255,0.32)',
-    padding: 10,
-    alignItems: 'center',
-},
-scoreMiniLabel: {
-    fontSize: 11,
-    color: 'rgba(17,24,39,0.55)',
-    fontWeight: '700',
-},
-scoreMiniValue: {
-    marginTop: 4,
-    fontSize: 16,
-    fontWeight: '900',
-    color: '#111827',
-},
-scoreInsightDetailTitle: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#111827',
-    marginBottom: 8,
-},
-scoreReasonRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    marginBottom: 8,
-},
-scoreReasonDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginTop: 7,
-    backgroundColor: 'rgba(17,24,39,0.35)',
-},
-scoreReasonText: {
-    flex: 1,
-    fontSize: 12,
-    lineHeight: 17,
-    color: 'rgba(17,24,39,0.74)',
-},
-scoreInsightNote: {
-    marginTop: 8,
-    fontSize: 12,
-    color: 'rgba(17,24,39,0.55)',
-    lineHeight: 16,
-},
+    // ---------- Score insight deck ----------
+    scoreInsightDeck: {
+        paddingHorizontal: 16,
+        paddingBottom: 2,
+        marginTop: 6,
+    },
+    scoreInsightHeader: {
+        marginBottom: 10,
+        paddingHorizontal: 4,
+    },
+    scoreInsightTitle: {
+        fontSize: 15,
+        fontWeight: '800',
+        color: '#111827',
+    },
+    scoreInsightSubtitle: {
+        marginTop: 4,
+        fontSize: 12,
+        lineHeight: 16,
+        color: 'rgba(17,24,39,0.55)',
+    },
+    scoreInsightList: {
+        gap: 10,
+    },
+    scoreInsightItem: {
+        borderRadius: 20,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.26)',
+        backgroundColor: 'rgba(255,255,255,0.28)',
+        padding: 12,
+    },
+    scoreInsightItemTop: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+    },
+    scoreInsightItemLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        flex: 1,
+    },
+    scoreInsightIconBubble: {
+        width: 28,
+        height: 28,
+        borderRadius: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(255,255,255,0.55)',
+        borderWidth: 1,
+        borderColor: 'rgba(17,24,39,0.10)',
+    },
+    scoreInsightItemTitle: {
+        fontSize: 13,
+        fontWeight: '800',
+        color: '#111827',
+    },
+    scoreInsightItemSummary: {
+        marginTop: 2,
+        fontSize: 12,
+        color: 'rgba(17,24,39,0.55)',
+        lineHeight: 16,
+    },
+    scoreInsightItemRight: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    scoreInsightExpanded: {
+        marginTop: 12,
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(255,255,255,0.25)',
+    },
+    scoreMiniGrid: {
+        flexDirection: 'row',
+        gap: 10,
+    },
+    scoreMiniCell: {
+        flex: 1,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.26)',
+        backgroundColor: 'rgba(255,255,255,0.32)',
+        padding: 10,
+        alignItems: 'center',
+    },
+    scoreMiniLabel: {
+        fontSize: 11,
+        color: 'rgba(17,24,39,0.55)',
+        fontWeight: '700',
+    },
+    scoreMiniValue: {
+        marginTop: 4,
+        fontSize: 16,
+        fontWeight: '900',
+        color: '#111827',
+    },
+    scoreInsightDetailTitle: {
+        fontSize: 12,
+        fontWeight: '800',
+        color: '#111827',
+        marginBottom: 8,
+    },
+    scoreReasonRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 10,
+        marginBottom: 8,
+    },
+    scoreReasonDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        marginTop: 7,
+        backgroundColor: 'rgba(17,24,39,0.35)',
+    },
+    scoreReasonText: {
+        flex: 1,
+        fontSize: 12,
+        lineHeight: 17,
+        color: 'rgba(17,24,39,0.74)',
+    },
+    scoreInsightNote: {
+        marginTop: 8,
+        fontSize: 12,
+        color: 'rgba(17,24,39,0.55)',
+        lineHeight: 16,
+    },
 
-pillarTriad: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-},
+    pillarTriad: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
 
-pillarTriadCols: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-},
-pillarCol: {
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-    minWidth: 54,
-},
-pillarColLabel: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: 'rgba(17,24,39,0.55)',
-},
-pillarColValueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 3,
-},
-pillarColValueText: {
-    fontSize: 11,
-    fontWeight: '900',
-    color: 'rgba(17,24,39,0.70)',
-},
-pillarChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.26)',
-    backgroundColor: 'rgba(255,255,255,0.34)',
-},
-pillarDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-},
-pillarChipText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: 'rgba(17,24,39,0.65)',
-},
+    pillarTriadCols: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+    },
+    pillarCol: {
+        alignItems: 'flex-start',
+        justifyContent: 'center',
+        minWidth: 54,
+    },
+    pillarColLabel: {
+        fontSize: 10,
+        fontWeight: '800',
+        color: 'rgba(17,24,39,0.55)',
+    },
+    pillarColValueRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        marginTop: 3,
+    },
+    pillarColValueText: {
+        fontSize: 11,
+        fontWeight: '900',
+        color: 'rgba(17,24,39,0.70)',
+    },
+    pillarChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingHorizontal: 8,
+        paddingVertical: 6,
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.26)',
+        backgroundColor: 'rgba(255,255,255,0.34)',
+    },
+    pillarDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+    },
+    pillarChipText: {
+        fontSize: 11,
+        fontWeight: '800',
+        color: 'rgba(17,24,39,0.65)',
+    },
 
-// ---------- Ingredient detail styling ----------
+    // ---------- Ingredient detail styling ----------
 
-ingredientChip: {
-    borderRadius: 999,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.26)',
-    backgroundColor: 'rgba(255,255,255,0.28)',
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    maxWidth: 220,
-},
-ingredientChipActive: {
-    borderColor: 'rgba(217,119,6,0.45)',
-    backgroundColor: 'rgba(255,255,255,0.40)',
-},
-ingredientChipText: {
-    fontSize: 12,
-    fontWeight: '900',
-    color: 'rgba(17,24,39,0.68)',
-},
-ingredientChipTextActive: {
-    color: '#111827',
-},
-ingredientsList: {
-    gap: 10,
-},
-ingredientsListRow: {
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
-    backgroundColor: 'rgba(255,255,255,0.30)',
-},
-ingredientsListName: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#111827',
-},
-ingredientsListDose: {
-    marginTop: 3,
-    fontSize: 12,
-    color: 'rgba(17,24,39,0.65)',
-    fontWeight: '600',
-},
-ingredientsListDoseMuted: {
-    marginTop: 3,
-    fontSize: 12,
-    color: 'rgba(17,24,39,0.45)',
-    fontWeight: '600',
-},
-embeddedPanel: {
-    borderRadius: 18,
-    overflow: 'hidden',
-},
+    ingredientChip: {
+        borderRadius: 999,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.26)',
+        backgroundColor: 'rgba(255,255,255,0.28)',
+        paddingHorizontal: 12,
+        paddingVertical: 9,
+        maxWidth: 220,
+    },
+    ingredientChipActive: {
+        borderColor: 'rgba(217,119,6,0.45)',
+        backgroundColor: 'rgba(255,255,255,0.40)',
+    },
+    ingredientChipText: {
+        fontSize: 12,
+        fontWeight: '900',
+        color: 'rgba(17,24,39,0.68)',
+    },
+    ingredientChipTextActive: {
+        color: '#111827',
+    },
+    ingredientsList: {
+        gap: 10,
+    },
+    ingredientsListRow: {
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.25)',
+        backgroundColor: 'rgba(255,255,255,0.30)',
+    },
+    ingredientsListName: {
+        fontSize: 14,
+        fontWeight: '800',
+        color: '#111827',
+    },
+    ingredientsListDose: {
+        marginTop: 3,
+        fontSize: 12,
+        color: 'rgba(17,24,39,0.65)',
+        fontWeight: '600',
+    },
+    ingredientsListDoseMuted: {
+        marginTop: 3,
+        fontSize: 12,
+        color: 'rgba(17,24,39,0.45)',
+        fontWeight: '600',
+    },
+    embeddedPanel: {
+        borderRadius: 18,
+        overflow: 'hidden',
+    },
 
-kvGrid: {
-    gap: 10,
-},
-kvRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
-    backgroundColor: 'rgba(255,255,255,0.30)',
-},
-kvLabel: {
-    fontSize: 12,
-    color: 'rgba(17,24,39,0.55)',
-    fontWeight: '700',
-    flex: 1,
-},
-kvValue: {
-    fontSize: 12,
-    color: 'rgba(17,24,39,0.85)',
-    fontWeight: '800',
-    textAlign: 'right',
-    flex: 1,
-},
+    kvGrid: {
+        gap: 10,
+    },
+    kvRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.25)',
+        backgroundColor: 'rgba(255,255,255,0.30)',
+    },
+    kvLabel: {
+        fontSize: 12,
+        color: 'rgba(17,24,39,0.55)',
+        fontWeight: '700',
+        flex: 1,
+    },
+    kvValue: {
+        fontSize: 12,
+        color: 'rgba(17,24,39,0.85)',
+        fontWeight: '800',
+        textAlign: 'right',
+        flex: 1,
+    },
 
-reasonBlock: {
-    padding: 12,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
-    backgroundColor: 'rgba(255,255,255,0.28)',
-},
-reasonHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 10,
-},
-reasonTitle: {
-    fontSize: 12,
-    fontWeight: '900',
-    color: '#111827',
-},
-reasonText: {
-    marginTop: 8,
-    fontSize: 12,
-    lineHeight: 17,
-    color: 'rgba(17,24,39,0.72)',
-},
+    reasonBlock: {
+        padding: 12,
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.25)',
+        backgroundColor: 'rgba(255,255,255,0.28)',
+    },
+    reasonHeaderRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 10,
+    },
+    reasonTitle: {
+        fontSize: 12,
+        fontWeight: '900',
+        color: '#111827',
+    },
+    reasonText: {
+        marginTop: 8,
+        fontSize: 12,
+        lineHeight: 17,
+        color: 'rgba(17,24,39,0.72)',
+    },
 
-emptyStateBox: {
-    padding: 12,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
-    backgroundColor: 'rgba(255,255,255,0.28)',
-},
-emptyStateTitle: {
-    fontSize: 13,
-    fontWeight: '900',
-    color: '#111827',
-},
-emptyStateText: {
-    marginTop: 6,
-    fontSize: 12,
-    lineHeight: 17,
-    color: 'rgba(17,24,39,0.60)',
-},
+    emptyStateBox: {
+        padding: 12,
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.25)',
+        backgroundColor: 'rgba(255,255,255,0.28)',
+    },
+    emptyStateTitle: {
+        fontSize: 13,
+        fontWeight: '900',
+        color: '#111827',
+    },
+    emptyStateText: {
+        marginTop: 6,
+        fontSize: 12,
+        lineHeight: 17,
+        color: 'rgba(17,24,39,0.60)',
+    },
 
-inlineLoadingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 8,
-},
-inlineLoadingText: {
-    fontSize: 12,
-    color: 'rgba(17,24,39,0.60)',
-    fontWeight: '700',
-},
+    inlineLoadingRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        paddingVertical: 8,
+    },
+    inlineLoadingText: {
+        fontSize: 12,
+        color: 'rgba(17,24,39,0.60)',
+        fontWeight: '700',
+    },
 
-summaryMainText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: 'rgba(17,24,39,0.82)',
-},
-summarySectionTitle: {
-    fontSize: 12,
-    fontWeight: '900',
-    color: '#111827',
-},
-verdictRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-},
-verdictIconBubble: {
-    width: 34,
-    height: 34,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-},
-verdictTitleText: {
-    fontSize: 14,
-    fontWeight: '900',
-    color: '#111827',
-},
-verdictSubtitleText: {
-    marginTop: 4,
-    fontSize: 12,
-    lineHeight: 17,
-    color: 'rgba(17,24,39,0.60)',
-},
+    summaryMainText: {
+        fontSize: 14,
+        lineHeight: 20,
+        color: 'rgba(17,24,39,0.82)',
+    },
+    summarySectionTitle: {
+        fontSize: 12,
+        fontWeight: '900',
+        color: '#111827',
+    },
+    verdictRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    verdictIconBubble: {
+        width: 34,
+        height: 34,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+    },
+    verdictTitleText: {
+        fontSize: 14,
+        fontWeight: '900',
+        color: '#111827',
+    },
+    verdictSubtitleText: {
+        marginTop: 4,
+        fontSize: 12,
+        lineHeight: 17,
+        color: 'rgba(17,24,39,0.60)',
+    },
 
-// ---------- New modal styling ----------
-modalOverlayGlass: {
-    flex: 1,
-    justifyContent: 'flex-end',
-},
-modalBackdropTint: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.22)',
-},
-modalSheet: {
-    width: '100%',
-    maxHeight: '88%',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.22)',
-    backgroundColor: 'rgba(255,255,255,0.28)',
-    paddingBottom: 8,
-},
-modalHeaderNew: {
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-},
-modalHeaderLeftNew: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
-},
-modalIconBubble: {
-    width: 38,
-    height: 38,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-},
-modalTitleNew: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: '#111827',
-},
-modalSubtitleNew: {
-    marginTop: 4,
-    fontSize: 12,
-    color: 'rgba(17,24,39,0.55)',
-    lineHeight: 16,
-},
-modalCloseButtonNew: {
-    width: 34,
-    height: 34,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.28)',
-    backgroundColor: 'rgba(255,255,255,0.40)',
-},
-modalScrollNew: {
-    flex: 1,
-},
-modalScrollContentNew: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-},
+    // ---------- New modal styling ----------
+    modalOverlayGlass: {
+        flex: 1,
+        justifyContent: 'flex-end',
+    },
+    modalBackdropTint: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.22)',
+    },
+    modalSheet: {
+        width: '100%',
+        height: '88%',
+        maxHeight: '88%',
+        minHeight: 420,
+        borderTopLeftRadius: 28,
+        borderTopRightRadius: 28,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.22)',
+        backgroundColor: 'rgba(255,255,255,0.28)',
+        paddingBottom: 8,
+    },
+    modalHeaderNew: {
+        paddingHorizontal: 16,
+        paddingBottom: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+    },
+    modalHeaderLeftNew: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        flex: 1,
+    },
+    modalIconBubble: {
+        width: 38,
+        height: 38,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+    },
+    modalTitleNew: {
+        fontSize: 16,
+        fontWeight: '900',
+        color: '#111827',
+    },
+    modalSubtitleNew: {
+        marginTop: 4,
+        fontSize: 12,
+        color: 'rgba(17,24,39,0.55)',
+        lineHeight: 16,
+    },
+    modalCloseButtonNew: {
+        width: 34,
+        height: 34,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.28)',
+        backgroundColor: 'rgba(255,255,255,0.40)',
+    },
+    modalScrollNew: {
+        flex: 1,
+    },
+    modalScrollContentNew: {
+        paddingHorizontal: 16,
+        paddingBottom: 16,
+    },
 
-dataStatusRowNew: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-},
-dataStatusSmallNew: {
-    fontSize: 12,
-    color: 'rgba(17,24,39,0.55)',
-    fontWeight: '600',
-},
-dataStatusNoteNew: {
-    fontSize: 12,
-    color: 'rgba(17,24,39,0.65)',
-    lineHeight: 17,
-},
-dataStatusDisclaimerNew: {
-    fontSize: 11,
-    color: 'rgba(17,24,39,0.55)',
-    lineHeight: 16,
-},
+    dataStatusRowNew: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+    },
+    dataStatusSmallNew: {
+        fontSize: 12,
+        color: 'rgba(17,24,39,0.55)',
+        fontWeight: '600',
+    },
+    dataStatusNoteNew: {
+        fontSize: 12,
+        color: 'rgba(17,24,39,0.65)',
+        lineHeight: 17,
+    },
+    dataStatusDisclaimerNew: {
+        fontSize: 11,
+        color: 'rgba(17,24,39,0.55)',
+        lineHeight: 16,
+    },
 });

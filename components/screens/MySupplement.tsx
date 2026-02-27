@@ -39,10 +39,13 @@ import { Easing } from "react-native-reanimated";
 import { AutoFitText } from "@/components/common/AutoFitText";
 import { Config } from "@/constants/Config";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOnboarding } from "@/contexts/OnboardingContext";
 import { useScanHistory } from "@/contexts/ScanHistoryContext";
 import { useSavedSupplements } from "@/contexts/SavedSupplementsContext";
 import { useScreenTokens } from "@/hooks/useScreenTokens";
+import { trackOnboardingEvent } from "@/lib/analytics/onboarding";
 import { withAuthHeaders } from "@/lib/auth-token";
+import { GOAL_OPTIONS, TYPE_OPTIONS, resolveVisibleGoalTags, resolveTypeTags } from "@/lib/onboarding-v2";
 import { resolveRoutineTimeUserSet } from "@/lib/routineIntent";
 import {
   loadMealTimePrefs,
@@ -192,7 +195,7 @@ const THEMES: Theme[] = [
   },
 ];
 
-const SMART_TAG_CATEGORIES: TagCategory[] = [
+const SMART_TAG_BASE_CATEGORIES: TagCategory[] = [
   {
     title: "Activity",
     color: { bg: "#f0fdfa", text: "#0f766e", border: "#ccfbf1" },
@@ -211,7 +214,7 @@ const SMART_TAG_CATEGORIES: TagCategory[] = [
       text: "#1d4ed8",
       border: "rgba(147,197,253,0.6)",
     },
-    tags: ["Sleep", "Energy", "Immunity", "Recovery", "Focus"],
+    tags: [...GOAL_OPTIONS],
   },
   {
     title: "Type",
@@ -221,7 +224,7 @@ const SMART_TAG_CATEGORIES: TagCategory[] = [
       text: "#6b21a8",
       border: "rgba(216,180,254,0.6)",
     },
-    tags: ["Vitamin", "Mineral", "Herb", "Probiotic", "Protein"],
+    tags: [...TYPE_OPTIONS],
   },
   {
     title: "Timing",
@@ -235,7 +238,7 @@ const SMART_TAG_CATEGORIES: TagCategory[] = [
   },
 ];
 
-const SMART_TAG_SET = new Set(SMART_TAG_CATEGORIES.flatMap((category) => category.tags));
+const SMART_TAG_SET = new Set(SMART_TAG_BASE_CATEGORIES.flatMap((category) => category.tags));
 
 const SCREEN_BG = "#F2F3F7";
 const NAV_HEIGHT = 64;
@@ -3006,6 +3009,7 @@ function NoteQuickView({
 export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Props) {
   const tokens = useScreenTokens(NAV_HEIGHT);
   const { user } = useAuth();
+  const { draft } = useOnboarding();
   const { scans } = useScanHistory();
   const { updateSupplement } = useSavedSupplements();
 
@@ -3036,6 +3040,22 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
   );
   const [mealTimePrefs, setMealTimePrefs] = useState<MealTimePrefs | null>(null);
 
+  const visibleGoalTags = useMemo(
+    () => resolveVisibleGoalTags(draft?.smartFilterConfig?.visibleGoals ?? draft?.goals),
+    [draft?.goals, draft?.smartFilterConfig?.visibleGoals],
+  );
+  const seededTypeTags = useMemo(
+    () => resolveTypeTags(draft?.smartFilterConfig?.preselectedTypes ?? draft?.preferredTypes),
+    [draft?.preferredTypes, draft?.smartFilterConfig?.preselectedTypes],
+  );
+  const smartTagCategories = useMemo<TagCategory[]>(() => {
+    return SMART_TAG_BASE_CATEGORIES.map((category) =>
+      category.title === "Goals" ? { ...category, tags: visibleGoalTags } : category,
+    );
+  }, [visibleGoalTags]);
+  const hasSeededFiltersRef = useRef(false);
+  const hasLoggedFirstFilterUseRef = useRef(false);
+
   const pillWidthRef = useRef(84);
   const [pillWidth, setPillWidth] = useState(84);
   const updatedDosageRef = useRef(new Map<string, string>());
@@ -3064,6 +3084,25 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
   );
 
   useEffect(() => () => clearFilterTimers(), [clearFilterTimers]);
+
+  useEffect(() => {
+    if (hasSeededFiltersRef.current) return;
+    if (seededTypeTags.length === 0) return;
+    if (data.length === 0) return;
+    const hasSeedMatch = data.some((item) =>
+      (item.tags ?? []).some((tag) => seededTypeTags.includes(tag)),
+    );
+    if (!hasSeedMatch) {
+      hasSeededFiltersRef.current = true;
+      return;
+    }
+
+    setActiveTags((prev) => {
+      if (prev.size > 0) return prev;
+      return new Set(seededTypeTags);
+    });
+    hasSeededFiltersRef.current = true;
+  }, [data, seededTypeTags]);
 
   useEffect(() => {
     if (selectionMode) setExpandedId(null);
@@ -3140,6 +3179,34 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
     }
     return undefined;
   }, [filterState, measureFilterAnchor, tokens.height, tokens.width]);
+
+  useEffect(() => {
+    const smartFilterTags = new Set(smartTagCategories.flatMap((category) => category.tags));
+    setActiveTags((prev) => {
+      const next = new Set<string>();
+      prev.forEach((tag) => {
+        if (!SMART_TAG_SET.has(tag)) {
+          next.add(tag);
+          return;
+        }
+        if (smartFilterTags.has(tag)) {
+          next.add(tag);
+        }
+      });
+
+      return next.size === prev.size ? prev : next;
+    });
+  }, [smartTagCategories]);
+
+  useEffect(() => {
+    if (hasLoggedFirstFilterUseRef.current) return;
+    if (activeTags.size === 0) return;
+    hasLoggedFirstFilterUseRef.current = true;
+    trackOnboardingEvent("first_filter_used", {
+      selectedCount: activeTags.size,
+      source: "my_supplement_smart_filter",
+    });
+  }, [activeTags.size]);
 
   useEffect(() => {
     const tagsFromData = new Set<string>();
@@ -3812,7 +3879,7 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
                     { paddingBottom: Math.max(24, keyboardHeight + 12) },
                   ]}
                 >
-                  {SMART_TAG_CATEGORIES.map((category, index) => (
+                  {smartTagCategories.map((category, index) => (
                     <MotiView
                       key={category.title}
                       from={{ opacity: 0, translateY: 12 }}
@@ -4013,6 +4080,7 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
       setActiveTags,
       setIsCreatingTag,
       setNewTagText,
+      smartTagCategories,
       tokens.insets.top,
       toggleTag,
       userTags,
@@ -4179,8 +4247,13 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
               {cards.length === 0 ? (
                 <View style={{ paddingVertical: 90, alignItems: "center" }}>
                   <Text style={{ color: "#94a3b8", includeFontPadding: false, lineHeight: 18 }}>
-                    No supplements found.
+                    {activeTags.size > 0 ? "No supplements match current filters." : "No supplements found."}
                   </Text>
+                  {activeTags.size > 0 ? (
+                    <Pressable onPress={() => setActiveTags(new Set())} style={styles.emptyStateClearButton}>
+                      <Text style={styles.emptyStateClearText}>Clear filters</Text>
+                    </Pressable>
+                  ) : null}
                 </View>
               ) : null}
             </View>
@@ -4599,6 +4672,20 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
     color: "#ef4444",
+    includeFontPadding: false,
+  },
+  emptyStateClearButton: {
+    marginTop: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderCurve: "continuous",
+    backgroundColor: "#e2e8f0",
+  },
+  emptyStateClearText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#475569",
     includeFontPadding: false,
   },
 

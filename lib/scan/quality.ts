@@ -68,12 +68,49 @@ export const getLabelDraftQuality = (draft?: LabelDraft | null, issues?: DraftIs
 
 export type BarcodeQuality = {
   errorState: boolean;
+  page: 'dashboard' | 'not_found' | 'recoverable_error' | 'session_expired';
+  failureKind: 'none' | 'not_found' | 'unauthorized' | 'network' | 'server' | 'session_expired';
 };
 
 export const getBarcodeQuality = (input: {
   status?: string | null;
   error?: string | null;
+  errorKind?: string | null;
+  sessionState?: 'ok' | 'session_expired' | null;
 }): BarcodeQuality => {
-  const errorState = input.status === 'error' || Boolean(input.error);
-  return { errorState };
+  if (input.sessionState === 'session_expired') {
+    return {
+      errorState: true,
+      page: 'session_expired',
+      failureKind: 'session_expired',
+    };
+  }
+
+  if (input.status === 'not_found' || input.errorKind === 'not_found') {
+    return {
+      errorState: true,
+      page: 'not_found',
+      failureKind: 'not_found',
+    };
+  }
+
+  const isRecoverableError = input.status === 'error' || Boolean(input.error);
+  if (isRecoverableError) {
+    const kind = input.errorKind === 'unauthorized'
+      ? 'unauthorized'
+      : input.errorKind === 'network'
+        ? 'network'
+        : 'server';
+    return {
+      errorState: true,
+      page: 'recoverable_error',
+      failureKind: kind,
+    };
+  }
+
+  return {
+    errorState: false,
+    page: 'dashboard',
+    failureKind: 'none',
+  };
 };

@@ -480,15 +480,21 @@ export const buildBarcodeSnapshot = (input: {
   if (!input.barcode) return null;
   const timestamp = nowIso();
 
-  const hasError = input.analysis.status === 'error';
+  const hasNotFound = input.analysis.status === 'not_found';
+  const hasError = input.analysis.status === 'error' || hasNotFound;
 
   const base = baseSnapshot({
     status: hasError ? 'error' : 'partial',
     source: 'barcode',
     barcodeRaw: input.barcode,
     createdAt: timestamp,
-    error: hasError && input.analysis.error
-      ? { code: 'barcode_scan_failed', message: input.analysis.error }
+    error: hasError
+      ? {
+        code: hasNotFound ? 'barcode_not_found' : 'barcode_scan_failed',
+        message: hasNotFound
+          ? 'Product not found'
+          : (input.analysis.error ?? 'Scan failed'),
+      }
       : null,
   });
 
@@ -504,7 +510,11 @@ export const buildBarcodeSnapshot = (input: {
     computedAt: timestamp,
   });
 
-  const snapshotStatus: SnapshotStatus = hasError ? 'error' : (scores ? 'resolved' : 'partial');
+  const snapshotStatus: SnapshotStatus = hasNotFound
+    ? 'unknown_product'
+    : hasError
+      ? 'error'
+      : (scores ? 'resolved' : 'partial');
 
   return {
     ...base,

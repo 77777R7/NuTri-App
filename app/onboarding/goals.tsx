@@ -1,158 +1,104 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Controller, useForm } from 'react-hook-form';
 
-import AppHeader from '@/components/common/AppHeader';
 import { OnboardingCard } from '@/components/onboarding/OnboardingCard';
 import { OnboardingContainer } from '@/components/onboarding/OnboardingContainer';
 import { useOnboarding } from '@/contexts/OnboardingContext';
+import { trackOnboardingEvent } from '@/lib/analytics/onboarding';
+import { buildSmartFilterConfig, GOAL_OPTIONS, ONBOARDING_TOTAL_STEPS } from '@/lib/onboarding-v2';
 import { colors } from '@/lib/theme';
-import { goalsSchema, type GoalsFormValues } from '@/lib/validation/onboarding';
 
-const GOAL_OPTIONS: GoalsFormValues['goals'] = [
-  'Boost energy',
-  'Improve sleep',
-  'Support immunity',
-  'Enhance focus',
-  'Manage stress',
-  'Build muscle',
-  'Weight management',
-  'General wellness',
-];
-
-const GoalsScreen = () => {
+export default function GoalsScreen() {
   const router = useRouter();
-  const { draft, loading, saveDraft } = useOnboarding();
-  const [limitWarning, setLimitWarning] = useState<string | null>(null);
-
-  const {
-    control,
-    handleSubmit,
-    formState: { isValid, isSubmitting },
-    reset,
-    watch,
-  } = useForm<GoalsFormValues>({
-    resolver: zodResolver(goalsSchema),
-    mode: 'onChange',
-    defaultValues: {
-      goals: draft?.goals?.length ? draft.goals : [],
-    },
-  });
-
-  const selectedGoals = watch('goals') ?? [];
+  const { draft, saveDraft } = useOnboarding();
+  const [selectedGoals, setSelectedGoals] = useState<string[]>(draft?.goals ?? []);
 
   useEffect(() => {
-    if (!loading) {
-      reset({
-        goals: draft?.goals?.length ? draft.goals : [],
-      });
-    }
-  }, [draft?.goals, loading, reset]);
+    setSelectedGoals(draft?.goals ?? []);
+  }, [draft?.goals]);
 
-  const toggleGoal = useCallback(
-    (current: string[], next: string) => {
-      if (current.includes(next)) {
-        return current.filter(item => item !== next);
+  const toggleGoal = useCallback((goal: string) => {
+    setSelectedGoals((current) => {
+      if (current.includes(goal)) {
+        return current.filter((item) => item !== goal);
       }
-      if (current.length >= 3) {
-        setLimitWarning('You can select up to 3 goals.');
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-        return current;
-      }
-      setLimitWarning(null);
-      return [...current, next];
-    },
-    [],
-  );
-
-  const onSubmit = useCallback(
-    async (values: GoalsFormValues) => {
-      const parsed = goalsSchema.parse(values);
-      try {
-        await saveDraft({ goals: parsed.goals }, 7);
-        console.log('🎯 Goals saved', parsed.goals);
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        router.push('/onboarding/privacy');
-      } catch (error) {
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        console.error('Failed to save goals', error);
-      }
-    },
-    [router, saveDraft],
-  );
-
-  const handleError = useCallback(async () => {
-    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return [...current, goal];
+    });
   }, []);
 
-  useEffect(() => {
-    if (selectedGoals.length < 3 && limitWarning) {
-      setLimitWarning(null);
-    }
-  }, [limitWarning, selectedGoals.length]);
+  const handleNext = useCallback(async () => {
+    if (selectedGoals.length === 0) return;
+
+    const smartFilterConfig = buildSmartFilterConfig({
+      goals: selectedGoals,
+      preferredTypes: draft?.preferredTypes ?? [],
+    });
+
+    await saveDraft(
+      {
+        goals: selectedGoals,
+        smartFilterConfig,
+      },
+      6,
+    );
+
+    trackOnboardingEvent('question_answered', {
+      question: 'goals',
+      answerCount: selectedGoals.length,
+      answers: selectedGoals,
+    });
+    router.push('/onboarding/types');
+  }, [draft?.preferredTypes, router, saveDraft, selectedGoals]);
 
   return (
-    <>
-      <AppHeader title="Step 6 of 7" showBack />
-      <OnboardingContainer
-        step={6}
-        totalSteps={7}
-        title="What are your goals?"
-        subtitle="Choose up to three areas you want to focus on."
-        fallbackHref="/onboarding/welcome"
-        onNext={handleSubmit(onSubmit, handleError)}
-        disableNext={!isValid || isSubmitting}
-        nextLabel={isSubmitting ? 'Saving...' : 'Next'}
-      >
+    <OnboardingContainer
+      step={6}
+      totalSteps={ONBOARDING_TOTAL_STEPS}
+      title="What are your goals right now?"
+      subtitle="Select at least one. Your selected goals will appear in Smart Filter."
+      fallbackHref="/onboarding/experience"
+      disableNext={selectedGoals.length === 0}
+      onNext={handleNext}
+    >
+      <View style={styles.content}>
+        <Text style={styles.why}>Why we ask: goals directly power your Smart Filter and recommendation focus.</Text>
         <View style={styles.list}>
-          <Controller<GoalsFormValues>
-            control={control}
-            name="goals"
-            render={({ field }: { field: GoalsFieldController }) => (
-              <>
-                {GOAL_OPTIONS.map(option => {
-                  const selected = field.value?.includes(option) ?? false;
-                  return (
-                    <OnboardingCard
-                      key={option}
-                      label={option}
-                      selected={selected}
-                      onPress={() => field.onChange(toggleGoal(field.value ?? [], option))}
-                      accessibilityLabel={`${option}${selected ? ' selected' : ''}`}
-                    />
-                  );
-                })}
-              </>
-            )}
-          />
-          <Text style={[styles.helper, selectedGoals.length === 0 && styles.helperError]}>
-            {limitWarning ?? `Select ${selectedGoals.length === 0 ? 'at least one' : 'up to three'} goals.`}
-          </Text>
+          {GOAL_OPTIONS.map((goal) => {
+            const selected = selectedGoals.includes(goal);
+            return (
+              <OnboardingCard
+                key={goal}
+                label={goal}
+                selected={selected}
+                onPress={() => toggleGoal(goal)}
+                accessibilityLabel={`${goal}${selected ? ' selected' : ''}`}
+              />
+            );
+          })}
         </View>
-      </OnboardingContainer>
-    </>
+        {selectedGoals.length === 0 ? <Text style={styles.error}>Select at least one goal to continue.</Text> : null}
+      </View>
+    </OnboardingContainer>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  list: {
+  content: {
     flex: 1,
-    gap: 16,
+    gap: 14,
   },
-  helper: {
-    fontSize: 14,
+  why: {
+    fontSize: 13,
+    lineHeight: 20,
     color: colors.textMuted,
   },
-  helperError: {
+  list: {
+    gap: 12,
+  },
+  error: {
+    fontSize: 13,
     color: '#EF4444',
+    fontWeight: '600',
   },
 });
-
-export default GoalsScreen;
-type GoalsFieldController = {
-  value: GoalsFormValues['goals'];
-  onChange: (value: GoalsFormValues['goals']) => void;
-};

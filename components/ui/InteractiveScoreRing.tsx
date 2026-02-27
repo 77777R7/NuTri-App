@@ -1,10 +1,9 @@
 import { ChevronRight, X } from 'lucide-react-native';
+import Constants from 'expo-constants';
 import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import Animated, {
     Easing,
-    FadeIn,
-    FadeOut,
     useAnimatedProps,
     useSharedValue,
     withDelay,
@@ -14,6 +13,19 @@ import Svg, { Circle, Defs, G, LinearGradient, Stop } from 'react-native-svg';
 import { ContentSection, ScoreDetailCard } from './ScoreDetailCard';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
+const FORCE_FULL_SCORE_RING =
+    process.env.EXPO_PUBLIC_FORCE_FULL_SCORE_RING === 'true' ||
+    process.env.EXPO_PUBLIC_FORCE_FULL_SCORE_RING === '1';
+const FORCE_FULL_DASHBOARD_EFFECTS =
+    process.env.EXPO_PUBLIC_FORCE_FULL_DASHBOARD_EFFECTS === 'true' ||
+    process.env.EXPO_PUBLIC_FORCE_FULL_DASHBOARD_EFFECTS === '1';
+const scoreRingAppOwnership = Constants.appOwnership;
+const scoreRingIsExpoGo = scoreRingAppOwnership === 'expo' || scoreRingAppOwnership === 'guest';
+const scoreRingIsIosDevClientBuild = __DEV__ && Platform.OS === 'ios' && scoreRingAppOwnership == null;
+const scoreRingSafeRuntime = !scoreRingIsExpoGo && !scoreRingIsIosDevClientBuild;
+const useExpoGoStaticRingMode =
+    !((FORCE_FULL_SCORE_RING || FORCE_FULL_DASHBOARD_EFFECTS) && scoreRingSafeRuntime);
 
 type Category = 'effectiveness' | 'safety' | 'practicality';
 
@@ -51,39 +63,34 @@ type InteractiveScoreRingProps = {
         value?: boolean;
     };
     metaLines?: string[];
+    showStaticModeHint?: boolean;
 };
 
-export const InteractiveScoreRing = ({
+const AnimatedRingSvg: React.FC<{
+    muted: boolean;
+    unknownEffectiveness: boolean;
+    unknownSafety: boolean;
+    unknownValue: boolean;
+    scores: {
+        effectiveness: number;
+        safety: number;
+        value: number;
+    };
+    onPressCategory: (category: Category) => void;
+}> = ({
+    muted,
+    unknownEffectiveness,
+    unknownSafety,
+    unknownValue,
     scores,
-    descriptions,
-    display,
-    muted = false,
-    badgeText,
-    sourceType,
-    labels,
-    unknownCategories,
-    metaLines,
-}: InteractiveScoreRingProps) => {
-    const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-    const valueLabel = labels?.valueLabel ?? (sourceType === 'label_scan' ? 'Formula Quality' : 'Value');
-    const overallLabel = labels?.overall ?? 'NUTRI SCORE';
-    const effectivenessLabel = labels?.effectiveness ?? 'Effectiveness';
-    const safetyLabel = labels?.safety ?? 'Safety';
-    const valueLegendLabel = labels?.value ?? valueLabel;
-    const unknownEffectiveness = unknownCategories?.effectiveness ?? false;
-    const unknownSafety = unknownCategories?.safety ?? false;
-    const unknownValue = unknownCategories?.value ?? false;
-
-    // Dimensions
-    const size = 150; // Compact ring size to leave room for legend text
+    onPressCategory,
+}) => {
+    const size = 150;
     const strokeWidth = 14;
     const center = size / 2;
-
-    // Radii for concentric rings
-    const r1 = 60; // Outer (Effectiveness)
-    const r2 = 42; // Middle (Safety)
-    const r3 = 24; // Inner (Practicality)
-
+    const r1 = 60;
+    const r2 = 42;
+    const r3 = 24;
     const c1 = 2 * Math.PI * r1;
     const c2 = 2 * Math.PI * r2;
     const c3 = 2 * Math.PI * r3;
@@ -105,7 +112,7 @@ export const InteractiveScoreRing = ({
         p1.value = withDelay(100, withTiming(target1, { duration: 1500, easing: Easing.out(Easing.exp) }));
         p2.value = withDelay(300, withTiming(target2, { duration: 1500, easing: Easing.out(Easing.exp) }));
         p3.value = withDelay(500, withTiming(target3, { duration: 1500, easing: Easing.out(Easing.exp) }));
-    }, [scores, muted, unknownEffectiveness, unknownSafety, unknownValue]);
+    }, [muted, p1, p2, p3, scores.effectiveness, scores.safety, scores.value, unknownEffectiveness, unknownSafety, unknownValue]);
 
     const props1 = useAnimatedProps(() => ({
         strokeDashoffset: c1 * (1 - p1.value),
@@ -116,6 +123,105 @@ export const InteractiveScoreRing = ({
     const props3 = useAnimatedProps(() => ({
         strokeDashoffset: c3 * (1 - p3.value),
     }));
+
+    const track1 = muted || unknownEffectiveness ? 'rgba(148,163,184,0.2)' : 'rgba(250, 17, 79, 0.15)';
+    const track2 = muted || unknownSafety ? 'rgba(148,163,184,0.2)' : 'rgba(166, 229, 51, 0.2)';
+    const track3 = muted || unknownValue ? 'rgba(148,163,184,0.2)' : 'rgba(0, 219, 221, 0.15)';
+    const ring1 = muted || unknownEffectiveness ? '#d1d5db' : '#FA114F';
+    const ring1End = muted || unknownEffectiveness ? '#e5e7eb' : '#FF4F80';
+    const ring2 = muted || unknownSafety ? '#d1d5db' : '#A6E533';
+    const ring2End = muted || unknownSafety ? '#e5e7eb' : '#CFFF60';
+    const ring3 = muted || unknownValue ? '#d1d5db' : '#00DBDD';
+    const ring3End = muted || unknownValue ? '#e5e7eb' : '#50F0F2';
+
+    return (
+        <View style={styles.ringWrapper}>
+            <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+                <Defs>
+                    <LinearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <Stop offset="0%" stopColor={ring1} />
+                        <Stop offset="100%" stopColor={ring1End} />
+                    </LinearGradient>
+                    <LinearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <Stop offset="0%" stopColor={ring2} />
+                        <Stop offset="100%" stopColor={ring2End} />
+                    </LinearGradient>
+                    <LinearGradient id="grad3" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <Stop offset="0%" stopColor={ring3} />
+                        <Stop offset="100%" stopColor={ring3End} />
+                    </LinearGradient>
+                </Defs>
+
+                <G rotation="-90" origin={`${center}, ${center}`}>
+                    <Circle cx={center} cy={center} r={r1} stroke={track1} strokeWidth={strokeWidth} fill="none" />
+                    <Circle cx={center} cy={center} r={r2} stroke={track2} strokeWidth={strokeWidth} fill="none" />
+                    <Circle cx={center} cy={center} r={r3} stroke={track3} strokeWidth={strokeWidth} fill="none" />
+
+                    <AnimatedCircle
+                        cx={center}
+                        cy={center}
+                        r={r1}
+                        stroke="url(#grad1)"
+                        strokeWidth={strokeWidth}
+                        strokeLinecap="round"
+                        fill="none"
+                        strokeDasharray={c1}
+                        animatedProps={props1}
+                        onPress={() => onPressCategory('effectiveness')}
+                    />
+                    <AnimatedCircle
+                        cx={center}
+                        cy={center}
+                        r={r2}
+                        stroke="url(#grad2)"
+                        strokeWidth={strokeWidth}
+                        strokeLinecap="round"
+                        fill="none"
+                        strokeDasharray={c2}
+                        animatedProps={props2}
+                        onPress={() => onPressCategory('safety')}
+                    />
+                    <AnimatedCircle
+                        cx={center}
+                        cy={center}
+                        r={r3}
+                        stroke="url(#grad3)"
+                        strokeWidth={strokeWidth}
+                        strokeLinecap="round"
+                        fill="none"
+                        strokeDasharray={c3}
+                        animatedProps={props3}
+                        onPress={() => onPressCategory('practicality')}
+                    />
+                </G>
+            </Svg>
+        </View>
+    );
+};
+
+export const InteractiveScoreRing = ({
+    scores,
+    descriptions,
+    display,
+    muted = false,
+    badgeText,
+    sourceType,
+    labels,
+    unknownCategories,
+    metaLines,
+    showStaticModeHint = false,
+}: InteractiveScoreRingProps) => {
+    const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+    const { width: viewportWidth, height: viewportHeight } = useWindowDimensions();
+    const valueLabel = labels?.valueLabel ?? (sourceType === 'label_scan' ? 'Formula Quality' : 'Value');
+    const overallLabel = labels?.overall ?? 'NUTRI SCORE';
+    const effectivenessLabel = labels?.effectiveness ?? 'Effectiveness';
+    const safetyLabel = labels?.safety ?? 'Safety';
+    const valueLegendLabel = labels?.value ?? valueLabel;
+    const useStaticRing = useExpoGoStaticRingMode;
+    const unknownEffectiveness = unknownCategories?.effectiveness ?? false;
+    const unknownSafety = unknownCategories?.safety ?? false;
+    const unknownValue = unknownCategories?.value ?? false;
 
     const handlePress = (category: Category) => {
         if (muted) return;
@@ -153,16 +259,8 @@ export const InteractiveScoreRing = ({
     };
     const overallIsNumeric = isNumericDisplay(displayOverall);
     const formatLegendScore = (value: string) => (isNumericDisplay(value) ? `${value}/100` : value);
-    const track1 = muted || unknownEffectiveness ? 'rgba(148,163,184,0.2)' : 'rgba(250, 17, 79, 0.15)';
-    const track2 = muted || unknownSafety ? 'rgba(148,163,184,0.2)' : 'rgba(166, 229, 51, 0.2)';
-    const track3 = muted || unknownValue ? 'rgba(148,163,184,0.2)' : 'rgba(0, 219, 221, 0.15)';
-    const ring1 = muted || unknownEffectiveness ? '#d1d5db' : '#FA114F';
-    const ring1End = muted || unknownEffectiveness ? '#e5e7eb' : '#FF4F80';
-    const ring2 = muted || unknownSafety ? '#d1d5db' : '#A6E533';
-    const ring2End = muted || unknownSafety ? '#e5e7eb' : '#CFFF60';
-    const ring3 = muted || unknownValue ? '#d1d5db' : '#00DBDD';
-    const ring3End = muted || unknownValue ? '#e5e7eb' : '#50F0F2';
-
+    const modalCardWidth = Math.min(480, Math.max(280, viewportWidth - 24));
+    const modalCardMaxHeight = Math.max(320, viewportHeight * 0.86);
     return (
         <View style={styles.container}>
             <View style={styles.overallRow}>
@@ -184,69 +282,34 @@ export const InteractiveScoreRing = ({
 
             <View style={styles.contentRow}>
                 {/* Left Side: Rings */}
-                <View style={styles.ringWrapper}>
-                    <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-                        <Defs>
-                            <LinearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
-                                <Stop offset="0%" stopColor={ring1} />
-                                <Stop offset="100%" stopColor={ring1End} />
-                            </LinearGradient>
-                            <LinearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="0%">
-                                <Stop offset="0%" stopColor={ring2} />
-                                <Stop offset="100%" stopColor={ring2End} />
-                            </LinearGradient>
-                            <LinearGradient id="grad3" x1="0%" y1="0%" x2="100%" y2="0%">
-                                <Stop offset="0%" stopColor={ring3} />
-                                <Stop offset="100%" stopColor={ring3End} />
-                            </LinearGradient>
-                        </Defs>
-
-                        {/* Background Tracks */}
-                        <G rotation="-90" origin={`${center}, ${center}`}>
-                            <Circle cx={center} cy={center} r={r1} stroke={track1} strokeWidth={strokeWidth} fill="none" />
-                            <Circle cx={center} cy={center} r={r2} stroke={track2} strokeWidth={strokeWidth} fill="none" />
-                            <Circle cx={center} cy={center} r={r3} stroke={track3} strokeWidth={strokeWidth} fill="none" />
-
-                            {/* Animated Progress Rings */}
-                            <AnimatedCircle
-                                cx={center}
-                                cy={center}
-                                r={r1}
-                                stroke="url(#grad1)"
-                                strokeWidth={strokeWidth}
-                                strokeLinecap="round"
-                                fill="none"
-                                strokeDasharray={c1}
-                                animatedProps={props1}
-                                onPress={() => handlePress('effectiveness')}
-                            />
-                            <AnimatedCircle
-                                cx={center}
-                                cy={center}
-                                r={r2}
-                                stroke="url(#grad2)"
-                                strokeWidth={strokeWidth}
-                                strokeLinecap="round"
-                                fill="none"
-                                strokeDasharray={c2}
-                                animatedProps={props2}
-                                onPress={() => handlePress('safety')}
-                            />
-                            <AnimatedCircle
-                                cx={center}
-                                cy={center}
-                                r={r3}
-                                stroke="url(#grad3)"
-                                strokeWidth={strokeWidth}
-                                strokeLinecap="round"
-                                fill="none"
-                                strokeDasharray={c3}
-                                animatedProps={props3}
-                                onPress={() => handlePress('practicality')}
-                            />
-                        </G>
-                    </Svg>
-                </View>
+                {useStaticRing ? (
+                    <View style={styles.ringFallbackWrapper}>
+                        <View style={styles.ringFallbackCircle}>
+                            <Text style={[styles.ringFallbackValue, muted ? styles.mutedTextStrong : null]}>
+                                {displayOverall}
+                            </Text>
+                            {overallIsNumeric ? (
+                                <Text style={[styles.ringFallbackMax, muted ? styles.mutedTextStrong : null]}>/100</Text>
+                            ) : null}
+                        </View>
+                        {showStaticModeHint ? (
+                            <Text style={styles.ringFallbackHint}>Expo Go static mode</Text>
+                        ) : null}
+                    </View>
+                ) : (
+                    <AnimatedRingSvg
+                        muted={muted}
+                        unknownEffectiveness={unknownEffectiveness}
+                        unknownSafety={unknownSafety}
+                        unknownValue={unknownValue}
+                        scores={{
+                            effectiveness: scores.effectiveness,
+                            safety: scores.safety,
+                            value: scores.value,
+                        }}
+                        onPressCategory={handlePress}
+                    />
+                )}
 
                 {/* Right Side: Legend */}
                 <View style={styles.legendContainer}>
@@ -317,29 +380,36 @@ export const InteractiveScoreRing = ({
 
             {/* Overlay Window */}
             {!muted && selectedCategory && overlayData && (
-                <Animated.View
-                    entering={FadeIn.duration(200)}
-                    exiting={FadeOut.duration(200)}
-                    style={styles.overlay}
+                <Modal
+                    visible
+                    transparent
+                    animationType="fade"
+                    statusBarTranslucent
+                    presentationStyle="overFullScreen"
+                    onRequestClose={handleClose}
                 >
-                    <Pressable style={styles.overlayBackdrop} onPress={handleClose} />
-                    <View style={styles.overlayCard}>
-                        <View style={styles.overlayHeader}>
-                            <Text style={styles.overlayTitle}>{overlayData.title}</Text>
-                            <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
-                                <X size={20} color="#6b7280" />
-                            </TouchableOpacity>
+                    <View style={styles.modalRoot}>
+                        <Pressable style={styles.modalBackdrop} onPress={handleClose} />
+                        <View style={[styles.modalSheet, { width: modalCardWidth, maxHeight: modalCardMaxHeight }]}>
+                            <View style={styles.modalHeader}>
+                                <Text style={styles.modalTitle}>{overlayData.title}</Text>
+                                <TouchableOpacity style={styles.modalCloseButton} onPress={handleClose}>
+                                    <X size={20} color="#6b7280" />
+                                </TouchableOpacity>
+                            </View>
+                            <ScrollView style={styles.modalScroll} contentContainerStyle={styles.modalScrollContent} showsVerticalScrollIndicator={false}>
+                                <ScoreDetailCard
+                                    category={selectedCategory}
+                                    score={overlayData.score}
+                                    description={overlayData.desc}
+                                    color={overlayData.color}
+                                    valueLabel={valueLabel}
+                                    labelOverride={overlayData.title}
+                                />
+                            </ScrollView>
                         </View>
-                        <ScoreDetailCard
-                            category={selectedCategory}
-                            score={overlayData.score}
-                            description={overlayData.desc}
-                            color={overlayData.color}
-                            valueLabel={valueLabel}
-                            labelOverride={overlayData.title}
-                        />
                     </View>
-                </Animated.View>
+                </Modal>
             )}
         </View>
     );
@@ -374,6 +444,39 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         padding: 4,
+    },
+    ringFallbackWrapper: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 4,
+        minWidth: 150,
+    },
+    ringFallbackCircle: {
+        width: 118,
+        height: 118,
+        borderRadius: 59,
+        borderWidth: 6,
+        borderColor: '#e5e7eb',
+        backgroundColor: '#f8fafc',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    ringFallbackValue: {
+        fontSize: 28,
+        fontWeight: '800',
+        color: '#1C1C1E',
+        lineHeight: 30,
+    },
+    ringFallbackMax: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#9ca3af',
+    },
+    ringFallbackHint: {
+        marginTop: 8,
+        fontSize: 11,
+        fontWeight: '600',
+        color: '#9ca3af',
     },
     legendContainer: {
         flex: 1,
@@ -465,43 +568,54 @@ const styles = StyleSheet.create({
         color: '#6B7280',
         fontWeight: '600',
     },
-    overlay: {
+    modalRoot: {
         ...StyleSheet.absoluteFillObject,
-        zIndex: 50,
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 16,
+        paddingHorizontal: 12,
+        paddingVertical: 18,
     },
-    overlayBackdrop: {
+    modalBackdrop: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0,0,0,0.3)',
-        borderRadius: 24,
+        backgroundColor: 'rgba(15,23,42,0.48)',
     },
-    overlayCard: {
-        width: '100%',
+    modalSheet: {
         backgroundColor: '#FFFFFF',
         borderRadius: 20,
-        padding: 16,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.2,
-        shadowRadius: 24,
-        elevation: 10,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.16,
+        shadowRadius: 20,
+        elevation: 12,
+        overflow: 'hidden',
     },
-    overlayHeader: {
+    modalHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f3f4f6',
     },
-    overlayTitle: {
+    modalTitle: {
         fontSize: 18,
         fontWeight: '700',
         color: '#1C1C1E',
+        flexShrink: 1,
+        paddingRight: 8,
     },
-    closeButton: {
+    modalCloseButton: {
         padding: 4,
         backgroundColor: '#F2F2F7',
         borderRadius: 12,
+    },
+    modalScroll: {
+        width: '100%',
+    },
+    modalScrollContent: {
+        paddingHorizontal: 12,
+        paddingTop: 12,
+        paddingBottom: 16,
     },
 });

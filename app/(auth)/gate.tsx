@@ -32,11 +32,11 @@ export default function AuthGateScreen() {
 
   useEffect(() => {
     if (AUTH_DISABLED) {
-      router.replace('/main');
+      router.replace('/');
       return;
     }
     if (!authLoading && session) {
-      router.replace('/main');
+      router.replace('/');
     }
   }, [authLoading, session, router]);
 
@@ -78,7 +78,7 @@ export default function AuthGateScreen() {
             try {
               await Haptics.selectionAsync();
             } catch {}
-            router.replace('/base44/welcome' as Href);
+            router.replace('/onboarding/welcome' as Href);
           }}
           activeOpacity={0.8}
           style={styles.backLink}
