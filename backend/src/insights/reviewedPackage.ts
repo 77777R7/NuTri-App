@@ -35,6 +35,8 @@ export type ReviewedFormExplain = {
   meta: ReviewedPackageMeta;
 };
 
+type ParsedReviewedPackage = Record<string, unknown>;
+
 const readString = (value: unknown): string | null => {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
@@ -80,85 +82,141 @@ const getDefaultPath = () =>
   process.env.REVIEWED_FORM_EXPLAINS_PATH ??
   path.join(process.cwd(), "data", "reviewed", "reviewed-form-explains-v4.json");
 
+const getDefaultOverridesPath = () =>
+  process.env.REVIEWED_FORM_EXPLAINS_OVERRIDES_PATH ??
+  path.join(process.cwd(), "data", "reviewed", "reviewed-form-explains-overrides.v1.json");
+
+const buildPackageMeta = (
+  metadata: Record<string, unknown> | null,
+  packageSha256: string,
+  fallbackDatasetVersion?: string,
+): ReviewedPackageMeta => ({
+  datasetVersion:
+    readString(metadata?.source_version) ??
+    readString(metadata?.package_version) ??
+    fallbackDatasetVersion ??
+    "v4.0-en-only",
+  reviewedAt: readString(metadata?.generated_at) ?? "unknown",
+  packageSha256,
+});
+
+const pickRows = (parsed: ParsedReviewedPackage | null, keys: string[]): Array<Record<string, unknown>> => {
+  if (!parsed) return [];
+  for (const key of keys) {
+    const value = parsed[key];
+    if (Array.isArray(value)) {
+      return value as Array<Record<string, unknown>>;
+    }
+  }
+  return [];
+};
+
+const parseReviewedRow = (
+  row: Record<string, unknown>,
+  meta: ReviewedPackageMeta,
+): ReviewedFormExplain | null => {
+  const ingredientId = readString(row.ingredient_id);
+  const formKey = readString(row.form_key);
+  if (!ingredientId || !formKey) return null;
+
+  const segmentsSource =
+    row.segments && typeof row.segments === "object"
+      ? (row.segments as Record<string, unknown>)
+      : {};
+
+  const absorption = readSentenceBucket(segmentsSource.absorption);
+  const solubility = readSentenceBucket(segmentsSource.solubility);
+  const tolerability = readSentenceBucket(segmentsSource.tolerability);
+  const caveats = readSentenceBucket(segmentsSource.caveats);
+
+  return {
+    ingredientId,
+    formKey,
+    formLabel: readString(row.form_display) ?? undefined,
+    evidenceGrade: (readString(row.evidence_grade) as ReviewedFormExplain["evidenceGrade"]) ?? undefined,
+    overallConfidence: readNumber(row.overall_confidence) ?? undefined,
+    relativeFactor: readNumber(row.relative_factor) ?? undefined,
+    displayText: readString(row.display_text) ?? undefined,
+    segments: {
+      ...(absorption.length > 0 ? { absorption } : {}),
+      ...(solubility.length > 0 ? { solubility } : {}),
+      ...(tolerability.length > 0 ? { tolerability } : {}),
+      ...(caveats.length > 0 ? { caveats } : {}),
+    },
+    meta,
+  };
+};
+
 export function loadReviewedPackageOnce(): void {
   if (loadAttempted) return;
   loadAttempted = true;
 
   const filePath = getDefaultPath();
-  let rawBuffer: Buffer;
+  let baseBuffer: Buffer | null = null;
   try {
-    rawBuffer = fs.readFileSync(filePath);
+    baseBuffer = fs.readFileSync(filePath);
   } catch {
-    reviewedIndex = new Map();
-    return;
+    baseBuffer = null;
   }
 
-  const packageSha256 = createHash("sha256").update(rawBuffer).digest("hex");
-  let parsed: Record<string, unknown>;
-  try {
-    parsed = JSON.parse(rawBuffer.toString("utf-8")) as Record<string, unknown>;
-  } catch {
-    reviewedIndex = new Map();
-    packageMeta = {
-      datasetVersion: "unknown",
-      reviewedAt: "unknown",
-      packageSha256,
-    };
-    return;
+  const baseSha256 = baseBuffer ? createHash("sha256").update(baseBuffer).digest("hex") : "";
+  let parsedBase: ParsedReviewedPackage | null = null;
+  if (baseBuffer) {
+    try {
+      parsedBase = JSON.parse(baseBuffer.toString("utf-8")) as ParsedReviewedPackage;
+    } catch {
+      parsedBase = null;
+    }
   }
 
-  const metadata =
-    parsed.metadata && typeof parsed.metadata === "object"
-      ? (parsed.metadata as Record<string, unknown>)
+  const baseMetadata =
+    parsedBase?.metadata && typeof parsedBase.metadata === "object"
+      ? (parsedBase.metadata as Record<string, unknown>)
       : null;
-
-  packageMeta = {
-    datasetVersion:
-      readString(metadata?.source_version) ??
-      readString(metadata?.package_version) ??
-      "v4.0-en-only",
-    reviewedAt: readString(metadata?.generated_at) ?? "unknown",
-    packageSha256,
-  };
-
-  const rows = Array.isArray(parsed.form_explain_library_top100)
-    ? (parsed.form_explain_library_top100 as Array<Record<string, unknown>>)
-    : [];
+  packageMeta = buildPackageMeta(baseMetadata, baseSha256);
 
   const nextIndex = new Map<string, ReviewedFormExplain>();
-  for (const row of rows) {
-    const ingredientId = readString(row.ingredient_id);
-    const formKey = readString(row.form_key);
-    if (!ingredientId || !formKey) continue;
+  const baseRows = pickRows(parsedBase, ["form_explain_library_top100"]);
+  for (const row of baseRows) {
+    const entry = parseReviewedRow(row, packageMeta);
+    if (!entry) continue;
+    nextIndex.set(`${entry.ingredientId}|${entry.formKey}`, entry);
+  }
 
-    const segmentsSource =
-      row.segments && typeof row.segments === "object"
-        ? (row.segments as Record<string, unknown>)
-        : {};
+  const overridesPath = getDefaultOverridesPath();
+  try {
+    const overrideBuffer = fs.readFileSync(overridesPath);
+    const overrideSha256 = createHash("sha256").update(overrideBuffer).digest("hex");
+    let parsedOverrides: ParsedReviewedPackage | null = null;
+    try {
+      parsedOverrides = JSON.parse(overrideBuffer.toString("utf-8")) as ParsedReviewedPackage;
+    } catch {
+      parsedOverrides = null;
+    }
 
-    const absorption = readSentenceBucket(segmentsSource.absorption);
-    const solubility = readSentenceBucket(segmentsSource.solubility);
-    const tolerability = readSentenceBucket(segmentsSource.tolerability);
-    const caveats = readSentenceBucket(segmentsSource.caveats);
-
-    const entry: ReviewedFormExplain = {
-      ingredientId,
-      formKey,
-      formLabel: readString(row.form_display) ?? undefined,
-      evidenceGrade: (readString(row.evidence_grade) as ReviewedFormExplain["evidenceGrade"]) ?? undefined,
-      overallConfidence: readNumber(row.overall_confidence) ?? undefined,
-      relativeFactor: readNumber(row.relative_factor) ?? undefined,
-      displayText: readString(row.display_text) ?? undefined,
-      segments: {
-        ...(absorption.length > 0 ? { absorption } : {}),
-        ...(solubility.length > 0 ? { solubility } : {}),
-        ...(tolerability.length > 0 ? { tolerability } : {}),
-        ...(caveats.length > 0 ? { caveats } : {}),
-      },
-      meta: packageMeta,
-    };
-
-    nextIndex.set(`${ingredientId}|${formKey}`, entry);
+    if (parsedOverrides) {
+      const overrideMetadata =
+        parsedOverrides.metadata && typeof parsedOverrides.metadata === "object"
+          ? (parsedOverrides.metadata as Record<string, unknown>)
+          : null;
+      const overrideMeta = buildPackageMeta(
+        overrideMetadata,
+        overrideSha256,
+        packageMeta.datasetVersion,
+      );
+      const overrideRows = pickRows(parsedOverrides, [
+        "form_explain_overrides",
+        "form_explain_library_overrides",
+        "form_explain_library_top100",
+      ]);
+      for (const row of overrideRows) {
+        const entry = parseReviewedRow(row, overrideMeta);
+        if (!entry) continue;
+        nextIndex.set(`${entry.ingredientId}|${entry.formKey}`, entry);
+      }
+    }
+  } catch {
+    // Optional overlay file.
   }
 
   reviewedIndex = nextIndex;

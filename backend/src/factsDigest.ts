@@ -84,6 +84,7 @@ export type LnhpdFactsInput = {
       properName?: string | null;
       sourceMaterial?: string | null;
       extractTypeDesc?: string | null;
+      inferenceSource?: string | null;
     } | null;
   }>;
   inactive: string[];
@@ -481,6 +482,54 @@ const extractDeliveryFormFromDosingLines = (lines: string[]): string | null => {
   return null;
 };
 
+const parseLnhpdLabelDosingLine = (rawDose: string): FactsDigest["labelDosing"][number] => {
+  const rawText = normalizeWhitespace(rawDose);
+  if (!rawText) {
+    return {
+      population: null,
+      age: null,
+      dose: null,
+      frequency: null,
+      rawText: null,
+    };
+  }
+
+  let populationPart: string | null = null;
+  let detailPart = rawText;
+  const colonIndex = rawText.indexOf(":");
+  if (colonIndex > 0) {
+    const prefix = normalizeWhitespace(rawText.slice(0, colonIndex));
+    const suffix = normalizeWhitespace(rawText.slice(colonIndex + 1));
+    if (prefix && suffix) {
+      populationPart = prefix;
+      detailPart = suffix;
+    }
+  }
+
+  const ageMatch = populationPart?.match(/\bage\s*([^)]+)\)?/i);
+  const age = ageMatch?.[1] ? normalizeWhitespace(ageMatch[1]) : null;
+  const population = populationPart
+    ? normalizeWhitespace(populationPart.replace(/\(\s*age[^)]*\)/i, ""))
+    : null;
+
+  const doseMatch = detailPart.match(
+    /(\d+(?:\.\d+)?(?:\s*-\s*\d+(?:\.\d+)?)?\s*(?:tablets?|capsules?|softgels?|gummies?|drops?|sprays?|scoops?|ml|mg|mcg|g|iu))/i,
+  );
+  const frequencyMatch =
+    detailPart.match(
+      /\b((?:once|twice|three|four|\d+(?:\s*-\s*\d+)?)\s*(?:times?)?\s*(?:daily|per day|weekly|per week|monthly|per month))\b/i,
+    )
+    ?? detailPart.match(/\b(daily|weekly|monthly|per day|per week|per month)\b/i);
+
+  return {
+    population: population || null,
+    age: age || null,
+    dose: doseMatch?.[1] ? normalizeWhitespace(doseMatch[1]) : null,
+    frequency: frequencyMatch?.[1] ? normalizeWhitespace(frequencyMatch[1]) : null,
+    rawText,
+  };
+};
+
 export const buildFactsDigestFromLnhpd = (params: {
   facts: LnhpdFactsInput;
   snapshot?: SupplementSnapshot | null;
@@ -498,7 +547,10 @@ export const buildFactsDigestFromLnhpd = (params: {
 
   const actives = (facts.actives ?? []).map((active) => {
     const normalizedUnit = normalizeUnitLabel(active.unit ?? null);
-    const evidenceText = active.lnhpdMeta?.sourceMaterial ?? active.lnhpdMeta?.extractTypeDesc ?? null;
+    const inferredFromProductName = active.lnhpdMeta?.inferenceSource === "product_name";
+    const evidenceText = inferredFromProductName
+      ? "Inferred from product name; treat as low-confidence ingredient evidence."
+      : active.lnhpdMeta?.sourceMaterial ?? active.lnhpdMeta?.extractTypeDesc ?? null;
 
     // P0-2: Extract chemical form evidence from LNHPD inputs in a DSLD-like way, so KB-first can
     // resolve reliably when the label discloses a salt/form.
@@ -535,7 +587,7 @@ export const buildFactsDigestFromLnhpd = (params: {
       deliveryForm,
       evidenceText: evidenceText ? normalizeWhitespace(evidenceText) : null,
       source: "lnhpd" as const,
-      confidence: active.lnhpdMeta ? 0.9 : 0.7,
+      confidence: inferredFromProductName ? 0.35 : active.lnhpdMeta ? 0.9 : 0.7,
     };
   });
 
@@ -560,13 +612,7 @@ export const buildFactsDigestFromLnhpd = (params: {
       servingSize: facts.servingSize ?? null,
       servingsPerContainer: facts.servingsPerContainer ?? null,
     },
-    labelDosing: (facts.doses ?? []).map((dose) => ({
-      population: null,
-      age: null,
-      dose: null,
-      frequency: null,
-      rawText: normalizeWhitespace(dose),
-    })),
+    labelDosing: (facts.doses ?? []).map((dose) => parseLnhpdLabelDosingLine(dose)),
     warnings: {
       warnings: [],
       consultDoctorIf: [],

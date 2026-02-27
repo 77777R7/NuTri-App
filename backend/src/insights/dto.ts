@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 const nonEmptyString = z.string().trim().min(1);
+const isoDateTimeSchema = z.string().datetime({ offset: true });
 
 export const factsSourceSchema = z.enum(["label_scan", "lnhpd", "dsld", "web_verified"]);
 
@@ -39,7 +40,7 @@ export const factsDtoSchema = z
     provenance: z
       .object({
         sourceUrl: z.string().url().nullable().optional(),
-        extractedAt: z.string().datetime().nullable().optional(),
+        extractedAt: isoDateTimeSchema.nullable().optional(),
       })
       .strict()
       .optional(),

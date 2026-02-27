@@ -133,6 +133,77 @@ export const SafetyDetailSchema = z.object({
 
 export type SafetyDetail = z.infer<typeof SafetyDetailSchema>;
 
+export const SafetySignalScopeSchema = z.enum(["label_specific", "ods_general"]);
+export type SafetySignalScope = z.infer<typeof SafetySignalScopeSchema>;
+
+export const SafetySignalSourceSchema = z.enum([
+  "label_record",
+  "score_v4_ul",
+  "ods_watchout",
+  "ods_interaction",
+  "quality_note",
+  "unknown",
+]);
+export type SafetySignalSource = z.infer<typeof SafetySignalSourceSchema>;
+
+export const SafetySignalItemSchema = z.object({
+  id: z.string().trim().min(1),
+  text: z.string().trim().min(1),
+  scope: SafetySignalScopeSchema,
+  source: SafetySignalSourceSchema,
+  reasonCode: z.string().trim().min(1).optional(),
+  sourceUrl: z.string().trim().url().optional(),
+  riskLevel: z.string().trim().min(1).optional(),
+});
+export type SafetySignalItem = z.infer<typeof SafetySignalItemSchema>;
+
+export const SafetyUlAmountSchema = z.object({
+  value: z.number().nullable(),
+  unit: z.string().trim().min(1).nullable(),
+  text: z.string().trim().min(1).nullable(),
+});
+export type SafetyUlAmount = z.infer<typeof SafetyUlAmountSchema>;
+
+export const SafetyUlScopeSchema = z.enum([
+  "total_intake",
+  "supplements_only",
+  "supplements_or_fortified_only",
+  "unknown",
+]);
+export type SafetyUlScope = z.infer<typeof SafetyUlScopeSchema>;
+
+export const SafetyUlRiskBandSchema = z.enum(["low", "moderate", "high", "unknown"]);
+export type SafetyUlRiskBand = z.infer<typeof SafetyUlRiskBandSchema>;
+
+export const SafetyUlEvidenceSourceSchema = z.enum(["NIH_ODS_UL", "LEGACY_UL_META", "UNKNOWN"]);
+export type SafetyUlEvidenceSource = z.infer<typeof SafetyUlEvidenceSourceSchema>;
+
+export const SafetyUlEntrySchema = z.object({
+  id: z.string().trim().min(1),
+  nutrientKey: z.string().trim().min(1),
+  displayName: z.string().trim().min(1),
+  currentDailyAmount: SafetyUlAmountSchema,
+  ulDailyAmount: SafetyUlAmountSchema,
+  riskBand: SafetyUlRiskBandSchema,
+  scope: SafetyUlScopeSchema,
+  evidenceSource: SafetyUlEvidenceSourceSchema,
+  explainLine: z.string().trim().min(1),
+  reasonCode: z.string().trim().min(1).optional(),
+  sourceUrl: z.string().trim().url().optional(),
+});
+export type SafetyUlEntry = z.infer<typeof SafetyUlEntrySchema>;
+
+export const SafetySignalPackSchema = z.object({
+  schemaVersion: z.literal(1),
+  labelWarnings: z.array(SafetySignalItemSchema),
+  ulEntries: z.array(SafetyUlEntrySchema).nullable().optional(),
+  ulSignals: z.array(SafetySignalItemSchema),
+  odsInteractions: z.array(SafetySignalItemSchema),
+  odsWatchouts: z.array(SafetySignalItemSchema),
+  qualityNotes: z.array(SafetySignalItemSchema),
+});
+export type SafetySignalPack = z.infer<typeof SafetySignalPackSchema>;
+
 export const DataStatusSchema = z.enum(["complete", "pending", "limited", "not_provided", "error"]);
 export type DataStatus = z.infer<typeof DataStatusSchema>;
 
@@ -226,17 +297,76 @@ export const PipelineMetricsEventSchema = z.object({
 });
 export type PipelineMetricsEvent = z.infer<typeof PipelineMetricsEventSchema>;
 
+export const DeterministicSignalsMetaSchema = z.object({
+  schemaVersion: z.literal(1),
+  ingredientCount: z.number().int().min(0),
+  doseCount: z.number().int().min(0),
+  usageStructuredCount: z.number().int().min(0),
+  safetySignalCount: z.number().int().min(0),
+  parserDiagnosticsTop: z.array(z.string().trim().min(1)).max(12),
+});
+export type DeterministicSignalsMeta = z.infer<typeof DeterministicSignalsMetaSchema>;
+
 export const AnalysisBundleMetaSchema = z.object({
   schemaVersion: z.literal(ANALYSIS_BUNDLE_SCHEMA_VERSION),
   promptVersion: z.string(),
   sourceType: z.enum(["lnhpd", "dsld", "web"]),
   sourceTypeFinal: z.boolean().optional(),
   scoreAvailable: z.boolean().optional(),
+  scoreReasonCode: z.string().optional(),
+  inferenceOnly: z.boolean().optional(),
   detailReady: z.boolean().optional(),
+  deterministicSignals: DeterministicSignalsMetaSchema.nullable().optional(),
   authoritativeIdentity: z.object({
     type: z.enum(["npn", "dsldLabelId", "webCanonicalId", "gtin14"]),
     value: z.string(),
   }),
+  productIdentity: z.object({
+    name: z.string().nullable().optional(),
+    brand: z.string().nullable().optional(),
+    sourceAttribution: z
+      .enum(["verified_regulatory", "label_record", "web_hint_unverified", "unknown"])
+      .optional(),
+    identityStable: z.boolean().optional(),
+    sourceId: z.string().nullable().optional(),
+  }).optional(),
+  regulatoryIds: z.object({
+    npnCandidates: z.array(
+      z.object({
+        value: z.string().regex(/^\d+$/),
+        sourceKind: z.enum([
+          "lnhpd_record",
+          "label_record",
+          "db_barcode_regulatory_map_npn",
+          "snapshot_regulatory",
+          "scan_history",
+          "name_match",
+          "web_extract",
+        ]),
+        confidence: z.number().min(0).max(1),
+        stableReason: z.enum(["verified_record", "stable_db", "unverified"]),
+      }),
+    ).max(3),
+  }).optional(),
+  candidateBackfill: z.object({
+    attempted: z.boolean(),
+    used: z.boolean(),
+    source: z
+      .enum([
+        "lnhpd_record",
+        "label_record",
+        "db_barcode_regulatory_map_npn",
+        "snapshot_regulatory",
+        "scan_history",
+        "name_match",
+        "web_extract",
+      ])
+      .nullable()
+      .optional(),
+    reasonCode: z.string().optional(),
+    latencyMs: z.number().int().min(0).optional(),
+    scoreSuppressed: z.boolean().optional(),
+  }).optional(),
   locale: z.enum(["zh", "en"]),
   phase: z.enum(["skeleton", "fast_ai", "full_ai"]),
   bundleId: z.string(),
@@ -249,6 +379,16 @@ export const AnalysisBundleMetaSchema = z.object({
   webVerifyMeta: WebVerifyMetaSchema.optional(),
   fallback: FallbackMetaSchema.optional(),
   fallbackReason: z.string().optional(),
+  stage0Winner: z
+    .enum(["verified_regulatory", "label_record", "web_hint_unverified", "unknown"])
+    .optional(),
+  stage0StartCount: z.number().int().min(0).optional(),
+  stage0ReplaceCount: z.number().int().min(0).optional(),
+  terminalReason: z.string().optional(),
+  degradedMode: z.boolean().optional(),
+  eventLoopLagP95DuringRequest: z.number().min(0).optional(),
+  webBytesReadTotal: z.number().int().min(0).optional(),
+  webParseMsTotal: z.number().min(0).optional(),
   serverCommitSha: z.string().nullable().optional(),
 });
 
@@ -279,6 +419,7 @@ export const SafetySectionSchema = z.object({
   layout: z.literal("safety_bullets"),
   cover: SafetyCoverSchema.nullable(),
   detail: SafetyDetailSchema.nullable(),
+  signals: SafetySignalPackSchema.nullable().optional(),
   dataStatus: DataStatusSchema,
 });
 

@@ -78,6 +78,46 @@ const shouldRetrySupabaseError = (error: { status?: number; message?: string } |
   return message.includes('timeout') || message.includes('fetch') || message.includes('network');
 };
 
+const SNAPSHOT_QUALITY_RANK: Record<string, number> = {
+  complete: 400,
+  ai_enriched: 350,
+  label_enriched: 300,
+  catalog_only: 200,
+  minimal: 100,
+};
+
+const resolveAnalysisStatus = (
+  analysisPayload?: SnapshotAnalysisPayload | null,
+): "complete" | "ai_enriched" | "label_enriched" | "catalog_only" | "minimal" => {
+  const status = analysisPayload?.analysis?.status ?? null;
+  if (status === "complete") return "complete";
+  if (status === "ai_enriched") return "ai_enriched";
+  if (status === "label_enriched") return "label_enriched";
+  if (status === "catalog_only") return "catalog_only";
+  return "minimal";
+};
+
+const resolveSnapshotQualityRank = (params: {
+  snapshot: SupplementSnapshot;
+  analysisPayload?: SnapshotAnalysisPayload | null;
+}): number => SNAPSHOT_QUALITY_RANK[resolveAnalysisStatus(params.analysisPayload)];
+
+const selectSnapshotRowForWrite = async (
+  key: string,
+  source: "barcode" | "label" | "mixed",
+  signal: AbortSignal,
+): Promise<SnapshotCacheRow | null> => {
+  const { data, error } = await supabase
+    .from("snapshots")
+    .select("id,key,source,payload_json,analysis_json,created_at,updated_at,expires_at")
+    .eq("key", key)
+    .eq("source", source)
+    .abortSignal(signal)
+    .maybeSingle();
+  if (error || !data) return null;
+  return data as SnapshotCacheRow;
+};
+
 export async function getSnapshotCache(params: {
   key: string;
   source: string;
@@ -235,6 +275,16 @@ export async function storeSnapshotCache(params: {
   analysisPayload?: SnapshotAnalysisPayload | null;
   expiresAt?: string | null;
 }, options: WriteResilienceOptions = {}): Promise<void> {
+  await storeSnapshotCacheGuarded(params, options);
+}
+
+export async function storeSnapshotCacheGuarded(params: {
+  key: string;
+  source: 'barcode' | 'label' | 'mixed';
+  snapshot: SupplementSnapshot;
+  analysisPayload?: SnapshotAnalysisPayload | null;
+  expiresAt?: string | null;
+}, options: WriteResilienceOptions = {}): Promise<void> {
   const { key, source, snapshot, analysisPayload, expiresAt } = params;
   if (options.signal?.aborted) {
     return;
@@ -252,7 +302,7 @@ export async function storeSnapshotCache(params: {
   }
 
   const updatedAt = snapshot.updatedAt ?? new Date().toISOString();
-  const payloadSnapshot =
+  const payloadSnapshot: SupplementSnapshot =
     snapshot.updatedAt === updatedAt
       ? snapshot
       : {
@@ -276,6 +326,27 @@ export async function storeSnapshotCache(params: {
   const timeoutSignal = createTimeoutSignal(budgetedTimeoutMs);
   const { signal, cleanup } = combineSignals([options.signal, timeoutSignal]);
   try {
+    const guardEnabled = !(
+      process.env.SNAPSHOT_WRITE_GUARD_V2 === '0' || process.env.SNAPSHOT_WRITE_GUARD_V2 === 'false'
+    );
+    if (guardEnabled && source === "barcode") {
+      const existing = await selectSnapshotRowForWrite(key, source, signal);
+      if (existing) {
+        const incomingRank = resolveSnapshotQualityRank({
+          snapshot: payloadSnapshot,
+          analysisPayload: analysisPayload ?? null,
+        });
+        const existingRank = resolveSnapshotQualityRank({
+          snapshot: existing.payload_json,
+          analysisPayload: existing.analysis_json ?? null,
+        });
+        if (incomingRank < existingRank) {
+          incrementMetric("snapshot_write_guard_blocked");
+          return;
+        }
+      }
+    }
+
     const { error } = await supabase
       .from('snapshots')
       .upsert(record, { onConflict: 'key,source' })

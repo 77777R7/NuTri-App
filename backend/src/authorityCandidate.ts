@@ -4,7 +4,7 @@ export type AuthorityMapStatus = "hit" | "stale" | "miss";
 
 export type AuthorityCandidate = {
   npn: string;
-  source: "map" | "map_stale" | "snapshot" | "scan_history";
+  source: "map" | "map_stale" | "snapshot" | "scan_history" | "name_match";
   isStale: boolean;
   requiresGuardrail: boolean;
   confidence: number | null;
@@ -121,4 +121,3 @@ export const resolveAuthorityCandidate = (
 
   return { candidate: null, mapStatus };
 };
-

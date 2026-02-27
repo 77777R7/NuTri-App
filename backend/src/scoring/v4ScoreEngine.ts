@@ -1,11 +1,24 @@
 import { createHash } from "node:crypto";
 
 import { supabase } from "../supabase.js";
+import {
+  INFERENCE_ONLY_SCORE_CONFIDENCE_CAP,
+  INFERENCE_ONLY_SCORE_REASON_CODE,
+} from "../lnhpd/inferredActives.js";
+import {
+  buildUlScopeNote,
+  classifyUlRisk,
+  convertDoseToUlUnit,
+  evaluateUlUnitPolicy,
+  formatDoseText,
+  getUlLimitByLifeStage,
+  lookupUlByCanonicalKey,
+} from "../ods/ulDataset.js";
 import type { DatasetCache } from "./v4DatasetCache.js";
 import type { DoseReasonCode, FormReasonCode } from "../insights/reasonCodes.js";
 import type { ScoreBundleV4, ScoreFlag, ScoreGoalFit, ScoreHighlight, ScoreSource } from "../types.js";
 
-export const V4_SCORE_VERSION = "v4.0.0-alpha.3";
+export const V4_SCORE_VERSION = "v4.0.0-alpha.4";
 
 export type ProductIngredientRow = {
   source_id: string;
@@ -24,10 +37,14 @@ export type ProductIngredientRow = {
   parse_confidence: number | null;
   basis: string;
   form_raw: string | null;
+  match_method?: string | null;
+  match_confidence?: number | null;
 };
 
 export type IngredientMeta = {
   id: string;
+  name: string | null;
+  canonical_key: string | null;
   unit: string | null;
   rda_adult: number | null;
   ul_adult: number | null;
@@ -68,6 +85,7 @@ export type IngredientFormAliasRow = {
 
 type FormSignal = {
   ingredientId: string;
+  ingredientCanonicalKey: string | null;
   ingredientName: string;
   candidateText: string;
   formId: string;
@@ -82,6 +100,47 @@ type FormSignal = {
   aliasText?: string | null;
   aliasSource?: string | null;
   aliasConfidence?: number | null;
+};
+
+type FormMatchZeroSignalReason =
+  | "NO_INGREDIENT_MATCH"
+  | "NO_FORM_ROWS"
+  | "FORM_ROWS_PRESENT_BUT_NO_MATCH"
+  | "UNKNOWN";
+
+type FormMismatchReason =
+  | "NO_FORM_ROWS"
+  | "MAPPING_NAME_CANONICAL_MISMATCH"
+  | "NO_CANDIDATE_TEXT"
+  | "NO_TOKEN_OVERLAP"
+  | "PARTIAL_TOKEN_OVERLAP";
+
+type FormMatchDiagnosticItem = {
+  ingredientId: string;
+  ingredientCanonicalKey: string | null;
+  ingredientName: string;
+  candidateTexts: string[];
+  availableFormKeys: string[];
+  expectedFormKey: string | null;
+  bestTokenOverlap: number;
+  mismatchReason: FormMismatchReason;
+  mappingConsistencyReason: string | null;
+  nameRawNormalized: string | null;
+};
+
+type FormMatchingDiagnostics = {
+  ingredientRowsWithIds: number;
+  ingredientRowsWithForms: number;
+  ingredientRowsWithoutFormRows: number;
+  ingredientRowsMappingMismatch: number;
+  ingredientRowsWithFormsNoMatch: number;
+  rowsWithoutFormRows: FormMatchDiagnosticItem[];
+  rowsMappingMismatch: FormMatchDiagnosticItem[];
+  rowsWithFormsNoMatch: FormMatchDiagnosticItem[];
+  rowsWithoutFormRowsTruncated: number;
+  rowsMappingMismatchTruncated: number;
+  rowsWithFormsNoMatchTruncated: number;
+  zeroSignalReason: FormMatchZeroSignalReason | null;
 };
 
 type IngredientDoseSignal = {
@@ -111,6 +170,34 @@ export type DailyMultiplierResult = {
 type UlWarnings = {
   high: string[];
   moderate: string[];
+  entries: Array<{
+    ingredientCanonicalKey: string | null;
+    displayName: string;
+    currentDose: string | null;
+    ulLimit: string | null;
+    unit: string | null;
+    scope: "total_intake" | "supplements_only" | "supplements_or_fortified_only";
+    sourceUrl: string | null;
+    riskLevel: "low" | "moderate" | "high" | "unknown";
+    confidence: number;
+    scopeNote?: string | null;
+    reasonCode:
+      | "ODS_UL_MATCHED"
+      | "LEGACY_UL_META_MATCHED"
+      | "UNIT_CONVERSION_UNCERTAIN"
+      | "NO_UL_ESTABLISHED"
+      | "UL_LOOKUP_MISSING";
+  }>;
+  source: string;
+  missingUlCount: number;
+  missingReasonCounts: {
+    noUlEstablished: number;
+    canonicalAliasMiss: number;
+    unitConversionUncertain: number;
+    legacyFallbackUsed: number;
+  };
+  unitPolicyWarningsCount: number;
+  webDisplayEligible: boolean;
   basis: "per_day_adult";
   dailyMultiplierUsed: number;
   dailyMultiplierSource: string;
@@ -254,6 +341,7 @@ const WEEKLY_CONFIDENCE_PENALTY = 0.93;
 const VERIFIED_AUDIT_STATUS = "verified";
 const MAX_AUDIT_ITEMS = 25;
 const MAX_FORM_SIGNALS = 20;
+const MAX_FORM_MATCH_DIAGNOSTIC_ITEMS = 50;
 
 const isRecognizedUnit = (unit?: string | null, unitKind?: string | null): boolean => {
   if (unitKind) return DOSE_UNIT_KINDS.has(unitKind);
@@ -270,6 +358,132 @@ const isVerifiedAudit = (value?: string | null): boolean =>
 const normalizeFormText = (value?: string | null): string => {
   if (!value) return "";
   return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+};
+
+const TRUSTED_MAPPING_METHODS = new Set(["exact", "synonym"]);
+const MAPPING_CONFIDENCE_BYPASS = 0.92;
+const MAPPING_ALIAS_ALLOWLIST = new Map<string, string>([
+  ["ascorbic acid", "vitamin c"],
+  ["vitamin b12", "vitamin b12"],
+  ["cobalamin", "vitamin b12"],
+  ["coenzyme q10", "coq10"],
+  ["cats claw", "cat s claw"],
+  ["cat s claw", "cat s claw"],
+]);
+const MAPPING_CANONICAL_OVERRIDE_BY_NAME = new Map<string, string>([
+  ["cat s claw", "cat_s_claw"],
+  ["cats claw", "cat_s_claw"],
+  ["cat s claw powder", "cat_s_claw"],
+  ["uncaria tomentosa", "cat_s_claw"],
+]);
+
+type MappingConsistency = {
+  status: "ok" | "mismatch" | "unknown";
+  reason: string;
+  nameRawNormalized: string | null;
+  matchedCanonicalKey: string | null;
+  canonicalOverrideKey: string | null;
+};
+
+const evaluateMappingConsistency = (
+  row: ProductIngredientRow,
+  meta: IngredientMeta | null,
+): MappingConsistency => {
+  const canonicalKeyRaw = typeof meta?.canonical_key === "string" ? meta.canonical_key : null;
+  const canonicalKeyNormalized = normalizeFormText(canonicalKeyRaw?.replace(/[_-]+/g, " "));
+  const nameRawNormalized = normalizeFormText(row.name_key ?? row.name_raw);
+  if (!canonicalKeyRaw || !canonicalKeyNormalized) {
+    return {
+      status: "unknown",
+      reason: "missing_canonical_key",
+      nameRawNormalized: nameRawNormalized || null,
+      matchedCanonicalKey: canonicalKeyRaw,
+      canonicalOverrideKey: null,
+    };
+  }
+  if (!nameRawNormalized) {
+    return {
+      status: "unknown",
+      reason: "missing_name_raw",
+      nameRawNormalized: null,
+      matchedCanonicalKey: canonicalKeyRaw,
+      canonicalOverrideKey: null,
+    };
+  }
+
+  const allowlistedCanonical = MAPPING_ALIAS_ALLOWLIST.get(nameRawNormalized);
+  if (allowlistedCanonical && allowlistedCanonical === canonicalKeyNormalized) {
+    return {
+      status: "ok",
+      reason: "allowlisted_alias",
+      nameRawNormalized,
+      matchedCanonicalKey: canonicalKeyRaw,
+      canonicalOverrideKey: null,
+    };
+  }
+
+  const canonicalOverrideKey = MAPPING_CANONICAL_OVERRIDE_BY_NAME.get(nameRawNormalized) ?? null;
+  const canonicalOverrideNormalized = canonicalOverrideKey
+    ? normalizeFormText(canonicalOverrideKey.replace(/[_-]+/g, " "))
+    : null;
+  if (canonicalOverrideNormalized && canonicalOverrideNormalized !== canonicalKeyNormalized) {
+    return {
+      status: "mismatch",
+      reason: "name_alias_override_available",
+      nameRawNormalized,
+      matchedCanonicalKey: canonicalKeyRaw,
+      canonicalOverrideKey,
+    };
+  }
+
+  const matchMethod = normalizeFormText(row.match_method);
+  const matchConfidence = typeof row.match_confidence === "number"
+    ? clamp(row.match_confidence, 0, 1)
+    : null;
+  if (TRUSTED_MAPPING_METHODS.has(matchMethod) && (matchConfidence == null || matchConfidence >= 0.85)) {
+    return {
+      status: "ok",
+      reason: "trusted_match_method",
+      nameRawNormalized,
+      matchedCanonicalKey: canonicalKeyRaw,
+      canonicalOverrideKey: null,
+    };
+  }
+  if (matchConfidence != null && matchConfidence >= MAPPING_CONFIDENCE_BYPASS) {
+    return {
+      status: "ok",
+      reason: "high_match_confidence",
+      nameRawNormalized,
+      matchedCanonicalKey: canonicalKeyRaw,
+      canonicalOverrideKey: null,
+    };
+  }
+
+  const canonicalTokens = canonicalKeyNormalized.split(/\s+/).filter(Boolean);
+  const nameTokens = new Set(nameRawNormalized.split(/\s+/).filter(Boolean));
+  const overlap = canonicalTokens.reduce((sum, token) => sum + (nameTokens.has(token) ? 1 : 0), 0);
+  const overlapRatio = canonicalTokens.length ? overlap / canonicalTokens.length : 0;
+  if (
+    nameRawNormalized.includes(canonicalKeyNormalized)
+    || canonicalKeyNormalized.includes(nameRawNormalized)
+    || overlapRatio >= 0.5
+  ) {
+    return {
+      status: "ok",
+      reason: overlapRatio >= 0.5 ? "token_overlap" : "canonical_in_name",
+      nameRawNormalized,
+      matchedCanonicalKey: canonicalKeyRaw,
+      canonicalOverrideKey: null,
+    };
+  }
+
+  return {
+    status: "mismatch",
+    reason: "name_canonical_mismatch",
+    nameRawNormalized,
+    matchedCanonicalKey: canonicalKeyRaw,
+    canonicalOverrideKey: null,
+  };
 };
 
 const createSeedAlias = (
@@ -596,6 +810,7 @@ const DAILY_MULTIPLIER_SOURCE_DEFAULT_NON_ADULT = "default_non_adult";
 const DAILY_MULTIPLIER_SOURCE_LNHPD = "lnhpd_dose";
 const DAILY_MULTIPLIER_SOURCE_LNHPD_WEEKLY = "lnhpd_weekly_dose";
 const DAILY_MULTIPLIER_SOURCE_NON_DAILY = "non_daily_frequency_unit";
+const DAILY_MULTIPLIER_SOURCE_LNHPD_TEXT = "lnhpd_dose_text";
 
 export const createDefaultDailyMultiplier = (): DailyMultiplierResult => ({
   multiplier: DEFAULT_DAILY_MULTIPLIER,
@@ -690,14 +905,116 @@ const isAdultDoseRecord = (record: Record<string, unknown>): boolean => {
   return false;
 };
 
+const collectDoseTextCandidates = (factsJson: Record<string, unknown>): string[] => {
+  const rows: string[] = [];
+  const push = (value: unknown) => {
+    if (typeof value !== "string") return;
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    rows.push(trimmed);
+  };
+  const rootKeys = [
+    "recommended_use",
+    "recommendedUse",
+    "directions",
+    "direction",
+    "instructions",
+    "usage",
+    "usageText",
+    "label_directions",
+    "labelDirections",
+  ];
+  for (const key of rootKeys) {
+    push(factsJson[key]);
+  }
+  const usage = factsJson.usage;
+  if (usage && typeof usage === "object") {
+    push((usage as Record<string, unknown>).summary);
+    push((usage as Record<string, unknown>).directions);
+    push((usage as Record<string, unknown>).frequency);
+    push((usage as Record<string, unknown>).dosage);
+  }
+  const dosesRaw = factsJson.doses;
+  const doses = Array.isArray(dosesRaw) ? dosesRaw : dosesRaw ? [dosesRaw] : [];
+  for (const row of doses) {
+    if (!row || typeof row !== "object") continue;
+    const record = row as Record<string, unknown>;
+    push(record.dose_text);
+    push(record.dose_instruction);
+    push(record.directions);
+    push(record.frequency_text);
+    push(record.quantity_text);
+  }
+  return Array.from(new Set(rows));
+};
+
+const parseDailyMultiplierFromDoseText = (
+  factsJson: Record<string, unknown>,
+): { multiplier: number; penaltyReason: string | null } | null => {
+  const texts = collectDoseTextCandidates(factsJson);
+  if (!texts.length) return null;
+  const unitToken = "(?:tab(?:let)?s?|capsules?|softgels?|drops?|servings?)";
+  const normalizedRows = texts.map((row) => row.toLowerCase().replace(/[–—]/g, "-"));
+  for (const text of normalizedRows) {
+    const rangeMatch = text.match(
+      new RegExp(`\\b(\\d+(?:\\.\\d+)?)\\s*-\\s*(\\d+(?:\\.\\d+)?)\\s*(?:${unitToken})?\\s*(?:per\\s*day|daily)\\b`, "i"),
+    );
+    if (rangeMatch) {
+      const lower = Number(rangeMatch[1]);
+      const upper = Number(rangeMatch[2]);
+      const hasUnit = new RegExp(unitToken, "i").test(rangeMatch[0]);
+      if (Number.isFinite(lower) && Number.isFinite(upper) && lower > 0) {
+        if (!hasUnit && upper > 12) continue;
+        return { multiplier: lower, penaltyReason: "range_lower_bound_used" };
+      }
+    }
+
+    const timesMatch = text.match(
+      new RegExp(`\\b(?:adults?:?\\s*)?(?:take\\s+)?(\\d+(?:\\.\\d+)?)\\s*(?:${unitToken})?\\s*,?\\s*(\\d+(?:\\.\\d+)?)\\s*(?:times?|x)\\s*(?:per\\s*day|daily)\\b`, "i"),
+    );
+    if (timesMatch) {
+      const quantity = Number(timesMatch[1]);
+      const frequency = Number(timesMatch[2]);
+      const hasUnit = new RegExp(unitToken, "i").test(timesMatch[0]);
+      if (Number.isFinite(quantity) && Number.isFinite(frequency) && quantity > 0 && frequency > 0) {
+        if (!hasUnit && quantity > 12) continue;
+        return { multiplier: quantity * frequency, penaltyReason: null };
+      }
+    }
+
+    const dailyMatch = text.match(
+      new RegExp(`\\b(?:adults?:?\\s*)?(?:take\\s+)?(\\d+(?:\\.\\d+)?)\\s*(${unitToken})\\s*(?:per\\s*day|daily|once\\s*daily)\\b`, "i"),
+    );
+    if (dailyMatch) {
+      const quantity = Number(dailyMatch[1]);
+      if (Number.isFinite(quantity) && quantity > 0) {
+        return { multiplier: quantity, penaltyReason: null };
+      }
+    }
+  }
+  return null;
+};
+
 export const computeDailyMultiplierFromLnhpdFacts = (
   factsJson: Record<string, unknown>,
 ): DailyMultiplierResult => {
+  const textFallback = parseDailyMultiplierFromDoseText(factsJson);
   const dosesRaw = factsJson.doses;
   const doses = Array.isArray(dosesRaw) ? dosesRaw : dosesRaw ? [dosesRaw] : [];
   const doseRecords = doses.filter((entry): entry is Record<string, unknown> => Boolean(entry && typeof entry === "object"));
   const doseRowsFound = doseRecords.length;
   if (!doseRowsFound) {
+    if (textFallback) {
+      return {
+        multiplier: textFallback.multiplier,
+        source: DAILY_MULTIPLIER_SOURCE_LNHPD_TEXT,
+        reliability: "unreliable",
+        doseRowsFound,
+        selectedDosePop: null,
+        frequencyUnit: "daily_text",
+        penaltyReason: textFallback.penaltyReason,
+      };
+    }
     return {
       multiplier: DEFAULT_DAILY_MULTIPLIER,
       source: DAILY_MULTIPLIER_SOURCE_DEFAULT,
@@ -717,6 +1034,17 @@ export const computeDailyMultiplierFromLnhpdFacts = (
   const selected = selectedByPopulation ?? selectedByAge ?? null;
   const selectedDosePop = selected ? pickDosePopulation(selected) : pickDosePopulation(doseRecords[0]);
   if (!selected) {
+    if (textFallback) {
+      return {
+        multiplier: textFallback.multiplier,
+        source: DAILY_MULTIPLIER_SOURCE_LNHPD_TEXT,
+        reliability: "unreliable",
+        doseRowsFound,
+        selectedDosePop,
+        frequencyUnit: "daily_text",
+        penaltyReason: textFallback.penaltyReason ?? "non_adult_population",
+      };
+    }
     return {
       multiplier: DEFAULT_DAILY_MULTIPLIER,
       source: DAILY_MULTIPLIER_SOURCE_DEFAULT_NON_ADULT,
@@ -748,6 +1076,17 @@ export const computeDailyMultiplierFromLnhpdFacts = (
     const quantityResolved =
       coercePositive(quantity) ?? coercePositive(averageRange(quantityMin, quantityMax));
     if (frequencyResolved == null || quantityResolved == null) {
+      if (textFallback) {
+        return {
+          multiplier: textFallback.multiplier,
+          source: DAILY_MULTIPLIER_SOURCE_LNHPD_TEXT,
+          reliability: "unreliable",
+          doseRowsFound,
+          selectedDosePop,
+          frequencyUnit: "daily_text",
+          penaltyReason: textFallback.penaltyReason ?? "invalid_dose_fields",
+        };
+      }
       return {
         multiplier: DEFAULT_DAILY_MULTIPLIER,
         source: DAILY_MULTIPLIER_SOURCE_DEFAULT_INVALID,
@@ -770,6 +1109,17 @@ export const computeDailyMultiplierFromLnhpdFacts = (
   }
 
   if (!isDailyFrequencyUnit(frequencyUnit)) {
+    if (textFallback) {
+      return {
+        multiplier: textFallback.multiplier,
+        source: DAILY_MULTIPLIER_SOURCE_LNHPD_TEXT,
+        reliability: "unreliable",
+        doseRowsFound,
+        selectedDosePop,
+        frequencyUnit: "daily_text",
+        penaltyReason: textFallback.penaltyReason ?? "non_daily_frequency_unit",
+      };
+    }
     return {
       multiplier: DEFAULT_DAILY_MULTIPLIER,
       source: DAILY_MULTIPLIER_SOURCE_NON_DAILY,
@@ -787,6 +1137,17 @@ export const computeDailyMultiplierFromLnhpdFacts = (
     coercePositive(quantity) ?? coercePositive(averageRange(quantityMin, quantityMax));
   const hasFullDose = frequencyResolved != null && quantityResolved != null;
   if (!hasFullDose) {
+    if (textFallback) {
+      return {
+        multiplier: textFallback.multiplier,
+        source: DAILY_MULTIPLIER_SOURCE_LNHPD_TEXT,
+        reliability: "unreliable",
+        doseRowsFound,
+        selectedDosePop,
+        frequencyUnit: "daily_text",
+        penaltyReason: textFallback.penaltyReason ?? "invalid_dose_fields",
+      };
+    }
     return {
       multiplier: DEFAULT_DAILY_MULTIPLIER,
       source: DAILY_MULTIPLIER_SOURCE_DEFAULT_INVALID,
@@ -910,6 +1271,91 @@ const selectBestFormMatch = (
   return best;
 };
 
+const uniqueNonEmptyStrings = (values: Array<string | null | undefined>): string[] =>
+  Array.from(
+    new Set(
+      values
+        .map((value) => (typeof value === "string" ? value.trim() : ""))
+        .filter(Boolean),
+    ),
+  );
+
+const computeBestTokenOverlap = (
+  candidateTexts: string[],
+  forms: IngredientFormRow[],
+): { expectedFormKey: string | null; bestTokenOverlap: number; mismatchReason: FormMismatchReason } => {
+  const normalizedCandidates = candidateTexts.map((value) => normalizeFormText(value)).filter(Boolean);
+  if (!normalizedCandidates.length) {
+    return {
+      expectedFormKey: null,
+      bestTokenOverlap: 0,
+      mismatchReason: "NO_CANDIDATE_TEXT",
+    };
+  }
+
+  const candidateTokens = new Set(
+    normalizedCandidates.flatMap((value) => value.split(/\s+/).filter(Boolean)),
+  );
+  let expectedFormKey: string | null = null;
+  let bestTokenOverlap = 0;
+
+  forms.forEach((form) => {
+    const keyTokens = normalizeFormText(form.form_key).split(/\s+/).filter(Boolean);
+    const labelTokens = normalizeFormText(form.form_label).split(/\s+/).filter(Boolean);
+    const tokens = keyTokens.length ? keyTokens : labelTokens;
+    if (!tokens.length) return;
+    const overlapHits = tokens.reduce(
+      (sum, token) => sum + (candidateTokens.has(token) ? 1 : 0),
+      0,
+    );
+    const overlapRatio = overlapHits / tokens.length;
+    if (overlapRatio > bestTokenOverlap) {
+      bestTokenOverlap = overlapRatio;
+      expectedFormKey = form.form_key;
+    }
+  });
+
+  return {
+    expectedFormKey,
+    bestTokenOverlap: roundScore(bestTokenOverlap),
+    mismatchReason: bestTokenOverlap > 0 ? "PARTIAL_TOKEN_OVERLAP" : "NO_TOKEN_OVERLAP",
+  };
+};
+
+const buildFormMatchDiagnosticItem = (params: {
+  row: ProductIngredientRow;
+  forms: IngredientFormRow[];
+  ingredientMeta: Map<string, IngredientMeta>;
+  mismatchReasonOverride?: FormMismatchReason;
+  mappingConsistencyReason?: string;
+  nameRawNormalizedOverride?: string | null;
+  canonicalKeyOverride?: string | null;
+}): FormMatchDiagnosticItem => {
+  const ingredientId = params.row.ingredient_id as string;
+  const candidateTexts = uniqueNonEmptyStrings([params.row.form_raw, params.row.name_raw]);
+  const availableFormKeys = uniqueNonEmptyStrings(params.forms.map((form) => form.form_key)).sort((a, b) =>
+    a.localeCompare(b),
+  );
+  const overlap = computeBestTokenOverlap(candidateTexts, params.forms);
+  const mismatchReason = params.mismatchReasonOverride ?? overlap.mismatchReason;
+  const bestTokenOverlap = params.mismatchReasonOverride === "NO_FORM_ROWS" ? 0 : overlap.bestTokenOverlap;
+
+  return {
+    ingredientId,
+    ingredientCanonicalKey:
+      params.canonicalKeyOverride ?? params.ingredientMeta.get(ingredientId)?.canonical_key ?? null,
+    ingredientName: params.row.name_raw,
+    candidateTexts,
+    availableFormKeys,
+    expectedFormKey: mismatchReason === "NO_FORM_ROWS" ? null : overlap.expectedFormKey,
+    bestTokenOverlap,
+    mismatchReason,
+    mappingConsistencyReason: params.mappingConsistencyReason ?? null,
+    nameRawNormalized:
+      params.nameRawNormalizedOverride ?? normalizeNameKey(params.row.name_key ?? params.row.name_raw),
+  };
+};
+
 const buildInputsHash = (
   rows: ProductIngredientRow[],
   context?: { dailyMultiplier?: number; dailyMultiplierSource?: string; datasetVersion?: string | null },
@@ -927,6 +1373,8 @@ const buildInputsHash = (
         unitKind: row.unit_kind,
         amountUnknown: row.amount_unknown,
         parseConfidence: row.parse_confidence,
+        matchMethod: row.match_method ?? null,
+        matchConfidence: row.match_confidence ?? null,
         active: row.is_active,
         proprietaryBlend: row.is_proprietary_blend,
         basis: row.basis,
@@ -1027,31 +1475,214 @@ const computeUlWarnings = (
   rows: ProductIngredientRow[],
   ingredientMeta: Map<string, IngredientMeta>,
   dailyMultiplier: DailyMultiplierResult,
+  source: ScoreSource,
 ): UlWarnings => {
   const high: string[] = [];
   const moderate: string[] = [];
+  const entries: UlWarnings["entries"] = [];
+  const missingUlByIngredient = new Set<string>();
+  const missingReasonSets = {
+    noUlEstablished: new Set<string>(),
+    canonicalAliasMiss: new Set<string>(),
+    unitConversionUncertain: new Set<string>(),
+    legacyFallbackUsed: new Set<string>(),
+  };
+  let unitPolicyWarningsCount = 0;
 
   rows.forEach((row) => {
     if (!row.ingredient_id || !row.is_active) return;
-    const meta = ingredientMeta.get(row.ingredient_id);
-    if (!meta?.ul_adult || meta.ul_adult <= 0) return;
+    const meta = ingredientMeta.get(row.ingredient_id) ?? null;
     const unit = row.unit_normalized ?? row.unit;
     const amount = row.amount_normalized ?? row.amount;
-    if (!unit || amount == null || !meta.unit || unit !== meta.unit) return;
+    if (!unit || amount == null || !Number.isFinite(amount)) return;
+
     const multiplier = row.basis === "label_serving" ? dailyMultiplier.multiplier : 1;
     const amountPerDay = amount * multiplier;
-    const ratio = amountPerDay / meta.ul_adult;
-    if (!Number.isFinite(ratio)) return;
-    if (ratio >= 1.2) {
-      high.push(row.name_raw);
-    } else if (ratio >= 1.0) {
-      moderate.push(row.name_raw);
+    if (!Number.isFinite(amountPerDay) || amountPerDay < 0) return;
+
+    const lookupCanonicalKey = meta?.canonical_key ?? row.name_key ?? row.name_raw;
+    const lookup = lookupUlByCanonicalKey(lookupCanonicalKey, [
+      row.name_key,
+      row.name_raw,
+      meta?.name,
+      meta?.canonical_key,
+    ]);
+    const odsGroup = lookup ? getUlLimitByLifeStage(lookup, "adult_19_plus") : null;
+    const displayName = lookup?.displayName ?? meta?.name ?? row.name_raw;
+    const canonicalKey = lookup?.ingredientCanonicalKey ?? meta?.canonical_key ?? row.name_key ?? null;
+    const fallbackUlLimit = meta?.ul_adult && meta.ul_adult > 0 ? meta.ul_adult : null;
+    const fallbackUlUnit = meta?.unit ?? null;
+
+    if (lookup && lookup.noUlEstablished) {
+      missingUlByIngredient.add(row.ingredient_id);
+      missingReasonSets.noUlEstablished.add(row.ingredient_id);
+      return;
     }
+
+    if (odsGroup && odsGroup.value > 0 && odsGroup.unit) {
+      const scope = lookup?.scope ?? "total_intake";
+      const scopeNoteBase = buildUlScopeNote({
+        scope,
+        canonicalKey,
+      });
+      const unitPolicy = evaluateUlUnitPolicy({
+        canonicalKey,
+        labelText: `${row.name_raw} ${row.form_raw ?? ""}`,
+        fromUnit: unit,
+        targetUnit: odsGroup.unit,
+      });
+      if (unitPolicy?.warn) {
+        unitPolicyWarningsCount += 1;
+        missingReasonSets.unitConversionUncertain.add(row.ingredient_id);
+        entries.push({
+          ingredientCanonicalKey: canonicalKey,
+          displayName: lookup?.displayName ?? displayName,
+          currentDose: formatDoseText(amountPerDay, unit),
+          ulLimit: formatDoseText(odsGroup.value, odsGroup.unit),
+          unit: odsGroup.unit,
+          scope,
+          scopeNote: [scopeNoteBase, unitPolicy.warningMessage].filter(Boolean).join(" "),
+          sourceUrl: lookup?.sourceUrl ?? null,
+          riskLevel: "unknown",
+          confidence: 0.25,
+          reasonCode: "UNIT_CONVERSION_UNCERTAIN",
+        });
+        return;
+      }
+      const converted = convertDoseToUlUnit({
+        amount: amountPerDay,
+        fromUnit: unit,
+        targetUnit: odsGroup.unit,
+        altUnits: lookup?.altUnits ?? [],
+      });
+      if (!converted.ok || converted.value == null) {
+        missingReasonSets.unitConversionUncertain.add(row.ingredient_id);
+        entries.push({
+          ingredientCanonicalKey: canonicalKey,
+          displayName: lookup?.displayName ?? displayName,
+          currentDose: formatDoseText(amountPerDay, unit),
+          ulLimit: formatDoseText(odsGroup.value, odsGroup.unit),
+          unit: odsGroup.unit,
+          scope,
+          scopeNote: scopeNoteBase,
+          sourceUrl: lookup?.sourceUrl ?? null,
+          riskLevel: "unknown",
+          confidence: 0.25,
+          reasonCode: "UNIT_CONVERSION_UNCERTAIN",
+        });
+        return;
+      }
+
+      const ratio = converted.value / odsGroup.value;
+      const riskLevel = classifyUlRisk(ratio);
+      if (riskLevel === "high") {
+        high.push(row.name_raw);
+      } else if (riskLevel === "moderate") {
+        moderate.push(row.name_raw);
+      }
+      entries.push({
+        ingredientCanonicalKey: canonicalKey,
+        displayName: lookup?.displayName ?? displayName,
+        currentDose: formatDoseText(converted.value, odsGroup.unit),
+        ulLimit: formatDoseText(odsGroup.value, odsGroup.unit),
+        unit: odsGroup.unit,
+        scope,
+        scopeNote: scopeNoteBase,
+        sourceUrl: lookup?.sourceUrl ?? null,
+        riskLevel,
+        confidence: converted.confidence,
+        reasonCode: "ODS_UL_MATCHED",
+      });
+      return;
+    }
+
+    if (fallbackUlLimit && fallbackUlUnit) {
+      missingReasonSets.legacyFallbackUsed.add(row.ingredient_id);
+      const unitPolicy = evaluateUlUnitPolicy({
+        canonicalKey,
+        labelText: `${row.name_raw} ${row.form_raw ?? ""}`,
+        fromUnit: unit,
+        targetUnit: fallbackUlUnit,
+      });
+      if (unitPolicy?.warn) {
+        unitPolicyWarningsCount += 1;
+        missingReasonSets.unitConversionUncertain.add(row.ingredient_id);
+        entries.push({
+          ingredientCanonicalKey: canonicalKey,
+          displayName,
+          currentDose: formatDoseText(amountPerDay, unit),
+          ulLimit: formatDoseText(fallbackUlLimit, fallbackUlUnit),
+          unit: fallbackUlUnit,
+          scope: "total_intake",
+          scopeNote: unitPolicy.warningMessage,
+          sourceUrl: null,
+          riskLevel: "unknown",
+          confidence: 0.2,
+          reasonCode: "UNIT_CONVERSION_UNCERTAIN",
+        });
+        return;
+      }
+      const converted = convertDoseToUlUnit({
+        amount: amountPerDay,
+        fromUnit: unit,
+        targetUnit: fallbackUlUnit,
+      });
+      if (!converted.ok || converted.value == null) {
+        missingReasonSets.unitConversionUncertain.add(row.ingredient_id);
+        entries.push({
+          ingredientCanonicalKey: canonicalKey,
+          displayName,
+          currentDose: formatDoseText(amountPerDay, unit),
+          ulLimit: formatDoseText(fallbackUlLimit, fallbackUlUnit),
+          unit: fallbackUlUnit,
+          scope: "total_intake",
+          sourceUrl: null,
+          riskLevel: "unknown",
+          confidence: 0.2,
+          reasonCode: "UNIT_CONVERSION_UNCERTAIN",
+        });
+        return;
+      }
+      const ratio = converted.value / fallbackUlLimit;
+      const riskLevel = classifyUlRisk(ratio);
+      if (riskLevel === "high") {
+        high.push(row.name_raw);
+      } else if (riskLevel === "moderate") {
+        moderate.push(row.name_raw);
+      }
+      entries.push({
+        ingredientCanonicalKey: canonicalKey,
+        displayName,
+        currentDose: formatDoseText(converted.value, fallbackUlUnit),
+        ulLimit: formatDoseText(fallbackUlLimit, fallbackUlUnit),
+        unit: fallbackUlUnit,
+        scope: "total_intake",
+        sourceUrl: null,
+        riskLevel,
+        confidence: Math.max(0.2, converted.confidence - 0.15),
+        reasonCode: "LEGACY_UL_META_MATCHED",
+      });
+      return;
+    }
+
+    missingUlByIngredient.add(row.ingredient_id);
+    missingReasonSets.canonicalAliasMiss.add(row.ingredient_id);
   });
 
   return {
-    high,
-    moderate,
+    high: Array.from(new Set(high)),
+    moderate: Array.from(new Set(moderate)),
+    entries,
+    source: "ods_ul_normalized_v1",
+    missingUlCount: missingUlByIngredient.size,
+    missingReasonCounts: {
+      noUlEstablished: missingReasonSets.noUlEstablished.size,
+      canonicalAliasMiss: missingReasonSets.canonicalAliasMiss.size,
+      unitConversionUncertain: missingReasonSets.unitConversionUncertain.size,
+      legacyFallbackUsed: missingReasonSets.legacyFallbackUsed.size,
+    },
+    unitPolicyWarningsCount,
+    webDisplayEligible: source !== "web",
     basis: "per_day_adult",
     dailyMultiplierUsed: dailyMultiplier.multiplier,
     dailyMultiplierSource: dailyMultiplier.source,
@@ -1078,7 +1709,21 @@ const computeConfidence = (
   return clamp(weighted, 0.1, 0.95);
 };
 
+const buildSyntheticUnspecifiedForm = (ingredientId: string): IngredientFormRow => ({
+  id: `synthetic_unspecified_${ingredientId}`,
+  ingredient_id: ingredientId,
+  form_key: "unspecified",
+  form_label: "Unspecified form",
+  relative_factor: 1,
+  confidence: 0.1,
+  evidence_grade: "D",
+  audit_status: "derived",
+});
+
+const INFERENCE_ONLY_PARSE_CONFIDENCE_MAX = 0.4;
+
 const computeScores = (
+  source: ScoreSource,
   rows: ProductIngredientRow[],
   canonicalSourceId: string | null,
   ingredientMeta: Map<string, IngredientMeta>,
@@ -1086,6 +1731,7 @@ const computeScores = (
   formRows: IngredientFormRow[],
   formAliases: IngredientFormAliasRow[],
   dailyMultiplier: DailyMultiplierResult,
+  unspecifiedFallbackRows: IngredientFormRow[],
 ) => {
   const activeRows = rows.filter((row) => row.is_active);
   const activeCount = activeRows.length;
@@ -1116,6 +1762,15 @@ const computeScores = (
   const avgParseConfidence = parseValues.length
     ? parseValues.reduce((sum, value) => sum + value, 0) / parseValues.length
     : 0.5;
+  const inferenceOnlyActives =
+    source === "lnhpd" &&
+    activeRows.length > 0 &&
+    activeRows.every(
+      (row) =>
+        typeof row.parse_confidence === "number" &&
+        Number.isFinite(row.parse_confidence) &&
+        row.parse_confidence <= INFERENCE_ONLY_PARSE_CONFIDENCE_MAX,
+    );
 
   const formsByIngredient = new Map<string, IngredientFormRow[]>();
   formRows.forEach((form) => {
@@ -1123,6 +1778,28 @@ const computeScores = (
     const bucket = formsByIngredient.get(form.ingredient_id) ?? [];
     bucket.push(form);
     formsByIngredient.set(form.ingredient_id, bucket);
+  });
+  const fallbackUnspecifiedByIngredient = new Map<string, IngredientFormRow>();
+  unspecifiedFallbackRows.forEach((form) => {
+    if (!form.ingredient_id) return;
+    const normalizedFormKey = normalizeFormText(form.form_key);
+    if (normalizedFormKey !== "unspecified") return;
+    const existing = fallbackUnspecifiedByIngredient.get(form.ingredient_id);
+    if (!existing) {
+      fallbackUnspecifiedByIngredient.set(form.ingredient_id, form);
+      return;
+    }
+    const existingVerified = isVerifiedAudit(existing.audit_status);
+    const nextVerified = isVerifiedAudit(form.audit_status);
+    if (nextVerified && !existingVerified) {
+      fallbackUnspecifiedByIngredient.set(form.ingredient_id, form);
+      return;
+    }
+    const existingConfidence = Number(existing.confidence ?? 0);
+    const nextConfidence = Number(form.confidence ?? 0);
+    if (nextConfidence > existingConfidence) {
+      fallbackUnspecifiedByIngredient.set(form.ingredient_id, form);
+    }
   });
   const globalAliases = formAliases.filter((alias) => !alias.ingredient_id);
   const aliasesByIngredient = new Map<string, IngredientFormAliasRow[]>();
@@ -1136,6 +1813,11 @@ const computeScores = (
   const formSignals: FormSignal[] = [];
   const usedFormIds = new Set<string>();
   const formMatches: ({ match: FormMatchResult; candidateText: string } | null)[] = [];
+  const rowsWithoutFormRows: FormMatchDiagnosticItem[] = [];
+  const rowsMappingMismatch: FormMatchDiagnosticItem[] = [];
+  const rowsWithFormsNoMatch: FormMatchDiagnosticItem[] = [];
+  let ingredientRowsWithIds = 0;
+  let ingredientRowsWithForms = 0;
   let formMatchCount = 0;
 
   activeRows.forEach((row) => {
@@ -1143,8 +1825,110 @@ const computeScores = (
       formMatches.push(null);
       return;
     }
+    ingredientRowsWithIds += 1;
     const forms = formsByIngredient.get(row.ingredient_id) ?? [];
+    if (forms.length) ingredientRowsWithForms += 1;
+    const fallbackUnspecified = fallbackUnspecifiedByIngredient.get(row.ingredient_id) ?? null;
+    const mappingConsistency = evaluateMappingConsistency(
+      row,
+      ingredientMeta.get(row.ingredient_id) ?? null,
+    );
+    if (mappingConsistency.status === "mismatch") {
+      const candidateText = row.form_raw ?? row.name_raw;
+      const conservativeForm = fallbackUnspecified ?? buildSyntheticUnspecifiedForm(row.ingredient_id);
+      const conservativeMatchScore = roundScore(
+        clamp(Number(conservativeForm.confidence ?? 0.1), 0, 1) * 0.1,
+      );
+      const conservativeMatch: FormMatchResult = {
+        form: conservativeForm,
+        matchScore: conservativeMatchScore,
+        effectiveFactor: 1,
+        aliasMatch: null,
+      };
+      formMatchCount += 1;
+      if (fallbackUnspecified) {
+        usedFormIds.add(fallbackUnspecified.id);
+      }
+      rowsMappingMismatch.push(
+        buildFormMatchDiagnosticItem({
+          row,
+          forms,
+          ingredientMeta,
+          mismatchReasonOverride: "MAPPING_NAME_CANONICAL_MISMATCH",
+          mappingConsistencyReason: mappingConsistency.reason,
+          nameRawNormalizedOverride: mappingConsistency.nameRawNormalized,
+          canonicalKeyOverride: mappingConsistency.canonicalOverrideKey,
+        }),
+      );
+      const ingredientCanonicalKey =
+        mappingConsistency.canonicalOverrideKey ?? ingredientMeta.get(row.ingredient_id)?.canonical_key ?? null;
+      formSignals.push({
+        ingredientId: row.ingredient_id,
+        ingredientCanonicalKey,
+        ingredientName: row.name_raw,
+        candidateText,
+        formId: conservativeForm.id,
+        formKey: conservativeForm.form_key,
+        formLabel: conservativeForm.form_label,
+        matchScore: conservativeMatchScore,
+        effectiveFactor: 1,
+        reasonCode: "MAPPING_NAME_CANONICAL_MISMATCH",
+        confidence: conservativeForm.confidence ?? null,
+        evidenceGrade: conservativeForm.evidence_grade ?? null,
+        auditStatus: conservativeForm.audit_status ?? null,
+        aliasText: null,
+        aliasSource: null,
+        aliasConfidence: null,
+      });
+      formMatches.push({ match: conservativeMatch, candidateText });
+      return;
+    }
     if (!forms.length) {
+      if (fallbackUnspecified) {
+        const candidateText = row.form_raw ?? row.name_raw;
+        const fallbackMatchScore = roundScore(
+          clamp(Number(fallbackUnspecified.confidence ?? 0.2), 0, 1) * 0.2,
+        );
+        const fallbackMatch: FormMatchResult = {
+          form: fallbackUnspecified,
+          matchScore: fallbackMatchScore,
+          effectiveFactor: 1,
+          aliasMatch: null,
+        };
+        formMatchCount += 1;
+        usedFormIds.add(fallbackUnspecified.id);
+        const ingredientCanonicalKey = ingredientMeta.get(row.ingredient_id)?.canonical_key ?? null;
+        formSignals.push({
+          ingredientId: row.ingredient_id,
+          ingredientCanonicalKey,
+          ingredientName: row.name_raw,
+          candidateText,
+          formId: fallbackUnspecified.id,
+          formKey: fallbackUnspecified.form_key,
+          formLabel: fallbackUnspecified.form_label,
+          matchScore: fallbackMatchScore,
+          effectiveFactor: 1,
+          reasonCode: "FORM_NOT_DISCLOSED",
+          confidence: fallbackUnspecified.confidence ?? null,
+          evidenceGrade: fallbackUnspecified.evidence_grade ?? null,
+          auditStatus: fallbackUnspecified.audit_status ?? null,
+          aliasText: null,
+          aliasSource: null,
+          aliasConfidence: null,
+        });
+        formMatches.push({ match: fallbackMatch, candidateText });
+        return;
+      }
+      rowsWithoutFormRows.push(
+        buildFormMatchDiagnosticItem({
+          row,
+          forms,
+          ingredientMeta,
+          mismatchReasonOverride: "NO_FORM_ROWS",
+          mappingConsistencyReason: mappingConsistency.reason,
+          nameRawNormalizedOverride: mappingConsistency.nameRawNormalized,
+        }),
+      );
       formMatches.push(null);
       return;
     }
@@ -1156,13 +1940,58 @@ const computeScores = (
       match = selectBestFormMatch(candidateText, forms, aliases);
     }
     if (!match) {
+      if (fallbackUnspecified) {
+        const fallbackMatchScore = roundScore(
+          clamp(Number(fallbackUnspecified.confidence ?? 0.2), 0, 1) * 0.2,
+        );
+        const fallbackMatch: FormMatchResult = {
+          form: fallbackUnspecified,
+          matchScore: fallbackMatchScore,
+          effectiveFactor: 1,
+          aliasMatch: null,
+        };
+        formMatchCount += 1;
+        usedFormIds.add(fallbackUnspecified.id);
+        const ingredientCanonicalKey = ingredientMeta.get(row.ingredient_id)?.canonical_key ?? null;
+        formSignals.push({
+          ingredientId: row.ingredient_id,
+          ingredientCanonicalKey,
+          ingredientName: row.name_raw,
+          candidateText,
+          formId: fallbackUnspecified.id,
+          formKey: fallbackUnspecified.form_key,
+          formLabel: fallbackUnspecified.form_label,
+          matchScore: fallbackMatchScore,
+          effectiveFactor: 1,
+          reasonCode: "FORM_NOT_DISCLOSED",
+          confidence: fallbackUnspecified.confidence ?? null,
+          evidenceGrade: fallbackUnspecified.evidence_grade ?? null,
+          auditStatus: fallbackUnspecified.audit_status ?? null,
+          aliasText: null,
+          aliasSource: null,
+          aliasConfidence: null,
+        });
+        formMatches.push({ match: fallbackMatch, candidateText });
+        return;
+      }
+      rowsWithFormsNoMatch.push(
+        buildFormMatchDiagnosticItem({
+          row,
+          forms,
+          ingredientMeta,
+          mappingConsistencyReason: mappingConsistency.reason,
+          nameRawNormalizedOverride: mappingConsistency.nameRawNormalized,
+        }),
+      );
       formMatches.push(null);
       return;
     }
     formMatchCount += 1;
     usedFormIds.add(match.form.id);
+    const ingredientCanonicalKey = ingredientMeta.get(row.ingredient_id)?.canonical_key ?? null;
     formSignals.push({
       ingredientId: row.ingredient_id,
+      ingredientCanonicalKey,
       ingredientName: row.name_raw,
       candidateText,
       formId: match.form.id,
@@ -1182,6 +2011,39 @@ const computeScores = (
   });
 
   const formCoverageRatio = activeCount ? formMatchCount / activeCount : 0;
+  const rowsWithoutFormRowsLimited = rowsWithoutFormRows.slice(0, MAX_FORM_MATCH_DIAGNOSTIC_ITEMS);
+  const rowsMappingMismatchLimited = rowsMappingMismatch.slice(0, MAX_FORM_MATCH_DIAGNOSTIC_ITEMS);
+  const rowsWithFormsNoMatchLimited = rowsWithFormsNoMatch.slice(0, MAX_FORM_MATCH_DIAGNOSTIC_ITEMS);
+  const rowsWithoutFormRowsTruncated = Math.max(0, rowsWithoutFormRows.length - rowsWithoutFormRowsLimited.length);
+  const rowsMappingMismatchTruncated = Math.max(0, rowsMappingMismatch.length - rowsMappingMismatchLimited.length);
+  const rowsWithFormsNoMatchTruncated = Math.max(0, rowsWithFormsNoMatch.length - rowsWithFormsNoMatchLimited.length);
+
+  let zeroSignalReason: FormMatchZeroSignalReason | null = null;
+  if (formSignals.length === 0) {
+    if (matchCount === 0) {
+      zeroSignalReason = "NO_INGREDIENT_MATCH";
+    } else if (rowsWithoutFormRows.length > 0) {
+      zeroSignalReason = "NO_FORM_ROWS";
+    } else if (rowsWithFormsNoMatch.length > 0) {
+      zeroSignalReason = "FORM_ROWS_PRESENT_BUT_NO_MATCH";
+    } else {
+      zeroSignalReason = "UNKNOWN";
+    }
+  }
+  const formMatchingDiagnostics: FormMatchingDiagnostics = {
+    ingredientRowsWithIds,
+    ingredientRowsWithForms,
+    ingredientRowsWithoutFormRows: rowsWithoutFormRows.length,
+    ingredientRowsMappingMismatch: rowsMappingMismatch.length,
+    ingredientRowsWithFormsNoMatch: rowsWithFormsNoMatch.length,
+    rowsWithoutFormRows: rowsWithoutFormRowsLimited,
+    rowsMappingMismatch: rowsMappingMismatchLimited,
+    rowsWithFormsNoMatch: rowsWithFormsNoMatchLimited,
+    rowsWithoutFormRowsTruncated,
+    rowsMappingMismatchTruncated,
+    rowsWithFormsNoMatchTruncated,
+    zeroSignalReason,
+  };
 
   const baseConfidence = computeConfidence(
     coverage,
@@ -1199,7 +2061,11 @@ const computeScores = (
   } else if (dailyMultiplier.source === DAILY_MULTIPLIER_SOURCE_NON_DAILY) {
     confidencePenalty = NON_DAILY_CONFIDENCE_PENALTY;
   }
-  const confidence = clamp(baseConfidence * confidencePenalty, 0.1, 0.95);
+  const confidenceBase = clamp(baseConfidence * confidencePenalty, 0.1, 0.95);
+  const confidence = inferenceOnlyActives
+    ? Math.min(confidenceBase, INFERENCE_ONLY_SCORE_CONFIDENCE_CAP)
+    : confidenceBase;
+  const inferenceGuardReasonCode = inferenceOnlyActives ? INFERENCE_ONLY_SCORE_REASON_CODE : null;
 
   const evidenceByIngredient = new Map<string, IngredientEvidenceRow[]>();
   evidenceRows.forEach((row) => {
@@ -1342,7 +2208,9 @@ const computeScores = (
       effectiveness: 20,
       safetyBase: 60,
       integrityBase: 25,
-      confidence: clamp(confidence * 0.6, 0.1, 0.6),
+      confidence: clamp(confidence * 0.6, 0.1, inferenceOnlyActives ? INFERENCE_ONLY_SCORE_CONFIDENCE_CAP : 0.6),
+      inferenceOnlyActives,
+      inferenceGuardReasonCode,
       coverage,
       activeCount,
       knownDoseCount,
@@ -1361,6 +2229,7 @@ const computeScores = (
       goalDoseAdequacy,
       goalDoseAdequacyRaw,
       formSignals,
+      formMatchingDiagnostics,
       ingredientDoseSignals: [],
       usedEvidenceIds: Array.from(usedEvidenceIds),
       usedFormIds: Array.from(usedFormIds),
@@ -1397,6 +2266,8 @@ const computeScores = (
     safetyBase,
     integrityBase,
     confidence,
+    inferenceOnlyActives,
+    inferenceGuardReasonCode,
     coverage,
     activeCount,
     knownDoseCount,
@@ -1415,6 +2286,7 @@ const computeScores = (
     goalDoseAdequacy,
     goalDoseAdequacyRaw,
     formSignals,
+    formMatchingDiagnostics,
     ingredientDoseSignals: Array.from(ingredientDoseSignalsById.values()),
     usedEvidenceIds: Array.from(usedEvidenceIds),
     usedFormIds: Array.from(usedFormIds),
@@ -1428,6 +2300,8 @@ const buildFlags = (params: {
   proprietaryBlendCount: number;
   ulWarnings: UlWarnings;
   avgParseConfidence: number;
+  inferenceOnlyActives: boolean;
+  inferenceGuardReasonCode: string | null;
 }): ScoreFlag[] => {
   const flags: ScoreFlag[] = [];
   if (params.proprietaryBlendCount > 0) {
@@ -1462,6 +2336,13 @@ const buildFlags = (params: {
       code: "LOW_PARSE_CONFIDENCE",
       message: "Parsing confidence is low; verify label details.",
       severity: "info",
+    });
+  }
+  if (params.inferenceOnlyActives) {
+    flags.push({
+      code: params.inferenceGuardReasonCode ?? INFERENCE_ONLY_SCORE_REASON_CODE,
+      message: "Ingredients are inferred from product name only; score confidence is conservatively capped.",
+      severity: "warning",
     });
   }
   if (params.ulWarnings.high.length > 0) {
@@ -1517,7 +2398,7 @@ const fetchIngredientMeta = async (rows: ProductIngredientRow[]): Promise<Map<st
 
   const { data, error } = await supabase
     .from("ingredients")
-    .select("id,unit,rda_adult,ul_adult,goals")
+    .select("id,name,canonical_key,unit,rda_adult,ul_adult,goals")
     .in("id", ingredientIds);
   if (error || !data) return metaMap;
 
@@ -1525,6 +2406,8 @@ const fetchIngredientMeta = async (rows: ProductIngredientRow[]): Promise<Map<st
     if (!row?.id) return;
     metaMap.set(row.id, {
       id: row.id as string,
+      name: typeof row.name === "string" ? row.name : null,
+      canonical_key: typeof row.canonical_key === "string" ? row.canonical_key : null,
       unit: row.unit ?? null,
       rda_adult: row.rda_adult ?? null,
       ul_adult: row.ul_adult ?? null,
@@ -1733,7 +2616,7 @@ const fetchProductIngredients = async (
   sourceId: string,
 ): Promise<{ rows: ProductIngredientRow[]; sourceIdForWrite: string; canonicalSourceId: string | null } | null> => {
   const selectColumns =
-    "source_id,canonical_source_id,ingredient_id,name_raw,name_key,amount,unit,amount_normalized,unit_normalized,unit_kind,amount_unknown,is_active,is_proprietary_blend,parse_confidence,basis,form_raw";
+    "source_id,canonical_source_id,ingredient_id,name_raw,name_key,amount,unit,amount_normalized,unit_normalized,unit_kind,amount_unknown,is_active,is_proprietary_blend,parse_confidence,basis,form_raw,match_method,match_confidence";
 
   const { data: directRows } = await supabase
     .from("product_ingredients")
@@ -1798,6 +2681,9 @@ const buildScoreBundleV4FromData = async (params: {
   const pendingEvidenceRows = params.evidenceRows.filter((row) => !isVerifiedAudit(row.audit_status));
   const verifiedFormRows = params.formRows.filter((row) => isVerifiedAudit(row.audit_status));
   const pendingFormRows = params.formRows.filter((row) => !isVerifiedAudit(row.audit_status));
+  const unspecifiedFallbackRows = params.formRows.filter(
+    (row) => normalizeFormText(row.form_key) === "unspecified",
+  );
   const verifiedEvidenceById = new Map(
     verifiedEvidenceRows.map((row) => [row.id, row]),
   );
@@ -1826,8 +2712,14 @@ const buildScoreBundleV4FromData = async (params: {
   const totalEvidenceAvailableRatio = activeIngredientIds.size
     ? totalEvidenceAvailableIds.size / activeIngredientIds.size
     : 0;
-  const ulWarnings = computeUlWarnings(params.rows, params.ingredientMeta, params.dailyMultiplier);
+  const ulWarnings = computeUlWarnings(
+    params.rows,
+    params.ingredientMeta,
+    params.dailyMultiplier,
+    params.source,
+  );
   const metrics = computeScores(
+    params.source,
     params.rows,
     params.canonicalSourceId,
     params.ingredientMeta,
@@ -1835,6 +2727,7 @@ const buildScoreBundleV4FromData = async (params: {
     verifiedFormRows,
     mergedFormAliases,
     params.dailyMultiplier,
+    unspecifiedFallbackRows,
   );
   const formSignalsSorted = [...metrics.formSignals].sort(
     (a, b) => b.matchScore - a.matchScore,
@@ -2027,6 +2920,8 @@ const buildScoreBundleV4FromData = async (params: {
       proprietaryBlendCount: metrics.proprietaryBlendCount,
       ulWarnings,
       avgParseConfidence: metrics.avgParseConfidence,
+      inferenceOnlyActives: metrics.inferenceOnlyActives,
+      inferenceGuardReasonCode: metrics.inferenceGuardReasonCode,
     }),
     highlights: buildHighlights({
       coverage: metrics.coverage,
@@ -2063,6 +2958,20 @@ const buildScoreBundleV4FromData = async (params: {
         doseAdequacy: roundScore(metrics.doseAdequacyRawAvg),
         formAdjustedDoseAdequacy: roundScore(metrics.doseAdequacyAvg),
         formCoverageRatio: roundScore(metrics.formCoverageRatio),
+        formMatching: {
+          ingredientRowsWithIds: metrics.formMatchingDiagnostics.ingredientRowsWithIds,
+          ingredientRowsWithForms: metrics.formMatchingDiagnostics.ingredientRowsWithForms,
+          ingredientRowsWithoutFormRows: metrics.formMatchingDiagnostics.ingredientRowsWithoutFormRows,
+          ingredientRowsMappingMismatch: metrics.formMatchingDiagnostics.ingredientRowsMappingMismatch,
+          ingredientRowsWithFormsNoMatch: metrics.formMatchingDiagnostics.ingredientRowsWithFormsNoMatch,
+          rowsWithoutFormRows: metrics.formMatchingDiagnostics.rowsWithoutFormRows,
+          rowsMappingMismatch: metrics.formMatchingDiagnostics.rowsMappingMismatch,
+          rowsWithFormsNoMatch: metrics.formMatchingDiagnostics.rowsWithFormsNoMatch,
+          rowsWithoutFormRowsTruncated: metrics.formMatchingDiagnostics.rowsWithoutFormRowsTruncated,
+          rowsMappingMismatchTruncated: metrics.formMatchingDiagnostics.rowsMappingMismatchTruncated,
+          rowsWithFormsNoMatchTruncated: metrics.formMatchingDiagnostics.rowsWithFormsNoMatchTruncated,
+          zeroSignalReason: metrics.formMatchingDiagnostics.zeroSignalReason,
+        },
         formSignals,
         formSignalsTruncatedCount,
         ingredientDoseSignals: metrics.ingredientDoseSignals,
@@ -2097,6 +3006,9 @@ const buildScoreBundleV4FromData = async (params: {
         dailyMultiplier: params.dailyMultiplier.multiplier,
         dailyMultiplierSource: params.dailyMultiplier.source,
         dailyMultiplierReliability: params.dailyMultiplier.reliability,
+        inferenceOnlyActives: metrics.inferenceOnlyActives,
+        inferenceGuardReasonCode: metrics.inferenceGuardReasonCode,
+        inferenceConfidenceCap: metrics.inferenceOnlyActives ? INFERENCE_ONLY_SCORE_CONFIDENCE_CAP : null,
         factsHash,
         ...(params.source === "lnhpd"
           ? {
@@ -2249,4 +3161,5 @@ export async function computeV4InputsHash(params: {
 
 export const __test__ = {
   computeUlWarnings,
+  computeScores,
 };

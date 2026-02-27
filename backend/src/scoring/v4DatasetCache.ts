@@ -2,6 +2,8 @@ import { supabase } from "../supabase.js";
 
 export type IngredientMeta = {
   id: string;
+  name: string | null;
+  canonical_key: string | null;
   unit: string | null;
   rda_adult: number | null;
   ul_adult: number | null;
@@ -121,7 +123,7 @@ export const loadDatasetCache = async (): Promise<DatasetCache> => {
       async (from, to) =>
         await supabase
           .from("ingredients")
-          .select("id,unit,rda_adult,ul_adult,goals")
+          .select("id,name,canonical_key,unit,rda_adult,ul_adult,goals")
           .order("id", { ascending: true })
           .range(from, to),
       "ingredients",
@@ -212,6 +214,8 @@ export const loadDatasetCache = async (): Promise<DatasetCache> => {
       if (!row?.id) return;
       ingredientMetaById.set(row.id as string, {
         id: row.id as string,
+        name: typeof row.name === "string" ? row.name : null,
+        canonical_key: typeof row.canonical_key === "string" ? row.canonical_key : null,
         unit: row.unit ?? null,
         rda_adult: row.rda_adult ?? null,
         ul_adult: row.ul_adult ?? null,

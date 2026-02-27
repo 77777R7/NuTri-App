@@ -10,10 +10,16 @@ const SERVER_PATH = path.resolve(__dirname, "../src/server.ts");
 
 test("admission gate constants exist with expected names", async () => {
   const source = await readFile(SERVER_PATH, "utf8");
-  assert.match(source, /const ENRICH_STREAM_MAX_ACTIVE\s*=\s*Math\.max\(1,\s*Number\(process\.env\.ENRICH_STREAM_MAX_ACTIVE\s*\?\?\s*4\)\)/);
-  assert.match(source, /const ENRICH_STREAM_MAX_QUEUE\s*=\s*Math\.max\(0,\s*Number\(process\.env\.ENRICH_STREAM_MAX_QUEUE\s*\?\?\s*20\)\)/);
+  assert.match(source, /const ENRICH_STREAM_MAX_ACTIVE_FULL\s*=\s*Math\.max\(/);
+  assert.match(source, /const ENRICH_STREAM_MAX_QUEUE_FULL\s*=\s*Math\.max\(/);
+  assert.match(source, /const ENRICH_STREAM_MAX_ACTIVE_BUNDLE_ONLY\s*=\s*Math\.max\(/);
+  assert.match(source, /const ENRICH_STREAM_MAX_QUEUE_BUNDLE_ONLY\s*=\s*Math\.max\(/);
   assert.match(source, /const ENRICH_STREAM_QUEUE_WAIT_MS\s*=\s*Math\.max\(0,\s*Number\(process\.env\.ENRICH_STREAM_QUEUE_WAIT_MS\s*\?\?\s*1500\)\)/);
-  assert.match(source, /const enrichStreamAdmissionGate = new EnrichStreamAdmissionGate\(/);
+  assert.match(source, /const ENRICH_STREAM_QUEUE_WAIT_MS_BUNDLE_ONLY\s*=\s*Math\.max\(\s*0,\s*Number\(process\.env\.ENRICH_STREAM_QUEUE_WAIT_MS_BUNDLE_ONLY\s*\?\?\s*1500\)/);
+  assert.match(source, /const enrichStreamAdmissionGateFull = new EnrichStreamAdmissionGate\(/);
+  assert.match(source, /const enrichStreamAdmissionGateBundleOnly = new EnrichStreamAdmissionGate\(/);
+  assert.match(source, /type EnrichStreamAdmissionLane = "full" \| "bundle_only"/);
+  assert.match(source, /const selectEnrichStreamAdmissionGate = \(/);
 });
 
 test("admission gate runs after SSE init and before main pipeline work", async () => {
@@ -33,6 +39,9 @@ test("admission gate runs after SSE init and before main pipeline work", async (
   assert.ok(admissionStart > sseStart, "admission must happen after SSE headers");
   assert.ok(admissionStart < invalidCheck, "admission should happen before main branch checks");
   assert.ok(admissionStart < stageWork, "admission should happen before heavy pipeline work");
+  assert.match(source, /const streamAdmissionLane: EnrichStreamAdmissionLane = streamAnalysisBundleOnly \? "bundle_only" : "full";/);
+  assert.match(source, /const streamAdmissionGate = selectEnrichStreamAdmissionGate\(streamAdmissionLane\);/);
+  assert.match(source, /streamAdmissionGate\.acquire/);
 });
 
 test("global watchdog uses request-level deadline", async () => {

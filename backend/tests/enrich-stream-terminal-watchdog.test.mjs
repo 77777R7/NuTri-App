@@ -44,18 +44,53 @@ test("global watchdog emits STREAM_TIMEOUT for rev0-only and finalizes", async (
   assert.match(globalSlice, /finalizeStream\("global_timeout_after_rev1"\)/);
 });
 
-test("web rev1 watchdog finalizes stream when post-rev1 tail drifts", async () => {
+test("full-lane rev1 watchdog finalizes stream for all source types when post-rev1 tail drifts", async () => {
   const source = await readFile(SERVER_PATH, "utf8");
   assert.match(source, /const ENRICH_STREAM_WEB_REV1_DONE_DELAY_MS = Math\.max\(/);
 
   const scheduleStart = source.indexOf("const scheduleBundleOnlyFinalize = () => {");
   assert.ok(scheduleStart >= 0, "missing post-rev1 finalize scheduler");
-  const scheduleSlice = source.slice(scheduleStart, scheduleStart + 1800);
+  const scheduleSlice = source.slice(scheduleStart, scheduleStart + 3200);
 
   assert.match(scheduleSlice, /if \(!streamState\.rev1Sent\) return;/);
-  assert.match(scheduleSlice, /if \(streamState\.latestSourceType !== "web"\) return;/);
+  assert.doesNotMatch(scheduleSlice, /if \(streamState\.latestSourceType !== "web"\) return;/);
   assert.match(scheduleSlice, /if \(webRev1DoneTimer\) return;/);
-  assert.match(scheduleSlice, /finalizeStream\("web_rev1_watchdog_complete"\)/);
+  assert.match(scheduleSlice, /finalizeStream\("full_rev1_watchdog_complete"\)/);
+});
+
+test("bundle-only terminal guard guarantees rev1/done closure", async () => {
+  const source = await readFile(SERVER_PATH, "utf8");
+  assert.match(source, /const ENRICH_STREAM_BUNDLE_ONLY_TERMINAL_GUARD_MS = Math\.max\(/);
+
+  const guardStart = source.indexOf("if (streamAnalysisBundleOnly && !bundleOnlyTerminalGuardTimer)");
+  assert.ok(guardStart >= 0, "missing bundle-only terminal guard");
+  const guardSlice = source.slice(guardStart, guardStart + 1600);
+
+  assert.match(guardSlice, /if \(!streamState\.rev1Sent\)/);
+  assert.match(guardSlice, /emitDegradedLimitedRev1AndFinalize\("BUNDLE_ONLY_NO_AUTHORITATIVE_MATCH"\)/);
+  assert.match(guardSlice, /finalizeStream\(terminalReason \?\? "analysis_bundle_only_terminal_guard"\)/);
+});
+
+test("full-lane pre-rev1 terminal guard emits stable timeout reason and finalizes", async () => {
+  const source = await readFile(SERVER_PATH, "utf8");
+  assert.match(source, /const ENRICH_STREAM_FULL_PRE_REV1_TERMINAL_GUARD_MS = Math\.max\(/);
+
+  const guardStart = source.indexOf("if (!streamAnalysisBundleOnly && !fullPreRev1TerminalGuardTimer)");
+  assert.ok(guardStart >= 0, "missing full-lane pre-rev1 terminal guard");
+  const guardSlice = source.slice(guardStart, guardStart + 1900);
+
+  assert.match(guardSlice, /if \(streamState\.rev1Sent\) return;/);
+  assert.match(guardSlice, /const isWebHintLike =/);
+  assert.match(guardSlice, /activeStage0Winner === "web_hint_unverified"/);
+  assert.match(guardSlice, /latestProductIdentity\?\.sourceAttribution === "web_hint_unverified"/);
+  assert.match(guardSlice, /streamState\.latestSourceType === "web"/);
+  assert.match(guardSlice, /streamState\.latestIdentityType === "webCanonicalId"/);
+  assert.match(guardSlice, /emitDegradedLimitedRev1AndFinalize\("DEGRADED_WEB_BUDGET"\)/);
+  assert.match(guardSlice, /emitTerminalErrorAndFinalize\(\{/);
+  assert.match(guardSlice, /code:\s*"STREAM_TIMEOUT"/);
+  assert.match(guardSlice, /stage:\s*"watchdog"/);
+  assert.match(guardSlice, /reasonCode:\s*"FULL_REV1_MISSING_GUARD_TIMEOUT"/);
+  assert.match(guardSlice, /finalizeReason:\s*"full_pre_rev1_guard_timeout"/);
 });
 
 test("terminal error payload includes terminalSnapshot fields", async () => {

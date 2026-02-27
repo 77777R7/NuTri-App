@@ -80,7 +80,74 @@ export type SafetyDetail = {
   redFlags: SafetyItem[];
 };
 
+export type SafetySignalScope = 'label_specific' | 'ods_general';
+export type SafetySignalSource =
+  | 'label_record'
+  | 'score_v4_ul'
+  | 'ods_watchout'
+  | 'ods_interaction'
+  | 'quality_note'
+  | 'unknown';
+
+export type SafetySignalItem = {
+  id: string;
+  text: string;
+  scope: SafetySignalScope;
+  source: SafetySignalSource;
+  reasonCode?: string;
+  sourceUrl?: string;
+  riskLevel?: string;
+};
+
+export type SafetyUlAmount = {
+  value: number | null;
+  unit: string | null;
+  text: string | null;
+};
+
+export type SafetyUlScope =
+  | 'total_intake'
+  | 'supplements_only'
+  | 'supplements_or_fortified_only'
+  | 'unknown';
+
+export type SafetyUlRiskBand = 'low' | 'moderate' | 'high' | 'unknown';
+export type SafetyUlEvidenceSource = 'NIH_ODS_UL' | 'LEGACY_UL_META' | 'UNKNOWN';
+
+export type SafetyUlEntry = {
+  id: string;
+  nutrientKey: string;
+  displayName: string;
+  currentDailyAmount: SafetyUlAmount;
+  ulDailyAmount: SafetyUlAmount;
+  riskBand: SafetyUlRiskBand;
+  scope: SafetyUlScope;
+  evidenceSource: SafetyUlEvidenceSource;
+  explainLine: string;
+  reasonCode?: string;
+  sourceUrl?: string;
+};
+
+export type SafetySignalPack = {
+  schemaVersion: 1;
+  labelWarnings: SafetySignalItem[];
+  ulEntries?: SafetyUlEntry[] | null;
+  ulSignals: SafetySignalItem[];
+  odsInteractions: SafetySignalItem[];
+  odsWatchouts: SafetySignalItem[];
+  qualityNotes: SafetySignalItem[];
+};
+
 export type DataStatus = 'complete' | 'pending' | 'limited' | 'not_provided' | 'error';
+
+export type DeterministicSignalsMeta = {
+  schemaVersion: 1;
+  ingredientCount: number;
+  doseCount: number;
+  usageStructuredCount: number;
+  safetySignalCount: number;
+  parserDiagnosticsTop: string[];
+};
 
 export type AnalysisBundleMetaV3 = {
   schemaVersion: 3;
@@ -88,7 +155,16 @@ export type AnalysisBundleMetaV3 = {
   sourceType: 'lnhpd' | 'dsld' | 'web';
   sourceTypeFinal?: boolean;
   scoreAvailable?: boolean;
+  scoreReasonCode?: string;
+  deterministicSignals?: DeterministicSignalsMeta | null;
   authoritativeIdentity: { type: 'npn' | 'dsldLabelId' | 'webCanonicalId' | 'gtin14'; value: string };
+  productIdentity?: {
+    name?: string | null;
+    brand?: string | null;
+    sourceAttribution?: 'verified_regulatory' | 'label_record' | 'web_hint_unverified' | 'unknown';
+    identityStable?: boolean;
+    sourceId?: string | null;
+  };
   locale: 'zh' | 'en';
   phase: 'skeleton' | 'fast_ai' | 'full_ai';
   bundleId: string;
@@ -97,6 +173,14 @@ export type AnalysisBundleMetaV3 = {
   factsSourceVersion: string;
   detailReady?: boolean;
   fallbackReason?: string;
+  stage0Winner?: 'verified_regulatory' | 'label_record' | 'web_hint_unverified' | 'unknown';
+  stage0StartCount?: number;
+  stage0ReplaceCount?: number;
+  terminalReason?: string;
+  degradedMode?: boolean;
+  eventLoopLagP95DuringRequest?: number;
+  webBytesReadTotal?: number;
+  webParseMsTotal?: number;
   serverCommitSha?: string | null;
 };
 
@@ -108,7 +192,13 @@ export type AnalysisBundleV3 = {
     overview: { layout: 'overview_card'; cover: OverviewCover | null; detail: OverviewDetail | null; dataStatus: DataStatus };
     ingredients: { layout: 'ingredients_list'; cover: IngredientsCover | null; detail: IngredientsDetailV3 | null; dataStatus: DataStatus };
     usage: { layout: 'usage_bullets'; cover: UsageCover | null; detail: UsageDetail | null; dataStatus: DataStatus };
-    safety: { layout: 'safety_bullets'; cover: SafetyCover | null; detail: SafetyDetail | null; dataStatus: DataStatus };
+    safety: {
+      layout: 'safety_bullets';
+      cover: SafetyCover | null;
+      detail: SafetyDetail | null;
+      signals?: SafetySignalPack | null;
+      dataStatus: DataStatus;
+    };
   };
 };
 
@@ -118,7 +208,13 @@ export type AnalysisBundleV4 = {
     overview: { layout: 'overview_card'; cover: OverviewCover | null; detail: OverviewDetail | null; dataStatus: DataStatus };
     ingredients: { layout: 'ingredients_list'; cover: IngredientsCover | null; detail: IngredientsDetailV4 | null; dataStatus: DataStatus };
     usage: { layout: 'usage_bullets'; cover: UsageCover | null; detail: UsageDetail | null; dataStatus: DataStatus };
-    safety: { layout: 'safety_bullets'; cover: SafetyCover | null; detail: SafetyDetail | null; dataStatus: DataStatus };
+    safety: {
+      layout: 'safety_bullets';
+      cover: SafetyCover | null;
+      detail: SafetyDetail | null;
+      signals?: SafetySignalPack | null;
+      dataStatus: DataStatus;
+    };
   };
 };
 

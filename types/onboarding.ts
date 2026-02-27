@@ -3,13 +3,31 @@ export type ProfileDraft = {
   weight?: number;
   age?: number;
   gender?: string;
+  ageRange?: string;
+  sex?: string;
+  supplementExperience?: string;
   diets?: string[];
   activity?: string;
+  preferredTypes?: string[];
+  adherenceBlocker?: string;
   location?: {
     country?: string;
     city?: string;
   };
   goals?: string[];
+  smartFilterConfig?: {
+    visibleGoals?: string[];
+    preselectedTypes?: string[];
+    preselectedTiming?: string[];
+  };
+  firstActionPreference?: 'scan' | 'manual' | 'later';
+  onboardingVersion?: 'v2';
+  onboardingCompletedAt?: string;
+  permissionPreferences?: {
+    camera?: boolean;
+    notifications?: boolean;
+    photos?: boolean;
+  };
   privacy?: {
     agreed: boolean;
     camera?: boolean;

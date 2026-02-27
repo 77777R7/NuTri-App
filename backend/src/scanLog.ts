@@ -31,7 +31,7 @@ export async function logBarcodeScan(input: {
   checksumValid: boolean | null;
 
   catalogHit: boolean;
-  servedFrom: string; // "override" | "dsld" | "snapshot_cache" | "google_ai" | "wait_inflight" | "error"
+  servedFrom: string; // e.g. "lnhpd" | "snapshot_cache" | "resolution_engine_v2" | "override_snapshot_cache" | "wait_inflight" | "error_not_found" | "error_config"
   dsldLabelId?: number | null;
   snapshotId?: string | null;
   brandName?: string | null;

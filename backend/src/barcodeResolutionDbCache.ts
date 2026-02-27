@@ -1,6 +1,6 @@
 import { supabase } from "./supabase.js";
-import { incrementMetric } from "./metrics.js";
-import { buildBarcodeVariants } from "./barcode.js";
+import { incrementMetric, recordRegulatoryWritePolicyDecision } from "./metrics.js";
+import { buildBarcodeVariantKeys, normalizeBarcodeKey } from "./barcodeKey.js";
 import {
   HttpError,
   combineSignals,
@@ -70,6 +70,28 @@ export type BarcodeRegulatoryMapRow = {
   updated_at: string;
 };
 
+export type BarcodeRegulatoryMapWriteOutcome = {
+  status: "upserted" | "blocked";
+  reason:
+    | "insert"
+    | "rank_upgrade"
+    | "equal_rank_better"
+    | "lower_rank"
+    | "equal_rank_not_better"
+    | "negative_signal"
+    | "write_skipped";
+  existing: BarcodeRegulatoryMapRow | null;
+  incomingRank: number;
+  existingRank: number | null;
+};
+
+export type RegulatoryMapWriteDecision = {
+  allowWrite: boolean;
+  reason: "insert" | "rank_upgrade" | "equal_rank_better" | "lower_rank" | "equal_rank_not_better" | "negative_signal";
+  incomingRank: number;
+  existingRank: number | null;
+};
+
 export type BarcodeHistoricalLnhpdCandidate = {
   barcode_gtin14: string;
   npn: string;
@@ -97,6 +119,8 @@ export type BarcodeResolutionTrainingRow = {
   created_at: string;
 };
 
+type ContractMode = "off" | "shadow" | "enforce";
+
 type ResilienceOptions = {
   signal?: AbortSignal;
   timeoutMs?: number;
@@ -105,6 +129,8 @@ type ResilienceOptions = {
   semaphore?: Semaphore;
   breaker?: CircuitBreaker;
   retry?: Partial<RetryOptions>;
+  keyContractMode?: ContractMode;
+  writeGuardMode?: ContractMode;
 };
 
 const shouldRetrySupabaseError = (error: { status?: number; message?: string } | null): boolean => {
@@ -112,6 +138,206 @@ const shouldRetrySupabaseError = (error: { status?: number; message?: string } |
   if (typeof error.status === "number") return isRetryableStatus(error.status);
   const message = error.message?.toLowerCase() ?? "";
   return message.includes("timeout") || message.includes("fetch") || message.includes("network");
+};
+
+const normalizeNpn = (value: string | null | undefined): string =>
+  String(value ?? "").replace(/\D/g, "").trim();
+
+const normalizeConfidence = (value: unknown): number => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 0;
+  if (parsed < 0) return 0;
+  if (parsed > 1) return 1;
+  return parsed;
+};
+
+const parseIsoTime = (value: string | null | undefined): number | null => {
+  if (!value) return null;
+  const parsed = Date.parse(value);
+  if (!Number.isFinite(parsed)) return null;
+  return parsed;
+};
+
+const resolveCanonicalGtin14 = (value: string): string | null => normalizeBarcodeKey(value).gtin14;
+
+const resolveContractMode = (value: unknown, fallback: ContractMode): ContractMode => {
+  const raw = String(value ?? "").trim().toLowerCase();
+  if (raw === "off") return "off";
+  if (raw === "shadow") return "shadow";
+  if (raw === "enforce") return "enforce";
+  return fallback;
+};
+
+const resolveKeyContractMode = (override?: ContractMode): ContractMode =>
+  resolveContractMode(override ?? process.env.KEY_CONTRACT_V2, "enforce");
+
+const resolveWriteGuardMode = (override?: ContractMode): ContractMode =>
+  resolveContractMode(override ?? process.env.WRITE_GUARD_V2, "enforce");
+
+const mapSourceToRank = (source: string): number => {
+  const normalized = String(source ?? "").trim().toLowerCase();
+  if (!normalized) return 100;
+  if (
+    normalized === "verified_regulatory" ||
+    normalized === "lnhpd" ||
+    normalized === "name_match" ||
+    normalized === "manual_verified" ||
+    normalized === "barcode_scans"
+  ) {
+    return 400;
+  }
+  if (
+    normalized === "label_record" ||
+    normalized === "dsld" ||
+    normalized === "label_scan" ||
+    normalized === "catalog_label"
+  ) {
+    return 300;
+  }
+  if (
+    normalized === "stable_db" ||
+    normalized === "scan_history" ||
+    normalized === "map" ||
+    normalized === "map_stale"
+  ) {
+    return 200;
+  }
+  if (normalized === "lnhpd_not_found") {
+    return 10;
+  }
+  return 100;
+};
+
+export const evaluateRegulatoryMapWritePolicy = (params: {
+  existing: BarcodeRegulatoryMapRow | null;
+  incoming: {
+    npn: string;
+    confidence: number;
+    source: string;
+    expiresAt: string | null;
+  };
+}): RegulatoryMapWriteDecision => {
+  const incomingRank = mapSourceToRank(params.incoming.source);
+  const existing = params.existing;
+  if (!existing) {
+    return {
+      allowWrite: true,
+      reason: "insert",
+      incomingRank,
+      existingRank: null,
+    };
+  }
+
+  const existingRank = mapSourceToRank(existing.source);
+  const incomingSource = String(params.incoming.source ?? "").trim().toLowerCase();
+  const incomingIsNegativeSignal = incomingSource === "lnhpd_not_found";
+  const existingIsPositive = existingRank > 10;
+  if (incomingIsNegativeSignal && existingIsPositive) {
+    return {
+      allowWrite: false,
+      reason: "negative_signal",
+      incomingRank,
+      existingRank,
+    };
+  }
+
+  if (incomingRank > existingRank) {
+    return {
+      allowWrite: true,
+      reason: "rank_upgrade",
+      incomingRank,
+      existingRank,
+    };
+  }
+
+  if (incomingRank < existingRank) {
+    return {
+      allowWrite: false,
+      reason: "lower_rank",
+      incomingRank,
+      existingRank,
+    };
+  }
+
+  const incomingConfidence = normalizeConfidence(params.incoming.confidence);
+  const existingConfidence = normalizeConfidence(existing.confidence);
+  const existingNpn = normalizeNpn(existing.npn);
+  const incomingNpn = normalizeNpn(params.incoming.npn);
+  const sameNpn = existingNpn === incomingNpn;
+  const confidenceThreshold = sameNpn ? 0.01 : 0.1;
+  const confidenceImproved = incomingConfidence >= existingConfidence + confidenceThreshold;
+  const incomingExpiryMs = parseIsoTime(params.incoming.expiresAt);
+  const existingExpiryMs = parseIsoTime(existing.expires_at);
+  const fresherForSameNpn =
+    sameNpn &&
+    incomingExpiryMs !== null &&
+    (existingExpiryMs === null || incomingExpiryMs > existingExpiryMs);
+
+  if (confidenceImproved || fresherForSameNpn) {
+    return {
+      allowWrite: true,
+      reason: "equal_rank_better",
+      incomingRank,
+      existingRank,
+    };
+  }
+
+  return {
+    allowWrite: false,
+    reason: "equal_rank_not_better",
+    incomingRank,
+    existingRank,
+  };
+};
+
+const recordWriteGuardObservation = (params: {
+  mode: ContractMode;
+  source: string;
+  decision: RegulatoryMapWriteDecision;
+}): void => {
+  if (params.mode !== "shadow" && params.mode !== "enforce") return;
+  const sourceKind = String(params.source ?? "").trim().toLowerCase() || "unknown";
+  const reason = String(params.decision.reason ?? "unknown");
+  const incomingRank = Number.isFinite(params.decision.incomingRank) ? params.decision.incomingRank : -1;
+
+  if (!params.decision.allowWrite) {
+    recordRegulatoryWritePolicyDecision({
+      mode: params.mode,
+      decision: "wouldBlock",
+      sourceKind,
+      incomingRank,
+      reason,
+    });
+    recordRegulatoryWritePolicyDecision({
+      mode: params.mode,
+      decision: "wouldWriteCandidateOnly",
+      sourceKind,
+      incomingRank,
+      reason,
+    });
+    return;
+  }
+
+  if (params.decision.reason === "rank_upgrade") {
+    recordRegulatoryWritePolicyDecision({
+      mode: params.mode,
+      decision: "wouldUpgrade",
+      sourceKind,
+      incomingRank,
+      reason,
+    });
+    return;
+  }
+
+  if (params.decision.reason === "equal_rank_better") {
+    recordRegulatoryWritePolicyDecision({
+      mode: params.mode,
+      decision: "wouldReplaceSameRank",
+      sourceKind,
+      incomingRank,
+      reason,
+    });
+  }
 };
 
 const selectResolutionCacheRow = async (
@@ -131,46 +357,48 @@ const selectResolutionCacheRow = async (
   return data as ResolutionCacheRow;
 };
 
-const buildBarcodeKeyList = (barcodeGtin14: string, barcodeRaw?: string | null): string[] => {
-  const keys = new Set<string>();
-  const add = (value?: string | null) => {
-    if (!value) return;
-    const digits = String(value).replace(/\D/g, "").trim();
-    if (!digits) return;
-    keys.add(digits);
-    for (const variant of buildBarcodeVariants(digits)) {
-      keys.add(variant);
-    }
-    if (digits.length < 14) {
-      keys.add(digits.padStart(14, "0"));
-    }
-  };
-  add(barcodeGtin14);
-  add(barcodeRaw);
-  return Array.from(keys);
+const buildBarcodeKeyList = (
+  barcodeGtin14: string,
+  barcodeRaw?: string | null,
+  mode: ContractMode = resolveKeyContractMode(),
+): string[] => {
+  const canonical = resolveCanonicalGtin14(barcodeGtin14);
+  if (!canonical) return [];
+  if (mode === "enforce") {
+    return buildBarcodeVariantKeys({ gtin14: canonical, raw: barcodeRaw ?? null });
+  }
+  const legacy = new Set<string>([canonical]);
+  const rawNormalized = normalizeBarcodeKey(barcodeRaw ?? "").rawNormalized;
+  if (rawNormalized) legacy.add(rawNormalized);
+  return Array.from(legacy);
 };
 
 const selectNegativeCacheRow = async (
   barcodeGtin14: string,
   signal: AbortSignal,
   barcodeRaw?: string | null,
+  keyContractMode?: ContractMode,
 ): Promise<NegativeCacheRow | null> => {
-  const keys = buildBarcodeKeyList(barcodeGtin14, barcodeRaw);
-  let query = supabase
-    .from("negative_cache")
-    .select("barcode_gtin14,barcode_raw,reason_code,until,attempt_count,last_attempt_at,updated_at")
-    .order("updated_at", { ascending: false })
-    .limit(1);
-  if (keys.length > 1) {
-    query = query.in("barcode_gtin14", keys);
-  } else if (keys.length === 1) {
-    query = query.eq("barcode_gtin14", keys[0]);
-  } else {
-    return null;
-  }
-  query = query.abortSignal(signal);
-  const { data, error } = await query.maybeSingle();
-  if (error || !data) return null;
+  const keys = buildBarcodeKeyList(barcodeGtin14, barcodeRaw, resolveKeyContractMode(keyContractMode));
+  if (!keys.length) return null;
+  const readBy = async (column: "barcode_gtin14" | "barcode_raw") => {
+    let query = supabase
+      .from("negative_cache")
+      .select("barcode_gtin14,barcode_raw,reason_code,until,attempt_count,last_attempt_at,updated_at")
+      .order("updated_at", { ascending: false })
+      .limit(1);
+    if (keys.length > 1) {
+      query = query.in(column, keys);
+    } else {
+      query = query.eq(column, keys[0]);
+    }
+    return await query.abortSignal(signal).maybeSingle();
+  };
+
+  const byGtin = await readBy("barcode_gtin14");
+  const byRaw = byGtin.data ? { data: null, error: null } : await readBy("barcode_raw");
+  const data = byGtin.data ?? byRaw.data;
+  if (!data) return null;
   if (isExpired((data as { until?: string }).until)) return null;
   return data as NegativeCacheRow;
 };
@@ -195,6 +423,90 @@ const selectNpnNegativeCacheRow = async (
   if (error || !data) return null;
   if (isExpired((data as { until?: string | null }).until ?? null)) return null;
   return data as NpnNegativeCacheRow;
+};
+
+const selectBarcodeRegulatoryMapByPrimaryKey = async (
+  barcodeGtin14: string,
+  signal: AbortSignal,
+): Promise<BarcodeRegulatoryMapRow | null> => {
+  const { data, error } = await supabase
+    .from("barcode_regulatory_map")
+    .select("barcode_gtin14,barcode_raw,npn,confidence,source,last_seen_at,expires_at,created_at,updated_at")
+    .eq("barcode_gtin14", barcodeGtin14)
+    .abortSignal(signal)
+    .maybeSingle();
+  if (error || !data) return null;
+  return data as BarcodeRegulatoryMapRow;
+};
+
+const insertBlockedRegulatoryCandidate = async (
+  input: {
+    barcodeGtin14: string;
+    barcodeRaw?: string | null;
+    npn: string;
+    confidence: number;
+    source: string;
+    expiresAt: string | null;
+  },
+  existing: BarcodeRegulatoryMapRow | null,
+  policy: {
+    reason: "lower_rank" | "equal_rank_not_better" | "negative_signal";
+    incomingRank: number;
+    existingRank: number | null;
+  },
+  signal: AbortSignal,
+): Promise<void> => {
+  const now = new Date().toISOString();
+  const { error } = await supabase
+    .from("barcode_regulatory_map_candidates")
+    .insert({
+      barcode_gtin14: input.barcodeGtin14,
+      barcode_raw: input.barcodeRaw ?? null,
+      incoming_npn: input.npn,
+      incoming_source: input.source,
+      incoming_confidence: normalizeConfidence(input.confidence),
+      incoming_expires_at: input.expiresAt,
+      incoming_rank: policy.incomingRank,
+      existing_npn: existing?.npn ?? null,
+      existing_source: existing?.source ?? null,
+      existing_confidence: existing?.confidence ?? null,
+      existing_expires_at: existing?.expires_at ?? null,
+      existing_rank: policy.existingRank,
+      reason_code: policy.reason,
+      created_at: now,
+    })
+    .abortSignal(signal);
+  if (!error) return;
+
+  const errorCode = String((error as { code?: string }).code ?? "");
+  const message = String(error.message ?? "").toLowerCase();
+  // Missing migration should not break the primary write-path behavior.
+  if (errorCode === "42P01" || message.includes("does not exist")) {
+    return;
+  }
+  console.warn("[barcode-regulatory-map] blocked-candidate insert failed", {
+    barcodeGtin14: input.barcodeGtin14,
+    source: input.source,
+    reason: policy.reason,
+    error: error.message ?? "unknown_error",
+  });
+};
+
+const shouldPersistBlockedCandidate = (params: {
+  reason: "lower_rank" | "equal_rank_not_better" | "negative_signal";
+  incomingRank: number;
+  existingRank: number | null;
+}): boolean => {
+  if (params.reason !== "lower_rank") return true;
+  if (!Number.isFinite(params.incomingRank)) return true;
+  if (!Number.isFinite(Number(params.existingRank))) return true;
+  const existingRank = Number(params.existingRank);
+  // Keep candidate audit focused on actionable conflicts:
+  // suppress low-rank noise when a strong authoritative mapping already exists.
+  if (existingRank >= 300 && params.incomingRank <= 100) {
+    return false;
+  }
+  return true;
 };
 
 const runWithResilience = async <T>(
@@ -434,26 +746,37 @@ export async function getNegativeCache(
   options: ResilienceOptions = {},
 ): Promise<NegativeCacheRow | null> {
   return await runWithResilience(async (signal) => {
-    const keys = buildBarcodeKeyList(barcodeGtin14, barcodeRaw);
-    let query = supabase
-      .from("negative_cache")
-      .select("barcode_gtin14,barcode_raw,reason_code,until,attempt_count,last_attempt_at,updated_at")
-      .order("updated_at", { ascending: false })
-      .limit(1);
-    if (keys.length > 1) {
-      query = query.in("barcode_gtin14", keys);
-    } else if (keys.length === 1) {
-      query = query.eq("barcode_gtin14", keys[0]);
-    } else {
-      return null;
-    }
-    query = query.abortSignal(signal);
-    const { data, error } = await query.maybeSingle();
-    if (error && options.retry && shouldRetrySupabaseError(error)) {
-      const rawStatus = (error as { status?: number }).status;
-      const status = typeof rawStatus === "number" ? rawStatus : 503;
-      throw new HttpError(status, error.message ?? "negative_cache_read_error");
-    }
+    const keys = buildBarcodeKeyList(
+      barcodeGtin14,
+      barcodeRaw,
+      resolveKeyContractMode(options.keyContractMode),
+    );
+    if (!keys.length) return null;
+
+    const readBy = async (column: "barcode_gtin14" | "barcode_raw") => {
+      let query = supabase
+        .from("negative_cache")
+        .select("barcode_gtin14,barcode_raw,reason_code,until,attempt_count,last_attempt_at,updated_at")
+        .order("updated_at", { ascending: false })
+        .limit(1);
+      if (keys.length > 1) {
+        query = query.in(column, keys);
+      } else {
+        query = query.eq(column, keys[0]);
+      }
+      const { data, error } = await query.abortSignal(signal).maybeSingle();
+      if (error && options.retry && shouldRetrySupabaseError(error)) {
+        const rawStatus = (error as { status?: number }).status;
+        const status = typeof rawStatus === "number" ? rawStatus : 503;
+        throw new HttpError(status, error.message ?? "negative_cache_read_error");
+      }
+      return { data, error };
+    };
+
+    const byGtin = await readBy("barcode_gtin14");
+    const byRaw = byGtin.data ? { data: null, error: null } : await readBy("barcode_raw");
+    const data = byGtin.data ?? byRaw.data;
+    const error = byGtin.error ?? byRaw.error;
     if (error || !data) return null;
     if (isExpired(data.until)) return null;
     return data as NegativeCacheRow;
@@ -470,11 +793,19 @@ export async function upsertNegativeCache(
   options: ResilienceOptions = {},
 ): Promise<void> {
   await runWithResilience(async (signal) => {
-    const existing = await selectNegativeCacheRow(input.barcodeGtin14, signal, input.barcodeRaw ?? null);
+    const canonicalGtin14 = resolveCanonicalGtin14(input.barcodeGtin14);
+    if (!canonicalGtin14) return null;
+    const normalizedRaw = normalizeBarcodeKey(input.barcodeRaw ?? "").rawNormalized || null;
+    const existing = await selectNegativeCacheRow(
+      canonicalGtin14,
+      signal,
+      normalizedRaw,
+      resolveKeyContractMode(options.keyContractMode),
+    );
     const now = new Date().toISOString();
     const record: Record<string, unknown> = {
-      barcode_gtin14: input.barcodeGtin14,
-      barcode_raw: input.barcodeRaw ?? existing?.barcode_raw ?? null,
+      barcode_gtin14: canonicalGtin14,
+      barcode_raw: normalizedRaw ?? existing?.barcode_raw ?? null,
       reason_code: input.reasonCode,
       until: input.until,
       attempt_count: (existing?.attempt_count ?? 0) + 1,
@@ -496,18 +827,37 @@ export async function upsertNegativeCache(
 
 export async function clearNegativeCache(
   barcodeGtin14: string,
+  barcodeRaw: string | null = null,
   options: ResilienceOptions = {},
 ): Promise<void> {
   await runWithResilience(async (signal) => {
-    const { error } = await supabase
-      .from("negative_cache")
-      .delete()
-      .eq("barcode_gtin14", barcodeGtin14)
-      .abortSignal(signal);
-    if (error && options.retry && shouldRetrySupabaseError(error)) {
-      const rawStatus = (error as { status?: number }).status;
-      const status = typeof rawStatus === "number" ? rawStatus : 503;
-      throw new HttpError(status, error.message ?? "negative_cache_delete_error");
+    const keys = buildBarcodeKeyList(
+      barcodeGtin14,
+      barcodeRaw,
+      resolveKeyContractMode(options.keyContractMode),
+    );
+    if (!keys.length) return null;
+
+    const deleteBy = async (column: "barcode_gtin14" | "barcode_raw") => {
+      let query = supabase.from("negative_cache").delete();
+      if (keys.length > 1) {
+        query = query.in(column, keys);
+      } else {
+        query = query.eq(column, keys[0]);
+      }
+      const { error } = await query.abortSignal(signal);
+      if (error && options.retry && shouldRetrySupabaseError(error)) {
+        const rawStatus = (error as { status?: number }).status;
+        const status = typeof rawStatus === "number" ? rawStatus : 503;
+        throw new HttpError(status, error.message ?? "negative_cache_delete_error");
+      }
+      return error;
+    };
+
+    const primaryError = await deleteBy("barcode_gtin14");
+    const secondaryError = await deleteBy("barcode_raw");
+    if (primaryError && !secondaryError) {
+      return null;
     }
     return null;
   }, options);
@@ -602,7 +952,11 @@ export async function getBarcodeRegulatoryMap(
 ): Promise<BarcodeRegulatoryMapRow | null> {
   const { includeExpired, ...resilience } = options;
   return await runWithResilience(async (signal) => {
-    const keys = buildBarcodeKeyList(barcodeGtin14, barcodeRaw);
+    const keys = buildBarcodeKeyList(
+      barcodeGtin14,
+      barcodeRaw,
+      resolveKeyContractMode(resilience.keyContractMode),
+    );
     if (!keys.length) return null;
 
     const readBy = async (column: "barcode_gtin14" | "barcode_raw") => {
@@ -646,13 +1000,100 @@ export async function upsertBarcodeRegulatoryMap(
   },
   options: ResilienceOptions = {},
 ): Promise<void> {
-  await runWithResilience(async (signal) => {
+  await upsertRegulatoryMapWithPolicy(input, options);
+}
+
+export async function upsertRegulatoryMapWithPolicy(
+  input: {
+    barcodeGtin14: string;
+    npn: string;
+    confidence: number;
+    source: string;
+    expiresAt: string | null;
+    barcodeRaw?: string | null;
+  },
+  options: ResilienceOptions = {},
+): Promise<BarcodeRegulatoryMapWriteOutcome> {
+  const writeGuardMode = resolveWriteGuardMode(options.writeGuardMode);
+  const writeOutcome = await runWithResilience(async (signal) => {
+    const canonicalGtin14 = resolveCanonicalGtin14(input.barcodeGtin14);
+    const normalizedNpn = normalizeNpn(input.npn);
+    if (!canonicalGtin14 || !normalizedNpn) {
+      return {
+        status: "blocked",
+        reason: "write_skipped",
+        existing: null,
+        incomingRank: mapSourceToRank(input.source),
+        existingRank: null,
+      } as BarcodeRegulatoryMapWriteOutcome;
+    }
+
+    const existing = await selectBarcodeRegulatoryMapByPrimaryKey(canonicalGtin14, signal);
+    const decision = evaluateRegulatoryMapWritePolicy({
+      existing,
+      incoming: {
+        npn: normalizedNpn,
+        confidence: input.confidence,
+        source: input.source,
+        expiresAt: input.expiresAt,
+      },
+    });
+    recordWriteGuardObservation({
+      mode: writeGuardMode,
+      source: input.source,
+      decision,
+    });
+
+    if (!decision.allowWrite) {
+      const blockedReason =
+        decision.reason === "lower_rank" ||
+        decision.reason === "equal_rank_not_better" ||
+        decision.reason === "negative_signal"
+          ? decision.reason
+          : "equal_rank_not_better";
+      if (writeGuardMode === "enforce") {
+        const persistBlockedCandidate = shouldPersistBlockedCandidate({
+          reason: blockedReason,
+          incomingRank: decision.incomingRank,
+          existingRank: decision.existingRank,
+        });
+        if (persistBlockedCandidate) {
+          await insertBlockedRegulatoryCandidate(
+            {
+              barcodeGtin14: canonicalGtin14,
+              barcodeRaw: input.barcodeRaw ?? null,
+              npn: normalizedNpn,
+              confidence: input.confidence,
+              source: input.source,
+              expiresAt: input.expiresAt,
+            },
+            existing,
+            {
+              reason: blockedReason,
+              incomingRank: decision.incomingRank,
+              existingRank: decision.existingRank,
+            },
+            signal,
+          );
+        } else {
+          incrementMetric("regulatory_candidate_write_suppressed_low_signal");
+        }
+        return {
+          status: "blocked",
+          reason: blockedReason,
+          existing,
+          incomingRank: decision.incomingRank,
+          existingRank: decision.existingRank,
+        } as BarcodeRegulatoryMapWriteOutcome;
+      }
+    }
+
     const now = new Date().toISOString();
     const record: Record<string, unknown> = {
-      barcode_gtin14: input.barcodeGtin14,
-      barcode_raw: input.barcodeRaw ?? null,
-      npn: input.npn,
-      confidence: input.confidence,
+      barcode_gtin14: canonicalGtin14,
+      barcode_raw: normalizeBarcodeKey(input.barcodeRaw ?? "").rawNormalized || null,
+      npn: normalizedNpn,
+      confidence: normalizeConfidence(input.confidence),
       source: input.source,
       last_seen_at: now,
       expires_at: input.expiresAt,
@@ -667,8 +1108,33 @@ export async function upsertBarcodeRegulatoryMap(
       const status = typeof rawStatus === "number" ? rawStatus : 503;
       throw new HttpError(status, error.message ?? "barcode_regulatory_map_write_error");
     }
-    return null;
+    if (error) {
+      return {
+        status: "blocked",
+        reason: "write_skipped",
+        existing,
+        incomingRank: decision.incomingRank,
+        existingRank: decision.existingRank,
+      } as BarcodeRegulatoryMapWriteOutcome;
+    }
+    return {
+      status: "upserted",
+      reason: decision.reason,
+      existing,
+      incomingRank: decision.incomingRank,
+      existingRank: decision.existingRank,
+    } as BarcodeRegulatoryMapWriteOutcome;
   }, options);
+
+  return (
+    writeOutcome ?? {
+      status: "blocked",
+      reason: "write_skipped",
+      existing: null,
+      incomingRank: mapSourceToRank(input.source),
+      existingRank: null,
+    }
+  );
 }
 
 export async function getHistoricalLnhpdScanNpn(
@@ -677,7 +1143,11 @@ export async function getHistoricalLnhpdScanNpn(
   options: ResilienceOptions = {},
 ): Promise<BarcodeHistoricalLnhpdCandidate | null> {
   return await runWithResilience(async (signal) => {
-    const keys = buildBarcodeKeyList(barcodeGtin14, barcodeRaw);
+    const keys = buildBarcodeKeyList(
+      barcodeGtin14,
+      barcodeRaw,
+      resolveKeyContractMode(options.keyContractMode),
+    );
     if (!keys.length) return null;
 
     let query = supabase

@@ -51,6 +51,11 @@ type KbRuntime = {
   reverseTokenIndex: Record<string, string>;
 };
 
+type ReviewedAliasFile = {
+  version?: string;
+  aliases?: Record<string, string>;
+};
+
 export type FormResolveSource =
   | "label_parenthetical"
   | "label_as_phrase"
@@ -135,6 +140,44 @@ const normalizeToken = (value: string): string => {
 
 const normalizeFreeText = (value: string): string => value.toLowerCase().trim();
 
+const REVIEWED_INGREDIENT_NAME_ALIASES_DEFAULT: Record<string, string> = {
+  folic_acid: "folate",
+  vitamin_b_12: "vitamin_b12",
+  vitamin_b12: "vitamin_b12",
+  vitamin_b_6: "vitamin_b6",
+  vitamin_b6: "vitamin_b6",
+  fish_oil: "omega_3",
+  thiamine: "thiamin",
+  thiamine_hcl: "thiamine_hcl",
+  cat_s_claw: "cat_s_claw",
+  cats_claw: "cat_s_claw",
+  uncaria_tomentosa: "cat_s_claw",
+};
+
+let reviewedAliasLoadAttempted = false;
+let reviewedIngredientAliases: Record<string, string> = { ...REVIEWED_INGREDIENT_NAME_ALIASES_DEFAULT };
+
+const getReviewedAliasPath = () =>
+  process.env.REVIEWED_INGREDIENT_ALIASES_PATH ??
+  path.join(process.cwd(), "data", "reviewed", "reviewed-ingredient-aliases.v1.json");
+
+const getReviewedIngredientAliases = (): Record<string, string> => {
+  if (reviewedAliasLoadAttempted) return reviewedIngredientAliases;
+  reviewedAliasLoadAttempted = true;
+  const loaded = loadJson<ReviewedAliasFile>(getReviewedAliasPath());
+  if (!loaded?.aliases || typeof loaded.aliases !== "object") return reviewedIngredientAliases;
+
+  const next: Record<string, string> = { ...REVIEWED_INGREDIENT_NAME_ALIASES_DEFAULT };
+  for (const [rawAlias, rawToken] of Object.entries(loaded.aliases)) {
+    const alias = normalizeToken(rawAlias);
+    const token = normalizeToken(rawToken);
+    if (!alias || !token) continue;
+    next[alias] = token;
+  }
+  reviewedIngredientAliases = next;
+  return reviewedIngredientAliases;
+};
+
 const pickBestAliasEntry = (entries: AliasEntry[] | undefined): AliasEntry | null => {
   if (!entries || entries.length === 0) return null;
   const sorted = [...entries].sort((a, b) => (b.alias_confidence ?? 0) - (a.alias_confidence ?? 0));
@@ -186,6 +229,140 @@ const loadJson = <T>(filePath: string): T | null => {
   } catch {
     return null;
   }
+};
+
+const isUuidLike = (value: string): boolean =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+
+const REVERSE_FORM_BASE_TOKENS = new Set(REVERSE_FORM_KEYWORDS);
+const BOTANICAL_NAME_SUFFIX_TOKENS = new Set([
+  "root",
+  "leaf",
+  "seed",
+  "flower",
+  "fruit",
+  "bark",
+  "extract",
+  "powder",
+  "oil",
+  "herb",
+  "whole",
+]);
+
+const resolveReviewedIngredientCandidates = (
+  ingredientName: string | null | undefined,
+  kb: KbRuntime | null,
+): Array<{ token: string; path: string }> => {
+  const aliasMap = getReviewedIngredientAliases();
+  const normalized = String(ingredientName ?? "").trim();
+  const base = normalizeToken(normalized);
+  if (!base) return [];
+
+  const seen = new Set<string>();
+  const out: Array<{ token: string; path: string }> = [];
+  const add = (tokenRaw: string, pathRaw: string) => {
+    const token = normalizeToken(tokenRaw);
+    if (!token || seen.has(token)) return;
+    seen.add(token);
+    out.push({ token, path: pathRaw });
+  };
+
+  add(base, "name_exact");
+  const directAlias = aliasMap[base];
+  if (directAlias) add(directAlias, "name_alias");
+  const kbMapped = kb?.ingredientNameIndex?.[base];
+  if (kbMapped) add(kbMapped, "kb_name_index");
+
+  const words = normalizeFreeText(normalized)
+    .replace(/[^a-z0-9]+/g, " ")
+    .split(/\s+/)
+    .filter(Boolean);
+  if (words.length >= 2) {
+    const binomial = normalizeToken(`${words[0] ?? ""}_${words[1] ?? ""}`);
+    if (binomial) {
+      add(binomial, "name_binomial");
+      const binomialAlias = aliasMap[binomial];
+      if (binomialAlias) add(binomialAlias, "name_binomial_alias");
+      const kbBinomial = kb?.ingredientNameIndex?.[binomial];
+      if (kbBinomial) add(kbBinomial, "kb_binomial_index");
+    }
+    const head = normalizeToken(words[0] ?? "");
+    if (head) {
+      const alias = aliasMap[head];
+      if (alias) add(alias, "name_head_alias");
+      const kbHead = kb?.ingredientNameIndex?.[head];
+      if (kbHead) add(kbHead, "kb_head_index");
+    }
+  }
+
+  const compositeParts = base.split("_").filter(Boolean);
+  if (compositeParts.length >= 2) {
+    const tail = compositeParts[compositeParts.length - 1] ?? "";
+    if (REVERSE_FORM_BASE_TOKENS.has(tail)) {
+      const ingredientOnly = compositeParts.slice(0, -1).join("_");
+      if (ingredientOnly) {
+        add(ingredientOnly, "name_form_suffix_stripped");
+        const suffixAlias = aliasMap[ingredientOnly];
+        if (suffixAlias) add(suffixAlias, "name_form_suffix_alias");
+      }
+    }
+    let trimmed = [...compositeParts];
+    let strippedAny = false;
+    while (trimmed.length >= 2 && BOTANICAL_NAME_SUFFIX_TOKENS.has(trimmed[trimmed.length - 1] ?? "")) {
+      trimmed = trimmed.slice(0, -1);
+      strippedAny = true;
+    }
+    if (strippedAny) {
+      const botanicalBase = trimmed.join("_");
+      if (botanicalBase) {
+        add(botanicalBase, "name_botanical_suffix_stripped");
+        const botanicalAlias = aliasMap[botanicalBase];
+        if (botanicalAlias) add(botanicalAlias, "name_botanical_suffix_alias");
+        const kbBotanical = kb?.ingredientNameIndex?.[botanicalBase];
+        if (kbBotanical) add(kbBotanical, "kb_botanical_suffix_index");
+      }
+    }
+  }
+
+  if (base.endsWith("s") && base.length > 3) {
+    const singular = base.replace(/s$/, "");
+    add(singular, "name_singularized");
+  }
+
+  return out;
+};
+
+const buildReviewedFormKeyCandidates = (
+  ingredientToken: string,
+  formKeyRaw: string,
+): Array<{ formKey: string; path: string }> => {
+  const formKey = normalizeToken(formKeyRaw);
+  if (!formKey) return [];
+
+  const seen = new Set<string>();
+  const out: Array<{ formKey: string; path: string }> = [];
+  const add = (raw: string, pathRaw: string) => {
+    const normalized = normalizeToken(raw);
+    if (!normalized || seen.has(normalized)) return;
+    seen.add(normalized);
+    out.push({ formKey: normalized, path: pathRaw });
+  };
+
+  add(formKey, "exact");
+  add(`${ingredientToken}_${formKey}`, "prefixed_ingredient");
+
+  if (formKey.startsWith(`${ingredientToken}_`)) {
+    add(formKey.slice(ingredientToken.length + 1), "strip_ingredient_prefix");
+  }
+
+  if (/\bhcl\b/.test(formKey)) add(formKey.replace(/\bhcl\b/g, "hydrochloride"), "hcl_to_hydrochloride");
+  if (/\bhydrochloride\b/.test(formKey)) add(formKey.replace(/\bhydrochloride\b/g, "hcl"), "hydrochloride_to_hcl");
+
+  if (ingredientToken === "thiamin" && (formKey === "hcl" || formKey === "hydrochloride" || formKey === "thiamin_hcl")) {
+    add("thiamine_hcl", "thiamin_variant");
+  }
+
+  return out;
 };
 
 export const getKbRuntime = (): KbRuntime | null => {
@@ -661,6 +838,8 @@ export type RuntimeInsightSegment = {
 export const lookupKbRuntimeFormInsights = (params: {
   ingredientId: string;
   formKey: string;
+  ingredientName?: string | null;
+  ingredientCanonicalKey?: string | null;
 }): {
   status: "ok" | "not_found";
   reason: "no_runtime" | "ingredient_not_supported" | "no_entry_for_form_key" | null;
@@ -672,36 +851,81 @@ export const lookupKbRuntimeFormInsights = (params: {
     source: "reviewed_package" | "kb_runtime" | null;
     datasetVersion: string | null;
   };
+  debug: {
+    ingredientResolvePath: string | null;
+    formKeyResolvePath: string | null;
+    reviewedLookupTried: string[];
+  };
 } => {
-  const reviewed = getReviewedFormExplain(params.ingredientId, params.formKey, "en");
-  if (reviewed) {
-    const toRuntimeSegments = (
-      kind: RuntimeInsightSegmentKind,
-      rows: Array<{
-        text: string;
-        sentenceId: string | null;
-        excerptId: string | null;
-        referenceId: string | null;
-        evidenceGrade: string | null;
-      }> | undefined,
-    ): RuntimeInsightSegment[] => {
-      if (!rows?.length) return [];
-      return rows
-        .map((row) => {
-          const text = typeof row.text === "string" ? row.text.trim() : "";
-          if (!text) return null;
-          return {
-            kind,
-            text,
-            sentenceId: row.sentenceId,
-            excerptId: row.excerptId,
-            referenceId: row.referenceId,
-            evidenceGrade: row.evidenceGrade,
-          } satisfies RuntimeInsightSegment;
-        })
-        .filter((row): row is RuntimeInsightSegment => Boolean(row));
-    };
+  const kb = getKbRuntime();
+  const toRuntimeSegments = (
+    kind: RuntimeInsightSegmentKind,
+    rows: Array<{
+      text: string;
+      sentenceId: string | null;
+      excerptId: string | null;
+      referenceId: string | null;
+      evidenceGrade: string | null;
+    }> | undefined,
+  ): RuntimeInsightSegment[] => {
+    if (!rows?.length) return [];
+    return rows
+      .map((row) => {
+        const text = typeof row.text === "string" ? row.text.trim() : "";
+        if (!text) return null;
+        return {
+          kind,
+          text,
+          sentenceId: row.sentenceId,
+          excerptId: row.excerptId,
+          referenceId: row.referenceId,
+          evidenceGrade: row.evidenceGrade,
+        } satisfies RuntimeInsightSegment;
+      })
+      .filter((row): row is RuntimeInsightSegment => Boolean(row));
+  };
 
+  const reviewedLookupTried: string[] = [];
+  let ingredientResolvePath: string | null = null;
+  let formKeyResolvePath: string | null = null;
+
+  const normalizeIngredientCandidate = normalizeToken(params.ingredientId);
+  const ingredientCandidates: Array<{ token: string; path: string }> = [];
+  const seenIngredientCandidates = new Set<string>();
+  const pushIngredientCandidate = (tokenRaw: string, pathRaw: string) => {
+    const token = normalizeToken(tokenRaw);
+    if (!token || seenIngredientCandidates.has(token)) return;
+    seenIngredientCandidates.add(token);
+    ingredientCandidates.push({ token, path: pathRaw });
+  };
+
+  const canonicalIngredientToken = normalizeToken(params.ingredientCanonicalKey ?? "");
+  if (canonicalIngredientToken) {
+    pushIngredientCandidate(canonicalIngredientToken, "ingredient_canonical_key");
+  }
+  if (normalizeIngredientCandidate && !isUuidLike(params.ingredientId)) {
+    pushIngredientCandidate(normalizeIngredientCandidate, "ingredient_id_exact");
+  }
+
+  resolveReviewedIngredientCandidates(params.ingredientName, kb).forEach((candidate) =>
+    pushIngredientCandidate(candidate.token, candidate.path),
+  );
+
+  const tryReviewedLookup = (
+    ingredientToken: string,
+    ingredientPath: string,
+    formKey: string,
+    formPath: string,
+  ) => {
+    const normalizedIngredient = normalizeToken(ingredientToken);
+    const normalizedForm = normalizeToken(formKey);
+    if (!normalizedIngredient || !normalizedForm) return null;
+    reviewedLookupTried.push(`${normalizedIngredient}|${normalizedForm}`);
+    const reviewed = getReviewedFormExplain(normalizedIngredient, normalizedForm, "en");
+    if (!reviewed) return null;
+
+    ingredientResolvePath = ingredientPath;
+    formKeyResolvePath = formPath;
     const reviewedSegments = [
       ...toRuntimeSegments("absorption", reviewed.segments.absorption),
       ...toRuntimeSegments("solubility", reviewed.segments.solubility),
@@ -710,20 +934,37 @@ export const lookupKbRuntimeFormInsights = (params: {
     ];
 
     return {
-      status: "ok",
+      status: "ok" as const,
       reason: null,
-      formDisplay: reviewed.formLabel ?? params.formKey,
+      formDisplay: reviewed.formLabel ?? normalizedForm,
       segments: reviewedSegments,
       meta: {
         packageSha256: reviewed.meta.packageSha256,
         reviewedAt: reviewed.meta.reviewedAt,
-        source: "reviewed_package",
+        source: "reviewed_package" as const,
         datasetVersion: reviewed.meta.datasetVersion,
       },
+      debug: {
+        ingredientResolvePath,
+        formKeyResolvePath,
+        reviewedLookupTried,
+      },
     };
+  };
+
+  for (const ingredientCandidate of ingredientCandidates) {
+    const formCandidates = buildReviewedFormKeyCandidates(ingredientCandidate.token, params.formKey);
+    for (const formCandidate of formCandidates) {
+      const reviewedMatch = tryReviewedLookup(
+        ingredientCandidate.token,
+        ingredientCandidate.path,
+        formCandidate.formKey,
+        formCandidate.path,
+      );
+      if (reviewedMatch) return reviewedMatch;
+    }
   }
 
-  const kb = getKbRuntime();
   const meta = {
     packageSha256:
       typeof kb?.runtime?.meta?.package_sha256 === "string" ? (kb.runtime.meta.package_sha256 as string) : null,
@@ -740,14 +981,31 @@ export const lookupKbRuntimeFormInsights = (params: {
       formDisplay: null,
       segments: [],
       meta,
+      debug: {
+        ingredientResolvePath,
+        formKeyResolvePath,
+        reviewedLookupTried,
+      },
     };
   }
 
-  const key = `${params.ingredientId}|${params.formKey}`;
-  const entry = kb.runtime.ingredient_form_index?.[key];
+  let resolvedRuntimeIngredientToken: string | null = null;
+  let entry: KbEntry | undefined;
+  for (const candidate of ingredientCandidates) {
+    const key = `${candidate.token}|${params.formKey}`;
+    const candidateEntry = kb.runtime.ingredient_form_index?.[key];
+    if (!candidateEntry) continue;
+    resolvedRuntimeIngredientToken = candidate.token;
+    ingredientResolvePath = ingredientResolvePath ?? candidate.path;
+    formKeyResolvePath = formKeyResolvePath ?? "runtime_exact";
+    entry = candidateEntry;
+    break;
+  }
   if (!entry) {
-    const hasIngredient = Object.keys(kb.runtime.ingredient_form_index ?? {}).some((indexKey) =>
-      indexKey.startsWith(`${params.ingredientId}|`),
+    const hasIngredient = ingredientCandidates.some((candidate) =>
+      Object.keys(kb.runtime.ingredient_form_index ?? {}).some((indexKey) =>
+        indexKey.startsWith(`${candidate.token}|`),
+      ),
     );
     return {
       status: "not_found",
@@ -755,6 +1013,11 @@ export const lookupKbRuntimeFormInsights = (params: {
       formDisplay: null,
       segments: [],
       meta,
+      debug: {
+        ingredientResolvePath,
+        formKeyResolvePath,
+        reviewedLookupTried,
+      },
     };
   }
 
@@ -792,5 +1055,12 @@ export const lookupKbRuntimeFormInsights = (params: {
     formDisplay: entry.form_display ?? entry.form_key ?? null,
     segments,
     meta,
+    debug: {
+      ingredientResolvePath:
+        ingredientResolvePath ??
+        (resolvedRuntimeIngredientToken ? "runtime_ingredient_fallback" : null),
+      formKeyResolvePath,
+      reviewedLookupTried,
+    },
   };
 };

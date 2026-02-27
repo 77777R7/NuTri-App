@@ -27,3 +27,11 @@ test("reviewed package meta includes sha256", () => {
   assert.ok(entry?.meta.packageSha256);
   assert.equal(entry?.meta.packageSha256.length, 64);
 });
+
+test("reviewed package loads conservative override entries", () => {
+  const entry = getReviewedFormExplain("vitamin_d", "unspecified", "en");
+  assert.ok(entry, "expected vitamin_d|unspecified override entry");
+  assert.equal(entry?.ingredientId, "vitamin_d");
+  assert.equal(entry?.formKey, "unspecified");
+  assert.ok((entry?.segments.caveats?.length ?? 0) >= 1);
+});

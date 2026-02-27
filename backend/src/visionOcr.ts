@@ -106,7 +106,7 @@ function resolveLanguageHints(overrides?: string[]): string[] {
     if (envValue) {
         const hints = envValue
             .split(',')
-            .map((hint) => hint.trim())
+            .map((hint: string) => hint.trim())
             .filter(Boolean);
         if (hints.length > 0) {
             return hints;

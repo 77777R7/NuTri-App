@@ -34,6 +34,23 @@ export type WebVerifyReviseOptions = {
   includeBudgetMs?: boolean;
 };
 
+const WEB_VERIFY_MAX_TEXT_CHARS = Math.max(
+  2000,
+  Number.parseInt(process.env.WEB_VERIFY_MAX_TEXT_CHARS ?? "12000", 10) || 12000,
+);
+const WEB_VERIFY_MAX_EVIDENCE_CORPUS_CHARS = Math.max(
+  2000,
+  Number.parseInt(process.env.WEB_VERIFY_MAX_EVIDENCE_CORPUS_CHARS ?? "16000", 10) || 16000,
+);
+const WEB_VERIFY_MAX_CLAIM_CHARS = Math.max(
+  200,
+  Number.parseInt(process.env.WEB_VERIFY_MAX_CLAIM_CHARS ?? "800", 10) || 800,
+);
+const WEB_VERIFY_MAX_SEGMENT_CHARS = Math.max(
+  200,
+  Number.parseInt(process.env.WEB_VERIFY_MAX_SEGMENT_CHARS ?? "2000", 10) || 2000,
+);
+
 const NOT_PROVIDED_TAGS: BasisTag[] = ["not_provided"];
 const NOT_PROVIDED_TEXT = "Not provided by source.";
 const CHEMICAL_FORM_NOT_PROVIDED_TEXT = "Chemical form not provided by source.";
@@ -43,8 +60,11 @@ const buildNotProvidedField = (text: string): UsageField => ({
   basisTags: NOT_PROVIDED_TAGS,
 });
 
+const clampText = (value: string, maxChars: number): string =>
+  value.length > maxChars ? value.slice(0, maxChars) : value;
+
 const normalizeForTokens = (value: string): string =>
-  value
+  clampText(value, WEB_VERIFY_MAX_TEXT_CHARS)
     .toLowerCase()
     // Join common "number + unit" pairs so dosage evidence isn't lost due to token length thresholds.
     .replace(/\b(\d+(?:\.\d+)?)\s*(mg|mcg|iu|g|ml)\b/gi, "$1$2")
@@ -63,17 +83,32 @@ const tokenize = (value: string): string[] => {
 
 const buildEvidenceCorpus = (digest: FactsDigest): string => {
   const segments: string[] = [];
+  let remainingChars = WEB_VERIFY_MAX_EVIDENCE_CORPUS_CHARS;
+  const pushSegment = (value: string | null | undefined) => {
+    if (!hasText(value) || remainingChars <= 0) return;
+    const bounded = clampText(String(value), Math.min(WEB_VERIFY_MAX_SEGMENT_CHARS, remainingChars));
+    if (!bounded) return;
+    segments.push(bounded);
+    remainingChars -= bounded.length + 1;
+  };
   for (const active of digest.actives) {
-    if (hasText(active.evidenceText)) segments.push(String(active.evidenceText));
+    pushSegment(active.evidenceText);
+    if (remainingChars <= 0) break;
   }
-  for (const dose of digest.labelDosing) {
-    if (hasText(dose.rawText)) segments.push(String(dose.rawText));
+  if (remainingChars > 0) {
+    for (const dose of digest.labelDosing) {
+      pushSegment(dose.rawText);
+      if (remainingChars <= 0) break;
+    }
   }
-  for (const warning of digest.warnings.warnings) {
-    if (hasText(warning)) segments.push(String(warning));
+  if (remainingChars > 0) {
+    for (const warning of digest.warnings.warnings) {
+      pushSegment(warning);
+      if (remainingChars <= 0) break;
+    }
   }
-  if (hasText(digest.serving.servingSize)) {
-    segments.push(String(digest.serving.servingSize));
+  if (remainingChars > 0) {
+    pushSegment(digest.serving.servingSize);
   }
   return normalizeForTokens(segments.join(" "));
 };
@@ -229,19 +264,22 @@ export const applyWebVerifyRevise = (
       return false;
     }
 
-    if (looksLikeInjectionAttempt(claim)) {
+    const boundedClaim = clampText(String(claim ?? ""), WEB_VERIFY_MAX_CLAIM_CHARS);
+    if (!boundedClaim) return false;
+
+    if (looksLikeInjectionAttempt(boundedClaim)) {
       injectionClaimDroppedCount += 1;
       return false;
     }
 
-    if (looksLikeMarketingFluff(claim)) {
+    if (looksLikeMarketingFluff(boundedClaim)) {
       return false;
     }
 
-    const normalizedClaim = normalizeForTokens(claim);
+    const normalizedClaim = normalizeForTokens(boundedClaim);
     if (!normalizedClaim) return false;
 
-    if (hasNegation(claim) && !evidenceHasNegation) {
+    if (hasNegation(boundedClaim) && !evidenceHasNegation) {
       return false;
     }
 

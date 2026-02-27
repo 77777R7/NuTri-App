@@ -48,13 +48,15 @@ type LnhpdIngredientMeta = {
   driedHerbEquivalent?: string | number | null;
   ingredientName?: string | null;
   properName?: string | null;
+  inferenceSource?: string | null;
 };
 
 const scoreLnhpdMeta = (meta?: LnhpdIngredientMeta | null): number => {
   if (!meta) return 0;
+  const inferredFromProductName = meta.inferenceSource === 'product_name';
   let score = 0;
   if (meta.sourceMaterial) score += 3;
-  if (meta.properName) score += 2;
+  if (meta.properName && !inferredFromProductName) score += 2;
   if (meta.extractTypeDesc) score += 2;
   if (meta.ratioNumerator != null && meta.ratioDenominator != null) score += 2;
   if (meta.potencyConstituent) score += 2;
@@ -73,6 +75,9 @@ const pickLnhpdMeta = (
   if (!current) return candidate;
   return scoreLnhpdMeta(candidate) > scoreLnhpdMeta(current) ? candidate : current;
 };
+
+const isInferredLnhpdMeta = (meta?: LnhpdIngredientMeta | null): boolean =>
+  meta?.inferenceSource === 'product_name' || meta?.properName === 'inferred_from_product_name';
 
 type UnitKind = 'mass' | 'volume' | 'iu' | 'cfu' | 'percent' | 'homeopathic' | 'unknown';
 
@@ -1012,6 +1017,11 @@ export async function upsertProductIngredientsFromLabelFacts(params: {
     const unitKind = classifyUnitKind(item.unit ?? normalized.unit);
     const amountMissing = normalized.amount == null;
     const amountUnknown = amountMissing || !isDoseUnitKind(unitKind);
+    const inferredFromProductName = params.source === 'lnhpd' && isInferredLnhpdMeta(item.lnhpdMeta ?? null);
+    const baseParseConfidence =
+      inferredFromProductName
+        ? Math.min(params.parseConfidence ?? 0.95, 0.4)
+        : params.parseConfidence;
     const nameKey = buildNameKey(item.name);
     const lnhpdFormRaw =
       params.source === 'lnhpd'
@@ -1039,7 +1049,7 @@ export async function upsertProductIngredientsFromLabelFacts(params: {
       is_proprietary_blend: false,
       amount_unknown: amountUnknown,
       form_raw: formRaw,
-      parse_confidence: computeRowParseConfidence(params.parseConfidence, {
+      parse_confidence: computeRowParseConfidence(baseParseConfidence, {
         amountMissing,
         unitKind,
         hasUnit: normalized.unit != null,

@@ -1314,7 +1314,7 @@ Rules:
 - overview.summary <= 180 chars; overview.bullets exactly 2 items.
 - If FACTS_DIGEST_JSON.claims.labelPurposes exists, use regulatory_claim tags.
 - If sourceType is dsld or web and you infer benefits, use ingredient_inference or web_evidence tags.
-- If safety info is missing in facts, set safety.bullets empty and verdict "Not provided by source" with basisTags ["not_provided"].
+- If safety info is missing in facts, set safety.bullets empty and verdict "Safety details are not included in this source record.".
 - Do not include dosage instructions beyond what is in FACTS_DIGEST_JSON.labelDosing.
 - Output JSON only, no markdown, no trailing commas.
 `;
@@ -1347,7 +1347,7 @@ Rules:
 - Use ingredient_inference or regulatory_claim tags based on FACTS_DIGEST_JSON.sourceType and evidence.
 - If sourceType is lnhpd and labelPurposes exist, whatItDoes should use regulatory_claim (add label_fact only if referencing dosage/form).
 - chemicalFormExplain rules:
-  - If actives[i].chemicalFormConfidence is null OR < 0.6, output exactly "Chemical form not provided by source." with basisTags ["not_provided"].
+  - If actives[i].chemicalFormConfidence is null OR < 0.6, output exactly "Chemical form isn't disclosed on this source label." with basisTags ["not_provided"].
   - If chemicalFormConfidence >= 0.6 and chemicalForm exists, explain salt/shape meaning using cautious language (must include \"may\" or \"limited evidence\"). Use basisTags ["label_fact","ingredient_inference"].
 - deliveryFormExplain:
   - Only output if actives[i].deliveryForm exists, otherwise null.
@@ -1400,7 +1400,7 @@ Rules:
 - Only output items for the actives provided in FACTS_DIGEST_JSON.
 - If FACTS_DIGEST_JSON.labelDosing has entries, reference label dosing briefly and do NOT say dosing is unknown.
 - chemicalFormExplain rules:
-  - If actives[i].chemicalFormConfidence is null OR < 0.6, output exactly "Chemical form not provided by source." with basisTags ["not_provided"].
+  - If actives[i].chemicalFormConfidence is null OR < 0.6, output exactly "Chemical form isn't disclosed on this source label." with basisTags ["not_provided"].
   - If chemicalFormConfidence >= 0.6 and chemicalForm exists, explain cautiously (must include \"may\" or \"limited evidence\") with basisTags ["label_fact","ingredient_inference"].
 - deliveryFormExplain only if deliveryForm exists, otherwise null.
 - Avoid starting sentences with "Contains".

@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import path from "node:path";
+
 import { isHighQualityDomain, isMarketplaceDomain } from "./searchQuality.js";
 
 export type OwnershipTier = "strong" | "weak" | "failed";
@@ -81,10 +84,104 @@ const withFetchTimeout = async (
 };
 
 const normalizeBarcodeDigits = (value: string): string => value.replace(/\D/g, "");
+const toBarcodeCandidates = (value: string): string[] => {
+  const digits = normalizeBarcodeDigits(value);
+  if (!digits) return [];
+  const set = new Set<string>();
+  set.add(digits);
+  if (digits.length <= 14) set.add(digits.padStart(14, "0"));
+  if (digits.length === 14 && /^0+/.test(digits)) set.add(digits.replace(/^0+/, ""));
+  return Array.from(set).filter(Boolean);
+};
 
 const normalizeText = (value?: string | null): string | null => {
   const normalized = (value ?? "").replace(/\s+/g, " ").trim();
   return normalized.length > 0 ? normalized : null;
+};
+
+type OffSeedRow = {
+  barcode?: string;
+  barcode_gtin14?: string;
+  brand?: string | null;
+  productName?: string | null;
+  sourceUrl?: string | null;
+  lane?: "primary" | "shadow_usca" | string;
+};
+
+let offSeedLoadAttempted = false;
+let offSeedIndex: Map<string, OffSeedRow> = new Map();
+
+const resolveLatestOffSeedRunDir = (): string | null => {
+  const baseDir = process.env.OFF_SEED_BASE_DIR ?? path.join(process.cwd(), "output", "off_candidates");
+  try {
+    const entries = fs.readdirSync(baseDir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+      .sort((a, b) => b.localeCompare(a));
+    if (entries.length === 0) return null;
+    return path.join(baseDir, entries[0] ?? "");
+  } catch {
+    return null;
+  }
+};
+
+const resolveOffSeedPaths = (): string[] => {
+  const explicitPrimary = process.env.OFF_SEED_PRIMARY_PATH;
+  const explicitShadow = process.env.OFF_SEED_SHADOW_PATH;
+  if (explicitPrimary || explicitShadow) {
+    return [explicitPrimary, explicitShadow].filter((value): value is string => Boolean(value));
+  }
+
+  const baseDir = process.env.OFF_SEED_BASE_DIR ?? path.join(process.cwd(), "output", "off_candidates");
+  const runId = process.env.OFF_SEED_RUN_ID?.trim();
+  const runDir = runId ? path.join(baseDir, runId) : resolveLatestOffSeedRunDir();
+  if (!runDir) return [];
+  return [
+    path.join(runDir, "candidates.primary.jsonl"),
+    path.join(runDir, "candidates.shadow_usca.jsonl"),
+  ];
+};
+
+const loadOffSeedIndexOnce = (): Map<string, OffSeedRow> => {
+  if (offSeedLoadAttempted) return offSeedIndex;
+  offSeedLoadAttempted = true;
+
+  const rowsByBarcode = new Map<string, OffSeedRow>();
+  const paths = resolveOffSeedPaths();
+  for (const filePath of paths) {
+    if (!filePath || !fs.existsSync(filePath)) continue;
+    let raw = "";
+    try {
+      raw = fs.readFileSync(filePath, "utf8");
+    } catch {
+      continue;
+    }
+    const lines = raw.split(/\r?\n/);
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      let parsed: OffSeedRow;
+      try {
+        parsed = JSON.parse(trimmed) as OffSeedRow;
+      } catch {
+        continue;
+      }
+      const barcode = normalizeBarcodeDigits(
+        String(parsed.barcode_gtin14 ?? parsed.barcode ?? ""),
+      );
+      if (!barcode) continue;
+
+      const prev = rowsByBarcode.get(barcode);
+      const nextLane = parsed.lane === "primary" ? "primary" : "shadow_usca";
+      const prevLane = prev?.lane === "primary" ? "primary" : prev?.lane === "shadow_usca" ? "shadow_usca" : null;
+      if (!prev || (prevLane !== "primary" && nextLane === "primary")) {
+        rowsByBarcode.set(barcode, { ...parsed, lane: nextLane });
+      }
+    }
+  }
+
+  offSeedIndex = rowsByBarcode;
+  return offSeedIndex;
 };
 
 const openFoodFactsProvider: IdentityProvider = {
@@ -178,7 +275,43 @@ const upcItemDbProvider: IdentityProvider = {
   },
 };
 
+const offSeedProvider: IdentityProvider = {
+  id: "off_seed",
+  lookup: async ({ barcode }) => {
+    const index = loadOffSeedIndexOnce();
+    if (!index.size) return null;
+    const barcodeCandidates = toBarcodeCandidates(barcode);
+    if (!barcodeCandidates.length) return null;
+
+    let hit: OffSeedRow | null = null;
+    let hitBarcode: string | null = null;
+    for (const candidate of barcodeCandidates) {
+      const row = index.get(candidate);
+      if (!row) continue;
+      hit = row;
+      hitBarcode = candidate;
+      break;
+    }
+    if (!hit || !hitBarcode) return null;
+
+    const lane = hit.lane === "primary" ? "primary" : "shadow_usca";
+    const sourceUrl =
+      normalizeText(hit.sourceUrl) ??
+      `https://world.openfoodfacts.org/product/${hitBarcode.replace(/^0+/, "")}`;
+
+    return {
+      provider: "off_seed",
+      brand: normalizeText(hit.brand),
+      productName: normalizeText(hit.productName),
+      gtinMatched: true,
+      confidence: lane === "primary" ? "strong" : "medium",
+      sourceUrl,
+    };
+  },
+};
+
 const PROVIDER_REGISTRY: Record<string, IdentityProvider> = {
+  off_seed: offSeedProvider,
   openfoodfacts: openFoodFactsProvider,
   upcitemdb: upcItemDbProvider,
 };
