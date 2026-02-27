@@ -42,6 +42,7 @@ import { ContentSection } from '@/components/ui/ScoreDetailCard';
 import { useTranslation } from '@/lib/i18n';
 import { Config } from '@/constants/Config';
 import { withAuthHeaders } from '@/lib/auth-token';
+import { isNutritionLabelLikeIngredient } from '@/lib/scan/isNutritionLabelLikeIngredient';
 import type {
     AnalysisBundle,
     AnalysisBundleV4,
@@ -1035,7 +1036,11 @@ const AnalysisBundleDashboard: React.FC<{
     }));
 
     const ingredientsCover = bundleState.sections.ingredients.cover;
-    const ingredientsItems = ingredientsCover?.items ?? [];
+    const ingredientsItemsRaw = ingredientsCover?.items ?? [];
+    const ingredientsItems = useMemo(
+        () => ingredientsItemsRaw.filter((item) => !isNutritionLabelLikeIngredient(item?.name)),
+        [ingredientsItemsRaw],
+    );
     const ingredientsNotProvidedCopy =
         bundleSourceType === 'lnhpd'
             ? 'Not provided by LNHPD for this NPN.'
