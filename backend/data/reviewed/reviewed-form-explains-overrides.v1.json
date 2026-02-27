@@ -1,0 +1,653 @@
+{
+  "metadata": {
+    "package_version": "reviewed-overrides.v1",
+    "source_version": "reviewed-overrides.v1",
+    "generated_at": "2026-02-23T11:15:43.556Z"
+  },
+  "form_explain_overrides": [
+    {
+      "ingredient_id": "bifidobacterium",
+      "ingredient": "Bifidobacterium",
+      "form_key": "unspecified",
+      "form_display": "Unspecified form",
+      "evidence_grade": "D",
+      "overall_confidence": 0.24,
+      "relative_factor": 1,
+      "reference_ids": [
+        "ref_reviewed_override_20260223"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "text": "Bifidobacterium strain and delivery form were not disclosed; survival through digestion may vary across products.",
+              "sentence_id": "override_bifidobacterium_unspecified_abs_1",
+              "evidence_grade": "D",
+              "evidence_reference_id": "ref_reviewed_override_20260223"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Scoring uses a conservative fallback until strain identity and delivery details are specified.",
+              "sentence_id": "override_bifidobacterium_unspecified_cav_1",
+              "evidence_grade": "D",
+              "evidence_reference_id": "ref_reviewed_override_20260223"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ingredient_id": "algal_oil",
+      "ingredient": "Algal Oil",
+      "form_key": "unspecified",
+      "form_display": "Unspecified form",
+      "evidence_grade": "D",
+      "overall_confidence": 0.24,
+      "relative_factor": 1,
+      "reference_ids": [
+        "ref_reviewed_override_20260223"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "text": "Algal oil subtype and processing method were not disclosed, so bioavailability may vary by formulation.",
+              "sentence_id": "override_algal_oil_unspecified_abs_1",
+              "evidence_grade": "D",
+              "evidence_reference_id": "ref_reviewed_override_20260223"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Scoring remains conservative until the exact algal oil composition and delivery system are provided.",
+              "sentence_id": "override_algal_oil_unspecified_cav_1",
+              "evidence_grade": "D",
+              "evidence_reference_id": "ref_reviewed_override_20260223"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ingredient_id": "lecithin",
+      "ingredient": "Lecithin",
+      "form_key": "unspecified",
+      "form_display": "Unspecified form",
+      "evidence_grade": "D",
+      "overall_confidence": 0.24,
+      "relative_factor": 1,
+      "reference_ids": [
+        "ref_reviewed_override_20260223"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "text": "Lecithin source and phospholipid profile were not disclosed; response may differ by composition.",
+              "sentence_id": "override_lecithin_unspecified_abs_1",
+              "evidence_grade": "D",
+              "evidence_reference_id": "ref_reviewed_override_20260223"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Scoring uses a conservative assumption until source material and form details are disclosed.",
+              "sentence_id": "override_lecithin_unspecified_cav_1",
+              "evidence_grade": "D",
+              "evidence_reference_id": "ref_reviewed_override_20260223"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ingredient_id": "pinus_strobus",
+      "ingredient": "Pinus strobus",
+      "form_key": "extract",
+      "form_display": "Extract",
+      "evidence_grade": "D",
+      "overall_confidence": 0.23,
+      "relative_factor": 1,
+      "reference_ids": [
+        "ref_reviewed_override_20260223"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "text": "Pinus strobus extract lacks standardized disclosure in this label context, so absorption expectations are conservative.",
+              "sentence_id": "override_pinus_strobus_extract_abs_1",
+              "evidence_grade": "D",
+              "evidence_reference_id": "ref_reviewed_override_20260223"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Extract potency can vary by extraction process and standardization, so interpretation is conservative.",
+              "sentence_id": "override_pinus_strobus_extract_cav_1",
+              "evidence_grade": "D",
+              "evidence_reference_id": "ref_reviewed_override_20260223"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ingredient_id": "pinus_strobus",
+      "ingredient": "Pinus strobus",
+      "form_key": "unspecified",
+      "form_display": "Unspecified form",
+      "evidence_grade": "D",
+      "overall_confidence": 0.22,
+      "relative_factor": 1,
+      "reference_ids": [
+        "ref_reviewed_override_20260223"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "text": "Pinus strobus form was not disclosed, so formulation effects on exposure are uncertain.",
+              "sentence_id": "override_pinus_strobus_unspecified_abs_1",
+              "evidence_grade": "D",
+              "evidence_reference_id": "ref_reviewed_override_20260223"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Scoring stays conservative until a specific extract type or standardization detail is available.",
+              "sentence_id": "override_pinus_strobus_unspecified_cav_1",
+              "evidence_grade": "D",
+              "evidence_reference_id": "ref_reviewed_override_20260223"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ingredient_id": "vitamin_d",
+      "ingredient": "Vitamin D",
+      "form_key": "unspecified",
+      "form_display": "Unspecified form",
+      "evidence_grade": "D",
+      "overall_confidence": 0.27,
+      "relative_factor": 1,
+      "reference_ids": [
+        "ref_reviewed_override_20260223"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "text": "Vitamin D subtype was not disclosed; D2, D3, and other forms can differ in practical potency.",
+              "sentence_id": "override_vitamin_d_unspecified_abs_1",
+              "evidence_grade": "D",
+              "evidence_reference_id": "ref_reviewed_override_20260223"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "A conservative fallback is used until the exact vitamin D form is specified on label.",
+              "sentence_id": "override_vitamin_d_unspecified_cav_1",
+              "evidence_grade": "D",
+              "evidence_reference_id": "ref_reviewed_override_20260223"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ingredient_id": "bacillus_subtilis",
+      "ingredient": "Bacillus subtilis",
+      "form_key": "unspecified",
+      "form_display": "Unspecified form",
+      "evidence_grade": "D",
+      "overall_confidence": 0.24,
+      "relative_factor": 1,
+      "reference_ids": [
+        "ref_reviewed_override_20260223"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "text": "Bacillus subtilis strain and encapsulation details were not disclosed, so delivery performance is uncertain.",
+              "sentence_id": "override_bacillus_subtilis_unspecified_abs_1",
+              "evidence_grade": "D",
+              "evidence_reference_id": "ref_reviewed_override_20260223"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Scoring remains conservative until strain-level details and form technology are provided.",
+              "sentence_id": "override_bacillus_subtilis_unspecified_cav_1",
+              "evidence_grade": "D",
+              "evidence_reference_id": "ref_reviewed_override_20260223"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ingredient_id": "cat_s_claw",
+      "ingredient": "Cat s claw",
+      "form_key": "unspecified",
+      "form_display": "Unspecified form",
+      "evidence_grade": "D",
+      "overall_confidence": 0.23,
+      "relative_factor": 1,
+      "reference_ids": [
+        "ref_reviewed_override_20260223"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "text": "Cat s claw processing form was not disclosed, so delivery characteristics are treated conservatively.",
+              "sentence_id": "override_cat_s_claw_unspecified_abs_1",
+              "evidence_grade": "D",
+              "evidence_reference_id": "ref_reviewed_override_20260223"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Conservative scoring is used until species confirmation and extraction details are explicitly listed.",
+              "sentence_id": "override_cat_s_claw_unspecified_cav_1",
+              "evidence_grade": "D",
+              "evidence_reference_id": "ref_reviewed_override_20260223"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ingredient_id": "vitamin_b6",
+      "ingredient": "Vitamin B6",
+      "form_key": "phosphate",
+      "form_display": "Phosphate",
+      "evidence_grade": "D",
+      "overall_confidence": 0.26,
+      "relative_factor": 1,
+      "reference_ids": [
+        "ref_reviewed_override_20260223"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "text": "Vitamin B6 phosphate forms may differ in conversion and uptake context compared with other B6 forms.",
+              "sentence_id": "override_vitamin_b6_phosphate_abs_1",
+              "evidence_grade": "D",
+              "evidence_reference_id": "ref_reviewed_override_20260223"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Conservative scoring is used until label details confirm the exact B6 phosphate form and dose context.",
+              "sentence_id": "override_vitamin_b6_phosphate_cav_1",
+              "evidence_grade": "D",
+              "evidence_reference_id": "ref_reviewed_override_20260223"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ingredient_id": "vitamin_e",
+      "ingredient": "Vitamin E",
+      "form_key": "succinate",
+      "form_display": "Succinate",
+      "evidence_grade": "D",
+      "overall_confidence": 0.25,
+      "relative_factor": 1,
+      "reference_ids": [
+        "ref_reviewed_override_20260223"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "text": "Vitamin E succinate can behave differently from mixed tocopherol forms depending on product composition.",
+              "sentence_id": "override_vitamin_e_succinate_abs_1",
+              "evidence_grade": "D",
+              "evidence_reference_id": "ref_reviewed_override_20260223"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Interpretation remains conservative until the complete vitamin E form profile is disclosed.",
+              "sentence_id": "override_vitamin_e_succinate_cav_1",
+              "evidence_grade": "D",
+              "evidence_reference_id": "ref_reviewed_override_20260223"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ingredient_id": "selenium",
+      "ingredient": "Selenium",
+      "form_key": "amino_acid_chelate",
+      "form_display": "Amino acid chelate",
+      "evidence_grade": "D",
+      "overall_confidence": 0.24,
+      "relative_factor": 1,
+      "reference_ids": [
+        "ref_reviewed_override_20260223"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "text": "Selenium amino acid chelate products can vary by ligand chemistry and formulation quality.",
+              "sentence_id": "override_selenium_amino_acid_chelate_abs_1",
+              "evidence_grade": "D",
+              "evidence_reference_id": "ref_reviewed_override_20260223"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Scoring stays conservative until chelate specification and assay details are explicitly available.",
+              "sentence_id": "override_selenium_amino_acid_chelate_cav_1",
+              "evidence_grade": "D",
+              "evidence_reference_id": "ref_reviewed_override_20260223"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ingredient_id": "selenium",
+      "ingredient": "Selenium",
+      "form_key": "bisglycinate",
+      "form_display": "Bisglycinate",
+      "evidence_grade": "D",
+      "overall_confidence": 0.25,
+      "relative_factor": 1,
+      "reference_ids": [
+        "ref_reviewed_override_20260223"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "text": "Selenium bisglycinate is a chelated form and product quality can still vary by ligand ratio and manufacturing controls.",
+              "sentence_id": "override_selenium_bisglycinate_abs_1",
+              "evidence_grade": "D",
+              "evidence_reference_id": "ref_reviewed_override_20260223"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Interpretation remains conservative until specification and assay details are disclosed for the bisglycinate salt.",
+              "sentence_id": "override_selenium_bisglycinate_cav_1",
+              "evidence_grade": "D",
+              "evidence_reference_id": "ref_reviewed_override_20260223"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ingredient_id": "chondroitin",
+      "ingredient": "Chondroitin",
+      "form_key": "sulfate",
+      "form_display": "Sulfate",
+      "evidence_grade": "D",
+      "overall_confidence": 0.27,
+      "relative_factor": 1,
+      "reference_ids": [
+        "ref_reviewed_override_20260223"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "text": "Chondroitin sulfate products may vary in molecular weight profile, which can affect practical response.",
+              "sentence_id": "override_chondroitin_sulfate_abs_1",
+              "evidence_grade": "D",
+              "evidence_reference_id": "ref_reviewed_override_20260223"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "A conservative fallback is used until sulfate characterization and source details are confirmed.",
+              "sentence_id": "override_chondroitin_sulfate_cav_1",
+              "evidence_grade": "D",
+              "evidence_reference_id": "ref_reviewed_override_20260223"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ingredient_id": "folic_acid",
+      "ingredient": "Folic Acid",
+      "form_key": "folic_acid",
+      "form_display": "Folic acid",
+      "evidence_grade": "D",
+      "overall_confidence": 0.28,
+      "relative_factor": 1,
+      "reference_ids": [
+        "ref_reviewed_override_20260223"
+      ],
+      "segments": {
+        "absorption": {
+          "en": [
+            {
+              "text": "Folic acid is a synthetic folate form; utilization can vary across individuals and context.",
+              "sentence_id": "override_folic_acid_folic_acid_abs_1",
+              "evidence_grade": "D",
+              "evidence_reference_id": "ref_reviewed_override_20260223"
+            }
+          ]
+        },
+        "caveats": {
+          "en": [
+            {
+              "text": "Conservative interpretation is applied unless the product clearly specifies folate form strategy.",
+              "sentence_id": "override_folic_acid_folic_acid_cav_1",
+              "evidence_grade": "D",
+              "evidence_reference_id": "ref_reviewed_override_20260223"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "indexes": {
+    "forms_by_ingredient": {
+      "bifidobacterium": {
+        "unspecified": {
+          "form_key": "unspecified",
+          "form_display": "Unspecified form",
+          "relative_factor": 1,
+          "overall_confidence": 0.24,
+          "evidence_grade": "D",
+          "reference_ids": [
+            "ref_reviewed_override_20260223"
+          ]
+        }
+      },
+      "algal_oil": {
+        "unspecified": {
+          "form_key": "unspecified",
+          "form_display": "Unspecified form",
+          "relative_factor": 1,
+          "overall_confidence": 0.24,
+          "evidence_grade": "D",
+          "reference_ids": [
+            "ref_reviewed_override_20260223"
+          ]
+        }
+      },
+      "lecithin": {
+        "unspecified": {
+          "form_key": "unspecified",
+          "form_display": "Unspecified form",
+          "relative_factor": 1,
+          "overall_confidence": 0.24,
+          "evidence_grade": "D",
+          "reference_ids": [
+            "ref_reviewed_override_20260223"
+          ]
+        }
+      },
+      "pinus_strobus": {
+        "extract": {
+          "form_key": "extract",
+          "form_display": "Extract",
+          "relative_factor": 1,
+          "overall_confidence": 0.23,
+          "evidence_grade": "D",
+          "reference_ids": [
+            "ref_reviewed_override_20260223"
+          ]
+        },
+        "unspecified": {
+          "form_key": "unspecified",
+          "form_display": "Unspecified form",
+          "relative_factor": 1,
+          "overall_confidence": 0.22,
+          "evidence_grade": "D",
+          "reference_ids": [
+            "ref_reviewed_override_20260223"
+          ]
+        }
+      },
+      "vitamin_d": {
+        "unspecified": {
+          "form_key": "unspecified",
+          "form_display": "Unspecified form",
+          "relative_factor": 1,
+          "overall_confidence": 0.27,
+          "evidence_grade": "D",
+          "reference_ids": [
+            "ref_reviewed_override_20260223"
+          ]
+        }
+      },
+      "bacillus_subtilis": {
+        "unspecified": {
+          "form_key": "unspecified",
+          "form_display": "Unspecified form",
+          "relative_factor": 1,
+          "overall_confidence": 0.24,
+          "evidence_grade": "D",
+          "reference_ids": [
+            "ref_reviewed_override_20260223"
+          ]
+        }
+      },
+      "cat_s_claw": {
+        "unspecified": {
+          "form_key": "unspecified",
+          "form_display": "Unspecified form",
+          "relative_factor": 1,
+          "overall_confidence": 0.23,
+          "evidence_grade": "D",
+          "reference_ids": [
+            "ref_reviewed_override_20260223"
+          ]
+        }
+      },
+      "vitamin_b6": {
+        "phosphate": {
+          "form_key": "phosphate",
+          "form_display": "Phosphate",
+          "relative_factor": 1,
+          "overall_confidence": 0.26,
+          "evidence_grade": "D",
+          "reference_ids": [
+            "ref_reviewed_override_20260223"
+          ]
+        }
+      },
+      "vitamin_e": {
+        "succinate": {
+          "form_key": "succinate",
+          "form_display": "Succinate",
+          "relative_factor": 1,
+          "overall_confidence": 0.25,
+          "evidence_grade": "D",
+          "reference_ids": [
+            "ref_reviewed_override_20260223"
+          ]
+        }
+      },
+      "selenium": {
+        "amino_acid_chelate": {
+          "form_key": "amino_acid_chelate",
+          "form_display": "Amino acid chelate",
+          "relative_factor": 1,
+          "overall_confidence": 0.24,
+          "evidence_grade": "D",
+          "reference_ids": [
+            "ref_reviewed_override_20260223"
+          ]
+        },
+        "bisglycinate": {
+          "form_key": "bisglycinate",
+          "form_display": "Bisglycinate",
+          "relative_factor": 1,
+          "overall_confidence": 0.25,
+          "evidence_grade": "D",
+          "reference_ids": [
+            "ref_reviewed_override_20260223"
+          ]
+        }
+      },
+      "chondroitin": {
+        "sulfate": {
+          "form_key": "sulfate",
+          "form_display": "Sulfate",
+          "relative_factor": 1,
+          "overall_confidence": 0.27,
+          "evidence_grade": "D",
+          "reference_ids": [
+            "ref_reviewed_override_20260223"
+          ]
+        }
+      },
+      "folic_acid": {
+        "folic_acid": {
+          "form_key": "folic_acid",
+          "form_display": "Folic acid",
+          "relative_factor": 1,
+          "overall_confidence": 0.28,
+          "evidence_grade": "D",
+          "reference_ids": [
+            "ref_reviewed_override_20260223"
+          ]
+        }
+      }
+    }
+  }
+}

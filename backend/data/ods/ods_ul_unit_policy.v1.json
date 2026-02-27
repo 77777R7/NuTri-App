@@ -1,0 +1,33 @@
+{
+  "version": "v1",
+  "generatedAt": "2026-02-23T00:00:00.000Z",
+  "rules": [
+    {
+      "ingredientCanonicalKey": "folate",
+      "labelHints": ["dfe", "dietary folate equivalent", "mcg dfe"],
+      "appliesToUnits": ["mcg"],
+      "ulUnit": "mcg",
+      "blockConversionWhenHintsPresent": true,
+      "reasonCode": "FOLATE_DFE_UNIT_POLICY",
+      "warningMessage": "Folate labels may use DFE units; the UL applies to folic acid from supplements or fortified foods."
+    },
+    {
+      "ingredientCanonicalKey": "vitamin_a",
+      "labelHints": ["rae", "retinol activity equivalent", "mcg rae"],
+      "appliesToUnits": ["mcg", "iu"],
+      "ulUnit": "mcg",
+      "blockConversionWhenHintsPresent": true,
+      "reasonCode": "VITAMIN_A_RAE_UNIT_POLICY",
+      "warningMessage": "Vitamin A labels in RAE may not be directly comparable with UL units without additional form details."
+    },
+    {
+      "ingredientCanonicalKey": "niacin",
+      "labelHints": ["ne", "niacin equivalent", "mg ne"],
+      "appliesToUnits": ["mg"],
+      "ulUnit": "mg",
+      "blockConversionWhenHintsPresent": true,
+      "reasonCode": "NIACIN_NE_UNIT_POLICY",
+      "warningMessage": "Niacin labels in NE may not map directly to the UL basis."
+    }
+  ]
+}

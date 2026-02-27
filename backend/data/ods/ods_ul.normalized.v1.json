@@ -1,0 +1,644 @@
+{
+  "version": "v1",
+  "generatedAt": "2026-02-23T22:23:49.052Z",
+  "sourceIndexUrl": "https://ods.od.nih.gov/factsheets/list-all/",
+  "parserVersion": "ods_ul_sync_v1",
+  "items": [
+    {
+      "ingredientCanonicalKey": "ashwagandha",
+      "displayName": "Ashwagandha: Is it helpful for stress, anxiety, or sleep?",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Ashwagandha-HealthProfessional/",
+      "sourceUpdatedAt": "2025-05-02",
+      "scope": "total_intake",
+      "unit": null,
+      "altUnits": [],
+      "groups": [],
+      "notes": [],
+      "noUlEstablished": true
+    },
+    {
+      "ingredientCanonicalKey": "biotin",
+      "displayName": "Biotin",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Biotin-HealthProfessional/",
+      "sourceUpdatedAt": "2022-01-10",
+      "scope": "total_intake",
+      "unit": null,
+      "altUnits": [],
+      "groups": [],
+      "notes": [],
+      "noUlEstablished": true
+    },
+    {
+      "ingredientCanonicalKey": "black_cohosh",
+      "displayName": "Black Cohosh",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/BlackCohosh-HealthProfessional/",
+      "sourceUpdatedAt": "2020-06-03",
+      "scope": "total_intake",
+      "unit": null,
+      "altUnits": [],
+      "groups": [],
+      "notes": [],
+      "noUlEstablished": true
+    },
+    {
+      "ingredientCanonicalKey": "boron",
+      "displayName": "Boron",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Boron-HealthProfessional/",
+      "sourceUpdatedAt": "2022-06-09",
+      "scope": "total_intake",
+      "unit": "mg",
+      "altUnits": [],
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 20,
+          "unit": "mg"
+        }
+      ],
+      "notes": [],
+      "noUlEstablished": false
+    },
+    {
+      "ingredientCanonicalKey": "calcium",
+      "displayName": "Calcium",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Calcium-HealthProfessional/",
+      "sourceUpdatedAt": "2025-07-11",
+      "scope": "total_intake",
+      "unit": "mg",
+      "altUnits": [],
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 2000,
+          "unit": "mg"
+        }
+      ],
+      "notes": [],
+      "noUlEstablished": false
+    },
+    {
+      "ingredientCanonicalKey": "choline",
+      "displayName": "Choline",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Choline-HealthProfessional/",
+      "sourceUpdatedAt": "2022-06-02",
+      "scope": "supplements_or_fortified_only",
+      "unit": "mg",
+      "altUnits": [],
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 3500,
+          "unit": "mg"
+        }
+      ],
+      "notes": [],
+      "noUlEstablished": false
+    },
+    {
+      "ingredientCanonicalKey": "chromium",
+      "displayName": "Chromium",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Chromium-HealthProfessional/",
+      "sourceUpdatedAt": "2022-06-02",
+      "scope": "total_intake",
+      "unit": null,
+      "altUnits": [],
+      "groups": [],
+      "notes": [],
+      "noUlEstablished": true
+    },
+    {
+      "ingredientCanonicalKey": "copper",
+      "displayName": "Copper",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Copper-HealthProfessional/",
+      "sourceUpdatedAt": "2022-10-18",
+      "scope": "total_intake",
+      "unit": "mcg",
+      "altUnits": [],
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 10000,
+          "unit": "mcg"
+        }
+      ],
+      "notes": [],
+      "noUlEstablished": false
+    },
+    {
+      "ingredientCanonicalKey": "covid19",
+      "displayName": "Dietary Supplements in the Time of COVID-19",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/COVID19-HealthProfessional/",
+      "sourceUpdatedAt": "2024-09-20",
+      "scope": "total_intake",
+      "unit": null,
+      "altUnits": [],
+      "groups": [],
+      "notes": [],
+      "noUlEstablished": true
+    },
+    {
+      "ingredientCanonicalKey": "ephedraand_ephedrine",
+      "displayName": "Ephedra and Ephedrine Alkaloids for Weight Loss and Athletic Performance",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/EphedraandEphedrine-HealthProfessional/",
+      "sourceUpdatedAt": "2004-07-01",
+      "scope": "total_intake",
+      "unit": null,
+      "altUnits": [],
+      "groups": [],
+      "notes": [],
+      "noUlEstablished": true
+    },
+    {
+      "ingredientCanonicalKey": "exercise_and_athletic_performance",
+      "displayName": "Dietary Supplements for Exercise and Athletic Performance",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/ExerciseAndAthleticPerformance-HealthProfessional/",
+      "sourceUpdatedAt": "2024-04-01",
+      "scope": "total_intake",
+      "unit": null,
+      "altUnits": [],
+      "groups": [],
+      "notes": [],
+      "noUlEstablished": true
+    },
+    {
+      "ingredientCanonicalKey": "fluoride",
+      "displayName": "Fluoride",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Fluoride-HealthProfessional/",
+      "sourceUpdatedAt": "2025-04-11",
+      "scope": "total_intake",
+      "unit": "mg",
+      "altUnits": [],
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 10,
+          "unit": "mg"
+        }
+      ],
+      "notes": [],
+      "noUlEstablished": false
+    },
+    {
+      "ingredientCanonicalKey": "folate",
+      "displayName": "Folate",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Folate-HealthProfessional/",
+      "sourceUpdatedAt": "2022-11-30",
+      "scope": "supplements_or_fortified_only",
+      "unit": "mcg",
+      "altUnits": [],
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 1000,
+          "unit": "mcg"
+        }
+      ],
+      "notes": [
+        "Table 3: Tolerable Upper Intake Levels (ULs) for Folate from Supplements or Fortified Foods [2] Age Male Female Pregnancy Lactation Birth to 6 months Not possible to establish* Not possible to establ…"
+      ],
+      "noUlEstablished": false
+    },
+    {
+      "ingredientCanonicalKey": "immune_function",
+      "displayName": "Dietary Supplements for Immune Function and Infectious Diseases",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/ImmuneFunction-HealthProfessional/",
+      "sourceUpdatedAt": "2025-03-10",
+      "scope": "supplements_only",
+      "unit": null,
+      "altUnits": [],
+      "groups": [],
+      "notes": [],
+      "noUlEstablished": true
+    },
+    {
+      "ingredientCanonicalKey": "iodine",
+      "displayName": "Iodine",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Iodine-HealthProfessional/",
+      "sourceUpdatedAt": "2024-11-05",
+      "scope": "total_intake",
+      "unit": "mcg",
+      "altUnits": [],
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 1100,
+          "unit": "mcg"
+        }
+      ],
+      "notes": [],
+      "noUlEstablished": false
+    },
+    {
+      "ingredientCanonicalKey": "iron",
+      "displayName": "Iron",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Iron-HealthProfessional/",
+      "sourceUpdatedAt": "2025-09-04",
+      "scope": "total_intake",
+      "unit": "mg",
+      "altUnits": [],
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 45,
+          "unit": "mg"
+        }
+      ],
+      "notes": [],
+      "noUlEstablished": false
+    },
+    {
+      "ingredientCanonicalKey": "l_carnitine",
+      "displayName": "Carnitine",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Carnitine-HealthProfessional/",
+      "sourceUpdatedAt": "2023-04-17",
+      "scope": "total_intake",
+      "unit": null,
+      "altUnits": [],
+      "groups": [],
+      "notes": [],
+      "noUlEstablished": true
+    },
+    {
+      "ingredientCanonicalKey": "magnesium",
+      "displayName": "Magnesium",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Magnesium-HealthProfessional/",
+      "sourceUpdatedAt": "2026-01-06",
+      "scope": "supplements_only",
+      "unit": "mg",
+      "altUnits": [],
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 350,
+          "unit": "mg"
+        }
+      ],
+      "notes": [],
+      "noUlEstablished": false
+    },
+    {
+      "ingredientCanonicalKey": "manganese",
+      "displayName": "Manganese",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Manganese-HealthProfessional/",
+      "sourceUpdatedAt": "2021-03-29",
+      "scope": "total_intake",
+      "unit": "mg",
+      "altUnits": [],
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 11,
+          "unit": "mg"
+        }
+      ],
+      "notes": [],
+      "noUlEstablished": false
+    },
+    {
+      "ingredientCanonicalKey": "molybdenum",
+      "displayName": "Molybdenum",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Molybdenum-HealthProfessional/",
+      "sourceUpdatedAt": "2021-03-30",
+      "scope": "total_intake",
+      "unit": "mcg",
+      "altUnits": [],
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 2000,
+          "unit": "mcg"
+        }
+      ],
+      "notes": [],
+      "noUlEstablished": false
+    },
+    {
+      "ingredientCanonicalKey": "mvms",
+      "displayName": "Multivitamin/mineral Supplements",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/MVMS-HealthProfessional/",
+      "sourceUpdatedAt": "2024-07-17",
+      "scope": "supplements_or_fortified_only",
+      "unit": null,
+      "altUnits": [],
+      "groups": [],
+      "notes": [],
+      "noUlEstablished": true
+    },
+    {
+      "ingredientCanonicalKey": "niacin",
+      "displayName": "Niacin",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Niacin-HealthProfessional/",
+      "sourceUpdatedAt": "2022-11-18",
+      "scope": "total_intake",
+      "unit": "mg",
+      "altUnits": [],
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 35,
+          "unit": "mg"
+        }
+      ],
+      "notes": [],
+      "noUlEstablished": false
+    },
+    {
+      "ingredientCanonicalKey": "omega_3",
+      "displayName": "Omega-3 Fatty Acids",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Omega3FattyAcids-HealthProfessional/",
+      "sourceUpdatedAt": "2025-08-22",
+      "scope": "total_intake",
+      "unit": null,
+      "altUnits": [],
+      "groups": [],
+      "notes": [],
+      "noUlEstablished": true
+    },
+    {
+      "ingredientCanonicalKey": "pantothenic_acid",
+      "displayName": "Pantothenic Acid",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/PantothenicAcid-HealthProfessional/",
+      "sourceUpdatedAt": "2021-03-26",
+      "scope": "total_intake",
+      "unit": null,
+      "altUnits": [],
+      "groups": [],
+      "notes": [],
+      "noUlEstablished": true
+    },
+    {
+      "ingredientCanonicalKey": "phosphorus",
+      "displayName": "Phosphorus",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Phosphorus-HealthProfessional/",
+      "sourceUpdatedAt": "2023-05-04",
+      "scope": "total_intake",
+      "unit": "mg",
+      "altUnits": [],
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 3000,
+          "unit": "mg"
+        }
+      ],
+      "notes": [],
+      "noUlEstablished": false
+    },
+    {
+      "ingredientCanonicalKey": "potassium",
+      "displayName": "Potassium",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Potassium-HealthProfessional/",
+      "sourceUpdatedAt": "2022-06-02",
+      "scope": "total_intake",
+      "unit": null,
+      "altUnits": [],
+      "groups": [],
+      "notes": [],
+      "noUlEstablished": true
+    },
+    {
+      "ingredientCanonicalKey": "pregnancy",
+      "displayName": "Dietary Supplements and Life Stages: Pregnancy",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Pregnancy-HealthProfessional/",
+      "sourceUpdatedAt": "2025-04-03",
+      "scope": "supplements_or_fortified_only",
+      "unit": null,
+      "altUnits": [],
+      "groups": [],
+      "notes": [
+        "The current unit of measurement for vitamin D is mcg, but IUs were used in the past; 1 mcg vitamin D is equal to 40 IU [191]."
+      ],
+      "noUlEstablished": true
+    },
+    {
+      "ingredientCanonicalKey": "primary_mitochondrial_disorders",
+      "displayName": "Dietary Supplements for Primary Mitochondrial Disorders",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/PrimaryMitochondrialDisorders-HealthProfessional/",
+      "sourceUpdatedAt": "2020-06-03",
+      "scope": "supplements_or_fortified_only",
+      "unit": null,
+      "altUnits": [],
+      "groups": [],
+      "notes": [],
+      "noUlEstablished": true
+    },
+    {
+      "ingredientCanonicalKey": "probiotics",
+      "displayName": "Probiotics",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Probiotics-HealthProfessional/",
+      "sourceUpdatedAt": "2025-03-25",
+      "scope": "total_intake",
+      "unit": null,
+      "altUnits": [],
+      "groups": [],
+      "notes": [],
+      "noUlEstablished": true
+    },
+    {
+      "ingredientCanonicalKey": "riboflavin",
+      "displayName": "Riboflavin",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Riboflavin-HealthProfessional/",
+      "sourceUpdatedAt": "2022-05-11",
+      "scope": "total_intake",
+      "unit": null,
+      "altUnits": [],
+      "groups": [],
+      "notes": [],
+      "noUlEstablished": true
+    },
+    {
+      "ingredientCanonicalKey": "selenium",
+      "displayName": "Selenium",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Selenium-HealthProfessional/",
+      "sourceUpdatedAt": "2025-09-04",
+      "scope": "total_intake",
+      "unit": "mcg",
+      "altUnits": [],
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 400,
+          "unit": "mcg"
+        }
+      ],
+      "notes": [],
+      "noUlEstablished": false
+    },
+    {
+      "ingredientCanonicalKey": "thiamin",
+      "displayName": "Thiamin",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Thiamin-HealthProfessional/",
+      "sourceUpdatedAt": "2023-02-09",
+      "scope": "total_intake",
+      "unit": null,
+      "altUnits": [],
+      "groups": [],
+      "notes": [],
+      "noUlEstablished": true
+    },
+    {
+      "ingredientCanonicalKey": "valerian",
+      "displayName": "Valerian",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Valerian-HealthProfessional/",
+      "sourceUpdatedAt": "2013-03-15",
+      "scope": "total_intake",
+      "unit": null,
+      "altUnits": [],
+      "groups": [],
+      "notes": [],
+      "noUlEstablished": true
+    },
+    {
+      "ingredientCanonicalKey": "vitamin_a",
+      "displayName": "Vitamin A and Carotenoids",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/VitaminA-HealthProfessional/",
+      "sourceUpdatedAt": "2025-03-10",
+      "scope": "total_intake",
+      "unit": "mcg",
+      "altUnits": [],
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 3000,
+          "unit": "mcg"
+        }
+      ],
+      "notes": [],
+      "noUlEstablished": false
+    },
+    {
+      "ingredientCanonicalKey": "vitamin_b12",
+      "displayName": "Vitamin B12",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/VitaminB12-HealthProfessional/",
+      "sourceUpdatedAt": "2025-07-02",
+      "scope": "supplements_or_fortified_only",
+      "unit": null,
+      "altUnits": [],
+      "groups": [],
+      "notes": [],
+      "noUlEstablished": true
+    },
+    {
+      "ingredientCanonicalKey": "vitamin_b6",
+      "displayName": "Vitamin B6",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/VitaminB6-HealthProfessional/",
+      "sourceUpdatedAt": "2023-06-16",
+      "scope": "supplements_or_fortified_only",
+      "unit": "mg",
+      "altUnits": [],
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 100,
+          "unit": "mg"
+        }
+      ],
+      "notes": [],
+      "noUlEstablished": false
+    },
+    {
+      "ingredientCanonicalKey": "vitamin_c",
+      "displayName": "Vitamin C",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/VitaminC-HealthProfessional/",
+      "sourceUpdatedAt": "2025-07-31",
+      "scope": "total_intake",
+      "unit": "mg",
+      "altUnits": [],
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 2000,
+          "unit": "mg"
+        }
+      ],
+      "notes": [],
+      "noUlEstablished": false
+    },
+    {
+      "ingredientCanonicalKey": "vitamin_d",
+      "displayName": "Vitamin D",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/VitaminD-HealthProfessional/",
+      "sourceUpdatedAt": "2025-06-27",
+      "scope": "total_intake",
+      "unit": "mcg",
+      "altUnits": [
+        {
+          "unit": "iu",
+          "factor": 40,
+          "direction": "mcg->iu"
+        }
+      ],
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 100,
+          "unit": "mcg"
+        }
+      ],
+      "notes": [
+        "RDAs for vitamin D are listed in both micrograms (mcg) and International Units (IU); 1 mcg vitamin D is equal to 40 IU (Table 2)."
+      ],
+      "noUlEstablished": false
+    },
+    {
+      "ingredientCanonicalKey": "vitamin_e",
+      "displayName": "Vitamin E",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/VitaminE-HealthProfessional/",
+      "sourceUpdatedAt": "2021-03-26",
+      "scope": "total_intake",
+      "unit": "mg",
+      "altUnits": [],
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 1000,
+          "unit": "mg"
+        }
+      ],
+      "notes": [],
+      "noUlEstablished": false
+    },
+    {
+      "ingredientCanonicalKey": "vitamin_k1",
+      "displayName": "Vitamin K",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/VitaminK-HealthProfessional/",
+      "sourceUpdatedAt": "2021-03-29",
+      "scope": "total_intake",
+      "unit": null,
+      "altUnits": [],
+      "groups": [],
+      "notes": [],
+      "noUlEstablished": true
+    },
+    {
+      "ingredientCanonicalKey": "weight_loss",
+      "displayName": "Dietary Supplements for Weight Loss",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/WeightLoss-HealthProfessional/",
+      "sourceUpdatedAt": "2022-05-18",
+      "scope": "total_intake",
+      "unit": null,
+      "altUnits": [],
+      "groups": [],
+      "notes": [],
+      "noUlEstablished": true
+    },
+    {
+      "ingredientCanonicalKey": "zinc",
+      "displayName": "Zinc",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Zinc-HealthProfessional/",
+      "sourceUpdatedAt": "2026-01-06",
+      "scope": "total_intake",
+      "unit": "mg",
+      "altUnits": [],
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 40,
+          "unit": "mg"
+        }
+      ],
+      "notes": [],
+      "noUlEstablished": false
+    }
+  ]
+}

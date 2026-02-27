@@ -1,0 +1,1552 @@
+{
+  "version": "v1",
+  "generatedAt": "2026-02-23T22:23:49.052Z",
+  "generatedTag": "2026-02-23T22-23-48-462Z",
+  "source": {
+    "factsListUrl": "https://ods.od.nih.gov/factsheets/list-all/",
+    "apiIndexUrl": "https://ods.od.nih.gov/api/",
+    "apiBaseUrl": "https://ods.od.nih.gov/api/"
+  },
+  "parserConfig": {
+    "rateLimitRps": 1.5,
+    "maxPages": null,
+    "strictMode": true,
+    "parsedPages": 42
+  },
+  "pages": [
+    {
+      "resourceName": "Ashwagandha",
+      "title": "Ashwagandha: Is it helpful for stress, anxiety, or sleep?",
+      "canonicalKey": "ashwagandha",
+      "reviewed": "2025-05-02",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Ashwagandha-HealthProfessional/",
+      "scope": "total_intake",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": true,
+      "groups": [],
+      "watchouts": {
+        "interactionMedications": [
+          "thyroid hormone"
+        ],
+        "cautionConditions": [
+          "liver disease",
+          "diabetes",
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "pregnancy"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 0
+      },
+      "contentHash": "0607eba6e82096b1538bbc74e0e71eee211de2438f6f137c0aca9973f2c435c4",
+      "contentPreview": "Introduction Withania somnifera (L.) Dunal is an evergreen shrub cultivated in tropical and subtropical areas of Asia, Africa, and Europe. It is commonly called by the Sanskrit name, ashwagandha, because the plant&rsquo;s roots are said to smell like a wet horse (&ldquo;ashwa&rdquo; for horse and &ldquo;gandha&rdquo; for smell) [1]. Ashwagandha is also sometimes known as winter cherry or Indian ginseng, although it does not belong to the ginseng family. Ashwagandha root has been used in the trad"
+    },
+    {
+      "resourceName": "Biotin",
+      "title": "Biotin",
+      "canonicalKey": "biotin",
+      "reviewed": "2022-01-10",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Biotin-HealthProfessional/",
+      "scope": "total_intake",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": true,
+      "groups": [],
+      "watchouts": {
+        "interactionMedications": [
+          "thyroid hormone"
+        ],
+        "cautionConditions": [
+          "liver disease",
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 0
+      },
+      "contentHash": "245a7bccb34f1e090be6d64cb3754c19910e7391c41e88eb6a583c3946955bab",
+      "contentPreview": "Introduction Biotin, a B vitamin, is an essential nutrient that is naturally present in some foods and available as a dietary supplement. This water-soluble vitamin is a cofactor for five carboxylases (propionyl-CoA carboxylase, pyruvate carboxylase, methylcrotonyl-CoA carboxylase [MCC], acetyl-CoA carboxylase 1, and acetyl-CoA carboxylase 2) that catalyze critical steps in the metabolism of fatty acids, glucose, and amino acids [1-5]. Biotin also plays key roles in histone modifications, gene r"
+    },
+    {
+      "resourceName": "BlackCohosh",
+      "title": "Black Cohosh",
+      "canonicalKey": "black_cohosh",
+      "reviewed": "2020-06-03",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/BlackCohosh-HealthProfessional/",
+      "scope": "total_intake",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": true,
+      "groups": [],
+      "watchouts": {
+        "interactionMedications": [],
+        "cautionConditions": [
+          "liver disease",
+          "bleeding risk",
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "pregnancy"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 0
+      },
+      "contentHash": "7ebad5ed4bc5f3f9406ff3a3a4c5e42e1505217778e8ab5f5b9f539c903c8615",
+      "contentPreview": "Introduction Black cohosh ( Actaea racemosa or Cimicifuga racemosa ), a member of the buttercup family, is a perennial plant native to North America. Other, mostly historical, names for this herb include snakeroot, black bugbane, rattleweed, macrotys, and rheumatism weed [1, 2]. Black cohosh has a long history of use. Native Americans used it, for example, to treat musculoskeletal pain, fever, cough, pneumonia, sluggish labor, and menstrual irregularities [3]. European settlers used black cohosh"
+    },
+    {
+      "resourceName": "Boron",
+      "title": "Boron",
+      "canonicalKey": "boron",
+      "reviewed": "2022-06-09",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Boron-HealthProfessional/",
+      "scope": "total_intake",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": false,
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 20,
+          "unit": "mg"
+        }
+      ],
+      "watchouts": {
+        "interactionMedications": [],
+        "cautionConditions": [],
+        "cautionPopulation": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 1
+      },
+      "contentHash": "dd7841e8ce08e20a17ffe854752e59389ac9e5dd293752b19bba7f5aa0ca2583",
+      "contentPreview": "Introduction Boron is a trace element that is naturally present in many foods and available as a dietary supplement. It is a structural component of plant cell walls and is required for plant growth, pollination, and seed formation [1]. Boron is not classified as an essential nutrient for humans because research has not yet identified a clear biological function for boron [2]. However, it might have beneficial effects on such functions as reproduction and development, calcium metabolism, bone fo"
+    },
+    {
+      "resourceName": "Calcium",
+      "title": "Calcium",
+      "canonicalKey": "calcium",
+      "reviewed": "2025-07-11",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Calcium-HealthProfessional/",
+      "scope": "total_intake",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": false,
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 2000,
+          "unit": "mg"
+        }
+      ],
+      "watchouts": {
+        "interactionMedications": [
+          "quinolones",
+          "antibiotics",
+          "thyroid hormone"
+        ],
+        "cautionConditions": [
+          "kidney disease",
+          "hypertension",
+          "diabetes",
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants",
+          "older adults"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 1
+      },
+      "contentHash": "412b759ad0cf9cdea7895cefb29bf93cf7d3a1bcd6c03ab1849b1b3da5d75d79",
+      "contentPreview": "Introduction Calcium, the most abundant mineral in the body, is found in some foods, added to others, present in some medicines (such as antacids), and available as a dietary supplement. Calcium makes up much of the structure of bones and teeth and allows normal bodily movement by keeping tissue rigid, strong, and flexible [1]. The small ionized pool of calcium in the circulatory system, extracellular fluid, and various tissues mediates blood vessel contraction and dilation, muscle function, blo"
+    },
+    {
+      "resourceName": "Carnitine",
+      "title": "Carnitine",
+      "canonicalKey": "l_carnitine",
+      "reviewed": "2023-04-17",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Carnitine-HealthProfessional/",
+      "scope": "total_intake",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": true,
+      "groups": [],
+      "watchouts": {
+        "interactionMedications": [
+          "antibiotics"
+        ],
+        "cautionConditions": [
+          "kidney disease",
+          "liver disease",
+          "diabetes",
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants",
+          "older adults"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 0
+      },
+      "contentHash": "8ebbb4b82f135975dcb4d992066e0e556cf74a9d173205fcd7d8da077748c8b9",
+      "contentPreview": "Introduction Carnitine, derived from an amino acid, is the generic term for several compounds, including L-carnitine, acetyl-L-carnitine, and propionyl-L-carnitine [1]. Carnitine is naturally present in many foods&mdash;especially foods of animal origin&mdash;and is available as a dietary supplement. Carnitine is also synthesized endogenously in the liver, kidneys, and brain from the amino acids lysine and methionine [2,3]. Carnitine is a conditionally essential nutrient because the requirements"
+    },
+    {
+      "resourceName": "Choline",
+      "title": "Choline",
+      "canonicalKey": "choline",
+      "reviewed": "2022-06-02",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Choline-HealthProfessional/",
+      "scope": "supplements_or_fortified_only",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": false,
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 3500,
+          "unit": "mg"
+        }
+      ],
+      "watchouts": {
+        "interactionMedications": [],
+        "cautionConditions": [
+          "kidney disease",
+          "liver disease",
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 1
+      },
+      "contentHash": "1e7fc9183f08d36bde9ef9e2a5cdaf31984e213040ed28232d55109731681fec",
+      "contentPreview": "Introduction Choline is an essential nutrient that is naturally present in some foods and available as a dietary supplement. Choline is a source of methyl groups needed for many steps in metabolism. The body needs choline to synthesize phosphatidylcholine and sphingomyelin, two major phospholipids vital for cell membranes. Therefore, all plant and animal cells need choline to preserve their structural integrity [1, 2]. In addition, choline is needed to produce acetylcholine, an important neurotr"
+    },
+    {
+      "resourceName": "Chromium",
+      "title": "Chromium",
+      "canonicalKey": "chromium",
+      "reviewed": "2022-06-02",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Chromium-HealthProfessional/",
+      "scope": "total_intake",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": true,
+      "groups": [],
+      "watchouts": {
+        "interactionMedications": [
+          "thyroid hormone"
+        ],
+        "cautionConditions": [
+          "liver disease",
+          "hypertension",
+          "diabetes",
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 0
+      },
+      "contentHash": "3c48ce8df6b5da6cd528ee034755e93dbe132bc1d08ee838012af470e7edc506",
+      "contentPreview": "Introduction Chromium, as trivalent (+3) chromium, is a trace element that is naturally present in many foods and available as a dietary supplement. Chromium also exists as hexavalent (+6) chromium, a toxic by-product of stainless steel and other manufacturing processes [1, 2]. This fact sheet focuses entirely on trivalent chromium. Chromium might play a role in carbohydrate, lipid, and protein metabolism by potentiating insulin action [1-5]. Although the precise mechanism for this activity has "
+    },
+    {
+      "resourceName": "Copper",
+      "title": "Copper",
+      "canonicalKey": "copper",
+      "reviewed": "2022-10-18",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Copper-HealthProfessional/",
+      "scope": "total_intake",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": false,
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 10000,
+          "unit": "mcg"
+        }
+      ],
+      "watchouts": {
+        "interactionMedications": [],
+        "cautionConditions": [
+          "liver disease",
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 1
+      },
+      "contentHash": "2a02e74ed90523be4fcc65ae59d82b43a081a6e579c879d5f65d1b34d7e8a0ce",
+      "contentPreview": "Introduction Copper, an essential mineral, is naturally present in some foods and is available as a dietary supplement. It is a cofactor for several enzymes (known as cuproenzymes) involved in energy production, iron metabolism, neuropeptide activation, connective tissue synthesis, and neurotransmitter synthesis [1-3]. One abundant cuproenzyme is ceruloplasmin (CP), which plays a role in iron metabolism and carries more than 95% of the total copper in healthy human plasma [4]. Copper is also inv"
+    },
+    {
+      "resourceName": "COVID19",
+      "title": "Dietary Supplements in the Time of COVID-19",
+      "canonicalKey": "covid19",
+      "reviewed": "2024-09-20",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/COVID19-HealthProfessional/",
+      "scope": "total_intake",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": true,
+      "groups": [],
+      "watchouts": {
+        "interactionMedications": [
+          "antibiotics",
+          "bisphosphonates",
+          "anticoagulants",
+          "diuretics"
+        ],
+        "cautionConditions": [
+          "kidney disease",
+          "liver disease",
+          "bleeding risk",
+          "hypertension",
+          "diabetes",
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "children",
+          "infants",
+          "older adults"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 0
+      },
+      "contentHash": "9236b23c1f3b7d7f4e7da9b795d66ec49707aa89addb31a0cfc722199a39da4b",
+      "contentPreview": "Data are insufficient to support recommendations for or against the use of any vitamin, mineral, herb or other botanical, fatty acid, or other dietary supplement ingredient to prevent or treat COVID-19. Introduction COVID-19, the disease caused by the novel severe acute respiratory syndrome coronavirus 2 (SARS-CoV-2), emerged in 2019 and caused a global pandemic [1]. Common initial signs and symptoms include cough, fever, fatigue, headache, muscle aches and pain, and diarrhea [2]. Some individua"
+    },
+    {
+      "resourceName": "EphedraandEphedrine",
+      "title": "Ephedra and Ephedrine Alkaloids for Weight Loss and Athletic Performance",
+      "canonicalKey": "ephedraand_ephedrine",
+      "reviewed": "2004-07-01",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/EphedraandEphedrine-HealthProfessional/",
+      "scope": "total_intake",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": true,
+      "groups": [],
+      "watchouts": {
+        "interactionMedications": [
+          "diuretics"
+        ],
+        "cautionConditions": [
+          "hypertension",
+          "heart condition"
+        ],
+        "cautionPopulation": []
+      },
+      "parse": {
+        "ulTableCount": 0
+      },
+      "contentHash": "a7fbc5a0745645bb5602b10e2bfcf04e6a44cc86a2f18a8ffe1660299c2a52a9",
+      "contentPreview": "This document summarizes the results of an evidence-based review on the efficacy and safety of ephedra and ephedrine alkaloids for weight loss or to enhance athletic performance (power and endurance). The report was prepared by the Southern California Evidence-based Practice Center-RAND (RAND) under contract to the Agency for Healthcare Research and Quality (AHRQ) of the U.S. Department of Health and Human Services. This work was sponsored by the Office of Dietary Supplements (ODS) and the Natio"
+    },
+    {
+      "resourceName": "ExerciseAndAthleticPerformance",
+      "title": "Dietary Supplements for Exercise and Athletic Performance",
+      "canonicalKey": "exercise_and_athletic_performance",
+      "reviewed": "2024-04-01",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/ExerciseAndAthleticPerformance-HealthProfessional/",
+      "scope": "total_intake",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": true,
+      "groups": [],
+      "watchouts": {
+        "interactionMedications": [
+          "thyroid hormone",
+          "levodopa",
+          "warfarin",
+          "anticoagulants"
+        ],
+        "cautionConditions": [
+          "kidney disease",
+          "liver disease",
+          "hypertension",
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "lactation",
+          "children",
+          "older adults"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 0
+      },
+      "contentHash": "411032392a5c96a8462f27027715d1552ebca2dcad8240add9ea97424e947f9e",
+      "contentPreview": "Introduction This fact sheet provides an overview of selected ingredients in dietary supplements designed or claimed to enhance exercise and athletic performance. Manufacturers and sellers promote these products, sometimes referred to as ergogenic aids, by claiming that they improve strength or endurance, increase exercise efficiency, achieve a performance goal more quickly, and increase tolerance for more intense training. These effects are the main focus of this fact sheet. Some people also us"
+    },
+    {
+      "resourceName": "Fluoride",
+      "title": "Fluoride",
+      "canonicalKey": "fluoride",
+      "reviewed": "2025-04-11",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Fluoride-HealthProfessional/",
+      "scope": "total_intake",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": false,
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 10,
+          "unit": "mg"
+        }
+      ],
+      "watchouts": {
+        "interactionMedications": [],
+        "cautionConditions": [],
+        "cautionPopulation": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 1
+      },
+      "contentHash": "871d6c0f17d29621e4165e2f2a5c02437fe95f57835bac211b1ba2b333543c00",
+      "contentPreview": "Introduction Fluoride, a mineral, is naturally present in many foods and available as a dietary supplement. Fluoride is the ionic form of the element fluorine, and it inhibits or reverses the initiation and progression of dental caries (tooth decay) and stimulates new bone formation [1]. Soil, water, plants, and foods contain trace amounts of fluoride. Most of the fluoride that people consume comes from fluoridated water, foods and beverages prepared with fluoridated water, and toothpaste and ot"
+    },
+    {
+      "resourceName": "Folate",
+      "title": "Folate",
+      "canonicalKey": "folate",
+      "reviewed": "2022-11-30",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Folate-HealthProfessional/",
+      "scope": "supplements_or_fortified_only",
+      "notes": [
+        "Table 3: Tolerable Upper Intake Levels (ULs) for Folate from Supplements or Fortified Foods [2] Age Male Female Pregnancy Lactation Birth to 6 months Not possible to establish* Not possible to establ…"
+      ],
+      "altUnits": [],
+      "noUlEstablished": false,
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 1000,
+          "unit": "mcg"
+        }
+      ],
+      "watchouts": {
+        "interactionMedications": [],
+        "cautionConditions": [
+          "kidney disease",
+          "liver disease",
+          "hypertension",
+          "diabetes",
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants",
+          "older adults"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 1
+      },
+      "contentHash": "a3d60efa785df5f8a122fd5dcd7910e4cda4d56157d99ba1471fc643d30f9072",
+      "contentPreview": "Introduction Folate is a water-soluble B vitamin that is naturally present in some foods, added to others, and available as a dietary supplement. Folate, formerly known as folacin and sometimes vitamin B9, is the generic term for naturally occurring food folates and folates in dietary supplements and fortified foods, including folic acid. Food folates are in the tetrahydrofolate (THF) form and usually have additional glutamate residues, making them polyglutamates [1]. Folic acid is the fully oxi"
+    },
+    {
+      "resourceName": "ImmuneFunction",
+      "title": "Dietary Supplements for Immune Function and Infectious Diseases",
+      "canonicalKey": "immune_function",
+      "reviewed": "2025-03-10",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/ImmuneFunction-HealthProfessional/",
+      "scope": "supplements_only",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": true,
+      "groups": [],
+      "watchouts": {
+        "interactionMedications": [
+          "antibiotics",
+          "warfarin",
+          "anticoagulants",
+          "diuretics"
+        ],
+        "cautionConditions": [
+          "kidney disease",
+          "liver disease",
+          "bleeding risk",
+          "hypertension",
+          "diabetes",
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants",
+          "older adults"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 0
+      },
+      "contentHash": "085e75b9e15edff0d049d489a2d7888292225c4c47f9d42e0e1b6420bb18a193",
+      "contentPreview": "Introduction Interest in dietary supplement ingredients that might enhance immune function and reduce the risk of infectious diseases is high, especially after the emergence of COVID-19. The immune system defends the body from pathogens that cause disease and is comprised of innate responses, which are the first line of defense, and adaptive responses, which become engaged later [1-3]. The innate immune system includes physical barriers, such as the skin and gut epithelium, that help prevent pat"
+    },
+    {
+      "resourceName": "Iodine",
+      "title": "Iodine",
+      "canonicalKey": "iodine",
+      "reviewed": "2024-11-05",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Iodine-HealthProfessional/",
+      "scope": "total_intake",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": false,
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 1100,
+          "unit": "mcg"
+        }
+      ],
+      "watchouts": {
+        "interactionMedications": [
+          "thyroid hormone",
+          "diuretics"
+        ],
+        "cautionConditions": [
+          "liver disease"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 1
+      },
+      "contentHash": "628b3641f6ca25830678dee9d2986b055d0154eb8efa477fae991e9ec083c1d2",
+      "contentPreview": "Introduction Iodine is a trace element that is naturally present in some foods, is added to some types of salt, and is available as a dietary supplement. Iodine is an essential component of the thyroid hormones thyroxine (T4) and triiodothyronine (T3). Thyroid hormones regulate many important biochemical reactions, including protein synthesis and enzymatic activity, and are critical determinants of metabolic activity [1,2]. They are also required for proper skeletal and central nervous system de"
+    },
+    {
+      "resourceName": "Iron",
+      "title": "Iron",
+      "canonicalKey": "iron",
+      "reviewed": "2025-09-04",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Iron-HealthProfessional/",
+      "scope": "total_intake",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": false,
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 45,
+          "unit": "mg"
+        }
+      ],
+      "watchouts": {
+        "interactionMedications": [
+          "thyroid hormone",
+          "levodopa",
+          "anticoagulants"
+        ],
+        "cautionConditions": [
+          "kidney disease",
+          "liver disease",
+          "bleeding risk",
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 1
+      },
+      "contentHash": "e9747de952986114d88eff6e45f72ff75ae3468bf348ab090e4f7cb6285426af",
+      "contentPreview": "Introduction Iron is a mineral that is naturally present in many foods, added to some food products, and available as a dietary supplement. Iron is an essential component of hemoglobin, an erythrocyte (red blood cell) protein that transfers oxygen from the lungs to the tissues [1]. As a component of myoglobin, another protein that provides oxygen, iron supports muscle metabolism and healthy connective tissue [2]. Iron is also necessary for physical growth, neurological development, cellular func"
+    },
+    {
+      "resourceName": "Magnesium",
+      "title": "Magnesium",
+      "canonicalKey": "magnesium",
+      "reviewed": "2026-01-06",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Magnesium-HealthProfessional/",
+      "scope": "supplements_only",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": false,
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 350,
+          "unit": "mg"
+        }
+      ],
+      "watchouts": {
+        "interactionMedications": [
+          "tetracyclines",
+          "quinolones",
+          "antibiotics",
+          "thyroid hormone",
+          "bisphosphonates",
+          "diuretics"
+        ],
+        "cautionConditions": [
+          "kidney disease",
+          "liver disease",
+          "hypertension",
+          "diabetes",
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants",
+          "older adults"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 1
+      },
+      "contentHash": "ee5f3c0c17e05790c292d02b3000cdf186cbf645a70a94fd1db16b7eb581ddff",
+      "contentPreview": "Introduction Magnesium, an abundant mineral in the body, is naturally present in many foods, added to other food products, available as a dietary supplement, and present in some medicines (e.g., antacids, laxatives). Magnesium is a cofactor in more than 300 enzyme systems that regulate diverse biochemical reactions in the body, including protein synthesis, muscle and nerve function, blood glucose control, and blood pressure regulation [1-3]. Magnesium is required for energy production, oxidative"
+    },
+    {
+      "resourceName": "Manganese",
+      "title": "Manganese",
+      "canonicalKey": "manganese",
+      "reviewed": "2021-03-29",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Manganese-HealthProfessional/",
+      "scope": "total_intake",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": false,
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 11,
+          "unit": "mg"
+        }
+      ],
+      "watchouts": {
+        "interactionMedications": [],
+        "cautionConditions": [
+          "kidney disease",
+          "liver disease",
+          "diabetes"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 1
+      },
+      "contentHash": "c4e941c767754f3b4a1f1edd92bf3ff6c699c2c2eb0cd3dd5056f5e33aeb110b",
+      "contentPreview": "Introduction Manganese is an essential trace element that is naturally present in many foods and available as a dietary supplement. Manganese is a cofactor for many enzymes, including manganese superoxide dismutase, arginase, and pyruvate carboxylase [1, 2]. Through the action of these enzymes, manganese is involved in amino acid, cholesterol, glucose, and carbohydrate metabolism; reactive oxygen species scavenging; bone formation; reproduction; and immune response [3-7]. Manganese also plays a "
+    },
+    {
+      "resourceName": "Molybdenum",
+      "title": "Molybdenum",
+      "canonicalKey": "molybdenum",
+      "reviewed": "2021-03-30",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Molybdenum-HealthProfessional/",
+      "scope": "total_intake",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": false,
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 2000,
+          "unit": "mcg"
+        }
+      ],
+      "watchouts": {
+        "interactionMedications": [],
+        "cautionConditions": [
+          "kidney disease",
+          "liver disease"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 1
+      },
+      "contentHash": "15d1b1c540f6ce807c3d0a6addfc73ec3d63ce03d9002814663b8d25d9dae54e",
+      "contentPreview": "Introduction Molybdenum is an essential trace element that is naturally present in many foods and is also available as a dietary supplement. Molybdenum is a structural constituent of molybdopterin, a cofactor synthesized by the body and required for the function of four enzymes: sulfite oxidase, xanthine oxidase, aldehyde oxidase, and mitochondrial amidoxime reducing component (mARC). These enzymes metabolize sulfur-containing amino acids and heterocyclic compounds including purines and pyrimidi"
+    },
+    {
+      "resourceName": "MVMS",
+      "title": "Multivitamin/mineral Supplements",
+      "canonicalKey": "mvms",
+      "reviewed": "2024-07-17",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/MVMS-HealthProfessional/",
+      "scope": "supplements_or_fortified_only",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": true,
+      "groups": [],
+      "watchouts": {
+        "interactionMedications": [
+          "warfarin"
+        ],
+        "cautionConditions": [
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "children",
+          "infants",
+          "older adults"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 1
+      },
+      "contentHash": "c6e0270980c742b7dc51e7b05a5492ded82d22d55bbb0814d1a67fc2a6ec66c8",
+      "contentPreview": "Introduction People in the United States have taken multivitamin/mineral (MVM) and multivitamin (MV) dietary supplements since the early 1940s, when the first such products became available [1]. MVMs, in particular, are popular supplements, currently taken by an estimated one-third of all adults in the United States, and one-quarter of children and adolescents take an MVM or MV [2, 3]. MVMs and MVs accounted for 14% of all purchases of supplements and 38% of all sales of vitamin and mineral supp"
+    },
+    {
+      "resourceName": "Niacin",
+      "title": "Niacin",
+      "canonicalKey": "niacin",
+      "reviewed": "2022-11-18",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Niacin-HealthProfessional/",
+      "scope": "total_intake",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": false,
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 35,
+          "unit": "mg"
+        }
+      ],
+      "watchouts": {
+        "interactionMedications": [],
+        "cautionConditions": [
+          "kidney disease",
+          "liver disease",
+          "bleeding risk",
+          "diabetes",
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 1
+      },
+      "contentHash": "2646269981732678ec830e7b2585d4bceceb410ff053f0c8f026ef0dfeadf987",
+      "contentPreview": "Introduction Niacin (also known as vitamin B3) is one of the water-soluble B vitamins. Niacin is the generic name for nicotinic acid (pyridine-3-carboxylic acid), nicotinamide (niacinamide or pyridine-3-carboxamide), and related derivatives, such as nicotinamide riboside [1-3]. Niacin is naturally present in many foods, added to some food products, and available as a dietary supplement. All tissues in the body convert absorbed niacin into its main metabolically active form, the coenzyme nicotina"
+    },
+    {
+      "resourceName": "Omega3FattyAcids",
+      "title": "Omega-3 Fatty Acids",
+      "canonicalKey": "omega_3",
+      "reviewed": "2025-08-22",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Omega3FattyAcids-HealthProfessional/",
+      "scope": "total_intake",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": true,
+      "groups": [],
+      "watchouts": {
+        "interactionMedications": [
+          "warfarin",
+          "anticoagulants"
+        ],
+        "cautionConditions": [
+          "kidney disease",
+          "liver disease",
+          "bleeding risk",
+          "diabetes",
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants",
+          "older adults"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 0
+      },
+      "contentHash": "21bf035329f7ab2732df450908166ba838c02e884eccee87da000e63728f4cf7",
+      "contentPreview": "Introduction The two major classes of polyunsaturated fatty acids (PUFAs) are the omega-3 and omega-6 fatty acids. Like all fatty acids, PUFAs consist of long chains of carbon atoms with a carboxyl group at one end of the chain and a methyl group at the other. PUFAs are distinguished from saturated and monounsaturated fatty acids by the presence of two or more double bonds between carbons within the fatty acid chain. Omega-3 fatty acids (omega-3s) have a carbon&ndash;carbon double bond located t"
+    },
+    {
+      "resourceName": "PantothenicAcid",
+      "title": "Pantothenic Acid",
+      "canonicalKey": "pantothenic_acid",
+      "reviewed": "2021-03-26",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/PantothenicAcid-HealthProfessional/",
+      "scope": "total_intake",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": true,
+      "groups": [],
+      "watchouts": {
+        "interactionMedications": [],
+        "cautionConditions": [
+          "liver disease",
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "lactation",
+          "children"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 0
+      },
+      "contentHash": "6f6fd0b5141624740c0a37f0512403fa2495e63bb42b99588da282144773dc98",
+      "contentPreview": "Introduction Pantothenic acid (also known as vitamin B5) is an essential nutrient that is naturally present in some foods, added to others, and available as a dietary supplement. The main function of this water-soluble B vitamin is in the synthesis of coenzyme A (CoA) and acyl carrier protein [1, 2]. CoA is essential for fatty acid synthesis and degradation, transfer of acetyl and acyl groups, and a multitude of other anabolic and catabolic processes [3, 4]. Acyl carrier protein&rsquo;s main rol"
+    },
+    {
+      "resourceName": "Phosphorus",
+      "title": "Phosphorus",
+      "canonicalKey": "phosphorus",
+      "reviewed": "2023-05-04",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Phosphorus-HealthProfessional/",
+      "scope": "total_intake",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": false,
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 3000,
+          "unit": "mg"
+        }
+      ],
+      "watchouts": {
+        "interactionMedications": [
+          "thyroid hormone"
+        ],
+        "cautionConditions": [
+          "kidney disease",
+          "liver disease",
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 1
+      },
+      "contentHash": "173561120e9d4ca9608ae0fe1a26c82aeb1ff7f98499bc03be55ef30d4a6687f",
+      "contentPreview": "Introduction Phosphorus, an essential mineral, is naturally present in many foods and available as a dietary supplement. Phosphorus is a component of bones, teeth, DNA, and RNA [1]. In the form of phospholipids, phosphorus is also a component of cell membrane structure and of the body&rsquo;s key energy source, adenosine triphosphate (ATP). Many proteins and sugars in the body are phosphorylated. In addition, phosphorus plays key roles in regulation of gene transcription, activation of enzymes, "
+    },
+    {
+      "resourceName": "Potassium",
+      "title": "Potassium",
+      "canonicalKey": "potassium",
+      "reviewed": "2022-06-02",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Potassium-HealthProfessional/",
+      "scope": "total_intake",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": true,
+      "groups": [],
+      "watchouts": {
+        "interactionMedications": [
+          "diuretics"
+        ],
+        "cautionConditions": [
+          "kidney disease",
+          "liver disease",
+          "hypertension",
+          "diabetes",
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants",
+          "older adults"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 0
+      },
+      "contentHash": "3d3a7376d6ef9584d3c943e1705959d8d8c97d47af4d2975a63400965a5e5b1b",
+      "contentPreview": "Introduction Potassium, the most abundant intracellular cation, is an essential nutrient that is naturally present in many foods and available as a dietary supplement. Potassium is present in all body tissues and is required for normal cell function because of its role in maintaining intracellular fluid volume and transmembrane electrochemical gradients [1, 2]. Potassium has a strong relationship with sodium, the main regulator of extracellular fluid volume, including plasma volume. The total am"
+    },
+    {
+      "resourceName": "Pregnancy",
+      "title": "Dietary Supplements and Life Stages: Pregnancy",
+      "canonicalKey": "pregnancy",
+      "reviewed": "2025-04-03",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Pregnancy-HealthProfessional/",
+      "scope": "supplements_or_fortified_only",
+      "notes": [
+        "The current unit of measurement for vitamin D is mcg, but IUs were used in the past; 1 mcg vitamin D is equal to 40 IU [191]."
+      ],
+      "altUnits": [],
+      "noUlEstablished": true,
+      "groups": [],
+      "watchouts": {
+        "interactionMedications": [
+          "thyroid hormone"
+        ],
+        "cautionConditions": [
+          "kidney disease",
+          "liver disease",
+          "hypertension",
+          "diabetes",
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "children",
+          "infants"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 2
+      },
+      "contentHash": "3c742b4045653acd55eb169216f668139eedc2e0971b3c72e840ce8d5cb3f0cd",
+      "contentPreview": "Introduction Nutritional requirements change throughout a person's lifespan. During pregnancy, higher intakes of many nutrients are needed to support maternal health and proper fetal development [1]. This fact sheet summarizes current research and recommendations for vitamins, minerals, choline, and omega-3 fatty acids during pregnancy and focuses on key nutrient considerations during this life stage. It also covers several botanicals. Finally, it includes a special considerations section that c"
+    },
+    {
+      "resourceName": "PrimaryMitochondrialDisorders",
+      "title": "Dietary Supplements for Primary Mitochondrial Disorders",
+      "canonicalKey": "primary_mitochondrial_disorders",
+      "reviewed": "2020-06-03",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/PrimaryMitochondrialDisorders-HealthProfessional/",
+      "scope": "supplements_or_fortified_only",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": true,
+      "groups": [],
+      "watchouts": {
+        "interactionMedications": [
+          "antibiotics",
+          "warfarin",
+          "anticoagulants",
+          "diuretics"
+        ],
+        "cautionConditions": [
+          "kidney disease",
+          "liver disease",
+          "bleeding risk",
+          "hypertension",
+          "diabetes",
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "lactation",
+          "children",
+          "infants"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 0
+      },
+      "contentHash": "4d1c2d9438498b221358cb6b50b56d214958b47a18d9dfb2b244fb136cf592cd",
+      "contentPreview": "Introduction Primary mitochondrial disorders (PMDs) are a heterogeneous group of disorders characterized by impaired mitochondrial structure or function due to mutations in nuclear or mitochondrial DNA [1]. PMDs are the most common inborn errors of metabolism and have a prevalence of approximately 1 in 5,000 individuals [1, 2]. Diagnosis, treatment, and day-to- day management of these diseases remain challenging and costly [1]. The metabolic pathway most affected in PMDs is the mitochondrial ele"
+    },
+    {
+      "resourceName": "Probiotics",
+      "title": "Probiotics",
+      "canonicalKey": "probiotics",
+      "reviewed": "2025-03-25",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Probiotics-HealthProfessional/",
+      "scope": "total_intake",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": true,
+      "groups": [],
+      "watchouts": {
+        "interactionMedications": [
+          "antibiotics"
+        ],
+        "cautionConditions": [
+          "liver disease",
+          "diabetes"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "children",
+          "infants"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 0
+      },
+      "contentHash": "4c0af30973829c08933676a986be2afc7214cfaabf82bde73171a83f057d3767",
+      "contentPreview": "Introduction The International Scientific Association for Probiotics and Prebiotics defines probiotics as &ldquo;live microorganisms that, when administered in adequate amounts, confer a health benefit on the host&rdquo; [1]. These microorganisms, which consist mainly of bacteria but also include yeasts, are present in some fermented foods (e.g., yogurt), are added to certain food products, and are available as dietary supplements. However, not all foods and dietary supplements that are labeled "
+    },
+    {
+      "resourceName": "Riboflavin",
+      "title": "Riboflavin",
+      "canonicalKey": "riboflavin",
+      "reviewed": "2022-05-11",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Riboflavin-HealthProfessional/",
+      "scope": "total_intake",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": true,
+      "groups": [],
+      "watchouts": {
+        "interactionMedications": [
+          "thyroid hormone"
+        ],
+        "cautionConditions": [
+          "kidney disease",
+          "liver disease",
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 0
+      },
+      "contentHash": "3a1fb7606609b3fd32ab96f9779f491695f4c27ae424453d37f7c00a870a76c2",
+      "contentPreview": "Introduction Riboflavin (also known as vitamin B2) is one of the B vitamins, which are all water soluble. Riboflavin is naturally present in some foods, added to some food products, and available as a dietary supplement. This vitamin is an essential component of two major coenzymes, flavin mononucleotide (FMN; also known as riboflavin-5'-phosphate) and flavin adenine dinucleotide (FAD). These coenzymes play major roles in energy production; cellular function, growth, and development; and metabol"
+    },
+    {
+      "resourceName": "Selenium",
+      "title": "Selenium",
+      "canonicalKey": "selenium",
+      "reviewed": "2025-09-04",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Selenium-HealthProfessional/",
+      "scope": "total_intake",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": false,
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 400,
+          "unit": "mcg"
+        }
+      ],
+      "watchouts": {
+        "interactionMedications": [
+          "thyroid hormone"
+        ],
+        "cautionConditions": [
+          "kidney disease",
+          "liver disease",
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants",
+          "older adults"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 1
+      },
+      "contentHash": "17b17011f384583135f6162e2a1f7a5cf04b716d431e48d25bae6ba6ceafeef6",
+      "contentPreview": "Introduction Selenium is an essential mineral that is naturally present in many foods and added to others. It is also available as a dietary supplement. Selenium is a constituent of 25 selenoproteins, including thioredoxin reductases, glutathione peroxidases, and selenoprotein P [1]. Selenoproteins play critical roles in thyroid hormone metabolism, DNA synthesis, reproduction, and protection from oxidative damage and infection [2-4]. Soil and ground water contain inorganic forms of selenium (e.g"
+    },
+    {
+      "resourceName": "Thiamin",
+      "title": "Thiamin",
+      "canonicalKey": "thiamin",
+      "reviewed": "2023-02-09",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Thiamin-HealthProfessional/",
+      "scope": "total_intake",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": true,
+      "groups": [],
+      "watchouts": {
+        "interactionMedications": [
+          "diuretics"
+        ],
+        "cautionConditions": [
+          "kidney disease",
+          "liver disease",
+          "hypertension",
+          "diabetes",
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants",
+          "older adults"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 0
+      },
+      "contentHash": "dade68ed2ccb37a7da3a66aa0bbee483925fbc56617a6210b2345d28242408dd",
+      "contentPreview": "Introduction Thiamin (or thiamine) is one of the water-soluble B vitamins. It is also known as vitamin B1. Thiamin is naturally present in some foods, added to some food products, and available as a dietary supplement. This vitamin plays a critical role in energy metabolism and, therefore, in the growth, development, and function of cells [1]. Ingested thiamin from food and dietary supplements is absorbed by the small intestine through active transport at nutritional doses and by passive diffusi"
+    },
+    {
+      "resourceName": "Valerian",
+      "title": "Valerian",
+      "canonicalKey": "valerian",
+      "reviewed": "2013-03-15",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Valerian-HealthProfessional/",
+      "scope": "total_intake",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": true,
+      "groups": [],
+      "watchouts": {
+        "interactionMedications": [],
+        "cautionConditions": [
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "children"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 0
+      },
+      "contentHash": "87aa8a6efefeafdb8afc2143f10e4bf986dc9c6ab134d2c19702df0a3693c0a0",
+      "contentPreview": "Key points This fact sheet provides an overview of the use of valerian for insomnia and other sleep disorders and contains the following key information: Valerian is an herb sold as a dietary supplement in the United States. Valerian is a common ingredient in products promoted as mild sedatives and sleep aids for nervous tension and insomnia. Evidence from clinical studies of the efficacy of valerian in treating sleep disorders such as insomnia is inconclusive. Constituents of valerian have been"
+    },
+    {
+      "resourceName": "VitaminA",
+      "title": "Vitamin A and Carotenoids",
+      "canonicalKey": "vitamin_a",
+      "reviewed": "2025-03-10",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/VitaminA-HealthProfessional/",
+      "scope": "total_intake",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": false,
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 3000,
+          "unit": "mcg"
+        }
+      ],
+      "watchouts": {
+        "interactionMedications": [],
+        "cautionConditions": [
+          "liver disease",
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 1
+      },
+      "contentHash": "aef1ccd3554014d2ff01dd24cb93e5f85e3d1b2a24d5b98f301ec30e7bd9e0a2",
+      "contentPreview": "Introduction Vitamin A is the name of a group of fat-soluble retinoids, primarily retinol and retinyl esters [1, 2]. Vitamin A is involved in immune function, cellular communication, growth and development, and male and female reproduction [1-3]. Vitamin A supports cell growth and differentiation, playing a critical role in the normal formation and maintenance of the heart, lungs, eyes, and other organs [1, 2]. Vitamin A is also critical for vision as an essential component of rhodopsin, the lig"
+    },
+    {
+      "resourceName": "VitaminB12",
+      "title": "Vitamin B12",
+      "canonicalKey": "vitamin_b12",
+      "reviewed": "2025-07-02",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/VitaminB12-HealthProfessional/",
+      "scope": "supplements_or_fortified_only",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": true,
+      "groups": [],
+      "watchouts": {
+        "interactionMedications": [],
+        "cautionConditions": [
+          "kidney disease",
+          "liver disease",
+          "diabetes",
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants",
+          "older adults"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 0
+      },
+      "contentHash": "863bc51eeb49c700d137aa3ee01932bf735fed44657aa23bfb633159135f86fa",
+      "contentPreview": "Introduction Vitamin B12 is a water-soluble vitamin that is naturally present in some foods, added to others, and available as a dietary supplement and a prescription medication. Because vitamin B12 contains the mineral cobalt, compounds with vitamin B12 activity are collectively called cobalamins [1]. Methylcobalamin and 5-deoxyadenosylcobalamin are the metabolically active forms of vitamin B12. However, two others forms, hydroxycobalamin and cyanocobalamin, become biologically active after the"
+    },
+    {
+      "resourceName": "VitaminB6",
+      "title": "Vitamin B6",
+      "canonicalKey": "vitamin_b6",
+      "reviewed": "2023-06-16",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/VitaminB6-HealthProfessional/",
+      "scope": "supplements_or_fortified_only",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": false,
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 100,
+          "unit": "mg"
+        }
+      ],
+      "watchouts": {
+        "interactionMedications": [
+          "antibiotics"
+        ],
+        "cautionConditions": [
+          "kidney disease",
+          "liver disease",
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants",
+          "older adults"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 1
+      },
+      "contentHash": "d74ddcdb7f07a263617948e0d786c67afbc43b96e269cd5498e594f3a17fbadf",
+      "contentPreview": "Introduction Vitamin B6 is a water-soluble vitamin that is naturally present in many foods, added to others, and available as a dietary supplement. It is the generic name for six compounds (vitamers) with vitamin B6 activity: pyridoxine, an alcohol; pyridoxal, an aldehyde; and pyridoxamine, which contains an amino group; and their respective 5'-phosphate esters. Pyridoxal 5' phosphate (PLP) and pyridoxamine 5' phosphate (PMP) are the active coenzyme forms of vitamin B6 [1, 2]. Substantial propor"
+    },
+    {
+      "resourceName": "VitaminC",
+      "title": "Vitamin C",
+      "canonicalKey": "vitamin_c",
+      "reviewed": "2025-07-31",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/VitaminC-HealthProfessional/",
+      "scope": "total_intake",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": false,
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 2000,
+          "unit": "mg"
+        }
+      ],
+      "watchouts": {
+        "interactionMedications": [],
+        "cautionConditions": [
+          "kidney disease",
+          "bleeding risk",
+          "diabetes",
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants",
+          "older adults"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 1
+      },
+      "contentHash": "cc9b506545eb759c35c4b10603ba8360990d7efc18afc97834cacbd08152d482",
+      "contentPreview": "For information on vitamin C and COVID-19, see Dietary Supplements in the Time of COVID-19 . Introduction Vitamin C, also known as L-ascorbic acid, is a water-soluble vitamin that is naturally present in some foods, added to others, and available as a dietary supplement. Humans, unlike most animals, are unable to synthesize vitamin C endogenously, so it is an essential dietary component [1]. Vitamin C is required for the biosynthesis of collagen, L-carnitine, and certain neurotransmitters; vitam"
+    },
+    {
+      "resourceName": "VitaminD",
+      "title": "Vitamin D",
+      "canonicalKey": "vitamin_d",
+      "reviewed": "2025-06-27",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/VitaminD-HealthProfessional/",
+      "scope": "total_intake",
+      "notes": [
+        "RDAs for vitamin D are listed in both micrograms (mcg) and International Units (IU); 1 mcg vitamin D is equal to 40 IU (Table 2)."
+      ],
+      "altUnits": [
+        {
+          "unit": "iu",
+          "factor": 40,
+          "direction": "mcg->iu"
+        }
+      ],
+      "noUlEstablished": false,
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 100,
+          "unit": "mcg"
+        }
+      ],
+      "watchouts": {
+        "interactionMedications": [
+          "thyroid hormone",
+          "diuretics"
+        ],
+        "cautionConditions": [
+          "kidney disease",
+          "liver disease",
+          "hypertension",
+          "diabetes",
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants",
+          "older adults"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 1
+      },
+      "contentHash": "0ea5a46d9396565ba53564ea94dc8146fc919f67e018f3e770ec03dfa03fa28b",
+      "contentPreview": "For information on vitamin D and COVID-19, see Dietary Supplements in the Time of COVID-19 . Introduction Vitamin D (also referred to as calciferol) is a fat-soluble vitamin that is naturally present in a few foods, added to others, and available as a dietary supplement. It is also produced endogenously when ultraviolet (UV) rays from sunlight strike the skin and trigger vitamin D synthesis. Vitamin D obtained from sun exposure, foods, and supplements is biologically inert and must undergo two h"
+    },
+    {
+      "resourceName": "VitaminE",
+      "title": "Vitamin E",
+      "canonicalKey": "vitamin_e",
+      "reviewed": "2021-03-26",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/VitaminE-HealthProfessional/",
+      "scope": "total_intake",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": false,
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 1000,
+          "unit": "mg"
+        }
+      ],
+      "watchouts": {
+        "interactionMedications": [
+          "warfarin",
+          "anticoagulants"
+        ],
+        "cautionConditions": [
+          "liver disease",
+          "bleeding risk",
+          "diabetes",
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 1
+      },
+      "contentHash": "b7fe2ed22b37e6026fb0dbdc0e09087d89b9b5f50c80096f965ff243becf4227",
+      "contentPreview": "Introduction Vitamin E is found naturally in some foods, added to others, and available as a dietary supplement. Vitamin E is the collective name for a group of fat-soluble compounds with distinctive antioxidant activities [1]. Naturally occurring vitamin E exists in eight chemical forms (alpha-, beta-, gamma-, and delta-tocopherol and alpha-, beta-, gamma-, and delta-tocotrienol) that have varying levels of biological activity [1]. Alpha- (or &alpha;-) tocopherol is the only form that is recogn"
+    },
+    {
+      "resourceName": "VitaminK",
+      "title": "Vitamin K",
+      "canonicalKey": "vitamin_k1",
+      "reviewed": "2021-03-29",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/VitaminK-HealthProfessional/",
+      "scope": "total_intake",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": true,
+      "groups": [],
+      "watchouts": {
+        "interactionMedications": [
+          "antibiotics",
+          "warfarin",
+          "anticoagulants"
+        ],
+        "cautionConditions": [
+          "kidney disease",
+          "liver disease",
+          "bleeding risk",
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 0
+      },
+      "contentHash": "82c4e1188a584e0e604e990977f48ddb9801af8418111db278d38aba3852d917",
+      "contentPreview": "Introduction Vitamin K, the generic name for a family of compounds with a common chemical structure of 2-methyl-1,4-naphthoquinone, is a fat-soluble vitamin that is naturally present in some foods and is available as a dietary supplement [1]. These compounds include phylloquinone (vitamin K1) and a series of menaquinones (vitamin K2) [2]. Menaquinones have unsaturated isoprenyl side chains and are designated as MK-4 through MK-13, based on the length of their side chain [1, 2]. MK-4, MK-7, and M"
+    },
+    {
+      "resourceName": "WeightLoss",
+      "title": "Dietary Supplements for Weight Loss",
+      "canonicalKey": "weight_loss",
+      "reviewed": "2022-05-18",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/WeightLoss-HealthProfessional/",
+      "scope": "total_intake",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": true,
+      "groups": [],
+      "watchouts": {
+        "interactionMedications": [
+          "thyroid hormone",
+          "warfarin",
+          "anticoagulants",
+          "diuretics"
+        ],
+        "cautionConditions": [
+          "kidney disease",
+          "liver disease",
+          "hypertension",
+          "diabetes",
+          "heart condition"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 1
+      },
+      "contentHash": "17621b9921078def3667cfe8f7fc903c62cdccc00469a1dd90c73906d471f9d0",
+      "contentPreview": "Introduction This fact sheet provides information on weight-loss dietary supplements * , including summaries of research on the safety and efficacy of several of the most commonly used ingredients in these products. More than two-third of adults and almost one-third of children and adolescents in the United States are overweight or have obesity [1, 2]. Forty-five percent of Americans who are overweight and 67% of those with obesity are trying to lose weight [3]. Health experts agree that making "
+    },
+    {
+      "resourceName": "Zinc",
+      "title": "Zinc",
+      "canonicalKey": "zinc",
+      "reviewed": "2026-01-06",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Zinc-HealthProfessional/",
+      "scope": "total_intake",
+      "notes": [],
+      "altUnits": [],
+      "noUlEstablished": false,
+      "groups": [
+        {
+          "lifeStage": "adult_19_plus",
+          "value": 40,
+          "unit": "mg"
+        }
+      ],
+      "watchouts": {
+        "interactionMedications": [
+          "tetracyclines",
+          "quinolones",
+          "antibiotics",
+          "diuretics"
+        ],
+        "cautionConditions": [
+          "kidney disease",
+          "liver disease",
+          "diabetes"
+        ],
+        "cautionPopulation": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants",
+          "older adults"
+        ]
+      },
+      "parse": {
+        "ulTableCount": 1
+      },
+      "contentHash": "76d6e30834f97bd2a80f880c10645065c01d124f8b2eef1b9e0c40249b6f1ffa",
+      "contentPreview": "Introduction Zinc, an essential mineral, is naturally present in some foods, added to others, and available as a dietary supplement. Zinc is also found in some cold lozenges, over-the-counter drugs sold as cold remedies, and some denture adhesive creams. Zinc is involved in many aspects of cellular metabolism. It is required for the catalytic activity of hundreds of enzymes, and it plays a role in enhancing immune function, protein and DNA synthesis, wound healing, and cell signaling and divisio"
+    }
+  ]
+}

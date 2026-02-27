@@ -1,0 +1,947 @@
+{
+  "version": "v1",
+  "generatedAt": "2026-02-23T22:23:49.052Z",
+  "sourceIndexUrl": "https://ods.od.nih.gov/factsheets/list-all/",
+  "items": [
+    {
+      "ingredientCanonicalKey": "ashwagandha",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Ashwagandha-HealthProfessional/",
+      "interaction": {
+        "medications": [
+          "thyroid hormone"
+        ]
+      },
+      "caution": {
+        "conditions": [
+          "liver disease",
+          "diabetes",
+          "heart condition"
+        ],
+        "population": [
+          "pregnancy"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "biotin",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Biotin-HealthProfessional/",
+      "interaction": {
+        "medications": [
+          "thyroid hormone"
+        ]
+      },
+      "caution": {
+        "conditions": [
+          "liver disease",
+          "heart condition"
+        ],
+        "population": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "black_cohosh",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/BlackCohosh-HealthProfessional/",
+      "interaction": {
+        "medications": []
+      },
+      "caution": {
+        "conditions": [
+          "liver disease",
+          "bleeding risk",
+          "heart condition"
+        ],
+        "population": [
+          "pregnancy"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "boron",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Boron-HealthProfessional/",
+      "interaction": {
+        "medications": []
+      },
+      "caution": {
+        "conditions": [],
+        "population": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "calcium",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Calcium-HealthProfessional/",
+      "interaction": {
+        "medications": [
+          "quinolones",
+          "antibiotics",
+          "thyroid hormone"
+        ]
+      },
+      "caution": {
+        "conditions": [
+          "kidney disease",
+          "hypertension",
+          "diabetes",
+          "heart condition"
+        ],
+        "population": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants",
+          "older adults"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "l_carnitine",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Carnitine-HealthProfessional/",
+      "interaction": {
+        "medications": [
+          "antibiotics"
+        ]
+      },
+      "caution": {
+        "conditions": [
+          "kidney disease",
+          "liver disease",
+          "diabetes",
+          "heart condition"
+        ],
+        "population": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants",
+          "older adults"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "choline",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Choline-HealthProfessional/",
+      "interaction": {
+        "medications": []
+      },
+      "caution": {
+        "conditions": [
+          "kidney disease",
+          "liver disease",
+          "heart condition"
+        ],
+        "population": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "chromium",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Chromium-HealthProfessional/",
+      "interaction": {
+        "medications": [
+          "thyroid hormone"
+        ]
+      },
+      "caution": {
+        "conditions": [
+          "liver disease",
+          "hypertension",
+          "diabetes",
+          "heart condition"
+        ],
+        "population": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "copper",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Copper-HealthProfessional/",
+      "interaction": {
+        "medications": []
+      },
+      "caution": {
+        "conditions": [
+          "liver disease",
+          "heart condition"
+        ],
+        "population": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "covid19",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/COVID19-HealthProfessional/",
+      "interaction": {
+        "medications": [
+          "antibiotics",
+          "bisphosphonates",
+          "anticoagulants",
+          "diuretics"
+        ]
+      },
+      "caution": {
+        "conditions": [
+          "kidney disease",
+          "liver disease",
+          "bleeding risk",
+          "hypertension",
+          "diabetes",
+          "heart condition"
+        ],
+        "population": [
+          "pregnancy",
+          "children",
+          "infants",
+          "older adults"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "ephedraand_ephedrine",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/EphedraandEphedrine-HealthProfessional/",
+      "interaction": {
+        "medications": [
+          "diuretics"
+        ]
+      },
+      "caution": {
+        "conditions": [
+          "hypertension",
+          "heart condition"
+        ],
+        "population": []
+      }
+    },
+    {
+      "ingredientCanonicalKey": "exercise_and_athletic_performance",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/ExerciseAndAthleticPerformance-HealthProfessional/",
+      "interaction": {
+        "medications": [
+          "thyroid hormone",
+          "levodopa",
+          "warfarin",
+          "anticoagulants"
+        ]
+      },
+      "caution": {
+        "conditions": [
+          "kidney disease",
+          "liver disease",
+          "hypertension",
+          "heart condition"
+        ],
+        "population": [
+          "lactation",
+          "children",
+          "older adults"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "fluoride",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Fluoride-HealthProfessional/",
+      "interaction": {
+        "medications": []
+      },
+      "caution": {
+        "conditions": [],
+        "population": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "folate",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Folate-HealthProfessional/",
+      "interaction": {
+        "medications": []
+      },
+      "caution": {
+        "conditions": [
+          "kidney disease",
+          "liver disease",
+          "hypertension",
+          "diabetes",
+          "heart condition"
+        ],
+        "population": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants",
+          "older adults"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "immune_function",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/ImmuneFunction-HealthProfessional/",
+      "interaction": {
+        "medications": [
+          "antibiotics",
+          "warfarin",
+          "anticoagulants",
+          "diuretics"
+        ]
+      },
+      "caution": {
+        "conditions": [
+          "kidney disease",
+          "liver disease",
+          "bleeding risk",
+          "hypertension",
+          "diabetes",
+          "heart condition"
+        ],
+        "population": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants",
+          "older adults"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "iodine",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Iodine-HealthProfessional/",
+      "interaction": {
+        "medications": [
+          "thyroid hormone",
+          "diuretics"
+        ]
+      },
+      "caution": {
+        "conditions": [
+          "liver disease"
+        ],
+        "population": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "iron",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Iron-HealthProfessional/",
+      "interaction": {
+        "medications": [
+          "thyroid hormone",
+          "levodopa",
+          "anticoagulants"
+        ]
+      },
+      "caution": {
+        "conditions": [
+          "kidney disease",
+          "liver disease",
+          "bleeding risk",
+          "heart condition"
+        ],
+        "population": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "magnesium",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Magnesium-HealthProfessional/",
+      "interaction": {
+        "medications": [
+          "tetracyclines",
+          "quinolones",
+          "antibiotics",
+          "thyroid hormone",
+          "bisphosphonates",
+          "diuretics"
+        ]
+      },
+      "caution": {
+        "conditions": [
+          "kidney disease",
+          "liver disease",
+          "hypertension",
+          "diabetes",
+          "heart condition"
+        ],
+        "population": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants",
+          "older adults"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "manganese",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Manganese-HealthProfessional/",
+      "interaction": {
+        "medications": []
+      },
+      "caution": {
+        "conditions": [
+          "kidney disease",
+          "liver disease",
+          "diabetes"
+        ],
+        "population": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "molybdenum",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Molybdenum-HealthProfessional/",
+      "interaction": {
+        "medications": []
+      },
+      "caution": {
+        "conditions": [
+          "kidney disease",
+          "liver disease"
+        ],
+        "population": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "mvms",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/MVMS-HealthProfessional/",
+      "interaction": {
+        "medications": [
+          "warfarin"
+        ]
+      },
+      "caution": {
+        "conditions": [
+          "heart condition"
+        ],
+        "population": [
+          "pregnancy",
+          "children",
+          "infants",
+          "older adults"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "niacin",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Niacin-HealthProfessional/",
+      "interaction": {
+        "medications": []
+      },
+      "caution": {
+        "conditions": [
+          "kidney disease",
+          "liver disease",
+          "bleeding risk",
+          "diabetes",
+          "heart condition"
+        ],
+        "population": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "omega_3",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Omega3FattyAcids-HealthProfessional/",
+      "interaction": {
+        "medications": [
+          "warfarin",
+          "anticoagulants"
+        ]
+      },
+      "caution": {
+        "conditions": [
+          "kidney disease",
+          "liver disease",
+          "bleeding risk",
+          "diabetes",
+          "heart condition"
+        ],
+        "population": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants",
+          "older adults"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "pantothenic_acid",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/PantothenicAcid-HealthProfessional/",
+      "interaction": {
+        "medications": []
+      },
+      "caution": {
+        "conditions": [
+          "liver disease",
+          "heart condition"
+        ],
+        "population": [
+          "pregnancy",
+          "lactation",
+          "children"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "phosphorus",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Phosphorus-HealthProfessional/",
+      "interaction": {
+        "medications": [
+          "thyroid hormone"
+        ]
+      },
+      "caution": {
+        "conditions": [
+          "kidney disease",
+          "liver disease",
+          "heart condition"
+        ],
+        "population": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "potassium",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Potassium-HealthProfessional/",
+      "interaction": {
+        "medications": [
+          "diuretics"
+        ]
+      },
+      "caution": {
+        "conditions": [
+          "kidney disease",
+          "liver disease",
+          "hypertension",
+          "diabetes",
+          "heart condition"
+        ],
+        "population": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants",
+          "older adults"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "pregnancy",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Pregnancy-HealthProfessional/",
+      "interaction": {
+        "medications": [
+          "thyroid hormone"
+        ]
+      },
+      "caution": {
+        "conditions": [
+          "kidney disease",
+          "liver disease",
+          "hypertension",
+          "diabetes",
+          "heart condition"
+        ],
+        "population": [
+          "pregnancy",
+          "children",
+          "infants"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "primary_mitochondrial_disorders",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/PrimaryMitochondrialDisorders-HealthProfessional/",
+      "interaction": {
+        "medications": [
+          "antibiotics",
+          "warfarin",
+          "anticoagulants",
+          "diuretics"
+        ]
+      },
+      "caution": {
+        "conditions": [
+          "kidney disease",
+          "liver disease",
+          "bleeding risk",
+          "hypertension",
+          "diabetes",
+          "heart condition"
+        ],
+        "population": [
+          "lactation",
+          "children",
+          "infants"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "probiotics",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Probiotics-HealthProfessional/",
+      "interaction": {
+        "medications": [
+          "antibiotics"
+        ]
+      },
+      "caution": {
+        "conditions": [
+          "liver disease",
+          "diabetes"
+        ],
+        "population": [
+          "pregnancy",
+          "children",
+          "infants"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "riboflavin",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Riboflavin-HealthProfessional/",
+      "interaction": {
+        "medications": [
+          "thyroid hormone"
+        ]
+      },
+      "caution": {
+        "conditions": [
+          "kidney disease",
+          "liver disease",
+          "heart condition"
+        ],
+        "population": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "selenium",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Selenium-HealthProfessional/",
+      "interaction": {
+        "medications": [
+          "thyroid hormone"
+        ]
+      },
+      "caution": {
+        "conditions": [
+          "kidney disease",
+          "liver disease",
+          "heart condition"
+        ],
+        "population": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants",
+          "older adults"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "thiamin",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Thiamin-HealthProfessional/",
+      "interaction": {
+        "medications": [
+          "diuretics"
+        ]
+      },
+      "caution": {
+        "conditions": [
+          "kidney disease",
+          "liver disease",
+          "hypertension",
+          "diabetes",
+          "heart condition"
+        ],
+        "population": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants",
+          "older adults"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "valerian",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Valerian-HealthProfessional/",
+      "interaction": {
+        "medications": []
+      },
+      "caution": {
+        "conditions": [
+          "heart condition"
+        ],
+        "population": [
+          "pregnancy",
+          "children"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "vitamin_a",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/VitaminA-HealthProfessional/",
+      "interaction": {
+        "medications": []
+      },
+      "caution": {
+        "conditions": [
+          "liver disease",
+          "heart condition"
+        ],
+        "population": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "vitamin_b12",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/VitaminB12-HealthProfessional/",
+      "interaction": {
+        "medications": []
+      },
+      "caution": {
+        "conditions": [
+          "kidney disease",
+          "liver disease",
+          "diabetes",
+          "heart condition"
+        ],
+        "population": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants",
+          "older adults"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "vitamin_b6",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/VitaminB6-HealthProfessional/",
+      "interaction": {
+        "medications": [
+          "antibiotics"
+        ]
+      },
+      "caution": {
+        "conditions": [
+          "kidney disease",
+          "liver disease",
+          "heart condition"
+        ],
+        "population": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants",
+          "older adults"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "vitamin_c",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/VitaminC-HealthProfessional/",
+      "interaction": {
+        "medications": []
+      },
+      "caution": {
+        "conditions": [
+          "kidney disease",
+          "bleeding risk",
+          "diabetes",
+          "heart condition"
+        ],
+        "population": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants",
+          "older adults"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "vitamin_d",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/VitaminD-HealthProfessional/",
+      "interaction": {
+        "medications": [
+          "thyroid hormone",
+          "diuretics"
+        ]
+      },
+      "caution": {
+        "conditions": [
+          "kidney disease",
+          "liver disease",
+          "hypertension",
+          "diabetes",
+          "heart condition"
+        ],
+        "population": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants",
+          "older adults"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "vitamin_e",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/VitaminE-HealthProfessional/",
+      "interaction": {
+        "medications": [
+          "warfarin",
+          "anticoagulants"
+        ]
+      },
+      "caution": {
+        "conditions": [
+          "liver disease",
+          "bleeding risk",
+          "diabetes",
+          "heart condition"
+        ],
+        "population": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "vitamin_k1",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/VitaminK-HealthProfessional/",
+      "interaction": {
+        "medications": [
+          "antibiotics",
+          "warfarin",
+          "anticoagulants"
+        ]
+      },
+      "caution": {
+        "conditions": [
+          "kidney disease",
+          "liver disease",
+          "bleeding risk",
+          "heart condition"
+        ],
+        "population": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "weight_loss",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/WeightLoss-HealthProfessional/",
+      "interaction": {
+        "medications": [
+          "thyroid hormone",
+          "warfarin",
+          "anticoagulants",
+          "diuretics"
+        ]
+      },
+      "caution": {
+        "conditions": [
+          "kidney disease",
+          "liver disease",
+          "hypertension",
+          "diabetes",
+          "heart condition"
+        ],
+        "population": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants"
+        ]
+      }
+    },
+    {
+      "ingredientCanonicalKey": "zinc",
+      "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Zinc-HealthProfessional/",
+      "interaction": {
+        "medications": [
+          "tetracyclines",
+          "quinolones",
+          "antibiotics",
+          "diuretics"
+        ]
+      },
+      "caution": {
+        "conditions": [
+          "kidney disease",
+          "liver disease",
+          "diabetes"
+        ],
+        "population": [
+          "pregnancy",
+          "lactation",
+          "children",
+          "infants",
+          "older adults"
+        ]
+      }
+    }
+  ]
+}

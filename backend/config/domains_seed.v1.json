@@ -1,0 +1,297 @@
+{
+  "version": "v1",
+  "generatedAt": "2026-02-26T00:00:00.000Z",
+  "notes": [
+    "Domain-first seed list for LNHPD NPN barcode hunt.",
+    "priorityTier controls default supervisor budget allocation.",
+    "status=active means included in scheduling unless overridden."
+  ],
+  "domains": [
+    {
+      "domain": "newrootsherbal.com",
+      "type": "brand",
+      "platformGuess": "custom",
+      "sitemapHints": [
+        "https://newrootsherbal.com/sitemap.xml"
+      ],
+      "priorityTier": "A",
+      "status": "active",
+      "lastProbeAt": null
+    },
+    {
+      "domain": "herbahealth.ca",
+      "type": "retailer",
+      "platformGuess": "shopify",
+      "sitemapHints": [
+        "https://herbahealth.ca/sitemap.xml"
+      ],
+      "priorityTier": "A",
+      "status": "active",
+      "lastProbeAt": null
+    },
+    {
+      "domain": "nhddirect.com",
+      "type": "retailer",
+      "platformGuess": "shopify",
+      "sitemapHints": [
+        "https://nhddirect.com/sitemap.xml"
+      ],
+      "priorityTier": "A",
+      "status": "active",
+      "lastProbeAt": null
+    },
+    {
+      "domain": "nutritionpharmacist.com",
+      "type": "retailer",
+      "platformGuess": "shopify",
+      "sitemapHints": [
+        "https://nutritionpharmacist.com/sitemap.xml"
+      ],
+      "priorityTier": "A",
+      "status": "active",
+      "lastProbeAt": null
+    },
+    {
+      "domain": "shopsupplements.ca",
+      "type": "retailer",
+      "platformGuess": "shopify",
+      "sitemapHints": [
+        "https://shopsupplements.ca/sitemap.xml"
+      ],
+      "priorityTier": "A",
+      "status": "active",
+      "lastProbeAt": null
+    },
+    {
+      "domain": "shop.georgianhealthfoods.ca",
+      "type": "retailer",
+      "platformGuess": "shopify",
+      "sitemapHints": [
+        "https://shop.georgianhealthfoods.ca/sitemap.xml"
+      ],
+      "priorityTier": "A",
+      "status": "active",
+      "lastProbeAt": null
+    },
+    {
+      "domain": "avivahealth.com",
+      "type": "retailer",
+      "platformGuess": "shopify",
+      "sitemapHints": [
+        "https://www.avivahealth.com/sitemap.xml"
+      ],
+      "priorityTier": "A",
+      "status": "active",
+      "lastProbeAt": null
+    },
+    {
+      "domain": "omegaalpha.ca",
+      "type": "brand",
+      "platformGuess": "custom",
+      "sitemapHints": [
+        "https://www.omegaalpha.ca/sitemap.xml"
+      ],
+      "priorityTier": "A",
+      "status": "active",
+      "lastProbeAt": null
+    },
+    {
+      "domain": "gohealthstore.ca",
+      "type": "retailer",
+      "platformGuess": "shopify",
+      "sitemapHints": [
+        "https://gohealthstore.ca/sitemap.xml"
+      ],
+      "priorityTier": "A",
+      "status": "active",
+      "lastProbeAt": null
+    },
+    {
+      "domain": "bodycrafters.ca",
+      "type": "retailer",
+      "platformGuess": "custom",
+      "sitemapHints": [
+        "https://bodycrafters.ca/sitemap.xml"
+      ],
+      "priorityTier": "B",
+      "status": "active",
+      "lastProbeAt": null
+    },
+    {
+      "domain": "goodnaturedhealth.ca",
+      "type": "retailer",
+      "platformGuess": "shopify",
+      "sitemapHints": [
+        "https://goodnaturedhealth.ca/sitemap.xml"
+      ],
+      "priorityTier": "B",
+      "status": "active",
+      "lastProbeAt": null
+    },
+    {
+      "domain": "pandoraspantry.ca",
+      "type": "retailer",
+      "platformGuess": "shopify",
+      "sitemapHints": [
+        "https://pandoraspantry.ca/sitemap.xml"
+      ],
+      "priorityTier": "B",
+      "status": "active",
+      "lastProbeAt": null
+    },
+    {
+      "domain": "shop.downtoearthnaturalfoods.ca",
+      "type": "retailer",
+      "platformGuess": "shopify",
+      "sitemapHints": [
+        "https://shop.downtoearthnaturalfoods.ca/sitemap.xml"
+      ],
+      "priorityTier": "B",
+      "status": "active",
+      "lastProbeAt": null
+    },
+    {
+      "domain": "goodhealthmarttoronto.com",
+      "type": "retailer",
+      "platformGuess": "shopify",
+      "sitemapHints": [
+        "https://goodhealthmarttoronto.com/sitemap.xml"
+      ],
+      "priorityTier": "B",
+      "status": "active",
+      "lastProbeAt": null
+    },
+    {
+      "domain": "myvivastore.com",
+      "type": "retailer",
+      "platformGuess": "shopify",
+      "sitemapHints": [
+        "https://myvivastore.com/sitemap.xml"
+      ],
+      "priorityTier": "B",
+      "status": "active",
+      "lastProbeAt": null
+    },
+    {
+      "domain": "nutritionhouse.com",
+      "type": "retailer",
+      "platformGuess": "custom",
+      "sitemapHints": [
+        "https://nutritionhouse.com/sitemap.xml"
+      ],
+      "priorityTier": "B",
+      "status": "active",
+      "lastProbeAt": null
+    },
+    {
+      "domain": "westcoastnaturals.com",
+      "type": "brand",
+      "platformGuess": "custom",
+      "sitemapHints": [
+        "https://westcoastnaturals.com/sitemap.xml"
+      ],
+      "priorityTier": "B",
+      "status": "active",
+      "lastProbeAt": null
+    },
+    {
+      "domain": "vitasave.ca",
+      "type": "retailer",
+      "platformGuess": "shopify",
+      "sitemapHints": [
+        "https://vitasave.ca/sitemap.xml"
+      ],
+      "priorityTier": "B",
+      "status": "active",
+      "lastProbeAt": null
+    },
+    {
+      "domain": "well.ca",
+      "type": "retailer",
+      "platformGuess": "custom",
+      "sitemapHints": [
+        "https://well.ca/sitemap.xml"
+      ],
+      "priorityTier": "C",
+      "status": "active",
+      "lastProbeAt": null
+    },
+    {
+      "domain": "healthyplanetcanada.com",
+      "type": "retailer",
+      "platformGuess": "custom",
+      "sitemapHints": [
+        "https://healthyplanetcanada.com/sitemap.xml"
+      ],
+      "priorityTier": "C",
+      "status": "active",
+      "lastProbeAt": null
+    },
+    {
+      "domain": "nationalnutrition.ca",
+      "type": "retailer",
+      "platformGuess": "custom",
+      "sitemapHints": [
+        "https://nationalnutrition.ca/sitemap.xml"
+      ],
+      "priorityTier": "C",
+      "status": "active",
+      "lastProbeAt": null
+    },
+    {
+      "domain": "naturamarket.ca",
+      "type": "retailer",
+      "platformGuess": "custom",
+      "sitemapHints": [
+        "https://naturamarket.ca/sitemap.xml"
+      ],
+      "priorityTier": "C",
+      "status": "active",
+      "lastProbeAt": null
+    },
+    {
+      "domain": "jamiesonvitamins.com",
+      "type": "brand",
+      "platformGuess": "custom",
+      "sitemapHints": [
+        "https://www.jamiesonvitamins.com/sitemap.xml"
+      ],
+      "priorityTier": "C",
+      "status": "active",
+      "lastProbeAt": null
+    },
+    {
+      "domain": "webbernaturals.com",
+      "type": "brand",
+      "platformGuess": "custom",
+      "sitemapHints": [
+        "https://webbernaturals.com/sitemap.xml"
+      ],
+      "priorityTier": "C",
+      "status": "active",
+      "lastProbeAt": null
+    },
+    {
+      "domain": "organika.com",
+      "type": "brand",
+      "platformGuess": "shopify",
+      "sitemapHints": [
+        "https://organika.com/sitemap.xml"
+      ],
+      "priorityTier": "C",
+      "status": "active",
+      "lastProbeAt": null
+    },
+    {
+      "domain": "canprev.ca",
+      "type": "brand",
+      "platformGuess": "custom",
+      "sitemapHints": [
+        "https://canprev.ca/sitemap.xml"
+      ],
+      "priorityTier": "C",
+      "status": "active",
+      "lastProbeAt": null
+    }
+  ]
+}
