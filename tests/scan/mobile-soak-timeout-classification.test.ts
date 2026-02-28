@@ -4,6 +4,7 @@ import path from 'node:path';
 import test from 'node:test';
 
 const SOAK_RUN_FILE = path.join(process.cwd(), 'scripts/maintainer/mobile-soak-run.mjs');
+const COHORT_REPLAY_FILE = path.join(process.cwd(), 'scripts/maintainer/run-cohort-replay.mjs');
 
 test('mobile soak run classifies timeout class and supports health preflight lane', () => {
   const source = fs.readFileSync(SOAK_RUN_FILE, 'utf8');
@@ -22,6 +23,9 @@ test('mobile soak run classifies timeout class and supports health preflight lan
   assert.ok(source.includes('const timeoutClass = classifyTimeoutClass({'));
 
   assert.ok(source.includes('const timeoutClassCounts = attempts.reduce((acc, row) => {'));
+  assert.ok(source.includes('const metricAttempts = serialAttempts.length > 0'));
+  assert.ok(source.includes('const metricAttemptsScope = serialAttempts.length > 0 ? "serial"'));
+  assert.ok(source.includes('"non_killer_fallback"'));
   assert.ok(source.includes('const killerTimeoutClassCounts = killerRows.reduce((acc, row) => {'));
   assert.ok(source.includes('const killerInfraUnavailableCount = killerInfraRows.length;'));
   assert.ok(source.includes('const killerProductAttempts = killerProductRows.length;'));
@@ -45,14 +49,30 @@ test('mobile soak run classifies timeout class and supports health preflight lan
   assert.ok(source.includes('dataCeilingRateByRole'));
   assert.ok(source.includes('scoreNotFoundTargetedCount'));
   assert.ok(source.includes('score_not_found_targeted.json'));
+  assert.ok(source.includes('nutritionLabelLikeFilteredCount'));
+  assert.ok(source.includes('nutritionLabelLikeLeakCount'));
+  assert.ok(source.includes('nutritionLabelLikeLeakCountDsld'));
+  assert.ok(source.includes('nutritionLabelLikeSamplesTop'));
   assert.ok(source.includes('const consistencyFailRows = regulatoryRichRows.filter('));
   assert.ok(source.includes('const coverDetailConsistencyFailCount = consistencyFailRows.length;'));
   assert.ok(source.includes('const consistencyFailTop = buildConsistencyFailTop(consistencyFailRows, 10);'));
   assert.ok(source.includes('coverDetailConsistency: coverDetailConsistencyFailCount === 0'));
+  assert.ok(source.includes('metricAttempts: metricAttempts.length'));
+  assert.ok(source.includes('metricAttemptsScope'));
   assert.ok(source.includes('coverDetailConsistencyFailCount'));
   assert.ok(source.includes('consistencyFailReasonCounts'));
   assert.ok(source.includes('consistencyFailTop'));
   assert.ok(source.includes('const unwrapScoreBundle = (value) => {'));
   assert.ok(source.includes('const payloadBundle = payloadObject?.bundle && typeof payloadObject.bundle === "object" ? payloadObject.bundle : null;'));
   assert.ok(source.includes('const scoreInfo = payloadScore || payloadBundle || payloadObject;'));
+});
+
+test('cohort replay emits timeoutBucket and replay profile diagnostics', () => {
+  const source = fs.readFileSync(COHORT_REPLAY_FILE, 'utf8');
+
+  assert.ok(source.includes('replayProfile'));
+  assert.ok(source.includes('timeoutBucket'));
+  assert.ok(source.includes('uiSkippedByBudget'));
+  assert.ok(source.includes('heavyEndpointCalls'));
+  assert.ok(source.includes('heavyEndpointTimeoutCount'));
 });

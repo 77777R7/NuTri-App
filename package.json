@@ -16,6 +16,10 @@
     "gates:release-db": "node scripts/maintainer/run-release-db-gates.mjs",
     "gates:shadow-watch": "node scripts/maintainer/run-shadow-watch-curve.mjs",
     "gates:shadow-board": "node scripts/maintainer/shadow-realtime-board.mjs",
+    "gates:bootstrap-baseline": "node scripts/maintainer/bootstrap-gate-baseline.mjs",
+    "gates:build-cohort": "node scripts/maintainer/build-cohort.mjs",
+    "gates:replay-cohort": "node scripts/maintainer/run-cohort-replay.mjs",
+    "gates:triage-cohort": "node scripts/maintainer/triage-cohort-results.mjs",
     "maintainer:remediate-candidate-conflicts": "node scripts/maintainer/remediate-candidate-conflicts.mjs",
     "supabase:types": "supabase gen types typescript --project-id \"$PROJECT_ID\" > types/supabase.ts"
   },
