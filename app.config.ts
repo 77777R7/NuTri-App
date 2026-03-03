@@ -24,6 +24,8 @@ const OPENAI_API_KEY = process.env.EXPO_PUBLIC_OPENAI_API_KEY ?? process.env.OPE
 const PADDLE_OCR_ENDPOINT = process.env.EXPO_PUBLIC_PADDLE_OCR_ENDPOINT ?? process.env.PADDLE_OCR_ENDPOINT;
 const SENTRY_DSN = process.env.SENTRY_DSN ?? process.env.EXPO_PUBLIC_SENTRY_DSN;
 const POSTHOG_API_KEY = process.env.POSTHOG_API_KEY ?? process.env.EXPO_PUBLIC_POSTHOG_API_KEY;
+const DISABLE_AUTH = process.env.EXPO_PUBLIC_DISABLE_AUTH ?? process.env.DISABLE_AUTH ?? '0';
+const FORCE_AUTH = process.env.EXPO_PUBLIC_FORCE_AUTH ?? process.env.FORCE_AUTH ?? '0';
 
 const parseHostname = (rawValue: string | undefined | null): string | null => {
   if (!rawValue) return null;
@@ -159,6 +161,8 @@ const createExpoConfig = ({ config }: ConfigContext): ExpoConfig => {
       openAiApiKey: OPENAI_API_KEY,
       paddleOcrEndpoint: PADDLE_OCR_ENDPOINT,
       searchApiBaseUrl: SEARCH_API_BASE_URL,
+      disableAuth: DISABLE_AUTH,
+      forceAuth: FORCE_AUTH,
       sentryDsn: SENTRY_DSN,
       posthogApiKey: POSTHOG_API_KEY,
       eas: {

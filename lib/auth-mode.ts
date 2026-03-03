@@ -1,11 +1,21 @@
 import Constants from 'expo-constants';
 
+const appExtra = (Constants.expoConfig?.extra as Record<string, unknown> | undefined) ?? {};
+const extraDisableAuthRaw = typeof appExtra.disableAuth === 'string' ? appExtra.disableAuth : null;
+const extraForceAuthRaw = typeof appExtra.forceAuth === 'string' ? appExtra.forceAuth : null;
+
 const disableFromEnv =
   process.env.EXPO_PUBLIC_DISABLE_AUTH === 'true' ||
   process.env.EXPO_PUBLIC_DISABLE_AUTH === '1';
 const forceAuthFromEnv =
   process.env.EXPO_PUBLIC_FORCE_AUTH === 'true' ||
   process.env.EXPO_PUBLIC_FORCE_AUTH === '1';
+const disableFromExtra =
+  extraDisableAuthRaw === 'true' ||
+  extraDisableAuthRaw === '1';
+const forceAuthFromExtra =
+  extraForceAuthRaw === 'true' ||
+  extraForceAuthRaw === '1';
 
 const appOwnership = Constants.appOwnership;
 const isExpoGo = appOwnership === 'expo' || appOwnership === 'guest';
@@ -45,5 +55,6 @@ const apiHost = parseHostname(typeof apiBaseFromConfig === 'string' ? apiBaseFro
 const disableForPrivateApiHost = isPrivateOrLoopbackHost(apiHost);
 
 export const AUTH_DISABLED =
-  !forceAuthFromEnv && (disableFromEnv || isExpoGo || disableForPrivateApiHost);
+  !(forceAuthFromEnv || forceAuthFromExtra)
+  && (disableFromEnv || disableFromExtra || isExpoGo || disableForPrivateApiHost);
 export const AUTH_FALLBACK_PATH = AUTH_DISABLED ? '/main' : '/(auth)/gate';

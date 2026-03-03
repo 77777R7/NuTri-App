@@ -1,6 +1,7 @@
 import { BlurView } from 'expo-blur';
 import Constants from 'expo-constants';
 import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 import {
     Activity,
     BarChart3,
@@ -175,6 +176,7 @@ type DecisionSupportTemplatePayload = {
     qualityMark?: {
         status?: 'detected' | 'not_detected' | 'unknown';
         evidenceRef?: string | null;
+        sourcesTried?: string[];
         checkedMode?: 'search_only' | 'page_fetch' | null;
         pagesFetchedCount?: number;
         searchPagesFetchedCount?: number;
@@ -586,6 +588,67 @@ const sourceTierLabel = (tier: 'official_record' | 'scanned_label' | 'general_sc
     if (tier === 'general_science') return 'General science (NIH ODS)';
     if (tier === 'missing') return 'Missing in official record';
     return 'AI summary (grounded)';
+};
+
+const stripBestForPrefix = (line: string): string =>
+    normalizeText(line).replace(/^(Best for|Good if you want|Not ideal if)\s*:\s*/i, '').replace(/[.!?]+$/, '').trim();
+
+const withSinglePeriod = (line: string): string => {
+    const stripped = stripBestForPrefix(line);
+    return stripped ? ensurePeriod(stripped) : '';
+};
+
+const buildBestForContractLines = (params: {
+    candidateLines: string[];
+    isOmegaLike: boolean;
+}): string[] => {
+    const { candidateLines, isOmegaLike } = params;
+    const contract: { best: string | null; good: string | null; notIdeal: string | null } = {
+        best: null,
+        good: null,
+        notIdeal: null,
+    };
+    const unlabeled: string[] = [];
+    candidateLines.forEach((raw) => {
+        const line = normalizeText(raw);
+        if (!line) return;
+        if (/^Best for\s*:/i.test(line)) {
+            contract.best = withSinglePeriod(line);
+            return;
+        }
+        if (/^Good if you want\s*:/i.test(line)) {
+            contract.good = withSinglePeriod(line);
+            return;
+        }
+        if (/^Not ideal if\s*:/i.test(line)) {
+            contract.notIdeal = withSinglePeriod(line);
+            return;
+        }
+        unlabeled.push(withSinglePeriod(line));
+    });
+    const nextUnlabeled = unlabeled.filter(Boolean);
+    const pullNext = () => nextUnlabeled.shift() ?? null;
+    if (!contract.best) contract.best = pullNext();
+    if (!contract.good) contract.good = pullNext();
+    if (!contract.notIdeal) contract.notIdeal = pullNext();
+
+    const fallback = isOmegaLike
+        ? {
+            best: 'increasing omega-3 intake as part of a heart/vascular-support routine.',
+            good: 'products with clear EPA+DHA per serving (easier to compare strength).',
+            notIdeal: "the label doesn't disclose EPA+DHA, because fish-oil mg alone is a weak strength signal.",
+        }
+        : {
+            best: 'comparing products with clear ingredient and serving disclosure.',
+            good: 'products that list key actives per serving and clear directions.',
+            notIdeal: 'key disclosure is missing, because product-to-product comparison gets weaker.',
+        };
+
+    return [
+        `Best for: ${stripBestForPrefix(contract.best ?? fallback.best)}.`,
+        `Good if you want: ${stripBestForPrefix(contract.good ?? fallback.good)}.`,
+        `Not ideal if: ${stripBestForPrefix(contract.notIdeal ?? fallback.notIdeal)}.`,
+    ];
 };
 
 function clampText(value?: string | null, maxChars: number = 100) {
@@ -1902,6 +1965,7 @@ const AnalysisBundleDashboard: React.FC<{
         error: null,
         autoRetryUsed: false,
     });
+    const [simpleSourcesOpen, setSimpleSourcesOpen] = useState(false);
     const [expandedScoreRow, setExpandedScoreRow] = useState<'effectiveness' | 'safety' | 'integrity' | null>(null);
     const detailLoadingRef = useRef(false);
     const detailInFlightKeyRef = useRef<string | null>(null);
@@ -4812,17 +4876,121 @@ const AnalysisBundleDashboard: React.FC<{
     const usageBlock = decisionTemplatePayload?.usageBlock;
     const safetyBlock = decisionTemplatePayload?.safetyBlock;
     const qualityMark = decisionTemplatePayload?.qualityMark;
-    const overviewBestForBullets = (
+
+    const identityType = normalizeText(bundleState.meta.authoritativeIdentity?.type ?? null);
+    const identityValue = normalizeText(bundleState.meta.authoritativeIdentity?.value ?? null);
+    const officialRecordLine = identityType === 'dsldlabelid' && identityValue
+        ? `Official record: DSLD (dsldLabelId:${identityValue})`
+        : identityType === 'npn' && identityValue
+            ? `Official record: LNHPD (npn:${identityValue})`
+            : 'Official record: Not linked yet (barcode only)';
+
+    const labelUsedLine = usageBlock?.directions?.sourceTier === 'scanned_label'
+        ? 'Label used: Yes (scanned-label patch applied)'
+        : usageBlock?.directions?.hasDirectionsTextVisible
+            ? 'Label used: Yes (official record directions available)'
+            : 'Label used: No (directions/warnings not extracted yet)';
+
+    const retrievedFromRecord = normalizeText(
+        (analysis as { analysis?: { labelExtraction?: { fetchedAt?: string | null } | null } | null })?.analysis?.labelExtraction?.fetchedAt
+        ?? null,
+    );
+    const retrievedFromVersion = normalizeText((bundleState.meta as { factsSourceVersion?: string | null })?.factsSourceVersion ?? null);
+    const retrievedLine = `Retrieved: ${retrievedFromRecord || retrievedFromVersion || '(from record)'}`;
+    const overviewSourceStripLines = [
+        officialRecordLine,
+        labelUsedLine,
+        retrievedLine,
+        'View sources: (sources drawer)',
+    ];
+
+    const factsSourceTarget = resolveFactsSourceFromIdentity(bundleState.meta.authoritativeIdentity);
+    const simpleOfficialRecordUrl = factsSourceTarget
+        ? buildOfficialRecordUrl(factsSourceTarget.source, factsSourceTarget.sourceId)
+        : null;
+    const sourceRows = useMemo(() => {
+        const rows: { label: string; value: string; url?: string | null }[] = [];
+        if (simpleOfficialRecordUrl && identityValue) {
+            rows.push({
+                label: 'Official record',
+                value: identityType === 'dsldlabelid' ? `DSLD ${identityValue}` : `LNHPD ${identityValue}`,
+                url: simpleOfficialRecordUrl,
+            });
+        }
+        const incomingSources = Array.isArray((analysis as { sources?: Record<string, unknown>[] | null })?.sources)
+            ? ((analysis as { sources?: Record<string, unknown>[] }).sources ?? [])
+            : [];
+        incomingSources.forEach((source, idx) => {
+            const title = normalizeText((source.title as string | null | undefined) ?? null) || `Source ${idx + 1}`;
+            const url = normalizeText((source.url as string | null | undefined) ?? null)
+                || normalizeText((source.link as string | null | undefined) ?? null)
+                || null;
+            rows.push({
+                label: title,
+                value: url ?? 'No URL available',
+                url,
+            });
+        });
+        if (rows.length === 0) {
+            rows.push({
+                label: 'Source',
+                value: 'No linked source pages were returned for this scan yet.',
+                url: null,
+            });
+        }
+        return rows;
+    }, [analysis, identityType, identityValue, simpleOfficialRecordUrl]);
+
+    const fallbackBestForCandidates = (
         (overviewBlock?.bestForBullets && overviewBlock.bestForBullets.length > 0)
             ? overviewBlock.bestForBullets
             : overviewBullets.map((item) => item.text)
-    ).slice(0, 3);
+    );
+    const isOmegaLike = /\b(omega|epa|dha|fish oil|krill)\b/i.test(
+        [
+            productTitle,
+            ...(overviewBlock?.providesVerified?.keyIngredients ?? []).map((item) => normalizeText(item?.name ?? null)),
+        ].join(' '),
+    );
+    const overviewBestForBullets = buildBestForContractLines({
+        candidateLines: fallbackBestForCandidates,
+        isOmegaLike,
+    }).slice(0, 3);
+
     const overviewProvides = overviewBlock?.providesVerified;
-    const overviewMissingInfo = (
-        (overviewBlock?.missingInfo && overviewBlock.missingInfo.length > 0)
-            ? overviewBlock.missingInfo
-            : overviewMissingInfoLines
-    ).slice(0, 2);
+    const overviewProvideLines: string[] = [];
+    if (overviewProvides?.servingSize) {
+        overviewProvideLines.push(`Serving size: ${overviewProvides.servingSize}`);
+    }
+    if (typeof overviewProvides?.servingsPerContainer === 'number') {
+        overviewProvideLines.push(`Servings per container: ${overviewProvides.servingsPerContainer}`);
+    }
+    (overviewProvides?.keyIngredients ?? []).slice(0, 3).forEach((item) => {
+        overviewProvideLines.push(`${item.name}${item.dose ? `: ${item.dose}` : ''}`);
+    });
+    if (overviewProvides?.dosageForm) {
+        overviewProvideLines.push(`Dosage form: ${overviewProvides.dosageForm}`);
+    }
+    const hasProvidesData = overviewProvideLines.length > 0;
+    if (!hasProvidesData) {
+        overviewProvideLines.push('Key ingredient: not available yet from this record.');
+    }
+    const missingInfoCandidates = [
+        ...(
+            (overviewBlock?.missingInfo && overviewBlock.missingInfo.length > 0)
+                ? overviewBlock.missingInfo
+                : overviewMissingInfoLines
+        ),
+        ...(hasProvidesData ? [] : ['Key ingredient and dose are not available from this record.']),
+    ];
+    const dedupMissing = Array.from(
+        new Set(
+            missingInfoCandidates
+                .map((line) => normalizeText(line))
+                .filter(Boolean),
+        ),
+    );
+    const overviewMissingInfo = dedupMissing.slice(0, 2);
     const usageDirectionsLines = (
         Array.isArray(usageBlock?.directions?.lines) && usageBlock?.directions?.lines?.length
             ? usageBlock?.directions?.lines
@@ -4833,6 +5001,9 @@ const AnalysisBundleDashboard: React.FC<{
             ]
     ).slice(0, 3);
     const usageDirectionsTier = usageBlock?.directions?.sourceTier ?? 'official_record';
+    const usageDirectionsTierLabel = usageDirectionsTier === 'scanned_label'
+        ? sourceTierLabel('scanned_label')
+        : sourceTierLabel('official_record');
     const scienceAiSummary = scienceBlock?.aiSummaryContract3 ?? [
         'This ingredient is commonly selected for goal-oriented support.',
         'This product provides label-disclosed ingredient information for comparison.',
@@ -4966,33 +5137,45 @@ const AnalysisBundleDashboard: React.FC<{
                         >
                             <View style={{ gap: 10 }}>
                                 <Text style={styles.detailMetaLabel}>Source strip</Text>
-                                {(overviewBlock?.sourceStrip ?? [
-                                    sourceTierLabel('official_record'),
-                                    sourceTierLabel('scanned_label'),
-                                    sourceTierLabel('general_science'),
-                                    sourceTierLabel('inferred'),
-                                ]).slice(0, 4).map((line, idx) => (
+                                {overviewSourceStripLines.map((line, idx) => (
                                     <Text key={`overview-source-${idx}`} style={styles.detailBodyText}>• {line}</Text>
                                 ))}
+                                <Pressable
+                                    style={styles.sourcesToggleButton}
+                                    onPress={() => setSimpleSourcesOpen((prev) => !prev)}
+                                >
+                                    <Text style={styles.sourcesToggleButtonText}>
+                                        {simpleSourcesOpen ? 'Hide sources' : 'View sources'}
+                                    </Text>
+                                </Pressable>
+                                {simpleSourcesOpen ? (
+                                    <View style={styles.sourcesDrawerCard}>
+                                        <Text style={styles.sourcesDrawerTitle}>Sources</Text>
+                                        {sourceRows.map((row, idx) => (
+                                            <View key={`simple-source-${idx}`} style={styles.sourceRow}>
+                                                <Text style={styles.sourceRowLabel}>{row.label}: {row.value}</Text>
+                                                {row.url ? <Text style={styles.sourceRowUrl}>{row.url}</Text> : null}
+                                            </View>
+                                        ))}
+                                    </View>
+                                ) : null}
                                 <Text style={styles.detailMetaLabel}>Best for</Text>
                                 {overviewBestForBullets.map((line, idx) => (
                                     <Text key={`overview-best-${idx}`} style={styles.detailBodyText}>• {line}</Text>
                                 ))}
                                 <Text style={styles.detailMetaLabel}>What this product provides (verified)</Text>
-                                {overviewProvides?.servingSize ? <Text style={styles.detailBodyText}>• Serving size: {overviewProvides.servingSize}</Text> : null}
-                                {typeof overviewProvides?.servingsPerContainer === 'number' ? (
-                                    <Text style={styles.detailBodyText}>• Servings per container: {overviewProvides.servingsPerContainer}</Text>
-                                ) : null}
-                                {(overviewProvides?.keyIngredients ?? []).slice(0, 3).map((item, idx) => (
-                                    <Text key={`overview-provide-${idx}`} style={styles.detailBodyText}>• {item.name}{item.dose ? `: ${item.dose}` : ''}</Text>
+                                {overviewProvideLines.map((line, idx) => (
+                                    <Text key={`overview-provide-${idx}`} style={styles.detailBodyText}>• {line}</Text>
                                 ))}
-                                {overviewProvides?.dosageForm ? <Text style={styles.detailBodyText}>• Dosage form: {overviewProvides.dosageForm}</Text> : null}
                                 <Text style={styles.detailMetaLabel}>Missing info (single CTA)</Text>
                                 {overviewMissingInfo.map((line, idx) => (
                                     <Text key={`overview-missing-${idx}`} style={styles.detailBodyText}>• {line}</Text>
                                 ))}
                                 {overviewBlock?.singleCta ? (
-                                    <Pressable style={styles.missingInfoCtaButton}>
+                                    <Pressable
+                                        style={styles.missingInfoCtaButton}
+                                        onPress={() => router.push({ pathname: '/scan/label', params: { from: 'barcode' } })}
+                                    >
                                         <Text style={styles.missingInfoCtaButtonText}>{overviewBlock.singleCta.label}</Text>
                                     </Pressable>
                                 ) : null}
@@ -5028,7 +5211,7 @@ const AnalysisBundleDashboard: React.FC<{
                             title="Practical Usage"
                             subtitle="How to use"
                             accentColor="#0EA5E9"
-                            right={<GlassPill label={sourceTierLabel(usageDirectionsTier)} />}
+                            right={<GlassPill label={usageDirectionsTierLabel} />}
                         >
                             <View style={{ gap: 10 }}>
                                 <Text style={styles.detailMetaLabel}>Directions</Text>

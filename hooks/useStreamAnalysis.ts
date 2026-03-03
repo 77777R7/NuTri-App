@@ -175,6 +175,7 @@ type AnalysisStateWithSnapshot = AnalysisState & {
 type SseNotFoundPayload = {
     schemaVersion?: number | null;
     code?: string | null;
+    error?: string | null;
     stage?: string | null;
     reasonCode?: string | null;
     retryable?: boolean | null;
@@ -201,9 +202,15 @@ type ParsedStreamError =
 const CORE_SECTION_KEYS = ['overview', 'ingredients', 'usage', 'safety'] as const;
 const TERMINAL_STATUSES: ReadonlySet<AnalysisStatus> = new Set(['not_found', 'error', 'complete']);
 
-const STREAM_CONNECT_GUARD_MS = 12_000;
-const STREAM_REV1_GUARD_MS = 30_000;
-const STREAM_REV1_DONE_WATCHDOG_MS = 10_000;
+const parsePositiveInt = (rawValue: string | undefined, fallback: number): number => {
+    if (!rawValue) return fallback;
+    const parsed = Number.parseInt(rawValue, 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+
+const STREAM_CONNECT_GUARD_MS = parsePositiveInt(process.env.EXPO_PUBLIC_SCAN_CONNECT_GUARD_MS, 20_000);
+const STREAM_REV1_GUARD_MS = parsePositiveInt(process.env.EXPO_PUBLIC_SCAN_REV1_GUARD_MS, 45_000);
+const STREAM_REV1_DONE_WATCHDOG_MS = parsePositiveInt(process.env.EXPO_PUBLIC_SCAN_REV1_DONE_WATCHDOG_MS, 12_000);
 const SHOW_SCAN_DEBUG =
     process.env.EXPO_PUBLIC_SHOW_SCAN_DEBUG === 'true' ||
     process.env.EXPO_PUBLIC_SHOW_SCAN_DEBUG === '1';
@@ -290,6 +297,7 @@ const parseNotFoundPayload = (payload: unknown): SseNotFoundPayload | null => {
                 ? payload.schemaVersion
                 : null,
         code: toOptionalString(payload.code),
+        error: toOptionalString(payload.error),
         stage: toOptionalString(payload.stage),
         reasonCode: toOptionalString(payload.reasonCode),
         retryable: typeof payload.retryable === 'boolean' ? payload.retryable : null,
@@ -304,9 +312,20 @@ export const parseStreamErrorEvent = (params: {
     fallbackMessage?: string | null;
 }): ParsedStreamError => {
     const payload = parseNotFoundPayload(params.payload);
-    const payloadMessage = payload?.message ?? null;
+    const payloadMessage = payload?.message ?? payload?.error ?? null;
     const payloadCode = payload?.code?.toUpperCase() ?? null;
     const message = payloadMessage ?? toOptionalString(params.fallbackMessage) ?? 'Scan failed';
+    const normalizedMessage = message.toLowerCase();
+    const normalizedError = (payload?.error ?? '').toLowerCase();
+    const isAuthErrorToken =
+        normalizedMessage.includes('missing_authorization')
+        || normalizedMessage.includes('invalid_or_expired_token')
+        || normalizedMessage.includes('invalid_authorization')
+        || normalizedMessage.includes('unauthorized')
+        || normalizedError.includes('missing_authorization')
+        || normalizedError.includes('invalid_or_expired_token')
+        || normalizedError.includes('invalid_authorization')
+        || normalizedError.includes('unauthorized');
     if (payloadCode === 'NOT_FOUND' || payloadMessage === 'Product not found') {
         return {
             kind: 'not_found',
@@ -318,7 +337,7 @@ export const parseStreamErrorEvent = (params: {
     }
 
     const statusCode = Number.isFinite(params.xhrStatus) ? Number(params.xhrStatus) : null;
-    if (statusCode === 401) {
+    if (statusCode === 401 || statusCode === 403 || isAuthErrorToken) {
         return {
             kind: 'unauthorized',
             message: message || 'Unauthorized (please sign in or enable dev auth bypass)',
