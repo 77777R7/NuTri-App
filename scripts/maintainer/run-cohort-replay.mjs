@@ -158,6 +158,7 @@ const runEnrichReplay = async ({ apiBaseUrl, headers, barcode, timeoutMs }) => {
   let sourceTypeFinal = null;
   let rev1Ms = null;
   let identity = null;
+  let requestId = null;
 
   try {
     const response = await fetch(`${apiBaseUrl}/api/enrich-stream`, {
@@ -188,6 +189,7 @@ const runEnrichReplay = async ({ apiBaseUrl, headers, barcode, timeoutMs }) => {
         sourceTypeFinal: null,
         rev1Ms: null,
         identity: null,
+        requestId: null,
       };
     }
     sseConnected = true;
@@ -209,6 +211,13 @@ const runEnrichReplay = async ({ apiBaseUrl, headers, barcode, timeoutMs }) => {
       }
       sseEventCount += 1;
       lastSseEventType = currentEvent;
+      if (payload && typeof payload === "object" && !requestId) {
+        requestId = payload?.requestId
+          ?? payload?.request_id
+          ?? payload?.meta?.requestId
+          ?? payload?.meta?.request_id
+          ?? null;
+      }
       if (currentEvent === "analysis_bundle" && payload && typeof payload === "object") {
         const revision = Number(payload?.meta?.revision);
         const sourceType = String(payload?.meta?.sourceType ?? "").trim().toLowerCase() || null;
@@ -272,6 +281,7 @@ const runEnrichReplay = async ({ apiBaseUrl, headers, barcode, timeoutMs }) => {
       sourceTypeFinal,
       rev1Ms,
       identity,
+      requestId,
     };
   } catch (error) {
     return {
@@ -288,6 +298,7 @@ const runEnrichReplay = async ({ apiBaseUrl, headers, barcode, timeoutMs }) => {
       sourceTypeFinal,
       rev1Ms,
       identity,
+      requestId,
     };
   } finally {
     clearTimeout(timer);
@@ -572,11 +583,13 @@ const main = async () => {
     });
     return {
       role,
+      country: row?.country ?? null,
       barcode: row.barcode,
       replayProfile: opts.profile,
       repeatIndex: row.repeatIndex,
       priority: row?.priority ?? null,
       source: row?.source ?? null,
+      expectedDatasetHint: row?.expected?.datasetHint ?? null,
       sseConnected: enrich.sseConnected,
       sseEventCount: enrich.sseEventCount,
       lastSseEventType: enrich.lastSseEventType,
@@ -585,6 +598,7 @@ const main = async () => {
       terminalReason: enrich.terminalReason,
       errorCode: enrich.errorCode,
       elapsedMs: enrich.elapsedMs,
+      requestId: enrich.requestId ?? null,
       rev0SourceType: enrich.rev0SourceType,
       rev1SourceType: enrich.rev1SourceType,
       sourceTypeFinal: enrich.sourceTypeFinal,

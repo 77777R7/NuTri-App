@@ -27,7 +27,8 @@ test("compileIngredientSummaryAsync returns LLM_OK when mock LLM returns valid J
     maxRetries: 0,
     llmFn: async () =>
       JSON.stringify({
-        tldr: "Vitamin D summary from mock model.",
+        tldr:
+          "Vitamin D may help support bone and immune health. This product provides 25 mcg with label-based usage context. Product-specific warnings were not available in the official record.",
         highlights: ["Dataset indicates normal relative availability."],
         caveats: ["Individual response can vary by context."],
       }),
@@ -35,6 +36,8 @@ test("compileIngredientSummaryAsync returns LLM_OK when mock LLM returns valid J
 
   assert.equal(response.reasonCode, "LLM_OK");
   assert.equal(response.fallbackUsed, false);
+  assert.equal(response.guardApplied, true);
+  assert.equal(typeof response.summaryVersion, "string");
   assert.equal(typeof response.tldr, "string");
   assert.ok(response.tldr.length > 0);
 });
@@ -47,5 +50,6 @@ test("compileIngredientSummaryAsync falls back when mock LLM returns non-JSON", 
 
   assert.equal(response.reasonCode, "LLM_PARSE_FAILED_NON_JSON");
   assert.equal(response.fallbackUsed, true);
+  assert.equal(response.guardApplied, true);
   assert.ok(response.tldr.length > 0);
 });

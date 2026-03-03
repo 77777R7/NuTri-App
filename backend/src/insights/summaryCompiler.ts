@@ -3,11 +3,15 @@ import { z } from 'zod';
 import type { LlmVerifierReasonCode } from './reasonCodes.js';
 
 const nonEmptyString = z.string().trim().min(1);
+const viewModeSchema = z.enum(['simple', 'details']).optional();
 
 const sourceTagSchema = z.enum(['Facts', 'Dataset', 'KB', 'ODS', 'ReviewedKB']);
+const safeScienceSignalSourceSchema = z.enum(['subset', 'fallback', 'none']);
+const safeScienceFallbackTypeSchema = z.enum(['best_for', 'comparison']).nullable();
 
 const legacyPacketSchema = z
   .object({
+    viewMode: viewModeSchema,
     ingredient: z
       .object({
         name: nonEmptyString,
@@ -54,6 +58,7 @@ const legacyPacketSchema = z
 const v11PacketSchema = z
   .object({
     locale: z.string().trim().min(2).max(8).optional(),
+    viewMode: viewModeSchema,
     ingredientName: nonEmptyString,
     facts: z
       .object({
@@ -77,12 +82,21 @@ const v11PacketSchema = z
       .optional(),
     reviewedKbBullets: z.array(nonEmptyString).max(8).optional(),
     odsBullets: z.array(nonEmptyString).max(8).optional(),
+    safeScienceBullets: z.array(nonEmptyString).max(8).optional(),
+    safeScienceBeforeYouBuy: z.string().trim().min(1).nullable().optional(),
+    safeScienceFormImpact: z.string().trim().min(1).nullable().optional(),
+    safeScienceSignalSource: safeScienceSignalSourceSchema.optional(),
+    safeScienceFallbackType: safeScienceFallbackTypeSchema.optional(),
+    directionsText: z.string().trim().min(1).nullable().optional(),
+    supportBullets: z.array(nonEmptyString).max(6).optional(),
+    missingHighImpact: z.array(nonEmptyString).max(6).optional(),
   })
   .strict();
 
 const dashboardCompatPacketSchema = z
   .object({
     locale: z.string().trim().min(2).max(8).optional(),
+    viewMode: viewModeSchema,
     ingredientName: nonEmptyString,
     labelFacts: z
       .object({
@@ -111,6 +125,14 @@ const dashboardCompatPacketSchema = z
       .nullable()
       .optional(),
     runtimeNotes: z.record(z.string(), z.array(nonEmptyString)).nullable().optional(),
+    safeScienceBullets: z.array(nonEmptyString).max(8).optional(),
+    safeScienceBeforeYouBuy: z.string().trim().min(1).nullable().optional(),
+    safeScienceFormImpact: z.string().trim().min(1).nullable().optional(),
+    safeScienceSignalSource: safeScienceSignalSourceSchema.optional(),
+    safeScienceFallbackType: safeScienceFallbackTypeSchema.optional(),
+    directionsText: z.string().trim().min(1).nullable().optional(),
+    supportBullets: z.array(nonEmptyString).max(6).optional(),
+    missingHighImpact: z.array(nonEmptyString).max(6).optional(),
   })
   .strict();
 
@@ -134,6 +156,8 @@ export type IngredientSummaryResponse = {
   };
   sourcesUsed: Array<'Facts' | 'Dataset' | 'KB' | 'ODS' | 'ReviewedKB'>;
   fallbackUsed: boolean;
+  guardApplied: boolean;
+  summaryVersion: string;
   reasonCode: LlmVerifierReasonCode;
 };
 
@@ -155,11 +179,32 @@ const dedupe = (items: string[]): string[] => {
   return out;
 };
 
-const disallowedMedicalClaims = ['cure', 'treat', 'heal', 'guarantee', 'clinical proof', 'proven to'];
+const disallowedMedicalClaimPatterns: RegExp[] = [
+  /\bcure(?:s|d|ing)?\b/i,
+  /\btreat(?:s|ed|ing|ment)?\b/i,
+  /\bheal(?:s|ed|ing)?\b/i,
+  /\bguarantee(?:s|d)?\b/i,
+  /\bclinical proof\b/i,
+  /\bproven to\b/i,
+];
+const technicalLeakPattern = /\brbf\b|match score|dataset signal|confidence tier|reason code|within_typical|below_typical|above_typical|reviewed[_\s]?kb|verified dataset|kb:|needs_capture|needs_edit|review_status/i;
+const fluffPattern = /\bnormal function\b|\bday-to-day wellness\b|\bwellness outcomes?\b/i;
+const SUMMARY_VERSION_SIMPLE = 'v1.6.12-simple-1';
 
 const containsDisallowed = (text: string): boolean => {
-  const lower = text.toLowerCase();
-  return disallowedMedicalClaims.some((token) => lower.includes(token));
+  return disallowedMedicalClaimPatterns.some((pattern) => pattern.test(text));
+};
+
+const splitSentences = (value: string): string[] =>
+  value
+    .split(/(?<=[.!?])\s+/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+
+const normalizeThreeSentenceSummary = (value: string): string | null => {
+  const sentences = splitSentences(value);
+  if (sentences.length < 3) return null;
+  return sentences.slice(0, 3).map((line) => asSentence(line)).join(' ');
 };
 
 const isLegacyPacket = (input: Packet): input is LegacyPacket =>
@@ -171,6 +216,7 @@ const isV11Packet = (input: Packet): input is V11Packet =>
 const normalizeCompatPacket = (input: Packet) => {
   if (isLegacyPacket(input)) {
     return {
+      viewMode: input.viewMode ?? 'simple',
       ingredientName: input.ingredient.name,
       amount: input.ingredient.amount ?? null,
       unit: input.ingredient.unit ?? null,
@@ -184,6 +230,14 @@ const normalizeCompatPacket = (input: Packet) => {
       dailyUnit: null as string | null,
       reviewedKbBullets: input.generalBackground.map((row) => row.text),
       odsBullets: [],
+      safeScienceBullets: [],
+      safeScienceBeforeYouBuy: null as string | null,
+      safeScienceFormImpact: null as string | null,
+      safeScienceSignalSource: 'none' as const,
+      safeScienceFallbackType: null as 'best_for' | 'comparison' | null,
+      directionsText: null as string | null,
+      supportBullets: [] as string[],
+      missingHighImpact: [] as string[],
       used: {
         facts: true,
         dataset: input.productSpecificInsights.length > 0,
@@ -195,6 +249,7 @@ const normalizeCompatPacket = (input: Packet) => {
 
   if (isV11Packet(input)) {
     return {
+      viewMode: input.viewMode ?? 'simple',
       ingredientName: input.ingredientName,
       amount: input.facts?.amount ?? null,
       unit: input.facts?.unit ?? null,
@@ -208,6 +263,14 @@ const normalizeCompatPacket = (input: Packet) => {
       dailyUnit: input.insight?.dailyUnit ?? null,
       reviewedKbBullets: input.reviewedKbBullets ?? [],
       odsBullets: input.odsBullets ?? [],
+      safeScienceBullets: input.safeScienceBullets ?? [],
+      safeScienceBeforeYouBuy: input.safeScienceBeforeYouBuy ?? null,
+      safeScienceFormImpact: input.safeScienceFormImpact ?? null,
+      safeScienceSignalSource: input.safeScienceSignalSource ?? 'none',
+      safeScienceFallbackType: input.safeScienceFallbackType ?? null,
+      directionsText: input.directionsText ?? null,
+      supportBullets: input.supportBullets ?? [],
+      missingHighImpact: input.missingHighImpact ?? [],
       used: {
         facts: Boolean(input.facts),
         dataset: Boolean(input.insight),
@@ -220,6 +283,7 @@ const normalizeCompatPacket = (input: Packet) => {
   const compatInput = input as DashboardCompatPacket;
   const runtimeBullets = Object.values(compatInput.runtimeNotes ?? {}).flat();
   return {
+    viewMode: compatInput.viewMode ?? 'simple',
     ingredientName: compatInput.ingredientName,
     amount: null,
     unit: null,
@@ -233,6 +297,14 @@ const normalizeCompatPacket = (input: Packet) => {
     dailyUnit: compatInput.productSignals?.doseSignal?.unit ?? null,
     reviewedKbBullets: runtimeBullets,
     odsBullets: [],
+    safeScienceBullets: compatInput.safeScienceBullets ?? [],
+    safeScienceBeforeYouBuy: compatInput.safeScienceBeforeYouBuy ?? null,
+    safeScienceFormImpact: compatInput.safeScienceFormImpact ?? null,
+    safeScienceSignalSource: compatInput.safeScienceSignalSource ?? 'none',
+    safeScienceFallbackType: compatInput.safeScienceFallbackType ?? null,
+    directionsText: compatInput.directionsText ?? null,
+    supportBullets: compatInput.supportBullets ?? [],
+    missingHighImpact: compatInput.missingHighImpact ?? [],
     used: {
       facts: Boolean(compatInput.labelFacts?.dose),
       dataset: Boolean(compatInput.productSignals),
@@ -243,54 +315,63 @@ const normalizeCompatPacket = (input: Packet) => {
 };
 
 const buildDeterministicSummary = (input: ReturnType<typeof normalizeCompatPacket>): IngredientSummaryResponse => {
-  const amountText =
+  const supportLineCandidate = input.safeScienceBullets[0]
+    ?? input.supportBullets[0]
+    ?? input.odsBullets[0]
+    ?? `${input.ingredientName} is commonly selected for ingredient-level support goals.`;
+  const supportLineRaw = fluffPattern.test(supportLineCandidate)
+    ? `${input.ingredientName} is commonly selected for ingredient-level support goals.`
+    : supportLineCandidate;
+  const doseText =
     typeof input.amount === 'number' && input.unit
       ? `${input.amount} ${input.unit}`
       : input.unit
-        ? `an undisclosed amount (${input.unit})`
-        : 'a label amount that is not disclosed in this record';
-
-  const formText = input.formText
-    ? `Form signal: ${input.formText}.`
-    : 'Form is not disclosed on the label record, so we do not assume a chemical form.';
-
-  const rbfText =
-    typeof input.rbfFactor === 'number'
-      ? `Relative bioavailability factor is ${input.rbfFactor.toFixed(2)} (${input.rbfBand} band).`
-      : 'Relative bioavailability signal is unavailable for this ingredient in the current dataset.';
-
-  const tldr = asSentence(
-    `${input.ingredientName} is analyzed from verified records with ${amountText}. ${formText} ${rbfText}`,
-  );
+        ? `an amount in ${input.unit}`
+        : 'an amount that is not clearly listed in this record';
+  const directionsText = input.directionsText
+    ? input.directionsText
+    : 'directions are not included in the official record';
+  const productLineRaw = `This product provides ${doseText}, and ${directionsText}.`;
+  const missingWarning = input.missingHighImpact.some((reason) => /warning/i.test(reason));
+  const missingDirections = input.missingHighImpact.some((reason) => /direction/i.test(reason));
+  const limitationLineRaw = input.safeScienceBeforeYouBuy
+    ? input.safeScienceBeforeYouBuy
+    : missingWarning
+    ? 'Product-specific warnings were not available in the official record, so check the package for label-specific cautions.'
+    : missingDirections
+      ? 'Directions were not provided in this record, so check the package label before use.'
+      : 'Use the product label first and consult a clinician for personal risk factors.';
+  const tldr = [
+    asSentence(supportLineRaw),
+    asSentence(productLineRaw),
+    asSentence(limitationLineRaw),
+  ].join(' ');
 
   const highlights = dedupe(
     [
-      ...input.whyBullets,
-      typeof input.dailyAmount === 'number' && input.dailyUnit
-        ? `Dose check uses an estimated daily amount of ${input.dailyAmount} ${input.dailyUnit}.`
-        : input.doseStatus === 'unknown'
-          ? 'Dose adequacy remains uncertain because daily frequency is not available in this record.'
-          : `Dose status: ${String(input.doseStatus).replace(/_/g, ' ')}.`,
-      ...input.reviewedKbBullets.slice(0, 2),
-    ]
-      .filter(Boolean)
-      .map((line) => asSentence(String(line))),
+      asSentence(supportLineRaw),
+      input.safeScienceFormImpact ? asSentence(input.safeScienceFormImpact) : '',
+      typeof input.amount === 'number' && input.unit
+        ? asSentence(`This product provides ${input.amount} ${input.unit}.`)
+        : asSentence('Use the product label for exact ingredient amounts.'),
+      input.directionsText
+        ? asSentence(`Directions from record: ${input.directionsText}`)
+        : asSentence('Directions are not provided in this record.'),
+    ],
   ).slice(0, 3);
 
   const caveats = dedupe(
     [
-      'This summary is constrained to available facts and reviewed dataset signals; it is not a guarantee of outcomes.',
-      input.reviewedKbBullets.length === 0
-        ? 'No reviewed form-explain snippets were available for this ingredient, so generic caveats were used.'
-        : '',
-    ]
-      .filter(Boolean)
-      .map((line) => asSentence(String(line))),
+      asSentence('This summary is informational and not medical advice.'),
+      missingWarning
+        ? asSentence('Label-specific warnings were not available in this record.')
+        : missingDirections
+          ? asSentence('Direction details were incomplete in this record.')
+          : asSentence('Always review the package label for complete instructions.'),
+    ],
   ).slice(0, 2);
 
-  const confidence_note = asSentence(
-    `Confidence is ${input.confidenceTier}. Improve precision by scanning a clear Supplement Facts + Directions panel.`,
-  );
+  const confidence_note = asSentence('Built from verified record fields and general science references.');
 
   const sourcesUsed = dedupe(
     [
@@ -303,8 +384,8 @@ const buildDeterministicSummary = (input: ReturnType<typeof normalizeCompatPacke
 
   return {
     tldr,
-    highlights: highlights.length ? highlights : ['Product-specific highlights are limited for this ingredient.'],
-    caveats: caveats.length ? caveats : ['Evidence is limited; follow the product label and clinician guidance.'],
+    highlights,
+    caveats,
     confidence_note,
     confidenceNote: confidence_note,
     sources_used: {
@@ -315,6 +396,8 @@ const buildDeterministicSummary = (input: ReturnType<typeof normalizeCompatPacke
     },
     sourcesUsed,
     fallbackUsed: true,
+    guardApplied: true,
+    summaryVersion: SUMMARY_VERSION_SIMPLE,
     reasonCode: 'LLM_FALLBACK_USED',
   };
 };
@@ -388,27 +471,41 @@ const LLM_SUMMARY_MAX_RETRIES = 1;
  * P0-1: Build the LLM prompt for ingredient summary generation.
  */
 const buildSummaryPrompt = (normalized: ReturnType<typeof normalizeCompatPacket>): string => {
+  const supportBullets = (
+    normalized.safeScienceBullets.length > 0
+      ? normalized.safeScienceBullets
+      : normalized.supportBullets.length > 0
+        ? normalized.supportBullets
+        : normalized.odsBullets
+  ).slice(0, 3);
+  const missingHighImpact = normalized.missingHighImpact.slice(0, 3);
   const parts = [
-    `Generate a concise JSON summary for the supplement ingredient "${normalized.ingredientName}".`,
+    `Write a consumer-friendly summary for supplement ingredient "${normalized.ingredientName}".`,
+    `Mode: ${normalized.viewMode}.`,
   ];
   if (normalized.amount != null && normalized.unit) {
-    parts.push(`Dose: ${normalized.amount} ${normalized.unit}.`);
+    parts.push(`Verified amount: ${normalized.amount} ${normalized.unit}.`);
   }
-  if (normalized.formText) {
-    parts.push(`Chemical form disclosed: "${normalized.formText}".`);
+  if (normalized.directionsText) {
+    parts.push(`Verified directions: ${normalized.directionsText}.`);
   }
-  if (normalized.rbfBand !== 'unknown') {
-    parts.push(`Relative bioavailability band: ${normalized.rbfBand} (factor: ${normalized.rbfFactor ?? 'unknown'}).`);
+  if (supportBullets.length > 0) {
+    parts.push(`General support bullets: ${supportBullets.join(' | ')}`);
   }
-  if (normalized.doseStatus !== 'unknown') {
-    parts.push(`Dose adequacy status: ${normalized.doseStatus}.`);
-  }
-  if (normalized.reviewedKbBullets.length > 0) {
-    parts.push(`Reviewed knowledge: ${normalized.reviewedKbBullets.join('; ')}`);
+  if (missingHighImpact.length > 0) {
+    parts.push(`High-impact missing fields: ${missingHighImpact.join(', ')}`);
   }
   parts.push(
     `Respond with ONLY a JSON object: {"tldr":"...","highlights":["..."],"caveats":["..."]}`,
-    `Rules: No medical claims (cure/treat/heal/guarantee). Max 2 highlights, max 2 caveats. Be factual and concise.`,
+    `Rules:`,
+    `- tldr MUST be exactly 3 sentences.`,
+    `- Sentence 1: what it may help support (general).`,
+    `- Sentence 2: what this product provides (amount and directions if available).`,
+    `- Sentence 3: top limitation (for example missing warnings or missing directions).`,
+    `- Use plain language. Avoid technical terms like RBF, match score, confidence tier, reason code, reviewed KB.`,
+    `- Avoid vague phrases like "normal function" or "day-to-day wellness".`,
+    `- No medical claims (cure/treat/heal/guarantee).`,
+    `- Keep highlights and caveats optional and concise.`,
   );
   return parts.join('\n');
 };
@@ -500,9 +597,22 @@ export const compileIngredientSummaryAsync = async (
         continue;
       }
 
-      // Verify no disallowed medical claims
+      // Verify no disallowed medical claims or technical leakage.
       const joined = [validated.tldr, ...validated.highlights, ...validated.caveats].join(' ');
       if (containsDisallowed(joined)) {
+        lastError = 'LLM_VERIFIER_REJECTED';
+        continue;
+      }
+      if (technicalLeakPattern.test(joined)) {
+        lastError = 'LLM_VERIFIER_REJECTED';
+        continue;
+      }
+      if (fluffPattern.test(joined)) {
+        lastError = 'LLM_VERIFIER_REJECTED';
+        continue;
+      }
+      const normalizedTldr = normalizeThreeSentenceSummary(validated.tldr);
+      if (!normalizedTldr) {
         lastError = 'LLM_VERIFIER_REJECTED';
         continue;
       }
@@ -518,11 +628,11 @@ export const compileIngredientSummaryAsync = async (
       ) as Array<'Facts' | 'Dataset' | 'KB' | 'ODS' | 'ReviewedKB'>;
 
       const confidenceNote = asSentence(
-        `Confidence is ${normalized.confidenceTier}. Summary generated by AI from verified data.`,
+        'Grounded to verified record fields and general science references.',
       );
 
       const result: IngredientSummaryResponse & { debug?: { llmRawPreview?: string; parsePath?: string } } = {
-        tldr: validated.tldr,
+        tldr: normalizedTldr,
         highlights: validated.highlights.length ? validated.highlights : fallback.highlights,
         caveats: validated.caveats.length ? validated.caveats : fallback.caveats,
         confidence_note: confidenceNote,
@@ -530,6 +640,8 @@ export const compileIngredientSummaryAsync = async (
         sources_used: normalized.used,
         sourcesUsed,
         fallbackUsed: false,
+        guardApplied: true,
+        summaryVersion: SUMMARY_VERSION_SIMPLE,
         reasonCode: 'LLM_OK',
       };
 
@@ -549,6 +661,8 @@ export const compileIngredientSummaryAsync = async (
   // All attempts failed, return deterministic fallback
   const result: IngredientSummaryResponse & { debug?: { llmRawPreview?: string; parsePath?: string } } = {
     ...fallback,
+    guardApplied: true,
+    summaryVersion: SUMMARY_VERSION_SIMPLE,
     reasonCode: (lastError ?? 'LLM_CALL_FAILED') as LlmVerifierReasonCode,
   };
 

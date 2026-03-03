@@ -9,6 +9,7 @@ const ROOT_DIR = process.cwd();
 const NOW_TAG = new Date().toISOString().replace(/[:.]/g, "-");
 
 const DEFAULT_TARGET_SIZE = 400;
+const DEFAULT_HISTORY_MAX_FILES = 80;
 const DEFAULT_ROLE_QUOTAS = {
   ca_top_scan_30d: 50,
   ca_top_scan_90d: 30,
@@ -24,7 +25,9 @@ const DEFAULT_ROLE_QUOTAS = {
 
 const REPEAT_BY_ROLE = {
   ca_top_scan_30d: 3,
-  canary_crash: 5,
+  ca_top_scan_90d: 2,
+  ca_recent_fail_30d: 2,
+  canary_crash: 10,
   negative_cache_hit: 3,
 };
 
@@ -46,6 +49,7 @@ Options:
   --target-size <n>            Cohort target size (default: 400)
   --role-quotas <spec>         Role quotas "role=count,role2=count"
   --history-root <path>        History root for rounds_summary scan (default: output)
+  --history-max-files <n>      Max history artifact files to scan (default: 80)
   --db-source <label>          Metadata label only (default: prod_readonly)
 `);
     process.exit(0);
@@ -59,6 +63,10 @@ Options:
     : DEFAULT_TARGET_SIZE;
   const historyRootArg = getArg("history-root") || "output";
   const historyRoot = path.isAbsolute(historyRootArg) ? historyRootArg : path.join(ROOT_DIR, historyRootArg);
+  const historyMaxFilesRaw = Number(getArg("history-max-files") || DEFAULT_HISTORY_MAX_FILES);
+  const historyMaxFiles = Number.isFinite(historyMaxFilesRaw) && historyMaxFilesRaw > 0
+    ? Math.floor(historyMaxFilesRaw)
+    : DEFAULT_HISTORY_MAX_FILES;
   const dbSource = String(getArg("db-source") || "prod_readonly").trim() || "prod_readonly";
   const roleQuotas = parseRoleQuotas(getArg("role-quotas"), DEFAULT_ROLE_QUOTAS);
 
@@ -66,6 +74,7 @@ Options:
     outDir,
     targetSize,
     historyRoot,
+    historyMaxFiles,
     dbSource,
     roleQuotas,
   };
@@ -300,12 +309,12 @@ const buildFixtureCandidates = async () => {
   return rows;
 };
 
-const buildHistoryCandidates = async (historyRoot) => {
+const buildHistoryCandidates = async (historyRoot, historyMaxFiles = DEFAULT_HISTORY_MAX_FILES) => {
   const rows = [];
   const roundsPaths = await sortByNewestMtime(
     await walkFiles(historyRoot, (name) => name === "rounds_summary.json"),
   );
-  const latest = roundsPaths.slice(0, 12);
+  const latest = roundsPaths.slice(0, historyMaxFiles);
   for (const filePath of latest) {
     const payload = await readJson(filePath);
     const attempts = Array.isArray(payload?.attempts) ? payload.attempts : [];
@@ -335,6 +344,25 @@ const buildHistoryCandidates = async (historyRoot) => {
           source: `history:${path.relative(ROOT_DIR, filePath)}`,
           expected: { datasetHint: "lnhpd" },
         });
+        pushCandidate(rows, {
+          role: "ca_top_scan_90d",
+          barcode,
+          priority: 2,
+          country: "CA",
+          source: `history:${path.relative(ROOT_DIR, filePath)}`,
+          lookbackDays: 90,
+          expected: { datasetHint: "lnhpd" },
+        });
+        pushCandidate(rows, {
+          role: "ca_top_scan_30d",
+          barcode,
+          priority: 3,
+          country: "CA",
+          source: `history:${path.relative(ROOT_DIR, filePath)}`,
+          lookbackDays: 30,
+          expected: { datasetHint: "lnhpd" },
+          repeat: REPEAT_BY_ROLE.ca_top_scan_30d,
+        });
       }
       if (
         attempt?.status === "error"
@@ -349,6 +377,71 @@ const buildHistoryCandidates = async (historyRoot) => {
           source: `history:${path.relative(ROOT_DIR, filePath)}`,
           lookbackDays: 30,
           notes: `status=${attempt?.status ?? "unknown"} terminal=${attempt?.terminalReason ?? "unknown"}`,
+        });
+      }
+    }
+  }
+
+  const tracesPaths = await sortByNewestMtime(
+    await walkFiles(historyRoot, (name) => name === "traces.jsonl"),
+  );
+  const latestTraceFiles = tracesPaths.slice(0, Math.max(20, Math.floor(historyMaxFiles * 0.5)));
+  for (const filePath of latestTraceFiles) {
+    const traceRows = await readJsonl(filePath);
+    for (const trace of traceRows) {
+      const barcode = normalizeBarcode(trace?.barcode);
+      if (!barcode) continue;
+      const sourceType = String(trace?.rev1SourceType ?? "").trim().toLowerCase();
+      const sourceTypeFinal = trace?.sourceTypeFinal === true;
+      const terminal = String(trace?.terminal ?? "").trim().toUpperCase();
+      const timeoutBucket = String(trace?.timeoutBucket ?? "").trim().toUpperCase();
+      const source = `history:${path.relative(ROOT_DIR, filePath)}`;
+
+      if (sourceType === "lnhpd" && sourceTypeFinal) {
+        pushCandidate(rows, {
+          role: "ca_mapped_lnhpd_sample",
+          barcode,
+          priority: 3,
+          country: "CA",
+          source,
+          expected: { datasetHint: "lnhpd" },
+        });
+        pushCandidate(rows, {
+          role: "ca_top_scan_90d",
+          barcode,
+          priority: 3,
+          country: "CA",
+          source,
+          lookbackDays: 90,
+          expected: { datasetHint: "lnhpd" },
+          repeat: REPEAT_BY_ROLE.ca_top_scan_90d,
+        });
+      }
+      if (sourceType === "dsld" && sourceTypeFinal) {
+        pushCandidate(rows, {
+          role: "us_dsld_canonical_sample",
+          barcode,
+          priority: 3,
+          country: "US",
+          source,
+          expected: { datasetHint: "dsld" },
+        });
+      }
+      if (
+        terminal === "REQUEST_ERROR"
+        || terminal === "CLIENT_TIMEOUT"
+        || timeoutBucket === "SSE_CONNECTED_NO_DONE"
+        || timeoutBucket === "SSE_NOT_CONNECTED"
+      ) {
+        pushCandidate(rows, {
+          role: "ca_recent_fail_30d",
+          barcode,
+          priority: 1,
+          country: "CA",
+          source,
+          lookbackDays: 30,
+          notes: `terminal=${terminal || "unknown"} timeoutBucket=${timeoutBucket || "none"}`,
+          repeat: REPEAT_BY_ROLE.ca_recent_fail_30d,
         });
       }
     }
@@ -420,25 +513,70 @@ const enrichCohortRow = (row, idx) => ({
   index: idx,
 });
 
-const buildCohortStats = ({ rows, targetSize, roleQuotas, dbSource }) => {
+const buildCohortStats = ({ rows, allCandidates, targetSize, roleQuotas, dbSource, historyMaxFiles }) => {
   const roleCounts = rows.reduce((acc, row) => {
     const key = row.role;
     acc[key] = (acc[key] ?? 0) + 1;
     return acc;
   }, {});
+  const candidateRoleCounts = (Array.isArray(allCandidates) ? allCandidates : []).reduce((acc, row) => {
+    const key = String(row?.role ?? "unknown");
+    acc[key] = (acc[key] ?? 0) + 1;
+    return acc;
+  }, {});
+  const candidateSourceTierCounts = (Array.isArray(allCandidates) ? allCandidates : []).reduce((acc, row) => {
+    const source = String(row?.source ?? "unknown");
+    const tier = source.startsWith("fixture:")
+      ? "fixtures"
+      : (source.startsWith("seed:") ? "seeds" : (source.startsWith("history:") ? "history" : "other"));
+    acc[tier] = (acc[tier] ?? 0) + 1;
+    return acc;
+  }, {});
+  const quotaDeficitByRole = Object.fromEntries(
+    Object.entries(roleQuotas).map(([role, quota]) => [
+      role,
+      Math.max(0, Number(quota) - Number(roleCounts[role] ?? 0)),
+    ]),
+  );
+  const quotaDeficitReasonsByRole = Object.fromEntries(
+    Object.entries(roleQuotas).map(([role, quota]) => {
+      const selectedCount = Number(roleCounts[role] ?? 0);
+      const candidateCount = Number(candidateRoleCounts[role] ?? 0);
+      let reason = "quota_met";
+      if (candidateCount === 0) {
+        reason = "no_candidates_in_pool";
+      } else if (selectedCount < quota && candidateCount < quota) {
+        reason = "candidate_pool_below_quota";
+      } else if (selectedCount < quota) {
+        reason = "selection_or_dedup_limited";
+      }
+      return [role, reason];
+    }),
+  );
+  const rolesMissingFromPool = Object.keys(roleQuotas)
+    .filter((role) => Number(candidateRoleCounts[role] ?? 0) <= 0);
+
   return {
     generatedAt: new Date().toISOString(),
     targetSize,
     actualSize: rows.length,
     dbSource,
+    historyMaxFiles,
     roleQuotas,
     roleCounts,
-    quotaDeficitByRole: Object.fromEntries(
-      Object.entries(roleQuotas).map(([role, quota]) => [
-        role,
-        Math.max(0, Number(quota) - Number(roleCounts[role] ?? 0)),
-      ]),
-    ),
+    quotaDeficitByRole,
+    quotaDeficitReasonsByRole,
+    candidatePoolSize: Array.isArray(allCandidates) ? allCandidates.length : 0,
+    candidateRoleCounts,
+    candidateSourceTierCounts,
+    targetDeficit: Math.max(0, Number(targetSize) - Number(rows.length)),
+    targetDeficitReason:
+      Number(rows.length) >= Number(targetSize)
+        ? "none"
+        : (Number((Array.isArray(allCandidates) ? allCandidates.length : 0)) < Number(targetSize)
+          ? "candidate_pool_exhausted"
+          : "selection_limited"),
+    rolesMissingFromPool,
   };
 };
 
@@ -446,18 +584,27 @@ export const buildCohort = async ({
   targetSize = DEFAULT_TARGET_SIZE,
   roleQuotas = DEFAULT_ROLE_QUOTAS,
   historyRoot = path.join(ROOT_DIR, "output"),
+  historyMaxFiles = DEFAULT_HISTORY_MAX_FILES,
   dbSource = "prod_readonly",
 }) => {
   const fixtureCandidates = await buildFixtureCandidates();
-  const historyCandidates = await buildHistoryCandidates(historyRoot);
+  const historyCandidates = await buildHistoryCandidates(historyRoot, historyMaxFiles);
+  const allCandidates = [...fixtureCandidates, ...historyCandidates];
   const selected = mergeByQuotaAndPriority({
-    candidates: [...fixtureCandidates, ...historyCandidates],
+    candidates: allCandidates,
     roleQuotas,
     targetSize,
   }).map(enrichCohortRow);
   return {
     rows: selected,
-    stats: buildCohortStats({ rows: selected, targetSize, roleQuotas, dbSource }),
+    stats: buildCohortStats({
+      rows: selected,
+      allCandidates,
+      targetSize,
+      roleQuotas,
+      dbSource,
+      historyMaxFiles,
+    }),
   };
 };
 
@@ -479,6 +626,7 @@ const main = async () => {
     targetSize: opts.targetSize,
     roleQuotas: opts.roleQuotas,
     historyRoot: opts.historyRoot,
+    historyMaxFiles: opts.historyMaxFiles,
     dbSource: opts.dbSource,
   });
   const outputs = await writeOutputs({ outDir: opts.outDir, rows, stats });

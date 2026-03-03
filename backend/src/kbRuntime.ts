@@ -56,6 +56,56 @@ type ReviewedAliasFile = {
   aliases?: Record<string, string>;
 };
 
+type SafeScienceSignal = {
+  ingredient_id?: string;
+  ingredient?: string | null;
+  best_for_bullets?: string[];
+  form_impact_line?: string | null;
+  before_you_buy_line?: string | null;
+  evidence_lines?: string[];
+  max_confidence?: number | null;
+  source_tier?: "general_science";
+};
+
+type SafeScienceFallbackSignal = {
+  ingredient_id?: string;
+  ingredient?: string | null;
+  best_for_fallback?: string[];
+  comparison_fallback?: string[];
+  before_you_buy_line?: string | null;
+  evidence_lines?: string[];
+  source_tier?: "general_science";
+};
+
+type SafeScienceSubsetFile = {
+  schemaVersion?: string;
+  generatedAt?: string;
+  minConfidence?: number;
+  signalsByIngredient?: Record<string, SafeScienceSignal>;
+};
+
+type SafeScienceFallbackFile = {
+  schemaVersion?: string;
+  generatedAt?: string;
+  signalsByIngredient?: Record<string, SafeScienceFallbackSignal>;
+};
+
+export type SafeScienceSignalSource = "subset" | "fallback" | "none";
+export type SafeScienceFallbackType = "best_for" | "comparison" | null;
+
+export type SafeScienceSignalResult = {
+  ingredientId: string;
+  ingredientName: string | null;
+  bestForBullets: string[];
+  formImpactLine: string | null;
+  beforeYouBuyLine: string | null;
+  evidenceLines: string[];
+  maxConfidence: number | null;
+  sourceTier: "general_science";
+  signalSource: SafeScienceSignalSource;
+  fallbackType: SafeScienceFallbackType;
+};
+
 export type FormResolveSource =
   | "label_parenthetical"
   | "label_as_phrase"
@@ -156,10 +206,22 @@ const REVIEWED_INGREDIENT_NAME_ALIASES_DEFAULT: Record<string, string> = {
 
 let reviewedAliasLoadAttempted = false;
 let reviewedIngredientAliases: Record<string, string> = { ...REVIEWED_INGREDIENT_NAME_ALIASES_DEFAULT };
+let safeScienceSubsetLoadAttempted = false;
+let cachedSafeScienceSubset: SafeScienceSubsetFile | null = null;
+let safeScienceFallbackLoadAttempted = false;
+let cachedSafeScienceFallbacks: SafeScienceFallbackFile | null = null;
 
 const getReviewedAliasPath = () =>
   process.env.REVIEWED_INGREDIENT_ALIASES_PATH ??
   path.join(process.cwd(), "data", "reviewed", "reviewed-ingredient-aliases.v1.json");
+
+const getSafeScienceSubsetPath = () =>
+  process.env.SAFE_SCIENCE_SUBSET_PATH ??
+  path.join(process.cwd(), "data", "kb", "v4_safe_science_subset.json");
+
+const getSafeScienceFallbackPath = () =>
+  process.env.SAFE_SCIENCE_FALLBACKS_PATH ??
+  path.join(process.cwd(), "data", "kb", "safe_science_fallbacks.v1.json");
 
 const getReviewedIngredientAliases = (): Record<string, string> => {
   if (reviewedAliasLoadAttempted) return reviewedIngredientAliases;
@@ -176,6 +238,30 @@ const getReviewedIngredientAliases = (): Record<string, string> => {
   }
   reviewedIngredientAliases = next;
   return reviewedIngredientAliases;
+};
+
+const getSafeScienceSubset = (): SafeScienceSubsetFile | null => {
+  if (safeScienceSubsetLoadAttempted) return cachedSafeScienceSubset;
+  safeScienceSubsetLoadAttempted = true;
+  const loaded = loadJson<SafeScienceSubsetFile>(getSafeScienceSubsetPath());
+  if (!loaded || !loaded.signalsByIngredient || typeof loaded.signalsByIngredient !== "object") {
+    cachedSafeScienceSubset = null;
+    return null;
+  }
+  cachedSafeScienceSubset = loaded;
+  return cachedSafeScienceSubset;
+};
+
+const getSafeScienceFallbacks = (): SafeScienceFallbackFile | null => {
+  if (safeScienceFallbackLoadAttempted) return cachedSafeScienceFallbacks;
+  safeScienceFallbackLoadAttempted = true;
+  const loaded = loadJson<SafeScienceFallbackFile>(getSafeScienceFallbackPath());
+  if (!loaded || !loaded.signalsByIngredient || typeof loaded.signalsByIngredient !== "object") {
+    cachedSafeScienceFallbacks = null;
+    return null;
+  }
+  cachedSafeScienceFallbacks = loaded;
+  return cachedSafeScienceFallbacks;
 };
 
 const pickBestAliasEntry = (entries: AliasEntry[] | undefined): AliasEntry | null => {
@@ -330,6 +416,127 @@ const resolveReviewedIngredientCandidates = (
   }
 
   return out;
+};
+
+const inferSafeScienceCategoryToken = (ingredientName: string): string | null => {
+  const text = normalizeFreeText(ingredientName);
+  if (!text) return null;
+  if (/fish\s*oil|omega\s*-?\s*3|epa|dha/.test(text)) return "fish_oil_omega3";
+  if (/flaxseed/.test(text)) return "flaxseed_oil";
+  if (/vitamin\s*d|\\bd2\\b|\\bd3\\b|cholecalciferol|ergocalciferol/.test(text)) return "vitamin_d";
+  if (/alpha\s*lipoic|\\bala\\b/.test(text)) return "alpha_lipoic_acid";
+  if (/biotin|hair\\s*[-,& ]?\\s*skin\\s*[-,& ]?\\s*nails?/.test(text)) return "biotin";
+  if (/melatonin/.test(text)) return "melatonin";
+  if (/coenzyme\s*q\s*10|\bco\s*q\s*10\b|\bcoq10\b|ubiquinol|ubiquinone/.test(text)) return "coq10";
+  if (/^c\s*\d+\s*mg\b|vitamin\s*c|\bascorbic\b|\bascorbate\b/.test(text)) return "vitamin_c";
+  if (/\\bmagnesium\\b/.test(text)) return "magnesium";
+  if (/\\bzinc\\b/.test(text)) return "zinc";
+  if (/probiotic|lactobacillus|bifidobacterium|cfu/.test(text)) return "probiotics";
+  return null;
+};
+
+const sanitizeSafeScienceLine = (value: string | null | undefined): string | null => {
+  const text = typeof value === "string" ? value.trim() : "";
+  if (!text) return null;
+  if (/\\bneeds_capture\\b|\\bneeds_edit\\b|\\breview_status\\b|\\bneeds review\\b/i.test(text)) return null;
+  if (/\\bnormal function\\b|\\bday-to-day wellness\\b|\\bgeneral wellness\\b/i.test(text)) return null;
+  return text;
+};
+
+const sanitizeSafeScienceLines = (value: string[] | null | undefined, max = 3): string[] => {
+  if (!Array.isArray(value)) return [];
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const row of value) {
+    const line = sanitizeSafeScienceLine(row);
+    if (!line) continue;
+    const key = line.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(line);
+    if (out.length >= max) break;
+  }
+  return out;
+};
+
+export const lookupSafeScienceSignals = (params: {
+  ingredientName: string | null | undefined;
+  formText?: string | null;
+}): SafeScienceSignalResult | null => {
+  const subset = getSafeScienceSubset();
+  const name = String(params.ingredientName ?? "").trim();
+  if (!name) return null;
+
+  const kb = getKbRuntime();
+  const candidates = resolveReviewedIngredientCandidates(name, kb);
+  const candidateTokens = new Set<string>();
+  for (const candidate of candidates) candidateTokens.add(normalizeToken(candidate.token));
+  candidateTokens.add(normalizeToken(name));
+  const inferred = inferSafeScienceCategoryToken(name);
+  if (inferred) candidateTokens.add(normalizeToken(inferred));
+
+  if (subset?.signalsByIngredient) {
+    for (const token of candidateTokens) {
+      if (!token) continue;
+      const signal = subset.signalsByIngredient[token];
+      if (!signal) continue;
+      const bestForBullets = sanitizeSafeScienceLines(signal.best_for_bullets, 3);
+      const formImpactLine = sanitizeSafeScienceLine(signal.form_impact_line ?? null);
+      const beforeYouBuyLine = sanitizeSafeScienceLine(signal.before_you_buy_line ?? null);
+      const evidenceLines = sanitizeSafeScienceLines(signal.evidence_lines, 6);
+      if (bestForBullets.length === 0 && !formImpactLine && !beforeYouBuyLine && evidenceLines.length === 0) {
+        continue;
+      }
+      return {
+        ingredientId: token,
+        ingredientName: signal.ingredient ?? null,
+        bestForBullets,
+        formImpactLine,
+        beforeYouBuyLine,
+        evidenceLines,
+        maxConfidence:
+          typeof signal.max_confidence === "number" && Number.isFinite(signal.max_confidence)
+            ? signal.max_confidence
+            : null,
+        sourceTier: "general_science",
+        signalSource: "subset",
+        fallbackType: null,
+      };
+    }
+  }
+
+  const fallbacks = getSafeScienceFallbacks();
+  if (fallbacks?.signalsByIngredient) {
+    for (const token of candidateTokens) {
+      if (!token) continue;
+      const signal = fallbacks.signalsByIngredient[token];
+      if (!signal) continue;
+      const bestForBullets = sanitizeSafeScienceLines(signal.best_for_fallback, 3);
+      const comparisonBullets = sanitizeSafeScienceLines(signal.comparison_fallback, 3);
+      const formImpactLine = comparisonBullets[0] ?? null;
+      const beforeYouBuyLine = sanitizeSafeScienceLine(signal.before_you_buy_line ?? null);
+      const evidenceLines = sanitizeSafeScienceLines(signal.evidence_lines, 6);
+      if (bestForBullets.length === 0 && comparisonBullets.length === 0 && !beforeYouBuyLine && evidenceLines.length === 0) {
+        continue;
+      }
+      const fallbackType: SafeScienceFallbackType =
+        bestForBullets.length > 0 ? "best_for" : comparisonBullets.length > 0 ? "comparison" : null;
+      return {
+        ingredientId: token,
+        ingredientName: signal.ingredient ?? null,
+        bestForBullets,
+        formImpactLine,
+        beforeYouBuyLine,
+        evidenceLines,
+        maxConfidence: null,
+        sourceTier: "general_science",
+        signalSource: "fallback",
+        fallbackType,
+      };
+    }
+  }
+
+  return null;
 };
 
 const buildReviewedFormKeyCandidates = (

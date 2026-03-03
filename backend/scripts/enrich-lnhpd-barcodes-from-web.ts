@@ -56,6 +56,8 @@ type TokenStrictness = "low" | "normal";
 
 type QueueNpnHints = {
   brandName: string | null;
+  brandNameNormalized: string | null;
+  brandAliases: string[];
   productName: string | null;
   twoHopHint: string | null;
   upcHints: string[];
@@ -573,6 +575,24 @@ const buildQueueNpnHint = (row: Record<string, unknown>): { npn: string; hint: Q
       ? String(row.brandName ?? row.brand_name)
       : "",
   );
+  const brandNameNormalized = sanitize(
+    typeof row.brandNameNormalized === "string" || typeof row.brand_name_normalized === "string"
+      ? String(row.brandNameNormalized ?? row.brand_name_normalized)
+      : "",
+  );
+  const rawBrandAliases =
+    Array.isArray(row.brandAliases) || Array.isArray(row.brand_aliases)
+      ? (row.brandAliases ?? row.brand_aliases)
+      : null;
+  const brandAliases = Array.isArray(rawBrandAliases)
+    ? Array.from(
+        new Set(
+          rawBrandAliases
+            .map((entry) => sanitize(typeof entry === "string" || typeof entry === "number" ? String(entry) : ""))
+            .filter(Boolean),
+        ),
+      ).slice(0, 6)
+    : [];
   const productName = sanitize(
     typeof row.productName === "string" || typeof row.product_name === "string"
       ? String(row.productName ?? row.product_name)
@@ -589,6 +609,8 @@ const buildQueueNpnHint = (row: Record<string, unknown>): { npn: string; hint: Q
     npn,
     hint: {
       brandName: brandName || null,
+      brandNameNormalized: brandNameNormalized || null,
+      brandAliases,
       productName: productName || null,
       twoHopHint: twoHopHint || null,
       upcHints: extractUpcHintsFromRow(row),
@@ -657,8 +679,11 @@ const loadQueueNpnHints = async (filePath: string): Promise<Map<string, QueueNpn
       continue;
     }
     const mergedUpc = Array.from(new Set([...current.upcHints, ...parsed.hint.upcHints])).slice(0, 5);
+    const mergedBrandAliases = Array.from(new Set([...(current.brandAliases ?? []), ...(parsed.hint.brandAliases ?? [])])).slice(0, 6);
     hints.set(parsed.npn, {
       brandName: parsed.hint.brandName ?? current.brandName ?? null,
+      brandNameNormalized: parsed.hint.brandNameNormalized ?? current.brandNameNormalized ?? null,
+      brandAliases: mergedBrandAliases,
       productName: parsed.hint.productName ?? current.productName ?? null,
       twoHopHint: parsed.hint.twoHopHint ?? current.twoHopHint ?? null,
       upcHints: mergedUpc,
@@ -671,7 +696,13 @@ const loadQueueNpnHints = async (filePath: string): Promise<Map<string, QueueNpn
 };
 
 const buildRowContext = (row: LnhpdRow, queueHint?: QueueNpnHints | null): RowContext => {
-  const brandText = sanitize(row.brand_name) || queueHint?.brandName || "";
+  const brandCandidates = [
+    sanitize(row.brand_name),
+    sanitize(queueHint?.brandName ?? ""),
+    sanitize(queueHint?.brandNameNormalized ?? ""),
+    ...((queueHint?.brandAliases ?? []).map((entry) => sanitize(entry)).filter(Boolean)),
+  ].filter(Boolean);
+  const brandText = brandCandidates.join(" ");
   const productText = sanitize(row.product_name) || queueHint?.productName || queueHint?.twoHopHint || "";
   const brandTokens = normalizeLooseText(brandText)
     .split(" ")
@@ -775,7 +806,17 @@ const buildQueries = (
   queueHint?: QueueNpnHints | null,
 ): { primary: string[]; fallback: string[] } => {
   const npn = sanitize(row.npn);
-  const brand = sanitize(row.brand_name) || queueHint?.brandName || "";
+  const brandCandidates = Array.from(
+    new Set(
+      [
+        sanitize(row.brand_name),
+        sanitize(queueHint?.brandName ?? ""),
+        sanitize(queueHint?.brandNameNormalized ?? ""),
+        ...((queueHint?.brandAliases ?? []).map((entry) => sanitize(entry)).filter(Boolean)),
+      ].filter(Boolean),
+    ),
+  ).slice(0, 4);
+  const brand = brandCandidates[0] ?? "";
   const product = sanitize(row.product_name) || queueHint?.productName || "";
   const twoHopHint = sanitize(queueHint?.twoHopHint ?? "");
   const upcHints = Array.isArray(queueHint?.upcHints) ? queueHint!.upcHints : [];
@@ -787,16 +828,22 @@ const buildQueries = (
   if (npn && brand) primary.add(`NPN ${npn} ${brand} barcode`);
   if (npn && brand && product) primary.add(`site:.ca NPN ${npn} ${brand} ${product}`);
   if (npn && twoHopHint) primary.add(`NPN ${npn} ${twoHopHint}`);
+  for (const brandVariant of brandCandidates.slice(1)) {
+    if (npn && brandVariant && product) primary.add(`NPN ${npn} ${brandVariant} ${product}`);
+    if (npn && brandVariant) primary.add(`NPN ${npn} ${brandVariant} barcode`);
+  }
 
   const fallback = new Set<string>();
-  if (enableUpcFallbackQuery && npn && brand) {
-    for (const upc of upcHints) {
-      fallback.add(`${brand} NPN ${npn} UPC ${upc}`);
-      fallback.add(`site:.ca ${brand} NPN ${npn} ${upc} barcode`);
-    }
-    fallback.add(`${brand} NPN ${npn} UPC barcode`);
-    if (product) {
-      fallback.add(`site:.ca ${brand} ${product} NPN ${npn} UPC`);
+  if (enableUpcFallbackQuery && npn && brandCandidates.length > 0) {
+    for (const brandVariant of brandCandidates) {
+      for (const upc of upcHints) {
+        fallback.add(`${brandVariant} NPN ${npn} UPC ${upc}`);
+        fallback.add(`site:.ca ${brandVariant} NPN ${npn} ${upc} barcode`);
+      }
+      fallback.add(`${brandVariant} NPN ${npn} UPC barcode`);
+      if (product) {
+        fallback.add(`site:.ca ${brandVariant} ${product} NPN ${npn} UPC`);
+      }
     }
   }
 

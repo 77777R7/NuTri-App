@@ -21,7 +21,14 @@ test("surface consistency report emits barcode bucket breakdowns", async () => {
   assert.match(source, /scanInferredIngredientCount/);
   assert.match(source, /scanStrictDoseCount/);
   assert.match(source, /scanInferredDoseCount/);
+  assert.match(source, /sourceDatasetMismatchHard/);
+  assert.match(source, /sourceDatasetMismatchWarning/);
+  assert.match(source, /sourceDatasetMismatchWarningCount/);
+  assert.match(source, /sourceDatasetMismatchWarningRows/);
   assert.match(source, /ingredientCountInferredOnlyContradictionCount/);
   assert.match(source, /doseCountInferredOnlyContradictionCount/);
   assert.match(source, /inferredOnlyContradictionRows/);
+  assert.match(source, /inferredOnlyRootCauseCounts/);
+  assert.match(source, /rootCause/);
+  assert.match(source, /inference_only_expected/);
 });

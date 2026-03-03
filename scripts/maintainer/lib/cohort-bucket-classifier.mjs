@@ -65,14 +65,41 @@ export const classifyCohortBuckets = (traces) => {
     bucketCounts[bucket] = (bucketCounts[bucket] ?? 0) + 1;
     const barcode = String(row?.barcode ?? "").trim();
     if (!barcode) continue;
-    if (!byBarcode.has(barcode)) byBarcode.set(barcode, new Set());
-    byBarcode.get(barcode).add(String(row?.stabilityHash ?? ""));
+    if (!byBarcode.has(barcode)) {
+      byBarcode.set(barcode, {
+        stabilityHashes: new Set(),
+        rev1SourceTypes: new Set(),
+        sourceTypeFinalValues: new Set(),
+        terminalReasons: new Set(),
+      });
+    }
+    const slot = byBarcode.get(barcode);
+    slot.stabilityHashes.add(String(row?.stabilityHash ?? ""));
+    slot.rev1SourceTypes.add(String(row?.rev1SourceType ?? "").trim().toLowerCase() || "unknown");
+    slot.sourceTypeFinalValues.add(row?.sourceTypeFinal === true);
+    slot.terminalReasons.add(String(row?.terminalReason ?? "").trim() || "unknown");
   }
 
   const nondeterministicBarcodes = [];
-  for (const [barcode, stabilitySet] of byBarcode.entries()) {
-    const filtered = [...stabilitySet].filter((value) => value.length > 0);
+  const nondeterministicDetails = [];
+  for (const [barcode, state] of byBarcode.entries()) {
+    const filtered = [...state.stabilityHashes].filter((value) => value.length > 0);
     if (new Set(filtered).size > 1) nondeterministicBarcodes.push(barcode);
+    if (new Set(filtered).size <= 1) continue;
+    const sourceTypes = [...state.rev1SourceTypes];
+    const authoritativeSeen = sourceTypes.some((source) => source === "lnhpd" || source === "dsld");
+    const webOnly = sourceTypes.every((source) => source === "web" || source === "unknown");
+    const classification = authoritativeSeen
+      ? "unacceptable_authoritative_path_nondeterministic"
+      : (webOnly ? "acceptable_web_only_nondeterministic" : "needs_manual_review");
+    nondeterministicDetails.push({
+      barcode,
+      stabilityHashCount: new Set(filtered).size,
+      rev1SourceTypes: sourceTypes,
+      sourceTypeFinalValues: [...state.sourceTypeFinalValues],
+      terminalReasons: [...state.terminalReasons],
+      classification,
+    });
   }
   if (nondeterministicBarcodes.length > 0) {
     bucketCounts.NONDETERMINISTIC_SAME_BARCODE = nondeterministicBarcodes.length;
@@ -87,6 +114,7 @@ export const classifyCohortBuckets = (traces) => {
     bucketCounts,
     bucketTop,
     nondeterministicBarcodes,
+    nondeterministicDetails,
     nondeterministicExamples: bucketRows.filter((row) => nondeterministicBarcodes.includes(String(row?.barcode ?? ""))),
   };
 };

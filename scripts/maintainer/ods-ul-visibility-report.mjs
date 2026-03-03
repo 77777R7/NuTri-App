@@ -207,7 +207,10 @@ const runEnrichStream = async (barcode) => {
     const res = await fetch(`${API_BASE_URL}/api/enrich-stream`, {
       method: "POST",
       headers: SSE_HEADERS,
-      body: JSON.stringify({ barcode }),
+      body: JSON.stringify({
+        barcode,
+        streamMode: "analysis_bundle_only",
+      }),
       signal: controller.signal,
     });
     if (!res.ok || !res.body) {

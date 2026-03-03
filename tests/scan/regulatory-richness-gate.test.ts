@@ -184,7 +184,7 @@ test('quality notes only does not satisfy safety pass', () => {
   assert.deepEqual(signals.missingSafetyKinds, ['label', 'ods', 'ul']);
 });
 
-test('consistency fails when deterministic ingredient signals exist but science cover items are empty', () => {
+test('inferred-only cover gap is warning-only and does not trigger hard consistency fail', () => {
   const bundle = makeBundle();
   (bundle as any).meta = {
     deterministicSignals: {
@@ -204,8 +204,9 @@ test('consistency fails when deterministic ingredient signals exist but science 
     moduleValue: null,
   });
 
-  assert.equal(signals.coverDetailConsistencyPass, false);
-  assert.equal(signals.consistencyFailReason, REGULATORY_CONSISTENCY_FAIL_REASONS.COVER_DETAIL_INCONSISTENT);
+  assert.equal(signals.coverDetailConsistencyPass, true);
+  assert.equal(signals.consistencyFailReason, null);
+  assert.deepEqual(signals.consistencyWarningReasons, ['INFERRED_ONLY_COVER_GAP']);
 });
 
 test('consistency fails with PARSER_GAP_VISIBLE when usage structure is expected but not visible', () => {

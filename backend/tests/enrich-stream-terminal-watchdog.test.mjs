@@ -77,7 +77,7 @@ test("full-lane pre-rev1 terminal guard emits stable timeout reason and finalize
 
   const guardStart = source.indexOf("if (!streamAnalysisBundleOnly && !fullPreRev1TerminalGuardTimer)");
   assert.ok(guardStart >= 0, "missing full-lane pre-rev1 terminal guard");
-  const guardSlice = source.slice(guardStart, guardStart + 1900);
+  const guardSlice = source.slice(guardStart, guardStart + 4600);
 
   assert.match(guardSlice, /if \(streamState\.rev1Sent\) return;/);
   assert.match(guardSlice, /const isWebHintLike =/);

@@ -26,6 +26,8 @@ if (hasFlag("help")) {
 Options:
   --api-base-url <url>   API base URL (default: API_BASE_URL or http://127.0.0.1:3001)
   --out-dir <path>       Output directory (default: output/maintainer-gates/<timestamp>)
+  --sample-mode <mode>   Barcode sampling source: fixture|scans (default: fixture)
+  --fixture-file <path>  Fixture path used when sample-mode=fixture
   --lookback-hours <n>   Scan lookback window in hours (default: 48)
   --sample-size <n>      Unique barcodes sampled (default: 25)
   --sse-timeout-ms <n>   Total timeout for one enrich-stream probe (default: 15000)
@@ -40,6 +42,15 @@ const apiBaseUrl = (getArg("api-base-url") || process.env.API_BASE_URL || "http:
 const outDirArg = getArg("out-dir") || path.join("output", "maintainer-gates", nowTag);
 const outDir = path.isAbsolute(outDirArg) ? outDirArg : path.join(ROOT_DIR, outDirArg);
 const outPath = path.join(outDir, "surface_consistency_report.json");
+const sampleModeRaw = String(getArg("sample-mode") || process.env.SURFACE_CONSISTENCY_SAMPLE_MODE || "fixture")
+  .trim()
+  .toLowerCase();
+const sampleMode = sampleModeRaw === "scans" ? "scans" : "fixture";
+const fixtureFileArg =
+  getArg("fixture-file")
+  || process.env.SURFACE_CONSISTENCY_FIXTURE_FILE
+  || path.join("scripts", "maintainer", "fixtures", "surface_consistency_barcodes.v1.json");
+const fixtureFilePath = path.isAbsolute(fixtureFileArg) ? fixtureFileArg : path.join(ROOT_DIR, fixtureFileArg);
 const lookbackHoursRaw = Number(getArg("lookback-hours") || process.env.SURFACE_CONSISTENCY_LOOKBACK_HOURS || 48);
 const sampleSizeRaw = Number(getArg("sample-size") || process.env.SURFACE_CONSISTENCY_SAMPLE_SIZE || 25);
 const sseTimeoutMsRaw = Number(getArg("sse-timeout-ms") || process.env.SURFACE_CONSISTENCY_SSE_TIMEOUT_MS || 15000);
@@ -73,6 +84,41 @@ const supabase = createClient(supabaseUrl, serviceKey, {
 });
 
 const normalizeDigits = (value) => String(value ?? "").replace(/\D/g, "").trim();
+
+const normalizeBarcode = (value) => {
+  const digits = normalizeDigits(value);
+  if (!digits) return null;
+  if (digits.length >= 14) return digits.slice(-14);
+  if (digits.length >= 8) return digits.padStart(14, "0");
+  return null;
+};
+
+const readJson = async (filePath) => {
+  try {
+    const raw = await fs.readFile(filePath, "utf8");
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+};
+
+const loadFixtureBarcodes = async (filePath, maxCount) => {
+  const payload = await readJson(filePath);
+  const rows = Array.isArray(payload)
+    ? payload
+    : (payload && Array.isArray(payload.barcodes) ? payload.barcodes : []);
+  const barcodes = [];
+  const seen = new Set();
+  for (const row of rows) {
+    const rawValue = typeof row === "string" ? row : row?.barcode;
+    const barcode = normalizeBarcode(rawValue);
+    if (!barcode || seen.has(barcode)) continue;
+    seen.add(barcode);
+    barcodes.push(barcode);
+    if (barcodes.length >= maxCount) break;
+  }
+  return barcodes;
+};
 
 const toVerificationStatus = (params) => {
   const dataset = String(params.sourceDataset ?? "unknown").trim().toLowerCase();
@@ -118,6 +164,7 @@ const parseSse = async (barcode) => {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), sseTimeoutMs);
   const deadlineAt = Date.now() + sseTimeoutMs;
+  let reader = null;
   const readWithDeadline = async (reader) => {
     const remainingMs = Math.max(1, deadlineAt - Date.now());
     const timeoutMs = Math.min(remainingMs, sseReadChunkTimeoutMs);
@@ -149,7 +196,7 @@ const parseSse = async (barcode) => {
     });
     if (!response.ok || !response.body) return null;
 
-    const reader = response.body.getReader();
+    reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
     let currentEvent = "message";
@@ -179,6 +226,9 @@ const parseSse = async (barcode) => {
     };
 
     while (true) {
+      if (Date.now() >= deadlineAt) {
+        throw new Error("sse_total_timeout");
+      }
       const { done, value } = await readWithDeadline(reader);
       if (done) break;
       buffer += decoder.decode(value, { stream: true });
@@ -204,6 +254,12 @@ const parseSse = async (barcode) => {
     return null;
   } finally {
     clearTimeout(timer);
+    try {
+      await reader?.cancel();
+    } catch {
+      // best-effort cleanup
+    }
+    controller.abort();
   }
 };
 
@@ -354,6 +410,8 @@ const deriveMySupplementView = (metadata, ensureOverview) => {
 };
 
 const isCountContradiction = (a, b) => (a === 0 && b > 0) || (a > 0 && b === 0);
+const AUTHORITATIVE_DATASETS = new Set(["lnhpd", "dsld", "label_record"]);
+const isAuthoritativeDataset = (dataset) => AUTHORITATIVE_DATASETS.has(String(dataset ?? "").trim().toLowerCase());
 
 const classifyDatasetVerificationBucket = ({ scan, mySupplement }) =>
   `scan:${scan.sourceDataset}/${scan.verificationStatus}->mysupp:${mySupplement.sourceDataset}/${mySupplement.verificationStatus}`;
@@ -367,30 +425,78 @@ const classifyDoseCountBucket = (scanDoseCount, mySupplementDoseCount) => {
   return null;
 };
 
+const classifyInferredOnlyRootCause = (row) => {
+  const scanStrictIngredientCount = Number(row?.scanStrictIngredientCount ?? 0);
+  const scanStrictDoseCount = Number(row?.scanStrictDoseCount ?? 0);
+  const scanInferredIngredientCount = Number(row?.scanInferredIngredientCount ?? 0);
+  const scanInferredDoseCount = Number(row?.scanInferredDoseCount ?? 0);
+  const mySupplementIngredientCount = Number(row?.mySupplementIngredientCount ?? 0);
+  const mySupplementDoseCount = Number(row?.mySupplementDoseCount ?? 0);
+  const scanSourceDataset = String(row?.scanSourceDataset ?? "unknown");
+  const scanVerificationStatus = String(row?.scanVerificationStatus ?? "unknown");
+
+  if (
+    (mySupplementIngredientCount > 0 && scanStrictIngredientCount === 0)
+    || (mySupplementDoseCount > 0 && scanStrictDoseCount === 0)
+  ) {
+    return "parser_gap_fixable";
+  }
+  if (
+    (scanInferredIngredientCount > 0 || scanInferredDoseCount > 0)
+    && scanStrictIngredientCount === 0
+    && scanStrictDoseCount === 0
+    && mySupplementIngredientCount === 0
+    && mySupplementDoseCount === 0
+  ) {
+    return "inference_only_expected";
+  }
+  if (
+    scanSourceDataset === "lnhpd"
+    && scanVerificationStatus === "final"
+    && mySupplementIngredientCount === 0
+    && mySupplementDoseCount === 0
+  ) {
+    return "data_ceiling";
+  }
+  return "unknown";
+};
+
 const main = async () => {
   await fs.mkdir(outDir, { recursive: true });
   const sinceIso = new Date(Date.now() - lookbackHours * 60 * 60 * 1000).toISOString();
-  const { data: rows, error } = await supabase
-    .from("barcode_scans")
-    .select("barcode_gtin14,created_at")
-    .gte("created_at", sinceIso)
-    .order("created_at", { ascending: false })
-    .limit(Math.max(sampleSize * 6, 100));
-  if (error) throw new Error(`barcode_scans_query_failed: ${error.message}`);
+  let sampleSource = sampleMode;
+  let barcodes = [];
+  if (sampleMode === "fixture") {
+    barcodes = await loadFixtureBarcodes(fixtureFilePath, sampleSize);
+    if (barcodes.length === 0) {
+      sampleSource = "scans_fallback";
+    }
+  }
 
-  const barcodes = [];
-  const seen = new Set();
-  for (const row of rows ?? []) {
-    const gtin = normalizeDigits(row?.barcode_gtin14);
-    if (gtin.length !== 14) continue;
-    if (seen.has(gtin)) continue;
-    seen.add(gtin);
-    barcodes.push(gtin);
-    if (barcodes.length >= sampleSize) break;
+  if (sampleSource !== "fixture") {
+    const { data: rows, error } = await supabase
+      .from("barcode_scans")
+      .select("barcode_gtin14,created_at")
+      .gte("created_at", sinceIso)
+      .order("created_at", { ascending: false })
+      .limit(Math.max(sampleSize * 6, 100));
+    if (error) throw new Error(`barcode_scans_query_failed: ${error.message}`);
+
+    barcodes = [];
+    const seen = new Set();
+    for (const row of rows ?? []) {
+      const gtin = normalizeDigits(row?.barcode_gtin14);
+      if (gtin.length !== 14) continue;
+      if (seen.has(gtin)) continue;
+      seen.add(gtin);
+      barcodes.push(gtin);
+      if (barcodes.length >= sampleSize) break;
+    }
   }
 
   const comparedRows = [];
   let sourceDatasetMismatchCount = 0;
+  let sourceDatasetMismatchWarningCount = 0;
   let verificationStatusMismatchCount = 0;
   let ingredientCountContradictionCount = 0;
   let doseCountContradictionCount = 0;
@@ -409,6 +515,13 @@ const main = async () => {
     C_both_positive_value_diff: [],
   };
   const inferredOnlyContradictionRows = [];
+  const inferredOnlyRootCauseCounts = {
+    parser_gap_fixable: 0,
+    data_ceiling: 0,
+    inference_only_expected: 0,
+    unknown: 0,
+  };
+  const sourceDatasetMismatchWarningRows = [];
 
   for (const barcode of barcodes) {
     const metadata = await fetchMetadata(barcode);
@@ -426,6 +539,13 @@ const main = async () => {
       scan.sourceDataset !== "unknown"
       && mySupplement.sourceDataset !== "unknown"
       && scan.sourceDataset !== mySupplement.sourceDataset;
+    const sourceDatasetMismatchWarning =
+      sourceDatasetMismatch
+      && scan.verificationStatus === "final"
+      && mySupplement.verificationStatus === "final"
+      && isAuthoritativeDataset(scan.sourceDataset)
+      && isAuthoritativeDataset(mySupplement.sourceDataset);
+    const sourceDatasetMismatchHard = sourceDatasetMismatch && !sourceDatasetMismatchWarning;
     const verificationStatusMismatch = scan.verificationStatus !== mySupplement.verificationStatus;
     const eligibleForCountComparison =
       scan.verificationStatus === "final" && mySupplement.verificationStatus === "final";
@@ -447,11 +567,12 @@ const main = async () => {
       ? classifyDoseCountBucket(scan.scanStrictDoseCount, mySupplement.doseCount)
       : null;
     const datasetVerificationBucket =
-      sourceDatasetMismatch || verificationStatusMismatch
+      sourceDatasetMismatchHard || verificationStatusMismatch
         ? classifyDatasetVerificationBucket({ scan, mySupplement })
         : null;
 
-    if (sourceDatasetMismatch) sourceDatasetMismatchCount += 1;
+    if (sourceDatasetMismatchHard) sourceDatasetMismatchCount += 1;
+    if (sourceDatasetMismatchWarning) sourceDatasetMismatchWarningCount += 1;
     if (verificationStatusMismatch) verificationStatusMismatchCount += 1;
     if (ingredientCountContradiction) ingredientCountContradictionCount += 1;
     if (doseCountContradiction) doseCountContradictionCount += 1;
@@ -470,9 +591,23 @@ const main = async () => {
         doseCountBucketBarcodes[doseCountBucket].push(barcode);
       }
     }
-    if (ingredientCountInferredOnlyContradiction || doseCountInferredOnlyContradiction) {
-      inferredOnlyContradictionRows.push({
+    if (sourceDatasetMismatchWarning) {
+      sourceDatasetMismatchWarningRows.push({
         barcode,
+        scanSourceDataset: scan.sourceDataset,
+        scanVerificationStatus: scan.verificationStatus,
+        mySupplementSourceDataset: mySupplement.sourceDataset,
+        mySupplementVerificationStatus: mySupplement.verificationStatus,
+        datasetVerificationBucket: classifyDatasetVerificationBucket({ scan, mySupplement }),
+      });
+    }
+    if (ingredientCountInferredOnlyContradiction || doseCountInferredOnlyContradiction) {
+      const inferredRow = {
+        barcode,
+        scanSourceDataset: scan.sourceDataset,
+        scanVerificationStatus: scan.verificationStatus,
+        mySupplementSourceDataset: mySupplement.sourceDataset,
+        mySupplementVerificationStatus: mySupplement.verificationStatus,
         scanStrictIngredientCount: scan.scanStrictIngredientCount,
         scanStrictDoseCount: scan.scanStrictDoseCount,
         scanInferredIngredientCount: scan.scanInferredIngredientCount,
@@ -481,6 +616,12 @@ const main = async () => {
         mySupplementDoseCount: mySupplement.doseCount,
         ingredientCountInferredOnlyContradiction,
         doseCountInferredOnlyContradiction,
+      };
+      inferredRow.rootCause = classifyInferredOnlyRootCause(inferredRow);
+      inferredOnlyRootCauseCounts[inferredRow.rootCause] =
+        (inferredOnlyRootCauseCounts[inferredRow.rootCause] ?? 0) + 1;
+      inferredOnlyContradictionRows.push({
+        ...inferredRow,
       });
     }
 
@@ -490,6 +631,8 @@ const main = async () => {
       mySupplement,
       mismatch: {
         sourceDatasetMismatch,
+        sourceDatasetMismatchHard,
+        sourceDatasetMismatchWarning,
         verificationStatusMismatch,
         datasetVerificationBucket,
         eligibleForCountComparison,
@@ -505,7 +648,7 @@ const main = async () => {
   const mismatchRows = comparedRows
     .filter(
       (row) =>
-        row.mismatch.sourceDatasetMismatch
+        row.mismatch.sourceDatasetMismatchHard
         || row.mismatch.verificationStatusMismatch
         || row.mismatch.ingredientCountContradiction
         || row.mismatch.doseCountContradiction,
@@ -522,10 +665,14 @@ const main = async () => {
   const report = {
     generatedAt: new Date().toISOString(),
     apiBaseUrl,
+    sampleMode,
+    sampleSource,
+    fixturePath: sampleMode === "fixture" ? path.relative(ROOT_DIR, fixtureFilePath) : null,
     lookbackHours,
     sampleSize,
     comparedCount: comparedRows.length,
     sourceDatasetMismatchCount,
+    sourceDatasetMismatchWarningCount,
     verificationStatusMismatchCount,
     ingredientCountContradictionCount,
     doseCountContradictionCount,
@@ -535,7 +682,9 @@ const main = async () => {
     datasetVerificationBucketBarcodes,
     doseCountBucketCounts,
     doseCountBucketBarcodes,
+    sourceDatasetMismatchWarningRows,
     inferredOnlyContradictionRows,
+    inferredOnlyRootCauseCounts,
     pass:
       sourceDatasetMismatchCount === 0
       && verificationStatusMismatchCount === 0

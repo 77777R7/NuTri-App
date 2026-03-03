@@ -17,8 +17,12 @@ import {
 import type { DatasetCache } from "./v4DatasetCache.js";
 import type { DoseReasonCode, FormReasonCode } from "../insights/reasonCodes.js";
 import type { ScoreBundleV4, ScoreFlag, ScoreGoalFit, ScoreHighlight, ScoreSource } from "../types.js";
+import {
+  isNutritionLabelLikeNameKey,
+  normalizeNutritionLabelLikeNameKey,
+} from "./nutritionLabelLikeLexicon.js";
 
-export const V4_SCORE_VERSION = "v4.0.0-alpha.4";
+export const V4_SCORE_VERSION = "v4.0.0-alpha.5";
 
 export type ProductIngredientRow = {
   source_id: string;
@@ -310,8 +314,17 @@ const GOAL_DEFINITIONS: GoalDefinition[] = [
 
 const GOAL_LABELS = new Map(GOAL_DEFINITIONS.map((goal) => [goal.id, goal.label]));
 
-const normalizeNameKey = (value: string): string =>
-  value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+const normalizeNameKey = (value: string): string => normalizeNutritionLabelLikeNameKey(value);
+
+const isScoreRelevantActiveRow = (
+  row: ProductIngredientRow,
+  source: ScoreSource,
+): boolean => {
+  if (!row.is_active) return false;
+  if (source !== "dsld") return true;
+  const normalizedName = normalizeNameKey(row.name_key ?? row.name_raw);
+  return !isNutritionLabelLikeNameKey(normalizedName);
+};
 
 const normalizeGoalId = (value?: string | null): string =>
   (value ?? "").trim().toLowerCase();
@@ -1733,7 +1746,21 @@ const computeScores = (
   dailyMultiplier: DailyMultiplierResult,
   unspecifiedFallbackRows: IngredientFormRow[],
 ) => {
-  const activeRows = rows.filter((row) => row.is_active);
+  const nutritionLabelLikeFilteredRows = source === "dsld"
+    ? rows.filter((row) => row.is_active && isNutritionLabelLikeNameKey(row.name_key ?? row.name_raw))
+    : [];
+  const nutritionLabelLikeFilteredCount = nutritionLabelLikeFilteredRows.length;
+  const nutritionLabelLikeFilteredSamples = Array.from(
+    new Set(
+      nutritionLabelLikeFilteredRows
+        .map((row) => String(row.name_raw ?? "").trim())
+        .filter(Boolean),
+    ),
+  ).slice(0, 3);
+  const activeRows = rows.filter((row) => isScoreRelevantActiveRow(row, source));
+  const nutritionLabelLikeLeakCount = activeRows.filter((row) =>
+    isNutritionLabelLikeNameKey(row.name_key ?? row.name_raw),
+  ).length;
   const activeCount = activeRows.length;
   const isUnitOk = (row: ProductIngredientRow): boolean => {
     if (!isRecognizedUnit(row.unit_normalized ?? row.unit, row.unit_kind)) return false;
@@ -2234,6 +2261,9 @@ const computeScores = (
       usedEvidenceIds: Array.from(usedEvidenceIds),
       usedFormIds: Array.from(usedFormIds),
       dailyMultiplier,
+      nutritionLabelLikeFilteredCount,
+      nutritionLabelLikeFilteredSamples,
+      nutritionLabelLikeLeakCount,
     };
   }
 
@@ -2291,6 +2321,9 @@ const computeScores = (
     usedEvidenceIds: Array.from(usedEvidenceIds),
     usedFormIds: Array.from(usedFormIds),
     dailyMultiplier,
+    nutritionLabelLikeFilteredCount,
+    nutritionLabelLikeFilteredSamples,
+    nutritionLabelLikeLeakCount,
   };
 };
 
@@ -2689,7 +2722,7 @@ const buildScoreBundleV4FromData = async (params: {
   );
   const activeIngredientIds = new Set(
     params.rows
-      .filter((row) => row.is_active && row.ingredient_id)
+      .filter((row) => isScoreRelevantActiveRow(row, params.source) && row.ingredient_id)
       .map((row) => row.ingredient_id as string),
   );
   const verifiedEvidenceCount = verifiedEvidenceRows.filter((row) =>
@@ -2737,7 +2770,7 @@ const buildScoreBundleV4FromData = async (params: {
 
   const ingredientNameById = new Map<string, string>();
   params.rows.forEach((row) => {
-    if (!row.is_active || !row.ingredient_id) return;
+    if (!isScoreRelevantActiveRow(row, params.source) || !row.ingredient_id) return;
     if (!ingredientNameById.has(row.ingredient_id)) {
       ingredientNameById.set(row.ingredient_id, row.name_raw);
     }
@@ -3000,6 +3033,11 @@ const buildScoreBundleV4FromData = async (params: {
         },
       },
       ulWarnings,
+      diagnostics: {
+        nutritionLabelLikeFilteredCount: metrics.nutritionLabelLikeFilteredCount,
+        nutritionLabelLikeFilteredSamples: metrics.nutritionLabelLikeFilteredSamples,
+        nutritionLabelLikeLeakCount: metrics.nutritionLabelLikeLeakCount,
+      },
       assumptions: {
         basis,
         doseBasis: "per_day_adult",

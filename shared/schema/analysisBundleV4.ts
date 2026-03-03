@@ -303,6 +303,40 @@ export const DeterministicSignalsMetaSchema = z.object({
 });
 export type DeterministicSignalsMeta = z.infer<typeof DeterministicSignalsMetaSchema>;
 
+export const DecisionSupportSubscoreIdSchema = z.enum([
+  "GoalEvidenceFit",
+  "FormulaQuality",
+  "SafetyTransparency",
+  "TrustQualityAssurance",
+]);
+export type DecisionSupportSubscoreId = z.infer<typeof DecisionSupportSubscoreIdSchema>;
+
+export const DecisionSupportSeveritySchema = z.enum(["high", "medium", "low"]);
+export type DecisionSupportSeverity = z.infer<typeof DecisionSupportSeveritySchema>;
+
+export const DecisionSupportInlineSchema = z.object({
+  verdict: z.enum([
+    "strong_candidate",
+    "reasonable_but_incomplete",
+    "hard_to_recommend_until_label_verified",
+  ]),
+  subscores: z.array(
+    z.object({
+      id: DecisionSupportSubscoreIdSchema,
+      score: z.number().min(0).max(100),
+    }),
+  ).max(4),
+  topBlockers: z.array(
+    z.object({
+      code: z.string().trim().min(1),
+      title: z.string().trim().min(1),
+      why: z.string().trim().min(1),
+      severity: DecisionSupportSeveritySchema,
+    }),
+  ).max(3),
+});
+export type DecisionSupportInline = z.infer<typeof DecisionSupportInlineSchema>;
+
 export const AnalysisBundleMetaSchema = z.object({
   schemaVersion: z.literal(ANALYSIS_BUNDLE_SCHEMA_VERSION),
   promptVersion: z.string(),
@@ -385,6 +419,8 @@ export const AnalysisBundleMetaSchema = z.object({
   eventLoopLagP95DuringRequest: z.number().min(0).optional(),
   webBytesReadTotal: z.number().int().min(0).optional(),
   webParseMsTotal: z.number().min(0).optional(),
+  decisionSupportDigest: z.string().trim().min(8).optional(),
+  decisionSupportInline: DecisionSupportInlineSchema.optional(),
   serverCommitSha: z.string().nullable().optional(),
 });
 

@@ -21,6 +21,7 @@ if (!runDirArg) {
 const shouldRefresh = getArg('refresh') !== 'false';
 
 const runDir = path.isAbsolute(runDirArg) ? runDirArg : path.resolve(process.cwd(), runDirArg);
+const runtimeSignalDirArg = getArg('runtime-signal-dir');
 const monitoringDir = path.join(runDir, 'monitoring');
 const heartbeatPath = path.join(monitoringDir, 'heartbeat.jsonl');
 const hourlyKpiPath = path.join(monitoringDir, 'hourly_kpi_latest.json');
@@ -53,9 +54,13 @@ const safeInt = (value, fallback = null) => {
 };
 
 if (shouldRefresh) {
+  const refreshArgs = ['scripts/maintainer/npn-hourly-kpi-report.mjs', '--run-dir', runDir];
+  if (runtimeSignalDirArg) {
+    refreshArgs.push('--runtime-signal-dir', runtimeSignalDirArg);
+  }
   const res = spawnSync(
     process.execPath,
-    ['scripts/maintainer/npn-hourly-kpi-report.mjs', '--run-dir', runDir],
+    refreshArgs,
     { cwd: process.cwd(), stdio: 'inherit' },
   );
   if (res.status !== 0) {
@@ -114,6 +119,12 @@ const telegramRow = {
     importedP0PerHour: report?.hourly?.importedP0PerHour ?? null,
     repairQueuePerHour: report?.hourly?.repairQueuePerHour ?? null,
     yieldPer1000Npns: latestBatch?.yieldPer1000Npns ?? null,
+    yieldPer1000NetNewPairs: latestBatch?.yieldPer1000NetNewPairs ?? null,
+    internalSignalAttemptedNpns: report?.internalSignal?.attemptedNpns ?? null,
+    internalSignalNetNewPairs: report?.internalSignal?.netNewPairs ?? null,
+    internalSignalAcceptedOrAlreadyPresent: report?.internalSignal?.acceptedOrAlreadyPresent ?? null,
+    internalSignalAlreadyPresentSameNpn: report?.internalSignal?.alreadyPresentHigherRankSameNpn ?? null,
+    internalSignalYieldPer1000Npns: report?.internalSignal?.yieldPer1000Npns ?? null,
   },
   cumulative: {
     attemptedNpns: now.attemptedNpns,
@@ -136,6 +147,10 @@ const telegramRow = {
     deltaCount: repairPriority?.deltaCount ?? null,
     topReasonDelta: Array.isArray(repairPriority?.topReasonDelta) ? repairPriority.topReasonDelta : [],
     topBrandDelta: Array.isArray(repairPriority?.topBrandDelta) ? repairPriority.topBrandDelta : [],
+  },
+  a1RepairLoop: {
+    queue: report?.a1RepairLoop?.queue ?? null,
+    replay: report?.a1RepairLoop?.replay ?? null,
   },
   health: {
     processAlive: Boolean(report?.health?.processAlive),
@@ -160,6 +175,14 @@ const md = [
   `- runDir: ${runDir}`,
   `- queue: ${telegramRow.queueCursor?.current ?? 'n/a'}/${telegramRow.queueCursor?.total ?? 'n/a'}`,
   `- yieldPer1000Npns: ${telegramRow.hourly.yieldPer1000Npns ?? 'n/a'}`,
+  `- yieldPer1000Npns(netNewPairs): ${telegramRow.hourly.yieldPer1000NetNewPairs ?? 'n/a'}`,
+  `- internalSignalAttemptedNpns: ${telegramRow.hourly.internalSignalAttemptedNpns ?? 'n/a'}`,
+  `- internalSignalNetNewPairs: ${telegramRow.hourly.internalSignalNetNewPairs ?? 'n/a'}`,
+  `- internalSignalAcceptedOrAlreadyPresent: ${telegramRow.hourly.internalSignalAcceptedOrAlreadyPresent ?? 'n/a'}`,
+  `- internalSignalAlreadyPresentSameNpn: ${telegramRow.hourly.internalSignalAlreadyPresentSameNpn ?? 'n/a'}`,
+  `- internalSignalYieldPer1000Npns: ${telegramRow.hourly.internalSignalYieldPer1000Npns ?? 'n/a'}`,
+  `- a1RepairQueue: ${telegramRow.a1RepairLoop.queue?.repairQueueTotal ?? 'n/a'} (release=${telegramRow.a1RepairLoop.queue?.release ?? 'n/a'}, retain=${telegramRow.a1RepairLoop.queue?.retain ?? 'n/a'}, manual=${telegramRow.a1RepairLoop.queue?.manual ?? 'n/a'})`,
+  `- a1Replay: attempted=${telegramRow.a1RepairLoop.replay?.attempted ?? 'n/a'} imported=${telegramRow.a1RepairLoop.replay?.imported ?? 'n/a'} blocked=${telegramRow.a1RepairLoop.replay?.blocked ?? 'n/a'} failed=${telegramRow.a1RepairLoop.replay?.failed ?? 'n/a'}`,
   `- attempted/hour: ${telegramRow.hourly.attemptedPerHour ?? 'n/a'}`,
   `- importedP0/hour: ${telegramRow.hourly.importedP0PerHour ?? 'n/a'}`,
   `- repairQueue/hour: ${telegramRow.hourly.repairQueuePerHour ?? 'n/a'}`,

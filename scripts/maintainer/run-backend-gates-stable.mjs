@@ -48,6 +48,7 @@ Options:
   --skip-focus-probes         Skip focus probe stream checks
   --skip-crash-canary         Skip crash canary sequence
   --ul-barcodes-file <path>   Barcode fixture for UL visibility report
+  --web-only-set <path>       Expected web-only fallback barcode set (default: scripts/maintainer/fixtures/web_only_barcodes.json)
   --skip-shadow-reports       Skip write policy/candidates/negative-cache/surface consistency reports
   --crash-canary-file <path>  Crash canary fixture (default: scripts/maintainer/fixtures/crash_canary_barcodes.v1.json)
   --expected-authoritative-set <path>  Expected authoritative barcode set (default: scripts/maintainer/fixtures/expected_authoritative_set.v1.json)
@@ -55,6 +56,8 @@ Options:
   --mobile-soak-summary <path> Optional mobile soak rounds_summary.json for content-value metrics
   --cohort-replay-summary <path> Optional run-cohort-replay replay_summary.json
   --cohort-triage-report <path> Optional triage-cohort-results triage_report.json
+  --cohort-stats <path> Optional build-cohort cohort_stats.json
+  --stage-b-compare-report <path> Optional compare-stage-b-baseline output json (consume-only)
 `);
   process.exit(0);
 }
@@ -80,8 +83,12 @@ const NEGATIVE_CACHE_RESIDUAL_REPORT_PATH = path.join(OUTPUT_DIR, "negative_cach
 const SURFACE_CONSISTENCY_REPORT_PATH = path.join(OUTPUT_DIR, "surface_consistency_report.json");
 const REPAIR_QUEUE_JSON_PATH = path.join(OUTPUT_DIR, "authoritative_expected_not_final_repair_queue.json");
 const REPAIR_QUEUE_MD_PATH = path.join(OUTPUT_DIR, "authoritative_expected_not_final_repair_queue.md");
+const WEB_FALLBACK_QUEUE_PATH = path.join(OUTPUT_DIR, "web_fallback_data_mapping_queue.jsonl");
+const INFERRED_ONLY_REPAIR_QUEUE_PATH = path.join(OUTPUT_DIR, "inferred_only_repair_queue.jsonl");
+const DATA_CEILING_EXPLAIN_QUEUE_PATH = path.join(OUTPUT_DIR, "data_ceiling_explain_queue.jsonl");
 const CRASH_CANARY_REPORT_PATH = path.join(OUTPUT_DIR, "crash_canary_report.json");
 const GENERALIZATION_COHORT_REPORT_PATH = path.join(OUTPUT_DIR, "generalization_cohorts_report.json");
+const GOVERNANCE_POLICY_REPORT_PATH = path.join(OUTPUT_DIR, "governance_policy_report.json");
 
 const manageBackend = hasFlag("manage-backend") || boolFromEnv(process.env.RUN_BACKEND_GATES_MANAGE_BACKEND, false);
 const backendCmd = getArg("backend-cmd") || process.env.RUN_BACKEND_GATES_BACKEND_CMD || "PORT=3001 node backend/dist/server.js";
@@ -142,6 +149,29 @@ const cohortTriageReportPath = cohortTriageReportArg
   ? path.isAbsolute(cohortTriageReportArg)
     ? cohortTriageReportArg
     : path.join(ROOT_DIR, cohortTriageReportArg)
+  : null;
+const cohortStatsArg =
+  getArg("cohort-stats")
+  || process.env.COHORT_STATS_PATH
+  || null;
+const inferCohortStatsPath = (replaySummaryPath) => {
+  if (!replaySummaryPath) return null;
+  const replayDir = path.dirname(replaySummaryPath);
+  const replayTag = path.basename(replayDir).replace(/-fullui$/i, "");
+  if (!replayTag) return null;
+  return path.join(ROOT_DIR, "output", "cohorts", replayTag, "cohort_stats.json");
+};
+const cohortStatsPath = cohortStatsArg
+  ? (path.isAbsolute(cohortStatsArg) ? cohortStatsArg : path.join(ROOT_DIR, cohortStatsArg))
+  : inferCohortStatsPath(cohortReplaySummaryPath);
+const stageBCompareReportArg =
+  getArg("stage-b-compare-report")
+  || process.env.STAGE_B_COMPARE_REPORT_PATH
+  || null;
+const stageBCompareReportPath = stageBCompareReportArg
+  ? path.isAbsolute(stageBCompareReportArg)
+    ? stageBCompareReportArg
+    : path.join(ROOT_DIR, stageBCompareReportArg)
   : null;
 const TERMINAL_REASON_WARN_THRESHOLD = Number(
   process.env.MAINTAINER_GATES_TERMINAL_REASON_WARN_THRESHOLD || 0.05,
@@ -245,6 +275,13 @@ const expectedAuthoritativeArg =
 const expectedAuthoritativePath = path.isAbsolute(expectedAuthoritativeArg)
   ? expectedAuthoritativeArg
   : path.join(ROOT_DIR, expectedAuthoritativeArg);
+const webOnlySetArg =
+  getArg("web-only-set")
+  || process.env.MAINTAINER_GATES_WEB_ONLY_SET
+  || path.join("scripts", "maintainer", "fixtures", "web_only_barcodes.json");
+const webOnlySetPath = path.isAbsolute(webOnlySetArg)
+  ? webOnlySetArg
+  : path.join(ROOT_DIR, webOnlySetArg);
 const repairQueueFallbackReportArg =
   getArg("repair-queue-fallback-report") ||
   process.env.MAINTAINER_GATES_REPAIR_QUEUE_FALLBACK_REPORT ||
@@ -255,6 +292,7 @@ const repairQueueFallbackReportPath = repairQueueFallbackReportArg
     : path.join(ROOT_DIR, repairQueueFallbackReportArg)
   : null;
 const EXPECTED_AUTH_RESOLVED_PATH = path.join(OUTPUT_DIR, "expected_authoritative_set.resolved.json");
+const WEB_ONLY_RESOLVED_PATH = path.join(OUTPUT_DIR, "web_only_set.resolved.json");
 const crashCanaryFixtureArg =
   getArg("crash-canary-file")
   || process.env.MAINTAINER_GATES_CRASH_CANARY_FILE
@@ -933,10 +971,125 @@ const buildRepairQueueFromViolations = (violations) => {
     }));
 };
 
+const buildWebFallbackQueueFromViolations = (violations) => {
+  const rows = Array.isArray(violations)
+    ? violations.filter((row) => row?.bucket === "allowed_web_fallback")
+    : [];
+  const grouped = new Map();
+  for (const row of rows) {
+    const barcode = toGtin14(row?.barcode);
+    if (!barcode) continue;
+    const existing = grouped.get(barcode) ?? {
+      barcode,
+      occurrences: 0,
+      scenarios: new Set(),
+      terminalReasons: new Set(),
+      sourceTypes: new Set(),
+      requestIds: new Set(),
+    };
+    existing.occurrences += 1;
+    if (row?.scenario) existing.scenarios.add(String(row.scenario));
+    if (row?.sourceType) existing.sourceTypes.add(String(row.sourceType));
+    if (row?.terminalReason) existing.terminalReasons.add(String(row.terminalReason));
+    if (row?.requestId) existing.requestIds.add(String(row.requestId));
+    grouped.set(barcode, existing);
+  }
+  return [...grouped.values()]
+    .sort((a, b) => a.barcode.localeCompare(b.barcode))
+    .map((item) => ({
+      barcode: item.barcode,
+      queue: "data_mapping_queue",
+      reason: "allowed_web_fallback_source_type_final_false",
+      occurrences: item.occurrences,
+      scenarios: [...item.scenarios].sort((a, b) => a.localeCompare(b)),
+      sourceTypes: [...item.sourceTypes].sort((a, b) => a.localeCompare(b)),
+      terminalReasons: [...item.terminalReasons].sort((a, b) => a.localeCompare(b)),
+      requestIds: [...item.requestIds].sort((a, b) => a.localeCompare(b)).slice(0, 20),
+    }));
+};
+
+const toJsonl = (rows) =>
+  rows.map((row) => JSON.stringify(row)).join("\n") + (rows.length ? "\n" : "");
+
+const buildInferredOnlyQueuesFromSurface = (surfaceReport) => {
+  const rows = Array.isArray(surfaceReport?.inferredOnlyContradictionRows)
+    ? surfaceReport.inferredOnlyContradictionRows
+    : [];
+  const inferredOnlyRepairQueue = [];
+  const dataCeilingExplainQueue = [];
+  const unknownQueue = [];
+  for (const row of rows) {
+    const rootCauseRaw = String(row?.rootCause ?? "").trim();
+    const rootCause = rootCauseRaw || "unknown";
+    const payload = {
+      barcode: toGtin14(row?.barcode),
+      rootCause,
+      scanSourceDataset: row?.scanSourceDataset ?? null,
+      scanVerificationStatus: row?.scanVerificationStatus ?? null,
+      mySupplementSourceDataset: row?.mySupplementSourceDataset ?? null,
+      mySupplementVerificationStatus: row?.mySupplementVerificationStatus ?? null,
+      scanStrictIngredientCount: row?.scanStrictIngredientCount ?? null,
+      scanStrictDoseCount: row?.scanStrictDoseCount ?? null,
+      scanInferredIngredientCount: row?.scanInferredIngredientCount ?? null,
+      scanInferredDoseCount: row?.scanInferredDoseCount ?? null,
+      mySupplementIngredientCount: row?.mySupplementIngredientCount ?? null,
+      mySupplementDoseCount: row?.mySupplementDoseCount ?? null,
+    };
+    if (!payload.barcode) continue;
+    if (rootCause === "parser_gap_fixable") {
+      inferredOnlyRepairQueue.push({ ...payload, queue: "inferred_only_repair_queue" });
+    } else if (rootCause === "data_ceiling" || rootCause === "inference_only_expected") {
+      dataCeilingExplainQueue.push({ ...payload, queue: "data_ceiling_explain_queue" });
+    } else {
+      unknownQueue.push({ ...payload, queue: "inferred_only_unknown_queue" });
+    }
+  }
+  return {
+    inferredOnlyRepairQueue,
+    dataCeilingExplainQueue,
+    unknownQueue,
+  };
+};
+
 const repairQueueToMarkdown = (payload) => {
   const lines = [];
   lines.push("# Authoritative Expected-Not-Final Repair Queue");
   lines.push("");
+
+  if (payload?.governancePolicy) {
+    lines.push("## Governance Policy");
+    lines.push("");
+    lines.push(`- pass: ${payload.governancePolicy.pass ? "yes" : "no"}`);
+    lines.push(`- env: ${payload.governancePolicy.env ?? "unknown"}`);
+    lines.push(`- migrationBatchId: ${payload.governancePolicy.migrationBatchId ?? "n/a"}`);
+    lines.push(`- dbWriteMode: ${payload.governancePolicy.dbWriteMode ?? "n/a"}`);
+    const blockingReasons = Array.isArray(payload.governancePolicy.blockingReasons)
+      ? payload.governancePolicy.blockingReasons
+      : [];
+    const warnings = Array.isArray(payload.governancePolicy.warnings)
+      ? payload.governancePolicy.warnings
+      : [];
+    lines.push(`- blockingReasons: ${blockingReasons.length > 0 ? blockingReasons.join(", ") : "none"}`);
+    lines.push(`- warnings: ${warnings.length > 0 ? warnings.join(", ") : "none"}`);
+    lines.push("");
+  }
+
+  if (payload?.payloadBudget?.topSamples?.length) {
+    lines.push("## Payload Budget");
+    lines.push("");
+    payload.payloadBudget.topSamples.forEach((entry) => {
+      lines.push(
+        `- scenario=${entry.scenario ?? "unknown"} maxObservedBytes=${entry.maxObservedBytes ?? 0}`,
+      );
+      const fields = Array.isArray(entry?.sample?.topFields) ? entry.sample.topFields : [];
+      fields.slice(0, 8).forEach((field) => {
+        lines.push(
+          `- path=${field.path ?? "unknown"} bytes=${field.bytes ?? 0} percent=${field.percent ?? 0}`,
+        );
+      });
+    });
+    lines.push("");
+  }
   lines.push(`- Generated: ${payload.generatedAt}`);
   lines.push(`- queueSource: ${payload.queueSource}`);
   lines.push(`- sourceReport: ${payload.sourceReport}`);
@@ -1052,6 +1205,100 @@ const computeSpanDays = (firstSeenAt, lastSeenAt) => {
   return Number((spanMs / 86400000).toFixed(2));
 };
 
+const readWebOnlyFixture = async (fixturePath) => {
+  const raw = await readJson(fixturePath);
+  const rows = Array.isArray(raw)
+    ? raw
+    : Array.isArray(raw?.barcodes)
+      ? raw.barcodes
+      : [];
+  const nowMs = Date.now();
+  const dedup = new Map();
+  for (const row of rows) {
+    const barcode = toGtin14(row?.barcode);
+    if (!barcode) continue;
+    if (dedup.has(barcode)) continue;
+    const reviewAfterDaysRaw = Number(row?.reviewAfterDays);
+    const reviewAfterDays = Number.isFinite(reviewAfterDaysRaw) && reviewAfterDaysRaw > 0
+      ? Math.floor(reviewAfterDaysRaw)
+      : null;
+    const reviewedAt = parseOptionalDate(row?.reviewedAt ?? row?.verifiedAt);
+    const expiresAtExplicit = parseOptionalDate(row?.expiresAt);
+    const expiresAtDerived = !expiresAtExplicit && reviewedAt && reviewAfterDays != null
+      ? new Date(new Date(reviewedAt).getTime() + reviewAfterDays * 86400000).toISOString()
+      : null;
+    const expiresAt = expiresAtExplicit ?? expiresAtDerived;
+    const expiresAtMs = expiresAt ? Date.parse(expiresAt) : null;
+    const expired = Number.isFinite(expiresAtMs) ? expiresAtMs <= nowMs : false;
+    dedup.set(barcode, {
+      barcode,
+      region: typeof row?.region === "string" ? row.region : null,
+      site: typeof row?.site === "string" ? row.site : null,
+      expectedSourceType:
+        typeof row?.expectedSourceType === "string" ? row.expectedSourceType : "web",
+      expectedScoreAvailable:
+        typeof row?.expectedScoreAvailable === "boolean" ? row.expectedScoreAvailable : null,
+      sourceUrl: typeof row?.sourceUrl === "string" ? row.sourceUrl : null,
+      notes: typeof row?.notes === "string" ? row.notes : null,
+      reviewedAt,
+      reviewAfterDays,
+      expiresAt,
+      expired,
+    });
+  }
+  const barcodes = [...dedup.values()].sort((a, b) => a.barcode.localeCompare(b.barcode));
+  const activeRows = barcodes.filter((row) => row.expired !== true);
+  return {
+    version: typeof raw?.version === "string" ? raw.version : "v1",
+    generatedAt: new Date().toISOString(),
+    fixture: {
+      path: fixturePath,
+      count: rows.length,
+    },
+    activeCount: activeRows.length,
+    expiredCount: barcodes.length - activeRows.length,
+    barcodes,
+    activeBarcodes: activeRows.map((row) => row.barcode),
+  };
+};
+
+const collectFlagsSnapshot = () => ({
+  KEY_CONTRACT_V2: process.env.KEY_CONTRACT_V2 ?? null,
+  WRITE_GUARD_V2: process.env.WRITE_GUARD_V2 ?? null,
+  METADATA_READONLY: process.env.METADATA_READONLY ?? null,
+  STAGE0_PROTOCOL_UNIFIED: process.env.STAGE0_PROTOCOL_UNIFIED ?? null,
+  STAGE0_AUTHORITATIVE_DETERMINISTIC_REV1:
+    process.env.STAGE0_AUTHORITATIVE_DETERMINISTIC_REV1 ?? null,
+  DETERMINISTIC_SIGNALS_PRIMARY: process.env.DETERMINISTIC_SIGNALS_PRIMARY ?? null,
+});
+
+const detectExecutionEnv = (apiBase) => {
+  const explicit = String(process.env.MAINTAINER_GATES_ENV || "").trim().toLowerCase();
+  if (explicit === "local" || explicit === "staging" || explicit === "prod") return explicit;
+  const url = String(apiBase || "").toLowerCase();
+  if (url.includes("127.0.0.1") || url.includes("localhost")) return "local";
+  if (url.includes("staging")) return "staging";
+  if (url.includes("prod") || url.includes("onrender.com") || url.includes("render.com")) return "prod";
+  return "unknown";
+};
+
+const readGitMeta = () => {
+  const read = (argsList) => {
+    try {
+      const result = spawnSync("git", argsList, { cwd: ROOT_DIR, encoding: "utf8" });
+      if (result.status !== 0) return null;
+      const value = String(result.stdout ?? "").trim();
+      return value || null;
+    } catch {
+      return null;
+    }
+  };
+  return {
+    gitCommit: read(["rev-parse", "--short", "HEAD"]),
+    branch: read(["rev-parse", "--abbrev-ref", "HEAD"]),
+  };
+};
+
 const registerDbEvidence = (dbEvidenceMap, barcode, evidenceKind, row) => {
   if (!barcode) return;
   const existing = dbEvidenceMap.get(barcode) ?? {
@@ -1131,7 +1378,9 @@ const resolveExpectedAuthoritativeSet = async (fixturePath) => {
 
       const { data: mapRows, error: mapError } = await supabase
         .from("barcode_regulatory_map")
-        .select("*")
+        .select(
+          "npn,gtin14,barcode_gtin14,barcode,barcode_raw,barcode_digits,upc,ean,code,created_at,updated_at,last_seen_at,observed_at,inserted_at",
+        )
         .limit(3000);
       if (mapError) {
         dbSummary.errors.push(`barcode_regulatory_map:${mapError.message}`);
@@ -1150,7 +1399,9 @@ const resolveExpectedAuthoritativeSet = async (fixturePath) => {
 
       const { data: trainingRows, error: trainingError } = await supabase
         .from("barcode_resolution_training")
-        .select("*")
+        .select(
+          "outcome,signals,gtin14,barcode_gtin14,barcode,barcode_raw,barcode_digits,upc,ean,code,created_at,updated_at,last_seen_at,observed_at,inserted_at",
+        )
         .limit(3000);
       if (trainingError) {
         dbSummary.errors.push(`barcode_resolution_training:${trainingError.message}`);
@@ -2251,7 +2502,7 @@ const buildTerminalReasonTopN = (rows, limit = TERMINAL_REASON_TOPN_LIMIT) => {
     }));
 };
 
-const evaluateSourceTypeFinalViolations = (rows, expectedSet) => {
+const evaluateSourceTypeFinalViolations = (rows, expectedSet, webOnlySet = null) => {
   const expectedLookup = new Map();
   if (Array.isArray(expectedSet?.barcodes)) {
     for (const row of expectedSet.barcodes) {
@@ -2265,9 +2516,26 @@ const evaluateSourceTypeFinalViolations = (rows, expectedSet) => {
       });
     }
   }
+  const webOnlyLookup = new Map();
+  if (Array.isArray(webOnlySet?.barcodes)) {
+    for (const row of webOnlySet.barcodes) {
+      const barcode = toGtin14(row?.barcode);
+      if (!barcode) continue;
+      if (row?.expired === true) continue;
+      if (webOnlyLookup.has(barcode)) continue;
+      webOnlyLookup.set(barcode, {
+        sourceUrl: row?.sourceUrl ?? null,
+        reviewedAt: row?.reviewedAt ?? null,
+        reviewAfterDays: row?.reviewAfterDays ?? null,
+        expiresAt: row?.expiresAt ?? null,
+        notes: row?.notes ?? null,
+      });
+    }
+  }
   const sourceTypeFinalViolations = [];
   let authoritativeExpectedButNotFinalCount = 0;
   let dbExpectedButNotFinalCount = 0;
+  let webOnlyExpectedCount = 0;
   let webFallbackCount = 0;
   let barcode000847Bucket = "not_observed";
   for (const row of rows) {
@@ -2278,16 +2546,21 @@ const evaluateSourceTypeFinalViolations = (rows, expectedSet) => {
       continue;
     }
     const expectedConfig = expectedLookup.get(row?.barcode);
+    const webOnlyConfig = webOnlyLookup.get(row?.barcode);
     const isFixtureHardFail = expectedConfig?.enforcement === "hard_fail";
     const isDbWarning = Boolean(expectedConfig) && !isFixtureHardFail;
+    const isExpectedWebOnly = !isFixtureHardFail && !isDbWarning && Boolean(webOnlyConfig);
     const bucket = isFixtureHardFail
       ? "expected_but_not_final"
       : isDbWarning
         ? "db_expected_warning"
-        : "allowed_web_fallback";
-    const severity = isFixtureHardFail ? "fail" : "warning";
+        : isExpectedWebOnly
+          ? "expected_web_only"
+          : "allowed_web_fallback";
+    const severity = isFixtureHardFail ? "fail" : isExpectedWebOnly ? "info" : "warning";
     if (isFixtureHardFail) authoritativeExpectedButNotFinalCount += 1;
     else if (isDbWarning) dbExpectedButNotFinalCount += 1;
+    else if (isExpectedWebOnly) webOnlyExpectedCount += 1;
     else webFallbackCount += 1;
     if (row?.barcode === "00084783891253") barcode000847Bucket = bucket;
     sourceTypeFinalViolations.push({
@@ -2298,6 +2571,12 @@ const evaluateSourceTypeFinalViolations = (rows, expectedSet) => {
       expectedSetSource: expectedConfig?.source ?? null,
       expectedSetReason: expectedConfig?.reason ?? null,
       expectedSetEnforcement: expectedConfig?.enforcement ?? null,
+      webOnlyExpected: isExpectedWebOnly,
+      webOnlySourceUrl: webOnlyConfig?.sourceUrl ?? null,
+      webOnlyReviewedAt: webOnlyConfig?.reviewedAt ?? null,
+      webOnlyReviewAfterDays: webOnlyConfig?.reviewAfterDays ?? null,
+      webOnlyExpiresAt: webOnlyConfig?.expiresAt ?? null,
+      webOnlyNotes: webOnlyConfig?.notes ?? null,
       requestId: row?.requestId ?? null,
       terminal: row?.terminal ?? null,
       scenario: row?.scenario ?? null,
@@ -2311,6 +2590,7 @@ const evaluateSourceTypeFinalViolations = (rows, expectedSet) => {
   return {
     authoritativeExpectedButNotFinalCount,
     dbExpectedButNotFinalCount,
+    webOnlyExpectedCount,
     webFallbackCount,
     sourceTypeFinalViolations,
     barcode000847Bucket,
@@ -2585,6 +2865,20 @@ const toMarkdown = (report) => {
   lines.push(`- productRegression: ${report.verdict.productRegression ? "yes" : "no"}`);
   lines.push("");
 
+  if (report.baseline_context) {
+    lines.push("## Baseline Context");
+    lines.push("");
+    lines.push(`- gitCommit: ${report.baseline_context.gitCommit ?? "n/a"}`);
+    lines.push(`- branch: ${report.baseline_context.branch ?? "n/a"}`);
+    lines.push(`- env: ${report.baseline_context.env ?? "unknown"}`);
+    lines.push(`- migrationBatchId: ${report.baseline_context.migrationBatchId ?? "n/a"}`);
+    lines.push(`- dbWriteMode: ${report.baseline_context.dbWriteMode ?? "n/a"}`);
+    lines.push(
+      `- flagsSnapshot: \`${JSON.stringify(report.baseline_context.flagsSnapshot ?? {})}\``,
+    );
+    lines.push("");
+  }
+
   lines.push("## Key Stats");
   lines.push("");
   lines.push(`- Terminal breakdown: \`${JSON.stringify(report.terminalBreakdown)}\``);
@@ -2596,6 +2890,11 @@ const toMarkdown = (report) => {
   lines.push(`- Degraded mode counts: \`${JSON.stringify(report.degradedModeCounts)}\``);
   lines.push(`- Admission lane counts: \`${JSON.stringify(report.admissionLaneCounts ?? {})}\``);
   lines.push(`- sourceTypeFinal counts: \`${JSON.stringify(report.sourceTypeFinalCounts)}\``);
+  if (report.payloadBudget) {
+    lines.push(
+      `- analysis_bundle payload: max=${report.payloadBudget.maxObservedBytes ?? 0}B warn=${report.payloadBudget.warnBytes ?? 0}B fail=${report.payloadBudget.failBytes ?? 0}B warnScenarios=${report.payloadBudget.warnScenarioCount ?? 0} failScenarios=${report.payloadBudget.failScenarioCount ?? 0}`,
+    );
+  }
   lines.push(
     `- npn rows with candidates: ${report.npnCandidateStats?.rowsWithCandidates ?? 0}/${report.npnCandidateStats?.totalRows ?? 0}`,
   );
@@ -2727,6 +3026,15 @@ const toMarkdown = (report) => {
     lines.push(`- cohort triage systemHealthVerdict: ${report.reports.cohortTriageReport.systemHealthVerdict ?? "n/a"}`);
     lines.push(`- cohort triage evidenceSufficiencyVerdict: ${report.reports.cohortTriageReport.evidenceSufficiencyVerdict ?? "n/a"}`);
     lines.push(`- cohort triage attemptCount: ${report.reports.cohortTriageReport.attemptCount ?? "n/a"}`);
+  }
+  if (report?.stageBCompare && typeof report.stageBCompare === "object") {
+    lines.push(`- stageB compare pass: ${report.stageBCompare.pass ? "yes" : "no"}`);
+    lines.push(`- stageB compare l1DistancePp: ${report.stageBCompare?.verdictDrift?.l1DistancePp ?? "n/a"}`);
+    lines.push(`- stageB compare bucketDeltaPp: ${JSON.stringify(report.stageBCompare?.verdictDrift?.bucketDeltaPp ?? {})}`);
+    lines.push(`- stageB compare digest409 metrics: ${JSON.stringify(report.stageBCompare?.digest409Metrics ?? {})}`);
+    lines.push(`- stageB compare noRegression: ${JSON.stringify(report.stageBCompare?.noRegression ?? {})}`);
+    lines.push(`- stageB compare report path: ${report?.reports?.stageBCompareReportPath ?? "n/a"}`);
+    lines.push(`- stageB repair queue path: ${report.stageBCompare?.stageBRepairQueuePath ?? "n/a"}`);
   }
   lines.push("");
 
@@ -2876,6 +3184,7 @@ const toMarkdown = (report) => {
   lines.push("");
   lines.push(`- expected-but-not-final count: ${report.authoritativeExpectedButNotFinalCount ?? 0}`);
   lines.push(`- db-expected-warning count: ${report.dbExpectedButNotFinalCount ?? 0}`);
+  lines.push(`- expected-web-only count: ${report.webOnlyExpectedCount ?? 0}`);
   lines.push(`- web fallback count: ${report.webFallbackCount ?? 0}`);
   lines.push(`- 000847 bucket: ${report.barcode000847Bucket ?? "not_observed"}`);
   lines.push("");
@@ -2980,6 +3289,39 @@ const toMarkdown = (report) => {
     lines.push("");
   }
 
+  if (Array.isArray(report.webFallbackQueue)) {
+    lines.push("## Web Fallback Queue");
+    lines.push("");
+    lines.push(`- queueSize: ${report.webFallbackQueue.length}`);
+    report.webFallbackQueue.slice(0, 50).forEach((item) => {
+      lines.push(
+        `- barcode=${item.barcode ?? "null"} reason=${item.reason ?? "unknown"} occurrences=${item.occurrences ?? 0} scenarios=${item.scenarios?.join(",") || "none"} sourceTypes=${item.sourceTypes?.join(",") || "none"} terminalReasons=${item.terminalReasons?.join(",") || "none"}`,
+      );
+    });
+    lines.push("");
+  }
+
+  if (report.inferredOnlyQueues) {
+    lines.push("## Inferred-Only Queue");
+    lines.push("");
+    lines.push(
+      `- inferredOnlyRepairQueueCount: ${report.inferredOnlyQueues.inferredOnlyRepairQueueCount ?? 0}`,
+    );
+    lines.push(
+      `- dataCeilingExplainQueueCount: ${report.inferredOnlyQueues.dataCeilingExplainQueueCount ?? 0}`,
+    );
+    lines.push(`- unknownQueueCount: ${report.inferredOnlyQueues.unknownQueueCount ?? 0}`);
+    const preview = Array.isArray(report.inferredOnlyQueues.inferredOnlyRepairQueue)
+      ? report.inferredOnlyQueues.inferredOnlyRepairQueue
+      : [];
+    preview.slice(0, 30).forEach((item) => {
+      lines.push(
+        `- barcode=${item.barcode ?? "null"} queue=${item.queue ?? "unknown"} rootCause=${item.rootCause ?? "unknown"} scanDataset=${item.scanSourceDataset ?? "unknown"} scanStatus=${item.scanVerificationStatus ?? "unknown"} mysuppDataset=${item.mySupplementSourceDataset ?? "unknown"} mysuppStatus=${item.mySupplementVerificationStatus ?? "unknown"}`,
+      );
+    });
+    lines.push("");
+  }
+
   lines.push("## Script Status");
   lines.push("");
   lines.push(`- enrich-stream-concurrency-gate: exit=${report.scripts.enrich.exitCode} durationMs=${report.scripts.enrich.durationMs}`);
@@ -2990,6 +3332,7 @@ const toMarkdown = (report) => {
   lines.push(`- candidates-quality-report: exit=${report.scripts.candidatesQuality.exitCode} durationMs=${report.scripts.candidatesQuality.durationMs}`);
   lines.push(`- negative-cache-residual-report: exit=${report.scripts.negativeCacheResidual.exitCode} durationMs=${report.scripts.negativeCacheResidual.durationMs}`);
   lines.push(`- surface-consistency-report: exit=${report.scripts.surfaceConsistency.exitCode} durationMs=${report.scripts.surfaceConsistency.durationMs}`);
+  lines.push(`- governance-policy-verifier: exit=${report.scripts.governancePolicy.exitCode} durationMs=${report.scripts.governancePolicy.durationMs}`);
   lines.push("");
 
   if (Array.isArray(report.verdict.warnings) && report.verdict.warnings.length > 0) {
@@ -3178,6 +3521,14 @@ const main = async () => {
     ],
     { timeoutMs: SCRIPT_TIMEOUT_MS_GENERALIZATION },
   );
+  const governancePolicyRun = await runNodeScript(
+    "scripts/maintainer/verify-governance-policy.mjs",
+    {
+      API_BASE_URL,
+    },
+    ["--out-dir", OUTPUT_DIR, "--api-base-url", API_BASE_URL],
+    { timeoutMs: SCRIPT_TIMEOUT_MS_DEFAULT },
+  );
 
   const enrichReport = await readJson(path.join(ENRICH_OUT_DIR, "report.json"));
   const bulkGate = await readJson(path.join(BULK_OUT_DIR, "gate.json"));
@@ -3188,7 +3539,19 @@ const main = async () => {
   const candidatesQualityReport = await readJson(CANDIDATES_QUALITY_REPORT_PATH);
   const negativeCacheResidualReport = await readJson(NEGATIVE_CACHE_RESIDUAL_REPORT_PATH);
   const surfaceConsistencyReport = await readJson(SURFACE_CONSISTENCY_REPORT_PATH);
+  const inferredOnlyQueues = buildInferredOnlyQueuesFromSurface(surfaceConsistencyReport);
+  await fs.writeFile(
+    INFERRED_ONLY_REPAIR_QUEUE_PATH,
+    toJsonl(inferredOnlyQueues.inferredOnlyRepairQueue),
+    "utf8",
+  );
+  await fs.writeFile(
+    DATA_CEILING_EXPLAIN_QUEUE_PATH,
+    toJsonl(inferredOnlyQueues.dataCeilingExplainQueue),
+    "utf8",
+  );
   const generalizationCohortReport = await readJson(GENERALIZATION_COHORT_REPORT_PATH);
+  const governancePolicyReport = await readJson(GOVERNANCE_POLICY_REPORT_PATH);
   const reportFreshness = await evaluateReportFreshness({
     anchorMs: Date.now(),
     maxAgeMs: REPORT_FRESHNESS_MAX_AGE_MS,
@@ -3216,6 +3579,8 @@ const main = async () => {
   const mobileSoakSummary = mobileSoakSummaryPath ? await readJson(mobileSoakSummaryPath) : null;
   const cohortReplaySummary = cohortReplaySummaryPath ? await readJson(cohortReplaySummaryPath) : null;
   const cohortTriageReport = cohortTriageReportPath ? await readJson(cohortTriageReportPath) : null;
+  const cohortStats = cohortStatsPath ? await readJson(cohortStatsPath) : null;
+  const stageBCompareReport = stageBCompareReportPath ? await readJson(stageBCompareReportPath) : null;
   const focusRows = skipFocusProbes ? [] : await runFocusProbes();
   const crashCanaryFixture = skipCrashCanary
     ? { schemaVersion: 1, samples: [], metadata: { skipped: true } }
@@ -3242,13 +3607,53 @@ const main = async () => {
   const backendCrashStats = await readBackendCrashStats(state.backend.backendLogPath);
   const focusContamination = detectFocusContamination(focusRows);
   const expectedAuthoritativeResolved = await resolveExpectedAuthoritativeSet(expectedAuthoritativePath);
+  const webOnlyResolved = await readWebOnlyFixture(webOnlySetPath);
   await fs.writeFile(
     EXPECTED_AUTH_RESOLVED_PATH,
     JSON.stringify(expectedAuthoritativeResolved, null, 2),
     "utf8",
   );
+  await fs.writeFile(
+    WEB_ONLY_RESOLVED_PATH,
+    JSON.stringify(webOnlyResolved, null, 2),
+    "utf8",
+  );
 
   const enrichScenarios = Array.isArray(enrichReport?.details) ? enrichReport.details : [];
+  const enrichPayloadBudget = (() => {
+    const scenarios = Array.isArray(enrichReport?.scenarios) ? enrichReport.scenarios : [];
+    const payloadRows = scenarios
+      .map((scenario) => ({
+        name: scenario?.name ?? "unknown",
+        budget: scenario?.payloadBudget ?? null,
+      }))
+      .filter((row) => row.budget && typeof row.budget === "object");
+    if (payloadRows.length === 0) return null;
+    const warnBytes = Number(payloadRows[0].budget.warnBytes ?? 64 * 1024);
+    const failBytes = Number(payloadRows[0].budget.failBytes ?? 80 * 1024);
+    const maxObservedBytes = payloadRows.reduce(
+      (max, row) => Math.max(max, Number(row.budget.maxObservedBytes ?? 0)),
+      0,
+    );
+    const warnScenarioCount = payloadRows.filter((row) => row.budget.warnExceeded).length;
+    const failScenarioCount = payloadRows.filter((row) => row.budget.failExceeded).length;
+    const topSamples = payloadRows
+      .map((row) => ({
+        scenario: row.name,
+        maxObservedBytes: Number(row.budget.maxObservedBytes ?? 0),
+        sample: row.budget.sample ?? null,
+      }))
+      .sort((a, b) => b.maxObservedBytes - a.maxObservedBytes)
+      .slice(0, 3);
+    return {
+      warnBytes,
+      failBytes,
+      maxObservedBytes,
+      warnScenarioCount,
+      failScenarioCount,
+      topSamples,
+    };
+  })();
   const bulkRows = Array.isArray(bulkSummary) ? bulkSummary : [];
   const evidenceRows = collectEvidenceRows(enrichScenarios, bulkRows);
   const focusEvidenceRows = focusRows.map((row) => ({
@@ -3321,7 +3726,12 @@ const main = async () => {
   const sourceTypeFinalEvaluation = evaluateSourceTypeFinalViolations(
     allEvidenceRows,
     expectedAuthoritativeResolved,
+    webOnlyResolved,
   );
+  const webFallbackQueue = buildWebFallbackQueueFromViolations(
+    sourceTypeFinalEvaluation.sourceTypeFinalViolations,
+  );
+  await fs.writeFile(WEB_FALLBACK_QUEUE_PATH, toJsonl(webFallbackQueue), "utf8");
   let repairQueue = buildRepairQueueFromViolations(
     sourceTypeFinalEvaluation.sourceTypeFinalViolations,
   );
@@ -3350,6 +3760,8 @@ const main = async () => {
     infraUntrusted: infraTrust.infraUntrusted,
     fallbackUsed: repairQueueFallbackUsed,
     fallbackReport: repairQueueFallbackReport,
+    governancePolicy: governancePolicyReport ?? null,
+    payloadBudget: enrichPayloadBudget ?? null,
     repairQueue,
   };
   await fs.writeFile(REPAIR_QUEUE_JSON_PATH, JSON.stringify(repairQueuePayload, null, 2), "utf8");
@@ -3377,6 +3789,9 @@ const main = async () => {
   if (generalizationCohortRun.exitCode !== 0) {
     verdictEvidenceReasons.push(`generalization_cohorts_report_exit_${generalizationCohortRun.exitCode}`);
   }
+  if (governancePolicyRun.exitCode !== 0) {
+    verdictReasons.push(`governance_policy_report_exit_${governancePolicyRun.exitCode}`);
+  }
   if (!skipConcurrency && enrichRun?.timedOut) verdictReasons.push(`concurrency_gate_timeout_${enrichRun.timeoutMs ?? "unknown"}ms`);
   if (!skipBulk && bulkRun?.timedOut) verdictReasons.push(`bulk_gate_timeout_${bulkRun.timeoutMs ?? "unknown"}ms`);
   if (!skipUl && ulVisibilityRun?.timedOut) verdictReasons.push(`ul_visibility_timeout_${ulVisibilityRun.timeoutMs ?? "unknown"}ms`);
@@ -3396,6 +3811,9 @@ const main = async () => {
   if (generalizationCohortRun?.timedOut) {
     verdictEvidenceReasons.push(`generalization_cohorts_timeout_${generalizationCohortRun.timeoutMs ?? "unknown"}ms`);
   }
+  if (governancePolicyRun?.timedOut) {
+    verdictReasons.push(`governance_policy_timeout_${governancePolicyRun.timeoutMs ?? "unknown"}ms`);
+  }
   if (!skipConcurrency && !enrichReport) verdictReasons.push("concurrency_report_missing");
   if (!skipBulk && !bulkGate) verdictReasons.push("bulk_gate_report_missing");
   if (!skipUl && !ulVisibilityReport) verdictReasons.push("ul_visibility_report_missing");
@@ -3414,6 +3832,33 @@ const main = async () => {
     for (const [type, insufficient] of Object.entries(insufficientByType)) {
       if (insufficient === true) {
         verdictEvidenceReasons.push(`generalization_cohort_insufficient_${type}`);
+      }
+    }
+  }
+  if (!governancePolicyReport) {
+    verdictReasons.push("governance_policy_report_missing");
+  } else if (governancePolicyReport?.pass === false) {
+    const reasons = Array.isArray(governancePolicyReport?.blockingReasons)
+      ? governancePolicyReport.blockingReasons
+      : [];
+    if (reasons.length > 0) {
+      reasons.forEach((reason) => verdictReasons.push(String(reason)));
+    } else {
+      verdictReasons.push("governance_policy_failed");
+    }
+  }
+  if (Array.isArray(governancePolicyReport?.warnings)) {
+    governancePolicyReport.warnings.forEach((warning) => verdictWarnings.push(String(warning)));
+  }
+  if (Array.isArray(enrichReport?.scenarios)) {
+    for (const scenario of enrichReport.scenarios) {
+      const payloadBudget = scenario?.payloadBudget;
+      const scenarioName = typeof scenario?.name === "string" ? scenario.name : "unknown";
+      const maxObservedBytes = Number(payloadBudget?.maxObservedBytes ?? 0);
+      if (payloadBudget?.failExceeded) {
+        verdictReasons.push(`analysis_bundle_payload_fail_${scenarioName}_${maxObservedBytes}`);
+      } else if (payloadBudget?.warnExceeded) {
+        verdictWarnings.push(`analysis_bundle_payload_warn_${scenarioName}_${maxObservedBytes}`);
       }
     }
   }
@@ -3740,6 +4185,16 @@ const main = async () => {
       verdictEvidenceReasons.push(
         `cohort_evidence_${cohortEvidenceVerdict}_${Number(cohortTriageReport.attemptCount ?? 0)}`,
       );
+      const roleDeficitRows = Array.isArray(cohortTriageReport.roleDeficit)
+        ? cohortTriageReport.roleDeficit
+        : [];
+      for (const deficit of roleDeficitRows) {
+        const role = String(deficit?.role ?? "").trim();
+        if (!role) continue;
+        const actual = Number.isFinite(Number(deficit?.actual)) ? Number(deficit.actual) : 0;
+        const required = Number.isFinite(Number(deficit?.required)) ? Number(deficit.required) : 0;
+        verdictEvidenceReasons.push(`cohort_role_deficit_${role}_${actual}_lt_${required}`);
+      }
     }
   }
   if (cohortTriageReportPath && !cohortTriageReport) {
@@ -3747,6 +4202,44 @@ const main = async () => {
   }
   if (cohortReplaySummaryPath && !cohortReplaySummary) {
     verdictEvidenceReasons.push("cohort_replay_summary_missing");
+  }
+  if (cohortStatsPath && !cohortStats) {
+    verdictEvidenceReasons.push("cohort_stats_missing");
+  }
+  if (cohortStats) {
+    const targetDeficit = Number(cohortStats?.targetDeficit ?? 0);
+    if (targetDeficit > 0) {
+      verdictWarnings.push(`cohort_target_deficit_${targetDeficit}`);
+    }
+    const deficitMap = cohortStats?.quotaDeficitByRole
+      && typeof cohortStats.quotaDeficitByRole === "object"
+      ? cohortStats.quotaDeficitByRole
+      : {};
+    for (const [role, deficit] of Object.entries(deficitMap)) {
+      if (Number(deficit) > 0) {
+        verdictWarnings.push(`cohort_quota_deficit_${role}_${Number(deficit)}`);
+      }
+    }
+  }
+  if (stageBCompareReportPath && !stageBCompareReport) {
+    verdictReasons.push("stage_b_compare_report_missing");
+  }
+  if (stageBCompareReport && typeof stageBCompareReport === "object") {
+    if (stageBCompareReport.pass === false) {
+      verdictReasons.push("stage_b_baseline_compare_failed");
+      const compareReasons = Array.isArray(stageBCompareReport.reasons)
+        ? stageBCompareReport.reasons
+        : [];
+      for (const reason of compareReasons.slice(0, 20)) {
+        verdictReasons.push(`stage_b_${String(reason)}`);
+      }
+    }
+    const compareWarnings = Array.isArray(stageBCompareReport.warnings)
+      ? stageBCompareReport.warnings
+      : [];
+    for (const warning of compareWarnings.slice(0, 20)) {
+      verdictWarnings.push(`stage_b_${String(warning)}`);
+    }
   }
   if (terminalReasonQuality.warning) {
     verdictWarnings.push(
@@ -3843,14 +4336,31 @@ const main = async () => {
   const verdictPass = !productRegression;
   const systemHealthVerdict = verdictPass ? "pass" : "fail";
   const evidenceSufficiencyVerdict = finalEvidenceReasons.length > 0 ? "insufficient" : "sufficient";
+  const gitMeta = readGitMeta();
+  const baselineContext = {
+    ...gitMeta,
+    env: detectExecutionEnv(API_BASE_URL),
+    flagsSnapshot: collectFlagsSnapshot(),
+    migrationBatchId:
+      typeof governancePolicyReport?.migrationBatchId === "string"
+        ? governancePolicyReport.migrationBatchId
+        : null,
+    dbWriteMode:
+      typeof governancePolicyReport?.dbWriteMode === "string"
+        ? governancePolicyReport.dbWriteMode
+        : null,
+  };
 
   const fullReport = {
     generatedAt: new Date().toISOString(),
     apiBaseUrl: API_BASE_URL,
     outputDir: OUTPUT_DIR,
+    baseline_context: baselineContext,
     backend: state.backend,
     backendCrashStats,
     crashCanary,
+    governancePolicy: governancePolicyReport,
+    payloadBudget: enrichPayloadBudget,
     scripts: {
       enrich: enrichRun,
       bulk: bulkRun,
@@ -3861,6 +4371,7 @@ const main = async () => {
       negativeCacheResidual: negativeCacheResidualRun,
       surfaceConsistency: surfaceConsistencyRun,
       generalizationCohorts: generalizationCohortRun,
+      governancePolicy: governancePolicyRun,
     },
     terminalBreakdown,
     failureClassCounts,
@@ -3892,6 +4403,7 @@ const main = async () => {
     authoritativeExpectedButNotFinalCount:
       sourceTypeFinalEvaluation.authoritativeExpectedButNotFinalCount,
     dbExpectedButNotFinalCount: sourceTypeFinalEvaluation.dbExpectedButNotFinalCount,
+    webOnlyExpectedCount: sourceTypeFinalEvaluation.webOnlyExpectedCount,
     webFallbackCount: sourceTypeFinalEvaluation.webFallbackCount,
     sourceTypeFinalViolations: sourceTypeFinalEvaluation.sourceTypeFinalViolations,
     barcode000847Bucket: sourceTypeFinalEvaluation.barcode000847Bucket,
@@ -3933,6 +4445,8 @@ const main = async () => {
     cohortInsufficientByType: generalizationCohortReport?.cohortInsufficientByType ?? null,
     sampleSourceBreakdownByType: generalizationCohortReport?.sampleSourceBreakdownByType ?? null,
     seedBackfillCountByType: generalizationCohortReport?.seedBackfillCountByType ?? null,
+    cohortBuildStats: cohortStats ?? null,
+    stageBCompare: stageBCompareReport ?? null,
     mobileSoakSummary,
     mobileRichnessGate: {
       enforceHardFail: MOBILE_RICHNESS_ENFORCE_HARD_FAIL,
@@ -3989,6 +4503,15 @@ const main = async () => {
         : null,
     },
     repairQueue: repairQueuePayload,
+    webFallbackQueue,
+    inferredOnlyQueues: {
+      inferredOnlyRepairQueueCount: inferredOnlyQueues.inferredOnlyRepairQueue.length,
+      dataCeilingExplainQueueCount: inferredOnlyQueues.dataCeilingExplainQueue.length,
+      unknownQueueCount: inferredOnlyQueues.unknownQueue.length,
+      inferredOnlyRepairQueue: inferredOnlyQueues.inferredOnlyRepairQueue,
+      dataCeilingExplainQueue: inferredOnlyQueues.dataCeilingExplainQueue,
+      unknownQueue: inferredOnlyQueues.unknownQueue,
+    },
     reports: {
       enrichReportPath: path.join(ENRICH_OUT_DIR, "report.json"),
       bulkSummaryPath: path.join(BULK_OUT_DIR, "summary.json"),
@@ -4003,9 +4526,15 @@ const main = async () => {
       mobileSoakSummaryPath,
       cohortReplaySummaryPath,
       cohortTriageReportPath,
+      cohortStatsPath,
+      stageBCompareReportPath,
       expectedAuthoritativeResolvedPath: EXPECTED_AUTH_RESOLVED_PATH,
+      webOnlyResolvedPath: WEB_ONLY_RESOLVED_PATH,
       repairQueuePath: REPAIR_QUEUE_JSON_PATH,
       repairQueueMarkdownPath: REPAIR_QUEUE_MD_PATH,
+      webFallbackQueuePath: WEB_FALLBACK_QUEUE_PATH,
+      inferredOnlyRepairQueuePath: INFERRED_ONLY_REPAIR_QUEUE_PATH,
+      dataCeilingExplainQueuePath: DATA_CEILING_EXPLAIN_QUEUE_PATH,
       crashCanaryFixturePath: crashCanaryFixturePath,
       crashCanaryReportPath: CRASH_CANARY_REPORT_PATH,
       enrich: enrichReport,
@@ -4021,7 +4550,10 @@ const main = async () => {
       mobileSoakSummary,
       cohortReplaySummary,
       cohortTriageReport,
+      cohortStats,
+      stageBCompareReport,
       expectedAuthoritativeResolved,
+      webOnlyResolved,
       reportFreshness,
       crashCanaryFixture,
       crashCanary,

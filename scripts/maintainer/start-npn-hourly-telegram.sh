@@ -4,12 +4,13 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 
 if [[ $# -lt 1 ]]; then
-  echo "Usage: scripts/maintainer/start-npn-hourly-telegram.sh <run-dir> [interval-sec]"
+  echo "Usage: scripts/maintainer/start-npn-hourly-telegram.sh <run-dir> [interval-sec] [runtime-signal-dir]"
   exit 1
 fi
 
 RUN_DIR_INPUT="$1"
 INTERVAL_SEC="${2:-3600}"
+RUNTIME_SIGNAL_DIR_INPUT="${3:-}"
 if [[ "${INTERVAL_SEC}" -lt 60 ]]; then
   echo "interval-sec must be >= 60"
   exit 1
@@ -18,6 +19,15 @@ fi
 RUN_DIR="${RUN_DIR_INPUT}"
 if [[ "${RUN_DIR}" != /* ]]; then
   RUN_DIR="${ROOT_DIR}/${RUN_DIR}"
+fi
+
+RUNTIME_SIGNAL_ARG=""
+if [[ -n "${RUNTIME_SIGNAL_DIR_INPUT}" ]]; then
+  RUNTIME_SIGNAL_DIR="${RUNTIME_SIGNAL_DIR_INPUT}"
+  if [[ "${RUNTIME_SIGNAL_DIR}" != /* ]]; then
+    RUNTIME_SIGNAL_DIR="${ROOT_DIR}/${RUNTIME_SIGNAL_DIR}"
+  fi
+  RUNTIME_SIGNAL_ARG=" --runtime-signal-dir \"${RUNTIME_SIGNAL_DIR}\""
 fi
 
 MON_DIR="${RUN_DIR}/monitoring"
@@ -36,7 +46,7 @@ if [[ -f "${PID_FILE}" ]]; then
   fi
 fi
 
-nohup bash -lc "while true; do if ! node \"${ROOT_DIR}/scripts/maintainer/npn-hourly-telegram.mjs\" --run-dir \"${RUN_DIR}\"; then echo \"[\$(date -u +%Y-%m-%dT%H:%M:%SZ)] npn-hourly-telegram iteration failed\"; fi; sleep ${INTERVAL_SEC}; done" \
+nohup bash -lc "while true; do if ! node \"${ROOT_DIR}/scripts/maintainer/npn-hourly-telegram.mjs\" --run-dir \"${RUN_DIR}\"${RUNTIME_SIGNAL_ARG}; then echo \"[\$(date -u +%Y-%m-%dT%H:%M:%SZ)] npn-hourly-telegram iteration failed\"; fi; sleep ${INTERVAL_SEC}; done" \
   >>"${LOG_FILE}" 2>&1 &
 
 telegram_pid="$!"

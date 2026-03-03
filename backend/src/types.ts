@@ -108,11 +108,17 @@ export type ScoreBundleV4 = {
   explain: Record<string, unknown> | null;
 };
 
+export type ScoreResponseDiagnostics = {
+  nutritionLabelLikeFilteredCount?: number;
+  nutritionLabelLikeFilteredSamples?: string[];
+};
+
 export interface ScoreBundleResponseOk {
   status: "ok";
   source: ScoreSource;
   sourceId: string;
   bundle: ScoreBundleV4;
+  diagnostics?: ScoreResponseDiagnostics;
 }
 
 export interface ScoreBundleResponsePending {
@@ -121,6 +127,7 @@ export interface ScoreBundleResponsePending {
   sourceId: string;
   reasonCode?: string;
   message?: string;
+  diagnostics?: ScoreResponseDiagnostics;
 }
 
 export interface ScoreBundleResponseNotFound {
@@ -129,6 +136,7 @@ export interface ScoreBundleResponseNotFound {
   sourceId: string;
   reasonCode?: string;
   message?: string;
+  diagnostics?: ScoreResponseDiagnostics;
 }
 
 export type ScoreBundleResponse =

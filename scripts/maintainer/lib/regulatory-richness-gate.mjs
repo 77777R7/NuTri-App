@@ -197,6 +197,28 @@ const extractScoreDoseSignals = (scoreInfo) => {
   return Array.isArray(rows) ? rows : [];
 };
 
+const extractScorePurityDiagnostics = (scoreInfo) => {
+  const explain = extractScoreExplain(scoreInfo);
+  const diagnostics = explain?.diagnostics && typeof explain.diagnostics === "object"
+    ? explain.diagnostics
+    : null;
+  const filteredCountRaw = Number(diagnostics?.nutritionLabelLikeFilteredCount);
+  const filteredCount = Number.isFinite(filteredCountRaw) ? filteredCountRaw : 0;
+  const filteredSamplesRaw = Array.isArray(diagnostics?.nutritionLabelLikeFilteredSamples)
+    ? diagnostics.nutritionLabelLikeFilteredSamples
+    : [];
+  const filteredSamples = filteredSamplesRaw
+    .filter((value) => typeof value === "string" && value.trim().length > 0)
+    .slice(0, 3);
+  const leakCountRaw = Number(diagnostics?.nutritionLabelLikeLeakCount);
+  const leakCount = Number.isFinite(leakCountRaw) ? leakCountRaw : 0;
+  return {
+    nutritionLabelLikeFilteredCount: filteredCount,
+    nutritionLabelLikeFilteredSamples: filteredSamples,
+    nutritionLabelLikeLeakCount: leakCount,
+  };
+};
+
 const extractUlMissingReasonCounts = (scoreInfo) => {
   const explain = extractScoreExplain(scoreInfo);
   if (!explain) {
@@ -478,6 +500,7 @@ export const deriveRegulatoryRichSignals = ({ analysisBundle, scoreInfo, moduleV
   const sciencePass = ingredientNames.size >= 1 && doseCount >= 1;
   const usagePass = hasDosage || hasFrequency || scheduleFromLabelPresent;
   const scorePass = scoreAvailable || scoreExplainabilityPresent;
+  const scorePurityDiagnostics = extractScorePurityDiagnostics(scoreInfo);
   const safetyPass = labelWarningsCount > 0 || ulEntriesCount > 0 || odsInteractionsCount > 0;
   const safetySignalOrigin =
     labelWarningsCount > 0
@@ -507,15 +530,21 @@ export const deriveRegulatoryRichSignals = ({ analysisBundle, scoreInfo, moduleV
     safetySignalCount: Number(deterministicSignalsMeta?.safetySignalCount ?? 0) || 0,
   };
 
-  const expectedIngredientCount = Math.max(ingredientNames.size, deterministicSignalCounts.ingredientCount);
-  const ruleCoverHasIngredientsWhenExpected =
-    expectedIngredientCount === 0 || ingredientCoverItems.length > 0;
-  const usageExpectedStructured =
+  const strictExpectedIngredientCount = ingredientNames.size;
+  const inferredExpectedIngredientCount = Math.max(ingredientNames.size, deterministicSignalCounts.ingredientCount);
+  const ruleCoverHasIngredientsWhenExpectedStrict =
+    strictExpectedIngredientCount === 0 || ingredientCoverItems.length > 0;
+  const ruleCoverHasIngredientsWhenExpectedInferred =
+    inferredExpectedIngredientCount === 0 || ingredientCoverItems.length > 0;
+  const usageExpectedStructuredStrict = doseCount > 0 || hasDosage;
+  const usageExpectedStructuredInferred =
     deterministicSignalCounts.usageStructuredCount > 0
     || deterministicSignalCounts.doseCount > 0
-    || hasDosage;
-  const ruleUsageShowsStructuredWhenExpected =
-    !usageExpectedStructured || hasDosage || hasFrequency || scheduleFromLabelPresent;
+    || usageExpectedStructuredStrict;
+  const ruleUsageShowsStructuredWhenExpectedStrict =
+    !usageExpectedStructuredStrict || hasDosage || hasFrequency || scheduleFromLabelPresent;
+  const ruleUsageShowsStructuredWhenExpectedInferred =
+    !usageExpectedStructuredInferred || hasDosage || hasFrequency || scheduleFromLabelPresent;
   const safetyVisibleLineCount =
     (Array.isArray(analysisBundle?.sections?.safety?.cover?.bullets)
       ? analysisBundle.sections.safety.cover.bullets.length
@@ -525,19 +554,32 @@ export const deriveRegulatoryRichSignals = ({ analysisBundle, scoreInfo, moduleV
     + (Array.isArray(safetyDetail?.redFlags) ? safetyDetail.redFlags.length : 0);
   const safetySignalsTotal =
     labelWarningsCount + ulEntriesCount + odsInteractionsCount + odsWatchoutsCount;
-  const ruleSafetyVisibleWhenSignalsPresent =
+  const ruleSafetyVisibleWhenSignalsPresentStrict =
     safetySignalsTotal === 0 || safetyVisibleLineCount > 0;
+  const inferredSafetySignalsTotal = Math.max(safetySignalsTotal, deterministicSignalCounts.safetySignalCount);
+  const ruleSafetyVisibleWhenSignalsPresentInferred =
+    inferredSafetySignalsTotal === 0 || safetyVisibleLineCount > 0;
   const coverDetailConsistencyPass =
-    ruleCoverHasIngredientsWhenExpected
-    && ruleUsageShowsStructuredWhenExpected
-    && ruleSafetyVisibleWhenSignalsPresent;
-  const consistencyFailReason = !ruleCoverHasIngredientsWhenExpected
+    ruleCoverHasIngredientsWhenExpectedStrict
+    && ruleUsageShowsStructuredWhenExpectedStrict
+    && ruleSafetyVisibleWhenSignalsPresentStrict;
+  const consistencyFailReason = !ruleCoverHasIngredientsWhenExpectedStrict
     ? REGULATORY_CONSISTENCY_FAIL_REASONS.COVER_DETAIL_INCONSISTENT
-    : !ruleUsageShowsStructuredWhenExpected
+    : !ruleUsageShowsStructuredWhenExpectedStrict
       ? REGULATORY_CONSISTENCY_FAIL_REASONS.PARSER_GAP_VISIBLE
-      : !ruleSafetyVisibleWhenSignalsPresent
+      : !ruleSafetyVisibleWhenSignalsPresentStrict
         ? REGULATORY_CONSISTENCY_FAIL_REASONS.COVER_DETAIL_INCONSISTENT
         : null;
+  const consistencyWarningReasons = [];
+  if (ruleCoverHasIngredientsWhenExpectedStrict && !ruleCoverHasIngredientsWhenExpectedInferred) {
+    consistencyWarningReasons.push("INFERRED_ONLY_COVER_GAP");
+  }
+  if (ruleUsageShowsStructuredWhenExpectedStrict && !ruleUsageShowsStructuredWhenExpectedInferred) {
+    consistencyWarningReasons.push("INFERRED_ONLY_USAGE_GAP");
+  }
+  if (ruleSafetyVisibleWhenSignalsPresentStrict && !ruleSafetyVisibleWhenSignalsPresentInferred) {
+    consistencyWarningReasons.push("INFERRED_ONLY_SAFETY_GAP");
+  }
 
   return {
     ingredientCount: ingredientNames.size,
@@ -569,14 +611,21 @@ export const deriveRegulatoryRichSignals = ({ analysisBundle, scoreInfo, moduleV
     deterministicSignalCounts,
     coverDetailConsistencyPass,
     consistencyFailReason,
+    consistencyWarningReasons,
     consistencyChecks: {
-      ruleCoverHasIngredientsWhenExpected,
-      ruleUsageShowsStructuredWhenExpected,
-      ruleSafetyVisibleWhenSignalsPresent,
+      ruleCoverHasIngredientsWhenExpectedStrict,
+      ruleCoverHasIngredientsWhenExpectedInferred,
+      ruleUsageShowsStructuredWhenExpectedStrict,
+      ruleUsageShowsStructuredWhenExpectedInferred,
+      ruleSafetyVisibleWhenSignalsPresentStrict,
+      ruleSafetyVisibleWhenSignalsPresentInferred,
     },
     sciencePass,
     usagePass,
     scorePass,
+    nutritionLabelLikeFilteredCount: scorePurityDiagnostics.nutritionLabelLikeFilteredCount,
+    nutritionLabelLikeFilteredSamples: scorePurityDiagnostics.nutritionLabelLikeFilteredSamples,
+    nutritionLabelLikeLeakCount: scorePurityDiagnostics.nutritionLabelLikeLeakCount,
     safetyPass,
     onlyFallbackTemplates,
     pass: sciencePass && usagePass && scorePass && safetyPass,

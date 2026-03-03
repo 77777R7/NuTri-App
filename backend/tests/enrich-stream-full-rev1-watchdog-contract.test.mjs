@@ -26,7 +26,7 @@ test("full pre-rev1 watchdog uses fixed timeout reason for killer gating", async
   const source = await readFile(SERVER_PATH, "utf8");
   const start = source.indexOf("if (!streamAnalysisBundleOnly && !fullPreRev1TerminalGuardTimer)");
   assert.ok(start >= 0, "missing full pre-rev1 guard block");
-  const slice = source.slice(start, start + 1900);
+  const slice = source.slice(start, start + 4200);
 
   assert.match(slice, /reasonCode:\s*"FULL_REV1_MISSING_GUARD_TIMEOUT"/);
   assert.match(slice, /finalizeReason:\s*"full_pre_rev1_guard_timeout"/);

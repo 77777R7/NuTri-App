@@ -1,0 +1,24 @@
+{
+  "version": "v1",
+  "generatedAt": "2026-02-27T00:00:00.000Z",
+  "canaries": [
+    {
+      "role": "web_hint_guard_path",
+      "barcode": "00084783891253"
+    },
+    {
+      "role": "ca_web_hint_fallback",
+      "barcode": "00064642059000"
+    }
+  ],
+  "knownGood": [
+    {
+      "role": "dsld_known_good",
+      "barcode": "00023249090021"
+    },
+    {
+      "role": "lnhpd_known_good",
+      "barcode": "00029537001069"
+    }
+  ]
+}

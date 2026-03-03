@@ -174,7 +174,7 @@ const resolveKeyContractMode = (override?: ContractMode): ContractMode =>
 const resolveWriteGuardMode = (override?: ContractMode): ContractMode =>
   resolveContractMode(override ?? process.env.WRITE_GUARD_V2, "enforce");
 
-const mapSourceToRank = (source: string): number => {
+export const mapSourceToRank = (source: string): number => {
   const normalized = String(source ?? "").trim().toLowerCase();
   if (!normalized) return 100;
   if (
@@ -196,6 +196,7 @@ const mapSourceToRank = (source: string): number => {
   }
   if (
     normalized === "stable_db" ||
+    normalized === "runtime_signal_v1" ||
     normalized === "scan_history" ||
     normalized === "map" ||
     normalized === "map_stale"

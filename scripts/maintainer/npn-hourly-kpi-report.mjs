@@ -18,6 +18,13 @@ if (!runDirArg) {
 }
 
 const runDir = path.isAbsolute(runDirArg) ? runDirArg : path.resolve(process.cwd(), runDirArg);
+const pipelineDir = path.basename(runDir) === "b1_full_hunt" ? path.dirname(runDir) : runDir;
+const runtimeSignalDirArg = getArg("runtime-signal-dir");
+const runtimeSignalDir = runtimeSignalDirArg
+  ? path.isAbsolute(runtimeSignalDirArg)
+    ? runtimeSignalDirArg
+    : path.resolve(process.cwd(), runtimeSignalDirArg)
+  : path.resolve(process.cwd(), "output/npn_webhunt/runtime_signal/latest");
 const monitoringDir = path.join(runDir, "monitoring");
 const heartbeatPath = path.join(monitoringDir, "heartbeat.jsonl");
 const hourlyPath = path.join(monitoringDir, "hourly_metrics.jsonl");
@@ -103,6 +110,13 @@ const round = (value, digits = 2) => {
   return Math.round(n * base) / base;
 };
 
+const computeYieldPer1000FromNetNewPairs = (netNewPairs, queueCount) => {
+  const pairs = Number(netNewPairs);
+  const queue = Number(queueCount);
+  if (!Number.isFinite(pairs) || !Number.isFinite(queue) || queue <= 0) return null;
+  return round((pairs / queue) * 1000, 2);
+};
+
 const main = async () => {
   const hourlyRows = readJsonlSafe(hourlyPath);
   const heartbeatRows = readJsonlSafe(heartbeatPath);
@@ -136,6 +150,10 @@ const main = async () => {
     ? readJsonSafe(path.join(latestBatchDir, "sitemap", "summary.json"))
     : null;
   const latestBatchQueue = latestBatchDir ? readJsonSafe(path.join(latestBatchDir, "batch_queue.json")) : null;
+  const runtimeImportReport = readJsonSafe(path.join(runtimeSignalDir, "runtime_p0_import_report.json"));
+  const runtimeImportStats = runtimeImportReport?.stats ?? null;
+  const a1RepairSummary = readJsonSafe(path.join(pipelineDir, "a1_repair", "runtime_a1_blocked_reason_distribution.json"));
+  const a1ReplayReport = readJsonSafe(path.join(pipelineDir, "a1_replay_release", "runtime_p0_import_report.json"));
 
   const heartbeatProgress =
     latestHeartbeat && latestHeartbeat.progress && typeof latestHeartbeat.progress === "object"
@@ -182,8 +200,18 @@ const main = async () => {
           checkpointUpdatedAt: latestCheckpoint?.updatedAt ?? null,
           sitemapPairCountDedup: Number(latestSitemapSummary?.pairCountDedup ?? 0),
           sitemapDomainsScanned: Number(latestSitemapSummary?.domainsScanned ?? 0),
+          netNewPairs: null,
+          yieldPer1000NetNewPairs: null,
         }
       : null;
+
+  const latestBatchQueueCount =
+    latestBatchReport && Number.isFinite(Number(latestBatchReport.queueCount))
+      ? Number(latestBatchReport.queueCount)
+      : batchQueueCount;
+  const latestBatchNetNewPairs = latestBatchReport
+    ? Number(latestBatchReport?.compareStats?.netNewPairs ?? 0)
+    : null;
 
   const report = {
     generatedAt: new Date().toISOString(),
@@ -210,14 +238,61 @@ const main = async () => {
     latestBatch: latestBatchReport
       ? {
           batchId: latestBatchReport.batchId ?? latestBatchId,
+          queueCount: latestBatchQueueCount ?? null,
           netNewPairs: latestBatchReport?.compareStats?.netNewPairs ?? null,
           p0AutoImport: latestBatchReport?.compareStats?.tierCounts?.P0_auto_import ?? null,
           p1Review: latestBatchReport?.compareStats?.tierCounts?.P1_review ?? null,
           p2Reject: latestBatchReport?.compareStats?.tierCounts?.P2_reject ?? null,
           conflictsByBarcode: latestBatchReport?.compareStats?.conflictsByBarcode ?? null,
           yieldPer1000Npns: latestBatchReport?.quality?.yieldPer1000Npns ?? null,
+          yieldPer1000NetNewPairs: computeYieldPer1000FromNetNewPairs(
+            latestBatchNetNewPairs,
+            latestBatchQueueCount,
+          ),
         }
       : liveBatchFallback,
+    internalSignal: runtimeImportStats
+      ? {
+          attemptedNpns: Number(runtimeImportStats?.attempted ?? 0),
+          netNewPairs: Number(runtimeImportStats?.imported ?? runtimeImportStats?.wouldImport ?? 0),
+          importedP0: Number(runtimeImportStats?.imported ?? 0),
+          acceptedOrAlreadyPresent: Number(
+            runtimeImportStats?.effectiveAccepted ??
+              Number(runtimeImportStats?.imported ?? 0) +
+                Number(runtimeImportStats?.alreadyPresentHigherRankSameNpn ?? 0),
+          ),
+          alreadyPresentHigherRankSameNpn: Number(runtimeImportStats?.alreadyPresentHigherRankSameNpn ?? 0),
+          blocked: Number(runtimeImportStats?.blocked ?? 0),
+          failed: Number(runtimeImportStats?.failed ?? 0),
+          yieldPer1000Npns: computeYieldPer1000FromNetNewPairs(
+            Number(runtimeImportStats?.imported ?? runtimeImportStats?.wouldImport ?? 0),
+            Number(runtimeImportStats?.attempted ?? 0),
+          ),
+          sourceReport: path.join(runtimeSignalDir, "runtime_p0_import_report.json"),
+        }
+      : null,
+    a1RepairLoop: {
+      queue: a1RepairSummary
+        ? {
+            blockedTotal: Number(a1RepairSummary?.totals?.a1Blocked ?? 0),
+            repairQueueTotal: Number(a1RepairSummary?.totals?.repairQueue ?? 0),
+            release: Number(a1RepairSummary?.totals?.executionRelease ?? 0),
+            retain: Number(a1RepairSummary?.totals?.executionRetain ?? 0),
+            manual: Number(a1RepairSummary?.totals?.executionManual ?? 0),
+          }
+        : null,
+      replay: a1ReplayReport
+        ? {
+            attempted: Number(a1ReplayReport?.stats?.attempted ?? 0),
+            imported: Number(a1ReplayReport?.stats?.imported ?? 0),
+            blocked: Number(a1ReplayReport?.stats?.blocked ?? 0),
+            failed: Number(a1ReplayReport?.stats?.failed ?? 0),
+            skippedByGate: Number(a1ReplayReport?.stats?.skippedByGate ?? 0),
+            writeAllowed: Boolean(a1ReplayReport?.gates?.writeAllowed),
+            sourceReport: path.join(pipelineDir, "a1_replay_release", "runtime_p0_import_report.json"),
+          }
+        : null,
+    },
     repairPriority: {
       latestBatchId,
       previousBatchId,
@@ -297,6 +372,14 @@ const main = async () => {
     `- netNewPairs(latestBatch): ${report.latestBatch?.netNewPairs ?? "n/a"}`,
     `- repairQueueDelta(lastHour): ${report.hourly?.repairQueueDelta ?? "n/a"}`,
     `- yieldPer1000Npns(latestBatch): ${report.latestBatch?.yieldPer1000Npns ?? "n/a"}`,
+    `- yieldPer1000Npns(latestBatch,netNewPairs): ${report.latestBatch?.yieldPer1000NetNewPairs ?? "n/a"}`,
+    `- internalSignalAttemptedNpns: ${report.internalSignal?.attemptedNpns ?? "n/a"}`,
+    `- internalSignalNetNewPairs: ${report.internalSignal?.netNewPairs ?? "n/a"}`,
+    `- internalSignalAcceptedOrAlreadyPresent: ${report.internalSignal?.acceptedOrAlreadyPresent ?? "n/a"}`,
+    `- internalSignalAlreadyPresentSameNpn: ${report.internalSignal?.alreadyPresentHigherRankSameNpn ?? "n/a"}`,
+    `- internalSignalYieldPer1000Npns: ${report.internalSignal?.yieldPer1000Npns ?? "n/a"}`,
+    `- a1RepairQueue: ${report.a1RepairLoop?.queue?.repairQueueTotal ?? "n/a"} (release=${report.a1RepairLoop?.queue?.release ?? "n/a"}, retain=${report.a1RepairLoop?.queue?.retain ?? "n/a"}, manual=${report.a1RepairLoop?.queue?.manual ?? "n/a"})`,
+    `- a1Replay: attempted=${report.a1RepairLoop?.replay?.attempted ?? "n/a"} imported=${report.a1RepairLoop?.replay?.imported ?? "n/a"} blocked=${report.a1RepairLoop?.replay?.blocked ?? "n/a"} failed=${report.a1RepairLoop?.replay?.failed ?? "n/a"}`,
     `- repairPriority deltaCount(batch): ${report.repairPriority?.deltaCount ?? "n/a"}`,
     `- repairPriority topReasonDelta: ${
       Array.isArray(report.repairPriority?.topReasonDelta) && report.repairPriority.topReasonDelta.length

@@ -96,16 +96,33 @@ const buildRepairQueue = (bucketRows) => {
     return bucket !== "HEALTHY" && bucket !== "DATA_CEILING";
   });
   const deduped = new Map();
-  for (const row of actionable) {
+  for (let idx = 0; idx < actionable.length; idx += 1) {
+    const row = actionable[idx];
     const barcode = String(row?.barcode ?? "").trim();
     if (!barcode) continue;
     const bucket = String(row?.bucket ?? "UNKNOWN");
     const key = `${barcode}::${bucket}`;
-    if (deduped.has(key)) continue;
+    const traceRef = {
+      traceLine: idx + 1,
+      requestId: row?.requestId ?? null,
+      terminalReason: row?.terminalReason ?? null,
+      stabilityHash: row?.stabilityHash ?? null,
+      replayProfile: row?.replayProfile ?? null,
+    };
+    if (deduped.has(key)) {
+      const existing = deduped.get(key);
+      if (Array.isArray(existing?.evidenceRefs) && existing.evidenceRefs.length < 5) {
+        existing.evidenceRefs.push(traceRef);
+      }
+      continue;
+    }
     const fix = BUCKET_FIX_PLAN[bucket] || { fixLane: "unknown", owner: "unknown", priority: 3 };
     deduped.set(key, {
       barcode,
+      country: row?.country ?? null,
+      expectedDatasetHint: row?.expectedDatasetHint ?? null,
       bucket,
+      failureBucket: bucket,
       fixLane: fix.fixLane,
       owner: fix.owner,
       priority: fix.priority,
@@ -115,6 +132,7 @@ const buildRepairQueue = (bucketRows) => {
       replayProfile: row?.replayProfile ?? null,
       role: row?.role ?? null,
       stabilityHash: row?.stabilityHash ?? null,
+      evidenceRefs: [traceRef],
     });
   }
   return [...deduped.values()].sort((a, b) => {
@@ -145,8 +163,12 @@ const buildMarkdown = (report) => {
   lines.push("");
   lines.push(`- healthReasons: \`${JSON.stringify(report.healthReasons)}\``);
   lines.push(`- evidenceReasons: \`${JSON.stringify(report.evidenceReasons)}\``);
+  lines.push(`- warnings: \`${JSON.stringify(report.warnings ?? [])}\``);
+  lines.push(`- roleDeficit: \`${JSON.stringify(report.roleDeficit ?? [])}\``);
   lines.push(`- nondeterministicBarcodes: \`${JSON.stringify(report.nondeterministicBarcodes)}\``);
+  lines.push(`- nondeterministicDetails: \`${JSON.stringify(report.nondeterministicDetails ?? [])}\``);
   lines.push(`- repairQueueSize: ${report.repairQueueSize}`);
+  lines.push(`- queuePaths: \`${JSON.stringify(report.queuePaths ?? {})}\``);
   return `${lines.join("\n")}\n`;
 };
 
@@ -174,10 +196,16 @@ const main = async () => {
   const roleCounts = buildRoleCounts(traces);
   const roleDeficit = Object.entries(roleCounts)
     .filter(([, count]) => Number(count) < opts.minRoleSamples)
-    .map(([role, count]) => `${role}:${count}`);
+    .map(([role, count]) => ({
+      role,
+      actual: Number(count),
+      required: opts.minRoleSamples,
+      deficit: Math.max(0, opts.minRoleSamples - Number(count)),
+    }));
 
   const healthReasons = [];
   const evidenceReasons = [];
+  const warnings = [];
   const blockingBuckets = [
     "CRASH_UNCAUGHT_EXCEPTION",
     "CLIENT_TIMEOUT",
@@ -189,18 +217,33 @@ const main = async () => {
     "COVER_DETAIL_INCONSISTENT",
     "NEGATIVE_CACHE_RESIDUAL",
     "SCORE_INPUT_PURITY_LEAK",
-    "NONDETERMINISTIC_SAME_BARCODE",
   ];
   for (const bucket of blockingBuckets) {
     if (Number(classified.bucketCounts[bucket] ?? 0) > 0) {
       healthReasons.push(`${bucket}_${classified.bucketCounts[bucket]}`);
     }
   }
+  const nondeterministicDetails = Array.isArray(classified.nondeterministicDetails)
+    ? classified.nondeterministicDetails
+    : [];
+  const nondeterministicBlockingCount = nondeterministicDetails.filter(
+    (item) => item?.classification !== "acceptable_web_only_nondeterministic",
+  ).length;
+  const nondeterministicWarningCount = nondeterministicDetails.filter(
+    (item) => item?.classification === "acceptable_web_only_nondeterministic",
+  ).length;
+  if (nondeterministicBlockingCount > 0) {
+    healthReasons.push(`NONDETERMINISTIC_SAME_BARCODE_${nondeterministicBlockingCount}`);
+  }
+  if (nondeterministicWarningCount > 0) {
+    warnings.push(`NONDETERMINISTIC_WEB_ONLY_${nondeterministicWarningCount}`);
+  }
   if (traces.length < opts.minAttempts) {
     evidenceReasons.push(`attempt_count_${traces.length}_lt_${opts.minAttempts}`);
   }
   if (roleDeficit.length > 0) {
-    evidenceReasons.push(`role_sample_deficit_${roleDeficit.join("|")}`);
+    const compact = roleDeficit.map((entry) => `${entry.role}:${entry.actual}`);
+    evidenceReasons.push(`role_sample_deficit_${compact.join("|")}`);
   }
   if (replaySummary?.uiSkippedByBudget > 0 && replaySummary?.replayProfile === "full_ui") {
     evidenceReasons.push(`ui_skipped_by_budget_${replaySummary.uiSkippedByBudget}`);
@@ -210,6 +253,11 @@ const main = async () => {
   const evidenceSufficiencyVerdict = evidenceReasons.length === 0 ? "sufficient" : "insufficient";
 
   const repairQueue = buildRepairQueue(classified.bucketRows);
+  const queueByLane = {
+    code: repairQueue.filter((row) => row.fixLane === "code"),
+    data: repairQueue.filter((row) => row.fixLane === "data"),
+    infra: repairQueue.filter((row) => row.fixLane === "infra"),
+  };
   const report = {
     generatedAt: new Date().toISOString(),
     tracesPath: opts.tracesPath,
@@ -219,26 +267,59 @@ const main = async () => {
     bucketCounts: classified.bucketCounts,
     bucketTop: classified.bucketTop,
     nondeterministicBarcodes: classified.nondeterministicBarcodes,
+    nondeterministicDetails,
     systemHealthVerdict,
     evidenceSufficiencyVerdict,
     healthReasons,
     evidenceReasons,
+    warnings,
     repairQueueSize: repairQueue.length,
+    roleDeficit,
+    queueByLaneCounts: {
+      code: queueByLane.code.length,
+      data: queueByLane.data.length,
+      infra: queueByLane.infra.length,
+    },
   };
 
   await fs.mkdir(opts.outDir, { recursive: true });
   const triageJsonPath = path.join(opts.outDir, "triage_report.json");
   const triageMdPath = path.join(opts.outDir, "triage_report.md");
   const repairQueuePath = path.join(opts.outDir, "repair_queue.jsonl");
+  const codeQueuePath = path.join(opts.outDir, "code_fix_queue.jsonl");
+  const dataQueuePath = path.join(opts.outDir, "data_mapping_queue.jsonl");
+  const infraQueuePath = path.join(opts.outDir, "infra_env_queue.jsonl");
   const nondeterministicPath = path.join(opts.outDir, "nondeterministic_barcodes.json");
   const nondeterministicExamplesPath = path.join(opts.outDir, "nondeterministic_examples.jsonl");
   const goNoGoPath = path.join(opts.outDir, "go_no_go.md");
+
+  report.queuePaths = {
+    repairQueuePath,
+    codeQueuePath,
+    dataQueuePath,
+    infraQueuePath,
+  };
 
   await fs.writeFile(triageJsonPath, JSON.stringify(report, null, 2), "utf8");
   await fs.writeFile(triageMdPath, buildMarkdown(report), "utf8");
   await fs.writeFile(
     repairQueuePath,
     repairQueue.map((row) => JSON.stringify(row)).join("\n") + "\n",
+    "utf8",
+  );
+  await fs.writeFile(
+    codeQueuePath,
+    queueByLane.code.map((row) => JSON.stringify(row)).join("\n") + "\n",
+    "utf8",
+  );
+  await fs.writeFile(
+    dataQueuePath,
+    queueByLane.data.map((row) => JSON.stringify(row)).join("\n") + "\n",
+    "utf8",
+  );
+  await fs.writeFile(
+    infraQueuePath,
+    queueByLane.infra.map((row) => JSON.stringify(row)).join("\n") + "\n",
     "utf8",
   );
   await fs.writeFile(nondeterministicPath, JSON.stringify(classified.nondeterministicBarcodes, null, 2), "utf8");

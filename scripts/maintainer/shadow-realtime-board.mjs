@@ -181,6 +181,7 @@ const summarizeList = (values, fallback = "无") => {
 
 const buildMarkdown = (payload) => {
   const latest = payload.latestRound;
+  const latestState = latest?.roundState ?? (latest?.goNoGo ? "GO" : "NO_GO");
   const lines = [
     "# Shadow 实时摘要板",
     "",
@@ -188,23 +189,31 @@ const buildMarkdown = (payload) => {
     `- 目录: ${payload.runDir}`,
     `- 进度: ${payload.roundsCompleted}/${payload.totalRounds}`,
     `- 最新轮次: R${String(latest?.round ?? 0).padStart(4, "0")}`,
+    `- 最新 RoundState: ${latestState}`,
     `- 最新 Go/No-Go: ${latest?.goNoGo ? "GO" : "NO-GO"}`,
+    `- Infra INCONCLUSIVE 轮次: ${payload.infraRounds ?? 0}`,
     "",
     "## 最近轮次 Go/No-Go",
     "",
-    "| round | startedAt | go/no-go | 异常条码数 |",
-    "|---|---|---|---:|",
+    "| round | startedAt | roundState | go/no-go | 异常条码数 | infra reason |",
+    "|---|---|---|---|---:|---|",
   ];
 
   for (const row of payload.recentRounds) {
     lines.push(
-      `| ${row.round} | ${row.startedAt ?? "n/a"} | ${row.goNoGo ? "GO" : "NO-GO"} | ${row.anomalyBarcodeCount ?? 0} |`,
+      `| ${row.round} | ${row.startedAt ?? "n/a"} | ${row.roundState ?? "NO_GO"} | ${row.goNoGo ? "GO" : "NO-GO"} | ${row.anomalyBarcodeCount ?? 0} | ${row.infraFailureReason ?? "n/a"} |`,
     );
   }
 
   lines.push("");
   lines.push("## 最新一轮异常条码清单");
   lines.push("");
+  lines.push(`- gate report exists: ${latest?.gateReportExists ? "yes" : "no"}`);
+  lines.push(`- infra inconclusive: ${latest?.infraInconclusive ? "yes" : "no"}`);
+  lines.push(`- infra reason: ${latest?.infraFailureReason ?? "无"}`);
+  if (!latest?.gateReportExists) {
+    lines.push(`- stable stderr(last): ${latest?.stableStderrLastLine ?? "无"}`);
+  }
   lines.push(`- surface mismatch: ${summarizeList(latest?.anomalies?.barcodes?.surfaceMismatchBarcodes)}`);
   lines.push(`- dose contradiction: ${summarizeList(latest?.anomalies?.barcodes?.doseContradictionBarcodes)}`);
   lines.push(`- candidate conflicts: ${summarizeList(latest?.anomalies?.barcodes?.conflictBarcodes)}`);
@@ -231,11 +240,28 @@ const buildPayload = async () => {
     const gateReportPath = String(row?.gateReportPath ?? "").trim();
     const gateReport = gateReportPath ? await readJson(gateReportPath) : null;
     const anomalies = collectRoundAnomalies(gateReport);
+    const roundState = String(row?.roundState ?? (row?.goNoGo ? "GO" : "NO_GO"));
+    const infraInconclusive = row?.infraInconclusive === true || roundState === "INCONCLUSIVE";
+    const infraFailureReason =
+      (typeof row?.infraFailureReason === "string" && row.infraFailureReason.trim())
+      || (Array.isArray(row?.verdict?.infraReasons) && row.verdict.infraReasons.length > 0
+        ? String(row.verdict.infraReasons[0])
+        : null)
+      || null;
+    const stableStderrTail = Array.isArray(row?.stableStderrTail) ? row.stableStderrTail : [];
+    const stableStderrLastLine =
+      (typeof row?.stableStderrLastLine === "string" && row.stableStderrLastLine.trim())
+      || (stableStderrTail.map((line) => String(line).trim()).filter(Boolean).slice(-1)[0] ?? null);
     enrichedRounds.push({
       round,
       startedAt: row?.startedAt ?? null,
       goNoGo: row?.goNoGo === true,
+      roundState,
+      infraInconclusive,
+      infraFailureReason,
+      stableStderrLastLine,
       gateReportPath: gateReportPath || null,
+      gateReportExists: Boolean(gateReport),
       anomalies,
       anomalyBarcodeCount: anomalies.counts.anomalyBarcodeCount,
     });
@@ -244,6 +270,7 @@ const buildPayload = async () => {
   const sorted = enrichedRounds.sort((a, b) => a.round - b.round);
   const latestRound = sorted.length > 0 ? sorted[sorted.length - 1] : null;
   const recentRounds = sorted.slice(Math.max(0, sorted.length - roundWindow)).reverse();
+  const infraRounds = sorted.filter((row) => row.roundState === "INCONCLUSIVE").length;
 
   return {
     generatedAt: new Date().toISOString(),
@@ -252,6 +279,7 @@ const buildPayload = async () => {
     roundsCompleted: Number(curve.roundsCompleted ?? sorted.length),
     goRounds: Number(curve.goRounds ?? sorted.filter((row) => row.goNoGo).length),
     noGoRounds: Number(curve.noGoRounds ?? sorted.filter((row) => !row.goNoGo).length),
+    infraRounds,
     goRate: Number(curve.goRate ?? 0),
     latestRound,
     recentRounds,

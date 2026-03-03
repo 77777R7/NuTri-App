@@ -31,6 +31,16 @@ const PARALLEL9_DONE_P95_MAX_MS = Number(process.env.ENRICH_STREAM_GATE_PARALLEL
 const PARALLEL9_NOT_FOUND_REV1_P95_MAX_MS = Number(
   process.env.ENRICH_STREAM_GATE_PARALLEL9_NOT_FOUND_REV1_P95_MAX_MS ?? 1700,
 );
+const ANALYSIS_BUNDLE_PAYLOAD_WARN_BYTES = Number(
+  process.env.ENRICH_STREAM_GATE_PAYLOAD_WARN_BYTES ?? 64 * 1024,
+);
+const ANALYSIS_BUNDLE_PAYLOAD_FAIL_BYTES = Number(
+  process.env.ENRICH_STREAM_GATE_PAYLOAD_FAIL_BYTES ?? 80 * 1024,
+);
+const ANALYSIS_BUNDLE_PAYLOAD_TOPN = Math.max(
+  3,
+  Number(process.env.ENRICH_STREAM_GATE_PAYLOAD_TOPN ?? 8),
+);
 const CONTRACT_BARCODE_000646 = toGtin14(
   process.env.ENRICH_STREAM_GATE_CONTRACT_BARCODE ?? "00064642061379",
 );
@@ -191,6 +201,38 @@ function buildRowDiagnostics(row) {
   };
 }
 
+function jsonByteLength(value) {
+  try {
+    return Buffer.byteLength(JSON.stringify(value ?? null), "utf8");
+  } catch {
+    return 0;
+  }
+}
+
+function collectPayloadFieldSizes(value, pathPrefix, depth = 0) {
+  if (value == null || depth > 6) return [];
+  if (typeof value !== "object") return [];
+
+  const rows = [];
+  if (Array.isArray(value)) {
+    value.forEach((entry, index) => {
+      const childPath = `${pathPrefix}[${index}]`;
+      const childBytes = jsonByteLength(entry);
+      rows.push({ path: childPath, bytes: childBytes });
+      rows.push(...collectPayloadFieldSizes(entry, childPath, depth + 1));
+    });
+    return rows;
+  }
+
+  Object.entries(value).forEach(([key, entry]) => {
+    const childPath = `${pathPrefix}.${key}`;
+    const childBytes = jsonByteLength(entry);
+    rows.push({ path: childPath, bytes: childBytes });
+    rows.push(...collectPayloadFieldSizes(entry, childPath, depth + 1));
+  });
+  return rows;
+}
+
 async function runOne(barcode) {
   const ctrl = new AbortController();
   const timeout = setTimeout(() => ctrl.abort(new Error(`timeout_${SSE_TIMEOUT_MS}ms`)), SSE_TIMEOUT_MS);
@@ -205,6 +247,9 @@ async function runOne(barcode) {
   let rev1Identity = null;
   let rev1Meta = null;
   let doneMeta = null;
+  let analysisBundlePayloadMaxBytes = 0;
+  let analysisBundlePayloadTopFields = [];
+  let analysisBundlePayloadRevision = null;
   let bundleProductIdentity = null;
   let requestId = null;
   const errorEvents = [];
@@ -267,6 +312,24 @@ async function runOne(barcode) {
           null;
       }
       if (currentEvent === "analysis_bundle" && data && typeof data === "object") {
+        const payloadBytes = Buffer.byteLength(raw, "utf8");
+        if (payloadBytes >= analysisBundlePayloadMaxBytes) {
+          const fieldSizes = collectPayloadFieldSizes(data, "analysis_bundle");
+          const topFields = fieldSizes
+            .filter((row) => Number.isFinite(row.bytes) && row.bytes > 0)
+            .sort((a, b) => b.bytes - a.bytes)
+            .slice(0, ANALYSIS_BUNDLE_PAYLOAD_TOPN)
+            .map((row) => ({
+              path: row.path,
+              bytes: row.bytes,
+              percent: payloadBytes > 0 ? Number(((row.bytes / payloadBytes) * 100).toFixed(2)) : 0,
+            }));
+          analysisBundlePayloadMaxBytes = payloadBytes;
+          analysisBundlePayloadTopFields = topFields;
+          analysisBundlePayloadRevision = Number.isFinite(Number(data?.meta?.revision))
+            ? Number(data.meta.revision)
+            : analysisBundlePayloadRevision;
+        }
         const revision = Number(data?.meta?.revision);
         const productIdentity = normalizeProductIdentity(data?.meta?.productIdentity);
         if (productIdentity) bundleProductIdentity = productIdentity;
@@ -527,6 +590,9 @@ async function runOne(barcode) {
       rev1Identity,
       requestContext,
       rev1Meta,
+      analysisBundlePayloadMaxBytes,
+      analysisBundlePayloadTopFields,
+      analysisBundlePayloadRevision,
       failureClass: diagnostics.failureClass,
       noiseFlags: diagnostics.noiseFlags,
       elapsedMs: Date.now() - startedAt,
@@ -568,6 +634,9 @@ async function runOne(barcode) {
       timedOut,
       error: message,
       requestContext,
+      analysisBundlePayloadMaxBytes: null,
+      analysisBundlePayloadTopFields: [],
+      analysisBundlePayloadRevision: null,
       failureClass: diagnostics.failureClass,
       noiseFlags: diagnostics.noiseFlags,
     };
@@ -662,6 +731,29 @@ function summarizeScenario(name, rows) {
     },
     { identityNull: 0, sourceTypeNull: 0, requestError: 0, backendUnavailable: 0 },
   );
+  const payloadRows = rows
+    .map((row) => ({
+      barcode: row?.barcode ?? null,
+      round: Number.isFinite(Number(row?.round)) ? Number(row.round) : null,
+      maxBytes: Number.isFinite(Number(row?.analysisBundlePayloadMaxBytes))
+        ? Number(row.analysisBundlePayloadMaxBytes)
+        : null,
+      topFields: Array.isArray(row?.analysisBundlePayloadTopFields) ? row.analysisBundlePayloadTopFields : [],
+      revision: Number.isFinite(Number(row?.analysisBundlePayloadRevision))
+        ? Number(row.analysisBundlePayloadRevision)
+        : null,
+      terminal: row?.terminal ?? null,
+    }))
+    .filter((row) => row.maxBytes != null)
+    .sort((a, b) => Number(b.maxBytes ?? 0) - Number(a.maxBytes ?? 0));
+  const payloadMaxBytes = payloadRows.length > 0 ? Number(payloadRows[0].maxBytes ?? 0) : null;
+  const payloadWarnExceededCount = payloadRows.filter(
+    (row) => Number(row.maxBytes ?? 0) > ANALYSIS_BUNDLE_PAYLOAD_WARN_BYTES,
+  ).length;
+  const payloadFailExceededCount = payloadRows.filter(
+    (row) => Number(row.maxBytes ?? 0) > ANALYSIS_BUNDLE_PAYLOAD_FAIL_BYTES,
+  ).length;
+  const payloadLargestSample = payloadRows[0] ?? null;
   return {
     name,
     total: rows.length,
@@ -686,6 +778,24 @@ function summarizeScenario(name, rows) {
     },
     persistedCommitModeCounts,
     persistedCommitNotCompletedBeforeDoneCount,
+    payloadBudget: {
+      warnBytes: ANALYSIS_BUNDLE_PAYLOAD_WARN_BYTES,
+      failBytes: ANALYSIS_BUNDLE_PAYLOAD_FAIL_BYTES,
+      maxObservedBytes: payloadMaxBytes,
+      warnExceededCount: payloadWarnExceededCount,
+      failExceededCount: payloadFailExceededCount,
+      warnExceeded: payloadWarnExceededCount > 0,
+      failExceeded: payloadFailExceededCount > 0,
+      sample: payloadLargestSample
+        ? {
+            barcode: payloadLargestSample.barcode,
+            round: payloadLargestSample.round,
+            revision: payloadLargestSample.revision,
+            terminal: payloadLargestSample.terminal,
+            topFields: payloadLargestSample.topFields,
+          }
+        : null,
+    },
     rows,
   };
 }
@@ -736,6 +846,11 @@ function assertGate(summary) {
       throw new Error(`${summary.name}: terminalReason missing for ${missingTerminalReason.length} rows`);
     }
   }
+  if (summary?.payloadBudget?.failExceeded) {
+    throw new Error(
+      `${summary.name}: analysis_bundle payload max ${summary.payloadBudget.maxObservedBytes} bytes exceeds fail threshold ${ANALYSIS_BUNDLE_PAYLOAD_FAIL_BYTES} bytes`,
+    );
+  }
 }
 
 async function main() {
@@ -766,6 +881,8 @@ async function main() {
       thresholds: {
         parallel9DoneP95MaxMs: PARALLEL9_DONE_P95_MAX_MS,
         parallel9NotFoundRev1P95MaxMs: PARALLEL9_NOT_FOUND_REV1_P95_MAX_MS,
+        analysisBundlePayloadWarnBytes: ANALYSIS_BUNDLE_PAYLOAD_WARN_BYTES,
+        analysisBundlePayloadFailBytes: ANALYSIS_BUNDLE_PAYLOAD_FAIL_BYTES,
       },
     },
     scenarios: scenarioSummaries.map((summary) => ({
@@ -784,6 +901,7 @@ async function main() {
       persistedCommitModeCounts: summary.persistedCommitModeCounts,
       persistedCommitNotCompletedBeforeDoneCount:
         summary.persistedCommitNotCompletedBeforeDoneCount,
+      payloadBudget: summary.payloadBudget,
       noiseCounts: summary.noiseCounts,
       latencyStats: summary.latencyStats,
     })),

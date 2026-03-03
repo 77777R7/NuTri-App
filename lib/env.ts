@@ -73,6 +73,69 @@ const shouldPreferFallback = (rawValue: string): boolean => {
   }
 };
 
+const parseHostname = (rawValue: string | undefined | null): string | null => {
+  if (!rawValue) return null;
+  const normalized = rawValue.includes('://') ? rawValue : `http://${rawValue}`;
+  try {
+    const url = new URL(normalized);
+    return url.hostname || null;
+  } catch {
+    return null;
+  }
+};
+
+const isLoopbackHost = (hostname: string | null): boolean => {
+  if (!hostname) return false;
+  return hostname === 'localhost'
+    || hostname === '127.0.0.1'
+    || hostname === '0.0.0.0'
+    || hostname === '::1'
+    || hostname === '10.0.2.2';
+};
+
+const isPrivateLanHost = (hostname: string | null): boolean => {
+  if (!hostname) return false;
+  if (hostname.startsWith('10.')) return true;
+  if (hostname.startsWith('192.168.')) return true;
+  const matched172 = hostname.match(/^172\.(\d{1,3})\./);
+  if (matched172) {
+    const secondOctet = Number(matched172[1]);
+    return Number.isFinite(secondOctet) && secondOctet >= 16 && secondOctet <= 31;
+  }
+  return false;
+};
+
+const resolveDevApiUrlMismatch = (params: {
+  label: string;
+  configured: string | undefined;
+  fallback: string | undefined;
+}): string | undefined => {
+  const { configured, fallback, label } = params;
+  if (!configured) return fallback;
+  if (!fallback) return configured;
+  if (process.env.NODE_ENV === 'production') return configured;
+  if (process.env.EXPO_PUBLIC_DEV_API_HOST_MODE?.toLowerCase() === 'env_only') {
+    return configured;
+  }
+
+  const configuredHost = parseHostname(configured);
+  const fallbackHost = parseHostname(fallback);
+  if (!configuredHost || !fallbackHost) return configured;
+  if (configuredHost === fallbackHost) return configured;
+  if (isLoopbackHost(configuredHost)) return fallback;
+
+  // When LAN IP changed after reconnecting Wi-Fi/hotspot, Expo host reflects the
+  // current device-reachable IP. Prefer it to avoid stale env values breaking SSE.
+  if (isPrivateLanHost(configuredHost) && isPrivateLanHost(fallbackHost)) {
+    console.warn(
+      `[env] ${label} host (${configuredHost}) differs from Expo host (${fallbackHost}); using ${fallback}. Set EXPO_PUBLIC_DEV_API_HOST_MODE=env_only to force env value.`,
+    );
+    return fallback;
+  }
+
+  return configured;
+};
+
 type GetEnvValueOptions = {
   fallback?: string;
   optional?: boolean;
@@ -113,13 +176,19 @@ const getEnvValue = (key: string, options?: GetEnvValueOptions): string | undefi
 
 const fallbackApiBaseUrl =
   process.env.NODE_ENV !== 'production' ? guessDevApiBaseUrl() : undefined;
+const apiBaseUrlRaw = getEnvValue('apiBaseUrl', { fallback: fallbackApiBaseUrl });
+const apiBaseUrl = resolveDevApiUrlMismatch({
+  label: 'EXPO_PUBLIC_API_BASE_URL',
+  configured: apiBaseUrlRaw,
+  fallback: fallbackApiBaseUrl,
+});
 
 const envValues = {
   supabaseUrl: getEnvValue('supabaseUrl'),
   supabaseAnonKey: getEnvValue('supabaseAnonKey'),
   openAiApiKey: getEnvValue('openAiApiKey', { optional: true }),
   paddleOcrEndpoint: getEnvValue('paddleOcrEndpoint', { optional: true }),
-  apiBaseUrl: getEnvValue('apiBaseUrl', { fallback: fallbackApiBaseUrl }),
+  apiBaseUrl,
   sentryDsn: getEnvValue('sentryDsn', { optional: true }),
   posthogApiKey: getEnvValue('posthogApiKey', { optional: true }),
   scanTerminalLockEnabled: getEnvValue('scanTerminalLockEnabled', { optional: true }),
@@ -127,11 +196,16 @@ const envValues = {
 
 // Keep search endpoint aligned with the same localhost->LAN fallback logic as apiBaseUrl.
 // This prevents real-device SSE failures when .env still points to localhost.
+const searchApiFallback = envValues.apiBaseUrl;
 const searchApiBaseUrlRaw = getEnvValue('searchApiBaseUrl', {
   optional: true,
-  fallback: envValues.apiBaseUrl,
+  fallback: searchApiFallback,
 });
-const searchApiBaseUrl = searchApiBaseUrlRaw ?? envValues.apiBaseUrl;
+const searchApiBaseUrl = resolveDevApiUrlMismatch({
+  label: 'EXPO_PUBLIC_SEARCH_API_BASE_URL',
+  configured: searchApiBaseUrlRaw ?? searchApiFallback,
+  fallback: searchApiFallback,
+}) ?? envValues.apiBaseUrl;
 
 const ensureValidUrl = (value: string | undefined | null, label: string, required: boolean, errors: string[], warnings: string[]) => {
   if (!value) {

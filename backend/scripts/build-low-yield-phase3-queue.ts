@@ -56,6 +56,10 @@ const outDir =
   getArg("out-dir") ?? path.join(runDir, "phase3_low_yield_queue", new Date().toISOString().replace(/[:]/g, "-"));
 const topBrandLimit = Math.max(3, Math.min(100, asNumber(getArg("top-brand-limit"), 20)));
 const npnLimit = Math.max(20, Math.min(5000, asNumber(getArg("npn-limit"), 800)));
+const includeTailBrands = hasFlag("include-tail-brands");
+const tailBrandLimit = Math.max(0, Math.min(200, asNumber(getArg("tail-brand-limit"), 40)));
+const tailNpnLimit = Math.max(npnLimit, Math.min(12000, asNumber(getArg("tail-npn-limit"), Math.max(npnLimit, 2000))));
+const brandAliasMax = Math.max(1, Math.min(8, asNumber(getArg("brand-alias-max"), 4)));
 const existingMapTable = getArg("existing-map-table") ?? "barcode_regulatory_map";
 const existingMapSource = getArg("existing-map-source")?.trim() ?? null;
 const existingMapSourceColumn = getArg("existing-map-source-column")?.trim() || "source";
@@ -89,6 +93,60 @@ const normalizeBrand = (value: unknown): string =>
     .trim()
     .toLowerCase()
     .replace(/\s+/g, " ");
+
+const BRAND_SUFFIX_STOP = new Set([
+  "inc",
+  "inc.",
+  "ltd",
+  "ltd.",
+  "limited",
+  "corp",
+  "corp.",
+  "corporation",
+  "company",
+  "co",
+  "co.",
+  "international",
+  "enterprises",
+  "enterprise",
+  "laboratories",
+  "laboratory",
+  "lab",
+  "labs",
+  "canada",
+]);
+
+const normalizeBrandCore = (value: unknown): string => {
+  const raw = String(value ?? "")
+    .toLowerCase()
+    .replace(/[\u2018\u2019']/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+  if (!raw) return "";
+  const parts = raw.split(" ").filter(Boolean);
+  const filtered = parts.filter((token) => !BRAND_SUFFIX_STOP.has(token));
+  return (filtered.length ? filtered : parts).join(" ").trim();
+};
+
+const buildBrandAliases = (value: unknown, maxCount: number): string[] => {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  const push = (entry: string) => {
+    const normalized = entry.trim().replace(/\s+/g, " ");
+    if (!normalized) return;
+    const key = normalized.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push(normalized);
+  };
+  const original = String(value ?? "").trim();
+  if (original) push(original);
+  const core = normalizeBrandCore(original);
+  if (core) push(core);
+  const compact = core.replace(/\s+/g, "");
+  if (compact && compact.length >= 5) push(compact);
+  return out.slice(0, maxCount);
+};
 
 const readJsonSafe = (filePath: string): unknown => {
   try {
@@ -271,13 +329,16 @@ const main = async () => {
     existingMapStats.matchedSources = Array.from(matchedSources).sort();
   }
 
-  const topBrands = Array.from(brandCounts.values())
-    .sort((a, b) => b.count - a.count)
-    .slice(0, topBrandLimit);
-
+  const sortedBrands = Array.from(brandCounts.values()).sort((a, b) => b.count - a.count);
+  const topBrands = sortedBrands.slice(0, topBrandLimit);
+  const tailBrands = includeTailBrands ? sortedBrands.slice(topBrandLimit, topBrandLimit + tailBrandLimit) : [];
+  const selectedBrands = includeTailBrands ? [...topBrands, ...tailBrands] : topBrands;
   const topBrandSet = new Set(topBrands.map((item) => normalizeBrand(item.brandName)));
+  const selectedBrandSet = new Set(selectedBrands.map((item) => normalizeBrand(item.brandName)));
+  const effectiveNpnLimit = includeTailBrands ? tailNpnLimit : npnLimit;
+
   const queueRows = Array.from(npnCandidates.values())
-    .filter((row) => topBrandSet.has(normalizeBrand(row.brandName)))
+    .filter((row) => selectedBrandSet.has(normalizeBrand(row.brandName)))
     .filter((row) => {
       if (!excludeExistingNpnInMap) return true;
       const shouldKeep = !mappedNpns.has(row.npn);
@@ -292,16 +353,30 @@ const main = async () => {
       if (aBrand !== bBrand) return aBrand.localeCompare(bBrand);
       return a.npn.localeCompare(b.npn);
     })
-    .slice(0, npnLimit)
-    .map((row, idx) => ({
+    .slice(0, effectiveNpnLimit)
+    .map((row, idx) => {
+      const normalizedBrand = normalizeBrandCore(row.brandName ?? "");
+      const aliases = buildBrandAliases(row.brandName ?? "", brandAliasMax);
+      const twoHopHintBase = [normalizedBrand || row.brandName || "", row.productName ?? "", "barcode upc gtin"]
+        .join(" ")
+        .replace(/\s+/g, " ")
+        .trim();
+      const brandKey = normalizeBrand(row.brandName);
+      const reason = topBrandSet.has(brandKey)
+        ? "low_yield_brand_phase3_top"
+        : "low_yield_brand_phase3_tail";
+      return {
       queueIndex: idx + 1,
       npn: row.npn,
       brandName: row.brandName,
+      brandNameNormalized: normalizedBrand || null,
+      brandAliases: aliases,
       productName: row.productName,
       sourceBatches: Array.from(row.sourceBatches).sort(),
-      reason: "low_yield_brand_phase3",
-      twoHopHint: row.brandName ? `${row.brandName} ${row.productName ?? ""} barcode` : `${row.npn} barcode`,
-    }));
+      reason,
+      twoHopHint: twoHopHintBase || `${row.npn} barcode`,
+    };
+    });
 
   await ensureDir(outDir);
   const queueJsonlPath = path.join(outDir, "low_yield_phase3_queue.jsonl");
@@ -330,10 +405,16 @@ const main = async () => {
     generatedAt: new Date().toISOString(),
     runDir,
     topBrandLimit,
+    includeTailBrands,
+    tailBrandLimit,
+    tailNpnLimit,
     npnLimit,
+    effectiveNpnLimit,
     batchCount: batchIds.length,
     batchYieldRows,
     topBrands,
+    tailBrands,
+    selectedBrands,
     queueSize: queueRows.length,
     existingMapStats,
     files: {

@@ -181,6 +181,20 @@ export type AnalysisBundleMetaV3 = {
   eventLoopLagP95DuringRequest?: number;
   webBytesReadTotal?: number;
   webParseMsTotal?: number;
+  decisionSupportDigest?: string;
+  decisionSupportInline?: {
+    verdict: 'strong_candidate' | 'reasonable_but_incomplete' | 'hard_to_recommend_until_label_verified';
+    subscores: Array<{
+      id: 'GoalEvidenceFit' | 'FormulaQuality' | 'SafetyTransparency' | 'TrustQualityAssurance';
+      score: number;
+    }>;
+    topBlockers: Array<{
+      code: string;
+      title: string;
+      why: string;
+      severity: 'high' | 'medium' | 'low';
+    }>;
+  };
   serverCommitSha?: string | null;
 };
 

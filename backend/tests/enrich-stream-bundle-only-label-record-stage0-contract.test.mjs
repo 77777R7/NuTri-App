@@ -20,7 +20,7 @@ test("stage0 coordinator allows label_record winner in bundle_only when toggle i
   const source = await readFile(SERVER_PATH, "utf8");
   const startIdx = source.indexOf("const startStage0Bundle = (");
   assert.ok(startIdx >= 0, "missing startStage0Bundle helper");
-  const slice = source.slice(startIdx, startIdx + 1400);
+  const slice = source.slice(startIdx, startIdx + 2200);
 
   assert.match(
     slice,

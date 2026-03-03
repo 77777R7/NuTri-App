@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
 import test from "node:test";
 
 import {
@@ -145,4 +147,30 @@ test("round extraction includes score pending timeout cohort rows", () => {
   assert.equal(Array.isArray(extracted.score_pending_timeout), true);
   assert.equal(extracted.score_pending_timeout.length, 1);
   assert.equal(extracted.score_pending_timeout[0]?.barcode, "00064642059000".padStart(14, "0"));
+});
+
+test("score_pending_timeout seed fixture has at least 20 unique barcodes", () => {
+  const seedPath = path.join(
+    process.cwd(),
+    "scripts",
+    "maintainer",
+    "fixtures",
+    "cohort_seeds",
+    "score_pending_timeout.seeds.jsonl",
+  );
+  const raw = fs.readFileSync(seedPath, "utf8");
+  const unique = new Set(
+    raw
+      .trim()
+      .split(/\r?\n/)
+      .map((line) => {
+        try {
+          return String(JSON.parse(line)?.barcode ?? "").replace(/\D/g, "").padStart(14, "0");
+        } catch {
+          return "";
+        }
+      })
+      .filter(Boolean),
+  );
+  assert.ok(unique.size >= 20);
 });

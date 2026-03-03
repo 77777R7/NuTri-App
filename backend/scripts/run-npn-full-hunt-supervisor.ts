@@ -78,7 +78,9 @@ type BatchRunSummary = {
   quality: {
     p0Rate: number;
     yieldPer1000Npns: number;
+    yieldPer1000NetNewPairs: number;
     conflictRate: number;
+    repairQueueDelta: number | null;
   };
   topMissBrands: Array<{ brandName: string; count: number }>;
   topMissBrandsByTier: Record<DomainTier | "unknown", Array<{ brandName: string; count: number }>>;
@@ -178,6 +180,13 @@ const enrichTokenStrictnessRaw = (getArg("token-strictness") ?? "normal").toLowe
 const enrichTokenStrictness: "low" | "normal" =
   enrichTokenStrictnessRaw === "low" ? "low" : "normal";
 const enableUpcFallbackQuery = hasFlag("enable-upc-fallback-query");
+const tierAOnly = hasFlag("tier-a-only");
+const stoplossYieldThreshold = Math.max(
+  0,
+  asNumber(getArg("stoploss-netnew-yield-threshold"), 0),
+);
+const stoplossWindowBatches = Math.max(0, asNumber(getArg("stoploss-hours"), 0));
+const stoplossRequireRepairDeltaNonNegative = hasFlag("stoploss-repair-delta-nonnegative");
 const stageTimeoutSitemapSec = Math.max(120, asNumber(getArg("stage-timeout-sitemap-sec"), 1800));
 const stageTimeoutEnrichSec = Math.max(120, asNumber(getArg("stage-timeout-enrich-sec"), 5400));
 const stageTimeoutCompareSec = Math.max(120, asNumber(getArg("stage-timeout-compare-sec"), 1800));
@@ -414,13 +423,13 @@ const selectDomainsForBatch = (params: {
   selectedByTier.A = aPick.selected;
   nextCursorByTier.A = aPick.nextCursor;
 
-  if (batchIndex % tierBFrequency === 0 || batchIndex === 1) {
+  if (!tierAOnly && (batchIndex % tierBFrequency === 0 || batchIndex === 1)) {
     const bPick = selectCycled(tiers.B, cursorByTier.B, budgetB);
     selectedByTier.B = bPick.selected;
     nextCursorByTier.B = bPick.nextCursor;
   }
 
-  if (batchIndex % tierCFrequency === 0 || batchIndex === 1) {
+  if (!tierAOnly && (batchIndex % tierCFrequency === 0 || batchIndex === 1)) {
     const cPick = selectCycled(tiers.C, cursorByTier.C, budgetC);
     selectedByTier.C = cPick.selected;
     nextCursorByTier.C = cPick.nextCursor;
@@ -433,13 +442,17 @@ const selectDomainsForBatch = (params: {
   // Fallback: if tier cadence yields no domains (e.g. all domains are Tier C),
   // force-pick from the first non-empty tier to keep the 24h run alive.
   if (selectedDomains.length === 0) {
-    const fallbackTier: DomainTier | null = tiers.C.length
-      ? "C"
-      : tiers.B.length
-        ? "B"
-        : tiers.A.length
-          ? "A"
-          : null;
+    const fallbackTier: DomainTier | null = tierAOnly
+      ? tiers.A.length
+        ? "A"
+        : null
+      : tiers.C.length
+        ? "C"
+        : tiers.B.length
+          ? "B"
+          : tiers.A.length
+            ? "A"
+            : null;
     if (fallbackTier) {
       const fallbackRows = tiers[fallbackTier];
       const fallbackCount = Math.max(1, Math.min(maxDomainsPerBatch, fallbackRows.length));
@@ -837,6 +850,8 @@ const main = async () => {
 
   let lowYieldStreak = 0;
   let previousConflictRate: number | null = null;
+  let stoplossStreak = 0;
+  let previousRepairQueueCount: number | null = null;
 
   while (Date.now() < hardStopMs && progress.queueCursor < queueRows.length) {
     if (maxBatches > 0 && progress.batchesCompleted >= maxBatches) {
@@ -1083,6 +1098,9 @@ const main = async () => {
     const p0Rate = queueSlice.length > 0 ? p0Numerator / queueSlice.length : 0;
     const conflictRate = queueSlice.length > 0 ? conflictsByBarcode / queueSlice.length : 0;
     const yieldPer1000Npns = queueSlice.length > 0 ? (importStatsCore.imported / queueSlice.length) * 1000 : 0;
+    const yieldPer1000NetNewPairs = queueSlice.length > 0 ? (netNewPairs / queueSlice.length) * 1000 : 0;
+    const repairQueueDelta =
+      previousRepairQueueCount == null ? null : Number(repairQueue.length) - Number(previousRepairQueueCount);
 
     const batchReport: BatchRunSummary = {
       batchId,
@@ -1107,7 +1125,9 @@ const main = async () => {
       quality: {
         p0Rate: Number(p0Rate.toFixed(6)),
         yieldPer1000Npns: Number(yieldPer1000Npns.toFixed(3)),
+        yieldPer1000NetNewPairs: Number(yieldPer1000NetNewPairs.toFixed(3)),
         conflictRate: Number(conflictRate.toFixed(6)),
+        repairQueueDelta,
       },
       topMissBrands,
       topMissBrandsByTier,
@@ -1160,6 +1180,8 @@ const main = async () => {
 
     await writeJson(progressPath, progress);
 
+    previousRepairQueueCount = repairQueue.length;
+
     const lowYield = p0Rate < 0.002;
     const nonImprovingConflict =
       previousConflictRate == null || conflictRate >= previousConflictRate;
@@ -1173,6 +1195,22 @@ const main = async () => {
     if (lowYieldStreak >= 3) {
       progress.stopReason = "low_yield_plateau_3_batches";
       break;
+    }
+
+    if (stoplossWindowBatches > 0 && stoplossYieldThreshold > 0) {
+      const lowNetNewYield = yieldPer1000NetNewPairs < stoplossYieldThreshold;
+      const repairStagnant =
+        !stoplossRequireRepairDeltaNonNegative ||
+        (repairQueueDelta != null && Number.isFinite(repairQueueDelta) && repairQueueDelta >= 0);
+      if (lowNetNewYield && repairStagnant) {
+        stoplossStreak += 1;
+      } else {
+        stoplossStreak = 0;
+      }
+      if (stoplossStreak >= stoplossWindowBatches) {
+        progress.stopReason = "stoploss_low_netnew_yield_repair_stagnant";
+        break;
+      }
     }
   }
 

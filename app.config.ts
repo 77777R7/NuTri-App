@@ -25,7 +25,75 @@ const PADDLE_OCR_ENDPOINT = process.env.EXPO_PUBLIC_PADDLE_OCR_ENDPOINT ?? proce
 const SENTRY_DSN = process.env.SENTRY_DSN ?? process.env.EXPO_PUBLIC_SENTRY_DSN;
 const POSTHOG_API_KEY = process.env.POSTHOG_API_KEY ?? process.env.EXPO_PUBLIC_POSTHOG_API_KEY;
 
+const parseHostname = (rawValue: string | undefined | null): string | null => {
+  if (!rawValue) return null;
+  const normalized = rawValue.includes('://') ? rawValue : `http://${rawValue}`;
+  try {
+    const url = new URL(normalized);
+    return url.hostname || null;
+  } catch {
+    return null;
+  }
+};
+
+const isLoopbackHost = (hostname: string | null): boolean => {
+  if (!hostname) return false;
+  return (
+    hostname === 'localhost'
+    || hostname === '127.0.0.1'
+    || hostname === '0.0.0.0'
+    || hostname === '::1'
+    || hostname === '10.0.2.2'
+  );
+};
+
+const isPrivateLanHost = (hostname: string | null): boolean => {
+  if (!hostname) return false;
+  if (hostname.startsWith('10.')) return true;
+  if (hostname.startsWith('192.168.')) return true;
+  const matched172 = hostname.match(/^172\.(\d{1,3})\./);
+  if (matched172) {
+    const secondOctet = Number(matched172[1]);
+    return Number.isFinite(secondOctet) && secondOctet >= 16 && secondOctet <= 31;
+  }
+  return false;
+};
+
+const isReleaseBuildProfile = (): boolean => {
+  const profile = String(process.env.EAS_BUILD_PROFILE ?? '').trim().toLowerCase();
+  return profile === 'production' || profile === 'preview';
+};
+
+const assertReleaseApiBaseSafety = () => {
+  const allowPrivateReleaseApi =
+    process.env.ALLOW_PRIVATE_API_IN_RELEASE === '1'
+    || process.env.EXPO_PUBLIC_ALLOW_PRIVATE_API_IN_RELEASE === '1';
+  if (!isReleaseBuildProfile() || allowPrivateReleaseApi) return;
+
+  const apiHost = parseHostname(API_BASE_URL);
+  const searchHost = parseHostname(SEARCH_API_BASE_URL);
+
+  const unsafeApi = isLoopbackHost(apiHost) || isPrivateLanHost(apiHost);
+  const unsafeSearch = isLoopbackHost(searchHost) || isPrivateLanHost(searchHost);
+  if (!unsafeApi && !unsafeSearch) return;
+
+  const profile = String(process.env.EAS_BUILD_PROFILE ?? 'unknown');
+  const unsafeParts: string[] = [];
+  if (unsafeApi) unsafeParts.push(`apiBaseUrl=${API_BASE_URL}`);
+  if (unsafeSearch) unsafeParts.push(`searchApiBaseUrl=${SEARCH_API_BASE_URL}`);
+  throw new Error(
+    `[app.config] Refusing ${profile} build with private/local API host(s): ${unsafeParts.join(', ')}. `
+    + 'Set EXPO_PUBLIC_API_BASE_URL / EXPO_PUBLIC_SEARCH_API_BASE_URL to a public HTTPS endpoint (Render). '
+    + 'For emergency local testing only, set ALLOW_PRIVATE_API_IN_RELEASE=1.',
+  );
+};
+
 const createExpoConfig = ({ config }: ConfigContext): ExpoConfig => {
+  assertReleaseApiBaseSafety();
+
+  const easProjectId =
+    process.env.EAS_PROJECT_ID || config.extra?.eas?.projectId || 'bf32fe60-8187-4534-bb7d-50d68b668ac8';
+
   return {
     ...config,
     name: NAME,
@@ -42,6 +110,7 @@ const createExpoConfig = ({ config }: ConfigContext): ExpoConfig => {
       bundleIdentifier: IOS_BUNDLE_ID,
       usesAppleSignIn: true,
       infoPlist: {
+        ITSAppUsesNonExemptEncryption: false,
         NSLocationWhenInUseUsageDescription: 'NuTri uses your approximate location to personalise supplement insights and seasonal guidance.',
       },
       ...config.ios,
@@ -93,7 +162,7 @@ const createExpoConfig = ({ config }: ConfigContext): ExpoConfig => {
       sentryDsn: SENTRY_DSN,
       posthogApiKey: POSTHOG_API_KEY,
       eas: {
-        projectId: process.env.EAS_PROJECT_ID ?? config.extra?.eas?.projectId,
+        projectId: easProjectId,
       },
     },
   };

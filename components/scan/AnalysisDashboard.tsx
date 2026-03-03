@@ -57,7 +57,7 @@ import { isNutritionLabelLikeIngredient } from '@/lib/scan/isNutritionLabelLikeI
 import { assembleInsightsDTO, buildWhyBullets } from '@/lib/scan/insightsAssembler';
 import { enforceNeverBlank, isPlaceholderText, sanitizeCoverBullets, sanitizeCoverLine } from '@/lib/scan/neverBlank';
 import { buildRecordFactsViewModel } from '@/lib/scan/recordFactsViewModel';
-import { buildSafetySignalPack, safetySignalsToPriorityLines } from '@/lib/scan/safetySignalPack';
+import { buildSafetySignalPack } from '@/lib/scan/safetySignalPack';
 import { resolveTrustedDisplayIdentity } from '@/lib/scan/resolveTrustedDisplayIdentity';
 import { buildVerificationPresentation } from '@/lib/scan/verificationPresentation';
 import { resolveReasonCodeMessage } from '@/lib/scan/streamStateMachine';
@@ -113,6 +113,74 @@ type FactsDtoState = {
     status: 'idle' | 'loading' | 'ready' | 'error';
     data: FactsDTO | null;
     error: string | null;
+};
+
+type DecisionSupportState = {
+    status: 'idle' | 'loading' | 'ready' | 'error';
+    data: Record<string, unknown> | null;
+    error: string | null;
+    autoRetryUsed: boolean;
+};
+
+type DecisionChecklistStatus = 'verified' | 'missing' | 'unknown';
+type DecisionChecklistRow = {
+    key: string;
+    label: string;
+    status: DecisionChecklistStatus;
+    sourceTier: 'official_record' | 'scanned_label' | 'general_science' | 'inferred' | 'missing';
+    why?: string | null;
+};
+type DecisionSupportTemplatePayload = {
+    nutriScoreCard?: {
+        score?: number;
+        confidenceCoverage?: number;
+        rows?: Array<{ id: 'effectiveness' | 'safety' | 'integrity'; label: string; score: number }>;
+        checklistsByRow?: Record<'effectiveness' | 'safety' | 'integrity', DecisionChecklistRow[]>;
+    };
+    overviewBlock?: {
+        sourceStrip?: string[];
+        bestForBullets?: string[];
+        providesVerified?: {
+            servingSize?: string | null;
+            servingsPerContainer?: number | null;
+            keyIngredients?: Array<{ name: string; dose?: string | null }>;
+            dosageForm?: string | null;
+            count?: string | null;
+        };
+        missingInfo?: string[];
+        singleCta?: { label?: string; id?: string } | null;
+    };
+    scienceBlock?: {
+        ingredientSnapshotNames?: string[];
+        formMatters?: { ingredientChemicalForm?: string | null; dosageForm?: string | null };
+        odsGeneralScienceBullets?: string[];
+        aiSummaryContract3?: [string, string, string];
+    };
+    usageBlock?: {
+        directions?: {
+            text?: string;
+            lines?: string[];
+            sourceTier?: 'official_record' | 'scanned_label' | 'missing';
+            hasDirectionsTextVisible?: boolean;
+        };
+        timingTip?: string;
+        conservativeGuidance?: string;
+    };
+    safetyBlock?: {
+        labelWarnings?: string[];
+        ulGuidance?: string[];
+        generalWatchouts?: string[];
+        dataStatusRef?: string;
+    };
+    qualityMark?: {
+        status?: 'detected' | 'not_detected' | 'unknown';
+        evidenceRef?: string | null;
+        checkedMode?: 'search_only' | 'page_fetch' | null;
+        pagesFetchedCount?: number;
+        searchPagesFetchedCount?: number;
+        evidenceType?: 'page' | 'search' | null;
+        note?: string;
+    };
 };
 
 type CoverLine = {
@@ -171,6 +239,22 @@ type TileConfig = {
         sources: SourceRef[];
         notes?: string[];
     };
+    trustPanel?: {
+        verifiedFrom: string;
+        retrievedOn: string;
+        webEvidence: 'used' | 'not used' | 'unknown';
+        trustLevel: 'High' | 'Medium' | 'Limited';
+        verifiedSummary: string;
+        missingSummary: string;
+        reason: string;
+        sources: Array<{
+            label: string;
+            value: string;
+            tag: 'Product-specific' | 'General reference' | 'User scan evidence' | 'Web evidence';
+            url?: string | null;
+        }>;
+    };
+    showDataStatusCard?: boolean;
     content: React.ReactNode;
 };
 
@@ -185,6 +269,21 @@ const FORCE_FULL_DASHBOARD_EFFECTS =
 const SHOW_SCAN_DEBUG =
     process.env.EXPO_PUBLIC_SHOW_SCAN_DEBUG === 'true' ||
     process.env.EXPO_PUBLIC_SHOW_SCAN_DEBUG === '1';
+const SCAN_UX_VIEW_MODE: 'simple' | 'details' = (() => {
+    const raw = String(process.env.EXPO_PUBLIC_SCAN_UX_VIEW_MODE ?? 'simple').trim().toLowerCase();
+    return raw === 'details' ? 'details' : 'simple';
+})();
+const SCAN_UX_VARIANT = (() => {
+    const raw = String(process.env.EXPO_PUBLIC_SCAN_UX_VARIANT ?? 'full').trim().toLowerCase();
+    if (raw === 'shadow' || raw === 'canary' || raw === 'full') return raw;
+    return 'full';
+})();
+const SIMPLE_TAXONOMY_WHITELIST = new Set([
+    'Official record',
+    'Scanned label',
+    'General science (NIH ODS)',
+    'AI summary',
+]);
 const SCORE_PENDING_DONE_TIMEOUT_MS = Math.max(
     8_000,
     Math.min(
@@ -429,6 +528,65 @@ function ensurePeriod(value: string) {
     if (!trimmed) return '';
     return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
 }
+
+function formatDateYmd(value?: string | null): string | null {
+    const normalized = normalizeText(value);
+    if (!normalized) return null;
+    const date = new Date(normalized);
+    if (Number.isNaN(date.getTime())) return null;
+    return date.toISOString().slice(0, 10);
+}
+
+function buildOfficialRecordUrl(source: 'lnhpd' | 'dsld' | 'web' | 'unknown', sourceId: string | null): string | null {
+    const normalizedSourceId = normalizeText(sourceId);
+    if (!normalizedSourceId) return null;
+    if (source === 'lnhpd') {
+        return `https://health-products.canada.ca/lnhpd-bdpsnh/info?licence=${encodeURIComponent(normalizedSourceId)}`;
+    }
+    if (source === 'dsld') {
+        return `https://dsld.od.nih.gov/label/${encodeURIComponent(normalizedSourceId)}`;
+    }
+    return null;
+}
+
+const CUSTOMER_TECHNICAL_LINE_PATTERN =
+    /match score|rbf|band thresholds|within_typical|below_typical|above_typical|reviewed[_\s]package|form match|evidence grade|confidence\s*\d|needs_capture|needs_edit|review_status/i;
+
+function sanitizeCustomerFacingLine(value?: string | null): string | null {
+    const normalized = normalizeText(value);
+    if (!normalized) return null;
+    if (CUSTOMER_TECHNICAL_LINE_PATTERN.test(normalized)) return null;
+    return ensurePeriod(normalized);
+}
+
+function emitScanUxMetric(event: string, payload: Record<string, unknown> = {}) {
+    console.info('[scan-ux-metric]', {
+        event,
+        ...payload,
+    });
+}
+
+function resolveSimpleTaxonomyLabel(label: string, fallback: string = 'Official record') {
+    if (SIMPLE_TAXONOMY_WHITELIST.has(label)) return label;
+    if (__DEV__) {
+        console.warn('[scan-simple-taxonomy] non-whitelisted badge', { label, fallback });
+    }
+    return fallback;
+}
+
+const renderChecklistSymbol = (status: DecisionChecklistStatus): string => {
+    if (status === 'verified') return '✅';
+    if (status === 'missing') return '⛔';
+    return '◻';
+};
+
+const sourceTierLabel = (tier: 'official_record' | 'scanned_label' | 'general_science' | 'inferred' | 'missing' | null | undefined): string => {
+    if (tier === 'official_record') return 'Official record (DSLD/LNHPD)';
+    if (tier === 'scanned_label') return 'Scanned label (patch/label)';
+    if (tier === 'general_science') return 'General science (NIH ODS)';
+    if (tier === 'missing') return 'Missing in official record';
+    return 'AI summary (grounded)';
+};
 
 function clampText(value?: string | null, maxChars: number = 100) {
     const normalized = normalizeText(value);
@@ -910,8 +1068,11 @@ const DashboardModal: React.FC<{
     visible: boolean;
     onClose: () => void;
     tile: TileConfig | null;
-}> = ({ visible, onClose, tile }) => {
+    sourceType: string | null;
+    sourceTypeFinal: boolean;
+}> = ({ visible, onClose, tile, sourceType, sourceTypeFinal }) => {
     const { t } = useTranslation();
+    const [sourcesOpen, setSourcesOpen] = useState(false);
     if (!tile) return null;
 
     const accent = tile.backgroundColor || '#D1D5DB';
@@ -921,18 +1082,80 @@ const DashboardModal: React.FC<{
         : undefined;
     const sourceLine = formatSourceRefs(tile.dataStatus?.sources);
     const notesLine = tile.dataStatus?.notes?.length ? tile.dataStatus.notes.join(' • ') : null;
+    const shouldShowDataStatusCard = SCAN_UX_VIEW_MODE === 'details' && tile.showDataStatusCard !== false;
+    const webEvidenceLabel =
+        tile.trustPanel?.webEvidence === 'used'
+            ? 'used'
+            : tile.trustPanel?.webEvidence === 'not used'
+                ? 'not used'
+                : 'unknown';
+    const openedAtRef = useRef<number>(0);
+    const maxScrollRatioRef = useRef<number>(0);
+    const viewportHeightRef = useRef<number>(1);
+    const contentHeightRef = useRef<number>(1);
+
+    const handleClose = useCallback(() => {
+        const openedAt = openedAtRef.current;
+        const dwellMs = openedAt > 0 ? Math.max(0, Date.now() - openedAt) : 0;
+        emitScanUxMetric('scan_sheet_closed', {
+            viewMode: SCAN_UX_VIEW_MODE,
+            variant: SCAN_UX_VARIANT,
+            sheetType: tile.type,
+            sourceType,
+            sourceTypeFinal,
+            dwellMs,
+            maxScrollRatio: Number(maxScrollRatioRef.current.toFixed(3)),
+            summaryVersion: null,
+            guardApplied: null,
+            fallbackUsed: null,
+        });
+        onClose();
+    }, [onClose, sourceType, sourceTypeFinal, tile.type]);
+
+    const handleModalScroll = useCallback((event: any) => {
+        const y = Number(event?.nativeEvent?.contentOffset?.y ?? 0);
+        const viewport = Number(event?.nativeEvent?.layoutMeasurement?.height ?? viewportHeightRef.current ?? 1);
+        const content = Number(event?.nativeEvent?.contentSize?.height ?? contentHeightRef.current ?? 1);
+        viewportHeightRef.current = Math.max(1, viewport);
+        contentHeightRef.current = Math.max(1, content);
+        const ratio = Math.max(0, Math.min(1, (y + viewportHeightRef.current) / contentHeightRef.current));
+        if (ratio > maxScrollRatioRef.current) {
+            maxScrollRatioRef.current = ratio;
+        }
+    }, []);
+
+    useEffect(() => {
+        if (!visible) return;
+        setSourcesOpen(false);
+        openedAtRef.current = Date.now();
+        maxScrollRatioRef.current = 0;
+        viewportHeightRef.current = 1;
+        contentHeightRef.current = 1;
+        emitScanUxMetric('scan_sheet_opened', {
+            viewMode: SCAN_UX_VIEW_MODE,
+            variant: SCAN_UX_VARIANT,
+            sheetType: tile.type,
+            sourceType,
+            sourceTypeFinal,
+            dwellMs: 0,
+            maxScrollRatio: 0,
+            summaryVersion: null,
+            guardApplied: null,
+            fallbackUsed: null,
+        });
+    }, [visible, sourceType, sourceTypeFinal, tile.type]);
 
     return (
         <Modal
             visible={visible}
             transparent
             animationType="none"
-            onRequestClose={onClose}
+            onRequestClose={handleClose}
             statusBarTranslucent
         >
             <View style={styles.modalOverlayGlass}>
                 {/* Backdrop */}
-                <Pressable style={StyleSheet.absoluteFill} onPress={onClose}>
+                <Pressable style={StyleSheet.absoluteFill} onPress={handleClose}>
                     <DashboardBlur intensity={22} tint="dark" style={StyleSheet.absoluteFill} />
                     <View style={styles.modalBackdropTint} />
                 </Pressable>
@@ -963,7 +1186,7 @@ const DashboardModal: React.FC<{
                             </View>
                         </View>
 
-                        <Pressable style={styles.modalCloseButtonNew} onPress={onClose} accessibilityLabel="Close">
+                        <Pressable style={styles.modalCloseButtonNew} onPress={handleClose} accessibilityLabel="Close">
                             <DashboardBlur intensity={18} tint="light" style={StyleSheet.absoluteFill} />
                             <X size={18} color="#111827" />
                         </Pressable>
@@ -973,7 +1196,78 @@ const DashboardModal: React.FC<{
                         style={styles.modalScrollNew}
                         contentContainerStyle={styles.modalScrollContentNew}
                         showsVerticalScrollIndicator={false}
+                        onScroll={handleModalScroll}
+                        scrollEventThrottle={16}
+                        onLayout={(event) => {
+                            viewportHeightRef.current = Math.max(1, Number(event.nativeEvent.layout.height ?? 1));
+                        }}
+                        onContentSizeChange={(_w, h) => {
+                            contentHeightRef.current = Math.max(1, Number(h ?? 1));
+                        }}
                     >
+                        {tile.trustPanel ? (
+                            <View style={styles.sourceStripCard}>
+                                <Text style={styles.sourceStripLine} numberOfLines={1}>
+                                    Official record: {tile.trustPanel.verifiedFrom}
+                                </Text>
+                                <Text style={styles.sourceStripLine} numberOfLines={1}>
+                                    Retrieved on: {tile.trustPanel.retrievedOn} · Web evidence: {webEvidenceLabel}
+                                </Text>
+                                <Text style={styles.sourceStripLine} numberOfLines={1}>
+                                    Trust level: {tile.trustPanel.trustLevel} · {tile.trustPanel.reason}
+                                </Text>
+                                <Text style={styles.sourceStripLine} numberOfLines={1}>
+                                    {tile.trustPanel.verifiedSummary}
+                                </Text>
+                                <Text style={styles.sourceStripLine} numberOfLines={1}>
+                                    {tile.trustPanel.missingSummary}
+                                </Text>
+                                <Pressable
+                                    style={styles.sourcesToggleButton}
+                                    onPress={() =>
+                                        setSourcesOpen((prev) => {
+                                            const next = !prev;
+                                            if (next) {
+                                                emitScanUxMetric('scan_source_drawer_opened', {
+                                                    viewMode: SCAN_UX_VIEW_MODE,
+                                                    variant: SCAN_UX_VARIANT,
+                                                    sheetType: tile.type,
+                                                    sourceType,
+                                                    sourceTypeFinal,
+                                                    dwellMs: 0,
+                                                    maxScrollRatio: Number(maxScrollRatioRef.current.toFixed(3)),
+                                                    summaryVersion: null,
+                                                    guardApplied: null,
+                                                    fallbackUsed: null,
+                                                });
+                                            }
+                                            return next;
+                                        })
+                                    }
+                                    accessibilityRole="button"
+                                    accessibilityLabel={sourcesOpen ? 'Hide sources' : 'View sources'}
+                                >
+                                    <Text style={styles.sourcesToggleButtonText}>
+                                        {sourcesOpen ? 'Hide sources' : 'View sources'}
+                                    </Text>
+                                </Pressable>
+                                {sourcesOpen ? (
+                                    <View style={styles.sourcesDrawerCard}>
+                                        <Text style={styles.sourcesDrawerTitle}>Sources</Text>
+                                        {tile.trustPanel.sources.map((source, idx) => (
+                                            <View key={`trust-source-${idx}`} style={styles.sourceRow}>
+                                                <Text style={styles.sourceRowTag}>{source.tag}</Text>
+                                                <Text style={styles.sourceRowLabel}>{source.label}: {source.value}</Text>
+                                                {source.url ? (
+                                                    <Text style={styles.sourceRowUrl}>{source.url}</Text>
+                                                ) : null}
+                                            </View>
+                                        ))}
+                                    </View>
+                                ) : null}
+                            </View>
+                        ) : null}
+
                         {/* Main content */}
                         {tile.content ? (
                             tile.content
@@ -989,27 +1283,28 @@ const DashboardModal: React.FC<{
                             </GlassCard>
                         )}
 
-                        {/* Data status (always visible, consistent) */}
-                        <GlassCard
-                            title={`Data status: ${COVER_STATUS_LABELS[tile.dataStatus?.status ?? 'limited']}`}
-                            subtitle={statusLine}
-                            accentColor={accent}
-                            style={{ marginTop: 14 }}
-                        >
-                            <View style={styles.dataStatusRowNew}>
-                                <Text style={styles.dataStatusSmallNew}>
-                                    Sources: {sourceLine}
-                                </Text>
-                            </View>
-                            {notesLine ? (
-                                <View style={{ marginTop: 8 }}>
-                                    <Text style={styles.dataStatusNoteNew}>Notes: {notesLine}</Text>
+                        {shouldShowDataStatusCard ? (
+                            <GlassCard
+                                title={`Data status: ${COVER_STATUS_LABELS[tile.dataStatus?.status ?? 'limited']}`}
+                                subtitle={statusLine}
+                                accentColor={accent}
+                                style={{ marginTop: 14 }}
+                            >
+                                <View style={styles.dataStatusRowNew}>
+                                    <Text style={styles.dataStatusSmallNew}>
+                                        Sources: {sourceLine}
+                                    </Text>
                                 </View>
-                            ) : null}
-                            <View style={{ marginTop: 10 }}>
-                                <Text style={styles.dataStatusDisclaimerNew}>{t.analysisIntegrityNote}</Text>
-                            </View>
-                        </GlassCard>
+                                {notesLine ? (
+                                    <View style={{ marginTop: 8 }}>
+                                        <Text style={styles.dataStatusNoteNew}>Notes: {notesLine}</Text>
+                                    </View>
+                                ) : null}
+                                <View style={{ marginTop: 10 }}>
+                                    <Text style={styles.dataStatusDisclaimerNew}>{t.analysisIntegrityNote}</Text>
+                                </View>
+                            </GlassCard>
+                        ) : null}
 
                         <View style={{ height: 24 }} />
                     </ScrollView>
@@ -1282,6 +1577,9 @@ type IngredientSummaryState = {
     highlights?: string[];
     caveats?: string[];
     confidence_note?: string;
+    summaryVersion?: string;
+    guardApplied?: boolean;
+    fallbackUsed?: boolean;
     error?: string;
 };
 
@@ -1341,6 +1639,30 @@ const isUnspecifiedFormSignal = (formKey?: string | null, reasonCode?: string | 
     const normalizedKey = String(formKey ?? '').trim().toLowerCase();
     const normalizedReason = String(reasonCode ?? '').trim().toUpperCase();
     return normalizedKey === 'unspecified' || normalizedReason === 'FORM_NOT_DISCLOSED';
+};
+
+const isSingleCtaAllowed = (sheetType: TileType): boolean => sheetType === 'overview';
+
+const normalizeVitaminDFormSignal = (value?: string | null): 'd2' | 'd3' | null => {
+    const normalized = String(value ?? '').trim().toLowerCase();
+    if (!normalized) return null;
+    if (/\bd2\b|ergocalciferol|vitamin\s*d2/.test(normalized)) return 'd2';
+    if (/\bd3\b|cholecalciferol|vitamin\s*d3/.test(normalized)) return 'd3';
+    return null;
+};
+
+const detectInferredFormConflict = (params: {
+    productName?: string | null;
+    explicitForm?: string | null;
+    inferredForm?: string | null;
+}): boolean => {
+    const productForm = normalizeVitaminDFormSignal(params.productName);
+    const explicitForm = normalizeVitaminDFormSignal(params.explicitForm);
+    const inferredForm = normalizeVitaminDFormSignal(params.inferredForm);
+    if (!inferredForm) return false;
+    if (productForm && productForm !== inferredForm) return true;
+    if (explicitForm && explicitForm !== inferredForm) return true;
+    return false;
 };
 
 const extractProductSpecificInsights = (bundle: ScoreBundleV4 | null): Map<string, ProductSpecificInsight> => {
@@ -1574,8 +1896,16 @@ const AnalysisBundleDashboard: React.FC<{
         data: null,
         error: null,
     });
+    const [decisionSupportState, setDecisionSupportState] = useState<DecisionSupportState>({
+        status: 'idle',
+        data: null,
+        error: null,
+        autoRetryUsed: false,
+    });
+    const [expandedScoreRow, setExpandedScoreRow] = useState<'effectiveness' | 'safety' | 'integrity' | null>(null);
     const detailLoadingRef = useRef(false);
     const detailInFlightKeyRef = useRef<string | null>(null);
+    const decisionSupportFetchKeyRef = useRef<string | null>(null);
     const foundationMetricLoggedRef = useRef<Set<string>>(new Set());
     const scrollY = useSharedValue(0);
     const scrollHandler = useAnimatedScrollHandler((event) => {
@@ -1740,6 +2070,113 @@ const AnalysisBundleDashboard: React.FC<{
     }, [
         bundleState.meta.authoritativeIdentity.type,
         bundleState.meta.authoritativeIdentity.value,
+    ]);
+
+    useEffect(() => {
+        const resolvedBarcode = (() => {
+            const identity = bundleState.meta.authoritativeIdentity;
+            if (identity?.type === 'gtin14') {
+                const digits = String(identity.value ?? '').replace(/\D/g, '');
+                if (digits.length >= 8) return digits.length > 14 ? digits.slice(-14) : digits.padStart(14, '0');
+            }
+            const analysisBarcodeRaw = normalizeText((analysis as { barcode?: string | null })?.barcode ?? null);
+            const analysisDigits = analysisBarcodeRaw.replace(/\D/g, '');
+            if (analysisDigits.length >= 8) {
+                return analysisDigits.length > 14 ? analysisDigits.slice(-14) : analysisDigits.padStart(14, '0');
+            }
+            return null;
+        })();
+        if (!resolvedBarcode) return;
+        const digestHint =
+            typeof (bundleState.meta as { decisionSupportDigest?: unknown })?.decisionSupportDigest === 'string'
+                ? String((bundleState.meta as { decisionSupportDigest?: string }).decisionSupportDigest)
+                : null;
+        const fetchKey = `${resolvedBarcode}|${digestHint ?? ''}|${SCAN_UX_VIEW_MODE}`;
+        if (decisionSupportFetchKeyRef.current === fetchKey) return;
+        decisionSupportFetchKeyRef.current = fetchKey;
+
+        let cancelled = false;
+        let autoRetryUsed = false;
+        const inlineFallback =
+            (bundleState.meta as { decisionSupportInline?: Record<string, unknown> | null }).decisionSupportInline ?? null;
+
+        const run = async (digestParam: string | null, canRetry: boolean): Promise<void> => {
+            try {
+                if (!cancelled) {
+                    setDecisionSupportState((prev) => ({
+                        status: 'loading',
+                        data: prev.data,
+                        error: null,
+                        autoRetryUsed,
+                    }));
+                }
+                const baseUrl = String(Config.searchApiBaseUrl).replace(/\/$/, '');
+                const params = new URLSearchParams({
+                    barcode: resolvedBarcode,
+                    viewMode: SCAN_UX_VIEW_MODE,
+                });
+                if (digestParam) params.set('digest', digestParam);
+                const res = await fetch(`${baseUrl}/api/decision-support/v1?${params.toString()}`, {
+                    method: 'GET',
+                    headers: await withAuthHeaders(),
+                });
+
+                if (res.status === 409) {
+                    const mismatchPayload = await res.json().catch(() => null);
+                    const latestDigest = typeof mismatchPayload?.latestDigest === 'string' ? mismatchPayload.latestDigest : null;
+                    if (canRetry && latestDigest && latestDigest !== digestParam) {
+                        autoRetryUsed = true;
+                        return run(latestDigest, false);
+                    }
+                    if (!cancelled) {
+                        setDecisionSupportState({
+                            status: inlineFallback ? 'ready' : 'error',
+                            data: inlineFallback
+                                ? {
+                                    ...inlineFallback,
+                                    staleDigest: true,
+                                    latestDigest,
+                                }
+                                : null,
+                            error: inlineFallback ? null : 'Decision support content updated. Refresh required.',
+                            autoRetryUsed,
+                        });
+                    }
+                    return;
+                }
+
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}`);
+                }
+
+                const payload = await res.json();
+                if (cancelled) return;
+                setDecisionSupportState({
+                    status: 'ready',
+                    data: payload && typeof payload === 'object' ? payload : null,
+                    error: null,
+                    autoRetryUsed,
+                });
+            } catch (error) {
+                if (cancelled) return;
+                const message = error instanceof Error ? error.message : 'Decision support unavailable';
+                setDecisionSupportState({
+                    status: inlineFallback ? 'ready' : 'error',
+                    data: inlineFallback ? { ...inlineFallback, staleDigest: true } : null,
+                    error: inlineFallback ? null : message,
+                    autoRetryUsed,
+                });
+            }
+        };
+
+        void run(digestHint, true);
+
+        return () => {
+            cancelled = true;
+        };
+    }, [
+        bundleState.meta,
+        analysis,
     ]);
 
     const onTilesGridLayout = useCallback((e: LayoutChangeEvent) => {
@@ -2508,70 +2945,166 @@ const AnalysisBundleDashboard: React.FC<{
 
     const overviewFacts = factsDtoState.data;
     const overviewGapNotes = buildGapActionSentences(overviewFacts?.dataQuality?.missingReasons, 'overview');
+    const bundleSourceForTrust: 'lnhpd' | 'dsld' | 'web' | 'unknown' =
+        bundleSourceType === 'lnhpd' || bundleSourceType === 'dsld' || bundleSourceType === 'web'
+            ? bundleSourceType
+            : 'unknown';
+    const hasLabelScanEvidence =
+        sourceType === 'label_scan' ||
+        normalizeText(overviewFacts?.provenance?.sourceFiles?.pdf ?? null).length > 0;
+    const verifiedFromBase =
+        bundleSourceForTrust === 'lnhpd'
+            ? 'Health Canada LNHPD (official record)'
+            : bundleSourceForTrust === 'dsld'
+                ? 'NIH DSLD (official record)'
+                : bundleSourceForTrust === 'web'
+                    ? 'Web evidence (unverified)'
+                    : 'Available source records';
+    const verifiedFromDisplay =
+        hasLabelScanEvidence && bundleSourceForTrust !== 'web'
+            ? `${verifiedFromBase} + label scan`
+            : verifiedFromBase;
+    const isLnhpdSource = bundleSourceForTrust === 'lnhpd';
+    const isDsldSource = bundleSourceForTrust === 'dsld';
+    const retrievedOn =
+        formatDateYmd(overviewFacts?.meta?.fetchedAt ?? null)
+        ?? formatDateYmd((analysis as Record<string, any>)?.analysisMeta?.labelExtraction?.fetchedAt ?? null)
+        ?? 'Unknown';
+    const completenessChecks = [
+        { label: 'active ingredients', ok: recordFacts.ingredientCount > 0 },
+        { label: 'per-serving dose', ok: Boolean(recordFacts.perServingDoseLine) },
+        { label: 'directions', ok: recordFacts.directionsPresent },
+        { label: 'label warnings', ok: recordFacts.warningsPresent },
+        { label: 'dosage form', ok: normalizeText(overviewFacts?.usage?.dosageForm ?? '').length > 0 },
+        { label: 'serving size', ok: Boolean(recordFacts.servingSizeText) },
+    ];
+    const verifiedFieldCount = completenessChecks.filter((item) => item.ok).length;
+    const verifiedFieldLabels = completenessChecks.filter((item) => item.ok).map((item) => item.label);
+    const missingFieldLabels = completenessChecks.filter((item) => !item.ok).map((item) => item.label);
+    const highImpactMissingLabels = missingFieldLabels.filter((label) => label === 'label warnings' || label === 'directions');
+    const lowImpactMissingLabels = missingFieldLabels.filter((label) => !highImpactMissingLabels.includes(label));
+    const trustLevel: 'High' | 'Medium' | 'Limited' =
+        highImpactMissingLabels.length === 0 && verifiedFieldCount >= 5
+            ? 'High'
+            : highImpactMissingLabels.length <= 1 && verifiedFieldCount >= 3
+                ? 'Medium'
+                : 'Limited';
+    const trustReason =
+        highImpactMissingLabels.length > 0
+            ? `${highImpactMissingLabels[0]} not captured in official record`
+            : lowImpactMissingLabels.length > 0
+                ? `${lowImpactMissingLabels[0]} missing in official record`
+                : 'Core product fields are available';
+    const trustVerifiedSummary = verifiedFieldLabels.length > 0
+        ? `Verified: ${verifiedFieldLabels.slice(0, 3).join(', ')}`
+        : 'Verified: core fields are limited';
+    const trustMissingSummary = highImpactMissingLabels.length > 0
+        ? `Missing: ${highImpactMissingLabels.join(', ')}`
+        : lowImpactMissingLabels.length > 0
+            ? `Missing: ${lowImpactMissingLabels[0]}`
+            : 'Missing: no high-impact gaps detected';
+    const officialRecordSourceId = normalizeText(overviewFacts?.meta?.sourceId ?? bundleState.meta.authoritativeIdentity?.value ?? '');
+    const officialRecordUrl = buildOfficialRecordUrl(bundleSourceForTrust, officialRecordSourceId || null);
+    const trustPanelSources: NonNullable<TileConfig['trustPanel']>['sources'] = [
+        {
+            tag: 'Product-specific',
+            label: 'Official record',
+            value:
+                bundleSourceForTrust === 'lnhpd'
+                    ? `LNHPD ${officialRecordSourceId || 'record'}`
+                    : bundleSourceForTrust === 'dsld'
+                        ? `DSLD ${officialRecordSourceId || 'record'}`
+                        : 'Record unavailable',
+            url: officialRecordUrl,
+        },
+        {
+            tag: 'General reference',
+            label: 'NIH ODS',
+            value: `${recordFacts.topIngredient?.name ?? 'Ingredient'} fact sheet (general reference)`,
+            url: 'https://ods.od.nih.gov/factsheets/list-all/',
+        },
+        {
+            tag: 'User scan evidence',
+            label: 'Label evidence',
+            value: hasLabelScanEvidence ? `available (${retrievedOn})` : 'not provided',
+            url: null,
+        },
+        {
+            tag: 'Web evidence',
+            label: 'Web evidence',
+            value: bundleSourceForTrust === 'web' ? 'used' : 'not used',
+            url: null,
+        },
+    ];
+    const sharedTrustPanel: NonNullable<TileConfig['trustPanel']> = {
+        verifiedFrom: verifiedFromDisplay,
+        retrievedOn,
+        webEvidence: bundleSourceForTrust === 'web' ? 'used' : 'not used',
+        trustLevel,
+        verifiedSummary: trustVerifiedSummary,
+        missingSummary: trustMissingSummary,
+        reason: trustReason,
+        sources: trustPanelSources,
+    };
     const overviewWhatIsLines = enforceNeverBlank({
         lines: [
             toSentence(
-                `${overviewFacts?.product?.name ?? productTitle} by ${overviewFacts?.product?.brand ?? (brandForSubtitle ?? 'Unknown brand')
-                } — ${verificationPresentation.copyTokens.overviewLead}`,
+                `${overviewFacts?.product?.name ?? productTitle} by ${overviewFacts?.product?.brand ?? (brandForSubtitle ?? 'Unknown brand')}`,
             ),
+            toSentence(verificationPresentation.copyTokens.overviewLead),
             isDataCeiling ? dataCeilingOverviewLine : overviewSummarySeed,
-            isDataCeiling
-                ? dataCeilingActionLine
-                : (
-                    recordFacts.topIngredient?.name
-                        ? `Key ingredient detected: ${recordFacts.topIngredient.name}.`
-                        : null
-                ),
         ],
         fallback: [
             verificationPresentation.copyTokens.sourceCopy,
-            'Add clearer label evidence to improve product-level context.',
+            'Use the official record summary as the baseline context.',
         ],
     });
-
     const overviewVerifiedLines = enforceNeverBlank({
         lines: [
-            isDataCeiling
-                ? 'Active ingredients were not provided in this verified record.'
-                : `Active ingredients detected: ${recordFacts.ingredientCount}.`,
-            recordFacts.servingSizeText
-                ? `Serving size on record: ${recordFacts.servingSizeText}.`
-                : null,
-            overviewFacts?.usage?.dosageForm ? `Dosage form on record: ${overviewFacts.usage.dosageForm}.` : null,
             recordFacts.perServingDoseLine
-                ? `Per-serving dose from record: ${recordFacts.perServingDoseLine}.`
-                : isDataCeiling
-                    ? 'Per-serving dose from record is unavailable.'
+                ? `Dose: ${recordFacts.perServingDoseLine}.`
+                : 'Dose: Not available in this source.',
+            recordFacts.directionsPresent
+                ? `Directions: ${normalizeText(overviewFacts?.usage?.directionsText ?? '') || 'See label schedule in source record.'}`
+                : isDsldSource
+                    ? 'Directions: Not provided in this record. Scan product label for exact directions.'
+                    : 'Directions: Not available in this source.',
+            overviewFacts?.usage?.dosageForm ? `Form: ${overviewFacts.usage.dosageForm}.` : null,
+            recordFacts.servingSizeText
+                ? `Serving size: ${recordFacts.servingSizeText}.`
+                : isLnhpdSource
+                    ? 'Amount shown per tablet.'
                     : null,
-            isDataCeiling ? `Reason: ${dataCeilingReasonNote}` : null,
         ],
         fallback: [
-            'Ingredient-level verification is available for this product.',
-            'When dosage form or serving fields are missing, we keep guidance conservative.',
+            'Dose and directions are limited in this source.',
+            'Use the package label as the final instruction.',
         ],
     });
-
-    const overviewQualityLines = enforceNeverBlank({
+    const warningsMissing = highImpactMissingLabels.includes('label warnings');
+    const missingInfoCtaLabel = 'Scan Supplement Facts + Warnings panel';
+    const missingInfoScanPrompt = `Next step: ${missingInfoCtaLabel}.`;
+    const overviewMissingInfoLines = enforceNeverBlank({
         lines: [
-            `Data quality status: ${overviewFacts?.dataQuality?.overallStatus ?? COVER_STATUS_LABELS[unifiedOverviewDataStatus.status]}.`,
-            isDataCeiling ? dataCeilingOverviewLine : null,
-            isDataCeiling ? dataCeilingActionLine : null,
-            ...(overviewFacts?.dataQuality?.notes ?? []),
-            ...overviewGapNotes,
+            highImpactMissingLabels.length > 0 ? 'Some high-impact record details are missing.' : 'Core high-impact details are present.',
+            highImpactMissingLabels.length > 0 ? `Missing: ${highImpactMissingLabels.join(', ')}.` : null,
+            warningsMissing ? 'Impact: Safety uses general guidance only.' : null,
+            ...(isDataCeiling ? [dataCeilingReasonNote] : []),
+            ...overviewGapNotes.slice(0, 1),
+            highImpactMissingLabels.length > 0 ? missingInfoScanPrompt : null,
         ],
         fallback: [
             'Some expected fields are missing in this source record.',
-            'Capture Supplement Facts + Directions panels to improve product-specific detail.',
         ],
     });
 
     const overviewContent = (
         <View style={styles.detailStack}>
             <GlassCard
-                title="What this product is"
-                subtitle={verificationPresentation.copyTokens.overviewSubtitle}
+                title="What this supplement may help support"
+                subtitle="Verified product summary"
                 accentColor="#2563EB"
-                right={<GlassPill label={verificationPresentation.copyTokens.evidencePillLabel} />}
+                right={<GlassPill label={resolveSimpleTaxonomyLabel('Official record')} />}
             >
                 <View style={{ gap: 10 }}>
                     {overviewWhatIsLines.map((line, idx) => (
@@ -2582,7 +3115,7 @@ const AnalysisBundleDashboard: React.FC<{
                 </View>
             </GlassCard>
 
-            <GlassCard title={verificationPresentation.copyTokens.factsCardTitle} subtitle="Facts-first checks" accentColor="#2563EB">
+            <GlassCard title="How to take it" subtitle="Dose and directions from the official record" accentColor="#2563EB">
                 <View style={{ gap: 10 }}>
                     {overviewVerifiedLines.map((line, idx) => (
                         <View key={`ov-ver-${idx}`} style={styles.bulletRow}>
@@ -2593,13 +3126,37 @@ const AnalysisBundleDashboard: React.FC<{
                 </View>
             </GlassCard>
 
-            <GlassCard title="Context notes" subtitle="What is missing and why" accentColor="#2563EB">
+            <GlassCard title="Missing info" subtitle="One place for gaps and next step" accentColor="#2563EB">
                 <View style={{ gap: 10 }}>
-                    {overviewQualityLines.map((line, idx) => (
+                    {overviewMissingInfoLines.map((line, idx) => (
                         <Text key={`ov-qual-${idx}`} style={styles.detailBodyText}>
                             {line}
                         </Text>
                     ))}
+                    {isSingleCtaAllowed('overview') && highImpactMissingLabels.length > 0 ? (
+                        <Pressable
+                            style={styles.missingInfoCtaButton}
+                            onPress={() =>
+                                emitScanUxMetric('scan_missing_info_cta_clicked', {
+                                    viewMode: SCAN_UX_VIEW_MODE,
+                                    variant: SCAN_UX_VARIANT,
+                                    sheetType: 'overview',
+                                    sourceType: bundleSourceForTrust,
+                                    sourceTypeFinal: bundleSourceTypeFinal,
+                                    missingFields: highImpactMissingLabels,
+                                    dwellMs: 0,
+                                    maxScrollRatio: 0,
+                                    summaryVersion: null,
+                                    guardApplied: null,
+                                    fallbackUsed: null,
+                                })
+                            }
+                            accessibilityRole="button"
+                            accessibilityLabel={missingInfoCtaLabel}
+                        >
+                            <Text style={styles.missingInfoCtaButtonText}>{missingInfoCtaLabel}</Text>
+                        </Pressable>
+                    ) : null}
                 </View>
             </GlassCard>
         </View>
@@ -2635,6 +3192,8 @@ const AnalysisBundleDashboard: React.FC<{
     const [activeIngredientName, setActiveIngredientName] = useState<string | null>(
         keyIngredientsForDetail[0] ?? null
     );
+    const showIngredientSelector = keyIngredientsForDetail.length > 1;
+    const [scienceGeneralExpanded, setScienceGeneralExpanded] = useState(false);
 
     useEffect(() => {
         const listKeys = keyIngredientsForDetail.map((n) => normalizeIngredientNameForBackground(n));
@@ -2643,6 +3202,10 @@ const AnalysisBundleDashboard: React.FC<{
             setActiveIngredientName(keyIngredientsForDetail[0] ?? null);
         }
     }, [keyIngredientsForDetail, activeIngredientName]);
+    useEffect(() => {
+        if (selectedTileType !== 'science') return;
+        setScienceGeneralExpanded(false);
+    }, [activeIngredientName, selectedTileType]);
 
     const activeIngredientKey = activeIngredientName ? normalizeIngredientNameForBackground(activeIngredientName) : null;
 
@@ -2914,41 +3477,22 @@ const AnalysisBundleDashboard: React.FC<{
         hasInferredSpecificForm,
     ]);
     const hasFactsSpecificForm = Boolean(activeFactsIngredient?.formText && activeFactsIngredient.formText.trim().length > 0);
-    const hasSpecificFormSignal = hasFactsSpecificForm || hasInferredSpecificForm;
-    const hasUnspecifiedFormFallback = isUnspecifiedFormSignal(
-        activeProductInsight?.formKey,
-        activeProductInsight?.reasonCode,
-    );
-    const activeFormDisplayText =
-        activeFactsIngredient?.formText ??
-        (hasInferredSpecificForm ? activeProductInsight?.formLabel : null) ??
-        activeInsightFromDto?.form?.text ??
-        'Form not disclosed on label; we do not assume.';
-    const activeRbfFactor =
-        activeInsightFromDto?.rbf?.factor ??
-        (hasUnspecifiedFormFallback ? null : activeProductInsight?.effectiveFactor ?? null);
-    const activeRbfBand =
-        activeInsightFromDto?.rbf?.band ??
-        (hasUnspecifiedFormFallback ? 'unknown' : activeProductInsight?.rbfBand ?? 'unknown');
-    const activeConfidenceText = activeInsightFromDto
-        ? activeInsightFromDto.confidenceNote
-        : `Confidence: ${activeProductInsight?.confidenceTier ?? 'none'}.`;
-    const scienceDatasetSubtitle =
-        verificationPresentation.verificationStatus === 'final'
-            ? 'Verified dataset (when available)'
-            : verificationPresentation.verificationStatus === 'likely'
-                ? 'Likely matched dataset (verify on label)'
-                : verificationPresentation.verificationStatus === 'pending'
-                    ? 'Dataset verification in progress'
-                    : 'Dataset signals are limited for this source';
-    const scienceDatasetPill =
-        verificationPresentation.verificationStatus === 'final'
-            ? 'Verified dataset'
-            : verificationPresentation.verificationStatus === 'likely'
-                ? 'Likely dataset'
-                : verificationPresentation.verificationStatus === 'pending'
-                    ? 'Verifying dataset'
-                    : 'Limited dataset';
+    const explicitFormText = hasFactsSpecificForm ? activeFactsIngredient?.formText ?? null : null;
+    const inferredFormText = hasInferredSpecificForm
+        ? activeProductInsight?.formLabel ?? activeInsightFromDto?.form?.text ?? null
+        : null;
+    const isFormConflict = detectInferredFormConflict({
+        productName: productInfo?.name ?? overviewFacts?.product?.name ?? activeIngredientName,
+        explicitForm: explicitFormText,
+        inferredForm: inferredFormText,
+    });
+    const activeFormDisplayText = explicitFormText || 'Form not stated on the official record.';
+    const detailsPossibleFormLine =
+        SCAN_UX_VIEW_MODE === 'details' && inferredFormText
+            ? isFormConflict
+                ? `Possible form (low confidence): ${inferredFormText}. Hidden in Simple mode due conflict with product identity.`
+                : `Possible form (low confidence): ${inferredFormText}.`
+            : null;
 
     useEffect(() => {
         if (selectedTileType !== 'science') return;
@@ -2956,75 +3500,35 @@ const AnalysisBundleDashboard: React.FC<{
 
         if (activeSummaryStatus && ['loading', 'ok'].includes(activeSummaryStatus)) return;
 
-        const stringHash = (s: string) => {
-            let h = 2166136261;
-            for (let i = 0; i < s.length; i++) {
-                h ^= s.charCodeAt(i);
-                h = Math.imul(h, 16777619);
-            }
-            return h >>> 0;
-        };
-
         const buildFallback = (): IngredientSummaryState => {
             const coverDose = activeIngredientDose;
-
-            const highlights: string[] = [];
-            const caveats: string[] = [];
-
-            if (coverDose) {
-                highlights.push(`Label dose: ${coverDose}.`);
-            }
-
-            if (activeProductInsight?.effectiveFactor && !hasUnspecifiedFormFallback) {
-                const factor = activeProductInsight.effectiveFactor.toFixed(2);
-                highlights.push(`Reviewed dataset suggests this form trends ${activeProductInsight.rbfBand.toLowerCase()} on relative bioavailability (RBF ${factor}).`);
-            }
-
-            if (activeProductInsight?.doseSignal) {
-                const ds = activeProductInsight.doseSignal;
-                const range =
-                    typeof ds.dailyAmount === 'number' && ds.unit
-                        ? `daily ${ds.dailyAmount} ${ds.unit}`
-                        : null;
-                const note = [
-                    `Dose evidence: ${ds.status.replace(/_/g, ' ')}`,
-                    range ? `(${range})` : null,
-                ].filter(Boolean).join(' ');
-                highlights.push(note + '.');
-            }
-
-            const chemicalFormExplain = isIngredientsDetailItemV4(activeIngredientDetail)
-                ? activeIngredientDetail.chemicalFormExplain
-                : null;
-            const formFromLabel = Boolean(
-                chemicalFormExplain &&
-                !(chemicalFormExplain.basisTags ?? []).includes('not_provided')
-            );
-            if (!formFromLabel && !hasInferredSpecificForm) {
-                caveats.push('Chemical form was not disclosed by the source, so absorption-specific insights are limited.');
-            }
-
-            const seed = stringHash(activeIngredientKey);
-            const leadins = ['Overall,', 'In practice,', 'For most users,', 'In plain terms,'];
-            const lead = leadins[seed % leadins.length];
-
-            const tldrParts: string[] = [];
-            tldrParts.push(`${lead} this ingredient view combines general background with product-specific signals when available.`);
-            if (activeProductInsight?.confidenceTier && activeProductInsight.confidenceTier !== 'none') {
-                tldrParts.push(`Confidence is ${activeProductInsight.confidenceTier.toLowerCase()} for the detected form evidence.`);
-            } else {
-                tldrParts.push('Confidence is limited because verified product signals are missing or incomplete.');
-            }
-
-            const confidence_note = activeProductInsight?.why ? activeProductInsight.why : undefined;
+            const ingredientTitle = capitalizeSentences(activeIngredientName);
+            const directionsFromRecord = normalizeText(overviewFacts?.usage?.directionsText ?? '');
+            const supportLine = `${ingredientTitle} may help support key body functions linked to this ingredient.`;
+            const productLine = coverDose
+                ? `This product provides ${coverDose}${directionsFromRecord ? `, with directions: ${directionsFromRecord}` : ''}.`
+                : `This product amount is not clearly listed in this record${directionsFromRecord ? `, with directions: ${directionsFromRecord}` : ''}.`;
+            const limitationLine = warningsMissing
+                ? 'Product-specific warnings were not available in the official record, so check the package for label-specific cautions.'
+                : 'Use the product label first and consult a clinician for personal risk factors.';
 
             return {
                 status: 'ok',
                 source: 'fallback',
-                tldr: tldrParts.join(' '),
-                highlights: highlights.slice(0, 4),
-                caveats: caveats.slice(0, 3),
-                confidence_note,
+                tldr: `${supportLine} ${productLine} ${limitationLine}`,
+                highlights: [
+                    coverDose ? `This product provides ${coverDose}.` : 'Use the package label for exact amount.',
+                    directionsFromRecord ? `Directions from record: ${directionsFromRecord}.` : 'Directions are not provided in this record.',
+                ],
+                caveats: [
+                    warningsMissing
+                        ? 'Label-specific warnings were not available in this record.'
+                        : 'This summary is informational and not medical advice.',
+                ],
+                confidence_note: 'Grounded to verified record fields and general science references.',
+                summaryVersion: 'simple_fallback_v1',
+                guardApplied: true,
+                fallbackUsed: true,
             };
         };
 
@@ -3036,14 +3540,36 @@ const AnalysisBundleDashboard: React.FC<{
                 }));
 
                 const baseUrl = String(Config.searchApiBaseUrl).replace(/\/$/, '');
+                const runtimeBestForBullets = enforceNeverBlank({
+                    lines: [
+                        ...(activeRuntimeSegments?.absorption ?? []).map((line) => sanitizeCustomerFacingLine(line)),
+                        ...(activeRuntimeSegments?.tolerability ?? []).map((line) => sanitizeCustomerFacingLine(line)),
+                    ],
+                    fallback: [
+                        `${capitalizeSentences(activeIngredientName)} may help support key body functions linked to this ingredient.`,
+                    ],
+                }).slice(0, 3);
+                const runtimeFormImpact = sanitizeCustomerFacingLine(
+                    (activeRuntimeSegments?.solubility ?? [])[0] ?? null,
+                );
+                const runtimeBeforeBuy = sanitizeCustomerFacingLine(
+                    (activeRuntimeSegments?.caveats ?? [])[0] ?? null,
+                );
                 const packet = {
                     locale: 'en',
+                    viewMode: SCAN_UX_VIEW_MODE,
                     ingredientName: activeIngredientName,
                     facts: {
                         amount: activeFactsIngredient?.amount ?? null,
                         unit: activeFactsIngredient?.unit ?? null,
                         formText: activeFactsIngredient?.formText ?? null,
                     },
+                    directionsText: normalizeText(overviewFacts?.usage?.directionsText ?? '') || null,
+                    supportBullets: runtimeBestForBullets,
+                    safeScienceBullets: runtimeBestForBullets,
+                    safeScienceFormImpact: runtimeFormImpact,
+                    safeScienceBeforeYouBuy: runtimeBeforeBuy,
+                    missingHighImpact: highImpactMissingLabels,
                     insight: {
                         rbfBand: activeProductInsight?.rbfBand ?? 'unknown',
                         rbfFactor: activeProductInsight?.effectiveFactor ?? null,
@@ -3097,6 +3623,9 @@ const AnalysisBundleDashboard: React.FC<{
                     : null;
 
                 const confidence_note = typeof json?.confidence_note === 'string' ? json.confidence_note : undefined;
+                const summaryVersion = typeof json?.summaryVersion === 'string' ? json.summaryVersion : undefined;
+                const guardApplied = typeof json?.guardApplied === 'boolean' ? json.guardApplied : undefined;
+                const fallbackUsed = typeof json?.fallbackUsed === 'boolean' ? json.fallbackUsed : undefined;
 
                 if (!tldr) {
                     setSummaryByIngredient((prev) => ({
@@ -3115,6 +3644,9 @@ const AnalysisBundleDashboard: React.FC<{
                         highlights: highlights ?? undefined,
                         caveats: caveats ?? undefined,
                         confidence_note,
+                        summaryVersion,
+                        guardApplied,
+                        fallbackUsed,
                     },
                 }));
             } catch {
@@ -3141,71 +3673,190 @@ const AnalysisBundleDashboard: React.FC<{
         activeRuntimeSegments,
     ]);
 
+    const customerSummaryHighlights = useMemo(
+        () =>
+            (activeSummary?.highlights ?? [])
+                .map((line) => sanitizeCustomerFacingLine(line))
+                .filter((line): line is string => Boolean(line))
+                .slice(0, 3),
+        [activeSummary?.highlights],
+    );
+    const customerSummaryCaveats = useMemo(
+        () =>
+            (activeSummary?.caveats ?? [])
+                .map((line) => sanitizeCustomerFacingLine(line))
+                .filter((line): line is string => Boolean(line))
+                .slice(0, 2),
+        [activeSummary?.caveats],
+    );
+    useEffect(() => {
+        if (selectedTileType !== 'science') return;
+        if (!activeSummary || activeSummary.status !== 'ok') return;
+        emitScanUxMetric('scan_summary_rendered', {
+            viewMode: SCAN_UX_VIEW_MODE,
+            variant: SCAN_UX_VARIANT,
+            sheetType: 'science',
+            sourceType: bundleSourceType ?? null,
+            sourceTypeFinal: bundleSourceTypeFinal,
+            dwellMs: 0,
+            maxScrollRatio: 0,
+            summaryVersion: activeSummary.summaryVersion ?? null,
+            guardApplied: activeSummary.guardApplied ?? null,
+            fallbackUsed: activeSummary.fallbackUsed ?? (activeSummary.source === 'fallback'),
+        });
+    }, [activeSummary, bundleSourceType, bundleSourceTypeFinal, selectedTileType]);
+    const pickRuntimeBucketLine = useCallback((bucket: keyof NonNullable<typeof activeRuntimeSegments>) => {
+        const rows = activeRuntimeSegments?.[bucket];
+        if (!Array.isArray(rows)) return null;
+        for (const row of rows) {
+            const clean = sanitizeCustomerFacingLine(row);
+            if (clean) return clean;
+        }
+        return null;
+    }, [activeRuntimeSegments]);
+    const runtimeBestForLine = useMemo(
+        () => pickRuntimeBucketLine('absorption') ?? pickRuntimeBucketLine('tolerability'),
+        [pickRuntimeBucketLine],
+    );
+    const scienceBestForLine = useMemo(
+        () =>
+            runtimeBestForLine
+            ?? `${capitalizeSentences(activeIngredientName)} is typically compared by intended goal, dose clarity, and label transparency.`,
+        [activeIngredientName, runtimeBestForLine],
+    );
+    const scienceBestForSourceCue = runtimeBestForLine
+        ? 'General science (verified subset)'
+        : 'General science (fallback guidance)';
+    const runtimeFormImpactLine = useMemo(
+        () => pickRuntimeBucketLine('solubility'),
+        [pickRuntimeBucketLine],
+    );
+    const scienceFormImpactLine = useMemo(
+        () =>
+            runtimeFormImpactLine
+            ?? activeFormDisplayText
+            ?? `Form not stated on the official record for ${capitalizeSentences(activeIngredientName)}.`,
+        [activeFormDisplayText, activeIngredientName, runtimeFormImpactLine],
+    );
+    const scienceFormSourceCue = runtimeFormImpactLine
+        ? 'General science (verified subset)'
+        : 'General science (fallback guidance)';
+    const scienceBeforeBuyLine = useMemo(() => {
+        const runtimeCaveat = pickRuntimeBucketLine('caveats');
+        if (runtimeCaveat) return runtimeCaveat;
+        if (warningsMissing) {
+            return 'Product-specific warnings were not included in the official record. Check the package before buying.';
+        }
+            return 'Use the package label first for product-specific cautions and dosage details.';
+    }, [pickRuntimeBucketLine, warningsMissing]);
+    const scienceGeneralLines = useMemo(
+        () =>
+            enforceNeverBlank({
+                lines: [
+                    `Best for (${scienceBestForSourceCue}): ${scienceBestForLine}`,
+                    `What this form may change (${scienceFormSourceCue}): ${scienceFormImpactLine}`,
+                    `Before you buy (Product/label check): ${scienceBeforeBuyLine}`,
+                ],
+                fallback: [
+                    `Best for (General science (fallback guidance)): ${capitalizeSentences(activeIngredientName)} support context is available from general science.`,
+                    'What this form may change (General science (fallback guidance)): formulation details can affect consistency.',
+                    'Before you buy (Product/label check): verify product-specific warnings on the package.',
+                ],
+            }),
+        [
+            activeIngredientName,
+            scienceBestForLine,
+            scienceBestForSourceCue,
+            scienceBeforeBuyLine,
+            scienceFormImpactLine,
+            scienceFormSourceCue,
+        ],
+    );
     const ingredientsContent = (
         <View style={styles.detailStack}>
-            <GlassCard
-                title="Key ingredient focus"
-                subtitle="Switch the context for the modules below"
-                accentColor="#D97706"
-                right={<GlassPill label="Science" />}
-            >
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.ingredientSelectorRow}
+            {showIngredientSelector ? (
+                <GlassCard
+                    title="Key ingredient focus"
+                    subtitle="Choose an ingredient context"
+                    accentColor="#D97706"
+                    right={<GlassPill label={resolveSimpleTaxonomyLabel('Official record')} />}
                 >
-                    {keyIngredientsForDetail.map((name) => {
-                        const key = normalizeIngredientNameForBackground(name);
-                        const isActive = key === activeIngredientKey;
-                        return (
-                            <Pressable
-                                key={key}
-                                onPress={() => setActiveIngredientName(name)}
-                                style={[
-                                    styles.ingredientChip,
-                                    isActive ? styles.ingredientChipActive : null,
-                                ]}
-                            >
-                                <DashboardBlur intensity={isActive ? 22 : 14} tint="light" style={StyleSheet.absoluteFill} />
-                                <Text style={[styles.ingredientChipText, isActive ? styles.ingredientChipTextActive : null]} numberOfLines={1}>
-                                    {capitalizeSentences(name)}
-                                </Text>
-                            </Pressable>
-                        );
-                    })}
-                </ScrollView>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.ingredientSelectorRow}
+                    >
+                        {keyIngredientsForDetail.map((name) => {
+                            const key = normalizeIngredientNameForBackground(name);
+                            const isActive = key === activeIngredientKey;
+                            return (
+                                <Pressable
+                                    key={key}
+                                    onPress={() => setActiveIngredientName(name)}
+                                    style={[
+                                        styles.ingredientChip,
+                                        isActive ? styles.ingredientChipActive : null,
+                                    ]}
+                                >
+                                    <DashboardBlur intensity={isActive ? 22 : 14} tint="light" style={StyleSheet.absoluteFill} />
+                                    <Text style={[styles.ingredientChipText, isActive ? styles.ingredientChipTextActive : null]} numberOfLines={1}>
+                                        {capitalizeSentences(name)}
+                                    </Text>
+                                </Pressable>
+                            );
+                        })}
+                    </ScrollView>
 
-                <View style={{ marginTop: 10 }}>
-                    <Text style={styles.detailMetaLabel}>Current selection</Text>
-                    <Text style={styles.detailMetaText}>{activeIngredientLabelLine}</Text>
-                </View>
-            </GlassCard>
+                    <View style={{ marginTop: 10 }}>
+                        <Text style={styles.detailMetaLabel}>Current selection</Text>
+                        <Text style={styles.detailMetaText}>{activeIngredientLabelLine}</Text>
+                    </View>
+                </GlassCard>
+            ) : null}
 
-            {/* Module 1 */}
             <GlassCard
-                title="General science background"
-                subtitle="NIH ODS (general; not product-specific)"
+                title="What this supplement may help support"
+                subtitle="General science from NIH ODS"
                 accentColor="#D97706"
-                right={<GlassPill label="NIH ODS" />}
+                right={<GlassPill label={resolveSimpleTaxonomyLabel('General science (NIH ODS)')} />}
             >
-                <View style={styles.embeddedPanel}>
-                    {disableOdsPanel ? (
-                        <Text style={styles.detailBodyText}>ODS panel disabled by dashboard bisection flag.</Text>
-                    ) : (
-                        <OdsFoundationPanel ingredientName={activeIngredientName} mode="science" />
-                    )}
+                <View style={{ gap: 10 }}>
+                    {scienceGeneralLines.slice(0, 3).map((line, idx) => (
+                        <View key={`science-general-${idx}`} style={styles.bulletRow}>
+                            <View style={styles.bulletDot} />
+                            <Text style={styles.bulletText}>{line}</Text>
+                        </View>
+                    ))}
+                    <Pressable
+                        style={styles.sourcesToggleButton}
+                        onPress={() => setScienceGeneralExpanded((prev) => !prev)}
+                        accessibilityRole="button"
+                        accessibilityLabel={scienceGeneralExpanded ? 'Hide NIH ODS detail' : 'Learn more from NIH ODS'}
+                    >
+                        <Text style={styles.sourcesToggleButtonText}>
+                            {scienceGeneralExpanded ? 'Hide details' : 'Learn more (NIH ODS)'}
+                        </Text>
+                    </Pressable>
                 </View>
+                {scienceGeneralExpanded ? (
+                    <View style={[styles.embeddedPanel, { marginTop: 12 }]}>
+                        {disableOdsPanel ? (
+                            <Text style={styles.detailBodyText}>ODS panel disabled by dashboard bisection flag.</Text>
+                        ) : (
+                            <OdsFoundationPanel ingredientName={activeIngredientName} mode="science" />
+                        )}
+                    </View>
+                ) : null}
             </GlassCard>
 
-            {/* Module 2 */}
             <GlassCard
-                title="Form & bioavailability signals"
-                subtitle={scienceDatasetSubtitle}
+                title="What this product provides"
+                subtitle="Verified product-specific fields"
                 accentColor="#D97706"
-                right={<GlassPill label={scienceDatasetPill} />}
+                right={<GlassPill label={resolveSimpleTaxonomyLabel('Official record')} />}
             >
                 <View style={{ marginBottom: 12 }}>
-                    <Text style={styles.detailMetaLabel}>Label ingredient snapshot</Text>
+                    <Text style={styles.detailMetaLabel}>Official record snapshot</Text>
                     <View style={styles.ingredientsList}>
                         {scienceTopIngredients.length > 0 ? (
                             scienceTopIngredients.map((item) => (
@@ -3232,72 +3883,25 @@ const AnalysisBundleDashboard: React.FC<{
                     </View>
                 </View>
 
-                {activeProductInsight || activeInsightFromDto ? (
+                {activeProductInsight || activeInsightFromDto || hasFactsSpecificForm ? (
                     <View style={{ gap: 10 }}>
                         <View style={styles.kvGrid}>
                             <View style={styles.kvRow}>
-                                <Text style={styles.kvLabel}>{hasSpecificFormSignal ? 'Detected form' : 'Form status'}</Text>
+                                <Text style={styles.kvLabel}>Form</Text>
                                 <Text style={styles.kvValue}>{activeFormDisplayText}</Text>
                             </View>
-
-                            <View style={styles.kvRow}>
-                                <Text style={styles.kvLabel}>Relative bioavailability factor</Text>
-                                <Text style={styles.kvValue}>
-                                    {typeof activeRbfFactor === 'number'
-                                        ? `${activeRbfFactor.toFixed(2)} (${activeRbfBand})`
-                                        : 'Unknown'}
-                                </Text>
-                            </View>
-
-                            <View style={styles.kvRow}>
-                                <Text style={styles.kvLabel}>Confidence</Text>
-                                <Text style={styles.kvValue}>
-                                    {activeInsightFromDto?.form?.matchScore != null
-                                        ? `${activeInsightFromDto.form.matchScore.toFixed(2)} / ${activeInsightFromDto.form.evidenceGrade ?? 'n/a'}`
-                                        : activeProductInsight?.confidenceTier ?? 'none'}
-                                </Text>
-                            </View>
-
-                            {activeProductInsight?.doseSignal ? (
-                                <View style={styles.kvRow}>
-                                    <Text style={styles.kvLabel}>Dose check</Text>
-                                    <Text style={styles.kvValue}>
-                                        {`${activeProductInsight.doseSignal.status}${typeof activeProductInsight.doseSignal.dailyAmount === 'number' && activeProductInsight.doseSignal.unit
-                                            ? ` (daily ${activeProductInsight.doseSignal.dailyAmount} ${activeProductInsight.doseSignal.unit})`
-                                            : ''
-                                            }`}
-                                    </Text>
-                                </View>
-                            ) : null}
                         </View>
-
-                        <View style={styles.reasonBlock}>
-                            <Text style={styles.reasonTitle}>Why this band</Text>
-                            <Text style={styles.reasonText}>
-                                {`Band thresholds: High>=1.10, Normal 0.90-1.09, Low<0.90. Not a guarantee of individual outcomes.`}
-                            </Text>
-                        </View>
-
-                        {activeWhyPayload?.bullets?.length ? (
-                            <View style={styles.reasonBlock}>
-                                <Text style={styles.reasonTitle}>Why this matters</Text>
-                                <View style={{ marginTop: 8, gap: 8 }}>
-                                    {activeWhyPayload.bullets.map((line, idx) => (
-                                        <View key={`why-${idx}`} style={styles.bulletRow}>
-                                            <View style={styles.bulletDot} />
-                                            <Text style={styles.bulletText}>{line}</Text>
-                                        </View>
-                                    ))}
-                                </View>
-                                <Text style={[styles.reasonText, { marginTop: 8 }]}>{activeConfidenceText}</Text>
-                            </View>
+                        {detailsPossibleFormLine ? (
+                            <Text style={styles.detailBodyText}>{detailsPossibleFormLine}</Text>
                         ) : null}
 
-                        {activeRuntimeNotes ? (
+                        {SHOW_SCAN_DEBUG && activeRuntimeNotes ? (
                             <View style={styles.reasonBlock}>
                                 <View style={styles.reasonHeaderRow}>
                                     <Text style={styles.reasonTitle}>Extra context</Text>
-                                    {activeRuntimeNotes.meta?.source ? <GlassPill label={`KB: ${activeRuntimeNotes.meta.source}`} /> : null}
+                                    {activeRuntimeNotes.meta?.source ? (
+                                        <Text style={styles.detailMetaLabel}>Source: {activeRuntimeNotes.meta.source}</Text>
+                                    ) : null}
                                 </View>
                                 <View style={{ marginTop: 8, gap: 8 }}>
                                     {(
@@ -3315,24 +3919,19 @@ const AnalysisBundleDashboard: React.FC<{
                     </View>
                 ) : (
                     <View style={styles.emptyStateBox}>
-                        <Text style={styles.emptyStateTitle}>
-                            {bundleSourceType === 'web' ? 'Not available for web listings yet' : 'No verified dataset signals for this ingredient'}
-                        </Text>
+                        <Text style={styles.emptyStateTitle}>Record-level ingredient detail is limited for this ingredient.</Text>
                         <Text style={styles.emptyStateText}>
-                            {bundleSourceType === 'web'
-                                ? 'Product-specific form signals are not available for most web listings yet.'
-                                : 'No verified dataset signals were found for this ingredient.'}
+                            Scan a clear Supplement Facts panel to improve ingredient detail quality.
                         </Text>
                     </View>
                 )}
             </GlassCard>
 
-            {/* Module 3 */}
             <GlassCard
-                title="Ingredient summary"
-                subtitle="DeepSeek (grounded to facts + dataset + ODS)"
+                title="Balanced overview"
+                subtitle="AI summary grounded to verified facts + general science"
                 accentColor="#D97706"
-                right={<GlassPill label="AI" />}
+                right={<GlassPill label={resolveSimpleTaxonomyLabel('AI summary')} />}
             >
                 {deepseekLoading ? (
                     <View style={styles.inlineLoadingRow}>
@@ -3348,10 +3947,10 @@ const AnalysisBundleDashboard: React.FC<{
                     <View style={{ gap: 12 }}>
                         <Text style={styles.summaryMainText}>{activeSummary.tldr}</Text>
 
-                        {Array.isArray(activeSummary.highlights) && activeSummary.highlights.length > 0 ? (
+                        {customerSummaryHighlights.length > 0 ? (
                             <View style={{ gap: 8 }}>
                                 <Text style={styles.summarySectionTitle}>Highlights</Text>
-                                {activeSummary.highlights.slice(0, 4).map((b: string, idx: number) => (
+                                {customerSummaryHighlights.map((b: string, idx: number) => (
                                     <View key={`sum-h-${idx}`} style={styles.bulletRow}>
                                         <View style={styles.bulletDot} />
                                         <Text style={styles.bulletText}>{b}</Text>
@@ -3360,21 +3959,15 @@ const AnalysisBundleDashboard: React.FC<{
                             </View>
                         ) : null}
 
-                        {Array.isArray(activeSummary.caveats) && activeSummary.caveats.length > 0 ? (
+                        {customerSummaryCaveats.length > 0 ? (
                             <View style={{ gap: 8 }}>
-                                <Text style={styles.summarySectionTitle}>Caveats</Text>
-                                {activeSummary.caveats.slice(0, 4).map((b: string, idx: number) => (
+                                <Text style={styles.summarySectionTitle}>Limitations</Text>
+                                {customerSummaryCaveats.map((b: string, idx: number) => (
                                     <View key={`sum-c-${idx}`} style={styles.bulletRow}>
                                         <View style={styles.bulletDot} />
                                         <Text style={styles.bulletText}>{b}</Text>
                                     </View>
                                 ))}
-                            </View>
-                        ) : null}
-
-                        {activeSummary.confidence_note ? (
-                            <View style={styles.summaryFootnote}>
-                                <Text style={styles.summaryFootnoteText}>{activeSummary.confidence_note}</Text>
                             </View>
                         ) : null}
                     </View>
@@ -3392,7 +3985,6 @@ const AnalysisBundleDashboard: React.FC<{
     );
 
     const usageFacts = factsDtoState.data;
-    const usageGapLines = buildGapActionSentences(usageFacts?.dataQuality?.missingReasons, 'usage');
     const usageScheduleRows = Array.isArray(bundleState?.sections?.usage?.detail?.scheduleFromLabel)
         ? bundleState.sections.usage.detail.scheduleFromLabel
         : [];
@@ -3409,48 +4001,23 @@ const AnalysisBundleDashboard: React.FC<{
             return null;
         })
         .filter((line): line is string => Boolean(line));
-    const usageDosageRaw = usageCover?.dosage;
     const usageBestTimeRaw = usageCover?.bestTimeToTake;
-    const usageDosageText = normalizeText(
-        typeof usageDosageRaw === 'string'
-            ? usageDosageRaw
-            : usageDosageRaw?.text ?? '',
-    );
     const usageBestTimeText = normalizeText(
         typeof usageBestTimeRaw === 'string'
             ? usageBestTimeRaw
             : usageBestTimeRaw?.text ?? '',
     );
     const usageDirectionsFromRecord = normalizeText(usageFacts?.usage?.directionsText ?? '');
-    const dosageTextConfirmed = usageDosageText.length > 0 && !/dose not confirmed/i.test(usageDosageText);
-    const perServingDoseFromFacts = (() => {
-        const actives = usageFacts?.ingredients?.actives ?? [];
-        const primary = actives.find(
-            (row) =>
-                typeof row?.amount === 'number' &&
-                Number.isFinite(row.amount) &&
-                typeof row?.unit === 'string' &&
-                row.unit.trim().length > 0 &&
-                typeof row?.name === 'string' &&
-                row.name.trim().length > 0,
-        );
-        if (!primary) return '';
-        return `${primary.name} ${primary.amount} ${primary.unit}`;
-    })();
     const directionsSummaryLine = usageDirectionsFromRecord
         ? `Directions from record: ${usageDirectionsFromRecord}`
         : usageScheduleLines.length > 0
             ? `Directions from record: ${usageScheduleLines[0]?.replace(/^Label schedule:\s*/i, '') ?? ''}`
-            : 'Directions from record: Not available in this source.';
-    const perServingSummaryLine = perServingDoseFromFacts
-        ? `Per-serving dose from record: ${perServingDoseFromFacts}.`
-        : dosageTextConfirmed
-            ? `Per-serving dose from record: ${usageDosageText}.`
-            : 'Per-serving dose from record: Not confirmed in this source.';
+            : isDsldSource
+                ? 'Directions from record: Not provided in this record. Scan label for exact directions.'
+                : 'Directions from record: Not available in this source.';
     const usageStructuredLines = [
         isDataCeiling ? 'This verified source includes limited structured fields and does not provide ingredient amount rows.' : null,
         directionsSummaryLine,
-        perServingSummaryLine,
         usageFacts?.serving?.servingSizeText
             ? `Serving size: ${usageFacts.serving.servingSizeText}${usageFacts.serving.servingsPerContainer != null
                 ? `; servings per container: ${usageFacts.serving.servingsPerContainer}`
@@ -3469,7 +4036,7 @@ const AnalysisBundleDashboard: React.FC<{
         ],
         fallback: [
             'Follow the product label first for timing and frequency.',
-            'If directions are missing, keep usage conservative until label details are confirmed.',
+            'If directions are missing, use conservative daily timing until label details are confirmed.',
         ],
     });
     const usageGuidanceLines = enforceNeverBlank({
@@ -3483,11 +4050,14 @@ const AnalysisBundleDashboard: React.FC<{
             'Seek clinician advice for personalized use decisions.',
         ],
     });
-    const usageAccuracyLines = enforceNeverBlank({
-        lines: usageGapLines,
+    const usageTimingTipLines = enforceNeverBlank({
+        lines: [
+            usageBestTimeText ? `Timing tip: ${usageBestTimeText}` : 'Timing tip: take it at a consistent time each day.',
+            'Optional: take with a meal if it fits your routine.',
+        ],
         fallback: [
-            'Adding a clear photo of the Supplement Facts and Directions panel improves product-specific guidance.',
-            'We keep this section conservative until those fields are verified.',
+            'Timing tip: take it at a consistent time each day.',
+            'Optional: take with a meal if it fits your routine.',
         ],
     });
     const summaryIdentityKey = useMemo(
@@ -3507,7 +4077,12 @@ const AnalysisBundleDashboard: React.FC<{
 
     const usageContent = (
         <View style={styles.detailStack}>
-            <GlassCard title="What the record says" subtitle="Label/source directions" accentColor="#0EA5E9" right={<GlassPill label="Practical" />}>
+            <GlassCard
+                title="How to take it"
+                subtitle="Directions from the official record"
+                accentColor="#0EA5E9"
+                right={<GlassPill label={resolveSimpleTaxonomyLabel('Official record')} />}
+            >
                 <View style={{ gap: 10 }}>
                     {usageRecordLines.map((line, idx) => (
                         <Text key={`usage-rec-${idx}`} style={idx === 0 ? styles.detailLeadText : styles.detailBodyText}>
@@ -3517,7 +4092,7 @@ const AnalysisBundleDashboard: React.FC<{
                 </View>
             </GlassCard>
 
-            <GlassCard title="Conservative usage guidance" subtitle="Safe default guidance" accentColor="#0EA5E9">
+            <GlassCard title="General tips" subtitle="Conservative default guidance" accentColor="#0EA5E9">
                 <View style={{ gap: 10 }}>
                     {usageGuidanceLines.map((line, idx) => (
                         <View key={`usage-guide-${idx}`} style={styles.bulletRow}>
@@ -3528,12 +4103,13 @@ const AnalysisBundleDashboard: React.FC<{
                 </View>
             </GlassCard>
 
-            <GlassCard title="What would improve accuracy" subtitle="Missing fields lower confidence" accentColor="#0EA5E9">
+            <GlassCard title="Timing tip (general)" subtitle="Consistency guidance" accentColor="#0EA5E9">
                 <View style={{ gap: 10 }}>
-                    {usageAccuracyLines.map((line, idx) => (
-                        <Text key={`usage-acc-${idx}`} style={styles.detailBodyText}>
-                            {line}
-                        </Text>
+                    {usageTimingTipLines.map((line, idx) => (
+                        <View key={`usage-time-${idx}`} style={styles.bulletRow}>
+                            <View style={styles.bulletDot} />
+                            <Text style={styles.bulletText}>{line}</Text>
+                        </View>
                     ))}
                 </View>
             </GlassCard>
@@ -3542,7 +4118,6 @@ const AnalysisBundleDashboard: React.FC<{
     );
 
     const safetyFacts = factsDtoState.data;
-    const safetyGapLines = buildGapActionSentences(safetyFacts?.dataQuality?.missingReasons, 'safety');
     const safetySignalPack = useMemo(
         () =>
             buildSafetySignalPack({
@@ -3553,7 +4128,6 @@ const AnalysisBundleDashboard: React.FC<{
             }),
         [bundleState, v4BundleForInsights, safetyFacts, keyIngredientsForSafety],
     );
-    const safetyPriorityLines = safetySignalsToPriorityLines(safetySignalPack);
     const safetyOdsInteractionLines = safetySignalPack.odsInteractions.map((item) => item.text);
     const safetyUlEntryLines = Array.isArray(safetySignalPack.ulEntries)
         ? safetySignalPack.ulEntries.map((item) => item.explainLine)
@@ -3583,14 +4157,38 @@ const AnalysisBundleDashboard: React.FC<{
         && selectedSafetyUlSignalLines.some((line) => /upper limit \(ul\):/i.test(line));
     const safetyLabelLines = enforceNeverBlank({
         lines: [
-            ...safetyPriorityLines,
-            safetyPriorityLines.length === 0
-                ? 'No label-specific warnings were provided by this source.'
+            ...safetySignalPack.labelWarnings.map((item) => ensurePeriod(item.text)),
+            safetySignalPack.labelWarnings.length === 0
+                ? 'Product-specific label warnings were not available in the official record.'
                 : null,
         ],
         fallback: [
-            'No label-specific warnings were provided by this source.',
-            'General watch-outs are shown for key ingredients and are not product-label warnings.',
+            'Product-specific label warnings were not available in the official record.',
+        ],
+    });
+    const safetyUlGuidanceLines = enforceNeverBlank({
+        lines: selectedSafetyUlSignalLines
+            .map((line) => ensurePeriod(normalizeText(line)))
+            .filter((line) => line.length > 0)
+            .filter((line, index, list) => list.findIndex((candidate) => candidate.toLowerCase() === line.toLowerCase()) === index)
+            .slice(0, 3),
+        fallback: [
+            'Adult UL guidance is general and applies to total daily intake from all sources.',
+            'Compare your total daily intake across supplements and food sources.',
+        ],
+    });
+    const safetyInteractionLines = enforceNeverBlank({
+        lines: [
+            ...selectedSafetyOdsInteractionLines
+                .map((line) => ensurePeriod(normalizeText(line)))
+                .filter((line) => line.length > 0)
+                .filter((line) => !/fatty fish|beef liver|egg yolks|cheese/i.test(line))
+                .slice(0, 2),
+            'Talk to a clinician if you are pregnant or breastfeeding, have chronic conditions, or use medications that may interact.',
+        ],
+        fallback: [
+            'Talk to a clinician if you are pregnant or breastfeeding, have chronic conditions, or use medications that may interact.',
+            'General watch-outs are ingredient-level guidance and not product-label warnings.',
         ],
     });
     const [safetySummaryByRequestKey, setSafetySummaryByRequestKey] = useState<Record<string, SafetySummaryState>>({});
@@ -3610,7 +4208,6 @@ const AnalysisBundleDashboard: React.FC<{
         );
         const actionLine = ensurePeriod(
             normalizeText(
-                safetyGapLines[0] ??
                 'Review the product label and consult a clinician for personal risk factors.',
             ),
         );
@@ -3620,7 +4217,7 @@ const AnalysisBundleDashboard: React.FC<{
             .slice(0, 3)
             .join(' ');
         return { riskLine, contextLine, actionLine, tldr };
-    }, [safetyGapLines, safetyLabelLines, safetyOdsInteractionLines, safetyUlSignalLines]);
+    }, [safetyLabelLines, safetyOdsInteractionLines, safetyUlSignalLines]);
     const safetySummaryPayloadFingerprint = useMemo(
         () =>
             JSON.stringify({
@@ -3629,7 +4226,7 @@ const AnalysisBundleDashboard: React.FC<{
                 labelLines: safetyLabelLines.slice(0, 4),
                 ulLines: safetyUlSignalLines.slice(0, 3),
                 interactionLines: safetyOdsInteractionLines.slice(0, 3),
-                missingLines: safetyGapLines.slice(0, 2),
+                missingLines: [],
             }),
         [
             bundleSourceType,
@@ -3637,7 +4234,6 @@ const AnalysisBundleDashboard: React.FC<{
             safetyLabelLines,
             safetyUlSignalLines,
             safetyOdsInteractionLines,
-            safetyGapLines,
         ],
     );
     const safetySummaryRequestKey = useMemo(
@@ -3648,7 +4244,7 @@ const AnalysisBundleDashboard: React.FC<{
     const safetySummaryStatus = safetySummaryState?.status ?? 'idle';
 
     useEffect(() => {
-        if (selectedTileType !== 'safety') return;
+        if (selectedTileType !== 'safety' || !SHOW_SCAN_DEBUG) return;
         if (!safetySummaryRequestKey) return;
         if (safetySummaryStatus === 'ok' || safetySummaryStatus === 'loading') return;
 
@@ -3820,7 +4416,7 @@ const AnalysisBundleDashboard: React.FC<{
     ]);
 
     useEffect(() => {
-        if (selectedTileType !== 'safety') return;
+        if (selectedTileType !== 'safety' || !SHOW_SCAN_DEBUG) return;
         if (safetySummaryStatus !== 'loading') return;
         if (!safetySummaryRequestKey) return;
         const watchdogId = setTimeout(() => {
@@ -3846,33 +4442,14 @@ const AnalysisBundleDashboard: React.FC<{
         return () => clearTimeout(watchdogId);
     }, [selectedTileType, safetySummaryStatus, safetySummaryRequestKey, safetySummaryFallback]);
 
-    const safetySummaryText = safetySummaryState?.tldr ?? safetySummaryFallback.tldr;
-    const safetySummaryLines = useMemo(() => {
-        const candidateLines = [
-            safetySummaryState?.riskLine,
-            safetySummaryState?.contextLine,
-            safetySummaryState?.actionLine,
-        ]
-            .map((line) => normalizeText(line))
-            .filter((line) => line.length > 0);
-        if (candidateLines.length >= 3) {
-            return candidateLines.slice(0, 3);
-        }
-        return safetySummaryText
-            .split(/(?<=[.!?])\s+/)
-            .map((line) => normalizeText(line))
-            .filter((line) => line.length > 0)
-            .slice(0, 3);
-    }, [
-        safetySummaryState?.riskLine,
-        safetySummaryState?.contextLine,
-        safetySummaryState?.actionLine,
-        safetySummaryText,
-    ]);
-
     const safetyContent = (
         <View style={styles.detailStack}>
-            <GlassCard title="Label warnings" subtitle="Label first, then general watch-outs" accentColor="#EF4444" right={<GlassPill label="Safety" />}>
+            <GlassCard
+                title="Label warning notice"
+                subtitle="From the official record"
+                accentColor="#EF4444"
+                right={<GlassPill label={resolveSimpleTaxonomyLabel('Official record')} />}
+            >
                 <View style={{ gap: 10 }}>
                     {safetyLabelLines.map((line, idx) => (
                         <View key={`safe-label-${idx}`} style={styles.bulletRow}>
@@ -3884,66 +4461,40 @@ const AnalysisBundleDashboard: React.FC<{
             </GlassCard>
 
             <GlassCard
-                title="General watch-outs"
-                subtitle="NIH ODS (not label-specific)"
+                title="Upper limit (UL) guidance"
+                subtitle="General reference (NIH ODS)"
                 accentColor="#EF4444"
-                right={<GlassPill label="NIH ODS" />}
+                right={<GlassPill label={resolveSimpleTaxonomyLabel('General science (NIH ODS)')} />}
             >
-                {keyIngredientsForSafety.length > 0 ? (
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.ingredientSelectorRow}
-                    >
-                        {keyIngredientsForSafety.map((name) => {
-                            const key = normalizeIngredientNameForBackground(name);
-                            const isActive = key === activeSafetyIngredientKey;
-                            return (
-                                <Pressable
-                                    key={`safety-${key}`}
-                                    onPress={() => setActiveSafetyIngredientName(name)}
-                                    style={[
-                                        styles.ingredientChip,
-                                        isActive ? styles.ingredientChipActive : null,
-                                    ]}
-                                >
-                                    <DashboardBlur intensity={isActive ? 22 : 14} tint="light" style={StyleSheet.absoluteFill} />
-                                    <Text style={[styles.ingredientChipText, isActive ? styles.ingredientChipTextActive : null]} numberOfLines={1}>
-                                        {capitalizeSentences(name)}
-                                    </Text>
-                                </Pressable>
-                            );
-                        })}
-                    </ScrollView>
-                ) : null}
-
-                <View style={styles.embeddedPanel}>
-                    {disableOdsPanel ? (
-                        <Text style={styles.detailBodyText}>ODS panel disabled by dashboard bisection flag.</Text>
-                    ) : (
-                        <OdsFoundationPanel
-                            ingredientName={activeSafetyIngredientName}
-                            mode="safety"
-                            interactionLines={selectedSafetyOdsInteractionLines}
-                            ulLines={selectedSafetyUlSignalLines}
-                        />
-                    )}
+                <View style={{ gap: 10 }}>
+                    {safetyUlGuidanceLines.map((line, idx) => (
+                        <View key={`safe-ul-${idx}`} style={styles.bulletRow}>
+                            <View style={styles.bulletDot} />
+                            <Text style={styles.bulletText}>{line}</Text>
+                        </View>
+                    ))}
+                    {hasReferenceOnlyUlSignals ? (
+                        <Text style={styles.detailBodyText}>
+                            UL shown as reference. Personalized comparison needs complete daily directions.
+                        </Text>
+                    ) : null}
                 </View>
-                {hasReferenceOnlyUlSignals ? (
-                    <Text style={styles.detailBodyText}>
-                        Reference UL shown. Personalized comparison needs daily directions.
-                    </Text>
-                ) : null}
             </GlassCard>
 
-            <GlassCard title="Safety summary" subtitle="DeepSeek (grounded to warnings + UL + missing fields)" accentColor="#EF4444" right={<GlassPill label="AI" />}>
+            <GlassCard
+                title="Interactions and watch-outs (general)"
+                subtitle="Ingredient-level guidance from NIH ODS"
+                accentColor="#EF4444"
+                right={<GlassPill label={resolveSimpleTaxonomyLabel('General science (NIH ODS)')} />}
+            >
                 <View style={{ gap: 10 }}>
-                    {safetySummaryLines.map((line, idx) => (
-                        <Text key={`safe-summary-${idx}`} style={styles.detailBodyText}>
-                            {line}
-                        </Text>
+                    {safetyInteractionLines.map((line, idx) => (
+                        <View key={`safe-int-${idx}`} style={styles.bulletRow}>
+                            <View style={styles.bulletDot} />
+                            <Text style={styles.bulletText}>{line}</Text>
+                        </View>
                     ))}
-                    {safetySummaryStatus === 'loading' ? (
+                    {SHOW_SCAN_DEBUG && safetySummaryStatus === 'loading' ? (
                         <View style={styles.inlineLoadingRow}>
                             <ActivityIndicator size="small" />
                             <Text style={styles.inlineLoadingText}>Refining summary...</Text>
@@ -3993,6 +4544,8 @@ const AnalysisBundleDashboard: React.FC<{
             bulletLines: 2,
             dataStatus: unifiedOverviewDataStatus,
             content: overviewContent,
+            trustPanel: sharedTrustPanel,
+            showDataStatusCard: false,
         },
         {
             id: 2,
@@ -4009,6 +4562,8 @@ const AnalysisBundleDashboard: React.FC<{
             mechanisms: ingredientMechanisms,
             dataStatus: unifiedIngredientsDataStatus,
             content: ingredientsContent,
+            trustPanel: sharedTrustPanel,
+            showDataStatusCard: false,
         },
         {
             id: 3,
@@ -4026,6 +4581,8 @@ const AnalysisBundleDashboard: React.FC<{
             bullets: usageBullets,
             dataStatus: unifiedUsageDataStatus,
             content: usageContent,
+            trustPanel: sharedTrustPanel,
+            showDataStatusCard: false,
         },
         {
             id: 4,
@@ -4043,6 +4600,8 @@ const AnalysisBundleDashboard: React.FC<{
             tip: { text: safetyTipCoverText, isPlaceholder: safetyPending && isPlaceholderText(safetyTipCoverText) },
             dataStatus: unifiedSafetyDataStatus,
             content: safetyContent,
+            trustPanel: sharedTrustPanel,
+            showDataStatusCard: false,
         },
     ];
     const selectedTile = useMemo(
@@ -4239,6 +4798,55 @@ const AnalysisBundleDashboard: React.FC<{
                 value: integrityScore == null,
             }
             : { effectiveness: false, safety: false, value: false };
+    const decisionTemplatePayload = useMemo<DecisionSupportTemplatePayload | null>(() => {
+        if (decisionSupportState.status !== 'ready' || !decisionSupportState.data || typeof decisionSupportState.data !== 'object') {
+            return null;
+        }
+        return decisionSupportState.data as DecisionSupportTemplatePayload;
+    }, [decisionSupportState.data, decisionSupportState.status]);
+    const scoreCardPayload = decisionTemplatePayload?.nutriScoreCard ?? null;
+    const scoreCardRows = scoreCardPayload?.rows ?? [];
+    const scoreCardChecklists = scoreCardPayload?.checklistsByRow ?? null;
+    const overviewBlock = decisionTemplatePayload?.overviewBlock;
+    const scienceBlock = decisionTemplatePayload?.scienceBlock;
+    const usageBlock = decisionTemplatePayload?.usageBlock;
+    const safetyBlock = decisionTemplatePayload?.safetyBlock;
+    const qualityMark = decisionTemplatePayload?.qualityMark;
+    const overviewBestForBullets = (
+        (overviewBlock?.bestForBullets && overviewBlock.bestForBullets.length > 0)
+            ? overviewBlock.bestForBullets
+            : overviewBullets.map((item) => item.text)
+    ).slice(0, 3);
+    const overviewProvides = overviewBlock?.providesVerified;
+    const overviewMissingInfo = (
+        (overviewBlock?.missingInfo && overviewBlock.missingInfo.length > 0)
+            ? overviewBlock.missingInfo
+            : overviewMissingInfoLines
+    ).slice(0, 2);
+    const usageDirectionsLines = (
+        Array.isArray(usageBlock?.directions?.lines) && usageBlock?.directions?.lines?.length
+            ? usageBlock?.directions?.lines
+            : [
+                normalizeText(usageBlock?.directions?.text)
+                || usageRecordLines[0]
+                || 'Directions are not included in the official record.',
+            ]
+    ).slice(0, 3);
+    const usageDirectionsTier = usageBlock?.directions?.sourceTier ?? 'official_record';
+    const scienceAiSummary = scienceBlock?.aiSummaryContract3 ?? [
+        'This ingredient is commonly selected for goal-oriented support.',
+        'This product provides label-disclosed ingredient information for comparison.',
+        `Largest limitation: ${overviewMissingInfo[0] ?? 'verify package directions and cautions before purchase.'}`,
+    ];
+    const safetyWarnings = (safetyBlock?.labelWarnings && safetyBlock.labelWarnings.length > 0)
+        ? safetyBlock.labelWarnings
+        : safetyLabelLines;
+    const safetyUl = (safetyBlock?.ulGuidance && safetyBlock.ulGuidance.length > 0)
+        ? safetyBlock.ulGuidance
+        : safetyUlGuidanceLines;
+    const safetyWatchouts = (safetyBlock?.generalWatchouts && safetyBlock.generalWatchouts.length > 0)
+        ? safetyBlock.generalWatchouts
+        : safetyInteractionLines;
     return (
         <View style={styles.root}>
             {!disableMiniHeader ? (
@@ -4303,81 +4911,256 @@ const AnalysisBundleDashboard: React.FC<{
                     </View>
                 ) : null}
 
-                <View style={styles.scoreSection}>
-                    <View style={styles.scoreHeroCard}>
-                        {!disableScoreRing ? (
-                            <>
-                                <InteractiveScoreRing
-                                    scores={{
-                                        overall: ringScores.overall,
-                                        effectiveness: ringScores.effectiveness,
-                                        safety: ringScores.safety,
-                                        value: ringScores.value,
-                                    }}
-                                    labels={{
-                                        value: t.analysisScoreIntegrity,
-                                        valueLabel: t.analysisScoreIntegrity,
-                                    }}
-                                    descriptions={scoreDescriptions}
-                                    display={ringDisplay}
-                                    muted={ringMuted}
-                                    badgeText={scoreBadge}
-                                    sourceType={sourceType}
-                                    unknownCategories={unknownCategories}
-                                    metaLines={ringMetaLines}
-                                    showStaticModeHint={SHOW_SCAN_DEBUG}
-                                />
-                                {showScoreRetryCta ? (
-                                    <Pressable onPress={onRetryScore} style={styles.scoreRetryButton}>
-                                        <Text style={styles.scoreRetryButtonText}>{t.analysisScoreRetryCta}</Text>
+                {SCAN_UX_VIEW_MODE === 'simple' ? (
+                    <View style={styles.detailStack}>
+                        <GlassCard
+                            title="Nutri Score Card"
+                            subtitle="Shopping readiness summary"
+                            accentColor="#2563EB"
+                            right={<GlassPill label={sourceTierLabel('general_science')} />}
+                        >
+                            <View style={{ gap: 12 }}>
+                                <Text style={styles.detailLeadText}>
+                                    Nutri Score: {Math.round(scoreCardPayload?.score ?? ringScores.overall)}/100
+                                </Text>
+                                <Text style={styles.detailBodyText}>
+                                    Confidence: {Math.round(scoreCardPayload?.confidenceCoverage ?? ((v4Bundle?.confidence ?? 0.7) * 100))}%
+                                </Text>
+                                {(scoreCardRows.length > 0 ? scoreCardRows : [
+                                    { id: 'effectiveness' as const, label: 'Effectiveness', score: Math.round(ringScores.effectiveness) },
+                                    { id: 'safety' as const, label: 'Safety', score: Math.round(ringScores.safety) },
+                                    { id: 'integrity' as const, label: 'Integrity', score: Math.round(ringScores.value) },
+                                ]).map((row) => {
+                                    const expanded = expandedScoreRow === row.id;
+                                    const rows = scoreCardChecklists?.[row.id] ?? [];
+                                    return (
+                                        <View key={`score-row-${row.id}`} style={{ gap: 8 }}>
+                                            <Pressable
+                                                style={styles.scoreRowButton}
+                                                onPress={() => setExpandedScoreRow(expanded ? null : row.id)}
+                                            >
+                                                <Text style={styles.scoreRowLabel}>{row.label}</Text>
+                                                <Text style={styles.scoreRowValue}>{Math.round(row.score)}/100</Text>
+                                                <ChevronRight size={16} color="#1F2937" />
+                                            </Pressable>
+                                            {expanded ? (
+                                                <View style={styles.scoreChecklistBox}>
+                                                    {rows.map((item) => (
+                                                        <Text key={item.key} style={styles.detailBodyText}>
+                                                            {renderChecklistSymbol(item.status)} {item.label}
+                                                        </Text>
+                                                    ))}
+                                                </View>
+                                            ) : null}
+                                        </View>
+                                    );
+                                })}
+                            </View>
+                        </GlassCard>
+
+                        <GlassCard
+                            title="Product Overview"
+                            subtitle="Purchase snapshot"
+                            accentColor="#2563EB"
+                            right={<GlassPill label={sourceTierLabel('official_record')} />}
+                        >
+                            <View style={{ gap: 10 }}>
+                                <Text style={styles.detailMetaLabel}>Source strip</Text>
+                                {(overviewBlock?.sourceStrip ?? [
+                                    sourceTierLabel('official_record'),
+                                    sourceTierLabel('scanned_label'),
+                                    sourceTierLabel('general_science'),
+                                    sourceTierLabel('inferred'),
+                                ]).slice(0, 4).map((line, idx) => (
+                                    <Text key={`overview-source-${idx}`} style={styles.detailBodyText}>• {line}</Text>
+                                ))}
+                                <Text style={styles.detailMetaLabel}>Best for</Text>
+                                {overviewBestForBullets.map((line, idx) => (
+                                    <Text key={`overview-best-${idx}`} style={styles.detailBodyText}>• {line}</Text>
+                                ))}
+                                <Text style={styles.detailMetaLabel}>What this product provides (verified)</Text>
+                                {overviewProvides?.servingSize ? <Text style={styles.detailBodyText}>• Serving size: {overviewProvides.servingSize}</Text> : null}
+                                {typeof overviewProvides?.servingsPerContainer === 'number' ? (
+                                    <Text style={styles.detailBodyText}>• Servings per container: {overviewProvides.servingsPerContainer}</Text>
+                                ) : null}
+                                {(overviewProvides?.keyIngredients ?? []).slice(0, 3).map((item, idx) => (
+                                    <Text key={`overview-provide-${idx}`} style={styles.detailBodyText}>• {item.name}{item.dose ? `: ${item.dose}` : ''}</Text>
+                                ))}
+                                {overviewProvides?.dosageForm ? <Text style={styles.detailBodyText}>• Dosage form: {overviewProvides.dosageForm}</Text> : null}
+                                <Text style={styles.detailMetaLabel}>Missing info (single CTA)</Text>
+                                {overviewMissingInfo.map((line, idx) => (
+                                    <Text key={`overview-missing-${idx}`} style={styles.detailBodyText}>• {line}</Text>
+                                ))}
+                                {overviewBlock?.singleCta ? (
+                                    <Pressable style={styles.missingInfoCtaButton}>
+                                        <Text style={styles.missingInfoCtaButtonText}>{overviewBlock.singleCta.label}</Text>
                                     </Pressable>
                                 ) : null}
+                            </View>
+                        </GlassCard>
+
+                        <GlassCard
+                            title="Science & Ingredients"
+                            subtitle="Ingredient context for comparison"
+                            accentColor="#D97706"
+                            right={<GlassPill label={sourceTierLabel('general_science')} />}
+                        >
+                            <View style={{ gap: 10 }}>
+                                <Text style={styles.detailMetaLabel}>Verified ingredient snapshot (names only)</Text>
+                                {(scienceBlock?.ingredientSnapshotNames ?? []).slice(0, 6).map((name, idx) => (
+                                    <Text key={`science-ing-${idx}`} style={styles.detailBodyText}>• {name}</Text>
+                                ))}
+                                <Text style={styles.detailMetaLabel}>Form matters</Text>
+                                <Text style={styles.detailBodyText}>• Ingredient chemical form: {scienceBlock?.formMatters?.ingredientChemicalForm || 'Not stated in record.'}</Text>
+                                <Text style={styles.detailBodyText}>• Dosage form: {scienceBlock?.formMatters?.dosageForm || 'Not stated in record.'}</Text>
+                                <Text style={styles.detailMetaLabel}>NIH ODS (general science, short)</Text>
+                                {(scienceBlock?.odsGeneralScienceBullets ?? []).slice(0, 3).map((line, idx) => (
+                                    <Text key={`science-ods-${idx}`} style={styles.detailBodyText}>• {line}</Text>
+                                ))}
+                                <Text style={styles.detailMetaLabel}>AI summary (buying explanation, 3 sentences)</Text>
+                                {scienceAiSummary.map((line, idx) => (
+                                    <Text key={`science-ai-${idx}`} style={styles.detailBodyText}>{idx + 1}. {line}</Text>
+                                ))}
+                            </View>
+                        </GlassCard>
+
+                        <GlassCard
+                            title="Practical Usage"
+                            subtitle="How to use"
+                            accentColor="#0EA5E9"
+                            right={<GlassPill label={sourceTierLabel(usageDirectionsTier)} />}
+                        >
+                            <View style={{ gap: 10 }}>
+                                <Text style={styles.detailMetaLabel}>Directions</Text>
+                                {usageDirectionsLines.map((line, idx) => (
+                                    <Text key={`usage-direction-${idx}`} style={styles.detailBodyText}>• {line}</Text>
+                                ))}
+                                <Text style={styles.detailMetaLabel}>Timing tip</Text>
+                                <Text style={styles.detailBodyText}>• {usageBlock?.timingTip ?? usageTimingTipLines[0]}</Text>
+                                <Text style={styles.detailMetaLabel}>Conservative guidance</Text>
+                                <Text style={styles.detailBodyText}>• {usageBlock?.conservativeGuidance ?? usageGuidanceLines[0]}</Text>
+                            </View>
+                        </GlassCard>
+
+                        <GlassCard
+                            title="Safety & Tips"
+                            subtitle="General watch-outs"
+                            accentColor="#EF4444"
+                            right={<GlassPill label={sourceTierLabel('general_science')} />}
+                        >
+                            <View style={{ gap: 10 }}>
+                                <Text style={styles.detailMetaLabel}>Label warnings (product-specific)</Text>
+                                {safetyWarnings.slice(0, 3).map((line, idx) => (
+                                    <Text key={`safety-warning-${idx}`} style={styles.detailBodyText}>• {line}</Text>
+                                ))}
+                                <Text style={styles.detailMetaLabel}>Upper limit (NIH ODS, general)</Text>
+                                {safetyUl.slice(0, 2).map((line, idx) => (
+                                    <Text key={`safety-ul-${idx}`} style={styles.detailBodyText}>• {line}</Text>
+                                ))}
+                                <Text style={styles.detailMetaLabel}>General watch-outs</Text>
+                                {safetyWatchouts.slice(0, 3).map((line, idx) => (
+                                    <Text key={`safety-watch-${idx}`} style={styles.detailBodyText}>• {line}</Text>
+                                ))}
+                                <Text style={styles.detailMetaLabel}>Data status</Text>
+                                <Text style={styles.detailBodyText}>{safetyBlock?.dataStatusRef ?? 'See Missing info in Overview.'}</Text>
+                                <Text style={styles.detailMetaLabel}>Third-party quality mark (Integrity helper)</Text>
+                                <Text style={styles.detailBodyText}>
+                                    Status: {
+                                        qualityMark?.checkedMode === 'search_only' || qualityMark?.evidenceType === 'search'
+                                            ? 'unknown (search-only evidence; no verified mark page/image found yet)'
+                                            : (qualityMark?.status ?? 'unknown')
+                                    }
+                                </Text>
+                                {Array.isArray(qualityMark?.sourcesTried) && qualityMark.sourcesTried.length > 0 ? (
+                                    <Text style={styles.detailBodyText}>Sources searched: {qualityMark.sourcesTried.join(', ')}</Text>
+                                ) : null}
+                                {qualityMark?.evidenceRef ? (
+                                    <Text style={styles.detailBodyText}>Evidence: {qualityMark.evidenceRef}</Text>
+                                ) : null}
+                            </View>
+                        </GlassCard>
+                    </View>
+                ) : (
+                    <>
+                        <View style={styles.scoreSection}>
+                            <View style={styles.scoreHeroCard}>
+                                {!disableScoreRing ? (
+                                    <>
+                                        <InteractiveScoreRing
+                                            scores={{
+                                                overall: ringScores.overall,
+                                                effectiveness: ringScores.effectiveness,
+                                                safety: ringScores.safety,
+                                                value: ringScores.value,
+                                            }}
+                                            labels={{
+                                                value: t.analysisScoreIntegrity,
+                                                valueLabel: t.analysisScoreIntegrity,
+                                            }}
+                                            descriptions={scoreDescriptions}
+                                            display={ringDisplay}
+                                            muted={ringMuted}
+                                            badgeText={scoreBadge}
+                                            sourceType={sourceType}
+                                            unknownCategories={unknownCategories}
+                                            metaLines={ringMetaLines}
+                                            showStaticModeHint={SHOW_SCAN_DEBUG}
+                                        />
+                                        {showScoreRetryCta ? (
+                                            <Pressable onPress={onRetryScore} style={styles.scoreRetryButton}>
+                                                <Text style={styles.scoreRetryButtonText}>{t.analysisScoreRetryCta}</Text>
+                                            </Pressable>
+                                        ) : null}
+                                    </>
+                                ) : (
+                                    <View style={styles.bisectNoticeCard}>
+                                        <Text style={styles.bisectNoticeTitle}>Score Ring disabled</Text>
+                                        <Text style={styles.bisectNoticeText}>{scoreRingDisableNotice}</Text>
+                                    </View>
+                                )}
+
+                            </View>
+                        </View>
+
+                        {!disableTilesGrid ? (
+                            <>
+                                <View style={styles.tilesHeader}>
+                                    <Text style={styles.tilesTitle}>{t.analysisDeepCategoriesTitle}</Text>
+                                    <Text style={styles.tilesSubtitle}>{t.analysisDeepCategoriesSubtitle}</Text>
+                                </View>
+
+                                <View style={styles.tilesGrid} onLayout={onTilesGridLayout}>
+                                    {tiles.map((tile) => (
+                                        <TileRenderer
+                                            key={tile.id}
+                                            tile={tile}
+                                            onPress={() => setSelectedTileType(tile.type)}
+                                            scrollY={scrollY}
+                                            viewportHeight={viewportHeight}
+                                            tileWidth={tileWidth}
+                                            style={{ marginBottom: TILE_GAP }}
+                                        />
+                                    ))}
+                                </View>
                             </>
                         ) : (
                             <View style={styles.bisectNoticeCard}>
-                                <Text style={styles.bisectNoticeTitle}>Score Ring disabled</Text>
-                                <Text style={styles.bisectNoticeText}>{scoreRingDisableNotice}</Text>
+                                <Text style={styles.bisectNoticeTitle}>Tiles grid disabled</Text>
+                                <Text style={styles.bisectNoticeText}>Set by `no_tiles` in `EXPO_PUBLIC_SCAN_DASHBOARD_BISECT`.</Text>
                             </View>
                         )}
-
-                    </View>
-                </View>
-
-                {!disableTilesGrid ? (
-                    <>
-                        <View style={styles.tilesHeader}>
-                            <Text style={styles.tilesTitle}>{t.analysisDeepCategoriesTitle}</Text>
-                            <Text style={styles.tilesSubtitle}>{t.analysisDeepCategoriesSubtitle}</Text>
-                        </View>
-
-                        <View style={styles.tilesGrid} onLayout={onTilesGridLayout}>
-                            {tiles.map((tile) => (
-                                <TileRenderer
-                                    key={tile.id}
-                                    tile={tile}
-                                    onPress={() => setSelectedTileType(tile.type)}
-                                    scrollY={scrollY}
-                                    viewportHeight={viewportHeight}
-                                    tileWidth={tileWidth}
-                                    style={{ marginBottom: TILE_GAP }}
-                                />
-                            ))}
-                        </View>
                     </>
-                ) : (
-                    <View style={styles.bisectNoticeCard}>
-                        <Text style={styles.bisectNoticeTitle}>Tiles grid disabled</Text>
-                        <Text style={styles.bisectNoticeText}>Set by `no_tiles` in `EXPO_PUBLIC_SCAN_DASHBOARD_BISECT`.</Text>
-                    </View>
                 )}
             </ScrollContainer>
 
-            {!disableModalPane ? (
+            {!disableModalPane && SCAN_UX_VIEW_MODE !== 'simple' ? (
                 <DashboardModal
                     key={selectedTileType ?? 'closed'}
                     visible={!!selectedTile}
                     tile={selectedTile}
                     onClose={() => setSelectedTileType(null)}
+                    sourceType={bundleSourceType ?? null}
+                    sourceTypeFinal={bundleSourceTypeFinal}
                 />
             ) : null}
         </View>
@@ -5549,7 +6332,13 @@ export const AnalysisDashboard: React.FC<{
             </ScrollContainer>
 
             {!disableModalPane ? (
-                <DashboardModal visible={!!selectedTile} tile={selectedTile} onClose={() => setSelectedTile(null)} />
+                <DashboardModal
+                    visible={!!selectedTile}
+                    tile={selectedTile}
+                    onClose={() => setSelectedTile(null)}
+                    sourceType={sourceType ?? null}
+                    sourceTypeFinal={true}
+                />
             ) : null}
         </View>
     );
@@ -6472,6 +7261,19 @@ const styles = StyleSheet.create({
     detailStack: {
         gap: 14,
     },
+    sourceStripCard: {
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: 'rgba(148,163,184,0.25)',
+        backgroundColor: 'rgba(255,255,255,0.74)',
+        padding: 10,
+        gap: 6,
+    },
+    sourceStripLine: {
+        fontSize: 12,
+        lineHeight: 17,
+        color: 'rgba(17,24,39,0.8)',
+    },
     detailLeadText: {
         fontSize: 15,
         lineHeight: 22,
@@ -6502,6 +7304,72 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: 'rgba(17,24,39,0.55)',
         lineHeight: 18,
+    },
+    sourcesToggleButton: {
+        alignSelf: 'flex-start',
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: 'rgba(37,99,235,0.25)',
+        backgroundColor: 'rgba(37,99,235,0.08)',
+        paddingHorizontal: 12,
+        paddingVertical: 7,
+        marginTop: 4,
+    },
+    sourcesToggleButtonText: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#1D4ED8',
+    },
+    sourcesDrawerCard: {
+        marginTop: 8,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: 'rgba(148,163,184,0.25)',
+        backgroundColor: 'rgba(255,255,255,0.66)',
+        padding: 10,
+        gap: 8,
+    },
+    sourcesDrawerTitle: {
+        fontSize: 12,
+        fontWeight: '800',
+        color: '#1F2937',
+    },
+    sourceRow: {
+        gap: 2,
+        paddingBottom: 6,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: 'rgba(148,163,184,0.35)',
+    },
+    sourceRowTag: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: '#475569',
+    },
+    sourceRowLabel: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#111827',
+        lineHeight: 18,
+    },
+    sourceRowUrl: {
+        fontSize: 11,
+        color: '#2563EB',
+        lineHeight: 16,
+    },
+    missingInfoCtaButton: {
+        alignSelf: 'flex-start',
+        marginTop: 4,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: 'rgba(37,99,235,0.35)',
+        backgroundColor: 'rgba(37,99,235,0.10)',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+    },
+    missingInfoCtaButtonText: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#1D4ED8',
     },
 
     glassCard: {
@@ -6695,6 +7563,37 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: '700',
         color: '#111827',
+    },
+    scoreRowButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(148,163,184,0.35)',
+        backgroundColor: 'rgba(255,255,255,0.7)',
+        paddingHorizontal: 10,
+        paddingVertical: 10,
+    },
+    scoreRowLabel: {
+        flex: 1,
+        fontSize: 14,
+        fontWeight: '700',
+        color: '#111827',
+    },
+    scoreRowValue: {
+        fontSize: 13,
+        fontWeight: '700',
+        color: '#1F2937',
+    },
+    scoreChecklistBox: {
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: 'rgba(148,163,184,0.25)',
+        backgroundColor: 'rgba(248,250,252,0.75)',
+        paddingHorizontal: 10,
+        paddingVertical: 8,
+        gap: 6,
     },
 
     miniHeader: {

@@ -6,6 +6,8 @@
     "expectedSourceType": "web",
     "expectedScoreAvailable": false,
     "verifiedAt": "2026-02-11",
+    "reviewAfterDays": 30,
+    "expiresAt": "2026-03-13",
     "sourceUrl": "https://www.nationalnutrition.ca/",
     "notes": "Known web fallback sample from prior E2E"
   },
@@ -16,6 +18,8 @@
     "expectedSourceType": "web",
     "expectedScoreAvailable": false,
     "verifiedAt": "2026-02-11",
+    "reviewAfterDays": 30,
+    "expiresAt": "2026-03-13",
     "sourceUrl": "https://www.swansonvitamins.com/",
     "notes": "Known web fallback sample from prior E2E"
   },
@@ -26,7 +30,33 @@
     "expectedSourceType": "web",
     "expectedScoreAvailable": false,
     "verifiedAt": "2026-02-11",
+    "reviewAfterDays": 30,
+    "expiresAt": "2026-03-13",
     "sourceUrl": "https://www.swansonvitamins.com/",
     "notes": "Known web fallback sample from prior E2E"
+  },
+  {
+    "barcode": "00649908268756",
+    "region": "US",
+    "site": "fixture",
+    "expectedSourceType": "web",
+    "expectedScoreAvailable": false,
+    "verifiedAt": "2026-03-01",
+    "reviewAfterDays": 30,
+    "expiresAt": "2026-03-31",
+    "sourceUrl": "https://www.puritan.com/fish-oil-omega-3-0102/wild-alaskan-pollock-fish-oil-concentrate-1250-mg-005850",
+    "notes": "R2D stage-A closure: classified as expected web-only fallback with TTL review."
+  },
+  {
+    "barcode": "00850049609098",
+    "region": "US",
+    "site": "fixture",
+    "expectedSourceType": "web",
+    "expectedScoreAvailable": false,
+    "verifiedAt": "2026-02-28",
+    "reviewAfterDays": 30,
+    "expiresAt": "2026-03-30",
+    "sourceUrl": "https://www.amazon.ca/dp/B0C3SGTNFG",
+    "notes": "No authoritative DSLD/LNHPD mapping observed; kept as web-only canary"
   }
 ]

@@ -1,0 +1,142 @@
+{
+  "schemaVersion": "v1.6.14-safe-science-fallbacks-1",
+  "generatedAt": "2026-03-02T00:00:00.000Z",
+  "signalsByIngredient": {
+    "vitamin_d": {
+      "ingredient_id": "vitamin_d",
+      "ingredient": "Vitamin D",
+      "best_for_fallback": [
+        "Often chosen to support bone and calcium-balance goals when daily intake is low.",
+        "Useful when comparing products for dose-per-serving and form disclosure (D3 or D2)."
+      ],
+      "comparison_fallback": [
+        "For buying decisions, disclosed form (D3 vs D2) and dose per serving usually matter more than the ingredient name alone."
+      ],
+      "before_you_buy_line": "Check the label for D3 or D2, the IU per serving, and product-specific warnings before purchase.",
+      "evidence_lines": [
+        "General science guidance; not proof that a specific branded product will deliver a clinical outcome."
+      ],
+      "source_tier": "general_science"
+    },
+    "fish_oil_omega3": {
+      "ingredient_id": "fish_oil_omega3",
+      "ingredient": "Fish Oil / Omega-3",
+      "best_for_fallback": [
+        "Commonly chosen to increase omega-3 intake for heart and blood-vessel support goals.",
+        "Most useful when the label discloses EPA and DHA per serving."
+      ],
+      "comparison_fallback": [
+        "For fish oil products, EPA and DHA disclosure is usually a stronger quality signal than fish oil total mg alone."
+      ],
+      "before_you_buy_line": "Verify EPA and DHA per serving, directions, and product-specific cautions on the package label.",
+      "evidence_lines": [
+        "General ingredient-level guidance; compare with product label transparency before buying."
+      ],
+      "source_tier": "general_science"
+    },
+    "coq10": {
+      "ingredient_id": "coq10",
+      "ingredient": "CoQ10",
+      "best_for_fallback": [
+        "Often chosen for energy-metabolism support and as an antioxidant cofactor.",
+        "Comparisons are more useful when dose and form are clearly labeled."
+      ],
+      "comparison_fallback": [
+        "When comparing CoQ10 products, dose clarity and form labeling (ubiquinone or ubiquinol) improve decision confidence."
+      ],
+      "before_you_buy_line": "Check dose per serving and form labeling, then confirm cautions on the package.",
+      "source_tier": "general_science"
+    },
+    "vitamin_c": {
+      "ingredient_id": "vitamin_c",
+      "ingredient": "Vitamin C",
+      "best_for_fallback": [
+        "Commonly selected for antioxidant support and to maintain immune-related functions.",
+        "Comparisons are more useful when total dose and form are clearly disclosed."
+      ],
+      "comparison_fallback": [
+        "For vitamin C products, per-serving amount and clear form labeling are stronger comparison signals than marketing claims."
+      ],
+      "before_you_buy_line": "Verify amount per serving and product-specific cautions on the label.",
+      "source_tier": "general_science"
+    },
+    "zinc": {
+      "ingredient_id": "zinc",
+      "ingredient": "Zinc",
+      "best_for_fallback": [
+        "Often used for immune-related support and tissue maintenance goals.",
+        "Comparisons are clearer when the elemental amount and form are disclosed."
+      ],
+      "comparison_fallback": [
+        "For zinc products, elemental amount and form disclosure usually improve formula comparison quality."
+      ],
+      "before_you_buy_line": "Check elemental amount per serving, form, and package cautions before purchase.",
+      "source_tier": "general_science"
+    },
+    "magnesium": {
+      "ingredient_id": "magnesium",
+      "ingredient": "Magnesium",
+      "best_for_fallback": [
+        "Commonly chosen for muscle and nerve-function support goals.",
+        "Product comparisons are stronger when elemental magnesium and salt form are both labeled."
+      ],
+      "comparison_fallback": [
+        "For magnesium products, elemental amount and form disclosure typically matter more than a generic ingredient mention."
+      ],
+      "before_you_buy_line": "Verify elemental magnesium per serving, salt form, and package cautions before buying.",
+      "source_tier": "general_science"
+    },
+    "biotin": {
+      "ingredient_id": "biotin",
+      "ingredient": "Biotin",
+      "best_for_fallback": [
+        "Often chosen for hair, skin, and nail support goals when biotin intake is a concern.",
+        "Comparisons are stronger when per-serving amount is clear and product directions are specific."
+      ],
+      "comparison_fallback": [
+        "For biotin products, amount per serving and label directions are stronger buying signals than broad beauty claims."
+      ],
+      "before_you_buy_line": "Check biotin amount per serving and verify product-specific cautions on the package label.",
+      "source_tier": "general_science"
+    },
+    "melatonin": {
+      "ingredient_id": "melatonin",
+      "ingredient": "Melatonin",
+      "best_for_fallback": [
+        "Commonly selected for sleep-timing support when bedtime schedule consistency is the goal.",
+        "Comparisons are clearer when dose per serving and intended timing guidance are explicit."
+      ],
+      "comparison_fallback": [
+        "For melatonin products, dose clarity and timing instructions usually matter more than general sleep marketing copy."
+      ],
+      "before_you_buy_line": "Verify dose, timing directions, and package cautions before purchase.",
+      "source_tier": "general_science"
+    },
+    "alpha_lipoic_acid": {
+      "ingredient_id": "alpha_lipoic_acid",
+      "ingredient": "Alpha Lipoic Acid",
+      "best_for_fallback": [
+        "Often chosen for antioxidant-support goals and cellular energy-metabolism support.",
+        "Comparisons are more useful when per-serving dose and directions are clearly disclosed."
+      ],
+      "comparison_fallback": [
+        "For alpha lipoic acid products, dose transparency and directions quality are stronger comparison signals than broad wellness claims."
+      ],
+      "before_you_buy_line": "Check dose per serving and label cautions, especially if using multiple antioxidant products.",
+      "source_tier": "general_science"
+    },
+    "flaxseed_oil": {
+      "ingredient_id": "flaxseed_oil",
+      "ingredient": "Flaxseed Oil",
+      "best_for_fallback": [
+        "Often chosen to increase plant-based omega-3 intake as part of heart-support nutrition goals.",
+        "Comparisons are stronger when serving amount and fatty-acid disclosure are clear."
+      ],
+      "comparison_fallback": [
+        "For flaxseed oil products, label transparency on serving amount and omega-3 context usually improves buying confidence."
+      ],
+      "before_you_buy_line": "Verify serving amount, usage directions, and product-specific cautions on the package.",
+      "source_tier": "general_science"
+    }
+  }
+}

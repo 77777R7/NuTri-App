@@ -23,6 +23,7 @@ const BULK_E2E_SSE_TIMEOUT_MS = Number(process.env.BULK_E2E_SSE_TIMEOUT_MS || 45
 const BULK_E2E_SSE_STOP_ON = String(process.env.BULK_E2E_SSE_STOP_ON || "revision1").toLowerCase();
 const BULK_E2E_SSE_STOP_TAIL_MS = Number(process.env.BULK_E2E_SSE_STOP_TAIL_MS || 6000);
 const BULK_E2E_RETRIES = Number(process.env.BULK_E2E_RETRIES || 1);
+const BULK_E2E_DETAIL_TIMEOUT_MS = Number(process.env.BULK_E2E_DETAIL_TIMEOUT_MS || 15000);
 const BULK_E2E_CA_ZERO_INGREDIENTS_MAX = Number(process.env.BULK_E2E_CA_ZERO_INGREDIENTS_MAX || 1);
 const BULK_E2E_US_ZERO_INGREDIENTS_MAX = Number(
   process.env.BULK_E2E_US_ZERO_INGREDIENTS_MAX || Number.MAX_SAFE_INTEGER,
@@ -418,14 +419,29 @@ async function fetchIngredientsDetail(meta, limit = 6, cursor = 0) {
     cursor,
   };
   const t0 = Date.now();
-  const res = await fetch(`${API_BASE_URL}/api/analysis-section`, {
-    method: "POST",
-    headers: { ...headers, Accept: "application/json" },
-    body: JSON.stringify(payload),
-  });
-  const timingMs = Date.now() - t0;
-  const data = await res.json().catch(() => null);
-  return { status: res.status, data, timingMs };
+  const ctrl = new AbortController();
+  const timeout = setTimeout(() => ctrl.abort(), BULK_E2E_DETAIL_TIMEOUT_MS);
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/analysis-section`, {
+      method: "POST",
+      headers: { ...headers, Accept: "application/json" },
+      body: JSON.stringify(payload),
+      signal: ctrl.signal,
+    });
+    const timingMs = Date.now() - t0;
+    const data = await res.json().catch(() => null);
+    return { status: res.status, data, timingMs };
+  } catch (error) {
+    const timingMs = Date.now() - t0;
+    const code = isAbortLikeError(error) ? "DETAIL_TIMEOUT" : "DETAIL_FETCH_ERROR";
+    return {
+      status: 0,
+      data: { error: code, message: String(error?.message || error || code) },
+      timingMs,
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 function safePick(obj, keys) {

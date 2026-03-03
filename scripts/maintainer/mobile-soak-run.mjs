@@ -88,6 +88,22 @@ const DEGRADED_CONTENT_PASS_THRESHOLD = Number(arg("--degraded-content-threshold
 const REGULATORY_RICH_RATE_THRESHOLD = Number(arg("--regulatory-rich-threshold", "0.3"));
 const SCORE_VISIBLE_RATE_THRESHOLD = Number(arg("--score-visible-threshold", "0.9"));
 const FIRST_FRAME_TRUSTED_REGULATORY_THRESHOLD = Number(arg("--first-frame-trusted-threshold", "0.6"));
+const REQUIRE_FIRST_FRAME_PENDING = !["0", "false", "off"].includes(
+  String(arg("--require-first-frame-pending", "true")).trim().toLowerCase(),
+);
+const REQUIRE_WEB_HINT_COVERAGE = !["0", "false", "off"].includes(
+  String(arg("--require-web-hint-coverage", "true")).trim().toLowerCase(),
+);
+const ROLE_DEFINITION_VERSION = String(
+  arg("--role-definition-version", process.env.STAGE_B_ROLE_DEFINITION_VERSION || "stage-b-role-v1"),
+).trim();
+const DECISION_SUPPORT_VIEW_MODE = String(
+  arg("--decision-support-view-mode", process.env.STAGE_B_DECISION_SUPPORT_VIEW_MODE || "simple"),
+)
+  .trim()
+  .toLowerCase() === "details"
+  ? "details"
+  : "simple";
 const HEALTH_PREFLIGHT_ENABLED = !["0", "false", "off"].includes(
   String(arg("--health-preflight", process.env.MOBILE_SOAK_HEALTH_PREFLIGHT || "true")).trim().toLowerCase(),
 );
@@ -160,6 +176,15 @@ const KILLER_BARCODE = normalizeBarcode(
 );
 
 const normalizeText = (value) => (typeof value === "string" ? value.trim() : "");
+const DECISION_SUPPORT_VERDICTS = [
+  "strong_candidate",
+  "reasonable_but_incomplete",
+  "hard_to_recommend_until_label_verified",
+];
+const normalizeDecisionSupportVerdict = (value) => {
+  const text = normalizeText(value);
+  return DECISION_SUPPORT_VERDICTS.includes(text) ? text : null;
+};
 const hasVerifiedUnverifiedConflict = ({ sourceAttribution, moduleValue }) => {
   if (!(sourceAttribution === "verified_regulatory" || sourceAttribution === "label_record")) {
     return false;
@@ -509,6 +534,19 @@ const resolveBarcodes = async () => {
       : path.join(ROOT_DIR, BARCODES_JSON)
     : "";
   const payload = await loadJsonSafe(sourceFile);
+  if (Array.isArray(payload)) {
+    return payload
+      .map((entry) => {
+        if (typeof entry === "string" || typeof entry === "number") {
+          return { role: "unknown", barcode: normalizeBarcode(entry) };
+        }
+        return {
+          role: String(entry?.role || "unknown"),
+          barcode: normalizeBarcode(entry?.barcode),
+        };
+      })
+      .filter((entry) => entry.barcode);
+  }
   if (payload && Array.isArray(payload.barcodes)) {
     return payload.barcodes
       .map((entry) => ({
@@ -993,6 +1031,96 @@ const fetchScoreInfo = async ({ meta }) => {
   return run;
 };
 
+const DECISION_SUPPORT_FETCH_CACHE = new Map();
+const fetchDecisionSupportInfo = async ({ barcode, meta }) => {
+  const normalizedBarcode = normalizeBarcode(barcode) || normalizeBarcode(meta?.authoritativeIdentity?.value);
+  if (!normalizedBarcode) {
+    return {
+      decisionSupportVerdict: null,
+      decisionSupportTopBlockerCodes: [],
+      decisionSupportDigest: null,
+      decisionSupportFetchStatus: "not_requested",
+      decisionSupportAutoRetryUsed: false,
+    };
+  }
+
+  const digestHint = normalizeText(meta?.decisionSupportDigest) || null;
+  const cacheKey = `${normalizedBarcode}:${DECISION_SUPPORT_VIEW_MODE}:${digestHint || "no_digest"}`;
+  if (DECISION_SUPPORT_FETCH_CACHE.has(cacheKey)) {
+    return DECISION_SUPPORT_FETCH_CACHE.get(cacheKey);
+  }
+
+  const run = (async () => {
+    const doFetch = async (digest) => {
+      const params = new URLSearchParams({
+        barcode: normalizedBarcode,
+        viewMode: DECISION_SUPPORT_VIEW_MODE,
+      });
+      if (digest) params.set("digest", digest);
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/decision-support/v1?${params.toString()}`, {
+          method: "GET",
+          headers: buildJsonHeaders(),
+        });
+        const payload = await res.json().catch(() => null);
+        return {
+          ok: res.ok,
+          status: res.status,
+          payload: payload && typeof payload === "object" ? payload : null,
+        };
+      } catch (error) {
+        return {
+          ok: false,
+          status: 0,
+          payload: {
+            error: error instanceof Error ? error.message : String(error),
+          },
+        };
+      }
+    };
+
+    let autoRetryUsed = false;
+    let response = await doFetch(digestHint);
+    if (!response.ok && response.status === 409) {
+      const latestDigest = normalizeText(response?.payload?.latestDigest) || null;
+      if (latestDigest) {
+        autoRetryUsed = true;
+        response = await doFetch(latestDigest);
+      }
+    }
+
+    if (!response.ok) {
+      return {
+        decisionSupportVerdict: null,
+        decisionSupportTopBlockerCodes: [],
+        decisionSupportDigest: null,
+        decisionSupportFetchStatus: response.status === 409 ? "digest_mismatch" : "error",
+        decisionSupportAutoRetryUsed: autoRetryUsed,
+      };
+    }
+
+    const verdict = normalizeDecisionSupportVerdict(response?.payload?.verdict);
+    const topBlockers = Array.isArray(response?.payload?.topBlockers)
+      ? response.payload.topBlockers
+      : [];
+    const topBlockerCodes = topBlockers
+      .map((row) => normalizeText(row?.code))
+      .filter(Boolean)
+      .slice(0, 5);
+
+    return {
+      decisionSupportVerdict: verdict,
+      decisionSupportTopBlockerCodes: topBlockerCodes,
+      decisionSupportDigest: normalizeText(response?.payload?.digest) || digestHint,
+      decisionSupportFetchStatus: "ok",
+      decisionSupportAutoRetryUsed: autoRetryUsed,
+    };
+  })();
+
+  DECISION_SUPPORT_FETCH_CACHE.set(cacheKey, run);
+  return run;
+};
+
 const FACTS_FETCH_CACHE = new Map();
 const fetchFactsProbe = async ({ source, sourceId }) => {
   const normalizedSource = normalizeText(source).toLowerCase();
@@ -1467,8 +1595,15 @@ const runOneAttempt = async ({ phase, round, role, barcode, preflight, screensho
       finalDisplayIdentityTitle: null,
       finalDisplayIdentitySourceAttribution: null,
       scoreQueryInitiated: false,
+      scoreQuerySource: null,
+      scoreQuerySourceId: null,
       scoreResponseStatus: "not_initiated",
       scoreResponseReasonCode: null,
+      decisionSupportVerdict: null,
+      decisionSupportTopBlockerCodes: [],
+      decisionSupportDigest: null,
+      decisionSupportFetchStatus: "not_requested",
+      decisionSupportAutoRetryUsed: false,
       scoreNotFoundTargeted: false,
       scoreNotFoundTrace: null,
       ulDiagnosticsEligible: false,
@@ -1489,6 +1624,9 @@ const runOneAttempt = async ({ phase, round, role, barcode, preflight, screensho
       contentValueFailReasons: [],
       moduleValue: null,
       regulatoryRichSignals: null,
+      nutritionLabelLikeFilteredCount: 0,
+      nutritionLabelLikeLeakCount: 0,
+      nutritionLabelLikeFilteredSamples: [],
       esterCorePass: false,
       esterUlEligible: false,
       esterUlReferenceReady: null,
@@ -1562,12 +1700,19 @@ const runOneAttempt = async ({ phase, round, role, barcode, preflight, screensho
         finalDisplayIdentityMode: null,
         finalDisplayIdentityTitle: null,
         finalDisplayIdentitySourceAttribution: null,
-      scoreQueryInitiated: false,
-      scoreResponseStatus: "not_initiated",
-      scoreResponseReasonCode: null,
-      scoreNotFoundTargeted: false,
-      scoreNotFoundTrace: null,
-      ulDiagnosticsEligible: false,
+        scoreQueryInitiated: false,
+        scoreQuerySource: null,
+        scoreQuerySourceId: null,
+        scoreResponseStatus: "not_initiated",
+        scoreResponseReasonCode: null,
+        decisionSupportVerdict: null,
+        decisionSupportTopBlockerCodes: [],
+        decisionSupportDigest: null,
+        decisionSupportFetchStatus: "not_requested",
+        decisionSupportAutoRetryUsed: false,
+        scoreNotFoundTargeted: false,
+        scoreNotFoundTrace: null,
+        ulDiagnosticsEligible: false,
         ulDiagnosticsEligibilityReason: "infra_unavailable_healthcheck",
         ulCandidateCount: 0,
         ulCandidateSource: "none",
@@ -1583,15 +1728,18 @@ const runOneAttempt = async ({ phase, round, role, barcode, preflight, screensho
         contentValueApplied: false,
         contentValuePass: null,
         contentValueFailReasons: [],
-      moduleValue: null,
-      regulatoryRichSignals: null,
-      esterCorePass: false,
-      esterUlEligible: false,
-      esterUlReferenceReady: null,
-      esterUlComparableReady: null,
-      esterUlReady: null,
-      dataCeilingKind: null,
-      fallbackRoutePass: null,
+        moduleValue: null,
+        regulatoryRichSignals: null,
+        nutritionLabelLikeFilteredCount: 0,
+        nutritionLabelLikeLeakCount: 0,
+        nutritionLabelLikeFilteredSamples: [],
+        esterCorePass: false,
+        esterUlEligible: false,
+        esterUlReferenceReady: null,
+        esterUlComparableReady: null,
+        esterUlReady: null,
+        dataCeilingKind: null,
+        fallbackRoutePass: null,
         fallbackRouteFailReasons: [],
         refreshingBannerDetected: false,
         debugToastDetected: false,
@@ -1666,6 +1814,7 @@ const runOneAttempt = async ({ phase, round, role, barcode, preflight, screensho
         ? stream.firstFrameSourceAttribution || sourceAttributionFromMeta
         : sourceAttributionFromMeta;
     const scoreProbe = await fetchScoreInfo({ meta });
+    const decisionSupportProbe = await fetchDecisionSupportInfo({ barcode, meta });
     const scoreInfo = scoreProbe?.scoreInfo ?? null;
     const bundleForRichness = withObservedUlEntries(stream.latestAnalysisBundle, scoreInfo);
     const contentValue = evaluateContentValueGate({
@@ -1851,8 +2000,17 @@ const runOneAttempt = async ({ phase, round, role, barcode, preflight, screensho
       finalDisplayIdentityTitle: stream.finalDisplayIdentityTitle ?? null,
       finalDisplayIdentitySourceAttribution: stream.finalDisplayIdentitySourceAttribution ?? null,
       scoreQueryInitiated: scoreProbe?.scoreQueryInitiated === true,
+      scoreQuerySource: scoreProbe?.scoreQuerySource ?? null,
+      scoreQuerySourceId: scoreProbe?.scoreQuerySourceId ?? null,
       scoreResponseStatus: scoreProbe?.scoreResponseStatus ?? "not_initiated",
       scoreResponseReasonCode: scoreProbe?.scoreResponseReasonCode ?? null,
+      decisionSupportVerdict: decisionSupportProbe?.decisionSupportVerdict ?? null,
+      decisionSupportTopBlockerCodes: Array.isArray(decisionSupportProbe?.decisionSupportTopBlockerCodes)
+        ? decisionSupportProbe.decisionSupportTopBlockerCodes
+        : [],
+      decisionSupportDigest: decisionSupportProbe?.decisionSupportDigest ?? null,
+      decisionSupportFetchStatus: decisionSupportProbe?.decisionSupportFetchStatus ?? "not_requested",
+      decisionSupportAutoRetryUsed: decisionSupportProbe?.decisionSupportAutoRetryUsed === true,
       scoreTerminalSeen,
       scoreNotFoundTargeted,
       scoreNotFoundTrace,
@@ -1874,8 +2032,22 @@ const runOneAttempt = async ({ phase, round, role, barcode, preflight, screensho
       contentValueFailReasons: Array.isArray(contentValue.failReasons) ? contentValue.failReasons : [],
       moduleValue: contentValue.moduleValue ?? null,
       regulatoryRichSignals,
+      nutritionLabelLikeFilteredCount: Number(regulatoryRichSignals?.nutritionLabelLikeFilteredCount ?? 0) || 0,
+      nutritionLabelLikeLeakCount: Number(regulatoryRichSignals?.nutritionLabelLikeLeakCount ?? 0) || 0,
+      nutritionLabelLikeFilteredSamples:
+        Array.isArray(regulatoryRichSignals?.nutritionLabelLikeFilteredSamples)
+          ? regulatoryRichSignals.nutritionLabelLikeFilteredSamples
+              .filter((value) => typeof value === "string")
+              .slice(0, 3)
+          : [],
       coverDetailConsistencyPass: regulatoryRichSignals?.coverDetailConsistencyPass === true,
       consistencyFailReason: regulatoryRichSignals?.consistencyFailReason ?? null,
+      consistencyWarningReasons:
+        Array.isArray(regulatoryRichSignals?.consistencyWarningReasons)
+          ? regulatoryRichSignals.consistencyWarningReasons
+              .filter((value) => typeof value === "string")
+              .slice(0, 5)
+          : [],
       deterministicSignalCounts:
         regulatoryRichSignals?.deterministicSignalCounts && typeof regulatoryRichSignals.deterministicSignalCounts === "object"
           ? regulatoryRichSignals.deterministicSignalCounts
@@ -1956,8 +2128,15 @@ const runOneAttempt = async ({ phase, round, role, barcode, preflight, screensho
     finalDisplayIdentityTitle: null,
     finalDisplayIdentitySourceAttribution: null,
     scoreQueryInitiated: false,
+    scoreQuerySource: null,
+    scoreQuerySourceId: null,
     scoreResponseStatus: "not_initiated",
     scoreResponseReasonCode: null,
+    decisionSupportVerdict: null,
+    decisionSupportTopBlockerCodes: [],
+    decisionSupportDigest: null,
+    decisionSupportFetchStatus: "not_requested",
+    decisionSupportAutoRetryUsed: false,
     scoreTerminalSeen: false,
     scoreNotFoundTargeted: false,
     scoreNotFoundTrace: null,
@@ -1979,8 +2158,12 @@ const runOneAttempt = async ({ phase, round, role, barcode, preflight, screensho
     contentValueFailReasons: [],
     moduleValue: null,
     regulatoryRichSignals: null,
+    nutritionLabelLikeFilteredCount: 0,
+    nutritionLabelLikeLeakCount: 0,
+    nutritionLabelLikeFilteredSamples: [],
     coverDetailConsistencyPass: false,
     consistencyFailReason: null,
+    consistencyWarningReasons: [],
     deterministicSignalCounts: null,
     esterCorePass: false,
     esterUlEligible: false,
@@ -2525,14 +2708,73 @@ const buildScoreNotFoundTargetedDiagnostics = ({ attempts, summaryPath }) => {
   };
 };
 
+const buildDecisionSupportDistribution = (rows) => {
+  const counts = Object.fromEntries(DECISION_SUPPORT_VERDICTS.map((key) => [key, 0]));
+  const byRoleCounts = {};
+  const sourceRows = Array.isArray(rows) ? rows : [];
+  for (const row of sourceRows) {
+    const verdict = normalizeDecisionSupportVerdict(row?.decisionSupportVerdict);
+    if (!verdict) continue;
+    counts[verdict] += 1;
+    const role = String(row?.role ?? "unknown");
+    byRoleCounts[role] ||= Object.fromEntries(DECISION_SUPPORT_VERDICTS.map((key) => [key, 0]));
+    byRoleCounts[role][verdict] += 1;
+  }
+
+  const total = DECISION_SUPPORT_VERDICTS.reduce((sum, key) => sum + Number(counts[key] || 0), 0);
+  const rates = Object.fromEntries(
+    DECISION_SUPPORT_VERDICTS.map((key) => [key, total > 0 ? Number((counts[key] / total).toFixed(6)) : 0]),
+  );
+  const byRole = {};
+  for (const [role, roleCounts] of Object.entries(byRoleCounts)) {
+    const roleTotal = DECISION_SUPPORT_VERDICTS.reduce((sum, key) => sum + Number(roleCounts[key] || 0), 0);
+    byRole[role] = {
+      ...roleCounts,
+      total: roleTotal,
+      rates: Object.fromEntries(
+        DECISION_SUPPORT_VERDICTS.map((key) => [key, roleTotal > 0 ? Number((roleCounts[key] / roleTotal).toFixed(6)) : 0]),
+      ),
+    };
+  }
+
+  return {
+    counts,
+    rates,
+    total,
+    byRole,
+  };
+};
+
 const summarize = ({ attempts, barcodes, preflight }) => {
   const serialAttempts = attempts.filter((row) => row.phase === "serial");
-  const doneSeenRate = serialAttempts.length
-    ? serialAttempts.filter((row) => row.doneSeen).length / serialAttempts.length
+  const isKillerPhase = (phase) => phase === "killer_cold" || phase === "killer_hot";
+  const nonKillerAttempts = attempts.filter((row) => !isKillerPhase(row.phase));
+  const metricAttempts = serialAttempts.length > 0
+    ? serialAttempts
+    : nonKillerAttempts.length > 0
+      ? nonKillerAttempts
+      : attempts;
+  const metricAttemptsScope = serialAttempts.length > 0 ? "serial" : nonKillerAttempts.length > 0 ? "non_killer_fallback" : "all_attempts";
+  const doneSeenRate = metricAttempts.length
+    ? metricAttempts.filter((row) => row.doneSeen).length / metricAttempts.length
     : 0;
 
-  const perBarcode = barcodes.map((entry) => {
-    const rows = serialAttempts.filter((row) => row.barcode === entry.barcode);
+  const perBarcodeEntries = serialAttempts.length > 0
+    ? barcodes
+    : Array.from(
+      metricAttempts.reduce((acc, row) => {
+        const barcode = normalizeBarcode(row?.barcode || "");
+        if (!barcode) return acc;
+        const key = `${String(row?.role || "unknown")}::${barcode}`;
+        if (!acc.has(key)) {
+          acc.set(key, { role: String(row?.role || "unknown"), barcode });
+        }
+        return acc;
+      }, new Map()),
+    ).map(([, value]) => value);
+
+  const perBarcode = perBarcodeEntries.map((entry) => {
+    const rows = metricAttempts.filter((row) => normalizeBarcode(row.barcode) === normalizeBarcode(entry.barcode));
     const passCount = rows.filter((row) => row.doneSeen).length;
     const passRate = rows.length ? passCount / rows.length : 0;
     return {
@@ -2544,20 +2786,20 @@ const summarize = ({ attempts, barcodes, preflight }) => {
     };
   });
 
-  const deadEndRate = serialAttempts.length
-    ? serialAttempts.filter((row) => !row.doneSeen && !row.errorCode && !row.requestError).length / serialAttempts.length
+  const deadEndRate = metricAttempts.length
+    ? metricAttempts.filter((row) => !row.doneSeen && !row.errorCode && !row.requestError).length / metricAttempts.length
     : 0;
 
   const tFirstBundleP95 = percentile(
-    serialAttempts.map((row) => row.tFirstBundleMs).filter(Number.isFinite),
+    metricAttempts.map((row) => row.tFirstBundleMs).filter(Number.isFinite),
     0.95,
   );
   const tDoneP95 = percentile(
-    serialAttempts.map((row) => row.tDoneMs).filter(Number.isFinite),
+    metricAttempts.map((row) => row.tDoneMs).filter(Number.isFinite),
     0.95,
   );
   const eventLoopLagP95 = percentile(
-    serialAttempts.map((row) => row.eventLoopLagP95DuringRequest).filter(Number.isFinite),
+    metricAttempts.map((row) => row.eventLoopLagP95DuringRequest).filter(Number.isFinite),
     0.95,
   );
 
@@ -2609,7 +2851,7 @@ const summarize = ({ attempts, barcodes, preflight }) => {
 
   const popupBlockedCount = attempts.filter((row) => row.popupBlocked).length;
   const watchdogTriggeredCount = attempts.filter((row) => row.watchdogTriggered).length;
-  const firstFrameRows = serialAttempts.filter((row) => typeof row.firstFrameDisplayIdentityMode === "string");
+  const firstFrameRows = metricAttempts.filter((row) => typeof row.firstFrameDisplayIdentityMode === "string");
   const firstFramePollutionCount = firstFrameRows.filter(
     (row) =>
       (row.firstFrameSourceAttribution === "web_hint_unverified" || row.firstFrameSourceAttribution === "unknown")
@@ -2642,7 +2884,7 @@ const summarize = ({ attempts, barcodes, preflight }) => {
     ? firstFrameRegulatoryRows.filter((row) => row.firstFrameDisplayIdentityMode === "trusted").length / firstFrameRegulatoryRows.length
     : 0;
 
-  const contentAppliedRows = serialAttempts.filter((row) => row.contentValueApplied === true);
+  const contentAppliedRows = metricAttempts.filter((row) => row.contentValueApplied === true);
   const contentValuePassRows = contentAppliedRows.filter((row) => row.contentValuePass === true);
   const contentValuePassRate = contentAppliedRows.length ? contentValuePassRows.length / contentAppliedRows.length : 0;
   const verifiedContentRows = contentAppliedRows.filter(
@@ -2695,6 +2937,58 @@ const summarize = ({ attempts, barcodes, preflight }) => {
   const scoreNumericVisibleRate = regulatoryRichRows.length
     ? regulatoryRichRows.filter((row) => row.regulatoryRichSignals?.scoreAvailable === true).length / regulatoryRichRows.length
     : 0;
+  const decisionSupportDistribution = buildDecisionSupportDistribution(metricAttempts);
+  const decisionSupportTopBlockerDistribution = (() => {
+    const counts = {};
+    for (const row of metricAttempts) {
+      const codes = Array.isArray(row?.decisionSupportTopBlockerCodes)
+        ? row.decisionSupportTopBlockerCodes
+        : [];
+      for (const code of codes) {
+        const key = String(code || "").trim();
+        if (!key) continue;
+        counts[key] = (counts[key] || 0) + 1;
+      }
+    }
+    return Object.entries(counts)
+      .sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0))
+      .map(([code, count]) => ({ code, count }));
+  })();
+  const dsldAuthoritativeRows = regulatoryRichRows.filter(
+    (row) => String(row?.scoreQuerySource || "").toLowerCase() === "dsld",
+  );
+  const nutritionLabelLikeFilteredCount = regulatoryRichRows.reduce(
+    (sum, row) => sum + (Number(row?.nutritionLabelLikeFilteredCount ?? 0) || 0),
+    0,
+  );
+  const nutritionLabelLikeLeakCount = regulatoryRichRows.reduce(
+    (sum, row) => sum + (Number(row?.nutritionLabelLikeLeakCount ?? 0) || 0),
+    0,
+  );
+  const nutritionLabelLikeLeakCountDsld = dsldAuthoritativeRows.reduce(
+    (sum, row) => sum + (Number(row?.nutritionLabelLikeLeakCount ?? 0) || 0),
+    0,
+  );
+  const nutritionLabelLikeLeakRowCountDsld = dsldAuthoritativeRows.filter(
+    (row) => (Number(row?.nutritionLabelLikeLeakCount ?? 0) || 0) > 0,
+  ).length;
+  const nutritionLabelLikeSamplesTop = (() => {
+    const counts = {};
+    for (const row of regulatoryRichRows) {
+      const samples = Array.isArray(row?.nutritionLabelLikeFilteredSamples)
+        ? row.nutritionLabelLikeFilteredSamples
+        : [];
+      for (const sample of samples) {
+        const key = String(sample || "").trim();
+        if (!key) continue;
+        counts[key] = (counts[key] || 0) + 1;
+      }
+    }
+    return Object.entries(counts)
+      .sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0))
+      .slice(0, 10)
+      .map(([name, count]) => ({ name, count }));
+  })();
   const ulEntriesCoverageVerified = regulatoryRichRows.length
     ? regulatoryRichRows.filter((row) => Number(row?.regulatoryRichSignals?.ulEntriesCount ?? 0) > 0).length / regulatoryRichRows.length
     : 0;
@@ -2969,7 +3263,7 @@ const summarize = ({ attempts, barcodes, preflight }) => {
       : 0,
     failReasonCounts: regulatoryRichLnhpdThinFailReasonCounts,
   };
-  const degradedRateByRole = serialAttempts.reduce((acc, row) => {
+  const degradedRateByRole = metricAttempts.reduce((acc, row) => {
     const roleKey = String(row.role || "unknown");
     const bucket = acc[roleKey] || {
       total: 0,
@@ -3011,7 +3305,7 @@ const summarize = ({ attempts, barcodes, preflight }) => {
     popupBlocked: popupBlockedCount === 0,
     firstFramePollution: firstFramePollutionCount === 0,
     firstFrameRename: firstFrameRenameCount === 0,
-    firstFramePending: firstFramePendingRate > 0,
+    firstFramePending: REQUIRE_FIRST_FRAME_PENDING ? firstFramePendingRate > 0 : true,
     firstFrameTrustedRegulatory:
       firstFrameRegulatoryRows.length > 0
         ? firstFrameTrustedRateRegulatory >= FIRST_FRAME_TRUSTED_REGULATORY_THRESHOLD
@@ -3031,7 +3325,7 @@ const summarize = ({ attempts, barcodes, preflight }) => {
     webHintContentPassRate:
       webHintContentRows.length > 0
         ? webHintContentPassRate >= WEB_HINT_CONTENT_PASS_THRESHOLD
-        : false,
+        : !REQUIRE_WEB_HINT_COVERAGE,
     degradedContentPassRate:
       degradedContentRows.length > 0
         ? degradedContentPassRate >= DEGRADED_CONTENT_PASS_THRESHOLD
@@ -3059,6 +3353,8 @@ const summarize = ({ attempts, barcodes, preflight }) => {
   return {
     attemptsTotal: attempts.length,
     serialAttempts: serialAttempts.length,
+    metricAttempts: metricAttempts.length,
+    metricAttemptsScope,
     doneSeenRate,
     perBarcode,
     deadEndRate,
@@ -3084,6 +3380,17 @@ const summarize = ({ attempts, barcodes, preflight }) => {
     regulatoryRichRate_uniqueBarcode: regulatoryRichRateUniqueBarcode,
     scoreVisibleRate,
     scoreNumericVisibleRate,
+    roleDefinitionVersion: ROLE_DEFINITION_VERSION,
+    decisionSupportVerdictDistribution: decisionSupportDistribution.counts,
+    decisionSupportVerdictDistributionRates: decisionSupportDistribution.rates,
+    decisionSupportVerdictTotal: decisionSupportDistribution.total,
+    decisionSupportVerdictDistributionByRole: decisionSupportDistribution.byRole,
+    decisionSupportTopBlockerDistribution,
+    nutritionLabelLikeFilteredCount,
+    nutritionLabelLikeLeakCount,
+    nutritionLabelLikeLeakCountDsld,
+    nutritionLabelLikeLeakRowCountDsld,
+    nutritionLabelLikeSamplesTop,
     ulEntriesCoverageVerified,
     ulReferenceCoverageVerified,
     ulComparableCoverageVerified,
@@ -3272,6 +3579,8 @@ const main = async () => {
       openResultScreen: OPEN_RESULT_SCREEN,
       openResultPhases: Array.from(OPEN_RESULT_PHASES),
       deeplinkWaitMs: DEEPLINK_WAIT_MS,
+      roleDefinitionVersion: ROLE_DEFINITION_VERSION,
+      decisionSupportViewMode: DECISION_SUPPORT_VIEW_MODE,
       dryRun: DRY_RUN,
       healthPreflightEnabled: HEALTH_PREFLIGHT_ENABLED,
       healthcheckUrl: HEALTHCHECK_URL,
@@ -3283,6 +3592,8 @@ const main = async () => {
         ulVisibilityPassRate: UL_VISIBILITY_PASS_THRESHOLD,
         degradedContentPassRate: DEGRADED_CONTENT_PASS_THRESHOLD,
         firstFrameTrustedRegulatoryRate: FIRST_FRAME_TRUSTED_REGULATORY_THRESHOLD,
+        requireFirstFramePending: REQUIRE_FIRST_FRAME_PENDING,
+        requireWebHintCoverage: REQUIRE_WEB_HINT_COVERAGE,
       },
     },
     preflight,

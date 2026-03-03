@@ -1,6 +1,5 @@
 /**
  * DeepSeek AI Integration Module
- * Enhanced prompts for deep ingredient analysis
  */
 
 import { extractDomain, isHighQualityDomain } from "./searchQuality.js";
@@ -17,7 +16,7 @@ import type { CircuitBreaker, DeadlineBudget, RetryOptions, Semaphore } from "./
 import type { SearchItem } from "./types.js";
 
 // ============================================================================
-// ENHANCED PROMPTS
+// PROMPTS
 // ============================================================================
 
 const deepseekDebug =
@@ -47,159 +46,6 @@ const buildDebugPayload = (
   __deepseek_snippet: truncateForLog(payload, 1200),
   __deepseek_meta: extra ?? null,
 });
-
-const PROMPT_EFFICACY = `You are NuTri-AI, a supplement science expert. Analyze this supplement with SCIENTIFIC DEPTH.
-
-CRITICAL INSTRUCTIONS:
-1. For each key ingredient, identify the EXACT chemical form (e.g., "Cholecalciferol" not just "Vitamin D")
-2. Evaluate bioavailability compared to other forms of the same nutrient
-3. Assess if the dosage matches clinical research recommendations
-4. Evaluate if claimed benefits have scientific evidence
-5. DO NOT simply repeat marketing claims from the package
-6. If information is not available, use null instead of guessing
-7. Pick the SINGLE most important ingredient as "primaryActive" (usually the one on the label name)
-8. Return a SINGLE valid JSON object. Include ALL keys exactly as specified. No trailing commas.
-
-OUTPUT JSON ONLY. NO MARKDOWN.
-{
-  "score": 0-10,
-  "verdict": "One-sentence scientific assessment (max 15 words)",
-  "primaryActive": {
-    "name": "Main ingredient name (e.g., Astaxanthin)",
-    "form": "Specific chemical form or null if unknown (e.g., 'Astaxanthin from Haematococcus pluvialis')",
-    "formQuality": "high|medium|low|unknown",
-    "formNote": "Brief explanation why this form is good/bad or null",
-    "dosageValue": 12,
-    "dosageUnit": "mg",
-    "evidenceLevel": "strong|moderate|weak|none",
-    "evidenceSummary": "1-sentence summary of evidence"
-  },
-  "ingredients": [
-    {
-      "name": "Ingredient name",
-      "form": "Chemical form or null if unknown",
-      "formQuality": "high|medium|low|unknown",
-      "formNote": "Brief explanation of form quality or null",
-      "dosageValue": 5000,
-      "dosageUnit": "IU",
-      "recommendedMin": 600,
-      "recommendedMax": 4000,
-      "recommendedUnit": "IU",
-      "dosageAssessment": "adequate|underdosed|overdosed|unknown",
-      "evidenceLevel": "strong|moderate|weak|none",
-      "evidenceSummary": "Brief summary of research or null"
-    }
-  ],
-  "overviewSummary": "1-2 sentence product summary for a general user. Mention main ingredient, dose, evidence strength.",
-  "coreBenefits": ["Benefit 1", "Benefit 2", "Benefit 3"],
-  "overallAssessment": "Is this product effective? Why or why not?",
-  "marketingVsReality": "What claims are supported vs unsupported?"
-}
-
-If dosage information is missing, set dosageValue/recommendedMin/recommendedMax to null.
-If you cannot determine the chemical form, set form to null and formQuality to "unknown".
-primaryActive should be the ingredient most prominently featured in the product name or marketing.
-`;
-
-
-const PROMPT_SAFETY = `You are NuTri-AI, a supplement safety expert. Analyze SAFETY with scientific rigor.
-
-CRITICAL INSTRUCTIONS:
-1. Evaluate if any ingredient exceeds Tolerable Upper Intake Level (UL)
-2. Identify any hepatotoxic, nephrotoxic, or other toxic ingredients
-3. Check for common allergens (soy, gluten, dairy, shellfish)
-4. Identify drug interactions if known
-5. List populations who should avoid this supplement
-6. Be conservative - when uncertain, warn
-7. Return a SINGLE valid JSON object. Include ALL keys exactly as specified. No trailing commas.
-
-OUTPUT JSON ONLY. NO MARKDOWN.
-{
-  "score": 0-10,
-  "verdict": "Brief safety verdict (max 10 words)",
-  "risks": ["Risk 1", "Risk 2"],
-  "redFlags": ["Severe warning if any, or empty array"],
-  "ulWarnings": [
-    {
-      "ingredient": "Vitamin A",
-      "currentDose": "10000 IU",
-      "ulLimit": "3000 IU",
-      "riskLevel": "moderate|high"
-    }
-  ],
-  "allergens": ["soy", "gluten", "dairy", "shellfish", "tree nuts"],
-  "interactions": ["May interact with blood thinners", "Avoid with X medication"],
-  "consultDoctorIf": ["pregnant", "taking blood thinners", "liver disease"],
-  "recommendation": "General safety advice (1-2 sentences)"
-}
-
-If no UL warnings, return empty array for ulWarnings.
-If no allergens detected, return empty array.
-Be strict about proprietary blends - flag as a risk if amounts are hidden.
-`;
-
-const PROMPT_USAGE = `You are NuTri-AI. Analyze USAGE, VALUE, and SOCIAL perception.
-
-CRITICAL INSTRUCTIONS:
-1. Provide specific dosing guidance (not vague "as directed")
-2. Explain timing rationale (why morning/evening, with/without food)
-3. Note interactions with other common supplements
-4. If price data available, analyze cost per serving
-5. If price missing, do NOT guess numbers
-6. Return a SINGLE valid JSON object. Include ALL keys exactly as specified. No trailing commas.
-
-OUTPUT JSON ONLY. NO MARKDOWN.
-{
-  "usage": {
-    "summary": "Specific how-to-take instructions",
-    "timing": "Best time and why (e.g., 'Morning with breakfast - fat-soluble, needs food for absorption')",
-    "withFood": true,
-    "frequency": "once daily|twice daily|as needed",
-    "interactions": ["Take 2h apart from iron", "Pairs well with Vitamin K2"]
-  },
-  "value": {
-    "score": 0-10,
-    "verdict": "Value verdict (e.g., 'Good value for premium brand')",
-    "analysis": "Price/quality analysis or 'Price data not available'",
-    "costPerServing": null,
-    "alternatives": ["Consider X brand for budget option", "Y form may be cheaper"]
-  },
-  "social": {
-    "score": 0-5,
-    "summary": "Brand reputation and user perception"
-  }
-}
-
-For value.costPerServing, use a number (in USD) or null if unknown.
-For usage.withFood: true=with food, false=empty stomach, null=anytime.
-`;
-
-const PROMPT_MY_SUPPLEMENT_OVERVIEW_CARD = `You are NuTri-AI. Create a short, product-style overview card for a dietary supplement.
-
-CRITICAL INSTRUCTIONS:
-1. OUTPUT JSON ONLY. NO MARKDOWN. NO TRAILING COMMAS.
-2. "overviewSummary" MUST be EXACTLY TWO sentences in English. Keep it general and product-oriented.
-3. Do not make medical claims (no diagnosis, treatment, or disease claims). Use general wellness language.
-4. "withFood" MUST be true or false (never null). If uncertain, choose the safer/more tolerable option.
-5. "timing" MUST be a short phrase (no long rationales). Prefer one of:
-   - "Morning (with breakfast)"
-   - "Morning (before breakfast)"
-   - "Breakfast or dinner (with a meal)"
-   - "Evening (after dinner)"
-   - "Bedtime (30–60 min before sleep)"
-   - "Anytime (with meals)"
-   - "Anytime"
-   If uncertain, choose "Anytime (with meals)" instead of defaulting to "Morning".
-6. If dosage is not provided, do not guess. If dosage is provided, you may mention it once.
-
-Return a SINGLE JSON object with exactly these keys:
-{
-  "overviewSummary": "Sentence one. Sentence two.",
-  "coreBenefits": ["Benefit 1", "Benefit 2"],
-  "timing": "Morning (with breakfast)",
-  "withFood": true
-}
-`;
 
 const PROMPT_ANALYSIS_BUNDLE = `You are NuTri-AI, a supplement science expert. Return a SINGLE valid JSON object with exactly three top-level keys: "efficacy", "safety", "usagePayload".
 
@@ -300,7 +146,6 @@ For usage.withFood: true=with food, false=empty stomach, null=anytime.
 // CONTEXT BUILDER
 // ============================================================================
 
-export type AnalysisSection = "efficacy" | "safety" | "usage";
 export type AnalysisBundle = {
   efficacy: unknown | null;
   safety: unknown | null;
@@ -316,13 +161,6 @@ export type ContextSource = {
   isHighQuality: boolean;
   extractedText: string | null;
 };
-
-export interface EnhancedContext {
-  brand: string;
-  product: string;
-  barcode: string;
-  sources: ContextSource[];
-}
 
 const MAX_SOURCES = 5;
 const MAX_FETCH_SOURCES = 2;
@@ -587,71 +425,6 @@ export async function prepareContextSources(
   return sources;
 }
 
-const buildSourcesText = (sources: ContextSource[]): string =>
-  sources
-    .map((source) => {
-      const extracted = source.extractedText ? `\nExtractedText: ${source.extractedText}` : "";
-      return `[Source ${source.index + 1}]
-Domain: ${source.domain}
-HighQuality: ${source.isHighQuality ? "yes" : "no"}
-Title: ${source.title}
-Link: ${source.link}
-Snippet: ${source.snippet || "No snippet available"}${extracted}`;
-    })
-    .join("\n\n");
-
-/**
- * Build enhanced context string for AI analysis (uses snippets + extracted page text where available).
- */
-export function buildEnhancedContext(ctx: EnhancedContext, section: AnalysisSection): string {
-  const { brand, product, barcode, sources } = ctx;
-
-  const sourcesText = buildSourcesText(sources);
-
-  const ignoreLine =
-    section === "usage"
-      ? "Ignore: shipping info. Be skeptical of marketing claims."
-      : "Ignore: prices and shipping info. Be skeptical of marketing claims.";
-
-  const focusLine =
-    section === "efficacy"
-      ? "Focus on: ingredient list, chemical forms, dosage information, and evidence strength."
-      : section === "safety"
-        ? "Focus on: ingredient doses, UL/overdose risks, interactions, allergens, and contraindications."
-        : "Focus on: how to take (timing/with food), practical interactions, value/price if present, and brand perception.";
-
-  return `PRODUCT INFORMATION:
-Brand: ${brand}
-Product Name: ${product}
-Barcode: ${barcode}
-
-SEARCH RESULTS (prioritize official sites and major retailers like Amazon/iHerb):
-${sourcesText}
-
-TASK: Analyze this supplement based on the search results above.
-${focusLine}
-${ignoreLine}
-If sources disagree, prioritize information from official brand sites and major retailers.`;
-}
-
-export function buildCombinedContext(ctx: EnhancedContext): string {
-  const { brand, product, barcode, sources } = ctx;
-  const sourcesText = buildSourcesText(sources);
-
-  return `PRODUCT INFORMATION:
-Brand: ${brand}
-Product Name: ${product}
-Barcode: ${barcode}
-
-SEARCH RESULTS (prioritize official sites and major retailers like Amazon/iHerb):
-${sourcesText}
-
-TASK: Analyze this supplement based on the search results above.
-Focus on: ingredients, chemical forms, dosage, evidence strength, safety risks/ULs, interactions, allergens, usage timing/with food, value/price if present, and brand perception.
-Ignore: shipping info. Be skeptical of marketing claims.
-If sources disagree, prioritize information from official brand sites and major retailers.`;
-}
-
 // ============================================================================
 // API FUNCTIONS
 // ============================================================================
@@ -705,130 +478,6 @@ const tryParseJsonLenient = (content: string): unknown | null => {
   return null;
 };
 
-export async function fetchAnalysisSection(
-  section: "efficacy" | "safety" | "usage",
-  context: string,
-  model: string,
-  apiKey: string,
-  options: ResilienceOptions = {}
-) {
-  let systemPrompt = "";
-  let maxTokens = 800; // Increased for more detailed analysis
-
-  if (section === "efficacy") {
-    systemPrompt = PROMPT_EFFICACY;
-    maxTokens = 1000; // Efficacy needs more tokens for ingredient details
-  }
-  if (section === "safety") systemPrompt = PROMPT_SAFETY;
-  if (section === "usage") systemPrompt = PROMPT_USAGE;
-
-  let release: (() => void) | null = null;
-  try {
-    if (options.breaker && !options.breaker.canRequest()) {
-      return null;
-    }
-
-    const timeoutMs = options.timeoutMs ?? 10_000;
-    const budgetedTimeout = options.budget ? options.budget.msFor(timeoutMs) : timeoutMs;
-    if (budgetedTimeout <= 0) {
-      return null;
-    }
-
-    if (options.semaphore) {
-      try {
-        release = await options.semaphore.acquire({
-          timeoutMs: options.queueTimeoutMs ?? 0,
-          signal: options.signal,
-        });
-      } catch {
-        return null;
-      }
-    }
-
-    const retryConfig: RetryOptions = {
-      maxAttempts: options.retry?.maxAttempts ?? 1,
-      baseDelayMs: options.retry?.baseDelayMs ?? 400,
-      maxDelayMs: options.retry?.maxDelayMs ?? 1500,
-      jitterRatio: options.retry?.jitterRatio ?? 0.4,
-      shouldRetry: (error) => {
-        if (error instanceof TimeoutError) return true;
-        if (error instanceof HttpError) return isRetryableStatus(error.status);
-        if (isAbortError(error)) return false;
-        return error instanceof TypeError;
-      },
-      signal: options.signal,
-      budget: options.budget,
-    };
-
-    const response = await withRetry(async () => {
-      const timeoutSignal = createTimeoutSignal(budgetedTimeout);
-      const { signal, cleanup } = combineSignals([options.signal, timeoutSignal]);
-      try {
-        const result = await fetch("https://api.deepseek.com/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
-          },
-          body: JSON.stringify({
-            model: model, // Use deepseek-chat (V3)
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: context },
-            ],
-            temperature: 0.2, // Lowered for more consistent structured output
-            stream: false,
-            max_tokens: maxTokens,
-          }),
-          signal,
-        });
-
-        if (!result.ok) {
-          throw new HttpError(result.status, `DeepSeek API error: ${result.status}`);
-        }
-
-        return result;
-      } catch (error) {
-        if (timeoutSignal.aborted && !options.signal?.aborted && isAbortError(error)) {
-          throw new TimeoutError();
-        }
-        throw error;
-      } finally {
-        cleanup();
-      }
-    }, retryConfig);
-
-    options.breaker?.recordSuccess();
-
-    const data = (await response.json()) as {
-      choices?: { message?: { content?: string } }[];
-    };
-    const content = data.choices?.[0]?.message?.content || "{}";
-    const parsed = tryParseJsonLenient(content);
-    if (parsed !== null) {
-      return parsed;
-    }
-
-    console.warn(`[DeepSeek] Invalid JSON for ${section}, skipping repair`);
-    return null;
-  } catch (error) {
-    if (!isAbortError(error)) {
-      options.breaker?.recordFailure();
-    }
-    console.error(`Error fetching ${section}:`, error);
-    return null; // Return null to let frontend show skeleton/fallback
-  } finally {
-    release?.();
-  }
-}
-
-export type MySupplementOverviewCard = {
-  overviewSummary: string;
-  coreBenefits: string[];
-  timing: string;
-  withFood: boolean;
-};
-
 export type MySupplementOverviewV2 = {
   oneLiner: string;
   whatItIs: string;
@@ -855,131 +504,6 @@ Return a SINGLE JSON object with exactly these keys:
   "watchOuts": ["0-4 cautious safety reminders (consult clinician wording). Empty array if none."]
 }
 `;
-
-export async function fetchMySupplementOverviewCard(
-  context: string,
-  model: string,
-  apiKey: string,
-  options: ResilienceOptions = {},
-): Promise<MySupplementOverviewCard | null> {
-  let release: (() => void) | null = null;
-  try {
-    if (options.breaker && !options.breaker.canRequest()) {
-      return null;
-    }
-
-    const timeoutMs = options.timeoutMs ?? 4_000;
-    const budgetedTimeout = options.budget ? options.budget.msFor(timeoutMs) : timeoutMs;
-    if (budgetedTimeout <= 0) {
-      return null;
-    }
-
-    if (options.semaphore) {
-      try {
-        release = await options.semaphore.acquire({
-          timeoutMs: options.queueTimeoutMs ?? 0,
-          signal: options.signal,
-        });
-      } catch {
-        return null;
-      }
-    }
-
-    const retryConfig: RetryOptions = {
-      maxAttempts: options.retry?.maxAttempts ?? 1,
-      baseDelayMs: options.retry?.baseDelayMs ?? 350,
-      maxDelayMs: options.retry?.maxDelayMs ?? 1200,
-      jitterRatio: options.retry?.jitterRatio ?? 0.35,
-      shouldRetry: (error) => {
-        if (error instanceof TimeoutError) return true;
-        if (error instanceof HttpError) return isRetryableStatus(error.status);
-        if (isAbortError(error)) return false;
-        return error instanceof TypeError;
-      },
-      signal: options.signal,
-      budget: options.budget,
-    };
-
-    const response = await withRetry(async () => {
-      const timeoutSignal = createTimeoutSignal(budgetedTimeout);
-      const { signal, cleanup } = combineSignals([options.signal, timeoutSignal]);
-      try {
-        const result = await fetch("https://api.deepseek.com/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
-          },
-          body: JSON.stringify({
-            model,
-            messages: [
-              { role: "system", content: PROMPT_MY_SUPPLEMENT_OVERVIEW_CARD },
-              { role: "user", content: context },
-            ],
-            temperature: 0.1,
-            stream: false,
-            max_tokens: options.maxTokens ?? 600,
-            response_format: { type: "json_object" },
-          }),
-          signal,
-        });
-
-        if (!result.ok) {
-          throw new HttpError(result.status, `DeepSeek API error: ${result.status}`);
-        }
-
-        return result;
-      } catch (error) {
-        if (timeoutSignal.aborted && !options.signal?.aborted && isAbortError(error)) {
-          throw new TimeoutError();
-        }
-        throw error;
-      } finally {
-        cleanup();
-      }
-    }, retryConfig);
-
-    options.breaker?.recordSuccess();
-
-    const data = (await response.json()) as { choices?: { message?: { content?: string } }[] };
-    const content = data.choices?.[0]?.message?.content || "{}";
-    const parsed = tryParseJsonLenient(content);
-    if (!parsed || typeof parsed !== "object") {
-      return null;
-    }
-
-    const record = parsed as Record<string, unknown>;
-    const overviewSummary =
-      typeof record.overviewSummary === "string" ? record.overviewSummary.trim() : "";
-    const timing = typeof record.timing === "string" ? record.timing.trim() : "";
-    const withFood = typeof record.withFood === "boolean" ? record.withFood : null;
-    const coreBenefitsRaw = Array.isArray(record.coreBenefits) ? record.coreBenefits : [];
-    const coreBenefits = coreBenefitsRaw
-      .filter((benefit) => typeof benefit === "string")
-      .map((benefit) => benefit.trim())
-      .filter(Boolean)
-      .slice(0, 3);
-
-    if (!overviewSummary || !timing || withFood === null) {
-      return null;
-    }
-
-    return {
-      overviewSummary,
-      coreBenefits,
-      timing,
-      withFood,
-    };
-  } catch (error) {
-    if (!isAbortError(error)) {
-      options.breaker?.recordFailure();
-    }
-    console.warn("[DeepSeek] MySupplement overview card generation failed", error);
-    return null;
-  } finally {
-    release?.();
-  }
-}
 
 export async function fetchMySupplementOverviewV2(
   context: string,

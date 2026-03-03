@@ -65,7 +65,8 @@ test("degraded helper emits STREAM_DEGRADED and finalizes", async () => {
   const source = await readServerSource();
   const helperStart = source.indexOf("const emitDegradedLimitedRev1AndFinalize =");
   assert.ok(helperStart >= 0, "missing emitDegradedLimitedRev1AndFinalize helper");
-  const helperSlice = source.slice(helperStart, helperStart + 9000);
+  const helperEnd = source.indexOf("const maybeDegradeForEventLoopLag", helperStart);
+  const helperSlice = source.slice(helperStart, helperEnd > helperStart ? helperEnd : helperStart + 20000);
 
   assert.match(
     helperSlice,
@@ -74,13 +75,17 @@ test("degraded helper emits STREAM_DEGRADED and finalizes", async () => {
   assert.match(helperSlice, /code:\s*"STREAM_DEGRADED"/);
   assert.match(helperSlice, /reasonCode/);
   assert.match(helperSlice, /finalizeStream\(`degraded_\$\{reasonCode\.toLowerCase\(\)\}`\)/);
+  assert.match(helperSlice, /emitTerminalErrorAndFinalize\(\{/);
+  assert.match(helperSlice, /code:\s*"STREAM_TIMEOUT"/);
+  assert.match(helperSlice, /reasonCode:\s*"DEGRADED_FALLBACK_FAILED"/);
 });
 
 test("degraded helper keeps terminal reason consistent between meta and SSE error payload", async () => {
   const source = await readServerSource();
   const helperStart = source.indexOf("const emitDegradedLimitedRev1AndFinalize =");
   assert.ok(helperStart >= 0, "missing emitDegradedLimitedRev1AndFinalize helper");
-  const helperSlice = source.slice(helperStart, helperStart + 9000);
+  const helperEnd = source.indexOf("const maybeDegradeForEventLoopLag", helperStart);
+  const helperSlice = source.slice(helperStart, helperEnd > helperStart ? helperEnd : helperStart + 20000);
 
   assert.match(helperSlice, /terminalReason\s*=\s*reasonCode/);
   assert.match(helperSlice, /code:\s*"STREAM_DEGRADED"/);
@@ -91,7 +96,8 @@ test("degraded helper preserves authoritative source context when already confir
   const source = await readServerSource();
   const helperStart = source.indexOf("const emitDegradedLimitedRev1AndFinalize =");
   assert.ok(helperStart >= 0, "missing emitDegradedLimitedRev1AndFinalize helper");
-  const helperSlice = source.slice(helperStart, helperStart + 6200);
+  const helperEnd = source.indexOf("const maybeDegradeForEventLoopLag", helperStart);
+  const helperSlice = source.slice(helperStart, helperEnd > helperStart ? helperEnd : helperStart + 20000);
 
   assert.match(helperSlice, /const shouldPreserveAuthoritativeSource\s*=/);
   assert.match(helperSlice, /latestSourceType === "lnhpd" \|\| latestSourceType === "dsld"/);
@@ -110,19 +116,38 @@ test("stage0 coordinator enforces rank-based single upgrade with full-chain abor
   const source = await readServerSource();
   const startIdx = source.indexOf("const startStage0Bundle = (");
   assert.ok(startIdx >= 0, "missing startStage0Bundle helper");
-  const slice = source.slice(startIdx, startIdx + 3400);
+  const slice = source.slice(startIdx, startIdx + 4200);
 
   assert.match(slice, /if \(stage0Rev1Locked \|\| streamState\.rev1Sent\)/);
+  assert.match(slice, /const stage0CompletedWithoutRev1 = stage0StartCount > 0 && activeStage0RunId === null/);
+  assert.match(slice, /const allowPostCompletionAuthoritativeUpgrade =/);
+  assert.match(slice, /\(nextWinner === "verified_regulatory" \|\| nextWinner === "label_record"\)/);
+  assert.match(slice, /if \(stage0CompletedWithoutRev1 && !allowPostCompletionAuthoritativeUpgrade\)/);
   assert.match(slice, /const stage0AuthoritativeWinner = nextWinner === "verified_regulatory" \|\| nextWinner === "label_record"/);
   assert.match(slice, /const effectiveAllowAi =/);
   assert.match(slice, /STAGE0_AUTHORITATIVE_DETERMINISTIC_REV1 && stage0AuthoritativeWinner/);
   assert.match(slice, /allowAi:\s*effectiveAllowAi/);
+  assert.match(slice, /if \(allowPostCompletionAuthoritativeUpgrade\)/);
   assert.match(slice, /if \(stage0UpgradeCount >= 1\)/);
   assert.match(slice, /if \(nextRank <= activeStage0Rank\)/);
   assert.match(slice, /stage0BundleAbort\?\.abort\(new Error\("fast_bundle_replaced"\)\)/);
   assert.match(slice, /stage0UpgradeCount \+= 1/);
   assert.match(slice, /combineSignals\(\[\s*requestSignal,\s*stage0BundleAbort\.signal,\s*\]\)/);
   assert.match(slice, /isRunActive:\s*\(\) => activeStage0RunId === runId/);
+});
+
+test("negative cache clearing retries with breaker-bypass fallback on terminal paths", async () => {
+  const source = await readServerSource();
+  const helperStart = source.indexOf("const clearNegativeCacheAllVariants =");
+  assert.ok(helperStart >= 0, "missing clearNegativeCacheAllVariants helper");
+  const helperSlice = source.slice(helperStart, helperStart + 2600);
+
+  assert.match(helperSlice, /clearNegativeCache\(/);
+  assert.match(helperSlice, /primary negative-cache clear failed/);
+  assert.match(helperSlice, /fallback negative-cache clear failed/);
+  assert.match(helperSlice, /queueTimeoutMs:\s*0/);
+  assert.match(helperSlice, /breaker:\s*undefined/);
+  assert.match(helperSlice, /semaphore:\s*undefined/);
 });
 
 test("authoritative stage0 deterministic rev1 toggle defaults to enabled", async () => {
@@ -157,6 +182,18 @@ test("finalizeStream done payload always includes terminalReason and stability c
   assert.match(finalizeSlice, /stage0Winner:\s*activeStage0Winner/);
   assert.match(finalizeSlice, /stage0StartCount/);
   assert.match(finalizeSlice, /stage0ReplaceCount/);
+});
+
+test("watchdog timers are crash-guarded with terminal fallback errors", async () => {
+  const source = await readServerSource();
+  const watchdogStart = source.indexOf("const armContractWatchdogs = () => {");
+  assert.ok(watchdogStart >= 0, "missing armContractWatchdogs helper");
+  const watchdogSlice = source.slice(watchdogStart, watchdogStart + 12000);
+
+  assert.match(watchdogSlice, /full pre-rev1 guard failed/);
+  assert.match(watchdogSlice, /reasonCode:\s*"FULL_PRE_REV1_GUARD_INTERNAL_ERROR"/);
+  assert.match(watchdogSlice, /hard terminal watchdog failed/);
+  assert.match(watchdogSlice, /reasonCode:\s*"HARD_TERMINAL_WATCHDOG_INTERNAL_ERROR"/);
 });
 
 test("safety signal pack is attached in skeleton, provisional, and rev1 safety sections", async () => {

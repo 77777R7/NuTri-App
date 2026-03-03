@@ -24,6 +24,7 @@ Options:
   --min-guidance-rate <n>   Default 0.30
   --max-uncertain-rate <n>  Default 0.40
   --min-scope-non-total <n> Default 1
+  --infra-unavailable-rate-min <n> Default 0.80
 `);
   process.exit(0);
 }
@@ -42,6 +43,9 @@ const enforce = hasFlag("enforce");
 const minGuidanceRate = Number(getArg("min-guidance-rate") || process.env.ODS_UL_GUIDANCE_RATE_MIN || 0.3);
 const maxUncertainRate = Number(getArg("max-uncertain-rate") || process.env.ODS_UL_UNCERTAIN_RATE_MAX || 0.4);
 const minScopeNonTotal = Number(getArg("min-scope-non-total") || process.env.ODS_UL_SCOPE_NON_TOTAL_MIN || 1);
+const infraUnavailableRateMin = Number(
+  getArg("infra-unavailable-rate-min") || process.env.ODS_UL_INFRA_UNAVAILABLE_RATE_MIN || 0.8,
+);
 
 const safeJson = async (filePath) => {
   const raw = await fs.readFile(filePath, "utf8");
@@ -52,6 +56,23 @@ const has503Signal = (value) => {
   const text = String(value ?? "").trim().toLowerCase();
   if (!text) return false;
   return text.includes("http_503") || text.includes("status_503") || /\b503\b/.test(text);
+};
+
+const hasInfraSignal = (value) => {
+  const text = String(value ?? "").trim().toLowerCase();
+  if (!text) return false;
+  return (
+    text.includes("operation was aborted")
+    || text.includes("request aborted")
+    || text.includes("aborted")
+    || text.includes("timeout")
+    || text.includes("timed out")
+    || text.includes("fetch failed")
+    || text.includes("network")
+    || text.includes("econnreset")
+    || text.includes("socket hang up")
+    || text.includes("ecanceled")
+  );
 };
 
 const toMarkdown = (gate) => {
@@ -72,6 +93,7 @@ const toMarkdown = (gate) => {
   lines.push(`- unit_conversion_uncertain_rate: ${(gate.metrics.unitConversionUncertainRate * 100).toFixed(1)}% (max ${(gate.thresholds.unitConversionUncertainRateMax * 100).toFixed(1)}%)`);
   lines.push(`- scope_non_total_count: ${gate.metrics.scopeNonTotalCount} (min ${gate.thresholds.scopeNonTotalCountMin})`);
   lines.push(`- web_unverified_entries_shown_count: ${gate.metrics.webUnverifiedEntriesShownCount} (must be 0)`);
+  lines.push(`- infra_error_rate: ${(gate.metrics.infraErrorRate * 100).toFixed(1)}% (inconclusive when >= ${(gate.thresholds.infraUnavailableRateMin * 100).toFixed(1)}%)`);
   lines.push("");
   if (gate.failures.length > 0) {
     lines.push("## Failures");
@@ -97,6 +119,22 @@ const main = async () => {
   const report = await safeJson(reportPath);
   const summary = report?.summary ?? {};
   const rows = Array.isArray(report?.rows) ? report.rows : [];
+  const isInfraErrorRow = (row) => {
+    const scoreHttpStatus = Number(row?.score?.httpStatus);
+    const scoreIs503 = Number.isFinite(scoreHttpStatus) && scoreHttpStatus === 503;
+    const scoreError = row?.score?.error;
+    const enrichTerminalCode = String(row?.enrich?.terminalCode ?? "").trim().toUpperCase();
+    const enrichError = row?.enrich?.error;
+    return (
+      scoreIs503
+      || has503Signal(scoreError)
+      || enrichTerminalCode === "REQUEST_ERROR"
+      || hasInfraSignal(scoreError)
+      || hasInfraSignal(enrichError)
+    );
+  };
+  const infraErrorCount = rows.filter((row) => isInfraErrorRow(row)).length;
+  const infraErrorRate = rows.length > 0 ? infraErrorCount / rows.length : 0;
 
   const metrics = {
     ulGuidanceRate:
@@ -125,16 +163,20 @@ const main = async () => {
       }
       return has503Signal(row?.score?.error);
     }).length,
+    infraErrorCount,
+    infraErrorRate,
   };
 
   const failures = [];
   const warnings = [];
   const infraUnavailable =
-    metrics.scoreRowsCount > 0 && metrics.scoreHttp503Count === metrics.scoreRowsCount;
+    metrics.scoreRowsCount > 0 && metrics.infraErrorRate >= infraUnavailableRateMin;
   const inconclusive = infraUnavailable;
-  const infraReason = infraUnavailable ? "all_scores_http_503" : null;
+  const infraReason = infraUnavailable
+    ? `infra_error_rate_${Number(metrics.infraErrorRate.toFixed(3))}_gte_${infraUnavailableRateMin}`
+    : null;
   if (infraUnavailable) {
-    warnings.push("infra_unavailable_all_scores_http_503");
+    warnings.push(infraReason);
   } else {
     if (metrics.ulGuidanceRate < minGuidanceRate) {
       failures.push(
@@ -168,6 +210,7 @@ const main = async () => {
       unitConversionUncertainRateMax: maxUncertainRate,
       scopeNonTotalCountMin: minScopeNonTotal,
       webUnverifiedEntriesShownCountMax: 0,
+      infraUnavailableRateMin,
     },
     metrics,
     failures,

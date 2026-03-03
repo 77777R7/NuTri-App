@@ -124,22 +124,30 @@ const main = async () => {
     if (raw) activeNegativeByRaw.set(raw, row);
   }
 
-  const residualRows = [];
+  const checkedRows = [];
   for (const row of candidates) {
     const match = activeNegativeByGtin.get(row.barcodeGtin14) || (row.barcodeRaw ? activeNegativeByRaw.get(row.barcodeRaw) : null);
-    if (!match) continue;
-    residualRows.push({
+    checkedRows.push({
       barcodeGtin14: row.barcodeGtin14,
       barcodeRaw: row.barcodeRaw || null,
       servedFrom: row.servedFrom,
       scanCreatedAt: row.createdAt,
-      negativeReason: match.reason_code ?? null,
-      negativeUntil: match.until ?? null,
-      negativeUpdatedAt: match.updated_at ?? null,
+      residual: Boolean(match),
+      negativeReason: match?.reason_code ?? null,
+      negativeUntil: match?.until ?? null,
+      negativeUpdatedAt: match?.updated_at ?? null,
     });
   }
+  const checkedRowsUnique = [];
+  const seenChecked = new Set();
+  for (const row of checkedRows) {
+    if (!row?.barcodeGtin14 || seenChecked.has(row.barcodeGtin14)) continue;
+    seenChecked.add(row.barcodeGtin14);
+    checkedRowsUnique.push(row);
+  }
+  const residualRows = checkedRowsUnique.filter((row) => row.residual === true);
 
-  const totalChecked = candidates.length;
+  const totalChecked = checkedRowsUnique.length;
   const residualCount = residualRows.length;
   const residualHitRate = totalChecked > 0 ? Number((residualCount / totalChecked).toFixed(6)) : 0;
   const report = {
@@ -147,10 +155,13 @@ const main = async () => {
     lookbackHours,
     sampleSize,
     totalChecked,
+    checkedUniqueBarcodeCount: checkedRowsUnique.length,
     residualCount,
+    residualUniqueBarcodeCount: residualRows.length,
     residualHitRate,
     residualHitRateTarget: 0,
     pass: residualHitRate === 0,
+    sampleCheckedRows: checkedRowsUnique.slice(0, 100),
     sampleResidualRows: residualRows.slice(0, 100),
   };
 
