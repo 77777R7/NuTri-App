@@ -13,6 +13,7 @@ const getArg = (name, fallback = null) => {
   if (idx === -1 || idx + 1 >= args.length) return fallback;
   return args[idx + 1];
 };
+const barcodeOnly = args.includes("--barcode-only");
 
 const nightlyDir = getArg(
   "nightly-dir",
@@ -23,6 +24,7 @@ const autoSelect = args.includes("--auto-select");
 const barcodeArg = getArg("barcode", null);
 const controlBaseUrl = String(getArg("control-base-url", "http://192.168.1.68:3101")).replace(/\/+$/, "");
 const patchBaseUrl = String(getArg("patch-base-url", "http://192.168.1.68:3102")).replace(/\/+$/, "");
+const authDisabledHeader = String(getArg("auth-disabled-header", "1")).trim() === "1";
 
 const safeSubsetPath = getArg(
   "safe-subset-json",
@@ -79,6 +81,7 @@ const fetchSse = async (url, payload, timeoutMs = 25000) => {
       headers: {
         "content-type": "application/json",
         accept: "text/event-stream",
+        ...(authDisabledHeader ? { "X-Auth-Disabled": "1" } : {}),
       },
       body: JSON.stringify(payload),
       signal: ctrl.signal,
@@ -131,6 +134,35 @@ const fetchSse = async (url, payload, timeoutMs = 25000) => {
       return { events, timedOut: true, error: error instanceof Error ? error.message : String(error) };
     }
     return { events, timedOut: false, error: error instanceof Error ? error.message : String(error) };
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
+const fetchJson = async (url, timeoutMs = 12000) => {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, {
+      headers: {
+        accept: "application/json",
+        ...(authDisabledHeader ? { "X-Auth-Disabled": "1" } : {}),
+      },
+      signal: ctrl.signal,
+    });
+    const body = await res.json().catch(() => null);
+    return {
+      ok: res.ok,
+      status: res.status,
+      body,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      status: 0,
+      body: null,
+      error: error instanceof Error ? error.message : String(error),
+    };
   } finally {
     clearTimeout(timer);
   }
@@ -237,7 +269,671 @@ const normalizeTerminalPunctuation = (value) =>
     .replace(/([.!?]){2,}$/g, "$1")
     .trim();
 
+const scoreBandOverall = (score) => {
+  const s = Number.isFinite(Number(score)) ? Number(score) : 0;
+  if (s >= 90) return "Excellent";
+  if (s >= 80) return "Strong";
+  if (s >= 70) return "Good";
+  if (s >= 60) return "Fair";
+  if (s >= 45) return "Limited";
+  return "Weak";
+};
+
+const scoreBandModule = (score) => {
+  const s = Number.isFinite(Number(score)) ? Number(score) : 0;
+  if (s >= 85) return "High";
+  if (s >= 65) return "Moderate";
+  if (s >= 40) return "Limited";
+  return "Low";
+};
+
+const checklistDisplayState = (item) => {
+  const state = safeText(item?.state).toLowerCase();
+  const strength = safeText(item?.evidenceStrength).toLowerCase();
+  if (state === "missing") return "Not shown";
+  if (state === "unknown") return "Not verified";
+  if (state === "verified" && strength === "overlay_claim") return "Listed";
+  if (state === "verified" && ["official", "scanned_label", "cert_page_verified"].includes(strength)) return "Confirmed";
+  if (state === "verified") return "Listed";
+  return "Not verified";
+};
+
+const renderNutriScoreCardV2Lines = (nutriScoreCardV2) => {
+  const lines = [];
+  if (!nutriScoreCardV2 || !Array.isArray(nutriScoreCardV2.modules)) return lines;
+  const overall = Number.isFinite(Number(nutriScoreCardV2.overallScore))
+    ? Math.round(Number(nutriScoreCardV2.overallScore))
+    : 0;
+  const confidence = Number.isFinite(Number(nutriScoreCardV2.confidencePct))
+    ? Math.round(Number(nutriScoreCardV2.confidencePct))
+    : 0;
+  const overallBand = safeText(nutriScoreCardV2.overallBand) || scoreBandOverall(overall);
+  lines.push("## 0) Nutri Score Card v2");
+  lines.push("");
+  lines.push(`- Overall score: ${overall}/100`);
+  lines.push(`- Overall band: ${overallBand}`);
+  lines.push(`- Confidence: ${confidence}%`);
+  lines.push("");
+  for (const module of nutriScoreCardV2.modules) {
+    const title = safeText(module?.title) || String(module?.id ?? "module");
+    const moduleScore = Number.isFinite(Number(module?.score)) ? Math.round(Number(module.score)) : 0;
+    const moduleBand = safeText(module?.band) || scoreBandModule(moduleScore);
+    lines.push(`### ${title}`);
+    lines.push(`- Score: ${moduleScore}/100`);
+    lines.push(`- Band: ${moduleBand}`);
+    const checklist = Array.isArray(module?.checklist) ? module.checklist : [];
+    if (checklist.length === 0) {
+      lines.push("- [Not verified] No checklist evidence available.");
+    } else {
+      for (const item of checklist) {
+        const label = safeText(item?.label) || safeText(item?.key) || "checklist item";
+        const display = checklistDisplayState(item);
+        lines.push(`- [${display}] ${label}`);
+      }
+    }
+    lines.push("");
+  }
+  return lines;
+};
+
+const coerceNutriScoreCardV2 = (decisionSupportBody) => {
+  const existing = decisionSupportBody?.nutriScoreCardV2;
+  if (existing && Array.isArray(existing.modules) && existing.modules.length === 6) {
+    return existing;
+  }
+  const v1 = decisionSupportBody?.nutriScoreCard ?? {};
+  const checklistsByRow = v1?.checklistsByRow ?? {};
+  const rows = Array.isArray(v1?.rows) ? v1.rows : [];
+  const rowScore = (id) => {
+    const row = rows.find((item) => String(item?.id) === id);
+    return Number.isFinite(Number(row?.score)) ? Math.round(Number(row.score)) : 0;
+  };
+  const findChecklistStatus = (rowId, keyPrefix) => {
+    const items = Array.isArray(checklistsByRow?.[rowId]) ? checklistsByRow[rowId] : [];
+    const match = items.find((item) => String(item?.key ?? "").startsWith(keyPrefix));
+    const status = String(match?.status || "unknown");
+    if (status === "verified" || status === "missing") return status;
+    return "unknown";
+  };
+
+  const mk = (key, label, state, sourceTier = "inferred", evidenceStrength = "inferred", scoreEligible = true) => ({
+    key,
+    label,
+    state,
+    sourceTier,
+    evidenceStrength,
+    evidenceRef: null,
+    note: null,
+    scoreEligible,
+  });
+  const moduleBand = (score) => scoreBandModule(score);
+  const moduleStatus = (band) => {
+    if (band === "High") return "high";
+    if (band === "Moderate") return "moderate";
+    if (band === "Limited") return "limited";
+    return "low";
+  };
+  const modules = [
+    {
+      id: "ingredient_safety",
+      title: "Ingredient Safety",
+      score: rowScore("safety"),
+      status: "moderate",
+      band: "Moderate",
+      checklist: [
+        mk(
+          "ingredient_safety:warnings_disclosed",
+          "Label warnings or cautions disclosed",
+          findChecklistStatus("safety", "safetytransparency:warnings_present"),
+          "official_record",
+          "official",
+        ),
+        mk("ingredient_safety:watchouts_surfaced", "General watch-outs surfaced", "unknown", "general_science", "general_science"),
+      ],
+    },
+    {
+      id: "formula_transparency",
+      title: "Formula Transparency",
+      score: rowScore("effectiveness"),
+      status: "moderate",
+      band: "Moderate",
+      checklist: [
+        mk(
+          "formula_transparency:active_amount_disclosed",
+          "Active amount disclosed per serving",
+          findChecklistStatus("effectiveness", "formulaquality:amount_disclosed"),
+          "official_record",
+          "official",
+        ),
+        mk(
+          "formula_transparency:breakdown_disclosed",
+          "Category-specific active breakdown disclosed",
+          findChecklistStatus("effectiveness", "formulaquality:active_breakdown"),
+          "official_record",
+          "official",
+        ),
+        mk(
+          "formula_transparency:chemical_form_disclosed",
+          "Chemical form disclosed",
+          findChecklistStatus("effectiveness", "formulaquality:form_disclosed"),
+          "official_record",
+          "official",
+        ),
+      ],
+    },
+    {
+      id: "label_clarity",
+      title: "Label Clarity (Directions & Warnings)",
+      score: rowScore("safety"),
+      status: "moderate",
+      band: "Moderate",
+      checklist: [
+        mk(
+          "label_clarity:directions_present",
+          "Directions present in record",
+          findChecklistStatus("safety", "safetytransparency:directions_present"),
+          "official_record",
+          "official",
+        ),
+        mk(
+          "label_clarity:warnings_present",
+          "Label warnings present in record",
+          findChecklistStatus("safety", "safetytransparency:warnings_present"),
+          "official_record",
+          "official",
+        ),
+        mk(
+          "label_clarity:missing_items_surfaced",
+          "Missing items surfaced in Missing info",
+          findChecklistStatus("safety", "safetytransparency:warnings_ceiling_notice"),
+          "official_record",
+          "official",
+        ),
+      ],
+    },
+    {
+      id: "manufacturing_standards",
+      title: "Manufacturing Standards",
+      score: 45,
+      status: "limited",
+      band: "Limited",
+      checklist: [
+        mk("manufacturing_standards:cgmp_claim", "cGMP / manufacturing compliance claim present", "unknown"),
+        mk("manufacturing_standards:origin_claim", "Manufacturing location/facility detail present", "unknown"),
+      ],
+    },
+    {
+      id: "testing_verification",
+      title: "Testing & Verification",
+      score: rowScore("integrity"),
+      status: "limited",
+      band: "Limited",
+      checklist: [
+        mk("testing_verification:third_party_tested_claim", "Third-party tested claim present", "unknown"),
+        mk(
+          "testing_verification:independent_cert_page",
+          "Independent cert-page status: unknown",
+          "unknown",
+          "general_science",
+          "general_science",
+          false,
+        ),
+      ],
+    },
+    {
+      id: "product_quality",
+      title: "Product Quality Signals",
+      score: rowScore("integrity"),
+      status: "limited",
+      band: "Limited",
+      checklist: [
+        mk("product_quality:lifestyle_claims", "Lifestyle/quality claims disclosed", "unknown"),
+        mk("product_quality:serving_transparency", "Serving transparency disclosed", "unknown"),
+      ],
+    },
+  ];
+  for (const module of modules) {
+    const band = moduleBand(module.score);
+    module.band = band;
+    module.status = moduleStatus(band);
+  }
+  const overallScore = Math.round(modules.reduce((sum, module) => sum + Number(module.score || 0), 0) / modules.length);
+  const overallBand = scoreBandOverall(overallScore);
+  const scoredItems = modules.flatMap((module) => module.checklist).filter((item) => item.scoreEligible !== false);
+  const confidenceWeight = (strength) => {
+    if (strength === "official") return 1.0;
+    if (strength === "scanned_label") return 0.95;
+    if (strength === "cert_page_verified") return 1.0;
+    if (strength === "overlay_claim") return 0.7;
+    if (strength === "general_science") return 0.55;
+    return 0.25;
+  };
+  const weightedKnown = scoredItems.reduce((sum, item) => {
+    if (item.state === "unknown") return sum;
+    return sum + confidenceWeight(item.evidenceStrength);
+  }, 0);
+  const confidencePct = scoredItems.length > 0 ? Math.round((weightedKnown / scoredItems.length) * 100) : 0;
+  return {
+    overallScore,
+    overallBand,
+    confidencePct,
+    modules,
+  };
+};
+
+const slugify = (value, fallback = "sample") => {
+  const slug = String(value ?? "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  return slug || fallback;
+};
+
+const runBarcodeOnlyMode = async () => {
+  await fs.mkdir(outputDir, { recursive: true });
+  const barcode = String(barcodeArg ?? "00766536026586").trim();
+  if (!barcode) throw new Error("--barcode is required in --barcode-only mode");
+
+  const controlSse = await fetchSse(`${controlBaseUrl}/api/enrich-stream`, { barcode }, 32000);
+  const patchSse = await fetchSse(`${patchBaseUrl}/api/enrich-stream`, { barcode }, 32000);
+  const controlBundle = pickBundle(controlSse.events);
+  const patchBundle = pickBundle(patchSse.events);
+  const patchSnapshot = pickLastEventData(patchSse.events, "snapshot");
+  if (!patchBundle) {
+    throw new Error("Patch bundle not found from SSE in --barcode-only mode");
+  }
+
+  const dsResp = await fetchJson(
+    `${patchBaseUrl}/api/decision-support/v1?barcode=${encodeURIComponent(barcode)}&viewMode=details`,
+    15000,
+  );
+  if (!dsResp.ok || !dsResp.body) {
+    throw new Error(`Decision support request failed: ${dsResp.status}`);
+  }
+  const decisionSupportBody = dsResp.body;
+  const patchStatusResp = await fetchJson(`${patchBaseUrl}/api/patch-shadow/status`, 10000);
+
+  const sourceTypeFinal = safeText(
+    patchBundle?.meta?.sourceType ??
+      decisionSupportBody?.sourceType ??
+      "unknown",
+  ).toLowerCase() || "unknown";
+  const identityType = safeText(
+    patchBundle?.meta?.authoritativeIdentity?.type ??
+      decisionSupportBody?.authoritativeIdentity?.type ??
+      "",
+  );
+  const identityValue = safeText(
+    patchBundle?.meta?.authoritativeIdentity?.value ??
+      decisionSupportBody?.authoritativeIdentity?.value ??
+      barcode,
+  );
+  const identityKey = identityType && identityValue
+    ? `${sourceTypeFinal}:${identityValue}`
+    : `${sourceTypeFinal}:${barcode}`;
+
+  const brandName = safeText(
+    patchBundle?.meta?.productIdentity?.brand ??
+      patchSnapshot?.product?.brand ??
+      patchBundle?.sections?.overview?.detail?.summary ??
+      "brand",
+  );
+  const productName = safeText(
+    patchBundle?.meta?.productIdentity?.name ??
+      patchSnapshot?.product?.name ??
+      "Supplement product",
+  );
+  const brandSlug = slugify(brandName, "brand");
+
+  const bundleControlPath = path.join(outputDir, `demo_bundle_control_${brandSlug}_${barcode}.json`);
+  const bundlePatchPath = path.join(outputDir, `demo_bundle_patch_${brandSlug}_${barcode}.json`);
+  const decisionSupportPath = path.join(outputDir, `demo_decision_support_${brandSlug}_${barcode}.json`);
+  const patchStatusPath = path.join(outputDir, `demo_patch_shadow_status_${brandSlug}_${barcode}.json`);
+  const mdPath = path.join(outputDir, `demo_ui_example_${brandSlug}_${barcode}.md`);
+  const tracePath = path.join(outputDir, `demo_ui_example_trace_${brandSlug}_${barcode}.json`);
+
+  await Promise.all([
+    fs.writeFile(
+      bundleControlPath,
+      JSON.stringify(
+        {
+          baseUrl: controlBaseUrl,
+          barcode,
+          ok: Boolean(controlBundle),
+          error: controlSse.error,
+          timedOut: controlSse.timedOut,
+          bundle: controlBundle ?? null,
+          snapshot: pickLastEventData(controlSse.events, "snapshot") ?? null,
+        },
+        null,
+        2,
+      ),
+    ),
+    fs.writeFile(
+      bundlePatchPath,
+      JSON.stringify(
+        {
+          baseUrl: patchBaseUrl,
+          barcode,
+          ok: Boolean(patchBundle),
+          error: patchSse.error,
+          timedOut: patchSse.timedOut,
+          bundle: patchBundle,
+          snapshot: patchSnapshot ?? null,
+        },
+        null,
+        2,
+      ),
+    ),
+    fs.writeFile(
+      decisionSupportPath,
+      JSON.stringify(
+        {
+          url: `${patchBaseUrl}/api/decision-support/v1`,
+          status: dsResp.status,
+          body: decisionSupportBody,
+        },
+        null,
+        2,
+      ),
+    ),
+    fs.writeFile(
+      patchStatusPath,
+      JSON.stringify(
+        {
+          url: `${patchBaseUrl}/api/patch-shadow/status`,
+          status: patchStatusResp.status,
+          body: patchStatusResp.body ?? null,
+          error: patchStatusResp.error ?? null,
+        },
+        null,
+        2,
+      ),
+    ),
+  ]);
+
+  const template = {
+    scoreCard: decisionSupportBody?.nutriScoreCard ?? null,
+    scoreCardV2: coerceNutriScoreCardV2(decisionSupportBody),
+    overview: decisionSupportBody?.overviewBlock ?? null,
+    science: decisionSupportBody?.scienceBlock ?? null,
+    usage: decisionSupportBody?.usageBlock ?? null,
+    safety: decisionSupportBody?.safetyBlock ?? null,
+    qualityMark: decisionSupportBody?.qualityMark ?? null,
+  };
+  const usageDirectionsSourceTier = safeText(template?.usage?.directions?.sourceTier);
+  const hasDirectionsTextVisible = Boolean(template?.usage?.directions?.hasDirectionsTextVisible);
+  const labelUsedLine = usageDirectionsSourceTier === "scanned_label"
+    ? "Yes (scanned-label patch applied)"
+    : hasDirectionsTextVisible
+    ? "Yes (official record directions available)"
+    : "No (directions/warnings not extracted yet)";
+
+  const v2Lines = renderNutriScoreCardV2Lines(template.scoreCardV2);
+  const bestForLinesRaw = uniqLines(Array.isArray(template?.overview?.bestForBullets) ? template.overview.bestForBullets : []);
+  const bestForPrimary = getPrefixedLine(
+    bestForLinesRaw,
+    "Best for:",
+    "Best for: comparing products with clear ingredient and serving disclosure.",
+  );
+  const bestForSecondary = getPrefixedLine(
+    bestForLinesRaw,
+    "Good if you want:",
+    "Good if you want: labels that clearly disclose key details for easier product comparison.",
+  );
+  const bestForTertiary = getPrefixedLine(
+    bestForLinesRaw,
+    "Not ideal if:",
+    "Not ideal if: core disclosure is missing, because confidence drops when key fields are not stated.",
+  );
+
+  const provides = template?.overview?.providesVerified ?? {};
+  const keyIngredient = Array.isArray(provides?.keyIngredients) ? provides.keyIngredients[0] : null;
+  const servingSizeDisplay = safeText(provides?.servingSize) || "not stated";
+  const servingsPerContainer = provides?.servingsPerContainer;
+  const keyIngredientLine = keyIngredient?.name
+    ? `${safeText(keyIngredient.name)}${safeText(keyIngredient.dose) ? ` ${safeText(keyIngredient.dose)}` : ""}`
+    : "not available yet from this record";
+
+  const missingInfoLines = uniqLines(Array.isArray(template?.overview?.missingInfo) ? template.overview.missingInfo : []).slice(0, 2);
+  const missingInfoText = missingInfoLines.length > 0
+    ? missingInfoLines.join("; ")
+    : "No high-impact missing fields were detected for this sample.";
+  const singleCta = safeText(template?.overview?.singleCta?.label) || "Scan Directions + Warnings panel";
+
+  const ingredientNames = uniqLines(Array.isArray(template?.science?.ingredientSnapshotNames) ? template.science.ingredientSnapshotNames : []).slice(0, 6);
+  const ingredientPrimary = ingredientNames[0] || "Ingredient not clearly stated";
+  const chemicalForm = safeText(template?.science?.formMatters?.ingredientChemicalForm) || "not stated in the official record";
+  const dosageForm = safeText(template?.science?.formMatters?.dosageForm) || "not stated in the official record";
+  const odsBullets = uniqLines(Array.isArray(template?.science?.odsGeneralScienceBullets) ? template.science.odsGeneralScienceBullets : []).slice(0, 3);
+  const aiSummary3 = uniqLines(Array.isArray(template?.science?.aiSummaryContract3) ? template.science.aiSummaryContract3 : []).slice(0, 3);
+  while (aiSummary3.length < 3) {
+    aiSummary3.push(
+      aiSummary3.length === 0
+        ? "Often used to support goal-oriented supplement routines (general science)."
+        : aiSummary3.length === 1
+        ? `This product provides ${keyIngredientLine}, but disclosure status affects how easy it is to compare.`
+        : `Main limitation: ${missingInfoLines[0] ?? "label transparency remains incomplete"}. Next step: ${singleCta.replace(/[.]+$/, "")}.`,
+    );
+  }
+
+  const usageDirectionLines = uniqLines(Array.isArray(template?.usage?.directions?.lines) ? template.usage.directions.lines : [])
+    .map((line) =>
+      String(line).replace(/\bSource:\s*scanned_label\./i, "Source: scanned_label (patched)."),
+    );
+  if (usageDirectionLines.length === 0) {
+    usageDirectionLines.push("Directions are not included in the official record.");
+    usageDirectionLines.push("Please use the bottle's Directions panel to confirm daily serving and schedule.");
+    usageDirectionLines.push(`Serving cue (verified): ${servingSizeDisplay} per serving (serving != daily dose).`);
+  }
+  const usageTimingTip = safeText(template?.usage?.timingTip) || "Build a consistent routine after confirming label directions.";
+  const usageConservative = safeText(template?.usage?.conservativeGuidance) || "If unsure, start with the lowest label-suggested daily amount and reassess tolerance.";
+
+  const labelWarnings = uniqLines(Array.isArray(template?.safety?.labelWarnings) ? template.safety.labelWarnings : []);
+  const ulGuidance = uniqLines(Array.isArray(template?.safety?.ulGuidance) ? template.safety.ulGuidance : []);
+  const generalWatchouts = uniqLines(Array.isArray(template?.safety?.generalWatchouts) ? template.safety.generalWatchouts : []);
+  const dataStatusRef = safeText(template?.safety?.dataStatusRef) || "See Missing info in Overview.";
+
+  const qualityMark = template?.qualityMark ?? {};
+  const qualityCheckedMode = safeText(qualityMark?.checkedMode);
+  const qualityEvidenceType = safeText(qualityMark?.evidenceType);
+  const qualityEvidenceRef = safeText(qualityMark?.evidenceRef);
+  const qualitySearchOnly = qualityCheckedMode === "search_only" ||
+    qualityEvidenceType === "search" ||
+    /duckduckgo\.com\/html\/\?q=/i.test(qualityEvidenceRef);
+  const qualityStatusLine = qualitySearchOnly
+    ? "unknown (search-only evidence; no verified mark page/image found yet)"
+    : safeText(qualityMark?.status) || "unknown";
+  const qualitySources = Array.isArray(qualityMark?.sourcesTried) ? qualityMark.sourcesTried : [];
+
+  const summaryTop =
+    "This page supports buying decisions by separating verified facts, general science, and what is missing, then turning missing fields into one-step actions.";
+  const retrievedAt = safeText(
+    patchBundle?.meta?.factsSourceVersion ??
+      patchSnapshot?.analysis?.labelExtraction?.fetchedAt ??
+      decisionSupportBody?.factsSourceVersion ??
+      "",
+  ) || "from record";
+
+  const mdLines = [];
+  mdLines.push("# Demo UI Example");
+  mdLines.push("");
+  mdLines.push(summaryTop);
+  mdLines.push("");
+  mdLines.push(`- Brand: ${brandName || "Unknown brand"}`);
+  mdLines.push(`- Product: ${productName || "Unknown product"}`);
+  mdLines.push(`- Barcode: ${barcode}`);
+  mdLines.push(`- Identity: ${identityKey}`);
+  mdLines.push(`- Source type: ${sourceTypeFinal}`);
+  mdLines.push("");
+  mdLines.push(...v2Lines);
+  mdLines.push("## 1) Product Overview");
+  mdLines.push("");
+  mdLines.push("### Source strip");
+  mdLines.push(`- Official record: ${sourceTypeFinal.toUpperCase()} (${identityKey})`);
+  mdLines.push(`- Label used: ${labelUsedLine}`);
+  mdLines.push(`- Retrieved: ${retrievedAt}`);
+  mdLines.push("- View sources: (sources drawer)");
+  mdLines.push("");
+  mdLines.push("### Best for");
+  mdLines.push(`- ${bestForPrimary}`);
+  mdLines.push(`- ${bestForSecondary}`);
+  mdLines.push(`- ${bestForTertiary}`);
+  mdLines.push("");
+  mdLines.push("### What this product provides (verified)");
+  mdLines.push(`- Serving size: ${servingSizeDisplay}`);
+  if (servingsPerContainer !== null && servingsPerContainer !== undefined) {
+    mdLines.push(`- Servings per container: ${servingsPerContainer}`);
+  }
+  mdLines.push(`- Key ingredient: ${keyIngredientLine}`);
+  mdLines.push("");
+  mdLines.push("### Missing info (single CTA)");
+  mdLines.push(`- Missing from official record: ${missingInfoText}`);
+  mdLines.push(`- To improve accuracy: ${singleCta.replace(/\.$/, "")}.`);
+  mdLines.push("");
+  mdLines.push("## 2) Science & Ingredients");
+  mdLines.push("");
+  mdLines.push("### Verified ingredient snapshot (names only)");
+  mdLines.push(`- ${ingredientPrimary}`);
+  mdLines.push("");
+  mdLines.push("### Form matters (two forms, no confusion)");
+  mdLines.push(`- Ingredient form (chemical): ${chemicalForm}.`);
+  mdLines.push(`- Dosage form: ${dosageForm}.`);
+  mdLines.push("");
+  mdLines.push("### NIH ODS (general science, short)");
+  for (const line of (odsBullets.length > 0 ? odsBullets : ["General science guidance is currently limited in this sample."])) {
+    mdLines.push(`- ${normalizeTerminalPunctuation(line)}`);
+  }
+  mdLines.push("");
+  mdLines.push("### AI summary (buying explanation, 3 sentences)");
+  for (const line of aiSummary3) {
+    mdLines.push(`- ${normalizeTerminalPunctuation(line)}`);
+  }
+  mdLines.push("");
+  mdLines.push("## 3) Practical Usage");
+  mdLines.push("");
+  mdLines.push("### Directions (from label / record)");
+  for (const line of usageDirectionLines) {
+    mdLines.push(`- ${normalizeTerminalPunctuation(line)}`);
+  }
+  mdLines.push("");
+  mdLines.push("### Timing tip (general)");
+  mdLines.push(`- ${normalizeTerminalPunctuation(usageTimingTip)}`);
+  mdLines.push("");
+  mdLines.push("### Conservative guidance (general)");
+  mdLines.push(`- ${normalizeTerminalPunctuation(usageConservative)}`);
+  mdLines.push("");
+  mdLines.push("## 4) Safety & Tips");
+  mdLines.push("");
+  mdLines.push("### Label warnings (product-specific)");
+  for (const line of (labelWarnings.length > 0
+    ? labelWarnings
+    : [
+      "Product-specific label warnings were not included in the official record.",
+      "Check the bottle's Warnings/Cautions panel.",
+    ])) {
+    mdLines.push(`- ${normalizeTerminalPunctuation(line)}`);
+  }
+  mdLines.push("");
+  mdLines.push("### Upper limit (NIH ODS, general)");
+  for (const line of (ulGuidance.length > 0
+    ? ulGuidance
+    : ["UL guidance is general and should be compared against total daily intake."])) {
+    mdLines.push(`- ${normalizeTerminalPunctuation(line)}`);
+  }
+  mdLines.push("");
+  mdLines.push("### General watch-outs (general)");
+  for (const line of (generalWatchouts.length > 0
+    ? generalWatchouts
+    : ["General watch-outs are currently limited for this sample."])) {
+    mdLines.push(`- ${normalizeTerminalPunctuation(line)}`);
+  }
+  mdLines.push("");
+  mdLines.push("### Data status");
+  mdLines.push(`- ${normalizeTerminalPunctuation(dataStatusRef)}`);
+  mdLines.push("");
+  mdLines.push("### Third-party quality mark (Integrity helper)");
+  mdLines.push(`- Status: ${qualityStatusLine}`);
+  if (qualityEvidenceRef) mdLines.push(`- Evidence: ${qualityEvidenceRef}`);
+  if (qualitySources.length > 0) {
+    mdLines.push(`- Sources searched: ${qualitySources.join(", ")}`);
+  }
+
+  const mdText = `${mdLines.join("\n")}\n`;
+  await fs.writeFile(mdPath, mdText, "utf8");
+
+  const generatedFromArtifacts = [bundleControlPath, bundlePatchPath, decisionSupportPath, patchStatusPath];
+  const artifactHashes = {};
+  for (const artifactPath of generatedFromArtifacts) {
+    // eslint-disable-next-line no-await-in-loop
+    artifactHashes[artifactPath] = await sha256File(artifactPath);
+  }
+
+  const usedPatchLanes = usageDirectionsSourceTier === "scanned_label" ? ["patch_directions_text_v1"] : [];
+  const trace = {
+    generatedAt: new Date().toISOString(),
+    brand: brandName || null,
+    product: productName || null,
+    barcode,
+    identityKey,
+    sourceTypeFinal,
+    usedPatchLanes,
+    runtimeHitEvidence: {
+      runtimePatchHitCount: Number(
+        patchStatusResp?.body?.runtimePatchHitCount ??
+          patchStatusResp?.body?.metrics?.runtimePatchHitCount ??
+          0,
+      ),
+      runtimePatchHitCountByLane:
+        patchStatusResp?.body?.runtimePatchHitCountByLane ??
+        patchStatusResp?.body?.metrics?.runtimePatchHitCountByLane ??
+        {},
+      decisionSupportDigest: safeText(decisionSupportBody?.digest),
+    },
+    qualityMarkAuditSummary: {
+      status: qualitySearchOnly ? "unknown" : (safeText(qualityMark?.status) || "unknown"),
+      checked: Boolean(qualityMark?.checked),
+      evidenceRef: qualityMark?.evidenceRef ?? null,
+      sourcesTried: qualitySources,
+      checkedMode: qualitySearchOnly ? "search_only" : (qualityMark?.checkedMode ?? null),
+      pagesFetchedCount: Number(qualityMark?.pagesFetchedCount ?? 0),
+      searchPagesFetchedCount: Number(qualityMark?.searchPagesFetchedCount ?? 0),
+      evidenceType: qualitySearchOnly ? "search" : (qualityMark?.evidenceType ?? null),
+      note: qualityMark?.note ?? null,
+    },
+    nutriScoreCardV2: template.scoreCardV2 ?? null,
+    generatedFromArtifacts,
+    generatedFromArtifactsSha256: artifactHashes,
+  };
+  await fs.writeFile(tracePath, `${JSON.stringify(trace, null, 2)}\n`, "utf8");
+
+  console.log(
+    JSON.stringify(
+      {
+        ok: true,
+        mode: "barcode-only",
+        barcode,
+        brand: brandName,
+        output: {
+          md: mdPath,
+          trace: tracePath,
+          controlBundle: bundleControlPath,
+          patchBundle: bundlePatchPath,
+          decisionSupport: decisionSupportPath,
+          patchStatus: patchStatusPath,
+        },
+      },
+      null,
+      2,
+    ),
+  );
+};
+
 const main = async () => {
+  if (barcodeOnly) {
+    await runBarcodeOnlyMode();
+    return;
+  }
   await fs.mkdir(outputDir, { recursive: true });
 
   const [impact, diagnostics, safeSubset, safeFallback, brandUx] = await Promise.all([
@@ -310,12 +1006,17 @@ const main = async () => {
   const patchSnapshot = pickLastEventData(patchSse.events, "snapshot") ?? existingPatchArtifact?.snapshot ?? null;
   if (!patchBundle) throw new Error("Patch bundle not found from SSE or existing artifact");
 
-  const decisionSupportUrl = `${patchBaseUrl}/api/decision-support/v1?barcode=${encodeURIComponent(barcode)}&viewMode=simple`;
+  const decisionSupportUrl = `${patchBaseUrl}/api/decision-support/v1?barcode=${encodeURIComponent(barcode)}&viewMode=details`;
   let decisionSupportStatus = 0;
   let decisionSupportBody = existingDecisionArtifact?.body ?? null;
   let decisionSupportError = null;
   try {
-    const decisionSupportResp = await fetch(decisionSupportUrl);
+    const decisionSupportResp = await fetch(decisionSupportUrl, {
+      headers: {
+        accept: "application/json",
+        ...(authDisabledHeader ? { "X-Auth-Disabled": "1" } : {}),
+      },
+    });
     decisionSupportStatus = decisionSupportResp.status;
     const body = await decisionSupportResp.json();
     if (!decisionSupportResp.ok) {
@@ -654,6 +1355,11 @@ const main = async () => {
   mdLines.push(`- Identity: ${identityDisplay}`);
   mdLines.push(`- Source type: ${productImpact.sourceType}`);
   mdLines.push("");
+  const coercedV2Card = coerceNutriScoreCardV2(decisionSupportBody);
+  const v2Lines = renderNutriScoreCardV2Lines(coercedV2Card);
+  if (v2Lines.length > 0) {
+    mdLines.push(...v2Lines);
+  }
   mdLines.push("## 1) Product Overview");
   mdLines.push("");
   mdLines.push("### Source strip");
@@ -877,6 +1583,7 @@ const main = async () => {
       decisionSupportDigest: safeText(decisionSupportBody?.digest || null),
     },
     qualityMarkAuditSummary: traceQualitySummary,
+    nutriScoreCardV2: coercedV2Card ?? null,
     sampleSelection: {
       enforced_and_visible: true,
       directions_added: productImpact?.delta?.directions_added === true,

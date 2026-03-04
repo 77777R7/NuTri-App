@@ -98,12 +98,12 @@ const ROLE_DEFINITION_VERSION = String(
   arg("--role-definition-version", process.env.STAGE_B_ROLE_DEFINITION_VERSION || "stage-b-role-v1"),
 ).trim();
 const DECISION_SUPPORT_VIEW_MODE = String(
-  arg("--decision-support-view-mode", process.env.STAGE_B_DECISION_SUPPORT_VIEW_MODE || "simple"),
+  arg("--decision-support-view-mode", process.env.STAGE_B_DECISION_SUPPORT_VIEW_MODE || "details"),
 )
   .trim()
   .toLowerCase() === "details"
   ? "details"
-  : "simple";
+  : "details";
 const HEALTH_PREFLIGHT_ENABLED = !["0", "false", "off"].includes(
   String(arg("--health-preflight", process.env.MOBILE_SOAK_HEALTH_PREFLIGHT || "true")).trim().toLowerCase(),
 );

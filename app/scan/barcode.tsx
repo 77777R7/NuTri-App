@@ -31,6 +31,7 @@ const { width } = Dimensions.get('window');
 const SCAN_FRAME_WIDTH = width * 0.85;
 const SCAN_FRAME_HEIGHT = 200; // Fixed height for barcode shape
 const SCAN_FRAME_RADIUS = 16;
+const SCAN_DEBOUNCE_MS = 1500;
 
 const normalizeBarcodeCandidate = (raw: string): string | null => {
   const trimmed = raw.trim();
@@ -61,6 +62,9 @@ export default function BarcodeScanScreen() {
   const [torchEnabled, setTorchEnabled] = useState(false);
   const [status, setStatus] = useState<ScanStatus>('idle');
   const processingRef = useRef(false);
+  const navigationLockedRef = useRef(false);
+  const lastScanValueRef = useRef<string | null>(null);
+  const lastScanAtRef = useRef(0);
 
   // Animation values
   const checkmarkScale = useSharedValue(0);
@@ -69,6 +73,9 @@ export default function BarcodeScanScreen() {
   useEffect(() => {
     // Reset state on mount
     processingRef.current = false;
+    navigationLockedRef.current = false;
+    lastScanValueRef.current = null;
+    lastScanAtRef.current = 0;
     setStatus('idle');
     checkmarkScale.value = 0;
     checkmarkOpacity.value = 0;
@@ -80,7 +87,7 @@ export default function BarcodeScanScreen() {
 
   const handleBarcode = useCallback(
     async (result: BarcodeScanningResult) => {
-      if (processingRef.current || status !== 'idle') {
+      if (processingRef.current || status !== 'idle' || navigationLockedRef.current) {
         return;
       }
 
@@ -93,6 +100,16 @@ export default function BarcodeScanScreen() {
         }, 1200);
         return;
       }
+
+      const now = Date.now();
+      if (
+        lastScanValueRef.current === normalized &&
+        now - lastScanAtRef.current < SCAN_DEBOUNCE_MS
+      ) {
+        return;
+      }
+      lastScanValueRef.current = normalized;
+      lastScanAtRef.current = now;
 
       processingRef.current = true;
       setStatus('processing'); // Temporarily processing before success
@@ -125,6 +142,7 @@ export default function BarcodeScanScreen() {
         });
 
         // Delay navigation to let user see the checkmark
+        navigationLockedRef.current = true;
         setTimeout(() => {
           runOnJS(navigateToResult)(sessionId);
         }, 800);
@@ -134,6 +152,7 @@ export default function BarcodeScanScreen() {
         // Reset on error
         setStatus('error');
         processingRef.current = false;
+        navigationLockedRef.current = false;
         // Optional: Error haptic
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
 
@@ -198,7 +217,7 @@ export default function BarcodeScanScreen() {
         facing="back"
         enableTorch={torchEnabled}
         barcodeScannerSettings={{ barcodeTypes: BARCODE_TYPES }}
-        onBarcodeScanned={handleBarcode}
+        onBarcodeScanned={status === 'idle' ? handleBarcode : undefined}
       />
 
 

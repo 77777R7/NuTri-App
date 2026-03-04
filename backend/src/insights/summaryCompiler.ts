@@ -3,7 +3,7 @@ import { z } from 'zod';
 import type { LlmVerifierReasonCode } from './reasonCodes.js';
 
 const nonEmptyString = z.string().trim().min(1);
-const viewModeSchema = z.enum(['simple', 'details']).optional();
+const viewModeSchema = z.literal('details').optional();
 
 const sourceTagSchema = z.enum(['Facts', 'Dataset', 'KB', 'ODS', 'ReviewedKB']);
 const safeScienceSignalSourceSchema = z.enum(['subset', 'fallback', 'none']);
@@ -189,7 +189,7 @@ const disallowedMedicalClaimPatterns: RegExp[] = [
 ];
 const technicalLeakPattern = /\brbf\b|match score|dataset signal|confidence tier|reason code|within_typical|below_typical|above_typical|reviewed[_\s]?kb|verified dataset|kb:|needs_capture|needs_edit|review_status/i;
 const fluffPattern = /\bnormal function\b|\bday-to-day wellness\b|\bwellness outcomes?\b/i;
-const SUMMARY_VERSION_SIMPLE = 'v1.6.12-simple-1';
+const SUMMARY_VERSION_DETAILS = 'v1.6.16-details-1';
 
 const containsDisallowed = (text: string): boolean => {
   return disallowedMedicalClaimPatterns.some((pattern) => pattern.test(text));
@@ -216,7 +216,7 @@ const isV11Packet = (input: Packet): input is V11Packet =>
 const normalizeCompatPacket = (input: Packet) => {
   if (isLegacyPacket(input)) {
     return {
-      viewMode: input.viewMode ?? 'simple',
+      viewMode: input.viewMode ?? 'details',
       ingredientName: input.ingredient.name,
       amount: input.ingredient.amount ?? null,
       unit: input.ingredient.unit ?? null,
@@ -249,7 +249,7 @@ const normalizeCompatPacket = (input: Packet) => {
 
   if (isV11Packet(input)) {
     return {
-      viewMode: input.viewMode ?? 'simple',
+      viewMode: input.viewMode ?? 'details',
       ingredientName: input.ingredientName,
       amount: input.facts?.amount ?? null,
       unit: input.facts?.unit ?? null,
@@ -283,7 +283,7 @@ const normalizeCompatPacket = (input: Packet) => {
   const compatInput = input as DashboardCompatPacket;
   const runtimeBullets = Object.values(compatInput.runtimeNotes ?? {}).flat();
   return {
-    viewMode: compatInput.viewMode ?? 'simple',
+    viewMode: compatInput.viewMode ?? 'details',
     ingredientName: compatInput.ingredientName,
     amount: null,
     unit: null,
@@ -397,7 +397,7 @@ const buildDeterministicSummary = (input: ReturnType<typeof normalizeCompatPacke
     sourcesUsed,
     fallbackUsed: true,
     guardApplied: true,
-    summaryVersion: SUMMARY_VERSION_SIMPLE,
+    summaryVersion: SUMMARY_VERSION_DETAILS,
     reasonCode: 'LLM_FALLBACK_USED',
   };
 };
@@ -641,7 +641,7 @@ export const compileIngredientSummaryAsync = async (
         sourcesUsed,
         fallbackUsed: false,
         guardApplied: true,
-        summaryVersion: SUMMARY_VERSION_SIMPLE,
+        summaryVersion: SUMMARY_VERSION_DETAILS,
         reasonCode: 'LLM_OK',
       };
 
@@ -662,7 +662,7 @@ export const compileIngredientSummaryAsync = async (
   const result: IngredientSummaryResponse & { debug?: { llmRawPreview?: string; parsePath?: string } } = {
     ...fallback,
     guardApplied: true,
-    summaryVersion: SUMMARY_VERSION_SIMPLE,
+    summaryVersion: SUMMARY_VERSION_DETAILS,
     reasonCode: (lastError ?? 'LLM_CALL_FAILED') as LlmVerifierReasonCode,
   };
 

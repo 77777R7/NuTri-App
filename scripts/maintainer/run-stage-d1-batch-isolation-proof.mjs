@@ -167,7 +167,7 @@ const main = async () => {
   const maxPositives = Math.max(minPositives, asNumber(getArg("max-positives"), 20));
   const minNegatives = Math.max(10, asNumber(getArg("min-negatives"), 10));
   const timeoutMs = Math.max(2000, asNumber(getArg("timeout-ms"), 12000));
-  const viewMode = String(getArg("view-mode", "simple")).trim().toLowerCase() === "details" ? "details" : "simple";
+  const viewMode = "details";
 
   const patchApiBaseUrl = String(getArg("patch-api-base-url", process.env.STAGING_PATCH_API_BASE_URL || "")).trim();
   if (!patchApiBaseUrl) {

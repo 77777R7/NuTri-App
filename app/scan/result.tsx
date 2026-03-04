@@ -43,12 +43,8 @@ const SHOW_SCAN_DEBUG =
   process.env.EXPO_PUBLIC_SHOW_SCAN_DEBUG === 'true' ||
   process.env.EXPO_PUBLIC_SHOW_SCAN_DEBUG === '1';
 
-const resolveDashboardRenderMode = (isExpoGo: boolean): 'full' | 'lite' => {
-  if (FORCE_LITE_DASHBOARD) return 'lite';
-  if (FORCE_FULL_DASHBOARD) return 'full';
-  // Default to full dashboard so latest UI can be tested.
-  // Expo Go-specific stability is handled inside AnalysisDashboard compat mode.
-  if (isExpoGo) return 'full';
+const resolveDashboardRenderMode = (_isExpoGo: boolean): 'full' => {
+  // Hard-lock to full dashboard so we never regress to legacy Lite UI during runtime.
   return 'full';
 };
 
@@ -431,9 +427,7 @@ export default function ScanResultScreen() {
     labelResult?.analysisStatus ?? (labelResult?.analysis ? 'complete' : null)
   );
   const [dashboardRuntimeError, setDashboardRuntimeError] = useState<string | null>(null);
-  const [dashboardRenderMode, setDashboardRenderMode] = useState<'full' | 'lite'>(
-    () => resolveDashboardRenderMode(isExpoGo),
-  );
+  const dashboardRenderMode: 'full' = resolveDashboardRenderMode(isExpoGo);
   const [evidenceExpanded, setEvidenceExpanded] = useState(false);
   const [scoreRequestNonce, setScoreRequestNonce] = useState(0);
   const resolvedLabelAnalysis = labelAnalysis ?? labelResult?.analysis ?? null;
@@ -535,9 +529,6 @@ export default function ScanResultScreen() {
       error: barcodeScoreState.error ?? null,
     });
   }, [barcodeScoreState.error, barcodeScoreState.response, barcodeScoreState.status]);
-  // Full dashboard is the default path; Lite remains an emergency fallback.
-  // Expo Go stability protections are applied inside AnalysisDashboard/ScoreRing.
-  const useLiteBarcodeDashboard = dashboardRenderMode === 'lite';
   const bundleRevision =
     typeof analysisBundle?.meta?.revision === 'number' ? analysisBundle.meta.revision : null;
   // Removed legacy full-screen "Analyzing supplement..." interstitial.
@@ -691,7 +682,6 @@ export default function ScanResultScreen() {
       setLabelAnalysisError(null);
       setLabelAnalysisLoading(false);
       setDashboardRuntimeError(null);
-      setDashboardRenderMode(resolveDashboardRenderMode(isExpoGo));
       setEvidenceExpanded(false);
       const nextLabelResult = consumeResult.status === 'ok' && consumeResult.session.mode === 'label'
         ? consumeResult.session.result
@@ -704,7 +694,7 @@ export default function ScanResultScreen() {
     return () => {
       cancelled = true;
     };
-  }, [isExpoGo, params.devBarcode, params.sessionId]);
+  }, [params.devBarcode, params.sessionId]);
 
   useEffect(() => {
     if (needsReview) {
@@ -713,8 +703,9 @@ export default function ScanResultScreen() {
   }, [needsReview]);
 
   const handleDashboardRenderError = useCallback((message: string) => {
+    // Keep users on the modern full dashboard path even if an error is captured.
+    // We surface the error banner instead of switching to legacy Lite UI.
     setDashboardRuntimeError(message);
-    setDashboardRenderMode((prev) => (prev === 'lite' ? prev : 'lite'));
   }, []);
 
   useEffect(() => {
@@ -861,36 +852,10 @@ export default function ScanResultScreen() {
     lastBrandRef.current = brand;
   }, [barcode, productInfo?.brand, savedSupplements, updateSupplement]);
 
-  const liteOverviewSummary = useMemo(() => {
-    const raw = (analysisBundle as any)?.sections?.overview?.cover?.summary;
-    return typeof raw === 'string' && raw.trim().length > 0
-      ? raw.trim()
-      : (efficacy?.overviewSummary ?? 'Overview is loading...');
-  }, [analysisBundle, efficacy?.overviewSummary]);
-  const liteOverviewBullets = useMemo(() => {
-    const raw = (analysisBundle as any)?.sections?.overview?.cover?.bullets;
-    if (!Array.isArray(raw)) return [];
-    return raw
-      .map((b: any) => (typeof b?.text === 'string' ? b.text.trim() : null))
-      .filter((line: string | null): line is string => Boolean(line))
-      .slice(0, 4);
-  }, [analysisBundle]);
-  const liteDataStatus = useMemo(() => {
-    const sections = (analysisBundle as any)?.sections;
-    if (!sections || typeof sections !== 'object') return null;
-    const normalize = (value: unknown) => (typeof value === 'string' ? value : 'pending');
-    return {
-      overview: normalize(sections?.overview?.dataStatus),
-      ingredients: normalize(sections?.ingredients?.dataStatus),
-      usage: normalize(sections?.usage?.dataStatus),
-      safety: normalize(sections?.safety?.dataStatus),
-    };
-  }, [analysisBundle]);
   useEffect(() => {
     if (!__DEV__) return;
     console.log('[ScanResult] dashboard mode', {
       platform: Platform.OS,
-      lite: useLiteBarcodeDashboard,
       appOwnership,
       isExpoGo,
       renderMode: dashboardRenderMode,
@@ -899,7 +864,7 @@ export default function ScanResultScreen() {
       bisectFlagsFromEnv: process.env.EXPO_PUBLIC_SCAN_DASHBOARD_BISECT ?? '',
       bundleRevision,
     });
-  }, [appOwnership, bundleRevision, dashboardRenderMode, isExpoGo, useLiteBarcodeDashboard]);
+  }, [appOwnership, bundleRevision, dashboardRenderMode, isExpoGo]);
 
   const handleBack = () => {
     if (session?.mode === 'barcode') {
@@ -1068,6 +1033,7 @@ export default function ScanResultScreen() {
           scoreBadge="Label-only estimate"
           scoreState={scoreState}
           sourceType="label_scan"
+          scanSessionId={typeof params.sessionId === 'string' ? params.sessionId : null}
           analysisBundle={analysisBundle}
         />
 
@@ -1278,6 +1244,7 @@ export default function ScanResultScreen() {
   };
   const compositeAnalysis = {
     productInfo: safeProductInfo,
+    barcode: barcode || null,
     efficacy: efficacy || {}, // Empty obj means "loading" inside dashboard components if checked
     safety: safety || {},
     usage: usage || {},
@@ -1318,50 +1285,17 @@ export default function ScanResultScreen() {
       {/* We render dashboard immediately. 
         As 'efficacy', 'safety' etc. arrive, this component re-renders and fills in the blanks.
       */}
-      {useLiteBarcodeDashboard ? (
-        <ScrollView contentContainerStyle={styles.liteContent}>
-          <View style={styles.liteCard}>
-            <Text style={styles.liteEyebrow}>Quick Analysis</Text>
-            <Text style={styles.liteTitle}>{safeProductInfo.name ?? 'Supplement'}</Text>
-            <Text style={styles.liteMeta}>
-              {[safeProductInfo.brand, safeProductInfo.category].filter(Boolean).join(' • ') || 'Identifying product info...'}
-            </Text>
-          </View>
-
-          <View style={styles.liteCard}>
-            <Text style={styles.liteSectionTitle}>Overview</Text>
-            <Text style={styles.liteSummary}>{liteOverviewSummary}</Text>
-            {liteOverviewBullets.length > 0 ? (
-              <View style={styles.liteBulletList}>
-                {liteOverviewBullets.map((line, idx) => (
-                  <Text key={`${line}-${idx}`} style={styles.liteBullet}>
-                    {'\u2022'} {line}
-                  </Text>
-                ))}
-              </View>
-            ) : null}
-          </View>
-
-          <View style={styles.liteCard}>
-            <Text style={styles.liteSectionTitle}>Section Status</Text>
-            <Text style={styles.liteStatusLine}>Overview: {liteDataStatus?.overview ?? 'pending'}</Text>
-            <Text style={styles.liteStatusLine}>Ingredients: {liteDataStatus?.ingredients ?? 'pending'}</Text>
-            <Text style={styles.liteStatusLine}>Usage: {liteDataStatus?.usage ?? 'pending'}</Text>
-            <Text style={styles.liteStatusLine}>Safety: {liteDataStatus?.safety ?? 'pending'}</Text>
-          </View>
-        </ScrollView>
-      ) : (
-        <DashboardErrorBoundary onError={handleDashboardRenderError}>
-          <AnalysisDashboard
-            analysis={compositeAnalysis}
-            isStreaming={isStreaming}
-            sourceType="barcode"
-            analysisBundle={analysisBundle}
-            scoreBundleV4State={barcodeScoreState}
-            onRetryScore={retryScore}
-          />
-        </DashboardErrorBoundary>
-      )}
+      <DashboardErrorBoundary onError={handleDashboardRenderError}>
+        <AnalysisDashboard
+          analysis={compositeAnalysis}
+          isStreaming={isStreaming}
+          sourceType="barcode"
+          scanSessionId={typeof params.sessionId === 'string' ? params.sessionId : null}
+          analysisBundle={analysisBundle}
+          scoreBundleV4State={barcodeScoreState}
+          onRetryScore={retryScore}
+        />
+      </DashboardErrorBoundary>
 
       {dashboardRuntimeError ? (
         <View style={styles.dashboardErrorBanner}>
@@ -1523,63 +1457,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#b91c1c',
     marginBottom: 12,
-  },
-  liteContent: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 36,
-    gap: 12,
-  },
-  liteCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#e4e4e7',
-    padding: 14,
-  },
-  liteEyebrow: {
-    fontSize: 12,
-    color: '#71717a',
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
-  },
-  liteTitle: {
-    marginTop: 6,
-    fontSize: 20,
-    lineHeight: 26,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  liteMeta: {
-    marginTop: 4,
-    fontSize: 13,
-    color: '#6b7280',
-  },
-  liteSectionTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: 8,
-  },
-  liteSummary: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#374151',
-  },
-  liteBulletList: {
-    marginTop: 8,
-    gap: 4,
-  },
-  liteBullet: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: '#4b5563',
-  },
-  liteStatusLine: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: '#4b5563',
   },
   analysisButton: {
     marginTop: 8,

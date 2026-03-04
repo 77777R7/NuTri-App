@@ -460,6 +460,7 @@ const extractOdsSignals = (ingredientNames: string[]): {
 
   ingredientNames.forEach((ingredient) => {
     const hit = lookupFoundationForIngredient(ingredient);
+    if (hit.kind !== 'ods') return;
     const rows = Array.isArray(hit.watchOuts) ? hit.watchOuts : [];
     rows.forEach((line, index) => {
       const text = normalizeText(line);

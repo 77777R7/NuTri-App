@@ -67,6 +67,7 @@ import {
 import {
   compileDecisionSupport,
   toDecisionSupportInline,
+  type DecisionSupportOverlayClaims,
   type DecisionSupportViewMode,
 } from "./decisionSupport.js";
 import { applyPatchShadowToFactsDigest, getPatchShadowLookup, getPatchShadowStatus } from "./patchShadowOverlay.js";
@@ -333,12 +334,8 @@ const DETERMINISTIC_SIGNALS_PRIMARY = parseBooleanEnv(
   process.env.DETERMINISTIC_SIGNALS_PRIMARY,
   true,
 );
-const parseDecisionSupportViewMode = (value: string | null | undefined): DecisionSupportViewMode =>
-  String(value ?? "")
-    .trim()
-    .toLowerCase() === "details"
-    ? "details"
-    : "simple";
+const parseDecisionSupportViewMode = (_value: string | null | undefined): DecisionSupportViewMode =>
+  "details";
 const DECISION_SUPPORT_DEFAULT_VIEW_MODE: DecisionSupportViewMode = parseDecisionSupportViewMode(
   process.env.DECISION_SUPPORT_DEFAULT_VIEW_MODE,
 );
@@ -2599,6 +2596,7 @@ const buildAnalysisBundleSkeleton = (params: {
     usage: "pending" | "limited";
     safety: "pending" | "limited";
   };
+  overlayClaims?: DecisionSupportOverlayClaims | null;
 }): AnalysisBundle => {
   const patched = applyPatchShadowToFactsDigest({
     digest: params.digest,
@@ -2613,6 +2611,7 @@ const buildAnalysisBundleSkeleton = (params: {
     viewMode: DECISION_SUPPORT_DEFAULT_VIEW_MODE,
     flagsSnapshot: collectDecisionSupportFlagsSnapshot(),
     patchActivation: patched.activation,
+    overlayClaims: params.overlayClaims ?? null,
   });
   const baseSafetySignals = buildBaseSafetySignalPack({
     digest,
@@ -2755,6 +2754,7 @@ const mergeFastAnalysisBundle = (params: {
   digest: FactsDigest;
   deterministicSignals?: DeterministicSignalPack | null;
   fastOutput: Record<string, unknown> | null;
+  overlayClaims?: DecisionSupportOverlayClaims | null;
 }): AnalysisBundle => {
   const { skeleton, fastOutput } = params;
   const patched = applyPatchShadowToFactsDigest({
@@ -2771,6 +2771,7 @@ const mergeFastAnalysisBundle = (params: {
     viewMode: DECISION_SUPPORT_DEFAULT_VIEW_MODE,
     flagsSnapshot: collectDecisionSupportFlagsSnapshot(),
     patchActivation: patched.activation,
+    overlayClaims: params.overlayClaims ?? null,
   });
   const ingredientsCover = buildIngredientsCover(digest, params.deterministicSignals);
   const ingredientsDataStatus = digest.actives.length > 0 ? "complete" : "not_provided";
@@ -3763,6 +3764,57 @@ const dsldFactsByLabelIdCache = new Map<number, { expiresAt: number; value: Dsld
 const dsldFactsByLabelIdInFlight = new Map<number, Promise<DsldFacts | null>>();
 const dsldFactsByBarcodeCache = new Map<string, { expiresAt: number; value: DsldFacts | null }>();
 const dsldFactsByBarcodeInFlight = new Map<string, Promise<DsldFacts | null>>();
+const DSDL_CANONICAL_LABEL_CACHE_TTL_MS = 5 * 60 * 1000;
+const dsldCanonicalLabelByBarcodeCache = new Map<string, { expiresAt: number; value: number | null }>();
+const dsldCanonicalLabelByBarcodeInFlight = new Map<string, Promise<number | null>>();
+
+const fetchCanonicalDsldLabelIdByBarcode = async (
+  barcodeGtin14: string,
+  signal?: AbortSignal,
+): Promise<number | null> => {
+  if (signal?.aborted) return null;
+  const cached = dsldCanonicalLabelByBarcodeCache.get(barcodeGtin14);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.value;
+  }
+  const existingInFlight = dsldCanonicalLabelByBarcodeInFlight.get(barcodeGtin14);
+  if (existingInFlight) {
+    return existingInFlight;
+  }
+
+  const task = (async (): Promise<number | null> => {
+    const { data, error } = await supabase
+      .from('dsld_barcode_canonical')
+      .select('canonical_dsld_label_id')
+      .eq('barcode_normalized_gtin14', barcodeGtin14)
+      .not('canonical_dsld_label_id', 'is', null)
+      .limit(5)
+      .abortSignal(signal ?? AbortSignal.timeout(1000));
+
+    if (error || !Array.isArray(data) || data.length === 0) {
+      return null;
+    }
+    const canonicalLabelId = Number(
+      data.find((row) => Number.isFinite(Number(row?.canonical_dsld_label_id)))?.canonical_dsld_label_id,
+    );
+    if (!Number.isFinite(canonicalLabelId) || canonicalLabelId <= 0) {
+      return null;
+    }
+    return canonicalLabelId;
+  })();
+
+  dsldCanonicalLabelByBarcodeInFlight.set(barcodeGtin14, task);
+  try {
+    const result = await task;
+    dsldCanonicalLabelByBarcodeCache.set(barcodeGtin14, {
+      value: result,
+      expiresAt: Date.now() + DSDL_CANONICAL_LABEL_CACHE_TTL_MS,
+    });
+    return result;
+  } finally {
+    dsldCanonicalLabelByBarcodeInFlight.delete(barcodeGtin14);
+  }
+};
 
 const fetchDsldFactsByLabelId = async (
   labelId: number,
@@ -3894,19 +3946,9 @@ const fetchDsldFactsByBarcode = async (
       .eq('barcode_normalized_gtin14', barcodeGtin14)
       .maybeSingle();
     if (error || !meta) {
-      const { data: canonicalRows, error: canonicalError } = await supabase
-        .from('dsld_barcode_canonical')
-        .select('canonical_dsld_label_id')
-        .eq('barcode_normalized_gtin14', barcodeGtin14)
-        .not('canonical_dsld_label_id', 'is', null)
-        .limit(3);
-      if (!canonicalError && Array.isArray(canonicalRows) && canonicalRows.length > 0) {
-        const canonicalLabelId = Number(
-          canonicalRows.find((row) => Number.isFinite(Number(row?.canonical_dsld_label_id)))?.canonical_dsld_label_id,
-        );
-        if (Number.isFinite(canonicalLabelId) && canonicalLabelId > 0) {
-          return fetchDsldFactsByLabelId(canonicalLabelId, signal);
-        }
+      const canonicalLabelId = await fetchCanonicalDsldLabelIdByBarcode(barcodeGtin14, signal);
+      if (Number.isFinite(canonicalLabelId) && canonicalLabelId && canonicalLabelId > 0) {
+        return fetchDsldFactsByLabelId(canonicalLabelId, signal);
       }
       return null;
     }
@@ -8095,6 +8137,34 @@ const buildMySupplementDigestQuick = async (params: {
     barcodeGtin14 && STAGE0_DSLD_BARCODE_FALLBACK_ENABLED && STAGE0_DSLD_SEEDED_LABEL_MAP_ENABLED
       ? STAGE0_DSLD_SEEDED_LABEL_MAP.get(barcodeGtin14) ?? null
       : null;
+  let prioritizedDsldLabelIdMemo: number | null | undefined;
+  const resolvePrioritizedDsldLabelId = async (): Promise<number | null> => {
+    if (prioritizedDsldLabelIdMemo !== undefined) return prioritizedDsldLabelIdMemo;
+    if (!STAGE0_DSLD_BARCODE_FALLBACK_ENABLED) {
+      prioritizedDsldLabelIdMemo = null;
+      return prioritizedDsldLabelIdMemo;
+    }
+    if (Number.isFinite(Number(seededDsldLabelId)) && Number(seededDsldLabelId) > 0) {
+      prioritizedDsldLabelIdMemo = Number(seededDsldLabelId);
+      return prioritizedDsldLabelIdMemo;
+    }
+    if (!barcodeGtin14 || msLeft() <= 0) {
+      prioritizedDsldLabelIdMemo = null;
+      return prioritizedDsldLabelIdMemo;
+    }
+    const canonicalTimeoutSignal = createTimeoutSignal(Math.max(250, Math.min(550, msLeft())));
+    const { signal: canonicalSignal, cleanup } = combineSignals([canonicalTimeoutSignal]);
+    try {
+      const canonicalDsldLabelId = await fetchCanonicalDsldLabelIdByBarcode(barcodeGtin14, canonicalSignal);
+      prioritizedDsldLabelIdMemo =
+        Number.isFinite(Number(canonicalDsldLabelId)) && Number(canonicalDsldLabelId) > 0
+          ? Number(canonicalDsldLabelId)
+          : null;
+      return prioritizedDsldLabelIdMemo;
+    } finally {
+      cleanup();
+    }
+  };
   const cacheKey = barcodeDigits ? buildBarcodeCacheKey(barcodeDigits) : null;
 
   const snapshot = cacheKey && msLeft() > 0
@@ -8135,6 +8205,38 @@ const buildMySupplementDigestQuick = async (params: {
       return { digest, factsSourceVersion, factsDigestHash, labelDirectionsRawText, snapshotHit: true, barcodeGtin14 };
     }
 
+    const prioritizedDsldLabelIdFromCanonical = await resolvePrioritizedDsldLabelId();
+    if (prioritizedDsldLabelIdFromCanonical && msLeft() > 0) {
+      const dsldTimeoutSignal = createTimeoutSignal(
+        Math.max(300, Math.min(RESILIENCE_LNHPD_TIMEOUT_MS, msLeft())),
+      );
+      const { signal: dsldSignal, cleanup } = combineSignals([dsldTimeoutSignal]);
+      try {
+        const facts = await fetchDsldFactsByLabelId(prioritizedDsldLabelIdFromCanonical, dsldSignal);
+        if (facts) {
+          const factsSourceVersion = `dsld:${facts.datasetVersion ?? facts.extractedAt ?? "unknown"}`;
+          const digest = buildFactsDigestFromDsld({
+            facts,
+            snapshot: undefined,
+            identityValue: String(facts.dsldLabelId ?? prioritizedDsldLabelIdFromCanonical),
+            regionTags: ["US"],
+          });
+          const factsDigestHash = computeFactsDigestHash(digest);
+          const labelDirectionsRawText = buildLabelDosingText(digest);
+          return {
+            digest,
+            factsSourceVersion,
+            factsDigestHash,
+            labelDirectionsRawText,
+            snapshotHit: false,
+            barcodeGtin14,
+          };
+        }
+      } finally {
+        cleanup();
+      }
+    }
+
     const factsSourceVersion = `web:${snapshot.analysis?.labelExtraction?.datasetVersion ?? snapshot.analysis?.labelExtraction?.fetchedAt ?? "snapshot"}`;
     const digest = buildFactsDigestFromWeb({
       facts: {
@@ -8169,19 +8271,21 @@ const buildMySupplementDigestQuick = async (params: {
     return { digest, factsSourceVersion, factsDigestHash, labelDirectionsRawText, snapshotHit: true, barcodeGtin14 };
   }
 
-  if (seededDsldLabelId && Number.isFinite(Number(seededDsldLabelId)) && msLeft() > 0) {
+  const prioritizedDsldLabelId = await resolvePrioritizedDsldLabelId();
+
+  if (prioritizedDsldLabelId && msLeft() > 0) {
     const dsldTimeoutSignal = createTimeoutSignal(
       Math.max(400, Math.min(RESILIENCE_LNHPD_TIMEOUT_MS, msLeft())),
     );
     const { signal: dsldSignal, cleanup } = combineSignals([dsldTimeoutSignal]);
     try {
-      const facts = await fetchDsldFactsByLabelId(Number(seededDsldLabelId), dsldSignal);
+      const facts = await fetchDsldFactsByLabelId(prioritizedDsldLabelId, dsldSignal);
       if (facts) {
         const factsSourceVersion = `dsld:${facts.datasetVersion ?? facts.extractedAt ?? "unknown"}`;
         const digest = buildFactsDigestFromDsld({
           facts,
           snapshot: undefined,
-          identityValue: String(facts.dsldLabelId ?? seededDsldLabelId),
+          identityValue: String(facts.dsldLabelId ?? prioritizedDsldLabelId),
           regionTags: ["US"],
         });
         const factsDigestHash = computeFactsDigestHash(digest);
@@ -9853,6 +9957,78 @@ app.post("/api/kb/runtime/form-insights/batch", verifySupabaseToken, async (req:
   return res.json(payload);
 });
 
+let iherbOverlayFetchWarned = false;
+const logIherbOverlayFetchWarningOnce = (message: string) => {
+  if (iherbOverlayFetchWarned) return;
+  iherbOverlayFetchWarned = true;
+  console.warn("[iherb-overlay] lookup disabled:", message);
+};
+
+const toDecisionSupportOverlayClaims = (row: Record<string, unknown>): DecisionSupportOverlayClaims => {
+  const descriptionSections =
+    row?.description_sections && typeof row.description_sections === "object"
+      ? (row.description_sections as Record<string, unknown>)
+      : {};
+  const supplementFacts =
+    row?.supplement_facts && typeof row.supplement_facts === "object"
+      ? (row.supplement_facts as Record<string, unknown>)
+      : {};
+  const nutritionalFactsRaw = Array.isArray(supplementFacts?.nutritionalFacts)
+    ? (supplementFacts.nutritionalFacts as Record<string, unknown>[])
+    : [];
+  return {
+    provider: "iherb",
+    productId: typeof row.product_id === "string" ? row.product_id : null,
+    link: typeof row.link === "string" ? row.link : null,
+    categories: Array.isArray(row.categories)
+      ? row.categories.map((item) => String(item ?? "").trim()).filter(Boolean)
+      : [],
+    description: typeof descriptionSections?.Description === "string" ? descriptionSections.Description : null,
+    suggestedUse:
+      typeof descriptionSections?.["Suggested use"] === "string"
+        ? String(descriptionSections["Suggested use"])
+        : null,
+    otherIngredients:
+      typeof descriptionSections?.["Other ingredients"] === "string"
+        ? String(descriptionSections["Other ingredients"])
+        : null,
+    warnings: typeof descriptionSections?.Warnings === "string" ? descriptionSections.Warnings : null,
+    disclaimer: typeof descriptionSections?.Disclaimer === "string" ? descriptionSections.Disclaimer : null,
+    nutritionalFacts: nutritionalFactsRaw
+      .map((item) => ({
+        substancy: String(item?.substancy ?? "").trim(),
+        amountPerServing: String(item?.amountPerServing ?? "").trim(),
+        dailyValuePercent: String(item?.dailyValuePercent ?? "").trim() || null,
+      }))
+      .filter((item) => item.substancy || item.amountPerServing || item.dailyValuePercent),
+  };
+};
+
+const fetchIherbOverlayClaimsByBarcode = async (
+  barcodeGtin14: string,
+): Promise<DecisionSupportOverlayClaims | null> => {
+  if (!barcodeGtin14) return null;
+  try {
+    const { data, error } = await supabase
+      .from("iherb_overlay_products")
+      .select("product_id,link,categories,supplement_facts,description_sections,updated_at")
+      .eq("barcode_gtin14", barcodeGtin14)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error || !data) {
+      if (error && /relation .*iherb_overlay_products.* does not exist/i.test(String(error.message ?? ""))) {
+        logIherbOverlayFetchWarningOnce("table iherb_overlay_products does not exist");
+      }
+      return null;
+    }
+    return toDecisionSupportOverlayClaims(data as Record<string, unknown>);
+  } catch (error) {
+    logIherbOverlayFetchWarningOnce(error instanceof Error ? error.message : String(error));
+    return null;
+  }
+};
+
 app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, res: Response) => {
   const barcodeRaw = typeof req.query.barcode === "string" ? req.query.barcode.trim() : "";
   const normalizedBarcode = normalizeBarcodeInput(barcodeRaw);
@@ -9875,6 +10051,7 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
 
   try {
     const barcodeGtin14 = normalizedBarcode.code.padStart(14, "0");
+    const overlayClaims = await fetchIherbOverlayClaimsByBarcode(barcodeGtin14);
     const quickDigest = await buildMySupplementDigestQuick({
       supplementId: barcodeGtin14,
       barcode: normalizedBarcode.code,
@@ -9904,6 +10081,7 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
       viewMode,
       flagsSnapshot: collectDecisionSupportFlagsSnapshot(),
       patchActivation: patched.activation,
+      overlayClaims,
     });
 
     if (requestedDigest && requestedDigest !== decisionSupport.digest) {
@@ -9937,6 +10115,7 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
       extraTrustSignals: decisionSupport.extraTrustSignals,
       sourceTiers: decisionSupport.sourceTiers,
       nutriScoreCard: decisionSupport.nutriScoreCard,
+      nutriScoreCardV2: decisionSupport.nutriScoreCardV2,
       overviewBlock: decisionSupport.overviewBlock,
       scienceBlock: decisionSupport.scienceBlock,
       usageBlock: decisionSupport.usageBlock,
@@ -13751,6 +13930,19 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       const dataStatus = params.allowAi
         ? { overview: "pending" as const, usage: "pending" as const, safety: "pending" as const }
         : { overview: "limited" as const, usage: "limited" as const, safety: "limited" as const };
+      const overlayClaims = (() => {
+        const raw =
+          params.identityType === "gtin14"
+            ? params.identityValue
+            : params.digest.identity.type === "gtin14"
+            ? params.digest.identity.value
+            : null;
+        const normalized = String(raw ?? "").replace(/\D/g, "");
+        return normalized ? normalized.padStart(14, "0").slice(-14) : null;
+      })();
+      const overlayClaimsByBarcode = overlayClaims
+        ? await fetchIherbOverlayClaimsByBarcode(overlayClaims)
+        : null;
       // shared-store contract:
       // - persisted is emitted only after bundle_fast is committed
       // - /api/analysis-section reads from the same shared store keyspace
@@ -13817,6 +14009,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         identityType: params.identityType,
         identityValue: params.identityValue,
         dataStatus,
+        overlayClaims: overlayClaimsByBarcode,
       });
       const skeleton = attachProductIdentityMeta({
         ...skeletonBase,
@@ -14181,6 +14374,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           digest: params.digest,
           deterministicSignals,
           fastOutput: fastRaw,
+          overlayClaims: overlayClaimsByBarcode,
         });
         fastCandidate = sanitizeAnalysisBundleCoverFields({ bundle: fastCandidate, digest: params.digest });
         if (fastFailed) {
@@ -14194,6 +14388,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
               digest: params.digest,
               deterministicSignals,
               fastOutput: null,
+              overlayClaims: overlayClaimsByBarcode,
             }),
           );
           parsed = safeParseAnalysisBundle(fallbackCandidate);
@@ -14211,6 +14406,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
             digest: params.digest,
             deterministicSignals,
             fastOutput: null,
+            overlayClaims: overlayClaimsByBarcode,
           }),
         );
         const parsed = safeParseAnalysisBundle(fallbackCandidate);
@@ -15061,6 +15257,22 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           STAGE0_DSLD_BARCODE_FALLBACK_ENABLED &&
           STAGE0_DSLD_SEEDED_LABEL_MAP_ENABLED &&
           STAGE0_DSLD_SEEDED_LABEL_MAP.has(barcodeGtin14);
+        let canonicalDsldCandidateLabelId: number | null = null;
+        if (!hasSeededDsldCandidate && STAGE0_DSLD_BARCODE_FALLBACK_ENABLED && !requestSignal.aborted) {
+          const timeoutSignal = createTimeoutSignal(
+            Math.min(1200, Math.max(250, STAGE0_DSLD_BARCODE_FALLBACK_FETCH_TIMEOUT_MS)),
+          );
+          const { signal, cleanup } = combineSignals([requestSignal, timeoutSignal]);
+          try {
+            canonicalDsldCandidateLabelId = await fetchCanonicalDsldLabelIdByBarcode(barcodeGtin14, signal);
+          } catch {
+            canonicalDsldCandidateLabelId = null;
+          } finally {
+            cleanup();
+          }
+        }
+        const hasCanonicalDsldCandidate =
+          Number.isFinite(Number(canonicalDsldCandidateLabelId)) && Number(canonicalDsldCandidateLabelId) > 0;
         const [catalogProbe, regulatoryProbe] = await Promise.all([
           catalogPromise.catch(() => null),
           regulatoryMapPromise.catch(() => null),
@@ -15094,7 +15306,13 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           }
         }
 
-        if (catalogProbe || regulatoryProbe?.npn || hasNameMatchCandidate || hasSeededDsldCandidate) {
+        if (
+          catalogProbe ||
+          regulatoryProbe?.npn ||
+          hasNameMatchCandidate ||
+          hasSeededDsldCandidate ||
+          hasCanonicalDsldCandidate
+        ) {
           bypassCachedFastPathForAuthority = true;
           console.info("[ResolutionV2] Bypassing web snapshot cache due to authoritative candidate", {
             barcode: barcodeGtin14,
@@ -15108,6 +15326,8 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
             hasRegulatoryCandidate: Boolean(regulatoryProbe?.npn),
             hasNameMatchCandidate,
             hasSeededDsldCandidate,
+            hasCanonicalDsldCandidate,
+            canonicalDsldCandidateLabelId,
           });
         }
       }
@@ -15832,16 +16052,14 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       console.log("[ResolutionV2] FORCE_STAGE1 enabled; continuing after catalog hit");
     }
 
-    const hasSeededDsldCandidateEarly =
-      STAGE0_DSLD_BARCODE_FALLBACK_ENABLED
-      && STAGE0_DSLD_SEEDED_LABEL_MAP_ENABLED
-      && STAGE0_DSLD_SEEDED_LABEL_MAP.has(barcodeGtin14);
-    if (!streamAnalysisBundleOnly && !stage0Delivered && !requestSignal.aborted && hasSeededDsldCandidateEarly) {
+    const allowDsldFallbackProbeEarly =
+      STAGE0_DSLD_BARCODE_FALLBACK_ENABLED && Boolean(barcodeGtin14);
+    if (!streamAnalysisBundleOnly && !stage0Delivered && !requestSignal.aborted && allowDsldFallbackProbeEarly) {
       const dsldRecoveredSeededEarly = await maybeRunDsldDirectFallbackStage0({ allowForFullStream: true });
       if (dsldRecoveredSeededEarly && stage0BundlePromise) {
         await awaitAnalysisBundle();
         if (!streamState.doneSent && !streamState.ended && !res.writableEnded) {
-          finalizeStream("dsld_seeded_stage0_full_stream_recovered");
+          finalizeStream("dsld_barcode_stage0_full_stream_recovered");
         }
         releaseInFlightOnce();
         return;
@@ -16371,13 +16589,13 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       }
       if (requestSignal.aborted || stage0Delivered || streamState.latestSourceTypeFinal === true) return false;
 
-      const fetchWithSoftTimeout = async (
-        factory: () => Promise<DsldFacts | null>,
+      const fetchWithSoftTimeout = async <T>(
+        factory: () => Promise<T>,
         timeoutMs: number,
-      ): Promise<DsldFacts | null> => {
-        const value = await Promise.race<DsldFacts | null>([
+      ): Promise<T | null> => {
+        const value = await Promise.race<T | null>([
           factory().catch(() => null),
-          new Promise<DsldFacts | null>((resolve) => setTimeout(() => resolve(null), timeoutMs)),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), timeoutMs)),
         ]);
         return value;
       };
@@ -16399,8 +16617,20 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       });
 
       let dsldFacts: DsldFacts | null = null;
+      const canonicalLabelId = hasSeededLabelId
+        ? Number(seededLabelId)
+        : await fetchWithSoftTimeout(
+            () => fetchCanonicalDsldLabelIdByBarcode(barcodeGtin14, requestSignal),
+            Math.min(450, STAGE0_DSLD_BARCODE_FALLBACK_FETCH_TIMEOUT_MS),
+          );
+      const prioritizedLabelId =
+        Number.isFinite(Number(seededLabelId)) && Number(seededLabelId) > 0
+          ? Number(seededLabelId)
+          : Number.isFinite(Number(canonicalLabelId)) && Number(canonicalLabelId) > 0
+            ? Number(canonicalLabelId)
+            : null;
 
-      if (hasSeededLabelId) {
+      if (prioritizedLabelId) {
         const seededFetchTimeoutMs = streamAnalysisBundleOnly
           ? STAGE0_DSLD_SEEDED_FETCH_TIMEOUT_MS
           : Math.max(
@@ -16408,14 +16638,16 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
               STAGE0_DSLD_BARCODE_FALLBACK_FETCH_TIMEOUT_MS,
             );
         dsldFacts = await fetchWithSoftTimeout(
-          () => fetchDsldFactsByLabelId(seededLabelId as number, requestSignal),
+          () => fetchDsldFactsByLabelId(prioritizedLabelId, requestSignal),
           seededFetchTimeoutMs,
         );
-        if (!dsldFacts && hasSeededLabelId) {
-          // For seeded barcodes, prefer deterministic identity over waiting on a second blocking fetch.
+        if (!dsldFacts) {
+          // For seeded/canonical-mapped barcodes, prefer deterministic authoritative identity
+          // over waiting on a second blocking fetch.
           // This applies to bundle_only and full lanes to prevent web-only terminal fallback when
           // authoritative DSLD identity is already known.
-          dsldFacts = buildSeededFallbackFacts(seededLabelId as number);
+          dsldFacts = buildSeededFallbackFacts(prioritizedLabelId);
+          void fetchDsldFactsByLabelId(prioritizedLabelId, requestSignal).catch(() => null);
           void fetchDsldFactsByBarcode(barcodeGtin14, requestSignal).catch(() => null);
         }
       }
@@ -16511,6 +16743,9 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         barcode: barcodeGtin14,
         lane: fallbackLane,
         seededLabelId,
+        canonicalLabelId: prioritizedLabelId && prioritizedLabelId !== Number(seededLabelId ?? 0)
+          ? prioritizedLabelId
+          : null,
         dsldLabelId: dsldFacts.dsldLabelId ?? null,
       });
       return true;

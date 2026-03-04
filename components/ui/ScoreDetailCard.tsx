@@ -6,6 +6,14 @@ export type ContentSection = {
     verdict: string;
     highlights: string[];
     warnings?: string[];
+    templateLoading?: boolean;
+    templateSections?: Array<{
+        title: string;
+        items: Array<{
+            label: string;
+            status: 'verified' | 'missing' | 'unknown';
+        }>;
+    }>;
 };
 
 type ScoreDetailCardProps = {
@@ -33,6 +41,17 @@ export const ScoreDetailCard = ({
             ? (valueLabel || 'Value')
             : category.charAt(0).toUpperCase() + category.slice(1)
     );
+    const templateSections = Array.isArray(description.templateSections)
+        ? description.templateSections
+        : [];
+    const hasTemplateSections = templateSections.length > 0;
+    const templateLoading = description.templateLoading === true;
+
+    const checklistSymbol = (status: 'verified' | 'missing' | 'unknown'): string => {
+        if (status === 'verified') return '✅';
+        if (status === 'missing') return '⛔';
+        return '◻';
+    };
 
     // Calculate progress percentage
     const progress = Math.min(Math.max(score / maxScore, 0), 1);
@@ -59,28 +78,65 @@ export const ScoreDetailCard = ({
                 {/* Verdict */}
                 <Text style={styles.verdict} numberOfLines={3}>{description.verdict}</Text>
 
-                {/* Highlights */}
-                {description.highlights.length > 0 && (
+                {templateLoading ? (
                     <View style={styles.section}>
-                        {description.highlights.map((item, index) => (
-                            <View key={`highlight-${index}`} style={styles.bulletRow}>
-                                <Check size={16} color="#10b981" style={styles.bulletIcon} />
-                                <Text style={styles.bulletText}>{item}</Text>
+                        {[0, 1].map((sectionIdx) => (
+                            <View
+                                key={`template-skeleton-${sectionIdx}`}
+                                style={sectionIdx > 0 ? styles.templateSectionWithGap : null}
+                            >
+                                <View style={styles.templateSkeletonTitle} />
+                                {[0, 1, 2].map((itemIdx) => (
+                                    <View key={`template-skeleton-item-${sectionIdx}-${itemIdx}`} style={styles.templateSkeletonRow}>
+                                        <View style={styles.templateSkeletonIcon} />
+                                        <View style={styles.templateSkeletonLine} />
+                                    </View>
+                                ))}
                             </View>
                         ))}
                     </View>
-                )}
+                ) : hasTemplateSections ? (
+                    <View style={styles.section}>
+                        {templateSections.map((section, sectionIdx) => (
+                            <View
+                                key={`template-section-${sectionIdx}`}
+                                style={sectionIdx > 0 ? styles.templateSectionWithGap : null}
+                            >
+                                <Text style={styles.templateSectionTitle}>{section.title}</Text>
+                                {section.items.map((item, itemIdx) => (
+                                    <Text key={`template-item-${sectionIdx}-${itemIdx}`} style={styles.templateChecklistItemText}>
+                                        {checklistSymbol(item.status)} {item.label}
+                                    </Text>
+                                ))}
+                            </View>
+                        ))}
+                    </View>
+                ) : (
+                    <>
+                        {/* Highlights */}
+                        {description.highlights.length > 0 && (
+                            <View style={styles.section}>
+                                {description.highlights.map((item, index) => (
+                                    <View key={`highlight-${index}`} style={styles.bulletRow}>
+                                        <Check size={16} color="#10b981" style={styles.bulletIcon} />
+                                        <Text style={styles.bulletText}>{item}</Text>
+                                    </View>
+                                ))}
+                            </View>
+                        )}
 
-                {/* Warnings */}
-                {description.warnings && description.warnings.length > 0 && (
-                    <View style={[styles.section, styles.warningSection]}>
-                        {description.warnings.map((item, index) => (
-                            <View key={`warning-${index}`} style={styles.bulletRow}>
-                                <AlertTriangle size={16} color="#f59e0b" style={styles.bulletIcon} />
-                                <Text style={styles.warningText}>{item}</Text>
+                        {/* Warnings */}
+                        {description.warnings && description.warnings.length > 0 && (
+                            <View style={[styles.section, styles.warningSection]}>
+                                {description.warnings.map((item, index) => (
+                                    <View key={`warning-${index}`} style={styles.bulletRow}>
+                                        <AlertTriangle size={16} color="#f59e0b" style={styles.bulletIcon} />
+                                        <Text style={styles.warningText}>{item}</Text>
+                                    </View>
+                                ))}
                             </View>
-                        ))}
-                    </View>
+                        )}
+                    </>
                 )}
             </View>
         </View>
@@ -202,5 +258,45 @@ const styles = StyleSheet.create({
         flex: 1,
         flexShrink: 1,
         minWidth: 0,
+    },
+    templateSectionWithGap: {
+        marginTop: 10,
+    },
+    templateSectionTitle: {
+        fontSize: 15,
+        fontWeight: '700',
+        color: '#111827',
+        marginBottom: 8,
+    },
+    templateChecklistItemText: {
+        fontSize: 14,
+        color: '#374151',
+        lineHeight: 22,
+        marginBottom: 4,
+    },
+    templateSkeletonTitle: {
+        width: '55%',
+        height: 14,
+        borderRadius: 6,
+        backgroundColor: '#E5E7EB',
+        marginBottom: 10,
+    },
+    templateSkeletonRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 8,
+    },
+    templateSkeletonIcon: {
+        width: 16,
+        height: 16,
+        borderRadius: 3,
+        backgroundColor: '#E5E7EB',
+    },
+    templateSkeletonLine: {
+        flex: 1,
+        height: 12,
+        borderRadius: 6,
+        backgroundColor: '#F3F4F6',
     },
 });

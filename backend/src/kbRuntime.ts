@@ -421,9 +421,14 @@ const resolveReviewedIngredientCandidates = (
 const inferSafeScienceCategoryToken = (ingredientName: string): string | null => {
   const text = normalizeFreeText(ingredientName);
   if (!text) return null;
+  const hasProbioticSignals = /probiotic|lactobacillus|bifidobacterium|cfu|saccharomyces|florassist|microbiome|gut/.test(
+    text,
+  );
+  const hasVitaminDSignals = /vitamin\s*d|\\bd2\\b|\\bd3\\b|cholecalciferol|ergocalciferol/.test(text);
   if (/fish\s*oil|omega\s*-?\s*3|epa|dha/.test(text)) return "fish_oil_omega3";
   if (/flaxseed/.test(text)) return "flaxseed_oil";
-  if (/vitamin\s*d|\\bd2\\b|\\bd3\\b|cholecalciferol|ergocalciferol/.test(text)) return "vitamin_d";
+  if (hasProbioticSignals) return "probiotics";
+  if (hasVitaminDSignals) return "vitamin_d";
   if (/alpha\s*lipoic|\\bala\\b/.test(text)) return "alpha_lipoic_acid";
   if (/biotin|hair\\s*[-,& ]?\\s*skin\\s*[-,& ]?\\s*nails?/.test(text)) return "biotin";
   if (/melatonin/.test(text)) return "melatonin";
@@ -431,7 +436,6 @@ const inferSafeScienceCategoryToken = (ingredientName: string): string | null =>
   if (/^c\s*\d+\s*mg\b|vitamin\s*c|\bascorbic\b|\bascorbate\b/.test(text)) return "vitamin_c";
   if (/\\bmagnesium\\b/.test(text)) return "magnesium";
   if (/\\bzinc\\b/.test(text)) return "zinc";
-  if (/probiotic|lactobacillus|bifidobacterium|cfu/.test(text)) return "probiotics";
   return null;
 };
 
