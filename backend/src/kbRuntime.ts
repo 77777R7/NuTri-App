@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { getReviewedFormExplain } from "./insights/reviewedPackage.js";
 
@@ -211,17 +212,20 @@ let cachedSafeScienceSubset: SafeScienceSubsetFile | null = null;
 let safeScienceFallbackLoadAttempted = false;
 let cachedSafeScienceFallbacks: SafeScienceFallbackFile | null = null;
 
+const BACKEND_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const REPO_ROOT = path.resolve(BACKEND_ROOT, "..");
+
 const getReviewedAliasPath = () =>
   process.env.REVIEWED_INGREDIENT_ALIASES_PATH ??
-  path.join(process.cwd(), "data", "reviewed", "reviewed-ingredient-aliases.v1.json");
+  path.join(BACKEND_ROOT, "data", "reviewed", "reviewed-ingredient-aliases.v1.json");
 
 const getSafeScienceSubsetPath = () =>
   process.env.SAFE_SCIENCE_SUBSET_PATH ??
-  path.join(process.cwd(), "data", "kb", "v4_safe_science_subset.json");
+  path.join(REPO_ROOT, "data", "kb", "v4_safe_science_subset.json");
 
 const getSafeScienceFallbackPath = () =>
   process.env.SAFE_SCIENCE_FALLBACKS_PATH ??
-  path.join(process.cwd(), "data", "kb", "safe_science_fallbacks.v1.json");
+  path.join(REPO_ROOT, "data", "kb", "safe_science_fallbacks.v1.json");
 
 const getReviewedIngredientAliases = (): Record<string, string> => {
   if (reviewedAliasLoadAttempted) return reviewedIngredientAliases;
@@ -421,9 +425,14 @@ const resolveReviewedIngredientCandidates = (
 const inferSafeScienceCategoryToken = (ingredientName: string): string | null => {
   const text = normalizeFreeText(ingredientName);
   if (!text) return null;
+  const hasProbioticSignals = /probiotic|lactobacillus|bifidobacterium|cfu|saccharomyces|florassist|microbiome|gut/.test(
+    text,
+  );
+  const hasVitaminDSignals = /vitamin\s*d|\\bd2\\b|\\bd3\\b|cholecalciferol|ergocalciferol/.test(text);
   if (/fish\s*oil|omega\s*-?\s*3|epa|dha/.test(text)) return "fish_oil_omega3";
   if (/flaxseed/.test(text)) return "flaxseed_oil";
-  if (/vitamin\s*d|\\bd2\\b|\\bd3\\b|cholecalciferol|ergocalciferol/.test(text)) return "vitamin_d";
+  if (hasProbioticSignals) return "probiotics";
+  if (hasVitaminDSignals) return "vitamin_d";
   if (/alpha\s*lipoic|\\bala\\b/.test(text)) return "alpha_lipoic_acid";
   if (/biotin|hair\\s*[-,& ]?\\s*skin\\s*[-,& ]?\\s*nails?/.test(text)) return "biotin";
   if (/melatonin/.test(text)) return "melatonin";
@@ -431,7 +440,6 @@ const inferSafeScienceCategoryToken = (ingredientName: string): string | null =>
   if (/^c\s*\d+\s*mg\b|vitamin\s*c|\bascorbic\b|\bascorbate\b/.test(text)) return "vitamin_c";
   if (/\\bmagnesium\\b/.test(text)) return "magnesium";
   if (/\\bzinc\\b/.test(text)) return "zinc";
-  if (/probiotic|lactobacillus|bifidobacterium|cfu/.test(text)) return "probiotics";
   return null;
 };
 
@@ -578,13 +586,20 @@ export const getKbRuntime = (): KbRuntime | null => {
   kbLoadAttempted = true;
 
   const runtimePath =
-    process.env.KB_RUNTIME_INDEX_PATH ?? path.join(process.cwd(), "data", "kb", "kb_runtime_index.json");
+    process.env.KB_RUNTIME_INDEX_PATH ?? path.join(BACKEND_ROOT, "data", "kb", "kb_runtime_index.json");
   const aliasPath =
-    process.env.KB_FORM_ALIAS_PATH ?? path.join(process.cwd(), "data", "kb", "form_alias_map.json");
+    process.env.KB_FORM_ALIAS_PATH ?? path.join(BACKEND_ROOT, "data", "kb", "form_alias_map.json");
 
   const runtime = loadJson<KbRuntimeIndex>(runtimePath);
   const alias = loadJson<AliasMap>(aliasPath);
-  if (!runtime || !alias) return null;
+  if (!runtime || !alias) {
+    const attempted = [
+      `runtimePath=${runtimePath}`,
+      `aliasPath=${aliasPath}`,
+    ].join(" | ");
+    console.warn(`[kb-runtime] failed to load runtime files (${attempted})`);
+    return null;
+  }
 
   const ingredientNameIndex: Record<string, string> = {};
   for (const entry of Object.values(runtime.ingredient_form_index ?? {})) {

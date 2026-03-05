@@ -46,6 +46,7 @@ const main = async () => {
   const issues = [];
 
   const requiredHeadings = [
+    "## 0) Nutri Score Card v2",
     "## 1) Product Overview",
     "## 2) Science & Ingredients",
     "## 3) Practical Usage",
@@ -75,6 +76,69 @@ const main = async () => {
         message: `Missing required heading: ${heading}`,
       });
     }
+  }
+
+  const v2ModuleHeadings = [
+    "### Ingredient Safety",
+    "### Formula Transparency",
+    "### Label Clarity (Directions & Warnings)",
+    "### Manufacturing Standards",
+    "### Testing & Verification",
+    "### Product Quality Signals",
+  ];
+  for (const heading of v2ModuleHeadings) {
+    if (!md.includes(heading)) {
+      issues.push({
+        type: "scorecard_v2_structure",
+        severity: "high",
+        message: `Missing scorecard module heading: ${heading}`,
+      });
+    }
+  }
+
+  const scorecardSectionText = linesBetween(md, "## 0) Nutri Score Card v2", "## 1) Product Overview").join(" ");
+  if (!/\b(Verified|Detected|Not verified|Not shown)\b/i.test(scorecardSectionText)) {
+    issues.push({
+      type: "scorecard_v2_structure",
+      severity: "high",
+      message: "Nutri Score Card v2 must include checklist chip states (Verified/Detected/Not verified/Not shown).",
+    });
+  }
+  if (/✅|⛔|◻/.test(scorecardSectionText)) {
+    issues.push({
+      type: "scorecard_v2_semantics",
+      severity: "high",
+      message: "Nutri Score Card v2 should not render emoji checklist symbols.",
+    });
+  }
+  if (/overlay_iherb/i.test(md)) {
+    issues.push({
+      type: "source_tier_semantics",
+      severity: "high",
+      message: "User-facing demo text must not expose raw source tier token overlay_iherb.",
+    });
+  }
+  if (!/\bOverall band:\s*(Excellent|Strong|Good|Fair|Limited|Weak)\b/i.test(scorecardSectionText)) {
+    issues.push({
+      type: "scorecard_v2_structure",
+      severity: "high",
+      message: "Nutri Score Card v2 must include a valid overall band label.",
+    });
+  }
+  const moduleBandMatches = scorecardSectionText.match(/\bBand:\s*(High|Moderate|Limited|Low)\b/gi) ?? [];
+  if (moduleBandMatches.length < 6) {
+    issues.push({
+      type: "scorecard_v2_structure",
+      severity: "high",
+      message: "Each v2 module must include a valid module band label.",
+    });
+  }
+  if (/Directions are not included in the official record|Please use the bottle's Directions panel|Serving cue \(verified\)/i.test(scorecardSectionText)) {
+    issues.push({
+      type: "scorecard_scope",
+      severity: "high",
+      message: "Score card should include checklist labels only, not full directions text.",
+    });
   }
 
   const bestForLines = linesBetween(md, "### Best for", "### What this product provides (verified)");
@@ -133,8 +197,18 @@ const main = async () => {
       message: "Science block repeats numeric dose information more than once.",
     });
   }
-  const nonUsageText = [providesText, scienceText, safetyText].join(" ");
-  if (/Directions are not included in the official record|Source:\s*scanned_label|Serving cue \(verified\)/i.test(nonUsageText)) {
+  const nonUsageBullets = [
+    ...linesBetween(md, "### What this product provides (verified)", "### Missing info (single CTA)"),
+    ...linesBetween(md, "## 2) Science & Ingredients", "## 3) Practical Usage"),
+    ...linesBetween(md, "## 4) Safety & Tips", null),
+  ];
+  if (
+    nonUsageBullets.some((line) =>
+      /^(Directions are not included in the official record|Source:\s*scanned_label|Serving cue \(verified\))/i.test(
+        line,
+      ),
+    )
+  ) {
     issues.push({
       type: "redundancy",
       severity: "high",
@@ -201,6 +275,27 @@ const main = async () => {
       type: "quality_mark_semantics",
       severity: "high",
       message: "Search-only quality-mark evidence must be rendered as unknown(search-only evidence...).",
+    });
+  }
+
+  const scoredV2Items = Array.isArray(trace?.nutriScoreCardV2?.modules)
+    ? trace.nutriScoreCardV2.modules.flatMap((module) =>
+        Array.isArray(module?.checklist)
+          ? module.checklist.filter((item) => item?.scoreEligible !== false)
+          : [],
+      )
+    : [];
+  const overlayClaimKnownCount = scoredV2Items.filter((item) =>
+    item?.evidenceStrength === "overlay_claim" && item?.state !== "unknown"
+  ).length;
+  const knownScoredCount = scoredV2Items.filter((item) => item?.state !== "unknown").length;
+  const overlayDominant = knownScoredCount > 0 && (overlayClaimKnownCount / knownScoredCount) >= 0.7;
+  const confidencePct = Number(trace?.nutriScoreCardV2?.confidencePct ?? 0);
+  if (overlayDominant && confidencePct >= 100) {
+    issues.push({
+      type: "confidence_semantics",
+      severity: "high",
+      message: "Confidence cannot be 100 when score evidence is dominated by overlay claims.",
     });
   }
 

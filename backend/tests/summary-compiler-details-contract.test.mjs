@@ -5,7 +5,7 @@ import { compileIngredientSummaryAsync } from "../dist/insights/summaryCompiler.
 
 const packet = {
   locale: "en",
-  viewMode: "simple",
+  viewMode: "details",
   ingredientName: "Vitamin D",
   facts: {
     amount: 25,
@@ -32,7 +32,7 @@ const sentenceCount = (text) =>
     .map((line) => line.trim())
     .filter(Boolean).length;
 
-test("ingredient summary enforces three-sentence simple contract", async () => {
+test("ingredient summary enforces three-sentence details contract", async () => {
   const response = await compileIngredientSummaryAsync(packet, {
     maxRetries: 0,
     llmFn: async () =>
@@ -47,7 +47,7 @@ test("ingredient summary enforces three-sentence simple contract", async () => {
   assert.equal(response.reasonCode, "LLM_OK");
   assert.equal(response.guardApplied, true);
   assert.equal(response.fallbackUsed, false);
-  assert.equal(response.summaryVersion, "v1.6.12-simple-1");
+  assert.equal(response.summaryVersion, "v1.6.16-details-1");
   assert.equal(sentenceCount(response.tldr), 3);
 });
 
@@ -65,7 +65,7 @@ test("ingredient summary falls back when technical leakage appears", async () =>
 
   assert.equal(response.fallbackUsed, true);
   assert.equal(response.guardApplied, true);
-  assert.equal(response.summaryVersion, "v1.6.12-simple-1");
+  assert.equal(response.summaryVersion, "v1.6.16-details-1");
   assert.equal(sentenceCount(response.tldr), 3);
 });
 
@@ -83,6 +83,6 @@ test("ingredient summary falls back when fluff phrasing appears", async () => {
 
   assert.equal(response.fallbackUsed, true);
   assert.equal(response.guardApplied, true);
-  assert.equal(response.summaryVersion, "v1.6.12-simple-1");
+  assert.equal(response.summaryVersion, "v1.6.16-details-1");
   assert.equal(sentenceCount(response.tldr), 3);
 });

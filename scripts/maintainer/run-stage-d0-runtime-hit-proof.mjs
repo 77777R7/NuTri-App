@@ -158,7 +158,7 @@ const main = async () => {
   const hitThreshold = Math.max(0, Math.min(1, asNumber(getArg("hit-threshold"), 0.7)));
   const visibleThreshold = Math.max(0, Math.min(1, asNumber(getArg("visible-threshold"), 0.7)));
   const payloadSoftThreshold = Math.max(0, Math.min(1, asNumber(getArg("payload-soft-threshold"), 0.4)));
-  const viewMode = String(getArg("view-mode", "simple")).trim().toLowerCase() === "details" ? "details" : "simple";
+  const viewMode = "details";
   const regressionToken = String(getArg("regression-token", process.env.REGRESSION_AUTH_TOKEN || "")).trim();
   const bearerToken = String(getArg("bearer-token", process.env.STAGE_D0_BEARER_TOKEN || "")).trim();
 

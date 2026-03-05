@@ -27,9 +27,7 @@ const apiBaseUrl = String(
 
 const timeoutMs = Math.max(1000, asNumber(getArg("timeout-ms"), 8000));
 const maxSamples = Math.max(1, Math.min(50, asNumber(getArg("max-samples"), 20)));
-const viewMode = String(getArg("view-mode") || "simple").trim().toLowerCase() === "details"
-  ? "details"
-  : "simple";
+const viewMode = "details";
 const maxUnexpected409Rate = Math.max(0, asNumber(getArg("max-unexpected409-rate"), 0.001));
 const minRetrySuccessRate = Math.min(1, Math.max(0, asNumber(getArg("min-retry-success-rate"), 0.99)));
 const maxInlineFallbackRate = Math.max(0, asNumber(getArg("max-inline-fallback-rate"), 0.001));

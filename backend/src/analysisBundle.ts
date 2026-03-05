@@ -338,6 +338,79 @@ export const DecisionSupportInlineSchema = z.object({
       severity: DecisionSupportSeveritySchema,
     }),
   ).max(3),
+  nutriScoreCard: z
+    .object({
+      score: z.number().min(0).max(100),
+      confidenceCoverage: z.number().min(0).max(100),
+      rows: z.array(
+        z.object({
+          id: z.enum(["effectiveness", "safety", "integrity"]),
+          label: z.string().trim().min(1),
+          score: z.number().min(0).max(100),
+        }),
+      ).length(3),
+      checklistsByRow: z.record(z.string(), z.array(z.unknown())).optional(),
+    })
+    .optional(),
+  nutriScoreCardV2: z
+    .object({
+      overallScore: z.number().min(0).max(100),
+      overallBand: z.enum(["Excellent", "Strong", "Good", "Fair", "Limited", "Weak"]).optional(),
+      confidencePct: z.number().min(0).max(100),
+      modules: z.array(
+        z.object({
+          id: z.enum([
+            "ingredient_safety",
+            "formula_transparency",
+            "label_clarity",
+            "manufacturing_standards",
+            "testing_verification",
+            "product_quality",
+          ]),
+          title: z.string().trim().min(1),
+          score: z.number().min(0).max(100),
+          status: z.enum(["high", "moderate", "limited", "low", "medium", "unknown"]),
+          band: z.enum(["High", "Moderate", "Limited", "Low"]).optional(),
+          checklist: z.array(
+            z.object({
+              key: z.string().trim().min(1),
+              label: z.string().trim().min(1),
+              state: z.enum(["verified", "missing", "unknown"]),
+              sourceTier: z.enum([
+                "official_record",
+                "scanned_label",
+                "overlay_iherb",
+                "general_science",
+                "inferred",
+              ]),
+              evidenceStrength: z.enum([
+                "official",
+                "scanned_label",
+                "overlay_label_transcription",
+                "overlay_claim",
+                "cert_page_verified",
+                "general_science",
+                "inferred",
+              ]),
+              evidenceRef: z.string().nullable().optional(),
+              note: z.string().nullable().optional(),
+              weight: z.number().min(0).optional(),
+              role: z.enum(["score", "info"]).optional(),
+              critical: z.boolean().optional(),
+              proofClass: z.enum([
+                "official_like",
+                "overlay_transcription",
+                "claim_only",
+                "independent_verifier",
+                "science_only",
+              ]).optional(),
+              scoreEligible: z.boolean().optional(),
+            }),
+          ),
+        }),
+      ).length(6),
+    })
+    .optional(),
 });
 export type DecisionSupportInline = z.infer<typeof DecisionSupportInlineSchema>;
 
