@@ -234,6 +234,133 @@ const parseBooleanEnv = (value: string | undefined, fallback: boolean): boolean 
   if (normalized === "0" || normalized === "false" || normalized === "no") return false;
   return fallback;
 };
+type LegacyCallerSurface = "mobile_ui" | "shadow_probe" | "regression" | "unknown";
+type LegacyRuntimeUsageDayRow = {
+  total: number;
+  mobileUiCalls: number;
+  byRoute: Record<string, number>;
+  bySurface: Record<LegacyCallerSurface, number>;
+};
+type LegacyRuntimeUsageSessionRow = {
+  sessionId: string;
+  total: number;
+  byRoute: Record<string, number>;
+  bySurface: Record<LegacyCallerSurface, number>;
+  visibleUiTouched: boolean;
+  lastSeenAt: string;
+};
+const FREEZE_SHADOW_ONLY = parseBooleanEnv(process.env.FREEZE_SHADOW_ONLY, true);
+const legacyRuntimeUsage = {
+  startedAt: new Date().toISOString(),
+  totalCalls: 0,
+  mobileUiCalls: 0,
+  byRoute: {} as Record<string, number>,
+  bySurface: {
+    mobile_ui: 0,
+    shadow_probe: 0,
+    regression: 0,
+    unknown: 0,
+  } as Record<LegacyCallerSurface, number>,
+  byDay: {} as Record<string, LegacyRuntimeUsageDayRow>,
+  bySession: {} as Record<string, LegacyRuntimeUsageSessionRow>,
+};
+const normalizeLegacyCallerSurface = (value: unknown): LegacyCallerSurface => {
+  const normalized = String(value ?? "").trim().toLowerCase();
+  if (normalized === "mobile_ui") return "mobile_ui";
+  if (normalized === "shadow_probe") return "shadow_probe";
+  if (normalized === "regression") return "regression";
+  return "unknown";
+};
+const resolveLegacyCallerSurface = (req: Request): LegacyCallerSurface => {
+  const rawHeader = req.headers["x-legacy-caller-surface"];
+  const headerValue = Array.isArray(rawHeader) ? rawHeader[0] : rawHeader;
+  const fromHeader = normalizeLegacyCallerSurface(headerValue);
+  if (fromHeader !== "unknown") return fromHeader;
+  const regressionAuthed = Boolean((req as Request & { regressionAuth?: boolean }).regressionAuth);
+  if (regressionAuthed) return "regression";
+  const userAgent = String(req.headers["user-agent"] ?? "").toLowerCase();
+  if (
+    userAgent.includes("expo")
+    || userAgent.includes("reactnative")
+    || userAgent.includes("cfnetwork")
+    || userAgent.includes("okhttp")
+  ) {
+    return "mobile_ui";
+  }
+  return "unknown";
+};
+const resolveLegacySessionId = (req: Request): string | null => {
+  const fromHeader = req.headers["x-scan-session-id"];
+  const headerValue = Array.isArray(fromHeader) ? fromHeader[0] : fromHeader;
+  const fromQuery = typeof req.query?.sessionId === "string" ? req.query.sessionId : null;
+  const candidate = String(headerValue ?? fromQuery ?? "").trim();
+  if (!candidate) return null;
+  return candidate.length > 80 ? candidate.slice(0, 80) : candidate;
+};
+const recordLegacyRuntimeUsage = (
+  route: string,
+  callerSurface: LegacyCallerSurface,
+  sessionId: string | null,
+): void => {
+  legacyRuntimeUsage.totalCalls += 1;
+  legacyRuntimeUsage.byRoute[route] = (legacyRuntimeUsage.byRoute[route] ?? 0) + 1;
+  legacyRuntimeUsage.bySurface[callerSurface] = (legacyRuntimeUsage.bySurface[callerSurface] ?? 0) + 1;
+  if (callerSurface === "mobile_ui") legacyRuntimeUsage.mobileUiCalls += 1;
+  const dayKey = new Date().toISOString().slice(0, 10);
+  if (!legacyRuntimeUsage.byDay[dayKey]) {
+    legacyRuntimeUsage.byDay[dayKey] = {
+      total: 0,
+      mobileUiCalls: 0,
+      byRoute: {},
+      bySurface: {
+        mobile_ui: 0,
+        shadow_probe: 0,
+        regression: 0,
+        unknown: 0,
+      },
+    };
+  }
+  const dayRow = legacyRuntimeUsage.byDay[dayKey];
+  dayRow.total += 1;
+  dayRow.byRoute[route] = (dayRow.byRoute[route] ?? 0) + 1;
+  dayRow.bySurface[callerSurface] = (dayRow.bySurface[callerSurface] ?? 0) + 1;
+  if (callerSurface === "mobile_ui") dayRow.mobileUiCalls += 1;
+  if (sessionId) {
+    if (!legacyRuntimeUsage.bySession[sessionId]) {
+      legacyRuntimeUsage.bySession[sessionId] = {
+        sessionId,
+        total: 0,
+        byRoute: {},
+        bySurface: {
+          mobile_ui: 0,
+          shadow_probe: 0,
+          regression: 0,
+          unknown: 0,
+        },
+        visibleUiTouched: false,
+        lastSeenAt: new Date().toISOString(),
+      };
+    }
+    const sessionRow = legacyRuntimeUsage.bySession[sessionId];
+    sessionRow.total += 1;
+    sessionRow.byRoute[route] = (sessionRow.byRoute[route] ?? 0) + 1;
+    sessionRow.bySurface[callerSurface] = (sessionRow.bySurface[callerSurface] ?? 0) + 1;
+    if (callerSurface === "mobile_ui") sessionRow.visibleUiTouched = true;
+    sessionRow.lastSeenAt = new Date().toISOString();
+  }
+};
+const applyLegacyShadowHeaders = (req: Request, res: Response, route: string): LegacyCallerSurface => {
+  const callerSurface = resolveLegacyCallerSurface(req);
+  const sessionId = resolveLegacySessionId(req);
+  if (FREEZE_SHADOW_ONLY) {
+    res.setHeader("Deprecation", "true");
+    res.setHeader("X-Legacy-Shadow-Route", "1");
+    res.setHeader("X-Legacy-Caller-Surface", callerSurface);
+    res.setHeader("X-Legacy-Freeze-Mode", "shadow_only");
+  }
+  recordLegacyRuntimeUsage(route, callerSurface, sessionId);
+  return callerSurface;
+};
 const readScanTerminalLockEnabled = (): boolean =>
   parseBooleanEnv(
     process.env.SCAN_TERMINAL_LOCK_ENABLED ?? process.env.EXPO_PUBLIC_SCAN_TERMINAL_LOCK_ENABLED,
@@ -9091,6 +9218,7 @@ app.get("/api/search-by-barcode", async (req: Request, res: Response) => {
  * v4 score bundle (cached)
  */
 app.get("/api/score/v4/:source/:id", verifySupabaseToken, async (req: Request, res: Response) => {
+  applyLegacyShadowHeaders(req, res, "/api/score/v4/:source/:id");
   const sourceParsed = scoreSourceSchema.safeParse(req.params.source);
   const sourceId = typeof req.params.id === "string" ? req.params.id.trim() : "";
 
@@ -9577,6 +9705,7 @@ app.get("/api/score/v4/:source/:id", verifySupabaseToken, async (req: Request, r
  * v4 web score ingestion + compute (ownership-gated)
  */
 app.post("/api/score/v4/web/:id", verifySupabaseToken, async (req: Request, res: Response) => {
+  applyLegacyShadowHeaders(req, res, "/api/score/v4/web/:id");
   const sourceId = typeof req.params.id === "string" ? req.params.id.trim() : "";
   if (!sourceId) {
     return res
@@ -10168,6 +10297,7 @@ app.get("/api/patch-shadow/status", verifySupabaseToken, (req: Request, res: Res
  * Product-specific ingredient narrative compiler
  */
 app.post("/api/summary/ingredient", verifySupabaseToken, async (req: Request, res: Response) => {
+  applyLegacyShadowHeaders(req, res, "/api/summary/ingredient");
   const packet = parseRequestBody(ingredientSummaryPacketSchema, req, res);
   if (!packet) return;
 
@@ -10284,6 +10414,7 @@ app.post("/api/summary/ingredient", verifySupabaseToken, async (req: Request, re
 });
 
 app.post("/api/summary/usage", verifySupabaseToken, async (req: Request, res: Response) => {
+  applyLegacyShadowHeaders(req, res, "/api/summary/usage");
   const packet = parseRequestBody(usageSummaryPacketSchema, req, res);
   if (!packet) return;
 
@@ -10347,6 +10478,7 @@ app.post("/api/summary/usage", verifySupabaseToken, async (req: Request, res: Re
 });
 
 app.post("/api/summary/safety", verifySupabaseToken, async (req: Request, res: Response) => {
+  applyLegacyShadowHeaders(req, res, "/api/summary/safety");
   const packet = parseRequestBody(safetySummaryPacketSchema, req, res);
   if (!packet) return;
 
@@ -10638,6 +10770,7 @@ const enforceUsageSectionContract = (
  * On-demand analysis section endpoint (ingredients detail + overview + usage)
  */
 app.post("/api/analysis-section", verifySupabaseToken, async (req: Request, res: Response) => {
+  applyLegacyShadowHeaders(req, res, "/api/analysis-section");
   const parsedBody = parseRequestBody(analysisSectionBodySchema, req, res);
   if (!parsedBody) {
     return;
@@ -24058,6 +24191,39 @@ app.post("/api/enrich-supplement", async (_req: Request, res: Response) => {
  */
 app.get("/internal/metrics", (_req: Request, res: Response) => {
   res.json(getMetricsSnapshot());
+});
+
+app.get("/internal/legacy-runtime-usage", (_req: Request, res: Response) => {
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayRow = legacyRuntimeUsage.byDay[todayKey] ?? {
+    total: 0,
+    mobileUiCalls: 0,
+    byRoute: {},
+    bySurface: {
+      mobile_ui: 0,
+      shadow_probe: 0,
+      regression: 0,
+      unknown: 0,
+    },
+  };
+  res.json({
+    schemaVersion: "legacy_runtime_usage.v1",
+    freezeShadowOnly: FREEZE_SHADOW_ONLY,
+    generatedAt: new Date().toISOString(),
+    startedAt: legacyRuntimeUsage.startedAt,
+    totals: {
+      totalCalls: legacyRuntimeUsage.totalCalls,
+      mobileUiCalls: legacyRuntimeUsage.mobileUiCalls,
+      bySurface: legacyRuntimeUsage.bySurface,
+      byRoute: legacyRuntimeUsage.byRoute,
+    },
+    bySession: legacyRuntimeUsage.bySession,
+    today: {
+      date: todayKey,
+      ...todayRow,
+    },
+    byDay: legacyRuntimeUsage.byDay,
+  });
 });
 
 /**

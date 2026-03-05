@@ -42,6 +42,13 @@ const FORCE_FULL_DASHBOARD =
 const SHOW_SCAN_DEBUG =
   process.env.EXPO_PUBLIC_SHOW_SCAN_DEBUG === 'true' ||
   process.env.EXPO_PUBLIC_SHOW_SCAN_DEBUG === '1';
+const FREEZE_SHADOW_ONLY =
+  process.env.EXPO_PUBLIC_FREEZE_SHADOW_ONLY == null
+    ? true
+    : !(
+      process.env.EXPO_PUBLIC_FREEZE_SHADOW_ONLY === '0' ||
+      process.env.EXPO_PUBLIC_FREEZE_SHADOW_ONLY === 'false'
+    );
 
 const resolveDashboardRenderMode = (_isExpoGo: boolean): 'full' => {
   // Hard-lock to full dashboard so we never regress to legacy Lite UI during runtime.
@@ -502,13 +509,14 @@ export default function ScanResultScreen() {
   const barcodeScoreState = useScoreBundleV4({
     source: scoreQueryFromBundleMeta?.source ?? null,
     sourceId: scoreQueryFromBundleMeta?.sourceId ?? null,
-    enabled: Boolean(scoreQueryFromBundleMeta) && !isLabel,
+    enabled: Boolean(scoreQueryFromBundleMeta) && !isLabel && !FREEZE_SHADOW_ONLY,
     requestNonce: scoreRequestNonce,
   });
   useEffect(() => {
     if (!__DEV__) return;
     console.log('[ScoreV4] query', {
-      enabled: Boolean(scoreQueryFromBundleMeta) && !isLabel,
+      enabled: Boolean(scoreQueryFromBundleMeta) && !isLabel && !FREEZE_SHADOW_ONLY,
+      freezeShadowOnly: FREEZE_SHADOW_ONLY,
       source: scoreQueryFromBundleMeta?.source ?? null,
       sourceId: scoreQueryFromBundleMeta?.sourceId ?? null,
       bundleSourceType: analysisBundle?.meta?.sourceType ?? null,

@@ -292,9 +292,9 @@ const checklistDisplayState = (item) => {
   const strength = safeText(item?.evidenceStrength).toLowerCase();
   if (state === "missing") return "Not shown";
   if (state === "unknown") return "Not verified";
-  if (state === "verified" && strength === "overlay_claim") return "Listed";
-  if (state === "verified" && ["official", "scanned_label", "cert_page_verified"].includes(strength)) return "Confirmed";
-  if (state === "verified") return "Listed";
+  if (state === "verified" && strength === "overlay_claim") return "Detected";
+  if (state === "verified" && ["official", "scanned_label", "overlay_label_transcription", "cert_page_verified"].includes(strength)) return "Verified";
+  if (state === "verified") return "Detected";
   return "Not verified";
 };
 
@@ -719,12 +719,19 @@ const runBarcodeOnlyMode = async () => {
 
   const usageDirectionLines = uniqLines(Array.isArray(template?.usage?.directions?.lines) ? template.usage.directions.lines : [])
     .map((line) =>
-      String(line).replace(/\bSource:\s*scanned_label\./i, "Source: scanned_label (patched)."),
+      String(line)
+        .replace(/\bSource:\s*scanned_label\./i, "Source: scanned label data (patched).")
+        .replace(
+          /\bSource:\s*overlay_iherb(?:\s*\([^)]+\))?\./i,
+          "Source: supplemental product-page label data.",
+        )
+        .replace(/\bSource:\s*official_record\./i, "Source: official record data.")
+        .replace(/\(serving\s*!=\s*daily dose\)/gi, "(a serving is not the same as the daily amount)"),
     );
   if (usageDirectionLines.length === 0) {
     usageDirectionLines.push("Directions are not included in the official record.");
     usageDirectionLines.push("Please use the bottle's Directions panel to confirm daily serving and schedule.");
-    usageDirectionLines.push(`Serving cue (verified): ${servingSizeDisplay} per serving (serving != daily dose).`);
+    usageDirectionLines.push(`Serving cue (verified): ${servingSizeDisplay} per serving (a serving is not the same as the daily amount).`);
   }
   const usageTimingTip = safeText(template?.usage?.timingTip) || "Build a consistent routine after confirming label directions.";
   const usageConservative = safeText(template?.usage?.conservativeGuidance) || "If unsure, start with the lowest label-suggested daily amount and reassess tolerance.";

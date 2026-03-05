@@ -21,6 +21,9 @@ const demoRoot = getArg("demo-root", path.join(ROOT, "output", "demo5"));
 const overlayOutDir = getArg("overlay-out-dir", path.join(ROOT, "output", "demo5_iherb"));
 const controlBaseUrl = String(getArg("control-base-url", "http://127.0.0.1:3101")).replace(/\/+$/, "");
 const patchBaseUrl = String(getArg("patch-base-url", "http://127.0.0.1:3102")).replace(/\/+$/, "");
+const readinessBaseUrl = String(getArg("readiness-base-url", patchBaseUrl)).replace(/\/+$/, "");
+const stabilityAttempts = Math.max(1, Number(getArg("stability-attempts", "20")) || 20);
+const nowIso = () => new Date().toISOString();
 
 const samples = [
   { brand: "Sports Research", key: "sports_research_omega3", barcode: "00023249011835" },
@@ -61,6 +64,13 @@ const parseLastJson = (text) => {
     return null;
   }
 };
+
+const normalize = (value) => String(value ?? "").trim();
+const excerptLines = (text, maxLines = 80) =>
+  String(text ?? "")
+    .split(/\r?\n/)
+    .filter((line) => line.trim().length > 0)
+    .slice(0, maxLines);
 
 const buildInvestorSummary = ({ perSample, batchLint, mergeReport }) => {
   const lines = [];
@@ -106,7 +116,9 @@ const buildInvestorSummary = ({ perSample, batchLint, mergeReport }) => {
   lines.push("");
   lines.push("## Merge / Lint Status");
   lines.push("");
-  lines.push(`- Overlay matched: ${mergeReport?.summary?.matched ?? 0}/${mergeReport?.summary?.total ?? 0}`);
+  lines.push(`- Overlay merged: ${mergeReport?.summary?.merged ?? 0}/${mergeReport?.summary?.total ?? 0}`);
+  lines.push(`- Overlay queued: ${mergeReport?.summary?.queued ?? 0}`);
+  lines.push(`- Overlay blocked: ${mergeReport?.summary?.blocked ?? 0}`);
   lines.push(`- Batch lint: ${batchLint?.ok ? "PASS" : "FAIL"} (${batchLint?.passCount ?? 0}/${batchLint?.total ?? 0})`);
 
   return `${lines.join("\n")}\n`;
@@ -173,7 +185,7 @@ const buildPilotCloseout = ({ perSample, mergeReport, unmatchedQueuePath }) => {
 
   return {
     schemaVersion: "demo5_iherb_pilot_closeout.v1",
-    generatedAt: new Date().toISOString(),
+    generatedAt: nowIso(),
     summary: {
       totalSamples: perSample.length,
       lintPassCount: perSample.filter((row) => row.lintOk).length,
@@ -186,6 +198,96 @@ const buildPilotCloseout = ({ perSample, mergeReport, unmatchedQueuePath }) => {
       mergeUnmatched: Array.isArray(mergeReport?.unmatched) ? mergeReport.unmatched : [],
     },
   };
+};
+
+const buildRemaining4ModuleFieldContract = () => {
+  const lines = [];
+  lines.push("# Remaining4 Module Field Contract");
+  lines.push("");
+  lines.push("## Product Overview");
+  lines.push("- Cover summary priority: product identity + primary value proposition.");
+  lines.push("- Cover bullets priority: quantified actives first, category-relevant compare facts second.");
+  lines.push("- Missing info: compute with `officialMissing - overlayResolved + unresolved`.");
+  lines.push("");
+  lines.push("## Science & Ingredients");
+  lines.push("- Use active ingredient ranking by category (omega-3: Total Omega-3 > EPA > DHA > fish oil total).");
+  lines.push("- Avoid macro nutrition filler on cover when active disclosures are available.");
+  lines.push("- ODS labels only when source tier is general_science.");
+  lines.push("");
+  lines.push("## Practical Usage");
+  lines.push("- Directions priority: scanned_label > official_record > overlay_iherb suggested use > generic fallback.");
+  lines.push("- All usage lines must be natural language; no internal source-tier tokens.");
+  lines.push("");
+  lines.push("## Safety & Tips");
+  lines.push("- Warning priority: official product warnings > overlay_iherb warnings > general watch-outs.");
+  lines.push("- Keep product-specific warnings and general science watch-outs separated.");
+  lines.push("");
+  lines.push("## Source Tier Rules");
+  lines.push("- official_record: authoritative registry fields.");
+  lines.push("- scanned_label: OCR/patch label extraction.");
+  lines.push("- overlay_iherb: supplemental product-page label text.");
+  lines.push("- general_science: NIH ODS/general context only.");
+  lines.push("");
+  return `${lines.join("\n")}\n`;
+};
+
+const buildRemaining4AfterMergeBundle = ({ perSample }) => {
+  const lines = [];
+  lines.push("# Remaining4 After-Merge Demo Bundle");
+  lines.push("");
+  lines.push(`- generatedAt: ${nowIso()}`);
+  lines.push("- scope: remaining 4 products (excluding Omega-3 baseline)");
+  lines.push("");
+  for (const row of perSample.filter((item) => item.key !== "sports_research_omega3")) {
+    lines.push(`## ${row.brand} (${row.barcode})`);
+    lines.push(`- sourceTypeFinal: ${normalize(row.trace?.sourceTypeFinal) || "unknown"}`);
+    lines.push(`- lintOk: ${row.lintOk}`);
+    lines.push(`- mdPath: ${row.mdPath}`);
+    const snippet = excerptLines(row.mdText, 70);
+    lines.push("");
+    lines.push("```markdown");
+    lines.push(...snippet);
+    lines.push("```");
+    lines.push("");
+  }
+  return `${lines.join("\n")}\n`;
+};
+
+const buildRemaining4BeforeAfterDiff = ({ perSample, mergeCoverageReport, renderCompletenessReport }) => {
+  const mergeByBarcode = new Map(
+    (Array.isArray(mergeCoverageReport?.rows) ? mergeCoverageReport.rows : []).map((row) => [normalize(row?.barcodeGtin14), row]),
+  );
+  const renderByBarcode = new Map(
+    (Array.isArray(renderCompletenessReport?.products) ? renderCompletenessReport.products : []).map((row) => [normalize(row?.barcode), row]),
+  );
+
+  const lines = [];
+  lines.push("# Remaining4 Before vs After Diff");
+  lines.push("");
+  lines.push(`- generatedAt: ${nowIso()}`);
+  lines.push("- baseline assumption: before merge, overlay-resolved fields were unavailable to the v2 content pipeline.");
+  lines.push("");
+
+  for (const row of perSample.filter((item) => item.key !== "sports_research_omega3")) {
+    const mergeRow = mergeByBarcode.get(normalize(row.barcode));
+    const renderRow = renderByBarcode.get(normalize(row.barcode));
+    const resolved = Array.isArray(mergeRow?.overlayResolvedFields) ? mergeRow.overlayResolvedFields : [];
+    const missing = Array.isArray(mergeRow?.stillMissingFields) ? mergeRow.stillMissingFields : [];
+    const dist = renderRow?.sourceTierDistribution ?? mergeRow?.sourceTierDistribution ?? {};
+
+    lines.push(`## ${row.brand} (${row.barcode})`);
+    lines.push(`- mergeDecision: ${normalize(mergeRow?.mergeDecision) || "unknown"}`);
+    lines.push(`- blockReasonCode: ${normalize(mergeRow?.blockReasonCode) || "none"}`);
+    lines.push(`- before: directions/warnings/overlay facts often unavailable in visible blocks for this product.`);
+    lines.push(`- after: overlayResolvedFields = ${resolved.length ? resolved.join(", ") : "none"}`);
+    lines.push(`- stillMissingFields = ${missing.length ? missing.join(", ") : "none"}`);
+    lines.push(`- sourceTierDistribution = ${JSON.stringify(dist)}`);
+    lines.push(`- productSpecificCoverHitCount = ${Number(renderRow?.productSpecificCoverHitCount ?? 0)}`);
+    lines.push(`- productSpecificDetailHitCount = ${Number(renderRow?.productSpecificDetailHitCount ?? 0)}`);
+    lines.push("");
+  }
+
+  return `${lines.join("\n")}\n`;
 };
 
 const main = async () => {
@@ -209,6 +311,18 @@ const main = async () => {
 
   await runNode(extractArgs);
   await runNode(mergeArgs);
+
+  await runNode([
+    path.join("scripts", "maintainer", "check-demo5-identity-stability.mjs"),
+    "--base-url",
+    patchBaseUrl,
+    "--attempts",
+    String(stabilityAttempts),
+    "--out-dir",
+    overlayOutDir,
+    "--auth-disabled-header",
+    "1",
+  ]);
 
   const perSample = [];
   for (const sample of samples) {
@@ -248,6 +362,7 @@ const main = async () => {
 
     const lintReport = await readJson(path.join(outDir, "ux_demo_lint_report.json"));
     const trace = await readJson(tracePath);
+    const mdText = await fs.readFile(mdPath, "utf8");
 
     perSample.push({
       brand: sample.brand,
@@ -258,6 +373,7 @@ const main = async () => {
       lintOk: Boolean(lintReport?.ok),
       lintIssueCount: Number(lintReport?.issueCount ?? 0),
       trace,
+      mdText,
     });
   }
 
@@ -272,12 +388,41 @@ const main = async () => {
   ]);
 
   const batchLint = await readJson(path.join(demoRoot, "ux_demo_lint_report.json"));
-  const mergeReport = await readJson(path.join(overlayOutDir, "merge_report.json"));
+  const mergeReport = await readJson(path.join(overlayOutDir, "overlay_merge_coverage_report.json"));
   const unmatchedQueuePath = path.join(overlayOutDir, "unmatched_queue.jsonl");
+
+  await runNode([
+    path.join("scripts", "maintainer", "build-demo5-render-completeness-report.mjs"),
+    "--demo-root",
+    demoRoot,
+    "--out-dir",
+    overlayOutDir,
+  ]);
+
+  const renderCompletenessReport = await readJson(path.join(overlayOutDir, "render_completeness_report.json"));
+  const identityStabilityReport = await readJson(path.join(overlayOutDir, "identity_stability_report.json"));
 
   const investorSummaryMd = buildInvestorSummary({ perSample, batchLint, mergeReport });
   const investorSummaryPath = path.join(demoRoot, "investor_demo_summary.md");
   await fs.writeFile(investorSummaryPath, investorSummaryMd, "utf8");
+
+  const moduleFieldContractPath = path.join(overlayOutDir, "remaining4_module_field_contract.md");
+  await fs.writeFile(moduleFieldContractPath, buildRemaining4ModuleFieldContract(), "utf8");
+
+  const renderOutDir = path.join(ROOT, "output", "demo5_render");
+  await fs.mkdir(renderOutDir, { recursive: true });
+  const remaining4AfterMergePath = path.join(renderOutDir, "remaining4_after_merge_demo_bundle.md");
+  await fs.writeFile(remaining4AfterMergePath, buildRemaining4AfterMergeBundle({ perSample }), "utf8");
+  const remaining4BeforeAfterPath = path.join(renderOutDir, "remaining4_before_vs_after_diff.md");
+  await fs.writeFile(
+    remaining4BeforeAfterPath,
+    buildRemaining4BeforeAfterDiff({
+      perSample,
+      mergeCoverageReport: mergeReport,
+      renderCompletenessReport,
+    }),
+    "utf8",
+  );
 
   const closeout = buildPilotCloseout({ perSample, mergeReport, unmatchedQueuePath });
   const closeoutJsonPath = path.join(overlayOutDir, "pilot_closeout.json");
@@ -303,6 +448,17 @@ const main = async () => {
   ];
   await fs.writeFile(closeoutMdPath, `${closeoutMdLines.join("\n")}\n`, "utf8");
 
+  const readinessResult = await runNode([
+    path.join("scripts", "maintainer", "legacy-runtime-readiness-report.mjs"),
+    "--base-url",
+    readinessBaseUrl,
+    "--out-dir",
+    path.join(ROOT, "output", "legacy-readiness"),
+    "--auth-disabled-header",
+    "1",
+  ]);
+  const parsedReadiness = parseLastJson(readinessResult.stdout) ?? {};
+
   console.log(
     JSON.stringify(
       {
@@ -312,8 +468,25 @@ const main = async () => {
           lintJson: path.join(demoRoot, "ux_demo_lint_report.json"),
           lintMd: path.join(demoRoot, "ux_demo_lint_report.md"),
           investorSummary: investorSummaryPath,
+          moduleFieldContractPath,
+          remaining4AfterMergePath,
+          remaining4BeforeAfterPath,
+          identityStabilityJson: path.join(overlayOutDir, "identity_stability_report.json"),
+          identityStabilityMd: path.join(overlayOutDir, "identity_stability_report.md"),
+          overlayMergeCoverageJson: path.join(overlayOutDir, "overlay_merge_coverage_report.json"),
+          overlayMergeCoverageMd: path.join(overlayOutDir, "overlay_merge_coverage_report.md"),
+          renderCompletenessJson: path.join(overlayOutDir, "render_completeness_report.json"),
+          renderCompletenessMd: path.join(overlayOutDir, "render_completeness_report.md"),
           pilotCloseoutJson: closeoutJsonPath,
           pilotCloseoutMd: closeoutMdPath,
+          legacyReadinessJson: parsedReadiness?.output?.outJson ?? null,
+          legacyReadinessMd: parsedReadiness?.output?.outMd ?? null,
+        },
+        summary: {
+          batchLint,
+          merge: mergeReport?.summary ?? null,
+          identityStability: identityStabilityReport?.summary ?? null,
+          renderCompleteness: renderCompletenessReport?.summary ?? null,
         },
       },
       null,

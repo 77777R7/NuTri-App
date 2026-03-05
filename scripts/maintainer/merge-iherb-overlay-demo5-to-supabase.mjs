@@ -3,11 +3,13 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
-import "dotenv/config";
+import dotenv from "dotenv";
 
 import { createClient } from "@supabase/supabase-js";
 
 const ROOT = process.cwd();
+dotenv.config();
+dotenv.config({ path: path.join(ROOT, "backend", ".env") });
 const args = process.argv.slice(2);
 const getArg = (name, fallback = null) => {
   const flag = `--${name}`;
@@ -32,31 +34,87 @@ const toGtin14 = (value) => {
   if (!digits) return "";
   return digits.padStart(14, "0").slice(-14);
 };
+const EXPECTED_CODEAGE_GTIN14 = "00853919008236";
+const isCodeageHardGatePass = ({ brandName, title, barcodeGtin14 }) => {
+  if (barcodeGtin14 !== EXPECTED_CODEAGE_GTIN14) return true;
+  const brand = normalize(brandName).toLowerCase();
+  const productTitle = normalize(title).toLowerCase();
+  const brandOk = brand.includes("codeage");
+  const titleOk =
+    /(?:^|\b)(a\s*-?\s*d\s*-?\s*k|vitamin(?:es)?\s*a\s*-?\s*d\s*-?\s*k|vitamin\s*a.+vitamin\s*d.+vitamin\s*k)/i.test(
+      productTitle,
+    );
+  return brandOk && titleOk;
+};
+const deriveOverlayCoverage = (product) => {
+  const sections = product?.allDescriptionSections && typeof product.allDescriptionSections === "object"
+    ? product.allDescriptionSections
+    : {};
+  const supplementFacts =
+    product?.supplementFacts && typeof product.supplementFacts === "object"
+      ? product.supplementFacts
+      : {};
+  const resolved = [];
+  if (normalize(sections["Suggested use"])) resolved.push("directions");
+  if (normalize(sections.Warnings)) resolved.push("warnings");
+  if (normalize(sections["Other ingredients"])) resolved.push("other_ingredients");
+  if (normalize(supplementFacts.servingSize)) resolved.push("serving_size");
+  if (Number.isFinite(Number(supplementFacts.servingsPerContainer))) resolved.push("servings_per_container");
+  if (Array.isArray(supplementFacts.nutritionalFacts) && supplementFacts.nutritionalFacts.length > 0) {
+    resolved.push("nutritional_facts");
+  }
+  const required = [
+    "directions",
+    "warnings",
+    "other_ingredients",
+    "serving_size",
+    "servings_per_container",
+    "nutritional_facts",
+  ];
+  return {
+    overlayResolvedFields: resolved,
+    stillMissingFields: required.filter((field) => !resolved.includes(field)),
+    sourceTierDistribution: {
+      overlay_iherb: resolved.length,
+      official_record: 0,
+      scanned_label: 0,
+      general_science: 0,
+      inferred: 0,
+    },
+  };
+};
 
 const readJson = async (p) => JSON.parse(await fs.readFile(p, "utf8"));
 
 const toMarkdown = (report) => {
   const lines = [
-    "# iHerb Overlay Demo5 Merge Report",
+    "# iHerb Overlay Demo5 Merge Coverage Report",
     "",
     `- generatedAt: ${report.generatedAt}`,
     `- runId: ${report.runId}`,
     `- inputPath: ${report.inputPath}`,
     `- products: ${report.summary.total}`,
-    `- matched: ${report.summary.matched}`,
-    `- unmatched: ${report.summary.unmatched}`,
+    `- merged: ${report.summary.merged}`,
+    `- queued: ${report.summary.queued}`,
+    `- blocked: ${report.summary.blocked}`,
     "",
     "## Match Results",
   ];
   report.rows.forEach((row, idx) => {
     lines.push(
-      `${idx + 1}. ${row.brandName} | ${row.productId} | ${row.barcodeGtin14 || "n/a"} | ${row.matchStatus} | ${row.authoritativeIdentityKey || row.reasonCode || "n/a"}`,
+      `${idx + 1}. ${row.brandName} | ${row.productId} | ${row.barcodeGtin14 || "n/a"} | ${row.mergeDecision} | ${row.authoritativeIdentityKey || row.blockReasonCode || row.reasonCode || "n/a"}`,
+    );
+    lines.push(
+      `   - overlayResolvedFields: ${row.overlayResolvedFields.length ? row.overlayResolvedFields.join(", ") : "none"}`,
+    );
+    lines.push(
+      `   - stillMissingFields: ${row.stillMissingFields.length ? row.stillMissingFields.join(", ") : "none"}`,
     );
   });
   if (report.unmatched.length > 0) {
-    lines.push("", "## Unmatched");
+    lines.push("", "## Queued / Blocked");
     report.unmatched.forEach((row, idx) => {
-      lines.push(`${idx + 1}. ${row.productId} | ${row.brandName} | ${row.reasonCode}`);
+      lines.push(`${idx + 1}. ${row.productId} | ${row.brandName} | ${row.blockReasonCode || row.reasonCode || "unknown_reason"}`);
     });
   }
   return `${lines.join("\n")}\n`;
@@ -200,6 +258,19 @@ const main = async () => {
     }
 
     const match = await queryAuthoritativeMatch(supabase, barcodeGtin14);
+    const coverage = deriveOverlayCoverage(product);
+    const codeageGatePass = isCodeageHardGatePass({ brandName, title, barcodeGtin14 });
+    const isCodeageTarget = barcodeGtin14 === EXPECTED_CODEAGE_GTIN14;
+    let mergeDecision = "merged";
+    let blockReasonCode = null;
+    if (match.matchStatus !== "matched") {
+      mergeDecision = "queued";
+      blockReasonCode = match.reasonCode || "authoritative_match_not_found";
+    } else if (!codeageGatePass) {
+      mergeDecision = "blocked";
+      blockReasonCode = "no_go_for_overlay_merge";
+    }
+
     const row = {
       productId,
       brandName: brandName || "unknown",
@@ -209,6 +280,13 @@ const main = async () => {
       authoritativeSourceType: match.authoritativeSourceType,
       authoritativeIdentityKey: match.authoritativeIdentityKey,
       reasonCode: match.reasonCode,
+      mergeDecision,
+      blockReasonCode,
+      codeageHardGateApplied: isCodeageTarget,
+      codeageHardGatePass: isCodeageTarget ? codeageGatePass : null,
+      overlayResolvedFields: coverage.overlayResolvedFields,
+      stillMissingFields: coverage.stillMissingFields,
+      sourceTierDistribution: coverage.sourceTierDistribution,
       extra: match.extra,
     };
     rows.push(row);
@@ -226,18 +304,25 @@ const main = async () => {
         title,
         overlayHash: overlayPayload.overlay_sha256,
         sourceTier: "overlay_iherb",
+        mergeDecision,
+        blockReasonCode,
+        codeageHardGateApplied: isCodeageTarget,
+        codeageHardGatePass: isCodeageTarget ? codeageGatePass : null,
+        overlayResolvedFields: coverage.overlayResolvedFields,
+        stillMissingFields: coverage.stillMissingFields,
+        sourceTierDistribution: coverage.sourceTierDistribution,
         ...match.extra,
       },
       created_at: nowIso(),
     });
 
-    if (match.matchStatus !== "matched") {
+    if (mergeDecision !== "merged") {
       unmatchedQueue.push({
-        queueType: "fixable",
+        queueType: mergeDecision === "blocked" ? "blocked" : "fixable",
         runId,
         owner,
         status: "open",
-        reasonCode: match.reasonCode || "authoritative_match_not_found",
+        reasonCode: blockReasonCode || match.reasonCode || "authoritative_match_not_found",
         eta: null,
         reviewAfterDays,
         productId,
@@ -256,8 +341,11 @@ const main = async () => {
   }
 
   const matched = rows.filter((row) => row.matchStatus === "matched");
+  const merged = rows.filter((row) => row.mergeDecision === "merged");
+  const queued = rows.filter((row) => row.mergeDecision === "queued");
+  const blocked = rows.filter((row) => row.mergeDecision === "blocked");
   const report = {
-    schemaVersion: "demo5_iherb_merge_report.v1",
+    schemaVersion: "demo5_iherb_overlay_merge_coverage_report.v1",
     generatedAt: nowIso(),
     runId,
     inputPath,
@@ -265,7 +353,10 @@ const main = async () => {
       total: rows.length,
       matched: matched.length,
       unmatched: rows.length - matched.length,
-      bySource: matched.reduce(
+      merged: merged.length,
+      queued: queued.length,
+      blocked: blocked.length,
+      bySource: merged.reduce(
         (acc, row) => {
           const key = String(row.authoritativeSourceType || "unknown");
           acc[key] = (acc[key] ?? 0) + 1;
@@ -275,15 +366,19 @@ const main = async () => {
       ),
     },
     rows,
-    unmatched: rows.filter((row) => row.matchStatus !== "matched"),
+    unmatched: rows.filter((row) => row.mergeDecision !== "merged"),
   };
 
-  const reportJsonPath = path.join(outDir, "merge_report.json");
-  const reportMdPath = path.join(outDir, "merge_report.md");
+  const reportJsonPath = path.join(outDir, "overlay_merge_coverage_report.json");
+  const reportMdPath = path.join(outDir, "overlay_merge_coverage_report.md");
+  const compatReportJsonPath = path.join(outDir, "merge_report.json");
+  const compatReportMdPath = path.join(outDir, "merge_report.md");
   const unmatchedPath = path.join(outDir, "unmatched_queue.jsonl");
 
   await fs.writeFile(reportJsonPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
   await fs.writeFile(reportMdPath, toMarkdown(report), "utf8");
+  await fs.writeFile(compatReportJsonPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
+  await fs.writeFile(compatReportMdPath, toMarkdown(report), "utf8");
   await fs.writeFile(
     unmatchedPath,
     unmatchedQueue.map((row) => JSON.stringify(row)).join("\n") + (unmatchedQueue.length ? "\n" : ""),
@@ -299,6 +394,8 @@ const main = async () => {
         output: {
           reportJsonPath,
           reportMdPath,
+          compatReportJsonPath,
+          compatReportMdPath,
           unmatchedPath,
         },
       },

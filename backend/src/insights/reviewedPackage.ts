@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 export type ReviewedPackageMeta = {
   datasetVersion: string;
@@ -78,13 +79,15 @@ let packageMeta: ReviewedPackageMeta = {
   packageSha256: "",
 };
 
+const BACKEND_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
+
 const getDefaultPath = () =>
   process.env.REVIEWED_FORM_EXPLAINS_PATH ??
-  path.join(process.cwd(), "data", "reviewed", "reviewed-form-explains-v4.json");
+  path.join(BACKEND_ROOT, "data", "reviewed", "reviewed-form-explains-v4.json");
 
 const getDefaultOverridesPath = () =>
   process.env.REVIEWED_FORM_EXPLAINS_OVERRIDES_PATH ??
-  path.join(process.cwd(), "data", "reviewed", "reviewed-form-explains-overrides.v1.json");
+  path.join(BACKEND_ROOT, "data", "reviewed", "reviewed-form-explains-overrides.v1.json");
 
 const buildPackageMeta = (
   metadata: Record<string, unknown> | null,

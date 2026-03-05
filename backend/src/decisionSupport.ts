@@ -2,6 +2,14 @@ import { createHash } from "node:crypto";
 
 import type { FactsDigest } from "./factsDigest.js";
 import { lookupSafeScienceSignals } from "./kbRuntime.js";
+import {
+  buildUlScopeNote,
+  classifyUlRisk,
+  convertDoseToUlUnit,
+  formatDoseText,
+  getUlLimitByLifeStage,
+  lookupUlByCanonicalKey,
+} from "./ods/ulDataset.js";
 import { lookupQualityMarkAudit } from "./qualityMarks/cache.js";
 
 export type DecisionSupportViewMode = "details";
@@ -366,6 +374,8 @@ const normalizeDisplayText = (value: string | null | undefined): string =>
     .replace(/\s+/g, " ")
     .trim();
 
+const stripTrailingSentencePunctuation = (value: string): string => value.replace(/[.!?]+$/g, "").trim();
+
 const normalizeActiveNames = (digest: FactsDigest): string[] =>
   (Array.isArray(digest?.actives) ? digest.actives : [])
     .map((active) => normalizeText(active?.name))
@@ -389,6 +399,21 @@ const dedupeLines = (lines: Array<string | null | undefined>, max = 3): string[]
     if (seen.has(key)) continue;
     seen.add(key);
     out.push(line);
+    if (out.length >= max) break;
+  }
+  return out;
+};
+
+const dedupeDisplayValues = (values: Array<string | null | undefined>, max = 8): string[] => {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of values) {
+    const normalized = stripTrailingSentencePunctuation(normalizeDisplayText(raw));
+    if (!normalized) continue;
+    const key = normalized.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(normalized);
     if (out.length >= max) break;
   }
   return out;
@@ -540,6 +565,48 @@ const parseOverlayOmega3Facts = (overlayClaims: DecisionSupportOverlayClaims | n
   };
 };
 
+const OVERLAY_FACTS_HEADER_PATTERN =
+  /(amount\s+per\s+serving|daily\s+value|%dv|%\s*dv|serving\s+size|servings\s+per\s+container)/i;
+
+const extractChemicalFormFromFactsRow = (
+  substancy: string,
+): { baseName: string; form: string } | null => {
+  const rowText = normalizeDisplayText(substancy);
+  if (!rowText) return null;
+  if (OVERLAY_FACTS_HEADER_PATTERN.test(rowText)) return null;
+
+  const parenthetical = rowText.match(/^(.*)\((as|from)\s+([^)]+)\)$/i);
+  if (parenthetical?.[1] && parenthetical[3]) {
+    const baseName = normalizeDisplayText(parenthetical[1]);
+    const form = normalizeDisplayText(parenthetical[3]);
+    if (baseName && form && !OVERLAY_FACTS_HEADER_PATTERN.test(baseName)) {
+      return { baseName, form };
+    }
+  }
+
+  const trailingPhrase = rowText.match(/\b(as|from)\s+([^,;]+)$/i);
+  if (trailingPhrase?.index != null && trailingPhrase[2]) {
+    const baseName = normalizeDisplayText(rowText.slice(0, trailingPhrase.index));
+    const form = normalizeDisplayText(trailingPhrase[2]);
+    if (baseName && form && !OVERLAY_FACTS_HEADER_PATTERN.test(baseName)) {
+      return { baseName, form };
+    }
+  }
+
+  return null;
+};
+
+const extractOverlayChemicalFormFromFacts = (
+  overlayClaims: DecisionSupportOverlayClaims | null | undefined,
+): { baseName: string; form: string } | null => {
+  const rows = Array.isArray(overlayClaims?.nutritionalFacts) ? overlayClaims.nutritionalFacts : [];
+  for (const row of rows) {
+    const parsed = extractChemicalFormFromFactsRow(String(row?.substancy ?? ""));
+    if (parsed) return parsed;
+  }
+  return null;
+};
+
 const OMEGA3_FORM_CUES: Array<{ re: RegExp; label: string }> = [
   { re: /\bre-?esterified triglyceride\b|\brtg\b/, label: "Re-esterified triglyceride (rTG)" },
   { re: /\btriglyceride\b|\btg\b/, label: "Triglyceride (TG)" },
@@ -562,6 +629,7 @@ const hasOverlayChemicalFormCue = (
   categoryId: DecisionSupportCategoryId,
   overlayClaims: DecisionSupportOverlayClaims | null | undefined,
 ): boolean => {
+  if (extractOverlayChemicalFormFromFacts(overlayClaims)) return true;
   const corpus = normalizeOverlayCorpus(overlayClaims);
   if (!corpus) return false;
   if (categoryId === "fish_oil_omega3") {
@@ -956,8 +1024,6 @@ const CLAIM_CGMP_REGEX = /\bcgmp\b|good[-\s]*manufacturing[-\s]*practice|certifi
 const CLAIM_CGMP_COMPACT_REGEX = /cgmp|goodmanufacturingpractice|certifiedmanufacturing/i;
 const CLAIM_THIRD_PARTY_TESTED_REGEX = /\bthird[-\s]*party[-\s]*tested\b|\bifos\b|\busp\b|\bnsf\b|informed[-\s]*choice|\bbscg\b|\bconsumerlab\b|\bigen\b/i;
 const CLAIM_THIRD_PARTY_TESTED_COMPACT_REGEX = /thirdpartytested|ifos|usp|nsf|informedchoice|bscg|consumerlab|igen/i;
-const CLAIM_TESTING_PROGRAM_REGEX = /\bifos\b|\busp\b|\bnsf\b|informed[-\s]*choice|\bbscg\b|\bconsumerlab\b|\bigen\b|\bmsc\b/i;
-const CLAIM_TESTING_PROGRAM_COMPACT_REGEX = /ifos|usp|nsf|informedchoice|bscg|consumerlab|igen|msc/i;
 const CLAIM_QUALITY_SIGNAL_REGEX = /\bnon[-\s]?gmo\b|\bgluten[-\s]?free\b|\bvegan\b|\bsoy[-\s]?free\b|\bdairy[-\s]?free\b|\bmsc\b/i;
 const CLAIM_QUALITY_SIGNAL_COMPACT_REGEX = /nongmo|glutenfree|vegan|soyfree|dairyfree|msc/i;
 const CLAIM_MANUFACTURING_ORIGIN_REGEX = /\bmade in\b|\bmanufactured in\b|\bfacility\b|\busa\b|\bcanada\b/i;
@@ -968,6 +1034,19 @@ const CLAIM_CHEMICAL_FORM_COMPACT_REGEX =
   /d3|d2|mk7|mk4|ubiquinol|ubiquinone|citrate|oxide|glycinate|malate|triglycerideform|triglyceride|tgasrtg|rtg/i;
 const CLAIM_EPA_DHA_REGEX = /\bepa\b|\bdha\b|omega[-\s]?3/i;
 const CLAIM_EPA_DHA_COMPACT_REGEX = /epa|dha|omega3/i;
+const THIRD_PARTY_SOURCE_DETECTORS: Array<{ label: string; spaced: RegExp; compact: RegExp }> = [
+  { label: "IFOS", spaced: /\bifos\b/i, compact: /ifos/i },
+  { label: "USP", spaced: /\busp\b/i, compact: /usp/i },
+  { label: "NSF", spaced: /\bnsf\b/i, compact: /nsf/i },
+  { label: "Informed Choice", spaced: /informed[-\s]*choice/i, compact: /informedchoice/i },
+  { label: "Informed Sport", spaced: /informed[-\s]*sport/i, compact: /informedsport/i },
+  { label: "BSCG", spaced: /\bbscg\b/i, compact: /bscg/i },
+  { label: "ConsumerLab", spaced: /consumerlab/i, compact: /consumerlab/i },
+  { label: "iGEN", spaced: /\bigen\b/i, compact: /igen/i },
+  { label: "iTested", spaced: /\bitested\b/i, compact: /itested/i },
+  { label: "Labdoor", spaced: /\blabdoor\b/i, compact: /labdoor/i },
+  { label: "MSC", spaced: /\bmsc\b/i, compact: /msc/i },
+];
 
 const CONFIDENCE_EVIDENCE_WEIGHTS: Record<DecisionSupportEvidenceStrength, number> = {
   official: 1.0,
@@ -1026,6 +1105,29 @@ const claimRegexMatch = (params: {
   spaced: RegExp;
   compact: RegExp;
 }): boolean => params.spaced.test(params.corpus) || params.compact.test(params.corpusCompact);
+
+const extractThirdPartyTestingSources = (params: {
+  corpus: string;
+  corpusCompact: string;
+  qualityMark: DecisionSupportQualityMark;
+}): string[] => {
+  const { corpus, corpusCompact, qualityMark } = params;
+  const hits = THIRD_PARTY_SOURCE_DETECTORS
+    .filter((item) => item.spaced.test(corpus) || item.compact.test(corpusCompact))
+    .map((item) => item.label);
+
+  const hasGenericThirdPartyClaim = CLAIM_THIRD_PARTY_TESTED_REGEX.test(corpus) ||
+    CLAIM_THIRD_PARTY_TESTED_COMPACT_REGEX.test(corpusCompact);
+  if (hits.length === 0 && hasGenericThirdPartyClaim) {
+    hits.push("Third-party tested (program unspecified)");
+  }
+
+  if (qualityMark.status === "detected" && qualityMark.evidenceType === "page") {
+    hits.push("Independent cert page (verified)");
+  }
+
+  return Array.from(new Set(hits));
+};
 
 const getOverallBand = (score: number): DecisionSupportOverallBand => {
   if (score >= 90) return "Excellent";
@@ -1190,15 +1292,9 @@ const getModuleCriticalCap = (params: {
   }
 
   if (categoryId === "fish_oil_omega3" && moduleId === "testing_verification") {
-    const independent = scoreItems.find((item) => /independent_cert_page/i.test(item.key));
-    const hasBatchPublicProof = scoreItems.some(
-      (item) => item.state === "verified" && /batch_public_report|public_coa|lot_report/i.test(item.key),
-    );
-    if (!independent || independent.state !== "verified") {
+    const thirdPartyClaim = scoreItems.find((item) => /third_party_tested_claim/i.test(item.key));
+    if (!thirdPartyClaim || thirdPartyClaim.state !== "verified") {
       cap = Math.min(cap, 55);
-      triggered = true;
-    } else if (!hasBatchPublicProof) {
-      cap = Math.min(cap, 85);
       triggered = true;
     }
   }
@@ -1345,6 +1441,7 @@ const buildNutriScoreCardV2 = (params: {
   const overlayRef = overlayClaims?.link ?? null;
   const overlayCorpus = normalizeOverlayCorpus(overlayClaims);
   const overlayCorpusCompact = compactOverlayCorpus(overlayCorpus);
+  const overlayChemicalFormFromFacts = extractOverlayChemicalFormFromFacts(overlayClaims);
   const overlayFactsCorpus = (overlayClaims?.nutritionalFacts ?? [])
     .map((row) => `${row.substancy ?? ""} ${row.amountPerServing ?? ""} ${row.dailyValuePercent ?? ""}`.trim())
     .join(" ")
@@ -1366,12 +1463,7 @@ const buildNutriScoreCardV2 = (params: {
     spaced: CLAIM_EPA_DHA_REGEX,
     compact: CLAIM_EPA_DHA_COMPACT_REGEX,
   });
-  const overlayHasChemicalFormFromFacts = claimRegexMatch({
-    corpus: overlayFactsCorpus,
-    corpusCompact: overlayFactsCorpusCompact,
-    spaced: CLAIM_CHEMICAL_FORM_REGEX,
-    compact: CLAIM_CHEMICAL_FORM_COMPACT_REGEX,
-  });
+  const overlayHasChemicalFormFromFacts = Boolean(overlayChemicalFormFromFacts);
   const overlayHasChemicalForm = overlayHasChemicalFormFromFacts || claimRegexMatch({
     corpus: overlayCorpus,
     corpusCompact: overlayCorpusCompact,
@@ -1389,12 +1481,6 @@ const buildNutriScoreCardV2 = (params: {
     corpusCompact: overlayCorpusCompact,
     spaced: CLAIM_THIRD_PARTY_TESTED_REGEX,
     compact: CLAIM_THIRD_PARTY_TESTED_COMPACT_REGEX,
-  });
-  const overlayHasProgramClaim = claimRegexMatch({
-    corpus: overlayCorpus,
-    corpusCompact: overlayCorpusCompact,
-    spaced: CLAIM_TESTING_PROGRAM_REGEX,
-    compact: CLAIM_TESTING_PROGRAM_COMPACT_REGEX,
   });
   const overlayHasQualitySignals = claimRegexMatch({
     corpus: overlayCorpus,
@@ -1420,9 +1506,10 @@ const buildNutriScoreCardV2 = (params: {
     typeof digest.serving?.servingsPerContainer === "number" ||
     overlayHasNutritionalFacts;
   const hasInactiveDisclosure = (digest.inactives ?? []).length > 0 || overlayHasOtherIngredients;
+  const hasOfficialActiveList = (digest.actives ?? []).length > 0;
   const hasBreakdownDisclosure = categoryId === "fish_oil_omega3"
     ? hasFishOilBreakdown(digest) || overlayHasEpaDha
-    : true;
+    : hasOfficialActiveList;
   const hasDirectionsFromOfficial = directionsVisible && usageBlock.directions.sourceTier === "official_record";
   const hasDirectionsFromLabel = directionsVisible && usageBlock.directions.sourceTier === "scanned_label";
 
@@ -1539,36 +1626,44 @@ const buildNutriScoreCardV2 = (params: {
           weight: 2,
           role: "score",
         }),
-    hasBreakdownDisclosure
-      ? buildV2ChecklistItem({
-          key: "formula_transparency:breakdown_disclosed",
-          label: categoryId === "fish_oil_omega3"
-            ? "EPA+DHA breakdown disclosed"
-            : "Category-specific active breakdown disclosed",
-          state: "verified",
-          sourceTier: hasFishOilBreakdown(digest) ? "official_record" : "overlay_iherb",
-          evidenceStrength: hasFishOilBreakdown(digest)
-            ? "official"
-            : (overlayHasEpaDhaFromFacts ? "overlay_label_transcription" : "overlay_claim"),
-          proofClass: hasFishOilBreakdown(digest)
-            ? "official_like"
-            : (overlayHasEpaDhaFromFacts ? "overlay_transcription" : "claim_only"),
-          evidenceRef: hasFishOilBreakdown(digest) ? null : overlayRef,
-          note: hasFishOilBreakdown(digest) ? null : "Claim-based (overlay_iherb)",
-          weight: 5,
-          role: "score",
-          critical: true,
-        })
+    categoryId === "fish_oil_omega3"
+      ? hasBreakdownDisclosure
+        ? buildV2ChecklistItem({
+            key: "formula_transparency:breakdown_disclosed",
+            label: "EPA+DHA breakdown disclosed",
+            state: "verified",
+            sourceTier: hasFishOilBreakdown(digest) ? "official_record" : "overlay_iherb",
+            evidenceStrength: hasFishOilBreakdown(digest)
+              ? "official"
+              : (overlayHasEpaDhaFromFacts ? "overlay_label_transcription" : "overlay_claim"),
+            proofClass: hasFishOilBreakdown(digest)
+              ? "official_like"
+              : (overlayHasEpaDhaFromFacts ? "overlay_transcription" : "claim_only"),
+            evidenceRef: hasFishOilBreakdown(digest) ? null : overlayRef,
+            note: hasFishOilBreakdown(digest) ? null : "Claim-based (overlay_iherb)",
+            weight: 5,
+            role: "score",
+            critical: true,
+          })
+        : buildV2ChecklistItem({
+            key: "formula_transparency:breakdown_disclosed",
+            label: "EPA+DHA breakdown disclosed",
+            state: useOverlayMissingState(overlayHasEpaDha),
+            sourceTier: overlayPresent ? "overlay_iherb" : "official_record",
+            evidenceStrength: overlayPresent ? (overlayHasEpaDhaFromFacts ? "overlay_label_transcription" : "overlay_claim") : "official",
+            proofClass: overlayPresent ? (overlayHasEpaDhaFromFacts ? "overlay_transcription" : "claim_only") : "official_like",
+            evidenceRef: overlayRef,
+            weight: 5,
+            role: "score",
+            critical: true,
+          })
       : buildV2ChecklistItem({
           key: "formula_transparency:breakdown_disclosed",
-          label: categoryId === "fish_oil_omega3"
-            ? "EPA+DHA breakdown disclosed"
-            : "Category-specific active breakdown disclosed",
-          state: useOverlayMissingState(overlayHasEpaDha),
-          sourceTier: overlayPresent ? "overlay_iherb" : "official_record",
-          evidenceStrength: overlayPresent ? (overlayHasEpaDhaFromFacts ? "overlay_label_transcription" : "overlay_claim") : "official",
-          proofClass: overlayPresent ? (overlayHasEpaDhaFromFacts ? "overlay_transcription" : "claim_only") : "official_like",
-          evidenceRef: overlayRef,
+          label: "Active ingredient list disclosed",
+          state: hasOfficialActiveList ? "verified" : (overlayPresent ? "missing" : "unknown"),
+          sourceTier: "official_record",
+          evidenceStrength: "official",
+          proofClass: "official_like",
           weight: 5,
           role: "score",
           critical: true,
@@ -1594,7 +1689,7 @@ const buildNutriScoreCardV2 = (params: {
           evidenceStrength: overlayHasChemicalFormFromFacts ? "overlay_label_transcription" : "overlay_claim",
           proofClass: overlayHasChemicalFormFromFacts ? "overlay_transcription" : "claim_only",
           evidenceRef: overlayRef,
-          note: "Claim-based (overlay_iherb)",
+          note: overlayHasChemicalFormFromFacts ? "From supplemental label data (iHerb)." : "Claim-based (overlay_iherb)",
           weight: 3,
           role: "score",
           critical: true,
@@ -1734,56 +1829,38 @@ const buildNutriScoreCardV2 = (params: {
     }),
   ];
 
-  const qualityMarkSearchOnly = qualityMark.checkedMode === "search_only" ||
-    qualityMark.evidenceType === "search" ||
-    /^https:\/\/duckduckgo\.com\/html\//i.test(String(qualityMark.evidenceRef ?? ""));
-  const certPageState: DecisionSupportChecklistStatus =
-    qualityMark.status === "detected" && qualityMark.evidenceType === "page"
-      ? "verified"
-      : qualityMark.status === "not_detected" && qualityMark.checkedMode === "page_fetch" && qualityMark.pagesFetchedCount >= 2
-      ? "missing"
-      : "unknown";
+  const thirdPartyTestingSources = extractThirdPartyTestingSources({
+    corpus: overlayCorpus,
+    corpusCompact: overlayCorpusCompact,
+    qualityMark,
+  });
+  const hasIndependentTestingProof = qualityMark.status === "detected" && qualityMark.evidenceType === "page";
+  const thirdPartyClaimState: DecisionSupportChecklistStatus = hasIndependentTestingProof
+    ? "verified"
+    : useOverlayMissingState(overlayHasTestingClaim || thirdPartyTestingSources.length > 0);
   const testingChecklist: DecisionSupportNutriScoreCardV2ChecklistItem[] = [
     buildV2ChecklistItem({
       key: "testing_verification:third_party_tested_claim",
       label: "Third-party tested claim present",
-      state: useOverlayMissingState(overlayHasTestingClaim),
-      sourceTier: overlayPresent ? "overlay_iherb" : "inferred",
-      evidenceStrength: overlayPresent ? "overlay_claim" : "inferred",
-      proofClass: overlayPresent ? "claim_only" : "science_only",
-      evidenceRef: overlayRef,
-      note: overlayHasTestingClaim ? "Claim-based (overlay_iherb)" : null,
-      weight: 2,
-      role: "score",
-    }),
-    buildV2ChecklistItem({
-      key: "testing_verification:program_claim_present",
-      label: "Program claim present (IFOS/USP/NSF or equivalent)",
-      state: useOverlayMissingState(overlayHasProgramClaim),
-      sourceTier: overlayPresent ? "overlay_iherb" : "inferred",
-      evidenceStrength: overlayPresent ? "overlay_claim" : "inferred",
-      proofClass: overlayPresent ? "claim_only" : "science_only",
-      evidenceRef: overlayRef,
-      note: overlayHasProgramClaim ? "Claim-based (overlay_iherb)" : null,
-      weight: 3,
-      role: "score",
-    }),
-    buildV2ChecklistItem({
-      key: "testing_verification:independent_cert_page",
-      label: qualityMarkSearchOnly
-        ? "Independent cert-page status: unknown (search-only evidence)"
-        : certPageState === "verified"
-        ? "Independent cert-page status: detected"
-        : certPageState === "missing"
-        ? "Independent cert-page status: not_detected"
-        : "Independent cert-page status: unknown",
-      state: certPageState,
-      sourceTier: qualityMark.evidenceType === "page" ? "official_record" : "general_science",
-      evidenceStrength: qualityMark.evidenceType === "page" ? "cert_page_verified" : "general_science",
-      proofClass: qualityMark.evidenceType === "page" ? "independent_verifier" : "science_only",
-      evidenceRef: qualityMark.evidenceRef ?? null,
-      note: qualityMark.note ?? null,
-      weight: 5,
+      state: thirdPartyClaimState,
+      sourceTier: hasIndependentTestingProof
+        ? "official_record"
+        : overlayPresent
+        ? "overlay_iherb"
+        : "inferred",
+      evidenceStrength: hasIndependentTestingProof
+        ? "cert_page_verified"
+        : overlayPresent
+        ? "overlay_claim"
+        : "inferred",
+      proofClass: hasIndependentTestingProof
+        ? "independent_verifier"
+        : overlayPresent
+        ? "claim_only"
+        : "science_only",
+      evidenceRef: hasIndependentTestingProof ? (qualityMark.evidenceRef ?? overlayRef) : overlayRef,
+      note: null,
+      weight: 10,
       role: "score",
       critical: true,
     }),
@@ -2262,6 +2339,7 @@ const buildScienceBlock = (params: {
   const overlayFactNames = (overlayClaims?.nutritionalFacts ?? [])
     .map((row) => normalizeDisplayText(row?.substancy))
     .filter((name) => name.length > 0);
+  const overlayChemicalFormFromFacts = extractOverlayChemicalFormFromFacts(overlayClaims);
   const digestActiveNames = (digest.actives ?? [])
     .map((item) => normalizeDisplayText(item?.name))
     .filter((name) => name.length > 0);
@@ -2271,14 +2349,14 @@ const buildScienceBlock = (params: {
       ...overlayFactNames,
       ...digestActiveNames,
     ]
-    : [...digestActiveNames, ...overlayFactNames];
-  const ingredientSnapshotNames = dedupeLines(preferredNames, 8);
+    : [...overlayFactNames, ...digestActiveNames];
+  const ingredientSnapshotNames = dedupeDisplayValues(preferredNames, 8);
 
   const digestChemicalForm =
     normalizeDisplayText((digest.actives ?? []).find((item) => normalizeText(item?.chemicalForm))?.chemicalForm) || null;
   const overlayChemicalForm = categoryId === "fish_oil_omega3"
     ? extractOmega3FormCueFromOverlay(overlayClaims)
-    : null;
+    : (overlayChemicalFormFromFacts?.form ?? null);
   const normalizedDigestForm = normalizeText(digestChemicalForm);
   const digestFormLooksLikeOmegaAcid =
     categoryId === "fish_oil_omega3" && (/\bepa\b|\bdha\b|eicosapentaenoic|docosahexaenoic/.test(normalizedDigestForm));
@@ -2372,6 +2450,87 @@ const buildUsageBlock = (params: {
   };
 };
 
+const DAILY_FREQUENCY_WORD_TO_NUM: Record<string, number> = {
+  once: 1,
+  twice: 2,
+  thrice: 3,
+};
+
+const parseDailyFrequencyRangeFromText = (
+  value: string | null | undefined,
+): { minTimesPerDay: number; maxTimesPerDay: number } | null => {
+  const text = normalizeDisplayText(value).toLowerCase();
+  if (!text) return null;
+  const normalized = text.replace(/[–—]/g, "-");
+
+  const numericRange = normalized.match(
+    /\b(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)\s*(?:times?|x)\s*(?:daily|per\s+day|a\s+day)\b/i,
+  );
+  if (numericRange?.[1] && numericRange[2]) {
+    const min = Number(numericRange[1]);
+    const max = Number(numericRange[2]);
+    if (Number.isFinite(min) && Number.isFinite(max) && min > 0 && max >= min) {
+      return { minTimesPerDay: min, maxTimesPerDay: max };
+    }
+  }
+
+  const numericSingle = normalized.match(/\b(\d+(?:\.\d+)?)\s*(?:times?|x)\s*(?:daily|per\s+day|a\s+day)\b/i);
+  if (numericSingle?.[1]) {
+    const times = Number(numericSingle[1]);
+    if (Number.isFinite(times) && times > 0) return { minTimesPerDay: times, maxTimesPerDay: times };
+  }
+
+  const wordSingle = normalized.match(/\b(once|twice|thrice)\s*(?:daily|per\s+day|a\s+day)\b/i);
+  if (wordSingle?.[1]) {
+    const times = DAILY_FREQUENCY_WORD_TO_NUM[wordSingle[1]] ?? null;
+    if (times) return { minTimesPerDay: times, maxTimesPerDay: times };
+  }
+
+  return null;
+};
+
+const resolvePrimaryActiveDose = (
+  digest: FactsDigest,
+): { name: string; amount: number; unit: string; evidenceText: string | null } | null => {
+  const primary = (digest.actives ?? [])[0];
+  if (!primary) return null;
+  const unitFromField = normalizeDisplayText(primary.unit);
+  const numericFromField = Number(primary.amount);
+  if (Number.isFinite(numericFromField) && numericFromField > 0 && unitFromField) {
+    return {
+      name: primary.name,
+      amount: numericFromField,
+      unit: unitFromField,
+      evidenceText: primary.evidenceText ?? primary.amountText ?? null,
+    };
+  }
+
+  const amountText = normalizeDisplayText(primary.amountText);
+  const parsed = amountText.match(/(\d+(?:,\d{3})*(?:\.\d+)?)\s*(mcg|µg|μg|mg|g|iu)\b/i);
+  if (!parsed?.[1] || !parsed[2]) return null;
+  const amount = Number(parsed[1].replace(/,/g, ""));
+  const unit = normalizeDisplayText(parsed[2]).toLowerCase();
+  if (!Number.isFinite(amount) || amount <= 0 || !unit) return null;
+  return {
+    name: primary.name,
+    amount,
+    unit,
+    evidenceText: amountText || primary.evidenceText || null,
+  };
+};
+
+const resolveUlDirectionText = (
+  digest: FactsDigest,
+  overlayClaims: DecisionSupportOverlayClaims | null,
+): string | null => {
+  const digestPreferred = (Array.isArray(digest.labelDosing) ? digest.labelDosing : [])
+    .map((row) => normalizeDisplayText(row?.rawText))
+    .filter(Boolean);
+  if (digestPreferred.length > 0) return digestPreferred[0] ?? null;
+  const fallback = normalizeDisplayText(overlayClaims?.suggestedUse);
+  return fallback || null;
+};
+
 const buildSafetyBlock = (params: {
   categoryId: DecisionSupportCategoryId;
   digest: FactsDigest;
@@ -2398,10 +2557,19 @@ const buildSafetyBlock = (params: {
     : overlayWarnings.length > 0
     ? overlayWarnings
     : [];
+  const primaryActiveDose = resolvePrimaryActiveDose(digest);
+  const ulItem = primaryActiveDose
+    ? lookupUlByCanonicalKey(primaryActiveDose.name, [primaryActiveDose.name])
+    : null;
+  const adultUlGroup = ulItem ? getUlLimitByLifeStage(ulItem, "adult_19_plus") : null;
+  const directionTextForUl = resolveUlDirectionText(digest, overlayClaims);
+  const directionFrequencyRange = parseDailyFrequencyRangeFromText(directionTextForUl);
+
   const omega3UlGuidance = [
     "NIH ODS does not set a single UL for omega-3 in the same way as some vitamins/minerals.",
     "General tip: consider total intake from all sources and follow label guidance.",
   ];
+
   const defaultUlGuidance = dedupeLines(
     [
       ...(safeScienceSignals?.evidenceLines ?? []).filter((line) => /\bul\b|upper limit/i.test(line)),
@@ -2409,6 +2577,57 @@ const buildSafetyBlock = (params: {
     ],
     2,
   );
+
+  const ulNumericGuidance = (() => {
+    if (categoryId === "fish_oil_omega3") return [] as string[];
+    if (!ulItem || !adultUlGroup) return [] as string[];
+
+    const lines: string[] = [];
+    const ulText = formatDoseText(adultUlGroup.value, adultUlGroup.unit);
+    lines.push(`Adult UL (NIH ODS): ${ulText}/day (total intake).`);
+
+    const scopeNote = buildUlScopeNote({
+      scope: ulItem.scope,
+      canonicalKey: ulItem.ingredientCanonicalKey,
+    });
+    if (scopeNote) lines.push(scopeNote);
+
+    if (primaryActiveDose && directionFrequencyRange) {
+      const converted = convertDoseToUlUnit({
+        amount: primaryActiveDose.amount,
+        fromUnit: primaryActiveDose.unit,
+        targetUnit: adultUlGroup.unit,
+        altUnits: ulItem.altUnits,
+      });
+      if (converted.ok && converted.value != null && converted.unit) {
+        const minDaily = converted.value * directionFrequencyRange.minTimesPerDay;
+        const maxDaily = converted.value * directionFrequencyRange.maxTimesPerDay;
+        const minDailyText = formatDoseText(minDaily, converted.unit);
+        const maxDailyText = formatDoseText(maxDaily, converted.unit);
+        const risk = classifyUlRisk(maxDaily / adultUlGroup.value);
+        if (risk === "high" || risk === "moderate") {
+          if (directionFrequencyRange.minTimesPerDay === directionFrequencyRange.maxTimesPerDay) {
+            lines.push(`Label directions could reach about ${maxDailyText}/day; this may exceed the UL.`);
+          } else {
+            lines.push(
+              `Label directions could provide about ${minDailyText}/day, up to ${maxDailyText}/day at the top end; this may exceed the UL.`,
+            );
+          }
+        } else if (directionFrequencyRange.minTimesPerDay === directionFrequencyRange.maxTimesPerDay) {
+          lines.push(`Label directions estimate about ${maxDailyText}/day, which appears below the UL.`);
+        } else {
+          lines.push(
+            `Label directions estimate about ${minDailyText}/day to ${maxDailyText}/day, which appears below the UL.`,
+          );
+        }
+        return dedupeLines(lines, 3);
+      }
+    }
+
+    lines.push("Compare this UL against total daily intake from food, fortified products, and supplements.");
+    return dedupeLines(lines, 3);
+  })();
+
   const omega3Watchouts = [
     "If pregnant/nursing or taking blood thinners / preparing for surgery, confirm with a clinician and read label cautions.",
     "Stop/adjust if you notice unexpected effects and consult a professional.",
@@ -2431,7 +2650,13 @@ const buildSafetyBlock = (params: {
     ulGuidance:
       categoryId === "fish_oil_omega3"
         ? omega3UlGuidance
-        : (defaultUlGuidance.length > 0 ? defaultUlGuidance : ["UL guidance remains general and should be reviewed with total daily intake."]),
+        : (
+          ulNumericGuidance.length > 0
+            ? ulNumericGuidance
+            : (defaultUlGuidance.length > 0
+              ? defaultUlGuidance
+              : ["UL guidance remains general and should be reviewed with total daily intake."])
+        ),
     generalWatchouts: categoryId === "fish_oil_omega3" ? omega3Watchouts : defaultWatchouts,
     dataStatusRef: "See Missing info in Overview.",
   };

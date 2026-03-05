@@ -97,11 +97,11 @@ const main = async () => {
   }
 
   const scorecardSectionText = linesBetween(md, "## 0) Nutri Score Card v2", "## 1) Product Overview").join(" ");
-  if (!/\b(Confirmed|Listed|Not verified|Not shown)\b/i.test(scorecardSectionText)) {
+  if (!/\b(Verified|Detected|Not verified|Not shown)\b/i.test(scorecardSectionText)) {
     issues.push({
       type: "scorecard_v2_structure",
       severity: "high",
-      message: "Nutri Score Card v2 must include checklist chip states (Confirmed/Listed/Not verified/Not shown).",
+      message: "Nutri Score Card v2 must include checklist chip states (Verified/Detected/Not verified/Not shown).",
     });
   }
   if (/✅|⛔|◻/.test(scorecardSectionText)) {

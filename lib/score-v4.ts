@@ -25,6 +25,7 @@ export async function fetchScoreBundleV4(params: {
     throw new Error('Search API base URL is not configured.');
   }
   const headers = await withAuthHeaders({ 'Content-Type': 'application/json' });
+  headers['X-Legacy-Caller-Surface'] = 'mobile_ui';
   const response = await fetch(
     `${apiBase}/api/score/v4/${params.source}/${encodeURIComponent(params.sourceId)}`,
     {

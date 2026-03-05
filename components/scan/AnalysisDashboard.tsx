@@ -58,6 +58,7 @@ import { isNutritionLabelLikeIngredient } from '@/lib/scan/isNutritionLabelLikeI
 import { assembleInsightsDTO, buildWhyBullets } from '@/lib/scan/insightsAssembler';
 import { enforceNeverBlank, isPlaceholderText, sanitizeCoverBullets, sanitizeCoverLine } from '@/lib/scan/neverBlank';
 import { buildRecordFactsViewModel } from '@/lib/scan/recordFactsViewModel';
+import { mergeScienceIngredientCandidates } from '@/lib/scan/scienceIngredientSnapshot';
 import { buildSafetySignalPack } from '@/lib/scan/safetySignalPack';
 import { resolveTrustedDisplayIdentity } from '@/lib/scan/resolveTrustedDisplayIdentity';
 import { buildVerificationPresentation } from '@/lib/scan/verificationPresentation';
@@ -333,6 +334,13 @@ const SCAN_UX_VARIANT = (() => {
     if (raw === 'shadow' || raw === 'canary' || raw === 'full') return raw;
     return 'full';
 })();
+const FREEZE_SHADOW_ONLY =
+    process.env.EXPO_PUBLIC_FREEZE_SHADOW_ONLY == null
+        ? true
+        : !(
+            process.env.EXPO_PUBLIC_FREEZE_SHADOW_ONLY === '0'
+            || process.env.EXPO_PUBLIC_FREEZE_SHADOW_ONLY === 'false'
+        );
 const normalizeTaxonomyLabel = (value?: string | null): string =>
     normalizeText(value)
         .toLowerCase()
@@ -904,30 +912,29 @@ const moduleStatusColor = (module: DecisionScoreCardV2Module): string => {
     return '#DC2626';
 };
 
-type ScoreChecklistChip = 'Confirmed' | 'Listed' | 'Not verified' | 'Not shown';
+type ScoreChecklistChip = 'Verified' | 'Detected' | 'Not verified' | 'Not shown';
 
 const resolveChecklistChip = (item: DecisionScoreCardV2ChecklistItem): ScoreChecklistChip => {
     if (item.state === 'missing') return 'Not shown';
     if (item.state === 'unknown') return 'Not verified';
-    if (item.evidenceStrength === 'overlay_claim') return 'Listed';
+    if (item.evidenceStrength === 'overlay_claim') return 'Detected';
     if (
         item.evidenceStrength === 'official'
         || item.evidenceStrength === 'scanned_label'
         || item.evidenceStrength === 'overlay_label_transcription'
         || item.evidenceStrength === 'cert_page_verified'
     ) {
-        return 'Confirmed';
+        return 'Verified';
     }
-    return 'Listed';
+    return 'Detected';
 };
 
 const NutriScoreCardV2: React.FC<{
     overallScore: number;
     overallBand?: string | null;
-    confidencePct: number;
     modules: DecisionScoreCardV2Module[];
     muted: boolean;
-}> = ({ overallScore, overallBand, confidencePct, modules, muted }) => {
+}> = ({ overallScore, overallBand, modules, muted }) => {
     const [expandedId, setExpandedId] = useState<DecisionScoreCardV2Module['id'] | null>(null);
     const safeModules = Array.isArray(modules) ? modules : [];
     if (safeModules.length === 0) return null;
@@ -943,7 +950,6 @@ const NutriScoreCardV2: React.FC<{
                         <Text style={styles.scoreV2OverallOutOf}>/100</Text>
                     </Text>
                     <Text style={styles.scoreV2OverallBand}>{resolvedOverallBand}</Text>
-                    <Text style={styles.scoreV2Confidence}>Confidence: {Math.round(confidencePct)}%</Text>
                 </View>
             </View>
 
@@ -984,8 +990,8 @@ const NutriScoreCardV2: React.FC<{
                                                 <View
                                                     style={[
                                                         styles.scoreV2ChecklistChip,
-                                                        chip === 'Confirmed' ? styles.scoreV2ChipConfirmed : null,
-                                                        chip === 'Listed' ? styles.scoreV2ChipListed : null,
+                                                        chip === 'Verified' ? styles.scoreV2ChipVerified : null,
+                                                        chip === 'Detected' ? styles.scoreV2ChipDetected : null,
                                                         chip === 'Not verified' ? styles.scoreV2ChipNotVerified : null,
                                                         chip === 'Not shown' ? styles.scoreV2ChipNotShown : null,
                                                     ]}
@@ -2338,6 +2344,7 @@ const AnalysisBundleDashboard: React.FC<{
     const decisionSupportFetchKeyRef = useRef<string | null>(null);
     const decisionSupportRequestSeqRef = useRef(0);
     const foundationMetricLoggedRef = useRef<Set<string>>(new Set());
+    const overlayConsumerMetricLoggedRef = useRef<Set<string>>(new Set());
     const currentRunKeyRef = useRef<string | null>(null);
     const incomingBundleRunKey = useMemo(() => {
         const normalizedSessionId = normalizeText(scanSessionId);
@@ -2402,6 +2409,7 @@ const AnalysisBundleDashboard: React.FC<{
         detailInFlightKeyRef.current = null;
         decisionSupportFetchKeyRef.current = null;
         foundationMetricLoggedRef.current = new Set();
+        overlayConsumerMetricLoggedRef.current = new Set();
         const incomingIdentity = bundle.meta.authoritativeIdentity;
         const incomingBarcode = incomingIdentity?.type === 'gtin14'
             ? normalizeBarcodeForDecision(String(incomingIdentity.value ?? ''))
@@ -3099,56 +3107,40 @@ const AnalysisBundleDashboard: React.FC<{
     const ingredientsNotes = hasAnyProductSpecificSignal
         ? undefined
         : ['Product-specific signals are limited for current evidence set.'];
-    const scienceTopIngredients = useMemo(
-        () =>
-            [
-                ...(
-                    ((decisionOverviewBlock?.providesVerified?.keyIngredients ?? [])
-                        .map((item) => ({
-                            name: String(item?.name ?? '').trim(),
-                            dose: String(item?.dose ?? '').trim(),
-                            basisTags: [] as BasisTag[],
-                        }))
-                        .filter((row) => row.name.length > 0)
-                    )
-                ),
-                ...(
-                    (decisionScienceBlock?.ingredientSnapshotNames ?? [])
-                        .map((name) => ({
-                            name: String(name ?? '').trim(),
-                            dose: '',
-                            basisTags: [] as BasisTag[],
-                        }))
-                        .filter((row) => row.name.length > 0)
-                ),
-                ...(ingredientsItemsFiltered.length > 0
-                    ? ingredientsItemsFiltered
-                    : recordFacts.ingredientRows.map((row) => ({
-                        name: row.name,
-                        dose: row.doseLine ?? '',
-                        basisTags: [] as BasisTag[],
-                    })).filter((row) => !isNutritionLabelLikeIngredient(row.name))),
-            ]
-                .filter((item) => !isNutritionLabelLikeIngredient(item.name))
-                .sort((a, b) => {
-                    const rankOmega = (name: string): number => {
-                        const normalized = normalizeText(name);
-                        if (/\btotal\b.*\bomega\s*-?\s*3\b|\bomega\s*-?\s*3\b/.test(normalized)) return 0;
-                        if (/\bepa\b|eicosapentaenoic/.test(normalized)) return 1;
-                        if (/\bdha\b|docosahexaenoic/.test(normalized)) return 2;
-                        if (/\bfish\s*oil\b|\bkrill\s*oil\b|\bpollock\b/.test(normalized)) return 3;
-                        return 10;
-                    };
-                    const omegaDiff = rankOmega(a?.name ?? '') - rankOmega(b?.name ?? '');
-                    if (omegaDiff !== 0) return omegaDiff;
-                    const aHasDose = normalizeText(a?.dose ?? '').length > 0 ? 1 : 0;
-                    const bHasDose = normalizeText(b?.dose ?? '').length > 0 ? 1 : 0;
-                    if (aHasDose !== bHasDose) return bHasDose - aHasDose;
-                    return normalizeText(a?.name ?? '').localeCompare(normalizeText(b?.name ?? ''));
-                })
-                .slice(0, 3),
-        [decisionOverviewBlock?.providesVerified?.keyIngredients, decisionScienceBlock?.ingredientSnapshotNames, ingredientsItemsFiltered, recordFacts.ingredientRows],
-    );
+    const scienceIngredientsMerged = useMemo(() => {
+        const candidates = [
+            ...(decisionScienceBlock?.ingredientSnapshotNames ?? [])
+                .map((name) => ({
+                    name: String(name ?? '').trim(),
+                    dose: '',
+                    source: 'science_snapshot' as const,
+                }))
+                .filter((row) => row.name.length > 0 && !isNutritionLabelLikeIngredient(row.name)),
+            ...(decisionOverviewBlock?.providesVerified?.keyIngredients ?? [])
+                .map((item) => ({
+                    name: String(item?.name ?? '').trim(),
+                    dose: String(item?.dose ?? '').trim(),
+                    source: 'decision_overview' as const,
+                }))
+                .filter((row) => row.name.length > 0 && !isNutritionLabelLikeIngredient(row.name)),
+            ...((ingredientsItemsFiltered.length > 0
+                ? ingredientsItemsFiltered.map((row) => ({
+                    name: row.name,
+                    dose: row.dose ?? '',
+                    source: 'ingredients_items' as const,
+                }))
+                : recordFacts.ingredientRows.map((row) => ({
+                    name: row.name,
+                    dose: row.doseLine ?? '',
+                    source: 'record_facts' as const,
+                }))).filter((row) => row.name.length > 0 && !isNutritionLabelLikeIngredient(row.name))),
+        ];
+
+        return mergeScienceIngredientCandidates({ candidates, maxCoverItems: 3 });
+    }, [decisionOverviewBlock?.providesVerified?.keyIngredients, decisionScienceBlock?.ingredientSnapshotNames, ingredientsItemsFiltered, recordFacts.ingredientRows]);
+    const scienceIngredientsAll = scienceIngredientsMerged.all;
+    const scienceIngredientsTop3 = scienceIngredientsMerged.top3;
+    const scienceIngredientsOverflowCount = scienceIngredientsMerged.overflowCount;
     const coverIngredientCandidates = useMemo(
         () =>
             [
@@ -3156,7 +3148,7 @@ const AnalysisBundleDashboard: React.FC<{
                     name: String(item?.name ?? '').trim(),
                     dose: String(item?.dose ?? '').trim(),
                 }))),
-                ...(scienceTopIngredients.map((item) => ({
+                ...(scienceIngredientsTop3.map((item) => ({
                     name: String(item?.name ?? '').trim(),
                     dose: String(item?.dose ?? '').trim(),
                 }))),
@@ -3170,7 +3162,7 @@ const AnalysisBundleDashboard: React.FC<{
                     const key = `${normalizeIngredientNameForBackground(row.name)}|${normalizeText(row.dose)}`;
                     return all.findIndex((candidate) => `${normalizeIngredientNameForBackground(candidate.name)}|${normalizeText(candidate.dose)}` === key) === index;
                 }),
-        [decisionOverviewBlock?.providesVerified?.keyIngredients, scienceTopIngredients, ingredientRowsForRanking],
+        [decisionOverviewBlock?.providesVerified?.keyIngredients, scienceIngredientsTop3, ingredientRowsForRanking],
     );
     const isOmegaLikeCover = useMemo(
         () =>
@@ -3279,8 +3271,8 @@ const AnalysisBundleDashboard: React.FC<{
             pushRow(omegaCoverSignals.fish, 0.78);
             if (rows.length > 0) return rows;
         }
-        if (scienceTopIngredients.length > 0) {
-            return scienceTopIngredients.map((item, index) => ({
+        if (scienceIngredientsTop3.length > 0) {
+            return scienceIngredientsTop3.map((item, index) => ({
                 name: item.name,
                 amount: item.dose || 'Amount not disclosed',
                 fill: 0.8 - index * 0.06,
@@ -3299,7 +3291,7 @@ const AnalysisBundleDashboard: React.FC<{
                 showInfo: false,
             },
         ];
-    }, [isOmegaLikeCover, legacyIngredientMechanisms, omegaCoverSignals.dha, omegaCoverSignals.epa, omegaCoverSignals.fish, omegaCoverSignals.total, scienceTopIngredients]);
+    }, [isOmegaLikeCover, legacyIngredientMechanisms, omegaCoverSignals.dha, omegaCoverSignals.epa, omegaCoverSignals.fish, omegaCoverSignals.total, scienceIngredientsTop3]);
     const decisionDirectionsForCover = useMemo(
         () =>
             (decisionUsageBlock?.directions?.lines ?? [])
@@ -3354,6 +3346,10 @@ const AnalysisBundleDashboard: React.FC<{
     const safetyNotes = showGeneralWatchOuts
         ? ['No label-specific warnings detected; general watch-outs shown.']
         : undefined;
+    const scienceTileFooterText =
+        scienceIngredientsOverflowCount > 0
+            ? `+${scienceIngredientsOverflowCount} more ingredients`
+            : undefined;
 
     const overviewDataStatus = useMemo(() => {
         const missingReasons = new Set<MissingReason>();
@@ -4076,7 +4072,7 @@ const AnalysisBundleDashboard: React.FC<{
             seen.add(key);
             deduped.push(name);
         }
-        return deduped.slice(0, 3);
+        return deduped;
     }, [keyIngredientsForIngredients, ingredientsItemsFiltered, recordFacts.ingredientRows]);
 
     const [activeIngredientName, setActiveIngredientName] = useState<string | null>(
@@ -4352,6 +4348,12 @@ const AnalysisBundleDashboard: React.FC<{
             ) ?? null
         );
     }, [activeIngredientKey, assembledInsights]);
+    const supplementalFormFromSnapshot = useMemo(() => {
+        if (!activeIngredientKey) return null;
+        const hit = scienceIngredientsAll.find((item) => item.key === activeIngredientKey);
+        const formValue = typeof hit?.formValue === 'string' ? hit.formValue.trim() : '';
+        return formValue.length > 0 ? formValue : null;
+    }, [activeIngredientKey, scienceIngredientsAll]);
     const hasInferredSpecificForm = Boolean(
         activeProductInsight?.formLabel
         && activeProductInsight.formLabel.trim().length > 0
@@ -4390,6 +4392,7 @@ const AnalysisBundleDashboard: React.FC<{
     ]);
     const hasFactsSpecificForm = Boolean(activeFactsIngredient?.formText && activeFactsIngredient.formText.trim().length > 0);
     const explicitFormText = hasFactsSpecificForm ? activeFactsIngredient?.formText ?? null : null;
+    const supplementalFormText = supplementalFormFromSnapshot ?? null;
     const inferredFormText = hasInferredSpecificForm
         ? activeProductInsight?.formLabel ?? activeInsightFromDto?.form?.text ?? null
         : null;
@@ -4409,13 +4412,23 @@ const AnalysisBundleDashboard: React.FC<{
         explicitForm: explicitFormText,
         inferredForm: inferredFormText,
     });
-    const activeFormDisplayText = explicitFormText || 'Form not stated on the official record.';
-    const detailsPossibleFormLine =
-        SCAN_UX_VIEW_MODE === 'details' && inferredFormText && !suppressInferredOmegaComponentForm
-            ? isFormConflict
+    const activeFormDisplayText =
+        explicitFormText
+        || supplementalFormText
+        || (inferredFormText && !suppressInferredOmegaComponentForm ? inferredFormText : null)
+        || 'Form not stated on the official record.';
+    const detailsPossibleFormLine = (() => {
+        if (SCAN_UX_VIEW_MODE !== 'details') return null;
+        if (!explicitFormText && supplementalFormText) {
+            return `Form from supplemental label data (iHerb): ${supplementalFormText}.`;
+        }
+        if (inferredFormText && !suppressInferredOmegaComponentForm) {
+            return isFormConflict
                 ? `Possible form (low confidence): ${inferredFormText}.`
-                : `Possible form (low confidence): ${inferredFormText}.`
-            : null;
+                : `Possible form (low confidence): ${inferredFormText}.`;
+        }
+        return null;
+    })();
 
     useEffect(() => {
         if (selectedTileType !== 'science') return;
@@ -4835,9 +4848,9 @@ const AnalysisBundleDashboard: React.FC<{
                 <View style={{ marginBottom: 12 }}>
                     <Text style={styles.detailMetaLabel}>Official record snapshot</Text>
                     <View style={styles.ingredientsList}>
-                        {scienceTopIngredients.length > 0 ? (
-                            scienceTopIngredients.map((item) => (
-                                <View key={item.name} style={styles.ingredientsListRow}>
+                        {scienceIngredientsAll.length > 0 ? (
+                            scienceIngredientsAll.map((item, idx) => (
+                                <View key={`${item.key}-${idx}`} style={styles.ingredientsListRow}>
                                     <View style={{ flex: 1 }}>
                                         <Text style={styles.ingredientsListName}>{item.name}</Text>
                                         {item.dose ? (
@@ -4860,7 +4873,7 @@ const AnalysisBundleDashboard: React.FC<{
                     </View>
                 </View>
 
-                {activeProductInsight || activeInsightFromDto || hasFactsSpecificForm ? (
+                {activeProductInsight || activeInsightFromDto || hasFactsSpecificForm || Boolean(supplementalFormFromSnapshot) ? (
                     <View style={{ gap: 10 }}>
                         <View style={styles.kvGrid}>
                             <View style={styles.kvRow}>
@@ -5594,6 +5607,7 @@ const AnalysisBundleDashboard: React.FC<{
             viewLabel: t.analysisView,
             eyebrow: t.analysisEyebrowKeyMechanism,
             mechanisms: ingredientMechanisms,
+            footerText: scienceTileFooterText,
             dataStatus: unifiedIngredientsDataStatus,
             content: ingredientsContent,
             trustPanel: sharedTrustPanel,
@@ -5679,6 +5693,115 @@ const AnalysisBundleDashboard: React.FC<{
         if (scoreCardV2Modules.length === 6) return scoreCardV2Modules;
         return [];
     }, [scoreCardV2Modules]);
+    const telemetrySourceTierUsage = useMemo(() => {
+        const counts = {
+            official: 0,
+            scanned: 0,
+            overlay: 0,
+            generalScience: 0,
+        };
+        const addByTier = (tier: string | null | undefined) => {
+            if (tier === 'official_record') counts.official += 1;
+            else if (tier === 'scanned_label') counts.scanned += 1;
+            else if (tier === 'overlay_iherb') counts.overlay += 1;
+            else if (tier === 'general_science') counts.generalScience += 1;
+        };
+
+        scoreCardV2DisplayModules.forEach((module) => {
+            (module?.checklist ?? []).forEach((item) => {
+                addByTier(item?.sourceTier ?? null);
+            });
+        });
+        addByTier(decisionUsageBlock?.directions?.sourceTier ?? null);
+        (decisionScienceBlock?.odsGeneralScienceBullets ?? []).forEach(() => {
+            counts.generalScience += 1;
+        });
+        (decisionSafetyBlock?.ulGuidance ?? []).forEach(() => {
+            counts.generalScience += 1;
+        });
+        (decisionSafetyBlock?.generalWatchouts ?? []).forEach(() => {
+            counts.generalScience += 1;
+        });
+        return counts;
+    }, [
+        decisionSafetyBlock?.generalWatchouts,
+        decisionSafetyBlock?.ulGuidance,
+        decisionScienceBlock?.odsGeneralScienceBullets,
+        decisionUsageBlock?.directions?.sourceTier,
+        scoreCardV2DisplayModules,
+    ]);
+    const usedCategorySpecificRanking = useMemo(() => {
+        if (!isOmegaLikeCover) return false;
+        const topNames = ingredientMechanisms
+            .slice(0, 3)
+            .map((item) => normalizeText(item?.name).toLowerCase())
+            .filter(Boolean);
+        if (topNames.length === 0) return false;
+        const hasOmegaActives = topNames.some((name) => /total omega|epa|dha|fish oil/.test(name));
+        const hasNutritionFallback = topNames.some((name) => /calories|total fat/.test(name));
+        return hasOmegaActives && !hasNutritionFallback;
+    }, [ingredientMechanisms, isOmegaLikeCover]);
+    const usedFallbackCopyCount = useMemo(() => {
+        const fallbackPattern =
+            /still loading|open this card|general reminder|follow the package label directions|safety data is limited|key product facts are summarized|active ingredient details are still loading/i;
+        const lines: string[] = [
+            overviewSummaryText,
+            ...overviewBullets.map((item) => item.text),
+            usageRoutine,
+            ...usageBullets.map((item) => item.text),
+            safetyWarningCoverText,
+            safetyTipCoverText,
+        ];
+        return lines.reduce((count, line) => (fallbackPattern.test(normalizeText(line)) ? count + 1 : count), 0);
+    }, [overviewBullets, overviewSummaryText, safetyTipCoverText, safetyWarningCoverText, usageBullets, usageRoutine]);
+    const overlayConsumerFieldHitCount =
+        telemetrySourceTierUsage.official
+        + telemetrySourceTierUsage.scanned
+        + telemetrySourceTierUsage.overlay
+        + telemetrySourceTierUsage.generalScience;
+    const decisionSupportV2Available = scoreCardV2DisplayModules.length === 6;
+    const legacyVisibleFallback = !decisionSupportV2Available;
+    const mobileUiLegacyCallCount = FREEZE_SHADOW_ONLY ? 0 : null;
+    useEffect(() => {
+        const digest = typeof bundleState.meta.factsDigestHash === 'string' ? bundleState.meta.factsDigestHash : '';
+        if (!digest) return;
+        if (overlayConsumerMetricLoggedRef.current.has(digest)) return;
+        overlayConsumerMetricLoggedRef.current.add(digest);
+        const payload = {
+            sourceType: bundleSourceType ?? null,
+            sourceTypeFinal: bundleSourceTypeFinal,
+            overlayConsumerFieldHitCount,
+            usedOfficialFields: telemetrySourceTierUsage.official,
+            usedScannedLabelFields: telemetrySourceTierUsage.scanned,
+            usedIherbOverlayFields: telemetrySourceTierUsage.overlay,
+            usedGeneralScienceFields: telemetrySourceTierUsage.generalScience,
+            legacyVisibleFallback,
+            mobile_ui_legacy_call_count: mobileUiLegacyCallCount,
+            decisionSupportV2Available,
+            usedCategorySpecificRanking,
+            usedFallbackCopyCount,
+        };
+        console.info('[overlay-consumer-metric]', payload);
+        emitScanUxMetric('scan_overlay_consumer_fields', {
+            viewMode: SCAN_UX_VIEW_MODE,
+            variant: SCAN_UX_VARIANT,
+            ...payload,
+        });
+    }, [
+        bundleSourceType,
+        bundleSourceTypeFinal,
+        bundleState.meta.factsDigestHash,
+        decisionSupportV2Available,
+        legacyVisibleFallback,
+        mobileUiLegacyCallCount,
+        overlayConsumerFieldHitCount,
+        telemetrySourceTierUsage.generalScience,
+        telemetrySourceTierUsage.official,
+        telemetrySourceTierUsage.overlay,
+        telemetrySourceTierUsage.scanned,
+        usedCategorySpecificRanking,
+        usedFallbackCopyCount,
+    ]);
     const scoreCardRows = scoreCardPayload?.rows ?? [];
     const scoreCardChecklists = scoreCardPayload?.checklistsByRow ?? null;
     const overviewBlock = decisionOverviewBlock;
@@ -5813,11 +5936,7 @@ const AnalysisBundleDashboard: React.FC<{
             ? [notScoredReason]
             : effectiveScoreUiMode === 'scoring'
                 ? [t.analysisScoreScoringReason]
-                : hasNumber(scoreCardPayload?.confidenceCoverage)
-                    ? [`${t.analysisConfidencePrefix}: ${Math.round(scoreCardPayload.confidenceCoverage)}%`]
-                    : hasNumber(scoreCardV2Payload?.confidencePct)
-                        ? [`${t.analysisConfidencePrefix}: ${Math.round(scoreCardV2Payload.confidencePct ?? 0)}%`]
-                        : [];
+                : [];
     const ringMetaLines =
         effectiveScoreUiMode === 'scored'
             ? ringMetaLinesRaw.filter((line) => !scoreMetaBlockedReasons.has(line))
@@ -6233,7 +6352,6 @@ const AnalysisBundleDashboard: React.FC<{
                             <View style={styles.heroPillsRow}>
                                 <GlassPill label={sourceBadgeLabel} />
                                 {scoreBadge ? <GlassPill label={scoreBadge} accentColor={ringMuted ? '#9CA3AF' : '#111827'} /> : null}
-                                {ringMuted ? <GlassPill label="Limited confidence" /> : null}
                             </View>
                         </LinearGradient>
                     </View>
@@ -6251,11 +6369,6 @@ const AnalysisBundleDashboard: React.FC<{
                                         }
                                         overallBand={
                                             normalizeText(scoreCardV2Payload?.overallBand ?? null) || undefined
-                                        }
-                                        confidencePct={
-                                            hasNumber(scoreCardV2Payload?.confidencePct)
-                                                ? Number(scoreCardV2Payload?.confidencePct)
-                                                : (hasNumber(scoreCardPayload?.confidenceCoverage) ? Number(scoreCardPayload?.confidenceCoverage) : 0)
                                         }
                                         modules={scoreCardV2DisplayModules}
                                         muted={ringMuted}
@@ -6514,7 +6627,7 @@ const LegacyAnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ analysis, i
     const overviewScoreLabel = legacyNotScored ? t.analysisScoreNotScored : t.analysisScoreLabel;
     const scoreMetaLines = legacyNotScored
         ? [t.analysisScoreNotScoredReasonUnavailable]
-        : [`${t.analysisConfidencePrefix}: ${t.analysisConfidenceComplete}`];
+        : [];
     const legacyScoreReady = !legacyNotScored;
 
     // Construct descriptions for InteractiveScoreRing with score factor explanations
@@ -8863,6 +8976,13 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: 'rgba(17,24,39,0.7)',
     },
+    scoreV2ConfidenceHint: {
+        marginTop: 2,
+        fontSize: 11,
+        lineHeight: 15,
+        color: 'rgba(17,24,39,0.6)',
+        fontWeight: '500',
+    },
     scoreV2Modules: {
         gap: 8,
     },
@@ -8940,21 +9060,21 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: '#1F2937',
     },
-    scoreV2ChipConfirmed: {
+    scoreV2ChipVerified: {
         backgroundColor: 'rgba(22,163,74,0.12)',
         borderColor: 'rgba(22,163,74,0.4)',
     },
-    scoreV2ChipListed: {
-        backgroundColor: 'rgba(14,116,144,0.12)',
-        borderColor: 'rgba(14,116,144,0.38)',
+    scoreV2ChipDetected: {
+        backgroundColor: 'rgba(234,179,8,0.16)',
+        borderColor: 'rgba(202,138,4,0.45)',
     },
     scoreV2ChipNotVerified: {
         backgroundColor: 'rgba(107,114,128,0.06)',
         borderColor: 'rgba(107,114,128,0.35)',
     },
     scoreV2ChipNotShown: {
-        backgroundColor: 'rgba(180,83,9,0.12)',
-        borderColor: 'rgba(180,83,9,0.45)',
+        backgroundColor: 'rgba(220,38,38,0.12)',
+        borderColor: 'rgba(220,38,38,0.45)',
     },
 
     miniHeader: {
