@@ -51,10 +51,14 @@ test('product overview AI stays sidecar-only on the frontend', () => {
     'const overviewContent = (',
   );
 
+  assert.ok(dashboardSource.includes('const buildProductOverviewFallbackClient = ('));
+  assert.ok(dashboardSource.includes('const overviewAiFallback = useMemo('));
   assert.ok(aiEffectSlice.includes('productOverviewAiStateRef.current[overviewAiDigest]'));
   assert.ok(aiEffectSlice.includes('const currentOverviewAi = productOverviewAiStateRef.current[overviewAiDigest];'));
   assert.ok(aiEffectSlice.includes("decisionSupportState.status !== 'ready'"));
   assert.ok(aiEffectSlice.includes('InteractionManager.runAfterInteractions'));
+  assert.ok(aiEffectSlice.includes('if (overviewAiFallback) {'));
+  assert.ok(aiEffectSlice.includes("promptVersion: 'client-fallback'"));
   assert.ok(aiEffectSlice.includes('setProductOverviewAiState(overviewAiDigest, {'));
   assert.ok(aiEffectSlice.includes('setProductOverviewAiState(overviewAiDigest, (current) => {'));
   assert.equal(aiEffectSlice.includes('setDecisionSupportState'), false);
@@ -66,6 +70,19 @@ test('product overview AI stays sidecar-only on the frontend', () => {
   assert.ok(aiEffectSlice.includes('const shouldShowOverviewAiLoading ='));
   assert.ok(aiEffectSlice.includes("currentOverviewAiStatus === 'loading' && currentOverviewAiMatchesFingerprint"));
   assert.equal(aiEffectSlice.includes("selectedTileType !== 'overview'"), false);
+});
+
+test('decision-support fetch waits out transient web skeleton state before calling the authority route', () => {
+  const fetchEffectSlice = readBetween(
+    dashboardSource,
+    'const sourceType = normalizeText(bundleState.meta.sourceType ?? null).toLowerCase();',
+    'const run = async (digestParam: string | null, canRetry: boolean): Promise<void> => {',
+  );
+
+  assert.ok(fetchEffectSlice.includes('const isWebSkeletonPhase ='));
+  assert.ok(fetchEffectSlice.includes("sourceType === 'web'"));
+  assert.ok(fetchEffectSlice.includes("bundleState.meta.phase === 'skeleton' || isStreaming"));
+  assert.ok(fetchEffectSlice.includes('if (isWebSkeletonPhase) {'));
 });
 
 test('product overview AI route is isolated from shared decision-support authority', () => {

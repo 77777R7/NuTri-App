@@ -258,6 +258,25 @@ type ProductOverviewAiPayload = {
     promptVersion?: string;
 };
 
+type ProductOverviewAiRequestPayload = {
+    digest: string;
+    productName: string;
+    brandName: string | null;
+    productTypeHint: string | null;
+    primaryIngredient: string | null;
+    keyIngredients: Array<{
+        name: string;
+        dose: string | null;
+    }>;
+    sourceContextHint: string | null;
+    chemicalFormHint: string | null;
+    strengthClaim: string | null;
+    servingStrength: string | null;
+    form: string | null;
+    count: string | null;
+    isLikelySingleIngredient: boolean;
+};
+
 type CoverLine = {
     text: string;
     isPlaceholder?: boolean;
@@ -2399,6 +2418,130 @@ const buildIngredientOverviewFallbackClient = (
     };
 };
 
+const buildProductOverviewFallbackClient = (
+    payload: ProductOverviewAiRequestPayload,
+): ProductOverviewAiPayload => {
+    const normalizeOverviewToken = (value?: string | null): string => normalizeText(value ?? null).toLowerCase();
+    const dedupeStrings = (values: Array<string | null | undefined>): string[] => {
+        const out: string[] = [];
+        const seen = new Set<string>();
+        values.forEach((value) => {
+            const normalized = normalizeText(value ?? null);
+            if (!normalized) return;
+            const key = normalized.toLowerCase();
+            if (seen.has(key)) return;
+            seen.add(key);
+            out.push(normalized);
+        });
+        return out;
+    };
+    const listToEnglish = (values: string[]): string => {
+        if (values.length === 0) return '';
+        if (values.length === 1) return values[0];
+        if (values.length === 2) return `${values[0]} and ${values[1]}`;
+        return `${values.slice(0, -1).join(', ')}, and ${values[values.length - 1]}`;
+    };
+
+    const productNameToken = normalizeOverviewToken(payload.productName);
+    const productTypeToken = normalizeOverviewToken(payload.productTypeHint);
+    const ingredientTokens = dedupeStrings([
+        payload.primaryIngredient,
+        ...payload.keyIngredients.map((item) => item.name),
+    ]).map((item) => item.toLowerCase());
+
+    if (payload.isLikelySingleIngredient) {
+        if (ingredientTokens.some((token) => token.includes('astaxanthin'))) {
+            return {
+                mode: 'rich',
+                lead: 'Astaxanthin is a carotenoid supplement ingredient commonly used in antioxidant-focused products.',
+                whatItIs: toSentence(
+                    payload.sourceContextHint
+                        ? `It is presented here with source context from ${payload.sourceContextHint} and appears as the main named active in the formula`
+                        : 'It appears here as the main named active in a straightforward single-ingredient formula',
+                ) ?? '',
+                whyPeopleTakeIt:
+                    'People usually choose astaxanthin products to compare the named ingredient, the source context on the label, and how clearly the formula stays focused on one active.',
+            };
+        }
+
+        if (ingredientTokens.some((token) => token.includes('vitamin c')) || productTypeToken.includes('vitamin c')) {
+            return {
+                mode: 'rich',
+                lead: 'This is a vitamin C supplement built around a clearly named vitamin ingredient.',
+                whatItIs:
+                    'It belongs to the straightforward vitamin-supplement category and may also include companion nutrients that sit alongside the main vitamin line on the label.',
+                whyPeopleTakeIt:
+                    'People usually choose products like this for direct vitamin C supplementation and to compare the named ingredient, label clarity, and any supporting nutrients included in the formula.',
+            };
+        }
+
+        const primaryIngredient = normalizeText(payload.primaryIngredient ?? payload.keyIngredients[0]?.name ?? payload.productName) ?? 'This product';
+        const productTypeHint = normalizeText(payload.productTypeHint)?.replace(/\bsupport supplement\b/i, 'supplement') ?? 'single-ingredient supplement';
+        const sourceContext = normalizeText(payload.sourceContextHint);
+        const chemicalForm = normalizeText(payload.chemicalFormHint);
+        return {
+            mode: 'rich',
+            lead: `${primaryIngredient} is a supplement ingredient used in ${productTypeHint.toLowerCase()} products.`,
+            whatItIs:
+                sourceContext
+                    ? `It is presented here with source context from ${sourceContext}.`
+                    : chemicalForm
+                        ? `It is presented here with a disclosed ingredient form of ${chemicalForm}.`
+                        : 'It appears here as the main named active in a straightforward single-ingredient formula.',
+            whyPeopleTakeIt:
+                'People usually choose products like this to compare the named ingredient, the disclosed label context, and how clearly the formula stays focused on one main active.',
+        };
+    }
+
+    if (
+        productTypeToken.includes('omega-3')
+        || productNameToken.includes('omega-3')
+        || ingredientTokens.some((token) => token.includes('epa') || token.includes('dha') || token.includes('fish oil'))
+    ) {
+        const names = dedupeStrings(payload.keyIngredients.map((item) => item.name));
+        const namedBreakdown = [
+            names.some((name) => /\bepa\b/i.test(name)) ? 'EPA' : null,
+            names.some((name) => /\bdha\b/i.test(name)) ? 'DHA' : null,
+        ].filter(Boolean) as string[];
+        return {
+            mode: 'short',
+            lead: 'This is an omega-3 supplement built around fish-oil-derived fatty acids.',
+            whatItIs:
+                namedBreakdown.length > 0
+                    ? `The label separates the source oil from specific omega-3 components such as ${listToEnglish(namedBreakdown)}, which are the lines shoppers usually compare most closely.`
+                    : 'The label presents omega-3s as a fish-oil-based formula rather than as a single isolated ingredient.',
+            whyPeopleTakeIt:
+                'People usually choose products like this for general omega-3 intake and to compare how clearly the EPA and DHA breakdown is disclosed.',
+        };
+    }
+
+    if (
+        productTypeToken.includes('probiotic')
+        || productNameToken.includes('probiotic')
+        || ingredientTokens.some((token) => token.includes('probiotic') || token.includes('phage') || token.includes('blend'))
+    ) {
+        return {
+            mode: 'short',
+            lead: 'This is a probiotic-style supplement organized around a blend-based formula.',
+            whatItIs:
+                'The label combines named blend lines rather than a fully itemized ingredient list, so the product is best understood as a formula with partially disclosed components.',
+            whyPeopleTakeIt:
+                'People usually choose products like this to compare how clearly the blend is described and whether the label gives enough detail to judge what is inside.',
+        };
+    }
+
+    const productTypeHint = normalizeText(payload.productTypeHint)?.replace(/\bsupport supplement\b/i, 'supplement') ?? 'multi-ingredient supplement';
+    const names = dedupeStrings(payload.keyIngredients.map((item) => item.name)).slice(0, 3);
+    const namedContext = names.length > 0 ? ` with named components such as ${listToEnglish(names)}` : '';
+    return {
+        mode: 'short',
+        lead: `This is a ${productTypeHint.toLowerCase()} with more than one disclosed ingredient.`,
+        whatItIs: `The formula is organized as a structured label${namedContext}, so shoppers need to distinguish the main active from supporting or context lines.`,
+        whyPeopleTakeIt:
+            'People usually choose products like this to compare the named ingredients and how clearly the label separates the main active from supporting components.',
+    };
+};
+
 const inferScientificBackgroundFamilyClient = (
     selectedIngredientName: string,
     rows: ScienceSidecarIngredientRow[],
@@ -3044,6 +3187,10 @@ const AnalysisBundleDashboard: React.FC<{
         const scanInstanceKey = `${normalizeText((bundleState.meta as { bundleId?: string | null })?.bundleId ?? '')}|${String(bundleState.meta.revision ?? '')}`;
         const sourceType = normalizeText(bundleState.meta.sourceType ?? null).toLowerCase();
         const sourceTypeFinal = bundleState.meta.sourceTypeFinal === true;
+        const isWebSkeletonPhase =
+            sourceType === 'web'
+            && !sourceTypeFinal
+            && (bundleState.meta.phase === 'skeleton' || isStreaming);
         const decisionCacheKey = [
             resolvedBarcode,
             `${bundleState.meta.authoritativeIdentity.type}:${bundleState.meta.authoritativeIdentity.value}`,
@@ -3075,6 +3222,15 @@ const AnalysisBundleDashboard: React.FC<{
                 error: null,
                 autoRetryUsed: prev.autoRetryUsed,
             }));
+        }
+        if (isWebSkeletonPhase) {
+            setDecisionSupportState((prev) => ({
+                status: prev.data ? 'ready' : 'loading',
+                data: prev.data,
+                error: null,
+                autoRetryUsed: prev.autoRetryUsed,
+            }));
+            return;
         }
         const run = async (digestParam: string | null, canRetry: boolean): Promise<void> => {
             try {
@@ -4567,7 +4723,7 @@ const AnalysisBundleDashboard: React.FC<{
             },
         ];
     }, [authoritativeTilePayloadReady, decisionScienceBlock?.ingredientRows]);
-    const productOverviewAiRequestPayload = useMemo(() => {
+    const productOverviewAiRequestPayload = useMemo<ProductOverviewAiRequestPayload | null>(() => {
         if (!overviewAiDigest) return null;
         const normalizedProductName = normalizeText(overviewFacts?.product?.name ?? productTitle);
         if (!normalizedProductName) return null;
@@ -4610,6 +4766,10 @@ const AnalysisBundleDashboard: React.FC<{
     ]);
     const overviewAiRequestFingerprint = useMemo(
         () => (productOverviewAiRequestPayload ? JSON.stringify(productOverviewAiRequestPayload) : null),
+        [productOverviewAiRequestPayload],
+    );
+    const overviewAiFallback = useMemo(
+        () => (productOverviewAiRequestPayload ? buildProductOverviewFallbackClient(productOverviewAiRequestPayload) : null),
         [productOverviewAiRequestPayload],
     );
     const currentOverviewAiState =
@@ -4688,6 +4848,18 @@ const AnalysisBundleDashboard: React.FC<{
                 if (cancelled) return;
 
                 if (!res.ok) {
+                    if (overviewAiFallback) {
+                        setProductOverviewAiState(overviewAiDigest, {
+                            status: 'ok',
+                            fingerprint: overviewAiRequestFingerprint,
+                            data: {
+                                ...overviewAiFallback,
+                                promptVersion: 'client-fallback',
+                            },
+                            error: `HTTP ${res.status}`,
+                        });
+                        return;
+                    }
                     setProductOverviewAiState(overviewAiDigest, {
                         status: 'error',
                         error: `HTTP ${res.status}`,
@@ -4719,6 +4891,19 @@ const AnalysisBundleDashboard: React.FC<{
                     return;
                 }
 
+                if (overviewAiFallback) {
+                    setProductOverviewAiState(overviewAiDigest, {
+                        status: 'ok',
+                        fingerprint: overviewAiRequestFingerprint,
+                        data: {
+                            ...overviewAiFallback,
+                            promptVersion: 'client-fallback',
+                        },
+                        error: typeof payload?.reason === 'string' ? payload.reason : 'AI summary fallback',
+                    });
+                    return;
+                }
+
                 setProductOverviewAiState(overviewAiDigest, {
                     status: 'unavailable',
                     error: typeof payload?.reason === 'string' ? payload.reason : 'AI summary unavailable',
@@ -4726,6 +4911,18 @@ const AnalysisBundleDashboard: React.FC<{
                 });
             } catch (error) {
                 if (cancelled || (error instanceof Error && error.name === 'AbortError')) return;
+                if (overviewAiFallback) {
+                    setProductOverviewAiState(overviewAiDigest, {
+                        status: 'ok',
+                        fingerprint: overviewAiRequestFingerprint,
+                        data: {
+                            ...overviewAiFallback,
+                            promptVersion: 'client-fallback',
+                        },
+                        error: error instanceof Error ? error.message : 'AI summary fallback',
+                    });
+                    return;
+                }
                 setProductOverviewAiState(overviewAiDigest, {
                     status: 'error',
                     error: error instanceof Error ? error.message : 'AI summary unavailable',
@@ -4755,6 +4952,7 @@ const AnalysisBundleDashboard: React.FC<{
     }, [
         decisionSupportState.status,
         overviewAiDigest,
+        overviewAiFallback,
         overviewAiRequestFingerprint,
         setProductOverviewAiState,
     ]);
