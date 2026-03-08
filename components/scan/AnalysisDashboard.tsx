@@ -3230,7 +3230,9 @@ const AnalysisBundleDashboard: React.FC<{
                 error: null,
                 autoRetryUsed: prev.autoRetryUsed,
             }));
-            return;
+            // Do not hard-block authoritative fetch on a web+skeleton bundle.
+            // If SSE rev1 never arrives (network hiccup / early stream drop), this
+            // fetch path still hydrates verified content instead of indefinite placeholders.
         }
         const run = async (digestParam: string | null, canRetry: boolean): Promise<void> => {
             try {
