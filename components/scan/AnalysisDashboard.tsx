@@ -3230,7 +3230,9 @@ const AnalysisBundleDashboard: React.FC<{
                 error: null,
                 autoRetryUsed: prev.autoRetryUsed,
             }));
-            return;
+            // Keep fetching authoritative decision-support even during a transient
+            // web skeleton phase so release builds do not get stuck on placeholders
+            // when rev1 never upgrades the stream in time.
         }
         const run = async (digestParam: string | null, canRetry: boolean): Promise<void> => {
             try {
