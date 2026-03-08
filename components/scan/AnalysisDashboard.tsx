@@ -1007,6 +1007,56 @@ const getOverallBandLabel = (score: number, explicitBand?: string | null): strin
     return 'Weak';
 };
 
+const getOverallBandTone = (score: number, explicitBand?: string | null) => {
+    const band = getOverallBandLabel(score, explicitBand).toLowerCase();
+    if (band === 'excellent') {
+        return {
+            accent: '#15803D',
+            bubbleBorder: 'rgba(21,128,61,0.24)',
+            bubbleFill: 'rgba(21,128,61,0.14)',
+            bubbleText: '#166534',
+        };
+    }
+    if (band === 'strong') {
+        return {
+            accent: '#16A34A',
+            bubbleBorder: 'rgba(22,163,74,0.24)',
+            bubbleFill: 'rgba(22,163,74,0.14)',
+            bubbleText: '#166534',
+        };
+    }
+    if (band === 'good') {
+        return {
+            accent: '#65A30D',
+            bubbleBorder: 'rgba(101,163,13,0.24)',
+            bubbleFill: 'rgba(101,163,13,0.14)',
+            bubbleText: '#4D7C0F',
+        };
+    }
+    if (band === 'fair') {
+        return {
+            accent: '#D97706',
+            bubbleBorder: 'rgba(217,119,6,0.24)',
+            bubbleFill: 'rgba(217,119,6,0.14)',
+            bubbleText: '#B45309',
+        };
+    }
+    if (band === 'limited') {
+        return {
+            accent: '#EA580C',
+            bubbleBorder: 'rgba(234,88,12,0.24)',
+            bubbleFill: 'rgba(234,88,12,0.14)',
+            bubbleText: '#C2410C',
+        };
+    }
+    return {
+        accent: '#DC2626',
+        bubbleBorder: 'rgba(220,38,38,0.24)',
+        bubbleFill: 'rgba(220,38,38,0.14)',
+        bubbleText: '#B91C1C',
+    };
+};
+
 const moduleStatusLabel = (module: DecisionScoreCardV2Module): string => {
     if (module.band) return module.band;
     if (module.status === 'high') return 'High';
@@ -1050,6 +1100,7 @@ const NutriScoreCardV2: React.FC<{
     const safeModules = Array.isArray(modules) ? modules : [];
     if (safeModules.length === 0) return null;
     const resolvedOverallBand = getOverallBandLabel(overallScore, overallBand);
+    const overallBandTone = getOverallBandTone(overallScore, overallBand);
 
     return (
         <View style={styles.scoreV2Card}>
@@ -1060,7 +1111,9 @@ const NutriScoreCardV2: React.FC<{
                         {muted ? '--' : Math.round(overallScore)}
                         <Text style={styles.scoreV2OverallOutOf}>/100</Text>
                     </Text>
-                    <Text style={styles.scoreV2OverallBand}>{resolvedOverallBand}</Text>
+                    <Text style={[styles.scoreV2OverallBand, muted ? null : { color: overallBandTone.accent }]}>
+                        {resolvedOverallBand}
+                    </Text>
                 </View>
             </View>
 
@@ -2803,38 +2856,52 @@ const pickKeyIngredientsForBackground = (items: IngredientCoverItemLike[] | null
 const MiniScoreHeader: React.FC<{
     scrollY: SharedValue<number>;
     overallScore: number;
-    title: string;
-    subtitle?: string;
+    overallBand?: string | null;
     muted?: boolean;
-}> = ({ scrollY, overallScore, title, subtitle, muted }) => {
+}> = ({ scrollY, overallScore, overallBand, muted }) => {
     const animatedStyle = useAnimatedStyle(() => {
         const progress = (scrollY.value - 210) / 70;
         const p = Math.max(0, Math.min(1, progress)); // appears after user scrolls a bit
         return {
             opacity: p,
-            transform: [{ translateY: (1 - p) * -66 }],
+            transform: [
+                { translateY: (1 - p) * -18 },
+                { scale: 0.88 + p * 0.12 },
+            ],
         };
     }, []);
+    const overallBandTone = getOverallBandTone(overallScore, overallBand);
 
     return (
         <Animated.View style={[styles.miniHeader, animatedStyle]} pointerEvents="none">
-            <DashboardBlur intensity={22} tint="light" style={StyleSheet.absoluteFill} />
+            <LinearGradient
+                colors={
+                    muted
+                        ? ['rgba(255,255,255,0.76)', 'rgba(255,255,255,0.46)']
+                        : ['rgba(255,255,255,0.94)', overallBandTone.bubbleFill]
+                }
+                locations={[0, 1]}
+                start={{ x: 0.15, y: 0.05 }}
+                end={{ x: 0.85, y: 1 }}
+                style={StyleSheet.absoluteFillObject}
+            />
+            <DashboardBlur intensity={24} tint="light" style={StyleSheet.absoluteFill} />
             <View style={styles.miniHeaderTint} />
 
-            <View style={styles.miniHeaderContent}>
-                <View style={[styles.miniScoreBubble, muted ? styles.miniScoreBubbleMuted : null]}>
-                    <Text style={styles.miniScoreText}>{Math.round(overallScore)}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                    <Text style={styles.miniHeaderTitle} numberOfLines={1}>
-                        {title}
-                    </Text>
-                    {subtitle ? (
-                        <Text style={styles.miniHeaderSubtitle} numberOfLines={1}>
-                            {subtitle}
-                        </Text>
-                    ) : null}
-                </View>
+            <View
+                style={[
+                    styles.miniScoreBubble,
+                    muted
+                        ? styles.miniScoreBubbleMuted
+                        : {
+                            borderColor: overallBandTone.bubbleBorder,
+                            backgroundColor: 'rgba(255,255,255,0.26)',
+                        },
+                ]}
+            >
+                <Text style={[styles.miniScoreText, muted ? null : { color: overallBandTone.bubbleText }]}>
+                    {muted ? '--' : Math.round(overallScore)}
+                </Text>
             </View>
         </Animated.View>
     );
@@ -6992,14 +7059,22 @@ const AnalysisBundleDashboard: React.FC<{
             templateSections: hasTemplateChecklistData ? integritySections : undefined,
         },
     };
+    const displayedOverallScore =
+        hasNumber(scoreCardV2Payload?.overallScore)
+            ? Number(scoreCardV2Payload?.overallScore)
+            : ringScores.overall;
+    const displayedOverallBand =
+        hasNumber(scoreCardV2Payload?.overallScore) || effectiveScoreUiMode === 'scored'
+            ? normalizeText(scoreCardV2Payload?.overallBand ?? null) || getOverallBandLabel(displayedOverallScore)
+            : null;
+
     return (
         <View style={styles.root}>
             {!disableMiniHeader ? (
                 <MiniScoreHeader
                     scrollY={scrollY}
-                    overallScore={ringScores.overall}
-                    title={productTitle}
-                    subtitle={scoreBadge ?? undefined}
+                    overallScore={displayedOverallScore}
+                    overallBand={displayedOverallBand}
                     muted={ringMuted}
                 />
             ) : null}
@@ -7061,14 +7136,8 @@ const AnalysisBundleDashboard: React.FC<{
                             <View style={styles.scoreHeroCard}>
                                 {!disableScoreRing ? (
                                     <NutriScoreCardV2
-                                        overallScore={
-                                            hasNumber(scoreCardV2Payload?.overallScore)
-                                                ? Number(scoreCardV2Payload?.overallScore)
-                                                : ringScores.overall
-                                        }
-                                        overallBand={
-                                            normalizeText(scoreCardV2Payload?.overallBand ?? null) || undefined
-                                        }
+                                        overallScore={displayedOverallScore}
+                                        overallBand={displayedOverallBand}
                                         modules={scoreCardV2DisplayModules}
                                         muted={ringMuted}
                                     />
@@ -9784,56 +9853,46 @@ const styles = StyleSheet.create({
 
     miniHeader: {
         position: 'absolute',
-        left: 16,
-        right: 16,
-        top: 10,
-        borderRadius: 18,
+        top: 12,
+        alignSelf: 'center',
+        width: 72,
+        height: 72,
+        borderRadius: 999,
         overflow: 'hidden',
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.28)',
-        backgroundColor: 'rgba(255,255,255,0.35)',
+        backgroundColor: 'rgba(255,255,255,0.20)',
         zIndex: 50,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#111827',
+        shadowOpacity: 0.08,
+        shadowRadius: 14,
+        shadowOffset: { width: 0, height: 8 },
+        elevation: 10,
     },
     miniHeaderTint: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(255,255,255,0.15)',
-    },
-    miniHeaderContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-        paddingHorizontal: 12,
-        paddingVertical: 10,
+        backgroundColor: 'rgba(255,255,255,0.08)',
     },
     miniScoreBubble: {
-        width: 36,
-        height: 36,
-        borderRadius: 12,
+        width: 54,
+        height: 54,
+        borderRadius: 999,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
         borderColor: 'rgba(17,24,39,0.12)',
-        backgroundColor: 'rgba(255,255,255,0.55)',
+        backgroundColor: 'rgba(255,255,255,0.42)',
     },
     miniScoreBubbleMuted: {
         borderColor: 'rgba(17,24,39,0.08)',
-        backgroundColor: 'rgba(255,255,255,0.40)',
+        backgroundColor: 'rgba(255,255,255,0.32)',
     },
     miniScoreText: {
-        fontSize: 14,
+        fontSize: 18,
         fontWeight: '900',
         color: '#111827',
-    },
-    miniHeaderTitle: {
-        fontSize: 13,
-        fontWeight: '800',
-        color: '#111827',
-    },
-    miniHeaderSubtitle: {
-        marginTop: 2,
-        fontSize: 11,
-        color: 'rgba(17,24,39,0.55)',
-        fontWeight: '600',
     },
 
     // ---------- Score insight deck ----------
