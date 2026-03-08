@@ -21,17 +21,19 @@ test("simple mode keeps a single missing-info CTA in overview", () => {
   );
 });
 
-test("simple mode includes inferred-form conflict guard and suppresses inferred form in default view", () => {
-  assert.ok(source.includes("const detectInferredFormConflict"));
-  assert.ok(source.includes("const isFormConflict = detectInferredFormConflict"));
-  assert.ok(source.includes("Form not stated on the official record."));
-  assert.ok(source.includes("Possible form (low confidence):"));
+test("simple mode keeps science sheet factual form semantics without low-confidence narration", () => {
+  assert.ok(source.includes("Chemical Form"));
+  assert.ok(source.includes("Delivery Type"));
+  assert.ok(source.includes("title=\"Ingredient overview\""));
+  assert.ok(source.includes("title=\"Scientific background\""));
+  assert.equal(source.includes("Possible chemical form (low confidence):"), false);
 });
 
 test("simple taxonomy whitelist is enforced", () => {
-  assert.ok(source.includes("const SIMPLE_TAXONOMY_WHITELIST = new Set(["));
+  assert.ok(source.includes("const SIMPLE_TAXONOMY_WHITELIST = new Set("));
   assert.ok(source.includes("'Official record'"));
   assert.ok(source.includes("'Scanned label'"));
+  assert.ok(source.includes("'Verified'"));
   assert.ok(source.includes("'General science (NIH ODS)'"));
   assert.ok(source.includes("'AI summary'"));
   assert.ok(source.includes("resolveSimpleTaxonomyLabel"));

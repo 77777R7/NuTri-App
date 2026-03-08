@@ -1,6 +1,8 @@
 import { createHash } from "node:crypto";
 
 import type { FactsDigest } from "./factsDigest.js";
+import type { ScienceIngredientRow as DecisionSupportScienceIngredientRow } from "./iherbOverlayIngredients.js";
+import { buildIngredientScienceContext } from "./ingredientScienceContext.js";
 import { lookupSafeScienceSignals } from "./kbRuntime.js";
 import {
   buildUlScopeNote,
@@ -223,6 +225,8 @@ export type DecisionSupportOverviewBlock = {
 };
 
 export type DecisionSupportScienceBlock = {
+  ingredientSourceTier: "overlay_iherb" | "official_record";
+  ingredientRows: DecisionSupportScienceIngredientRow[];
   ingredientSnapshotNames: string[];
   formMatters: {
     ingredientChemicalForm: string | null;
@@ -575,19 +579,19 @@ const extractChemicalFormFromFactsRow = (
   if (!rowText) return null;
   if (OVERLAY_FACTS_HEADER_PATTERN.test(rowText)) return null;
 
-  const parenthetical = rowText.match(/^(.*)\((as|from)\s+([^)]+)\)$/i);
-  if (parenthetical?.[1] && parenthetical[3]) {
-    const baseName = normalizeDisplayText(parenthetical[1]);
-    const form = normalizeDisplayText(parenthetical[3]);
+  const parenthetical = rowText.match(/\((as|from)\s+([^)]+)\)/i);
+  if (parenthetical?.index != null && parenthetical[2]) {
+    const baseName = normalizeDisplayText(rowText.slice(0, parenthetical.index));
+    const form = normalizeDisplayText(parenthetical[2].replace(/[™®]/g, ""));
     if (baseName && form && !OVERLAY_FACTS_HEADER_PATTERN.test(baseName)) {
       return { baseName, form };
     }
   }
 
-  const trailingPhrase = rowText.match(/\b(as|from)\s+([^,;]+)$/i);
+  const trailingPhrase = rowText.match(/\b(as|from)\s+([^,;()]+)$/i);
   if (trailingPhrase?.index != null && trailingPhrase[2]) {
     const baseName = normalizeDisplayText(rowText.slice(0, trailingPhrase.index));
-    const form = normalizeDisplayText(trailingPhrase[2]);
+    const form = normalizeDisplayText(trailingPhrase[2].replace(/[™®]/g, ""));
     if (baseName && form && !OVERLAY_FACTS_HEADER_PATTERN.test(baseName)) {
       return { baseName, form };
     }
@@ -673,6 +677,19 @@ const detectOverlayDosageForm = (overlayClaims: DecisionSupportOverlayClaims | n
   if (/\bpowder\b/.test(corpus)) return "Powder";
   if (/\bliquid\b/.test(corpus)) return "Liquid";
   return null;
+};
+
+const resolveScienceDosageForm = (params: {
+  digest: FactsDigest;
+  overlayClaims: DecisionSupportOverlayClaims | null | undefined;
+  ingredientSourceTier: "overlay_iherb" | "official_record";
+}): string | null => {
+  const digestDosageForm = normalizeDisplayText(params.digest?.product?.dosageForm) || null;
+  const overlayDosageForm = detectOverlayDosageForm(params.overlayClaims);
+  if (params.ingredientSourceTier === "overlay_iherb") {
+    return overlayDosageForm || digestDosageForm || null;
+  }
+  return digestDosageForm || overlayDosageForm || null;
 };
 
 const toSubscore = (id: DecisionSupportSubscoreId, checklist: DecisionSupportChecklistItem[]): DecisionSupportSubscore => {
@@ -2240,6 +2257,7 @@ const buildAiSummaryContract = (params: {
   hasActiveBreakdown: boolean;
   hasChemicalForm: boolean;
   overlayClaims: DecisionSupportOverlayClaims | null;
+  scienceIngredientRows: DecisionSupportScienceIngredientRow[];
 }): [string, string, string] => {
   const {
     digest,
@@ -2251,6 +2269,7 @@ const buildAiSummaryContract = (params: {
     hasActiveBreakdown,
     hasChemicalForm,
     overlayClaims,
+    scienceIngredientRows,
   } = params;
   const overlayOmega3Facts = parseOverlayOmega3Facts(overlayClaims);
   const overlayHasWarnings = splitOverlayTextLines(overlayClaims?.warnings, 4).length > 0;
@@ -2263,10 +2282,9 @@ const buildAiSummaryContract = (params: {
     }),
   ) ?? "Often used to support goal-oriented supplement support (general science).";
 
-  const keyIngredient = overviewBlock.providesVerified.keyIngredients[0];
-  const dosageForm = overviewBlock.providesVerified.dosageForm;
+  const keyIngredient = scienceIngredientRows[0] ?? null;
   const provideFragment = keyIngredient
-    ? `${keyIngredient.name}${keyIngredient.dose ? ` ${keyIngredient.dose} per serving` : ""}${dosageForm ? ` in ${dosageForm} form` : ""}`
+    ? `${keyIngredient.name}${keyIngredient.dose ? ` ${keyIngredient.dose} per serving` : ""}`
     : `${overviewBlock.providesVerified.servingSize ?? "label-disclosed serving information"}`;
   const disclosureStatus = buildComparabilityDisclosure({
     categoryId,
@@ -2297,7 +2315,7 @@ const buildAiSummaryContract = (params: {
     ? buildLimitationText(chosenCode)
     : hasUnresolvedMissingInfo
     ? "some disclosure details still need label confirmation"
-    : "no high-impact unresolved disclosure gap was detected from current record plus supplemental label data";
+    : "no high-impact unresolved disclosure gap was detected from current verified product data";
   const action = chosenCode
     ? buildActionStep({
       code: chosenCode,
@@ -2323,6 +2341,10 @@ const buildScienceBlock = (params: {
   missingActiveBreakdown: boolean;
   missingFormHighImpact: boolean;
   overlayClaims: DecisionSupportOverlayClaims | null;
+  selectedIngredients: {
+    ingredientSourceTier: "overlay_iherb" | "official_record";
+    ingredientRows: DecisionSupportScienceIngredientRow[];
+  };
 }): DecisionSupportScienceBlock => {
   const {
     digest,
@@ -2334,23 +2356,15 @@ const buildScienceBlock = (params: {
     missingActiveBreakdown,
     missingFormHighImpact,
     overlayClaims,
+    selectedIngredients,
   } = params;
   const overlayOmega3Facts = parseOverlayOmega3Facts(overlayClaims);
-  const overlayFactNames = (overlayClaims?.nutritionalFacts ?? [])
-    .map((row) => normalizeDisplayText(row?.substancy))
-    .filter((name) => name.length > 0);
   const overlayChemicalFormFromFacts = extractOverlayChemicalFormFromFacts(overlayClaims);
-  const digestActiveNames = (digest.actives ?? [])
-    .map((item) => normalizeDisplayText(item?.name))
-    .filter((name) => name.length > 0);
-  const preferredNames = categoryId === "fish_oil_omega3"
-    ? [
-      ...overlayOmega3Facts.entries.map((row) => row.name),
-      ...overlayFactNames,
-      ...digestActiveNames,
-    ]
-    : [...overlayFactNames, ...digestActiveNames];
-  const ingredientSnapshotNames = dedupeDisplayValues(preferredNames, 8);
+  const ingredientRows = selectedIngredients.ingredientRows.map((row) => ({
+    name: normalizeDisplayText(row.name) || "Ingredient",
+    dose: row.dose ? normalizeDisplayText(row.dose) : null,
+  }));
+  const ingredientSnapshotNames = dedupeDisplayValues(ingredientRows.map((row) => row.name), 8);
 
   const digestChemicalForm =
     normalizeDisplayText((digest.actives ?? []).find((item) => normalizeText(item?.chemicalForm))?.chemicalForm) || null;
@@ -2363,7 +2377,11 @@ const buildScienceBlock = (params: {
   const ingredientChemicalForm = digestFormLooksLikeOmegaAcid
     ? (overlayChemicalForm ?? null)
     : (digestChemicalForm || overlayChemicalForm || null);
-  const dosageForm = normalizeDisplayText(digest?.product?.dosageForm) || detectOverlayDosageForm(overlayClaims) || null;
+  const dosageForm = resolveScienceDosageForm({
+    digest,
+    overlayClaims,
+    ingredientSourceTier: selectedIngredients.ingredientSourceTier,
+  });
   const odsGeneralScienceBullets = dedupeLines(
     [safeScienceSignals?.formImpactLine ?? null, ...(safeScienceSignals?.evidenceLines ?? [])],
     3,
@@ -2385,8 +2403,11 @@ const buildScienceBlock = (params: {
     hasActiveBreakdown: !missingActiveBreakdown || overlayOmega3Facts.hasEpaDhaBreakdown,
     hasChemicalForm: (!missingFormHighImpact && hasExplicitForm(digest)) || hasOverlayChemicalFormCue(categoryId, overlayClaims),
     overlayClaims,
+    scienceIngredientRows: ingredientRows,
   });
   return {
+    ingredientSourceTier: selectedIngredients.ingredientSourceTier,
+    ingredientRows,
     ingredientSnapshotNames,
     formMatters: {
       ingredientChemicalForm,
@@ -2802,6 +2823,14 @@ export const compileDecisionSupport = (
     patchActivation: params.patchActivation ?? null,
     overlayClaims: params.overlayClaims ?? null,
   });
+  const ingredientScienceContext = buildIngredientScienceContext({
+    digest: params.digest,
+    overlayClaims: params.overlayClaims ?? null,
+  });
+  const selectedScienceIngredients = {
+    ingredientSourceTier: ingredientScienceContext.ingredientSourceTier,
+    ingredientRows: ingredientScienceContext.ingredientRows,
+  };
   const overviewBlock = buildOverviewBlock({
     digest: params.digest,
     categoryId,
@@ -2821,6 +2850,7 @@ export const compileDecisionSupport = (
     missingActiveBreakdown,
     missingFormHighImpact,
     overlayClaims: params.overlayClaims ?? null,
+    selectedIngredients: selectedScienceIngredients,
   });
   const safetyBlock = buildSafetyBlock({
     categoryId,

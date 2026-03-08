@@ -18,6 +18,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
     ActivityIndicator,
     Image,
+    InteractionManager,
     Modal,
     Platform,
     Pressable,
@@ -65,6 +66,12 @@ import { buildVerificationPresentation } from '@/lib/scan/verificationPresentati
 import { resolveReasonCodeMessage } from '@/lib/scan/streamStateMachine';
 import { computeSmartScores, type AnalysisInput } from '@/lib/scoring';
 import { formatBrandForPill } from '@/lib/supplementDisplay';
+import type {
+    IngredientOverviewBlock,
+    IngredientOverviewResponse,
+    ScientificBackgroundBlock,
+    ScientificBackgroundResponse,
+} from '@/shared/types/ingredientScience';
 import type { FactsDTO } from '@/shared/types/scan-insights';
 import type {
     AnalysisBundle,
@@ -173,6 +180,7 @@ type DecisionScoreCardV2Module = {
     checklist: DecisionScoreCardV2ChecklistItem[];
 };
 type DecisionSupportTemplatePayload = {
+    digest?: string;
     nutriScoreCard?: {
         score?: number;
         confidenceCoverage?: number;
@@ -199,6 +207,8 @@ type DecisionSupportTemplatePayload = {
         singleCta?: { label?: string; id?: string } | null;
     };
     scienceBlock?: {
+        ingredientSourceTier?: 'overlay_iherb' | 'official_record';
+        ingredientRows?: Array<{ name: string; dose?: string | null }>;
         ingredientSnapshotNames?: string[];
         formMatters?: { ingredientChemicalForm?: string | null; dosageForm?: string | null };
         odsGeneralScienceBullets?: string[];
@@ -238,6 +248,33 @@ type DecisionSupportTemplatePayload = {
         evidenceType?: 'page' | 'search' | null;
         note?: string;
     };
+};
+
+type ProductOverviewAiPayload = {
+    mode: 'short' | 'rich';
+    lead: string;
+    whatItIs: string;
+    whyPeopleTakeIt: string;
+    promptVersion?: string;
+};
+
+type ProductOverviewAiRequestPayload = {
+    digest: string;
+    productName: string;
+    brandName: string | null;
+    productTypeHint: string | null;
+    primaryIngredient: string | null;
+    keyIngredients: Array<{
+        name: string;
+        dose: string | null;
+    }>;
+    sourceContextHint: string | null;
+    chemicalFormHint: string | null;
+    strengthClaim: string | null;
+    servingStrength: string | null;
+    form: string | null;
+    count: string | null;
+    isLikelySingleIngredient: boolean;
 };
 
 type CoverLine = {
@@ -354,11 +391,13 @@ const normalizeBarcodeForDecision = (value?: string | null): string | null => {
 };
 const SIMPLE_TAXONOMY_WHITELIST = new Set(
     [
+        'iHerb',
         'Official record',
         'Scanned label',
         'Scanned label (patch/label)',
         'Official + supplemental label data',
         'Supplemental label data',
+        'Verified',
         'General science',
         'General science (NIH ODS)',
         'AI summary',
@@ -672,6 +711,78 @@ function computeCoverStatus(slotStates: boolean[]): CoverStatus {
 function normalizeText(value?: string | null) {
     return value?.replace(/\s+/g, ' ').trim() ?? '';
 }
+
+const toTitleCaseWords = (value?: string | null): string => {
+    const normalized = normalizeText(value);
+    if (!normalized) return '';
+    return normalized
+        .split(/\s+/)
+        .map((token) => {
+            if (!token) return token;
+            if (/^[A-Z0-9-]+$/.test(token)) return token;
+            return token.charAt(0).toUpperCase() + token.slice(1).toLowerCase();
+        })
+        .join(' ');
+};
+
+const singularizeServingUnit = (value?: string | null): string | null => {
+    const normalized = normalizeText(value)
+        .replace(/^\d+(?:[./]\d+)?\s+/i, '')
+        .replace(/\(\s*s\s*\)/gi, 's')
+        .replace(/\bservings?\b/gi, '')
+        .trim();
+    if (!normalized) return null;
+    if (/ies$/i.test(normalized)) return `${normalized.slice(0, -3)}y`;
+    if (/capsules$/i.test(normalized)) return normalized.replace(/capsules$/i, 'capsule');
+    if (/softgels$/i.test(normalized)) return normalized.replace(/softgels$/i, 'softgel');
+    if (/tablets$/i.test(normalized)) return normalized.replace(/tablets$/i, 'tablet');
+    if (/gummies$/i.test(normalized)) return normalized.replace(/gummies$/i, 'gummy');
+    if (/soft chews$/i.test(normalized)) return normalized.replace(/soft chews$/i, 'soft chew');
+    if (/s$/i.test(normalized) && !/ss$/i.test(normalized)) return normalized.slice(0, -1);
+    return normalized;
+};
+
+const pluralizeServingUnit = (value?: string | null): string | null => {
+    const singular = singularizeServingUnit(value);
+    if (!singular) return null;
+    if (/y$/i.test(singular) && !/[aeiou]y$/i.test(singular)) return `${singular.slice(0, -1)}ies`;
+    if (/soft chew$/i.test(singular)) return singular.replace(/soft chew$/i, 'soft chews');
+    if (/capsule$/i.test(singular)) return `${singular}s`;
+    if (/softgel$/i.test(singular)) return `${singular}s`;
+    if (/tablet$/i.test(singular)) return `${singular}s`;
+    if (/gummy$/i.test(singular)) return `${singular.slice(0, -1)}ies`;
+    if (/s$/i.test(singular)) return singular;
+    return `${singular}s`;
+};
+
+const extractStrengthClaim = (value?: string | null): string | null => {
+    const normalized = normalizeText(value);
+    if (!normalized) return null;
+    const match = normalized.match(
+        /\b(triple strength|double strength|extra strength|maximum strength|ultra strength|super strength|high potency|extra potency|maximum potency)\b/i,
+    );
+    return match?.[1] ? toTitleCaseWords(match[1]) : null;
+};
+
+const deriveProductTypeLabel = (params: {
+    productTitle: string | null;
+    primaryIngredient: string | null;
+}): string | null => {
+    const haystack = `${normalizeText(params.productTitle)} ${normalizeText(params.primaryIngredient)}`.toLowerCase();
+    if (!haystack) return null;
+    if (/\b(astaxanthin|carotenoid)\b/.test(haystack)) return 'Antioxidant supplement';
+    if (/\b(omega[\s-]*3|fish oil|epa|dha|pollock|krill)\b/.test(haystack)) return 'Omega-3 supplement';
+    if (/\b(probiotic|phage)\b/.test(haystack)) return 'Probiotic supplement';
+    if (/\bvitamin c\b|\bascorbic acid\b/.test(haystack)) return 'Vitamin C supplement';
+    if (/\bmagnesium\b/.test(haystack)) return 'Magnesium supplement';
+    if (/\bmelatonin\b/.test(haystack)) return 'Melatonin supplement';
+    if (/\bvitamin d\b|\bd3\b|\bd2\b/.test(haystack)) return 'Vitamin D supplement';
+    if (/\bzinc\b/.test(haystack)) return 'Zinc supplement';
+    if (normalizeText(params.primaryIngredient) && normalizeText(params.primaryIngredient) !== 'Multi-ingredient formula') {
+        return `${normalizeText(params.primaryIngredient)} supplement`;
+    }
+    return 'Dietary supplement';
+};
 
 function ensurePeriod(value: string) {
     const trimmed = value.trim();
@@ -2000,19 +2111,42 @@ const buildUnifiedTileDataStatus = (
     };
 };
 
-// Ingredient summary (DeepSeek-backed when available; deterministic fallback otherwise)
-type IngredientSummaryState = {
+type IngredientOverviewSidecarState = {
     status: 'idle' | 'loading' | 'ok' | 'error';
     source?: 'api' | 'fallback';
-    tldr?: string;
-    highlights?: string[];
-    caveats?: string[];
-    confidence_note?: string;
-    summaryVersion?: string;
-    guardApplied?: boolean;
     fallbackUsed?: boolean;
+    promptVersion?: string;
+    data?: IngredientOverviewBlock;
     error?: string;
 };
+
+type ScientificBackgroundSidecarState = {
+    status: 'idle' | 'loading' | 'ok' | 'error';
+    source?: 'api' | 'fallback';
+    fallbackUsed?: boolean;
+    promptVersion?: string;
+    data?: ScientificBackgroundBlock;
+    error?: string;
+};
+
+type IngredientOverviewSidecarStateUpdater =
+    | IngredientOverviewSidecarState
+    | ((current: IngredientOverviewSidecarState | undefined) => IngredientOverviewSidecarState | undefined);
+
+type ScientificBackgroundSidecarStateUpdater =
+    | ScientificBackgroundSidecarState
+    | ((current: ScientificBackgroundSidecarState | undefined) => ScientificBackgroundSidecarState | undefined);
+
+type ProductOverviewAiState = {
+    status: 'idle' | 'loading' | 'ok' | 'unavailable' | 'error';
+    fingerprint?: string;
+    data?: ProductOverviewAiPayload;
+    error?: string;
+};
+
+type ProductOverviewAiStateUpdater =
+    | ProductOverviewAiState
+    | ((current: ProductOverviewAiState | undefined) => ProductOverviewAiState | undefined);
 
 type SafetySummaryState = {
     status: 'idle' | 'loading' | 'ok' | 'error';
@@ -2218,6 +2352,394 @@ const normalizeIngredientNameForBackground = (value?: string | null): string => 
 const isBlendLikeName = (name: string): boolean =>
     /\b(proprietary|blend|matrix|complex)\b/i.test(name);
 
+const isOmega3TotalLineName = (name: string): boolean =>
+    /\btotal\b.*\bomega\s*-?\s*3\b|\bomega\s*-?\s*3\b.*\btotal\b/i.test(name);
+
+const isOmega3SourceLineName = (name: string): boolean =>
+    /\bfish\s*oil\b|\bkrill\s*oil\b|\balgal\s*oil\b|\boil\s*concentrate\b/i.test(name);
+
+const isOmega3BreakdownLineName = (name: string): boolean =>
+    /\bepa\b|\bdha\b|eicosapentaenoic|docosahexaenoic/i.test(name);
+
+type ScienceSidecarIngredientRow = {
+    key: string;
+    name: string;
+    dose: string | null;
+};
+
+const buildIngredientOverviewFallbackClient = (
+    rows: ScienceSidecarIngredientRow[],
+): IngredientOverviewBlock => {
+    const anchor = rows[0] ?? null;
+    const hasOpaqueBlend = rows.some((row) => isBlendLikeName(row.name));
+    const hasOmega3Breakdown = rows.some((row) => isOmega3BreakdownLineName(row.name));
+    const formulaMode: IngredientOverviewBlock['mode'] =
+        rows.length <= 1 && !hasOpaqueBlend
+            ? 'single_anchor'
+            : hasOpaqueBlend
+                ? 'blend_anchor'
+                : 'multi_anchor';
+
+    if (formulaMode === 'single_anchor') {
+        return {
+            mode: 'single_anchor',
+            titleLine: anchor?.name ?? 'Ingredient',
+            paragraph1: `${anchor?.name ?? 'This ingredient'} is the main disclosed active in this product rather than one part of a broader multi-ingredient formula.`,
+            paragraph2: 'That makes the label easier to read because the core ingredient identity stands on its own instead of being buried inside a blend or total line.',
+            compareHint: 'When comparing products, focus on the named ingredient, the stated amount per serving, and whether the label clearly states the form or source.',
+        };
+    }
+
+    if (formulaMode === 'multi_anchor') {
+        if (rows.some((row) => isOmega3SourceLineName(row.name)) && hasOmega3Breakdown) {
+            return {
+                mode: 'multi_anchor',
+                titleLine: 'Omega-3 formula',
+                paragraph1: 'This omega-3 formula is organized around a source-oil line plus separate rows that break out the specific fatty acids underneath it.',
+                paragraph2: 'That structure helps distinguish the source material from the EPA and DHA amounts that matter most when comparing products side by side.',
+                compareHint: 'When comparing omega-3 products, focus on total omega-3 plus the stated EPA and DHA amounts, not just the fish-oil total.',
+            };
+        }
+        return {
+            mode: 'multi_anchor',
+            titleLine: anchor?.name ?? 'Multi-ingredient formula',
+            paragraph1: 'This product uses a multi-part formula instead of relying on only one disclosed active ingredient.',
+            paragraph2: 'Some rows identify the main actives, while others add supporting nutrients or extra disclosure that helps explain how the formula is structured.',
+            compareHint: 'When comparing products, focus on the named primary actives first and then check whether the rest of the formula is itemized clearly enough to compare.',
+        };
+    }
+
+    return {
+        mode: 'blend_anchor',
+        titleLine: 'Blend-style formula',
+        paragraph1: 'This product is organized around broad blend-style label lines rather than a fully itemized ingredient list.',
+        paragraph2: 'That can describe the formula category at a glance, but it gives less precision about which components are doing the work and in what amounts.',
+        compareHint: 'When comparing products, look for item-level naming and whether the label provides more than a single broad blend total.',
+    };
+};
+
+const buildProductOverviewFallbackClient = (
+    payload: ProductOverviewAiRequestPayload,
+): ProductOverviewAiPayload => {
+    const normalizeOverviewToken = (value?: string | null): string => normalizeText(value ?? null).toLowerCase();
+    const dedupeStrings = (values: Array<string | null | undefined>): string[] => {
+        const out: string[] = [];
+        const seen = new Set<string>();
+        values.forEach((value) => {
+            const normalized = normalizeText(value ?? null);
+            if (!normalized) return;
+            const key = normalized.toLowerCase();
+            if (seen.has(key)) return;
+            seen.add(key);
+            out.push(normalized);
+        });
+        return out;
+    };
+    const listToEnglish = (values: string[]): string => {
+        if (values.length === 0) return '';
+        if (values.length === 1) return values[0];
+        if (values.length === 2) return `${values[0]} and ${values[1]}`;
+        return `${values.slice(0, -1).join(', ')}, and ${values[values.length - 1]}`;
+    };
+
+    const productNameToken = normalizeOverviewToken(payload.productName);
+    const productTypeToken = normalizeOverviewToken(payload.productTypeHint);
+    const ingredientTokens = dedupeStrings([
+        payload.primaryIngredient,
+        ...payload.keyIngredients.map((item) => item.name),
+    ]).map((item) => item.toLowerCase());
+
+    if (payload.isLikelySingleIngredient) {
+        if (ingredientTokens.some((token) => token.includes('astaxanthin'))) {
+            return {
+                mode: 'rich',
+                lead: 'Astaxanthin is a carotenoid supplement ingredient commonly used in antioxidant-focused products.',
+                whatItIs: toSentence(
+                    payload.sourceContextHint
+                        ? `It is presented here with source context from ${payload.sourceContextHint} and appears as the main named active in the formula`
+                        : 'It appears here as the main named active in a straightforward single-ingredient formula',
+                ) ?? '',
+                whyPeopleTakeIt:
+                    'People usually choose astaxanthin products to compare the named ingredient, the source context on the label, and how clearly the formula stays focused on one active.',
+            };
+        }
+
+        if (ingredientTokens.some((token) => token.includes('vitamin c')) || productTypeToken.includes('vitamin c')) {
+            return {
+                mode: 'rich',
+                lead: 'This is a vitamin C supplement built around a clearly named vitamin ingredient.',
+                whatItIs:
+                    'It belongs to the straightforward vitamin-supplement category and may also include companion nutrients that sit alongside the main vitamin line on the label.',
+                whyPeopleTakeIt:
+                    'People usually choose products like this for direct vitamin C supplementation and to compare the named ingredient, label clarity, and any supporting nutrients included in the formula.',
+            };
+        }
+
+        const primaryIngredient = normalizeText(payload.primaryIngredient ?? payload.keyIngredients[0]?.name ?? payload.productName) ?? 'This product';
+        const productTypeHint = normalizeText(payload.productTypeHint)?.replace(/\bsupport supplement\b/i, 'supplement') ?? 'single-ingredient supplement';
+        const sourceContext = normalizeText(payload.sourceContextHint);
+        const chemicalForm = normalizeText(payload.chemicalFormHint);
+        return {
+            mode: 'rich',
+            lead: `${primaryIngredient} is a supplement ingredient used in ${productTypeHint.toLowerCase()} products.`,
+            whatItIs:
+                sourceContext
+                    ? `It is presented here with source context from ${sourceContext}.`
+                    : chemicalForm
+                        ? `It is presented here with a disclosed ingredient form of ${chemicalForm}.`
+                        : 'It appears here as the main named active in a straightforward single-ingredient formula.',
+            whyPeopleTakeIt:
+                'People usually choose products like this to compare the named ingredient, the disclosed label context, and how clearly the formula stays focused on one main active.',
+        };
+    }
+
+    if (
+        productTypeToken.includes('omega-3')
+        || productNameToken.includes('omega-3')
+        || ingredientTokens.some((token) => token.includes('epa') || token.includes('dha') || token.includes('fish oil'))
+    ) {
+        const names = dedupeStrings(payload.keyIngredients.map((item) => item.name));
+        const namedBreakdown = [
+            names.some((name) => /\bepa\b/i.test(name)) ? 'EPA' : null,
+            names.some((name) => /\bdha\b/i.test(name)) ? 'DHA' : null,
+        ].filter(Boolean) as string[];
+        return {
+            mode: 'short',
+            lead: 'This is an omega-3 supplement built around fish-oil-derived fatty acids.',
+            whatItIs:
+                namedBreakdown.length > 0
+                    ? `The label separates the source oil from specific omega-3 components such as ${listToEnglish(namedBreakdown)}, which are the lines shoppers usually compare most closely.`
+                    : 'The label presents omega-3s as a fish-oil-based formula rather than as a single isolated ingredient.',
+            whyPeopleTakeIt:
+                'People usually choose products like this for general omega-3 intake and to compare how clearly the EPA and DHA breakdown is disclosed.',
+        };
+    }
+
+    if (
+        productTypeToken.includes('probiotic')
+        || productNameToken.includes('probiotic')
+        || ingredientTokens.some((token) => token.includes('probiotic') || token.includes('phage') || token.includes('blend'))
+    ) {
+        return {
+            mode: 'short',
+            lead: 'This is a probiotic-style supplement organized around a blend-based formula.',
+            whatItIs:
+                'The label combines named blend lines rather than a fully itemized ingredient list, so the product is best understood as a formula with partially disclosed components.',
+            whyPeopleTakeIt:
+                'People usually choose products like this to compare how clearly the blend is described and whether the label gives enough detail to judge what is inside.',
+        };
+    }
+
+    const productTypeHint = normalizeText(payload.productTypeHint)?.replace(/\bsupport supplement\b/i, 'supplement') ?? 'multi-ingredient supplement';
+    const names = dedupeStrings(payload.keyIngredients.map((item) => item.name)).slice(0, 3);
+    const namedContext = names.length > 0 ? ` with named components such as ${listToEnglish(names)}` : '';
+    return {
+        mode: 'short',
+        lead: `This is a ${productTypeHint.toLowerCase()} with more than one disclosed ingredient.`,
+        whatItIs: `The formula is organized as a structured label${namedContext}, so shoppers need to distinguish the main active from supporting or context lines.`,
+        whyPeopleTakeIt:
+            'People usually choose products like this to compare the named ingredients and how clearly the label separates the main active from supporting components.',
+    };
+};
+
+const inferScientificBackgroundFamilyClient = (
+    selectedIngredientName: string,
+    rows: ScienceSidecarIngredientRow[],
+): 'astaxanthin' | 'vitamin_c' | 'zinc' | 'omega_3' | 'probiotic_or_blend' | 'generic' => {
+    const combined = [selectedIngredientName, ...rows.map((row) => row.name)].join(' ').toLowerCase();
+    if (/astaxanthin|carotenoid/.test(combined)) return 'astaxanthin';
+    if (/\bvitamin\s*c\b|\bascorbic\b|\bester\s*c\b/.test(combined)) return 'vitamin_c';
+    if (/\bzinc\b/.test(combined)) return 'zinc';
+    if (/\bfish\s*oil\b|\bomega\s*-?\s*3\b|\bepa\b|\bdha\b|\bkrill\b/.test(combined)) return 'omega_3';
+    if (/probiotic|lactobacillus|bifidobacterium|saccharomyces|microbiome|phage/.test(combined) || rows.some((row) => isBlendLikeName(row.name))) {
+        return 'probiotic_or_blend';
+    }
+    return 'generic';
+};
+
+const buildScientificBackgroundFallbackClient = (
+    selectedIngredientName: string,
+    rows: ScienceSidecarIngredientRow[],
+): ScientificBackgroundBlock => {
+    const selectedRow = rows.find((row) => row.key === normalizeIngredientNameForBackground(selectedIngredientName)) ?? rows[0] ?? null;
+    const selectedLabel = selectedRow?.name ?? selectedIngredientName;
+    const selectedDose = selectedRow?.dose ?? null;
+    const hasOmega3Breakdown = rows.some((row) => isOmega3BreakdownLineName(row.name));
+    const isLabelContextMode =
+        isBlendLikeName(selectedLabel)
+        || isOmega3TotalLineName(selectedLabel)
+        || (isOmega3SourceLineName(selectedLabel) && hasOmega3Breakdown);
+
+    if (isLabelContextMode) {
+        return {
+            mode: 'label_context_mode',
+            selectedLabel,
+            selectedDose,
+            introLine: selectedDose ? `${selectedLabel} • ${selectedDose}` : selectedLabel,
+            closingNote: 'Read this line as label context first, then compare it with the more specific ingredient rows that carry the strongest decision value.',
+            sections: [
+                {
+                    heading: 'What this line means on the label',
+                    summary: isOmega3TotalLineName(selectedLabel)
+                        ? 'This line reports the total omega-3 pool in the serving rather than one stand-alone fatty acid with its own separate research story.'
+                        : isOmega3SourceLineName(selectedLabel)
+                            ? 'This line identifies the source oil in the formula, which tells you where the omega-3s come from but not the full active fatty-acid breakdown by itself.'
+                            : 'This selected line is better understood as part of the label structure than as a stand-alone research target.',
+                    bullets: [
+                        isOmega3TotalLineName(selectedLabel)
+                            ? 'It combines more than one omega-3 component into a single disclosure line.'
+                            : 'It provides context about how the formula is described.',
+                        isOmega3TotalLineName(selectedLabel)
+                            ? 'It does not replace the specific EPA and DHA rows.'
+                            : 'It is not always the row that carries the most research value by itself.',
+                    ],
+                    evidenceRead: 'This is mainly a label-reading and comparison line rather than the cleanest stand-alone research target.',
+                    shopperMeaning: 'Use it to understand how the formula is organized, then move to the more specific active lines before comparing products.',
+                },
+            ],
+        };
+    }
+
+    const family = inferScientificBackgroundFamilyClient(selectedLabel, rows);
+    const sections =
+        family === 'astaxanthin'
+            ? [
+                {
+                    heading: 'Antioxidant activity',
+                    summary: `${selectedLabel} is most often discussed in research on oxidative stress and antioxidant-related markers, where studies look at how it may help limit oxidative damage under specific conditions.`,
+                    bullets: [
+                        'Oxidative-stress marker studies are the clearest research lane here.',
+                        'Mechanistic work often focuses on antioxidant response and cellular stress pathways.',
+                        'Results can still vary by dose, population, and study design.',
+                    ],
+                    evidenceRead: 'This is one of the stronger research directions for this ingredient, but the evidence is still outcome-specific rather than universally definitive.',
+                    shopperMeaning: 'This supports antioxidant positioning more than broad all-purpose wellness claims.',
+                },
+                {
+                    heading: 'Eye and skin context',
+                    summary: `${selectedLabel} also appears in research touching eye comfort and skin-related outcomes, especially in settings where oxidative stress or environmental exposure is part of the discussion.`,
+                    bullets: [
+                        'Eye-comfort and visual-fatigue contexts appear in some studies.',
+                        'Skin hydration, elasticity, and appearance outcomes are also discussed.',
+                        'These findings are usually more supportive than definitive.',
+                    ],
+                    evidenceRead: 'This is a meaningful but more context-dependent lane than the broad antioxidant story.',
+                    shopperMeaning: 'It is reasonable as a secondary positioning area, but not the main evidence anchor for comparison.',
+                },
+            ]
+            : family === 'vitamin_c'
+                ? [
+                    {
+                        heading: 'Antioxidant and immune research',
+                        summary: `${selectedLabel} is commonly discussed in antioxidant and immune-related research, but the cleanest interpretation depends on the exact outcome being measured.`,
+                        bullets: [
+                            'Antioxidant marker contexts are common.',
+                            'Immune-function discussions appear often, but they should not be read as disease-treatment claims.',
+                            'Broad immune language is usually wider than the most specific research endpoints.',
+                        ],
+                        evidenceRead: 'Evidence is real but outcome-specific, so broad marketing language can run ahead of the clearest data.',
+                        shopperMeaning: 'This ingredient fits an immune-positioned product, but comparison should stay anchored to the exact ingredient, dose, and form rather than to broad claims alone.',
+                    },
+                    {
+                        heading: 'Collagen and tissue support',
+                        summary: `${selectedLabel} also appears in research tied to collagen formation and tissue-related functions, which is why it often shows up in structure- or recovery-oriented formulas.`,
+                        bullets: [
+                            'Collagen-related contexts are a common research lane.',
+                            'Tissue-support relevance is usually discussed in function-specific settings.',
+                            'Applicability still depends on the broader product context.',
+                        ],
+                        evidenceRead: 'This is a useful secondary research lane, but it should still be read in a context-specific way.',
+                        shopperMeaning: 'It helps explain why vitamin C appears in more than one category of supplement, not just immune-positioned products.',
+                    },
+                ]
+                : family === 'zinc'
+                    ? [
+                        {
+                            heading: 'Immune function context',
+                            summary: `${selectedLabel} is most often discussed in immune-function contexts, although the meaning of that evidence still depends on dose, population, and the exact outcome being studied.`,
+                            bullets: [
+                                'Immune-related positioning is common for this ingredient.',
+                                'Outcome interpretation can shift by dose and population.',
+                                'Broad language can easily outrun the exact evidence lane.',
+                            ],
+                            evidenceRead: 'This is a legitimate research lane, but it should still be read more narrowly than broad marketing copy implies.',
+                            shopperMeaning: 'This makes zinc easy to position, but shoppers should still compare the actual disclosed amount and product context.',
+                        },
+                    ]
+                    : family === 'omega_3'
+                        ? [
+                            {
+                                heading: isOmega3BreakdownLineName(selectedLabel) && /\bepa\b|eicosapentaenoic/i.test(selectedLabel)
+                                    ? 'Lipid and triglyceride research'
+                                    : isOmega3BreakdownLineName(selectedLabel) && /\bdha\b|docosahexaenoic/i.test(selectedLabel)
+                                        ? 'Brain and eye context'
+                                        : 'Most studied: lipid-related endpoints',
+                                summary: isOmega3BreakdownLineName(selectedLabel) && /\bepa\b|eicosapentaenoic/i.test(selectedLabel)
+                                    ? `${selectedLabel} is most strongly associated with triglyceride and lipid-marker research, which makes this the clearest evidence lane for interpreting it.`
+                                    : isOmega3BreakdownLineName(selectedLabel) && /\bdha\b|docosahexaenoic/i.test(selectedLabel)
+                                        ? `${selectedLabel} is more often discussed in brain and eye-related contexts than in the lipid-heavy language commonly attached to EPA.`
+                                        : `${selectedLabel} is most useful as part of the product's lipid and triglyceride context, which is where omega-3 evidence is usually easiest to interpret.`,
+                                bullets: isOmega3BreakdownLineName(selectedLabel) && /\bdha\b|docosahexaenoic/i.test(selectedLabel)
+                                    ? [
+                                        'Eye and retinal context is especially relevant here.',
+                                        'Brain-related positioning is common, but broad cognition claims should still be read carefully.',
+                                        'This research lane is not the same as EPA’s main endpoint profile.',
+                                    ]
+                                    : [
+                                        'Triglyceride and lipid endpoints are the most concrete comparison lane here.',
+                                        'This is more specific than vague omega-3 marketing language.',
+                                        'Dose and study design still shape how findings apply.',
+                                    ],
+                                evidenceRead: isOmega3BreakdownLineName(selectedLabel) && /\bdha\b|docosahexaenoic/i.test(selectedLabel)
+                                    ? 'This is a meaningful lane, but it still contains more nuance than a simple brain-health slogan suggests.'
+                                    : 'This is the most practical and decision-useful evidence lane for interpreting omega-3 actives.',
+                                shopperMeaning: isOmega3BreakdownLineName(selectedLabel) && /\bdha\b|docosahexaenoic/i.test(selectedLabel)
+                                    ? 'It helps explain why DHA and EPA should not be treated as interchangeable on the label.'
+                                    : 'Use this as the main context for comparison before giving much weight to broader claims.',
+                            },
+                        ]
+                        : [
+                            {
+                                heading: 'Most studied roles',
+                                summary: `${selectedLabel} appears in several research directions, but some outcomes are usually more central than others depending on the exact ingredient identity and dose.`,
+                                bullets: [
+                                    'Research emphasis changes with the exact ingredient and formula setting.',
+                                    'Not every broad claim is equally central to the evidence.',
+                                ],
+                                evidenceRead: 'This is a useful orientation section, but it should not be read as a blanket endorsement of every possible claim.',
+                                shopperMeaning: 'It helps the shopper distinguish core positioning from more peripheral marketing language.',
+                            },
+                        ];
+
+    return {
+        mode: 'research_mode',
+        selectedLabel,
+        selectedDose,
+        introLine: selectedDose ? `${selectedLabel} • ${selectedDose}` : selectedLabel,
+        sections,
+        closingNote: 'Read the research context as outcome-specific guidance, not as a blanket promise for every claim on the label.',
+    };
+};
+
+const isResearchModeScienceRow = (
+    row: ScienceSidecarIngredientRow,
+    rows: ScienceSidecarIngredientRow[],
+): boolean => {
+    if (isBlendLikeName(row.name)) return false;
+    if (isOmega3TotalLineName(row.name)) return false;
+    if (isOmega3SourceLineName(row.name) && rows.some((candidate) => isOmega3BreakdownLineName(candidate.name))) {
+        return false;
+    }
+    return true;
+};
+
+const pickResearchModeScienceRows = (
+    rows: ScienceSidecarIngredientRow[],
+): ScienceSidecarIngredientRow[] => {
+    const filtered = rows.filter((row) => isResearchModeScienceRow(row, rows));
+    return filtered.length > 0 ? filtered : rows;
+};
+
 const pickKeyIngredientsForBackground = (items: IngredientCoverItemLike[] | null | undefined): string[] => {
     const list = Array.isArray(items) ? items : [];
     const seen = new Set<string>();
@@ -2335,6 +2857,12 @@ const AnalysisBundleDashboard: React.FC<{
         error: null,
         autoRetryUsed: false,
     });
+    const [productOverviewAiByDigest, setProductOverviewAiByDigest] = useState<Record<string, ProductOverviewAiState>>({});
+    const [ingredientOverviewByRequestKey, setIngredientOverviewByRequestKey] = useState<Record<string, IngredientOverviewSidecarState>>({});
+    const [scientificBackgroundByRequestKey, setScientificBackgroundByRequestKey] = useState<Record<string, ScientificBackgroundSidecarState>>({});
+    const productOverviewAiStateRef = useRef<Record<string, ProductOverviewAiState>>({});
+    const ingredientOverviewStateRef = useRef<Record<string, IngredientOverviewSidecarState>>({});
+    const scientificBackgroundStateRef = useRef<Record<string, ScientificBackgroundSidecarState>>({});
     const decisionSupportCacheRef = useRef<Map<string, Record<string, unknown>>>(new Map());
     const decisionSupportByBarcodeRef = useRef<Map<string, Record<string, unknown>>>(decisionSupportWarmCache);
     const [simpleSourcesOpen, setSimpleSourcesOpen] = useState(false);
@@ -2346,6 +2874,66 @@ const AnalysisBundleDashboard: React.FC<{
     const foundationMetricLoggedRef = useRef<Set<string>>(new Set());
     const overlayConsumerMetricLoggedRef = useRef<Set<string>>(new Set());
     const currentRunKeyRef = useRef<string | null>(null);
+    const setProductOverviewAiState = useCallback(
+        (digest: string, nextEntry: ProductOverviewAiStateUpdater) => {
+            setProductOverviewAiByDigest((prev) => {
+                const current = prev[digest];
+                const resolved = typeof nextEntry === 'function'
+                    ? nextEntry(current)
+                    : nextEntry;
+                if (resolved === current) return prev;
+                const next = { ...prev };
+                if (resolved) next[digest] = resolved;
+                else delete next[digest];
+                productOverviewAiStateRef.current = next;
+                return next;
+            });
+        },
+        [],
+    );
+    useEffect(() => {
+        productOverviewAiStateRef.current = productOverviewAiByDigest;
+    }, [productOverviewAiByDigest]);
+    const setIngredientOverviewSidecarState = useCallback(
+        (requestKey: string, nextEntry: IngredientOverviewSidecarStateUpdater) => {
+            setIngredientOverviewByRequestKey((prev) => {
+                const current = prev[requestKey];
+                const resolved = typeof nextEntry === 'function'
+                    ? nextEntry(current)
+                    : nextEntry;
+                if (resolved === current) return prev;
+                const next = { ...prev };
+                if (resolved) next[requestKey] = resolved;
+                else delete next[requestKey];
+                ingredientOverviewStateRef.current = next;
+                return next;
+            });
+        },
+        [],
+    );
+    useEffect(() => {
+        ingredientOverviewStateRef.current = ingredientOverviewByRequestKey;
+    }, [ingredientOverviewByRequestKey]);
+    const setScientificBackgroundSidecarState = useCallback(
+        (requestKey: string, nextEntry: ScientificBackgroundSidecarStateUpdater) => {
+            setScientificBackgroundByRequestKey((prev) => {
+                const current = prev[requestKey];
+                const resolved = typeof nextEntry === 'function'
+                    ? nextEntry(current)
+                    : nextEntry;
+                if (resolved === current) return prev;
+                const next = { ...prev };
+                if (resolved) next[requestKey] = resolved;
+                else delete next[requestKey];
+                scientificBackgroundStateRef.current = next;
+                return next;
+            });
+        },
+        [],
+    );
+    useEffect(() => {
+        scientificBackgroundStateRef.current = scientificBackgroundByRequestKey;
+    }, [scientificBackgroundByRequestKey]);
     const incomingBundleRunKey = useMemo(() => {
         const normalizedSessionId = normalizeText(scanSessionId);
         if (normalizedSessionId) {
@@ -2635,8 +3223,6 @@ const AnalysisBundleDashboard: React.FC<{
                 autoRetryUsed: prev.autoRetryUsed,
             }));
         }
-        // Avoid querying decision-support during transient web skeleton state.
-        // Wait for authoritative bundle (or stream completion) to avoid stale/old result overrides.
         if (isWebSkeletonPhase) {
             setDecisionSupportState((prev) => ({
                 status: prev.data ? 'ready' : 'loading',
@@ -2646,7 +3232,6 @@ const AnalysisBundleDashboard: React.FC<{
             }));
             return;
         }
-
         const run = async (digestParam: string | null, canRetry: boolean): Promise<void> => {
             try {
                 if (!cancelled) {
@@ -3107,7 +3692,28 @@ const AnalysisBundleDashboard: React.FC<{
     const ingredientsNotes = hasAnyProductSpecificSignal
         ? undefined
         : ['Product-specific signals are limited for current evidence set.'];
+    const sourceLockedScienceRows = useMemo(
+        () =>
+            (decisionScienceBlock?.ingredientRows ?? [])
+                .map((row) => ({
+                    name: String(row?.name ?? '').trim(),
+                    dose: String(row?.dose ?? '').trim(),
+                }))
+                .filter((row) => row.name.length > 0 && !isNutritionLabelLikeIngredient(row.name)),
+        [decisionScienceBlock?.ingredientRows],
+    );
     const scienceIngredientsMerged = useMemo(() => {
+        if (sourceLockedScienceRows.length > 0) {
+            return mergeScienceIngredientCandidates({
+                candidates: sourceLockedScienceRows.map((row) => ({
+                    name: row.name,
+                    dose: row.dose,
+                    source: 'science_snapshot' as const,
+                })),
+                maxCoverItems: 3,
+            });
+        }
+
         const candidates = [
             ...(decisionScienceBlock?.ingredientSnapshotNames ?? [])
                 .map((name) => ({
@@ -3137,10 +3743,17 @@ const AnalysisBundleDashboard: React.FC<{
         ];
 
         return mergeScienceIngredientCandidates({ candidates, maxCoverItems: 3 });
-    }, [decisionOverviewBlock?.providesVerified?.keyIngredients, decisionScienceBlock?.ingredientSnapshotNames, ingredientsItemsFiltered, recordFacts.ingredientRows]);
+    }, [
+        decisionOverviewBlock?.providesVerified?.keyIngredients,
+        decisionScienceBlock?.ingredientSnapshotNames,
+        ingredientsItemsFiltered,
+        recordFacts.ingredientRows,
+        sourceLockedScienceRows,
+    ]);
     const scienceIngredientsAll = scienceIngredientsMerged.all;
     const scienceIngredientsTop3 = scienceIngredientsMerged.top3;
     const scienceIngredientsOverflowCount = scienceIngredientsMerged.overflowCount;
+    const scienceIngredientBadgeLabel = resolveSimpleTaxonomyLabel('Verified', 'Verified');
     const coverIngredientCandidates = useMemo(
         () =>
             [
@@ -3911,57 +4524,10 @@ const AnalysisBundleDashboard: React.FC<{
         sources: trustPanelSources,
     };
     const decisionProvides = decisionOverviewBlock?.providesVerified;
-    const decisionKeyIngredientFacts = (decisionProvides?.keyIngredients ?? [])
-        .slice(0, 4)
-        .map((item) => {
-            const name = normalizeText(item?.name ?? null);
-            if (!name) return null;
-            const displayName = String(item?.name ?? '').trim();
-            const dose = normalizeText(item?.dose ?? null);
-            return dose ? `${displayName}: ${String(item?.dose ?? '').trim()}` : displayName;
-        })
-        .filter((line): line is string => Boolean(line));
-    const decisionDirectionsLines = (decisionUsageBlock?.directions?.lines ?? [])
-        .map((line) => (typeof line === 'string' ? line.trim() : ''))
-        .filter((line) => line.length > 0)
-        .slice(0, 3);
     const decisionMissingLines = (decisionOverviewBlock?.missingInfo ?? [])
         .map((line) => (typeof line === 'string' ? line.trim() : ''))
         .filter((line) => line.length > 0)
         .slice(0, 2);
-    const overviewWhatIsLines = enforceNeverBlank({
-        lines: [
-            toSentence(
-                `${overviewFacts?.product?.name ?? productTitle} by ${overviewFacts?.product?.brand ?? (brandForSubtitle ?? 'Unknown brand')}`,
-            ),
-            decisionKeyIngredientFacts.length > 0
-                ? toSentence(`Key label facts: ${decisionKeyIngredientFacts.slice(0, 3).join('; ')}`)
-                : null,
-            toSentence(verificationPresentation.copyTokens.overviewLead),
-            isDataCeiling ? dataCeilingOverviewLine : overviewSummarySeed,
-        ],
-        fallback: [
-            verificationPresentation.copyTokens.sourceCopy,
-            'Use the official record summary as the baseline context.',
-        ],
-    });
-    const overviewVerifiedLines = enforceNeverBlank({
-        lines: [
-            decisionProvides?.servingSize ? `Serving size: ${decisionProvides.servingSize}.` : null,
-            typeof decisionProvides?.servingsPerContainer === 'number'
-                ? `Servings per container: ${decisionProvides.servingsPerContainer}.`
-                : null,
-            ...(decisionKeyIngredientFacts.length > 0
-                ? decisionKeyIngredientFacts.slice(0, 3).map((line) => `${line}.`)
-                : []),
-            ...(decisionDirectionsLines.length > 0 ? decisionDirectionsLines : []),
-            decisionProvides?.dosageForm ? `Dosage form: ${decisionProvides.dosageForm}.` : null,
-        ],
-        fallback: [
-            'Dose and directions are limited in this source.',
-            'Use the package label as the final instruction.',
-        ],
-    });
     const unresolvedMissingLines = decisionMissingLines.length > 0
         ? decisionMissingLines
         : highImpactMissingLabels.length > 0
@@ -3970,6 +4536,259 @@ const AnalysisBundleDashboard: React.FC<{
     const warningsMissing = unresolvedMissingLines.some((line) => /warning/i.test(line));
     const missingInfoCtaLabel = decisionOverviewBlock?.singleCta?.label || 'Scan Supplement Facts + Warnings panel';
     const missingInfoScanPrompt = `Next step: ${missingInfoCtaLabel}.`;
+    const overviewAiDigest =
+        decisionSupportState.status === 'ready'
+            ? normalizeText(decisionTemplatePayload?.digest ?? bundleState.meta.factsDigestHash ?? null) || null
+            : null;
+    const overviewPrimaryScienceRow = scienceIngredientsAll[0] ?? null;
+    const overviewPrimaryIngredientLabel = useMemo(() => {
+        if (!overviewPrimaryScienceRow) return null;
+        const baseName = normalizeText(overviewPrimaryScienceRow.baseName || overviewPrimaryScienceRow.name);
+        if (!baseName) return null;
+        if (scienceIngredientsAll.length > 1 && /\b(blend|complex|matrix|formula|proprietary)\b/i.test(baseName)) {
+            return 'Multi-ingredient formula';
+        }
+        return baseName;
+    }, [overviewPrimaryScienceRow, scienceIngredientsAll]);
+    const overviewServingUnitSingular = useMemo(
+        () => singularizeServingUnit(decisionProvides?.servingSize ?? decisionProvides?.dosageForm ?? null),
+        [decisionProvides?.dosageForm, decisionProvides?.servingSize],
+    );
+    const overviewServingUnitPlural = useMemo(
+        () => pluralizeServingUnit(decisionProvides?.servingSize ?? decisionProvides?.dosageForm ?? null),
+        [decisionProvides?.dosageForm, decisionProvides?.servingSize],
+    );
+    const overviewProductType = useMemo(
+        () => deriveProductTypeLabel({ productTitle, primaryIngredient: overviewPrimaryIngredientLabel }),
+        [overviewPrimaryIngredientLabel, productTitle],
+    );
+    const overviewStrengthClaim = useMemo(() => extractStrengthClaim(productTitle), [productTitle]);
+    const overviewServingStrength = useMemo(() => {
+        if (!overviewPrimaryScienceRow?.dose) return null;
+        if (!overviewPrimaryIngredientLabel || overviewPrimaryIngredientLabel === 'Multi-ingredient formula') return null;
+        if (overviewServingUnitSingular) return `${overviewPrimaryScienceRow.dose} per ${overviewServingUnitSingular.toLowerCase()}`;
+        return `${overviewPrimaryScienceRow.dose} per serving`;
+    }, [overviewPrimaryIngredientLabel, overviewPrimaryScienceRow?.dose, overviewServingUnitSingular]);
+    const overviewFormValue = useMemo(() => {
+        const plural = normalizeText(overviewServingUnitPlural);
+        if (plural) return toTitleCaseWords(plural);
+        const dosageForm = normalizeText(decisionProvides?.dosageForm ?? null);
+        return dosageForm ? toTitleCaseWords(pluralizeServingUnit(dosageForm) ?? dosageForm) : null;
+    }, [decisionProvides?.dosageForm, overviewServingUnitPlural]);
+    const overviewCountValue = useMemo(() => {
+        const servings = decisionProvides?.servingsPerContainer;
+        if (typeof servings !== 'number') return null;
+        const pluralUnit = normalizeText(overviewServingUnitPlural);
+        if (pluralUnit) return `${servings} ${pluralUnit.toLowerCase()}`;
+        return `${servings} servings`;
+    }, [decisionProvides?.servingsPerContainer, overviewServingUnitPlural]);
+    const overviewSourceContextHint = useMemo(() => {
+        if (!overviewPrimaryScienceRow?.formValue) return null;
+        return /\(From\b/i.test(overviewPrimaryScienceRow.name) ? overviewPrimaryScienceRow.formValue : null;
+    }, [overviewPrimaryScienceRow?.formValue, overviewPrimaryScienceRow?.name]);
+    const overviewChemicalFormHint = useMemo(() => {
+        if (!overviewPrimaryScienceRow?.formValue) return null;
+        return /\(As\b/i.test(overviewPrimaryScienceRow.name) ? overviewPrimaryScienceRow.formValue : null;
+    }, [overviewPrimaryScienceRow?.formValue, overviewPrimaryScienceRow?.name]);
+    const overviewKeyProductFactsRows = useMemo(
+        () =>
+            [
+                { label: 'Product type', value: overviewProductType },
+                { label: 'Primary ingredient', value: overviewPrimaryIngredientLabel },
+                { label: 'Strength claim', value: overviewStrengthClaim },
+                { label: 'Form', value: overviewFormValue },
+                { label: 'Count', value: overviewCountValue },
+            ].filter(
+                (row): row is { label: string; value: string } =>
+                    typeof row.value === 'string' && normalizeText(row.value).length > 0,
+            ),
+        [
+            overviewCountValue,
+            overviewFormValue,
+            overviewPrimaryIngredientLabel,
+            overviewProductType,
+            overviewServingStrength,
+            overviewStrengthClaim,
+        ],
+    );
+    const authoritativeTilePayloadReady = useMemo(
+        () => hasRenderableDecisionTemplate(decisionTemplatePayload as Record<string, unknown> | null | undefined),
+        [decisionTemplatePayload],
+    );
+    const authoritativeOverviewTileSummary = useMemo<CoverLine>(() => {
+        if (!authoritativeTilePayloadReady) {
+            return {
+                text: 'Latest verified product details are loading.',
+                isPlaceholder: true,
+            };
+        }
+        if (overviewProductType && overviewPrimaryIngredientLabel) {
+            if (overviewPrimaryIngredientLabel === 'Multi-ingredient formula') {
+                return {
+                    text: `${overviewProductType} with multiple disclosed active components.`,
+                };
+            }
+            return {
+                text: `${overviewProductType} featuring ${overviewPrimaryIngredientLabel}.`,
+            };
+        }
+        if (overviewProductType) {
+            return {
+                text: `${overviewProductType} with verified product details.`,
+            };
+        }
+        if (overviewPrimaryIngredientLabel) {
+            return {
+                text: `${overviewPrimaryIngredientLabel} with verified product details.`,
+            };
+        }
+        return {
+            text: 'Verified product details are ready to review.',
+        };
+    }, [authoritativeTilePayloadReady, overviewPrimaryIngredientLabel, overviewProductType]);
+    const authoritativeOverviewTileBullets = useMemo<BulletItem[]>(() => {
+        if (!authoritativeTilePayloadReady) {
+            return [
+                {
+                    text: 'Loading verified product facts.',
+                    isPlaceholder: true,
+                },
+                {
+                    text: 'Open the card to review the latest details.',
+                    isPlaceholder: true,
+                },
+            ];
+        }
+        const bullets: BulletItem[] = [];
+        if (overviewPrimaryIngredientLabel) {
+            bullets.push({ text: `Primary ingredient: ${overviewPrimaryIngredientLabel}.` });
+        }
+        if (overviewStrengthClaim) {
+            bullets.push({ text: `Strength claim: ${overviewStrengthClaim}.` });
+        }
+        if (overviewFormValue) {
+            bullets.push({ text: `Form: ${overviewFormValue}.` });
+        }
+        if (overviewCountValue) {
+            bullets.push({ text: `Count: ${overviewCountValue}.` });
+        }
+        if (bullets.length === 0) {
+            bullets.push({ text: 'Verified product facts are ready to review.' });
+        }
+        return bullets.slice(0, 2);
+    }, [
+        authoritativeTilePayloadReady,
+        overviewCountValue,
+        overviewFormValue,
+        overviewPrimaryIngredientLabel,
+        overviewStrengthClaim,
+    ]);
+    const authoritativeScienceTileMechanisms = useMemo<Mechanism[]>(() => {
+        if (!authoritativeTilePayloadReady) {
+            return [
+                {
+                    name: 'Verified ingredient details loading',
+                    amount: 'Please wait',
+                    fill: 0.42,
+                    mode: 'unknown',
+                    showInfo: false,
+                },
+                {
+                    name: 'Latest per-serving amounts',
+                    amount: 'Preparing facts',
+                    fill: 0.38,
+                    mode: 'unknown',
+                    showInfo: false,
+                },
+            ];
+        }
+        const rows = (decisionScienceBlock?.ingredientRows ?? [])
+            .map((row, index) => ({
+                name: normalizeText(row?.name ?? ''),
+                amount: normalizeText(row?.dose ?? '') || 'Dose not disclosed',
+                fill: 0.8 - index * 0.06,
+                mode: normalizeText(row?.dose ?? '') ? 'actual' as const : 'unknown' as const,
+                showInfo: false,
+            }))
+            .filter((row) => row.name.length > 0)
+            .slice(0, 3);
+        if (rows.length > 0) return rows;
+        return [
+            {
+                name: 'Verified ingredient details are limited',
+                amount: 'Open the card for the latest product facts',
+                fill: 0.38,
+                mode: 'unknown',
+                showInfo: false,
+            },
+        ];
+    }, [authoritativeTilePayloadReady, decisionScienceBlock?.ingredientRows]);
+    const productOverviewAiRequestPayload = useMemo<ProductOverviewAiRequestPayload | null>(() => {
+        if (!overviewAiDigest) return null;
+        const normalizedProductName = normalizeText(overviewFacts?.product?.name ?? productTitle);
+        if (!normalizedProductName) return null;
+        return {
+            digest: overviewAiDigest,
+            productName: normalizedProductName,
+            brandName: normalizeText(overviewFacts?.product?.brand ?? brandForSubtitle) || null,
+            productTypeHint: overviewProductType,
+            primaryIngredient: overviewPrimaryIngredientLabel,
+            keyIngredients: scienceIngredientsAll.slice(0, 4).map((row) => ({
+                name: row.baseName || row.name,
+                dose: row.dose ?? null,
+            })),
+            sourceContextHint: overviewSourceContextHint,
+            chemicalFormHint: overviewChemicalFormHint,
+            strengthClaim: overviewStrengthClaim,
+            servingStrength: overviewServingStrength,
+            form: overviewFormValue,
+            count: overviewCountValue,
+            isLikelySingleIngredient:
+                Boolean(overviewPrimaryIngredientLabel)
+                && overviewPrimaryIngredientLabel !== 'Multi-ingredient formula'
+                && scienceIngredientsAll.length <= 1,
+        };
+    }, [
+        brandForSubtitle,
+        overviewAiDigest,
+        overviewChemicalFormHint,
+        overviewCountValue,
+        overviewFacts?.product?.brand,
+        overviewFacts?.product?.name,
+        overviewFormValue,
+        overviewPrimaryIngredientLabel,
+        overviewProductType,
+        overviewServingStrength,
+        overviewSourceContextHint,
+        overviewStrengthClaim,
+        productTitle,
+        scienceIngredientsAll,
+    ]);
+    const overviewAiRequestFingerprint = useMemo(
+        () => (productOverviewAiRequestPayload ? JSON.stringify(productOverviewAiRequestPayload) : null),
+        [productOverviewAiRequestPayload],
+    );
+    const overviewAiFallback = useMemo(
+        () => (productOverviewAiRequestPayload ? buildProductOverviewFallbackClient(productOverviewAiRequestPayload) : null),
+        [productOverviewAiRequestPayload],
+    );
+    const currentOverviewAiState =
+        overviewAiDigest && productOverviewAiByDigest[overviewAiDigest]
+            ? productOverviewAiByDigest[overviewAiDigest]
+            : undefined;
+    const currentOverviewAiStatus = currentOverviewAiState?.status ?? 'idle';
+    const currentOverviewAiMatchesFingerprint = Boolean(
+        overviewAiRequestFingerprint
+        && currentOverviewAiState?.fingerprint === overviewAiRequestFingerprint,
+    );
+    const overviewAiParagraphOne = currentOverviewAiState?.data
+        ? [toSentence(currentOverviewAiState.data.lead), toSentence(currentOverviewAiState.data.whatItIs)]
+            .filter((line): line is string => Boolean(line))
+            .join(' ')
+        : null;
+    const overviewAiParagraphTwo = currentOverviewAiState?.data
+        ? toSentence(currentOverviewAiState.data.whyPeopleTakeIt)
+        : null;
     const overviewMissingInfoLines = enforceNeverBlank({
         lines: [
             unresolvedMissingLines.length > 0 ? 'Some high-impact record details are missing.' : 'Core high-impact details are present.',
@@ -3984,32 +4803,206 @@ const AnalysisBundleDashboard: React.FC<{
         ],
     });
 
+    useEffect(() => {
+        if (!overviewAiDigest || !overviewAiRequestFingerprint || decisionSupportState.status !== 'ready') return;
+        const currentOverviewAi = productOverviewAiStateRef.current[overviewAiDigest];
+        const currentOverviewAiMatchesRequestedFingerprint =
+            currentOverviewAi?.fingerprint === overviewAiRequestFingerprint;
+        if (
+            currentOverviewAiMatchesRequestedFingerprint
+            && (
+                currentOverviewAi?.status === 'loading'
+                || currentOverviewAi?.status === 'ok'
+                || currentOverviewAi?.status === 'unavailable'
+                || currentOverviewAi?.status === 'error'
+            )
+        ) {
+            return;
+        }
+
+        let cancelled = false;
+        const controller = new AbortController();
+        const interactionTask = InteractionManager.runAfterInteractions(() => {
+            void run();
+        });
+
+        const run = async () => {
+            try {
+                setProductOverviewAiState(overviewAiDigest, {
+                    status: 'loading',
+                    fingerprint: overviewAiRequestFingerprint,
+                });
+
+                const baseUrl = String(Config.searchApiBaseUrl).replace(/\/$/, '');
+                const res = await fetch(`${baseUrl}/api/product-overview-ai/v1`, {
+                    method: 'POST',
+                    headers: {
+                        ...(await withAuthHeaders({
+                            'Content-Type': 'application/json',
+                        })),
+                    },
+                    body: overviewAiRequestFingerprint,
+                    signal: controller.signal,
+                });
+
+                if (cancelled) return;
+
+                if (!res.ok) {
+                    if (overviewAiFallback) {
+                        setProductOverviewAiState(overviewAiDigest, {
+                            status: 'ok',
+                            fingerprint: overviewAiRequestFingerprint,
+                            data: {
+                                ...overviewAiFallback,
+                                promptVersion: 'client-fallback',
+                            },
+                            error: `HTTP ${res.status}`,
+                        });
+                        return;
+                    }
+                    setProductOverviewAiState(overviewAiDigest, {
+                        status: 'error',
+                        error: `HTTP ${res.status}`,
+                        fingerprint: overviewAiRequestFingerprint,
+                    });
+                    return;
+                }
+
+                const payload = await res.json();
+                if (cancelled) return;
+                if (normalizeText(payload?.digest ?? null) !== overviewAiDigest) return;
+
+                if (
+                    payload?.status === 'ok'
+                    && payload?.overviewAi
+                    && typeof payload.overviewAi === 'object'
+                ) {
+                    setProductOverviewAiState(overviewAiDigest, {
+                        status: 'ok',
+                        fingerprint: overviewAiRequestFingerprint,
+                        data: {
+                            mode: payload.overviewAi.mode === 'rich' ? 'rich' : 'short',
+                            lead: String(payload.overviewAi.lead ?? '').trim(),
+                            whatItIs: String(payload.overviewAi.whatItIs ?? '').trim(),
+                            whyPeopleTakeIt: String(payload.overviewAi.whyPeopleTakeIt ?? '').trim(),
+                            promptVersion: typeof payload.promptVersion === 'string' ? payload.promptVersion : undefined,
+                        },
+                    });
+                    return;
+                }
+
+                if (overviewAiFallback) {
+                    setProductOverviewAiState(overviewAiDigest, {
+                        status: 'ok',
+                        fingerprint: overviewAiRequestFingerprint,
+                        data: {
+                            ...overviewAiFallback,
+                            promptVersion: 'client-fallback',
+                        },
+                        error: typeof payload?.reason === 'string' ? payload.reason : 'AI summary fallback',
+                    });
+                    return;
+                }
+
+                setProductOverviewAiState(overviewAiDigest, {
+                    status: 'unavailable',
+                    error: typeof payload?.reason === 'string' ? payload.reason : 'AI summary unavailable',
+                    fingerprint: overviewAiRequestFingerprint,
+                });
+            } catch (error) {
+                if (cancelled || (error instanceof Error && error.name === 'AbortError')) return;
+                if (overviewAiFallback) {
+                    setProductOverviewAiState(overviewAiDigest, {
+                        status: 'ok',
+                        fingerprint: overviewAiRequestFingerprint,
+                        data: {
+                            ...overviewAiFallback,
+                            promptVersion: 'client-fallback',
+                        },
+                        error: error instanceof Error ? error.message : 'AI summary fallback',
+                    });
+                    return;
+                }
+                setProductOverviewAiState(overviewAiDigest, {
+                    status: 'error',
+                    error: error instanceof Error ? error.message : 'AI summary unavailable',
+                    fingerprint: overviewAiRequestFingerprint,
+                });
+            }
+        };
+
+        return () => {
+            cancelled = true;
+            interactionTask.cancel();
+            controller.abort();
+            setProductOverviewAiState(overviewAiDigest, (current) => {
+                if (
+                    !current
+                    || current.status !== 'loading'
+                    || current.fingerprint !== overviewAiRequestFingerprint
+                ) {
+                    return current;
+                }
+                return {
+                    status: 'idle',
+                    fingerprint: overviewAiRequestFingerprint,
+                };
+            });
+        };
+    }, [
+        decisionSupportState.status,
+        overviewAiDigest,
+        overviewAiFallback,
+        overviewAiRequestFingerprint,
+        setProductOverviewAiState,
+    ]);
+
+    const shouldShowOverviewAiLoading =
+        Boolean(overviewAiDigest)
+        && (
+            currentOverviewAiStatus === 'idle'
+            || (currentOverviewAiStatus === 'loading' && currentOverviewAiMatchesFingerprint)
+        );
+
     const overviewContent = (
         <View style={styles.detailStack}>
             <GlassCard
-                title="What this supplement may help support"
-                subtitle="Verified product summary"
+                title="What is it?"
+                subtitle="Based on product name + main ingredients"
                 accentColor="#2563EB"
-                right={<GlassPill label={resolveSimpleTaxonomyLabel('Official record')} />}
+                right={<GlassPill label={resolveSimpleTaxonomyLabel('AI summary')} />}
             >
-                <View style={{ gap: 10 }}>
-                    {overviewWhatIsLines.map((line, idx) => (
-                        <Text key={`ov-what-${idx}`} style={idx === 0 ? styles.detailLeadText : styles.detailBodyText}>
-                            {line}
-                        </Text>
-                    ))}
-                </View>
+                {shouldShowOverviewAiLoading ? (
+                    <View style={styles.inlineLoadingRow}>
+                        <ActivityIndicator />
+                        <Text style={styles.inlineLoadingText}>AI generating</Text>
+                    </View>
+                ) : currentOverviewAiStatus === 'ok' && overviewAiParagraphOne && overviewAiParagraphTwo ? (
+                    <View style={{ gap: 12 }}>
+                        <Text style={styles.detailNarrativeText}>{overviewAiParagraphOne}</Text>
+                        <Text style={styles.detailNarrativeText}>{overviewAiParagraphTwo}</Text>
+                    </View>
+                ) : (
+                    <View style={styles.emptyStateBox}>
+                        <Text style={styles.emptyStateTitle}>AI summary unavailable</Text>
+                        <Text style={styles.emptyStateText}>Current factual details remain available below.</Text>
+                    </View>
+                )}
             </GlassCard>
 
-            <GlassCard title="How to take it" subtitle="Dose and directions from the official record" accentColor="#2563EB">
-                <View style={{ gap: 10 }}>
-                    {overviewVerifiedLines.map((line, idx) => (
-                        <View key={`ov-ver-${idx}`} style={styles.bulletRow}>
-                            <View style={styles.bulletDot} />
-                            <Text style={styles.bulletText}>{line}</Text>
-                        </View>
-                    ))}
-                </View>
+            <GlassCard title="Key Product Facts" subtitle="Structured product facts" accentColor="#2563EB">
+                {overviewKeyProductFactsRows.length > 0 ? (
+                    <View style={styles.kvGrid}>
+                        {overviewKeyProductFactsRows.map((row) => (
+                            <View key={`ov-fact-${row.label}`} style={styles.kvRow}>
+                                <Text style={styles.kvLabel}>{row.label}</Text>
+                                <Text style={styles.kvValue}>{row.value}</Text>
+                            </View>
+                        ))}
+                    </View>
+                ) : (
+                    <Text style={styles.detailPlaceholderText}>Key facts are limited in the current record.</Text>
+                )}
             </GlassCard>
 
             <GlassCard title="Missing info" subtitle="One place for gaps and next step" accentColor="#2563EB">
@@ -4048,122 +5041,123 @@ const AnalysisBundleDashboard: React.FC<{
         </View>
     );
 
-    const ingredientsDetail = bundleState.sections.ingredients.detail;
-
-
-    // --- Science & Ingredients: per-ingredient detail view state ---
-    const keyIngredientsForDetail = useMemo(() => {
-        const preferred = keyIngredientsForIngredients.length
-            ? keyIngredientsForIngredients
-            : (
-                ingredientsItemsFiltered.length > 0
-                    ? ingredientsItemsFiltered.map((i) => i.name).filter(Boolean)
-                    : recordFacts.ingredientRows
-                        .map((row) => row.name)
-                        .filter((name): name is string => Boolean(name) && !isNutritionLabelLikeIngredient(name))
-            );
-
-        const deduped: string[] = [];
-        const seen = new Set<string>();
-        for (const name of preferred) {
-            const key = normalizeIngredientNameForBackground(name);
-            if (!key) continue;
-            if (seen.has(key)) continue;
-            seen.add(key);
-            deduped.push(name);
-        }
-        return deduped;
-    }, [keyIngredientsForIngredients, ingredientsItemsFiltered, recordFacts.ingredientRows]);
-
+    const decisionBarcodeForScience = useMemo(
+        () =>
+            normalizeBarcodeForDecision(analysisBarcodeDigits)
+            ?? normalizeBarcodeForDecision(String(bundleState.meta.authoritativeIdentity?.value ?? ''))
+            ?? null,
+        [analysisBarcodeDigits, bundleState.meta.authoritativeIdentity?.value],
+    );
+    const decisionDigestForScience = normalizeText(decisionTemplatePayload?.digest ?? '') || null;
+    const scienceSourceFinalKey = bundleSourceTypeFinal ? 'final' : 'nonfinal';
+    const decisionScienceIngredientRows = useMemo<ScienceSidecarIngredientRow[]>(
+        () =>
+            (decisionScienceBlock?.ingredientRows ?? [])
+                .map((row) => ({
+                    key: normalizeIngredientNameForBackground(row?.name),
+                    name: normalizeText(row?.name ?? ''),
+                    dose: normalizeText(row?.dose ?? '') || null,
+                }))
+                .filter((row) => row.key.length > 0 && row.name.length > 0 && !isNutritionLabelLikeIngredient(row.name)),
+        [decisionScienceBlock?.ingredientRows],
+    );
+    const scientificBackgroundIngredientRows = useMemo(
+        () => {
+            const researchRows = pickResearchModeScienceRows(decisionScienceIngredientRows);
+            return researchRows.length > 0 ? researchRows : decisionScienceIngredientRows;
+        },
+        [decisionScienceIngredientRows],
+    );
+    const keyIngredientsForDetail = useMemo(
+        () => scientificBackgroundIngredientRows.map((row) => row.name),
+        [scientificBackgroundIngredientRows],
+    );
     const [activeIngredientName, setActiveIngredientName] = useState<string | null>(
         keyIngredientsForDetail[0] ?? null
     );
     const showIngredientSelector = keyIngredientsForDetail.length > 1;
-    const [scienceGeneralExpanded, setScienceGeneralExpanded] = useState(false);
 
     useEffect(() => {
-        const listKeys = keyIngredientsForDetail.map((n) => normalizeIngredientNameForBackground(n));
+        const listKeys = keyIngredientsForDetail.map((name) => normalizeIngredientNameForBackground(name));
         const activeKey = activeIngredientName ? normalizeIngredientNameForBackground(activeIngredientName) : null;
         if (!activeKey || !listKeys.includes(activeKey)) {
             setActiveIngredientName(keyIngredientsForDetail[0] ?? null);
         }
     }, [keyIngredientsForDetail, activeIngredientName]);
-    useEffect(() => {
-        if (selectedTileType !== 'science') return;
-        setScienceGeneralExpanded(false);
-    }, [activeIngredientName, selectedTileType]);
 
     const activeIngredientKey = activeIngredientName ? normalizeIngredientNameForBackground(activeIngredientName) : null;
-
-    const activeIngredientCover = useMemo(() => {
-        if (!activeIngredientKey) return null;
-        return ingredientsItemsFiltered.find((i) => normalizeIngredientNameForBackground(i.name) === activeIngredientKey) ?? null;
-    }, [ingredientsItemsFiltered, activeIngredientKey]);
-    const activeIngredientRecord = useMemo(() => {
-        if (!activeIngredientKey) return null;
-        return (
-            recordFacts.ingredientRows.find(
-                (item) => normalizeIngredientNameForBackground(item.name) === activeIngredientKey,
-            ) ?? null
-        );
-    }, [activeIngredientKey, recordFacts.ingredientRows]);
-
-    const activeIngredientDetail = useMemo(() => {
-        if (!activeIngredientKey) return null;
-        const items = ingredientsDetail?.items ?? [];
-        return items.find((i) => normalizeIngredientNameForBackground(i.name) === activeIngredientKey) ?? null;
-    }, [ingredientsDetail?.items, activeIngredientKey]);
-
-    const activeProductInsight = useMemo(() => {
-        if (!activeIngredientKey) return null;
-        return productSpecificInsightsByIngredient.get(activeIngredientKey) ?? null;
-    }, [productSpecificInsightsByIngredient, activeIngredientKey]);
-
+    const activeScienceIngredientRow = useMemo(
+        () =>
+            scientificBackgroundIngredientRows.find((row) => row.key === activeIngredientKey)
+            ?? scientificBackgroundIngredientRows[0]
+            ?? null,
+        [activeIngredientKey, scientificBackgroundIngredientRows],
+    );
     const activeIngredientLabelLine = useMemo(() => {
-        const selectedName = activeIngredientName
-            ? capitalizeSentences(activeIngredientName)
+        const selectedName = activeScienceIngredientRow?.name
+            ? capitalizeSentences(activeScienceIngredientRow.name)
             : (isDataCeiling ? 'Ingredients unavailable in this record' : 'No ingredient selected');
-        const labelDose = normalizeText(
-            typeof activeIngredientCover?.dose === 'string'
-                ? activeIngredientCover.dose
-                : activeIngredientRecord?.doseLine,
-        );
-        if (labelDose) {
-            return `${selectedName} • ${labelDose}`;
+        if (activeScienceIngredientRow?.dose) {
+            return `${selectedName} • ${activeScienceIngredientRow.dose}`;
         }
         return `${selectedName} • ${isDataCeiling ? 'Scan Supplement Facts to continue' : 'Dose not disclosed on label'}`;
-    }, [activeIngredientName, activeIngredientCover?.dose, activeIngredientRecord?.doseLine, isDataCeiling]);
+    }, [activeScienceIngredientRow?.dose, activeScienceIngredientRow?.name, isDataCeiling]);
+    const chemicalFormDisplayText = normalizeText(decisionScienceBlock?.formMatters?.ingredientChemicalForm ?? '') || null;
+    const deliveryTypeDisplayText = normalizeText(decisionScienceBlock?.formMatters?.dosageForm ?? '') || null;
 
-    // Runtime KB notes cache keyed by normalizedIngredientName|formKey.
-
-    const activeRuntimeKey =
-        activeIngredientKey && activeProductInsight?.formKey
-            ? `${activeIngredientKey}|${activeProductInsight.formKey}`
-            : null;
-
-    const activeRuntimeNotes = activeRuntimeKey ? runtimeKbNotesByKey[activeRuntimeKey] : undefined;
-    const activeRuntimeStatus = activeRuntimeNotes?.status;
+    const ingredientOverviewRequestKey = useMemo(
+        () =>
+            decisionBarcodeForScience && decisionDigestForScience
+                ? ['ingredient_overview', decisionBarcodeForScience, decisionDigestForScience, scienceSourceFinalKey].join('|')
+                : null,
+        [decisionBarcodeForScience, decisionDigestForScience, scienceSourceFinalKey],
+    );
+    const scientificBackgroundRequestKey = useMemo(
+        () =>
+            decisionBarcodeForScience && decisionDigestForScience && activeIngredientKey
+                ? [
+                    'scientific_background',
+                    decisionBarcodeForScience,
+                    decisionDigestForScience,
+                    activeIngredientKey,
+                    scienceSourceFinalKey,
+                ].join('|')
+                : null,
+        [activeIngredientKey, decisionBarcodeForScience, decisionDigestForScience, scienceSourceFinalKey],
+    );
+    const ingredientOverviewState = ingredientOverviewRequestKey
+        ? ingredientOverviewByRequestKey[ingredientOverviewRequestKey]
+        : undefined;
+    const scientificBackgroundState = scientificBackgroundRequestKey
+        ? scientificBackgroundByRequestKey[scientificBackgroundRequestKey]
+        : undefined;
 
     useEffect(() => {
-        const FORM_MATCH_GATE = 0.35;
-        if (selectedTileType !== 'science') return;
-        if (!activeIngredientKey) return;
-        if (!activeProductInsight?.ingredientId || !activeProductInsight?.formKey) return;
-        if ((activeProductInsight.matchScore ?? 0) < FORM_MATCH_GATE) return;
+        setRuntimeKbNotesByKey({});
+        setIngredientOverviewByRequestKey({});
+        setScientificBackgroundByRequestKey({});
+        ingredientOverviewStateRef.current = {};
+        scientificBackgroundStateRef.current = {};
+        setActiveIngredientName(keyIngredientsForDetail[0] ?? null);
+        setActiveSafetyIngredientName(keyIngredientsForSafety[0] ?? null);
+    }, [incomingBundleRunKey, keyIngredientsForDetail, keyIngredientsForSafety]);
 
-        if (activeRuntimeStatus && ['loading', 'ok', 'not_found', 'error'].includes(activeRuntimeStatus)) return;
+    useEffect(() => {
+        if (decisionSupportState.status !== 'ready') return;
+        if (!ingredientOverviewRequestKey || !decisionBarcodeForScience || !decisionDigestForScience) return;
+        const current = ingredientOverviewStateRef.current[ingredientOverviewRequestKey];
+        if (current && (current.status === 'loading' || current.status === 'ok')) return;
 
-        const key = `${activeIngredientKey}|${activeProductInsight.formKey}`;
+        let cancelled = false;
+        let settled = false;
+        const controller = new AbortController();
+        const fallbackBlock = buildIngredientOverviewFallbackClient(decisionScienceIngredientRows);
 
         const run = async () => {
             try {
-                setRuntimeKbNotesByKey((prev) => ({
-                    ...prev,
-                    [key]: { status: 'loading' },
-                }));
-
+                setIngredientOverviewSidecarState(ingredientOverviewRequestKey, { status: 'loading' });
                 const baseUrl = String(Config.searchApiBaseUrl).replace(/\/$/, '');
-                const res = await fetch(`${baseUrl}/api/kb/runtime/form-insights/batch`, {
+                const response = await fetch(`${baseUrl}/api/ingredient-overview/v1`, {
                     method: 'POST',
                     headers: {
                         ...(await withAuthHeaders({
@@ -4171,474 +5165,192 @@ const AnalysisBundleDashboard: React.FC<{
                         })),
                     },
                     body: JSON.stringify({
-                        locale: 'en',
-                        items: [
-                            {
-                                ingredientId: activeProductInsight.ingredientId,
-                                formKey: activeProductInsight.formKey,
-                                ingredientName: activeIngredientName ?? undefined,
-                                ingredientCanonicalKey: activeProductInsight.ingredientCanonicalKey ?? undefined,
-                            },
-                        ],
+                        barcode: decisionBarcodeForScience,
+                        decisionDigest: decisionDigestForScience,
                     }),
+                    signal: controller.signal,
                 });
 
-                if (!res.ok) {
-                    setRuntimeKbNotesByKey((prev) => ({
-                        ...prev,
-                        [key]: { status: 'error', reason: `HTTP ${res.status}` },
-                    }));
-                    return;
-                }
+                if (cancelled) return;
 
-                const payload = await res.json();
-                const items: any[] = Array.isArray(payload?.items) ? payload.items : [];
-
-                const match =
-                    items.find(
-                        (i) =>
-                            i?.ingredientId === activeProductInsight.ingredientId &&
-                            i?.formKey === activeProductInsight.formKey
-                    ) ??
-                    items[0] ??
-                    null;
-
-                if (!match) {
-                    setRuntimeKbNotesByKey((prev) => ({
-                        ...prev,
-                        [key]: { status: 'error', reason: 'No runtime KB response' },
-                    }));
-                    return;
-                }
-
-                const statusRaw: string = typeof match?.status === 'string' ? match.status : 'error';
-
-                const segmentsByBucket: Record<string, string[]> = {};
-                if (Array.isArray(match?.segments)) {
-                    for (const seg of match.segments) {
-                        const bucket =
-                            typeof seg?.kind === 'string'
-                                ? seg.kind
-                                : typeof seg?.bucket === 'string'
-                                    ? seg.bucket
-                                    : null;
-                        const t = typeof seg?.text === 'string' ? seg.text : null;
-                        if (!bucket || !t) continue;
-                        if (!segmentsByBucket[bucket]) segmentsByBucket[bucket] = [];
-                        segmentsByBucket[bucket].push(t);
-                    }
-                }
-
-                const nestedMeta = (match?.meta && typeof match.meta === 'object') ? match.meta : null;
-                const meta = {
-                    source:
-                        (nestedMeta && typeof (nestedMeta as any).source === 'string'
-                            ? (nestedMeta as any).source
-                            : typeof match?.source === 'string'
-                                ? match.source
-                                : undefined),
-                    packageSha256:
-                        (nestedMeta && typeof (nestedMeta as any).packageSha256 === 'string'
-                            ? (nestedMeta as any).packageSha256
-                            : typeof match?.packageSha256 === 'string'
-                                ? match.packageSha256
-                                : undefined),
-                    reviewedAt:
-                        (nestedMeta && typeof (nestedMeta as any).reviewedAt === 'string'
-                            ? (nestedMeta as any).reviewedAt
-                            : typeof match?.reviewedAt === 'string'
-                                ? match.reviewedAt
-                                : undefined),
-                    formDisplay:
-                        (nestedMeta && typeof (nestedMeta as any).formDisplay === 'string'
-                            ? (nestedMeta as any).formDisplay
-                            : typeof match?.formDisplay === 'string'
-                                ? match.formDisplay
-                                : undefined),
-                };
-
-                if (statusRaw !== 'ok') {
-                    setRuntimeKbNotesByKey((prev) => ({
-                        ...prev,
-                        [key]: {
-                            status: 'not_found',
-                            reason: typeof match?.reason === 'string' ? match.reason : 'Not available',
-                            segmentsByBucket: Object.keys(segmentsByBucket).length ? segmentsByBucket : undefined,
-                            meta,
-                        },
-                    }));
-                    return;
-                }
-
-                setRuntimeKbNotesByKey((prev) => ({
-                    ...prev,
-                    [key]: {
+                if (!response.ok) {
+                    settled = true;
+                    setIngredientOverviewSidecarState(ingredientOverviewRequestKey, {
                         status: 'ok',
-                        segmentsByBucket: Object.keys(segmentsByBucket).length ? segmentsByBucket : undefined,
-                        meta,
-                    },
-                }));
-            } catch (e: any) {
-                setRuntimeKbNotesByKey((prev) => ({
-                    ...prev,
-                    [key]: { status: 'error', reason: e?.message ?? 'Error' },
-                }));
+                        source: 'fallback',
+                        fallbackUsed: true,
+                        promptVersion: 'ingredient_overview_client_fallback_v1',
+                        data: fallbackBlock,
+                    });
+                    return;
+                }
+
+                const payload = await response.json() as IngredientOverviewResponse & { latestDigest?: string };
+                if (cancelled) return;
+                if (payload?.status !== 'ok' || !payload.ingredientOverview) {
+                    throw new Error('ingredient_overview_invalid_payload');
+                }
+
+                settled = true;
+                setIngredientOverviewSidecarState(ingredientOverviewRequestKey, {
+                    status: 'ok',
+                    source: payload.source,
+                    fallbackUsed: payload.fallbackUsed,
+                    promptVersion: payload.promptVersion,
+                    data: payload.ingredientOverview,
+                });
+            } catch (error) {
+                if (cancelled) return;
+                settled = true;
+                setIngredientOverviewSidecarState(ingredientOverviewRequestKey, {
+                    status: 'ok',
+                    source: 'fallback',
+                    fallbackUsed: true,
+                    promptVersion: 'ingredient_overview_client_fallback_v1',
+                    data: fallbackBlock,
+                    error: error instanceof Error ? error.message : 'Ingredient overview unavailable',
+                });
             }
         };
 
-        run();
-    }, [
-        selectedTileType,
-        activeIngredientKey,
-        activeIngredientName,
-        activeProductInsight?.ingredientId,
-        activeProductInsight?.ingredientCanonicalKey,
-        activeProductInsight?.formKey,
-        activeProductInsight?.matchScore,
-        activeRuntimeStatus,
-    ]);
-
-    // Ingredient summary cache (DeepSeek-backed when configured; deterministic fallback otherwise)
-    const [summaryByIngredient, setSummaryByIngredient] = useState<Record<string, IngredientSummaryState>>({});
-
-    const activeSummary = activeIngredientKey ? summaryByIngredient[activeIngredientKey] : undefined;
-    const deepseekLoading = activeSummary?.status === 'loading';
-    const deepseekError =
-        activeSummary?.status === 'error'
-            ? activeSummary.error ?? 'Summary unavailable'
-            : null;
-    const activeSummaryStatus = activeSummary?.status;
-    const decisionAiSummaryLines = useMemo(
-        () =>
-            (decisionScienceBlock?.aiSummaryContract3 ?? [])
-                .map((line) => sanitizeCustomerFacingLine(line))
-                .filter((line): line is string => Boolean(line))
-                .slice(0, 3),
-        [decisionScienceBlock?.aiSummaryContract3],
-    );
-    const decisionAiSummaryState = useMemo<IngredientSummaryState | null>(() => {
-        if (decisionAiSummaryLines.length !== 3) return null;
-        return {
-            status: 'ok',
-            source: 'api',
-            tldr: decisionAiSummaryLines.join(' '),
-            highlights: decisionAiSummaryLines.slice(0, 2),
-            caveats: [decisionAiSummaryLines[2]],
-            confidence_note: 'Grounded to verified product fields and general science context.',
-            summaryVersion: 'decision_support_contract_v1',
-            guardApplied: true,
-            fallbackUsed: false,
-        };
-    }, [decisionAiSummaryLines]);
-    const activeRuntimeSegments = activeRuntimeNotes?.segmentsByBucket ?? null;
-    const activeIngredientDose = activeIngredientCover?.dose ?? null;
-    const activeFactsIngredient = useMemo(() => {
-        if (!activeIngredientKey) return null;
-        const actives = factsDtoState.data?.ingredients?.actives ?? [];
-        return (
-            actives.find((item) => normalizeIngredientNameForBackground(item.name) === activeIngredientKey) ?? null
-        );
-    }, [activeIngredientKey, factsDtoState.data?.ingredients?.actives]);
-
-    const activeInsightFromDto = useMemo(() => {
-        if (!activeIngredientKey) return null;
-        return (
-            assembledInsights?.keyIngredientsInsights?.find(
-                (item) => normalizeIngredientNameForBackground(item.name) === activeIngredientKey,
-            ) ?? null
-        );
-    }, [activeIngredientKey, assembledInsights]);
-    const supplementalFormFromSnapshot = useMemo(() => {
-        if (!activeIngredientKey) return null;
-        const hit = scienceIngredientsAll.find((item) => item.key === activeIngredientKey);
-        const formValue = typeof hit?.formValue === 'string' ? hit.formValue.trim() : '';
-        return formValue.length > 0 ? formValue : null;
-    }, [activeIngredientKey, scienceIngredientsAll]);
-    const hasInferredSpecificForm = Boolean(
-        activeProductInsight?.formLabel
-        && activeProductInsight.formLabel.trim().length > 0
-        && !isUnspecifiedFormSignal(activeProductInsight.formKey, activeProductInsight.reasonCode),
-    );
-
-    const activeWhyPayload = useMemo(() => {
-        if (!activeIngredientName) return null;
-        return buildWhyBullets({
-            ingredientName: activeIngredientName,
-            formText: activeFactsIngredient?.formText ?? null,
-            formSource: activeFactsIngredient?.formText ? 'facts' : hasInferredSpecificForm ? 'inferred' : 'none',
-            formKey: activeProductInsight?.formKey ?? null,
-            reasonCode: activeProductInsight?.reasonCode ?? null,
-            formLabel: activeProductInsight?.formLabel ?? null,
-            matchScore: activeProductInsight?.matchScore ?? null,
-            evidenceGrade: activeProductInsight?.evidenceGrade ?? null,
-            rbfFactor: activeProductInsight?.effectiveFactor ?? null,
-            rbfBand: activeProductInsight?.rbfBand ?? 'unknown',
-            doseSignal: activeProductInsight?.doseSignal ?? null,
-            reviewedSegments: activeRuntimeSegments,
+        const interactionTask = InteractionManager.runAfterInteractions(() => {
+            void run();
         });
-    }, [
-        activeIngredientName,
-        activeFactsIngredient?.formText,
-        activeProductInsight?.formLabel,
-        activeProductInsight?.formKey,
-        activeProductInsight?.reasonCode,
-        activeProductInsight?.matchScore,
-        activeProductInsight?.evidenceGrade,
-        activeProductInsight?.effectiveFactor,
-        activeProductInsight?.rbfBand,
-        activeProductInsight?.doseSignal,
-        activeRuntimeSegments,
-        hasInferredSpecificForm,
-    ]);
-    const hasFactsSpecificForm = Boolean(activeFactsIngredient?.formText && activeFactsIngredient.formText.trim().length > 0);
-    const explicitFormText = hasFactsSpecificForm ? activeFactsIngredient?.formText ?? null : null;
-    const supplementalFormText = supplementalFormFromSnapshot ?? null;
-    const inferredFormText = hasInferredSpecificForm
-        ? activeProductInsight?.formLabel ?? activeInsightFromDto?.form?.text ?? null
-        : null;
-    const isOmegaContextForForm = /\b(omega[\s-]*3|fish oil|krill|epa|dha)\b/i.test(
-        [productTitle, activeIngredientName, activeIngredientCover?.name, activeIngredientRecord?.name].filter(Boolean).join(' '),
-    );
-    const inferredLooksLikeOmegaComponent = OMEGA_FORM_DISALLOWED_PATTERN.test(
-        normalizeText(inferredFormText).toLowerCase(),
-    );
-    const inferredLooksLikeValidOmegaForm = OMEGA_FORM_ALLOWED_PATTERN.test(
-        normalizeText(inferredFormText).toLowerCase(),
-    );
-    const suppressInferredOmegaComponentForm =
-        isOmegaContextForForm && inferredLooksLikeOmegaComponent && !inferredLooksLikeValidOmegaForm;
-    const isFormConflict = detectInferredFormConflict({
-        productName: productInfo?.name ?? overviewFacts?.product?.name ?? activeIngredientName,
-        explicitForm: explicitFormText,
-        inferredForm: inferredFormText,
-    });
-    const activeFormDisplayText =
-        explicitFormText
-        || supplementalFormText
-        || (inferredFormText && !suppressInferredOmegaComponentForm ? inferredFormText : null)
-        || 'Form not stated on the official record.';
-    const detailsPossibleFormLine = (() => {
-        if (SCAN_UX_VIEW_MODE !== 'details') return null;
-        if (!explicitFormText && supplementalFormText) {
-            return `Form from supplemental label data (iHerb): ${supplementalFormText}.`;
-        }
-        if (inferredFormText && !suppressInferredOmegaComponentForm) {
-            return isFormConflict
-                ? `Possible form (low confidence): ${inferredFormText}.`
-                : `Possible form (low confidence): ${inferredFormText}.`;
-        }
-        return null;
-    })();
-
-    useEffect(() => {
-        if (selectedTileType !== 'science') return;
-        if (!activeIngredientName || !activeIngredientKey) return;
-        if (decisionAiSummaryState) {
-            setSummaryByIngredient((prev) => ({
-                ...prev,
-                [activeIngredientKey]: decisionAiSummaryState,
-            }));
-            return;
-        }
-        if (!ENABLE_LEGACY_SECTION_API) {
-            return;
-        }
-
-        if (activeSummaryStatus && ['loading', 'ok'].includes(activeSummaryStatus)) return;
-
-        const buildFallback = (): IngredientSummaryState => {
-            const coverDose = activeIngredientDose;
-            const ingredientTitle = capitalizeSentences(activeIngredientName);
-            const directionsFromRecord = normalizeText(overviewFacts?.usage?.directionsText ?? '');
-            const supportLine = `${ingredientTitle} may help support key body functions linked to this ingredient.`;
-            const productLine = coverDose
-                ? `This product provides ${coverDose}${directionsFromRecord ? `, with directions: ${directionsFromRecord}` : ''}.`
-                : `This product amount is not clearly listed in this record${directionsFromRecord ? `, with directions: ${directionsFromRecord}` : ''}.`;
-            const limitationLine = warningsMissing
-                ? 'Product-specific warnings were not available in the official record, so check the package for label-specific cautions.'
-                : 'Use the product label first and consult a clinician for personal risk factors.';
-
-            return {
-                status: 'ok',
-                source: 'fallback',
-                tldr: `${supportLine} ${productLine} ${limitationLine}`,
-                highlights: [
-                    coverDose ? `This product provides ${coverDose}.` : 'Use the package label for exact amount.',
-                    directionsFromRecord ? `Directions from record: ${directionsFromRecord}.` : 'Directions are not provided in this record.',
-                ],
-                caveats: [
-                    warningsMissing
-                        ? 'Label-specific warnings were not available in this record.'
-                        : 'This summary is informational and not medical advice.',
-                ],
-                confidence_note: 'Grounded to verified record fields and general science references.',
-                summaryVersion: 'simple_fallback_v1',
-                guardApplied: true,
-                fallbackUsed: true,
-            };
-        };
-
-        const run = async () => {
-            try {
-                setSummaryByIngredient((prev) => ({
-                    ...prev,
-                    [activeIngredientKey]: { status: 'loading' },
-                }));
-
-                const baseUrl = String(Config.searchApiBaseUrl).replace(/\/$/, '');
-                const runtimeBestForBullets = enforceNeverBlank({
-                    lines: [
-                        ...(activeRuntimeSegments?.absorption ?? []).map((line) => sanitizeCustomerFacingLine(line)),
-                        ...(activeRuntimeSegments?.tolerability ?? []).map((line) => sanitizeCustomerFacingLine(line)),
-                    ],
-                    fallback: [
-                        `${capitalizeSentences(activeIngredientName)} may help support key body functions linked to this ingredient.`,
-                    ],
-                }).slice(0, 3);
-                const runtimeFormImpact = sanitizeCustomerFacingLine(
-                    (activeRuntimeSegments?.solubility ?? [])[0] ?? null,
+        return () => {
+            cancelled = true;
+            controller.abort();
+            interactionTask.cancel();
+            if (!settled) {
+                setIngredientOverviewSidecarState(ingredientOverviewRequestKey, (currentState) =>
+                    currentState?.status === 'loading' ? undefined : currentState,
                 );
-                const runtimeBeforeBuy = sanitizeCustomerFacingLine(
-                    (activeRuntimeSegments?.caveats ?? [])[0] ?? null,
-                );
-                const packet = {
-                    locale: 'en',
-                    viewMode: SCAN_UX_VIEW_MODE,
-                    ingredientName: activeIngredientName,
-                    facts: {
-                        amount: activeFactsIngredient?.amount ?? null,
-                        unit: activeFactsIngredient?.unit ?? null,
-                        formText: activeFactsIngredient?.formText ?? null,
-                    },
-                    directionsText: normalizeText(overviewFacts?.usage?.directionsText ?? '') || null,
-                    supportBullets: runtimeBestForBullets,
-                    safeScienceBullets: runtimeBestForBullets,
-                    safeScienceFormImpact: runtimeFormImpact,
-                    safeScienceBeforeYouBuy: runtimeBeforeBuy,
-                    missingHighImpact: highImpactMissingLabels,
-                    insight: {
-                        rbfBand: activeProductInsight?.rbfBand ?? 'unknown',
-                        rbfFactor: activeProductInsight?.effectiveFactor ?? null,
-                        confidenceTier: activeProductInsight?.confidenceTier ?? 'none',
-                        whyBullets: activeWhyPayload?.bullets ?? [],
-                        doseStatus:
-                            activeProductInsight?.doseSignal?.status === 'below_typical' ||
-                                activeProductInsight?.doseSignal?.status === 'within_typical' ||
-                                activeProductInsight?.doseSignal?.status === 'above_typical'
-                                ? activeProductInsight.doseSignal.status
-                                : 'unknown',
-                        dailyAmount: activeProductInsight?.doseSignal?.dailyAmount ?? null,
-                        dailyUnit: activeProductInsight?.doseSignal?.unit ?? null,
-                    },
-                    reviewedKbBullets: Object.values(activeRuntimeSegments ?? {}).flat().slice(0, 4),
-                };
-
-                const res = await fetch(`${baseUrl}/api/summary/ingredient`, {
-                    method: 'POST',
-                    headers: {
-                        ...(await withAuthHeaders({
-                            'Content-Type': 'application/json',
-                        })),
-                    },
-                    body: JSON.stringify(packet),
-                });
-
-                if (!res.ok) {
-                    setSummaryByIngredient((prev) => ({
-                        ...prev,
-                        [activeIngredientKey]: buildFallback(),
-                    }));
-                    return;
-                }
-
-                const json = await res.json();
-                const tldr =
-                    (typeof json?.tldr === 'string' && json.tldr) ||
-                    (typeof json?.summary === 'string' && json.summary) ||
-                    (typeof json?.text === 'string' && json.text) ||
-                    null;
-
-                const highlights = Array.isArray(json?.highlights)
-                    ? json.highlights.filter((x: any) => typeof x === 'string')
-                    : Array.isArray(json?.bullets)
-                        ? json.bullets.filter((x: any) => typeof x === 'string')
-                        : null;
-
-                const caveats = Array.isArray(json?.caveats)
-                    ? json.caveats.filter((x: any) => typeof x === 'string')
-                    : null;
-
-                const confidence_note = typeof json?.confidence_note === 'string' ? json.confidence_note : undefined;
-                const summaryVersion = typeof json?.summaryVersion === 'string' ? json.summaryVersion : undefined;
-                const guardApplied = typeof json?.guardApplied === 'boolean' ? json.guardApplied : undefined;
-                const fallbackUsed = typeof json?.fallbackUsed === 'boolean' ? json.fallbackUsed : undefined;
-
-                if (!tldr) {
-                    setSummaryByIngredient((prev) => ({
-                        ...prev,
-                        [activeIngredientKey]: buildFallback(),
-                    }));
-                    return;
-                }
-
-                setSummaryByIngredient((prev) => ({
-                    ...prev,
-                    [activeIngredientKey]: {
-                        status: 'ok',
-                        source: 'api',
-                        tldr,
-                        highlights: highlights ?? undefined,
-                        caveats: caveats ?? undefined,
-                        confidence_note,
-                        summaryVersion,
-                        guardApplied,
-                        fallbackUsed,
-                    },
-                }));
-            } catch {
-                setSummaryByIngredient((prev) => ({
-                    ...prev,
-                    [activeIngredientKey]: buildFallback(),
-                }));
             }
         };
-
-        run();
     }, [
-        selectedTileType,
-        activeIngredientKey,
-        activeIngredientName,
-        activeSummaryStatus,
-        bundleState.meta.authoritativeIdentity,
-        productInfo?.name,
-        productInfo?.brand,
-        bundleSourceType,
-        activeIngredientDose,
-        activeIngredientDetail,
-        activeProductInsight,
-        activeRuntimeSegments,
-        decisionAiSummaryState,
+        decisionSupportState.status,
+        decisionBarcodeForScience,
+        decisionDigestForScience,
+        decisionScienceIngredientRows,
+        ingredientOverviewRequestKey,
+        setIngredientOverviewSidecarState,
     ]);
 
-    const customerSummaryHighlights = useMemo(
-        () =>
-            (activeSummary?.highlights ?? [])
-                .map((line) => sanitizeCustomerFacingLine(line))
-                .filter((line): line is string => Boolean(line))
-                .slice(0, 3),
-        [activeSummary?.highlights],
-    );
-    const customerSummaryCaveats = useMemo(
-        () =>
-            (activeSummary?.caveats ?? [])
-                .map((line) => sanitizeCustomerFacingLine(line))
-                .filter((line): line is string => Boolean(line))
-                .slice(0, 2),
-        [activeSummary?.caveats],
-    );
+    useEffect(() => {
+        if (decisionSupportState.status !== 'ready') return;
+        if (!decisionBarcodeForScience || !decisionDigestForScience) return;
+        if (scientificBackgroundIngredientRows.length === 0) return;
+
+        let cancelled = false;
+        const requestRunKey = currentRunKeyRef.current;
+        const controllers: AbortController[] = [];
+        const startedRequestKeys = new Set<string>();
+        const settledRequestKeys = new Set<string>();
+        const interactionTask = InteractionManager.runAfterInteractions(() => {
+            const baseUrl = String(Config.searchApiBaseUrl).replace(/\/$/, '');
+            scientificBackgroundIngredientRows.forEach((row) => {
+                const requestKey = [
+                    'scientific_background',
+                    decisionBarcodeForScience,
+                    decisionDigestForScience,
+                    row.key,
+                    scienceSourceFinalKey,
+                ].join('|');
+                const current = scientificBackgroundStateRef.current[requestKey];
+                if (current && (current.status === 'loading' || current.status === 'ok')) return;
+
+                const controller = new AbortController();
+                controllers.push(controller);
+                startedRequestKeys.add(requestKey);
+                const fallbackBlock = buildScientificBackgroundFallbackClient(
+                    row.name,
+                    decisionScienceIngredientRows,
+                );
+
+                void (async () => {
+                    try {
+                        setScientificBackgroundSidecarState(requestKey, { status: 'loading' });
+                        const response = await fetch(`${baseUrl}/api/scientific-background/v1`, {
+                            method: 'POST',
+                            headers: {
+                                ...(await withAuthHeaders({
+                                    'Content-Type': 'application/json',
+                                })),
+                            },
+                            body: JSON.stringify({
+                                barcode: decisionBarcodeForScience,
+                                decisionDigest: decisionDigestForScience,
+                                selectedIngredientName: row.name,
+                            }),
+                            signal: controller.signal,
+                        });
+
+                        if (cancelled || currentRunKeyRef.current !== requestRunKey) return;
+
+                        if (!response.ok) {
+                            settledRequestKeys.add(requestKey);
+                            setScientificBackgroundSidecarState(requestKey, {
+                                status: 'ok',
+                                source: 'fallback',
+                                fallbackUsed: true,
+                                promptVersion: 'scientific_background_client_fallback_v1',
+                                data: fallbackBlock,
+                            });
+                            return;
+                        }
+
+                        const payload = await response.json() as ScientificBackgroundResponse & { latestDigest?: string };
+                        if (cancelled || currentRunKeyRef.current !== requestRunKey) return;
+                        if (payload?.status !== 'ok' || !payload.scientificBackground) {
+                            throw new Error('scientific_background_invalid_payload');
+                        }
+
+                        settledRequestKeys.add(requestKey);
+                        setScientificBackgroundSidecarState(requestKey, {
+                            status: 'ok',
+                            source: payload.source,
+                            fallbackUsed: payload.fallbackUsed,
+                            promptVersion: payload.promptVersion,
+                            data: payload.scientificBackground,
+                        });
+                    } catch (error) {
+                        if (cancelled || currentRunKeyRef.current !== requestRunKey) return;
+                        settledRequestKeys.add(requestKey);
+                        setScientificBackgroundSidecarState(requestKey, {
+                            status: 'ok',
+                            source: 'fallback',
+                            fallbackUsed: true,
+                            promptVersion: 'scientific_background_client_fallback_v1',
+                            data: fallbackBlock,
+                            error: error instanceof Error ? error.message : 'Scientific background unavailable',
+                        });
+                    }
+                })();
+            });
+        });
+        return () => {
+            cancelled = true;
+            controllers.forEach((controller) => controller.abort());
+            interactionTask.cancel();
+            startedRequestKeys.forEach((requestKey) => {
+                if (settledRequestKeys.has(requestKey)) return;
+                setScientificBackgroundSidecarState(requestKey, (currentState) =>
+                    currentState?.status === 'loading' ? undefined : currentState,
+                );
+            });
+        };
+    }, [
+        decisionSupportState.status,
+        decisionBarcodeForScience,
+        decisionDigestForScience,
+        decisionScienceIngredientRows,
+        scientificBackgroundIngredientRows,
+        scienceSourceFinalKey,
+        setScientificBackgroundSidecarState,
+    ]);
+
     useEffect(() => {
         if (selectedTileType !== 'science') return;
-        if (!activeSummary || activeSummary.status !== 'ok') return;
+        if (!scientificBackgroundState || scientificBackgroundState.status !== 'ok') return;
         emitScanUxMetric('scan_summary_rendered', {
             viewMode: SCAN_UX_VIEW_MODE,
             variant: SCAN_UX_VARIANT,
@@ -4647,216 +5359,36 @@ const AnalysisBundleDashboard: React.FC<{
             sourceTypeFinal: bundleSourceTypeFinal,
             dwellMs: 0,
             maxScrollRatio: 0,
-            summaryVersion: activeSummary.summaryVersion ?? null,
-            guardApplied: activeSummary.guardApplied ?? null,
-            fallbackUsed: activeSummary.fallbackUsed ?? (activeSummary.source === 'fallback'),
+            summaryVersion: scientificBackgroundState.promptVersion ?? null,
+            guardApplied: true,
+            fallbackUsed: scientificBackgroundState.fallbackUsed ?? (scientificBackgroundState.source === 'fallback'),
         });
-    }, [activeSummary, bundleSourceType, bundleSourceTypeFinal, selectedTileType]);
-    const pickRuntimeBucketLine = useCallback((bucket: keyof NonNullable<typeof activeRuntimeSegments>) => {
-        const rows = activeRuntimeSegments?.[bucket];
-        if (!Array.isArray(rows)) return null;
-        for (const row of rows) {
-            const clean = sanitizeCustomerFacingLine(row);
-            if (clean) return clean;
-        }
-        return null;
-    }, [activeRuntimeSegments]);
-    const activeFoundationHit = useMemo(
-        () => lookupFoundationForIngredient(activeIngredientName),
-        [activeIngredientName],
-    );
-    const scienceUsesTrueOds = activeFoundationHit.kind === 'ods';
-    const runtimeBestForLine = useMemo(
-        () => pickRuntimeBucketLine('absorption') ?? pickRuntimeBucketLine('tolerability'),
-        [pickRuntimeBucketLine],
-    );
-    const scienceBestForLine = useMemo(
-        () =>
-            runtimeBestForLine
-            ?? `${capitalizeSentences(activeIngredientName)} is typically compared by intended goal, dose clarity, and label transparency.`,
-        [activeIngredientName, runtimeBestForLine],
-    );
-    const scienceBestForSourceCue = runtimeBestForLine
-        ? 'General science (verified subset)'
-        : 'General science (fallback guidance)';
-    const runtimeFormImpactLine = useMemo(
-        () => pickRuntimeBucketLine('solubility'),
-        [pickRuntimeBucketLine],
-    );
-    const scienceFormImpactLine = useMemo(
-        () =>
-            runtimeFormImpactLine
-            ?? activeFormDisplayText
-            ?? `Form not stated on the official record for ${capitalizeSentences(activeIngredientName)}.`,
-        [activeFormDisplayText, activeIngredientName, runtimeFormImpactLine],
-    );
-    const scienceFormSourceCue = runtimeFormImpactLine
-        ? 'General science (verified subset)'
-        : 'General science (fallback guidance)';
-    const scienceBeforeBuyLine = useMemo(() => {
-        const runtimeCaveat = pickRuntimeBucketLine('caveats');
-        if (runtimeCaveat) return runtimeCaveat;
-        if (warningsMissing) {
-            return 'Product-specific warnings were not included in the official record. Check the package before buying.';
-        }
-            return 'Use the package label first for product-specific cautions and dosage details.';
-    }, [pickRuntimeBucketLine, warningsMissing]);
-    const scienceGeneralLinesFallback = useMemo(
-        () =>
-            enforceNeverBlank({
-                lines: [
-                    `Best for (${scienceBestForSourceCue}): ${scienceBestForLine}`,
-                    `What this form may change (${scienceFormSourceCue}): ${scienceFormImpactLine}`,
-                    `Before you buy (Product/label check): ${scienceBeforeBuyLine}`,
-                ],
-                fallback: [
-                    `Best for (General science (fallback guidance)): ${capitalizeSentences(activeIngredientName)} support context is available from general science.`,
-                    'What this form may change (General science (fallback guidance)): formulation details can affect consistency.',
-                    'Before you buy (Product/label check): verify product-specific warnings on the package.',
-                ],
-            }),
-        [
-            activeIngredientName,
-            scienceBestForLine,
-            scienceBestForSourceCue,
-            scienceBeforeBuyLine,
-            scienceFormImpactLine,
-            scienceFormSourceCue,
-        ],
-    );
-    const scienceGeneralLinesFromOds = useMemo(() => {
-        if (activeFoundationHit.kind !== 'ods') return [] as string[];
-        const whatItDoesLines = (activeFoundationHit.whatItDoes ?? [])
-            .map((line) => sanitizeCustomerFacingLine(line))
-            .filter((line): line is string => Boolean(line))
-            .slice(0, 2);
-        const overviewLine = sanitizeCustomerFacingLine(activeFoundationHit.overview);
-        if (whatItDoesLines.length === 0 && overviewLine) {
-            whatItDoesLines.push(overviewLine);
-        }
-        const watchOutLine = (activeFoundationHit.watchOuts ?? [])
-            .map((line) => sanitizeCustomerFacingLine(line))
-            .find((line): line is string => Boolean(line));
-        return enforceNeverBlank({
-            lines: [
-                whatItDoesLines[0] ? `ODS context: ${whatItDoesLines[0]}` : null,
-                whatItDoesLines[1] ? `ODS context: ${whatItDoesLines[1]}` : null,
-                watchOutLine ? `Watch-out (general): ${watchOutLine}` : null,
-            ],
-            fallback: ['ODS fact-sheet context is available for this ingredient.'],
-        });
-    }, [activeFoundationHit]);
-    const scienceGeneralLines = scienceUsesTrueOds
-        ? scienceGeneralLinesFromOds
-        : scienceGeneralLinesFallback;
-    const scienceGeneralBadge = resolveSimpleTaxonomyLabel(
-        generalScienceBadgeLabel(scienceUsesTrueOds),
-        'General science',
-    );
-    const scienceGeneralSubtitle = scienceUsesTrueOds
-        ? 'General science from NIH ODS'
-        : 'General science background';
+    }, [bundleSourceType, bundleSourceTypeFinal, scientificBackgroundState, selectedTileType]);
+
+    const scientificBackgroundSections = scientificBackgroundState?.data?.sections ?? [];
+    const ingredientOverviewTitleLine = ingredientOverviewState?.data?.titleLine ?? null;
+    const ingredientOverviewParagraphOne = ingredientOverviewState?.data?.paragraph1 ?? null;
+    const ingredientOverviewParagraphTwo = ingredientOverviewState?.data?.paragraph2 ?? null;
+    const ingredientOverviewCompareHint = ingredientOverviewState?.data?.compareHint ?? null;
+    const scientificBackgroundIntroLine = scientificBackgroundState?.data?.introLine ?? activeIngredientLabelLine;
+    const scientificBackgroundClosingNote = scientificBackgroundState?.data?.closingNote ?? null;
     const ingredientsContent = (
         <View style={styles.detailStack}>
-            {showIngredientSelector ? (
-                <GlassCard
-                    title="Key ingredient focus"
-                    subtitle="Choose an ingredient context"
-                    accentColor="#D97706"
-                    right={<GlassPill label={resolveSimpleTaxonomyLabel('Official record')} />}
-                >
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.ingredientSelectorRow}
-                    >
-                        {keyIngredientsForDetail.map((name) => {
-                            const key = normalizeIngredientNameForBackground(name);
-                            const isActive = key === activeIngredientKey;
-                            return (
-                                <Pressable
-                                    key={key}
-                                    onPress={() => setActiveIngredientName(name)}
-                                    style={[
-                                        styles.ingredientChip,
-                                        isActive ? styles.ingredientChipActive : null,
-                                    ]}
-                                >
-                                    <DashboardBlur intensity={isActive ? 22 : 14} tint="light" style={StyleSheet.absoluteFill} />
-                                    <Text style={[styles.ingredientChipText, isActive ? styles.ingredientChipTextActive : null]} numberOfLines={1}>
-                                        {capitalizeSentences(name)}
-                                    </Text>
-                                </Pressable>
-                            );
-                        })}
-                    </ScrollView>
-
-                    <View style={{ marginTop: 10 }}>
-                        <Text style={styles.detailMetaLabel}>Current selection</Text>
-                        <Text style={styles.detailMetaText}>{activeIngredientLabelLine}</Text>
-                    </View>
-                </GlassCard>
-            ) : null}
-
-            <GlassCard
-                title="What this supplement may help support"
-                subtitle={scienceGeneralSubtitle}
-                accentColor="#D97706"
-                right={<GlassPill label={scienceGeneralBadge} />}
-            >
-                <View style={{ gap: 10 }}>
-                    {scienceGeneralLines.slice(0, 3).map((line, idx) => (
-                        <View key={`science-general-${idx}`} style={styles.bulletRow}>
-                            <View style={styles.bulletDot} />
-                            <Text style={styles.bulletText}>{line}</Text>
-                        </View>
-                    ))}
-                    <Pressable
-                        style={styles.sourcesToggleButton}
-                        onPress={() => setScienceGeneralExpanded((prev) => !prev)}
-                        accessibilityRole="button"
-                        accessibilityLabel={
-                            scienceGeneralExpanded
-                                ? (scienceUsesTrueOds ? 'Hide NIH ODS detail' : 'Hide general science detail')
-                                : (scienceUsesTrueOds ? 'Learn more from NIH ODS' : 'Learn more from general science')
-                        }
-                    >
-                        <Text style={styles.sourcesToggleButtonText}>
-                            {scienceGeneralExpanded
-                                ? 'Hide details'
-                                : (scienceUsesTrueOds ? 'Learn more (NIH ODS)' : 'Learn more (general science)')}
-                        </Text>
-                    </Pressable>
-                </View>
-                {scienceGeneralExpanded ? (
-                    <View style={[styles.embeddedPanel, { marginTop: 12 }]}>
-                        {disableOdsPanel ? (
-                            <Text style={styles.detailBodyText}>ODS panel disabled by dashboard bisection flag.</Text>
-                        ) : (
-                            <OdsFoundationPanel ingredientName={activeIngredientName} mode="science" />
-                        )}
-                    </View>
-                ) : null}
-            </GlassCard>
-
             <GlassCard
                 title="What this product provides"
                 subtitle="Verified product-specific fields"
                 accentColor="#D97706"
-                right={<GlassPill label={resolveSimpleTaxonomyLabel('Official record')} />}
+                right={<GlassPill label={scienceIngredientBadgeLabel} />}
             >
-                <View style={{ marginBottom: 12 }}>
-                    <Text style={styles.detailMetaLabel}>Official record snapshot</Text>
+                <View style={{ marginBottom: (chemicalFormDisplayText || deliveryTypeDisplayText) ? 12 : 0 }}>
                     <View style={styles.ingredientsList}>
-                        {scienceIngredientsAll.length > 0 ? (
-                            scienceIngredientsAll.map((item, idx) => (
+                        {decisionScienceIngredientRows.length > 0 ? (
+                            decisionScienceIngredientRows.map((item, idx) => (
                                 <View key={`${item.key}-${idx}`} style={styles.ingredientsListRow}>
                                     <View style={{ flex: 1 }}>
                                         <Text style={styles.ingredientsListName}>{item.name}</Text>
                                         {item.dose ? (
-                                            <Text style={styles.ingredientsListDose}>
-                                                {item.dose}
-                                            </Text>
+                                            <Text style={styles.ingredientsListDose}>{item.dose}</Text>
                                         ) : (
                                             <Text style={styles.ingredientsListDoseMuted}>Dose not disclosed</Text>
                                         )}
@@ -4867,103 +5399,134 @@ const AnalysisBundleDashboard: React.FC<{
                             <Text style={styles.detailPlaceholderText}>
                                 {isDataCeiling && dataCeilingScienceLead && dataCeilingScienceAction
                                     ? `${dataCeilingScienceLead} ${dataCeilingScienceAction}`
-                                    : 'Scan the Supplement Facts panel to unlock ingredient analysis.'}
+                                    : 'Verified ingredient rows are still loading.'}
                             </Text>
                         )}
                     </View>
                 </View>
 
-                {activeProductInsight || activeInsightFromDto || hasFactsSpecificForm || Boolean(supplementalFormFromSnapshot) ? (
-                    <View style={{ gap: 10 }}>
-                        <View style={styles.kvGrid}>
+                {(chemicalFormDisplayText || deliveryTypeDisplayText) ? (
+                    <View style={styles.kvGrid}>
+                        {chemicalFormDisplayText ? (
                             <View style={styles.kvRow}>
-                                <Text style={styles.kvLabel}>Form</Text>
-                                <Text style={styles.kvValue}>{activeFormDisplayText}</Text>
+                                <Text style={styles.kvLabel}>Chemical Form</Text>
+                                <Text style={styles.kvValue}>{chemicalFormDisplayText}</Text>
                             </View>
-                        </View>
-                        {detailsPossibleFormLine ? (
-                            <Text style={styles.detailBodyText}>{detailsPossibleFormLine}</Text>
                         ) : null}
-
-                        {SHOW_SCAN_DEBUG && activeRuntimeNotes ? (
-                            <View style={styles.reasonBlock}>
-                                <View style={styles.reasonHeaderRow}>
-                                    <Text style={styles.reasonTitle}>Extra context</Text>
-                                    {activeRuntimeNotes.meta?.source ? (
-                                        <Text style={styles.detailMetaLabel}>Source: {activeRuntimeNotes.meta.source}</Text>
-                                    ) : null}
-                                </View>
-                                <View style={{ marginTop: 8, gap: 8 }}>
-                                    {(
-                                        Object.values(activeRuntimeNotes.segmentsByBucket ?? {}).flat()
-                                            .slice(0, 6)
-                                    ).map((r: string, idx: number) => (
-                                        <View key={`kb-${idx}`} style={styles.bulletRow}>
-                                            <View style={styles.bulletDot} />
-                                            <Text style={styles.bulletText}>{r}</Text>
-                                        </View>
-                                    ))}
-                                </View>
+                        {deliveryTypeDisplayText ? (
+                            <View style={styles.kvRow}>
+                                <Text style={styles.kvLabel}>Delivery Type</Text>
+                                <Text style={styles.kvValue}>{deliveryTypeDisplayText}</Text>
                             </View>
+                        ) : null}
+                    </View>
+                ) : null}
+            </GlassCard>
+
+            <GlassCard
+                title="Ingredient overview"
+                subtitle="Core ingredient identity and formula context"
+                accentColor="#D97706"
+                right={<GlassPill label={resolveSimpleTaxonomyLabel('AI summary')} />}
+            >
+                {ingredientOverviewState?.status === 'loading' ? (
+                    <View style={styles.inlineLoadingRow}>
+                        <ActivityIndicator />
+                        <Text style={styles.inlineLoadingText}>Generating overview…</Text>
+                    </View>
+                ) : ingredientOverviewState?.status === 'ok' && ingredientOverviewState.data ? (
+                    <View style={{ gap: 12 }}>
+                        {ingredientOverviewTitleLine ? (
+                            <Text style={styles.summarySectionTitle}>{ingredientOverviewTitleLine}</Text>
+                        ) : null}
+                        {ingredientOverviewParagraphOne ? (
+                            <Text style={styles.detailNarrativeText}>{ingredientOverviewParagraphOne}</Text>
+                        ) : null}
+                        {ingredientOverviewParagraphTwo ? (
+                            <Text style={styles.detailNarrativeText}>{ingredientOverviewParagraphTwo}</Text>
+                        ) : null}
+                        {ingredientOverviewCompareHint ? (
+                            <Text style={styles.detailBodyText}>{ingredientOverviewCompareHint}</Text>
                         ) : null}
                     </View>
                 ) : (
-                    <View style={styles.emptyStateBox}>
-                        <Text style={styles.emptyStateTitle}>Record-level ingredient detail is limited for this ingredient.</Text>
-                        <Text style={styles.emptyStateText}>
-                            Scan a clear Supplement Facts panel to improve ingredient detail quality.
-                        </Text>
-                    </View>
+                    <Text style={styles.detailPlaceholderText}>Ingredient overview is pending.</Text>
                 )}
             </GlassCard>
 
             <GlassCard
-                title="Balanced overview"
-                subtitle="AI summary grounded to verified facts + general science"
+                title="Scientific background"
+                subtitle="Research context for the selected ingredient"
                 accentColor="#D97706"
-                right={<GlassPill label={resolveSimpleTaxonomyLabel('AI summary')} />}
+                right={<GlassPill label={resolveSimpleTaxonomyLabel('General science')} />}
             >
-                {deepseekLoading ? (
-                    <View style={styles.inlineLoadingRow}>
-                        <ActivityIndicator />
-                        <Text style={styles.inlineLoadingText}>Generating summary…</Text>
-                    </View>
-                ) : deepseekError ? (
-                    <View style={styles.emptyStateBox}>
-                        <Text style={styles.emptyStateTitle}>Summary unavailable</Text>
-                        <Text style={styles.emptyStateText}>{deepseekError}</Text>
-                    </View>
-                ) : activeSummary?.status === 'ok' ? (
-                    <View style={{ gap: 12 }}>
-                        <Text style={styles.summaryMainText}>{activeSummary.tldr}</Text>
+                <View style={{ gap: 12 }}>
+                    {showIngredientSelector ? (
+                        <View style={{ gap: 10 }}>
+                            <Text style={styles.detailMetaLabel}>Choose an ingredient for scientific background</Text>
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={styles.ingredientSelectorRow}
+                            >
+                                {keyIngredientsForDetail.map((name) => {
+                                    const key = normalizeIngredientNameForBackground(name);
+                                    const isActive = key === activeIngredientKey;
+                                    return (
+                                        <Pressable
+                                            key={key}
+                                            onPress={() => setActiveIngredientName(name)}
+                                            style={[
+                                                styles.ingredientChip,
+                                                isActive ? styles.ingredientChipActive : null,
+                                            ]}
+                                        >
+                                            <DashboardBlur intensity={isActive ? 22 : 14} tint="light" style={StyleSheet.absoluteFill} />
+                                            <Text style={[styles.ingredientChipText, isActive ? styles.ingredientChipTextActive : null]} numberOfLines={1}>
+                                                {capitalizeSentences(name)}
+                                            </Text>
+                                        </Pressable>
+                                    );
+                                })}
+                            </ScrollView>
+                            <Text style={styles.detailMetaText}>{scientificBackgroundIntroLine}</Text>
+                        </View>
+                    ) : null}
 
-                        {customerSummaryHighlights.length > 0 ? (
-                            <View style={{ gap: 8 }}>
-                                <Text style={styles.summarySectionTitle}>Highlights</Text>
-                                {customerSummaryHighlights.map((b: string, idx: number) => (
-                                    <View key={`sum-h-${idx}`} style={styles.bulletRow}>
-                                        <View style={styles.bulletDot} />
-                                        <Text style={styles.bulletText}>{b}</Text>
-                                    </View>
-                                ))}
-                            </View>
-                        ) : null}
-
-                        {customerSummaryCaveats.length > 0 ? (
-                            <View style={{ gap: 8 }}>
-                                <Text style={styles.summarySectionTitle}>Limitations</Text>
-                                {customerSummaryCaveats.map((b: string, idx: number) => (
-                                    <View key={`sum-c-${idx}`} style={styles.bulletRow}>
-                                        <View style={styles.bulletDot} />
-                                        <Text style={styles.bulletText}>{b}</Text>
-                                    </View>
-                                ))}
-                            </View>
-                        ) : null}
-                    </View>
-                ) : (
-                    <Text style={styles.detailPlaceholderText}>Ingredient summary is pending.</Text>
-                )}
+                    {scientificBackgroundState?.status === 'loading' ? (
+                        <View style={styles.inlineLoadingRow}>
+                            <ActivityIndicator />
+                            <Text style={styles.inlineLoadingText}>Generating scientific background…</Text>
+                        </View>
+                    ) : scientificBackgroundState?.status === 'ok' && scientificBackgroundState.data ? (
+                        <View style={{ gap: 16 }}>
+                            {!showIngredientSelector ? (
+                                <Text style={styles.detailMetaText}>{scientificBackgroundIntroLine}</Text>
+                            ) : null}
+                            {scientificBackgroundSections.map((section, idx) => (
+                                <View key={`scientific-background-section-${idx}`} style={{ gap: 8 }}>
+                                    <Text style={styles.summarySectionTitle}>{section.heading}</Text>
+                                    <Text style={styles.detailNarrativeText}>{section.summary}</Text>
+                                    {section.bullets.map((bullet, bulletIndex) => (
+                                        <View key={`scientific-background-bullet-${idx}-${bulletIndex}`} style={styles.bulletRow}>
+                                            <View style={styles.bulletDot} />
+                                            <Text style={styles.bulletText}>{bullet}</Text>
+                                        </View>
+                                    ))}
+                                    <Text style={styles.detailBodyText}>{section.evidenceRead}</Text>
+                                    {section.shopperMeaning ? (
+                                        <Text style={styles.detailBodyText}>{section.shopperMeaning}</Text>
+                                    ) : null}
+                                </View>
+                            ))}
+                            {scientificBackgroundClosingNote ? (
+                                <Text style={styles.detailBodyText}>{scientificBackgroundClosingNote}</Text>
+                            ) : null}
+                        </View>
+                    ) : (
+                        <Text style={styles.detailPlaceholderText}>Scientific background is pending.</Text>
+                    )}
+                </View>
             </GlassCard>
 
             {detailError ? (
@@ -5251,12 +5814,7 @@ const AnalysisBundleDashboard: React.FC<{
     });
     const [safetySummaryByRequestKey, setSafetySummaryByRequestKey] = useState<Record<string, SafetySummaryState>>({});
     useEffect(() => {
-        setRuntimeKbNotesByKey({});
-        setSummaryByIngredient({});
         setSafetySummaryByRequestKey({});
-        setScienceGeneralExpanded(false);
-        setActiveIngredientName(keyIngredientsForDetail[0] ?? null);
-        setActiveSafetyIngredientName(keyIngredientsForSafety[0] ?? null);
     }, [incomingBundleRunKey]);
     const safetySummaryFallback = useMemo(() => {
         const riskLine = ensurePeriod(
@@ -5584,9 +6142,9 @@ const AnalysisBundleDashboard: React.FC<{
             labelColor: '#D6E5FF',
             viewLabel: t.analysisView,
             eyebrow: t.analysisEyebrowCoreBenefits,
-            summary: { text: overviewSummaryText },
+            summary: authoritativeOverviewTileSummary,
             summaryLines: 2,
-            bullets: overviewBullets,
+            bullets: authoritativeOverviewTileBullets,
             bulletLimit: 2,
             bulletLines: 2,
             dataStatus: unifiedOverviewDataStatus,
@@ -5606,7 +6164,7 @@ const AnalysisBundleDashboard: React.FC<{
             labelColor: '#ea580c',
             viewLabel: t.analysisView,
             eyebrow: t.analysisEyebrowKeyMechanism,
-            mechanisms: ingredientMechanisms,
+            mechanisms: authoritativeScienceTileMechanisms,
             footerText: scienceTileFooterText,
             dataStatus: unifiedIngredientsDataStatus,
             content: ingredientsContent,
@@ -5684,6 +6242,9 @@ const AnalysisBundleDashboard: React.FC<{
             : resolveReasonCodeMessage(scoreReasonCode);
 
     const hasNumber = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+    // SCORE_SECTION_FROZEN_PAYLOAD_START
+    // Treat the score ring/card contract as frozen unless the user explicitly requests a score change.
+    // Detail-sheet copy, AI summaries, and modal rewrites must not become score inputs by accident.
     const scoreCardPayload = decisionTemplatePayload?.nutriScoreCard ?? null;
     const scoreCardV2Payload = decisionTemplatePayload?.nutriScoreCardV2 ?? null;
     const scoreCardV2Modules = Array.isArray(scoreCardV2Payload?.modules)
@@ -5693,6 +6254,7 @@ const AnalysisBundleDashboard: React.FC<{
         if (scoreCardV2Modules.length === 6) return scoreCardV2Modules;
         return [];
     }, [scoreCardV2Modules]);
+    // SCORE_SECTION_FROZEN_PAYLOAD_END
     const telemetrySourceTierUsage = useMemo(() => {
         const counts = {
             official: 0,
@@ -5732,7 +6294,7 @@ const AnalysisBundleDashboard: React.FC<{
     ]);
     const usedCategorySpecificRanking = useMemo(() => {
         if (!isOmegaLikeCover) return false;
-        const topNames = ingredientMechanisms
+        const topNames = authoritativeScienceTileMechanisms
             .slice(0, 3)
             .map((item) => normalizeText(item?.name).toLowerCase())
             .filter(Boolean);
@@ -5740,20 +6302,27 @@ const AnalysisBundleDashboard: React.FC<{
         const hasOmegaActives = topNames.some((name) => /total omega|epa|dha|fish oil/.test(name));
         const hasNutritionFallback = topNames.some((name) => /calories|total fat/.test(name));
         return hasOmegaActives && !hasNutritionFallback;
-    }, [ingredientMechanisms, isOmegaLikeCover]);
+    }, [authoritativeScienceTileMechanisms, isOmegaLikeCover]);
     const usedFallbackCopyCount = useMemo(() => {
         const fallbackPattern =
-            /still loading|open this card|general reminder|follow the package label directions|safety data is limited|key product facts are summarized|active ingredient details are still loading/i;
+            /still loading|open this card|general reminder|follow the package label directions|safety data is limited|key product facts are summarized|active ingredient details are still loading|latest verified product details are loading|loading verified product facts|verified ingredient details loading|preparing facts/i;
         const lines: string[] = [
-            overviewSummaryText,
-            ...overviewBullets.map((item) => item.text),
+            authoritativeOverviewTileSummary.text,
+            ...authoritativeOverviewTileBullets.map((item) => item.text),
             usageRoutine,
             ...usageBullets.map((item) => item.text),
             safetyWarningCoverText,
             safetyTipCoverText,
         ];
         return lines.reduce((count, line) => (fallbackPattern.test(normalizeText(line)) ? count + 1 : count), 0);
-    }, [overviewBullets, overviewSummaryText, safetyTipCoverText, safetyWarningCoverText, usageBullets, usageRoutine]);
+    }, [
+        authoritativeOverviewTileBullets,
+        authoritativeOverviewTileSummary.text,
+        safetyTipCoverText,
+        safetyWarningCoverText,
+        usageBullets,
+        usageRoutine,
+    ]);
     const overlayConsumerFieldHitCount =
         telemetrySourceTierUsage.official
         + telemetrySourceTierUsage.scanned
@@ -5802,6 +6371,7 @@ const AnalysisBundleDashboard: React.FC<{
         usedCategorySpecificRanking,
         usedFallbackCopyCount,
     ]);
+    // SCORE_SECTION_FROZEN_STATE_START
     const scoreCardRows = scoreCardPayload?.rows ?? [];
     const scoreCardChecklists = scoreCardPayload?.checklistsByRow ?? null;
     const overviewBlock = decisionOverviewBlock;
@@ -5941,6 +6511,7 @@ const AnalysisBundleDashboard: React.FC<{
         effectiveScoreUiMode === 'scored'
             ? ringMetaLinesRaw.filter((line) => !scoreMetaBlockedReasons.has(line))
             : ringMetaLinesRaw;
+    // SCORE_SECTION_FROZEN_STATE_END
 
     const baseScoreDescriptions =
         effectiveScoreUiMode === 'scored'
@@ -6104,11 +6675,6 @@ const AnalysisBundleDashboard: React.FC<{
         : usageDirectionsTier === 'overlay_iherb'
             ? 'Supplemental label data'
             : sourceTierLabel('official_record');
-    const scienceAiSummary = scienceBlock?.aiSummaryContract3 ?? [
-        'This ingredient is commonly selected for goal-oriented support.',
-        'This product provides label-disclosed ingredient information for comparison.',
-        `Largest limitation: ${overviewMissingInfo[0] ?? 'verify package directions and cautions before purchase.'}`,
-    ];
     const safetyWarnings = (safetyBlock?.labelWarnings && safetyBlock.labelWarnings.length > 0)
         ? safetyBlock.labelWarnings
         : safetyLabelLines;
@@ -6358,6 +6924,7 @@ const AnalysisBundleDashboard: React.FC<{
                 ) : null}
 
                 <>
+                        {/* SCORE_SECTION_FROZEN_RENDER_START */}
                         <View style={styles.scoreSection}>
                             <View style={styles.scoreHeroCard}>
                                 {!disableScoreRing ? (
@@ -6382,6 +6949,7 @@ const AnalysisBundleDashboard: React.FC<{
 
                             </View>
                         </View>
+                        {/* SCORE_SECTION_FROZEN_RENDER_END */}
 
                         {!disableTilesGrid ? (
                             <>
@@ -8610,6 +9178,11 @@ const styles = StyleSheet.create({
         color: 'rgba(17,24,39,0.8)',
     },
     detailLeadText: {
+        fontSize: 15,
+        lineHeight: 22,
+        color: '#111827',
+    },
+    detailNarrativeText: {
         fontSize: 15,
         lineHeight: 22,
         color: '#111827',

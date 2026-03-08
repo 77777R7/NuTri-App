@@ -486,6 +486,13 @@ export type MySupplementOverviewV2 = {
   watchOuts: string[];
 };
 
+export type ProductOverviewWhatIsIt = {
+  mode: "short" | "rich";
+  lead: string;
+  whatItIs: string;
+  whyPeopleTakeIt: string;
+};
+
 const PROMPT_MY_SUPPLEMENT_OVERVIEW_V2 = `You are NuTri-AI. Convert structured supplement facts into a helpful, user-facing overview.
 
 CRITICAL INSTRUCTIONS:
@@ -502,6 +509,33 @@ Return a SINGLE JSON object with exactly these keys:
   "tips": ["1-3 short tips grounded in facts. Empty array if none."],
   "whatYouMayNotice": ["0-3 cautious observations. Empty array if none."],
   "watchOuts": ["0-4 cautious safety reminders (consult clinician wording). Empty array if none."]
+}
+`;
+
+const PROMPT_PRODUCT_OVERVIEW_WHAT_IS_IT = `You are NuTri-AI. Write a shopper-facing English overview for a supplement detail page.
+
+CRITICAL INSTRUCTIONS:
+1. OUTPUT JSON ONLY. NO MARKDOWN. NO TRAILING COMMAS.
+2. Write in ENGLISH ONLY.
+3. This card answers only: what the product is, what kind of supplement it is, and why people commonly take it.
+4. Mention real ingredient names or a real supplement type. Avoid vague filler.
+5. Do NOT make disease, diagnosis, treatment, cure, or prevention claims.
+6. Do NOT include timing, with-food guidance, doctor advice, serving strength, count, or dosage-form facts. Those are shown elsewhere.
+7. Do NOT confuse source context with chemical form. Source context may be mentioned as background only.
+8. Use "rich" only when the product is simple, the primary ingredient is clear, and one short mechanism sentence can be explained in plain English without sounding medical.
+9. Keep the tone specific, shopper-friendly, and plain-English. Avoid hype such as "best form", "high absorption", "superior bioavailability", or "clinically proven".
+
+STYLE REFERENCE (do not copy unless it matches the facts):
+- Rich mode can sound like:
+  "Astaxanthin is a carotenoid antioxidant commonly derived from microalgae such as Haematococcus pluvialis. It is widely used as a dietary supplement for antioxidant support."
+  "People typically take astaxanthin supplements for antioxidant support, skin health, eye comfort, and exercise recovery. Because it is fat-soluble, it is often discussed in the context of cell-membrane antioxidant activity."
+
+Return a SINGLE JSON object with exactly these keys:
+{
+  "mode": "short or rich",
+  "lead": "One sentence that identifies the product or ingredient clearly.",
+  "whatItIs": "One sentence that explains what type of supplement it is and any safe source/background context.",
+  "whyPeopleTakeIt": "One or two sentences explaining common shopper use, with at most one short plain-English mechanism sentence in rich mode."
 }
 `;
 
@@ -626,6 +660,123 @@ export async function fetchMySupplementOverviewV2(
       options.breaker?.recordFailure();
     }
     console.warn("[DeepSeek] MySupplement overview V2 generation failed", error);
+    return null;
+  } finally {
+    release?.();
+  }
+}
+
+export async function fetchProductOverviewWhatIsIt(
+  context: string,
+  model: string,
+  apiKey: string,
+  options: ResilienceOptions = {},
+): Promise<ProductOverviewWhatIsIt | null> {
+  let release: (() => void) | null = null;
+  try {
+    if (options.breaker && !options.breaker.canRequest()) {
+      return null;
+    }
+
+    const timeoutMs = options.timeoutMs ?? 6_500;
+    const budgetedTimeout = options.budget ? options.budget.msFor(timeoutMs) : timeoutMs;
+    if (budgetedTimeout <= 0) {
+      return null;
+    }
+
+    if (options.semaphore) {
+      try {
+        release = await options.semaphore.acquire({
+          timeoutMs: options.queueTimeoutMs ?? 0,
+          signal: options.signal,
+        });
+      } catch {
+        return null;
+      }
+    }
+
+    const retryConfig: RetryOptions = {
+      maxAttempts: options.retry?.maxAttempts ?? 1,
+      baseDelayMs: options.retry?.baseDelayMs ?? 350,
+      maxDelayMs: options.retry?.maxDelayMs ?? 1200,
+      jitterRatio: options.retry?.jitterRatio ?? 0.35,
+      shouldRetry: (error) => {
+        if (error instanceof TimeoutError) return true;
+        if (error instanceof HttpError) return isRetryableStatus(error.status);
+        if (isAbortError(error)) return false;
+        return error instanceof TypeError;
+      },
+      signal: options.signal,
+      budget: options.budget,
+    };
+
+    const response = await withRetry(async () => {
+      const timeoutSignal = createTimeoutSignal(budgetedTimeout);
+      const { signal, cleanup } = combineSignals([options.signal, timeoutSignal]);
+      try {
+        const result = await fetch("https://api.deepseek.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: "system", content: PROMPT_PRODUCT_OVERVIEW_WHAT_IS_IT },
+              { role: "user", content: context },
+            ],
+            temperature: 0.1,
+            stream: false,
+            max_tokens: options.maxTokens ?? 900,
+            response_format: { type: "json_object" },
+          }),
+          signal,
+        });
+
+        if (!result.ok) {
+          throw new HttpError(result.status, `DeepSeek API error: ${result.status}`);
+        }
+
+        return result;
+      } catch (error) {
+        if (timeoutSignal.aborted && !options.signal?.aborted && isAbortError(error)) {
+          throw new TimeoutError();
+        }
+        throw error;
+      } finally {
+        cleanup();
+      }
+    }, retryConfig);
+
+    options.breaker?.recordSuccess();
+
+    const data = (await response.json()) as { choices?: { message?: { content?: string } }[] };
+    const content = data.choices?.[0]?.message?.content || "{}";
+    const parsed = tryParseJsonLenient(content);
+    if (!parsed || typeof parsed !== "object") {
+      return null;
+    }
+
+    const record = parsed as Record<string, unknown>;
+    const mode = record.mode === "rich" ? "rich" : "short";
+    const lead = typeof record.lead === "string" ? record.lead.trim() : "";
+    const whatItIs = typeof record.whatItIs === "string" ? record.whatItIs.trim() : "";
+    const whyPeopleTakeIt = typeof record.whyPeopleTakeIt === "string" ? record.whyPeopleTakeIt.trim() : "";
+
+    if (!lead || !whatItIs || !whyPeopleTakeIt) {
+      return null;
+    }
+
+    return {
+      mode,
+      lead,
+      whatItIs,
+      whyPeopleTakeIt,
+    };
+  } catch (error) {
+    options.breaker?.recordFailure();
+    console.warn("[DeepSeek] Product Overview 'What is it?' generation failed", error);
     return null;
   } finally {
     release?.();

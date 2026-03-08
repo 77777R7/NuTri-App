@@ -169,7 +169,110 @@ test('vitamin c decision support confirms chemical form and UL comparison from s
   assert.equal(testingItem?.key, 'testing_verification:third_party_tested_claim');
   assert.equal(testingItem?.note, null);
 
+  assert.equal(compiled.scienceBlock.ingredientSourceTier, 'overlay_iherb');
+  assert.deepEqual(compiled.scienceBlock.ingredientRows, [
+    {
+      name: 'Vitamin C (as Ascorbic Acid)',
+      dose: '1000 mg',
+    },
+  ]);
+
   const snapshotNames = compiled.scienceBlock.ingredientSnapshotNames ?? [];
+  assert.deepEqual(snapshotNames, (compiled.scienceBlock.ingredientRows ?? []).map((row) => row.name));
   assert.equal(new Set(snapshotNames.map((name) => name.toLowerCase())).size, snapshotNames.length);
   assert.equal(snapshotNames.some((name) => /[.!?]$/.test(name)), false);
+
+  const aiSummaryText = (compiled.scienceBlock.aiSummaryContract3 ?? []).join(' ');
+  assert.match(aiSummaryText, /Vitamin C \(as Ascorbic Acid\)/i);
+  assert.match(aiSummaryText, /1000 mg/i);
+});
+
+test('decision support falls back to official science rows when iHerb coverage fails', () => {
+  const digest: FactsDigest = {
+    sourceType: 'dsld',
+    identity: {
+      type: 'dsldLabelId',
+      value: 'fallback-fixture',
+      regionTags: ['US'],
+    },
+    product: {
+      brandDisplay: 'Fallback Brand',
+      name: 'Vitamin C plus Rose Hips',
+      dosageForm: 'Capsule',
+      route: null,
+    },
+    actives: [
+      {
+        name: 'Vitamin C',
+        amount: 1000,
+        unit: 'mg',
+        source: 'dsld',
+        confidence: 1,
+      },
+      {
+        name: 'Rose Hips',
+        amount: 100,
+        unit: 'mg',
+        source: 'dsld',
+        confidence: 1,
+      },
+    ],
+    inactives: [],
+    serving: {
+      servingSize: '1 Capsule',
+      servingsPerContainer: 60,
+    },
+    labelDosing: [],
+    warnings: {
+      warnings: [],
+      consultDoctorIf: [],
+      redFlags: [],
+      missingFlag: true,
+    },
+    claims: {
+      labelPurposes: [],
+      webClaims: [],
+    },
+    quality: {
+      isComplete: true,
+      missingFields: [],
+      completenessScore: 90,
+    },
+  };
+
+  const compiled = compileDecisionSupport({
+    digest,
+    factsDigestHash: 'fallback-coverage-fixture',
+    viewMode: 'details',
+    overlayClaims: {
+      provider: 'iherb',
+      productId: 'fallback-coverage-fixture',
+      link: null,
+      categories: [],
+      description: null,
+      suggestedUse: null,
+      otherIngredients: null,
+      warnings: null,
+      disclaimer: null,
+      nutritionalFacts: [
+        {
+          substancy: 'Vitamin C (as Ascorbic Acid)',
+          amountPerServing: '1000 mg',
+          dailyValuePercent: '1111%',
+        },
+      ],
+    },
+  });
+
+  assert.equal(compiled.scienceBlock.ingredientSourceTier, 'official_record');
+  assert.deepEqual(compiled.scienceBlock.ingredientRows, [
+    {
+      name: 'Vitamin C',
+      dose: '1000 mg',
+    },
+    {
+      name: 'Rose Hips',
+      dose: '100 mg',
+    },
+  ]);
 });

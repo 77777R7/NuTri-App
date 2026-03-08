@@ -52,6 +52,7 @@ import {
   fetchAnalysisBundleFastV3,
   fetchIngredientsDetailV3,
   fetchMySupplementOverviewV2,
+  fetchProductOverviewWhatIsIt,
   prepareContextSources
 } from "./deepseek.js";
 import {
@@ -101,7 +102,26 @@ import {
   safetySummaryPacketSchema,
   usageSummaryPacketSchema,
 } from "./insights/sectionSummaryCompiler.js";
+import {
+  compileIngredientOverviewAsync,
+} from "./insights/ingredientOverviewCompiler.js";
+import {
+  compileScientificBackgroundAsync,
+  resolveScientificBackgroundExecutionProfile,
+  SCIENTIFIC_BACKGROUND_PROMPT_VERSION,
+  planScientificBackgroundSections,
+} from "./insights/scientificBackgroundCompiler.js";
+import type {
+  ScientificBackgroundExecutionProfile,
+} from "./insights/scientificBackgroundCompiler.js";
+import {
+  buildProductOverviewWhatIsItFallback,
+} from "./insights/productOverviewWhatIsItFallback.js";
 import { compileIngredientSummaryAsync, ingredientSummaryPacketSchema } from "./insights/summaryCompiler.js";
+import {
+  buildIngredientScienceContext,
+  normalizeIngredientScienceKey,
+} from "./ingredientScienceContext.js";
 import { verifyWebOwnership } from "./insights/webOwnership.js";
 import { getKbRuntime, lookupKbFormExplain, lookupKbRuntimeFormInsights, lookupSafeScienceSignals } from "./kbRuntime.js";
 import { analyzeLabelDraftWithDiagnostics, formatForDeepSeek, needsConfirmation, validateIngredient, type LabelAnalysisDiagnostics, type LabelDraft } from "./labelAnalysis.js";
@@ -8020,6 +8040,7 @@ const trackEnsureOverviewStart = (inflightKey: string): number => {
 const MY_SUPP_OVERVIEW_V2_PROMPT_VERSION = "my_supp_overview_v2:v1";
 const MY_SUPP_OVERVIEW_V2_GATE_SECTION = "my_supp_overview_v2_gate";
 const MY_SUPP_OVERVIEW_V2_GATE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
+const PRODUCT_OVERVIEW_WHAT_IS_IT_PROMPT_VERSION = "product_overview_what_is_it:v1";
 
 // Ensure-overview (Facts-first) budgets: facts must return fast even on cache miss.
 const ENSURE_OVERVIEW_FACTS_BUDGET_MS = 1800;
@@ -10158,6 +10179,187 @@ const fetchIherbOverlayClaimsByBarcode = async (
   }
 };
 
+const ingredientOverviewBodySchema = z.object({
+  barcode: z.string().trim().min(1),
+  decisionDigest: z.string().trim().min(1).nullable().optional(),
+}).strict();
+
+const scientificBackgroundBodySchema = z.object({
+  barcode: z.string().trim().min(1),
+  decisionDigest: z.string().trim().min(1).nullable().optional(),
+  selectedIngredientName: z.string().trim().min(1),
+}).strict();
+
+const INGREDIENT_OVERVIEW_SIDECAR_TIMEOUT_MS = 8_500;
+const SCIENCE_SIDECAR_MAX_RETRIES = 0;
+const SCIENTIFIC_BACKGROUND_RESULT_CACHE_LIMIT = 120;
+const SCIENTIFIC_BACKGROUND_RESEARCH_FALLBACK_CACHE_TTL_MS = 20_000;
+const SCIENTIFIC_BACKGROUND_BACKGROUND_REFRESH_TIMEOUT_MS = 24_000;
+
+type ScientificBackgroundSidecarResponse = {
+  status: "ok";
+  digest: string;
+  scientificBackground: Awaited<ReturnType<typeof compileScientificBackgroundAsync>>["scientificBackground"];
+  source: Awaited<ReturnType<typeof compileScientificBackgroundAsync>>["source"];
+  fallbackUsed: boolean;
+  promptVersion: string;
+};
+
+type ScientificBackgroundSidecarCacheEntry = {
+  expiresAt: number;
+  payload: ScientificBackgroundSidecarResponse;
+};
+
+const scientificBackgroundSidecarCache = new Map<string, ScientificBackgroundSidecarCacheEntry>();
+const scientificBackgroundSidecarInflight = new Map<string, Promise<ScientificBackgroundSidecarResponse>>();
+const scientificBackgroundSidecarBackgroundRefresh = new Map<string, Promise<void>>();
+
+const readScientificBackgroundSidecarCache = (
+  cacheKey: string,
+): ScientificBackgroundSidecarResponse | null => {
+  const entry = scientificBackgroundSidecarCache.get(cacheKey);
+  if (!entry) return null;
+  if (entry.expiresAt <= Date.now()) {
+    scientificBackgroundSidecarCache.delete(cacheKey);
+    return null;
+  }
+  return entry.payload;
+};
+
+const writeScientificBackgroundSidecarCache = (
+  cacheKey: string,
+  payload: ScientificBackgroundSidecarResponse,
+  ttlMs: number,
+): void => {
+  scientificBackgroundSidecarCache.set(cacheKey, {
+    expiresAt: Date.now() + ttlMs,
+    payload,
+  });
+  if (scientificBackgroundSidecarCache.size <= SCIENTIFIC_BACKGROUND_RESULT_CACHE_LIMIT) return;
+  const oldestKey = scientificBackgroundSidecarCache.keys().next().value;
+  if (typeof oldestKey === "string") {
+    scientificBackgroundSidecarCache.delete(oldestKey);
+  }
+};
+
+const resolveScientificBackgroundCacheTtlMs = (
+  payload: ScientificBackgroundSidecarResponse,
+  executionProfile: ScientificBackgroundExecutionProfile,
+): number => {
+  if (payload.source === "api") return executionProfile.cacheTtlMs;
+  if (payload.scientificBackground.mode === "research_mode") {
+    return SCIENTIFIC_BACKGROUND_RESEARCH_FALLBACK_CACHE_TTL_MS;
+  }
+  return executionProfile.cacheTtlMs;
+};
+
+const buildDecisionSupportDigestMismatchPayload = (latestDigest: string) => ({
+  error: "DECISION_SUPPORT_DIGEST_MISMATCH",
+  reasonCode: "DECISION_SUPPORT_DIGEST_MISMATCH",
+  message: "Decision support content has updated. Refresh with latest digest.",
+  latestDigest,
+});
+
+const buildDeepseekJsonLlmFn = (params: {
+  deepseekKey: string | null;
+  deepseekModel: string;
+  timeoutMs: number;
+  maxTokens: number;
+}): ((prompt: string) => Promise<string>) | undefined => {
+  if (!params.deepseekKey) return undefined;
+
+  return async (prompt: string): Promise<string> => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), params.timeoutMs);
+    try {
+      const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${params.deepseekKey}`,
+        },
+        body: JSON.stringify({
+          model: params.deepseekModel,
+          messages: [
+            {
+              role: "system",
+              content:
+                "Return ONLY a valid JSON object. No markdown. No commentary. No code fences.",
+            },
+            { role: "user", content: prompt },
+          ],
+          temperature: 0.1,
+          stream: false,
+          max_tokens: params.maxTokens,
+          response_format: { type: "json_object" },
+        }),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`deepseek_http_${response.status}`);
+      }
+
+      const payload = (await response.json()) as {
+        choices?: Array<{ message?: { content?: string } }>;
+      };
+      const content = payload.choices?.[0]?.message?.content;
+      if (typeof content !== "string" || content.trim().length === 0) {
+        throw new Error("deepseek_empty_content");
+      }
+      return content;
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+};
+
+const buildDecisionSupportAuthorityBundle = async (
+  normalizedBarcode: NormalizedBarcode,
+): Promise<{
+  barcodeGtin14: string;
+  overlayClaims: DecisionSupportOverlayClaims | null;
+  quickDigest: Awaited<ReturnType<typeof buildMySupplementDigestQuick>>;
+  patched: ReturnType<typeof applyPatchShadowToFactsDigest>;
+  decisionSupport: ReturnType<typeof compileDecisionSupport>;
+  ingredientScienceContext: ReturnType<typeof buildIngredientScienceContext>;
+}> => {
+  const barcodeGtin14 = normalizedBarcode.code.padStart(14, "0");
+  const overlayClaims = await fetchIherbOverlayClaimsByBarcode(barcodeGtin14);
+  const quickDigest = await buildMySupplementDigestQuick({
+    supplementId: barcodeGtin14,
+    barcode: normalizedBarcode.code,
+    brandName: "",
+    productName: "",
+    budgetMs: 4_500,
+  });
+  const patched = applyPatchShadowToFactsDigest({
+    digest: quickDigest.digest,
+    barcodeGtin14,
+  });
+  const decisionSupport = compileDecisionSupport({
+    digest: patched.digest,
+    factsDigestHash: quickDigest.factsDigestHash,
+    viewMode: DECISION_SUPPORT_DEFAULT_VIEW_MODE,
+    flagsSnapshot: collectDecisionSupportFlagsSnapshot(),
+    patchActivation: patched.activation,
+    overlayClaims,
+  });
+  const ingredientScienceContext = buildIngredientScienceContext({
+    digest: patched.digest,
+    overlayClaims,
+  });
+
+  return {
+    barcodeGtin14,
+    overlayClaims,
+    quickDigest,
+    patched,
+    decisionSupport,
+    ingredientScienceContext,
+  };
+};
+
 app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, res: Response) => {
   const barcodeRaw = typeof req.query.barcode === "string" ? req.query.barcode.trim() : "";
   const normalizedBarcode = normalizeBarcodeInput(barcodeRaw);
@@ -10267,6 +10469,221 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
   }
 });
 
+app.post("/api/ingredient-overview/v1", verifySupabaseToken, async (req: Request, res: Response) => {
+  const parsedBody = parseRequestBody(ingredientOverviewBodySchema, req, res);
+  if (!parsedBody) return;
+
+  const normalizedBarcode = normalizeBarcodeInput(parsedBody.barcode);
+  if (!normalizedBarcode) {
+    return res
+      .status(400)
+      .json({ error: "invalid_request", detail: "barcode is required" } satisfies ErrorResponse);
+  }
+
+  try {
+    const authority = await buildDecisionSupportAuthorityBundle(normalizedBarcode);
+    if (
+      parsedBody.decisionDigest &&
+      parsedBody.decisionDigest !== authority.decisionSupport.digest
+    ) {
+      return res.status(409).json(
+        buildDecisionSupportDigestMismatchPayload(authority.decisionSupport.digest),
+      );
+    }
+
+    const deepseekKey = process.env.DEEPSEEK_API_KEY?.trim() || null;
+    const deepseekModel = process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
+    const llmFn = buildDeepseekJsonLlmFn({
+      deepseekKey,
+      deepseekModel,
+      timeoutMs: INGREDIENT_OVERVIEW_SIDECAR_TIMEOUT_MS,
+      maxTokens: 450,
+    });
+    const compiled = await compileIngredientOverviewAsync(authority.ingredientScienceContext, {
+      llmFn,
+      timeoutMs: INGREDIENT_OVERVIEW_SIDECAR_TIMEOUT_MS,
+      maxRetries: SCIENCE_SIDECAR_MAX_RETRIES,
+    });
+
+    return res.json({
+      status: "ok",
+      digest: authority.decisionSupport.digest,
+      ingredientOverview: compiled.ingredientOverview,
+      source: compiled.source,
+      fallbackUsed: compiled.fallbackUsed,
+      promptVersion: compiled.promptVersion,
+    });
+  } catch (error) {
+    captureException(error, { route: "/api/ingredient-overview/v1" });
+    const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+    return res.status(500).json({ error: "unexpected_error", detail } satisfies ErrorResponse);
+  }
+});
+
+app.post("/api/scientific-background/v1", verifySupabaseToken, async (req: Request, res: Response) => {
+  const parsedBody = parseRequestBody(scientificBackgroundBodySchema, req, res);
+  if (!parsedBody) return;
+
+  const normalizedBarcode = normalizeBarcodeInput(parsedBody.barcode);
+  if (!normalizedBarcode) {
+    return res
+      .status(400)
+      .json({ error: "invalid_request", detail: "barcode is required" } satisfies ErrorResponse);
+  }
+
+  try {
+    const authority = await buildDecisionSupportAuthorityBundle(normalizedBarcode);
+    if (
+      parsedBody.decisionDigest &&
+      parsedBody.decisionDigest !== authority.decisionSupport.digest
+    ) {
+      return res.status(409).json(
+        buildDecisionSupportDigestMismatchPayload(authority.decisionSupport.digest),
+      );
+    }
+
+    const selectedIngredientKey = normalizeIngredientScienceKey(parsedBody.selectedIngredientName);
+    const selectedDescriptor = authority.ingredientScienceContext.ingredientDescriptors.find(
+      (descriptor) => descriptor.key === selectedIngredientKey,
+    );
+
+    if (!selectedDescriptor) {
+      return res.status(400).json({
+        error: "invalid_request",
+        detail: "selectedIngredientName must match a source-locked ingredient",
+      } satisfies ErrorResponse);
+    }
+
+    const plan = planScientificBackgroundSections({
+      context: authority.ingredientScienceContext,
+      selectedIngredientName: selectedDescriptor.name,
+    });
+    const executionProfile = resolveScientificBackgroundExecutionProfile(plan);
+    const cacheKey = [
+      authority.decisionSupport.digest,
+      selectedDescriptor.key,
+      plan.mode,
+      SCIENTIFIC_BACKGROUND_PROMPT_VERSION,
+    ].join("|");
+    const cached = readScientificBackgroundSidecarCache(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
+    const existingInflight = scientificBackgroundSidecarInflight.get(cacheKey);
+    if (existingInflight) {
+      return res.json(await existingInflight);
+    }
+
+    const deepseekKey = process.env.DEEPSEEK_API_KEY?.trim() || null;
+    const deepseekModel = process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
+    const llmFn = executionProfile.preferLiveWriter
+      ? buildDeepseekJsonLlmFn({
+        deepseekKey,
+        deepseekModel,
+        timeoutMs: executionProfile.timeoutMs,
+        maxTokens: executionProfile.maxTokens,
+      })
+      : undefined;
+
+    const compilePromise = (async (): Promise<ScientificBackgroundSidecarResponse> => {
+      const compiled = await compileScientificBackgroundAsync(
+        authority.ingredientScienceContext,
+        selectedDescriptor.name,
+        {
+          llmFn,
+          timeoutMs: executionProfile.timeoutMs,
+          maxRetries: executionProfile.maxRetries ?? SCIENCE_SIDECAR_MAX_RETRIES,
+        },
+      );
+
+      const payload: ScientificBackgroundSidecarResponse = {
+        status: "ok",
+        digest: authority.decisionSupport.digest,
+        scientificBackground: compiled.scientificBackground,
+        source: compiled.source,
+        fallbackUsed: compiled.fallbackUsed,
+        promptVersion: compiled.promptVersion,
+      };
+
+      writeScientificBackgroundSidecarCache(
+        cacheKey,
+        payload,
+        resolveScientificBackgroundCacheTtlMs(payload, executionProfile),
+      );
+
+      if (
+        payload.source === "fallback" &&
+        executionProfile.preferLiveWriter &&
+        deepseekKey &&
+        !scientificBackgroundSidecarBackgroundRefresh.has(cacheKey)
+      ) {
+        const backgroundRefresh = (async (): Promise<void> => {
+          const backgroundLlmFn = buildDeepseekJsonLlmFn({
+            deepseekKey,
+            deepseekModel,
+            timeoutMs: SCIENTIFIC_BACKGROUND_BACKGROUND_REFRESH_TIMEOUT_MS,
+            maxTokens: executionProfile.maxTokens,
+          });
+          if (!backgroundLlmFn) return;
+
+          const refreshed = await compileScientificBackgroundAsync(
+            authority.ingredientScienceContext,
+            selectedDescriptor.name,
+            {
+              llmFn: backgroundLlmFn,
+              timeoutMs: SCIENTIFIC_BACKGROUND_BACKGROUND_REFRESH_TIMEOUT_MS,
+              maxRetries: executionProfile.maxRetries ?? SCIENCE_SIDECAR_MAX_RETRIES,
+            },
+          );
+
+          if (refreshed.source !== "api") return;
+
+          const refreshedPayload: ScientificBackgroundSidecarResponse = {
+            status: "ok",
+            digest: authority.decisionSupport.digest,
+            scientificBackground: refreshed.scientificBackground,
+            source: refreshed.source,
+            fallbackUsed: refreshed.fallbackUsed,
+            promptVersion: refreshed.promptVersion,
+          };
+
+          writeScientificBackgroundSidecarCache(
+            cacheKey,
+            refreshedPayload,
+            resolveScientificBackgroundCacheTtlMs(refreshedPayload, executionProfile),
+          );
+        })()
+          .catch((error) => {
+            captureException(error, {
+              route: "/api/scientific-background/v1",
+              phase: "background_refresh",
+              cacheKey,
+            });
+          })
+          .finally(() => {
+            scientificBackgroundSidecarBackgroundRefresh.delete(cacheKey);
+          });
+
+        scientificBackgroundSidecarBackgroundRefresh.set(cacheKey, backgroundRefresh);
+      }
+
+      return payload;
+    })();
+
+    scientificBackgroundSidecarInflight.set(cacheKey, compilePromise);
+    try {
+      return res.json(await compilePromise);
+    } finally {
+      scientificBackgroundSidecarInflight.delete(cacheKey);
+    }
+  } catch (error) {
+    captureException(error, { route: "/api/scientific-background/v1" });
+    const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+    return res.status(500).json({ error: "unexpected_error", detail } satisfies ErrorResponse);
+  }
+});
+
 app.get("/api/patch-shadow/status", verifySupabaseToken, (req: Request, res: Response) => {
   const authedReq = req as AuthenticatedRequest;
   if (!authDisabled && authedReq.regressionAuth !== true) {
@@ -10291,6 +10708,192 @@ app.get("/api/patch-shadow/status", verifySupabaseToken, (req: Request, res: Res
     ...patchStatus,
     lookup,
   });
+});
+
+const productOverviewAiBodySchema = z.object({
+  digest: z.string().min(1),
+  productName: z.string().min(1),
+  brandName: z.string().nullable().optional(),
+  productTypeHint: z.string().nullable().optional(),
+  primaryIngredient: z.string().nullable().optional(),
+  keyIngredients: z.array(
+    z.object({
+      name: z.string().min(1),
+      dose: z.string().nullable().optional(),
+    }),
+  ).max(6),
+  sourceContextHint: z.string().nullable().optional(),
+  chemicalFormHint: z.string().nullable().optional(),
+  strengthClaim: z.string().nullable().optional(),
+  servingStrength: z.string().nullable().optional(),
+  form: z.string().nullable().optional(),
+  count: z.string().nullable().optional(),
+  isLikelySingleIngredient: z.boolean().optional(),
+});
+
+const normalizeOverviewAiToken = (value?: string | null): string =>
+  safeTrim(value)?.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim() ?? "";
+
+const hasOverviewAiForbiddenContent = (value: string): boolean => {
+  const normalized = normalizeOverviewAiToken(value);
+  if (!normalized) return true;
+  return /\b(treat|treats|treating|cure|cures|curing|prevent|prevents|prevention|diagnos|therapy|heal|heals|healing|doctor|clinician|physician|pharmacist|with food|empty stomach|best form|superior bioavailability|high absorption|clinically proven)\b/i.test(
+    normalized,
+  );
+};
+
+const countSentenceLikeClauses = (value: string): number =>
+  String(value)
+    .split(/(?<=[.!?])\s+/)
+    .map((part) => safeTrim(part) ?? "")
+    .filter(Boolean).length;
+
+const passesProductOverviewWhatIsItGate = (params: {
+  lead: string;
+  whatItIs: string;
+  whyPeopleTakeIt: string;
+  primaryIngredient: string | null;
+  productTypeHint: string | null;
+  keyIngredients: Array<{ name: string; dose?: string | null }>;
+  servingStrength: string | null;
+  form: string | null;
+  count: string | null;
+}): boolean => {
+  const combined = [params.lead, params.whatItIs, params.whyPeopleTakeIt].join(" ");
+  if ((safeTrim(combined) ?? "").length < 90) return false;
+  if ([params.lead, params.whatItIs, params.whyPeopleTakeIt].some((part) => hasOverviewAiForbiddenContent(part))) {
+    return false;
+  }
+
+  const normalizedCombined = normalizeOverviewAiToken(combined);
+  const anchorCandidates = [
+    params.primaryIngredient,
+    params.productTypeHint,
+    ...params.keyIngredients.map((item) => item.name),
+  ]
+    .map((value) => normalizeOverviewAiToken(value))
+    .filter((value) => value.length >= 4);
+
+  if (anchorCandidates.length > 0 && !anchorCandidates.some((anchor) => normalizedCombined.includes(anchor))) {
+    return false;
+  }
+
+  const forbiddenFactEchoes = [params.servingStrength, params.count, params.form]
+    .map((value) => normalizeOverviewAiToken(value))
+    .filter((value) => value.length >= 4);
+  if (forbiddenFactEchoes.some((fact) => normalizedCombined.includes(fact))) {
+    return false;
+  }
+
+  if (countSentenceLikeClauses(params.whyPeopleTakeIt) > 2) {
+    return false;
+  }
+
+  return true;
+};
+
+app.post("/api/product-overview-ai/v1", verifySupabaseToken, async (req: Request, res: Response) => {
+  const parsedBody = parseRequestBody(productOverviewAiBodySchema, req, res);
+  if (!parsedBody) return;
+
+  const deepseekKey = process.env.DEEPSEEK_API_KEY?.trim();
+  const deepseekModel = process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat";
+
+  const fallbackOverviewAi = buildProductOverviewWhatIsItFallback({
+    productName: parsedBody.productName,
+    productTypeHint: parsedBody.productTypeHint ?? null,
+    primaryIngredient: parsedBody.primaryIngredient ?? null,
+    keyIngredients: parsedBody.keyIngredients,
+    sourceContextHint: parsedBody.sourceContextHint ?? null,
+    chemicalFormHint: parsedBody.chemicalFormHint ?? null,
+    isLikelySingleIngredient: parsedBody.isLikelySingleIngredient ?? false,
+  });
+
+  const respondWithOverviewFallback = (reason: string) => res.json({
+    status: "ok",
+    digest: parsedBody.digest,
+    promptVersion: `${PRODUCT_OVERVIEW_WHAT_IS_IT_PROMPT_VERSION}:fallback`,
+    fallbackUsed: true,
+    fallbackReason: reason,
+    overviewAi: fallbackOverviewAi,
+  });
+
+  if (!deepseekKey) {
+    return respondWithOverviewFallback("ai_not_configured");
+  }
+
+  const promptPayload = {
+    productName: parsedBody.productName,
+    brandName: parsedBody.brandName ?? null,
+    productTypeHint: parsedBody.productTypeHint ?? null,
+    primaryIngredient: parsedBody.primaryIngredient ?? null,
+    keyIngredients: parsedBody.keyIngredients.map((item) => ({
+      name: item.name,
+      dose: item.dose ?? null,
+    })),
+    sourceContextHint: parsedBody.sourceContextHint ?? null,
+    chemicalFormHint: parsedBody.chemicalFormHint ?? null,
+    strengthClaim: parsedBody.strengthClaim ?? null,
+    servingStrength: parsedBody.servingStrength ?? null,
+    form: parsedBody.form ?? null,
+    count: parsedBody.count ?? null,
+    isLikelySingleIngredient: parsedBody.isLikelySingleIngredient ?? false,
+    writingRules: {
+      language: "English only",
+      shopperFacing: true,
+      doNotRepeatFacts: ["serving strength", "form", "count"],
+      noMedicalClaims: true,
+      noDoctorAdvice: true,
+      noTimingGuidance: true,
+      richModeOnlyWhenSimple: true,
+    },
+  };
+
+  try {
+    const ai = await fetchProductOverviewWhatIsIt(
+      `PRODUCT_OVERVIEW_INPUT_JSON: ${JSON.stringify(promptPayload)}`,
+      deepseekModel,
+      deepseekKey,
+      {
+        timeoutMs: Math.max(MY_SUPP_OVERVIEW_TIMEOUT_MS, 5_500),
+        queueTimeoutMs: RESILIENCE_DEEPSEEK_QUEUE_TIMEOUT_MS_DETAIL,
+        breaker: deepseekBreaker,
+        semaphore: deepseekSemaphore,
+        maxTokens: 900,
+      },
+    );
+
+    if (!ai) {
+      return respondWithOverviewFallback("empty_or_failed");
+    }
+
+    if (
+      !passesProductOverviewWhatIsItGate({
+        lead: ai.lead,
+        whatItIs: ai.whatItIs,
+        whyPeopleTakeIt: ai.whyPeopleTakeIt,
+        primaryIngredient: parsedBody.primaryIngredient ?? null,
+        productTypeHint: parsedBody.productTypeHint ?? null,
+        keyIngredients: parsedBody.keyIngredients,
+        servingStrength: parsedBody.servingStrength ?? null,
+        form: parsedBody.form ?? null,
+        count: parsedBody.count ?? null,
+      })
+    ) {
+      return respondWithOverviewFallback("gate_rejected");
+    }
+
+    return res.json({
+      status: "ok",
+      digest: parsedBody.digest,
+      promptVersion: PRODUCT_OVERVIEW_WHAT_IS_IT_PROMPT_VERSION,
+      fallbackUsed: false,
+      overviewAi: ai,
+    });
+  } catch (error) {
+    captureException(error, { route: "/api/product-overview-ai/v1" });
+    return respondWithOverviewFallback("unexpected_error");
+  }
 });
 
 /**
