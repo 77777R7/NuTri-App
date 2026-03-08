@@ -10118,41 +10118,68 @@ const logIherbOverlayFetchWarningOnce = (message: string) => {
   console.warn("[iherb-overlay] lookup disabled:", message);
 };
 
+const toOverlayObjectRecord = (value: unknown): Record<string, unknown> =>
+  value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+
+const normalizeOverlaySectionKey = (value: string): string =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "")
+    .trim();
+
+const readOverlaySectionText = (
+  sections: Record<string, unknown>,
+  aliases: string[],
+): string | null => {
+  const aliasKeys = new Set(aliases.map(normalizeOverlaySectionKey));
+  for (const [rawKey, rawValue] of Object.entries(sections)) {
+    if (!aliasKeys.has(normalizeOverlaySectionKey(rawKey))) continue;
+    if (typeof rawValue !== "string") continue;
+    const trimmed = rawValue.trim();
+    if (trimmed) return trimmed;
+  }
+  return null;
+};
+
 const toDecisionSupportOverlayClaims = (row: Record<string, unknown>): DecisionSupportOverlayClaims => {
-  const descriptionSections =
-    row?.description_sections && typeof row.description_sections === "object"
-      ? (row.description_sections as Record<string, unknown>)
-      : {};
-  const supplementFacts =
-    row?.supplement_facts && typeof row.supplement_facts === "object"
-      ? (row.supplement_facts as Record<string, unknown>)
-      : {};
+  const descriptionSections = toOverlayObjectRecord(
+    row.allDescriptionSections ?? row.descriptionSections ?? row.description_sections,
+  );
+  const supplementFacts = toOverlayObjectRecord(row.supplementFacts ?? row.supplement_facts);
   const nutritionalFactsRaw = Array.isArray(supplementFacts?.nutritionalFacts)
     ? (supplementFacts.nutritionalFacts as Record<string, unknown>[])
-    : [];
+    : Array.isArray(supplementFacts?.nutritional_facts)
+      ? (supplementFacts.nutritional_facts as Record<string, unknown>[])
+      : [];
   return {
     provider: "iherb",
-    productId: typeof row.product_id === "string" ? row.product_id : null,
+    productId:
+      typeof row.productId === "number"
+        ? String(row.productId)
+        : typeof row.productId === "string"
+          ? row.productId
+          : typeof row.product_id === "number"
+            ? String(row.product_id)
+            : typeof row.product_id === "string"
+              ? row.product_id
+              : null,
     link: typeof row.link === "string" ? row.link : null,
     categories: Array.isArray(row.categories)
       ? row.categories.map((item) => String(item ?? "").trim()).filter(Boolean)
-      : [],
-    description: typeof descriptionSections?.Description === "string" ? descriptionSections.Description : null,
-    suggestedUse:
-      typeof descriptionSections?.["Suggested use"] === "string"
-        ? String(descriptionSections["Suggested use"])
-        : null,
-    otherIngredients:
-      typeof descriptionSections?.["Other ingredients"] === "string"
-        ? String(descriptionSections["Other ingredients"])
-        : null,
-    warnings: typeof descriptionSections?.Warnings === "string" ? descriptionSections.Warnings : null,
-    disclaimer: typeof descriptionSections?.Disclaimer === "string" ? descriptionSections.Disclaimer : null,
+      : Array.isArray(row.category)
+        ? row.category.map((item) => String(item ?? "").trim()).filter(Boolean)
+        : [],
+    description: readOverlaySectionText(descriptionSections, ["Description"]),
+    suggestedUse: readOverlaySectionText(descriptionSections, ["Suggested use", "Suggested Use", "Suggested usage"]),
+    otherIngredients: readOverlaySectionText(descriptionSections, ["Other ingredients", "Other Ingredients"]),
+    warnings: readOverlaySectionText(descriptionSections, ["Warnings", "Warning"]),
+    disclaimer: readOverlaySectionText(descriptionSections, ["Disclaimer"]),
     nutritionalFacts: nutritionalFactsRaw
       .map((item) => ({
-        substancy: String(item?.substancy ?? "").trim(),
-        amountPerServing: String(item?.amountPerServing ?? "").trim(),
-        dailyValuePercent: String(item?.dailyValuePercent ?? "").trim() || null,
+        substancy: String(item?.substancy ?? item?.substance ?? item?.substance_name ?? item?.name ?? "").trim(),
+        amountPerServing: String(item?.amountPerServing ?? item?.amount_per_serving ?? item?.amount ?? "").trim(),
+        dailyValuePercent:
+          String(item?.dailyValuePercent ?? item?.daily_value_percent ?? item?.dailyValue ?? "").trim() || null,
       }))
       .filter((item) => item.substancy || item.amountPerServing || item.dailyValuePercent),
   };

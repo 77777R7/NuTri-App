@@ -164,3 +164,20 @@ test('buildWhatsInsideDisplay: overlay ingredients take precedence and show top 
   ]);
   assert.equal(out.hiddenCount, 1);
 });
+
+test('buildWhatsInsideDisplay: actives fallback filters nutrition-like rows and keeps active ingredients', () => {
+  const out = buildWhatsInsideDisplay({
+    productName: 'Omega-3 Fish Oil',
+    dosageText: '15 cal',
+    actives: [
+      { name: 'Calories', amount: 15, unit: 'cal' },
+      { name: 'Total Fat', amount: 1.5, unit: 'g' },
+      { name: 'EPA (Eicosapentaenoic Acid)', amount: 690, unit: 'mg' },
+      { name: 'DHA (Docosahexaenoic Acid)', amount: 260, unit: 'mg' },
+    ],
+  });
+
+  assert.equal(out.source, 'actives');
+  assert.deepEqual(out.lines, ['Omega-3 (EPA 690 mg + DHA 260 mg)']);
+  assert.equal(out.hiddenCount, 0);
+});

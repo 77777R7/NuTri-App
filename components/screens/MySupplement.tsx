@@ -375,6 +375,24 @@ const computeFactsStatusClient = (facts: MySupplementFactsV1 | null | undefined)
   return hasActiveDose || hasDirections || hasOverlayIngredients || hasOverlaySuggestedUse ? "full" : "partial";
 };
 
+const hasOverlayBackedFacts = (facts: MySupplementFactsV1 | null | undefined): boolean => {
+  if (!facts) return false;
+  const hasOverlayIngredients = Array.isArray(facts.overlay?.ingredients) && facts.overlay.ingredients.length > 0;
+  const hasOverlaySuggestedUse =
+    typeof facts.overlay?.suggestedUse === "string" && facts.overlay.suggestedUse.trim().length > 0;
+  return hasOverlayIngredients || hasOverlaySuggestedUse;
+};
+
+const computeOverviewFactsStatus = (
+  facts: MySupplementFactsV1 | null | undefined,
+  barcode?: string | null,
+): "full" | "partial" | "none" => {
+  const baseStatus = computeFactsStatusClient(facts);
+  if (baseStatus === "none") return "none";
+  if (!(barcode?.trim())) return baseStatus;
+  return hasOverlayBackedFacts(facts) ? baseStatus : "partial";
+};
+
 const extractFactsDigestHashFromAnalysisPayload = (payload: AnalysisPayload | null): string | null => {
   if (!payload || typeof payload !== "object") return null;
   const root = payload as any;
@@ -1379,7 +1397,7 @@ function DetailSheet({
       factsCache.set(supplementId, payload);
       if (!isActive) return;
       setFacts(payload);
-      const nextFactsStatus = meta?.factsStatus ?? computeFactsStatusClient(payload);
+      const nextFactsStatus = meta?.factsStatus ?? computeOverviewFactsStatus(payload, item.barcode ?? null);
       setFactsStatus(nextFactsStatus);
       const nextHash = meta?.factsDigestHash ?? payload.factsDigestHash ?? null;
       if (nextFactsStatus === "full") {
@@ -1536,7 +1554,8 @@ function DetailSheet({
         ensured.factsDigestHash ?? responseFacts?.factsDigestHash ?? null;
       const responseFactsSourceVersion =
         ensured.factsSourceVersion ?? responseFacts?.factsSourceVersion ?? null;
-      const responseFactsStatus = ensured.factsStatus ?? computeFactsStatusClient(responseFacts);
+      const responseFactsStatus =
+        ensured.factsStatus ?? computeOverviewFactsStatus(responseFacts, item.barcode ?? null);
 
       if (responseFacts) {
         finalizeFacts(supplementId, responseFacts, {
@@ -1600,7 +1619,7 @@ function DetailSheet({
         const cachedFacts = factsCache.get(supplementId);
         if (cachedFacts && isActive) {
           finalizeFacts(supplementId, cachedFacts, {
-            factsStatus: computeFactsStatusClient(cachedFacts),
+            factsStatus: computeOverviewFactsStatus(cachedFacts, item.barcode ?? null),
             factsDigestHash: cachedFacts.factsDigestHash ?? null,
             factsSourceVersion: cachedFacts.factsSourceVersion ?? null,
           });
@@ -1739,7 +1758,7 @@ function DetailSheet({
         if (!isActive) return true;
 
         const nextFacts = ensured.facts;
-        const nextFactsStatus = ensured.factsStatus ?? computeFactsStatusClient(nextFacts);
+        const nextFactsStatus = ensured.factsStatus ?? computeOverviewFactsStatus(nextFacts, barcode);
         const nextHash = ensured.factsDigestHash ?? nextFacts.factsDigestHash ?? null;
 
         if (expectedHash && factsDigestHashRef.current && factsDigestHashRef.current !== expectedHash) {

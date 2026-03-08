@@ -116,7 +116,7 @@ const buildProcessedActives = (actives: FactsActiveDisplay[]): ProcessedActive[]
 
   for (const active of actives) {
     const name = typeof active?.name === "string" ? active.name.trim() : "";
-    if (!name) continue;
+    if (!name || isNutritionLabelLikeIngredient(name)) continue;
     const canonicalKey = canonicalizeActiveKey(name);
     if (!canonicalKey) continue;
 
