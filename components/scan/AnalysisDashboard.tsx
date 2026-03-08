@@ -2779,8 +2779,6 @@ const pickKeyIngredientsForBackground = (items: IngredientCoverItemLike[] | null
     return scored.map((row) => row.name);
 };
 
-const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
-
 const MiniScoreHeader: React.FC<{
     scrollY: SharedValue<number>;
     overallScore: number;
@@ -2789,7 +2787,8 @@ const MiniScoreHeader: React.FC<{
     muted?: boolean;
 }> = ({ scrollY, overallScore, title, subtitle, muted }) => {
     const animatedStyle = useAnimatedStyle(() => {
-        const p = clamp01((scrollY.value - 210) / 70); // appears after user scrolls a bit
+        const progress = (scrollY.value - 210) / 70;
+        const p = Math.max(0, Math.min(1, progress)); // appears after user scrolls a bit
         return {
             opacity: p,
             transform: [{ translateY: (1 - p) * -66 }],

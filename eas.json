@@ -11,6 +11,13 @@
     "preview": {
       "distribution": "internal"
     },
+    "preview_dashboard_static": {
+      "extends": "preview",
+      "env": {
+        "EXPO_PUBLIC_FORCE_FULL_DASHBOARD_EFFECTS": "0",
+        "EXPO_PUBLIC_SCAN_DASHBOARD_BISECT": "no_mini_header,no_reanimated_scroll,no_tile_anim"
+      }
+    },
     "production": {
       "autoIncrement": true
     }
