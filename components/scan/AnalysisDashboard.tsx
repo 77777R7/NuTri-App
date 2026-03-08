@@ -1141,6 +1141,27 @@ function clampTextWithEllipsis(value?: string | null, maxChars: number = 100) {
 }
 
 const waitMs = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
+const DECISION_SUPPORT_RETRY_BACKOFF_MS = [1200, 3000, 6000] as const;
+
+const isTransientDecisionSupportFailure = (message: string, status?: number | null): boolean => {
+    if (typeof status === 'number' && (status === 408 || status === 425 || status === 429 || status >= 500)) {
+        return true;
+    }
+    const normalized = message.trim().toLowerCase();
+    return (
+        normalized.includes('network')
+        || normalized.includes('timeout')
+        || normalized.includes('timed out')
+        || normalized.includes('connection')
+        || normalized.includes('failed to fetch')
+        || normalized.includes('tunnel unavailable')
+        || normalized.includes('unexpected token <')
+        || normalized.includes('json parse')
+        || normalized.includes('http 502')
+        || normalized.includes('http 503')
+        || normalized.includes('http 504')
+    );
+};
 
 const buildIngredientsDetailRequestKey = (bundle: AnalysisBundle) =>
     [
@@ -3233,7 +3254,11 @@ const AnalysisBundleDashboard: React.FC<{
             // web skeleton phase so release builds do not get stuck on placeholders
             // when rev1 never upgrades the stream in time.
         }
-        const run = async (digestParam: string | null, canRetry: boolean): Promise<void> => {
+        const run = async (
+            digestParam: string | null,
+            canDigestRetry: boolean,
+            retryAttempt: number = 0,
+        ): Promise<void> => {
             try {
                 if (!cancelled) {
                     setDecisionSupportState((prev) => ({
@@ -3258,9 +3283,9 @@ const AnalysisBundleDashboard: React.FC<{
                 if (res.status === 409) {
                     const mismatchPayload = await res.json().catch(() => null);
                     const latestDigest = typeof mismatchPayload?.latestDigest === 'string' ? mismatchPayload.latestDigest : null;
-                    if (canRetry && latestDigest && latestDigest !== digestParam) {
+                    if (canDigestRetry && latestDigest && latestDigest !== digestParam) {
                         autoRetryUsed = true;
-                        return run(latestDigest, false);
+                        return run(latestDigest, false, retryAttempt);
                     }
                     if (!cancelled) {
                         const fallbackData = pickStrongerDecisionPayload(
@@ -3317,6 +3342,25 @@ const AnalysisBundleDashboard: React.FC<{
             } catch (error) {
                 if (cancelled || requestSeq !== decisionSupportRequestSeqRef.current) return;
                 const message = error instanceof Error ? error.message : 'Decision support unavailable';
+                const statusMatch = message.match(/HTTP\s+(\d{3})/i);
+                const httpStatus = statusMatch ? Number.parseInt(statusMatch[1] ?? '', 10) : null;
+                const shouldRetry =
+                    retryAttempt < DECISION_SUPPORT_RETRY_BACKOFF_MS.length
+                    && isTransientDecisionSupportFailure(message, Number.isFinite(httpStatus) ? httpStatus : null);
+                if (shouldRetry) {
+                    const delayMs = DECISION_SUPPORT_RETRY_BACKOFF_MS[retryAttempt] ?? 0;
+                    if (!cancelled) {
+                        setDecisionSupportState((prev) => ({
+                            status: prev.data ? 'ready' : 'loading',
+                            data: prev.data,
+                            error: prev.data ? prev.error : `Retrying verified details… (${Math.max(1, Math.round(delayMs / 1000))}s)`,
+                            autoRetryUsed,
+                        }));
+                    }
+                    await waitMs(delayMs);
+                    if (cancelled || requestSeq !== decisionSupportRequestSeqRef.current) return;
+                    return run(digestParam, canDigestRetry, retryAttempt + 1);
+                }
                 const fallbackData = pickStrongerDecisionPayload(
                     pickStrongerDecisionPayload(decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null, inlineFallback ?? null),
                     cachedPayload,
@@ -3352,12 +3396,26 @@ const AnalysisBundleDashboard: React.FC<{
         scanSessionId,
     ]);
 
+    const inlineDecisionTemplatePayload = useMemo<Record<string, unknown> | null>(() => {
+        const inline =
+            (bundleState.meta as { decisionSupportInline?: Record<string, unknown> | null }).decisionSupportInline ?? null;
+        return inline && typeof inline === 'object' ? inline : null;
+    }, [bundleState.meta]);
     const decisionTemplatePayload = useMemo<DecisionSupportTemplatePayload | null>(() => {
-        if (decisionSupportState.status !== 'ready' || !decisionSupportState.data || typeof decisionSupportState.data !== 'object') {
-            return null;
-        }
-        return decisionSupportState.data as DecisionSupportTemplatePayload;
-    }, [decisionSupportState.data, decisionSupportState.status]);
+        const fetchedPayload =
+            decisionSupportState.status === 'ready' && decisionSupportState.data && typeof decisionSupportState.data === 'object'
+                ? decisionSupportState.data
+                : null;
+        const selectedPayload = pickStrongerDecisionPayload(inlineDecisionTemplatePayload, fetchedPayload);
+        if (!selectedPayload) return null;
+        return selectedPayload as DecisionSupportTemplatePayload;
+    }, [decisionSupportState.data, decisionSupportState.status, inlineDecisionTemplatePayload]);
+    const decisionTemplatePending =
+        !hasRenderableDecisionTemplate(decisionTemplatePayload as Record<string, unknown> | null | undefined)
+        && (decisionSupportState.status === 'idle' || decisionSupportState.status === 'loading' || isStreaming);
+    const decisionTemplateUnavailable =
+        !hasRenderableDecisionTemplate(decisionTemplatePayload as Record<string, unknown> | null | undefined)
+        && !decisionTemplatePending;
     const decisionOverviewBlock = decisionTemplatePayload?.overviewBlock;
     const decisionScienceBlock = decisionTemplatePayload?.scienceBlock;
     const decisionUsageBlock = decisionTemplatePayload?.usageBlock;
@@ -3375,19 +3433,30 @@ const AnalysisBundleDashboard: React.FC<{
     }, []);
 
     const productInfo = analysis?.productInfo ?? { brand: null, name: null, category: null, image: null };
-    const brandForSubtitle =
-        typeof productInfo.brand === 'string' && productInfo.brand.trim()
-            ? formatBrandForPill(productInfo.brand)
-            : null;
+    const factsProduct = factsDtoState.data?.product ?? null;
+    const bundleProductIdentity =
+        ((bundleState.meta as { productIdentity?: { name?: string | null; brand?: string | null } | null }).productIdentity)
+        ?? null;
+    const resolvedProductName =
+        normalizeText(productInfo.name ?? null)
+        || normalizeText(bundleProductIdentity?.name ?? null)
+        || normalizeText(factsProduct?.name ?? null)
+        || null;
+    const resolvedProductBrand =
+        normalizeText(productInfo.brand ?? null)
+        || normalizeText(bundleProductIdentity?.brand ?? null)
+        || normalizeText(factsProduct?.brand ?? null)
+        || null;
+    const brandForSubtitle = resolvedProductBrand ? formatBrandForPill(resolvedProductBrand) : null;
     const rawProductSubtitle = [brandForSubtitle, productInfo.category].filter(Boolean).join(' • ');
     const trustedDisplayIdentity = useMemo(
         () =>
             resolveTrustedDisplayIdentity({
                 bundleMeta: bundleState.meta,
-                productName: productInfo.name || 'Supplement',
+                productName: resolvedProductName || 'Supplement',
                 productSubtitle: rawProductSubtitle,
                 authoritativeIdentity: bundleState?.meta?.authoritativeIdentity ?? null,
-                barcode: bundleState?.meta?.authoritativeIdentity?.value ?? null,
+                barcode: analysisBarcodeRaw || analysisBarcodeDigits || null,
                 sources: (Array.isArray(analysis?.sources) ? analysis.sources : []).map((source: any) => ({
                     domain: typeof source?.domain === 'string' ? source.domain : null,
                     url: typeof source?.url === 'string' ? source.url : typeof source?.link === 'string' ? source.link : null,
@@ -3397,9 +3466,11 @@ const AnalysisBundleDashboard: React.FC<{
             }),
         [
             analysis?.sources,
+            analysisBarcodeDigits,
+            analysisBarcodeRaw,
             bundleState.meta,
-            productInfo.name,
             rawProductSubtitle,
+            resolvedProductName,
         ],
     );
     const productTitle = trustedDisplayIdentity.title;
@@ -4538,7 +4609,7 @@ const AnalysisBundleDashboard: React.FC<{
     const missingInfoCtaLabel = decisionOverviewBlock?.singleCta?.label || 'Scan Supplement Facts + Warnings panel';
     const missingInfoScanPrompt = `Next step: ${missingInfoCtaLabel}.`;
     const overviewAiDigest =
-        decisionSupportState.status === 'ready'
+        decisionTemplatePayload
             ? normalizeText(decisionTemplatePayload?.digest ?? bundleState.meta.factsDigestHash ?? null) || null
             : null;
     const overviewPrimaryScienceRow = scienceIngredientsAll[0] ?? null;
@@ -4618,6 +4689,17 @@ const AnalysisBundleDashboard: React.FC<{
     );
     const authoritativeOverviewTileSummary = useMemo<CoverLine>(() => {
         if (!authoritativeTilePayloadReady) {
+            const fallbackSummary = normalizeText(overviewSummaryText);
+            if (fallbackSummary) {
+                return {
+                    text: fallbackSummary,
+                };
+            }
+            if (decisionTemplateUnavailable) {
+                return {
+                    text: 'Verified product details are temporarily unavailable.',
+                };
+            }
             return {
                 text: 'Latest verified product details are loading.',
                 isPlaceholder: true,
@@ -4646,9 +4728,29 @@ const AnalysisBundleDashboard: React.FC<{
         return {
             text: 'Verified product details are ready to review.',
         };
-    }, [authoritativeTilePayloadReady, overviewPrimaryIngredientLabel, overviewProductType]);
+    }, [
+        authoritativeTilePayloadReady,
+        decisionTemplateUnavailable,
+        overviewPrimaryIngredientLabel,
+        overviewProductType,
+        overviewSummaryText,
+    ]);
     const authoritativeOverviewTileBullets = useMemo<BulletItem[]>(() => {
         if (!authoritativeTilePayloadReady) {
+            const fallbackBullets = overviewBullets.filter((item) => normalizeText(item?.text ?? null).length > 0);
+            if (fallbackBullets.length > 0) {
+                return fallbackBullets;
+            }
+            if (decisionTemplateUnavailable) {
+                return [
+                    {
+                        text: 'The verified details request was interrupted.',
+                    },
+                    {
+                        text: 'Go back and rescan to reload the latest product facts.',
+                    },
+                ];
+            }
             return [
                 {
                     text: 'Loading verified product facts.',
@@ -4679,6 +4781,8 @@ const AnalysisBundleDashboard: React.FC<{
         return bullets.slice(0, 2);
     }, [
         authoritativeTilePayloadReady,
+        decisionTemplateUnavailable,
+        overviewBullets,
         overviewCountValue,
         overviewFormValue,
         overviewPrimaryIngredientLabel,
@@ -4686,6 +4790,28 @@ const AnalysisBundleDashboard: React.FC<{
     ]);
     const authoritativeScienceTileMechanisms = useMemo<Mechanism[]>(() => {
         if (!authoritativeTilePayloadReady) {
+            const fallbackMechanisms = ingredientMechanisms.filter((item) => normalizeText(item?.name ?? null).length > 0);
+            if (fallbackMechanisms.length > 0) {
+                return fallbackMechanisms;
+            }
+            if (decisionTemplateUnavailable) {
+                return [
+                    {
+                        name: 'Verified ingredient details unavailable',
+                        amount: 'Retry scan',
+                        fill: 0.35,
+                        mode: 'unknown',
+                        showInfo: false,
+                    },
+                    {
+                        name: 'Per-serving ingredient facts request was interrupted',
+                        amount: 'Try again',
+                        fill: 0.3,
+                        mode: 'unknown',
+                        showInfo: false,
+                    },
+                ];
+            }
             return [
                 {
                     name: 'Verified ingredient details loading',
@@ -4723,7 +4849,12 @@ const AnalysisBundleDashboard: React.FC<{
                 showInfo: false,
             },
         ];
-    }, [authoritativeTilePayloadReady, decisionScienceBlock?.ingredientRows]);
+    }, [
+        authoritativeTilePayloadReady,
+        decisionScienceBlock?.ingredientRows,
+        decisionTemplateUnavailable,
+        ingredientMechanisms,
+    ]);
     const productOverviewAiRequestPayload = useMemo<ProductOverviewAiRequestPayload | null>(() => {
         if (!overviewAiDigest) return null;
         const normalizedProductName = normalizeText(overviewFacts?.product?.name ?? productTitle);
