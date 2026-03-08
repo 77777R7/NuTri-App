@@ -4971,6 +4971,12 @@ const AnalysisBundleDashboard: React.FC<{
         () => (productOverviewAiRequestPayload ? buildProductOverviewFallbackClient(productOverviewAiRequestPayload) : null),
         [productOverviewAiRequestPayload],
     );
+    const canRequestOverviewAi = Boolean(
+        overviewAiDigest
+        && overviewAiRequestFingerprint
+        && decisionTemplatePayload
+        && typeof decisionTemplatePayload === 'object',
+    );
     const currentOverviewAiState =
         overviewAiDigest && productOverviewAiByDigest[overviewAiDigest]
             ? productOverviewAiByDigest[overviewAiDigest]
@@ -5003,7 +5009,7 @@ const AnalysisBundleDashboard: React.FC<{
     });
 
     useEffect(() => {
-        if (!overviewAiDigest || !overviewAiRequestFingerprint || decisionSupportState.status !== 'ready') return;
+        if (!overviewAiDigest || !overviewAiRequestFingerprint || !canRequestOverviewAi) return;
         const currentOverviewAi = productOverviewAiStateRef.current[overviewAiDigest];
         const currentOverviewAiMatchesRequestedFingerprint =
             currentOverviewAi?.fingerprint === overviewAiRequestFingerprint;
@@ -5149,7 +5155,7 @@ const AnalysisBundleDashboard: React.FC<{
             });
         };
     }, [
-        decisionSupportState.status,
+        canRequestOverviewAi,
         overviewAiDigest,
         overviewAiFallback,
         overviewAiRequestFingerprint,
@@ -5157,7 +5163,7 @@ const AnalysisBundleDashboard: React.FC<{
     ]);
 
     const shouldShowOverviewAiLoading =
-        Boolean(overviewAiDigest)
+        canRequestOverviewAi
         && (
             currentOverviewAiStatus === 'idle'
             || (currentOverviewAiStatus === 'loading' && currentOverviewAiMatchesFingerprint)
