@@ -2917,6 +2917,9 @@ const AnalysisBundleDashboard: React.FC<{
     scanSessionId?: string | null;
     scoreBundleV4State?: ScoreBundleV4State;
     onRetryScore?: () => void;
+    externalScrollY?: SharedValue<number>;
+    miniHeaderMode?: 'inline' | 'header';
+    onMiniScoreMetaChange?: (meta: { overallScore: number; overallBand: string | null; muted: boolean }) => void;
 }> = ({
     bundle,
     analysis,
@@ -2927,6 +2930,9 @@ const AnalysisBundleDashboard: React.FC<{
     scanSessionId = null,
     scoreBundleV4State,
     onRetryScore,
+    externalScrollY,
+    miniHeaderMode = 'inline',
+    onMiniScoreMetaChange,
 }) => {
     const { t } = useTranslation();
     const [selectedTileType, setSelectedTileType] = useState<TileType | null>(null);
@@ -3046,7 +3052,8 @@ const AnalysisBundleDashboard: React.FC<{
         (bundle.meta as { bundleId?: string | null })?.bundleId,
         scanSessionId,
     ]);
-    const scrollY = useSharedValue(0);
+    const internalScrollY = useSharedValue(0);
+    const scrollY = externalScrollY ?? internalScrollY;
     const scrollHandler = useAnimatedScrollHandler((event) => {
         scrollY.value = event.contentOffset.y;
     });
@@ -3056,8 +3063,11 @@ const AnalysisBundleDashboard: React.FC<{
     const tileWidth: DimensionValue = tilesContainerW > 0 ? tilesContainerW : '100%';
     const TileRenderer = disableTileAnimation ? StaticTile : AnimatedTile;
     const ScrollContainer: any = disableReanimatedScroll ? ScrollView : Animated.ScrollView;
+    const handlePlainScroll = useCallback((event: any) => {
+        scrollY.value = event.nativeEvent.contentOffset.y;
+    }, [scrollY]);
     const scrollProps = disableReanimatedScroll
-        ? {}
+        ? { onScroll: handlePlainScroll }
         : { onScroll: scrollHandler };
 
     useEffect(() => {
@@ -7073,10 +7083,19 @@ const AnalysisBundleDashboard: React.FC<{
         hasNumber(scoreCardV2Payload?.overallScore) || effectiveScoreUiMode === 'scored'
             ? normalizeText(scoreCardV2Payload?.overallBand ?? null) || getOverallBandLabel(displayedOverallScore)
             : null;
+    const shouldRenderInlineMiniHeader = !disableMiniHeader && miniHeaderMode !== 'header';
+
+    useEffect(() => {
+        onMiniScoreMetaChange?.({
+            overallScore: displayedOverallScore,
+            overallBand: displayedOverallBand,
+            muted: ringMuted,
+        });
+    }, [displayedOverallBand, displayedOverallScore, onMiniScoreMetaChange, ringMuted]);
 
     return (
         <View style={styles.root}>
-            {!disableMiniHeader ? (
+            {shouldRenderInlineMiniHeader ? (
                 <MiniScoreHeader
                     scrollY={scrollY}
                     overallScore={displayedOverallScore}
@@ -7212,6 +7231,9 @@ type AnalysisDashboardProps = {
     analysisBundle?: AnalysisBundle | null;
     scoreBundleV4State?: ScoreBundleV4State;
     onRetryScore?: () => void;
+    externalScrollY?: SharedValue<number>;
+    miniHeaderMode?: 'inline' | 'header';
+    onMiniScoreMetaChange?: (meta: { overallScore: number; overallBand: string | null; muted: boolean }) => void;
 };
 
 const LegacyAnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ analysis, isStreaming = false, scoreBadge, scoreState, sourceType, scanSessionId = null, analysisBundle, scoreBundleV4State, onRetryScore }) => {
@@ -8437,6 +8459,9 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
     analysisBundle,
     scoreBundleV4State,
     onRetryScore,
+    externalScrollY,
+    miniHeaderMode = 'inline',
+    onMiniScoreMetaChange,
 }) => {
     const modernBundle = ensureModernAnalysisBundle(analysisBundle, analysis, scanSessionId);
     return (
@@ -8450,6 +8475,9 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
             scanSessionId={scanSessionId}
             scoreBundleV4State={scoreBundleV4State}
             onRetryScore={onRetryScore}
+            externalScrollY={externalScrollY}
+            miniHeaderMode={miniHeaderMode}
+            onMiniScoreMetaChange={onMiniScoreMetaChange}
         />
     );
 };

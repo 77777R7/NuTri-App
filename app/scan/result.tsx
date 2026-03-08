@@ -1,10 +1,12 @@
 import { BlurView } from 'expo-blur';
 import Constants from 'expo-constants';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ArrowLeft, FileText } from 'lucide-react-native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, type SharedValue } from 'react-native-reanimated';
 
 import { ResponsiveScreen } from '@/components/common/ResponsiveScreen';
 import { OrganicSpinner } from '@/components/ui/OrganicSpinner';
@@ -33,6 +35,12 @@ type LabelIngredientEntry = {
   dosageUnit: string | null;
 };
 
+type HeaderMiniScoreState = {
+  overallScore: number;
+  overallBand: string | null;
+  muted: boolean;
+};
+
 const FORCE_LITE_DASHBOARD =
   process.env.EXPO_PUBLIC_FORCE_LITE_DASHBOARD === 'true' ||
   process.env.EXPO_PUBLIC_FORCE_LITE_DASHBOARD === '1';
@@ -49,6 +57,63 @@ const FREEZE_SHADOW_ONLY =
       process.env.EXPO_PUBLIC_FREEZE_SHADOW_ONLY === '0' ||
       process.env.EXPO_PUBLIC_FREEZE_SHADOW_ONLY === 'false'
     );
+const HEADER_MINI_SCORE_START = 210;
+const HEADER_MINI_SCORE_RANGE = 70;
+
+const getHeaderOverallBandLabel = (score: number, explicitBand?: string | null): string => {
+  const normalized = typeof explicitBand === 'string' ? explicitBand.trim() : '';
+  if (normalized) return normalized;
+  if (score >= 90) return 'Excellent';
+  if (score >= 80) return 'Strong';
+  if (score >= 70) return 'Good';
+  if (score >= 60) return 'Fair';
+  if (score >= 45) return 'Limited';
+  return 'Weak';
+};
+
+const getHeaderOverallBandTone = (score: number, explicitBand?: string | null) => {
+  const band = getHeaderOverallBandLabel(score, explicitBand).toLowerCase();
+  if (band === 'excellent') {
+    return {
+      bubbleBorder: 'rgba(21,128,61,0.24)',
+      bubbleFill: 'rgba(21,128,61,0.16)',
+      bubbleText: '#166534',
+    };
+  }
+  if (band === 'strong') {
+    return {
+      bubbleBorder: 'rgba(22,163,74,0.24)',
+      bubbleFill: 'rgba(22,163,74,0.16)',
+      bubbleText: '#166534',
+    };
+  }
+  if (band === 'good') {
+    return {
+      bubbleBorder: 'rgba(101,163,13,0.24)',
+      bubbleFill: 'rgba(101,163,13,0.16)',
+      bubbleText: '#4D7C0F',
+    };
+  }
+  if (band === 'fair') {
+    return {
+      bubbleBorder: 'rgba(217,119,6,0.24)',
+      bubbleFill: 'rgba(217,119,6,0.16)',
+      bubbleText: '#B45309',
+    };
+  }
+  if (band === 'limited') {
+    return {
+      bubbleBorder: 'rgba(234,88,12,0.24)',
+      bubbleFill: 'rgba(234,88,12,0.16)',
+      bubbleText: '#C2410C',
+    };
+  }
+  return {
+    bubbleBorder: 'rgba(220,38,38,0.24)',
+    bubbleFill: 'rgba(220,38,38,0.16)',
+    bubbleText: '#B91C1C',
+  };
+};
 
 const resolveDashboardRenderMode = (_isExpoGo: boolean): 'full' => {
   // Hard-lock to full dashboard so we never regress to legacy Lite UI during runtime.
@@ -437,6 +502,8 @@ export default function ScanResultScreen() {
   const dashboardRenderMode: 'full' = resolveDashboardRenderMode(isExpoGo);
   const [evidenceExpanded, setEvidenceExpanded] = useState(false);
   const [scoreRequestNonce, setScoreRequestNonce] = useState(0);
+  const analysisHeaderScrollY = useSharedValue(0);
+  const [headerMiniScore, setHeaderMiniScore] = useState<HeaderMiniScoreState | null>(null);
   const resolvedLabelAnalysis = labelAnalysis ?? labelResult?.analysis ?? null;
   const labelDraft = labelResult?.draft ?? null;
   const labelIssues = useMemo(
@@ -493,6 +560,22 @@ export default function ScanResultScreen() {
   const retryScore = useCallback(() => {
     setScoreRequestNonce((prev) => prev + 1);
   }, []);
+  const handleHeaderMiniScoreChange = useCallback((next: HeaderMiniScoreState) => {
+    setHeaderMiniScore((prev) => {
+      if (
+        prev?.overallScore === next.overallScore &&
+        prev?.overallBand === next.overallBand &&
+        prev?.muted === next.muted
+      ) {
+        return prev;
+      }
+      return next;
+    });
+  }, []);
+  useEffect(() => {
+    analysisHeaderScrollY.value = 0;
+    setHeaderMiniScore(null);
+  }, [analysisHeaderScrollY, barcode, isLabel, params.sessionId]);
   const debugPanelNode = SHOW_SCAN_DEBUG ? (
     <DebugScanPanel
       requestId={requestId}
@@ -1033,7 +1116,11 @@ export default function ScanResultScreen() {
           }}
         />
         <StatusBar style="dark" />
-        <Header onBack={handleBack} title="Analysis" />
+        <Header
+          onBack={handleBack}
+          title="Analysis"
+          miniScore={headerMiniScore ? { ...headerMiniScore, scrollY: analysisHeaderScrollY } : null}
+        />
 
         <AnalysisDashboard
           analysis={analysisWithLabelName as any}
@@ -1043,6 +1130,9 @@ export default function ScanResultScreen() {
           sourceType="label_scan"
           scanSessionId={typeof params.sessionId === 'string' ? params.sessionId : null}
           analysisBundle={analysisBundle}
+          externalScrollY={analysisHeaderScrollY}
+          miniHeaderMode="header"
+          onMiniScoreMetaChange={handleHeaderMiniScoreChange}
         />
 
         {!analysisComplete ? (
@@ -1288,7 +1378,11 @@ export default function ScanResultScreen() {
         }}
       />
       <StatusBar style="dark" />
-      <Header onBack={handleBack} title="Analysis" />
+      <Header
+        onBack={handleBack}
+        title="Analysis"
+        miniScore={headerMiniScore ? { ...headerMiniScore, scrollY: analysisHeaderScrollY } : null}
+      />
 
       {/* We render dashboard immediately. 
         As 'efficacy', 'safety' etc. arrive, this component re-renders and fills in the blanks.
@@ -1302,6 +1396,9 @@ export default function ScanResultScreen() {
           analysisBundle={analysisBundle}
           scoreBundleV4State={barcodeScoreState}
           onRetryScore={retryScore}
+          externalScrollY={analysisHeaderScrollY}
+          miniHeaderMode="header"
+          onMiniScoreMetaChange={handleHeaderMiniScoreChange}
         />
       </DashboardErrorBoundary>
 
@@ -1331,15 +1428,91 @@ export default function ScanResultScreen() {
   );
 }
 
-function Header({ onBack, title }: { onBack: () => void, title: string }) {
-  // ... (Keep existing Header code) ...
+function Header({
+  onBack,
+  title,
+  miniScore,
+}: {
+  onBack: () => void,
+  title: string,
+  miniScore?: (HeaderMiniScoreState & { scrollY: SharedValue<number> }) | null,
+}) {
+  const miniScoreTone = useMemo(
+    () => (miniScore ? getHeaderOverallBandTone(miniScore.overallScore, miniScore.overallBand) : null),
+    [miniScore?.overallBand, miniScore?.overallScore]
+  );
+  const titleAnimatedStyle = useAnimatedStyle(() => {
+    const progress = miniScore
+      ? Math.max(0, Math.min(1, (miniScore.scrollY.value - HEADER_MINI_SCORE_START) / HEADER_MINI_SCORE_RANGE))
+      : 0;
+    return {
+      opacity: 1 - progress,
+      transform: [
+        { translateY: progress * 8 },
+        { scale: 1 - progress * 0.06 },
+      ],
+    };
+  }, [miniScore]);
+  const miniScoreAnimatedStyle = useAnimatedStyle(() => {
+    const progress = miniScore
+      ? Math.max(0, Math.min(1, (miniScore.scrollY.value - HEADER_MINI_SCORE_START) / HEADER_MINI_SCORE_RANGE))
+      : 0;
+    return {
+      opacity: progress,
+      transform: [
+        { translateY: (1 - progress) * 10 },
+        { scale: 0.82 + progress * 0.18 },
+      ],
+    };
+  }, [miniScore]);
+
   return (
     <View style={styles.header}>
       <TouchableOpacity style={styles.backButton} onPress={onBack} activeOpacity={0.7}>
         <ArrowLeft size={20} color="#000" />
       </TouchableOpacity>
-      <Text style={styles.headerTitle}>{title}</Text>
-      <View style={{ width: 40 }} />
+      <View style={styles.headerCenterSlot} pointerEvents="none">
+        <Animated.View style={[styles.headerTitleLayer, titleAnimatedStyle]}>
+          <Text style={styles.headerTitle}>{title}</Text>
+        </Animated.View>
+        {miniScore && miniScoreTone ? (
+          <Animated.View style={[styles.headerMiniScoreLayer, miniScoreAnimatedStyle]}>
+            <LinearGradient
+              colors={
+                miniScore.muted
+                  ? ['rgba(255,255,255,0.94)', 'rgba(241,245,249,0.78)']
+                  : ['rgba(255,255,255,0.96)', miniScoreTone.bubbleFill]
+              }
+              locations={[0, 1]}
+              start={{ x: 0.15, y: 0.05 }}
+              end={{ x: 0.85, y: 1 }}
+              style={[
+                styles.headerMiniScoreShell,
+                miniScore.muted ? styles.headerMiniScoreShellMuted : { borderColor: miniScoreTone.bubbleBorder },
+              ]}
+            >
+              <View
+                style={[
+                  styles.headerMiniScoreCore,
+                  miniScore.muted
+                    ? styles.headerMiniScoreCoreMuted
+                    : { borderColor: miniScoreTone.bubbleBorder, backgroundColor: 'rgba(255,255,255,0.34)' },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.headerMiniScoreText,
+                    miniScore.muted ? styles.headerMiniScoreTextMuted : { color: miniScoreTone.bubbleText },
+                  ]}
+                >
+                  {miniScore.muted ? '--' : Math.round(miniScore.overallScore)}
+                </Text>
+              </View>
+            </LinearGradient>
+          </Animated.View>
+        ) : null}
+      </View>
+      <View style={styles.headerSpacer} />
     </View>
   );
 }
@@ -1406,6 +1579,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#F2F2F7',
     zIndex: 10,
   },
+  headerCenterSlot: {
+    position: 'absolute',
+    left: 76,
+    right: 76,
+    top: 16,
+    bottom: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitleLayer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerMiniScoreLayer: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   backButton: {
     width: 40,
     height: 40,
@@ -1420,6 +1611,46 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#000',
+  },
+  headerSpacer: {
+    width: 40,
+    height: 40,
+  },
+  headerMiniScoreShell: {
+    width: 58,
+    height: 58,
+    borderRadius: 999,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#111827',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
+  },
+  headerMiniScoreShellMuted: {
+    borderColor: 'rgba(148,163,184,0.18)',
+  },
+  headerMiniScoreCore: {
+    width: 44,
+    height: 44,
+    borderRadius: 999,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerMiniScoreCoreMuted: {
+    borderColor: 'rgba(148,163,184,0.14)',
+    backgroundColor: 'rgba(255,255,255,0.48)',
+  },
+  headerMiniScoreText: {
+    fontSize: 21,
+    fontWeight: '900',
+    color: '#111827',
+  },
+  headerMiniScoreTextMuted: {
+    color: '#64748b',
   },
   loadingContainer: { flex: 1, backgroundColor: '#F2F2F7', justifyContent: 'center', alignItems: 'center' },
   loadingTitle: { fontSize: 18, fontWeight: '600', color: '#52525b' },
