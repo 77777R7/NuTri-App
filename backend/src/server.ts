@@ -8073,6 +8073,59 @@ const computeFactsStatus = (facts: MySupplementFactsV1 | null): EnsureOverviewFa
   return hasActiveDose || hasDirections || hasOverlayIngredients || hasOverlaySuggestedUse ? "full" : "partial";
 };
 
+const computeFactsCoverageScore = (facts: MySupplementFactsV1 | null): number => {
+  if (!facts) return 0;
+  const overlayIngredientCount = Array.isArray(facts.overlay?.ingredients)
+    ? Math.min(3, facts.overlay.ingredients.length)
+    : 0;
+  const overlaySuggestedUseScore =
+    typeof facts.overlay?.suggestedUse === "string" && facts.overlay.suggestedUse.trim().length > 0 ? 4 : 0;
+  const directionsScore =
+    typeof facts.directions?.rawText === "string" && facts.directions.rawText.trim().length > 0 ? 3 : 0;
+  const activeDoseCount = Math.min(
+    3,
+    (facts.actives ?? []).filter((active) => {
+      const amountText = typeof active?.amountText === "string" ? active.amountText.trim() : "";
+      if (amountText.length > 0) return true;
+      return active?.amount != null && typeof active?.unit === "string" && active.unit.trim().length > 0;
+    }).length,
+  );
+
+  return overlayIngredientCount * 2 + overlaySuggestedUseScore + directionsScore + activeDoseCount;
+};
+
+const shouldPreferFactsCandidate = (
+  currentFacts: MySupplementFactsV1,
+  currentStatus: EnsureOverviewFactsStatus,
+  candidateFacts: MySupplementFactsV1,
+  candidateStatus: EnsureOverviewFactsStatus,
+): boolean => {
+  if (candidateStatus === "full" && currentStatus !== "full") return true;
+  if (candidateStatus !== "full" && currentStatus === "full") return false;
+
+  const currentScore = computeFactsCoverageScore(currentFacts);
+  const candidateScore = computeFactsCoverageScore(candidateFacts);
+  if (candidateScore !== currentScore) return candidateScore > currentScore;
+
+  const currentHasOverlayIngredients =
+    Array.isArray(currentFacts.overlay?.ingredients) && currentFacts.overlay.ingredients.length > 0;
+  const candidateHasOverlayIngredients =
+    Array.isArray(candidateFacts.overlay?.ingredients) && candidateFacts.overlay.ingredients.length > 0;
+  if (candidateHasOverlayIngredients !== currentHasOverlayIngredients) {
+    return candidateHasOverlayIngredients;
+  }
+
+  const currentHasSuggestedUse =
+    typeof currentFacts.overlay?.suggestedUse === "string" && currentFacts.overlay.suggestedUse.trim().length > 0;
+  const candidateHasSuggestedUse =
+    typeof candidateFacts.overlay?.suggestedUse === "string" && candidateFacts.overlay.suggestedUse.trim().length > 0;
+  if (candidateHasSuggestedUse !== currentHasSuggestedUse) {
+    return candidateHasSuggestedUse;
+  }
+
+  return false;
+};
+
 const extractFactsDigestHashFromAnalysisData = (
   analysisData: unknown,
 ): string | null => {
@@ -22402,7 +22455,7 @@ app.post("/api/ensure-overview", verifySupabaseToken, async (req: Request, res: 
     const barcodeGtin14 = barcodeDigits ? barcodeDigits.padStart(14, "0") : null;
     const overlayClaims = barcodeGtin14 ? await fetchIherbOverlayClaimsByBarcode(barcodeGtin14) : null;
 
-    const facts = buildMySupplementFactsV1({
+    let facts = buildMySupplementFactsV1({
       digest: digestBundle.digest,
       factsSourceVersion: digestBundle.factsSourceVersion,
       factsDigestHash: digestBundle.factsDigestHash,
@@ -22410,9 +22463,42 @@ app.post("/api/ensure-overview", verifySupabaseToken, async (req: Request, res: 
       overlayClaims,
     });
 
-    const factsStatus = computeFactsStatus(facts);
-    const factsDigestHash = digestBundle.factsDigestHash;
-    const factsSourceVersion = digestBundle.factsSourceVersion;
+    let factsStatus = computeFactsStatus(facts);
+    let factsDigestHash = digestBundle.factsDigestHash;
+    let factsSourceVersion = digestBundle.factsSourceVersion;
+
+    // When supplement-id resolution yields sparse facts, retry a barcode-authoritative digest
+    // so My Supplement detail can show iHerb-backed ingredients/directions consistently.
+    if (factsStatus !== "full" && barcodeDigits && barcodeGtin14) {
+      try {
+        const barcodeDigestBundle = await buildMySupplementDigestQuick({
+          supplementId: barcodeGtin14,
+          barcode: barcodeDigits,
+          brandName,
+          productName,
+          budgetMs: ENSURE_OVERVIEW_FACTS_BUDGET_MS,
+        });
+        const barcodeOverlayClaims = overlayClaims ?? await fetchIherbOverlayClaimsByBarcode(barcodeGtin14);
+        const barcodeFacts = buildMySupplementFactsV1({
+          digest: barcodeDigestBundle.digest,
+          factsSourceVersion: barcodeDigestBundle.factsSourceVersion,
+          factsDigestHash: barcodeDigestBundle.factsDigestHash,
+          labelDirectionsRawText: barcodeDigestBundle.labelDirectionsRawText,
+          overlayClaims: barcodeOverlayClaims,
+        });
+        const barcodeFactsStatus = computeFactsStatus(barcodeFacts);
+
+        if (shouldPreferFactsCandidate(facts, factsStatus, barcodeFacts, barcodeFactsStatus)) {
+          facts = barcodeFacts;
+          factsStatus = barcodeFactsStatus;
+          factsDigestHash = barcodeDigestBundle.factsDigestHash;
+          factsSourceVersion = barcodeDigestBundle.factsSourceVersion;
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unknown error";
+        console.warn("[ensure-overview] Barcode-authoritative facts fallback failed", message);
+      }
+    }
 
     const cachedAnalysis = await findMatchingPublicAnalysis({ supplementId, factsDigestHash });
     if (cachedAnalysis) {

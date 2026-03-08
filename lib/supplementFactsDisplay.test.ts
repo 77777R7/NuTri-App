@@ -126,7 +126,7 @@ test('buildWhatsInsideDisplay: blocklist names do not infer actives', () => {
   assert.equal(out.badgeLabel, null);
 });
 
-test('buildWhatsInsideDisplay: clamps to top 2 lines with hiddenCount', () => {
+test('buildWhatsInsideDisplay: clamps to top 3 lines with hiddenCount', () => {
   const out = buildWhatsInsideDisplay({
     productName: 'Mineral Complex',
     dosageText: null,
@@ -135,10 +135,11 @@ test('buildWhatsInsideDisplay: clamps to top 2 lines with hiddenCount', () => {
       { name: 'Magnesium', amount: 200, unit: 'mg' },
       { name: 'Zinc', amount: 15, unit: 'mg' },
       { name: 'Iron', amount: 8, unit: 'mg' },
+      { name: 'Vitamin D3', amount: 25, unit: 'mcg' },
     ],
   });
 
-  assert.equal(out.lines.length, 2);
+  assert.equal(out.lines.length, 3);
   assert.equal(out.hiddenCount, 1);
 });
 

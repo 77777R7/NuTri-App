@@ -206,8 +206,8 @@ export const buildWhatsInsideDisplay = (params: {
   if (activeLines.length > 0) {
     return {
       source: "actives",
-      lines: activeLines.slice(0, 2),
-      hiddenCount: Math.max(0, activeLines.length - 2),
+      lines: activeLines.slice(0, 3),
+      hiddenCount: Math.max(0, activeLines.length - 3),
       badgeLabel: null,
       metaText: null,
     };
