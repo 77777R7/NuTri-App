@@ -360,6 +360,8 @@ type WidgetTileProps = {
 const FORCE_FULL_DASHBOARD_EFFECTS =
     process.env.EXPO_PUBLIC_FORCE_FULL_DASHBOARD_EFFECTS === 'true' ||
     process.env.EXPO_PUBLIC_FORCE_FULL_DASHBOARD_EFFECTS === '1';
+const PRODUCT_OVERVIEW_AI_TIMEOUT_MS = 4_800;
+const PRODUCT_OVERVIEW_AI_WATCHDOG_MS = 5_400;
 const SHOW_SCAN_DEBUG =
     process.env.EXPO_PUBLIC_SHOW_SCAN_DEBUG === 'true' ||
     process.env.EXPO_PUBLIC_SHOW_SCAN_DEBUG === '1';
@@ -2216,6 +2218,9 @@ type ProductOverviewAiState = {
     fingerprint?: string;
     data?: ProductOverviewAiPayload;
     error?: string;
+    source?: 'api' | 'client-fallback';
+    fallbackUsed?: boolean;
+    startedAt?: number;
 };
 
 type ProductOverviewAiStateUpdater =
@@ -4981,6 +4986,10 @@ const AnalysisBundleDashboard: React.FC<{
         () => (productOverviewAiRequestPayload ? buildProductOverviewFallbackClient(productOverviewAiRequestPayload) : null),
         [productOverviewAiRequestPayload],
     );
+    const overviewAiClientFallback = useMemo(
+        () => (overviewAiFallback ? { ...overviewAiFallback, promptVersion: 'client-fallback' as const } : null),
+        [overviewAiFallback],
+    );
     const canRequestOverviewAi = Boolean(
         overviewAiDigest
         && overviewAiRequestFingerprint
@@ -4996,14 +5005,49 @@ const AnalysisBundleDashboard: React.FC<{
         overviewAiRequestFingerprint
         && currentOverviewAiState?.fingerprint === overviewAiRequestFingerprint,
     );
-    const overviewAiParagraphOne = currentOverviewAiState?.data
-        ? [toSentence(currentOverviewAiState.data.lead), toSentence(currentOverviewAiState.data.whatItIs)]
+    const buildOverviewAiFallbackState = useCallback(
+        (error: string): ProductOverviewAiState => {
+            if (overviewAiClientFallback) {
+                return {
+                    status: 'ok',
+                    fingerprint: overviewAiRequestFingerprint ?? undefined,
+                    data: overviewAiClientFallback,
+                    error,
+                    source: 'client-fallback',
+                    fallbackUsed: true,
+                    startedAt: undefined,
+                };
+            }
+            return {
+                status: 'unavailable',
+                fingerprint: overviewAiRequestFingerprint ?? undefined,
+                error,
+                startedAt: undefined,
+            };
+        },
+        [overviewAiClientFallback, overviewAiRequestFingerprint],
+    );
+    const buildOverviewAiLoadingState = useCallback(
+        (): ProductOverviewAiState => ({
+            status: 'loading',
+            fingerprint: overviewAiRequestFingerprint ?? undefined,
+            data: overviewAiClientFallback ?? undefined,
+            source: overviewAiClientFallback ? 'client-fallback' : undefined,
+            fallbackUsed: Boolean(overviewAiClientFallback),
+            startedAt: Date.now(),
+        }),
+        [overviewAiClientFallback, overviewAiRequestFingerprint],
+    );
+    const overviewAiDisplayData = currentOverviewAiState?.data ?? overviewAiClientFallback ?? null;
+    const overviewAiParagraphOne = overviewAiDisplayData
+        ? [toSentence(overviewAiDisplayData.lead), toSentence(overviewAiDisplayData.whatItIs)]
             .filter((line): line is string => Boolean(line))
             .join(' ')
         : null;
-    const overviewAiParagraphTwo = currentOverviewAiState?.data
-        ? toSentence(currentOverviewAiState.data.whyPeopleTakeIt)
+    const overviewAiParagraphTwo = overviewAiDisplayData
+        ? toSentence(overviewAiDisplayData.whyPeopleTakeIt)
         : null;
+    const overviewAiHasRenderableContent = Boolean(overviewAiParagraphOne || overviewAiParagraphTwo);
     const overviewMissingInfoLines = enforceNeverBlank({
         lines: [
             unresolvedMissingLines.length > 0 ? 'Some high-impact record details are missing.' : 'Core high-impact details are present.',
@@ -5036,26 +5080,27 @@ const AnalysisBundleDashboard: React.FC<{
         }
 
         let cancelled = false;
+        let timedOut = false;
         const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+            timedOut = true;
+            controller.abort();
+        }, PRODUCT_OVERVIEW_AI_TIMEOUT_MS);
+        setProductOverviewAiState(overviewAiDigest, buildOverviewAiLoadingState());
         const interactionTask = InteractionManager.runAfterInteractions(() => {
             void run();
         });
 
         const run = async () => {
             try {
-                setProductOverviewAiState(overviewAiDigest, {
-                    status: 'loading',
-                    fingerprint: overviewAiRequestFingerprint,
-                });
-
                 const baseUrl = String(Config.searchApiBaseUrl).replace(/\/$/, '');
+                const headers = await withAuthHeaders({
+                    'Content-Type': 'application/json',
+                });
+                if (cancelled) return;
                 const res = await fetch(`${baseUrl}/api/product-overview-ai/v1`, {
                     method: 'POST',
-                    headers: {
-                        ...(await withAuthHeaders({
-                            'Content-Type': 'application/json',
-                        })),
-                    },
+                    headers,
                     body: overviewAiRequestFingerprint,
                     signal: controller.signal,
                 });
@@ -5063,29 +5108,16 @@ const AnalysisBundleDashboard: React.FC<{
                 if (cancelled) return;
 
                 if (!res.ok) {
-                    if (overviewAiFallback) {
-                        setProductOverviewAiState(overviewAiDigest, {
-                            status: 'ok',
-                            fingerprint: overviewAiRequestFingerprint,
-                            data: {
-                                ...overviewAiFallback,
-                                promptVersion: 'client-fallback',
-                            },
-                            error: `HTTP ${res.status}`,
-                        });
-                        return;
-                    }
-                    setProductOverviewAiState(overviewAiDigest, {
-                        status: 'error',
-                        error: `HTTP ${res.status}`,
-                        fingerprint: overviewAiRequestFingerprint,
-                    });
+                    setProductOverviewAiState(overviewAiDigest, buildOverviewAiFallbackState(`HTTP ${res.status}`));
                     return;
                 }
 
                 const payload = await res.json();
                 if (cancelled) return;
-                if (normalizeText(payload?.digest ?? null) !== overviewAiDigest) return;
+                if (normalizeText(payload?.digest ?? null) !== overviewAiDigest) {
+                    setProductOverviewAiState(overviewAiDigest, buildOverviewAiFallbackState('overview_ai_digest_mismatch'));
+                    return;
+                }
 
                 if (
                     payload?.status === 'ok'
@@ -5102,54 +5134,38 @@ const AnalysisBundleDashboard: React.FC<{
                             whyPeopleTakeIt: String(payload.overviewAi.whyPeopleTakeIt ?? '').trim(),
                             promptVersion: typeof payload.promptVersion === 'string' ? payload.promptVersion : undefined,
                         },
+                        source: payload?.fallbackUsed ? 'client-fallback' : 'api',
+                        fallbackUsed: Boolean(payload?.fallbackUsed),
+                        startedAt: undefined,
                     });
                     return;
                 }
 
-                if (overviewAiFallback) {
-                    setProductOverviewAiState(overviewAiDigest, {
-                        status: 'ok',
-                        fingerprint: overviewAiRequestFingerprint,
-                        data: {
-                            ...overviewAiFallback,
-                            promptVersion: 'client-fallback',
-                        },
-                        error: typeof payload?.reason === 'string' ? payload.reason : 'AI summary fallback',
-                    });
-                    return;
-                }
-
-                setProductOverviewAiState(overviewAiDigest, {
-                    status: 'unavailable',
-                    error: typeof payload?.reason === 'string' ? payload.reason : 'AI summary unavailable',
-                    fingerprint: overviewAiRequestFingerprint,
-                });
+                setProductOverviewAiState(
+                    overviewAiDigest,
+                    buildOverviewAiFallbackState(typeof payload?.reason === 'string' ? payload.reason : 'AI summary fallback'),
+                );
             } catch (error) {
-                if (cancelled || (error instanceof Error && error.name === 'AbortError')) return;
-                if (overviewAiFallback) {
-                    setProductOverviewAiState(overviewAiDigest, {
-                        status: 'ok',
-                        fingerprint: overviewAiRequestFingerprint,
-                        data: {
-                            ...overviewAiFallback,
-                            promptVersion: 'client-fallback',
-                        },
-                        error: error instanceof Error ? error.message : 'AI summary fallback',
-                    });
+                if (cancelled) return;
+                if (error instanceof Error && error.name === 'AbortError' && !timedOut) {
                     return;
                 }
-                setProductOverviewAiState(overviewAiDigest, {
-                    status: 'error',
-                    error: error instanceof Error ? error.message : 'AI summary unavailable',
-                    fingerprint: overviewAiRequestFingerprint,
-                });
+                setProductOverviewAiState(
+                    overviewAiDigest,
+                    buildOverviewAiFallbackState(
+                        timedOut
+                            ? 'overview_ai_timeout'
+                            : error instanceof Error
+                                ? error.message
+                                : 'AI summary fallback',
+                    ),
+                );
+            } finally {
+                clearTimeout(timeoutId);
             }
         };
 
-        return () => {
-            cancelled = true;
-            interactionTask.cancel();
-            controller.abort();
+        const watchdogId = setTimeout(() => {
             setProductOverviewAiState(overviewAiDigest, (current) => {
                 if (
                     !current
@@ -5158,6 +5174,31 @@ const AnalysisBundleDashboard: React.FC<{
                 ) {
                     return current;
                 }
+                return buildOverviewAiFallbackState('overview_ai_watchdog_timeout');
+            });
+        }, PRODUCT_OVERVIEW_AI_WATCHDOG_MS);
+
+        return () => {
+            cancelled = true;
+            interactionTask.cancel();
+            controller.abort();
+            clearTimeout(timeoutId);
+            clearTimeout(watchdogId);
+            setProductOverviewAiState(overviewAiDigest, (current) => {
+                if (
+                    !current
+                    || current.status !== 'loading'
+                    || current.fingerprint !== overviewAiRequestFingerprint
+                ) {
+                    return current;
+                }
+                if (current.data) {
+                    return {
+                        ...current,
+                        status: 'ok',
+                        startedAt: undefined,
+                    };
+                }
                 return {
                     status: 'idle',
                     fingerprint: overviewAiRequestFingerprint,
@@ -5165,15 +5206,17 @@ const AnalysisBundleDashboard: React.FC<{
             });
         };
     }, [
+        buildOverviewAiFallbackState,
+        buildOverviewAiLoadingState,
         canRequestOverviewAi,
         overviewAiDigest,
-        overviewAiFallback,
         overviewAiRequestFingerprint,
         setProductOverviewAiState,
     ]);
 
     const shouldShowOverviewAiLoading =
         canRequestOverviewAi
+        && !overviewAiHasRenderableContent
         && (
             currentOverviewAiStatus === 'idle'
             || (currentOverviewAiStatus === 'loading' && currentOverviewAiMatchesFingerprint)
@@ -5192,10 +5235,14 @@ const AnalysisBundleDashboard: React.FC<{
                         <ActivityIndicator />
                         <Text style={styles.inlineLoadingText}>AI generating</Text>
                     </View>
-                ) : currentOverviewAiStatus === 'ok' && overviewAiParagraphOne && overviewAiParagraphTwo ? (
+                ) : overviewAiHasRenderableContent ? (
                     <View style={{ gap: 12 }}>
-                        <Text style={styles.detailNarrativeText}>{overviewAiParagraphOne}</Text>
-                        <Text style={styles.detailNarrativeText}>{overviewAiParagraphTwo}</Text>
+                        {overviewAiParagraphOne ? (
+                            <Text style={styles.detailNarrativeText}>{overviewAiParagraphOne}</Text>
+                        ) : null}
+                        {overviewAiParagraphTwo ? (
+                            <Text style={styles.detailNarrativeText}>{overviewAiParagraphTwo}</Text>
+                        ) : null}
                     </View>
                 ) : (
                     <View style={styles.emptyStateBox}>

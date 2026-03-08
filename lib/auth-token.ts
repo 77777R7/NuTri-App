@@ -16,6 +16,9 @@ export const withAuthHeaders = async (
     if (!nextHeaders['X-Auth-Disabled']) {
       nextHeaders['X-Auth-Disabled'] = '1';
     }
+    if (!tokenOverride) {
+      return nextHeaders;
+    }
   }
 
   const token = tokenOverride ?? (await getAccessToken());
