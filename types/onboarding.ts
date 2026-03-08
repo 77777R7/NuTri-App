@@ -56,6 +56,7 @@ export type OnboardingState = {
   setTrial: (trial: TrialState) => Promise<void>;
   markCompletedLocal: () => Promise<void>;
   clearDraft: () => Promise<void>;
+  resetLocalOnboarding: () => Promise<void>;
   setServerSyncedAt: (iso: string) => Promise<void>;
 };
 

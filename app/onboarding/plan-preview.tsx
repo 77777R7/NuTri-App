@@ -29,7 +29,7 @@ export default function PlanPreviewScreen() {
       },
     }, 10);
 
-    router.push('/onboarding/first-stack');
+    router.replace('/onboarding/first-stack');
   }, [preferredTypes, router, saveDraft, visibleGoals]);
 
   return (

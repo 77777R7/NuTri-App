@@ -6,18 +6,27 @@ import test from "node:test";
 const DASHBOARD_FILE = path.join(process.cwd(), "components/scan/AnalysisDashboard.tsx");
 const source = fs.readFileSync(DASHBOARD_FILE, "utf8");
 
-const readBetween = (input: string, startToken: string, endToken: string): string => {
-  const start = input.indexOf(startToken);
-  const end = input.indexOf(endToken, start + startToken.length);
-  assert.ok(start >= 0, `missing token: ${startToken}`);
-  assert.ok(end > start, `missing token after ${startToken}: ${endToken}`);
+const findIndex = (input: string, token: string | RegExp, from = 0): number => {
+  if (typeof token === "string") {
+    return input.indexOf(token, from);
+  }
+  const rest = input.slice(from);
+  const local = rest.search(token);
+  return local < 0 ? -1 : from + local;
+};
+
+const readBetween = (input: string, startToken: string | RegExp, endToken: string | RegExp): string => {
+  const start = findIndex(input, startToken);
+  assert.ok(start >= 0, `missing token: ${String(startToken)}`);
+  const end = findIndex(input, endToken, start + 1);
+  assert.ok(end > start, `missing token after ${String(startToken)}: ${String(endToken)}`);
   return input.slice(start, end);
 };
 
 test("above-the-fold overview and science tiles prefer authoritative decision-support content", () => {
-  assert.ok(source.includes("const authoritativeOverviewTileSummary = useMemo<CoverLine>(() => {"));
-  assert.ok(source.includes("const authoritativeOverviewTileBullets = useMemo<BulletItem[]>(() => {"));
-  assert.ok(source.includes("const authoritativeScienceTileMechanisms = useMemo<Mechanism[]>(() => {"));
+  assert.match(source, /const authoritativeOverviewTileSummary = useMemo(?:<[^>]+>)?\(\(\) => \{/);
+  assert.match(source, /const authoritativeOverviewTileBullets = useMemo(?:<[^>]+>)?\(\(\) => \{/);
+  assert.match(source, /const authoritativeScienceTileMechanisms = useMemo(?:<[^>]+>)?\(\(\) => \{/);
 
   const tilesSlice = readBetween(
     source,
@@ -36,8 +45,8 @@ test("above-the-fold overview and science tiles prefer authoritative decision-su
 test("authoritative-first tiles use neutral placeholders instead of old cover copy before ready", () => {
   const overviewSelectorSlice = readBetween(
     source,
-    "const authoritativeOverviewTileSummary = useMemo<CoverLine>(() => {",
-    "const productOverviewAiRequestPayload = useMemo(() => {",
+    /const authoritativeOverviewTileSummary = useMemo(?:<[^>]+>)?\(\(\) => \{/,
+    /const productOverviewAiRequestPayload = useMemo(?:<[\s\S]*?>)?\(/,
   );
 
   assert.ok(overviewSelectorSlice.includes("Latest verified product details are loading."));

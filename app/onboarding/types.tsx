@@ -47,7 +47,7 @@ export default function TypesScreen() {
       answers: selectedTypes,
     });
 
-    router.push('/onboarding/blocker');
+    router.replace('/onboarding/blocker');
   }, [draft?.goals, router, saveDraft, selectedTypes]);
 
   return (
@@ -57,6 +57,7 @@ export default function TypesScreen() {
       title="Which supplement types do you want to focus on first?"
       subtitle="Optional. We will use this to pre-select your Smart Filter view."
       fallbackHref="/onboarding/goals"
+      scrollable
       showSkip
       onSkip={persistAndContinue}
       onNext={persistAndContinue}

@@ -1,4 +1,5 @@
 import ProgressScreen from '@/components/screens/ProgressScreen';
+import ProfileScreen from '@/components/screens/ProfileScreen';
 import { MySupplementView } from '@/components/screens/MySupplement';
 import { ContentFrame } from '@/components/common/ContentFrame';
 import { useDailyCheckIns } from '@/contexts/DailyCheckInContext';
@@ -11,7 +12,6 @@ import { apiClient, type NutriTipsData } from '@/lib/api-client';
 import { buildCheckInKey } from '@/lib/check-ins';
 import { useTranslation } from '@/lib/i18n';
 import { selectDailyTip, type NutriTipSelection } from '@/lib/nutri-tips';
-import { formatDoseForPill } from '@/lib/supplementDisplay';
 import type { RoutinePreferences } from '@/types/saved-supplements';
 import type { ScanHistoryItem } from '@/types/scan-history';
 import { BlurView } from 'expo-blur';
@@ -531,44 +531,6 @@ const buildDailyTrendSeries = ({
   });
 };
 
-const buildWeeklyTrendSeries = ({
-  baseDate,
-  expectedCount,
-  expectedKeySet,
-  checkInsByDate,
-}: {
-  baseDate: Date;
-  expectedCount: number;
-  expectedKeySet: Set<string>;
-  checkInsByDate: Record<string, string[]>;
-}) => {
-  const endDate = new Date(baseDate);
-  endDate.setHours(0, 0, 0, 0);
-  const days = Array.from({ length: 28 }, (_, index) => {
-    const date = new Date(endDate);
-    date.setDate(endDate.getDate() - (27 - index));
-    const dateKey = getLocalDateKey(date);
-    const completed = countCompletedForDate(expectedKeySet, checkInsByDate[dateKey]);
-    const total = expectedCount;
-    const value = total > 0 ? calcPercent(completed, total) : null;
-    return { k: WEEKDAY_LABELS[date.getDay()], v: value, completed, total, dateKey };
-  });
-
-  return Array.from({ length: 4 }, (_, weekIndex) => {
-    const slice = days.slice(weekIndex * 7, weekIndex * 7 + 7);
-    const completed = slice.reduce((sum, entry) => sum + entry.completed, 0);
-    const total = slice.reduce((sum, entry) => sum + entry.total, 0);
-    const value = total > 0 ? calcPercent(completed, total) : null;
-    return {
-      k: `W${weekIndex + 1}`,
-      v: value,
-      completed,
-      total,
-      dateKey: slice[0]?.dateKey ?? `w${weekIndex + 1}`,
-    };
-  });
-};
-
 type DayItemProps = {
   item: WeekdayItem;
   isSelected: boolean;
@@ -787,7 +749,7 @@ const SavedSupplements = ({ selectedDateKey, pageX }: { selectedDateKey: string;
         supplementId: item.supplementId,
         checkInKey: buildCheckInKey({ supplementId: item.supplementId, localId: item.id }),
         name: item.productName,
-        dose: formatDoseForPill(item.dosageText) ?? '',
+        dose: '',
         ...theme,
       };
     });
@@ -1495,7 +1457,7 @@ const RecentlyScanned = () => {
       barcode: item.barcode ?? null,
       productName: item.productName,
       brandName: item.brandName,
-      dosageText: formatDoseForPill(item.dosageText) ?? '',
+      dosageText: '',
     });
     if (!added) {
       setSavingIds(prev => ({ ...prev, [item.id]: false }));
@@ -1959,14 +1921,14 @@ const BottomNav = ({
                   labelBottom="Scan"
                   Icon={ScanText}
                   delay={100}
-                  onPress={() => router.push('/scan/label')}
+                  onPress={() => router.replace('/scan/label')}
                 />
                 <FloatingMenuItem
                   labelTop="Barcode"
                   labelBottom="Scan"
                   Icon={ScanBarcode}
                   delay={0}
-                  onPress={() => router.push('/scan/barcode')}
+                  onPress={() => router.replace('/scan/barcode')}
                 />
               </MotiView>
             )}
@@ -2277,35 +2239,7 @@ const HomeTab = () => {
 };
 
 const ProfileTab = () => {
-  const tokens = useScreenTokens(NAV_HEIGHT);
-  const contentTopPadding = tokens.contentTopPadding;
-  const contentBottomPadding = tokens.contentBottomPadding;
-
-  return (
-    <View style={styles.screen}>
-      <ScrollView
-        contentInsetAdjustmentBehavior="never"
-        scrollIndicatorInsets={{ top: contentTopPadding, bottom: contentBottomPadding }}
-        contentContainerStyle={{
-          paddingTop: contentTopPadding,
-          paddingBottom: contentBottomPadding,
-          width: '100%',
-        }}
-        showsVerticalScrollIndicator={false}
-      >
-        <ContentFrame navHeight={NAV_HEIGHT} style={styles.contentFrame}>
-          <View style={styles.screenHeaderRow}>
-            <Text style={[styles.h1, { fontSize: tokens.h1Size, lineHeight: tokens.h1Line }]} maxFontSizeMultiplier={1.2}>
-              Profile
-            </Text>
-          </View>
-          <View>
-            <Text style={styles.placeholderText}>Profile</Text>
-          </View>
-        </ContentFrame>
-      </ScrollView>
-    </View>
-  );
+  return <ProfileScreen navHeight={NAV_HEIGHT} />;
 };
 
 // -----------------------------------------------------
@@ -3206,13 +3140,6 @@ const styles = StyleSheet.create({
   },
   tabScreen: {
     ...StyleSheet.absoluteFillObject,
-  },
-  placeholderText: {
-    fontSize: 16,
-    lineHeight: 22,
-    fontWeight: '700',
-    color: '#94a3b8',
-    includeFontPadding: false,
   },
 
   // ---- Bottom nav ----

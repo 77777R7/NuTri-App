@@ -9,7 +9,15 @@ import {
 } from 'react';
 import type { ReactNode } from 'react';
 
-import { getDraft, getFlags, getProgress, saveDraft as persistDraft, setFlags, setProgress as persistProgress } from '@/lib/storage/onboarding';
+import {
+  getDraft,
+  getFlags,
+  getProgress,
+  resetOnboardingStorage,
+  saveDraft as persistDraft,
+  setFlags,
+  setProgress as persistProgress,
+} from '@/lib/storage/onboarding';
 import { ONBOARDING_TOTAL_STEPS } from '@/lib/onboarding-v2';
 import type { OnboardingState, ProfileDraft, TrialState } from '@/types/onboarding';
 
@@ -160,6 +168,17 @@ export const OnboardingProvider = ({ children }: OnboardingProviderProps) => {
     await setFlags({ draftUpdatedAt: '' });
   }, []);
 
+  const resetLocalOnboarding = useCallback(async () => {
+    setDraft(null);
+    setProgressState(1);
+    setOnbCompleted(false);
+    setTrialState(DEFAULT_TRIAL_STATE);
+    draftUpdatedAtRef.current = undefined;
+    setDraftUpdatedAt(undefined);
+    setServerSyncedAtState(undefined);
+    await resetOnboardingStorage();
+  }, []);
+
   const setServerSyncedAt = useCallback(async (iso: string) => {
     setServerSyncedAtState(iso);
     await setFlags({ serverSyncedAt: iso });
@@ -179,9 +198,25 @@ export const OnboardingProvider = ({ children }: OnboardingProviderProps) => {
       setTrial,
       markCompletedLocal,
       clearDraft,
+      resetLocalOnboarding,
       setServerSyncedAt,
     }),
-    [clearDraft, draft, draftUpdatedAt, loading, markCompletedLocal, onbCompleted, progress, saveDraft, serverSyncedAt, setProgress, setServerSyncedAt, setTrial, trial],
+    [
+      clearDraft,
+      draft,
+      draftUpdatedAt,
+      loading,
+      markCompletedLocal,
+      onbCompleted,
+      progress,
+      resetLocalOnboarding,
+      saveDraft,
+      serverSyncedAt,
+      setProgress,
+      setServerSyncedAt,
+      setTrial,
+      trial,
+    ],
   );
 
   return <OnboardingContext.Provider value={value}>{children}</OnboardingContext.Provider>;

@@ -8,6 +8,7 @@ export default function ScanLayout() {
         headerShown: false,
         animation: 'slide_from_right',
         presentation: 'card',
+        gestureEnabled: false,
         contentStyle: { backgroundColor: '#F2F2F7' },
       }}
     >

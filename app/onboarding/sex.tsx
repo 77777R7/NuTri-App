@@ -23,7 +23,7 @@ export default function SexScreen() {
 
     await saveDraft({ sex: selected, gender: selected }, 4);
     trackOnboardingEvent('question_answered', { question: 'sex', answer: selected });
-    router.push('/onboarding/experience');
+    router.replace('/onboarding/experience');
   }, [router, saveDraft, selected]);
 
   return (
@@ -33,6 +33,7 @@ export default function SexScreen() {
       title="How do you identify?"
       subtitle="Choose what feels right for your profile preferences."
       fallbackHref="/onboarding/age-range"
+      scrollable
       disableNext={!selected}
       onNext={handleNext}
     >

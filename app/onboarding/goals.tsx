@@ -48,7 +48,7 @@ export default function GoalsScreen() {
       answerCount: selectedGoals.length,
       answers: selectedGoals,
     });
-    router.push('/onboarding/types');
+    router.replace('/onboarding/types');
   }, [draft?.preferredTypes, router, saveDraft, selectedGoals]);
 
   return (
@@ -58,6 +58,7 @@ export default function GoalsScreen() {
       title="What are your goals right now?"
       subtitle="Select at least one. Your selected goals will appear in Smart Filter."
       fallbackHref="/onboarding/experience"
+      scrollable
       disableNext={selectedGoals.length === 0}
       onNext={handleNext}
     >

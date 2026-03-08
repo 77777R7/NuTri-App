@@ -1,4 +1,6 @@
+import type { DecisionSupportOverlayClaims } from "./decisionSupport.js";
 import type { FactsDigest } from "./factsDigest.js";
+import { normalizeIherbSupplementFactsRows } from "./iherbOverlayIngredients.js";
 
 export type MySupplementFactsIdentityType = FactsDigest["identity"]["type"];
 
@@ -41,6 +43,14 @@ export type MySupplementFactsV1 = {
     };
     parseConfidence: number; // 0-1
   };
+  overlay: {
+    provider: "iherb";
+    suggestedUse: string | null;
+    ingredients: Array<{
+      name: string;
+      dose: string | null;
+    }>;
+  } | null;
   warnings: {
     bullets: string[];
     missing: boolean;
@@ -135,8 +145,11 @@ export function buildMySupplementFactsV1(params: {
   factsSourceVersion: string;
   factsDigestHash: string;
   labelDirectionsRawText: string | null;
+  overlayClaims?: DecisionSupportOverlayClaims | null;
 }): MySupplementFactsV1 {
-  const labelDirectionsRawText = safeTrim(params.labelDirectionsRawText);
+  const overlaySuggestedUse = safeTrim(params.overlayClaims?.suggestedUse);
+  const overlayIngredients = normalizeIherbSupplementFactsRows(params.overlayClaims?.nutritionalFacts);
+  const labelDirectionsRawText = overlaySuggestedUse ?? safeTrim(params.labelDirectionsRawText);
   const parsedDirections = parseLabelDirectionsV1(labelDirectionsRawText);
 
   return {
@@ -163,6 +176,14 @@ export function buildMySupplementFactsV1(params: {
       parsed: parsedDirections.parsed,
       parseConfidence: parsedDirections.parseConfidence,
     },
+    overlay:
+      overlaySuggestedUse || overlayIngredients.length > 0
+        ? {
+            provider: "iherb",
+            suggestedUse: overlaySuggestedUse,
+            ingredients: overlayIngredients,
+          }
+        : null,
     warnings: {
       bullets: [
         ...(params.digest.warnings.warnings ?? []),
@@ -178,4 +199,3 @@ export function buildMySupplementFactsV1(params: {
     quality: params.digest.quality,
   };
 }
-
