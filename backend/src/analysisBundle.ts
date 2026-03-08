@@ -411,7 +411,14 @@ export const DecisionSupportInlineSchema = z.object({
       ).length(6),
     })
     .optional(),
-});
+  // Keep this permissive so new decision-support detail blocks survive analysis_bundle
+  // validation and SSE transport without requiring a schema bump for every additive field.
+  overviewBlock: z.record(z.string(), z.unknown()).optional(),
+  scienceBlock: z.record(z.string(), z.unknown()).optional(),
+  usageBlock: z.record(z.string(), z.unknown()).optional(),
+  safetyBlock: z.record(z.string(), z.unknown()).optional(),
+  qualityMark: z.record(z.string(), z.unknown()).optional(),
+}).passthrough();
 export type DecisionSupportInline = z.infer<typeof DecisionSupportInlineSchema>;
 
 export const AnalysisBundleMetaSchema = z.object({
