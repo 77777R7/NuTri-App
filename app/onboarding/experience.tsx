@@ -23,7 +23,7 @@ export default function ExperienceScreen() {
 
     await saveDraft({ supplementExperience: selected }, 5);
     trackOnboardingEvent('question_answered', { question: 'supplement_experience', answer: selected });
-    router.push('/onboarding/goals');
+    router.replace('/onboarding/goals');
   }, [router, saveDraft, selected]);
 
   return (
@@ -33,6 +33,7 @@ export default function ExperienceScreen() {
       title="How familiar are you with supplements?"
       subtitle="We tailor onboarding depth based on your current experience."
       fallbackHref="/onboarding/sex"
+      scrollable
       disableNext={!selected}
       onNext={handleNext}
     >

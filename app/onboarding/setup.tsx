@@ -42,7 +42,7 @@ export default function SetupPreferencesScreen() {
       question: 'setup_preferences',
       answers: values,
     });
-    router.push('/onboarding/plan-preview');
+    router.replace('/onboarding/plan-preview');
   }, [router, saveDraft, values]);
 
   return (

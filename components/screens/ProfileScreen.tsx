@@ -1,5 +1,6 @@
-import React from 'react';
-import { ScrollView, StyleSheet, Text, View, type TextStyle, type ViewStyle } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, type TextStyle, type ViewStyle } from 'react-native';
+import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   Bell,
@@ -125,16 +126,29 @@ const getStateTone = (state: ProfileStatusState) => {
 
 export default function ProfileScreen({ navHeight }: ProfileScreenProps) {
   const { user, isBiometricEnabled } = useAuth();
-  const { draft } = useOnboarding();
+  const router = useRouter();
+  const { draft, resetLocalOnboarding } = useOnboarding();
   const { t } = useTranslation();
   const tokens = useScreenTokens(navHeight);
   const model = buildProfileScreenModel({ user, draft, isBiometricEnabled });
+  const [qaBusy, setQaBusy] = useState(false);
 
   const contentTopPadding = tokens.contentTopPadding;
   const contentBottomPadding = tokens.contentBottomPadding;
   const snapshotColumns = (tokens.contentWidth - SNAPSHOT_GAP) / 2 >= MIN_TWO_UP_CARD_WIDTH ? 2 : 1;
   const snapshotCardWidth =
     snapshotColumns === 2 ? (tokens.contentWidth - SNAPSHOT_GAP) / 2 : tokens.contentWidth;
+
+  const handleStartQaTest = useCallback(async () => {
+    if (qaBusy) return;
+    setQaBusy(true);
+    try {
+      await resetLocalOnboarding();
+      router.replace('/onboarding/welcome');
+    } finally {
+      setQaBusy(false);
+    }
+  }, [qaBusy, resetLocalOnboarding, router]);
 
   const snapshotMeta: Record<ProfileSnapshotId, SnapshotMeta> = {
     goals: {
@@ -237,12 +251,26 @@ export default function ProfileScreen({ navHeight }: ProfileScreenProps) {
       >
         <ContentFrame navHeight={navHeight}>
           <View style={styles.headerBlock}>
-            <Text
-              style={[styles.headerTitle, { fontSize: tokens.h1Size, lineHeight: tokens.h1Line }]}
-              maxFontSizeMultiplier={1.2}
-            >
-              {t.profileTitle}
-            </Text>
+            <View style={styles.headerTitleRow}>
+              <Text
+                style={[styles.headerTitle, styles.headerTitleTight, { fontSize: tokens.h1Size, lineHeight: tokens.h1Line }]}
+                maxFontSizeMultiplier={1.2}
+              >
+                {t.profileTitle}
+              </Text>
+              <TouchableOpacity
+                activeOpacity={0.88}
+                onPress={() => {
+                  void handleStartQaTest();
+                }}
+                disabled={qaBusy}
+                style={[styles.qaTestButton, qaBusy ? styles.qaTestButtonBusy : null]}
+              >
+                <Text style={styles.qaTestButtonText}>
+                  {qaBusy ? 'Starting...' : 'Start Q&A test'}
+                </Text>
+              </TouchableOpacity>
+            </View>
             <Text style={styles.headerSubtitle}>{t.profileSubtitle}</Text>
           </View>
 
@@ -474,8 +502,18 @@ const styles = StyleSheet.create({
   headerBlock: {
     marginBottom: 20,
   },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    flexWrap: 'wrap',
+  },
   headerTitle: {
     ...h1Base,
+  },
+  headerTitleTight: {
+    flexShrink: 1,
   },
   headerSubtitle: {
     marginTop: 8,
@@ -485,6 +523,27 @@ const styles = StyleSheet.create({
     color: '#66758f',
     includeFontPadding: false,
     maxWidth: 320,
+  },
+  qaTestButton: {
+    minHeight: 38,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    backgroundColor: '#0f766e',
+    borderWidth: 1,
+    borderColor: 'rgba(15, 118, 110, 0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  qaTestButtonBusy: {
+    opacity: 0.72,
+  },
+  qaTestButtonText: {
+    fontSize: 13,
+    lineHeight: 16,
+    fontWeight: '800',
+    color: '#ffffff',
+    includeFontPadding: false,
   },
   sectionBlock: {
     marginTop: 24,

@@ -1,4 +1,5 @@
 import { normalizeHumanTextForMatch } from "@/lib/text/normalizeHumanText";
+import { isNutritionLabelLikeIngredient } from "@/lib/scan/isNutritionLabelLikeIngredient";
 
 export type FactsActiveDisplay = {
   name?: string | null;
@@ -8,7 +9,7 @@ export type FactsActiveDisplay = {
 };
 
 export type WhatsInsideDisplay = {
-  source: "actives" | "inferred" | "dose" | "none";
+  source: "overlay" | "actives" | "inferred" | "dose" | "none";
   lines: string[];
   hiddenCount: number;
   badgeLabel: string | null;
@@ -178,7 +179,27 @@ export const buildWhatsInsideDisplay = (params: {
   actives: FactsActiveDisplay[];
   dosageText?: string | null;
   productName: string;
+  overlayIngredients?: Array<{ name: string; dose: string | null }>;
 }): WhatsInsideDisplay => {
+  const overlayLines = (params.overlayIngredients ?? [])
+    .map((ingredient) => {
+      const name = typeof ingredient?.name === "string" ? ingredient.name.trim() : "";
+      if (!name || isNutritionLabelLikeIngredient(name)) return null;
+      const dose = typeof ingredient?.dose === "string" ? ingredient.dose.trim() : "";
+      return dose ? `${name} - ${dose}` : name;
+    })
+    .filter((line): line is string => Boolean(line));
+
+  if (overlayLines.length > 0) {
+    return {
+      source: "overlay",
+      lines: overlayLines.slice(0, 3),
+      hiddenCount: Math.max(0, overlayLines.length - 3),
+      badgeLabel: null,
+      metaText: null,
+    };
+  }
+
   const processedActives = buildProcessedActives(params.actives ?? []);
   const activeLines = processedActives.map((item) => item.line);
 

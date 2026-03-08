@@ -150,3 +150,9 @@ export const setFlags = async (nextFlags: Partial<OnboardingFlags>) => {
     await AsyncStorage.multiRemove(removals);
   }
 };
+
+export const resetOnboardingStorage = async () => {
+  await AsyncStorage.multiRemove(
+    Object.values(STORAGE_KEYS).map(key => withPrefix(key)),
+  );
+};

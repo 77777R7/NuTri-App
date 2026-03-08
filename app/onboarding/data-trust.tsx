@@ -50,7 +50,7 @@ export default function DataTrustScreen() {
     }
 
     await saveDraft({ onboardingVersion: 'v2' }, 2);
-    router.push('/onboarding/age-range');
+    router.replace('/onboarding/age-range');
   }, [router, saveDraft]);
 
   return (

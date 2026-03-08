@@ -58,6 +58,9 @@ export default function RootLayout() {
                         <Stack screenOptions={{ headerShown: false }}>
                           <Stack.Screen name="index" options={{ gestureEnabled: false }} />
                           <Stack.Screen name="(auth)" />
+                          <Stack.Screen name="main" options={{ gestureEnabled: false }} />
+                          <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
+                          <Stack.Screen name="scan" options={{ gestureEnabled: false }} />
                         </Stack>
                         <StatusBar style="auto" />
                         <Toast position="bottom" />

@@ -142,7 +142,7 @@ export default function WelcomeScreen() {
     setProgress(2);
     setDirection('forward');
     trackOnboardingEvent('onboarding_started', { version: 'v2' });
-    router.push('/onboarding/data-trust');
+    router.replace('/onboarding/data-trust');
   };
 
   return (
@@ -186,7 +186,7 @@ export default function WelcomeScreen() {
           />
         </View>
 
-        <AppHeader showBack title={`Step 1 of ${ONBOARDING_TOTAL_STEPS}`} fallbackHref="/" />
+        <AppHeader showBack={false} title={`Step 1 of ${ONBOARDING_TOTAL_STEPS}`} fallbackHref="/" />
 
         {/* Progress indicator */}
         <AnimView

@@ -23,7 +23,7 @@ export default function BlockerScreen() {
 
     await saveDraft({ adherenceBlocker: selected }, 8);
     trackOnboardingEvent('question_answered', { question: 'adherence_blocker', answer: selected });
-    router.push('/onboarding/setup');
+    router.replace('/onboarding/setup');
   }, [router, saveDraft, selected]);
 
   return (
@@ -33,6 +33,7 @@ export default function BlockerScreen() {
       title="What usually gets in the way of taking supplements consistently?"
       subtitle="Pick the one that fits best right now."
       fallbackHref="/onboarding/types"
+      scrollable
       disableNext={!selected}
       onNext={handleNext}
       nextLabel="Continue"

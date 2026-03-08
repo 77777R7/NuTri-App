@@ -122,6 +122,7 @@ import {
   buildIngredientScienceContext,
   normalizeIngredientScienceKey,
 } from "./ingredientScienceContext.js";
+import { normalizeIherbSupplementFactsRows } from "./iherbOverlayIngredients.js";
 import { verifyWebOwnership } from "./insights/webOwnership.js";
 import { getKbRuntime, lookupKbFormExplain, lookupKbRuntimeFormInsights, lookupSafeScienceSignals } from "./kbRuntime.js";
 import { analyzeLabelDraftWithDiagnostics, formatForDeepSeek, needsConfirmation, validateIngredient, type LabelAnalysisDiagnostics, type LabelDraft } from "./labelAnalysis.js";
@@ -8066,7 +8067,10 @@ const computeFactsStatus = (facts: MySupplementFactsV1 | null): EnsureOverviewFa
       return false;
     });
   const hasDirections = typeof facts.directions?.rawText === "string" && facts.directions.rawText.trim().length > 0;
-  return hasActiveDose || hasDirections ? "full" : "partial";
+  const hasOverlayIngredients = Array.isArray(facts.overlay?.ingredients) && facts.overlay.ingredients.length > 0;
+  const hasOverlaySuggestedUse =
+    typeof facts.overlay?.suggestedUse === "string" && facts.overlay.suggestedUse.trim().length > 0;
+  return hasActiveDose || hasDirections || hasOverlayIngredients || hasOverlaySuggestedUse ? "full" : "partial";
 };
 
 const extractFactsDigestHashFromAnalysisData = (
@@ -22366,11 +22370,17 @@ app.post("/api/ensure-overview", verifySupabaseToken, async (req: Request, res: 
       budgetMs: ENSURE_OVERVIEW_FACTS_BUDGET_MS,
     });
 
+    const normalizedBarcode = barcode ? normalizeBarcodeInput(barcode) : null;
+    const barcodeDigits = normalizedBarcode?.code ?? null;
+    const barcodeGtin14 = barcodeDigits ? barcodeDigits.padStart(14, "0") : null;
+    const overlayClaims = barcodeGtin14 ? await fetchIherbOverlayClaimsByBarcode(barcodeGtin14) : null;
+
     const facts = buildMySupplementFactsV1({
       digest: digestBundle.digest,
       factsSourceVersion: digestBundle.factsSourceVersion,
       factsDigestHash: digestBundle.factsDigestHash,
       labelDirectionsRawText: digestBundle.labelDirectionsRawText,
+      overlayClaims,
     });
 
     const factsStatus = computeFactsStatus(facts);
@@ -22394,8 +22404,6 @@ app.post("/api/ensure-overview", verifySupabaseToken, async (req: Request, res: 
       });
     }
 
-    const normalizedBarcode = barcode ? normalizeBarcodeInput(barcode) : null;
-    const barcodeDigits = normalizedBarcode?.code ?? null;
     if (factsStatus === "partial" && barcodeDigits) {
       void populateBarcodeSnapshotCacheDeduped(barcodeDigits).catch((error) => {
         const message = error instanceof Error ? error.message : "Unknown error";
@@ -22669,6 +22677,7 @@ app.get("/api/barcode-metadata", verifySupabaseToken, async (req: Request, res: 
   const barcodeGtin14 = barcode.padStart(14, "0");
   const barcodeRawDigits = barcode;
   const cacheKey = buildBarcodeCacheKey(barcode);
+  const overlayClaims = await fetchIherbOverlayClaimsByBarcode(barcodeGtin14);
   const seededDsldLabelId = STAGE0_DSLD_BARCODE_FALLBACK_ENABLED && STAGE0_DSLD_SEEDED_LABEL_MAP_ENABLED
     ? STAGE0_DSLD_SEEDED_LABEL_MAP.get(barcodeGtin14) ?? null
     : null;
@@ -22676,17 +22685,27 @@ app.get("/api/barcode-metadata", verifySupabaseToken, async (req: Request, res: 
     process.env.METADATA_READONLY === "0" || process.env.METADATA_READONLY === "false"
   );
 
-  const extractPrimaryDoseText = (snapshot: SupplementSnapshot): string | null => {
+  const extractPrimaryDoseText = (
+    snapshot: SupplementSnapshot,
+    overlayClaimsForBarcode: DecisionSupportOverlayClaims | null,
+  ): string | null => {
+    const overlayRows = normalizeIherbSupplementFactsRows(overlayClaimsForBarcode?.nutritionalFacts);
+    const overlayDose = overlayRows.find((row) => row.dose)?.dose?.trim() ?? "";
+    if (overlayDose) return overlayDose;
+
     for (const active of snapshot.label.actives) {
       if (active.amountUnknown) continue;
       if (active.isProprietaryBlend) continue;
       if (active.amount == null) continue;
+      const activeName = typeof active.name === "string" ? active.name.trim().toLowerCase() : "";
+      if (/\bcalories?\b|\btotal fat\b|\bsaturated fat\b|\bcholesterol\b|\bsodium\b/.test(activeName)) continue;
       const unit =
         active.amountUnitNormalized ??
         active.amountUnit ??
         active.amountUnitRaw ??
         null;
       if (!unit) continue;
+      if (/\bcal(?:ories?)?\b/i.test(unit)) continue;
       // Return as raw text; the client display formatter will normalize/compact if needed.
       return `${active.amount} ${unit}`.trim();
     }
@@ -22710,7 +22729,7 @@ app.get("/api/barcode-metadata", verifySupabaseToken, async (req: Request, res: 
           brand: snapshot.product.brand ?? null,
           name: snapshot.product.name ?? null,
         },
-        primaryDoseText: extractPrimaryDoseText(snapshot),
+        primaryDoseText: extractPrimaryDoseText(snapshot, overlayClaims),
         npn: snapshot.regulatory.npn ?? null,
         dsldLabelId: snapshot.regulatory.dsldLabelId ?? null,
       });
@@ -22791,7 +22810,7 @@ app.get("/api/barcode-metadata", verifySupabaseToken, async (req: Request, res: 
               brand: snapshot.product.brand ?? null,
               name: snapshot.product.name ?? null,
             },
-            primaryDoseText: extractPrimaryDoseText(snapshot),
+            primaryDoseText: extractPrimaryDoseText(snapshot, overlayClaims),
             npn: snapshot.regulatory.npn ?? null,
             dsldLabelId: snapshot.regulatory.dsldLabelId ?? String(seededDsldLabelId),
           });
@@ -22903,7 +22922,7 @@ app.get("/api/barcode-metadata", verifySupabaseToken, async (req: Request, res: 
           brand: snapshot.product.brand ?? null,
           name: snapshot.product.name ?? null,
         },
-        primaryDoseText: extractPrimaryDoseText(snapshot),
+        primaryDoseText: extractPrimaryDoseText(snapshot, overlayClaims),
         npn: snapshot.regulatory.npn ?? npn,
         dsldLabelId: snapshot.regulatory.dsldLabelId ?? null,
       });

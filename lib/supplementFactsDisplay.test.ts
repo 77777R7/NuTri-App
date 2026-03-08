@@ -7,6 +7,7 @@ test('buildWhatsInsideDisplay: combines EPA + DHA into one omega-3 line', () => 
   const out = buildWhatsInsideDisplay({
     productName: 'Fish Oil',
     dosageText: null,
+    overlayIngredients: [],
     actives: [
       { name: 'Eicosapentaenoic Acid (EPA)', amount: 180, unit: 'mg' },
       { name: 'Docosahexaenoic Acid (DHA)', amount: 120, unit: 'mg' },
@@ -22,6 +23,7 @@ test('buildWhatsInsideDisplay: keeps mixed EPA/DHA units in combined omega-3 lin
   const out = buildWhatsInsideDisplay({
     productName: 'Fish Oil',
     dosageText: null,
+    overlayIngredients: [],
     actives: [
       { name: 'Eicosapentaenoic Acid (EPA)', amount: 500, unit: 'mg' },
       { name: 'Docosahexaenoic Acid (DHA)', amount: 1, unit: 'g' },
@@ -36,6 +38,7 @@ test('buildWhatsInsideDisplay: dedupes canonical aliases (Vitamin D3 / Cholecalc
   const out = buildWhatsInsideDisplay({
     productName: 'Vitamin D',
     dosageText: null,
+    overlayIngredients: [],
     actives: [
       { name: 'Vitamin D3', amount: 25, unit: 'mcg' },
       { name: 'Cholecalciferol', amount: null, unit: null },
@@ -51,6 +54,7 @@ test('buildWhatsInsideDisplay: inferred requires whitelist + strength unit and r
   const inferred = buildWhatsInsideDisplay({
     productName: 'Astaxanthin',
     dosageText: '12 mg',
+    overlayIngredients: [],
     actives: [],
   });
   assert.equal(inferred.source, 'inferred');
@@ -59,6 +63,7 @@ test('buildWhatsInsideDisplay: inferred requires whitelist + strength unit and r
   const mlDose = buildWhatsInsideDisplay({
     productName: 'Astaxanthin Liquid',
     dosageText: '5 mL',
+    overlayIngredients: [],
     actives: [],
   });
   assert.equal(mlDose.source, 'dose');
@@ -66,6 +71,7 @@ test('buildWhatsInsideDisplay: inferred requires whitelist + strength unit and r
   const ozDose = buildWhatsInsideDisplay({
     productName: 'Astaxanthin Liquid',
     dosageText: '1 oz',
+    overlayIngredients: [],
     actives: [],
   });
   assert.equal(ozDose.source, 'dose');
@@ -75,6 +81,7 @@ test('buildWhatsInsideDisplay: infers Ester-C and NAC aliases with token boundar
   const esterC = buildWhatsInsideDisplay({
     productName: 'Ester-C 1000',
     dosageText: '1000 mg',
+    overlayIngredients: [],
     actives: [],
   });
   assert.equal(esterC.source, 'inferred');
@@ -83,6 +90,7 @@ test('buildWhatsInsideDisplay: infers Ester-C and NAC aliases with token boundar
   const esterCUnicode = buildWhatsInsideDisplay({
     productName: 'Ester‑C 1000™',
     dosageText: '1000 mg',
+    overlayIngredients: [],
     actives: [],
   });
   assert.equal(esterCUnicode.source, 'inferred');
@@ -91,6 +99,7 @@ test('buildWhatsInsideDisplay: infers Ester-C and NAC aliases with token boundar
   const nac = buildWhatsInsideDisplay({
     productName: 'NAC 600',
     dosageText: '600 mg',
+    overlayIngredients: [],
     actives: [],
   });
   assert.equal(nac.source, 'inferred');
@@ -99,6 +108,7 @@ test('buildWhatsInsideDisplay: infers Ester-C and NAC aliases with token boundar
   const nacthNoise = buildWhatsInsideDisplay({
     productName: 'NACHT Sleep Blend',
     dosageText: '600 mg',
+    overlayIngredients: [],
     actives: [],
   });
   assert.equal(nacthNoise.source, 'dose');
@@ -108,6 +118,7 @@ test('buildWhatsInsideDisplay: blocklist names do not infer actives', () => {
   const out = buildWhatsInsideDisplay({
     productName: 'Daily Multi Formula',
     dosageText: '25 mg',
+    overlayIngredients: [],
     actives: [],
   });
 
@@ -119,6 +130,7 @@ test('buildWhatsInsideDisplay: clamps to top 2 lines with hiddenCount', () => {
   const out = buildWhatsInsideDisplay({
     productName: 'Mineral Complex',
     dosageText: null,
+    overlayIngredients: [],
     actives: [
       { name: 'Magnesium', amount: 200, unit: 'mg' },
       { name: 'Zinc', amount: 15, unit: 'mg' },
@@ -127,5 +139,28 @@ test('buildWhatsInsideDisplay: clamps to top 2 lines with hiddenCount', () => {
   });
 
   assert.equal(out.lines.length, 2);
+  assert.equal(out.hiddenCount, 1);
+});
+
+test('buildWhatsInsideDisplay: overlay ingredients take precedence and show top 3 lines', () => {
+  const out = buildWhatsInsideDisplay({
+    productName: 'Omega-3 Fish Oil',
+    dosageText: '15 cal',
+    overlayIngredients: [
+      { name: 'Calories', dose: '15 cal' },
+      { name: 'Total Omega-3 Fatty Acids', dose: '1040 mg' },
+      { name: 'EPA (Eicosapentaenoic Acid)', dose: '690 mg' },
+      { name: 'DHA (Docosahexaenoic Acid)', dose: '260 mg' },
+      { name: 'Other Omega-3 Fatty Acids', dose: '90 mg' },
+    ],
+    actives: [{ name: 'Calories', amount: 15, unit: 'cal' }],
+  });
+
+  assert.equal(out.source, 'overlay');
+  assert.deepEqual(out.lines, [
+    'Total Omega-3 Fatty Acids - 1040 mg',
+    'EPA (Eicosapentaenoic Acid) - 690 mg',
+    'DHA (Docosahexaenoic Acid) - 260 mg',
+  ]);
   assert.equal(out.hiddenCount, 1);
 });

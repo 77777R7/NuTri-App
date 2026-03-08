@@ -352,6 +352,14 @@ const formatRetryAfterLabel = (seconds: number): string | null => {
   return `~${hours}h`;
 };
 
+const CALORIE_DOSE_REGEX = /\bcal(?:ories)?\b/i;
+
+const formatSavedDoseForDisplay = (raw?: string | null): string | null => {
+  const formatted = formatDoseForPill(raw);
+  if (!formatted) return null;
+  return CALORIE_DOSE_REGEX.test(formatted) ? null : formatted;
+};
+
 const computeFactsStatusClient = (facts: MySupplementFactsV1 | null | undefined): "full" | "partial" | "none" => {
   if (!facts) return "none";
   const hasActiveDose = (facts.actives ?? []).some((active) => {
@@ -361,7 +369,10 @@ const computeFactsStatusClient = (facts: MySupplementFactsV1 | null | undefined)
     return false;
   });
   const hasDirections = typeof facts.directions?.rawText === "string" && facts.directions.rawText.trim().length > 0;
-  return hasActiveDose || hasDirections ? "full" : "partial";
+  const hasOverlayIngredients = Array.isArray(facts.overlay?.ingredients) && facts.overlay.ingredients.length > 0;
+  const hasOverlaySuggestedUse =
+    typeof facts.overlay?.suggestedUse === "string" && facts.overlay.suggestedUse.trim().length > 0;
+  return hasActiveDose || hasDirections || hasOverlayIngredients || hasOverlaySuggestedUse ? "full" : "partial";
 };
 
 const extractFactsDigestHashFromAnalysisPayload = (payload: AnalysisPayload | null): string | null => {
@@ -635,6 +646,14 @@ type MySupplementFactsV1 = {
     };
     parseConfidence: number;
   };
+  overlay: {
+    provider: "iherb";
+    suggestedUse: string | null;
+    ingredients: Array<{
+      name: string;
+      dose: string | null;
+    }>;
+  } | null;
   warnings: {
     bullets: string[];
     missing: boolean;
@@ -1077,7 +1096,7 @@ const CollectionCard = React.memo(
 	                    </Text>
 	                  </View>
 	                  {(() => {
-	                    const dose = formatDoseForPill(item.dosageText);
+	                    const dose = formatSavedDoseForDisplay(item.dosageText);
 	                    if (!dose) return null;
 	                    return (
 	                      <View style={[styles.tagPill, styles.dosePillClamp, { borderColor: theme.tagBorderColor }]}>
@@ -1574,7 +1593,7 @@ function DetailSheet({
     };
 
     const load = async () => {
-      const dosageShort = formatDoseForPill(item.dosageText) ?? null;
+      const dosageShort = formatSavedDoseForDisplay(item.dosageText);
 
       let supplementId = item.supplementId ?? null;
       if (supplementId) {
@@ -1683,7 +1702,7 @@ function DetailSheet({
     factsRefreshLoopActiveRef.current = true;
     const scheduleMs = [2000, 5000, 10000];
     const expectedHash = factsDigestHash ?? null;
-    const dosageShort = formatDoseForPill(item.dosageText) ?? null;
+    const dosageShort = formatSavedDoseForDisplay(item.dosageText);
     const userSupplementId = isUuid(item.id) ? item.id : null;
     const refreshStartedAt = Date.now();
     let attemptsUsed = 0;
@@ -1927,7 +1946,7 @@ function DetailSheet({
 
   const fallback = buildLocalOverviewFallback({
     productName: item.productName,
-    dosageText: formatDoseForPill(item.dosageText) ?? null,
+    dosageText: formatSavedDoseForDisplay(item.dosageText),
   });
 
   const coreBenefits = Array.isArray(efficacy?.coreBenefits)
@@ -1991,16 +2010,20 @@ function DetailSheet({
     }
   })();
 
-  const localDose = formatDoseForPill(item.dosageText) ?? null;
+  const localDose = formatSavedDoseForDisplay(item.dosageText);
   const whatsInsideDisplay = buildWhatsInsideDisplay({
     actives: facts?.actives ?? [],
     dosageText: localDose,
     productName: item.productName,
+    overlayIngredients: facts?.overlay?.ingredients ?? [],
   });
   const labelDirectionsRaw = typeof facts?.directions?.rawText === "string" ? facts.directions.rawText.trim() : "";
-  const showDirectionsRow = Boolean(labelDirectionsRaw) || factsStatus === "full";
-  const labelDirectionsPrimaryText = labelDirectionsRaw ? labelDirectionsRaw : "Directions not found for this product.";
-  const labelDirectionsMetaText = !labelDirectionsRaw && factsStatus === "full"
+  const overlaySuggestedUseRaw =
+    typeof facts?.overlay?.suggestedUse === "string" ? facts.overlay.suggestedUse.trim() : "";
+  const resolvedDirectionsRaw = overlaySuggestedUseRaw || labelDirectionsRaw;
+  const showDirectionsRow = Boolean(resolvedDirectionsRaw) || factsStatus === "full";
+  const labelDirectionsPrimaryText = resolvedDirectionsRaw || "Directions not found for this product.";
+  const labelDirectionsMetaText = !resolvedDirectionsRaw && factsStatus === "full"
     ? "Check the bottle label. You can add your own note below."
     : null;
   const suggestedRoutine = buildSuggestedRoutineV0({
@@ -2040,7 +2063,7 @@ function DetailSheet({
   });
   const applySuggestionButtonText = applyCopy.buttonText;
   const effectiveApplyNotice = applyCopy.notice;
-  const showAddLabelDirectionsCta = !labelDirectionsRaw && factsStatus === "full";
+  const showAddLabelDirectionsCta = !resolvedDirectionsRaw && factsStatus === "full";
   const handleAddLabelDirections = () => {
     if (!note.trim()) {
       setNote("Label directions: ");
@@ -2362,7 +2385,7 @@ function DetailSheet({
     aiUiPhase === "none";
   const whatsInsideLinesForDisplay = overviewExpanded
     ? whatsInsideDisplay.lines
-    : whatsInsideDisplay.lines.slice(0, 1);
+    : whatsInsideDisplay.lines.slice(0, 3);
   const whatsInsideExtraCount =
     Math.max(0, whatsInsideDisplay.hiddenCount) +
     Math.max(0, whatsInsideDisplay.lines.length - whatsInsideLinesForDisplay.length);
@@ -2420,7 +2443,7 @@ function DetailSheet({
 	                    </Text>
 	                  </View>
 	                  {(() => {
-	                    const dose = formatDoseForPill(item.dosageText);
+	                    const dose = formatSavedDoseForDisplay(item.dosageText);
 	                    if (!dose) return null;
 	                    return (
 	                      <View style={[styles.sheetTag, styles.dosePillClamp, { borderColor: theme.tagBorderColor }]}>
@@ -2472,7 +2495,9 @@ function DetailSheet({
                             </View>
                           ) : null}
                         </View>
-	                        {whatsInsideDisplay.source === "actives" || whatsInsideDisplay.source === "inferred" ? (
+	                        {whatsInsideDisplay.source === "overlay" ||
+                          whatsInsideDisplay.source === "actives" ||
+                          whatsInsideDisplay.source === "inferred" ? (
 	                          <View style={{ gap: 10 }}>
 	                            {whatsInsideLinesForDisplay.map((line) => (
 	                              <View key={line} style={styles.overviewBulletRow}>
@@ -2511,7 +2536,11 @@ function DetailSheet({
 	                          <>
 	                            <Text style={styles.overviewBulletText}>
 	                              <Text style={styles.overviewBulletLabel}>
-	                                {labelDirectionsRaw ? "Directions (from label): " : "Directions: "}
+                                {overlaySuggestedUseRaw
+                                    ? "Directions (from iHerb): "
+                                    : labelDirectionsRaw
+                                      ? "Directions (from label): "
+                                      : "Directions: "}
 	                              </Text>
 	                              {labelDirectionsPrimaryText}
 	                            </Text>
@@ -3300,7 +3329,7 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
 
 	      // Keep dosageText clean: never persist or display full directions here.
 	      const preferredRaw = cleanedCurrent || scanDose || "";
-	      return formatDoseForPill(preferredRaw) ?? "";
+	      return formatSavedDoseForDisplay(preferredRaw) ?? "";
 	    },
 	    [scanDoseLookup],
 	  );
@@ -3442,9 +3471,10 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
       .filter((item) => {
         const barcode = item.barcode?.trim();
         if (!barcode) return false;
-        const currentDose = formatDoseForPill(item.dosageText) ?? null;
+        const currentDose = formatSavedDoseForDisplay(item.dosageText);
         if (!currentDose) return true;
         if (isStrengthDose(currentDose)) return false;
+        if (CALORIE_DOSE_REGEX.test(currentDose)) return true;
         return isCountDose(currentDose);
       })
       .slice(0, 10);
@@ -3462,10 +3492,10 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
         if (cancelled) break;
         if (!meta || meta.status !== "ok") continue;
 
-        const nextDose = formatDoseForPill(meta.primaryDoseText);
+        const nextDose = formatSavedDoseForDisplay(meta.primaryDoseText);
         if (!nextDose) continue;
 
-        const currentDose = formatDoseForPill(item.dosageText) ?? null;
+        const currentDose = formatSavedDoseForDisplay(item.dosageText);
         if (currentDose && isStrengthDose(currentDose)) continue; // upgrade-only
         if (nextDose === currentDose) continue;
 

@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, type ReactNode } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import { ScrollView, StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useNavigation, type NavigationProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -28,6 +28,7 @@ type OnboardingContainerProps = {
   showBack?: boolean;
   showSkip?: boolean;
   fallbackHref?: Href;
+  scrollable?: boolean;
 };
 
 export const OnboardingContainer = ({
@@ -46,6 +47,7 @@ export const OnboardingContainer = ({
   showBack = true,
   showSkip = false,
   fallbackHref = '/onboarding/welcome',
+  scrollable = false,
 }: OnboardingContainerProps) => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp<ReactNavigation.RootParamList>>();
@@ -112,7 +114,18 @@ export const OnboardingContainer = ({
         durationMs={360}
         mountKey={`${step}-${enterDir}`}
       >
-        <View style={styles.content}>{children}</View>
+        {scrollable ? (
+          <ScrollView
+            style={styles.content}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            {children}
+          </ScrollView>
+        ) : (
+          <View style={styles.content}>{children}</View>
+        )}
       </StepSlide>
 
       <View style={styles.footer}>
@@ -170,6 +183,10 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     marginTop: 24,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 28,
   },
   footer: {
     flexDirection: 'row',

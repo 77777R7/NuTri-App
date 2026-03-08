@@ -25,7 +25,7 @@ export default function FirstStackScreen() {
 
   const handleNext = useCallback(async () => {
     await saveDraft({ firstActionPreference: selected }, 11);
-    router.push('/onboarding/done');
+    router.replace('/onboarding/done');
   }, [router, saveDraft, selected]);
 
   return (
@@ -35,6 +35,7 @@ export default function FirstStackScreen() {
       title="Build your first stack"
       subtitle="Pick how you want to start so we can guide your next action."
       fallbackHref="/onboarding/plan-preview"
+      scrollable
       onNext={handleNext}
       nextLabel="Finish setup"
     >

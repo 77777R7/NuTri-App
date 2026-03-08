@@ -23,7 +23,7 @@ export default function AgeRangeScreen() {
 
     await saveDraft({ ageRange: selected }, 3);
     trackOnboardingEvent('question_answered', { question: 'age_range', answer: selected });
-    router.push('/onboarding/sex');
+    router.replace('/onboarding/sex');
   }, [router, saveDraft, selected]);
 
   return (
@@ -33,6 +33,7 @@ export default function AgeRangeScreen() {
       title="Which age range are you in?"
       subtitle="This helps us tune guidance tone and personalization for you."
       fallbackHref="/onboarding/data-trust"
+      scrollable
       disableNext={!selected}
       onNext={handleNext}
     >

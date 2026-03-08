@@ -12,7 +12,6 @@ import { apiClient, type NutriTipsData } from '@/lib/api-client';
 import { buildCheckInKey } from '@/lib/check-ins';
 import { useTranslation } from '@/lib/i18n';
 import { selectDailyTip, type NutriTipSelection } from '@/lib/nutri-tips';
-import { formatDoseForPill } from '@/lib/supplementDisplay';
 import type { RoutinePreferences } from '@/types/saved-supplements';
 import type { ScanHistoryItem } from '@/types/scan-history';
 import { BlurView } from 'expo-blur';
@@ -750,7 +749,7 @@ const SavedSupplements = ({ selectedDateKey, pageX }: { selectedDateKey: string;
         supplementId: item.supplementId,
         checkInKey: buildCheckInKey({ supplementId: item.supplementId, localId: item.id }),
         name: item.productName,
-        dose: formatDoseForPill(item.dosageText) ?? '',
+        dose: '',
         ...theme,
       };
     });
@@ -1458,7 +1457,7 @@ const RecentlyScanned = () => {
       barcode: item.barcode ?? null,
       productName: item.productName,
       brandName: item.brandName,
-      dosageText: formatDoseForPill(item.dosageText) ?? '',
+      dosageText: '',
     });
     if (!added) {
       setSavingIds(prev => ({ ...prev, [item.id]: false }));
@@ -1922,14 +1921,14 @@ const BottomNav = ({
                   labelBottom="Scan"
                   Icon={ScanText}
                   delay={100}
-                  onPress={() => router.push('/scan/label')}
+                  onPress={() => router.replace('/scan/label')}
                 />
                 <FloatingMenuItem
                   labelTop="Barcode"
                   labelBottom="Scan"
                   Icon={ScanBarcode}
                   delay={0}
-                  onPress={() => router.push('/scan/barcode')}
+                  onPress={() => router.replace('/scan/barcode')}
                 />
               </MotiView>
             )}
