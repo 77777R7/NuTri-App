@@ -41,6 +41,7 @@ backend/backend/
 # local artifacts
 artifacts/
 output/
+build-preview*.ipa
 
 # typescript
 *.tsbuildinfo
