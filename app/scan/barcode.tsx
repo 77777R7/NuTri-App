@@ -5,13 +5,6 @@ import { CameraOff, Check, Flashlight, X } from 'lucide-react-native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigation, type NavigationProp } from '@react-navigation/native';
 import { ActivityIndicator, Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Animated, {
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming
-} from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ResponsiveScreen } from '@/components/common/ResponsiveScreen';
@@ -65,10 +58,7 @@ export default function BarcodeScanScreen() {
   const navigationLockedRef = useRef(false);
   const lastScanValueRef = useRef<string | null>(null);
   const lastScanAtRef = useRef(0);
-
-  // Animation values
-  const checkmarkScale = useSharedValue(0);
-  const checkmarkOpacity = useSharedValue(0);
+  const navigationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     // Reset state on mount
@@ -77,9 +67,13 @@ export default function BarcodeScanScreen() {
     lastScanValueRef.current = null;
     lastScanAtRef.current = 0;
     setStatus('idle');
-    checkmarkScale.value = 0;
-    checkmarkOpacity.value = 0;
-  }, [checkmarkOpacity, checkmarkScale]);
+    return () => {
+      if (navigationTimerRef.current) {
+        clearTimeout(navigationTimerRef.current);
+        navigationTimerRef.current = null;
+      }
+    };
+  }, []);
 
   const navigateToResult = useCallback((sessionId: string) => {
     router.replace({ pathname: '/scan/result', params: { sessionId } });
@@ -124,10 +118,6 @@ export default function BarcodeScanScreen() {
 
         setStatus('success');
 
-        // Animate checkmark
-        checkmarkScale.value = withSpring(1, { damping: 12 });
-        checkmarkOpacity.value = withTiming(1, { duration: 200 });
-
         // Set session to loading and navigate
         const sessionId = ensureSessionId();
         setScanSession({
@@ -143,8 +133,8 @@ export default function BarcodeScanScreen() {
 
         // Delay navigation to let user see the checkmark
         navigationLockedRef.current = true;
-        setTimeout(() => {
-          runOnJS(navigateToResult)(sessionId);
+        navigationTimerRef.current = setTimeout(() => {
+          navigateToResult(sessionId);
         }, 800);
 
       } catch (error) {
@@ -162,13 +152,8 @@ export default function BarcodeScanScreen() {
         }, 2000);
       }
     },
-    [status, navigateToResult, checkmarkScale, checkmarkOpacity],
+    [status, navigateToResult],
   );
-
-  const checkmarkStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: checkmarkScale.value }],
-    opacity: checkmarkOpacity.value,
-  }));
 
   const handleRequestCameraPermission = useCallback(async () => {
     trackOnboardingEvent('permission_prompted', { permission: 'camera', source: 'barcode_scan' });
@@ -226,11 +211,11 @@ export default function BarcodeScanScreen() {
         <View style={styles.roundedFrame}>
           {/* Success Checkmark */}
           {status === 'success' && (
-            <Animated.View style={[styles.successContainer, checkmarkStyle]}>
+            <View style={styles.successContainer}>
               <View style={styles.successCircle}>
                 <Check size={48} color="#fff" strokeWidth={3} />
               </View>
-            </Animated.View>
+            </View>
           )}
         </View>
       </View>
