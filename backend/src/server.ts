@@ -10262,6 +10262,44 @@ const fetchIherbOverlayClaimsByBarcode = async (
   }
 };
 
+const normalizeBarcodeToGtin14 = (rawBarcode: string | null | undefined): string | null => {
+  const digits = String(rawBarcode ?? "").replace(/\D/g, "");
+  if (!digits) return null;
+  return digits.padStart(14, "0").slice(-14);
+};
+
+const bundleUsesIherbOverlaySupport = (bundle: AnalysisBundle | null | undefined): boolean => {
+  if (!bundle || typeof bundle !== "object") return false;
+  const inline = (
+    bundle.meta as {
+      decisionSupportInline?: {
+        overviewBlock?: { sourceStrip?: unknown } | null;
+        usageBlock?: { directions?: { sourceTier?: unknown } | null } | null;
+      } | null;
+    } | undefined
+  )?.decisionSupportInline;
+  if (!inline || typeof inline !== "object") return false;
+  const sourceStrip = Array.isArray(inline.overviewBlock?.sourceStrip) ? inline.overviewBlock.sourceStrip : [];
+  if (sourceStrip.some((line: unknown) => /supplemental|product-page|iherb/i.test(String(line ?? "")))) {
+    return true;
+  }
+  const directionsTier = String(inline.usageBlock?.directions?.sourceTier ?? "").trim().toLowerCase();
+  return directionsTier === "overlay_iherb";
+};
+
+const snapshotPayloadUsesIherbOverlaySupport = (
+  analysisPayload: SnapshotAnalysisPayload | null | undefined,
+): boolean => {
+  if (!analysisPayload || typeof analysisPayload !== "object") return false;
+  const sources = Array.isArray(analysisPayload.sources) ? analysisPayload.sources : [];
+  return sources.some((source) => {
+    const title = String(source?.title ?? "").trim().toLowerCase();
+    const link = String(source?.link ?? "").trim().toLowerCase();
+    const domain = String(source?.domain ?? "").trim().toLowerCase();
+    return title.includes("iherb") || link.includes("iherb") || domain.includes("iherb");
+  });
+};
+
 const ingredientOverviewBodySchema = z.object({
   barcode: z.string().trim().min(1),
   decisionDigest: z.string().trim().min(1).nullable().optional(),
@@ -14750,14 +14788,15 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         ? { overview: "pending" as const, usage: "pending" as const, safety: "pending" as const }
         : { overview: "limited" as const, usage: "limited" as const, safety: "limited" as const };
       const overlayClaims = (() => {
-        const raw =
-          params.identityType === "gtin14"
-            ? params.identityValue
-            : params.digest.identity.type === "gtin14"
-            ? params.digest.identity.value
-            : null;
-        const normalized = String(raw ?? "").replace(/\D/g, "");
-        return normalized ? normalized.padStart(14, "0").slice(-14) : null;
+        const fromStreamBarcode = normalizeBarcodeToGtin14(streamBarcode);
+        if (fromStreamBarcode) return fromStreamBarcode;
+        if (params.identityType === "gtin14") {
+          return normalizeBarcodeToGtin14(params.identityValue);
+        }
+        if (params.digest.identity.type === "gtin14") {
+          return normalizeBarcodeToGtin14(params.digest.identity.value);
+        }
+        return null;
       })();
       const overlayClaimsByBarcode = overlayClaims
         ? await fetchIherbOverlayClaimsByBarcode(overlayClaims)
@@ -14864,7 +14903,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
 
       const skipCachedFastForBundleOnlyDeterministic =
         streamAnalysisBundleOnly && params.digest.sourceType !== "web" && params.allowAi === false;
-      const cachedFast = skipCachedFastForBundleOnlyDeterministic
+      let cachedFast = skipCachedFastForBundleOnlyDeterministic
         ? null
         : await getAnalysisIdentityCache(
           {
@@ -14877,6 +14916,14 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           },
           { timeoutMs: 700 },
         ).catch(() => null);
+      if (
+        cachedFast?.payload &&
+        typeof cachedFast.payload === "object" &&
+        overlayClaimsByBarcode &&
+        !bundleUsesIherbOverlaySupport(cachedFast.payload as AnalysisBundle)
+      ) {
+        cachedFast = null;
+      }
       if (!canWrite()) {
         return { factsDigestHash };
       }
@@ -16023,6 +16070,17 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     let cachedLooksWebOnly = false;
     let prefetchedNameMatchFacts: LnhpdFacts | null = null;
     if (cachedFast) {
+      const cachedOverlayClaims = await fetchIherbOverlayClaimsByBarcode(barcodeGtin14);
+      const cachedNeedsOverlayRefresh =
+        Boolean(cachedOverlayClaims) &&
+        !snapshotPayloadUsesIherbOverlaySupport(cachedFast.analysisPayload);
+      if (cachedNeedsOverlayRefresh) {
+        bypassCachedFastPathForAuthority = true;
+        console.info("[ResolutionV2] Bypassing snapshot cache due to missing iHerb overlay augmentation", {
+          barcode: barcodeGtin14,
+          snapshotId: cachedFast.snapshot.snapshotId,
+        });
+      }
       const cachedLabelSource =
         cachedFast.snapshot.analysis?.labelExtraction?.source ??
         cachedFast.analysisPayload?.analysis?.labelExtraction?.source ??
