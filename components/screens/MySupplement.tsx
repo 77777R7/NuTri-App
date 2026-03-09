@@ -2121,9 +2121,7 @@ function DetailSheet({
     ? factsStatus === "full"
       ? "Use instructions aren't available from iHerb or the label yet."
       : "Usage details are still loading."
-    : overlaySuggestedUseRaw
-      ? "Source: iHerb product page."
-      : "Source: product label.";
+    : null;
   const suggestedRoutine = buildSuggestedRoutineV0({
     parsed: facts?.directions?.parsed ?? null,
     parseConfidence: facts?.directions?.parseConfidence ?? null,
@@ -2827,12 +2825,7 @@ function DetailSheet({
                           <View style={styles.suggestedRoutineCard}>
 	                          <View style={styles.suggestedRoutineHeader}>
 	                            <Text style={styles.suggestedRoutineTitle}>Suggested plan</Text>
-                            <Text style={styles.suggestedRoutineMeta}>
-                              {suggestedRoutine.source === "label" ? "From label facts" : "Heuristic"}
-                              {" · "}
-                              {suggestedRoutine.confidence}
-                            </Text>
-                          </View>
+	                          </View>
 	                          <Text style={styles.suggestedRoutineRationale}>{suggestedRoutine.rationale}</Text>
                             {suggestedRoutine.displayMode === "choice_slots" ? (
                               <View style={styles.anchorChoiceRow}>
@@ -5182,7 +5175,6 @@ const styles = StyleSheet.create({
   },
   suggestedRoutineHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
   suggestedRoutineTitle: { fontSize: 13, lineHeight: 18, fontWeight: "800", color: "#334155", includeFontPadding: false },
-  suggestedRoutineMeta: { fontSize: 11, lineHeight: 14, fontWeight: "700", color: "#64748b", includeFontPadding: false, textTransform: "uppercase" },
   suggestedRoutineRationale: { fontSize: 12, lineHeight: 16, fontWeight: "600", color: "#475569", includeFontPadding: false },
   anchorChoiceRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 2 },
   anchorChoiceChip: {
