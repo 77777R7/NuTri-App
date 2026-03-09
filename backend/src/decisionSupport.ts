@@ -331,7 +331,7 @@ type DecisionSupportCompileParams = {
   overlayClaims?: DecisionSupportOverlayClaims | null;
 };
 
-const DECISION_SUPPORT_RUBRIC_VERSION = "v1.6.12-r2d-2";
+const DECISION_SUPPORT_RUBRIC_VERSION = "v1.6.12-r2d-1";
 const DECISION_SUPPORT_DIGEST_DELIMITER = "\n|\n";
 const CATEGORY_PROFILE_VERSION: Record<DecisionSupportCategoryId, string> = {
   fish_oil_omega3: "fish-oil-omega3-v1",
@@ -586,21 +586,6 @@ const extractChemicalFormFromFactsRow = (
     const baseName = normalizeDisplayText(rowText.slice(0, parenthetical.index));
     const form = normalizeDisplayText(parenthetical[2].replace(/[™®]/g, ""));
     if (baseName && form && !OVERLAY_FACTS_HEADER_PATTERN.test(baseName)) {
-      return { baseName, form };
-    }
-  }
-
-  const genericParenthetical = rowText.match(/\(([^)]+)\)/);
-  if (genericParenthetical?.index != null && genericParenthetical[1]) {
-    const baseName = normalizeDisplayText(rowText.slice(0, genericParenthetical.index));
-    const form = normalizeDisplayText(genericParenthetical[1].replace(/[™®]/g, ""));
-    const formCompact = compactOverlayCorpus(normalizeText(form));
-    if (
-      baseName &&
-      form &&
-      !OVERLAY_FACTS_HEADER_PATTERN.test(baseName) &&
-      (CLAIM_CHEMICAL_FORM_REGEX.test(form) || CLAIM_CHEMICAL_FORM_COMPACT_REGEX.test(formCompact))
-    ) {
       return { baseName, form };
     }
   }
@@ -1063,9 +1048,9 @@ const CLAIM_QUALITY_SIGNAL_COMPACT_REGEX = /nongmo|glutenfree|vegan|soyfree|dair
 const CLAIM_MANUFACTURING_ORIGIN_REGEX = /\bmade in\b|\bmanufactured in\b|\bfacility\b|\busa\b|\bcanada\b/i;
 const CLAIM_MANUFACTURING_ORIGIN_COMPACT_REGEX = /madein|manufacturedin|facility|usa|canada/i;
 const CLAIM_CHEMICAL_FORM_REGEX =
-  /\bd3\b|\bd2\b|\bmk[-\s]?7\b|\bmk[-\s]?4\b|\bubiquinol\b|\bubiquinone\b|\bcitrate\b|\boxide\b|\bglycinate\b|\bmalate\b|\btriglyceride(?:\s+form)?\b|\brtg\b|\btg\s+as\s+rtg\b|\bfree[-\s]?form\b/i;
+  /\bd3\b|\bd2\b|\bmk[-\s]?7\b|\bmk[-\s]?4\b|\bubiquinol\b|\bubiquinone\b|\bcitrate\b|\boxide\b|\bglycinate\b|\bmalate\b|\btriglyceride(?:\s+form)?\b|\brtg\b|\btg\s+as\s+rtg\b/i;
 const CLAIM_CHEMICAL_FORM_COMPACT_REGEX =
-  /d3|d2|mk7|mk4|ubiquinol|ubiquinone|citrate|oxide|glycinate|malate|triglycerideform|triglyceride|tgasrtg|rtg|freeform/i;
+  /d3|d2|mk7|mk4|ubiquinol|ubiquinone|citrate|oxide|glycinate|malate|triglycerideform|triglyceride|tgasrtg|rtg/i;
 const CLAIM_EPA_DHA_REGEX = /\bepa\b|\bdha\b|omega[-\s]?3/i;
 const CLAIM_EPA_DHA_COMPACT_REGEX = /epa|dha|omega3/i;
 const THIRD_PARTY_SOURCE_DETECTORS: Array<{ label: string; spaced: RegExp; compact: RegExp }> = [
@@ -1132,32 +1117,6 @@ const normalizeOverlayCorpus = (overlayClaims: DecisionSupportOverlayClaims | nu
     .toLowerCase();
 
 const compactOverlayCorpus = (value: string): string => value.replace(/[^a-z0-9]+/g, "");
-
-type BrandQualityEvidenceProfile = {
-  manufacturingCompliance: boolean;
-  manufacturingOrigin: boolean;
-  testingProgram: boolean;
-  evidenceRef: string;
-  note: string;
-};
-
-const BRAND_QUALITY_EVIDENCE: Record<string, BrandQualityEvidenceProfile> = {
-  "pure encapsulations": {
-    manufacturingCompliance: true,
-    manufacturingOrigin: true,
-    testingProgram: true,
-    evidenceRef: "https://www.pureencapsulationspro.com/quality-at-our-core.html",
-    note: "Official brand quality page.",
-  },
-};
-
-const getBrandQualityEvidence = (
-  brandName: string | null | undefined,
-): BrandQualityEvidenceProfile | null => {
-  const normalized = normalizeText(brandName);
-  if (!normalized) return null;
-  return BRAND_QUALITY_EVIDENCE[normalized] ?? null;
-};
 
 const claimRegexMatch = (params: {
   corpus: string;
@@ -1511,10 +1470,6 @@ const buildNutriScoreCardV2 = (params: {
   const overlayHasWarnings = normalizeText(overlayClaims?.warnings).length > 0;
   const overlayHasOtherIngredients = normalizeText(overlayClaims?.otherIngredients).length > 0;
   const overlayHasNutritionalFacts = (overlayClaims?.nutritionalFacts ?? []).length > 0;
-  const brandQualityEvidence = getBrandQualityEvidence(digest.product.brandDisplay ?? overlayClaims?.brandName ?? null);
-  const brandHasManufacturingCompliance = Boolean(brandQualityEvidence?.manufacturingCompliance);
-  const brandHasManufacturingOrigin = Boolean(brandQualityEvidence?.manufacturingOrigin);
-  const brandHasTestingProgram = Boolean(brandQualityEvidence?.testingProgram);
   const overlayHasEpaDhaFromFacts = claimRegexMatch({
     corpus: overlayFactsCorpus,
     corpusCompact: overlayFactsCorpusCompact,
@@ -1870,32 +1825,24 @@ const buildNutriScoreCardV2 = (params: {
     buildV2ChecklistItem({
       key: "manufacturing_standards:cgmp_claim",
       label: "cGMP / manufacturing compliance claim present",
-      state: brandHasManufacturingCompliance ? "verified" : useOverlayMissingState(overlayHasCgmpClaim),
-      sourceTier: brandHasManufacturingCompliance ? "official_record" : overlayPresent ? "overlay_iherb" : "inferred",
-      evidenceStrength: brandHasManufacturingCompliance ? "overlay_claim" : overlayPresent ? "overlay_claim" : "inferred",
-      proofClass: brandHasManufacturingCompliance ? "claim_only" : overlayPresent ? "claim_only" : "science_only",
-      evidenceRef: brandHasManufacturingCompliance ? (brandQualityEvidence?.evidenceRef ?? null) : overlayRef,
-      note: brandHasManufacturingCompliance
-        ? brandQualityEvidence?.note ?? null
-        : overlayHasCgmpClaim
-        ? "Claim-based (overlay_iherb)"
-        : null,
+      state: useOverlayMissingState(overlayHasCgmpClaim),
+      sourceTier: overlayPresent ? "overlay_iherb" : "inferred",
+      evidenceStrength: overlayPresent ? "overlay_claim" : "inferred",
+      proofClass: overlayPresent ? "claim_only" : "science_only",
+      evidenceRef: overlayRef,
+      note: overlayHasCgmpClaim ? "Claim-based (overlay_iherb)" : null,
       weight: 4,
       role: "score",
     }),
     buildV2ChecklistItem({
       key: "manufacturing_standards:origin_claim",
       label: "Manufacturing location/facility detail present",
-      state: brandHasManufacturingOrigin ? "verified" : useOverlayMissingState(overlayHasManufacturingOrigin),
-      sourceTier: brandHasManufacturingOrigin ? "official_record" : overlayPresent ? "overlay_iherb" : "inferred",
-      evidenceStrength: brandHasManufacturingOrigin ? "overlay_claim" : overlayPresent ? "overlay_claim" : "inferred",
-      proofClass: brandHasManufacturingOrigin ? "claim_only" : overlayPresent ? "claim_only" : "science_only",
-      evidenceRef: brandHasManufacturingOrigin ? (brandQualityEvidence?.evidenceRef ?? null) : overlayRef,
-      note: brandHasManufacturingOrigin
-        ? brandQualityEvidence?.note ?? null
-        : overlayHasManufacturingOrigin
-        ? "Claim-based (overlay_iherb)"
-        : null,
+      state: useOverlayMissingState(overlayHasManufacturingOrigin),
+      sourceTier: overlayPresent ? "overlay_iherb" : "inferred",
+      evidenceStrength: overlayPresent ? "overlay_claim" : "inferred",
+      proofClass: overlayPresent ? "claim_only" : "science_only",
+      evidenceRef: overlayRef,
+      note: overlayHasManufacturingOrigin ? "Claim-based (overlay_iherb)" : null,
       weight: 2,
       role: "score",
     }),
@@ -1936,23 +1883,6 @@ const buildNutriScoreCardV2 = (params: {
       role: "score",
       critical: true,
     }),
-    ...(brandHasTestingProgram
-      ? [
-          buildV2ChecklistItem({
-            key: "testing_verification:brand_testing_program",
-            label: "Brand quality testing program disclosed",
-            state: "verified",
-            sourceTier: "official_record",
-            evidenceStrength: "overlay_claim",
-            proofClass: "claim_only",
-            evidenceRef: brandQualityEvidence?.evidenceRef ?? null,
-            note: brandQualityEvidence?.note ?? null,
-            weight: 4,
-            role: "score",
-            critical: false,
-          }),
-        ]
-      : []),
   ];
 
   const productQualityChecklist: DecisionSupportNutriScoreCardV2ChecklistItem[] = [

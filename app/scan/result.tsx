@@ -18,7 +18,7 @@ import { useStreamAnalysis } from '@/hooks/useStreamAnalysis';
 import { useSavedSupplements } from '@/contexts/SavedSupplementsContext';
 import { consumeScanSessionWithStatusAsync, ensureSessionId, type ScanSession } from '@/lib/scan/session';
 import { requestLabelAnalysis } from '@/lib/scan/service';
-import { hasMeaningfulPartialData, isUsableResultBundle, resolveReasonCodeMessage } from '@/lib/scan/streamStateMachine';
+import { resolveReasonCodeMessage } from '@/lib/scan/streamStateMachine';
 import { getBarcodeQuality, getLabelDraftQuality } from '@/lib/scan/quality';
 import { buildLabelInsights } from '@/lib/scan/labelInsights';
 import { formatDoseForPill } from '@/lib/supplementDisplay';
@@ -544,31 +544,14 @@ export default function ScanResultScreen() {
     snapshot,
     analysisBundle,
   } = useStreamAnalysis(barcode);
-  const shouldPreferDashboardDespiteError = useMemo(
-    () =>
-      isUsableResultBundle(analysisBundle)
-      || hasMeaningfulPartialData({
-        analysisBundle,
-        productInfo,
-        brandExtraction: null,
-        sources: snapshot?.references?.items ?? [],
-        efficacy,
-        safety,
-        usage,
-        value,
-        social,
-      }),
-    [analysisBundle, efficacy, productInfo, safety, snapshot?.references?.items, social, usage, value],
-  );
   const barcodeQuality = useMemo(
     () => getBarcodeQuality({
       status,
       error,
       errorKind,
       sessionState,
-      hasDashboardData: shouldPreferDashboardDespiteError,
     }),
-    [error, errorKind, sessionState, shouldPreferDashboardDespiteError, status],
+    [error, errorKind, sessionState, status],
   );
   const scoreQueryFromBundleMeta = useMemo(
     () => resolveScoreQueryFromBundleMeta(analysisBundle?.meta ?? null),

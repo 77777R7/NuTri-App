@@ -172,15 +172,6 @@ type AnalysisStateWithSnapshot = AnalysisState & {
     titleSanitized: boolean;
 };
 
-type ScanBootstrapResponse = {
-    status: 'ok';
-    barcode?: string | null;
-    productInfo?: ProductInfo | null;
-    sources?: EnrichedSource[] | null;
-    analysisMeta?: AnalysisState['analysisMeta'] | null;
-    analysisBundle?: AnalysisBundle | null;
-};
-
 type SseNotFoundPayload = {
     schemaVersion?: number | null;
     code?: string | null;
@@ -218,7 +209,6 @@ const parsePositiveInt = (rawValue: string | undefined, fallback: number): numbe
 };
 
 const STREAM_CONNECT_GUARD_MS = parsePositiveInt(process.env.EXPO_PUBLIC_SCAN_CONNECT_GUARD_MS, 20_000);
-const STREAM_BOOTSTRAP_FALLBACK_MS = parsePositiveInt(process.env.EXPO_PUBLIC_SCAN_BOOTSTRAP_FALLBACK_MS, 8_000);
 const STREAM_REV1_GUARD_MS = parsePositiveInt(process.env.EXPO_PUBLIC_SCAN_REV1_GUARD_MS, 45_000);
 const STREAM_REV1_DONE_WATCHDOG_MS = parsePositiveInt(process.env.EXPO_PUBLIC_SCAN_REV1_DONE_WATCHDOG_MS, 12_000);
 const SHOW_SCAN_DEBUG =
@@ -283,38 +273,6 @@ export const resolveDoneTerminalStatus = (state: Pick<
     isUsableResultBundle(state.analysisBundle)
         ? 'complete'
         : 'error';
-
-const isSyntheticFactsDigestHash = (bundle: AnalysisBundle | null | undefined): boolean => {
-    const digestHash = bundle?.meta?.factsDigestHash;
-    return typeof digestHash === 'string' && digestHash.startsWith('synthetic:');
-};
-
-const shouldAdoptBootstrapBundle = (
-    currentBundle: AnalysisBundle | null | undefined,
-    candidateBundle: AnalysisBundle | null | undefined,
-): boolean => {
-    if (!candidateBundle?.meta) return false;
-    if (!currentBundle?.meta) return true;
-    if (isSyntheticFactsDigestHash(currentBundle)) return true;
-
-    const currentRevision = Number.isFinite(currentBundle.meta.revision) ? Number(currentBundle.meta.revision) : -1;
-    const candidateRevision = Number.isFinite(candidateBundle.meta.revision) ? Number(candidateBundle.meta.revision) : -1;
-    if (candidateRevision > currentRevision) return true;
-
-    if (candidateBundle.meta.sourceTypeFinal === true && currentBundle.meta.sourceTypeFinal !== true) {
-        return true;
-    }
-
-    const currentFactsDigestHash =
-        typeof currentBundle.meta.factsDigestHash === 'string' ? currentBundle.meta.factsDigestHash : null;
-    const candidateFactsDigestHash =
-        typeof candidateBundle.meta.factsDigestHash === 'string' ? candidateBundle.meta.factsDigestHash : null;
-    if (candidateFactsDigestHash && currentFactsDigestHash && candidateFactsDigestHash !== currentFactsDigestHash) {
-        return true;
-    }
-
-    return candidateBundle.meta.sourceTypeFinal === true && currentBundle.meta.sourceTypeFinal !== true;
-};
 
 const isLikelyNetworkError = (message: string): boolean => {
     const normalized = message.toLowerCase();
@@ -431,7 +389,6 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
         error: null,
     });
     const [serverSnapshot, setServerSnapshot] = useState<SupplementSnapshot | null>(null);
-    const latestStateRef = useRef<AnalysisState>(state);
 
     const eventSourceRef = useRef<RNEventSource | null>(null);
     const hasBundleRef = useRef(false);
@@ -440,25 +397,12 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
     const rev1DoneWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
-        latestStateRef.current = state;
-    }, [state]);
-
-    useEffect(() => {
         if (!barcode) return;
 
         let sawAnyActivity = false;
-        const resetState: AnalysisState = {
-            brandExtraction: null,
-            productInfo: null,
-            sources: [],
-            efficacy: null,
-            safety: null,
-            usage: null,
-            value: null,
-            social: null,
-            meta: null,
-            analysisMeta: null,
-            analysisBundle: null,
+
+        setState(prev => ({
+            ...prev,
             status: 'loading',
             errorKind: 'none',
             reasonCode: null,
@@ -467,9 +411,8 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
             lastSseEventType: null,
             watchdogReason: null,
             error: null,
-        };
-        latestStateRef.current = resetState;
-        setState(resetState);
+            analysisBundle: null,
+        }));
         setServerSnapshot(null);
         hasBundleRef.current = false;
         rev1SeenRef.current = false;
@@ -478,8 +421,6 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
         const rawBaseUrl = Config.searchApiBaseUrl;
         const API_URL = rawBaseUrl.endsWith('/') ? rawBaseUrl.slice(0, -1) : rawBaseUrl;
         let isActive = true;
-        let bootstrapPromise: Promise<boolean> | null = null;
-        let bootstrapAbortController: AbortController | null = null;
         const clearRev1DoneWatchdog = () => {
             if (!rev1DoneWatchdogRef.current) return;
             clearTimeout(rev1DoneWatchdogRef.current);
@@ -502,134 +443,13 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
                     nextStatus: next.status,
                 });
                 if (resolvedStatus !== next.status) {
-                    latestStateRef.current = prev;
                     return prev;
                 }
-                latestStateRef.current = next;
                 if (TERMINAL_STATUSES.has(resolvedStatus)) {
                     terminalLockedRef.current = true;
                 }
                 return next;
             });
-        };
-
-        const settleRecoverableFailure = async (params: {
-            kind: ErrorKind;
-            message: string;
-            reasonCode: string | null;
-            stage: string | null;
-        }) => {
-            const runBootstrapFallback = async (): Promise<boolean> => {
-                if (bootstrapPromise) return bootstrapPromise;
-                bootstrapAbortController = new AbortController();
-                bootstrapPromise = (async () => {
-                    try {
-                        applyStateUpdate((prev) => ({
-                            ...prev,
-                            status: prev.status === 'streaming' ? 'streaming' : 'loading',
-                            errorKind: 'none',
-                            reasonCode: prev.reasonCode ?? params.reasonCode,
-                            stage: 'bootstrap',
-                            error: null,
-                        }));
-
-                        const headers = await withAuthHeaders();
-                        const bootstrapResponse = await fetch(
-                            `${API_URL}/api/scan-bootstrap/v1?barcode=${encodeURIComponent(barcode)}`,
-                            {
-                                method: 'GET',
-                                headers,
-                                signal: bootstrapAbortController?.signal,
-                            },
-                        );
-                        if (!bootstrapResponse.ok) {
-                            throw new Error(`HTTP ${bootstrapResponse.status}`);
-                        }
-                        const payload = (await bootstrapResponse.json()) as ScanBootstrapResponse | null;
-                        if (!payload || payload.status !== 'ok' || !payload.analysisBundle?.meta) {
-                            throw new Error('Invalid bootstrap response');
-                        }
-
-                        applyStateUpdate((prev) => {
-                            const nextBundle = shouldAdoptBootstrapBundle(prev.analysisBundle, payload.analysisBundle)
-                                ? payload.analysisBundle ?? prev.analysisBundle
-                                : prev.analysisBundle;
-                            const nextState: AnalysisState = {
-                                ...prev,
-                                productInfo: payload.productInfo
-                                    ? {
-                                        brand: payload.productInfo.brand ?? prev.productInfo?.brand ?? null,
-                                        name: payload.productInfo.name ?? prev.productInfo?.name ?? null,
-                                        category: payload.productInfo.category ?? prev.productInfo?.category ?? null,
-                                        image: payload.productInfo.image ?? prev.productInfo?.image ?? null,
-                                    }
-                                    : prev.productInfo,
-                                sources: Array.isArray(payload.sources) && payload.sources.length > 0
-                                    ? payload.sources
-                                    : prev.sources,
-                                analysisMeta: payload.analysisMeta ?? prev.analysisMeta,
-                                analysisBundle: nextBundle,
-                                status: 'loading',
-                                errorKind: 'none',
-                                reasonCode: prev.reasonCode ?? params.reasonCode,
-                                stage: 'bootstrap',
-                                error: null,
-                            };
-                            const hasUsableData =
-                                isUsableResultBundle(nextState.analysisBundle)
-                                || hasMeaningfulPartialData(nextState);
-                            return {
-                                ...nextState,
-                                status: hasUsableData ? 'complete' : 'loading',
-                            };
-                        });
-                        closeStream();
-                        return true;
-                    } catch (error) {
-                        const message = error instanceof Error ? error.message : 'Bootstrap fallback failed';
-                        console.warn('[SSE] Bootstrap fallback failed', {
-                            reasonCode: params.reasonCode,
-                            stage: params.stage,
-                            message,
-                        });
-                        return false;
-                    } finally {
-                        bootstrapAbortController = null;
-                        bootstrapPromise = null;
-                    }
-                })();
-                return bootstrapPromise;
-            };
-
-            const bootstrapped = await runBootstrapFallback();
-            if (!isActive) return;
-            if (bootstrapped) {
-                return;
-            }
-
-            applyStateUpdate((prev) => {
-                if (isUsableResultBundle(prev.analysisBundle) || hasMeaningfulPartialData(prev)) {
-                    return {
-                        ...prev,
-                        status: 'complete',
-                        errorKind: 'none',
-                        reasonCode: prev.reasonCode ?? params.reasonCode ?? 'BOOTSTRAP_PARTIAL_COMPLETE',
-                        stage: params.stage ?? prev.stage ?? 'bootstrap',
-                        watchdogReason: prev.watchdogReason ?? params.reasonCode,
-                        error: null,
-                    };
-                }
-                return {
-                    ...prev,
-                    status: 'error',
-                    errorKind: params.kind,
-                    reasonCode: params.reasonCode ?? prev.reasonCode,
-                    stage: params.stage ?? prev.stage,
-                    watchdogReason: prev.watchdogReason,
-                    error: params.message,
-                };
-            });
-            closeStream();
         };
 
         const armRev1DoneWatchdog = () => {
@@ -678,44 +498,43 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
         };
 
         const connectGuard = setTimeout(() => {
-            if (!isActive || terminalLockedRef.current) return;
+            if (!isActive) return;
             if (sawAnyActivity) return;
-            if (latestStateRef.current.status !== 'loading') return;
-            void settleRecoverableFailure({
-                kind: 'network',
-                reasonCode: latestStateRef.current.reasonCode ?? 'CONNECT_TIMEOUT',
-                stage: latestStateRef.current.stage ?? 'connect',
-                message: latestStateRef.current.error ?? 'Unable to connect while analyzing. Please retry.',
+            applyStateUpdate((prev) => {
+                if (prev.status !== 'loading') return prev;
+                return {
+                    ...prev,
+                    status: 'error',
+                    errorKind: 'network',
+                    reasonCode: prev.reasonCode ?? 'CONNECT_TIMEOUT',
+                    stage: prev.stage ?? 'connect',
+                    lastSseEventType: prev.lastSseEventType ?? 'connect_timeout',
+                    error: prev.error ?? 'Unable to connect while analyzing. Please retry.',
+                };
             });
+            closeStream();
         }, STREAM_CONNECT_GUARD_MS);
-
-        const bootstrapGuard = setTimeout(() => {
-            if (!isActive || terminalLockedRef.current) return;
-            const currentState = latestStateRef.current;
-            if (isUsableResultBundle(currentState.analysisBundle)) return;
-            void settleRecoverableFailure({
-                kind: 'network',
-                reasonCode: currentState.reasonCode ?? 'STREAM_BOOTSTRAP_TIMEOUT',
-                stage: currentState.stage ?? 'bootstrap',
-                message: currentState.error ?? 'Refreshing verified details via fallback.',
-            });
-        }, STREAM_BOOTSTRAP_FALLBACK_MS);
 
         const rev1Guard = setTimeout(() => {
             if (!isActive) return;
-            const currentState = latestStateRef.current;
-            if (currentState.status !== 'loading' && currentState.status !== 'streaming') return;
-            const revision =
-                typeof currentState.analysisBundle?.meta?.revision === 'number'
-                    ? currentState.analysisBundle.meta.revision
-                    : null;
-            if (revision != null && revision >= 1) return;
-            void settleRecoverableFailure({
-                kind: 'network',
-                reasonCode: currentState.reasonCode ?? 'STREAM_TIMEOUT_REV1_MISSING',
-                stage: currentState.stage ?? 'stream',
-                message: currentState.error ?? 'We lost connection while analyzing. Please retry.',
+            applyStateUpdate((prev) => {
+                if (prev.status !== 'loading' && prev.status !== 'streaming') return prev;
+                const revision =
+                    typeof prev.analysisBundle?.meta?.revision === 'number'
+                        ? prev.analysisBundle.meta.revision
+                        : null;
+                if (revision != null && revision >= 1) return prev;
+                return {
+                    ...prev,
+                    status: 'error',
+                    errorKind: 'network',
+                    reasonCode: prev.reasonCode ?? 'STREAM_TIMEOUT_REV1_MISSING',
+                    stage: prev.stage ?? 'stream',
+                    lastSseEventType: prev.lastSseEventType ?? 'rev1_timeout',
+                    error: prev.error ?? 'We lost connection while analyzing. Please retry.',
+                };
             });
+            closeStream();
         }, STREAM_REV1_GUARD_MS);
 
         const startStream = async () => {
@@ -1034,15 +853,6 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
                             xhrStatus,
                             fallbackMessage: errorData?.message,
                         });
-                        if (parsed.kind === 'network' || parsed.kind === 'server') {
-                            void settleRecoverableFailure({
-                                kind: parsed.kind,
-                                reasonCode: parsed.reasonCode,
-                                stage: parsed.stage,
-                                message: parsed.message || 'Scan failed',
-                            });
-                            return;
-                        }
                         if (EXPECTED_DEGRADED_REASON_CODES.has(String(parsed.reasonCode ?? '').toUpperCase())) {
                             console.info('[SSE] Degraded terminal event:', {
                                 reasonCode: parsed.reasonCode,
@@ -1139,15 +949,6 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
                             xhrStatus,
                             fallbackMessage: event?.message ?? 'Connection failed',
                         });
-                        if (parsed.kind === 'network' || parsed.kind === 'server') {
-                            void settleRecoverableFailure({
-                                kind: parsed.kind,
-                                reasonCode: parsed.reasonCode,
-                                stage: parsed.stage,
-                                message: parsed.message || 'Connection failed',
-                            });
-                            return;
-                        }
                         applyStateUpdate((prev) => {
                             if (rev1SeenRef.current && (isUsableResultBundle(prev.analysisBundle) || hasMeaningfulPartialData(prev))) {
                                 return {
@@ -1206,15 +1007,6 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
                                     ? 'Unauthorized (please sign in or enable dev auth bypass)'
                                     : 'Could not connect to the server',
                     });
-                    if (parsed.kind === 'network' || parsed.kind === 'server') {
-                        void settleRecoverableFailure({
-                            kind: parsed.kind,
-                            reasonCode: parsed.reasonCode,
-                            stage: parsed.stage,
-                            message: parsed.message,
-                        });
-                        return;
-                    }
                     applyStateUpdate((prev) => {
                         if (rev1SeenRef.current && (isUsableResultBundle(prev.analysisBundle) || hasMeaningfulPartialData(prev))) {
                             return {
@@ -1257,18 +1049,19 @@ export function useStreamAnalysis(barcode: string): AnalysisStateWithSnapshot {
 
         startStream().catch((error) => {
             console.warn('[SSE] Stream init failed', error);
-            void settleRecoverableFailure({
-                kind: 'network',
-                reasonCode: latestStateRef.current.reasonCode ?? 'STREAM_INIT_FAILED',
-                stage: latestStateRef.current.stage ?? 'connect',
-                message: 'Connection failed',
-            });
+            applyStateUpdate(prev => ({
+                ...prev,
+                status: 'error',
+                errorKind: 'network',
+                reasonCode: prev.reasonCode,
+                stage: prev.stage,
+                watchdogReason: prev.watchdogReason,
+                error: 'Connection failed',
+            }));
         });
 
         return () => {
             isActive = false;
-            bootstrapAbortController?.abort();
-            clearTimeout(bootstrapGuard);
             clearTimeout(connectGuard);
             clearTimeout(rev1Guard);
             closeStream();

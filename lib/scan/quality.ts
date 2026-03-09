@@ -77,7 +77,6 @@ export const getBarcodeQuality = (input: {
   error?: string | null;
   errorKind?: string | null;
   sessionState?: 'ok' | 'session_expired' | null;
-  hasDashboardData?: boolean;
 }): BarcodeQuality => {
   if (input.sessionState === 'session_expired') {
     return {
@@ -97,13 +96,6 @@ export const getBarcodeQuality = (input: {
 
   const isRecoverableError = input.status === 'error' || Boolean(input.error);
   if (isRecoverableError) {
-    if (input.hasDashboardData) {
-      return {
-        errorState: false,
-        page: 'dashboard',
-        failureKind: 'none',
-      };
-    }
     const kind = input.errorKind === 'unauthorized'
       ? 'unauthorized'
       : input.errorKind === 'network'
