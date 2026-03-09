@@ -1348,12 +1348,6 @@ const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
             {tile.footerText}
         </Text>
     ) : null;
-    const visibleScienceMechanisms = tile.type === 'science' ? (tile.mechanisms || []).slice(0, 3) : [];
-    const shouldCenterScienceMechanisms =
-        tile.type === 'science'
-        && !tile.footerText
-        && visibleScienceMechanisms.length > 0
-        && visibleScienceMechanisms.length < 3;
 
     const renderContent = () => {
         if (tile.loading) {
@@ -1416,9 +1410,9 @@ const WidgetTile: React.FC<WidgetTileProps> = ({ tile, onPress }) => {
                 );
             case 'science':
                 return (
-                    <View style={[styles.tileSection, shouldCenterScienceMechanisms ? styles.tileSectionCentered : null]}>
-                        <View style={[styles.mechList, shouldCenterScienceMechanisms ? styles.mechListCentered : null]}>
-                            {visibleScienceMechanisms.map((mechanism, idx) => (
+                    <View style={styles.tileSection}>
+                        <View style={styles.mechList}>
+                            {(tile.mechanisms || []).slice(0, 3).map((mechanism, idx) => (
                                 <View key={idx} style={styles.mechRow}>
                                     <View style={styles.mechHeader}>
                                         <Text
@@ -8905,9 +8899,6 @@ const styles = StyleSheet.create({
         marginTop: 16,
         flexGrow: 1,
     },
-    tileSectionCentered: {
-        justifyContent: 'center',
-    },
     tileEyebrow: {
         fontSize: 10,
         fontWeight: '700',
@@ -8967,9 +8958,6 @@ const styles = StyleSheet.create({
     },
     mechList: {
         gap: 10,
-    },
-    mechListCentered: {
-        justifyContent: 'center',
     },
     mechRow: {
         gap: 6,

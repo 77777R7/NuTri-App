@@ -16,10 +16,8 @@
       "upcCode": "766298001890",
       "barcode_gtin14": "00766298001890",
       "link": "https://www.iherb.com/pr/pure-encapsulations-nac-600-mg-90-capsules/51870",
-      "productImages": [
-        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/pes/pes00189/l/11.jpg"
-      ],
-      "productCatalogImage": "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/pes/pes00189/u/11.jpg",
+      "productImages": [],
+      "productCatalogImage": null,
       "categories": [
         "Supplements",
         "Antioxidants"

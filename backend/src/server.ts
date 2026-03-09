@@ -10186,37 +10186,6 @@ const readOverlaySectionText = (
   return null;
 };
 
-const SCAN_RESULT_IHERB_IMAGE_PILOT_BY_BARCODE: Record<string, string> = {
-  "00023249011835":
-    "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/sre/sre01183/u/127.jpg",
-  "00023249090021":
-    "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/sre/sre09002/u/67.jpg",
-  "00737870212539":
-    "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/lex/lex21253/u/124.jpg",
-  "00023249012566":
-    "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/sre/sre01256/u/96.jpg",
-  "00766298001890":
-    "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/pes/pes00189/u/11.jpg",
-};
-
-const normalizeBarcodeGtin14 = (value?: string | null): string | null => {
-  const digits = String(value ?? "").replace(/\D/g, "");
-  if (!digits) return null;
-  return digits.padStart(14, "0").slice(-14);
-};
-
-const pickScanResultProductImage = (
-  barcodeGtin14: string | null | undefined,
-  ...candidates: Array<string | null | undefined>
-): string | null => {
-  const normalizedBarcode = normalizeBarcodeGtin14(barcodeGtin14);
-  const pilotImage = normalizedBarcode ? SCAN_RESULT_IHERB_IMAGE_PILOT_BY_BARCODE[normalizedBarcode] ?? null : null;
-  for (const value of [pilotImage, ...candidates]) {
-    if (typeof value === "string" && value.trim().length > 0) return value.trim();
-  }
-  return null;
-};
-
 const toDecisionSupportOverlayClaims = (row: Record<string, unknown>): DecisionSupportOverlayClaims => {
   const descriptionSections = toOverlayObjectRecord(
     row.allDescriptionSections ?? row.descriptionSections ?? row.description_sections,
@@ -15694,12 +15663,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         ),
         name: pickText(catalog?.productName, workingAnalysisPayload?.productInfo?.name, snapshot.product.name),
         category: pickText(catalogCategory, workingAnalysisPayload?.productInfo?.category, snapshot.product.category),
-        image: pickScanResultProductImage(
-          barcodeGtin14,
-          catalog?.imageUrl,
-          workingAnalysisPayload?.productInfo?.image,
-          snapshot.product.imageUrl,
-        ),
+        image: pickText(catalog?.imageUrl, workingAnalysisPayload?.productInfo?.image, snapshot.product.imageUrl),
       };
 
       if (workingAnalysisPayload) {
@@ -16505,12 +16469,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
                 ),
                 name: pickText(catalog.productName, analysisPayload?.productInfo?.name, snapshot.product.name),
                 category: pickText(catalogCategory, analysisPayload?.productInfo?.category, snapshot.product.category),
-                image: pickScanResultProductImage(
-                  catalog.barcodeGtin14,
-                  catalog.imageUrl,
-                  analysisPayload?.productInfo?.image,
-                  snapshot.product.imageUrl,
-                ),
+                image: pickText(catalog.imageUrl, analysisPayload?.productInfo?.image, snapshot.product.imageUrl),
               };
 
               snapshot.product.brand = finalProductInfo.brand;
@@ -16661,12 +16620,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         ),
         name: pickText(catalog.productName, workingAnalysisPayload.productInfo?.name, workingSnapshot.product.name),
         category: pickText(catalogCategory, workingAnalysisPayload.productInfo?.category, workingSnapshot.product.category),
-        image: pickScanResultProductImage(
-          gtin14,
-          catalog.imageUrl,
-          workingAnalysisPayload.productInfo?.image,
-          workingSnapshot.product.imageUrl,
-        ),
+        image: pickText(catalog.imageUrl, workingAnalysisPayload.productInfo?.image, workingSnapshot.product.imageUrl),
       };
 
       workingSnapshot = {
@@ -16745,12 +16699,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         ),
         name: pickText(workingSnapshot.product.name, catalog.productName, workingAnalysisPayload.productInfo?.name),
         category: pickText(catalogCategory, workingAnalysisPayload.productInfo?.category, workingSnapshot.product.category),
-        image: pickScanResultProductImage(
-          gtin14,
-          catalog.imageUrl,
-          workingAnalysisPayload.productInfo?.image,
-          workingSnapshot.product.imageUrl,
-        ),
+        image: pickText(catalog.imageUrl, workingAnalysisPayload.productInfo?.image, workingSnapshot.product.imageUrl),
       };
 
       workingSnapshot = {
@@ -17245,7 +17194,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
                 brand: lnhpdFacts.brandName ?? null,
                 name: lnhpdFacts.productName ?? null,
                 category: null,
-                image: pickScanResultProductImage(barcodeGtin14),
+                image: null,
               };
 
               const lnhpdSources: { title: string; link: string; domain: string; isHighQuality: boolean }[] = [];
@@ -17313,7 +17262,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
                   brand: lnhpdFacts.brandName ?? null,
                   name: lnhpdFacts.productName ?? null,
                   category: null,
-                  image: pickScanResultProductImage(barcodeGtin14),
+                  image: null,
                 },
                 sources: [],
               });
@@ -20212,7 +20161,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
     const provisionalBrand = extraction?.brand ?? null;
     const provisionalName = extraction?.product ?? (initialItems[0]?.title ?? null);
     const provisionalCategory = extraction?.category ?? null;
-    const provisionalImage = pickScanResultProductImage(barcodeGtin14, initialItems[0]?.image ?? null);
+    const provisionalImage = initialItems[0]?.image ?? null;
     if (stage1SseEnabled && (provisionalName || provisionalBrand)) {
       sendSSE(res, "product_info", {
         productInfo: {
@@ -21151,7 +21100,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
             brand: lnhpdFacts.brandName ?? provisionalBrand ?? null,
             name: lnhpdFacts.productName ?? provisionalName ?? null,
             category: provisionalCategory ?? null,
-            image: pickScanResultProductImage(barcodeGtin14, provisionalImage ?? null),
+            image: provisionalImage ?? null,
           };
           const labelAnalysis = buildLabelOnlyAnalysis(lnhpdLabelFacts);
           const lnhpdAnalysisPayload: SnapshotAnalysisPayload = {
@@ -21416,7 +21365,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
               brand: nameMatchedFacts.brandName ?? provisionalBrand ?? null,
               name: nameMatchedFacts.productName ?? provisionalName ?? null,
               category: provisionalCategory ?? null,
-              image: pickScanResultProductImage(barcodeGtin14, provisionalImage ?? null),
+              image: provisionalImage ?? null,
             };
             const labelAnalysis = buildLabelOnlyAnalysis(nameMatchLabelFacts);
             const nameMatchAnalysisPayload: SnapshotAnalysisPayload = {
@@ -21906,12 +21855,9 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
         ? bestFacts.canonical.name ?? providerOwnership.providerProductName ?? provisionalName ?? null
         : providerOwnership.providerProductName ?? provisionalName ?? null,
       category: provisionalCategory ?? null,
-      image: pickScanResultProductImage(
-        barcodeGtin14,
-        allowCanonical
-          ? provisionalImage ?? bestFacts.canonical.images?.[0] ?? null
-          : provisionalImage ?? null,
-      ),
+      image: allowCanonical
+        ? provisionalImage ?? bestFacts.canonical.images?.[0] ?? null
+        : provisionalImage ?? null,
     };
 
     let factsForAnalysis = allowCanonical
@@ -22997,7 +22943,7 @@ app.get("/api/barcode-metadata", verifySupabaseToken, async (req: Request, res: 
         brand: facts.brandName ?? null,
         name: facts.productName ?? null,
         category: null,
-        image: pickScanResultProductImage(barcodeGtin14),
+        image: null,
       };
 
       const analysisPayload: SnapshotAnalysisPayload = {
