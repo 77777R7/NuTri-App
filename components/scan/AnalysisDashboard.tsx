@@ -4884,107 +4884,6 @@ const AnalysisBundleDashboard: React.FC<{
         () => hasRenderableDecisionTemplate(decisionTemplatePayload as Record<string, unknown> | null | undefined),
         [decisionTemplatePayload],
     );
-    const authoritativeOverviewTileSummary = useMemo<CoverLine>(() => {
-        if (!authoritativeTilePayloadReady) {
-            const fallbackSummary = normalizeText(overviewSummaryText);
-            if (fallbackSummary) {
-                return {
-                    text: fallbackSummary,
-                };
-            }
-            if (decisionTemplateUnavailable) {
-                return {
-                    text: 'Verified product details are temporarily unavailable.',
-                };
-            }
-            return {
-                text: 'Latest verified product details are loading.',
-                isPlaceholder: true,
-            };
-        }
-        if (overviewProductType && overviewPrimaryIngredientLabel) {
-            if (overviewPrimaryIngredientLabel === 'Multi-ingredient formula') {
-                return {
-                    text: `${overviewProductType} with multiple disclosed active components.`,
-                };
-            }
-            return {
-                text: `${overviewProductType} featuring ${overviewPrimaryIngredientLabel}.`,
-            };
-        }
-        if (overviewProductType) {
-            return {
-                text: `${overviewProductType} with verified product details.`,
-            };
-        }
-        if (overviewPrimaryIngredientLabel) {
-            return {
-                text: `${overviewPrimaryIngredientLabel} with verified product details.`,
-            };
-        }
-        return {
-            text: 'Verified product details are ready to review.',
-        };
-    }, [
-        authoritativeTilePayloadReady,
-        decisionTemplateUnavailable,
-        overviewPrimaryIngredientLabel,
-        overviewProductType,
-        overviewSummaryText,
-    ]);
-    const authoritativeOverviewTileBullets = useMemo<BulletItem[]>(() => {
-        if (!authoritativeTilePayloadReady) {
-            const fallbackBullets = overviewBullets.filter((item) => normalizeText(item?.text ?? null).length > 0);
-            if (fallbackBullets.length > 0) {
-                return fallbackBullets;
-            }
-            if (decisionTemplateUnavailable) {
-                return [
-                    {
-                        text: 'The verified details request was interrupted.',
-                    },
-                    {
-                        text: 'Go back and rescan to reload the latest product facts.',
-                    },
-                ];
-            }
-            return [
-                {
-                    text: 'Loading verified product facts.',
-                    isPlaceholder: true,
-                },
-                {
-                    text: 'Open the card to review the latest details.',
-                    isPlaceholder: true,
-                },
-            ];
-        }
-        const bullets: BulletItem[] = [];
-        if (overviewPrimaryIngredientLabel) {
-            bullets.push({ text: `Primary ingredient: ${overviewPrimaryIngredientLabel}.` });
-        }
-        if (overviewStrengthClaim) {
-            bullets.push({ text: `Strength claim: ${overviewStrengthClaim}.` });
-        }
-        if (overviewFormValue) {
-            bullets.push({ text: `Form: ${overviewFormValue}.` });
-        }
-        if (overviewCountValue) {
-            bullets.push({ text: `Count: ${overviewCountValue}.` });
-        }
-        if (bullets.length === 0) {
-            bullets.push({ text: 'Verified product facts are ready to review.' });
-        }
-        return bullets.slice(0, 2);
-    }, [
-        authoritativeTilePayloadReady,
-        decisionTemplateUnavailable,
-        overviewBullets,
-        overviewCountValue,
-        overviewFormValue,
-        overviewPrimaryIngredientLabel,
-        overviewStrengthClaim,
-    ]);
     const authoritativeScienceTileMechanisms = useMemo<Mechanism[]>(() => {
         if (!authoritativeTilePayloadReady) {
             const fallbackMechanisms = ingredientMechanisms.filter((item) => normalizeText(item?.name ?? null).length > 0);
@@ -5154,6 +5053,12 @@ const AnalysisBundleDashboard: React.FC<{
         [overviewAiClientFallback, overviewAiRequestFingerprint],
     );
     const overviewAiDisplayData = currentOverviewAiState?.data ?? overviewAiClientFallback ?? null;
+    const overviewAiApiDisplayData = useMemo<ProductOverviewAiPayload | null>(() => {
+        if (!currentOverviewAiState || currentOverviewAiState.status !== 'ok') return null;
+        if (currentOverviewAiState.source !== 'api') return null;
+        if (!currentOverviewAiMatchesFingerprint) return null;
+        return currentOverviewAiState.data ?? null;
+    }, [currentOverviewAiMatchesFingerprint, currentOverviewAiState]);
     const overviewAiParagraphOne = overviewAiDisplayData
         ? [toSentence(overviewAiDisplayData.lead), toSentence(overviewAiDisplayData.whatItIs)]
             .filter((line): line is string => Boolean(line))
@@ -5163,6 +5068,26 @@ const AnalysisBundleDashboard: React.FC<{
         ? toSentence(overviewAiDisplayData.whyPeopleTakeIt)
         : null;
     const overviewAiHasRenderableContent = Boolean(overviewAiParagraphOne || overviewAiParagraphTwo);
+    const overviewAiCoverSummaryText = useMemo(() => {
+        const lead = toSentence(overviewAiApiDisplayData?.lead);
+        const whatItIs = toSentence(overviewAiApiDisplayData?.whatItIs);
+        const preferred = clampText(lead, 110);
+        if (preferred) return capitalizeSentences(preferred);
+        const combined = clampText([lead, whatItIs].filter(Boolean).join(' '), 110);
+        return combined ? capitalizeSentences(combined) : null;
+    }, [overviewAiApiDisplayData?.lead, overviewAiApiDisplayData?.whatItIs]);
+    const overviewAiCoverBullets = useMemo<BulletItem[]>(() => {
+        if (!overviewAiApiDisplayData) return [];
+        const lines = [
+            clampText(toSentence(overviewAiApiDisplayData.whatItIs), 108),
+            clampText(toSentence(overviewAiApiDisplayData.whyPeopleTakeIt), 108),
+        ]
+            .map((line) => capitalizeSentences(line))
+            .filter((line): line is string => Boolean(line))
+            .filter((line) => line.toLowerCase() !== overviewAiCoverSummaryText?.toLowerCase())
+            .filter((line, index, all) => all.findIndex((candidate) => candidate.toLowerCase() === line.toLowerCase()) === index);
+        return lines.slice(0, 2).map((text) => ({ text }));
+    }, [overviewAiApiDisplayData, overviewAiCoverSummaryText]);
     const overviewMissingInfoLines = enforceNeverBlank({
         lines: [
             unresolvedMissingLines.length > 0 ? 'Some high-impact record details are missing.' : 'Core high-impact details are present.',
@@ -5176,6 +5101,125 @@ const AnalysisBundleDashboard: React.FC<{
             'Some expected fields are missing in this source record.',
         ],
     });
+    const authoritativeOverviewTileSummary = useMemo<CoverLine>(() => {
+        if (!authoritativeTilePayloadReady) {
+            const fallbackSummary = normalizeText(overviewSummaryText);
+            if (fallbackSummary) {
+                return {
+                    text: fallbackSummary,
+                };
+            }
+            if (decisionTemplateUnavailable) {
+                return {
+                    text: 'Verified product details are temporarily unavailable.',
+                };
+            }
+            return {
+                text: 'Latest verified product details are loading.',
+                isPlaceholder: true,
+            };
+        }
+        if (overviewAiCoverSummaryText) {
+            return {
+                text: overviewAiCoverSummaryText,
+            };
+        }
+        if (canRequestOverviewAi && (currentOverviewAiStatus === 'idle' || currentOverviewAiStatus === 'loading')) {
+            return {
+                text: 'Preparing verified product overview...',
+                isPlaceholder: true,
+            };
+        }
+        if (overviewProductType && overviewPrimaryIngredientLabel) {
+            if (overviewPrimaryIngredientLabel === 'Multi-ingredient formula') {
+                return {
+                    text: `${overviewProductType} with multiple disclosed active components.`,
+                };
+            }
+            return {
+                text: `${overviewProductType} featuring ${overviewPrimaryIngredientLabel}.`,
+            };
+        }
+        if (overviewProductType) {
+            return {
+                text: `${overviewProductType} with verified product details.`,
+            };
+        }
+        if (overviewPrimaryIngredientLabel) {
+            return {
+                text: `${overviewPrimaryIngredientLabel} with verified product details.`,
+            };
+        }
+        return {
+            text: 'Verified product details are ready to review.',
+        };
+    }, [
+        authoritativeTilePayloadReady,
+        canRequestOverviewAi,
+        currentOverviewAiStatus,
+        decisionTemplateUnavailable,
+        overviewAiCoverSummaryText,
+        overviewPrimaryIngredientLabel,
+        overviewProductType,
+        overviewSummaryText,
+    ]);
+    const authoritativeOverviewTileBullets = useMemo<BulletItem[]>(() => {
+        if (!authoritativeTilePayloadReady) {
+            const fallbackBullets = overviewBullets.filter((item) => normalizeText(item?.text ?? null).length > 0);
+            if (fallbackBullets.length > 0) {
+                return fallbackBullets;
+            }
+            if (decisionTemplateUnavailable) {
+                return [
+                    {
+                        text: 'The verified details request was interrupted.',
+                    },
+                    {
+                        text: 'Go back and rescan to reload the latest product facts.',
+                    },
+                ];
+            }
+            return [
+                {
+                    text: 'Loading verified product facts.',
+                    isPlaceholder: true,
+                },
+                {
+                    text: 'Open the card to review the latest details.',
+                    isPlaceholder: true,
+                },
+            ];
+        }
+        if (overviewAiCoverBullets.length > 0) {
+            return overviewAiCoverBullets;
+        }
+        const bullets: BulletItem[] = [];
+        if (overviewPrimaryIngredientLabel) {
+            bullets.push({ text: `Primary ingredient: ${overviewPrimaryIngredientLabel}.` });
+        }
+        if (overviewStrengthClaim) {
+            bullets.push({ text: `Strength claim: ${overviewStrengthClaim}.` });
+        }
+        if (overviewFormValue) {
+            bullets.push({ text: `Form: ${overviewFormValue}.` });
+        }
+        if (overviewCountValue) {
+            bullets.push({ text: `Count: ${overviewCountValue}.` });
+        }
+        if (bullets.length === 0) {
+            bullets.push({ text: 'Verified product facts are ready to review.' });
+        }
+        return bullets.slice(0, 2);
+    }, [
+        authoritativeTilePayloadReady,
+        decisionTemplateUnavailable,
+        overviewAiCoverBullets,
+        overviewBullets,
+        overviewCountValue,
+        overviewFormValue,
+        overviewPrimaryIngredientLabel,
+        overviewStrengthClaim,
+    ]);
 
     useEffect(() => {
         if (!overviewAiDigest || !overviewAiRequestFingerprint || !canRequestOverviewAi) return;
