@@ -45,6 +45,10 @@ export type MySupplementFactsV1 = {
   };
   overlay: {
     provider: "iherb";
+    brandName: string | null;
+    title: string | null;
+    description: string | null;
+    link: string | null;
     suggestedUse: string | null;
     ingredients: Array<{
       name: string;
@@ -147,6 +151,10 @@ export function buildMySupplementFactsV1(params: {
   labelDirectionsRawText: string | null;
   overlayClaims?: DecisionSupportOverlayClaims | null;
 }): MySupplementFactsV1 {
+  const overlayBrandName = safeTrim(params.overlayClaims?.brandName);
+  const overlayTitle = safeTrim(params.overlayClaims?.title);
+  const overlayDescription = safeTrim(params.overlayClaims?.description);
+  const overlayLink = safeTrim(params.overlayClaims?.link);
   const overlaySuggestedUse = safeTrim(params.overlayClaims?.suggestedUse);
   const overlayIngredients = normalizeIherbSupplementFactsRows(params.overlayClaims?.nutritionalFacts);
   const labelDirectionsRawText = overlaySuggestedUse ?? safeTrim(params.labelDirectionsRawText);
@@ -177,9 +185,13 @@ export function buildMySupplementFactsV1(params: {
       parseConfidence: parsedDirections.parseConfidence,
     },
     overlay:
-      overlaySuggestedUse || overlayIngredients.length > 0
+      overlayBrandName || overlayTitle || overlayDescription || overlayLink || overlaySuggestedUse || overlayIngredients.length > 0
         ? {
             provider: "iherb",
+            brandName: overlayBrandName,
+            title: overlayTitle,
+            description: overlayDescription,
+            link: overlayLink,
             suggestedUse: overlaySuggestedUse,
             ingredients: overlayIngredients,
           }

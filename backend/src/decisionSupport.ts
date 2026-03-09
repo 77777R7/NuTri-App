@@ -196,6 +196,8 @@ export type DecisionSupportNutriScoreCardV2 = {
 export type DecisionSupportOverlayClaims = {
   provider: "iherb";
   productId: string | null;
+  brandName: string | null;
+  title: string | null;
   link: string | null;
   categories: string[];
   description: string | null;

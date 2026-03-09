@@ -181,7 +181,9 @@ export default function BarcodeScanScreen() {
       <ResponsiveScreen contentStyle={styles.permissionScreen}>
         <Stack.Screen options={{ headerShown: false }} />
         <View style={styles.permissionCard}>
-          <CameraOff size={32} color={tokens.colors.textPrimary} />
+          <View style={styles.permissionIconWrap}>
+            <CameraOff size={32} color="#1e40af" />
+          </View>
           <Text style={styles.permissionTitle}>Camera access needed</Text>
           <Text style={styles.permissionCopy}>
             Allow camera access so we can scan the barcode on your supplement.
@@ -289,8 +291,24 @@ const createStyles = (tokens: DesignTokens, topInset: number, bottomInset: numbe
       gap: tokens.spacing.md,
       padding: tokens.spacing.lg,
       borderRadius: tokens.components.card.radius,
-      backgroundColor: tokens.colors.surface,
-      ...tokens.shadow.card,
+      backgroundColor: 'rgba(255,255,255,0.88)',
+      borderWidth: 1,
+      borderColor: 'rgba(30,64,175,0.10)',
+      shadowColor: 'rgba(30,64,175,0.20)',
+      shadowOpacity: 0.14,
+      shadowRadius: 26,
+      shadowOffset: { width: 0, height: 14 },
+      elevation: 12,
+    },
+    permissionIconWrap: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: 'rgba(30,64,175,0.08)',
+      borderWidth: 1,
+      borderColor: 'rgba(30,64,175,0.12)',
     },
     permissionTitle: {
       color: tokens.colors.textPrimary,
@@ -306,7 +324,14 @@ const createStyles = (tokens: DesignTokens, topInset: number, bottomInset: numbe
       paddingHorizontal: tokens.spacing.lg,
       paddingVertical: tokens.spacing.sm,
       borderRadius: tokens.radius.full,
-      backgroundColor: tokens.colors.accent,
+      backgroundColor: '#1e40af',
+      minWidth: 188,
+      alignItems: 'center',
+      shadowColor: 'rgba(30,64,175,0.35)',
+      shadowOpacity: 0.18,
+      shadowRadius: 14,
+      shadowOffset: { width: 0, height: 8 },
+      elevation: 6,
     },
     permissionButtonText: {
       color: tokens.colors.surface,

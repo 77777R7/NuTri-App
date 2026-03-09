@@ -59,7 +59,7 @@ import { supabase } from "@/lib/supabase";
 import { buildTimingSuggestion } from "@/lib/timingSuggestion";
 import { getOdsFactForSupplement } from "@/lib/knowledge/ods-factpack";
 import { getNonOdsFactForSupplement } from "@/lib/knowledge/non-ods-factpack";
-import { pickMeaningfulOverviewText } from "@/lib/knowledge/what-it-does";
+import { SAFE_OVERVIEW_PLACEHOLDER, isMeaningfulOverviewText } from "@/lib/knowledge/what-it-does";
 import {
   buildApplyCopy,
   buildAutosyncPatch,
@@ -420,6 +420,71 @@ const normalizeTwoSentenceSummary = (value: string) => {
   return `${first} ${second}`;
 };
 
+const OVERLAY_DESCRIPTION_SKIP_REGEX =
+  /^(gluten free|non-gmo\b|dietary supplement\b|quality matters\b|igen\b|ifos\b|third party tested\b|cgmp compliant\b|non bpa\b|single source\b|\d+\s*(mg|mcg|g|iu|softgels?|capsules?|tablets?)\b)/i;
+
+const normalizeOverlayDescriptionText = (value: string | null | undefined): string =>
+  pickFirstText(value)
+    .replace(/\u00a0/g, " ")
+    .replace(/[®™]/g, "")
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/([.!?])(?=[A-Za-z0-9])/g, "$1 ")
+    .replace(/([,:;])(?=[A-Za-z0-9])/g, "$1 ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const extractOverlayNarrative = (value: string | null | undefined): string => {
+  const normalized = normalizeOverlayDescriptionText(value);
+  if (!normalized) return "";
+  const narrativeMatch = normalized.match(
+    /\b(Our\b.*|This\b.*|Looking for\b.*|Fight free radicals\b.*|[A-Z][A-Za-z0-9&+/-]*(?:\s+[A-Z][A-Za-z0-9&+/-]*){0,7}\s+(?:is|are|provides|provide|delivers|deliver|combines|combine|includes|include|helps|help|supports|support|promotes|promote|features|feature)\b.*)/i,
+  );
+  return narrativeMatch ? narrativeMatch[1].trim() : normalized;
+};
+
+const buildOverlayOverviewSupport = (value: string | null | undefined): { summary: string; bullets: string[] } => {
+  const narrative = extractOverlayNarrative(value);
+  if (!narrative) return { summary: "", bullets: [] };
+
+  const sentences = (narrative.match(/[^.!?]+[.!?]+|[^.!?]+$/g) ?? [narrative])
+    .map((sentence) => formatSentence(sentence))
+    .filter((sentence) => sentence.length >= 42)
+    .filter((sentence) => !OVERLAY_DESCRIPTION_SKIP_REGEX.test(sentence));
+
+  if (sentences.length === 0) {
+    return { summary: "", bullets: [] };
+  }
+
+  return {
+    summary: sentences.slice(0, 2).join(" "),
+    bullets: sentences.slice(2, 5),
+  };
+};
+
+const pickOverviewTextCandidate = (params: {
+  productName: string;
+  candidates: Array<{ source: "ods" | "curated" | "overlay" | "ai" | "efficacy" | "benefit" | "fallback"; text: string }>;
+}): {
+  text: string;
+  source: "ods" | "curated" | "overlay" | "ai" | "efficacy" | "benefit" | "fallback" | "placeholder";
+  usedPlaceholder: boolean;
+} => {
+  for (const candidate of params.candidates) {
+    if (!isMeaningfulOverviewText(candidate.text, params.productName)) continue;
+    return {
+      text: candidate.text.trim(),
+      source: candidate.source,
+      usedPlaceholder: false,
+    };
+  }
+
+  return {
+    text: SAFE_OVERVIEW_PLACEHOLDER,
+    source: "placeholder",
+    usedPlaceholder: true,
+  };
+};
+
 const buildLocalOverviewFallback = (params: { productName: string; dosageText?: string | null }) => {
   const name = params.productName.toLowerCase();
   const has = (tokens: string[]) => tokens.some((token) => name.includes(token));
@@ -666,6 +731,10 @@ type MySupplementFactsV1 = {
   };
   overlay: {
     provider: "iherb";
+    brandName: string | null;
+    title: string | null;
+    description: string | null;
+    link: string | null;
     suggestedUse: string | null;
     ingredients: Array<{
       name: string;
@@ -772,6 +841,15 @@ const ensureOverview = async (params: {
     return null;
   }
   return payload;
+};
+
+const getOverviewLookupSupplementId = (
+  supplementId?: string | null,
+  barcode?: string | null,
+): string | null => {
+  const normalizedBarcode = typeof barcode === "string" ? barcode.trim() : "";
+  if (normalizedBarcode) return null;
+  return supplementId ?? null;
 };
 
 const fetchBarcodeMetadata = async (barcode: string): Promise<BarcodeMetadataResponse | null> => {
@@ -963,6 +1041,7 @@ function TimePicker({
 const CollectionCard = React.memo(
   function CollectionCard({
     item,
+    displayBrandName,
     overlapCount,
     index,
     theme,
@@ -978,6 +1057,7 @@ const CollectionCard = React.memo(
     onViewNote,
   }: {
     item: SavedSupplement;
+    displayBrandName: string;
     overlapCount: number;
     index: number;
     theme: Theme;
@@ -1110,24 +1190,9 @@ const CollectionCard = React.memo(
 	                      numberOfLines={1}
 	                      ellipsizeMode="tail"
 	                    >
-	                      {formatBrandForPill(item.brandName)}
+	                      {formatBrandForPill(displayBrandName)}
 	                    </Text>
 	                  </View>
-	                  {(() => {
-	                    const dose = formatSavedDoseForDisplay(item.dosageText);
-	                    if (!dose) return null;
-	                    return (
-	                      <View style={[styles.tagPill, styles.dosePillClamp, { borderColor: theme.tagBorderColor }]}>
-	                        <Text
-	                          style={[styles.tagText, styles.pillTextClamp, { color: theme.textColor }]}
-	                          numberOfLines={1}
-	                          ellipsizeMode="tail"
-	                        >
-	                          {dose}
-	                        </Text>
-	                      </View>
-	                    );
-	                  })()}
                     {overlapCount > 0 ? (
                       <View style={[styles.tagPill, styles.overlapPill, { borderColor: theme.tagBorderColor }]}>
                         <Text
@@ -1189,6 +1254,7 @@ const CollectionCard = React.memo(
   },
   (prev, next) =>
     prev.item === next.item &&
+    prev.displayBrandName === next.displayBrandName &&
     prev.overlapCount === next.overlapCount &&
     prev.index === next.index &&
     prev.theme === next.theme &&
@@ -1231,11 +1297,11 @@ function DetailSheet({
   const [facts, setFacts] = useState<MySupplementFactsV1 | null>(null);
   const [factsStatus, setFactsStatus] = useState<"full" | "partial" | "none">("none");
   const [factsDigestHash, setFactsDigestHash] = useState<string | null>(null);
-  const [factsSourceVersion, setFactsSourceVersion] = useState<string | null>(null);
+  const [, setFactsSourceVersion] = useState<string | null>(null);
   const [factsRefreshExhausted, setFactsRefreshExhausted] = useState(false);
   const [factsRefreshRetryNonce, setFactsRefreshRetryNonce] = useState(0);
   const [analysisData, setAnalysisData] = useState<AnalysisPayload | null>(null);
-  const [aiStatus, setAiStatus] = useState<"ready" | "pending" | "blocked" | "none">("none");
+  const [, setAiStatus] = useState<"ready" | "pending" | "blocked" | "none">("none");
   const [aiRetryAfterSec, setAiRetryAfterSec] = useState(0);
   const [aiBlockedReason, setAiBlockedReason] = useState<string | null>(null);
   const [aiUiPhase, setAiUiPhase] = useState<"idle" | "pending" | "ready" | "timeout" | "blocked" | "none">("idle");
@@ -1265,6 +1331,7 @@ function DetailSheet({
   const savedSuggestedHiddenMetricKeyRef = useRef<string | null>(null);
   const factsRefreshSessionIdRef = useRef<string | null>(null);
   const [overviewExpanded, setOverviewExpanded] = useState(false);
+  const [whatsInsideExpanded, setWhatsInsideExpanded] = useState(false);
   const [selectedAnchorLabel, setSelectedAnchorLabel] = useState<"Breakfast" | "Dinner" | null>(null);
   const autoAnchorSyncedRef = useRef<string | null>(null);
   const [anchorPrefilled, setAnchorPrefilled] = useState(false);
@@ -1296,6 +1363,7 @@ function DetailSheet({
     if (unsaveArmTimerRef.current) clearTimeout(unsaveArmTimerRef.current);
     unsaveArmTimerRef.current = null;
     setOverviewExpanded(false);
+    setWhatsInsideExpanded(false);
     setSelectedAnchorLabel(null);
     autoAnchorSyncedRef.current = null;
     autosyncedThisSessionRef.current = false;
@@ -1541,10 +1609,16 @@ function DetailSheet({
     };
 
     const applyEnsureResponse = async (
-      supplementId: string,
+      fallbackSupplementId: string | null,
       ensured: EnsureOverviewResponse | null,
     ) => {
       if (!ensured) {
+        finalizeTimeout();
+        return;
+      }
+
+      const supplementId = ensured.supplementId ?? fallbackSupplementId;
+      if (!supplementId) {
         finalizeTimeout();
         return;
       }
@@ -1613,24 +1687,33 @@ function DetailSheet({
 
     const load = async () => {
       const dosageShort = formatSavedDoseForDisplay(item.dosageText);
+      const barcode = item.barcode?.trim() || null;
+      const lookupSupplementId = getOverviewLookupSupplementId(item.supplementId, barcode);
+      const persistResolvedSupplementId = (nextSupplementId: string | null) => {
+        if (!nextSupplementId || item.supplementId === nextSupplementId) return;
+        void updateSupplement(item.id, { supplementId: nextSupplementId }).catch((error) => {
+          const message = error instanceof Error ? error.message : "Unknown error";
+          console.warn("[supplement-overview] Failed to persist supplementId", message);
+        });
+      };
 
-      let supplementId = item.supplementId ?? null;
+      let supplementId = lookupSupplementId;
       if (supplementId) {
         const cachedFacts = factsCache.get(supplementId);
         if (cachedFacts && isActive) {
           finalizeFacts(supplementId, cachedFacts, {
-            factsStatus: computeOverviewFactsStatus(cachedFacts, item.barcode ?? null),
+            factsStatus: computeOverviewFactsStatus(cachedFacts, barcode),
             factsDigestHash: cachedFacts.factsDigestHash ?? null,
             factsSourceVersion: cachedFacts.factsSourceVersion ?? null,
           });
         }
       }
 
-      // Backfill supplementId when older local items are missing it (detail-open only).
+      // Re-resolve identity from barcode for older saved items before trusting a cached supplementId.
       if (!supplementId) {
         const ensured = await ensureOverview({
           supplementId: null,
-          barcode: item.barcode ?? null,
+          barcode,
           brandName: item.brandName ?? null,
           productName: item.productName,
           dosageText: dosageShort,
@@ -1642,13 +1725,7 @@ function DetailSheet({
           finalizeFacts(supplementId, ensured.facts);
         }
 
-        if (supplementId && item.supplementId !== supplementId) {
-          // Best-effort sync; failure shouldn't block Overview rendering.
-          void updateSupplement(item.id, { supplementId }).catch((error) => {
-            const message = error instanceof Error ? error.message : "Unknown error";
-            console.warn("[supplement-overview] Failed to persist supplementId", message);
-          });
-        }
+        persistResolvedSupplementId(supplementId);
 
         if (!isActive) return;
         if (!supplementId) {
@@ -1661,8 +1738,8 @@ function DetailSheet({
 
       try {
         const ensured = await ensureOverview({
-          supplementId,
-          barcode: item.barcode ?? null,
+          supplementId: lookupSupplementId,
+          barcode,
           brandName: item.brandName ?? null,
           productName: item.productName,
           dosageText: dosageShort,
@@ -1670,6 +1747,7 @@ function DetailSheet({
         });
 
         if (!isActive) return;
+        persistResolvedSupplementId(ensured?.supplementId ?? supplementId);
         await applyEnsureResponse(supplementId, ensured);
       } catch (error) {
         if (!isActive) return;
@@ -1741,10 +1819,11 @@ function DetailSheet({
       const attempt = attemptsUsed;
       const aiPhaseBefore = aiUiPhaseRef.current;
       let outcome: "no_facts" | "resolved_full" | "resolved_partial" | "hash_changed" | "error" = "resolved_partial";
+      let resolvedSupplementIdForAttempt = getOverviewLookupSupplementId(item.supplementId, barcode);
 
       try {
         const ensured = await ensureOverview({
-          supplementId: item.supplementId ?? null,
+          supplementId: resolvedSupplementIdForAttempt,
           barcode,
           brandName: item.brandName ?? null,
           productName: item.productName,
@@ -1756,6 +1835,14 @@ function DetailSheet({
           return false;
         }
         if (!isActive) return true;
+
+        resolvedSupplementIdForAttempt = ensured.supplementId ?? resolvedSupplementIdForAttempt;
+        if (resolvedSupplementIdForAttempt && resolvedSupplementIdForAttempt !== item.supplementId) {
+          void updateSupplement(item.id, { supplementId: resolvedSupplementIdForAttempt }).catch((error) => {
+            const message = error instanceof Error ? error.message : "Unknown error";
+            console.warn("[supplement-facts] Failed to persist refreshed supplementId", message);
+          });
+        }
 
         const nextFacts = ensured.facts;
         const nextFactsStatus = ensured.factsStatus ?? computeOverviewFactsStatus(nextFacts, barcode);
@@ -1771,8 +1858,8 @@ function DetailSheet({
         setFactsSourceVersion(ensured.factsSourceVersion ?? nextFacts.factsSourceVersion ?? null);
         factsDigestHashRef.current = nextHash;
         setFactsDigestHash(nextHash);
-        if (ensured.supplementId) {
-          factsCache.set(ensured.supplementId, nextFacts);
+        if (resolvedSupplementIdForAttempt) {
+          factsCache.set(resolvedSupplementIdForAttempt, nextFacts);
         }
 
         if (nextFactsStatus === "full") {
@@ -1790,7 +1877,7 @@ function DetailSheet({
         console.info("[supplement-facts-refresh-attempt]", {
           metric: "facts_refresh_attempt",
           sessionId,
-          supplementId: item.supplementId ?? null,
+          supplementId: resolvedSupplementIdForAttempt,
           factsDigestHash: expectedHash,
           attempt,
           aiPhaseBefore,
@@ -1979,7 +2066,6 @@ function DetailSheet({
     : "";
 
   const aiV2 = (analysisRoot?.mySupplementOverviewV2 ?? null) as MySupplementOverviewV2 | null;
-  const aiTips = Array.isArray(aiV2?.tips) ? aiV2.tips.filter(isNonEmptyString).slice(0, 3) : [];
   const aiNotice = Array.isArray(aiV2?.whatYouMayNotice)
     ? aiV2.whatYouMayNotice.filter(isNonEmptyString).slice(0, 3)
     : [];
@@ -2014,37 +2100,30 @@ function DetailSheet({
     activeNames,
   });
 
-  const suggestedTimingLabel = timingSuggestion.source === "label" ? "Suggested (label)" : "Suggested (general)";
-  const suggestedTimingText = formatSentence(timingSuggestion.text);
-  const suggestedReasonText = (() => {
-    switch (timingSuggestion.reasonKind) {
-      case "label_says_with_meals":
-        return "Why (label): Label suggests taking with meals.";
-      case "fat_soluble":
-        return "Why (general tip): Often taken with a meal (fat can help absorption).";
-      case "reduce_nausea":
-        return "Why (general tip): Taking with food may reduce stomach upset.";
-      default:
-        return "";
-    }
-  })();
-
+  const displayBrandName = pickFirstText(facts?.overlay?.brandName, facts?.product?.brandDisplay, item.brandName);
   const localDose = formatSavedDoseForDisplay(item.dosageText);
   const whatsInsideDisplay = buildWhatsInsideDisplay({
     actives: facts?.actives ?? [],
     dosageText: localDose,
     productName: item.productName,
     overlayIngredients: facts?.overlay?.ingredients ?? [],
+    allowInference: false,
+    allowDoseOnly: false,
   });
+  const overlayOverview = buildOverlayOverviewSupport(facts?.overlay?.description);
   const labelDirectionsRaw = typeof facts?.directions?.rawText === "string" ? facts.directions.rawText.trim() : "";
   const overlaySuggestedUseRaw =
     typeof facts?.overlay?.suggestedUse === "string" ? facts.overlay.suggestedUse.trim() : "";
-  const resolvedDirectionsRaw = overlaySuggestedUseRaw || labelDirectionsRaw;
-  const showDirectionsRow = Boolean(resolvedDirectionsRaw) || factsStatus === "full";
-  const labelDirectionsPrimaryText = resolvedDirectionsRaw || "Directions not found for this product.";
-  const labelDirectionsMetaText = !resolvedDirectionsRaw && factsStatus === "full"
-    ? "Check the bottle label. You can add your own note below."
-    : null;
+  const labelDirectionsFallbackRaw = overlaySuggestedUseRaw ? "" : labelDirectionsRaw;
+  const howToUseTitle = overlaySuggestedUseRaw ? "How to use (Manufacturing Claim)" : "How to use";
+  const howToUseText = overlaySuggestedUseRaw || labelDirectionsFallbackRaw;
+  const howToUseMetaText = !howToUseText
+    ? factsStatus === "full"
+      ? "Use instructions aren't available from iHerb or the label yet."
+      : "Usage details are still loading."
+    : overlaySuggestedUseRaw
+      ? "Source: iHerb product page."
+      : "Source: product label.";
   const suggestedRoutine = buildSuggestedRoutineV0({
     parsed: facts?.directions?.parsed ?? null,
     parseConfidence: facts?.directions?.parseConfidence ?? null,
@@ -2082,7 +2161,7 @@ function DetailSheet({
   });
   const applySuggestionButtonText = applyCopy.buttonText;
   const effectiveApplyNotice = applyCopy.notice;
-  const showAddLabelDirectionsCta = !resolvedDirectionsRaw && factsStatus === "full";
+  const showAddLabelDirectionsCta = !howToUseText && factsStatus === "full";
   const handleAddLabelDirections = () => {
     if (!note.trim()) {
       setNote("Label directions: ");
@@ -2122,7 +2201,6 @@ function DetailSheet({
   const foundationSourceUrl = hasOdsFoundation ? odsFactHit?.entry.sourceUrl ?? null : nonOdsFactHit?.entry.sourceUrl ?? null;
   const foundationSourceTitle = hasOdsFoundation ? odsFactHit?.displayTitle ?? null : nonOdsFactHit?.entry.sourceLabel ?? null;
   const showSuggestedPlanCard = shouldShowSuggestedPlanCard(savedTime);
-  const usingOdsOverview = hasOdsFoundation && !odsFactHit?.qualityRejected;
 
   useEffect(() => {
     const metricKey = `${item.id}:${factsDigestHash ?? "none"}:${timingSuggestion.source}`;
@@ -2301,18 +2379,28 @@ function DetailSheet({
     }
   };
 
-  const whatItDoesCandidate = pickMeaningfulOverviewText({
+  const whatItDoesCandidate = pickOverviewTextCandidate({
     productName: item.productName,
     candidates: [
-      hasOdsFoundation ? odsFactHit?.entry.overview ?? "" : "",
-      hasNonOdsFoundation ? nonOdsFactHit?.entry.overview ?? "" : "",
-      typeof aiV2?.whatItIs === "string" ? aiV2.whatItIs.trim() : "",
-      efficacy?.overviewSummary ? normalizeTwoSentenceSummary(efficacy.overviewSummary) : "",
-      benefitSummary,
-      fallback.summary,
+      { source: "ods", text: hasOdsFoundation ? odsFactHit?.entry.overview ?? "" : "" },
+      { source: "curated", text: hasNonOdsFoundation ? nonOdsFactHit?.entry.overview ?? "" : "" },
+      { source: "overlay", text: overlayOverview.summary },
+      { source: "ai", text: typeof aiV2?.whatItIs === "string" ? aiV2.whatItIs.trim() : "" },
+      { source: "efficacy", text: efficacy?.overviewSummary ? normalizeTwoSentenceSummary(efficacy.overviewSummary) : "" },
+      { source: "benefit", text: benefitSummary },
+      { source: "fallback", text: fallback.summary },
     ],
   });
   const whatItDoesText = whatItDoesCandidate.text;
+  const whatItDoesBullets = foundationWhatItDoesBullets.length > 0
+    ? foundationWhatItDoesBullets
+    : whatItDoesCandidate.source === "overlay"
+      ? overlayOverview.bullets
+      : [];
+  const whatItDoesSourceTitle =
+    whatItDoesCandidate.source === "overlay" ? "iHerb product page (Manufacturing Claim)" : foundationSourceTitle;
+  const whatItDoesSourceUrl =
+    whatItDoesCandidate.source === "overlay" ? facts?.overlay?.link ?? null : foundationSourceUrl;
 
   const watchOutLines = (() => {
     const fromFacts = (facts?.warnings?.bullets ?? []).filter(isNonEmptyString).slice(0, 6);
@@ -2342,7 +2430,7 @@ function DetailSheet({
       supplementId: item.supplementId ?? null,
       factsDigestHash: factsDigestHash ?? null,
       placeholder: whatItDoesCandidate.usedPlaceholder,
-      source: usingOdsOverview ? "ods" : hasNonOdsFoundation ? "curated" : "fallback",
+      source: whatItDoesCandidate.source,
     });
     if (hasOdsFoundation) {
       console.info("[ods-quality-metric]", {
@@ -2356,18 +2444,17 @@ function DetailSheet({
         supplementId: item.supplementId ?? null,
         factsDigestHash: factsDigestHash ?? null,
         expected: 3,
-        rendered: foundationWhatItDoesBullets.length,
+        rendered: whatItDoesBullets.length,
       });
     }
   }, [
     factsDigestHash,
-    foundationWhatItDoesBullets.length,
-    hasNonOdsFoundation,
+    whatItDoesBullets.length,
     hasOdsFoundation,
     item.id,
     item.supplementId,
     odsFactHit?.qualityRejected,
-    usingOdsOverview,
+    whatItDoesCandidate.source,
     whatItDoesCandidate.usedPlaceholder,
   ]);
 
@@ -2390,10 +2477,9 @@ function DetailSheet({
   const overviewDetailsLoading = (factsStatus === "partial" && !factsRefreshExhausted) || aiUiPhase === "pending";
   const overviewDetailsReady =
     !overviewDetailsLoading &&
-    (foundationWhatItDoesBullets.length > 0 ||
+    (whatItDoesBullets.length > 0 ||
       watchOutLines.length > 0 ||
       aiNotice.length > 0 ||
-      aiTips.length > 0 ||
       stackOverlapLines.length > 0 ||
       aiUiPhase === "ready");
   const showOverviewToggle =
@@ -2402,12 +2488,13 @@ function DetailSheet({
     watchOutLines.length > 0 ||
     aiUiPhase === "blocked" ||
     aiUiPhase === "none";
-  const whatsInsideLinesForDisplay = overviewExpanded
+  const whatsInsideLinesForDisplay = whatsInsideExpanded
     ? whatsInsideDisplay.lines
-    : whatsInsideDisplay.lines.slice(0, 3);
-  const whatsInsideExtraCount =
-    Math.max(0, whatsInsideDisplay.hiddenCount) +
-    Math.max(0, whatsInsideDisplay.lines.length - whatsInsideLinesForDisplay.length);
+    : whatsInsideDisplay.lines.slice(0, Math.max(0, whatsInsideDisplay.previewLimit));
+  const whatsInsideOverflowCount = Math.max(0, whatsInsideDisplay.hiddenCount);
+  const showWhatsInsideToggle =
+    (whatsInsideDisplay.source === "overlay" || whatsInsideDisplay.source === "actives") &&
+    whatsInsideOverflowCount > 0;
 
   return (
     <Modal visible transparent animationType="none" onRequestClose={onClose}>
@@ -2458,7 +2545,7 @@ function DetailSheet({
 	                      style={[styles.sheetTagText, styles.pillTextClamp, { color: theme.textColor }]}
 	                      numberOfLines={1}
 	                    >
-	                      {formatBrandForPill(item.brandName)}
+	                      {formatBrandForPill(displayBrandName)}
 	                    </Text>
 	                  </View>
 	                  {(() => {
@@ -2515,8 +2602,7 @@ function DetailSheet({
                           ) : null}
                         </View>
 	                        {whatsInsideDisplay.source === "overlay" ||
-                          whatsInsideDisplay.source === "actives" ||
-                          whatsInsideDisplay.source === "inferred" ? (
+                          whatsInsideDisplay.source === "actives" ? (
 	                          <View style={{ gap: 10 }}>
 	                            {whatsInsideLinesForDisplay.map((line) => (
 	                              <View key={line} style={styles.overviewBulletRow}>
@@ -2524,74 +2610,41 @@ function DetailSheet({
 	                                <Text style={styles.overviewBulletText}>{line}</Text>
 	                              </View>
 	                            ))}
-	                            {whatsInsideExtraCount > 0 ? (
-	                              <Text style={styles.overviewMetaText}>+{whatsInsideExtraCount} more</Text>
-	                            ) : null}
+                            {showWhatsInsideToggle ? (
+                              <Pressable
+                                accessibilityLabel={whatsInsideExpanded ? "Show fewer ingredients" : `Show ${whatsInsideOverflowCount} more ingredients`}
+                                onPress={() => setWhatsInsideExpanded((value) => !value)}
+                                style={styles.overviewToggleBtn}
+                              >
+                                <Text style={styles.overviewToggleText}>
+                                  {whatsInsideExpanded ? "Show less" : `+${whatsInsideOverflowCount} more`}
+                                </Text>
+                              </Pressable>
+                            ) : null}
 	                            {whatsInsideDisplay.metaText ? (
 	                              <Text style={styles.overviewMetaText}>{whatsInsideDisplay.metaText}</Text>
 	                            ) : null}
                           </View>
-                        ) : whatsInsideDisplay.source === "dose" ? (
-                          <View style={{ gap: 8 }}>
-                            <Text style={styles.overviewBulletText}>{whatsInsideDisplay.lines[0]}</Text>
-                            {factsStatus === "partial" ? (
-                              <Text style={styles.overviewMetaText}>
-                                Main ingredient is still loading from the label...
-                              </Text>
-                            ) : null}
-                          </View>
                         ) : (
-                          <Text style={styles.overviewBulletText}>
-                            <Text style={styles.overviewBulletLabel}>Dose: </Text>
-                            {localDose ?? "Follow the product label."}
+                          <Text style={styles.overviewMetaText}>
+                            Ingredient and dosage details aren&apos;t available from iHerb or structured facts yet.
                           </Text>
                         )}
                       </View>
 
 	                      <View style={{ gap: 10 }}>
-	                        <Text style={styles.overviewSectionTitle}>How to use</Text>
-
-	                        {showDirectionsRow ? (
-	                          <>
-	                            <Text style={styles.overviewBulletText}>
-	                              <Text style={styles.overviewBulletLabel}>
-                                {overlaySuggestedUseRaw
-                                    ? "Directions (from iHerb): "
-                                    : labelDirectionsRaw
-                                      ? "Directions (from label): "
-                                      : "Directions: "}
-	                              </Text>
-	                              {labelDirectionsPrimaryText}
-	                            </Text>
-	                            {labelDirectionsMetaText ? (
-	                              <Text style={styles.overviewMetaText}>{labelDirectionsMetaText}</Text>
-	                            ) : null}
-	                            {showAddLabelDirectionsCta ? (
-	                              <Pressable onPress={handleAddLabelDirections} style={styles.addLabelCtaBtn}>
-	                                <Text style={styles.addLabelCtaText}>Add label directions</Text>
-	                              </Pressable>
-	                            ) : null}
-	                          </>
-	                        ) : null}
-
-	                        <Text style={styles.overviewBulletText}>
-	                          <Text style={styles.overviewBulletLabel}>{suggestedTimingLabel}: </Text>
-	                          {suggestedTimingText}
-	                        </Text>
-	                        {suggestedReasonText ? (
-	                          <Text style={styles.overviewBulletText}>{formatSentence(suggestedReasonText)}</Text>
-	                        ) : null}
-
-	                        {overviewExpanded && aiTips.length > 0 ? (
-	                          <View style={{ gap: 10 }}>
-	                            {aiTips.map((tip) => (
-	                              <View key={tip} style={styles.overviewBulletRow}>
-	                                <View style={styles.overviewBulletDot} />
-                                <Text style={styles.overviewBulletText}>{formatSentence(tip)}</Text>
-                              </View>
-                            ))}
-                          </View>
-                        ) : null}
+	                        <Text style={styles.overviewSectionTitle}>{howToUseTitle}</Text>
+                          {howToUseText ? (
+	                          <Text style={styles.overviewBulletText}>{howToUseText}</Text>
+                          ) : null}
+                          {howToUseMetaText ? (
+                            <Text style={styles.overviewMetaText}>{howToUseMetaText}</Text>
+                          ) : null}
+                          {showAddLabelDirectionsCta ? (
+                            <Pressable onPress={handleAddLabelDirections} style={styles.addLabelCtaBtn}>
+                              <Text style={styles.addLabelCtaText}>Add label directions</Text>
+                            </Pressable>
+                          ) : null}
                       </View>
 
 	                      <View style={{ gap: 10 }}>
@@ -2599,9 +2652,9 @@ function DetailSheet({
 		                        <Text style={styles.overviewSummary}>
 	                            {whatItDoesText}
 	                          </Text>
-                        {overviewExpanded && foundationWhatItDoesBullets.length > 0 ? (
+                        {overviewExpanded && whatItDoesBullets.length > 0 ? (
                           <View style={{ gap: 8 }}>
-                            {foundationWhatItDoesBullets.map((line) => (
+                            {whatItDoesBullets.map((line) => (
                               <View key={line} style={styles.overviewBulletRow}>
                                 <View style={styles.overviewBulletDot} />
                                 <Text style={styles.overviewBulletText}>{formatSentence(line)}</Text>
@@ -2670,22 +2723,22 @@ function DetailSheet({
 		                        </Pressable>
 		                      ) : null}
 
-		                      {overviewExpanded && foundationSourceTitle ? (
-		                        foundationSourceUrl ? (
+		                      {overviewExpanded && whatItDoesSourceTitle ? (
+		                        whatItDoesSourceUrl ? (
 		                          <Pressable
 		                            onPress={() => {
-		                              void Linking.openURL(foundationSourceUrl).catch((error) => {
+		                              void Linking.openURL(whatItDoesSourceUrl).catch((error) => {
 		                                const message = error instanceof Error ? error.message : "Unknown error";
 		                                console.warn("[ods-fallback] Failed to open source URL", message);
 		                              });
 		                            }}
 		                            style={styles.overviewSourceLinkBtn}
 		                          >
-		                            <Text style={styles.overviewSourceLinkText}>{foundationSourceTitle}</Text>
+		                            <Text style={styles.overviewSourceLinkText}>{whatItDoesSourceTitle}</Text>
 		                          </Pressable>
 		                        ) : (
 		                          <View style={styles.overviewSourceLinkBtn}>
-		                            <Text style={styles.overviewSourceLinkText}>{foundationSourceTitle}</Text>
+		                            <Text style={styles.overviewSourceLinkText}>{whatItDoesSourceTitle}</Text>
 		                          </View>
 		                        )
 		                      ) : null}
@@ -3106,8 +3159,10 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
 
   const pillWidthRef = useRef(84);
   const [pillWidth, setPillWidth] = useState(84);
+  const [brandOverrideById, setBrandOverrideById] = useState<Map<string, string>>(() => new Map());
   const updatedDosageRef = useRef(new Map<string, string>());
   const dosageMetadataBackfillStartedRef = useRef(false);
+  const brandMetadataBackfillStartedRef = useRef(false);
   const filterTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const filterScrollRef = useRef<ScrollView>(null);
   const filterWrapRef = useRef<View>(null);
@@ -3354,8 +3409,13 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
 	  );
 
   const resolvedData = useMemo(
-    () => data.map((item) => ({ ...item, dosageText: resolveDosageText(item) })),
-    [data, resolveDosageText],
+    () =>
+      data.map((item) => {
+        const nextBrandName = brandOverrideById.get(item.id) ?? item.brandName;
+        const resolvedItem = nextBrandName === item.brandName ? item : { ...item, brandName: nextBrandName };
+        return { ...resolvedItem, dosageText: resolveDosageText(resolvedItem) };
+      }),
+    [brandOverrideById, data, resolveDosageText],
   );
 
   const dataById = useMemo(() => {
@@ -3531,6 +3591,80 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
       const message = error instanceof Error ? error.message : "Unknown error";
       console.warn("[supplement-dose] Unhandled dosage metadata backfill error", message);
     });
+    return () => {
+      cancelled = true;
+    };
+  }, [sorted, updateSupplement]);
+
+  useEffect(() => {
+    if (brandMetadataBackfillStartedRef.current) return;
+    if (sorted.length === 0) return;
+    brandMetadataBackfillStartedRef.current = true;
+
+    const candidates = sorted
+      .filter((item) => Boolean(item.barcode?.trim()))
+      .slice(0, 12);
+
+    if (candidates.length === 0) return;
+
+    let cancelled = false;
+    const run = async () => {
+      for (const item of candidates) {
+        if (cancelled) break;
+
+        const barcode = item.barcode?.trim();
+        if (!barcode) continue;
+
+        const ensured = await ensureOverview({
+          supplementId: getOverviewLookupSupplementId(item.supplementId, barcode),
+          barcode,
+          brandName: item.brandName ?? null,
+          productName: item.productName,
+          dosageText: formatSavedDoseForDisplay(item.dosageText),
+          userSupplementId: isUuid(item.id) ? item.id : null,
+        });
+        if (cancelled || !ensured?.facts) continue;
+
+        const nextBrand = pickFirstText(
+          ensured.facts.overlay?.brandName,
+          ensured.facts.product.brandDisplay,
+          item.brandName,
+        );
+        if (!nextBrand) continue;
+
+        const brandChanged = normalizeKey(nextBrand) !== normalizeKey(item.brandName);
+        if (brandChanged) {
+          setBrandOverrideById((prev) => {
+            if (prev.get(item.id) === nextBrand) return prev;
+            const next = new Map(prev);
+            next.set(item.id, nextBrand);
+            return next;
+          });
+        }
+
+        if (!brandChanged && ensured.supplementId === item.supplementId) {
+          continue;
+        }
+
+        try {
+          await updateSupplement(item.id, {
+            ...(brandChanged ? { brandName: nextBrand } : {}),
+            ...(ensured.supplementId && ensured.supplementId !== item.supplementId
+              ? { supplementId: ensured.supplementId }
+              : {}),
+          });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Unknown error";
+          console.warn("[supplement-brand] Failed to backfill brand", message);
+        }
+      }
+    };
+
+    void run().catch((error) => {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      console.warn("[supplement-brand] Unhandled brand metadata backfill error", message);
+    });
+
     return () => {
       cancelled = true;
     };
@@ -4256,6 +4390,7 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
                 <CollectionCard
                   key={item.id}
                   item={item}
+                  displayBrandName={item.brandName}
                   overlapCount={item.supplementId ? stackOverlapCountBySupplementId.get(item.supplementId) ?? 0 : 0}
                   index={i}
                   theme={theme}

@@ -17,6 +17,7 @@ test('buildWhatsInsideDisplay: combines EPA + DHA into one omega-3 line', () => 
 
   assert.equal(out.source, 'actives');
   assert.equal(out.lines[0], 'Omega-3 (EPA 180 mg + DHA 120 mg)');
+  assert.equal(out.previewLimit, 2);
 });
 
 test('buildWhatsInsideDisplay: keeps mixed EPA/DHA units in combined omega-3 line', () => {
@@ -32,6 +33,7 @@ test('buildWhatsInsideDisplay: keeps mixed EPA/DHA units in combined omega-3 lin
 
   assert.equal(out.source, 'actives');
   assert.equal(out.lines[0], 'Omega-3 (EPA 500 mg + DHA 1 g)');
+  assert.equal(out.previewLimit, 2);
 });
 
 test('buildWhatsInsideDisplay: dedupes canonical aliases (Vitamin D3 / Cholecalciferol)', () => {
@@ -48,6 +50,7 @@ test('buildWhatsInsideDisplay: dedupes canonical aliases (Vitamin D3 / Cholecalc
   assert.equal(out.source, 'actives');
   const vitaminDLines = out.lines.filter((line) => line.toLowerCase().includes('vitamin d'));
   assert.equal(vitaminDLines.length, 1);
+  assert.equal(out.previewLimit, 2);
 });
 
 test('buildWhatsInsideDisplay: inferred requires whitelist + strength unit and rejects mL/oz', () => {
@@ -59,6 +62,7 @@ test('buildWhatsInsideDisplay: inferred requires whitelist + strength unit and r
   });
   assert.equal(inferred.source, 'inferred');
   assert.equal(inferred.badgeLabel, 'Inferred');
+  assert.equal(inferred.previewLimit, 1);
 
   const mlDose = buildWhatsInsideDisplay({
     productName: 'Astaxanthin Liquid',
@@ -138,11 +142,12 @@ test('buildWhatsInsideDisplay: clamps to top 2 lines with hiddenCount', () => {
     ],
   });
 
-  assert.equal(out.lines.length, 2);
+  assert.equal(out.lines.length, 3);
+  assert.equal(out.previewLimit, 2);
   assert.equal(out.hiddenCount, 1);
 });
 
-test('buildWhatsInsideDisplay: overlay ingredients take precedence and show top 3 lines', () => {
+test('buildWhatsInsideDisplay: overlay ingredients take precedence and preserve hidden rows for expansion', () => {
   const out = buildWhatsInsideDisplay({
     productName: 'Omega-3 Fish Oil',
     dosageText: '15 cal',
@@ -157,10 +162,12 @@ test('buildWhatsInsideDisplay: overlay ingredients take precedence and show top 
   });
 
   assert.equal(out.source, 'overlay');
+  assert.equal(out.previewLimit, 3);
   assert.deepEqual(out.lines, [
     'Total Omega-3 Fatty Acids - 1040 mg',
     'EPA (Eicosapentaenoic Acid) - 690 mg',
     'DHA (Docosahexaenoic Acid) - 260 mg',
+    'Other Omega-3 Fatty Acids - 90 mg',
   ]);
   assert.equal(out.hiddenCount, 1);
 });
@@ -179,5 +186,35 @@ test('buildWhatsInsideDisplay: actives fallback filters nutrition-like rows and 
 
   assert.equal(out.source, 'actives');
   assert.deepEqual(out.lines, ['Omega-3 (EPA 690 mg + DHA 260 mg)']);
+  assert.equal(out.previewLimit, 2);
   assert.equal(out.hiddenCount, 0);
+});
+
+test('buildWhatsInsideDisplay: can disable inference for stricter product-facts display', () => {
+  const out = buildWhatsInsideDisplay({
+    productName: 'Astaxanthin',
+    dosageText: '12 mg',
+    overlayIngredients: [],
+    actives: [],
+    allowInference: false,
+  });
+
+  assert.equal(out.source, 'dose');
+  assert.deepEqual(out.lines, ['Dose: 12 mg']);
+  assert.equal(out.previewLimit, 1);
+});
+
+test('buildWhatsInsideDisplay: can disable dose-only fallback when ingredient rows are unavailable', () => {
+  const out = buildWhatsInsideDisplay({
+    productName: 'Astaxanthin',
+    dosageText: '12 mg',
+    overlayIngredients: [],
+    actives: [],
+    allowInference: false,
+    allowDoseOnly: false,
+  });
+
+  assert.equal(out.source, 'none');
+  assert.deepEqual(out.lines, []);
+  assert.equal(out.previewLimit, 0);
 });

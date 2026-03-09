@@ -53,6 +53,13 @@ const toOverlayClaims = (productRow: Record<string, unknown>): DecisionSupportOv
         : typeof productRow.product_id === 'string'
           ? productRow.product_id
           : null,
+    brandName:
+      typeof productRow.brandName === 'string'
+        ? productRow.brandName
+        : typeof productRow.brand_name === 'string'
+          ? productRow.brand_name
+          : null,
+    title: typeof productRow.title === 'string' ? productRow.title : null,
     link: typeof productRow.link === 'string' ? productRow.link : null,
     categories: categoriesRaw.map((item) => String(item ?? '').trim()).filter(Boolean),
     description: typeof (sections as any).Description === 'string' ? (sections as any).Description : null,
@@ -247,6 +254,8 @@ test('decision support falls back to official science rows when iHerb coverage f
     overlayClaims: {
       provider: 'iherb',
       productId: 'fallback-coverage-fixture',
+      brandName: null,
+      title: null,
       link: null,
       categories: [],
       description: null,

@@ -11,6 +11,7 @@ export type FactsActiveDisplay = {
 export type WhatsInsideDisplay = {
   source: "overlay" | "actives" | "inferred" | "dose" | "none";
   lines: string[];
+  previewLimit: number;
   hiddenCount: number;
   badgeLabel: string | null;
   metaText: string | null;
@@ -180,7 +181,13 @@ export const buildWhatsInsideDisplay = (params: {
   dosageText?: string | null;
   productName: string;
   overlayIngredients?: Array<{ name: string; dose: string | null }>;
+  allowInference?: boolean;
+  allowDoseOnly?: boolean;
 }): WhatsInsideDisplay => {
+  const overlayPreviewLimit = 3;
+  const activesPreviewLimit = 2;
+  const allowInference = params.allowInference ?? true;
+  const allowDoseOnly = params.allowDoseOnly ?? true;
   const overlayLines = (params.overlayIngredients ?? [])
     .map((ingredient) => {
       const name = typeof ingredient?.name === "string" ? ingredient.name.trim() : "";
@@ -193,8 +200,9 @@ export const buildWhatsInsideDisplay = (params: {
   if (overlayLines.length > 0) {
     return {
       source: "overlay",
-      lines: overlayLines.slice(0, 3),
-      hiddenCount: Math.max(0, overlayLines.length - 3),
+      lines: overlayLines,
+      previewLimit: overlayPreviewLimit,
+      hiddenCount: Math.max(0, overlayLines.length - overlayPreviewLimit),
       badgeLabel: null,
       metaText: null,
     };
@@ -206,8 +214,9 @@ export const buildWhatsInsideDisplay = (params: {
   if (activeLines.length > 0) {
     return {
       source: "actives",
-      lines: activeLines.slice(0, 2),
-      hiddenCount: Math.max(0, activeLines.length - 2),
+      lines: activeLines,
+      previewLimit: activesPreviewLimit,
+      hiddenCount: Math.max(0, activeLines.length - activesPreviewLimit),
       badgeLabel: null,
       metaText: null,
     };
@@ -215,28 +224,34 @@ export const buildWhatsInsideDisplay = (params: {
 
   const dose = typeof params.dosageText === "string" ? params.dosageText.trim() : "";
   if (!dose) {
-    return { source: "none", lines: [], hiddenCount: 0, badgeLabel: null, metaText: null };
+    return { source: "none", lines: [], previewLimit: 0, hiddenCount: 0, badgeLabel: null, metaText: null };
   }
 
   const normalizedProductName = normalizeHumanTextForMatch(params.productName);
   const canInferFromName = Boolean(normalizedProductName) && !PRODUCT_INFERENCE_BLOCKLIST.test(normalizedProductName);
   const hasStrengthDose = INFERRED_STRENGTH_REGEX.test(dose);
   const inferredActive = canInferFromName && hasStrengthDose ? inferActiveFromProductName(normalizedProductName) : null;
-  if (inferredActive && hasStrengthDose) {
+  if (allowInference && inferredActive && hasStrengthDose) {
     return {
       source: "inferred",
       lines: [`${inferredActive} - ${dose}`],
+      previewLimit: 1,
       hiddenCount: 0,
       badgeLabel: "Inferred",
       metaText: "Inferred from product name.",
     };
   }
 
-  return {
-    source: "dose",
-    lines: [`Dose: ${dose}`],
-    hiddenCount: 0,
-    badgeLabel: null,
-    metaText: null,
-  };
+  if (allowDoseOnly) {
+    return {
+      source: "dose",
+      lines: [`Dose: ${dose}`],
+      previewLimit: 1,
+      hiddenCount: 0,
+      badgeLabel: null,
+      metaText: null,
+    };
+  }
+
+  return { source: "none", lines: [], previewLimit: 0, hiddenCount: 0, badgeLabel: null, metaText: null };
 };

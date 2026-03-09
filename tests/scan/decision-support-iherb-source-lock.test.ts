@@ -58,6 +58,8 @@ const buildOverlayClaims = (
 ): DecisionSupportOverlayClaims => ({
   provider: 'iherb',
   productId: 'fixture-product',
+  brandName: null,
+  title: null,
   link: null,
   categories,
   description: null,

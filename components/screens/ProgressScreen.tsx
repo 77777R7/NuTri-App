@@ -1520,7 +1520,7 @@ export default function ProgressScreen() {
               {todayItems.map(item => (
                 <ScalePressable key={item.id} accessibilityLabel={item.name} onPress={() => toggleDone(item)} style={styles.sheetRowButton} scaleTo={0.98}>
                   <View style={styles.sheetRowInner}>
-                    <View>
+                    <View style={styles.sheetRowTextWrap}>
                       <Text style={styles.sheetRowTitle}>{item.name}</Text>
                       <Text style={styles.sheetRowSubtitle}>{item.time}</Text>
                     </View>
@@ -2416,12 +2416,13 @@ const styles = StyleSheet.create({
   sheetSectionTitle: { fontSize: 14, lineHeight: 18, fontWeight: '800', color: '#0f172a', includeFontPadding: false },
   sheetList: { marginTop: 12, gap: 12 },
   sheetRowButton: { borderRadius: 16, borderCurve: 'continuous', backgroundColor: 'rgba(15,23,42,0.04)', borderWidth: 1, borderColor: 'rgba(15,23,42,0.06)' },
-  sheetRowInner: { paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  sheetRowTitle: { fontSize: 14, lineHeight: 18, fontWeight: '900', color: '#0f172a', includeFontPadding: false },
+  sheetRowInner: { paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
+  sheetRowTextWrap: { flex: 1, minWidth: 0, paddingRight: 4 },
+  sheetRowTitle: { flexShrink: 1, fontSize: 14, lineHeight: 18, fontWeight: '900', color: '#0f172a', includeFontPadding: false },
   sheetRowSubtitle: { marginTop: 2, fontSize: 12, lineHeight: 16, fontWeight: '700', color: '#475569', includeFontPadding: false },
   sheetRowNote: { marginTop: 6, fontSize: 12, lineHeight: 16, fontWeight: '700', color: '#64748b', includeFontPadding: false },
-  sheetRowRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  sheetRowStatus: { fontSize: 12, lineHeight: 16, fontWeight: '800', color: '#475569', includeFontPadding: false },
+  sheetRowRight: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 0 },
+  sheetRowStatus: { fontSize: 12, lineHeight: 16, fontWeight: '800', color: '#475569', includeFontPadding: false, textAlign: 'right' },
   sheetStatusIcon: { width: 36, height: 36, borderRadius: 999, borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center' },
   sheetStatusIconDone: { backgroundColor: 'rgba(34,197,94,0.16)' },
   sheetStatusIconPending: { backgroundColor: 'rgba(148,163,184,0.20)' },

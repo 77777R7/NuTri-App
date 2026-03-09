@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "iherb_overlay_single_product.v1",
+  "generatedAt": "2026-03-08T18:30:00.000Z",
+  "input": {
+    "zipPath": "",
+    "sourceNote": "Single-product iHerb overlay import for Pure Encapsulations NAC 600 mg (product 51870)."
+  },
+  "requiredProductIds": [
+    "51870"
+  ],
+  "products": [
+    {
+      "brandName": "Pure Encapsulations",
+      "title": "Pure Encapsulations, NAC, 600 mg, 90 Capsules",
+      "productId": "51870",
+      "upcCode": "766298001890",
+      "barcode_gtin14": "00766298001890",
+      "link": "https://www.iherb.com/pr/pure-encapsulations-nac-600-mg-90-capsules/51870",
+      "productImages": [],
+      "productCatalogImage": null,
+      "categories": [
+        "Supplements",
+        "Antioxidants"
+      ],
+      "serving": {
+        "servingSize": "1 Capsule",
+        "servingsPerContainer": "90"
+      },
+      "supplementFacts": {
+        "servingSize": "1 Capsule",
+        "servingsPerContainer": "90",
+        "nutritionalFacts": [
+          {
+            "substancy": "",
+            "amountPerServing": "Amount Per Serving",
+            "dailyValuePercent": "%DV"
+          },
+          {
+            "substancy": "N-Acetyl-L-Cysteine (free-form)",
+            "amountPerServing": "600 mg",
+            "dailyValuePercent": "*"
+          }
+        ]
+      },
+      "allDescriptionSections": {
+        "Description": "NAC helps maintain healthy lung tissue and supports glutathione, liver, kidney, and immune function. Made with hypoallergenic, vegan ingredients. N-Acetyl-L-Cysteine (free-form) is a derivative of the amino acid l-cysteine and a precursor to glutathione that works as a powerful free radical scavenger.",
+        "Suggested use": "As a dietary supplement, take 1 capsule, 1-3 times daily, between meals.",
+        "Other ingredients": "Vegetarian capsule (cellulose, water), ascorbyl palmitate.",
+        "Warnings": "If you are pregnant or lactating, have any health condition or are taking any medication, consult your health professional before use. Keep out of reach of children. Use only if safety seal is intact. Contents may not fill package in order to accommodate required labeling. Please rely on stated quantity.",
+        "Disclaimer": "* Daily Value (DV) not established."
+      },
+      "_sourceEntry": {
+        "source": "iherb_product_page_single_import",
+        "notes": [
+          "Title, product ID, and marketing summary verified against the iHerb listing for product 51870.",
+          "Suggested use, other ingredients, and warnings aligned with product-page snippets and package label text."
+        ]
+      }
+    }
+  ],
+  "missingProductIds": []
+}

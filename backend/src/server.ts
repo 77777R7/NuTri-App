@@ -7909,23 +7909,19 @@ const resolveSupplementIdForOverview = async (params: {
   productName: string;
   dosageText: string | null;
 }): Promise<{ supplementId: string | null; fingerprint: string | null }> => {
-  if (params.supplementId) {
-    return {
-      supplementId: params.supplementId,
-      fingerprint: buildSupplementFingerprint({
-        brandName: params.brandName,
-        productName: params.productName,
-        dosageText: params.dosageText,
-      }),
-    };
-  }
-
   const barcodeCandidates = buildBarcodeCandidates(params.barcode);
   const fingerprint = buildSupplementFingerprint({
     brandName: params.brandName,
     productName: params.productName,
     dosageText: params.dosageText,
   });
+
+  if (params.supplementId && barcodeCandidates.length === 0) {
+    return {
+      supplementId: params.supplementId,
+      fingerprint,
+    };
+  }
 
   if (barcodeCandidates.length > 0) {
     const { data, error } = await supabase
@@ -8116,6 +8112,58 @@ const findMatchingPublicAnalysis = async (params: {
     }
   }
   return null;
+};
+
+const persistPublicAnalysis = async (params: {
+  supplementId: string;
+  analysisData: Partial<AiSupplementAnalysis>;
+}): Promise<boolean> => {
+  const updatePayload = { analysis_data: params.analysisData };
+
+  const { data: updatedRows, error: updateError } = await supabase
+    .from("ai_analyses")
+    .update(updatePayload)
+    .eq("supplement_id", params.supplementId)
+    .is("user_id", null)
+    .select("id")
+    .limit(1);
+
+  if (updateError) {
+    console.warn("[ensure-overview] ai_analyses update failed", updateError.message);
+    return false;
+  }
+
+  if (Array.isArray(updatedRows) && updatedRows.length > 0) {
+    return true;
+  }
+
+  const { error: insertError } = await supabase.from("ai_analyses").insert({
+    supplement_id: params.supplementId,
+    user_id: null,
+    analysis_data: params.analysisData,
+  });
+
+  if (!insertError) return true;
+
+  if (isUniqueViolation(insertError)) {
+    const { data: retriedRows, error: retryUpdateError } = await supabase
+      .from("ai_analyses")
+      .update(updatePayload)
+      .eq("supplement_id", params.supplementId)
+      .is("user_id", null)
+      .select("id")
+      .limit(1);
+
+    if (retryUpdateError) {
+      console.warn("[ensure-overview] ai_analyses retry update failed", retryUpdateError.message);
+      return false;
+    }
+
+    return Array.isArray(retriedRows) && retriedRows.length > 0;
+  }
+
+  console.warn("[ensure-overview] ai_analyses insert failed", insertError.message);
+  return false;
 };
 
 const computeRetryAfterSeconds = (expiresAt: string | null | undefined): number => {
@@ -8947,15 +8995,12 @@ const ensurePublicOverview = async (params: {
         : null,
     } satisfies Partial<AiSupplementAnalysis>;
 
-    const { error: insertError } = await supabase.from("ai_analyses").insert({
-      supplement_id: params.supplementId,
-      user_id: null,
-      analysis_data: analysisData,
+    const persisted = await persistPublicAnalysis({
+      supplementId: params.supplementId,
+      analysisData,
     });
 
-    if (insertError) {
-      if (isUniqueViolation(insertError)) return { analysisReady: true, source: "cache" };
-      console.warn("[ensure-overview] ai_analyses insert failed", insertError.message);
+    if (!persisted) {
       return { analysisReady: false, source: "none" };
     }
 
@@ -10160,9 +10205,16 @@ const toDecisionSupportOverlayClaims = (row: Record<string, unknown>): DecisionS
           ? row.productId
           : typeof row.product_id === "number"
             ? String(row.product_id)
-            : typeof row.product_id === "string"
+          : typeof row.product_id === "string"
               ? row.product_id
               : null,
+    brandName:
+      typeof row.brandName === "string"
+        ? row.brandName
+        : typeof row.brand_name === "string"
+          ? row.brand_name
+          : null,
+    title: typeof row.title === "string" ? row.title : null,
     link: typeof row.link === "string" ? row.link : null,
     categories: Array.isArray(row.categories)
       ? row.categories.map((item) => String(item ?? "").trim()).filter(Boolean)
@@ -10192,7 +10244,7 @@ const fetchIherbOverlayClaimsByBarcode = async (
   try {
     const { data, error } = await supabase
       .from("iherb_overlay_products")
-      .select("product_id,link,categories,supplement_facts,description_sections,updated_at")
+      .select("product_id,brand_name,title,link,categories,supplement_facts,description_sections,updated_at")
       .eq("barcode_gtin14", barcodeGtin14)
       .order("updated_at", { ascending: false })
       .limit(1)
