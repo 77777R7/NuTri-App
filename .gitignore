@@ -42,6 +42,7 @@ backend/backend/
 artifacts/
 output/
 build-preview*.ipa
+build-production*.ipa
 
 # typescript
 *.tsbuildinfo

@@ -410,6 +410,15 @@ const decisionSupportWarmCache = new Map<string, Record<string, unknown>>();
 const getPayloadSourceType = (payload: Record<string, unknown> | null | undefined): string =>
     normalizeText(payload && typeof payload.sourceType === 'string' ? payload.sourceType : null).toLowerCase();
 
+const getDecisionPayloadFactsDigestHash = (payload: Record<string, unknown> | null | undefined): string =>
+    normalizeText(payload && typeof payload.factsDigestHash === 'string' ? payload.factsDigestHash : null);
+
+const getDecisionPayloadDigest = (payload: Record<string, unknown> | null | undefined): string =>
+    normalizeText(payload && typeof payload.digest === 'string' ? payload.digest : null);
+
+const isDecisionPayloadExplicitlyStale = (payload: Record<string, unknown> | null | undefined): boolean =>
+    Boolean(payload && typeof payload === 'object' && payload.staleDigest === true);
+
 const getV2ModulesFromPayload = (payload: Record<string, unknown> | null | undefined): Record<string, unknown>[] => {
     const card = payload?.nutriScoreCardV2;
     if (!card || typeof card !== 'object') return [];
@@ -464,9 +473,42 @@ const pickStrongerDecisionPayload = (
 ): Record<string, unknown> | null => {
     if (!candidatePayload) return currentPayload ?? null;
     if (!currentPayload) return candidatePayload;
+    const currentFactsDigestHash = getDecisionPayloadFactsDigestHash(currentPayload);
+    const candidateFactsDigestHash = getDecisionPayloadFactsDigestHash(candidatePayload);
+    if (candidateFactsDigestHash && currentFactsDigestHash && candidateFactsDigestHash !== currentFactsDigestHash) {
+        return candidatePayload;
+    }
     const currentStrength = computeDecisionPayloadStrength(currentPayload);
     const candidateStrength = computeDecisionPayloadStrength(candidatePayload);
     return candidateStrength >= currentStrength ? candidatePayload : currentPayload;
+};
+
+const pickFreshDecisionPayloadForFacts = (
+    factsDigestHash: string | null | undefined,
+    decisionDigest: string | null | undefined,
+    ...payloads: Array<Record<string, unknown> | null | undefined>
+): Record<string, unknown> | null => {
+    const normalizedFactsDigestHash = normalizeText(factsDigestHash);
+    const normalizedDecisionDigest = normalizeText(decisionDigest);
+    let best: Record<string, unknown> | null = null;
+    payloads.forEach((payload) => {
+        if (!payload || typeof payload !== 'object') return;
+        if (isDecisionPayloadExplicitlyStale(payload)) return;
+        if (normalizedDecisionDigest) {
+            const payloadDecisionDigest = getDecisionPayloadDigest(payload);
+            if (!payloadDecisionDigest || payloadDecisionDigest !== normalizedDecisionDigest) {
+                return;
+            }
+        }
+        if (normalizedFactsDigestHash) {
+            const payloadFactsDigestHash = getDecisionPayloadFactsDigestHash(payload);
+            if (!payloadFactsDigestHash || payloadFactsDigestHash !== normalizedFactsDigestHash) {
+                return;
+            }
+        }
+        best = pickStrongerDecisionPayload(best, payload);
+    });
+    return best;
 };
 
 const upsertDecisionPayloadByBarcode = (
@@ -3104,8 +3146,17 @@ const AnalysisBundleDashboard: React.FC<{
         const incomingBarcode = incomingIdentity?.type === 'gtin14'
             ? normalizeBarcodeForDecision(String(incomingIdentity.value ?? ''))
             : normalizeBarcodeForDecision((analysis as { barcode?: string | null })?.barcode ?? null);
+        const incomingFactsDigestHash = normalizeText(bundle.meta.factsDigestHash ?? null) || null;
+        const incomingDecisionDigest =
+            typeof (bundle.meta as { decisionSupportDigest?: unknown })?.decisionSupportDigest === 'string'
+                ? String((bundle.meta as { decisionSupportDigest?: string }).decisionSupportDigest)
+                : null;
         const seededDecision = incomingBarcode
-            ? decisionSupportByBarcodeRef.current.get(incomingBarcode) ?? null
+            ? pickFreshDecisionPayloadForFacts(
+                incomingFactsDigestHash,
+                incomingDecisionDigest,
+                decisionSupportByBarcodeRef.current.get(incomingBarcode) ?? null,
+            )
             : null;
         setBundleState(bundle);
         setDecisionSupportState(
@@ -3286,6 +3337,7 @@ const AnalysisBundleDashboard: React.FC<{
             typeof (bundleState.meta as { decisionSupportDigest?: unknown })?.decisionSupportDigest === 'string'
                 ? String((bundleState.meta as { decisionSupportDigest?: string }).decisionSupportDigest)
                 : null;
+        const currentFactsDigestHash = normalizeText(bundleState.meta.factsDigestHash ?? null) || null;
         const scanInstanceKey = `${normalizeText((bundleState.meta as { bundleId?: string | null })?.bundleId ?? '')}|${String(bundleState.meta.revision ?? '')}`;
         const sourceType = normalizeText(bundleState.meta.sourceType ?? null).toLowerCase();
         const sourceTypeFinal = bundleState.meta.sourceTypeFinal === true;
@@ -3310,10 +3362,30 @@ const AnalysisBundleDashboard: React.FC<{
         let cancelled = false;
         let autoRetryUsed = false;
         const cachedPayload = decisionSupportCacheRef.current.get(decisionCacheKey) ?? null;
-        const inlineFallback =
+        const inlinePayloadRaw =
             (bundleState.meta as { decisionSupportInline?: Record<string, unknown> | null }).decisionSupportInline ?? null;
-        const seededPayload = pickStrongerDecisionPayload(
-            pickStrongerDecisionPayload(decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null, inlineFallback ?? null),
+        const inlineFallback =
+            inlinePayloadRaw && typeof inlinePayloadRaw === 'object'
+                ? {
+                    ...inlinePayloadRaw,
+                    factsDigestHash: currentFactsDigestHash ?? getDecisionPayloadFactsDigestHash(inlinePayloadRaw),
+                    digest: normalizeText(
+                        typeof inlinePayloadRaw.digest === 'string'
+                            ? inlinePayloadRaw.digest
+                            : digestHint,
+                    ) || undefined,
+                    sourceType: normalizeText(
+                        typeof inlinePayloadRaw.sourceType === 'string'
+                            ? inlinePayloadRaw.sourceType
+                            : bundleState.meta.sourceType,
+                    ) || undefined,
+                  }
+                : null;
+        const seededPayload = pickFreshDecisionPayloadForFacts(
+            currentFactsDigestHash,
+            digestHint,
+            decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
+            inlineFallback ?? null,
             cachedPayload,
         );
         if (!cancelled && seededPayload) {
@@ -3370,8 +3442,11 @@ const AnalysisBundleDashboard: React.FC<{
                         return run(latestDigest, false, retryAttempt);
                     }
                     if (!cancelled) {
-                        const fallbackData = pickStrongerDecisionPayload(
-                            pickStrongerDecisionPayload(decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null, inlineFallback ?? null),
+                        const fallbackData = pickFreshDecisionPayloadForFacts(
+                            currentFactsDigestHash,
+                            digestHint,
+                            decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
+                            inlineFallback ?? null,
                             cachedPayload,
                         );
                         if (fallbackData) {
@@ -3402,15 +3477,23 @@ const AnalysisBundleDashboard: React.FC<{
                 if (payload && typeof payload === 'object') {
                     const objectPayload = payload as Record<string, unknown>;
                     decisionSupportCacheRef.current.set(decisionCacheKey, objectPayload);
-                    const selectedPayload = upsertDecisionPayloadByBarcode(
+                    upsertDecisionPayloadByBarcode(
                         decisionSupportByBarcodeRef.current,
                         resolvedBarcode,
                         objectPayload,
                     );
+                    const selectedPayload = pickFreshDecisionPayloadForFacts(
+                        currentFactsDigestHash,
+                        digestHint,
+                        objectPayload,
+                        inlineFallback ?? null,
+                        decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
+                        decisionSupportCacheRef.current.get(decisionCacheKey) ?? null,
+                    );
                     setDecisionSupportState({
-                        status: 'ready',
+                        status: selectedPayload ? 'ready' : 'error',
                         data: selectedPayload,
-                        error: null,
+                        error: selectedPayload ? null : 'Verified details did not match the latest scan.',
                         autoRetryUsed,
                     });
                     return;
@@ -3443,8 +3526,11 @@ const AnalysisBundleDashboard: React.FC<{
                     if (cancelled || requestSeq !== decisionSupportRequestSeqRef.current) return;
                     return run(digestParam, canDigestRetry, retryAttempt + 1);
                 }
-                const fallbackData = pickStrongerDecisionPayload(
-                    pickStrongerDecisionPayload(decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null, inlineFallback ?? null),
+                const fallbackData = pickFreshDecisionPayloadForFacts(
+                    currentFactsDigestHash,
+                    digestHint,
+                    decisionSupportByBarcodeRef.current.get(resolvedBarcode) ?? null,
+                    inlineFallback ?? null,
                     cachedPayload,
                 );
                 if (fallbackData) {
@@ -3481,17 +3567,46 @@ const AnalysisBundleDashboard: React.FC<{
     const inlineDecisionTemplatePayload = useMemo<Record<string, unknown> | null>(() => {
         const inline =
             (bundleState.meta as { decisionSupportInline?: Record<string, unknown> | null }).decisionSupportInline ?? null;
-        return inline && typeof inline === 'object' ? inline : null;
+        if (!inline || typeof inline !== 'object') return null;
+        const currentFactsDigestHash = normalizeText(bundleState.meta.factsDigestHash ?? null) || null;
+        const digestHint =
+            typeof (bundleState.meta as { decisionSupportDigest?: unknown })?.decisionSupportDigest === 'string'
+                ? String((bundleState.meta as { decisionSupportDigest?: string }).decisionSupportDigest)
+                : null;
+        return {
+            ...inline,
+            factsDigestHash: currentFactsDigestHash ?? getDecisionPayloadFactsDigestHash(inline),
+            digest: normalizeText(typeof inline.digest === 'string' ? inline.digest : digestHint) || undefined,
+            sourceType: normalizeText(
+                typeof inline.sourceType === 'string' ? inline.sourceType : bundleState.meta.sourceType,
+            ) || undefined,
+        };
     }, [bundleState.meta]);
     const decisionTemplatePayload = useMemo<DecisionSupportTemplatePayload | null>(() => {
+        const currentFactsDigestHash = normalizeText(bundleState.meta.factsDigestHash ?? null) || null;
+        const currentDecisionDigest =
+            typeof (bundleState.meta as { decisionSupportDigest?: unknown })?.decisionSupportDigest === 'string'
+                ? String((bundleState.meta as { decisionSupportDigest?: string }).decisionSupportDigest)
+                : null;
         const fetchedPayload =
             decisionSupportState.status === 'ready' && decisionSupportState.data && typeof decisionSupportState.data === 'object'
                 ? decisionSupportState.data
                 : null;
-        const selectedPayload = pickStrongerDecisionPayload(inlineDecisionTemplatePayload, fetchedPayload);
+        const selectedPayload = pickFreshDecisionPayloadForFacts(
+            currentFactsDigestHash,
+            currentDecisionDigest,
+            fetchedPayload,
+            inlineDecisionTemplatePayload,
+        );
         if (!selectedPayload) return null;
         return selectedPayload as DecisionSupportTemplatePayload;
-    }, [decisionSupportState.data, decisionSupportState.status, inlineDecisionTemplatePayload]);
+    }, [
+        (bundleState.meta as { decisionSupportDigest?: string | null })?.decisionSupportDigest,
+        bundleState.meta.factsDigestHash,
+        decisionSupportState.data,
+        decisionSupportState.status,
+        inlineDecisionTemplatePayload,
+    ]);
     const decisionTemplatePending =
         !hasRenderableDecisionTemplate(decisionTemplatePayload as Record<string, unknown> | null | undefined)
         && (decisionSupportState.status === 'idle' || decisionSupportState.status === 'loading' || isStreaming);
@@ -7207,12 +7322,23 @@ const AnalysisBundleDashboard: React.FC<{
                         <View style={styles.scoreSection}>
                             <View style={styles.scoreHeroCard}>
                                 {!disableScoreRing ? (
-                                    <NutriScoreCardV2
-                                        overallScore={displayedOverallScore}
-                                        overallBand={displayedOverallBand}
-                                        modules={scoreCardV2DisplayModules}
-                                        muted={ringMuted}
-                                    />
+                                    decisionSupportV2Available ? (
+                                        <NutriScoreCardV2
+                                            overallScore={displayedOverallScore}
+                                            overallBand={displayedOverallBand}
+                                            modules={scoreCardV2DisplayModules}
+                                            muted={ringMuted}
+                                        />
+                                    ) : (
+                                        <View style={styles.scoreLoadingCard}>
+                                            <Text style={styles.scoreLoadingTitle}>Nutri Score</Text>
+                                            <Text style={styles.scoreLoadingBody}>
+                                                {decisionTemplatePending
+                                                    ? 'Calculating verified score details...'
+                                                    : 'Verified score details are refreshing for this scan.'}
+                                            </Text>
+                                        </View>
+                                    )
                                 ) : (
                                     <View style={styles.bisectNoticeCard}>
                                         <Text style={styles.bisectNoticeTitle}>Score Ring disabled</Text>
@@ -9792,6 +9918,28 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255,255,255,0.78)',
         padding: 12,
         gap: 10,
+    },
+    scoreLoadingCard: {
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: 'rgba(148,163,184,0.20)',
+        backgroundColor: 'rgba(255,255,255,0.72)',
+        paddingHorizontal: 16,
+        paddingVertical: 18,
+        gap: 6,
+    },
+    scoreLoadingTitle: {
+        fontSize: 14,
+        fontWeight: '900',
+        color: '#111827',
+        letterSpacing: 0.4,
+        textTransform: 'uppercase',
+    },
+    scoreLoadingBody: {
+        fontSize: 14,
+        lineHeight: 20,
+        fontWeight: '600',
+        color: '#4B5563',
     },
     scoreV2Header: {
         flexDirection: 'row',
