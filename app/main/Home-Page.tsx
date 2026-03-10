@@ -1396,6 +1396,9 @@ const RecentlyScanned = () => {
   const { addSupplement, savedSupplements } = useSavedSupplements();
   const { scans } = useScanHistory();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const { height } = useWindowDimensions();
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [savingIds, setSavingIds] = useState<Record<string, boolean>>({});
 
   const normalize = useCallback((value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, '').trim(), []);
@@ -1446,6 +1449,43 @@ const RecentlyScanned = () => {
   );
 
   const items = useMemo(() => scans.slice(0, 3), [scans]);
+  const totalCount = scans.length;
+  const historySheetMaxHeight = Math.min(Math.max(height * 0.72, 420), 640);
+
+  const formatRelativeScanTime = useCallback((value: string) => {
+    const scannedAt = new Date(value);
+    if (Number.isNaN(scannedAt.getTime())) return null;
+
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const scanKey = getLocalDateKey(scannedAt);
+    const todayKey = getLocalDateKey(today);
+    const yesterdayKey = getLocalDateKey(yesterday);
+
+    const timeLabel = scannedAt.toLocaleTimeString([], {
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+
+    if (scanKey === todayKey) return `Today · ${timeLabel}`;
+    if (scanKey === yesterdayKey) return `Yesterday · ${timeLabel}`;
+
+    const dateLabel = scannedAt.toLocaleDateString([], {
+      month: 'short',
+      day: 'numeric',
+    });
+    return `${dateLabel} · ${timeLabel}`;
+  }, []);
+
+  const buildItemMeta = useCallback(
+    (item: ScanHistoryItem) => {
+      const parts = [item.brandName?.trim(), formatRelativeScanTime(item.scannedAt)].filter(Boolean);
+      return parts.join(' · ');
+    },
+    [formatRelativeScanTime],
+  );
 
   const handleSave = (item: ScanHistoryItem) => {
     if (savingIds[item.id]) return;
@@ -1469,113 +1509,199 @@ const RecentlyScanned = () => {
     }, 240);
   };
 
-  return (
-    <Animated.View
-      entering={FadeInUp.delay(600).duration(500)}
-      className="bg-blue-300 rounded-[2rem] p-6"
-      style={{ borderCurve: 'continuous' }}
-    >
-      <View className="flex-row justify-between items-start mb-4">
-        <View>
-          <Text style={styles.recentTitle}>Recently Scanned</Text>
-          <Text style={styles.recentSubtitle}>Today</Text>
+  const renderRecentRow = (item: ScanHistoryItem, index: number, options?: { showMeta?: boolean; animated?: boolean }) => {
+    const showMeta = options?.showMeta ?? false;
+    const animated = options?.animated ?? false;
+    const isSaved = isItemSaved(item);
+    const isSaving = savingIds[item.id];
+    const isActive = isSaved || isSaving;
+    const iconConfig = getCategoryIconConfig(item.category, item.productName || '');
+    const Icon = iconConfig.icon;
+    const iconStyle = iconConfig.rotate ? { transform: [{ rotate: iconConfig.rotate }] } : undefined;
+    const meta = showMeta ? buildItemMeta(item) : '';
+
+    const row = (
+      <View
+        className="flex-row items-center justify-between p-3 rounded-2xl bg-white/20 border border-white/10"
+        style={{ borderCurve: 'continuous' }}
+      >
+        <View style={[styles.recentIconOuter, { borderCurve: 'continuous' as const }]}>
+          <View style={[styles.recentIconInner, { borderCurve: 'continuous' as const }]}>
+            <View style={iconStyle}>
+              <Icon size={20} color="#0f172a" strokeWidth={2.2} />
+            </View>
+          </View>
         </View>
 
-        <AnimatedPressable
-          onPress={() => {}}
-          className="w-10 h-10 rounded-full border border-slate-700/10 items-center justify-center bg-white/20"
-          style={({ pressed }) => [{ transform: [{ scale: pressed ? 0.95 : 1 }] }, { borderCurve: 'continuous' }]}
+        <View style={{ flex: 1, minWidth: 0, paddingHorizontal: 12 }}>
+          <Text style={styles.recentItemTitle} numberOfLines={showMeta ? 3 : 2} ellipsizeMode="tail">
+            {cleanProductName(item.productName || 'Unknown supplement')}
+          </Text>
+          {meta ? (
+            <Text style={styles.recentItemMeta} numberOfLines={1} ellipsizeMode="tail">
+              {meta}
+            </Text>
+          ) : null}
+        </View>
+
+        <Pressable
+          onPress={() => handleSave(item)}
+          disabled={isActive}
+          hitSlop={10}
+          style={({ pressed }) => [
+            styles.recentActionPressable,
+            { opacity: pressed ? 0.7 : 1 },
+          ]}
         >
-          <ScanBarcode size={20} color="#0f172a" />
-        </AnimatedPressable>
-      </View>
-
-      <View style={{ gap: 8 }}>
-        {items.length === 0 ? (
-          <View className="rounded-2xl bg-white/20 border border-white/10 p-4" style={{ borderCurve: 'continuous' }}>
-            <Text style={styles.recentEmpty}>{t.emptyScans}</Text>
-          </View>
-        ) : (
-          items.map((item, index) => {
-            const isSaved = isItemSaved(item);
-            const isSaving = savingIds[item.id];
-            const isActive = isSaved || isSaving;
-
-            const iconConfig = getCategoryIconConfig(item.category, item.productName || '');
-            const Icon = iconConfig.icon;
-            const iconStyle = iconConfig.rotate ? { transform: [{ rotate: iconConfig.rotate }] } : undefined;
-
-            return (
-              <Animated.View
-                key={item.id}
-                entering={FadeInRight.delay(700 + index * 100).springify()}
-                className="flex-row items-center justify-between p-3 rounded-2xl bg-white/20 border border-white/10"
-                style={{ borderCurve: 'continuous' }}
+          <MotiView
+            style={styles.recentActionBubble}
+            animate={{
+              backgroundColor: isActive ? 'rgba(16,185,129,0.85)' : 'rgba(255,255,255,0.40)',
+              borderColor: isActive ? 'rgba(16,185,129,0.45)' : 'rgba(255,255,255,0.30)',
+              scale: isActive ? 1.04 : 1,
+            }}
+            transition={{ type: 'spring', stiffness: 260, damping: 18, mass: 0.7 }}
+          >
+            <View pointerEvents="none" style={styles.recentActionIconWrap}>
+              <MotiView
+                style={styles.recentActionIcon}
+                animate={{
+                  opacity: isActive ? 0 : 1,
+                  scale: isActive ? 0.6 : 1,
+                  rotate: isActive ? '-90deg' : '0deg',
+                }}
+                transition={{ type: 'timing', duration: 160 }}
               >
-                <View style={[styles.recentIconOuter, { borderCurve: 'continuous' as const }]}>
-                  <View style={[styles.recentIconInner, { borderCurve: 'continuous' as const }]}>
-                    <View style={iconStyle}>
-                      <Icon size={20} color="#0f172a" strokeWidth={2.2} />
-                    </View>
-                  </View>
-                </View>
+                <Plus size={12} color="#0f172a" />
+              </MotiView>
+              <MotiView
+                style={styles.recentActionIcon}
+                animate={{
+                  opacity: isActive ? 1 : 0,
+                  scale: isActive ? 1 : 0.6,
+                  rotate: isActive ? '0deg' : '20deg',
+                }}
+                transition={{ type: 'timing', duration: 160 }}
+              >
+                <Check size={12} color="#ffffff" />
+              </MotiView>
+            </View>
+          </MotiView>
+        </Pressable>
+      </View>
+    );
 
-                <View style={{ flex: 1, minWidth: 0, paddingHorizontal: 12 }}>
-                  <Text style={styles.recentItemTitle} numberOfLines={2} ellipsizeMode="tail">
-                    {cleanProductName(item.productName || 'Unknown supplement')}
-                  </Text>
+    if (!animated) {
+      return <View key={item.id}>{row}</View>;
+    }
+
+    return (
+      <Animated.View
+        key={item.id}
+        entering={FadeInRight.delay(700 + index * 100).springify()}
+      >
+        {row}
+      </Animated.View>
+    );
+  };
+
+  return (
+    <>
+      <Animated.View
+        entering={FadeInUp.delay(600).duration(500)}
+        className="bg-blue-300 rounded-[2rem] p-6"
+        style={{ borderCurve: 'continuous' }}
+      >
+        <View className="flex-row justify-between items-start mb-4">
+          <View>
+            <Text style={styles.recentTitle}>Recently Scanned</Text>
+            <Text style={styles.recentSubtitle}>Today</Text>
+          </View>
+
+          <Pressable
+            onPress={() => setIsHistoryOpen(true)}
+            style={({ pressed }) => [
+              styles.recentViewAllPill,
+              { opacity: pressed ? 0.82 : 1 },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={`View all ${totalCount} recent scans`}
+          >
+            <Text style={styles.recentViewAllText}>{`View All (${totalCount})`}</Text>
+          </Pressable>
+        </View>
+
+        <View style={{ gap: 8 }}>
+          {items.length === 0 ? (
+            <View className="rounded-2xl bg-white/20 border border-white/10 p-4" style={{ borderCurve: 'continuous' }}>
+              <Text style={styles.recentEmpty}>{t.emptyScans}</Text>
+            </View>
+          ) : (
+            items.map((item, index) => renderRecentRow(item, index, { animated: true }))
+          )}
+        </View>
+      </Animated.View>
+
+      <Modal
+        visible={isHistoryOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsHistoryOpen(false)}
+      >
+        <View style={styles.recentSheetOverlay}>
+          <BlurView intensity={48} tint="light" style={StyleSheet.absoluteFill} />
+          <View style={styles.recentSheetDim} />
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setIsHistoryOpen(false)} />
+
+          <SafeAreaView style={styles.recentSheetSafe} edges={['bottom']}>
+            <MotiView
+              from={{ opacity: 0, translateY: 28 }}
+              animate={{ opacity: 1, translateY: 0 }}
+              transition={{ type: 'timing', duration: 220 }}
+              style={[
+                styles.recentSheet,
+                {
+                  maxHeight: historySheetMaxHeight,
+                  paddingBottom: Math.max(insets.bottom, 12),
+                },
+              ]}
+            >
+              <View style={styles.recentSheetHandle} />
+
+              <View style={styles.recentSheetHeader}>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={styles.recentSheetTitle}>Recently Scanned</Text>
+                  <Text style={styles.recentSubtitle}>{`${totalCount} item${totalCount === 1 ? '' : 's'}`}</Text>
                 </View>
 
                 <Pressable
-                  onPress={() => handleSave(item)}
-                  disabled={isActive}
-                  hitSlop={10}
-                  style={({ pressed }) => [
-                    styles.recentActionPressable,
-                    { opacity: pressed ? 0.7 : 1 },
-                  ]}
+                  onPress={() => setIsHistoryOpen(false)}
+                  style={styles.recentSheetClose}
+                  accessibilityRole="button"
+                  accessibilityLabel="Close recent scans"
                 >
-                  <MotiView
-                    style={styles.recentActionBubble}
-                    animate={{
-                      backgroundColor: isActive ? 'rgba(16,185,129,0.85)' : 'rgba(255,255,255,0.40)',
-                      borderColor: isActive ? 'rgba(16,185,129,0.45)' : 'rgba(255,255,255,0.30)',
-                      scale: isActive ? 1.04 : 1,
-                    }}
-                    transition={{ type: 'spring', stiffness: 260, damping: 18, mass: 0.7 }}
-                  >
-                    <View pointerEvents="none" style={styles.recentActionIconWrap}>
-                      <MotiView
-                        style={styles.recentActionIcon}
-                        animate={{
-                          opacity: isActive ? 0 : 1,
-                          scale: isActive ? 0.6 : 1,
-                          rotate: isActive ? '-90deg' : '0deg',
-                        }}
-                        transition={{ type: 'timing', duration: 160 }}
-                      >
-                        <Plus size={12} color="#0f172a" />
-                      </MotiView>
-                      <MotiView
-                        style={styles.recentActionIcon}
-                        animate={{
-                          opacity: isActive ? 1 : 0,
-                          scale: isActive ? 1 : 0.6,
-                          rotate: isActive ? '0deg' : '20deg',
-                        }}
-                        transition={{ type: 'timing', duration: 160 }}
-                      >
-                        <Check size={12} color="#ffffff" />
-                      </MotiView>
-                    </View>
-                  </MotiView>
+                  <X size={18} color="#64748b" />
                 </Pressable>
-              </Animated.View>
-            );
-          })
-        )}
-      </View>
-    </Animated.View>
+              </View>
+
+              <ScrollView
+                style={{ maxHeight: historySheetMaxHeight - 88 }}
+                contentContainerStyle={styles.recentSheetContent}
+                showsVerticalScrollIndicator={false}
+              >
+                {scans.length === 0 ? (
+                  <View style={styles.recentSheetEmpty}>
+                    <Text style={styles.recentEmpty}>{t.emptyScans}</Text>
+                  </View>
+                ) : (
+                  scans.map((item, index) => renderRecentRow(item, index, { showMeta: true }))
+                )}
+              </ScrollView>
+            </MotiView>
+          </SafeAreaView>
+        </View>
+      </Modal>
+    </>
   );
 };
 
@@ -3074,6 +3200,25 @@ const styles = StyleSheet.create({
     color: '#475569',
     includeFontPadding: false,
   },
+  recentViewAllPill: {
+    minHeight: 34,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderCurve: 'continuous',
+    backgroundColor: 'rgba(255,255,255,0.40)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.42)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recentViewAllText: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '800',
+    color: '#0f172a',
+    includeFontPadding: false,
+  },
   recentEmpty: {
     fontSize: 14,
     lineHeight: 18,
@@ -3105,6 +3250,14 @@ const styles = StyleSheet.create({
     color: '#0f172a',
     includeFontPadding: false,
   },
+  recentItemMeta: {
+    marginTop: 4,
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: '700',
+    color: '#475569',
+    includeFontPadding: false,
+  },
   recentActionPressable: {
     width: 30,
     height: 30,
@@ -3131,6 +3284,78 @@ const styles = StyleSheet.create({
     position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  recentSheetOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  recentSheetDim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(15,23,42,0.14)',
+  },
+  recentSheetSafe: {
+    width: '100%',
+    justifyContent: 'flex-end',
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+  },
+  recentSheet: {
+    width: '100%',
+    borderRadius: 32,
+    borderCurve: 'continuous',
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderWidth: 1,
+    borderColor: 'rgba(226,232,240,0.82)',
+    paddingHorizontal: 18,
+    paddingTop: 12,
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+    elevation: 8,
+  },
+  recentSheetHandle: {
+    alignSelf: 'center',
+    width: 44,
+    height: 5,
+    borderRadius: 999,
+    backgroundColor: 'rgba(148,163,184,0.45)',
+    marginBottom: 12,
+  },
+  recentSheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginBottom: 14,
+  },
+  recentSheetTitle: {
+    fontSize: 20,
+    lineHeight: 24,
+    fontWeight: '900',
+    color: '#0f172a',
+    includeFontPadding: false,
+  },
+  recentSheetClose: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(148,163,184,0.14)',
+  },
+  recentSheetContent: {
+    gap: 8,
+    paddingBottom: 6,
+  },
+  recentSheetEmpty: {
+    borderRadius: 22,
+    borderCurve: 'continuous',
+    backgroundColor: 'rgba(248,250,252,0.85)',
+    borderWidth: 1,
+    borderColor: 'rgba(226,232,240,0.82)',
+    paddingHorizontal: 16,
+    paddingVertical: 18,
   },
 
   // ---- Tabs container ----
