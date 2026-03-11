@@ -41,6 +41,13 @@ type HeaderMiniScoreState = {
   muted: boolean;
 };
 
+type RecentScanProductInfo = {
+  name: string | null;
+  brand: string | null;
+  category: string | null;
+  image: string | null;
+};
+
 const FORCE_LITE_DASHBOARD =
   process.env.EXPO_PUBLIC_FORCE_LITE_DASHBOARD === 'true' ||
   process.env.EXPO_PUBLIC_FORCE_LITE_DASHBOARD === '1';
@@ -595,6 +602,20 @@ export default function ScanResultScreen() {
     enabled: Boolean(scoreQueryFromBundleMeta) && !isLabel && !FREEZE_SHADOW_ONLY,
     requestNonce: scoreRequestNonce,
   });
+  const recentScanProductInfo = useMemo<RecentScanProductInfo | null>(() => {
+    const bundleIdentity = analysisBundle?.meta?.productIdentity ?? null;
+    const snapshotProduct = snapshot?.product ?? null;
+    const candidate: RecentScanProductInfo = {
+      name: productInfo?.name ?? bundleIdentity?.name ?? snapshotProduct?.name ?? null,
+      brand: productInfo?.brand ?? bundleIdentity?.brand ?? snapshotProduct?.brand ?? null,
+      category: productInfo?.category ?? snapshotProduct?.category ?? null,
+      image: productInfo?.image ?? snapshotProduct?.imageUrl ?? null,
+    };
+    const hasIdentity =
+      (typeof candidate.name === 'string' && candidate.name.trim().length > 0) ||
+      (typeof candidate.brand === 'string' && candidate.brand.trim().length > 0);
+    return hasIdentity ? candidate : null;
+  }, [analysisBundle?.meta?.productIdentity, productInfo, snapshot?.product]);
   useEffect(() => {
     if (!__DEV__) return;
     console.log('[ScoreV4] query', {
@@ -826,7 +847,7 @@ export default function ScanResultScreen() {
       return;
     }
 
-    if (barcodeQuality.page !== 'dashboard' || !productInfo) return;
+    if (barcodeQuality.page !== 'dashboard' || !recentScanProductInfo) return;
 
     const supplementId = snapshot?.product?.entityRefs?.supplementId ?? null;
     const bundleActiveDose = (() => {
@@ -872,11 +893,11 @@ export default function ScanResultScreen() {
       addScan({
         barcode: barcode || null,
         supplementId,
-        productName: productInfo.name ?? 'Unknown supplement',
-        brandName: productInfo.brand ?? 'Unknown brand',
+        productName: recentScanProductInfo.name ?? 'Unknown supplement',
+        brandName: recentScanProductInfo.brand ?? 'Unknown brand',
         dosageText,
-        category: productInfo.category ?? null,
-        imageUrl: productInfo.image ?? null,
+        category: recentScanProductInfo.category ?? null,
+        imageUrl: recentScanProductInfo.image ?? null,
       });
       addedRef.current = true;
       lastDosageRef.current = dosageText || null;
@@ -891,11 +912,11 @@ export default function ScanResultScreen() {
       addScan({
         barcode: barcode || null,
         supplementId,
-        productName: productInfo.name ?? 'Unknown supplement',
-        brandName: productInfo.brand ?? 'Unknown brand',
+        productName: recentScanProductInfo.name ?? 'Unknown supplement',
+        brandName: recentScanProductInfo.brand ?? 'Unknown brand',
         dosageText,
-        category: productInfo.category ?? null,
-        imageUrl: productInfo.image ?? null,
+        category: recentScanProductInfo.category ?? null,
+        imageUrl: recentScanProductInfo.image ?? null,
       });
       if (shouldUpdateDosage) {
         lastDosageRef.current = dosageText;
@@ -913,7 +934,7 @@ export default function ScanResultScreen() {
     extractDoseFromText,
     formatDose,
     labelProductName,
-    productInfo,
+    recentScanProductInfo,
     resolvedLabelAnalysis,
     session,
     snapshot?.product?.entityRefs?.supplementId,
@@ -922,7 +943,7 @@ export default function ScanResultScreen() {
   ]);
 
   useEffect(() => {
-    const brand = productInfo?.brand ?? null;
+    const brand = recentScanProductInfo?.brand ?? null;
     if (!barcode || !brand) return;
     if (brand === lastBrandRef.current) return;
     const normalizedBarcode = normalizeBarcode(barcode);
@@ -941,7 +962,7 @@ export default function ScanResultScreen() {
       void updateSupplement(item.id, { brandName: brand });
     });
     lastBrandRef.current = brand;
-  }, [barcode, productInfo?.brand, savedSupplements, updateSupplement]);
+  }, [barcode, recentScanProductInfo?.brand, savedSupplements, updateSupplement]);
 
   useEffect(() => {
     if (!__DEV__) return;
