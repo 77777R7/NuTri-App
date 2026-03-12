@@ -23,6 +23,7 @@ type ResolveAuthorityCandidateParams = {
   mapMinConfidence: number;
   staleWindowMs: number;
   historicalNpn?: string | null;
+  allowLnhpd?: boolean;
   nowMs?: number;
 };
 
@@ -44,11 +45,12 @@ export const resolveAuthorityCandidate = (
   params: ResolveAuthorityCandidateParams,
 ): { candidate: AuthorityCandidate | null; mapStatus: AuthorityMapStatus } => {
   const nowMs = Number.isFinite(params.nowMs) ? Number(params.nowMs) : Date.now();
+  const allowLnhpd = params.allowLnhpd !== false;
   const mapRow = params.regulatoryMap;
   let mapStatus: AuthorityMapStatus = "miss";
   let mapCandidate: AuthorityCandidate | null = null;
 
-  if (mapRow && mapRow.npn) {
+  if (allowLnhpd && mapRow && mapRow.npn) {
     const mapNpn = normalizeNpn(mapRow.npn);
     if (mapNpn) {
       const expired = isExpiredAt(mapRow.expires_at, nowMs);
@@ -88,7 +90,7 @@ export const resolveAuthorityCandidate = (
     return { candidate: mapCandidate, mapStatus };
   }
 
-  const snapshotNpn = normalizeNpn(params.snapshot?.regulatory?.npn ?? null);
+  const snapshotNpn = allowLnhpd ? normalizeNpn(params.snapshot?.regulatory?.npn ?? null) : null;
   const snapshotVerified =
     params.snapshot?.regulatory?.npnStatus === "verified" &&
     params.snapshot?.regulatory?.npnVerifiedBy === "lnhpd_fetch";
@@ -105,7 +107,7 @@ export const resolveAuthorityCandidate = (
     };
   }
 
-  const historicalNpn = normalizeNpn(params.historicalNpn ?? null);
+  const historicalNpn = allowLnhpd ? normalizeNpn(params.historicalNpn ?? null) : null;
   if (historicalNpn) {
     return {
       candidate: {

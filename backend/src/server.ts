@@ -260,6 +260,7 @@ const parseBooleanEnv = (value: string | undefined, fallback: boolean): boolean 
   if (normalized === "0" || normalized === "false" || normalized === "no") return false;
   return fallback;
 };
+const LNHPD_RUNTIME_ENABLED = parseBooleanEnv(process.env.LNHPD_RUNTIME_ENABLED, false);
 type LegacyCallerSurface = "mobile_ui" | "shadow_probe" | "regression" | "unknown";
 type LegacyRuntimeUsageDayRow = {
   total: number;
@@ -4607,6 +4608,16 @@ const fetchLnhpdFactsWithSecondChance = async (
   finalStatus: Exclude<LnhpdLookupStatus, "not_attempted">;
   secondChanceUsed: boolean;
 }> => {
+  if (!LNHPD_RUNTIME_ENABLED) {
+    return {
+      facts: null,
+      attempt1Status: "not_attempted",
+      attempt2Status: "not_attempted",
+      finalStatus: "not_found",
+      secondChanceUsed: false,
+    };
+  }
+
   const normalized = String(npn ?? "").trim();
   if (!normalized) {
     return {
@@ -5122,6 +5133,67 @@ const buildDsldFactsInputFromSnapshot = (snapshot: SupplementSnapshot): DsldFact
   datasetVersion: snapshot.analysis?.labelExtraction?.datasetVersion ?? null,
   extractedAt: snapshot.analysis?.labelExtraction?.fetchedAt ?? null,
 });
+
+const tryBuildCanonicalDsldDigest = async (params: {
+  dsldLabelId: number | string | null | undefined;
+  timeoutMs: number;
+  snapshot?: SupplementSnapshot | null;
+  barcodeRaw?: string | null;
+  identityValueFallback?: string | null;
+}): Promise<{
+  digest: FactsDigest;
+  factsSourceVersion: string;
+  factsDigestHash: string;
+  labelDirectionsRawText: string | null;
+} | null> => {
+  const idNum = Number(params.dsldLabelId);
+  if (!Number.isFinite(idNum) || idNum <= 0) return null;
+
+  const dsldTimeoutSignal = createTimeoutSignal(Math.max(250, params.timeoutMs));
+  const { signal: dsldSignal, cleanup } = combineSignals([dsldTimeoutSignal]);
+  try {
+    const facts = await fetchDsldFactsByLabelId(idNum, dsldSignal);
+    if (!facts) return null;
+
+    let digestSnapshot = buildBarcodeSnapshot({
+      barcode:
+        params.barcodeRaw ??
+        params.snapshot?.product.barcode.raw ??
+        params.identityValueFallback ??
+        String(idNum),
+      productInfo: {
+        brand: facts.brandName ?? params.snapshot?.product.brand ?? null,
+        name: facts.productName ?? params.snapshot?.product.name ?? null,
+        category: params.snapshot?.product.category ?? null,
+        image: params.snapshot?.product.imageUrl ?? null,
+      },
+      sources: [],
+      efficacy: null,
+      safety: null,
+      usagePayload: null,
+    });
+    digestSnapshot = applyDsldFactsToSnapshot(digestSnapshot, facts);
+
+    const identityValue = String(
+      facts.dsldLabelId ??
+      params.dsldLabelId ??
+      params.identityValueFallback ??
+      idNum,
+    );
+    const factsSourceVersion = `dsld:${facts.datasetVersion ?? facts.extractedAt ?? "unknown"}`;
+    const digest = buildFactsDigestFromDsld({
+      facts,
+      snapshot: digestSnapshot,
+      identityValue,
+      regionTags: digestSnapshot.regulatory.regionTags,
+    });
+    const factsDigestHash = computeFactsDigestHash(digest);
+    const labelDirectionsRawText = buildLabelDosingText(digest);
+    return { digest, factsSourceVersion, factsDigestHash, labelDirectionsRawText };
+  } finally {
+    cleanup();
+  }
+};
 
 const SIMILARITY_STOPWORDS = new Set([
   "supplement",
@@ -5647,6 +5719,7 @@ const hasCoreAnalysis = (analysisPayload?: SnapshotAnalysisPayload | null): bool
 const hasAuthoritativeIdentityFromSnapshot = (snapshot: SupplementSnapshot): boolean => {
   if (snapshot.regulatory.dsldLabelId) return true;
   return Boolean(
+    LNHPD_RUNTIME_ENABLED &&
     snapshot.regulatory.npn &&
     snapshot.regulatory.npnStatus === "verified" &&
     snapshot.regulatory.npnVerifiedBy === "lnhpd_fetch",
@@ -5663,6 +5736,7 @@ const hasBundleOnlyLabelRecordIdentityFromSnapshot = (snapshot: SupplementSnapsh
 
 const hasBundleOnlyAuthoritativeFastPath = (snapshot: SupplementSnapshot): boolean => {
   const isVerifiedNpn = Boolean(
+    LNHPD_RUNTIME_ENABLED &&
     snapshot.regulatory.npn &&
     snapshot.regulatory.npnStatus === "verified" &&
     snapshot.regulatory.npnVerifiedBy === "lnhpd_fetch",
@@ -8312,6 +8386,7 @@ const populateBarcodeSnapshotCache = async (barcodeDigits: string): Promise<void
     { timeoutMs: 900 },
   ).catch(() => null);
   if (existing?.snapshot) return;
+  if (!LNHPD_RUNTIME_ENABLED) return;
 
   const map = await getBarcodeRegulatoryMap(barcodeGtin14, barcode, {
     timeoutMs: 1200,
@@ -8470,6 +8545,24 @@ const buildMySupplementDigestQuick = async (params: {
   if (snapshot) {
     const source = snapshot.analysis?.labelExtraction?.source ?? null;
     if (source === "dsld" || source === "label_scan") {
+      const prioritizedDsldLabelIdFromCanonical = await resolvePrioritizedDsldLabelId();
+      if (prioritizedDsldLabelIdFromCanonical && msLeft() > 0) {
+        const canonicalDigest = await tryBuildCanonicalDsldDigest({
+          dsldLabelId: prioritizedDsldLabelIdFromCanonical,
+          timeoutMs: Math.min(RESILIENCE_LNHPD_TIMEOUT_MS, msLeft()),
+          snapshot,
+          barcodeRaw: barcodeDigits,
+          identityValueFallback: snapshot.regulatory.dsldLabelId ?? (barcodeGtin14 ?? params.supplementId),
+        });
+        if (canonicalDigest) {
+          return {
+            ...canonicalDigest,
+            snapshotHit: false,
+            barcodeGtin14,
+          };
+        }
+      }
+
       const fallbackFacts = buildDsldFactsInputFromSnapshot(snapshot);
       const factsSourceVersion = `dsld:${snapshot.analysis?.labelExtraction?.datasetVersion ?? snapshot.analysis?.labelExtraction?.fetchedAt ?? "unknown"}`;
       const digest = buildFactsDigestFromDsld({
@@ -8483,7 +8576,9 @@ const buildMySupplementDigestQuick = async (params: {
       return { digest, factsSourceVersion, factsDigestHash, labelDirectionsRawText, snapshotHit: true, barcodeGtin14 };
     }
 
-    const snapshotNpn = normalizeNpnValue(snapshot.regulatory.npn ?? null);
+    const snapshotNpn = LNHPD_RUNTIME_ENABLED
+      ? normalizeNpnValue(snapshot.regulatory.npn ?? null)
+      : null;
     if (snapshotNpn) {
       const fallbackFacts = buildLnhpdFactsInputFromSnapshot(snapshot);
       const factsSourceVersion = `lnhpd:${snapshot.analysis?.labelExtraction?.datasetVersion ?? snapshot.analysis?.labelExtraction?.fetchedAt ?? "unknown"}`;
@@ -8500,33 +8595,17 @@ const buildMySupplementDigestQuick = async (params: {
 
     const prioritizedDsldLabelIdFromCanonical = await resolvePrioritizedDsldLabelId();
     if (prioritizedDsldLabelIdFromCanonical && msLeft() > 0) {
-      const dsldTimeoutSignal = createTimeoutSignal(
-        Math.max(300, Math.min(RESILIENCE_LNHPD_TIMEOUT_MS, msLeft())),
-      );
-      const { signal: dsldSignal, cleanup } = combineSignals([dsldTimeoutSignal]);
-      try {
-        const facts = await fetchDsldFactsByLabelId(prioritizedDsldLabelIdFromCanonical, dsldSignal);
-        if (facts) {
-          const factsSourceVersion = `dsld:${facts.datasetVersion ?? facts.extractedAt ?? "unknown"}`;
-          const digest = buildFactsDigestFromDsld({
-            facts,
-            snapshot: undefined,
-            identityValue: String(facts.dsldLabelId ?? prioritizedDsldLabelIdFromCanonical),
-            regionTags: ["US"],
-          });
-          const factsDigestHash = computeFactsDigestHash(digest);
-          const labelDirectionsRawText = buildLabelDosingText(digest);
-          return {
-            digest,
-            factsSourceVersion,
-            factsDigestHash,
-            labelDirectionsRawText,
-            snapshotHit: false,
-            barcodeGtin14,
-          };
-        }
-      } finally {
-        cleanup();
+      const canonicalDigest = await tryBuildCanonicalDsldDigest({
+        dsldLabelId: prioritizedDsldLabelIdFromCanonical,
+        timeoutMs: Math.min(RESILIENCE_LNHPD_TIMEOUT_MS, msLeft()),
+        barcodeRaw: barcodeDigits,
+      });
+      if (canonicalDigest) {
+        return {
+          ...canonicalDigest,
+          snapshotHit: false,
+          barcodeGtin14,
+        };
       }
     }
 
@@ -8567,26 +8646,17 @@ const buildMySupplementDigestQuick = async (params: {
   const prioritizedDsldLabelId = await resolvePrioritizedDsldLabelId();
 
   if (prioritizedDsldLabelId && msLeft() > 0) {
-    const dsldTimeoutSignal = createTimeoutSignal(
-      Math.max(400, Math.min(RESILIENCE_LNHPD_TIMEOUT_MS, msLeft())),
-    );
-    const { signal: dsldSignal, cleanup } = combineSignals([dsldTimeoutSignal]);
-    try {
-      const facts = await fetchDsldFactsByLabelId(prioritizedDsldLabelId, dsldSignal);
-      if (facts) {
-        const factsSourceVersion = `dsld:${facts.datasetVersion ?? facts.extractedAt ?? "unknown"}`;
-        const digest = buildFactsDigestFromDsld({
-          facts,
-          snapshot: undefined,
-          identityValue: String(facts.dsldLabelId ?? prioritizedDsldLabelId),
-          regionTags: ["US"],
-        });
-        const factsDigestHash = computeFactsDigestHash(digest);
-        const labelDirectionsRawText = buildLabelDosingText(digest);
-        return { digest, factsSourceVersion, factsDigestHash, labelDirectionsRawText, snapshotHit: false, barcodeGtin14 };
-      }
-    } finally {
-      cleanup();
+    const canonicalDigest = await tryBuildCanonicalDsldDigest({
+      dsldLabelId: prioritizedDsldLabelId,
+      timeoutMs: Math.min(RESILIENCE_LNHPD_TIMEOUT_MS, msLeft()),
+      barcodeRaw: barcodeDigits,
+    });
+    if (canonicalDigest) {
+      return {
+        ...canonicalDigest,
+        snapshotHit: false,
+        barcodeGtin14,
+      };
     }
   }
 
@@ -8596,7 +8666,7 @@ const buildMySupplementDigestQuick = async (params: {
       includeExpired: true,
     }).catch(() => null)
     : null;
-  const npn = map?.npn ?? null;
+  const npn = LNHPD_RUNTIME_ENABLED ? map?.npn ?? null : null;
 
   const identityType: FactsIdentityType = npn ? "npn" : "webCanonicalId";
   const identityValue = npn ?? barcodeGtin14 ?? params.supplementId;
@@ -8656,6 +8726,38 @@ const buildMySupplementDigestForEnsureOverview = async (params: {
   const normalizedBarcode = params.barcode ? normalizeBarcodeInput(params.barcode) : null;
   const barcodeDigits = normalizedBarcode?.code ?? null;
   const barcodeGtin14 = barcodeDigits ? barcodeDigits.padStart(14, "0") : null;
+  const seededDsldLabelId =
+    barcodeGtin14 && STAGE0_DSLD_BARCODE_FALLBACK_ENABLED
+      ? resolvePreferredStage0DsldLabelId(barcodeGtin14)
+      : null;
+  let prioritizedDsldLabelIdMemo: number | null | undefined;
+  const resolvePrioritizedDsldLabelId = async (): Promise<number | null> => {
+    if (prioritizedDsldLabelIdMemo !== undefined) return prioritizedDsldLabelIdMemo;
+    if (!STAGE0_DSLD_BARCODE_FALLBACK_ENABLED) {
+      prioritizedDsldLabelIdMemo = null;
+      return prioritizedDsldLabelIdMemo;
+    }
+    if (Number.isFinite(Number(seededDsldLabelId)) && Number(seededDsldLabelId) > 0) {
+      prioritizedDsldLabelIdMemo = Number(seededDsldLabelId);
+      return prioritizedDsldLabelIdMemo;
+    }
+    if (!barcodeGtin14) {
+      prioritizedDsldLabelIdMemo = null;
+      return prioritizedDsldLabelIdMemo;
+    }
+    const canonicalTimeoutSignal = createTimeoutSignal(550);
+    const { signal: canonicalSignal, cleanup } = combineSignals([canonicalTimeoutSignal]);
+    try {
+      const canonicalDsldLabelId = await fetchCanonicalDsldLabelIdByBarcode(barcodeGtin14, canonicalSignal);
+      prioritizedDsldLabelIdMemo =
+        Number.isFinite(Number(canonicalDsldLabelId)) && Number(canonicalDsldLabelId) > 0
+          ? Number(canonicalDsldLabelId)
+          : null;
+      return prioritizedDsldLabelIdMemo;
+    } finally {
+      cleanup();
+    }
+  };
   const cacheKey = barcodeDigits ? buildBarcodeCacheKey(barcodeDigits) : null;
 
   const snapshot = cacheKey
@@ -8670,7 +8772,7 @@ const buildMySupplementDigestForEnsureOverview = async (params: {
       includeExpired: true,
     }).catch(() => null)
     : null;
-  const npn = npnFromSnapshot ?? map?.npn ?? null;
+  const npn = LNHPD_RUNTIME_ENABLED ? (npnFromSnapshot ?? map?.npn ?? null) : null;
 
   if (npn) {
     const lnhpdTimeoutSignal = createTimeoutSignal(RESILIENCE_LNHPD_TIMEOUT_MS);
@@ -8709,27 +8811,18 @@ const buildMySupplementDigestForEnsureOverview = async (params: {
     }
   }
 
-  const dsldLabelId = snapshot?.regulatory?.dsldLabelId ?? null;
+  const prioritizedDsldLabelId = await resolvePrioritizedDsldLabelId();
+  const dsldLabelId = prioritizedDsldLabelId ?? snapshot?.regulatory?.dsldLabelId ?? null;
   if (dsldLabelId) {
-    const idNum = Number(dsldLabelId);
-    const dsldTimeoutSignal = createTimeoutSignal(RESILIENCE_LNHPD_TIMEOUT_MS);
-    const { signal: dsldSignal, cleanup } = combineSignals([dsldTimeoutSignal]);
-    try {
-      const facts = Number.isFinite(idNum) ? await fetchDsldFactsByLabelId(idNum, dsldSignal) : null;
-      if (facts) {
-        const factsSourceVersion = `dsld:${facts.datasetVersion ?? facts.extractedAt ?? "unknown"}`;
-        const digest = buildFactsDigestFromDsld({
-          facts,
-          snapshot: snapshot ?? undefined,
-          identityValue: String(facts.dsldLabelId ?? dsldLabelId),
-          regionTags: snapshot?.regulatory?.regionTags ?? ["US"],
-        });
-        const factsDigestHash = computeFactsDigestHash(digest);
-        const labelDirectionsRawText = buildLabelDosingText(digest);
-        return { digest, factsSourceVersion, factsDigestHash, labelDirectionsRawText };
-      }
-    } finally {
-      cleanup();
+    const canonicalDigest = await tryBuildCanonicalDsldDigest({
+      dsldLabelId,
+      timeoutMs: RESILIENCE_LNHPD_TIMEOUT_MS,
+      snapshot,
+      barcodeRaw: barcodeDigits,
+      identityValueFallback: String(snapshot?.regulatory?.dsldLabelId ?? barcodeGtin14 ?? params.supplementId),
+    });
+    if (canonicalDigest) {
+      return canonicalDigest;
     }
   }
 
@@ -9405,6 +9498,17 @@ app.get("/api/score/v4/:source/:id", verifySupabaseToken, async (req: Request, r
   }
 
   try {
+    if (source === "lnhpd" && !LNHPD_RUNTIME_ENABLED) {
+      const response: ScoreBundleResponse = {
+        status: "not_found",
+        source,
+        sourceId,
+        reasonCode: "LNHPD_DISABLED",
+        message: "LNHPD scoring is disabled for the current market configuration.",
+      };
+      return res.json(response);
+    }
+
     const selectScoreColumns =
       "source,source_id,canonical_source_id,score_version,overall_score,effectiveness_score,safety_score,integrity_score,confidence,best_fit_goals,flags_json,highlights_json,explain_json,inputs_hash,computed_at";
     const extractScoreResponseDiagnostics = (bundle: ScoreBundleV4) => {
@@ -10038,6 +10142,9 @@ app.get("/api/scan-facts/v1/:source/:id", verifySupabaseToken, async (req: Reque
 
   try {
     if (source === "lnhpd") {
+      if (!LNHPD_RUNTIME_ENABLED) {
+        return res.json({ status: "not_found", source, sourceId, facts: null });
+      }
       const facts = await fetchLnhpdFactsByNpn(sourceId, requestSignal);
       if (!facts) {
         return res.json({ status: "not_found", source, sourceId, facts: null });
@@ -16048,6 +16155,14 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         return;
       }
 
+      if (!LNHPD_RUNTIME_ENABLED) {
+        candidateBackfillState = {
+          ...candidateBackfillState,
+          reasonCode: "LNHPD_DISABLED",
+        };
+        return;
+      }
+
       const startedAtMs = Date.now();
       const timeoutSignal = createTimeoutSignal(NPN_CANDIDATE_DIRECT_LOOKUP_TIMEOUT_MS);
       const { signal, cleanup } = combineSignals([requestSignal, timeoutSignal]);
@@ -16133,6 +16248,10 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       }
     };
     const ensureCatalogNpnCandidatesForMeta = async (snapshot: SupplementSnapshot): Promise<void> => {
+      if (!LNHPD_RUNTIME_ENABLED) {
+        npnCandidatesForMeta = [];
+        return;
+      }
       if (npnCandidatesForMeta.length > 0) return;
       if (requestSignal.aborted) return;
       const resolveMapQuickly = async (): Promise<{
@@ -16244,7 +16363,21 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       const cachedNpn = cachedFast.snapshot.regulatory.npn ?? null;
       const cachedNpnStatus = cachedFast.snapshot.regulatory.npnStatus ?? null;
       const cachedNpnVerifiedBy = cachedFast.snapshot.regulatory.npnVerifiedBy ?? null;
+      const cachedSnapshotUsesLnhpd =
+        Boolean(cachedNpn)
+        || cachedNpnVerifiedBy === "lnhpd_fetch"
+        || cachedLabelSource === "lnhpd"
+        || cachedSourceType === "lnhpd"
+        || cachedIdentityType === "npn";
+      if (!LNHPD_RUNTIME_ENABLED && cachedSnapshotUsesLnhpd) {
+        bypassCachedFastPathForAuthority = true;
+        console.info("[ResolutionV2] Bypassing cached LNHPD snapshot in US-only runtime mode", {
+          barcode: barcodeGtin14,
+          snapshotId: cachedFast.snapshot.snapshotId,
+        });
+      }
       const cachedIsNpnVerified =
+        LNHPD_RUNTIME_ENABLED &&
         Boolean(cachedNpn) &&
         cachedNpnStatus === "verified" &&
         cachedNpnVerifiedBy === "lnhpd_fetch";
@@ -16290,7 +16423,13 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           (hintBrand && hintBrand.trim().length > 0) || (hintProduct && hintProduct.trim().length > 0);
         let hasNameMatchCandidate = false;
 
-        if (!catalogProbe && !regulatoryProbe?.npn && hasNameHints && !requestSignal.aborted) {
+        if (
+          LNHPD_RUNTIME_ENABLED &&
+          !catalogProbe &&
+          !regulatoryProbe?.npn &&
+          hasNameHints &&
+          !requestSignal.aborted
+        ) {
           const timeoutSignal = createTimeoutSignal(1200);
           const { signal, cleanup } = combineSignals([requestSignal, timeoutSignal]);
           try {
@@ -16307,9 +16446,11 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           }
         }
 
+        const hasRegulatoryCandidate = LNHPD_RUNTIME_ENABLED && Boolean(regulatoryProbe?.npn);
+
         if (
           catalogProbe ||
-          regulatoryProbe?.npn ||
+          hasRegulatoryCandidate ||
           hasNameMatchCandidate ||
           hasSeededDsldCandidate ||
           hasCanonicalDsldCandidate
@@ -16324,7 +16465,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
             cachedIdentityType,
             cachedSourceType,
             hasCatalogCandidate: Boolean(catalogProbe),
-            hasRegulatoryCandidate: Boolean(regulatoryProbe?.npn),
+            hasRegulatoryCandidate,
             hasNameMatchCandidate,
             hasSeededDsldCandidate,
             hasCanonicalDsldCandidate,
@@ -16396,6 +16537,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         const snapshotNpnStatus = cachedFast.snapshot.regulatory.npnStatus ?? null;
         const snapshotVerifiedBy = cachedFast.snapshot.regulatory.npnVerifiedBy ?? null;
         const snapshotIsVerified =
+          LNHPD_RUNTIME_ENABLED &&
           snapshotNpnStatus === "verified" &&
           snapshotVerifiedBy === "lnhpd_fetch" &&
           Boolean(snapshotNpn);
@@ -16505,13 +16647,19 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       }
 
       const snapshotIsVerified =
+        LNHPD_RUNTIME_ENABLED &&
         cachedFast.snapshot.regulatory.npnStatus === "verified" &&
         cachedFast.snapshot.regulatory.npnVerifiedBy === "lnhpd_fetch";
 
       const snapshotVerifiedNpn = cachedFast.snapshot.regulatory.npn;
       const snapshotVerifiedBy = cachedFast.snapshot.regulatory.npnVerifiedBy;
       const snapshotNpnStatus = cachedFast.snapshot.regulatory.npnStatus;
-      if (snapshotVerifiedNpn && snapshotVerifiedBy === "lnhpd_fetch" && snapshotNpnStatus === "verified") {
+      if (
+        LNHPD_RUNTIME_ENABLED &&
+        snapshotVerifiedNpn &&
+        snapshotVerifiedBy === "lnhpd_fetch" &&
+        snapshotNpnStatus === "verified"
+      ) {
         void upsertBarcodeRegulatoryMap({
           barcodeGtin14,
           npn: snapshotVerifiedNpn,
@@ -16538,7 +16686,11 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           let identityValue = barcodeGtin14;
           let factsSourceVersion = "snapshot:unknown";
 
-          if ((snapshotLabelSource === "lnhpd" || snapshotLabelSource === "manual") && snapshotVerifiedNpn) {
+          if (
+            LNHPD_RUNTIME_ENABLED &&
+            (snapshotLabelSource === "lnhpd" || snapshotLabelSource === "manual") &&
+            snapshotVerifiedNpn
+          ) {
             identityType = "npn";
             identityValue = snapshotVerifiedNpn;
             const lnhpdTimeoutSignal = createTimeoutSignal(RESILIENCE_LNHPD_TIMEOUT_MS);
@@ -17077,19 +17229,21 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     // Hard rule: Stage 1 web resolution must not start (or short-circuit) before we
     // give first-party resolvers (A/Catalog/LNHPD) a chance to terminate.
     let regulatoryMap: Awaited<ReturnType<typeof getBarcodeRegulatoryMap>> | null = null;
-    regMapPrimaryAttempted = true;
-    try {
-      regulatoryMap = await regulatoryMapPromise;
-      if (regulatoryMap) {
-        regMapPrimaryStatus = isExpiredAt(regulatoryMap.expires_at) ? "stale" : "hit";
+    if (LNHPD_RUNTIME_ENABLED) {
+      regMapPrimaryAttempted = true;
+      try {
+        regulatoryMap = await regulatoryMapPromise;
+        if (regulatoryMap) {
+          regMapPrimaryStatus = isExpiredAt(regulatoryMap.expires_at) ? "stale" : "hit";
+        }
+      } catch (error) {
+        regulatoryMapStatus = "timeout";
+        regMapPrimaryStatus = "timeout";
+        console.warn("[ResolutionV2] Regulatory map lookup failed", error);
       }
-    } catch (error) {
-      regulatoryMapStatus = "timeout";
-      regMapPrimaryStatus = "timeout";
-      console.warn("[ResolutionV2] Regulatory map lookup failed", error);
     }
 
-    if (authorityRegressionScenarioActive && !requestSignal.aborted) {
+    if (LNHPD_RUNTIME_ENABLED && authorityRegressionScenarioActive && !requestSignal.aborted) {
       const seededNpnFromMap =
         typeof regulatoryMap?.npn === "string" ? regulatoryMap.npn.replace(/\D/g, "").trim() : "";
       authorityRegressionScenarioHistoricalNpn =
@@ -17110,7 +17264,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     // Stage0 hardening: if the first map read misses (or times out), do one direct second-chance
     // read without the shared read semaphore to avoid false Web fallback during transient queue pressure.
     // Safety rule: this must stay exact-match only (same gtin14 + same raw digits), no fuzzy lookup.
-    if (!regulatoryMap && !requestSignal.aborted) {
+    if (LNHPD_RUNTIME_ENABLED && !regulatoryMap && !requestSignal.aborted) {
       regMapSecondChanceAttempted = true;
       if (authorityRegressionScenarioActive) {
         regMapSecondChanceLatencyMs = 0;
@@ -17168,6 +17322,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         mapMinConfidence: REGULATORY_MAP_MIN_CONFIDENCE,
         staleWindowMs: REGULATORY_MAP_STALE_WINDOW_MS,
         historicalNpn: historicalNpn ?? null,
+        allowLnhpd: LNHPD_RUNTIME_ENABLED,
       });
 
     let authority = resolveCandidate();
@@ -17178,7 +17333,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
 
     // Root-fix for cache resets: if map/snapshot are gone, recover LNHPD candidate
     // from prior successful scans of the same GTIN14 before falling into Web.
-    if (!candidate && !requestSignal.aborted) {
+    if (LNHPD_RUNTIME_ENABLED && !candidate && !requestSignal.aborted) {
       if (authorityRegressionScenarioActive && authorityRegressionScenarioHistoricalNpn) {
         historicalLnhpd = {
           barcode_gtin14: barcodeGtin14,
@@ -17206,7 +17361,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
 
     // Name/brand fallback: when barcode mapping misses but we still have stable product hints
     // (usually from cached snapshot metadata), try a strict LNHPD name match before Web Stage 1.
-    if (!candidate && !requestSignal.aborted) {
+    if (LNHPD_RUNTIME_ENABLED && !candidate && !requestSignal.aborted) {
       const hintBrand =
         cachedFast?.analysisPayload?.productInfo?.brand ??
         cachedFast?.snapshot?.product?.brand ??
@@ -17578,7 +17733,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       }
     }
 
-    if (!stage0Delivered && !requestSignal.aborted && streamState.latestSourceTypeFinal !== true) {
+    if (LNHPD_RUNTIME_ENABLED && !stage0Delivered && !requestSignal.aborted && streamState.latestSourceTypeFinal !== true) {
       await maybeRunNpnCandidateBackfill();
     }
 
@@ -17928,8 +18083,12 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           let identityValue = barcodeGtin14;
           let factsSourceVersion = `snapshot:${snapshotLabelSource ?? "unknown"}`;
 
-          const snapshotNpn = after.snapshot.regulatory.npn ?? null;
-          if ((snapshotLabelSource === "lnhpd" || snapshotLabelSource === "manual") && snapshotNpn) {
+          const snapshotNpn = LNHPD_RUNTIME_ENABLED ? after.snapshot.regulatory.npn ?? null : null;
+          if (
+            LNHPD_RUNTIME_ENABLED &&
+            (snapshotLabelSource === "lnhpd" || snapshotLabelSource === "manual") &&
+            snapshotNpn
+          ) {
             identityType = "npn";
             identityValue = snapshotNpn;
             factsSourceVersion = `lnhpd:${snapshotLabelVersion ?? "unknown"}`;
@@ -19106,8 +19265,8 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           return null;
         };
 
-        const npnSeed = await tryMarketplaceNpn();
-        if (npnSeed?.npn) {
+        const npnSeed = LNHPD_RUNTIME_ENABLED ? await tryMarketplaceNpn() : null;
+        if (LNHPD_RUNTIME_ENABLED && npnSeed?.npn) {
           npnCandidate = npnSeed.npn;
           npnSourceUrl = npnSeed.sourceUrl;
           npnCandidateSource = "web";
@@ -21269,9 +21428,11 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
 
     // Opportunistic LNHPD resolution if we discovered an NPN (deterministic extraction).
     const npnCandidate =
-      deepCandidates.map((c) => c.evidence.npnCandidate).find((value): value is string => typeof value === "string") ??
-      null;
-    if (npnCandidate) {
+      LNHPD_RUNTIME_ENABLED
+        ? deepCandidates.map((c) => c.evidence.npnCandidate).find((value): value is string => typeof value === "string") ??
+          null
+        : null;
+    if (LNHPD_RUNTIME_ENABLED && npnCandidate) {
       npnCandidateSource = "web";
       authorityCandidateSource = "web";
       npnCandidateStale = false;
@@ -21463,7 +21624,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
 
     // Stage-0 style checkpoint using early web deterministic hints:
     // when NPN was not extracted directly, still try LNHPD name match before deep fetch/LLM.
-    if (!stage0Delivered && !requestSignal.aborted) {
+    if (LNHPD_RUNTIME_ENABLED && !stage0Delivered && !requestSignal.aborted) {
       const nameHintBrand = typeof provisionalBrand === "string" ? provisionalBrand.trim() : "";
       const nameHintProduct = typeof provisionalName === "string" ? provisionalName.trim() : "";
       if (nameHintBrand || nameHintProduct) {
@@ -23007,17 +23168,28 @@ app.get("/api/barcode-metadata", verifySupabaseToken, async (req: Request, res: 
 
     if (cached?.snapshot) {
       const snapshot = cached.snapshot;
-      return res.json({
-        status: "ok",
-        barcodeGtin14,
-        productInfo: {
-          brand: snapshot.product.brand ?? null,
-          name: snapshot.product.name ?? null,
-        },
-        primaryDoseText: extractPrimaryDoseText(snapshot, overlayClaims),
-        npn: snapshot.regulatory.npn ?? null,
-        dsldLabelId: snapshot.regulatory.dsldLabelId ?? null,
-      });
+      const cachedSnapshotLabelSource =
+        snapshot.analysis?.labelExtraction?.source ??
+        cached.analysisPayload?.analysis?.labelExtraction?.source ??
+        null;
+      const cachedSnapshotUsesLnhpd =
+        (cachedSnapshotLabelSource === "lnhpd" || cachedSnapshotLabelSource === "manual") &&
+        Boolean(snapshot.regulatory.npnVerifiedBy === "lnhpd_fetch" || snapshot.regulatory.npn);
+      if (!LNHPD_RUNTIME_ENABLED && cachedSnapshotUsesLnhpd) {
+        // Ignore stale LNHPD-backed snapshots in US-only runtime mode.
+      } else {
+        return res.json({
+          status: "ok",
+          barcodeGtin14,
+          productInfo: {
+            brand: snapshot.product.brand ?? null,
+            name: snapshot.product.name ?? null,
+          },
+          primaryDoseText: extractPrimaryDoseText(snapshot, overlayClaims),
+          npn: LNHPD_RUNTIME_ENABLED ? snapshot.regulatory.npn ?? null : null,
+          dsldLabelId: snapshot.regulatory.dsldLabelId ?? null,
+        });
+      }
     }
 
     // Keep metadata source alignment with scan Stage0 for curated seeded DSLD barcodes.
@@ -23100,13 +23272,24 @@ app.get("/api/barcode-metadata", verifySupabaseToken, async (req: Request, res: 
               name: snapshot.product.name ?? null,
             },
             primaryDoseText: extractPrimaryDoseText(snapshot, overlayClaims),
-            npn: snapshot.regulatory.npn ?? null,
+            npn: LNHPD_RUNTIME_ENABLED ? snapshot.regulatory.npn ?? null : null,
             dsldLabelId: snapshot.regulatory.dsldLabelId ?? String(seededDsldLabelId),
           });
         }
       } finally {
         cleanupDsldSignal();
       }
+    }
+
+    if (!LNHPD_RUNTIME_ENABLED) {
+      return res.json({
+        status: "not_found",
+        barcodeGtin14,
+        productInfo: { brand: null, name: null },
+        primaryDoseText: null,
+        npn: null,
+        dsldLabelId: null,
+      });
     }
 
     const map = await getBarcodeRegulatoryMap(barcodeGtin14, barcodeRawDigits, {
