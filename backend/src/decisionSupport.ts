@@ -306,6 +306,39 @@ export type DecisionSupportPayload = {
   qualityMark: DecisionSupportQualityMark;
   safeScienceSignalSource?: "subset" | "fallback" | "none";
   safeScienceFallbackType?: "best_for" | "comparison" | null;
+  decisionDebug?: {
+    factsDigestHash: string;
+    sourceIdentityCanonical: string;
+    sourceType: FactsDigest["sourceType"];
+    digestIdentityType: FactsDigest["identity"]["type"];
+    digestIdentityValue: string;
+    localeCanonical: string;
+    rubricVersion: string;
+    categoryId: DecisionSupportCategoryId;
+    categoryProfileVersion: string;
+    viewMode: DecisionSupportViewMode;
+    flagsSnapshotCanonical: string;
+    overlayClaimsHash: string | null;
+    overlayAugmentationVersion: string | null;
+    overlayAugmentationSource: "iherb" | "none";
+    patchActivationCanonical: string;
+    decisionContractVersion: string;
+    digestInputParts: {
+      factsDigestHash: string;
+      decisionContractVersion: string;
+      localeCanonical: string;
+      rubricVersion: string;
+      categoryId: DecisionSupportCategoryId;
+      categoryProfileVersion: string;
+      viewMode: DecisionSupportViewMode;
+      flagsSnapshotCanonical: string;
+      sourceIdentityCanonical: string;
+      overlayAugmentationSource: "iherb" | "none";
+      overlayAugmentationVersion: string | null;
+      overlayClaimsHash: string | null;
+      patchActivationCanonical: string;
+    };
+  };
 };
 
 export type DecisionSupportInline = {
@@ -2856,20 +2889,35 @@ export const compileDecisionSupport = (
   const patchActivationCanonical = canonicalizePatchActivation(params.patchActivation ?? null);
   const overlayAugmentation = buildDecisionSupportOverlayAugmentationMeta(params.overlayClaims ?? null);
   const localeCanonical = String(params.locale ?? "en").trim().toLowerCase();
-  const digestInput = [
-    params.factsDigestHash,
-    DECISION_SUPPORT_CONTRACT_VERSION,
+  const digestInputParts = {
+    factsDigestHash: params.factsDigestHash,
+    decisionContractVersion: DECISION_SUPPORT_CONTRACT_VERSION,
     localeCanonical,
-    DECISION_SUPPORT_RUBRIC_VERSION,
+    rubricVersion: DECISION_SUPPORT_RUBRIC_VERSION,
     categoryId,
     categoryProfileVersion,
-    params.viewMode,
+    viewMode: params.viewMode,
     flagsSnapshotCanonical,
     sourceIdentityCanonical,
-    overlayAugmentation.source,
-    overlayAugmentation.version ?? "none",
-    overlayAugmentation.claimsHash ?? "none",
+    overlayAugmentationSource: overlayAugmentation.source,
+    overlayAugmentationVersion: overlayAugmentation.version,
+    overlayClaimsHash: overlayAugmentation.claimsHash,
     patchActivationCanonical,
+  } as const;
+  const digestInput = [
+    digestInputParts.factsDigestHash,
+    digestInputParts.decisionContractVersion,
+    digestInputParts.localeCanonical,
+    digestInputParts.rubricVersion,
+    digestInputParts.categoryId,
+    digestInputParts.categoryProfileVersion,
+    digestInputParts.viewMode,
+    digestInputParts.flagsSnapshotCanonical,
+    digestInputParts.sourceIdentityCanonical,
+    digestInputParts.overlayAugmentationSource,
+    digestInputParts.overlayAugmentationVersion ?? "none",
+    digestInputParts.overlayClaimsHash ?? "none",
+    digestInputParts.patchActivationCanonical,
   ].join(DECISION_SUPPORT_DIGEST_DELIMITER);
   const decisionInputsHash = hashCanonicalString(digestInput);
   const digest = decisionInputsHash;
@@ -2971,6 +3019,25 @@ export const compileDecisionSupport = (
     qualityMark,
     safeScienceSignalSource: safeScienceSignals?.signalSource ?? "none",
     safeScienceFallbackType: safeScienceSignals?.fallbackType ?? null,
+    decisionDebug: {
+      factsDigestHash: params.factsDigestHash,
+      sourceIdentityCanonical,
+      sourceType: params.digest.sourceType,
+      digestIdentityType: params.digest.identity.type,
+      digestIdentityValue: params.digest.identity.value,
+      localeCanonical,
+      rubricVersion: DECISION_SUPPORT_RUBRIC_VERSION,
+      categoryId,
+      categoryProfileVersion,
+      viewMode: params.viewMode,
+      flagsSnapshotCanonical,
+      overlayClaimsHash: overlayAugmentation.claimsHash,
+      overlayAugmentationVersion: overlayAugmentation.version,
+      overlayAugmentationSource: overlayAugmentation.source,
+      patchActivationCanonical,
+      decisionContractVersion: DECISION_SUPPORT_CONTRACT_VERSION,
+      digestInputParts,
+    },
   };
 };
 

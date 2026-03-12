@@ -260,6 +260,17 @@ const parseBooleanEnv = (value: string | undefined, fallback: boolean): boolean 
   if (normalized === "0" || normalized === "false" || normalized === "no") return false;
   return fallback;
 };
+const parseDebugDecisionRequested = (req: Request): boolean => {
+  const queryValue = req.query.debugDecision;
+  const queryRequested = Array.isArray(queryValue)
+    ? queryValue.some((value) => String(value ?? "").trim() === "1")
+    : String(queryValue ?? "").trim() === "1";
+  if (queryRequested) return true;
+  const headerValue = req.headers["x-decision-debug"];
+  return Array.isArray(headerValue)
+    ? headerValue.some((value) => String(value ?? "").trim() === "1")
+    : String(headerValue ?? "").trim() === "1";
+};
 const LNHPD_RUNTIME_ENABLED = parseBooleanEnv(process.env.LNHPD_RUNTIME_ENABLED, false);
 type LegacyCallerSurface = "mobile_ui" | "shadow_probe" | "regression" | "unknown";
 type LegacyRuntimeUsageDayRow = {
@@ -2789,6 +2800,7 @@ const buildAnalysisBundleSkeleton = (params: {
     safety: "pending" | "limited";
   };
   overlayClaims?: DecisionSupportOverlayClaims | null;
+  includeDecisionDebug?: boolean;
 }): AnalysisBundle => {
   const patched = applyPatchShadowToFactsDigest({
     digest: params.digest,
@@ -2836,6 +2848,11 @@ const buildAnalysisBundleSkeleton = (params: {
       overlayAugmentationVersion: decisionSupport.overlayAugmentationVersion,
       overlayAugmentationSource: decisionSupport.overlayAugmentationSource,
       patchActivationCanonical: decisionSupport.patchActivationCanonical,
+      ...(params.includeDecisionDebug && decisionSupport.decisionDebug
+        ? {
+          decisionDebug: decisionSupport.decisionDebug,
+        }
+        : {}),
       decisionSupportInline: toDecisionSupportInline(decisionSupport),
       serverCommitSha: SERVER_COMMIT_SHA,
     },
@@ -2954,6 +2971,7 @@ const mergeFastAnalysisBundle = (params: {
   deterministicSignals?: DeterministicSignalPack | null;
   fastOutput: Record<string, unknown> | null;
   overlayClaims?: DecisionSupportOverlayClaims | null;
+  includeDecisionDebug?: boolean;
 }): AnalysisBundle => {
   const { skeleton, fastOutput } = params;
   const patched = applyPatchShadowToFactsDigest({
@@ -3213,6 +3231,11 @@ const mergeFastAnalysisBundle = (params: {
       overlayAugmentationVersion: decisionSupport.overlayAugmentationVersion,
       overlayAugmentationSource: decisionSupport.overlayAugmentationSource,
       patchActivationCanonical: decisionSupport.patchActivationCanonical,
+      ...(params.includeDecisionDebug && decisionSupport.decisionDebug
+        ? {
+          decisionDebug: decisionSupport.decisionDebug,
+        }
+        : {}),
       decisionSupportInline: toDecisionSupportInline(decisionSupport),
     },
     sections: {
@@ -10718,6 +10741,7 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
     if (Array.isArray(raw)) return raw.some((value) => String(value).trim() === "1");
     return String(raw ?? "").trim() === "1";
   })();
+  const debugDecisionRequested = parseDebugDecisionRequested(req);
 
   try {
     const barcodeGtin14 = normalizedBarcode.code.padStart(14, "0");
@@ -10767,6 +10791,7 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
 
     const authedReq = req as AuthenticatedRequest;
     const allowPatchDebug = authDisabled || authedReq.regressionAuth === true;
+    const allowDecisionDebug = allowPatchDebug && debugDecisionRequested;
     return res.json({
       status: "ok",
       barcode: barcodeGtin14,
@@ -10799,6 +10824,11 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
       usageBlock: decisionSupport.usageBlock,
       safetyBlock: decisionSupport.safetyBlock,
       qualityMark: decisionSupport.qualityMark,
+      ...(allowDecisionDebug && decisionSupport.decisionDebug
+        ? {
+          decisionDebug: decisionSupport.decisionDebug,
+        }
+        : {}),
       ...(debugPatchRequested && allowPatchDebug
         ? {
           patchDebug: {
@@ -13020,6 +13050,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       : 15000;
   const globalDeadlineAt = requestEntryAt + Math.max(1000, globalStreamTimeoutMs);
   const isRegressionRequest = (req as AuthenticatedRequest).regressionAuth === true;
+  const debugDecisionRequested = parseDebugDecisionRequested(req);
   const authBypassHeader = req.headers["x-auth-disabled"];
   const isAuthBypassRequest = Array.isArray(authBypassHeader)
     ? authBypassHeader.includes("1")
@@ -15101,6 +15132,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         identityValue: params.identityValue,
         dataStatus,
         overlayClaims: overlayClaimsByBarcode,
+        includeDecisionDebug: debugDecisionRequested && (authDisabled || isRegressionRequest),
       });
       const skeleton = attachProductIdentityMeta({
         ...skeletonBase,
@@ -15474,6 +15506,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           deterministicSignals,
           fastOutput: fastRaw,
           overlayClaims: overlayClaimsByBarcode,
+          includeDecisionDebug: debugDecisionRequested && (authDisabled || isRegressionRequest),
         });
         fastCandidate = sanitizeAnalysisBundleCoverFields({ bundle: fastCandidate, digest: params.digest });
         if (fastFailed) {
@@ -15488,6 +15521,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
               deterministicSignals,
               fastOutput: null,
               overlayClaims: overlayClaimsByBarcode,
+              includeDecisionDebug: debugDecisionRequested && (authDisabled || isRegressionRequest),
             }),
           );
           parsed = safeParseAnalysisBundle(fallbackCandidate);
@@ -15506,6 +15540,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
             deterministicSignals,
             fastOutput: null,
             overlayClaims: overlayClaimsByBarcode,
+            includeDecisionDebug: debugDecisionRequested && (authDisabled || isRegressionRequest),
           }),
         );
         const parsed = safeParseAnalysisBundle(fallbackCandidate);

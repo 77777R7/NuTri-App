@@ -188,6 +188,39 @@ export type AnalysisBundleMetaV3 = {
   overlayAugmentationVersion?: string | null;
   overlayAugmentationSource?: 'iherb' | 'none';
   patchActivationCanonical?: string;
+  decisionDebug?: {
+    factsDigestHash: string;
+    sourceIdentityCanonical: string;
+    sourceType: 'lnhpd' | 'dsld' | 'web';
+    digestIdentityType: 'npn' | 'dsldLabelId' | 'webCanonicalId' | 'gtin14';
+    digestIdentityValue: string;
+    localeCanonical: string;
+    rubricVersion: string;
+    categoryId: string;
+    categoryProfileVersion: string;
+    viewMode: 'summary' | 'details';
+    flagsSnapshotCanonical: string;
+    overlayClaimsHash: string | null;
+    overlayAugmentationVersion: string | null;
+    overlayAugmentationSource: 'iherb' | 'none';
+    patchActivationCanonical: string;
+    decisionContractVersion: string;
+    digestInputParts: {
+      factsDigestHash: string;
+      decisionContractVersion: string;
+      localeCanonical: string;
+      rubricVersion: string;
+      categoryId: string;
+      categoryProfileVersion: string;
+      viewMode: 'summary' | 'details';
+      flagsSnapshotCanonical: string;
+      sourceIdentityCanonical: string;
+      overlayAugmentationSource: 'iherb' | 'none';
+      overlayAugmentationVersion: string | null;
+      overlayClaimsHash: string | null;
+      patchActivationCanonical: string;
+    };
+  };
   decisionSupportInline?: {
     verdict: 'strong_candidate' | 'reasonable_but_incomplete' | 'hard_to_recommend_until_label_verified';
     subscores: Array<{
