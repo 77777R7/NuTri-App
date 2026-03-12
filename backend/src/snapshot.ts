@@ -21,6 +21,11 @@ export type SnapshotAnalysisPayload = {
       fetchedAt: string | null;
       datasetVersion: string | null;
     } | null;
+    overlayAugmentation?: {
+      provider: 'iherb' | 'none';
+      version: string | null;
+      claimsHash: string | null;
+    } | null;
   } | null;
   brandExtraction?: {
     brand: string | null;

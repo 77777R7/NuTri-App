@@ -504,6 +504,12 @@ export const AnalysisBundleMetaSchema = z.object({
   webBytesReadTotal: z.number().int().min(0).optional(),
   webParseMsTotal: z.number().min(0).optional(),
   decisionSupportDigest: z.string().trim().min(8).optional(),
+  decisionInputsHash: z.string().trim().min(8).optional(),
+  decisionContractVersion: z.string().trim().min(1).optional(),
+  overlayClaimsHash: z.string().trim().min(8).nullable().optional(),
+  overlayAugmentationVersion: z.string().trim().min(1).nullable().optional(),
+  overlayAugmentationSource: z.enum(["iherb", "none"]).optional(),
+  patchActivationCanonical: z.string().trim().min(2).optional(),
   decisionSupportInline: DecisionSupportInlineSchema.optional(),
   serverCommitSha: z.string().nullable().optional(),
 });

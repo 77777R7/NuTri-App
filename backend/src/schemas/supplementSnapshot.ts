@@ -30,6 +30,12 @@ const LabelExtractionSchema = z.object({
   datasetVersion: z.string().nullable(),
 });
 
+const OverlayAugmentationSchema = z.object({
+  provider: z.enum(['iherb', 'none']),
+  version: z.string().nullable(),
+  claimsHash: z.string().nullable(),
+});
+
 export const SupplementSnapshotSchema = z.object({
   schemaVersion: z.number(),
   snapshotId: z.string(),
@@ -171,6 +177,7 @@ export const SupplementSnapshotSchema = z.object({
       status: AnalysisStatusSchema.nullable(),
       version: z.number().int().nullable(),
       labelExtraction: LabelExtractionSchema.nullable(),
+      overlayAugmentation: OverlayAugmentationSchema.nullable().optional(),
     })
     .nullable()
     .optional(),

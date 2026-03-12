@@ -182,6 +182,12 @@ export type AnalysisBundleMetaV3 = {
   webBytesReadTotal?: number;
   webParseMsTotal?: number;
   decisionSupportDigest?: string;
+  decisionInputsHash?: string;
+  decisionContractVersion?: string;
+  overlayClaimsHash?: string | null;
+  overlayAugmentationVersion?: string | null;
+  overlayAugmentationSource?: 'iherb' | 'none';
+  patchActivationCanonical?: string;
   decisionSupportInline?: {
     verdict: 'strong_candidate' | 'reasonable_but_incomplete' | 'hard_to_recommend_until_label_verified';
     subscores: Array<{

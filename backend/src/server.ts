@@ -66,7 +66,12 @@ import {
   type LnhpdFactsInput,
 } from "./factsDigest.js";
 import {
+  buildDecisionSupportOverlayAugmentationMeta,
   compileDecisionSupport,
+  DECISION_SUPPORT_CONTRACT_VERSION,
+  DECISION_SUPPORT_OVERLAY_AUGMENTATION_VERSION,
+  DECISION_SUPPORT_PATCH_VERSION,
+  DECISION_SUPPORT_RUBRIC_VERSION,
   toDecisionSupportInline,
   type DecisionSupportOverlayClaims,
   type DecisionSupportViewMode,
@@ -442,6 +447,12 @@ const parseSeededDsldLabelMap = (value: string | undefined): Map<string, number>
   }
   return map;
 };
+const CORE_STAGE0_DSLD_WARM_LABEL_MAP = new Map<string, number>([
+  ["00023249011835".padStart(14, "0"), 326272], // Sports Research Omega-3
+  ["00023249090021".padStart(14, "0"), 326292], // Sports Research Vitamin C
+  ["00737870212539".padStart(14, "0"), 232334], // Life Extension GI with Phage
+  ["00023249012566".padStart(14, "0"), 326237], // Sports Research Astaxanthin
+]);
 const STAGE0_DSLD_SEEDED_LABEL_MAP = parseSeededDsldLabelMap(
   process.env.STAGE0_DSLD_SEEDED_LABEL_MAP_JSON,
 );
@@ -477,6 +488,22 @@ const STAGE0_DSLD_BARCODE_FALLBACK_FETCH_TIMEOUT_MS = Math.max(
   100,
   Number(process.env.STAGE0_DSLD_BARCODE_FALLBACK_FETCH_TIMEOUT_MS ?? 900),
 );
+const resolvePreferredStage0DsldLabelId = (barcodeGtin14: string | null | undefined): number | null => {
+  const normalized = normalizeBarcodeInput(String(barcodeGtin14 ?? ""));
+  if (!normalized) return null;
+  const key = normalized.code.padStart(14, "0");
+  const coreWarmLabelId = CORE_STAGE0_DSLD_WARM_LABEL_MAP.get(key);
+  if (Number.isFinite(Number(coreWarmLabelId)) && Number(coreWarmLabelId) > 0) {
+    return Number(coreWarmLabelId);
+  }
+  if (!STAGE0_DSLD_SEEDED_LABEL_MAP_ENABLED) return null;
+  const seededLabelId = STAGE0_DSLD_SEEDED_LABEL_MAP.get(key) ?? null;
+  return Number.isFinite(Number(seededLabelId)) && Number(seededLabelId) > 0
+    ? Number(seededLabelId)
+    : null;
+};
+const hasPreferredStage0DsldLabelId = (barcodeGtin14: string | null | undefined): boolean =>
+  resolvePreferredStage0DsldLabelId(barcodeGtin14) != null;
 const STAGE0_PROTOCOL_UNIFIED = parseBooleanEnv(process.env.STAGE0_PROTOCOL_UNIFIED, true);
 const DETERMINISTIC_SIGNALS_PRIMARY = parseBooleanEnv(
   process.env.DETERMINISTIC_SIGNALS_PRIMARY,
@@ -700,6 +727,17 @@ const NPN_NEGATIVE_CACHE_WINDOW_HOURS = Number(process.env.NPN_NEGATIVE_CACHE_WI
 const NPN_NEGATIVE_CACHE_THRESHOLD = Number(process.env.NPN_NEGATIVE_CACHE_THRESHOLD ?? 2);
 
 const ANALYSIS_BUNDLE_PROMPT_VERSION = process.env.ANALYSIS_BUNDLE_PROMPT_VERSION ?? "reg_v4.0";
+const withDecisionContractPromptVersion = (basePromptVersion: string): string =>
+  [
+    basePromptVersion,
+    `dc:${DECISION_SUPPORT_CONTRACT_VERSION}`,
+    `overlay:${DECISION_SUPPORT_OVERLAY_AUGMENTATION_VERSION}`,
+    `patch:${DECISION_SUPPORT_PATCH_VERSION}`,
+    `rubric:${DECISION_SUPPORT_RUBRIC_VERSION}`,
+  ].join("|");
+const ANALYSIS_BUNDLE_PROMPT_VERSION_VERSIONED = withDecisionContractPromptVersion(
+  ANALYSIS_BUNDLE_PROMPT_VERSION,
+);
 const ANALYSIS_BUNDLE_FAST_TIMEOUT_MS = Number(process.env.ANALYSIS_BUNDLE_FAST_TIMEOUT_MS ?? 3500);
 const SSE_FAST_GRACE_MS = Number(process.env.SSE_FAST_GRACE_MS ?? 500);
 const SSE_GLOBAL_STREAM_TIMEOUT_MS = Number(process.env.SSE_GLOBAL_STREAM_TIMEOUT_MS ?? 15000);
@@ -1031,6 +1069,11 @@ type AnalysisMeta = {
   status: AnalysisStatus;
   version: number;
   labelExtraction: LabelExtractionMeta | null;
+  overlayAugmentation: {
+    provider: 'iherb' | 'none';
+    version: string | null;
+    claimsHash: string | null;
+  } | null;
 };
 
 type NormalizedAmountUnit = 'mg' | 'mcg' | 'g' | 'iu' | 'cfu' | 'ml';
@@ -2757,6 +2800,7 @@ const buildAnalysisBundleSkeleton = (params: {
     digest,
     factsDigestHash: params.factsDigestHash,
     viewMode: DECISION_SUPPORT_DEFAULT_VIEW_MODE,
+    locale: params.locale,
     flagsSnapshot: collectDecisionSupportFlagsSnapshot(),
     patchActivation: patched.activation,
     overlayClaims: params.overlayClaims ?? null,
@@ -2769,7 +2813,7 @@ const buildAnalysisBundleSkeleton = (params: {
   return {
     meta: {
       schemaVersion: 4,
-      promptVersion: ANALYSIS_BUNDLE_PROMPT_VERSION,
+      promptVersion: ANALYSIS_BUNDLE_PROMPT_VERSION_VERSIONED,
       sourceType: digest.sourceType,
       sourceTypeFinal: !isSkeleton,
       scoreAvailable: scoreMeta.scoreAvailable,
@@ -2785,6 +2829,12 @@ const buildAnalysisBundleSkeleton = (params: {
       factsDigestHash: params.factsDigestHash,
       factsSourceVersion: params.factsSourceVersion,
       decisionSupportDigest: decisionSupport.digest,
+      decisionInputsHash: decisionSupport.decisionInputsHash,
+      decisionContractVersion: decisionSupport.decisionContractVersion,
+      overlayClaimsHash: decisionSupport.overlayClaimsHash,
+      overlayAugmentationVersion: decisionSupport.overlayAugmentationVersion,
+      overlayAugmentationSource: decisionSupport.overlayAugmentationSource,
+      patchActivationCanonical: decisionSupport.patchActivationCanonical,
       decisionSupportInline: toDecisionSupportInline(decisionSupport),
       serverCommitSha: SERVER_COMMIT_SHA,
     },
@@ -2842,7 +2892,7 @@ const buildProvisionalAnalysisBundle = (params: {
   return {
     meta: {
       schemaVersion: 4,
-      promptVersion: ANALYSIS_BUNDLE_PROMPT_VERSION,
+      promptVersion: ANALYSIS_BUNDLE_PROMPT_VERSION_VERSIONED,
       sourceType: "web",
       sourceTypeFinal: !isSkeleton,
       scoreAvailable: false,
@@ -2917,6 +2967,7 @@ const mergeFastAnalysisBundle = (params: {
     digest,
     factsDigestHash: skeleton.meta.factsDigestHash,
     viewMode: DECISION_SUPPORT_DEFAULT_VIEW_MODE,
+    locale: skeleton.meta.locale,
     flagsSnapshot: collectDecisionSupportFlagsSnapshot(),
     patchActivation: patched.activation,
     overlayClaims: params.overlayClaims ?? null,
@@ -3155,6 +3206,12 @@ const mergeFastAnalysisBundle = (params: {
       phase: "fast_ai",
       revision: skeleton.meta.revision + 1,
       decisionSupportDigest: decisionSupport.digest,
+      decisionInputsHash: decisionSupport.decisionInputsHash,
+      decisionContractVersion: decisionSupport.decisionContractVersion,
+      overlayClaimsHash: decisionSupport.overlayClaimsHash,
+      overlayAugmentationVersion: decisionSupport.overlayAugmentationVersion,
+      overlayAugmentationSource: decisionSupport.overlayAugmentationSource,
+      patchActivationCanonical: decisionSupport.patchActivationCanonical,
       decisionSupportInline: toDecisionSupportInline(decisionSupport),
     },
     sections: {
@@ -3842,11 +3899,33 @@ const buildAnalysisStatus = (params: {
   return 'catalog_only';
 };
 
-const buildAnalysisMeta = (params: { status: AnalysisStatus; labelExtraction?: LabelExtractionMeta | null }): AnalysisMeta => ({
-  status: params.status,
-  version: ANALYSIS_VERSION,
-  labelExtraction: params.labelExtraction ?? null,
-});
+const buildAnalysisMeta = (params: {
+  status: AnalysisStatus;
+  labelExtraction?: LabelExtractionMeta | null;
+  overlayClaims?: DecisionSupportOverlayClaims | null;
+  overlayAugmentation?: AnalysisMeta["overlayAugmentation"] | null;
+}): AnalysisMeta => {
+  const explicitOverlayAugmentation = params.overlayAugmentation;
+  const overlayAugmentation =
+    explicitOverlayAugmentation !== undefined
+      ? explicitOverlayAugmentation
+      : (() => {
+          const computed = buildDecisionSupportOverlayAugmentationMeta(params.overlayClaims ?? null);
+          return computed
+            ? {
+                provider: computed.source,
+                version: computed.version,
+                claimsHash: computed.claimsHash,
+              }
+            : null;
+        })();
+  return {
+    status: params.status,
+    version: ANALYSIS_VERSION,
+    labelExtraction: params.labelExtraction ?? null,
+    overlayAugmentation,
+  };
+};
 
 const computeExpiresAt = (status: AnalysisStatus): string => {
   const ttlMs =
@@ -5611,6 +5690,7 @@ const resolveAnalysisMeta = (params: {
     status,
     version: current?.version ?? 0,
     labelExtraction: current?.labelExtraction ?? params.labelExtraction ?? null,
+    overlayAugmentation: current?.overlayAugmentation ?? null,
   };
 };
 
@@ -7567,6 +7647,10 @@ const queueBarcodeAnalysisCompletion = (params: {
         nextAnalysisPayload.analysis?.labelExtraction ??
         params.snapshot.analysis?.labelExtraction ??
         null,
+      overlayAugmentation:
+        nextAnalysisPayload.analysis?.overlayAugmentation ??
+        params.snapshot.analysis?.overlayAugmentation ??
+        null,
     });
     nextAnalysisPayload.analysis = analysisMeta;
     updatedSnapshot.analysis = analysisMeta;
@@ -7697,6 +7781,10 @@ ${LABEL_SCAN_OUTPUT_RULES}`;
       labelExtraction:
         nextAnalysisPayload.analysis?.labelExtraction ??
         params.snapshot.analysis?.labelExtraction ??
+        null,
+      overlayAugmentation:
+        nextAnalysisPayload.analysis?.overlayAugmentation ??
+        params.snapshot.analysis?.overlayAugmentation ??
         null,
     });
     nextAnalysisPayload.analysis = analysisMeta;
@@ -8217,6 +8305,7 @@ const populateBarcodeSnapshotCache = async (barcodeDigits: string): Promise<void
   const barcode = normalized.code;
   const barcodeGtin14 = barcode.padStart(14, "0");
   const cacheKey = buildBarcodeCacheKey(barcode);
+  const overlayClaims = await fetchIherbOverlayClaimsByBarcode(barcodeGtin14);
 
   const existing = await getSnapshotCache(
     { key: cacheKey, source: "barcode" },
@@ -8281,7 +8370,11 @@ const populateBarcodeSnapshotCache = async (barcodeDigits: string): Promise<void
       hasAi: hasAiPayload(analysisPayload),
       dsldLabelId: null,
     });
-    const analysisMeta = buildAnalysisMeta({ status: analysisStatus, labelExtraction });
+    const analysisMeta = buildAnalysisMeta({
+      status: analysisStatus,
+      labelExtraction,
+      overlayClaims,
+    });
     analysisPayload.analysis = analysisMeta;
     snapshot.status = "resolved";
     snapshot.analysis = analysisMeta;
@@ -8334,8 +8427,8 @@ const buildMySupplementDigestQuick = async (params: {
   const barcodeDigits = normalizedBarcode?.code ?? null;
   const barcodeGtin14 = barcodeDigits ? barcodeDigits.padStart(14, "0") : null;
   const seededDsldLabelId =
-    barcodeGtin14 && STAGE0_DSLD_BARCODE_FALLBACK_ENABLED && STAGE0_DSLD_SEEDED_LABEL_MAP_ENABLED
-      ? STAGE0_DSLD_SEEDED_LABEL_MAP.get(barcodeGtin14) ?? null
+    barcodeGtin14 && STAGE0_DSLD_BARCODE_FALLBACK_ENABLED
+      ? resolvePreferredStage0DsldLabelId(barcodeGtin14)
       : null;
   let prioritizedDsldLabelIdMemo: number | null | undefined;
   const resolvePrioritizedDsldLabelId = async (): Promise<number | null> => {
@@ -10270,6 +10363,14 @@ const normalizeBarcodeToGtin14 = (rawBarcode: string | null | undefined): string
 
 const bundleUsesIherbOverlaySupport = (bundle: AnalysisBundle | null | undefined): boolean => {
   if (!bundle || typeof bundle !== "object") return false;
+  const overlayAugmentationSource = String(bundle.meta?.overlayAugmentationSource ?? "").trim().toLowerCase();
+  const overlayAugmentationVersion = String(bundle.meta?.overlayAugmentationVersion ?? "").trim();
+  if (overlayAugmentationSource === "iherb" && overlayAugmentationVersion.length > 0) {
+    return true;
+  }
+  if (overlayAugmentationSource === "none") {
+    return false;
+  }
   const inline = (
     bundle.meta as {
       decisionSupportInline?: {
@@ -10291,6 +10392,15 @@ const snapshotPayloadUsesIherbOverlaySupport = (
   analysisPayload: SnapshotAnalysisPayload | null | undefined,
 ): boolean => {
   if (!analysisPayload || typeof analysisPayload !== "object") return false;
+  const overlayAugmentation = analysisPayload.analysis?.overlayAugmentation;
+  const explicitProvider = String(overlayAugmentation?.provider ?? "").trim().toLowerCase();
+  const explicitVersion = String(overlayAugmentation?.version ?? "").trim();
+  if (explicitProvider === "iherb" && explicitVersion.length > 0) {
+    return true;
+  }
+  if (explicitProvider === "none") {
+    return false;
+  }
   const sources = Array.isArray(analysisPayload.sources) ? analysisPayload.sources : [];
   return sources.some((source) => {
     const title = String(source?.title ?? "").trim().toLowerCase();
@@ -10462,6 +10572,7 @@ const buildDecisionSupportAuthorityBundle = async (
     digest: patched.digest,
     factsDigestHash: quickDigest.factsDigestHash,
     viewMode: DECISION_SUPPORT_DEFAULT_VIEW_MODE,
+    locale: "en",
     flagsSnapshot: collectDecisionSupportFlagsSnapshot(),
     patchActivation: patched.activation,
     overlayClaims,
@@ -10531,6 +10642,7 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
       digest: patched.digest,
       factsDigestHash: quickDigest.factsDigestHash,
       viewMode,
+      locale: "en",
       flagsSnapshot: collectDecisionSupportFlagsSnapshot(),
       patchActivation: patched.activation,
       overlayClaims,
@@ -10554,6 +10666,13 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
       sourceType: patched.digest.sourceType,
       factsDigestHash: quickDigest.factsDigestHash,
       digest: decisionSupport.digest,
+      decisionSupportDigest: decisionSupport.digest,
+      decisionInputsHash: decisionSupport.decisionInputsHash,
+      decisionContractVersion: decisionSupport.decisionContractVersion,
+      overlayClaimsHash: decisionSupport.overlayClaimsHash,
+      overlayAugmentationVersion: decisionSupport.overlayAugmentationVersion,
+      overlayAugmentationSource: decisionSupport.overlayAugmentationSource,
+      patchActivationCanonical: decisionSupport.patchActivationCanonical,
       rubricVersion: decisionSupport.rubricVersion,
       categoryId: decisionSupport.categoryId,
       categoryProfileVersion: decisionSupport.categoryProfileVersion,
@@ -14398,6 +14517,13 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     const cacheKey = buildBarcodeCacheKey(barcode);
     const barcodeGtin14 = normalized.code.padStart(14, "0");
     const barcodeRawDigits = normalized.code;
+    let overlayClaimsForBarcodePromise: Promise<DecisionSupportOverlayClaims | null> | null = null;
+    const getOverlayClaimsForBarcode = (): Promise<DecisionSupportOverlayClaims | null> => {
+      if (!overlayClaimsForBarcodePromise) {
+        overlayClaimsForBarcodePromise = fetchIherbOverlayClaimsByBarcode(barcodeGtin14);
+      }
+      return overlayClaimsForBarcodePromise;
+    };
     const authorityRegressionScenarioActive =
       AUTHORITY_REGRESSION_SAMPLE_ENABLED &&
       isRegressionLikeRequest &&
@@ -14748,7 +14874,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
 
         // Mirror /api/analysis-section caching dimension: incorporate production KB package signature so
         // detail pages can refresh when the shipped KB changes (even when the LLM output is unchanged).
-        let promptVersionForCache = ANALYSIS_BUNDLE_PROMPT_VERSION;
+        let promptVersionForCache = ANALYSIS_BUNDLE_PROMPT_VERSION_VERSIONED;
         const kb = getKbRuntime();
         const pkgSha = kb?.runtime?.meta?.package_sha256;
         if (typeof pkgSha === "string" && pkgSha.trim()) {
@@ -14812,7 +14938,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
               identityType: params.identityType,
               identityValue: params.identityValue,
               locale,
-              promptVersion: ANALYSIS_BUNDLE_PROMPT_VERSION,
+              promptVersion: ANALYSIS_BUNDLE_PROMPT_VERSION_VERSIONED,
               factsDigestHash,
               factsSourceVersion: params.factsSourceVersion,
               section: "bundle_fast",
@@ -14882,7 +15008,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
           identityType: params.identityType,
           identityValue: params.identityValue,
           locale,
-          promptVersion: ANALYSIS_BUNDLE_PROMPT_VERSION,
+          promptVersion: ANALYSIS_BUNDLE_PROMPT_VERSION_VERSIONED,
           factsDigestHash,
           factsSourceVersion: params.factsSourceVersion,
           section: "digest",
@@ -14910,7 +15036,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
             identityType: params.identityType,
             identityValue: params.identityValue,
             locale,
-            promptVersion: ANALYSIS_BUNDLE_PROMPT_VERSION,
+            promptVersion: ANALYSIS_BUNDLE_PROMPT_VERSION_VERSIONED,
             factsDigestHash,
             section: "bundle_fast",
           },
@@ -16070,7 +16196,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     let cachedLooksWebOnly = false;
     let prefetchedNameMatchFacts: LnhpdFacts | null = null;
     if (cachedFast) {
-      const cachedOverlayClaims = await fetchIherbOverlayClaimsByBarcode(barcodeGtin14);
+      const cachedOverlayClaims = await getOverlayClaimsForBarcode();
       const cachedNeedsOverlayRefresh =
         Boolean(cachedOverlayClaims) &&
         !snapshotPayloadUsesIherbOverlaySupport(cachedFast.analysisPayload);
@@ -16131,9 +16257,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         cachedLabelSource === null;
       if ((cachedLooksWebOnly || cachedNeedsAuthorityUpgrade) && !forceStage1) {
         const hasSeededDsldCandidate =
-          STAGE0_DSLD_BARCODE_FALLBACK_ENABLED &&
-          STAGE0_DSLD_SEEDED_LABEL_MAP_ENABLED &&
-          STAGE0_DSLD_SEEDED_LABEL_MAP.has(barcodeGtin14);
+          STAGE0_DSLD_BARCODE_FALLBACK_ENABLED && hasPreferredStage0DsldLabelId(barcodeGtin14);
         let canonicalDsldCandidateLabelId: number | null = null;
         if (!hasSeededDsldCandidate && STAGE0_DSLD_BARCODE_FALLBACK_ENABLED && !requestSignal.aborted) {
           const timeoutSignal = createTimeoutSignal(
@@ -16787,7 +16911,11 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         hasAi: hasAiPayload(workingAnalysisPayload),
         dsldLabelId: catalog.dsldLabelId,
       });
-      const analysisMeta = buildAnalysisMeta({ status: analysisStatus, labelExtraction });
+      const analysisMeta = buildAnalysisMeta({
+        status: analysisStatus,
+        labelExtraction,
+        overlayClaims: await getOverlayClaimsForBarcode(),
+      });
 
       workingSnapshot = {
         ...workingSnapshot,
@@ -17301,7 +17429,11 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
                 hasAi: hasAiPayload(lnhpdAnalysisPayload),
                 dsldLabelId: null,
               });
-              const analysisMeta = buildAnalysisMeta({ status: analysisStatus, labelExtraction });
+              const analysisMeta = buildAnalysisMeta({
+                status: analysisStatus,
+                labelExtraction,
+                overlayClaims: await getOverlayClaimsForBarcode(),
+              });
               lnhpdAnalysisPayload.analysis = analysisMeta;
               lnhpdSnapshot.status = "resolved";
               lnhpdSnapshot.analysis = analysisMeta;
@@ -17452,9 +17584,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
 
     async function maybeRunDsldDirectFallbackStage0(params?: { allowForFullStream?: boolean }): Promise<boolean> {
       if (!STAGE0_DSLD_BARCODE_FALLBACK_ENABLED) return false;
-      const seededLabelId = STAGE0_DSLD_SEEDED_LABEL_MAP_ENABLED
-        ? STAGE0_DSLD_SEEDED_LABEL_MAP.get(barcodeGtin14) ?? null
-        : null;
+      const seededLabelId = resolvePreferredStage0DsldLabelId(barcodeGtin14);
       const hasSeededLabelId = Boolean(seededLabelId && Number.isFinite(seededLabelId));
       const allowForFullStream = params?.allowForFullStream === true
         && (STAGE0_DSLD_BARCODE_FALLBACK_FULL_ENABLED || hasSeededLabelId);
@@ -17597,7 +17727,11 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         hasAi: hasAiPayload(dsldAnalysisPayload),
         dsldLabelId: dsldFacts.dsldLabelId ?? null,
       });
-      const analysisMeta = buildAnalysisMeta({ status: analysisStatus, labelExtraction });
+      const analysisMeta = buildAnalysisMeta({
+        status: analysisStatus,
+        labelExtraction,
+        overlayClaims: await getOverlayClaimsForBarcode(),
+      });
       dsldAnalysisPayload.analysis = analysisMeta;
       dsldSnapshot.status = "resolved";
       dsldSnapshot.analysis = analysisMeta;
@@ -19033,7 +19167,11 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
                 hasAi: hasAiPayload(lnhpdAnalysisPayload),
                 dsldLabelId: null,
               });
-              const analysisMeta = buildAnalysisMeta({ status: analysisStatus, labelExtraction });
+              const analysisMeta = buildAnalysisMeta({
+                status: analysisStatus,
+                labelExtraction,
+                overlayClaims: await getOverlayClaimsForBarcode(),
+              });
               lnhpdAnalysisPayload.analysis = analysisMeta;
               lnhpdSnapshot.status = "resolved";
               lnhpdSnapshot.analysis = analysisMeta;
@@ -19551,6 +19689,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
                         const analysisMeta = buildAnalysisMeta({
                           status: analysisStatus,
                           labelExtraction: analysisPayload.analysis?.labelExtraction ?? null,
+                          overlayClaims: await getOverlayClaimsForBarcode(),
                         });
                         analysisPayload.analysis = analysisMeta;
                         snapshot.analysis = analysisMeta;
@@ -19802,8 +19941,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
       if (isActiveNegative && !ignoreNeedsJsNegative && !ignoreMarketplaceNegative) {
         const hasSeededDsldCandidate =
           STAGE0_DSLD_BARCODE_FALLBACK_ENABLED &&
-          STAGE0_DSLD_SEEDED_LABEL_MAP_ENABLED &&
-          STAGE0_DSLD_SEEDED_LABEL_MAP.has(barcodeGtin14);
+          hasPreferredStage0DsldLabelId(barcodeGtin14);
         const regulatoryProbe = await regulatoryMapPromise.catch(() => null);
         const hasRegulatoryCandidate = Boolean(regulatoryProbe?.npn);
         const bypassNegativeShortCircuit =
@@ -20412,6 +20550,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
       const analysisMeta = buildAnalysisMeta({
         status: analysisStatus,
         labelExtraction: analysisPayload.analysis?.labelExtraction ?? null,
+        overlayClaims: await getOverlayClaimsForBarcode(),
       });
       analysisPayload.analysis = analysisMeta;
       snapshot.analysis = analysisMeta;
@@ -21204,7 +21343,11 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
             hasAi: hasAiPayload(lnhpdAnalysisPayload),
             dsldLabelId: null,
           });
-          const analysisMeta = buildAnalysisMeta({ status: analysisStatus, labelExtraction });
+          const analysisMeta = buildAnalysisMeta({
+            status: analysisStatus,
+            labelExtraction,
+            overlayClaims: await getOverlayClaimsForBarcode(),
+          });
           lnhpdAnalysisPayload.analysis = analysisMeta;
           lnhpdSnapshot.status = "resolved";
           lnhpdSnapshot.analysis = analysisMeta;
@@ -21471,7 +21614,11 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(sanitizedEvidenceSnippets)}
               hasAi: hasAiPayload(nameMatchAnalysisPayload),
               dsldLabelId: null,
             });
-            const analysisMeta = buildAnalysisMeta({ status: analysisStatus, labelExtraction });
+            const analysisMeta = buildAnalysisMeta({
+              status: analysisStatus,
+              labelExtraction,
+              overlayClaims: await getOverlayClaimsForBarcode(),
+            });
             nameMatchAnalysisPayload.analysis = analysisMeta;
             nameMatchSnapshot.status = "resolved";
             nameMatchSnapshot.analysis = analysisMeta;
@@ -22152,6 +22299,7 @@ EVIDENCE_SNIPPETS_JSON: ${JSON.stringify(evidenceSnippets)}
     const analysisMeta = buildAnalysisMeta({
       status: analysisStatus,
       labelExtraction: analysisPayload.analysis?.labelExtraction ?? null,
+      overlayClaims: await getOverlayClaimsForBarcode(),
     });
     analysisPayload.analysis = analysisMeta;
     snapshot.analysis = analysisMeta;
@@ -22815,8 +22963,8 @@ app.get("/api/barcode-metadata", verifySupabaseToken, async (req: Request, res: 
   const barcodeRawDigits = barcode;
   const cacheKey = buildBarcodeCacheKey(barcode);
   const overlayClaims = await fetchIherbOverlayClaimsByBarcode(barcodeGtin14);
-  const seededDsldLabelId = STAGE0_DSLD_BARCODE_FALLBACK_ENABLED && STAGE0_DSLD_SEEDED_LABEL_MAP_ENABLED
-    ? STAGE0_DSLD_SEEDED_LABEL_MAP.get(barcodeGtin14) ?? null
+  const seededDsldLabelId = STAGE0_DSLD_BARCODE_FALLBACK_ENABLED
+    ? resolvePreferredStage0DsldLabelId(barcodeGtin14)
     : null;
   const metadataReadonly = !(
     process.env.METADATA_READONLY === "0" || process.env.METADATA_READONLY === "false"
@@ -22920,7 +23068,11 @@ app.get("/api/barcode-metadata", verifySupabaseToken, async (req: Request, res: 
             hasAi: hasAiPayload(analysisPayload),
             dsldLabelId: dsldFacts.dsldLabelId ?? null,
           });
-          const analysisMeta = buildAnalysisMeta({ status: analysisStatus, labelExtraction });
+          const analysisMeta = buildAnalysisMeta({
+            status: analysisStatus,
+            labelExtraction,
+            overlayClaims,
+          });
           analysisPayload.analysis = analysisMeta;
           snapshot.status = "resolved";
           snapshot.analysis = analysisMeta;
@@ -23032,7 +23184,11 @@ app.get("/api/barcode-metadata", verifySupabaseToken, async (req: Request, res: 
         hasAi: hasAiPayload(analysisPayload),
         dsldLabelId: null,
       });
-      const analysisMeta = buildAnalysisMeta({ status: analysisStatus, labelExtraction });
+      const analysisMeta = buildAnalysisMeta({
+        status: analysisStatus,
+        labelExtraction,
+        overlayClaims,
+      });
       analysisPayload.analysis = analysisMeta;
       snapshot.status = "resolved";
       snapshot.analysis = analysisMeta;

@@ -181,6 +181,12 @@ type DecisionScoreCardV2Module = {
 };
 type DecisionSupportTemplatePayload = {
     digest?: string;
+    decisionInputsHash?: string;
+    decisionContractVersion?: string;
+    overlayClaimsHash?: string | null;
+    overlayAugmentationVersion?: string | null;
+    overlayAugmentationSource?: 'iherb' | 'none';
+    patchActivationCanonical?: string;
     nutriScoreCard?: {
         score?: number;
         confidenceCoverage?: number;
@@ -2967,6 +2973,7 @@ const AnalysisBundleDashboard: React.FC<{
     externalScrollY?: SharedValue<number>;
     miniHeaderMode?: 'inline' | 'header';
     onMiniScoreMetaChange?: (meta: { overallScore: number; overallBand: string | null; muted: boolean }) => void;
+    onCoreReadyChange?: (ready: boolean) => void;
 }> = ({
     bundle,
     analysis,
@@ -2980,6 +2987,7 @@ const AnalysisBundleDashboard: React.FC<{
     externalScrollY,
     miniHeaderMode = 'inline',
     onMiniScoreMetaChange,
+    onCoreReadyChange,
 }) => {
     const { t } = useTranslation();
     const [selectedTileType, setSelectedTileType] = useState<TileType | null>(null);
@@ -3338,7 +3346,6 @@ const AnalysisBundleDashboard: React.FC<{
                 ? String((bundleState.meta as { decisionSupportDigest?: string }).decisionSupportDigest)
                 : null;
         const currentFactsDigestHash = normalizeText(bundleState.meta.factsDigestHash ?? null) || null;
-        const scanInstanceKey = `${normalizeText((bundleState.meta as { bundleId?: string | null })?.bundleId ?? '')}|${String(bundleState.meta.revision ?? '')}`;
         const sourceType = normalizeText(bundleState.meta.sourceType ?? null).toLowerCase();
         const sourceTypeFinal = bundleState.meta.sourceTypeFinal === true;
         const isWebSkeletonPhase =
@@ -3348,13 +3355,11 @@ const AnalysisBundleDashboard: React.FC<{
         const decisionCacheKey = [
             resolvedBarcode,
             `${bundleState.meta.authoritativeIdentity.type}:${bundleState.meta.authoritativeIdentity.value}`,
-            digestHint ?? 'no_digest',
-            sourceType || 'unknown',
-            sourceTypeFinal ? 'final' : 'nonfinal',
+            digestHint ?? currentFactsDigestHash ?? 'no_digest',
             SCAN_UX_VIEW_MODE,
         ].join('|');
         const normalizedSessionId = normalizeText(scanSessionId) || 'session_unknown';
-        const fetchKey = `${normalizedSessionId}|${decisionCacheKey}|${scanInstanceKey}`;
+        const fetchKey = `${normalizedSessionId}|${decisionCacheKey}`;
         if (decisionSupportFetchKeyRef.current === fetchKey) return;
         decisionSupportFetchKeyRef.current = fetchKey;
         const requestSeq = ++decisionSupportRequestSeqRef.current;
@@ -3555,12 +3560,7 @@ const AnalysisBundleDashboard: React.FC<{
         bundleState.meta.authoritativeIdentity.type,
         bundleState.meta.authoritativeIdentity.value,
         (bundleState.meta as { decisionSupportDigest?: string | null })?.decisionSupportDigest,
-        (bundleState.meta as { bundleId?: string | null })?.bundleId,
-        bundleState.meta.revision,
-        bundleState.meta.sourceType,
-        bundleState.meta.sourceTypeFinal,
-        bundleState.meta.phase,
-        isStreaming,
+        bundleState.meta.factsDigestHash,
         scanSessionId,
     ]);
 
@@ -3607,17 +3607,21 @@ const AnalysisBundleDashboard: React.FC<{
         decisionSupportState.status,
         inlineDecisionTemplatePayload,
     ]);
-    const decisionTemplatePending =
-        !hasRenderableDecisionTemplate(decisionTemplatePayload as Record<string, unknown> | null | undefined)
-        && (decisionSupportState.status === 'idle' || decisionSupportState.status === 'loading' || isStreaming);
-    const decisionTemplateUnavailable =
-        !hasRenderableDecisionTemplate(decisionTemplatePayload as Record<string, unknown> | null | undefined)
-        && !decisionTemplatePending;
     const decisionOverviewBlock = decisionTemplatePayload?.overviewBlock;
     const decisionScienceBlock = decisionTemplatePayload?.scienceBlock;
     const decisionUsageBlock = decisionTemplatePayload?.usageBlock;
     const decisionSafetyBlock = decisionTemplatePayload?.safetyBlock;
     const decisionQualityMark = decisionTemplatePayload?.qualityMark;
+    const currentDecisionDigest =
+        normalizeText(
+            decisionTemplatePayload?.digest
+            ?? ((bundleState.meta as { decisionSupportDigest?: string | null })?.decisionSupportDigest ?? null),
+        ) || null;
+    const currentDecisionInputsHash =
+        normalizeText(
+            decisionTemplatePayload?.decisionInputsHash
+            ?? ((bundleState.meta as { decisionInputsHash?: string | null })?.decisionInputsHash ?? null),
+        ) || null;
     const decisionOverlayUsed = useMemo(() => {
         if (decisionUsageBlock?.directions?.sourceTier === 'overlay_iherb') return true;
         const sourceStrip = Array.isArray(decisionOverviewBlock?.sourceStrip) ? decisionOverviewBlock.sourceStrip : [];
@@ -4884,6 +4888,16 @@ const AnalysisBundleDashboard: React.FC<{
         () => hasRenderableDecisionTemplate(decisionTemplatePayload as Record<string, unknown> | null | undefined),
         [decisionTemplatePayload],
     );
+    const decisionTemplatePending =
+        !authoritativeTilePayloadReady
+        && (
+            decisionSupportState.status === 'idle'
+            || decisionSupportState.status === 'loading'
+            || isStreaming
+        );
+    const decisionTemplateUnavailable =
+        !authoritativeTilePayloadReady
+        && !decisionTemplatePending;
     const authoritativeScienceTileMechanisms = useMemo<Mechanism[]>(() => {
         if (!authoritativeTilePayloadReady) {
             const fallbackMechanisms = ingredientMechanisms.filter((item) => normalizeText(item?.name ?? null).length > 0);
@@ -5470,6 +5484,12 @@ const AnalysisBundleDashboard: React.FC<{
         [analysisBarcodeDigits, bundleState.meta.authoritativeIdentity?.value],
     );
     const decisionDigestForScience = normalizeText(decisionTemplatePayload?.digest ?? '') || null;
+    const shouldLoadScienceSidecars =
+        selectedTileType === 'science'
+        && decisionSupportState.status === 'ready'
+        && decisionTemplatePayload != null
+        && Boolean(decisionBarcodeForScience)
+        && Boolean(decisionDigestForScience);
     const scienceSourceFinalKey = bundleSourceTypeFinal ? 'final' : 'nonfinal';
     const decisionScienceIngredientRows = useMemo<ScienceSidecarIngredientRow[]>(
         () =>
@@ -5564,7 +5584,7 @@ const AnalysisBundleDashboard: React.FC<{
     }, [incomingBundleRunKey, keyIngredientsForDetail, keyIngredientsForSafety]);
 
     useEffect(() => {
-        if (decisionSupportState.status !== 'ready') return;
+        if (!shouldLoadScienceSidecars) return;
         if (!ingredientOverviewRequestKey || !decisionBarcodeForScience || !decisionDigestForScience) return;
         const current = ingredientOverviewStateRef.current[ingredientOverviewRequestKey];
         if (current && (current.status === 'loading' || current.status === 'ok')) return;
@@ -5648,7 +5668,7 @@ const AnalysisBundleDashboard: React.FC<{
             }
         };
     }, [
-        decisionSupportState.status,
+        shouldLoadScienceSidecars,
         decisionBarcodeForScience,
         decisionDigestForScience,
         decisionScienceIngredientRows,
@@ -5657,114 +5677,105 @@ const AnalysisBundleDashboard: React.FC<{
     ]);
 
     useEffect(() => {
-        if (decisionSupportState.status !== 'ready') return;
+        if (!shouldLoadScienceSidecars) return;
         if (!decisionBarcodeForScience || !decisionDigestForScience) return;
-        if (scientificBackgroundIngredientRows.length === 0) return;
+        if (!activeScienceIngredientRow || !scientificBackgroundRequestKey) return;
 
         let cancelled = false;
         const requestRunKey = currentRunKeyRef.current;
-        const controllers: AbortController[] = [];
-        const startedRequestKeys = new Set<string>();
-        const settledRequestKeys = new Set<string>();
+        const controller = new AbortController();
+        let startedRequestKey: string | null = null;
+        let settledRequestKey: string | null = null;
         const interactionTask = InteractionManager.runAfterInteractions(() => {
             const baseUrl = String(Config.searchApiBaseUrl).replace(/\/$/, '');
-            scientificBackgroundIngredientRows.forEach((row) => {
-                const requestKey = [
-                    'scientific_background',
-                    decisionBarcodeForScience,
-                    decisionDigestForScience,
-                    row.key,
-                    scienceSourceFinalKey,
-                ].join('|');
-                const current = scientificBackgroundStateRef.current[requestKey];
-                if (current && (current.status === 'loading' || current.status === 'ok')) return;
+            const requestKey = scientificBackgroundRequestKey;
+            const row = activeScienceIngredientRow;
+            const current = scientificBackgroundStateRef.current[requestKey];
+            if (current && (current.status === 'loading' || current.status === 'ok')) return;
 
-                const controller = new AbortController();
-                controllers.push(controller);
-                startedRequestKeys.add(requestKey);
-                const fallbackBlock = buildScientificBackgroundFallbackClient(
-                    row.name,
-                    decisionScienceIngredientRows,
-                );
+            startedRequestKey = requestKey;
+            const fallbackBlock = buildScientificBackgroundFallbackClient(
+                row.name,
+                decisionScienceIngredientRows,
+            );
 
-                void (async () => {
-                    try {
-                        setScientificBackgroundSidecarState(requestKey, { status: 'loading' });
-                        const response = await fetch(`${baseUrl}/api/scientific-background/v1`, {
-                            method: 'POST',
-                            headers: {
-                                ...(await withAuthHeaders({
-                                    'Content-Type': 'application/json',
-                                })),
-                            },
-                            body: JSON.stringify({
-                                barcode: decisionBarcodeForScience,
-                                decisionDigest: decisionDigestForScience,
-                                selectedIngredientName: row.name,
-                            }),
-                            signal: controller.signal,
-                        });
+            void (async () => {
+                try {
+                    setScientificBackgroundSidecarState(requestKey, { status: 'loading' });
+                    const response = await fetch(`${baseUrl}/api/scientific-background/v1`, {
+                        method: 'POST',
+                        headers: {
+                            ...(await withAuthHeaders({
+                                'Content-Type': 'application/json',
+                            })),
+                        },
+                        body: JSON.stringify({
+                            barcode: decisionBarcodeForScience,
+                            decisionDigest: decisionDigestForScience,
+                            selectedIngredientName: row.name,
+                        }),
+                        signal: controller.signal,
+                    });
 
-                        if (cancelled || currentRunKeyRef.current !== requestRunKey) return;
+                    if (cancelled || currentRunKeyRef.current !== requestRunKey) return;
 
-                        if (!response.ok) {
-                            settledRequestKeys.add(requestKey);
-                            setScientificBackgroundSidecarState(requestKey, {
-                                status: 'ok',
-                                source: 'fallback',
-                                fallbackUsed: true,
-                                promptVersion: 'scientific_background_client_fallback_v1',
-                                data: fallbackBlock,
-                            });
-                            return;
-                        }
-
-                        const payload = await response.json() as ScientificBackgroundResponse & { latestDigest?: string };
-                        if (cancelled || currentRunKeyRef.current !== requestRunKey) return;
-                        if (payload?.status !== 'ok' || !payload.scientificBackground) {
-                            throw new Error('scientific_background_invalid_payload');
-                        }
-
-                        settledRequestKeys.add(requestKey);
-                        setScientificBackgroundSidecarState(requestKey, {
-                            status: 'ok',
-                            source: payload.source,
-                            fallbackUsed: payload.fallbackUsed,
-                            promptVersion: payload.promptVersion,
-                            data: payload.scientificBackground,
-                        });
-                    } catch (error) {
-                        if (cancelled || currentRunKeyRef.current !== requestRunKey) return;
-                        settledRequestKeys.add(requestKey);
+                    if (!response.ok) {
+                        settledRequestKey = requestKey;
                         setScientificBackgroundSidecarState(requestKey, {
                             status: 'ok',
                             source: 'fallback',
                             fallbackUsed: true,
                             promptVersion: 'scientific_background_client_fallback_v1',
                             data: fallbackBlock,
-                            error: error instanceof Error ? error.message : 'Scientific background unavailable',
                         });
+                        return;
                     }
-                })();
-            });
+
+                    const payload = await response.json() as ScientificBackgroundResponse & { latestDigest?: string };
+                    if (cancelled || currentRunKeyRef.current !== requestRunKey) return;
+                    if (payload?.status !== 'ok' || !payload.scientificBackground) {
+                        throw new Error('scientific_background_invalid_payload');
+                    }
+
+                    settledRequestKey = requestKey;
+                    setScientificBackgroundSidecarState(requestKey, {
+                        status: 'ok',
+                        source: payload.source,
+                        fallbackUsed: payload.fallbackUsed,
+                        promptVersion: payload.promptVersion,
+                        data: payload.scientificBackground,
+                    });
+                } catch (error) {
+                    if (cancelled || currentRunKeyRef.current !== requestRunKey) return;
+                    settledRequestKey = requestKey;
+                    setScientificBackgroundSidecarState(requestKey, {
+                        status: 'ok',
+                        source: 'fallback',
+                        fallbackUsed: true,
+                        promptVersion: 'scientific_background_client_fallback_v1',
+                        data: fallbackBlock,
+                        error: error instanceof Error ? error.message : 'Scientific background unavailable',
+                    });
+                }
+            })();
         });
         return () => {
             cancelled = true;
-            controllers.forEach((controller) => controller.abort());
+            controller.abort();
             interactionTask.cancel();
-            startedRequestKeys.forEach((requestKey) => {
-                if (settledRequestKeys.has(requestKey)) return;
-                setScientificBackgroundSidecarState(requestKey, (currentState) =>
+            if (startedRequestKey && startedRequestKey !== settledRequestKey) {
+                setScientificBackgroundSidecarState(startedRequestKey, (currentState) =>
                     currentState?.status === 'loading' ? undefined : currentState,
                 );
-            });
+            }
         };
     }, [
-        decisionSupportState.status,
+        activeScienceIngredientRow,
+        shouldLoadScienceSidecars,
         decisionBarcodeForScience,
         decisionDigestForScience,
         decisionScienceIngredientRows,
-        scientificBackgroundIngredientRows,
+        scientificBackgroundRequestKey,
         scienceSourceFinalKey,
         setScientificBackgroundSidecarState,
     ]);
@@ -6750,6 +6761,26 @@ const AnalysisBundleDashboard: React.FC<{
         + telemetrySourceTierUsage.overlay
         + telemetrySourceTierUsage.generalScience;
     const decisionSupportV2Available = scoreCardV2DisplayModules.length === 6;
+    const heroIdentityReady = normalizeText(resolvedProductName).length > 0;
+    const overviewCoverReady =
+        normalizeText(authoritativeOverviewTileSummary.text).length > 0
+        || authoritativeOverviewTileBullets.some((item) => {
+            const nextText = normalizeText(item?.text ?? null);
+            return nextText.length > 0 && !isPlaceholderText(nextText);
+        });
+    const ingredientsCoverReady = authoritativeScienceTileMechanisms.some((item) => {
+        const nextName = normalizeText(item?.name ?? null);
+        return nextName.length > 0 && !isPlaceholderText(nextName);
+    });
+    const usageCoverReady =
+        normalizeText(usageRoutine).length > 0
+        || usageBullets.some((item) => {
+            const nextText = normalizeText(item?.text ?? null);
+            return nextText.length > 0 && !isPlaceholderText(nextText);
+        });
+    const coreCoverCardsReady = overviewCoverReady && ingredientsCoverReady && usageCoverReady;
+    const coreResultsReady = heroIdentityReady && decisionSupportV2Available && coreCoverCardsReady;
+    const blockingStreamingState = isStreaming && !coreResultsReady;
     const legacyVisibleFallback = !decisionSupportV2Available;
     const mobileUiLegacyCallCount = FREEZE_SHADOW_ONLY ? 0 : null;
     useEffect(() => {
@@ -6866,7 +6897,7 @@ const AnalysisBundleDashboard: React.FC<{
     const effectiveScoreUiMode: ScoreUiMode =
         decisionScoreReady
             ? 'scored'
-            : decisionSupportState.status === 'loading' || decisionSupportState.status === 'idle' || isStreaming
+            : decisionSupportState.status === 'loading' || decisionSupportState.status === 'idle' || blockingStreamingState
                 ? 'scoring'
                 : 'not_scored';
 
@@ -7292,6 +7323,10 @@ const AnalysisBundleDashboard: React.FC<{
     const shouldRenderInlineMiniHeader = !disableMiniHeader && miniHeaderMode !== 'header';
 
     useEffect(() => {
+        onCoreReadyChange?.(coreResultsReady);
+    }, [coreResultsReady, onCoreReadyChange]);
+
+    useEffect(() => {
         onMiniScoreMetaChange?.({
             overallScore: displayedOverallScore,
             overallBand: displayedOverallBand,
@@ -7358,6 +7393,50 @@ const AnalysisBundleDashboard: React.FC<{
                                 {scoreBadge ? <GlassPill label={scoreBadge} accentColor={ringMuted ? '#9CA3AF' : '#111827'} /> : null}
                             </View>
                         </LinearGradient>
+                    </View>
+                ) : null}
+
+                {SHOW_SCAN_DEBUG ? (
+                    <View style={styles.scanDebugCard}>
+                        <Text style={styles.scanDebugTitle}>Scan debug</Text>
+                        <View style={styles.scanDebugGrid}>
+                            <View style={styles.scanDebugRow}>
+                                <Text style={styles.scanDebugLabel}>factsDigest</Text>
+                                <Text style={styles.scanDebugValue} numberOfLines={1}>
+                                    {bundleState.meta.factsDigestHash ?? 'missing'}
+                                </Text>
+                            </View>
+                            <View style={styles.scanDebugRow}>
+                                <Text style={styles.scanDebugLabel}>decisionDigest</Text>
+                                <Text style={styles.scanDebugValue} numberOfLines={1}>
+                                    {currentDecisionDigest ?? 'missing'}
+                                </Text>
+                            </View>
+                            <View style={styles.scanDebugRow}>
+                                <Text style={styles.scanDebugLabel}>decisionInputs</Text>
+                                <Text style={styles.scanDebugValue} numberOfLines={1}>
+                                    {currentDecisionInputsHash ?? 'missing'}
+                                </Text>
+                            </View>
+                            <View style={styles.scanDebugRow}>
+                                <Text style={styles.scanDebugLabel}>decisionFetches</Text>
+                                <Text style={styles.scanDebugValue}>
+                                    {String(decisionSupportRequestSeqRef.current)}
+                                </Text>
+                            </View>
+                            <View style={styles.scanDebugRow}>
+                                <Text style={styles.scanDebugLabel}>bundleRevision</Text>
+                                <Text style={styles.scanDebugValue}>
+                                    {String(bundleState.meta.revision ?? 'missing')}
+                                </Text>
+                            </View>
+                            <View style={styles.scanDebugRow}>
+                                <Text style={styles.scanDebugLabel}>decisionState</Text>
+                                <Text style={styles.scanDebugValue}>
+                                    {decisionSupportState.status}
+                                </Text>
+                            </View>
+                        </View>
                     </View>
                 ) : null}
 
@@ -7451,6 +7530,7 @@ type AnalysisDashboardProps = {
     externalScrollY?: SharedValue<number>;
     miniHeaderMode?: 'inline' | 'header';
     onMiniScoreMetaChange?: (meta: { overallScore: number; overallBand: string | null; muted: boolean }) => void;
+    onCoreReadyChange?: (ready: boolean) => void;
 };
 
 const LegacyAnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ analysis, isStreaming = false, scoreBadge, scoreState, sourceType, scanSessionId = null, analysisBundle, scoreBundleV4State, onRetryScore }) => {
@@ -8679,6 +8759,7 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
     externalScrollY,
     miniHeaderMode = 'inline',
     onMiniScoreMetaChange,
+    onCoreReadyChange,
 }) => {
     const modernBundle = ensureModernAnalysisBundle(analysisBundle, analysis, scanSessionId);
     return (
@@ -8695,6 +8776,7 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({
             externalScrollY={externalScrollY}
             miniHeaderMode={miniHeaderMode}
             onMiniScoreMetaChange={onMiniScoreMetaChange}
+            onCoreReadyChange={onCoreReadyChange}
         />
     );
 };
@@ -8745,6 +8827,42 @@ const styles = StyleSheet.create({
     },
     scoreSection: {
         marginBottom: 24,
+    },
+    scanDebugCard: {
+        marginBottom: 16,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: '#D7E0EA',
+        backgroundColor: '#F8FAFC',
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        gap: 10,
+    },
+    scanDebugTitle: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#0F172A',
+        letterSpacing: 0.6,
+        textTransform: 'uppercase',
+    },
+    scanDebugGrid: {
+        gap: 8,
+    },
+    scanDebugRow: {
+        gap: 2,
+    },
+    scanDebugLabel: {
+        fontSize: 11,
+        fontWeight: '600',
+        color: '#64748B',
+        letterSpacing: 0.4,
+        textTransform: 'uppercase',
+    },
+    scanDebugValue: {
+        fontSize: 12,
+        lineHeight: 16,
+        fontWeight: '600',
+        color: '#0F172A',
     },
     bisectNoticeCard: {
         borderRadius: 16,

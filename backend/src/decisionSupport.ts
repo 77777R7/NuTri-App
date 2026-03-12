@@ -279,6 +279,12 @@ export type DecisionSupportCategoryId =
 
 export type DecisionSupportPayload = {
   digest: string;
+  decisionInputsHash: string;
+  decisionContractVersion: string;
+  overlayClaimsHash: string | null;
+  overlayAugmentationVersion: string | null;
+  overlayAugmentationSource: "iherb" | "none";
+  patchActivationCanonical: string;
   rubricVersion: string;
   categoryId: DecisionSupportCategoryId;
   categoryProfileVersion: string;
@@ -324,6 +330,7 @@ type DecisionSupportCompileParams = {
   digest: FactsDigest;
   factsDigestHash: string;
   viewMode: DecisionSupportViewMode;
+  locale?: "zh" | "en";
   flagsSnapshot?: Record<string, unknown>;
   patchActivation?: {
     appliedLaneIds?: string[];
@@ -331,7 +338,10 @@ type DecisionSupportCompileParams = {
   overlayClaims?: DecisionSupportOverlayClaims | null;
 };
 
-const DECISION_SUPPORT_RUBRIC_VERSION = "v1.6.12-r2d-1";
+export const DECISION_SUPPORT_CONTRACT_VERSION = "dc-v1";
+export const DECISION_SUPPORT_RUBRIC_VERSION = "v1.6.12-r2d-1";
+export const DECISION_SUPPORT_OVERLAY_AUGMENTATION_VERSION = "iherb-overlay-v1";
+export const DECISION_SUPPORT_PATCH_VERSION = "patch-shadow-v1";
 const DECISION_SUPPORT_DIGEST_DELIMITER = "\n|\n";
 const CATEGORY_PROFILE_VERSION: Record<DecisionSupportCategoryId, string> = {
   fish_oil_omega3: "fish-oil-omega3-v1",
@@ -368,6 +378,44 @@ const canonicalizeSourceIdentity = (digest: FactsDigest): string => {
   const identityType = String(digest?.identity?.type ?? "unknown").trim().toLowerCase();
   const identityValue = String(digest?.identity?.value ?? "").trim();
   return `${identityType}:${identityValue}`;
+};
+
+const canonicalizePatchActivation = (
+  value: DecisionSupportCompileParams["patchActivation"],
+): string => {
+  const appliedLaneIds = Array.isArray(value?.appliedLaneIds)
+    ? [...new Set(value.appliedLaneIds.map((item) => String(item ?? "").trim()).filter(Boolean))].sort()
+    : [];
+  return stableStringify({ appliedLaneIds });
+};
+
+const canonicalizeOverlayClaims = (
+  value: DecisionSupportOverlayClaims | null | undefined,
+): string => stableStringify(value ?? null);
+
+const hashCanonicalString = (value: string): string =>
+  createHash("sha256").update(value).digest("hex");
+
+export const buildDecisionSupportOverlayAugmentationMeta = (
+  overlayClaims: DecisionSupportOverlayClaims | null | undefined,
+): {
+  source: "iherb" | "none";
+  version: string | null;
+  claimsHash: string | null;
+} => {
+  if (!overlayClaims) {
+    return {
+      source: "none",
+      version: null,
+      claimsHash: null,
+    };
+  }
+
+  return {
+    source: "iherb",
+    version: DECISION_SUPPORT_OVERLAY_AUGMENTATION_VERSION,
+    claimsHash: hashCanonicalString(canonicalizeOverlayClaims(overlayClaims)),
+  };
 };
 
 const normalizeText = (value: string | null | undefined): string =>
@@ -2805,16 +2853,26 @@ export const compileDecisionSupport = (
 
   const sourceIdentityCanonical = canonicalizeSourceIdentity(params.digest);
   const flagsSnapshotCanonical = canonicalizeFlagsSnapshot(params.flagsSnapshot);
+  const patchActivationCanonical = canonicalizePatchActivation(params.patchActivation ?? null);
+  const overlayAugmentation = buildDecisionSupportOverlayAugmentationMeta(params.overlayClaims ?? null);
+  const localeCanonical = String(params.locale ?? "en").trim().toLowerCase();
   const digestInput = [
     params.factsDigestHash,
+    DECISION_SUPPORT_CONTRACT_VERSION,
+    localeCanonical,
     DECISION_SUPPORT_RUBRIC_VERSION,
     categoryId,
     categoryProfileVersion,
     params.viewMode,
     flagsSnapshotCanonical,
     sourceIdentityCanonical,
+    overlayAugmentation.source,
+    overlayAugmentation.version ?? "none",
+    overlayAugmentation.claimsHash ?? "none",
+    patchActivationCanonical,
   ].join(DECISION_SUPPORT_DIGEST_DELIMITER);
-  const digest = createHash("sha256").update(digestInput).digest("hex");
+  const decisionInputsHash = hashCanonicalString(digestInput);
+  const digest = decisionInputsHash;
 
   const nutriScoreCard = buildNutriScoreCard({
     checklist,
@@ -2886,6 +2944,12 @@ export const compileDecisionSupport = (
 
   return {
     digest,
+    decisionInputsHash,
+    decisionContractVersion: DECISION_SUPPORT_CONTRACT_VERSION,
+    overlayClaimsHash: overlayAugmentation.claimsHash,
+    overlayAugmentationVersion: overlayAugmentation.version,
+    overlayAugmentationSource: overlayAugmentation.source,
+    patchActivationCanonical,
     rubricVersion: DECISION_SUPPORT_RUBRIC_VERSION,
     categoryId,
     categoryProfileVersion,

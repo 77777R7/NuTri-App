@@ -511,6 +511,7 @@ export default function ScanResultScreen() {
   const [scoreRequestNonce, setScoreRequestNonce] = useState(0);
   const analysisHeaderScrollY = useSharedValue(0);
   const [headerMiniScore, setHeaderMiniScore] = useState<HeaderMiniScoreState | null>(null);
+  const [dashboardCoreReady, setDashboardCoreReady] = useState(false);
   const resolvedLabelAnalysis = labelAnalysis ?? labelResult?.analysis ?? null;
   const labelDraft = labelResult?.draft ?? null;
   const labelIssues = useMemo(
@@ -579,9 +580,13 @@ export default function ScanResultScreen() {
       return next;
     });
   }, []);
+  const handleDashboardCoreReadyChange = useCallback((next: boolean) => {
+    setDashboardCoreReady((prev) => (prev === next ? prev : next));
+  }, []);
   useEffect(() => {
     analysisHeaderScrollY.value = 0;
     setHeaderMiniScore(null);
+    setDashboardCoreReady(false);
   }, [analysisHeaderScrollY, barcode, isLabel, params.sessionId]);
   const debugPanelNode = SHOW_SCAN_DEBUG ? (
     <DebugScanPanel
@@ -1145,7 +1150,7 @@ export default function ScanResultScreen() {
 
         <AnalysisDashboard
           analysis={analysisWithLabelName as any}
-          isStreaming={isLabelStreaming}
+          isStreaming={isLabelStreaming && !dashboardCoreReady}
           scoreBadge="Label-only estimate"
           scoreState={scoreState}
           sourceType="label_scan"
@@ -1154,6 +1159,7 @@ export default function ScanResultScreen() {
           externalScrollY={analysisHeaderScrollY}
           miniHeaderMode="header"
           onMiniScoreMetaChange={handleHeaderMiniScoreChange}
+          onCoreReadyChange={handleDashboardCoreReadyChange}
         />
 
         {!analysisComplete ? (
@@ -1268,7 +1274,7 @@ export default function ScanResultScreen() {
           ) : null}
         </View>
 
-        {isLabelStreaming && !labelAnalysisError ? (
+      {isLabelStreaming && !labelAnalysisError && !dashboardCoreReady ? (
           <BlurView intensity={40} tint="dark" style={styles.streamingBadge}>
             <OrganicSpinner size={24} color="rgba(255,255,255,0.9)" />
             <View style={{ top: 3 }}>
@@ -1382,6 +1388,7 @@ export default function ScanResultScreen() {
 
   // Pass a loading flag so Dashboard knows stream is active
   const isStreaming = status === 'streaming' || status === 'loading';
+  const showStreamingBadge = isStreaming && !dashboardCoreReady;
 
   return (
     <ResponsiveScreen
@@ -1411,7 +1418,7 @@ export default function ScanResultScreen() {
       <DashboardErrorBoundary onError={handleDashboardRenderError}>
         <AnalysisDashboard
           analysis={compositeAnalysis}
-          isStreaming={isStreaming}
+          isStreaming={showStreamingBadge}
           sourceType="barcode"
           scanSessionId={typeof params.sessionId === 'string' ? params.sessionId : null}
           analysisBundle={analysisBundle}
@@ -1420,6 +1427,7 @@ export default function ScanResultScreen() {
           externalScrollY={analysisHeaderScrollY}
           miniHeaderMode="header"
           onMiniScoreMetaChange={handleHeaderMiniScoreChange}
+          onCoreReadyChange={handleDashboardCoreReadyChange}
         />
       </DashboardErrorBoundary>
 
@@ -1433,7 +1441,7 @@ export default function ScanResultScreen() {
       {debugPanelNode}
 
       {/* Optional: A small global spinner in the corner if streaming */}
-      {isStreaming && (
+      {showStreamingBadge && (
         <BlurView intensity={40} tint="dark" style={styles.streamingBadge}>
           <OrganicSpinner size={24} color="rgba(255,255,255,0.9)" />
           <View style={{ top: 3 }}>
