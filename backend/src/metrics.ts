@@ -19,11 +19,39 @@ export const METRIC_NAMES = [
   "label_scan_metrics_write_success",
   "label_scan_metrics_write_rejected",
   "label_scan_metrics_write_timeout",
+  "decision_support_digest_mismatch",
+  "decision_inputs_hash_mismatch",
+  "decision_support_refetch_count_per_scan",
+  "snapshot_bypass_missing_iherb_overlay_rate",
+  "bundle_fast_cache_rejected_missing_overlay_rate",
+  "stage0_dsld_recovery_rate",
+  "product_overview_ai_closed_early_rate",
 ] as const;
 
 export type MetricName = (typeof METRIC_NAMES)[number];
 
 type MetricsState = Record<MetricName, number>;
+
+export const TIMING_METRIC_NAMES = [
+  "stage0_dsld_recovery_ms",
+  "time_to_rev0_ms",
+  "time_to_rev1_ms",
+  "time_to_done_ms",
+  "ingredient_overview_ms",
+  "scientific_background_ms",
+] as const;
+
+export type TimingMetricName = (typeof TIMING_METRIC_NAMES)[number];
+
+type TimingMetricSummary = {
+  count: number;
+  totalMs: number;
+  minMs: number;
+  maxMs: number;
+  lastMs: number;
+};
+
+type TimingMetricsState = Record<TimingMetricName, TimingMetricSummary>;
 
 type LabelScanMetricsWriteRejectedDebug = {
   at: string;
@@ -65,6 +93,20 @@ const buildEmptyCounts = (): MetricsState =>
     return acc;
   }, {} as MetricsState);
 
+const buildEmptyTimingSummary = (): TimingMetricSummary => ({
+  count: 0,
+  totalMs: 0,
+  minMs: Number.POSITIVE_INFINITY,
+  maxMs: 0,
+  lastMs: 0,
+});
+
+const buildEmptyTimings = (): TimingMetricsState =>
+  TIMING_METRIC_NAMES.reduce((acc, name) => {
+    acc[name] = buildEmptyTimingSummary();
+    return acc;
+  }, {} as TimingMetricsState);
+
 const buildEmptyRegulatoryPolicyDecisionCounts = (): RegulatoryWritePolicyDecisionCounts =>
   REGULATORY_POLICY_DECISIONS.reduce((acc, decision) => {
     acc[decision] = 0;
@@ -79,6 +121,8 @@ const buildEmptyRegulatoryPolicyBucket = (): RegulatoryWritePolicyBucket =>
 
 const totals = buildEmptyCounts();
 let windowCounts = buildEmptyCounts();
+const timingTotals = buildEmptyTimings();
+let timingWindow = buildEmptyTimings();
 const startedAt = new Date().toISOString();
 let lastFlushAt = startedAt;
 let flushStarted = false;
@@ -123,6 +167,19 @@ const redactForInternalMetrics = (input: string): string => {
 export const incrementMetric = (name: MetricName, amount = 1): void => {
   totals[name] += amount;
   windowCounts[name] += amount;
+};
+
+export const recordMetricTiming = (name: TimingMetricName, ms: number): void => {
+  if (!Number.isFinite(ms) || ms < 0) return;
+  const roundedMs = Math.round(ms * 10) / 10;
+  for (const bucket of [timingTotals, timingWindow]) {
+    const current = bucket[name];
+    current.count += 1;
+    current.totalMs += roundedMs;
+    current.lastMs = roundedMs;
+    current.maxMs = Math.max(current.maxMs, roundedMs);
+    current.minMs = current.count === 1 ? roundedMs : Math.min(current.minMs, roundedMs);
+  }
 };
 
 export const recordLabelScanMetricsWriteRejected = (message: string, code?: string | null): void => {
@@ -190,6 +247,30 @@ export const getMetricsSnapshot = () => ({
   lastFlushAt,
   totals: { ...totals },
   window: { ...windowCounts },
+  timingTotals: Object.fromEntries(
+    TIMING_METRIC_NAMES.map((name) => [
+      name,
+      {
+        ...timingTotals[name],
+        minMs: timingTotals[name].count ? timingTotals[name].minMs : 0,
+        avgMs: timingTotals[name].count
+          ? Math.round((timingTotals[name].totalMs / timingTotals[name].count) * 10) / 10
+          : 0,
+      },
+    ]),
+  ),
+  timingWindow: Object.fromEntries(
+    TIMING_METRIC_NAMES.map((name) => [
+      name,
+      {
+        ...timingWindow[name],
+        minMs: timingWindow[name].count ? timingWindow[name].minMs : 0,
+        avgMs: timingWindow[name].count
+          ? Math.round((timingWindow[name].totalMs / timingWindow[name].count) * 10) / 10
+          : 0,
+      },
+    ]),
+  ),
   debug: {
     labelScanMetricsWriteRejectedRecent: [...labelScanMetricsWriteRejectedRecent],
     regulatoryWritePolicy: {
@@ -205,16 +286,25 @@ export const getMetricsSnapshot = () => ({
 const formatCounts = (counts: MetricsState): string =>
   METRIC_NAMES.map((name) => `${name}=${counts[name]}`).join(" ");
 
+const formatTimingCounts = (counts: TimingMetricsState): string =>
+  TIMING_METRIC_NAMES.map((name) => {
+    const metric = counts[name];
+    const avg = metric.count ? Math.round((metric.totalMs / metric.count) * 10) / 10 : 0;
+    return `${name}={count:${metric.count},avgMs:${avg},lastMs:${metric.lastMs}}`;
+  }).join(" ");
+
 export const startMetricsFlush = (): void => {
   if (flushStarted) return;
   flushStarted = true;
 
   setInterval(() => {
     const hasActivity = METRIC_NAMES.some((name) => windowCounts[name] > 0);
-    if (hasActivity && METRICS_WINDOW_LOG_ENABLED) {
-      console.log(`[metrics] window ${formatCounts(windowCounts)}`);
+    const hasTimingActivity = TIMING_METRIC_NAMES.some((name) => timingWindow[name].count > 0);
+    if ((hasActivity || hasTimingActivity) && METRICS_WINDOW_LOG_ENABLED) {
+      console.log(`[metrics] window ${formatCounts(windowCounts)} timings=${formatTimingCounts(timingWindow)}`);
     }
     windowCounts = buildEmptyCounts();
+    timingWindow = buildEmptyTimings();
     lastFlushAt = new Date().toISOString();
   }, 60_000);
 };

@@ -67,6 +67,10 @@ const FREEZE_SHADOW_ONLY =
 const HEADER_MINI_SCORE_START = 210;
 const HEADER_MINI_SCORE_RANGE = 70;
 
+const emitScanUxMetric = (event: string, payload: Record<string, unknown> = {}) => {
+  console.info('[scan-ux-metric]', { event, ...payload });
+};
+
 const getHeaderOverallBandLabel = (score: number, explicitBand?: string | null): string => {
   const normalized = typeof explicitBand === 'string' ? explicitBand.trim() : '';
   if (normalized) return normalized;
@@ -512,6 +516,11 @@ export default function ScanResultScreen() {
   const analysisHeaderScrollY = useSharedValue(0);
   const [headerMiniScore, setHeaderMiniScore] = useState<HeaderMiniScoreState | null>(null);
   const [dashboardCoreReady, setDashboardCoreReady] = useState(false);
+  const loadingBadgeTimingRef = useRef({
+    startedAt: 0,
+    seen: false,
+    hiddenLogged: false,
+  });
   const resolvedLabelAnalysis = labelAnalysis ?? labelResult?.analysis ?? null;
   const labelDraft = labelResult?.draft ?? null;
   const labelIssues = useMemo(
@@ -587,6 +596,11 @@ export default function ScanResultScreen() {
     analysisHeaderScrollY.value = 0;
     setHeaderMiniScore(null);
     setDashboardCoreReady(false);
+    loadingBadgeTimingRef.current = {
+      startedAt: 0,
+      seen: false,
+      hiddenLogged: false,
+    };
   }, [analysisHeaderScrollY, barcode, isLabel, params.sessionId]);
   const debugPanelNode = SHOW_SCAN_DEBUG ? (
     <DebugScanPanel
@@ -651,6 +665,8 @@ export default function ScanResultScreen() {
   // Removed legacy full-screen "Analyzing supplement..." interstitial.
   // We now render the dashboard skeleton immediately for a smoother UI.
   const holdDashboardDuringSkeleton = false;
+  const isStreaming = status === 'streaming' || status === 'loading';
+  const showStreamingBadge = isStreaming && !dashboardCoreReady;
 
   useEffect(() => {
     if (!__DEV__) return;
@@ -672,6 +688,27 @@ export default function ScanResultScreen() {
     bundleRevision,
     holdDashboardDuringSkeleton,
   ]);
+  useEffect(() => {
+    if (showStreamingBadge) {
+      if (!loadingBadgeTimingRef.current.seen) {
+        loadingBadgeTimingRef.current = {
+          startedAt: Date.now(),
+          seen: true,
+          hiddenLogged: false,
+        };
+      }
+      return;
+    }
+    if (!loadingBadgeTimingRef.current.seen || loadingBadgeTimingRef.current.hiddenLogged) return;
+    loadingBadgeTimingRef.current.hiddenLogged = true;
+    emitScanUxMetric('time_to_loading_badge_hidden', {
+      sessionId: typeof params.sessionId === 'string' ? params.sessionId : null,
+      barcode: barcode || null,
+      elapsedMs: Date.now() - loadingBadgeTimingRef.current.startedAt,
+      dashboardCoreReady,
+      status,
+    });
+  }, [barcode, dashboardCoreReady, params.sessionId, showStreamingBadge, status]);
 
   const formatDose = useCallback((value?: number | string | null, unit?: string | null) => {
     if (value == null) return null;
@@ -1387,8 +1424,6 @@ export default function ScanResultScreen() {
   };
 
   // Pass a loading flag so Dashboard knows stream is active
-  const isStreaming = status === 'streaming' || status === 'loading';
-  const showStreamingBadge = isStreaming && !dashboardCoreReady;
 
   return (
     <ResponsiveScreen

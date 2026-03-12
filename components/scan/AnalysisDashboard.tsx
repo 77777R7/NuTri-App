@@ -3019,9 +3019,39 @@ const AnalysisBundleDashboard: React.FC<{
     const detailInFlightKeyRef = useRef<string | null>(null);
     const decisionSupportFetchKeyRef = useRef<string | null>(null);
     const decisionSupportRequestSeqRef = useRef(0);
+    const decisionSupportFetchCountRef = useRef(0);
+    const scanUxTimingRef = useRef({
+        startedAt: Date.now(),
+        firstRenderableLogged: false,
+        scoreVisibleLogged: false,
+        coreCardsVisibleLogged: false,
+    });
+    const analysisBarcodeRaw = normalizeText((analysis as { barcode?: string | null })?.barcode ?? null);
+    const analysisBarcodeDigits = useMemo(() => {
+        const digits = analysisBarcodeRaw.replace(/\D/g, '');
+        if (digits.length < 8) return null;
+        return digits.length > 14 ? digits.slice(-14) : digits.padStart(14, '0');
+    }, [analysisBarcodeRaw]);
     const foundationMetricLoggedRef = useRef<Set<string>>(new Set());
     const overlayConsumerMetricLoggedRef = useRef<Set<string>>(new Set());
     const currentRunKeyRef = useRef<string | null>(null);
+    const emitScanUxTimingOnce = useCallback((
+        key: 'firstRenderableLogged' | 'scoreVisibleLogged' | 'coreCardsVisibleLogged',
+        event:
+            | 'time_to_first_renderable_decision_template'
+            | 'time_to_score_visible'
+            | 'time_to_core_cards_visible',
+        extra: Record<string, unknown> = {},
+    ) => {
+        if (scanUxTimingRef.current[key]) return;
+        scanUxTimingRef.current[key] = true;
+        emitScanUxMetric(event, {
+            scanSessionId: normalizeText(scanSessionId) || null,
+            barcode: analysisBarcodeDigits ?? null,
+            elapsedMs: Date.now() - scanUxTimingRef.current.startedAt,
+            ...extra,
+        });
+    }, [analysisBarcodeDigits, scanSessionId]);
     const setProductOverviewAiState = useCallback(
         (digest: string, nextEntry: ProductOverviewAiStateUpdater) => {
             setProductOverviewAiByDigest((prev) => {
@@ -3148,6 +3178,13 @@ const AnalysisBundleDashboard: React.FC<{
         detailLoadingRef.current = false;
         detailInFlightKeyRef.current = null;
         decisionSupportFetchKeyRef.current = null;
+        decisionSupportFetchCountRef.current = 0;
+        scanUxTimingRef.current = {
+            startedAt: Date.now(),
+            firstRenderableLogged: false,
+            scoreVisibleLogged: false,
+            coreCardsVisibleLogged: false,
+        };
         foundationMetricLoggedRef.current = new Set();
         overlayConsumerMetricLoggedRef.current = new Set();
         const incomingIdentity = bundle.meta.authoritativeIdentity;
@@ -3324,13 +3361,6 @@ const AnalysisBundleDashboard: React.FC<{
         bundleState.meta.authoritativeIdentity.value,
     ]);
 
-    const analysisBarcodeRaw = normalizeText((analysis as { barcode?: string | null })?.barcode ?? null);
-    const analysisBarcodeDigits = useMemo(() => {
-        const digits = analysisBarcodeRaw.replace(/\D/g, '');
-        if (digits.length < 8) return null;
-        return digits.length > 14 ? digits.slice(-14) : digits.padStart(14, '0');
-    }, [analysisBarcodeRaw]);
-
     useEffect(() => {
         const resolvedBarcode = (() => {
             const identity = bundleState.meta.authoritativeIdentity;
@@ -3359,10 +3389,23 @@ const AnalysisBundleDashboard: React.FC<{
             SCAN_UX_VIEW_MODE,
         ].join('|');
         const normalizedSessionId = normalizeText(scanSessionId) || 'session_unknown';
+        const normalizedSessionIdRaw = normalizeText(scanSessionId) || null;
+        const decisionInputsHashHint =
+            normalizeText(
+                ((bundleState.meta as { decisionInputsHash?: string | null }).decisionInputsHash) ?? null,
+            ) || null;
         const fetchKey = `${normalizedSessionId}|${decisionCacheKey}`;
         if (decisionSupportFetchKeyRef.current === fetchKey) return;
         decisionSupportFetchKeyRef.current = fetchKey;
         const requestSeq = ++decisionSupportRequestSeqRef.current;
+        decisionSupportFetchCountRef.current += 1;
+        emitScanUxMetric('decision_support_fetch', {
+            scanSessionId: normalizedSessionIdRaw,
+            barcode: resolvedBarcode,
+            count: decisionSupportFetchCountRef.current,
+            digestHint,
+            decisionInputsHashHint,
+        });
 
         let cancelled = false;
         let autoRetryUsed = false;
@@ -3433,6 +3476,8 @@ const AnalysisBundleDashboard: React.FC<{
                     viewMode: SCAN_UX_VIEW_MODE,
                 });
                 if (digestParam) params.set('digest', digestParam);
+                if (normalizedSessionIdRaw) params.set('scanSessionId', normalizedSessionIdRaw);
+                if (decisionInputsHashHint) params.set('decisionInputsHash', decisionInputsHashHint);
                 const res = await fetch(`${baseUrl}/api/decision-support/v1?${params.toString()}`, {
                     method: 'GET',
                     headers: await withAuthHeaders(),
@@ -3560,6 +3605,7 @@ const AnalysisBundleDashboard: React.FC<{
         bundleState.meta.authoritativeIdentity.type,
         bundleState.meta.authoritativeIdentity.value,
         (bundleState.meta as { decisionSupportDigest?: string | null })?.decisionSupportDigest,
+        (bundleState.meta as { decisionInputsHash?: string | null })?.decisionInputsHash,
         bundleState.meta.factsDigestHash,
         scanSessionId,
     ]);
@@ -6823,6 +6869,27 @@ const AnalysisBundleDashboard: React.FC<{
         usedCategorySpecificRanking,
         usedFallbackCopyCount,
     ]);
+    useEffect(() => {
+        if (authoritativeTilePayloadReady && !decisionTemplatePending) {
+            emitScanUxTimingOnce('firstRenderableLogged', 'time_to_first_renderable_decision_template', {
+                sourceType: bundleSourceType ?? null,
+                decisionState: decisionSupportState.status,
+            });
+        }
+    }, [
+        authoritativeTilePayloadReady,
+        bundleSourceType,
+        decisionSupportState.status,
+        decisionTemplatePending,
+        emitScanUxTimingOnce,
+    ]);
+    useEffect(() => {
+        if (coreCoverCardsReady) {
+            emitScanUxTimingOnce('coreCardsVisibleLogged', 'time_to_core_cards_visible', {
+                sourceType: bundleSourceType ?? null,
+            });
+        }
+    }, [bundleSourceType, coreCoverCardsReady, emitScanUxTimingOnce]);
     // SCORE_SECTION_FROZEN_STATE_START
     const scoreCardRows = scoreCardPayload?.rows ?? [];
     const scoreCardChecklists = scoreCardPayload?.checklistsByRow ?? null;
@@ -7325,6 +7392,19 @@ const AnalysisBundleDashboard: React.FC<{
     useEffect(() => {
         onCoreReadyChange?.(coreResultsReady);
     }, [coreResultsReady, onCoreReadyChange]);
+    useEffect(() => {
+        if (decisionSupportV2Available) {
+            emitScanUxTimingOnce('scoreVisibleLogged', 'time_to_score_visible', {
+                scoreBand: displayedOverallBand,
+                scoreValue: displayedOverallScore,
+            });
+        }
+    }, [
+        decisionSupportV2Available,
+        displayedOverallBand,
+        displayedOverallScore,
+        emitScanUxTimingOnce,
+    ]);
 
     useEffect(() => {
         onMiniScoreMetaChange?.({
@@ -7421,7 +7501,7 @@ const AnalysisBundleDashboard: React.FC<{
                             <View style={styles.scanDebugRow}>
                                 <Text style={styles.scanDebugLabel}>decisionFetches</Text>
                                 <Text style={styles.scanDebugValue}>
-                                    {String(decisionSupportRequestSeqRef.current)}
+                                    {String(decisionSupportFetchCountRef.current)}
                                 </Text>
                             </View>
                             <View style={styles.scanDebugRow}>

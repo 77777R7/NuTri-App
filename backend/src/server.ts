@@ -138,7 +138,7 @@ import {
   buildVersionedOcrCacheKey,
   normalizePreprocessProfile,
 } from "./labelScanVersion.js";
-import { getMetricsSnapshot, incrementMetric, startMetricsFlush } from "./metrics.js";
+import { getMetricsSnapshot, incrementMetric, recordMetricTiming, startMetricsFlush } from "./metrics.js";
 import { buildMySupplementFactsV1, type MySupplementFactsV1 } from "./mySupplementFacts.js";
 import { getMySupplementOverviewV2GateReason } from "./mySupplementOverviewGate.js";
 import { getNutriTipsData } from "./nutriTips.js";
@@ -6978,14 +6978,24 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   const startedAt = process.hrtime.bigint();
   let finished = false;
   let aborted = false;
+  const recordRouteTimingMetrics = (durationMs: number) => {
+    if (req.path === "/api/ingredient-overview/v1") {
+      recordMetricTiming("ingredient_overview_ms", durationMs);
+      return;
+    }
+    if (req.path === "/api/scientific-background/v1") {
+      recordMetricTiming("scientific_background_ms", durationMs);
+    }
+  };
 
   res.on("finish", () => {
     finished = true;
+    const durationMs = Number(process.hrtime.bigint() - startedAt) / 1e6;
+    recordRouteTimingMetrics(durationMs);
     if (!HTTP_ACCESS_LOG_ENABLED) return;
     // Avoid noisy health check logs (Render pings this frequently).
     if (req.path === "/health") return;
 
-    const durationMs = Number(process.hrtime.bigint() - startedAt) / 1e6;
     const durationLabel = `${durationMs.toFixed(1)}ms`;
     console.log(`[HTTP] ${res.statusCode} ${req.method} ${req.path} (${durationLabel}) id=${requestId}`);
   });
@@ -6998,6 +7008,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     console.warn(`[HTTP_ABORTED] ${req.method} ${req.path} (${durationLabel}) id=${requestId}`);
   });
   res.on("close", () => {
+    if (req.path === "/api/product-overview-ai/v1" && !finished) {
+      incrementMetric("product_overview_ai_closed_early_rate");
+    }
     if (!HTTP_ACCESS_LOG_ENABLED) return;
     if (req.path === "/health") return;
     if (finished) return;
@@ -7037,6 +7050,37 @@ const regressionAuthRoutes = new Set([
   "/api/label-scan/metrics",
   "/api/label-scan/metrics/smoke",
 ]);
+const DECISION_SUPPORT_FETCH_WINDOW_MS = 10 * 60 * 1000;
+const decisionSupportFetchCountsByScanSession = new Map<string, { count: number; lastSeenAt: number }>();
+
+const pruneDecisionSupportFetchCounts = (now: number) => {
+  for (const [key, value] of decisionSupportFetchCountsByScanSession.entries()) {
+    if (now - value.lastSeenAt > DECISION_SUPPORT_FETCH_WINDOW_MS) {
+      decisionSupportFetchCountsByScanSession.delete(key);
+    }
+  }
+};
+
+const recordDecisionSupportFetchForScanSession = (
+  scanSessionId: string | null,
+  barcodeGtin14: string,
+): number | null => {
+  const normalizedScanSessionId = String(scanSessionId ?? "").trim();
+  if (!normalizedScanSessionId) return null;
+  const now = Date.now();
+  pruneDecisionSupportFetchCounts(now);
+  const key = `${normalizedScanSessionId}:${barcodeGtin14}`;
+  const current = decisionSupportFetchCountsByScanSession.get(key);
+  const count = (current?.count ?? 0) + 1;
+  decisionSupportFetchCountsByScanSession.set(key, {
+    count,
+    lastSeenAt: now,
+  });
+  if (count > 1) {
+    incrementMetric("decision_support_refetch_count_per_scan");
+  }
+  return count;
+};
 
 const verifySupabaseToken = async (req: Request, res: Response, next: NextFunction) => {
   if (authDisabled) {
@@ -10733,6 +10777,12 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
 
   const requestedDigestRaw = typeof req.query.digest === "string" ? req.query.digest.trim() : "";
   const requestedDigest = requestedDigestRaw.length > 0 ? requestedDigestRaw : null;
+  const requestedDecisionInputsHashRaw =
+    typeof req.query.decisionInputsHash === "string" ? req.query.decisionInputsHash.trim() : "";
+  const requestedDecisionInputsHash =
+    requestedDecisionInputsHashRaw.length > 0 ? requestedDecisionInputsHashRaw : null;
+  const scanSessionIdRaw = typeof req.query.scanSessionId === "string" ? req.query.scanSessionId.trim() : "";
+  const scanSessionId = scanSessionIdRaw.length > 0 ? scanSessionIdRaw : null;
   const viewMode = parseDecisionSupportViewMode(
     typeof req.query.viewMode === "string" ? req.query.viewMode : null,
   );
@@ -10745,6 +10795,7 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
 
   try {
     const barcodeGtin14 = normalizedBarcode.code.padStart(14, "0");
+    const fetchCount = recordDecisionSupportFetchForScanSession(scanSessionId, barcodeGtin14);
     const overlayClaims = await fetchIherbOverlayClaimsByBarcode(barcodeGtin14);
     const quickDigest = await buildMySupplementDigestQuick({
       supplementId: barcodeGtin14,
@@ -10779,12 +10830,36 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
       overlayClaims,
     });
 
+    if (
+      requestedDecisionInputsHash &&
+      requestedDecisionInputsHash !== decisionSupport.decisionInputsHash
+    ) {
+      incrementMetric("decision_inputs_hash_mismatch");
+      console.warn("[telemetry] decision_inputs_hash_mismatch", {
+        barcode: barcodeGtin14,
+        scanSessionId,
+        requestedDecisionInputsHash,
+        latestDecisionInputsHash: decisionSupport.decisionInputsHash,
+        latestDigest: decisionSupport.digest,
+      });
+    }
+
     if (requestedDigest && requestedDigest !== decisionSupport.digest) {
+      incrementMetric("decision_support_digest_mismatch");
+      console.warn("[telemetry] decision_support_digest_mismatch", {
+        barcode: barcodeGtin14,
+        scanSessionId,
+        requestedDigest,
+        latestDigest: decisionSupport.digest,
+        requestedDecisionInputsHash,
+        latestDecisionInputsHash: decisionSupport.decisionInputsHash,
+      });
       const mismatchPayload = {
         error: "DECISION_SUPPORT_DIGEST_MISMATCH",
         reasonCode: "DECISION_SUPPORT_DIGEST_MISMATCH",
         message: "Decision support content has updated. Refresh with latest digest.",
         latestDigest: decisionSupport.digest,
+        latestDecisionInputsHash: decisionSupport.decisionInputsHash,
       };
       return res.status(409).json(mismatchPayload);
     }
@@ -10824,6 +10899,7 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
       usageBlock: decisionSupport.usageBlock,
       safetyBlock: decisionSupport.safetyBlock,
       qualityMark: decisionSupport.qualityMark,
+      ...(typeof fetchCount === "number" ? { decisionSupportFetchCount: fetchCount } : {}),
       ...(allowDecisionDebug && decisionSupport.decisionDebug
         ? {
           decisionDebug: decisionSupport.decisionDebug,
@@ -13272,6 +13348,20 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
   ];
   const pipelineMetricsEnabled = isRegressionRequest;
   const pipelineStartedAt = performance.now();
+  const streamTimingRecorded = {
+    rev0: false,
+    rev1: false,
+    done: false,
+  };
+  const recordStreamTimingOnce = (
+    metricName: "time_to_rev0_ms" | "time_to_rev1_ms" | "time_to_done_ms",
+    stage: keyof typeof streamTimingRecorded,
+  ) => {
+    if (streamTimingRecorded[stage]) return;
+    streamTimingRecorded[stage] = true;
+    recordMetricTiming(metricName, performance.now() - pipelineStartedAt);
+  };
+  const startedAt = pipelineStartedAt;
   const pipelineState = new Map<PipelineStepName, PipelineStepMetric>(
     pipelineStepsOrder.map((step) => [step, { step, status: "degraded", code: "not_reached" }]),
   );
@@ -13786,6 +13876,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     if (text.includes("event: done")) {
       streamState.doneSent = true;
       streamState.tDone = Date.now();
+      recordStreamTimingOnce("time_to_done_ms", "done");
       markPipelineStepEnd("emit", "ok");
       logDoneEvent("success", { emit_path: "write_wrapper_observed_done_event" });
     }
@@ -13820,6 +13911,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         if (emitted) {
           streamState.doneSent = true;
           streamState.tDone = Date.now();
+          recordStreamTimingOnce("time_to_done_ms", "done");
           markPipelineStepEnd("emit", "ok");
           logDoneEvent("success", { emit_path: "res_end_guard_send_done" });
         } else {
@@ -14222,6 +14314,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     sendSSE(res, "analysis_bundle", normalized);
     streamState.rev0Sent = true;
     streamState.tRev0 = Date.now();
+    recordStreamTimingOnce("time_to_rev0_ms", "rev0");
     logSseLifecycle({
       requestId: requestId || null,
       phase: "rev0",
@@ -14272,6 +14365,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     streamState.rev1Sent = true;
     stage0Rev1Locked = true;
     streamState.tRev1 = Date.now();
+    recordStreamTimingOnce("time_to_rev1_ms", "rev1");
     streamState.rev1Source = source;
     logSseLifecycle({
       requestId: requestId || null,
@@ -14688,8 +14782,6 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     let authorityFailureReason: AuthorityFailureReason | null = null;
     let authorityNegativeCacheBypassed = false;
     let authorityRegressionScenarioHistoricalNpn: string | null = null;
-
-    const startedAt = performance.now();
     const budget = new DeadlineBudget(Date.now() + RESILIENCE_TOTAL_BUDGET_MS);
     const streamAbort = new AbortController();
     streamAbortController = streamAbort;
@@ -15187,6 +15279,13 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         overlayClaimsByBarcode &&
         !bundleUsesIherbOverlaySupport(cachedFast.payload as AnalysisBundle)
       ) {
+        incrementMetric("bundle_fast_cache_rejected_missing_overlay_rate");
+        console.info("[telemetry] bundle_fast_cache_rejected_missing_overlay", {
+          barcode: overlayClaims,
+          identityType: params.identityType,
+          identityValue: params.identityValue,
+          factsDigestHash,
+        });
         cachedFast = null;
       }
       if (!canWrite()) {
@@ -16356,6 +16455,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         !snapshotPayloadUsesIherbOverlaySupport(cachedFast.analysisPayload);
       if (cachedNeedsOverlayRefresh) {
         bypassCachedFastPathForAuthority = true;
+        incrementMetric("snapshot_bypass_missing_iherb_overlay_rate");
         console.info("[ResolutionV2] Bypassing snapshot cache due to missing iHerb overlay augmentation", {
           barcode: barcodeGtin14,
           snapshotId: cachedFast.snapshot.snapshotId,
@@ -17773,6 +17873,7 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
     }
 
     async function maybeRunDsldDirectFallbackStage0(params?: { allowForFullStream?: boolean }): Promise<boolean> {
+      const stage0RecoveryStartedAt = performance.now();
       if (!STAGE0_DSLD_BARCODE_FALLBACK_ENABLED) return false;
       const seededLabelId = resolvePreferredStage0DsldLabelId(barcodeGtin14);
       const hasSeededLabelId = Boolean(seededLabelId && Number.isFinite(seededLabelId));
@@ -17939,6 +18040,19 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
       stage0Source = "dsld";
       clearNegativeCacheAllVariants(barcodeGtin14, rawBarcode, {
         context: "dsld_fallback_stage0_success",
+      });
+      const stage0RecoveryMs = performance.now() - stage0RecoveryStartedAt;
+      incrementMetric("stage0_dsld_recovery_rate");
+      recordMetricTiming("stage0_dsld_recovery_ms", stage0RecoveryMs);
+      console.info("[telemetry] stage0_dsld_recovery", {
+        barcode: barcodeGtin14,
+        lane: fallbackLane,
+        recoveryMs: Math.round(stage0RecoveryMs * 10) / 10,
+        seededLabelId,
+        canonicalLabelId: prioritizedLabelId && prioritizedLabelId !== Number(seededLabelId ?? 0)
+          ? prioritizedLabelId
+          : null,
+        dsldLabelId: dsldFacts.dsldLabelId ?? null,
       });
       console.info("[ResolutionV2] Stage0 DSLD fallback recovered authoritative path", {
         barcode: barcodeGtin14,
