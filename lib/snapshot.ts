@@ -1,6 +1,5 @@
 import type { AiSupplementAnalysis } from '@/backend/src/types';
 import type { LabelDraft } from '@/backend/src/labelAnalysis';
-import { computeSmartScores } from '@/lib/scoring';
 import type {
   NormalizedAmountUnit,
   SnapshotSource,
@@ -13,8 +12,6 @@ import {
 } from '@/types/supplementSnapshot';
 
 import type { AnalysisState, EnrichedSource } from '@/hooks/useStreamAnalysis';
-
-type SnapshotScoreConfidence = NonNullable<SupplementSnapshot['scores']>['confidence'];
 
 const createSnapshotId = () => {
   try {
@@ -314,122 +311,6 @@ const baseSnapshot = (params: {
   };
 };
 
-const buildScoresFromSections = (input: {
-  efficacy: AnalysisState['efficacy'];
-  safety: AnalysisState['safety'];
-  value: AnalysisState['value'];
-  social: AnalysisState['social'];
-  confidence: SnapshotScoreConfidence;
-  computedAt: string;
-}): SupplementSnapshot['scores'] | undefined => {
-  const { efficacy, safety, value, social, confidence, computedAt } = input;
-  if (!efficacy || typeof efficacy.score !== 'number') return undefined;
-  if (!safety || typeof safety.score !== 'number') return undefined;
-  if (!value || typeof value.score !== 'number') return undefined;
-
-  const analysisInput = {
-    efficacy: {
-      score: efficacy.score,
-      primaryActive: efficacy.primaryActive ?? null,
-      ingredients: efficacy.ingredients ?? [],
-      overallAssessment: efficacy.overallAssessment,
-      marketingVsReality: efficacy.marketingVsReality,
-      coreBenefits: efficacy.coreBenefits ?? efficacy.benefits ?? [],
-    },
-    safety: {
-      score: safety.score,
-      ulWarnings: safety.ulWarnings ?? [],
-      allergens: safety.allergens ?? [],
-      interactions: safety.interactions ?? [],
-      redFlags: safety.redFlags ?? [],
-      consultDoctorIf: safety.consultDoctorIf ?? [],
-    },
-    value: {
-      score: value.score,
-      costPerServing: value.costPerServing ?? null,
-      alternatives: value.alternatives ?? [],
-    },
-    social: {
-      score: typeof social?.score === 'number' ? social.score : undefined,
-      summary: social?.summary,
-    },
-  };
-
-  const breakdown = computeSmartScores(analysisInput);
-
-  return {
-    overall: breakdown.overall,
-    effectiveness: breakdown.effectiveness,
-    safety: breakdown.safety,
-    value: breakdown.value,
-    version: 'v2-ai',
-    computedAt,
-    confidence,
-  };
-};
-
-const buildScoresFromAnalysis = (input: {
-  analysis: AiSupplementAnalysis | null;
-  confidence: SnapshotScoreConfidence;
-  computedAt: string;
-}): SupplementSnapshot['scores'] | undefined => {
-  const { analysis, confidence, computedAt } = input;
-  if (!analysis || analysis.status !== 'success') return undefined;
-
-  if (!analysis.efficacy || typeof analysis.efficacy.score !== 'number') return undefined;
-  if (!analysis.safety || typeof analysis.safety.score !== 'number') return undefined;
-  if (!analysis.value || typeof analysis.value.score !== 'number') return undefined;
-
-  const analysisInput = {
-    efficacy: {
-      score: analysis.efficacy.score,
-      primaryActive: analysis.efficacy.primaryActive ?? null,
-      ingredients: analysis.efficacy.ingredients ?? [],
-      overallAssessment: analysis.efficacy.overallAssessment,
-      marketingVsReality: analysis.efficacy.marketingVsReality,
-      coreBenefits: analysis.efficacy.coreBenefits ?? analysis.efficacy.benefits ?? [],
-    },
-    safety: {
-      score: analysis.safety.score,
-      ulWarnings: [],
-      allergens: [],
-      interactions: [],
-      redFlags: analysis.safety.redFlags ?? [],
-      consultDoctorIf: [],
-    },
-    value: {
-      score: analysis.value.score,
-      costPerServing: null,
-      alternatives: [],
-    },
-    social: {
-      score: typeof analysis.social?.score === 'number' ? analysis.social.score : undefined,
-      summary: analysis.social?.summary,
-    },
-  };
-
-  const breakdown = computeSmartScores(analysisInput);
-
-  return {
-    overall: breakdown.overall,
-    effectiveness: breakdown.effectiveness,
-    safety: breakdown.safety,
-    value: breakdown.value,
-    version: 'v2-ai',
-    computedAt,
-    confidence,
-  };
-};
-
-const buildConfidenceBase = (): SnapshotScoreConfidence => ({
-  overall: null,
-  labelCoverage: null,
-  ingredientCoverage: null,
-  priceCoverage: null,
-  trustCoverage: null,
-  regulatoryCoverage: null,
-});
-
 const buildLabelActives = (draft: LabelDraft | null): SupplementSnapshot['label']['actives'] => {
   if (!draft) return [];
   return draft.ingredients.map((ingredient) => {
@@ -499,22 +380,15 @@ export const buildBarcodeSnapshot = (input: {
   });
 
   const productInfo = input.analysis.productInfo;
-  const resolvedConfidence = buildConfidenceBase();
-
-  const scores = buildScoresFromSections({
-    efficacy: input.analysis.efficacy,
-    safety: input.analysis.safety,
-    value: input.analysis.value,
-    social: input.analysis.social,
-    confidence: resolvedConfidence,
-    computedAt: timestamp,
-  });
+  const hasStructuredAnalysis =
+    input.analysis.status === 'complete' ||
+    Boolean(input.analysis.efficacy || input.analysis.safety || input.analysis.usage);
 
   const snapshotStatus: SnapshotStatus = hasNotFound
     ? 'unknown_product'
     : hasError
       ? 'error'
-      : (scores ? 'resolved' : 'partial');
+      : (hasStructuredAnalysis ? 'resolved' : 'partial');
 
   return {
     ...base,
@@ -527,7 +401,6 @@ export const buildBarcodeSnapshot = (input: {
       imageUrl: productInfo?.image ?? null,
     },
     references: buildReferencesFromSources(input.analysis.sources ?? [], timestamp),
-    scores,
   };
 };
 
@@ -538,19 +411,6 @@ export const buildLabelSnapshot = (input: {
   message?: string;
 }): SupplementSnapshot => {
   const timestamp = nowIso();
-  const confidence = buildConfidenceBase();
-
-  if (input.draft) {
-    confidence.overall = input.draft.confidenceScore ?? null;
-    confidence.labelCoverage = input.draft.parseCoverage ?? null;
-    confidence.ingredientCoverage = input.draft.parseCoverage ?? null;
-  }
-
-  const scores = buildScoresFromAnalysis({
-    analysis: input.analysis,
-    confidence,
-    computedAt: timestamp,
-  });
 
   const statusFromAnalysis: SnapshotStatus | null =
     input.analysis?.status === 'unknown_product'
@@ -566,7 +426,7 @@ export const buildLabelSnapshot = (input: {
         ? statusFromAnalysis
         : input.status === 'needs_confirmation'
           ? 'partial'
-          : (scores ? 'resolved' : 'partial');
+          : (input.analysis?.status === 'success' ? 'resolved' : 'partial');
 
   const errorMessage =
     input.status === 'failed'
@@ -605,6 +465,5 @@ export const buildLabelSnapshot = (input: {
       extraction: buildLabelExtraction(input.draft),
     },
     references: buildReferencesFromSources(input.analysis?.sources ?? [], timestamp),
-    scores,
   };
 };

@@ -13,6 +13,17 @@ import {
   lookupUlByCanonicalKey,
 } from "./ods/ulDataset.js";
 import { lookupQualityMarkAudit } from "./qualityMarks/cache.js";
+import {
+  buildQualityMarkProgramMatches,
+  detectQualityMarkProgramIds,
+  isGenericThirdPartyClaimEvidenceMatch,
+  mergeQualityMarkSummaries,
+  summarizeQualityMarkProgramMatches,
+} from "./qualityMarks/matchers.js";
+import { getQualityMarkProgramDefinition } from "./qualityMarks/programs.js";
+import type { QualityMarkProgramMatch, QualityMarkVerificationSummary } from "./qualityMarks/types.js";
+import { buildProductSafetySummary } from "./safety/productSafetySummary.js";
+import type { UlGuidanceEntry } from "./safety/types.js";
 
 export type DecisionSupportViewMode = "details";
 
@@ -72,7 +83,7 @@ export type DecisionSupportBlocker = {
 
 export type DecisionSupportQualityMarkStatus = "detected" | "not_detected" | "unknown";
 
-export type DecisionSupportExtraTrustSignal = {
+export type DecisionSupportQualityMarkTrustSignal = {
   code: "quality_mark_status";
   status: DecisionSupportQualityMarkStatus;
   checked: boolean;
@@ -84,30 +95,37 @@ export type DecisionSupportExtraTrustSignal = {
   checkedMode: "search_only" | "page_fetch" | null;
   pagesFetchedCount: number;
   searchPagesFetchedCount: number;
-  evidenceType: "page" | "search" | null;
+  evidenceType: "page" | "search" | "official_registry" | null;
   note: string;
+  programMatches?: QualityMarkProgramMatch[];
+  verificationSummary?: QualityMarkVerificationSummary | null;
 };
+
+export type DecisionSupportBrandLevelProgramSignal = {
+  code: "brand_level_official_program";
+  status: DecisionSupportQualityMarkStatus;
+  checked: boolean;
+  confidence: number | null;
+  confidenceBucket: "high" | "medium" | "low";
+  evidenceRef: string | null;
+  sourcesTried: string[];
+  lastCheckedAt: string | null;
+  checkedMode: "search_only" | "page_fetch" | null;
+  pagesFetchedCount: number;
+  searchPagesFetchedCount: number;
+  evidenceType: "page" | "search" | "official_registry" | null;
+  note: string;
+  programLabel: string | null;
+  matchLevel: "brand";
+  programMatches?: QualityMarkProgramMatch[];
+  verificationSummary?: QualityMarkVerificationSummary | null;
+};
+
+export type DecisionSupportExtraTrustSignal =
+  | DecisionSupportQualityMarkTrustSignal
+  | DecisionSupportBrandLevelProgramSignal;
 
 export type DecisionSupportChecklistStatus = "verified" | "missing" | "unknown";
-
-export type DecisionSupportChecklistRow = {
-  key: string;
-  label: string;
-  status: DecisionSupportChecklistStatus;
-  sourceTier: DecisionSupportSourceTier;
-  why: string | null;
-};
-
-export type DecisionSupportNutriScoreCard = {
-  score: number;
-  confidenceCoverage: number;
-  rows: Array<{
-    id: "effectiveness" | "safety" | "integrity";
-    label: "Effectiveness" | "Safety" | "Integrity";
-    score: number;
-  }>;
-  checklistsByRow: Record<"effectiveness" | "safety" | "integrity", DecisionSupportChecklistRow[]>;
-};
 
 export type DecisionSupportEvidenceStrength =
   | "official"
@@ -252,6 +270,7 @@ export type DecisionSupportUsageBlock = {
 export type DecisionSupportSafetyBlock = {
   labelWarnings: string[];
   ulGuidance: string[];
+  ulGuidanceEntries?: UlGuidanceEntry[];
   generalWatchouts: string[];
   dataStatusRef: string;
 };
@@ -266,8 +285,10 @@ export type DecisionSupportQualityMark = {
   checkedMode: "search_only" | "page_fetch" | null;
   pagesFetchedCount: number;
   searchPagesFetchedCount: number;
-  evidenceType: "page" | "search" | null;
+  evidenceType: "page" | "search" | "official_registry" | null;
   note: string;
+  programMatches?: QualityMarkProgramMatch[];
+  verificationSummary?: QualityMarkVerificationSummary | null;
 };
 
 export type DecisionSupportCategoryId =
@@ -297,7 +318,6 @@ export type DecisionSupportPayload = {
   topBlockers: DecisionSupportBlocker[];
   extraTrustSignals: DecisionSupportExtraTrustSignal[];
   sourceTiers: DecisionSupportSourceTier[];
-  nutriScoreCard: DecisionSupportNutriScoreCard;
   nutriScoreCardV2: DecisionSupportNutriScoreCardV2;
   overviewBlock: DecisionSupportOverviewBlock;
   scienceBlock: DecisionSupportScienceBlock;
@@ -350,7 +370,6 @@ export type DecisionSupportInline = {
     why: string;
     severity: DecisionSupportSeverity;
   }>;
-  nutriScoreCard: DecisionSupportNutriScoreCard;
   nutriScoreCardV2: DecisionSupportNutriScoreCardV2;
   overviewBlock: DecisionSupportOverviewBlock;
   scienceBlock: DecisionSupportScienceBlock;
@@ -1067,63 +1086,12 @@ const deriveVerdict = (params: {
 const findSubscore = (subscores: DecisionSupportSubscore[], id: DecisionSupportSubscoreId): number =>
   subscores.find((item) => item.id === id)?.score ?? 0;
 
-const toChecklistStatus = (item: DecisionSupportChecklistItem): DecisionSupportChecklistStatus => {
-  if (item.passed) return "verified";
-  if (item.sourceTier === "inferred") return "unknown";
-  return "missing";
-};
-
-const toChecklistRows = (items: DecisionSupportChecklistItem[]): DecisionSupportChecklistRow[] =>
-  items.map((item) => ({
-    key: item.id,
-    label: item.label,
-    status: toChecklistStatus(item),
-    sourceTier: item.sourceTier,
-    why: item.why ?? null,
-  }));
-
-const buildNutriScoreCard = (params: {
-  checklist: DecisionSupportChecklistItem[];
-  subscores: DecisionSupportSubscore[];
-}): DecisionSupportNutriScoreCard => {
-  const { checklist, subscores } = params;
-  const effectivenessItems = checklist.filter(
-    (item) =>
-      item.id.startsWith("goalevidencefit:") ||
-      item.id.startsWith("formulaquality:"),
-  );
-  const safetyItems = checklist.filter((item) => item.id.startsWith("safetytransparency:"));
-  const integrityItems = checklist.filter((item) => item.id.startsWith("trustqualityassurance:"));
-  const visibleItems = checklist.filter((item) => item.sourceTier !== "inferred");
-  const covered = visibleItems.filter((item) => item.passed).length;
-  const confidenceCoverage =
-    visibleItems.length > 0 ? Math.max(0, Math.min(100, Math.round((covered / visibleItems.length) * 100))) : 0;
-  const effectivenessScore = scoreClamp(
-    (findSubscore(subscores, "GoalEvidenceFit") + findSubscore(subscores, "FormulaQuality")) / 2,
-  );
-  const safetyScore = findSubscore(subscores, "SafetyTransparency");
-  const integrityScore = findSubscore(subscores, "TrustQualityAssurance");
-  const score = scoreClamp((effectivenessScore + safetyScore + integrityScore) / 3);
-  return {
-    score,
-    confidenceCoverage,
-    rows: [
-      { id: "effectiveness", label: "Effectiveness", score: effectivenessScore },
-      { id: "safety", label: "Safety", score: safetyScore },
-      { id: "integrity", label: "Integrity", score: integrityScore },
-    ],
-    checklistsByRow: {
-      effectiveness: toChecklistRows(effectivenessItems),
-      safety: toChecklistRows(safetyItems),
-      integrity: toChecklistRows(integrityItems),
-    },
-  };
-};
-
 const CLAIM_CGMP_REGEX = /\bcgmp\b|good[-\s]*manufacturing[-\s]*practice|certified[-\s]*manufacturing/i;
 const CLAIM_CGMP_COMPACT_REGEX = /cgmp|goodmanufacturingpractice|certifiedmanufacturing/i;
-const CLAIM_THIRD_PARTY_TESTED_REGEX = /\bthird[-\s]*party[-\s]*tested\b|\bifos\b|\busp\b|\bnsf\b|informed[-\s]*choice|\bbscg\b|\bconsumerlab\b|\bigen\b/i;
-const CLAIM_THIRD_PARTY_TESTED_COMPACT_REGEX = /thirdpartytested|ifos|usp|nsf|informedchoice|bscg|consumerlab|igen/i;
+const CLAIM_THIRD_PARTY_TESTED_REGEX =
+  /\bthird[-\s]*party[-\s]*tested\b|\bifos\b|\busp\b|\bnsf\b|informed[-\s]*choice|informed[-\s]*sport|\bbscg\b/i;
+const CLAIM_THIRD_PARTY_TESTED_COMPACT_REGEX =
+  /thirdpartytested|ifos|usp|nsf|informedchoice|informedsport|bscg/i;
 const CLAIM_QUALITY_SIGNAL_REGEX = /\bnon[-\s]?gmo\b|\bgluten[-\s]?free\b|\bvegan\b|\bsoy[-\s]?free\b|\bdairy[-\s]?free\b|\bmsc\b/i;
 const CLAIM_QUALITY_SIGNAL_COMPACT_REGEX = /nongmo|glutenfree|vegan|soyfree|dairyfree|msc/i;
 const CLAIM_MANUFACTURING_ORIGIN_REGEX = /\bmade in\b|\bmanufactured in\b|\bfacility\b|\busa\b|\bcanada\b/i;
@@ -1134,20 +1102,6 @@ const CLAIM_CHEMICAL_FORM_COMPACT_REGEX =
   /d3|d2|mk7|mk4|ubiquinol|ubiquinone|citrate|oxide|glycinate|malate|triglycerideform|triglyceride|tgasrtg|rtg/i;
 const CLAIM_EPA_DHA_REGEX = /\bepa\b|\bdha\b|omega[-\s]?3/i;
 const CLAIM_EPA_DHA_COMPACT_REGEX = /epa|dha|omega3/i;
-const THIRD_PARTY_SOURCE_DETECTORS: Array<{ label: string; spaced: RegExp; compact: RegExp }> = [
-  { label: "IFOS", spaced: /\bifos\b/i, compact: /ifos/i },
-  { label: "USP", spaced: /\busp\b/i, compact: /usp/i },
-  { label: "NSF", spaced: /\bnsf\b/i, compact: /nsf/i },
-  { label: "Informed Choice", spaced: /informed[-\s]*choice/i, compact: /informedchoice/i },
-  { label: "Informed Sport", spaced: /informed[-\s]*sport/i, compact: /informedsport/i },
-  { label: "BSCG", spaced: /\bbscg\b/i, compact: /bscg/i },
-  { label: "ConsumerLab", spaced: /consumerlab/i, compact: /consumerlab/i },
-  { label: "iGEN", spaced: /\bigen\b/i, compact: /igen/i },
-  { label: "iTested", spaced: /\bitested\b/i, compact: /itested/i },
-  { label: "Labdoor", spaced: /\blabdoor\b/i, compact: /labdoor/i },
-  { label: "MSC", spaced: /\bmsc\b/i, compact: /msc/i },
-];
-
 const CONFIDENCE_EVIDENCE_WEIGHTS: Record<DecisionSupportEvidenceStrength, number> = {
   official: 1.0,
   scanned_label: 0.95,
@@ -1206,15 +1160,48 @@ const claimRegexMatch = (params: {
   compact: RegExp;
 }): boolean => params.spaced.test(params.corpus) || params.compact.test(params.corpusCompact);
 
+const buildOverlayThirdPartyVerificationSummary = (params: {
+  corpus: string;
+  corpusCompact: string;
+}): QualityMarkVerificationSummary | null => {
+  const programIds = detectQualityMarkProgramIds({
+    text: params.corpus,
+    compactText: params.corpusCompact,
+    includeNonEquivalent: true,
+  });
+  if (programIds.length === 0) return null;
+  const programMatches = buildQualityMarkProgramMatches({
+    programIds,
+    status: "claimed_on_product_page",
+    evidenceUrl: null,
+    evidenceType: "page",
+    sourceType: "retailer_marketplace",
+    confidence: 0.6,
+    note: "Detected from overlay claim text.",
+  });
+  return summarizeQualityMarkProgramMatches({
+    programMatches,
+    checked: true,
+  });
+};
+
 const extractThirdPartyTestingSources = (params: {
   corpus: string;
   corpusCompact: string;
   qualityMark: DecisionSupportQualityMark;
 }): string[] => {
   const { corpus, corpusCompact, qualityMark } = params;
-  const hits = THIRD_PARTY_SOURCE_DETECTORS
-    .filter((item) => item.spaced.test(corpus) || item.compact.test(corpusCompact))
-    .map((item) => item.label);
+  const overlayProgramLabels = detectQualityMarkProgramIds({
+    text: corpus,
+    compactText: corpusCompact,
+    includeNonEquivalent: false,
+  })
+    .map((programId) => getQualityMarkProgramDefinition(programId)?.label ?? null)
+    .filter(Boolean) as string[];
+  const qualityMarkLabels = (qualityMark.programMatches ?? [])
+    .filter((match) => isGenericThirdPartyClaimEvidenceMatch(match))
+    .map((match) => match.programLabel);
+  const hits = [...overlayProgramLabels, ...qualityMarkLabels];
 
   const hasGenericThirdPartyClaim = CLAIM_THIRD_PARTY_TESTED_REGEX.test(corpus) ||
     CLAIM_THIRD_PARTY_TESTED_COMPACT_REGEX.test(corpusCompact);
@@ -1222,8 +1209,10 @@ const extractThirdPartyTestingSources = (params: {
     hits.push("Third-party tested (program unspecified)");
   }
 
-  if (qualityMark.status === "detected" && qualityMark.evidenceType === "page") {
-    hits.push("Independent cert page (verified)");
+  if (qualityMark.verificationSummary?.officialRegistryVerified) {
+    hits.push("Official registry verification");
+  } else if (qualityMark.verificationSummary?.productPageClaimDetected) {
+    hits.push("Product page claim detected");
   }
 
   return Array.from(new Set(hits));
@@ -1934,10 +1923,24 @@ const buildNutriScoreCardV2 = (params: {
     corpusCompact: overlayCorpusCompact,
     qualityMark,
   });
-  const hasIndependentTestingProof = qualityMark.status === "detected" && qualityMark.evidenceType === "page";
+  const mergedThirdPartyVerificationSummary = mergeQualityMarkSummaries(
+    qualityMark.verificationSummary ?? null,
+    buildOverlayThirdPartyVerificationSummary({
+      corpus: overlayCorpus,
+      corpusCompact: overlayCorpusCompact,
+    }),
+  );
+  const hasIndependentTestingProof = Boolean(mergedThirdPartyVerificationSummary?.officialRegistryVerified);
+  const hasProductPageTestingClaim = Boolean(mergedThirdPartyVerificationSummary?.productPageClaimDetected);
+  const hasThirdPartyClaimEvidence =
+    overlayHasTestingClaim || thirdPartyTestingSources.length > 0 || hasProductPageTestingClaim;
   const thirdPartyClaimState: DecisionSupportChecklistStatus = hasIndependentTestingProof
     ? "verified"
-    : useOverlayMissingState(overlayHasTestingClaim || thirdPartyTestingSources.length > 0);
+    : hasThirdPartyClaimEvidence
+      ? useOverlayMissingState(true)
+      : mergedThirdPartyVerificationSummary?.overallStatus === "ambiguous"
+        ? "unknown"
+        : useOverlayMissingState(false);
   const testingChecklist: DecisionSupportNutriScoreCardV2ChecklistItem[] = [
     buildV2ChecklistItem({
       key: "testing_verification:third_party_tested_claim",
@@ -1945,20 +1948,27 @@ const buildNutriScoreCardV2 = (params: {
       state: thirdPartyClaimState,
       sourceTier: hasIndependentTestingProof
         ? "official_record"
+        : hasProductPageTestingClaim
+        ? "official_record"
         : overlayPresent
         ? "overlay_iherb"
         : "inferred",
       evidenceStrength: hasIndependentTestingProof
         ? "cert_page_verified"
+        : hasProductPageTestingClaim
+        ? "overlay_claim"
         : overlayPresent
         ? "overlay_claim"
         : "inferred",
       proofClass: hasIndependentTestingProof
         ? "independent_verifier"
+        : hasProductPageTestingClaim
+        ? "claim_only"
         : overlayPresent
         ? "claim_only"
         : "science_only",
-      evidenceRef: hasIndependentTestingProof ? (qualityMark.evidenceRef ?? overlayRef) : overlayRef,
+      evidenceRef:
+        hasIndependentTestingProof || hasProductPageTestingClaim ? (qualityMark.evidenceRef ?? overlayRef) : overlayRef,
       note: null,
       weight: 10,
       role: "score",
@@ -2668,6 +2678,7 @@ const buildSafetyBlock = (params: {
   const adultUlGroup = ulItem ? getUlLimitByLifeStage(ulItem, "adult_19_plus") : null;
   const directionTextForUl = resolveUlDirectionText(digest, overlayClaims);
   const directionFrequencyRange = parseDailyFrequencyRangeFromText(directionTextForUl);
+  const productSafetySummary = buildProductSafetySummary({ digest });
 
   const omega3UlGuidance = [
     "NIH ODS does not set a single UL for omega-3 in the same way as some vitamins/minerals.",
@@ -2752,7 +2763,12 @@ const buildSafetyBlock = (params: {
           "Check the bottle's Warnings/Cautions panel.",
         ],
     ulGuidance:
-      categoryId === "fish_oil_omega3"
+      productSafetySummary.ulGuidanceEntries.length > 0
+        ? dedupeLines(
+          productSafetySummary.ulGuidanceEntries.map((entry) => entry.displayLine),
+          3,
+        )
+        : categoryId === "fish_oil_omega3"
         ? omega3UlGuidance
         : (
           ulNumericGuidance.length > 0
@@ -2761,12 +2777,14 @@ const buildSafetyBlock = (params: {
               ? defaultUlGuidance
               : ["UL guidance remains general and should be reviewed with total daily intake."])
         ),
+    ulGuidanceEntries:
+      productSafetySummary.ulGuidanceEntries.length > 0 ? productSafetySummary.ulGuidanceEntries : undefined,
     generalWatchouts: categoryId === "fish_oil_omega3" ? omega3Watchouts : defaultWatchouts,
     dataStatusRef: "See Missing info in Overview.",
   };
 };
 
-const deriveQualityMarkSignal = (digest: FactsDigest): DecisionSupportExtraTrustSignal => {
+const deriveQualityMarkSignal = (digest: FactsDigest): DecisionSupportQualityMarkTrustSignal => {
   const cached = lookupQualityMarkAudit({
     sourceType: digest?.sourceType ?? null,
     identityType: digest?.identity?.type ?? null,
@@ -2787,6 +2805,28 @@ const deriveQualityMarkSignal = (digest: FactsDigest): DecisionSupportExtraTrust
     const normalizedSearchPagesFetchedCount = Number.isFinite(cached.entry.searchPagesFetchedCount)
       ? cached.entry.searchPagesFetchedCount
       : (searchOnlyEvidence ? 1 : 0);
+    const verificationSummary = cached.entry.verificationSummary ?? null;
+    const note =
+      searchOnlyEvidence
+        ? "Third-party verification is still unproven because only search-only evidence is available."
+        : verificationSummary?.overallStatus === "verified"
+          ? `Third-party verification was confirmed via the ${verificationSummary.strongestProgramLabel ?? "official"} registry.`
+          : verificationSummary?.warnings.includes("registry_access_blocked")
+            ? `Official ${verificationSummary.strongestProgramLabel ?? "registry"} access was attempted but blocked, so third-party verification remains unproven.`
+            : verificationSummary?.warnings.includes("brand_level_only_match")
+              ? `Official ${verificationSummary.strongestProgramLabel ?? "registry"} results matched the brand, but product-level verification remains unproven.`
+              : verificationSummary?.overallStatus === "claimed" &&
+                  verificationSummary?.warnings.includes("registry_checked_not_found")
+                ? `A program-specific third-party claim was detected${verificationSummary.strongestProgramLabel ? ` (${verificationSummary.strongestProgramLabel})` : ""}, but official registry checks did not confirm a product-level match.`
+          : verificationSummary?.overallStatus === "claimed"
+            ? `A program-specific third-party claim was detected${verificationSummary.strongestProgramLabel ? ` (${verificationSummary.strongestProgramLabel})` : ""}, but registry verification has not been completed yet.`
+            : verificationSummary?.warnings.includes("registry_checked_not_found")
+              ? `Official ${verificationSummary.strongestProgramLabel ?? "registry"} verification was checked and no product-level match was found.`
+            : verificationSummary?.overallStatus === "not_proven"
+              ? "Third-party verification was checked and is not currently proven from the available evidence."
+              : verificationSummary?.warnings.includes("program_not_equivalent_to_generic_third_party")
+                ? "A quality program was mentioned, but it is not treated as a generic third-party testing proof."
+                : "Third-party quality mark check is inconclusive.";
     return {
       code: "quality_mark_status",
       status: normalizedStatus,
@@ -2800,14 +2840,9 @@ const deriveQualityMarkSignal = (digest: FactsDigest): DecisionSupportExtraTrust
       pagesFetchedCount: normalizedPagesFetchedCount,
       searchPagesFetchedCount: normalizedSearchPagesFetchedCount,
       evidenceType: normalizedEvidenceType,
-      note:
-        searchOnlyEvidence
-          ? "Third-party quality mark status is unknown (search-only evidence; no verified mark page/image found yet)."
-          : normalizedStatus === "detected"
-          ? "Third-party quality mark detected from web evidence."
-          : normalizedStatus === "not_detected"
-            ? "Third-party quality mark was checked with no confident detection."
-            : "Third-party quality mark check is inconclusive.",
+      note,
+      programMatches: cached.entry.programMatches ?? [],
+      verificationSummary,
     };
   }
   return {
@@ -2824,6 +2859,37 @@ const deriveQualityMarkSignal = (digest: FactsDigest): DecisionSupportExtraTrust
     searchPagesFetchedCount: 0,
     evidenceType: null,
     note: "Third-party quality mark status is unknown until verified web evidence is available.",
+    programMatches: [],
+    verificationSummary: null,
+  };
+};
+
+const deriveBrandLevelOfficialProgramSignal = (
+  qualitySignal: DecisionSupportQualityMarkTrustSignal,
+): DecisionSupportBrandLevelProgramSignal | null => {
+  const verificationSummary = qualitySignal.verificationSummary ?? null;
+  if (!verificationSummary?.brandLevelOfficialProgramDetected) return null;
+  return {
+    code: "brand_level_official_program",
+    status: "detected",
+    checked: qualitySignal.checked,
+    confidence: qualitySignal.confidence,
+    confidenceBucket: qualitySignal.confidenceBucket,
+    evidenceRef: qualitySignal.evidenceRef,
+    sourcesTried: qualitySignal.sourcesTried,
+    lastCheckedAt: qualitySignal.lastCheckedAt,
+    checkedMode: qualitySignal.checkedMode,
+    pagesFetchedCount: qualitySignal.pagesFetchedCount,
+    searchPagesFetchedCount: qualitySignal.searchPagesFetchedCount,
+    evidenceType: qualitySignal.evidenceType,
+    note:
+      verificationSummary.brandLevelOfficialProgramLabels.length > 0
+        ? `Official registry results matched the brand for ${verificationSummary.brandLevelOfficialProgramLabels.join(", ")}, but product-level verification remains unproven.`
+        : "Official registry results matched the brand, but product-level verification remains unproven.",
+    programLabel: verificationSummary.strongestProgramLabel,
+    matchLevel: "brand",
+    programMatches: qualitySignal.programMatches ?? [],
+    verificationSummary,
   };
 };
 
@@ -2846,6 +2912,19 @@ export const compileDecisionSupport = (
     formText: params.digest?.actives?.[0]?.chemicalForm ?? null,
   });
   const qualitySignal = deriveQualityMarkSignal(params.digest);
+  const overlayCorpus = normalizeOverlayCorpus(params.overlayClaims ?? null);
+  const overlayCorpusCompact = compactOverlayCorpus(overlayCorpus);
+  const qualitySignalForPayload: DecisionSupportQualityMarkTrustSignal = {
+    ...qualitySignal,
+    verificationSummary: mergeQualityMarkSummaries(
+      qualitySignal.verificationSummary ?? null,
+      buildOverlayThirdPartyVerificationSummary({
+        corpus: overlayCorpus,
+        corpusCompact: overlayCorpusCompact,
+      }),
+    ),
+  };
+  const brandLevelOfficialProgramSignal = deriveBrandLevelOfficialProgramSignal(qualitySignalForPayload);
 
   const checklist = buildChecklist({
     digest: params.digest,
@@ -2922,10 +3001,6 @@ export const compileDecisionSupport = (
   const decisionInputsHash = hashCanonicalString(digestInput);
   const digest = decisionInputsHash;
 
-  const nutriScoreCard = buildNutriScoreCard({
-    checklist,
-    subscores,
-  });
   const usageBlock = buildUsageBlock({
     digest: params.digest,
     patchActivation: params.patchActivation ?? null,
@@ -2967,17 +3042,19 @@ export const compileDecisionSupport = (
     overlayClaims: params.overlayClaims ?? null,
   });
   const qualityMark: DecisionSupportQualityMark = {
-    status: qualitySignal.status,
-    checked: qualitySignal.checked,
-    confidenceBucket: qualitySignal.confidenceBucket,
-    evidenceRef: qualitySignal.evidenceRef,
-    sourcesTried: qualitySignal.sourcesTried,
-    lastCheckedAt: qualitySignal.lastCheckedAt,
-    checkedMode: qualitySignal.checkedMode,
-    pagesFetchedCount: qualitySignal.pagesFetchedCount,
-    searchPagesFetchedCount: qualitySignal.searchPagesFetchedCount,
-    evidenceType: qualitySignal.evidenceType,
-    note: qualitySignal.note,
+    status: qualitySignalForPayload.status,
+    checked: qualitySignalForPayload.checked,
+    confidenceBucket: qualitySignalForPayload.confidenceBucket,
+    evidenceRef: qualitySignalForPayload.evidenceRef,
+    sourcesTried: qualitySignalForPayload.sourcesTried,
+    lastCheckedAt: qualitySignalForPayload.lastCheckedAt,
+    checkedMode: qualitySignalForPayload.checkedMode,
+    pagesFetchedCount: qualitySignalForPayload.pagesFetchedCount,
+    searchPagesFetchedCount: qualitySignalForPayload.searchPagesFetchedCount,
+    evidenceType: qualitySignalForPayload.evidenceType,
+    note: qualitySignalForPayload.note,
+    programMatches: qualitySignalForPayload.programMatches ?? [],
+    verificationSummary: qualitySignalForPayload.verificationSummary ?? null,
   };
   const nutriScoreCardV2 = buildNutriScoreCardV2({
     digest: params.digest,
@@ -3008,9 +3085,10 @@ export const compileDecisionSupport = (
     checklist,
     blockers,
     topBlockers,
-    extraTrustSignals: [qualitySignal],
+    extraTrustSignals: brandLevelOfficialProgramSignal
+      ? [qualitySignalForPayload, brandLevelOfficialProgramSignal]
+      : [qualitySignalForPayload],
     sourceTiers: dedupeSourceTiers(checklist),
-    nutriScoreCard,
     nutriScoreCardV2,
     overviewBlock,
     scienceBlock,
@@ -3050,7 +3128,6 @@ export const toDecisionSupportInline = (payload: DecisionSupportPayload): Decisi
     why: item.why,
     severity: item.severity,
   })),
-  nutriScoreCard: payload.nutriScoreCard,
   nutriScoreCardV2: payload.nutriScoreCardV2,
   overviewBlock: payload.overviewBlock,
   scienceBlock: payload.scienceBlock,

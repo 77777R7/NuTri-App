@@ -138,7 +138,7 @@ export type SafetySignalScope = z.infer<typeof SafetySignalScopeSchema>;
 
 export const SafetySignalSourceSchema = z.enum([
   "label_record",
-  "score_v4_ul",
+  "ul_reference",
   "ods_watchout",
   "ods_interaction",
   "quality_note",
@@ -338,20 +338,6 @@ export const DecisionSupportInlineSchema = z.object({
       severity: DecisionSupportSeveritySchema,
     }),
   ).max(3),
-  nutriScoreCard: z
-    .object({
-      score: z.number().min(0).max(100),
-      confidenceCoverage: z.number().min(0).max(100),
-      rows: z.array(
-        z.object({
-          id: z.enum(["effectiveness", "safety", "integrity"]),
-          label: z.string().trim().min(1),
-          score: z.number().min(0).max(100),
-        }),
-      ).length(3),
-      checklistsByRow: z.record(z.string(), z.array(z.unknown())).optional(),
-    })
-    .optional(),
   nutriScoreCardV2: z
     .object({
       overallScore: z.number().min(0).max(100),

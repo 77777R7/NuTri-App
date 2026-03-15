@@ -14,7 +14,6 @@ const UX_VIS_SCRIPT_PATH = path.resolve(__dirname, "../../scripts/maintainer/eva
 const UX_BASELINE_FREEZE_SCRIPT_PATH = path.resolve(__dirname, "../../scripts/maintainer/freeze-stage-e-ux-closure-baseline.mjs");
 const UX_PROJECTION_SCRIPT_PATH = path.resolve(__dirname, "../../scripts/maintainer/project-stage-e-ux-closure.mjs");
 const UX_NONREG_SCRIPT_PATH = path.resolve(__dirname, "../../scripts/maintainer/evaluate-stage-e-ux-nonregression.mjs");
-const NON_POLLUTION_SCRIPT_PATH = path.resolve(__dirname, "../../scripts/maintainer/audit-v4-non-pollution.mjs");
 const TOP100_ORCH_PATH = path.resolve(__dirname, "../../scripts/maintainer/run_top100_lane1_orchestrator.mjs");
 const PACKAGE_JSON_PATH = path.resolve(__dirname, "../../package.json");
 
@@ -59,7 +58,7 @@ test("coverage gap matrix and merged scope scripts emit required artifacts", asy
   assert.match(mergeSource, /coverage_gap_scope_merge_audit\.json/);
 });
 
-test("ux closure scripts expose baseline freeze, projection, nonregression, and non-pollution gates", async () => {
+test("ux closure scripts expose baseline freeze, projection, and nonregression gates", async () => {
   const freezeSource = await readFile(UX_BASELINE_FREEZE_SCRIPT_PATH, "utf8");
   assert.match(freezeSource, /ux_closure_baseline\.json/);
   assert.match(freezeSource, /strict_pass/);
@@ -74,11 +73,6 @@ test("ux closure scripts expose baseline freeze, projection, nonregression, and 
   assert.match(nonregSource, /ux_nonregression_report\.json/);
   assert.match(nonregSource, /formula_explainability_non_regression/);
   assert.match(nonregSource, /before_you_buy_non_regression/);
-
-  const pollutionSource = await readFile(NON_POLLUTION_SCRIPT_PATH, "utf8");
-  assert.match(pollutionSource, /v4_non_pollution_audit\.json/);
-  assert.match(pollutionSource, /patchedValue/);
-  assert.match(pollutionSource, /SAFE_SCIENCE_SUBSET_PATH/);
 });
 
 test("package scripts expose e-plus coverage tooling commands", async () => {
@@ -90,5 +84,4 @@ test("package scripts expose e-plus coverage tooling commands", async () => {
   assert.equal(typeof pkg?.scripts?.["gates:e-plus-ux-baseline-freeze"], "string");
   assert.equal(typeof pkg?.scripts?.["gates:e-plus-ux-projection"], "string");
   assert.equal(typeof pkg?.scripts?.["gates:e-plus-ux-nonregression"], "string");
-  assert.equal(typeof pkg?.scripts?.["gates:e-plus-non-pollution-audit"], "string");
 });

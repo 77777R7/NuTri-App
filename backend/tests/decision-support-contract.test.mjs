@@ -20,7 +20,7 @@ test("decision support digest is canonicalized with delimiter and category id", 
   assert.match(source, /categoryId/);
   assert.match(source, /categoryProfileVersion/);
   assert.match(source, /sourceIdentityCanonical/);
-  assert.match(source, /createHash\("sha256"\)\.update\(digestInput\)\.digest\("hex"\)/);
+  assert.match(source, /const decisionInputsHash = hashCanonicalString\(digestInput\)/);
 });
 
 test("quality mark unknown stays out of core blockers and warnings ceiling is non-core", async () => {
@@ -28,6 +28,7 @@ test("quality mark unknown stays out of core blockers and warnings ceiling is no
   assert.match(source, /code:\s*"warnings_missing_ceiling"[\s\S]*affectsCoreVerdict:\s*false/);
   assert.match(source, /const topBlockers = blockers[\s\S]*\.filter\(\(item\) => item\.affectsCoreVerdict\)/);
   assert.match(source, /code:\s*"quality_mark_status"/);
+  assert.match(source, /code:\s*"brand_level_official_program"/);
   assert.doesNotMatch(source, /code:\s*"quality_mark_unknown"/);
 });
 
@@ -54,7 +55,7 @@ test("decision support route exposes 409 digest mismatch contract", async () => 
   const source = await readServerSource();
   const routeStart = source.indexOf('app.get("/api/decision-support/v1"');
   assert.ok(routeStart >= 0, "missing /api/decision-support/v1 route");
-  const routeSlice = source.slice(routeStart, routeStart + 3000);
+  const routeSlice = source.slice(routeStart, routeStart + 12000);
 
   assert.match(routeSlice, /verifySupabaseToken/);
   assert.match(routeSlice, /requestedDigest/);

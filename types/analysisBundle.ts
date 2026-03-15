@@ -83,7 +83,7 @@ export type SafetyDetail = {
 export type SafetySignalScope = 'label_specific' | 'ods_general';
 export type SafetySignalSource =
   | 'label_record'
-  | 'score_v4_ul'
+  | 'ul_reference'
   | 'ods_watchout'
   | 'ods_interaction'
   | 'quality_note'

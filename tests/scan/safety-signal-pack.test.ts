@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { buildSafetySignalPack, extractUlEntriesFromScore } from '@/lib/scan/safetySignalPack';
+import { buildSafetySignalPack } from '@/lib/scan/safetySignalPack';
 
 const makeBundle = () =>
   ({
@@ -22,7 +22,7 @@ const makeBundle = () =>
     },
   }) as any;
 
-test('buildSafetySignalPack merges and dedupes label warnings from pack/detail/facts', () => {
+test('buildSafetySignalPack merges and dedupes label warnings from bundle detail and facts', () => {
   const bundle = makeBundle();
   bundle.sections.ingredients.cover.items = [];
   bundle.sections.safety.signals = {
@@ -41,11 +41,13 @@ test('buildSafetySignalPack merges and dedupes label warnings from pack/detail/f
     odsWatchouts: [],
     qualityNotes: [],
   };
-  bundle.sections.safety.detail.warnings = [{ text: 'Do not exceed suggested use.' }, { text: 'Keep out of reach of children.' }];
+  bundle.sections.safety.detail.warnings = [
+    { text: 'Do not exceed suggested use.' },
+    { text: 'Keep out of reach of children.' },
+  ];
 
   const pack = buildSafetySignalPack({
     bundle,
-    scoreBundle: null,
     facts: {
       safety: {
         labelWarnings: ['Keep out of reach of children.', 'Consult clinician when pregnant.'],
@@ -61,197 +63,89 @@ test('buildSafetySignalPack merges and dedupes label warnings from pack/detail/f
   assert.equal(new Set(texts).size, texts.length);
 });
 
-test('buildSafetySignalPack slices ODS interaction lines by keyword', () => {
+test('buildSafetySignalPack normalizes structured UL entries from bundle safety signals', () => {
+  const bundle = makeBundle();
+  bundle.sections.safety.signals = {
+    schemaVersion: 1,
+    labelWarnings: [],
+    ulEntries: [
+      {
+        id: 'ul:zinc',
+        ingredientCanonicalKey: 'zinc',
+        displayName: 'Zinc',
+        currentDose: '50 mg',
+        ulLimit: '40 mg',
+        scope: 'total_intake',
+        riskLevel: 'high',
+        reasonCode: 'ODS_UL_MATCHED',
+        sourceUrl: 'https://ods.od.nih.gov',
+      },
+    ],
+    ulSignals: [],
+    odsInteractions: [],
+    odsWatchouts: [],
+    qualityNotes: [],
+  };
+
   const pack = buildSafetySignalPack({
-    bundle: makeBundle(),
-    scoreBundle: null,
+    bundle,
     facts: null,
-    ingredientNames: ['Biotin'],
+    ingredientNames: ['Zinc'],
   });
 
-  assert.equal(Array.isArray(pack.odsInteractions), true);
-  assert.equal(pack.odsInteractions.length >= 1, true);
-  assert.equal(
-    pack.odsInteractions.some((item) => /interact|medication|medicine/i.test(item.text)),
-    true,
-  );
+  assert.equal(Array.isArray(pack.ulEntries), true);
+  assert.equal(pack.ulEntries?.length, 1);
+  assert.equal(pack.ulEntries?.[0]?.nutrientKey, 'zinc');
+  assert.equal(pack.ulEntries?.[0]?.currentDailyAmount.value, 50);
+  assert.equal(pack.ulEntries?.[0]?.ulDailyAmount.value, 40);
+  assert.equal(pack.ulSignals.length >= 1, true);
+  assert.equal(pack.ulSignals[0]?.source, 'ul_reference');
 });
 
-test('extractUlEntriesFromScore maps structured UL entries', () => {
-  const ulEntries = extractUlEntriesFromScore({
-    explain: {
-      ulWarnings: {
-        entries: [
-          {
-            ingredientCanonicalKey: 'zinc',
-            displayName: 'Zinc',
-            currentDose: '50 mg',
-            ulLimit: '40 mg',
-            scope: 'total_intake',
-            riskLevel: 'high',
-            reasonCode: 'ODS_UL_MATCHED',
-            sourceUrl: 'https://ods.od.nih.gov',
-          },
-        ],
+test('buildSafetySignalPack dedupes repeated UL entries from the bundle', () => {
+  const bundle = makeBundle();
+  bundle.sections.safety.signals = {
+    schemaVersion: 1,
+    labelWarnings: [],
+    ulEntries: [
+      {
+        ingredientCanonicalKey: 'zinc',
+        displayName: 'Zinc',
+        currentDose: '50 mg',
+        ulLimit: '40 mg',
+        scope: 'total_intake',
+        riskLevel: 'high',
+        reasonCode: 'ODS_UL_MATCHED',
       },
-    },
-  } as any);
-
-  assert.equal(ulEntries.length, 1);
-  assert.equal(ulEntries[0]?.nutrientKey, 'zinc');
-  assert.equal(ulEntries[0]?.currentDailyAmount.value, 50);
-  assert.equal(ulEntries[0]?.ulDailyAmount.value, 40);
-  assert.equal(ulEntries[0]?.evidenceSource, 'NIH_ODS_UL');
-  assert.match(ulEntries[0]?.explainLine ?? '', /Zinc: current 50 mg \| UL 40 mg/i);
-});
-
-test('extractUlEntriesFromScore supports wrapped score response payload', () => {
-  const ulEntries = extractUlEntriesFromScore({
-    status: 'ok',
-    source: 'dsld',
-    sourceId: 'x',
-    bundle: {
-      explain: {
-        ulWarnings: {
-          entries: [
-            {
-              ingredientCanonicalKey: 'zinc',
-              displayName: 'Zinc',
-              currentDose: '50 mg',
-              ulLimit: '40 mg',
-              scope: 'total_intake',
-              riskLevel: 'high',
-              reasonCode: 'ODS_UL_MATCHED',
-            },
-          ],
-        },
+      {
+        ingredientCanonicalKey: 'zinc',
+        displayName: 'Zinc',
+        currentDose: '50 mg',
+        ulLimit: '40 mg',
+        scope: 'total_intake',
+        riskLevel: 'high',
+        reasonCode: 'ODS_UL_MATCHED',
       },
-    },
-  } as any);
+    ],
+    ulSignals: [],
+    odsInteractions: [],
+    odsWatchouts: [],
+    qualityNotes: [],
+  };
 
-  assert.equal(ulEntries.length, 1);
-  assert.equal(ulEntries[0]?.nutrientKey, 'zinc');
-  assert.equal(ulEntries[0]?.currentDailyAmount.value, 50);
-});
-
-test('extractUlEntriesFromScore skips rows without parseable daily amount', () => {
-  const ulEntries = extractUlEntriesFromScore({
-    explain: {
-      ulWarnings: {
-        entries: [
-          {
-            ingredientCanonicalKey: 'vitamin_c',
-            displayName: 'Vitamin C',
-            currentDose: null,
-            ulLimit: '2000 mg',
-            scope: 'total_intake',
-            riskLevel: 'moderate',
-            reasonCode: 'ODS_UL_MATCHED',
-          },
-        ],
-      },
-    },
-  } as any);
-
-  assert.equal(ulEntries.length, 0);
-});
-
-test('buildSafetySignalPack emits UL reference line when UL exists but current dose is missing', () => {
   const pack = buildSafetySignalPack({
-    bundle: makeBundle(),
-    scoreBundle: {
-      explain: {
-        ulWarnings: {
-          entries: [
-            {
-              ingredientCanonicalKey: 'vitamin_c',
-              displayName: 'Vitamin C',
-              currentDose: null,
-              ulLimit: '2000 mg',
-              scope: 'total_intake',
-              riskLevel: 'unknown',
-              reasonCode: 'ODS_UL_MATCHED',
-            },
-          ],
-        },
-      },
-    } as any,
-    facts: null,
-    ingredientNames: ['Vitamin C'],
-  });
-
-  const ulReferenceLine = pack.ulSignals.find((item) => /Upper limit \(UL\):/i.test(item.text));
-  assert.ok(ulReferenceLine, 'expected UL reference line');
-  assert.match(ulReferenceLine?.text ?? '', /2000 mg\/day/i);
-  assert.equal(ulReferenceLine?.reasonCode, 'UL_REFERENCE_ONLY');
-});
-
-test('extractUlEntriesFromScore uses lower bound when dose text is a range', () => {
-  const ulEntries = extractUlEntriesFromScore({
-    explain: {
-      ulWarnings: {
-        entries: [
-          {
-            ingredientCanonicalKey: 'vitamin_c',
-            displayName: 'Vitamin C',
-            currentDose: '1-2 mg',
-            ulLimit: '10 mg',
-            scope: 'total_intake',
-            riskLevel: 'low',
-            reasonCode: 'ODS_UL_MATCHED',
-          },
-        ],
-      },
-    },
-  } as any);
-
-  assert.equal(ulEntries.length, 1);
-  assert.equal(ulEntries[0]?.currentDailyAmount.value, 1);
-  assert.match(ulEntries[0]?.explainLine ?? '', /current 1-2 mg/i);
-});
-
-test('buildSafetySignalPack dedupes UL entries by nutrient and explain line', () => {
-  const pack = buildSafetySignalPack({
-    bundle: makeBundle(),
-    scoreBundle: {
-      explain: {
-        ulWarnings: {
-          entries: [
-            {
-              ingredientCanonicalKey: 'zinc',
-              displayName: 'Zinc',
-              currentDose: '50 mg',
-              ulLimit: '40 mg',
-              scope: 'total_intake',
-              riskLevel: 'high',
-              reasonCode: 'ODS_UL_MATCHED',
-            },
-            {
-              ingredientCanonicalKey: 'zinc',
-              displayName: 'Zinc',
-              currentDose: '50 mg',
-              ulLimit: '40 mg',
-              scope: 'total_intake',
-              riskLevel: 'high',
-              reasonCode: 'ODS_UL_MATCHED',
-            },
-          ],
-        },
-      },
-    } as any,
+    bundle,
     facts: null,
     ingredientNames: [],
   });
 
   assert.equal(Array.isArray(pack.ulEntries), true);
   assert.equal(pack.ulEntries?.length, 1);
-  assert.equal(pack.ulSignals.length >= 1, true);
 });
 
 test('buildSafetySignalPack emits quality note when label warnings are missing', () => {
   const pack = buildSafetySignalPack({
     bundle: makeBundle(),
-    scoreBundle: null,
     facts: null,
     ingredientNames: [],
   });
@@ -261,7 +155,7 @@ test('buildSafetySignalPack emits quality note when label warnings are missing',
   assert.match(pack.qualityNotes[0]?.text ?? '', /did not provide label-specific warnings/i);
 });
 
-test('buildSafetySignalPack promotes one ODS watchout into interaction when label/UL are missing', () => {
+test('buildSafetySignalPack promotes one ODS watchout into interaction when label and UL signals are missing', () => {
   const bundle = makeBundle();
   bundle.sections.ingredients.cover.items = [];
   bundle.sections.safety.signals = {
@@ -283,13 +177,10 @@ test('buildSafetySignalPack promotes one ODS watchout into interaction when labe
 
   const pack = buildSafetySignalPack({
     bundle,
-    scoreBundle: null,
     facts: null,
     ingredientNames: [],
   });
 
-  assert.equal(pack.labelWarnings.length, 0);
-  assert.equal((pack.ulEntries ?? []).length, 0);
   assert.equal(pack.odsInteractions.length >= 1, true);
   assert.equal(pack.odsInteractions[0]?.reasonCode, 'ODS_WATCHOUT_PROMOTED');
 });

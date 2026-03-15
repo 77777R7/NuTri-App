@@ -341,184 +341,7 @@ const coerceNutriScoreCardV2 = (decisionSupportBody) => {
   if (existing && Array.isArray(existing.modules) && existing.modules.length === 6) {
     return existing;
   }
-  const v1 = decisionSupportBody?.nutriScoreCard ?? {};
-  const checklistsByRow = v1?.checklistsByRow ?? {};
-  const rows = Array.isArray(v1?.rows) ? v1.rows : [];
-  const rowScore = (id) => {
-    const row = rows.find((item) => String(item?.id) === id);
-    return Number.isFinite(Number(row?.score)) ? Math.round(Number(row.score)) : 0;
-  };
-  const findChecklistStatus = (rowId, keyPrefix) => {
-    const items = Array.isArray(checklistsByRow?.[rowId]) ? checklistsByRow[rowId] : [];
-    const match = items.find((item) => String(item?.key ?? "").startsWith(keyPrefix));
-    const status = String(match?.status || "unknown");
-    if (status === "verified" || status === "missing") return status;
-    return "unknown";
-  };
-
-  const mk = (key, label, state, sourceTier = "inferred", evidenceStrength = "inferred", scoreEligible = true) => ({
-    key,
-    label,
-    state,
-    sourceTier,
-    evidenceStrength,
-    evidenceRef: null,
-    note: null,
-    scoreEligible,
-  });
-  const moduleBand = (score) => scoreBandModule(score);
-  const moduleStatus = (band) => {
-    if (band === "High") return "high";
-    if (band === "Moderate") return "moderate";
-    if (band === "Limited") return "limited";
-    return "low";
-  };
-  const modules = [
-    {
-      id: "ingredient_safety",
-      title: "Ingredient Safety",
-      score: rowScore("safety"),
-      status: "moderate",
-      band: "Moderate",
-      checklist: [
-        mk(
-          "ingredient_safety:warnings_disclosed",
-          "Label warnings or cautions disclosed",
-          findChecklistStatus("safety", "safetytransparency:warnings_present"),
-          "official_record",
-          "official",
-        ),
-        mk("ingredient_safety:watchouts_surfaced", "General watch-outs surfaced", "unknown", "general_science", "general_science"),
-      ],
-    },
-    {
-      id: "formula_transparency",
-      title: "Formula Transparency",
-      score: rowScore("effectiveness"),
-      status: "moderate",
-      band: "Moderate",
-      checklist: [
-        mk(
-          "formula_transparency:active_amount_disclosed",
-          "Active amount disclosed per serving",
-          findChecklistStatus("effectiveness", "formulaquality:amount_disclosed"),
-          "official_record",
-          "official",
-        ),
-        mk(
-          "formula_transparency:breakdown_disclosed",
-          "Category-specific active breakdown disclosed",
-          findChecklistStatus("effectiveness", "formulaquality:active_breakdown"),
-          "official_record",
-          "official",
-        ),
-        mk(
-          "formula_transparency:chemical_form_disclosed",
-          "Chemical form disclosed",
-          findChecklistStatus("effectiveness", "formulaquality:form_disclosed"),
-          "official_record",
-          "official",
-        ),
-      ],
-    },
-    {
-      id: "label_clarity",
-      title: "Label Clarity (Directions & Warnings)",
-      score: rowScore("safety"),
-      status: "moderate",
-      band: "Moderate",
-      checklist: [
-        mk(
-          "label_clarity:directions_present",
-          "Directions present in record",
-          findChecklistStatus("safety", "safetytransparency:directions_present"),
-          "official_record",
-          "official",
-        ),
-        mk(
-          "label_clarity:warnings_present",
-          "Label warnings present in record",
-          findChecklistStatus("safety", "safetytransparency:warnings_present"),
-          "official_record",
-          "official",
-        ),
-        mk(
-          "label_clarity:missing_items_surfaced",
-          "Missing items surfaced in Missing info",
-          findChecklistStatus("safety", "safetytransparency:warnings_ceiling_notice"),
-          "official_record",
-          "official",
-        ),
-      ],
-    },
-    {
-      id: "manufacturing_standards",
-      title: "Manufacturing Standards",
-      score: 45,
-      status: "limited",
-      band: "Limited",
-      checklist: [
-        mk("manufacturing_standards:cgmp_claim", "cGMP / manufacturing compliance claim present", "unknown"),
-        mk("manufacturing_standards:origin_claim", "Manufacturing location/facility detail present", "unknown"),
-      ],
-    },
-    {
-      id: "testing_verification",
-      title: "Testing & Verification",
-      score: rowScore("integrity"),
-      status: "limited",
-      band: "Limited",
-      checklist: [
-        mk("testing_verification:third_party_tested_claim", "Third-party tested claim present", "unknown"),
-        mk(
-          "testing_verification:independent_cert_page",
-          "Independent cert-page status: unknown",
-          "unknown",
-          "general_science",
-          "general_science",
-          false,
-        ),
-      ],
-    },
-    {
-      id: "product_quality",
-      title: "Product Quality Signals",
-      score: rowScore("integrity"),
-      status: "limited",
-      band: "Limited",
-      checklist: [
-        mk("product_quality:lifestyle_claims", "Lifestyle/quality claims disclosed", "unknown"),
-        mk("product_quality:serving_transparency", "Serving transparency disclosed", "unknown"),
-      ],
-    },
-  ];
-  for (const module of modules) {
-    const band = moduleBand(module.score);
-    module.band = band;
-    module.status = moduleStatus(band);
-  }
-  const overallScore = Math.round(modules.reduce((sum, module) => sum + Number(module.score || 0), 0) / modules.length);
-  const overallBand = scoreBandOverall(overallScore);
-  const scoredItems = modules.flatMap((module) => module.checklist).filter((item) => item.scoreEligible !== false);
-  const confidenceWeight = (strength) => {
-    if (strength === "official") return 1.0;
-    if (strength === "scanned_label") return 0.95;
-    if (strength === "cert_page_verified") return 1.0;
-    if (strength === "overlay_claim") return 0.7;
-    if (strength === "general_science") return 0.55;
-    return 0.25;
-  };
-  const weightedKnown = scoredItems.reduce((sum, item) => {
-    if (item.state === "unknown") return sum;
-    return sum + confidenceWeight(item.evidenceStrength);
-  }, 0);
-  const confidencePct = scoredItems.length > 0 ? Math.round((weightedKnown / scoredItems.length) * 100) : 0;
-  return {
-    overallScore,
-    overallBand,
-    confidencePct,
-    modules,
-  };
+  return null;
 };
 
 const slugify = (value, fallback = "sample") => {
@@ -653,7 +476,6 @@ const runBarcodeOnlyMode = async () => {
   ]);
 
   const template = {
-    scoreCard: decisionSupportBody?.nutriScoreCard ?? null,
     scoreCardV2: coerceNutriScoreCardV2(decisionSupportBody),
     overview: decisionSupportBody?.overviewBlock ?? null,
     science: decisionSupportBody?.scienceBlock ?? null,
@@ -1172,7 +994,6 @@ const main = async () => {
   }
 
   const template = {
-    scoreCard: decisionSupportBody?.nutriScoreCard ?? null,
     overview: decisionSupportBody?.overviewBlock ?? null,
     science: decisionSupportBody?.scienceBlock ?? null,
     usage: decisionSupportBody?.usageBlock ?? null,

@@ -4,7 +4,6 @@
     "app/scan/barcode.tsx",
     "app/scan/result.tsx",
     "components/scan/AnalysisDashboard.tsx",
-    "hooks/useScoreBundleV4.ts",
     "hooks/useStreamAnalysis.ts",
     "lib/scan/quality.ts",
     "lib/scan/scienceInsightCoverage.ts",

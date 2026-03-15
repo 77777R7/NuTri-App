@@ -11,8 +11,6 @@ const AnalysisStatusSchema = z.enum(['catalog_only', 'label_enriched', 'ai_enric
 const BarcodeNormalizedFormatSchema = z.enum(['gtin14', 'ean13', 'upca', 'unknown']);
 const NormalizedAmountUnitSchema = z.enum(['mg', 'mcg', 'g', 'iu', 'cfu', 'ml']);
 
-const ConfidenceValueSchema = z.number().min(0).max(1).nullable();
-
 const ReferenceItemSchema = z.object({
   id: z.string(),
   sourceType: z.enum(['ODS', 'DSLD', 'LNHPD', 'NSF', 'CLP', 'NUTRASOURCE', 'OTHER']),
@@ -180,24 +178,6 @@ export const SupplementSnapshotSchema = z.object({
       overlayAugmentation: OverlayAugmentationSchema.nullable().optional(),
     })
     .nullable()
-    .optional(),
-  scores: z
-    .object({
-      overall: z.number(),
-      effectiveness: z.number(),
-      safety: z.number(),
-      value: z.number(),
-      version: z.string(),
-      computedAt: z.string(),
-      confidence: z.object({
-        overall: ConfidenceValueSchema,
-        labelCoverage: ConfidenceValueSchema,
-        ingredientCoverage: ConfidenceValueSchema,
-        priceCoverage: ConfidenceValueSchema,
-        trustCoverage: ConfidenceValueSchema,
-        regulatoryCoverage: ConfidenceValueSchema,
-      }),
-    })
     .optional(),
 });
 

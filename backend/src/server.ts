@@ -128,7 +128,6 @@ import {
   normalizeIngredientScienceKey,
 } from "./ingredientScienceContext.js";
 import { normalizeIherbSupplementFactsRows } from "./iherbOverlayIngredients.js";
-import { verifyWebOwnership } from "./insights/webOwnership.js";
 import { getKbRuntime, lookupKbFormExplain, lookupKbRuntimeFormInsights, lookupSafeScienceSignals } from "./kbRuntime.js";
 import { analyzeLabelDraftWithDiagnostics, formatForDeepSeek, needsConfirmation, validateIngredient, type LabelAnalysisDiagnostics, type LabelDraft } from "./labelAnalysis.js";
 import { logLabelScanMetric, updateLabelScanClientTiming } from "./labelScanMetrics.js";
@@ -161,7 +160,6 @@ import { finalizePipelineStepCodes } from "./pipelineMetrics.js";
 import {
   upsertProductIngredientsFromDraft,
   upsertProductIngredientsFromLabelFacts,
-  upsertProductIngredientsFromWebFacts,
 } from "./productIngredients.js";
 import type { RetryOptions } from "./resilience.js";
 import {
@@ -179,7 +177,6 @@ import {
 } from "./resilience.js";
 import { logBarcodeScan } from "./scanLog.js";
 import type { SupplementSnapshot } from "./schemas/supplementSnapshot.js";
-import { V4_SCORE_VERSION, computeScoreBundleV4, computeV4InputsHash } from "./scoring/v4ScoreEngine.js";
 import {
   extractDomain,
   getExtractabilityTier,
@@ -191,9 +188,10 @@ import {
 } from "./searchQuality.js";
 import { buildBarcodeSnapshot, buildLabelSnapshot, validateSnapshotOrFallback, type SnapshotAnalysisPayload } from "./snapshot.js";
 import { getSnapshotCache, storeSnapshotCache } from "./snapshotCache.js";
+import { deriveDailyDoseBasis } from "./safety/dailyDoseBasis.js";
+import { buildSnapshotSafetyDigestBundle } from "./safety/snapshotSafety.js";
 import {
   buildStackOverlapResult,
-  extractStackOverlapIngredientKeys,
   type StackOverlapSupplementInput,
 } from "./stackOverlap.js";
 import { supabase } from "./supabase.js";
@@ -203,11 +201,6 @@ import type {
   IngredientAnalysis,
   PrimaryActive,
   RatingScore,
-  ScoreBundleResponse,
-  ScoreBundleV4,
-  ScoreFlag,
-  ScoreGoalFit,
-  ScoreHighlight,
   SearchItem,
   SearchResponse,
 } from "./types.js";
@@ -404,7 +397,6 @@ const readScanTerminalLockEnabled = (): boolean =>
     process.env.SCAN_TERMINAL_LOCK_ENABLED ?? process.env.EXPO_PUBLIC_SCAN_TERMINAL_LOCK_ENABLED,
     false,
   );
-const SCORE_V4_WEB_ENABLED = parseBooleanEnv(process.env.SCORE_V4_WEB_ENABLED, false);
 const BUNDLE_ONLY_SKIP_WEB_SEARCH = parseBooleanEnv(process.env.BUNDLE_ONLY_SKIP_WEB_SEARCH, true);
 const BUNDLE_ONLY_ALLOW_LABEL_RECORD_STAGE0 = parseBooleanEnv(
   process.env.BUNDLE_ONLY_ALLOW_LABEL_RECORD_STAGE0,
@@ -1361,7 +1353,7 @@ const buildSafetySignalItem = (params: {
   prefix: string;
   text: string;
   scope: "label_specific" | "ods_general";
-  source: "label_record" | "score_v4_ul" | "ods_watchout" | "ods_interaction" | "quality_note" | "unknown";
+  source: "label_record" | "ul_reference" | "ods_watchout" | "ods_interaction" | "quality_note" | "unknown";
   reasonCode?: string | null;
   sourceUrl?: string | null;
   riskLevel?: string | null;
@@ -1510,7 +1502,7 @@ const buildBaseSafetySignalPack = (params: {
             prefix: "ul",
             text: signal.text,
             scope: "ods_general",
-            source: "score_v4_ul",
+            source: "ul_reference",
             reasonCode: signal.reasonCode ?? null,
           }),
         )
@@ -7156,7 +7148,7 @@ const parseRequestBody = <T>(schema: z.ZodType<T>, req: Request, res: Response):
 // ============================================================================
 
 const getScoreAvailableFromSourceType = (sourceType: unknown): boolean | null => {
-  if (sourceType === "web") return SCORE_V4_WEB_ENABLED;
+  if (sourceType === "web") return false;
   if (sourceType === "dsld" || sourceType === "lnhpd") return true;
   return null;
 };
@@ -7771,8 +7763,7 @@ const queueBarcodeAnalysisCompletion = (params: {
 
     const updatedSnapshot: SupplementSnapshot = {
       ...params.snapshot,
-      status: analysisSnapshot.scores ? analysisSnapshot.status : params.snapshot.status,
-      scores: analysisSnapshot.scores ?? params.snapshot.scores,
+      status: analysisSnapshot.status,
       references: mergedReferences,
       updatedAt: nowIso(),
     };
@@ -7906,8 +7897,7 @@ ${LABEL_SCAN_OUTPUT_RULES}`;
 
     const updatedSnapshot: SupplementSnapshot = {
       ...params.snapshot,
-      status: analysisSnapshot.scores ? analysisSnapshot.status : params.snapshot.status,
-      scores: analysisSnapshot.scores ?? params.snapshot.scores,
+      status: analysisSnapshot.status,
       references: mergedReferences,
       updatedAt: nowIso(),
     };
@@ -9272,7 +9262,6 @@ const ensurePublicOverview = async (params: {
   }
 };
 
-const scoreSourceSchema = z.enum(["dsld", "lnhpd", "ocr", "manual", "web"]);
 const scanFactsSourceSchema = z.enum(["dsld", "lnhpd", "web"]);
 const kbFormInsightsItemSchema = z
   .object({
@@ -9297,83 +9286,6 @@ const kbFormInsightsBatchBodySchema = z
     locale: value.locale,
     items: value.items?.length ? value.items : (value.requests ?? []),
   }));
-
-const webScoreIngestBodySchema = z
-  .object({
-    facts: z.unknown(),
-    ownership: z
-      .object({
-        regId: z.string().trim().min(1).nullable().optional(),
-        evidenceText: z.string().trim().min(1).nullable().optional(),
-        candidateBrand: z.string().trim().min(1).nullable().optional(),
-        expectedBrand: z.string().trim().min(1).nullable().optional(),
-        candidateName: z.string().trim().min(1).nullable().optional(),
-        expectedName: z.string().trim().min(1).nullable().optional(),
-        variantCueMatch: z.number().finite().nullable().optional(),
-      })
-      .strict(),
-  })
-  .strict();
-
-const coerceScoreGoalFits = (value: unknown): ScoreGoalFit[] => {
-  if (!Array.isArray(value)) return [];
-  const output: ScoreGoalFit[] = [];
-  for (const item of value) {
-    if (!item || typeof item !== "object") continue;
-    const goal = (item as { goal?: unknown }).goal;
-    const score = parseNumber((item as { score?: unknown }).score);
-    if (typeof goal !== "string" || score == null) continue;
-    const label = (item as { label?: unknown }).label;
-    output.push({
-      goal,
-      score,
-      label: typeof label === "string" ? label : undefined,
-    });
-  }
-  return output;
-};
-
-const coerceScoreFlags = (value: unknown): ScoreFlag[] => {
-  if (!Array.isArray(value)) return [];
-  const output: ScoreFlag[] = [];
-  for (const item of value) {
-    if (!item || typeof item !== "object") continue;
-    const code = (item as { code?: unknown }).code;
-    const message = (item as { message?: unknown }).message;
-    if (typeof code !== "string" || typeof message !== "string") continue;
-    const severity = (item as { severity?: unknown }).severity;
-    output.push({
-      code,
-      message,
-      severity:
-        severity === "info" || severity === "warning" || severity === "risk"
-          ? severity
-          : undefined,
-    });
-  }
-  return output;
-};
-
-const coerceScoreHighlights = (value: unknown): ScoreHighlight[] => {
-  if (!Array.isArray(value)) return [];
-  const output: ScoreHighlight[] = [];
-  for (const item of value) {
-    if (!item || typeof item !== "object") continue;
-    const message = (item as { message?: unknown }).message;
-    if (typeof message !== "string") continue;
-    const code = (item as { code?: unknown }).code;
-    output.push({
-      message,
-      code: typeof code === "string" ? code : undefined,
-    });
-  }
-  return output;
-};
-
-const coerceScoreExplain = (value: unknown): Record<string, unknown> | null => {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  return value as Record<string, unknown>;
-};
 
 // ============================================================================
 // ENDPOINTS
@@ -9535,643 +9447,6 @@ app.get("/api/search-by-barcode", async (req: Request, res: Response) => {
       error instanceof Error ? `${error.name}: ${error.message}` : String(error);
     return res.status(500).json({ error: "unexpected_error", detail } satisfies ErrorResponse);
   }
-});
-
-/**
- * v4 score bundle (cached)
- */
-app.get("/api/score/v4/:source/:id", verifySupabaseToken, async (req: Request, res: Response) => {
-  applyLegacyShadowHeaders(req, res, "/api/score/v4/:source/:id");
-  const sourceParsed = scoreSourceSchema.safeParse(req.params.source);
-  const sourceId = typeof req.params.id === "string" ? req.params.id.trim() : "";
-
-  if (!sourceParsed.success || !sourceId) {
-    return res
-      .status(400)
-      .json({ error: "invalid_request", detail: "Invalid score source or id" } satisfies ErrorResponse);
-  }
-
-  const source = sourceParsed.data;
-
-  if (source === "web" && !SCORE_V4_WEB_ENABLED) {
-    const response: ScoreBundleResponse = {
-      status: "not_found",
-      source,
-      sourceId,
-      reasonCode: "WEB_DATA_UNAVAILABLE",
-      message: "Web scoring is currently disabled.",
-    };
-    return res.json(response);
-  }
-
-  try {
-    if (source === "lnhpd" && !LNHPD_RUNTIME_ENABLED) {
-      const response: ScoreBundleResponse = {
-        status: "not_found",
-        source,
-        sourceId,
-        reasonCode: "LNHPD_DISABLED",
-        message: "LNHPD scoring is disabled for the current market configuration.",
-      };
-      return res.json(response);
-    }
-
-    const selectScoreColumns =
-      "source,source_id,canonical_source_id,score_version,overall_score,effectiveness_score,safety_score,integrity_score,confidence,best_fit_goals,flags_json,highlights_json,explain_json,inputs_hash,computed_at";
-    const extractScoreResponseDiagnostics = (bundle: ScoreBundleV4) => {
-      const diagnosticsRaw =
-        bundle?.explain && typeof bundle.explain === "object" && bundle.explain
-          ? (bundle.explain as Record<string, unknown>).diagnostics
-          : null;
-      if (!diagnosticsRaw || typeof diagnosticsRaw !== "object") return undefined;
-      const filteredCountRaw = Number((diagnosticsRaw as Record<string, unknown>).nutritionLabelLikeFilteredCount);
-      const filteredCount = Number.isFinite(filteredCountRaw) ? filteredCountRaw : null;
-      const filteredSamplesRaw = (diagnosticsRaw as Record<string, unknown>).nutritionLabelLikeFilteredSamples;
-      const filteredSamples = Array.isArray(filteredSamplesRaw)
-        ? filteredSamplesRaw
-            .filter((value): value is string => typeof value === "string")
-            .slice(0, 3)
-        : [];
-      if (filteredCount == null && filteredSamples.length === 0) return undefined;
-      return {
-        ...(filteredCount != null ? { nutritionLabelLikeFilteredCount: filteredCount } : null),
-        ...(filteredSamples.length > 0 ? { nutritionLabelLikeFilteredSamples: filteredSamples } : null),
-      };
-    };
-    const persistComputedScore = async (computedResult: Awaited<ReturnType<typeof computeScoreBundleV4>>) => {
-      if (!computedResult) return null;
-      const { bundle, inputsHash, canonicalSourceId, sourceIdForWrite } = computedResult;
-      const scorePayload = {
-        source,
-        source_id: sourceIdForWrite,
-        canonical_source_id: canonicalSourceId,
-        score_version: V4_SCORE_VERSION,
-        overall_score: bundle.overallScore,
-        effectiveness_score: bundle.pillars.effectiveness,
-        safety_score: bundle.pillars.safety,
-        integrity_score: bundle.pillars.integrity,
-        confidence: bundle.confidence,
-        best_fit_goals: bundle.bestFitGoals,
-        flags_json: bundle.flags,
-        highlights_json: bundle.highlights,
-        explain_json: bundle.explain,
-        inputs_hash: inputsHash,
-        computed_at: bundle.provenance.computedAt,
-      };
-      const { error: upsertError } = await supabase
-        .from("product_scores")
-        .upsert(scorePayload, { onConflict: "source,source_id" });
-      if (upsertError) {
-        console.warn("[ScoreV4] Upsert failed", upsertError.message);
-      }
-      const response: ScoreBundleResponse = {
-        status: "ok",
-        source,
-        sourceId,
-        bundle,
-        diagnostics: extractScoreResponseDiagnostics(bundle),
-      };
-      return response;
-    };
-    const backfillLnhpdIngredientsForScore = async (): Promise<{
-      attempted: boolean;
-      activeCountWithDose: number;
-      canonicalSourceId: string | null;
-      reason: string | null;
-    }> => {
-      const facts = await fetchLnhpdFactsByNpn(sourceId);
-      if (!facts || !Array.isArray(facts.actives) || facts.actives.length === 0) {
-        return {
-          attempted: false,
-          activeCountWithDose: 0,
-          canonicalSourceId: null,
-          reason: "facts_missing_or_empty",
-        };
-      }
-      const row = await fetchLnhpdFactsRecordByNpn(sourceId);
-      const dto = mapLnhpdFactsToFactsDTO({
-        npn: sourceId,
-        productName: facts.productName ?? null,
-        brandName: facts.brandName ?? null,
-        actives: facts.actives,
-        inactive: facts.inactive ?? [],
-        purposes: facts.purposes ?? [],
-        routes: facts.routes ?? [],
-        doses: facts.doses ?? [],
-        datasetVersion: facts.datasetVersion ?? row?.dataset_version ?? null,
-        extractedAt: facts.extractedAt ?? row?.extracted_at ?? null,
-        isComplete: typeof row?.is_complete === "boolean" ? row.is_complete : null,
-        missingFields:
-          Array.isArray(row?.missing_fields)
-            ? row.missing_fields.filter((item): item is string => typeof item === "string")
-            : [],
-        factsJson: row?.facts_json,
-      });
-      const dtoActives = Array.isArray(dto?.ingredients?.actives)
-        ? dto.ingredients.actives
-            .map((entry) => {
-              const name = typeof entry?.name === "string" ? entry.name.trim() : "";
-              if (!name) return null;
-              const amount = Number.isFinite(Number(entry?.amount)) ? Number(entry.amount) : null;
-              const unit = normalizeUnitLabel(typeof entry?.unit === "string" ? entry.unit : null);
-              return {
-                name,
-                amount,
-                unit,
-                formRaw: typeof entry?.formText === "string" ? entry.formText : null,
-                lnhpdMeta: null,
-              };
-            })
-            .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
-        : [];
-      const fallbackActives = facts.actives
-        .map((entry) => {
-          const name = typeof entry?.name === "string" ? entry.name.trim() : "";
-          if (!name) return null;
-          const amount = Number.isFinite(Number(entry?.amount)) ? Number(entry.amount) : null;
-          const unit = normalizeUnitLabel(typeof entry?.unit === "string" ? entry.unit : null);
-          return {
-            name,
-            amount,
-            unit,
-            formRaw: typeof entry?.formRaw === "string" ? entry.formRaw : null,
-            lnhpdMeta: entry?.lnhpdMeta ?? null,
-          };
-        })
-        .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
-      const actives = dtoActives.length > 0 ? dtoActives : fallbackActives;
-      const activeCountWithDose = actives.filter((entry) => entry.amount != null && Boolean(entry.unit)).length;
-      if (activeCountWithDose <= 0) {
-        return {
-          attempted: false,
-          activeCountWithDose,
-          canonicalSourceId: null,
-          reason: "facts_without_amount_unit",
-        };
-      }
-      const canonicalSourceId =
-        facts?.lnhpdId != null && Number.isFinite(Number(facts.lnhpdId))
-          ? String(facts.lnhpdId)
-          : null;
-      const upsertResult = await upsertProductIngredientsFromLabelFacts({
-        source: "lnhpd",
-        sourceId,
-        canonicalSourceId,
-        labelFacts: {
-          actives,
-          inactive: Array.isArray(facts.inactive)
-            ? facts.inactive.filter((value): value is string => typeof value === "string")
-            : [],
-          proprietaryBlends: [],
-        },
-        parseConfidence: 0.98,
-      });
-      if (!upsertResult.success) {
-        console.warn("[ScoreV4] LNHPD ingredient backfill failed", {
-          sourceId,
-          reason: upsertResult.error?.message ?? "unknown_error",
-        });
-        return {
-          attempted: false,
-          activeCountWithDose,
-          canonicalSourceId,
-          reason: "upsert_failed",
-        };
-      }
-      return {
-        attempted: true,
-        activeCountWithDose,
-        canonicalSourceId,
-        reason: null,
-      };
-    };
-    const backfillDsldIngredientsForScore = async (): Promise<{
-      attempted: boolean;
-      activeCountWithDose: number;
-      canonicalSourceId: string | null;
-      reason: string | null;
-    }> => {
-      const labelId = Number(sourceId);
-      if (!Number.isFinite(labelId) || labelId <= 0) {
-        return {
-          attempted: false,
-          activeCountWithDose: 0,
-          canonicalSourceId: null,
-          reason: "invalid_dsld_label_id",
-        };
-      }
-      const facts = await fetchDsldFactsByLabelId(labelId);
-      if (!facts || !Array.isArray(facts.actives) || facts.actives.length === 0) {
-        return {
-          attempted: false,
-          activeCountWithDose: 0,
-          canonicalSourceId: null,
-          reason: "facts_missing_or_empty",
-        };
-      }
-      const actives = facts.actives
-        .map((entry) => {
-          const name = typeof entry?.name === "string" ? entry.name.trim() : "";
-          if (!name) return null;
-          const amount = Number.isFinite(Number(entry?.amount)) ? Number(entry.amount) : null;
-          const unit = normalizeUnitLabel(typeof entry?.unit === "string" ? entry.unit : null);
-          return {
-            name,
-            amount,
-            unit,
-            formRaw: typeof entry?.formRaw === "string" ? entry.formRaw : null,
-          };
-        })
-        .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
-      const activeCountWithDose = actives.filter((entry) => entry.amount != null && Boolean(entry.unit)).length;
-      if (activeCountWithDose <= 0) {
-        return {
-          attempted: false,
-          activeCountWithDose,
-          canonicalSourceId: null,
-          reason: "facts_without_amount_unit",
-        };
-      }
-      const canonicalSourceId =
-        Number.isFinite(Number(facts.dsldLabelId)) && Number(facts.dsldLabelId) > 0
-          ? String(facts.dsldLabelId)
-          : String(labelId);
-      const upsertResult = await upsertProductIngredientsFromLabelFacts({
-        source: "dsld",
-        sourceId,
-        canonicalSourceId,
-        labelFacts: {
-          actives,
-          inactive: Array.isArray(facts.inactive)
-            ? facts.inactive.filter((value): value is string => typeof value === "string")
-            : [],
-          proprietaryBlends: Array.isArray(facts.proprietaryBlends)
-            ? facts.proprietaryBlends
-                .map((blend) => {
-                  const name = typeof blend?.name === "string" ? blend.name.trim() : "";
-                  if (!name) return null;
-                  const totalAmount = Number.isFinite(Number(blend?.totalAmount))
-                    ? Number(blend.totalAmount)
-                    : null;
-                  const unit = normalizeUnitLabel(typeof blend?.unit === "string" ? blend.unit : null);
-                  const ingredients = Array.isArray(blend?.ingredients)
-                    ? blend.ingredients.filter((value): value is string => typeof value === "string")
-                    : null;
-                  return {
-                    name,
-                    totalAmount,
-                    unit,
-                    ingredients,
-                  };
-                })
-                .filter((blend): blend is NonNullable<typeof blend> => Boolean(blend))
-            : [],
-        },
-        parseConfidence: 0.98,
-      });
-      if (!upsertResult.success) {
-        console.warn("[ScoreV4] DSLD ingredient backfill failed", {
-          sourceId,
-          reason: upsertResult.error?.message ?? "unknown_error",
-        });
-        return {
-          attempted: false,
-          activeCountWithDose,
-          canonicalSourceId,
-          reason: "upsert_failed",
-        };
-      }
-      return {
-        attempted: true,
-        activeCountWithDose,
-        canonicalSourceId,
-        reason: null,
-      };
-    };
-    const fetchScoreRow = async () => {
-      const { data } = await supabase
-        .from("product_scores")
-        .select(selectScoreColumns)
-        .eq("source", source)
-        .eq("source_id", sourceId)
-        .maybeSingle();
-      if (data) return data;
-      const { data: canonical } = await supabase
-        .from("product_scores")
-        .select(selectScoreColumns)
-        .eq("source", source)
-        .eq("canonical_source_id", sourceId)
-        .order("computed_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      return canonical ?? null;
-    };
-
-    const [scoreRow, currentHash] = await Promise.all([
-      fetchScoreRow(),
-      computeV4InputsHash({ source, sourceId }),
-    ]);
-    const isCacheHit =
-      scoreRow &&
-      scoreRow.score_version === V4_SCORE_VERSION &&
-      Boolean(scoreRow.inputs_hash) &&
-      Boolean(currentHash) &&
-      scoreRow.inputs_hash === currentHash;
-
-    if (isCacheHit && scoreRow) {
-      const bundle: ScoreBundleV4 = {
-        overallScore: parseNumber(scoreRow.overall_score),
-        pillars: {
-          effectiveness: parseNumber(scoreRow.effectiveness_score),
-          safety: parseNumber(scoreRow.safety_score),
-          integrity: parseNumber(scoreRow.integrity_score),
-        },
-        confidence: parseNumber(scoreRow.confidence),
-        bestFitGoals: coerceScoreGoalFits(scoreRow.best_fit_goals),
-        flags: coerceScoreFlags(scoreRow.flags_json),
-        highlights: coerceScoreHighlights(scoreRow.highlights_json),
-        provenance: {
-          source,
-          sourceId,
-          canonicalSourceId: scoreRow.canonical_source_id ?? null,
-          scoreVersion: String(scoreRow.score_version),
-          computedAt: String(scoreRow.computed_at),
-          inputsHash: scoreRow.inputs_hash ?? null,
-          datasetVersion: null,
-          extractedAt: null,
-        },
-        explain: coerceScoreExplain(scoreRow.explain_json),
-      };
-
-      const response: ScoreBundleResponse = {
-        status: "ok",
-        source,
-        sourceId,
-        bundle,
-        diagnostics: extractScoreResponseDiagnostics(bundle),
-      };
-      return res.json(response);
-    }
-
-    let computed = await computeScoreBundleV4({ source, sourceId });
-    if (!computed && source === "lnhpd") {
-      const fallback = await backfillLnhpdIngredientsForScore();
-      if (fallback.attempted) {
-        computed = await computeScoreBundleV4({ source, sourceId });
-      } else if (fallback.activeCountWithDose > 0) {
-        console.info("[ScoreV4] LNHPD score fallback skipped", {
-          sourceId,
-          reason: fallback.reason,
-          canonicalSourceId: fallback.canonicalSourceId,
-          activeCountWithDose: fallback.activeCountWithDose,
-        });
-      }
-    } else if (!computed && source === "dsld") {
-      const fallback = await backfillDsldIngredientsForScore();
-      if (fallback.attempted) {
-        computed = await computeScoreBundleV4({ source, sourceId });
-      } else if (fallback.activeCountWithDose > 0) {
-        console.info("[ScoreV4] DSLD score fallback skipped", {
-          sourceId,
-          reason: fallback.reason,
-          canonicalSourceId: fallback.canonicalSourceId,
-          activeCountWithDose: fallback.activeCountWithDose,
-        });
-      }
-    }
-    if (computed) {
-      const response = await persistComputedScore(computed);
-      if (response) return res.json(response);
-    }
-
-    const { data: ingredientRow, error: ingredientError } = await supabase
-      .from("product_ingredients")
-      .select("id")
-      .eq("source", source)
-      .eq("source_id", sourceId)
-      .limit(1)
-      .maybeSingle();
-
-    if (ingredientError) {
-      throw ingredientError;
-    }
-
-    let hasIngredients = Boolean(ingredientRow?.id);
-    if (!hasIngredients) {
-      const { data: canonicalIngredientRow, error: canonicalIngredientError } = await supabase
-        .from("product_ingredients")
-        .select("id")
-        .eq("source", source)
-        .eq("canonical_source_id", sourceId)
-        .limit(1)
-        .maybeSingle();
-      if (canonicalIngredientError) {
-        throw canonicalIngredientError;
-      }
-      hasIngredients = Boolean(canonicalIngredientRow?.id);
-    }
-
-    if (source === "web") {
-      if (!hasIngredients) {
-        const response: ScoreBundleResponse = {
-          status: "not_found",
-          source,
-          sourceId,
-          reasonCode: "WEB_DATA_UNAVAILABLE",
-          message: "No verified web ingredient facts are available for this barcode.",
-        };
-        return res.json(response);
-      }
-
-      const { data: webRows, error: webRowsError } = await supabase
-        .from("product_ingredients")
-        .select("name_raw,amount,unit,is_active,is_proprietary_blend")
-        .eq("source", source)
-        .or(`source_id.eq.${sourceId},canonical_source_id.eq.${sourceId}`)
-        .limit(100);
-      if (webRowsError) {
-        throw webRowsError;
-      }
-      const eligibleCount = (webRows ?? []).filter((row) =>
-        isActiveIngredient({
-          name: String(row?.name_raw ?? ""),
-          amount: typeof row?.amount === "number" ? row.amount : null,
-          unit: typeof row?.unit === "string" ? row.unit : null,
-          isBlendPlaceholder: Boolean(row?.is_proprietary_blend),
-        }),
-      ).length;
-      if (eligibleCount < 2) {
-        const response: ScoreBundleResponse = {
-          status: "not_found",
-          source,
-          sourceId,
-          reasonCode: "WEB_ELIGIBILITY_FAILED_INSUFFICIENT_ACTIVES",
-          message: "At least two active ingredients with amount+unit are required to score web sources.",
-        };
-        return res.json(response);
-      }
-
-      const response: ScoreBundleResponse = {
-        status: "pending",
-        source,
-        sourceId,
-        reasonCode: "WEB_SCORE_PENDING",
-      };
-      return res.json(response);
-    }
-
-    const status: ScoreBundleResponse["status"] = hasIngredients ? "pending" : "not_found";
-    const response: ScoreBundleResponse = {
-      status,
-      source,
-      sourceId,
-    };
-    return res.json(response);
-  } catch (error) {
-    captureException(error, { route: "/api/score/v4" });
-    console.error("/api/score/v4 unexpected error", error);
-    const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
-    return res.status(500).json({ error: "unexpected_error", detail } satisfies ErrorResponse);
-  }
-});
-
-/**
- * v4 web score ingestion + compute (ownership-gated)
- */
-app.post("/api/score/v4/web/:id", verifySupabaseToken, async (req: Request, res: Response) => {
-  applyLegacyShadowHeaders(req, res, "/api/score/v4/web/:id");
-  const sourceId = typeof req.params.id === "string" ? req.params.id.trim() : "";
-  if (!sourceId) {
-    return res
-      .status(400)
-      .json({ error: "invalid_request", detail: "Missing web source id" } satisfies ErrorResponse);
-  }
-
-  if (!SCORE_V4_WEB_ENABLED) {
-    const response: ScoreBundleResponse = {
-      status: "not_found",
-      source: "web",
-      sourceId,
-      reasonCode: "WEB_DATA_UNAVAILABLE",
-      message: "Web scoring is currently disabled.",
-    };
-    return res.json(response);
-  }
-
-  const parsed = parseRequestBody(webScoreIngestBodySchema, req, res);
-  if (!parsed) return;
-
-  let factsPayload: ReturnType<typeof sanitizeFactsDTO>;
-  try {
-    factsPayload = sanitizeFactsDTO(parsed.facts);
-  } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error);
-    return res.status(400).json({ error: "invalid_facts_payload", detail } satisfies ErrorResponse);
-  }
-
-  const eligibleCount = factsPayload.ingredients.filter((ingredient) =>
-    isActiveIngredient({
-      name: ingredient.name,
-      amount: ingredient.amount,
-      unit: ingredient.unit,
-      isBlendPlaceholder: ingredient.isBlendPlaceholder ?? false,
-    }),
-  ).length;
-
-  if (eligibleCount < 2) {
-    const response: ScoreBundleResponse = {
-      status: "not_found",
-      source: "web",
-      sourceId,
-      reasonCode: "WEB_ELIGIBILITY_FAILED_INSUFFICIENT_ACTIVES",
-      message: "At least two active ingredients with amount+unit are required.",
-    };
-    return res.json(response);
-  }
-
-  const ownership = verifyWebOwnership({
-    barcode: sourceId,
-    regId: parsed.ownership.regId ?? null,
-    evidenceText: parsed.ownership.evidenceText ?? null,
-    candidateBrand: parsed.ownership.candidateBrand ?? null,
-    expectedBrand: parsed.ownership.expectedBrand ?? null,
-    candidateName: parsed.ownership.candidateName ?? null,
-    expectedName: parsed.ownership.expectedName ?? null,
-    variantCueMatch: parsed.ownership.variantCueMatch ?? 0,
-  });
-
-  if (!ownership.pass) {
-    const response: ScoreBundleResponse = {
-      status: "not_found",
-      source: "web",
-      sourceId,
-      reasonCode: "WEB_OWNERSHIP_FAILED",
-      message:
-        "We found potentially related web pages, but ownership could not be verified. We do not use this data.",
-    };
-    return res.json(response);
-  }
-
-  const upsertResult = await upsertProductIngredientsFromWebFacts({
-    sourceId,
-    canonicalSourceId: sourceId,
-    facts: factsPayload,
-    parseConfidence: ownership.confidence === "strong" ? 0.85 : 0.72,
-  });
-  if (!upsertResult.success) {
-    const response: ScoreBundleResponse = {
-      status: "not_found",
-      source: "web",
-      sourceId,
-      reasonCode: "WEB_PARSE_FAILED",
-      message: "Web facts could not be persisted for scoring.",
-    };
-    return res.json(response);
-  }
-
-  const computed = await computeScoreBundleV4({ source: "web", sourceId });
-  if (!computed) {
-    const response: ScoreBundleResponse = {
-      status: "pending",
-      source: "web",
-      sourceId,
-      reasonCode: "WEB_SCORE_PENDING",
-    };
-    return res.json(response);
-  }
-
-  const { bundle, inputsHash, canonicalSourceId, sourceIdForWrite } = computed;
-  const scorePayload = {
-    source: "web",
-    source_id: sourceIdForWrite,
-    canonical_source_id: canonicalSourceId,
-    score_version: V4_SCORE_VERSION,
-    overall_score: bundle.overallScore,
-    effectiveness_score: bundle.pillars.effectiveness,
-    safety_score: bundle.pillars.safety,
-    integrity_score: bundle.pillars.integrity,
-    confidence: bundle.confidence,
-    best_fit_goals: bundle.bestFitGoals,
-    flags_json: bundle.flags,
-    highlights_json: bundle.highlights,
-    explain_json: bundle.explain,
-    inputs_hash: inputsHash,
-    computed_at: bundle.provenance.computedAt,
-  };
-  const { error: upsertError } = await supabase
-    .from("product_scores")
-    .upsert(scorePayload, { onConflict: "source,source_id" });
-  if (upsertError) {
-    console.warn("[ScoreV4][web] Upsert failed", upsertError.message);
-  }
-
-  const response: ScoreBundleResponse = {
-    status: "ok",
-    source: "web",
-    sourceId,
-    bundle,
-  };
-  return res.json(response);
 });
 
 app.get("/api/scan-facts/v1/:source/:id", verifySupabaseToken, async (req: Request, res: Response) => {
@@ -10892,7 +10167,6 @@ app.get("/api/decision-support/v1", verifySupabaseToken, async (req: Request, re
       topBlockers: decisionSupport.topBlockers,
       extraTrustSignals: decisionSupport.extraTrustSignals,
       sourceTiers: decisionSupport.sourceTiers,
-      nutriScoreCard: decisionSupport.nutriScoreCard,
       nutriScoreCardV2: decisionSupport.nutriScoreCardV2,
       overviewBlock: decisionSupport.overviewBlock,
       scienceBlock: decisionSupport.scienceBlock,
@@ -16146,64 +15420,15 @@ app.post("/api/enrich-stream", verifySupabaseToken, async (req: Request, res: Re
         });
       }
 
-      const fallbackScore = (value: number | undefined) =>
-        typeof value === "number" ? Math.round(value / 10) : 5;
-
-      const fallbackEfficacy = snapshot.scores
-        ? {
-          score: fallbackScore(snapshot.scores.effectiveness),
-          verdict: "Cached snapshot analysis.",
-          primaryActive: null,
-          ingredients: [],
-          overviewSummary: null,
-          coreBenefits: [],
-          overallAssessment: "",
-          marketingVsReality: "",
-        }
-        : null;
-
-      const fallbackSafety = snapshot.scores
-        ? {
-          score: fallbackScore(snapshot.scores.safety),
-          verdict: "Cached snapshot analysis.",
-          risks: [],
-          redFlags: [],
-          recommendation: "Cached snapshot analysis.",
-        }
-        : null;
-
-      const fallbackUsagePayload = snapshot.scores
-        ? {
-          usage: {
-            summary: "Cached snapshot analysis.",
-            timing: "",
-            withFood: null,
-            frequency: "",
-            interactions: [],
-          },
-          value: {
-            score: fallbackScore(snapshot.scores.value),
-            verdict: "Cached snapshot analysis.",
-            analysis: "Cached snapshot analysis.",
-            costPerServing: null,
-            alternatives: [],
-          },
-          social: {
-            score: 3,
-            summary: "Cached snapshot analysis.",
-          },
-        }
-        : null;
-
       if (mode === "full") {
-        if (workingAnalysisPayload?.efficacy || fallbackEfficacy) {
-          sendSSE(res, "result_efficacy", workingAnalysisPayload?.efficacy ?? fallbackEfficacy);
+        if (workingAnalysisPayload?.efficacy) {
+          sendSSE(res, "result_efficacy", workingAnalysisPayload.efficacy);
         }
-        if (workingAnalysisPayload?.safety || fallbackSafety) {
-          sendSSE(res, "result_safety", workingAnalysisPayload?.safety ?? fallbackSafety);
+        if (workingAnalysisPayload?.safety) {
+          sendSSE(res, "result_safety", workingAnalysisPayload.safety);
         }
-        if (workingAnalysisPayload?.usagePayload || fallbackUsagePayload) {
-          sendSSE(res, "result_usage", workingAnalysisPayload?.usagePayload ?? fallbackUsagePayload);
+        if (workingAnalysisPayload?.usagePayload) {
+          sendSSE(res, "result_usage", workingAnalysisPayload.usagePayload);
         }
 
         sendSSE(res, "snapshot", snapshotToSend);
@@ -23194,23 +22419,49 @@ app.get("/api/user-stack-overlap", verifySupabaseToken, async (req: Request, res
         const snapshot = cached?.snapshot ?? null;
         if (!snapshot) return { type: "skipped" };
 
-        const ingredientNames = (snapshot.label.actives ?? [])
-          .map((active) => safeTrim(active.name))
-          .filter((name): name is string => Boolean(name))
+        const ingredientRows = (snapshot.label.actives ?? [])
+          .map((active) => {
+            const name = safeTrim(active.name);
+            if (!name) return null;
+            return {
+              name,
+              amount: active.amountUnknown ? null : active.amount ?? null,
+              unit: active.amountUnitNormalized ?? active.amountUnit ?? active.amountUnitRaw ?? null,
+              amountText:
+                !active.amountUnknown && active.amount != null && (active.amountUnitNormalized ?? active.amountUnit ?? active.amountUnitRaw)
+                  ? `${active.amount} ${active.amountUnitNormalized ?? active.amountUnit ?? active.amountUnitRaw}`.trim()
+                  : null,
+              chemicalForm: active.form ?? null,
+            };
+          })
+          .filter((row): row is NonNullable<typeof row> => Boolean(row))
           .slice(0, 24);
+        if (ingredientRows.length === 0) return { type: "skipped" };
 
-        const normalizedKeys = extractStackOverlapIngredientKeys(
-          ingredientNames,
-          STACK_OVERLAP_ACTIVES_PER_SUPPLEMENT,
-        );
-        if (normalizedKeys.length === 0) return { type: "skipped" };
+        const safetyBundle = buildSnapshotSafetyDigestBundle({
+          snapshot,
+          supplementId,
+          barcodeGtin14: normalized.code.padStart(14, "0"),
+          brandName: snapshot.product.brand ?? "",
+          productName,
+        });
+        const usableIngredientRows = ingredientRows.filter((row) => row.amount != null && Boolean(row.unit));
+        const dailyDoseContext = deriveDailyDoseBasis({
+          labelDirectionsRawText: safetyBundle.labelDirectionsRawText,
+          hasUsableActiveDose: usableIngredientRows.length > 0,
+          sourceContext: "snapshot_only",
+        });
 
         return {
           type: "processed",
           value: {
             supplementId,
             productName,
-            ingredientNames,
+            ingredientNames: ingredientRows.map((row) => row.name),
+            ingredientRows: usableIngredientRows,
+            dailyMultiplier: dailyDoseContext.dailyMultiplier,
+            dailyDoseBasis: dailyDoseContext.dailyDoseBasis,
+            dailyDoseBasisReason: dailyDoseContext.dailyDoseBasisReason,
           },
         };
       },
@@ -23224,15 +22475,17 @@ app.get("/api/user-stack-overlap", verifySupabaseToken, async (req: Request, res
     const overlap = buildStackOverlapResult(processedInputs, {
       maxPerSupplement: STACK_OVERLAP_ACTIVES_PER_SUPPLEMENT,
       maxOverlaps: STACK_OVERLAP_MAX_ITEMS,
+      skippedSupplements,
     });
     const processedSupplements = processedInputs.length;
-    const status = truncated || skippedSupplements > 0 ? "partial" : "ok";
+    const totalSkippedSupplements = overlap.meta.skippedSupplements;
+    const status = truncated || totalSkippedSupplements > 0 ? "partial" : "ok";
     const latencyMs = Math.round(performance.now() - startedAt);
 
     console.info("[stack-overlap]", {
       status,
       processedSupplements,
-      skippedSupplements,
+      skippedSupplements: totalSkippedSupplements,
       overlapCount: overlap.overlapCount,
       truncated,
       latencyMs,
@@ -23243,9 +22496,17 @@ app.get("/api/user-stack-overlap", verifySupabaseToken, async (req: Request, res
       overlaps: overlap.overlaps,
       summary: {
         processedSupplements,
-        skippedSupplements,
+        skippedSupplements: totalSkippedSupplements,
         overlapCount: overlap.overlapCount,
         truncated,
+        hiddenOverlapCount: overlap.hiddenOverlapCount,
+      },
+      stackLevelSummary: overlap.stackLevelSummary,
+      duplicateGroups: overlap.duplicateGroups,
+      meta: {
+        ...overlap.meta,
+        truncated,
+        overlapCount: overlap.overlapCount,
         hiddenOverlapCount: overlap.hiddenOverlapCount,
       },
     });

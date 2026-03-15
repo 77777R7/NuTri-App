@@ -134,7 +134,7 @@ export type SafetySignalScope = z.infer<typeof SafetySignalScopeSchema>;
 
 export const SafetySignalSourceSchema = z.enum([
   "label_record",
-  "score_v4_ul",
+  "ul_reference",
   "ods_watchout",
   "ods_interaction",
   "quality_note",

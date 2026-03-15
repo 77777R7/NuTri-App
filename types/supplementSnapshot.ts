@@ -147,20 +147,4 @@ export type SupplementSnapshot = {
       datasetVersion: string | null;
     } | null;
   } | null;
-  scores?: {
-    overall: number;
-    effectiveness: number;
-    safety: number;
-    value: number;
-    version: string;
-    computedAt: string;
-    confidence: {
-      overall: number | null;
-      labelCoverage: number | null;
-      ingredientCoverage: number | null;
-      priceCoverage: number | null;
-      trustCoverage: number | null;
-      regulatoryCoverage: number | null;
-    };
-  };
 };

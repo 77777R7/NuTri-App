@@ -53,15 +53,6 @@ export type SnapshotAnalysisPayload = {
 
 export const SNAPSHOT_VALIDATION_ERROR_CODE = 'SNAPSHOT_VALIDATION_FAILED' as const;
 
-type SnapshotScoreConfidence = {
-  overall: number | null;
-  labelCoverage: number | null;
-  ingredientCoverage: number | null;
-  priceCoverage: number | null;
-  trustCoverage: number | null;
-  regulatoryCoverage: number | null;
-};
-
 type NormalizedAmountUnit = 'mg' | 'mcg' | 'g' | 'iu' | 'cfu' | 'ml';
 
 const createSnapshotId = () => {
@@ -140,47 +131,6 @@ const buildReferencesFromSearchItems = (
   });
 
   return { items: references };
-};
-
-const buildConfidenceBase = (): SnapshotScoreConfidence => ({
-  overall: null,
-  labelCoverage: null,
-  ingredientCoverage: null,
-  priceCoverage: null,
-  trustCoverage: null,
-  regulatoryCoverage: null,
-});
-
-const buildScores = (params: {
-  efficacyScore?: number | null;
-  safetyScore?: number | null;
-  valueScore?: number | null;
-  confidence: SnapshotScoreConfidence;
-  computedAt: string;
-}): SupplementSnapshot['scores'] | undefined => {
-  const { efficacyScore, safetyScore, valueScore, confidence, computedAt } = params;
-  if (
-    typeof efficacyScore !== 'number' ||
-    typeof safetyScore !== 'number' ||
-    typeof valueScore !== 'number'
-  ) {
-    return undefined;
-  }
-
-  const effectiveness = Math.round(efficacyScore * 10);
-  const safety = Math.round(safetyScore * 10);
-  const value = Math.round(valueScore * 10);
-  const overall = Math.round((effectiveness + safety + value) / 3);
-
-  return {
-    overall,
-    effectiveness,
-    safety,
-    value,
-    version: 'ai-raw',
-    computedAt,
-    confidence,
-  };
 };
 
 const baseSnapshot = (input: {
@@ -266,22 +216,6 @@ export const buildLabelSnapshot = (input: {
   message?: string;
 }): SupplementSnapshot => {
   const timestamp = nowIso();
-  const confidence = buildConfidenceBase();
-
-  if (input.draft) {
-    confidence.overall = input.draft.confidenceScore ?? null;
-    confidence.labelCoverage = input.draft.parseCoverage ?? null;
-    confidence.ingredientCoverage = input.draft.parseCoverage ?? null;
-  }
-
-  const scores = buildScores({
-    efficacyScore: input.analysis?.status === 'success' ? input.analysis.efficacy?.score ?? null : null,
-    safetyScore: input.analysis?.status === 'success' ? input.analysis.safety?.score ?? null : null,
-    valueScore: input.analysis?.status === 'success' ? input.analysis.value?.score ?? null : null,
-    confidence,
-    computedAt: timestamp,
-  });
-
   const statusFromAnalysis: SnapshotStatus | null =
     input.analysis?.status === 'unknown_product'
       ? 'unknown_product'
@@ -296,7 +230,7 @@ export const buildLabelSnapshot = (input: {
         ? statusFromAnalysis
         : input.status === 'needs_confirmation'
           ? 'partial'
-          : scores
+          : input.analysis?.status === 'success'
             ? 'resolved'
             : 'partial';
 
@@ -382,7 +316,6 @@ export const buildLabelSnapshot = (input: {
         })
         : [],
     },
-    scores,
   };
 };
 
@@ -400,16 +333,9 @@ export const buildBarcodeSnapshot = (input: {
   usagePayload: any | null;
 }): SupplementSnapshot => {
   const timestamp = nowIso();
-  const confidence = buildConfidenceBase();
-  const scores = buildScores({
-    efficacyScore: input.efficacy?.score ?? null,
-    safetyScore: input.safety?.score ?? null,
-    valueScore: input.usagePayload?.value?.score ?? null,
-    confidence,
-    computedAt: timestamp,
-  });
-
-  const status: SnapshotStatus = scores ? 'resolved' : 'partial';
+  const hasStructuredAnalysis =
+    Boolean(input.efficacy || input.safety || input.usagePayload);
+  const status: SnapshotStatus = hasStructuredAnalysis ? 'resolved' : 'partial';
 
   const base = baseSnapshot({
     status,
@@ -428,7 +354,6 @@ export const buildBarcodeSnapshot = (input: {
       imageUrl: input.productInfo?.image ?? null,
     },
     references: buildReferencesFromSearchItems(input.sources ?? [], timestamp),
-    scores,
   };
 };
 

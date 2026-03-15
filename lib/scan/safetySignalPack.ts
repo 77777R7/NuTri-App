@@ -7,11 +7,9 @@ import type {
   SafetyUlAmount,
   SafetyUlEntry,
 } from '@/types/analysisBundle';
-import type { ScoreBundleV4 } from '@/types/scoreBundle';
 
 type BuildSafetySignalPackParams = {
   bundle: AnalysisBundle | null | undefined;
-  scoreBundle: ScoreBundleV4 | null | undefined;
   facts: FactsDTO | null | undefined;
   ingredientNames?: string[] | null;
 };
@@ -113,18 +111,6 @@ const parseAmountText = (value: unknown): SafetyUlAmount => {
     unit,
     text,
   };
-};
-
-const resolveScoreExplain = (scoreBundle: ScoreBundleV4 | null | undefined): Record<string, unknown> | null => {
-  if (!scoreBundle || typeof scoreBundle !== 'object') return null;
-  const root = scoreBundle as unknown as Record<string, unknown>;
-  const maybeBundle = root.bundle;
-  const payload =
-    maybeBundle && typeof maybeBundle === 'object'
-      ? (maybeBundle as Record<string, unknown>)
-      : root;
-  const explain = payload.explain;
-  return explain && typeof explain === 'object' ? (explain as Record<string, unknown>) : null;
 };
 
 const normalizeUlScope = (value: unknown): SafetyUlEntry['scope'] => {
@@ -325,107 +311,16 @@ const extractLabelWarningsFromBundle = (
     .filter((item): item is SafetySignalItem => item !== null);
 };
 
-const extractUlRows = (scoreBundle: ScoreBundleV4 | null | undefined): unknown[] => {
-  const payload = resolveScoreExplain(scoreBundle);
-  if (!payload) return [];
-  const rootUl = payload.ulWarnings;
-  if (Array.isArray(rootUl)) return rootUl;
-  if (rootUl && typeof rootUl === 'object' && Array.isArray((rootUl as { entries?: unknown[] }).entries)) {
-    return (rootUl as { entries: unknown[] }).entries;
-  }
-  const nestedUl = (payload.safety as Record<string, unknown> | undefined)?.ulWarnings;
-  if (Array.isArray(nestedUl)) return nestedUl;
-  if (nestedUl && typeof nestedUl === 'object' && Array.isArray((nestedUl as { entries?: unknown[] }).entries)) {
-    return (nestedUl as { entries: unknown[] }).entries;
-  }
-  return [];
-};
-
-export const extractUlEntriesFromScore = (scoreBundle: ScoreBundleV4 | null | undefined): SafetyUlEntry[] =>
-  dedupeUlEntries(
-    extractUlRows(scoreBundle)
-      .map((row) => normalizeUlEntry(row))
-      .filter((item): item is SafetyUlEntry => item !== null),
-    MAX_UL_ENTRIES,
-  );
-
 const ulEntryToSignal = (entry: SafetyUlEntry): SafetySignalItem | null =>
   createSignal({
     prefix: `ul-${entry.nutrientKey}`,
     text: entry.explainLine,
     scope: 'ods_general',
-    source: 'score_v4_ul',
+    source: 'ul_reference',
     reasonCode: entry.reasonCode,
     sourceUrl: entry.sourceUrl,
     riskLevel: entry.riskBand,
   });
-
-const extractUlSignalsFromScore = (scoreBundle: ScoreBundleV4 | null | undefined): SafetySignalItem[] => {
-  const ensurePerDayUlText = (value: string): string => {
-    const text = normalizeText(value);
-    if (!text) return '';
-    if (/\/\s*day|per\s*day|daily/i.test(text)) return text;
-    return `${text}/day`;
-  };
-  const buildReferenceUlLine = (ingredient: string, ulLimit: string): string => {
-    const withPerDay = ensurePerDayUlText(ulLimit);
-    const ingredientLead = ingredient ? `${ingredient} — ` : '';
-    return `${ingredientLead}Upper limit (UL): ${withPerDay} (adult 19+, NIH ODS).`;
-  };
-  const fromEntries = extractUlEntriesFromScore(scoreBundle)
-    .map((entry) => ulEntryToSignal(entry))
-    .filter((item): item is SafetySignalItem => item !== null);
-
-  const fromRawRows = extractUlRows(scoreBundle)
-    .map((row, index) => {
-      if (typeof row === 'string') {
-        return createSignal({
-          prefix: `ul-${index + 1}`,
-          text: row,
-          scope: 'ods_general',
-          source: 'score_v4_ul',
-        });
-      }
-      if (!row || typeof row !== 'object') return null;
-      const data = row as Record<string, unknown>;
-      const ingredient = normalizeText(data.displayName || data.ingredient || data.ingredientName || data.name);
-      const currentDose = normalizeText(data.currentDose || data.dailyAmount || data.dose);
-      const ulLimit = normalizeText(data.ulLimit || data.upperLimit || data.limit);
-      const riskLevel = normalizeText(data.riskLevel || data.risk || data.severity);
-      const sourceUrl = normalizeText(data.sourceUrl || data.sourceURL || data.url);
-      const reasonCode = normalizeText(data.reasonCode || data.reason);
-      if (ulLimit && !currentDose) {
-        return createSignal({
-          prefix: `ul-reference-${index + 1}`,
-          text: buildReferenceUlLine(ingredient, ulLimit),
-          scope: 'ods_general',
-          source: 'score_v4_ul',
-          reasonCode: 'UL_REFERENCE_ONLY',
-          sourceUrl,
-          riskLevel: riskLevel || undefined,
-        });
-      }
-      const parts = [
-        ingredient || 'Ingredient',
-        currentDose ? `current ${currentDose}` : '',
-        ulLimit ? `UL ${ulLimit}` : '',
-        riskLevel ? `${riskLevel} risk` : '',
-      ].filter(Boolean);
-      if (parts.length === 0) return null;
-      return createSignal({
-        prefix: `ul-${index + 1}`,
-        text: `UL watch-out: ${parts.join(', ')}`,
-        scope: 'ods_general',
-        source: 'score_v4_ul',
-        reasonCode,
-        sourceUrl,
-        riskLevel,
-      });
-    })
-    .filter((item): item is SafetySignalItem => item !== null);
-
-  return dedupeSignals([...fromEntries, ...fromRawRows], MAX_UL_SIGNALS);
-};
 
 const collectIngredientNames = (
   bundle: AnalysisBundle | null | undefined,
@@ -516,15 +411,11 @@ export const buildSafetySignalPack = (params: BuildSafetySignalPackParams): Safe
     [...(base?.labelWarnings ?? []), ...extractLabelWarningsFromBundle(params.bundle, params.facts)],
     MAX_LABEL_WARNINGS,
   );
-  const ulEntries = dedupeUlEntries(
-    [...(base?.ulEntries ?? []), ...extractUlEntriesFromScore(params.scoreBundle)],
-    MAX_UL_ENTRIES,
-  );
+  const ulEntries = dedupeUlEntries(base?.ulEntries ?? [], MAX_UL_ENTRIES);
   const ulSignals = dedupeSignals(
     [
       ...(base?.ulSignals ?? []),
       ...ulEntries.map((entry) => ulEntryToSignal(entry)).filter((item): item is SafetySignalItem => item !== null),
-      ...extractUlSignalsFromScore(params.scoreBundle),
     ],
     MAX_UL_SIGNALS,
   );

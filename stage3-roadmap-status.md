@@ -59,7 +59,7 @@
 - P0-C Score Binding
   - `/Users/howard07/NuTriApp/nutri-app/components/scan/AnalysisDashboard.tsx`
   - `/Users/howard07/NuTriApp/nutri-app/app/scan/result.tsx`
-  - `/Users/howard07/NuTriApp/nutri-app/hooks/useScoreBundleV4.ts`
+  - `/Users/howard07/NuTriApp/nutri-app/backend/src/decisionSupport.ts`
 - Gate & Metrics
   - `/Users/howard07/NuTriApp/nutri-app/output/website-barcode-e2e-promotion-state.json`
   - `/Users/howard07/NuTriApp/nutri-app/output/website-barcode-e2e-health-rounds-1771550397582/round-05-1771550486683/gate_summary.json`
