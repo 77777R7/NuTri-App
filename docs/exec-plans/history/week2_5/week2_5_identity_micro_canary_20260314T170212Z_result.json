@@ -1,0 +1,35 @@
+{
+  "waveId": "week2_5_identity_micro_canary_20260314T170212Z",
+  "lane": "kpi",
+  "pathKey": "official_fetch_unresolved:iherb_identity_v2_micro_canary",
+  "attempted": 0,
+  "recoveredComplete": 0,
+  "recoveredPartial": 0,
+  "kpiDelta": {
+    "completeHitCount": 0,
+    "completeHitRate": 0,
+    "activeQueueCount": 0
+  },
+  "mergeDelta": {
+    "strictMergeReady": 0,
+    "queued": 0
+  },
+  "blockerBreakdown": {
+    "search_source_defect": 4,
+    "fetch_defect": 2,
+    "normalization_defect": 2
+  },
+  "decision": "pause",
+  "outcomeClass": "diagnostic_success",
+  "evidencePath": "/Users/howard07/NuTriApp/nutri-app/output/official_fetch_unresolved_micro_canary.json",
+  "executionHealth": {
+    "requests": 0,
+    "fetchSuccess": 0,
+    "http429": 0,
+    "aborted": 0,
+    "cacheHits": 0,
+    "retryCount": 0
+  },
+  "executed": false,
+  "skipReason": "positive_control_invalid"
+}

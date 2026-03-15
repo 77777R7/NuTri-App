@@ -1,0 +1,425 @@
+{
+  "generatedAt": "2026-03-14T22:14:48.659Z",
+  "fixtures": [
+    {
+      "fixture": "magnesium_over_stack",
+      "summary": {
+        "stackLevelSummary": {
+          "headline": "You have 2 products with magnesium.",
+          "detailLines": [
+            "Estimated total: 620 mg/day.",
+            "Adult supplemental UL: 350 mg/day.",
+            "UL applies to supplemental magnesium (and medications), not naturally occurring food intake."
+          ],
+          "status": "over"
+        },
+        "duplicateGroups": [
+          {
+            "ingredientCanonicalKey": "magnesium",
+            "ingredientDisplayName": "Magnesium",
+            "productCount": 2,
+            "products": [
+              {
+                "supplementId": "mag-1",
+                "productName": "Magnesium Product A",
+                "ingredientCanonicalKey": "magnesium",
+                "ingredientDisplayName": "Magnesium",
+                "rawDoseText": "200 mg",
+                "dailyEstimatedDoseText": "400 mg",
+                "dailyEstimatedDoseValue": 400,
+                "dailyEstimatedDoseUnit": "mg",
+                "dailyDoseBasis": "label_daily_estimate",
+                "dailyDoseBasisReason": "parsed_label_directions",
+                "dailyDoseBasisLabel": "estimated from label directions",
+                "comparisonStatus": "over",
+                "comparableToUl": true
+              },
+              {
+                "supplementId": "mag-2",
+                "productName": "Magnesium Product B",
+                "ingredientCanonicalKey": "magnesium",
+                "ingredientDisplayName": "Magnesium",
+                "rawDoseText": "220 mg",
+                "dailyEstimatedDoseText": "220 mg",
+                "dailyEstimatedDoseValue": 220,
+                "dailyEstimatedDoseUnit": "mg",
+                "dailyDoseBasis": "one_serving_fallback",
+                "dailyDoseBasisReason": "snapshot_only_no_directions",
+                "dailyDoseBasisLabel": "estimated from 1 serving/day",
+                "comparisonStatus": "below",
+                "comparableToUl": true
+              }
+            ],
+            "estimatedTotalDoseValue": 620,
+            "estimatedTotalDoseUnit": "mg",
+            "estimatedTotalDoseText": "620 mg",
+            "ulValue": 350,
+            "ulUnit": "mg",
+            "ulValueText": "350 mg",
+            "scope": "supplements_only",
+            "scopeNote": "UL applies to supplemental magnesium (and medications), not naturally occurring food intake.",
+            "status": "over",
+            "confidence": "high",
+            "surfaced": true,
+            "launchTier": "tier1"
+          }
+        ],
+        "meta": {
+          "processedSupplements": 2,
+          "skippedSupplements": 0,
+          "surfacedGroupCount": 1,
+          "hiddenGroupCount": 0,
+          "supportedLifeStage": "adult_19_plus",
+          "dailyDoseBasisCounts": {
+            "labelDailyEstimate": 1,
+            "oneServingFallback": 1
+          },
+          "dailyDoseBasisReasonCounts": {
+            "parsed_label_directions": 1,
+            "snapshot_only_no_directions": 1
+          },
+          "estimateBasisSummary": "Dose estimates use label directions when available and 1 serving/day when directions are missing or ambiguous.",
+          "hiddenGroupNote": null,
+          "skippedSupplementNote": null
+        }
+      }
+    },
+    {
+      "fixture": "zinc_over_stack",
+      "summary": {
+        "stackLevelSummary": {
+          "headline": "You have 2 products with zinc.",
+          "detailLines": [
+            "Estimated total: 50 mg/day.",
+            "Adult supplemental UL: 40 mg/day.",
+            "This UL applies to supplemental sources only when noted."
+          ],
+          "status": "over"
+        },
+        "duplicateGroups": [
+          {
+            "ingredientCanonicalKey": "zinc",
+            "ingredientDisplayName": "Zinc",
+            "productCount": 2,
+            "products": [
+              {
+                "supplementId": "zn-1",
+                "productName": "Zinc Product A",
+                "ingredientCanonicalKey": "zinc",
+                "ingredientDisplayName": "Zinc",
+                "rawDoseText": "25 mg",
+                "dailyEstimatedDoseText": "25 mg",
+                "dailyEstimatedDoseValue": 25,
+                "dailyEstimatedDoseUnit": "mg",
+                "dailyDoseBasis": "one_serving_fallback",
+                "dailyDoseBasisReason": "missing_directions",
+                "dailyDoseBasisLabel": "estimated from 1 serving/day",
+                "comparisonStatus": "below",
+                "comparableToUl": true
+              },
+              {
+                "supplementId": "zn-2",
+                "productName": "Zinc Product B",
+                "ingredientCanonicalKey": "zinc",
+                "ingredientDisplayName": "Zinc",
+                "rawDoseText": "25 mg",
+                "dailyEstimatedDoseText": "25 mg",
+                "dailyEstimatedDoseValue": 25,
+                "dailyEstimatedDoseUnit": "mg",
+                "dailyDoseBasis": "one_serving_fallback",
+                "dailyDoseBasisReason": "missing_directions",
+                "dailyDoseBasisLabel": "estimated from 1 serving/day",
+                "comparisonStatus": "below",
+                "comparableToUl": true
+              }
+            ],
+            "estimatedTotalDoseValue": 50,
+            "estimatedTotalDoseUnit": "mg",
+            "estimatedTotalDoseText": "50 mg",
+            "ulValue": 40,
+            "ulUnit": "mg",
+            "ulValueText": "40 mg",
+            "scope": "total_intake",
+            "scopeNote": null,
+            "status": "over",
+            "confidence": "high",
+            "surfaced": true,
+            "launchTier": "tier1"
+          }
+        ],
+        "meta": {
+          "processedSupplements": 2,
+          "skippedSupplements": 0,
+          "surfacedGroupCount": 1,
+          "hiddenGroupCount": 0,
+          "supportedLifeStage": "adult_19_plus",
+          "dailyDoseBasisCounts": {
+            "labelDailyEstimate": 0,
+            "oneServingFallback": 2
+          },
+          "dailyDoseBasisReasonCounts": {
+            "missing_directions": 2
+          },
+          "estimateBasisSummary": "Dose estimates use 1 serving/day when label directions are missing or ambiguous.",
+          "hiddenGroupNote": null,
+          "skippedSupplementNote": null
+        }
+      }
+    },
+    {
+      "fixture": "folate_uncertain_stack",
+      "summary": {
+        "stackLevelSummary": {
+          "headline": null,
+          "detailLines": [],
+          "status": null
+        },
+        "duplicateGroups": [
+          {
+            "ingredientCanonicalKey": "folate",
+            "ingredientDisplayName": "Folate",
+            "productCount": 2,
+            "products": [
+              {
+                "supplementId": "fol-1",
+                "productName": "Folate Product A",
+                "ingredientCanonicalKey": "folate",
+                "ingredientDisplayName": "Folate",
+                "rawDoseText": "400 mcg DFE",
+                "dailyEstimatedDoseText": "400 mcg dfe",
+                "dailyEstimatedDoseValue": 400,
+                "dailyEstimatedDoseUnit": "mcg dfe",
+                "dailyDoseBasis": "one_serving_fallback",
+                "dailyDoseBasisReason": "missing_directions",
+                "dailyDoseBasisLabel": "estimated from 1 serving/day",
+                "comparisonStatus": "not_comparable",
+                "comparableToUl": false
+              },
+              {
+                "supplementId": "fol-2",
+                "productName": "Folate Product B",
+                "ingredientCanonicalKey": "folate",
+                "ingredientDisplayName": "Folate",
+                "rawDoseText": "400 mcg DFE",
+                "dailyEstimatedDoseText": "400 mcg dfe",
+                "dailyEstimatedDoseValue": 400,
+                "dailyEstimatedDoseUnit": "mcg dfe",
+                "dailyDoseBasis": "one_serving_fallback",
+                "dailyDoseBasisReason": "missing_directions",
+                "dailyDoseBasisLabel": "estimated from 1 serving/day",
+                "comparisonStatus": "not_comparable",
+                "comparableToUl": false
+              }
+            ],
+            "estimatedTotalDoseValue": null,
+            "estimatedTotalDoseUnit": "mcg",
+            "estimatedTotalDoseText": null,
+            "ulValue": 1000,
+            "ulUnit": "mcg",
+            "ulValueText": "1000 mcg",
+            "scope": "supplements_or_fortified_only",
+            "scopeNote": "UL applies to folic acid from supplements or fortified foods, not naturally occurring food folate.",
+            "status": "not_comparable",
+            "confidence": "low",
+            "surfaced": false,
+            "launchTier": "tier1"
+          }
+        ],
+        "meta": {
+          "processedSupplements": 2,
+          "skippedSupplements": 0,
+          "surfacedGroupCount": 0,
+          "hiddenGroupCount": 1,
+          "supportedLifeStage": "adult_19_plus",
+          "dailyDoseBasisCounts": {
+            "labelDailyEstimate": 0,
+            "oneServingFallback": 2
+          },
+          "dailyDoseBasisReasonCounts": {
+            "missing_directions": 2
+          },
+          "estimateBasisSummary": "Dose estimates use 1 serving/day when label directions are missing or ambiguous.",
+          "hiddenGroupNote": "1 additional group stayed out of the primary warning because confidence was lower or UL comparison was not ready.",
+          "skippedSupplementNote": null
+        }
+      }
+    },
+    {
+      "fixture": "omega3_tier2_stack",
+      "summary": {
+        "stackLevelSummary": {
+          "headline": null,
+          "detailLines": [],
+          "status": null
+        },
+        "duplicateGroups": [
+          {
+            "ingredientCanonicalKey": "omega_3",
+            "ingredientDisplayName": "Omega-3",
+            "productCount": 2,
+            "products": [
+              {
+                "supplementId": "om-1",
+                "productName": "Omega Product A",
+                "ingredientCanonicalKey": "omega_3",
+                "ingredientDisplayName": "Omega-3",
+                "rawDoseText": "1000 mg",
+                "dailyEstimatedDoseText": "1000 mg",
+                "dailyEstimatedDoseValue": 1000,
+                "dailyEstimatedDoseUnit": "mg",
+                "dailyDoseBasis": "one_serving_fallback",
+                "dailyDoseBasisReason": "missing_directions",
+                "dailyDoseBasisLabel": "estimated from 1 serving/day",
+                "comparisonStatus": "no_ul_established",
+                "comparableToUl": false
+              },
+              {
+                "supplementId": "om-2",
+                "productName": "Omega Product B",
+                "ingredientCanonicalKey": "omega_3",
+                "ingredientDisplayName": "Omega-3",
+                "rawDoseText": "1000 mg",
+                "dailyEstimatedDoseText": "1000 mg",
+                "dailyEstimatedDoseValue": 1000,
+                "dailyEstimatedDoseUnit": "mg",
+                "dailyDoseBasis": "one_serving_fallback",
+                "dailyDoseBasisReason": "missing_directions",
+                "dailyDoseBasisLabel": "estimated from 1 serving/day",
+                "comparisonStatus": "no_ul_established",
+                "comparableToUl": false
+              }
+            ],
+            "estimatedTotalDoseValue": null,
+            "estimatedTotalDoseUnit": null,
+            "estimatedTotalDoseText": null,
+            "ulValue": null,
+            "ulUnit": null,
+            "ulValueText": null,
+            "scope": null,
+            "scopeNote": null,
+            "status": "no_ul_established",
+            "confidence": "low",
+            "surfaced": false,
+            "launchTier": "tier2"
+          }
+        ],
+        "meta": {
+          "processedSupplements": 2,
+          "skippedSupplements": 0,
+          "surfacedGroupCount": 0,
+          "hiddenGroupCount": 1,
+          "supportedLifeStage": "adult_19_plus",
+          "dailyDoseBasisCounts": {
+            "labelDailyEstimate": 0,
+            "oneServingFallback": 2
+          },
+          "dailyDoseBasisReasonCounts": {
+            "missing_directions": 2
+          },
+          "estimateBasisSummary": "Dose estimates use 1 serving/day when label directions are missing or ambiguous.",
+          "hiddenGroupNote": "1 additional group stayed out of the primary warning because confidence was lower or UL comparison was not ready.",
+          "skippedSupplementNote": null
+        }
+      }
+    }
+  ],
+  "routeShapeResult": {
+    "overlaps": [
+      {
+        "ingredientKey": "magnesium",
+        "ingredientDisplay": "Magnesium",
+        "count": 2,
+        "supplements": [
+          {
+            "supplementId": "mix-1",
+            "productName": "Magnesium Product A"
+          },
+          {
+            "supplementId": "mix-2",
+            "productName": "Magnesium Product B"
+          }
+        ]
+      }
+    ],
+    "overlapCount": 1,
+    "hiddenOverlapCount": 0,
+    "stackLevelSummary": {
+      "headline": "You have 2 products with magnesium.",
+      "detailLines": [
+        "Estimated total: 600 mg/day.",
+        "Adult supplemental UL: 350 mg/day.",
+        "UL applies to supplemental magnesium (and medications), not naturally occurring food intake."
+      ],
+      "status": "over"
+    },
+    "duplicateGroups": [
+      {
+        "ingredientCanonicalKey": "magnesium",
+        "ingredientDisplayName": "Magnesium",
+        "productCount": 2,
+        "products": [
+          {
+            "supplementId": "mix-1",
+            "productName": "Magnesium Product A",
+            "ingredientCanonicalKey": "magnesium",
+            "ingredientDisplayName": "Magnesium",
+            "rawDoseText": "200 mg",
+            "dailyEstimatedDoseText": "400 mg",
+            "dailyEstimatedDoseValue": 400,
+            "dailyEstimatedDoseUnit": "mg",
+            "dailyDoseBasis": "label_daily_estimate",
+            "dailyDoseBasisReason": "parsed_label_directions",
+            "dailyDoseBasisLabel": "estimated from label directions",
+            "comparisonStatus": "over",
+            "comparableToUl": true
+          },
+          {
+            "supplementId": "mix-2",
+            "productName": "Magnesium Product B",
+            "ingredientCanonicalKey": "magnesium",
+            "ingredientDisplayName": "Magnesium",
+            "rawDoseText": "200 mg",
+            "dailyEstimatedDoseText": "200 mg",
+            "dailyEstimatedDoseValue": 200,
+            "dailyEstimatedDoseUnit": "mg",
+            "dailyDoseBasis": "one_serving_fallback",
+            "dailyDoseBasisReason": "snapshot_only_no_directions",
+            "dailyDoseBasisLabel": "estimated from 1 serving/day",
+            "comparisonStatus": "below",
+            "comparableToUl": true
+          }
+        ],
+        "estimatedTotalDoseValue": 600,
+        "estimatedTotalDoseUnit": "mg",
+        "estimatedTotalDoseText": "600 mg",
+        "ulValue": 350,
+        "ulUnit": "mg",
+        "ulValueText": "350 mg",
+        "scope": "supplements_only",
+        "scopeNote": "UL applies to supplemental magnesium (and medications), not naturally occurring food intake.",
+        "status": "over",
+        "confidence": "high",
+        "surfaced": true,
+        "launchTier": "tier1"
+      }
+    ],
+    "meta": {
+      "processedSupplements": 2,
+      "skippedSupplements": 1,
+      "surfacedGroupCount": 1,
+      "hiddenGroupCount": 0,
+      "supportedLifeStage": "adult_19_plus",
+      "dailyDoseBasisCounts": {
+        "labelDailyEstimate": 1,
+        "oneServingFallback": 1
+      },
+      "dailyDoseBasisReasonCounts": {
+        "parsed_label_directions": 1,
+        "snapshot_only_no_directions": 1
+      },
+      "estimateBasisSummary": "Dose estimates use label directions when available and 1 serving/day when directions are missing or ambiguous.",
+      "hiddenGroupNote": null,
+      "skippedSupplementNote": "1 saved item were skipped because ingredient or dose data is incomplete."
+    }
+  }
+}

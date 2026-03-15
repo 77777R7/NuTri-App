@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "iherb_official_fallback_config.v1",
+  "brandName": "Carlson",
+  "priorityLane": "P0_api_fill_us_strong_identity",
+  "siteOrigin": "https://www.carlsonlabs.com",
+  "readerPrefix": "https://r.jina.ai/http://",
+  "searchPathTemplate": "/search?q={query}&type=product",
+  "enableAgentBrowserFallback": true,
+  "enableImageOcrFallback": true,
+  "enableStagedImageOcr": true,
+  "allowSiteWideFdaWarning": true,
+  "ocrMaxImages": 6,
+  "catalogApi": {
+    "mode": "shopify_products_json",
+    "pathTemplate": "/products.json?limit=250&page={page}",
+    "pageSize": 250,
+    "maxPages": 12
+  },
+  "searchQueryOverrides": {},
+  "productPageUrlOverrides": {
+    "116231": "https://www.carlsonlabs.com/products/magnesium-soft-chews",
+    "12794": "https://www.carlsonlabs.com/products/phosphatidyl-serine"
+  },
+  "brochureFilenameOverrides": {},
+  "manualSectionOverrides": {
+    "116231": {
+      "Warnings": "These statements have not been evaluated by the FDA. This product is not intended to diagnose, treat, cure, or prevent any disease."
+    }
+  },
+  "manualSupplementFactsOverrides": {}
+}

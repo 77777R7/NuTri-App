@@ -1,11 +1,9 @@
 import type { FactsDigest } from "../factsDigest.js";
 import {
-  convertDoseToUlUnit,
   formatDoseText,
-  getUlLimitByLifeStage,
-  lookupUlByCanonicalKey,
   normalizeOdsCanonicalKey,
 } from "../ods/ulDataset.js";
+import { buildProductSafetySummary } from "../safety/productSafetySummary.js";
 import type { FactsDTOv2 } from "./scanInsightsSchema.js";
 
 type SourceRole = "lnhpd" | "dsld" | "web";
@@ -771,41 +769,28 @@ const buildSafetySignals = (params: {
     });
   }
 
-  for (const ingredient of params.ingredientRows) {
-    const ingredientName = normalizeText(ingredient.name);
-    if (!ingredientName) continue;
-    const canonicalKey = canonicalKeyFromName(ingredientName);
-    const ulItem = lookupUlByCanonicalKey(canonicalKey);
-    if (!ulItem) continue;
-    const adultLimit = getUlLimitByLifeStage(ulItem, "adult_19_plus");
-    if (!adultLimit) continue;
-
-    let referenceLine = `Upper limit (UL): ${formatDoseText(adultLimit.value, adultLimit.unit)}/day (adult 19+, NIH ODS).`;
-    if (ingredient.amount != null && ingredient.unit) {
-      const conversion = convertDoseToUlUnit({
+  const productSafetySummary = buildProductSafetySummary({
+    digest: {
+      actives: params.ingredientRows.map((ingredient) => ({
+        name: ingredient.name,
         amount: ingredient.amount,
-        fromUnit: ingredient.unit,
-        targetUnit: adultLimit.unit,
-        altUnits: ulItem.altUnits,
-      });
-      if (conversion.ok && conversion.value != null) {
-        referenceLine = `${referenceLine} Current label amount: ${formatDoseText(conversion.value, adultLimit.unit)} per serving.`;
-      } else if (!conversion.ok && conversion.reasonCode === "UNSUPPORTED_UNIT_CONVERSION") {
-        addDiagnostic(
-          params.parserDiagnostics,
-          "UNIT_CONVERSION_UNCERTAIN",
-          `Unit conversion remained uncertain for ${ingredientName} (${normalizeText(ingredient.unit)} -> ${adultLimit.unit}).`,
-          "warn",
-        );
-      }
-    }
-
+        unit: ingredient.unit,
+        amountText: ingredient.doseText,
+        chemicalForm: null,
+        chemicalFormEvidence: null,
+        source: "web",
+        confidence: ingredient.confidence ?? null,
+      })),
+      labelDosing: [],
+    },
+  });
+  for (const entry of productSafetySummary.ulGuidanceEntries) {
     rows.push({
       domain: "ul_reference",
-      text: referenceLine,
+      text: entry.displayLine,
       sourceField: "ods.ulDataset",
       scope: "ods_general",
-      reasonCode: null,
+      reasonCode: entry.reasonCode ?? null,
     });
   }
 

@@ -1,0 +1,63 @@
+{
+  "generatedAt": "2026-03-14T23:15:45.227Z",
+  "auditSourceLabel": "local_saved_products",
+  "priorityUserId": null,
+  "priorityAuditSourceId": "local_saved:native:CB15D242-7E36-4B00-A676-AD20387F3AE9:F6B1B7D0-0BA0-4BB4-81A1-D7C458B83D51",
+  "environmentHadEnoughRealSavedProducts": false,
+  "cases": {
+    "case1": {
+      "caseId": "case1",
+      "pass": false,
+      "failureReason": "no_real_simple_duplicate_case_found",
+      "productsUsed": [],
+      "duplicatedIngredient": null,
+      "perProductContribution": [],
+      "estimatedTotal": null,
+      "ul": null,
+      "scopeNote": null,
+      "payloadShapeCorrect": false,
+      "conservativeBehaviorOk": false
+    },
+    "case2": {
+      "caseId": "case2",
+      "pass": false,
+      "failureReason": "no_real_multi_product_stack_found",
+      "productsUsed": [],
+      "payloadShapeCorrect": false,
+      "conservativeBehaviorOk": false,
+      "duplicateGroupsFound": [],
+      "surfacedGroups": [],
+      "hiddenGroups": [],
+      "perProductContribution": [],
+      "totalEstimatedDosePerSurfacedGroup": [],
+      "skippedCount": 0
+    },
+    "case3": {
+      "caseId": "case3",
+      "pass": false,
+      "failureReason": "no_real_edge_input_case_found",
+      "productsUsed": [],
+      "edgeConditionType": null,
+      "payloadShapeCorrect": false,
+      "conservativeBehaviorOk": false,
+      "duplicateGroupsFound": [],
+      "surfacedGroups": [],
+      "hiddenGroups": [],
+      "perProductContribution": [],
+      "totalEstimatedDosePerSurfacedGroup": [],
+      "estimateBasisLabels": [],
+      "scopeNotes": [],
+      "skippedCount": 0
+    }
+  },
+  "payloadShapeCorrect": null,
+  "mySavedBehaviorConservative": null,
+  "currentWeek3OutputsRegressed": false,
+  "finalDecision": "Week 3 not yet fully closed",
+  "blockers": [
+    "insufficient real saved products to build all 3 required cases",
+    "Case 1 failed: no_real_simple_duplicate_case_found",
+    "Case 2 failed: no_real_multi_product_stack_found",
+    "Case 3 failed: no_real_edge_input_case_found"
+  ]
+}

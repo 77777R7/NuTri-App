@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "iherb_official_fallback_config.v1",
+  "brandName": "Nature Made",
+  "priorityLane": "P0_api_fill_us_strong_identity",
+  "siteOrigin": "https://www.naturemade.com",
+  "readerPrefix": "https://r.jina.ai/http://",
+  "searchPathTemplate": "/search?q={query}",
+  "enableAgentBrowserFallback": true,
+  "searchQueryOverrides": {
+    "142182": ["magnesium 250 mg"]
+  },
+  "productPageUrlOverrides": {
+    "142182": "https://www.naturemade.com/products/magnesium-250-mg-tablets"
+  },
+  "brochureFilenameOverrides": {},
+  "manualSectionOverrides": {
+    "142182": {
+      "Suggested use": "Adults, take 1 tablet daily with water and a meal.",
+      "Warnings": "Given that no two people are alike, if you are taking any medications you should be aware that potential drug-nutrient interactions may occur and are encouraged to consult a healthcare professional before using this product. If you have kidney disease or are taking any medication, consult your physician before use. Current research indicates that this supplement should be used with caution when taking certain prescription drugs including antibiotics and osteoporosis medications (bisphosphonates)."
+    }
+  },
+  "manualSupplementFactsOverrides": {}
+}

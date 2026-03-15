@@ -1,0 +1,40 @@
+{
+  "waveId": "week2_5_identity_iherb_identity_v2_20260314T082011Z",
+  "lane": "kpi",
+  "pathKey": "official_fetch_unresolved:iherb_identity_v2",
+  "cohortSource": "/Users/howard07/NuTriApp/nutri-app/output/high_frequency_remaining_gap_breakdown_queues/official_fetch_unresolved.json",
+  "brands": [
+    "Healthy Origins",
+    "Pure Encapsulations",
+    "Nature's Bounty",
+    "Schiff"
+  ],
+  "queryStrategy": "iherb_identity_v2",
+  "sourcePriority": [
+    "sitemap",
+    "iherb_search",
+    "search_engine_fallback",
+    "strict_page_acceptance"
+  ],
+  "stopRules": [
+    "Positive control must pass 3/4.",
+    "Scale only on execution_success.",
+    "Retarget on strategy_proof or diagnostic_success."
+  ],
+  "successMetric": "safe recoveries or sharper blocker isolation",
+  "newMethod": true,
+  "unpauseRationale": "Brand-specific query families, normalized barcode/title, and positive controls make this a new identity method.",
+  "baselineRef": {
+    "strictMergeReady": 26634,
+    "queued": 23984,
+    "completeHitCount": 666,
+    "completeHitRate": 40.3,
+    "gapBreakdownPath": "/Users/howard07/NuTriApp/nutri-app/output/high_frequency_remaining_gap_breakdown.json"
+  },
+  "touchedBrandPaths": [
+    "official_fetch_unresolved:iherb_identity_v2"
+  ],
+  "touchedBlockerKeys": [
+    "kpi:official_fetch_unresolved/iherb_identity_v2"
+  ]
+}

@@ -4,6 +4,16 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
 
+import { detectQualityMarkFromHtml } from "../../backend/src/qualityMarks/detector.ts";
+import {
+  dedupeQualityMarkProgramMatches,
+  mergeQualityMarkSummaries,
+} from "../../backend/src/qualityMarks/matchers.ts";
+import {
+  buildQualityMarkSourceCandidates,
+  fetchQualityMarkSource,
+} from "../../backend/src/qualityMarks/provider.ts";
+
 const ROOT = process.cwd();
 const args = process.argv.slice(2);
 const getArg = (name, fallback = null) => {
@@ -47,168 +57,113 @@ const buildKey = (row) => {
 
 const makeExpiresAt = () => new Date(Date.now() + ttlDays * 24 * 60 * 60 * 1000).toISOString();
 
-const SEARCH_PATTERNS = [
-  { label: "USP Verified", re: /\busp\b(?:\s*verified)?/i },
-  { label: "NSF", re: /\bnsf\b(?:\s*certified(?:\s*for\s*sport)?)?/i },
-  { label: "Informed Choice", re: /\binformed\s*choice\b/i },
-  { label: "Informed Sport", re: /\binformed\s*sport\b/i },
-  { label: "BSCG", re: /\bbscg\b/i },
-  { label: "ConsumerLab", re: /\bconsumerlab\b/i },
-];
+const confidenceBucket = (confidence) =>
+  confidence >= 0.85 ? "high" : confidence >= 0.65 ? "medium" : "low";
 
-const sanitizeHtml = (html) =>
-  html
-    .replace(/<script[\s\S]*?<\/script>/gi, " ")
-    .replace(/<style[\s\S]*?<\/style>/gi, " ")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/\s+/g, " ")
-    .trim()
-    .toLowerCase();
-
-const fetchHtml = async (url, timeoutMs = 8000) => {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const response = await fetch(url, {
-      method: "GET",
-      signal: controller.signal,
-      headers: {
-        "user-agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
-        accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-      },
-    });
-    if (!response.ok) return { ok: false, html: null, error: `http_${response.status}` };
-    const html = await response.text();
-    return { ok: true, html, error: null };
-  } catch (error) {
-    return { ok: false, html: null, error: error instanceof Error ? error.message : String(error) };
-  } finally {
-    clearTimeout(timer);
+const buildSummaryNote = (summary) => {
+  if (!summary) return "Third-party quality mark status is unknown until verified web evidence is available.";
+  if (summary.overallStatus === "verified") {
+    return `Official ${summary.strongestProgramLabel ?? "registry"} verification matched this product.`;
   }
+  if (summary.warnings.includes("registry_access_blocked")) {
+    return `Official ${summary.strongestProgramLabel ?? "registry"} access was blocked, so third-party verification remains unproven.`;
+  }
+  if (summary.warnings.includes("brand_level_only_match")) {
+    return `Official ${summary.strongestProgramLabel ?? "registry"} results only support a brand-level match so far.`;
+  }
+  if (summary.overallStatus === "claimed" && summary.warnings.includes("registry_checked_not_found")) {
+    return `A ${summary.strongestProgramLabel ?? "program-specific"} claim was detected, but official registry checks did not confirm a product-level match.`;
+  }
+  if (summary.overallStatus === "claimed") {
+    return `A ${summary.strongestProgramLabel ?? "program-specific"} claim was detected, but official registry verification has not been completed yet.`;
+  }
+  if (summary.warnings.includes("registry_checked_not_found")) {
+    return `Official ${summary.strongestProgramLabel ?? "registry"} verification was checked and no product-level match was found.`;
+  }
+  if (summary.warnings.includes("program_not_equivalent_to_generic_third_party")) {
+    return "A quality program was mentioned, but it is not treated as generic third-party testing proof.";
+  }
+  if (summary.warnings.includes("search_only_evidence")) {
+    return "Search-only evidence is available, but no verified mark page or registry match has been confirmed yet.";
+  }
+  if (summary.overallStatus === "not_proven") {
+    return "Third-party verification was checked and is not currently proven from the available evidence.";
+  }
+  return "Third-party quality mark check is inconclusive.";
 };
 
-const buildSources = (row) => {
-  const brand = String(row.brandName ?? "").trim();
-  const product = String(row.productName ?? "").trim();
-  const query = encodeURIComponent(`${brand} ${product} third-party tested USP NSF Informed Choice BSCG ConsumerLab`);
-  const brandDomain = normalize(brand).replace(/_/g, "");
-  return [
-    {
-      url: `https://duckduckgo.com/html/?q=${query}+site%3A${brandDomain}.com`,
-      sourceType: "brand_official",
-    },
-    {
-      url: `https://duckduckgo.com/html/?q=${query}+site%3Aamazon.com`,
-      sourceType: "retailer_marketplace",
-    },
-    {
-      url: `https://duckduckgo.com/html/?q=${query}+site%3Aiherb.com`,
-      sourceType: "retailer_marketplace",
-    },
-    {
-      url: `https://duckduckgo.com/html/?q=${query}+site%3Awell.ca`,
-      sourceType: "retailer_marketplace",
-    },
-  ];
+const pickBestDetection = (detections, summary) => {
+  if (!detections.length) return null;
+  if (summary?.strongestProgramId) {
+    const strongestProgramDetection = detections.find((item) =>
+      item.detection.programMatches?.some((match) => match.programId === summary.strongestProgramId)
+    );
+    if (strongestProgramDetection) return strongestProgramDetection;
+  }
+  if (summary?.officialRegistryVerified) {
+    return detections.find((item) => item.detection.verificationSummary?.officialRegistryVerified) ?? detections[0];
+  }
+  if (summary?.overallStatus === "claimed") {
+    return detections.find((item) => item.detection.status === "detected") ?? detections[0];
+  }
+  if (summary?.officialRegistryChecked) {
+    return (
+      detections.find((item) => item.source.sourceType === "official_registry" && item.detection.checked) ??
+      detections[0]
+    );
+  }
+  return detections.find((item) => item.detection.checked) ?? detections[0];
 };
 
-const detectFromHtml = (html, source) => {
-  const isSearchOnlySource = /duckduckgo\.com\/html\/\?q=/i.test(source.url);
-  if (!html) {
-    return {
-      status: "unknown",
-      checked: false,
-      confidence: null,
-      confidenceBucket: "low",
-      evidenceRef: null,
-      evidenceType: null,
-      checkedMode: isSearchOnlySource ? "search_only" : "page_fetch",
-      pagesFetchedCount: isSearchOnlySource ? 0 : 1,
-      searchPagesFetchedCount: isSearchOnlySource ? 1 : 0,
-      note: "No source HTML returned.",
-    };
-  }
-  const text = sanitizeHtml(html);
-  if (!text) {
-    return {
-      status: "unknown",
-      checked: false,
-      confidence: null,
-      confidenceBucket: "low",
-      evidenceRef: null,
-      evidenceType: null,
-      checkedMode: isSearchOnlySource ? "search_only" : "page_fetch",
-      pagesFetchedCount: isSearchOnlySource ? 0 : 1,
-      searchPagesFetchedCount: isSearchOnlySource ? 1 : 0,
-      note: "Source content empty after sanitization.",
-    };
-  }
-  if (isSearchOnlySource) {
-    return {
-      status: "unknown",
-      checked: true,
-      confidence: 0.55,
-      confidenceBucket: "low",
-      evidenceRef: source.url,
-      evidenceType: "search",
-      checkedMode: "search_only",
-      pagesFetchedCount: 0,
-      searchPagesFetchedCount: 1,
-      note: "Search-only evidence; no verified mark page/image found yet.",
-    };
-  }
-  for (const item of SEARCH_PATTERNS) {
-    const match = text.match(item.re);
-    if (!match || typeof match.index !== "number") continue;
-    const left = Math.max(0, match.index - 80);
-    const right = Math.min(text.length, match.index + 80);
-    const span = text.slice(left, right);
-    if (!/\blogo\b|\bseal\b|\bicon\b|\bcertified\b|\btested\b|\bquality\b/i.test(span)) {
-      return {
-        status: "unknown",
-        checked: true,
-        confidence: 0.55,
-        confidenceBucket: "low",
-        evidenceRef: source.url,
-        evidenceType: "page",
-        checkedMode: "page_fetch",
-        pagesFetchedCount: 1,
-        searchPagesFetchedCount: 0,
-        note: `Weak mention found for ${item.label}.`,
-      };
-    }
-    return {
-      status: "detected",
-      checked: true,
-      confidence: 0.92,
-      confidenceBucket: "high",
-      evidenceRef: source.url,
-      evidenceType: "page",
-      checkedMode: "page_fetch",
-      pagesFetchedCount: 1,
-      searchPagesFetchedCount: 0,
-      note: `Detected ${item.label}.`,
-    };
-  }
-  const confidence = source.sourceType === "brand_official" ? 0.86 : 0.82;
+const finalizeDetection = (params) => {
+  const { detections, programMatches, verificationSummary, pageFetchCount, searchFetchCount, errors } = params;
+  const best = pickBestDetection(detections, verificationSummary);
+
+  let status = best?.detection.status ?? "unknown";
+  if (verificationSummary?.officialRegistryVerified) status = "detected";
+  else if (verificationSummary?.overallStatus === "claimed") status = "detected";
+  else if (verificationSummary?.overallStatus === "not_proven") status = "not_detected";
+  else if (verificationSummary?.overallStatus === "ambiguous") status = "unknown";
+
+  const confidence =
+    verificationSummary?.officialRegistryVerified
+      ? 0.97
+      : verificationSummary?.overallStatus === "claimed"
+        ? Math.max(best?.detection.confidence ?? 0.92, 0.92)
+        : verificationSummary?.overallStatus === "not_proven"
+          ? Math.max(best?.detection.confidence ?? 0.88, 0.88)
+          : best?.detection.confidence ?? (searchFetchCount > 0 ? 0.55 : null);
+
+  const evidenceType =
+    verificationSummary?.officialRegistryVerified || verificationSummary?.officialRegistryChecked
+      ? "official_registry"
+      : best?.detection.evidenceType ?? null;
+  const checkedMode = pageFetchCount > 0 ? "page_fetch" : searchFetchCount > 0 ? "search_only" : "search_only";
+
   return {
-    status: "unknown",
-    checked: true,
+    status,
+    checked: pageFetchCount > 0 || searchFetchCount > 0,
     confidence,
-    confidenceBucket: confidence >= 0.85 ? "high" : "medium",
-    evidenceRef: source.url,
-    evidenceType: "page",
-    checkedMode: "page_fetch",
-    pagesFetchedCount: 1,
-    searchPagesFetchedCount: 0,
-    note: "Checked source with no confident quality mark detected.",
+    confidenceBucket: confidence === null ? "low" : confidenceBucket(confidence),
+    evidenceRef: best?.detection.evidenceRef ?? null,
+    evidenceType,
+    checkedMode,
+    pagesFetchedCount: pageFetchCount,
+    searchPagesFetchedCount: searchFetchCount,
+    note: buildSummaryNote(verificationSummary),
+    programMatches: dedupeQualityMarkProgramMatches(programMatches),
+    verificationSummary,
+    error: errors[0] ?? null,
   };
 };
 
 const readJson = async (filePath) => JSON.parse(await fs.readFile(filePath, "utf8"));
+
+const runQualityMarkSource = async (source) => {
+  const fetched = await fetchQualityMarkSource(source);
+  const detection = detectQualityMarkFromHtml(fetched, source);
+  return { source, fetched, detection };
+};
 
 const main = async () => {
   await fs.mkdir(path.dirname(cachePath), { recursive: true });
@@ -223,65 +178,56 @@ const main = async () => {
   const rows = [];
   for (const row of products.slice(0, scope === "top53" ? 53 : 120)) {
     const key = buildKey(row);
-    const sources = buildSources(row);
+    const sources = buildQualityMarkSourceCandidates({
+      identityType: (row.identityKey || "").split(":")[0] || null,
+      identityValue: (row.identityKey || "").split(":").slice(1).join(":") || row.barcode_gtin14 || null,
+      sourceType: row.sourceType ?? null,
+      brandName: row.brandName ?? null,
+      productName: row.productName ?? null,
+    });
     const tried = [];
-    let final = {
-      status: "unknown",
-      checked: false,
-      confidence: null,
-      confidenceBucket: "low",
-      evidenceRef: null,
-      evidenceType: null,
-      checkedMode: "search_only",
-      pagesFetchedCount: 0,
-      searchPagesFetchedCount: 0,
-      note: "No source tried.",
-      error: null,
-    };
+    const detections = [];
+    const summaries = [];
+    const programMatches = [];
+    const errors = [];
     let pageFetchCount = 0;
     let searchFetchCount = 0;
-    let detectedOnPage = false;
-    for (const source of sources) {
-      tried.push(source.url);
-      const fetched = await fetchHtml(source.url);
-      if (!fetched.ok) {
-        final.error = fetched.error;
-        continue;
+
+    const officialSources = sources.filter((source) => source.sourceType === "official_registry");
+    const fallbackSources = sources.filter((source) => source.sourceType !== "official_registry");
+    const sourceBatches = [officialSources, fallbackSources];
+
+    for (const batch of sourceBatches) {
+      if (batch.length === 0) continue;
+      if (batch[0]?.sourceType !== "official_registry" && summaries.some((summary) => summary?.officialRegistryChecked)) {
+        break;
       }
-      const detected = detectFromHtml(fetched.html, source);
-      pageFetchCount += detected.pagesFetchedCount || 0;
-      searchFetchCount += detected.searchPagesFetchedCount || 0;
-      final = { ...detected, error: null };
-      if (detected.status === "detected" && detected.checkedMode === "page_fetch") {
-        detectedOnPage = true;
+
+      const batchResults = await Promise.all(batch.map(runQualityMarkSource));
+      for (const result of batchResults) {
+        tried.push(result.source.url);
+        if (result.fetched.error) errors.push(result.fetched.error);
+        detections.push(result);
+        pageFetchCount += result.detection.pagesFetchedCount || 0;
+        searchFetchCount += result.detection.searchPagesFetchedCount || 0;
+        if (Array.isArray(result.detection.programMatches)) programMatches.push(...result.detection.programMatches);
+        if (result.detection.verificationSummary) summaries.push(result.detection.verificationSummary);
+      }
+
+      if (summaries.some((summary) => summary?.officialRegistryVerified)) {
         break;
       }
     }
-    if (!detectedOnPage) {
-      if (pageFetchCount >= 2) {
-        final = {
-          ...final,
-          status: "not_detected",
-          checked: true,
-          confidence: final.confidence ?? 0.82,
-          confidenceBucket: final.confidenceBucket ?? "medium",
-          note: "Checked >=2 page sources with no confident quality mark detected.",
-          checkedMode: "page_fetch",
-          evidenceType: final.evidenceType === "page" ? "page" : null,
-        };
-      } else if (searchFetchCount > 0 && pageFetchCount === 0) {
-        final = {
-          ...final,
-          status: "unknown",
-          checked: true,
-          confidence: 0.55,
-          confidenceBucket: "low",
-          note: "Search-only evidence; no verified mark page/image found yet.",
-          checkedMode: "search_only",
-          evidenceType: "search",
-        };
-      }
-    }
+
+    const verificationSummary = mergeQualityMarkSummaries(...summaries);
+    const final = finalizeDetection({
+      detections,
+      programMatches,
+      verificationSummary,
+      pageFetchCount,
+      searchFetchCount,
+      errors,
+    });
 
     const checkedAt = nowIso();
     const entry = {
@@ -293,10 +239,12 @@ const main = async () => {
       evidenceRef: final.evidenceRef,
       evidenceType: final.evidenceType,
       checkedMode: final.checkedMode,
-      pagesFetchedCount: pageFetchCount,
-      searchPagesFetchedCount: searchFetchCount,
+      pagesFetchedCount: final.pagesFetchedCount,
+      searchPagesFetchedCount: final.searchPagesFetchedCount,
       sourcesTried: tried,
-      sourcePriority: ["brand_official", "retailer_marketplace", "retailer_other"],
+      sourcePriority: Array.from(new Set(sources.map((source) => source.sourceType))),
+      programMatches: final.programMatches,
+      verificationSummary: final.verificationSummary ?? null,
       checkedAt,
       expiresAt: makeExpiresAt(),
       error: final.error,
@@ -312,7 +260,7 @@ const main = async () => {
   }
 
   const cachePayload = {
-    schemaVersion: "quality_mark_cache.v1",
+    schemaVersion: "quality_mark_cache.v2",
     ttlDays,
     updatedAt: nowIso(),
     entryCount: Object.keys(entries).length,

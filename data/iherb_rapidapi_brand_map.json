@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "iherb_rapidapi_brand_map.v1",
+  "brands": [
+    {
+      "brandName": "Healthy Origins",
+      "brandSlug": "healthy-origins",
+      "status": "available"
+    },
+    {
+      "brandName": "Schiff",
+      "brandSlug": "schiff",
+      "status": "available"
+    },
+    {
+      "brandName": "Natrol",
+      "brandSlug": "natrol",
+      "status": "available"
+    },
+    {
+      "brandName": "Spring Valley",
+      "brandSlug": null,
+      "status": "unavailable",
+      "note": "No matching brand slug was returned by the RapidAPI brands endpoint on 2026-03-13."
+    },
+    {
+      "brandName": "Centrum",
+      "brandSlug": "centrum",
+      "status": "available"
+    }
+  ]
+}

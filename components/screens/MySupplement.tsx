@@ -37,6 +37,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Easing } from "react-native-reanimated";
 
 import { AutoFitText } from "@/components/common/AutoFitText";
+import { DuplicateIngredientGroupCard } from "@/components/screens/mySaved/DuplicateIngredientGroupCard";
+import { SavedStackSafetySummary } from "@/components/screens/mySaved/SavedStackSafetySummary";
+import type {
+  StackDuplicateGroup,
+  StackLevelSafetySummary,
+  StackSafetyMeta,
+} from "@/components/screens/mySaved/types";
 import { Config } from "@/constants/Config";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOnboarding } from "@/contexts/OnboardingContext";
@@ -791,6 +798,9 @@ type StackOverlapResponse = {
     truncated: boolean;
     hiddenOverlapCount: number;
   };
+  stackLevelSummary?: StackLevelSafetySummary | null;
+  duplicateGroups?: StackDuplicateGroup[];
+  meta?: StackSafetyMeta | null;
 };
 
 const ensureOverview = async (params: {
@@ -1269,6 +1279,9 @@ function DetailSheet({
   item,
   theme,
   stackOverlaps,
+  stackSafetySummary,
+  duplicateGroups,
+  stackSafetyMeta,
   mealTimePrefs,
   onLearnMealTimePref,
   onClose,
@@ -1277,6 +1290,9 @@ function DetailSheet({
   item: SavedSupplement;
   theme: Theme;
   stackOverlaps?: StackOverlapItem[];
+  stackSafetySummary?: StackLevelSafetySummary | null;
+  duplicateGroups?: StackDuplicateGroup[];
+  stackSafetyMeta?: StackSafetyMeta | null;
   mealTimePrefs?: MealTimePrefs | null;
   onLearnMealTimePref?: (
     label: "Breakfast" | "Lunch" | "Dinner" | "Bedtime",
@@ -2472,12 +2488,18 @@ function DetailSheet({
       })
       .slice(0, 5);
   })();
+  const surfacedDuplicateGroups = useMemo(
+    () => (Array.isArray(duplicateGroups) ? duplicateGroups.filter((group) => group?.surfaced) : []),
+    [duplicateGroups],
+  );
+  const hasStackSafetyWarning = Boolean(stackSafetySummary?.headline) && surfacedDuplicateGroups.length > 0;
   const overviewDetailsLoading = (factsStatus === "partial" && !factsRefreshExhausted) || aiUiPhase === "pending";
   const overviewDetailsReady =
     !overviewDetailsLoading &&
     (whatItDoesBullets.length > 0 ||
       watchOutLines.length > 0 ||
       aiNotice.length > 0 ||
+      hasStackSafetyWarning ||
       stackOverlapLines.length > 0 ||
       aiUiPhase === "ready");
   const showOverviewToggle =
@@ -2690,7 +2712,24 @@ function DetailSheet({
 	                        </View>
 	                      ) : null}
 
-	                      {overviewExpanded && stackOverlapLines.length > 0 ? (
+	                      {overviewExpanded && hasStackSafetyWarning ? (
+	                        <View style={{ gap: 10 }}>
+	                          <Text style={styles.overviewSectionTitle}>Duplicate ingredient warning</Text>
+                            {stackSafetySummary ? (
+                              <SavedStackSafetySummary summary={stackSafetySummary} meta={stackSafetyMeta ?? null} />
+                            ) : null}
+                            <View style={{ gap: 10 }}>
+                              {surfacedDuplicateGroups.map((group) => (
+                                <DuplicateIngredientGroupCard
+                                  key={group.ingredientCanonicalKey}
+                                  group={group}
+                                />
+                              ))}
+                            </View>
+	                        </View>
+	                      ) : null}
+
+	                      {overviewExpanded && !hasStackSafetyWarning && stackOverlapLines.length > 0 ? (
 	                        <View style={{ gap: 10 }}>
 	                          <Text style={styles.overviewSectionTitle}>Stack overlaps</Text>
 	                          <View style={{ gap: 10 }}>
@@ -3132,6 +3171,15 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
   const [stackOverlapCountBySupplementId, setStackOverlapCountBySupplementId] = useState<Map<string, number>>(
     () => new Map(),
   );
+  const [stackSafetySummaryBySupplementId, setStackSafetySummaryBySupplementId] = useState<Map<string, StackLevelSafetySummary>>(
+    () => new Map(),
+  );
+  const [duplicateGroupsBySupplementId, setDuplicateGroupsBySupplementId] = useState<Map<string, StackDuplicateGroup[]>>(
+    () => new Map(),
+  );
+  const [stackSafetyMetaBySupplementId, setStackSafetyMetaBySupplementId] = useState<Map<string, StackSafetyMeta>>(
+    () => new Map(),
+  );
   const [mealTimePrefs, setMealTimePrefs] = useState<MealTimePrefs | null>(null);
 
   const visibleGoalTags = useMemo(
@@ -3453,6 +3501,9 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
     if (!user?.id || data.length === 0) {
       setStackOverlapBySupplementId(new Map());
       setStackOverlapCountBySupplementId(new Map());
+      setStackSafetySummaryBySupplementId(new Map());
+      setDuplicateGroupsBySupplementId(new Map());
+      setStackSafetyMetaBySupplementId(new Map());
       return () => {
         isActive = false;
       };
@@ -3464,12 +3515,18 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
         if (!payload) {
           setStackOverlapBySupplementId(new Map());
           setStackOverlapCountBySupplementId(new Map());
+          setStackSafetySummaryBySupplementId(new Map());
+          setDuplicateGroupsBySupplementId(new Map());
+          setStackSafetyMetaBySupplementId(new Map());
         }
         return;
       }
 
       const bySupplement = new Map<string, StackOverlapItem[]>();
       const countBySupplement = new Map<string, number>();
+      const duplicateBySupplement = new Map<string, StackDuplicateGroup[]>();
+      const summaryBySupplement = new Map<string, StackLevelSafetySummary>();
+      const metaBySupplement = new Map<string, StackSafetyMeta>();
 
       for (const overlap of payload.overlaps) {
         for (const supplement of overlap.supplements) {
@@ -3484,11 +3541,40 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
         }
       }
 
+      const surfacedGroups = (payload.duplicateGroups ?? []).filter((group) => group?.surfaced);
+      for (const group of surfacedGroups) {
+        for (const product of group.products ?? []) {
+          const supplementId = product.supplementId?.trim();
+          if (!supplementId) continue;
+          const existing = duplicateBySupplement.get(supplementId) ?? [];
+          if (!existing.some((entry) => entry.ingredientCanonicalKey === group.ingredientCanonicalKey)) {
+            existing.push(group);
+            duplicateBySupplement.set(supplementId, existing);
+          }
+          if (payload.stackLevelSummary?.headline) {
+            summaryBySupplement.set(supplementId, payload.stackLevelSummary);
+          }
+          if (payload.meta) {
+            metaBySupplement.set(supplementId, payload.meta);
+          }
+        }
+      }
+
+      for (const [supplementId, groups] of duplicateBySupplement.entries()) {
+        countBySupplement.set(
+          supplementId,
+          Math.max(countBySupplement.get(supplementId) ?? 0, groups.length),
+        );
+      }
+
       setStackOverlapBySupplementId(bySupplement);
       setStackOverlapCountBySupplementId(countBySupplement);
-      if (payload.overlaps.length > 0) {
+      setStackSafetySummaryBySupplementId(summaryBySupplement);
+      setDuplicateGroupsBySupplementId(duplicateBySupplement);
+      setStackSafetyMetaBySupplementId(metaBySupplement);
+      if (payload.overlaps.length > 0 || surfacedGroups.length > 0) {
         logStackOverlapEvent("stack_overlap_exposed", {
-          overlapCount: payload.summary?.overlapCount ?? payload.overlaps.length,
+          overlapCount: payload.meta?.surfacedGroupCount ?? payload.summary?.overlapCount ?? payload.overlaps.length,
           truncated: payload.summary?.truncated ?? false,
           hiddenOverlapCount: payload.summary?.hiddenOverlapCount ?? 0,
         });
@@ -3501,6 +3587,9 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
       console.warn("[stack-overlap] Unhandled fetch error", message);
       setStackOverlapBySupplementId(new Map());
       setStackOverlapCountBySupplementId(new Map());
+      setStackSafetySummaryBySupplementId(new Map());
+      setDuplicateGroupsBySupplementId(new Map());
+      setStackSafetyMetaBySupplementId(new Map());
     });
 
     return () => {
@@ -4473,6 +4562,9 @@ export function MySupplementView({ data, onDeleteSelected, onSaveRoutine }: Prop
           item={detailItem}
           theme={detailTheme}
           stackOverlaps={detailItem.supplementId ? stackOverlapBySupplementId.get(detailItem.supplementId) ?? [] : []}
+          stackSafetySummary={detailItem.supplementId ? stackSafetySummaryBySupplementId.get(detailItem.supplementId) ?? null : null}
+          duplicateGroups={detailItem.supplementId ? duplicateGroupsBySupplementId.get(detailItem.supplementId) ?? [] : []}
+          stackSafetyMeta={detailItem.supplementId ? stackSafetyMetaBySupplementId.get(detailItem.supplementId) ?? null : null}
           mealTimePrefs={mealTimePrefs}
           onLearnMealTimePref={handleLearnMealTimePref}
           onClose={() => setDetailId(null)}

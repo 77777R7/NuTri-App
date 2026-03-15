@@ -1,0 +1,13 @@
+{
+  "generatedAt": "2026-03-14T22:14:48.659Z",
+  "totalSavedProductsEvaluated": 0,
+  "countUsingLabelDailyEstimate": 0,
+  "countUsingOneServingFallback": 0,
+  "countSkippedDueToInsufficientIngredientOrDoseData": 0,
+  "topFallbackReasons": [],
+  "evaluationCoverage": {
+    "queriedSavedRows": 0,
+    "cachedSnapshotRowsEvaluated": 0,
+    "uncachedOrUnusableSavedRows": 0
+  }
+}

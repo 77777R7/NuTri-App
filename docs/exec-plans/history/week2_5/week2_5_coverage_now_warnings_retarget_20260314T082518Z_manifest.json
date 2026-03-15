@@ -1,0 +1,35 @@
+{
+  "waveId": "week2_5_coverage_now_warnings_retarget_20260314T082518Z",
+  "lane": "coverage",
+  "pathKey": "NOW Foods:official_warnings_path_retarget",
+  "cohortSource": "/Users/howard07/NuTriApp/nutri-app/output/week2_5_root_cause/now_retarget_queue_20260314T082518Z.json",
+  "brands": [
+    "NOW Foods"
+  ],
+  "queryStrategy": "official_warnings_path_retarget",
+  "sourcePriority": [
+    "official_page",
+    "product_sections",
+    "ocr_fallback"
+  ],
+  "stopRules": [
+    "Scale on >=4 complete.",
+    "Retarget on 1-3 complete.",
+    "Pause on 0 complete."
+  ],
+  "successMetric": "complete uplift on a new, narrower NOW Foods cohort",
+  "newMethod": true,
+  "unpauseRationale": "This is a narrower retargeted cohort, not the exhausted broad NOW path.",
+  "baselineRef": {
+    "strictMergeReady": 26634,
+    "queued": 23984,
+    "completeHitCount": 666,
+    "completeHitRate": 40.3
+  },
+  "touchedBrandPaths": [
+    "NOW Foods:official_warnings_path_retarget"
+  ],
+  "touchedBlockerKeys": [
+    "coverage:now_foods/official_warnings_retarget"
+  ]
+}
