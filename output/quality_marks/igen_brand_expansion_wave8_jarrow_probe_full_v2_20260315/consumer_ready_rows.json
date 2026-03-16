@@ -1,0 +1,28 @@
+[
+  {
+    "key": "web:gtin14:00790011210788:jarrow_formulas:jarrow_formulas_lactoferrin_freeze_dried_250_mg_30_capsules",
+    "productId": "117437",
+    "barcode": "00790011210788",
+    "brandName": "Jarrow Formulas",
+    "productName": "Jarrow Formulas, Lactoferrin, Freeze Dried, 250 mg, 30 Capsules",
+    "iherbUrl": "https://www.iherb.com/pr/jarrow-formulas-lactoferrin-freeze-dried-250-mg-30-capsules/117437",
+    "officialSignalProgramId": "igen",
+    "officialSignalState": "product_level_official_signal",
+    "officialRegistryEvidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=JRRW0056",
+    "currentStagingStatus": "full_overlay_ready",
+    "currentCoreMissingFields": []
+  },
+  {
+    "key": "web:gtin14:00790011120254:jarrow_formulas:jarrow_formulas_lutein_20_mg_60_softgels",
+    "productId": "139",
+    "barcode": "00790011120254",
+    "brandName": "Jarrow Formulas",
+    "productName": "Jarrow Formulas, Lutein, 20 mg, 60 Softgels",
+    "iherbUrl": "https://www.iherb.com/pr/jarrow-formulas-lutein-20-mg-60-softgels/139",
+    "officialSignalProgramId": "igen",
+    "officialSignalState": "product_level_official_signal",
+    "officialRegistryEvidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=JRRW0033",
+    "currentStagingStatus": "full_overlay_ready",
+    "currentCoreMissingFields": []
+  }
+]

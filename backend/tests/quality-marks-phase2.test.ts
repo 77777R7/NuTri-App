@@ -10,7 +10,11 @@ import {
   mergeQualityMarkSummaries,
   summarizeQualityMarkProgramMatches,
 } from "../src/qualityMarks/matchers.js";
-import { buildQualityMarkSourceCandidates } from "../src/qualityMarks/provider.js";
+import {
+  buildQualityMarkSourceCandidates,
+  resolveNutrasourceBrandDetailSource,
+  resolveNutrasourceProductDetailSource,
+} from "../src/qualityMarks/provider.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -34,6 +38,69 @@ test("phase 2 provider builds direct official registry adapters before fallback 
   assert.match(official[0]?.url ?? "", /search-results\.php\?keyword=/);
   assert.match(official[2]?.url ?? "", /choice\.wetestyoutrust\.com\/supplement-search\?search=/);
   assert.match(official[5]?.url ?? "", /GetFilteredProducts/);
+});
+
+test("provider strips duplicated brand prefixes and noisy suffixes from registry queries", () => {
+  const sources = buildQualityMarkSourceCandidates({
+    identityType: "barcode",
+    identityValue: "088395060630",
+    sourceType: "web",
+    brandName: "Carlson",
+    productName: "Carlson Elite Omega-3 Plus D & K, Natural Lemon, 180 Soft Gels",
+  });
+
+  const nsfSource = sources.find((source) => source.adapterKind === "nsf_search");
+  const ifosSource = sources.find((source) => source.adapterKind === "nutrasource_product_search");
+
+  assert.equal(nsfSource?.queryText, "Carlson Elite Omega-3 Plus D & K, Natural Lemon, 180 Soft Gels");
+  assert.equal(ifosSource?.queryText, "Elite Omega 3 Plus D & K");
+});
+
+test("provider can resolve Nutrasource brand detail then product detail from brand listings", () => {
+  const brandDetailSource = resolveNutrasourceBrandDetailSource({
+    source: {
+      url: "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?...",
+      sourceType: "official_registry",
+      programId: "ifos",
+      adapterKind: "nutrasource_brand_search",
+      responseFormat: "json",
+      brandName: "Barlean's",
+      productName: "Barlean's, Ideal Omega 3, Orange, 60 Softgels",
+      queryText: "Barlean's",
+    },
+    fetchResult: {
+      ok: true,
+      body: JSON.stringify({
+        success: true,
+        list: [{ BrandId: "BARL", Name: "Barlean's", HasIfos: true }],
+      }),
+      error: null,
+      statusCode: 200,
+      contentType: "application/json",
+    },
+  });
+
+  assert.equal(brandDetailSource?.adapterKind, "nutrasource_brand_detail");
+  assert.match(brandDetailSource?.url ?? "", /certified-products\/brand\?id=BARL/);
+
+  const productDetailSource = resolveNutrasourceProductDetailSource({
+    source: brandDetailSource!,
+    fetchResult: {
+      ok: true,
+      body: `
+        <div class="brand-products">
+          <a href="/certified-products/product?id=BARL0001">Ideal Omega 3</a>
+          <a href="/certified-products/product?id=BARL0003">Eye Remedy - Tangerine Smoothie Fish Oil</a>
+        </div>
+      `,
+      error: null,
+      statusCode: 200,
+      contentType: "text/html",
+    },
+  });
+
+  assert.equal(productDetailSource?.adapterKind, "nutrasource_product_detail");
+  assert.match(productDetailSource?.url ?? "", /certified-products\/product\?id=BARL0001/);
 });
 
 test("detector turns NSF result rows into verified registry matches", () => {
@@ -105,7 +172,7 @@ test("detector keeps IFOS brand-only hits ambiguous instead of upgrading them to
   assert.equal(detection.programMatches[0]?.matchLevel, "brand");
 });
 
-test("detector records USP registry blocks as ambiguous instead of not_proven", () => {
+test("detector records USP registry blocks without pretending they are product-level matches", () => {
   const detection = detectQualityMarkFromHtml(
     {
       ok: false,
@@ -129,6 +196,10 @@ test("detector records USP registry blocks as ambiguous instead of not_proven", 
   assert.equal(detection.status, "unknown");
   assert.equal(detection.verificationSummary?.overallStatus, "ambiguous");
   assert.equal(detection.verificationSummary?.warnings.includes("registry_access_blocked"), true);
+  assert.equal(detection.checked, false);
+  assert.deepEqual(detection.programMatches, []);
+  assert.deepEqual(detection.verificationSummary?.blockedProgramIds, []);
+  assert.deepEqual(detection.verificationSummary?.blockedProgramLabels, []);
 });
 
 test("detector does not treat Informed query echo plus no-results page chrome as a verified match", () => {
@@ -208,6 +279,82 @@ test("detector uses Informed result cards as product-level verified matches", ()
   assert.equal(detection.programMatches[0]?.status, "verified_registry_match");
 });
 
+test("structured IFOS product hits can merge with brand-level hits into a verified registry result", () => {
+  const productDetection = detectQualityMarkFromHtml(
+    {
+      ok: true,
+      body: JSON.stringify({
+        success: true,
+        html: `
+          <div class="item-thumb">
+            <a href="/certified-products/product?id=CRLL0001">Elite Omega-3 Plus D & K</a>
+          </div>
+        `,
+        list: [
+          {
+            ProductNum: "CRLL0001",
+            ProductName: "Elite Omega-3 Plus D & K",
+            IsIfos: true,
+          },
+        ],
+      }),
+      error: null,
+      statusCode: 200,
+      contentType: "application/json",
+    },
+    {
+      url: "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredProducts?...",
+      sourceType: "official_registry",
+      programId: "ifos",
+      adapterKind: "nutrasource_product_search",
+      responseFormat: "json",
+      brandName: "Carlson",
+      productName: "Carlson Elite Omega-3 Plus D & K, Natural Lemon, 180 Soft Gels",
+      queryText: "Elite Omega-3 D & K",
+    },
+  );
+
+  const brandDetection = detectQualityMarkFromHtml(
+    {
+      ok: true,
+      body: JSON.stringify({
+        success: true,
+        html: `
+          <div class="brand-card">
+            <a href="/certified-products/brand?id=CRLL">Carlson</a>
+            <span class="certification">IFOS</span>
+          </div>
+        `,
+        list: [{ Name: "Carlson", HasIfos: true }],
+      }),
+      error: null,
+      statusCode: 200,
+      contentType: "application/json",
+    },
+    {
+      url: "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?...",
+      sourceType: "official_registry",
+      programId: "ifos",
+      adapterKind: "nutrasource_brand_search",
+      responseFormat: "json",
+      brandName: "Carlson",
+      productName: "Carlson Elite Omega-3 Plus D & K, Natural Lemon, 180 Soft Gels",
+      queryText: "Carlson",
+    },
+  );
+
+  const merged = mergeQualityMarkSummaries(
+    brandDetection.verificationSummary,
+    productDetection.verificationSummary,
+  );
+
+  assert.equal(productDetection.status, "unknown");
+  assert.equal(productDetection.verificationSummary?.warnings.includes("product_match_without_brand_confirmation"), true);
+  assert.equal(merged?.overallStatus, "verified");
+  assert.equal(merged?.officialRegistryVerified, true);
+  assert.equal(merged?.strongestProgramId, "ifos");
+});
+
 test("summary merging preserves official not-found warnings even when a page claim exists", () => {
   const registrySummary = summarizeQualityMarkProgramMatches({
     programMatches: buildQualityMarkProgramMatches({
@@ -246,7 +393,7 @@ test("summary merging preserves official not-found warnings even when a page cla
   assert.equal(merged?.warnings.includes("registry_checked_not_found"), true);
 });
 
-test("summary merging prefers brand-level official matches over blocked registries and drops search-only noise", () => {
+test("summary merging keeps blocked product-level registries ahead of weaker brand-level official matches", () => {
   const blockedUsp = summarizeQualityMarkProgramMatches({
     programMatches: buildQualityMarkProgramMatches({
       programIds: ["usp_verified"],
@@ -282,7 +429,9 @@ test("summary merging prefers brand-level official matches over blocked registri
 
   const merged = mergeQualityMarkSummaries(blockedUsp, ifosBrandOnly);
   assert.equal(merged?.overallStatus, "ambiguous");
-  assert.equal(merged?.strongestProgramId, "ifos");
+  assert.equal(merged?.strongestProgramId, "usp_verified");
+  assert.deepEqual(merged?.blockedProgramIds, ["usp_verified"]);
+  assert.deepEqual(merged?.blockedProgramLabels, ["USP Verified"]);
   assert.equal(merged?.warnings.includes("brand_level_only_match"), true);
   assert.equal(merged?.warnings.includes("search_only_evidence"), false);
 });

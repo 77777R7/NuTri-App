@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "nutrasource_product_catalog.v1",
+  "generatedAt": "2026-03-15T19:33:45.683Z",
+  "rows": [
+    {
+      "brandId": "ARBE",
+      "brandName": "Arbee Biomarine Extracts Pvt Ltd.",
+      "productNum": "ARBE0001",
+      "productName": "IFOS Raw Material Certificate 2025",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=ARBE0001",
+      "programsBrandRaw": [
+        "ifos"
+      ]
+    }
+  ]
+}

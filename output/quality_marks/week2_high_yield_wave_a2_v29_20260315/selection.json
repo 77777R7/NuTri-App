@@ -1,0 +1,689 @@
+{
+  "schemaVersion": "week2_registry_first_positive_control_selection.v1",
+  "generatedAt": "2026-03-15T17:46:22.751Z",
+  "seedSelectionPath": "output/quality_marks/overnight_loop/tmp_week2_seed_ifos_nsf_only_v25_20260315.json",
+  "selectedCount": 9,
+  "matchesPerProgram": 120,
+  "seedBrands": {
+    "NSF Certified for Sport": [],
+    "Informed Choice": [],
+    "Informed Sport": [],
+    "IFOS": [
+      {
+        "brandName": "Barlean's",
+        "seedCount": 19
+      },
+      {
+        "brandName": "Life Extension",
+        "seedCount": 5
+      },
+      {
+        "brandName": "Carlson",
+        "seedCount": 2
+      }
+    ]
+  },
+  "registryQuerySummary": [
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "Sports Research",
+      "queryBrandName": "Sports Research",
+      "seedKind": "fallback",
+      "officialRowCount": 1,
+      "matchedCount": 1,
+      "warnings": [],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Sports%20Research"
+    },
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "Thorne",
+      "queryBrandName": "Thorne",
+      "seedKind": "fallback",
+      "officialRowCount": 44,
+      "matchedCount": 29,
+      "warnings": [],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Thorne"
+    },
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "Garden of Life",
+      "queryBrandName": "Garden of Life",
+      "seedKind": "fallback",
+      "officialRowCount": 23,
+      "matchedCount": 5,
+      "warnings": [],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Garden%20of%20Life"
+    },
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "Sun Chlorella",
+      "queryBrandName": "Sun Chlorella",
+      "seedKind": "fallback",
+      "officialRowCount": 1,
+      "matchedCount": 1,
+      "warnings": [],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Sun%20Chlorella"
+    },
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "C4 / Cellucor",
+      "queryBrandName": "Cellucor",
+      "seedKind": "fallback",
+      "officialRowCount": 31,
+      "matchedCount": 2,
+      "warnings": [],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Cellucor"
+    },
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "Optimum Nutrition",
+      "queryBrandName": "Optimum Nutrition",
+      "seedKind": "fallback",
+      "officialRowCount": 1,
+      "matchedCount": 1,
+      "warnings": [],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Optimum%20Nutrition"
+    },
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "Podium Nutrition",
+      "queryBrandName": "Podium Nutrition",
+      "seedKind": "fallback",
+      "officialRowCount": 8,
+      "matchedCount": 6,
+      "warnings": [],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Podium%20Nutrition"
+    },
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "Ghost",
+      "queryBrandName": "Ghost",
+      "seedKind": "fallback",
+      "officialRowCount": 2,
+      "matchedCount": 0,
+      "warnings": [],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Ghost"
+    },
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "Bucked Up",
+      "queryBrandName": "Bucked Up",
+      "seedKind": "fallback",
+      "officialRowCount": 1,
+      "matchedCount": 0,
+      "warnings": [],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Bucked%20Up"
+    },
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "Kaged",
+      "queryBrandName": "Kaged",
+      "seedKind": "fallback",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Kaged"
+    },
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "NOW Foods",
+      "queryBrandName": "NOW Foods",
+      "seedKind": "fallback",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=NOW%20Foods"
+    },
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "Sunwarrior",
+      "queryBrandName": "Sunwarrior",
+      "seedKind": "fallback",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Sunwarrior"
+    },
+    {
+      "programId": "ifos",
+      "programLabel": "IFOS",
+      "brandName": "Barlean's",
+      "queryBrandName": "Barlean's",
+      "seedKind": "primary",
+      "officialRowCount": 14,
+      "matchedCount": 2,
+      "warnings": [],
+      "searchEvidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's"
+    },
+    {
+      "programId": "ifos",
+      "programLabel": "IFOS",
+      "brandName": "Life Extension",
+      "queryBrandName": "Life Extension",
+      "seedKind": "primary",
+      "officialRowCount": 2,
+      "matchedCount": 1,
+      "warnings": [],
+      "searchEvidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Life%20Extension"
+    },
+    {
+      "programId": "ifos",
+      "programLabel": "IFOS",
+      "brandName": "Carlson",
+      "queryBrandName": "Carlson",
+      "seedKind": "primary",
+      "officialRowCount": 254,
+      "matchedCount": 21,
+      "warnings": [],
+      "searchEvidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Carlson"
+    },
+    {
+      "programId": "ifos",
+      "programLabel": "IFOS",
+      "brandName": "Sports Research",
+      "queryBrandName": "Sports Research",
+      "seedKind": "fallback",
+      "officialRowCount": 150,
+      "matchedCount": 7,
+      "warnings": [],
+      "searchEvidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Sports%20Research"
+    },
+    {
+      "programId": "ifos",
+      "programLabel": "IFOS",
+      "brandName": "Natural Factors",
+      "queryBrandName": "Natural Factors",
+      "seedKind": "fallback",
+      "officialRowCount": 4,
+      "matchedCount": 1,
+      "warnings": [],
+      "searchEvidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Natural%20Factors"
+    },
+    {
+      "programId": "ifos",
+      "programLabel": "IFOS",
+      "brandName": "Metagenics",
+      "queryBrandName": "Metagenics",
+      "seedKind": "fallback",
+      "officialRowCount": 8,
+      "matchedCount": 0,
+      "warnings": [],
+      "searchEvidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Metagenics"
+    },
+    {
+      "programId": "ifos",
+      "programLabel": "IFOS",
+      "brandName": "Nordic Naturals",
+      "queryBrandName": "Nordic Naturals",
+      "seedKind": "fallback",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [],
+      "searchEvidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Nordic%20Naturals"
+    },
+    {
+      "programId": "ifos",
+      "programLabel": "IFOS",
+      "brandName": "Garden of Life",
+      "queryBrandName": "Garden of Life",
+      "seedKind": "fallback",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [],
+      "searchEvidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Garden%20of%20Life"
+    }
+  ],
+  "programCounts": {
+    "NSF Certified for Sport": 9
+  },
+  "nsfFallbackBrands": [
+    {
+      "brandName": "Sports Research",
+      "seedCount": 0,
+      "importedCount": 128,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Thorne",
+      "seedCount": 0,
+      "importedCount": 167,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Garden of Life",
+      "seedCount": 0,
+      "importedCount": 216,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Sun Chlorella",
+      "seedCount": 0,
+      "importedCount": 3,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "C4 / Cellucor",
+      "seedCount": 0,
+      "importedCount": 68,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Optimum Nutrition",
+      "seedCount": 0,
+      "importedCount": 101,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Podium Nutrition",
+      "seedCount": 0,
+      "importedCount": 24,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Ghost",
+      "seedCount": 0,
+      "importedCount": 61,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Bucked Up",
+      "seedCount": 0,
+      "importedCount": 42,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Kaged",
+      "seedCount": 0,
+      "importedCount": 44,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "NOW Foods",
+      "seedCount": 0,
+      "importedCount": 958,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Sunwarrior",
+      "seedCount": 0,
+      "importedCount": 97,
+      "priority": "preferred"
+    }
+  ],
+  "ifosFallbackBrands": [
+    {
+      "brandName": "Sports Research",
+      "seedCount": 0,
+      "importedCount": 128,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Natural Factors",
+      "seedCount": 0,
+      "importedCount": 388,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Metagenics",
+      "seedCount": 0,
+      "importedCount": 197,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Nordic Naturals",
+      "seedCount": 0,
+      "importedCount": 167,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Garden of Life",
+      "seedCount": 0,
+      "importedCount": 216,
+      "priority": "preferred"
+    }
+  ],
+  "rows": [
+    {
+      "key": "web:gtin14:00693749118022:thorne:thorne_biotin_8_000_mcg_60_capsules",
+      "productId": "18454",
+      "barcode": "00693749118022",
+      "brandName": "Thorne",
+      "productName": "Thorne, Biotin, 8,000 mcg, 60 Capsules",
+      "iherbUrl": "https://www.iherb.com/pr/thorne-biotin-8-000-mcg-60-capsules/18454",
+      "categoryId": "unknown",
+      "strongestProgramId": "nsf_certified_for_sport",
+      "strongestProgramLabel": "NSF Certified for Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "verified",
+        "strongestProgramId": "nsf_certified_for_sport",
+        "strongestProgramLabel": "NSF Certified for Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": true,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": []
+      },
+      "selectionReason": "registry_first_positive_control",
+      "officialRegistryProductName": "Thorne® D-5,000",
+      "officialRegistryBrandName": "Thorne",
+      "officialRegistryEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/listing-detail.php?id=1221010",
+      "registryQueryBrandName": "Thorne",
+      "matchScore": 0.85,
+      "officialCoverage": 1,
+      "candidateCoverage": 0.4,
+      "phraseMatch": false
+    },
+    {
+      "key": "web:gtin14:00693749788027:thorne:thorne_melaton_3_60_capsules_3_mg_per_capsule",
+      "productId": "18750",
+      "barcode": "00693749788027",
+      "brandName": "Thorne",
+      "productName": "Thorne, Melaton-3™, 60 Capsules (3 mg per Capsule)",
+      "iherbUrl": "https://www.iherb.com/pr/thorne-melaton-3-60-capsules-3-mg-per-capsule/18750",
+      "categoryId": "unknown",
+      "strongestProgramId": "nsf_certified_for_sport",
+      "strongestProgramLabel": "NSF Certified for Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "verified",
+        "strongestProgramId": "nsf_certified_for_sport",
+        "strongestProgramLabel": "NSF Certified for Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": true,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": []
+      },
+      "selectionReason": "registry_first_positive_control",
+      "officialRegistryProductName": "Thorne® Melaton-3™",
+      "officialRegistryBrandName": "Thorne",
+      "officialRegistryEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/listing-detail.php?id=1207474",
+      "registryQueryBrandName": "Thorne",
+      "matchScore": 0.85,
+      "officialCoverage": 1,
+      "candidateCoverage": 0.4,
+      "phraseMatch": false
+    },
+    {
+      "key": "web:gtin14:00693749006251:thorne:thorne_enteromend_orange_vanilla_5_9_oz_168_g",
+      "productId": "68446",
+      "barcode": "00693749006251",
+      "brandName": "Thorne",
+      "productName": "Thorne, EnteroMend®, Orange Vanilla, 5.9 oz (168 g)",
+      "iherbUrl": "https://www.iherb.com/pr/thorne-enteromend-orange-vanilla-5-9-oz-168-g/68446",
+      "categoryId": "unknown",
+      "strongestProgramId": "nsf_certified_for_sport",
+      "strongestProgramLabel": "NSF Certified for Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "verified",
+        "strongestProgramId": "nsf_certified_for_sport",
+        "strongestProgramLabel": "NSF Certified for Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": true,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": []
+      },
+      "selectionReason": "registry_first_positive_control",
+      "officialRegistryProductName": "Thorne® EnteroMend®",
+      "officialRegistryBrandName": "Thorne",
+      "officialRegistryEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/listing-detail.php?id=1385854",
+      "registryQueryBrandName": "Thorne",
+      "matchScore": 0.85,
+      "officialCoverage": 1,
+      "candidateCoverage": 0.4,
+      "phraseMatch": false
+    },
+    {
+      "key": "web:gtin14:00693749006459:thorne:thorne_beta_alanine_sr_120_tablets_800_mg_per_tablet",
+      "productId": "73487",
+      "barcode": "00693749006459",
+      "brandName": "Thorne",
+      "productName": "Thorne, Beta Alanine-SR, 120 Tablets (800 mg per Tablet)",
+      "iherbUrl": "https://www.iherb.com/pr/thorne-beta-alanine-sr-120-tablets-800-mg-per-tablet/73487",
+      "categoryId": "unknown",
+      "strongestProgramId": "nsf_certified_for_sport",
+      "strongestProgramLabel": "NSF Certified for Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "nsf_certified_for_sport",
+        "strongestProgramLabel": "NSF Certified for Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "registry_first_positive_control",
+      "officialRegistryProductName": "Thorne® Beta Alanine-SR",
+      "officialRegistryBrandName": "Thorne",
+      "officialRegistryEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/listing-detail.php?id=1046814",
+      "registryQueryBrandName": "Thorne",
+      "matchScore": 0.8438,
+      "officialCoverage": 1,
+      "candidateCoverage": 0.375,
+      "phraseMatch": false
+    },
+    {
+      "key": "web:gtin14:00693749005681:thorne:thorne_whey_protein_isolate_vanilla_1_84_lb_837_g",
+      "productId": "68453",
+      "barcode": "00693749005681",
+      "brandName": "Thorne",
+      "productName": "Thorne, Whey Protein Isolate, Vanilla, 1.84 lb (837 g)",
+      "iherbUrl": "https://www.iherb.com/pr/thorne-whey-protein-isolate-vanilla-1-84-lb-837-g/68453",
+      "categoryId": "unknown",
+      "strongestProgramId": "nsf_certified_for_sport",
+      "strongestProgramLabel": "NSF Certified for Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "nsf_certified_for_sport",
+        "strongestProgramLabel": "NSF Certified for Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": false,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_not_checked"
+        ]
+      },
+      "selectionReason": "registry_first_positive_control",
+      "officialRegistryProductName": "Thorne® Whey Protein Isolate Vanilla Flavored",
+      "officialRegistryBrandName": "Thorne",
+      "officialRegistryEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/listing-detail.php?id=1513728",
+      "registryQueryBrandName": "Thorne",
+      "matchScore": 0.8333,
+      "officialCoverage": 0.8333,
+      "candidateCoverage": 0.8333,
+      "phraseMatch": false
+    },
+    {
+      "key": "web:gtin14:00693749540038:thorne:thorne_glutathione_sr_60_capsules_175_mg_per_capsule",
+      "productId": "18512",
+      "barcode": "00693749540038",
+      "brandName": "Thorne",
+      "productName": "Thorne, Glutathione-SR, 60 Capsules (175 mg per Capsule)",
+      "iherbUrl": "https://www.iherb.com/pr/thorne-glutathione-sr-60-capsules-175-mg-per-capsule/18512",
+      "categoryId": "unknown",
+      "strongestProgramId": "nsf_certified_for_sport",
+      "strongestProgramLabel": "NSF Certified for Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "nsf_certified_for_sport",
+        "strongestProgramLabel": "NSF Certified for Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": false,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_not_checked"
+        ]
+      },
+      "selectionReason": "registry_first_positive_control",
+      "officialRegistryProductName": "Thorne® Glutathione-SR",
+      "officialRegistryBrandName": "Thorne",
+      "officialRegistryEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/listing-detail.php?id=1205060",
+      "registryQueryBrandName": "Thorne",
+      "matchScore": 0.8333,
+      "officialCoverage": 1,
+      "candidateCoverage": 0.3333,
+      "phraseMatch": false
+    },
+    {
+      "key": "web:gtin14:00693749006299:thorne:thorne_catalyte_lemon_lime_flavored_electrolytes_11_01_oz_312_g",
+      "productId": "70005",
+      "barcode": "00693749006299",
+      "brandName": "Thorne",
+      "productName": "Thorne, Catalyte, Lemon Lime Flavored Electrolytes, 11.01 oz (312 g)",
+      "iherbUrl": "https://www.iherb.com/pr/thorne-catalyte-lemon-lime-flavored-electrolytes-11-01-oz-312-g/70005",
+      "categoryId": "magnesium",
+      "strongestProgramId": "nsf_certified_for_sport",
+      "strongestProgramLabel": "NSF Certified for Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "nsf_certified_for_sport",
+        "strongestProgramLabel": "NSF Certified for Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": false,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_not_checked"
+        ]
+      },
+      "selectionReason": "registry_first_positive_control",
+      "officialRegistryProductName": "Thorne® Catalyte®",
+      "officialRegistryBrandName": "Thorne",
+      "officialRegistryEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/listing-detail.php?id=1286726",
+      "registryQueryBrandName": "Thorne",
+      "matchScore": 0.8214,
+      "officialCoverage": 1,
+      "candidateCoverage": 0.2857,
+      "phraseMatch": false
+    },
+    {
+      "key": "web:gtin14:00693749006909:thorne:thorne_super_epa_90_gelcaps",
+      "productId": "85477",
+      "barcode": "00693749006909",
+      "brandName": "Thorne",
+      "productName": "Thorne, Super EPA, 90 Gelcaps",
+      "iherbUrl": "https://www.iherb.com/pr/thorne-super-epa-90-gelcaps/85477",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "nsf_certified_for_sport",
+      "strongestProgramLabel": "NSF Certified for Sport",
+      "thirdPartyChecklistState": "missing",
+      "verificationSummary": null,
+      "selectionReason": "registry_first_positive_control",
+      "officialRegistryProductName": "Thorne® Super EPA (EPA & DHA)",
+      "officialRegistryBrandName": "Thorne",
+      "officialRegistryEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/listing-detail.php?id=1237707",
+      "registryQueryBrandName": "Thorne",
+      "matchScore": 0.75,
+      "officialCoverage": 0.75,
+      "candidateCoverage": 0.75,
+      "phraseMatch": false
+    },
+    {
+      "key": "web:gtin14:00693749011330:thorne:thorne_recoverypro_chocolate_16_7_oz_474_g",
+      "productId": "126117",
+      "barcode": "00693749011330",
+      "brandName": "Thorne",
+      "productName": "Thorne, RecoveryPro, Chocolate, 16.7 oz (474 g)",
+      "iherbUrl": "https://www.iherb.com/pr/thorne-recoverypro-chocolate-16-7-oz-474-g/126117",
+      "categoryId": "magnesium",
+      "strongestProgramId": "nsf_certified_for_sport",
+      "strongestProgramLabel": "NSF Certified for Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "nsf_certified_for_sport",
+        "strongestProgramLabel": "NSF Certified for Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": false,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_not_checked"
+        ]
+      },
+      "selectionReason": "registry_first_positive_control",
+      "officialRegistryProductName": "Thorne® RecoveryPro® Chocolate Flavored",
+      "officialRegistryBrandName": "Thorne",
+      "officialRegistryEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/listing-detail.php?id=1308805",
+      "registryQueryBrandName": "Thorne",
+      "matchScore": 0.75,
+      "officialCoverage": 0.75,
+      "candidateCoverage": 0.75,
+      "phraseMatch": false
+    }
+  ],
+  "selectionMode": "wave_a2_thorne_extension",
+  "candidateCount": 9
+}

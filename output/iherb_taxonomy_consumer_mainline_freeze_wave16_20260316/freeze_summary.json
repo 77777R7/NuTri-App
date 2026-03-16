@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "iherb_taxonomy_consumer_mainline_freeze.v1",
+  "frozenAt": "2026-03-16",
+  "baseline": "wave16",
+  "status": "frozen_for_mainline",
+  "mainlineResult": {
+    "metabolic_glucose_support": "taxonomy_live_and_copy_specialized",
+    "cholesterol_lipid_support": "taxonomy_live_and_copy_specialized",
+    "liver_bile_support": "taxonomy_live_and_copy_specialized"
+  },
+  "validation": {
+    "experiencePackPath": "output/iherb_category_experience_validation_pack_wave16_20260316/category_experience_validation_pack.json",
+    "weakExperienceCategories": [],
+    "recommendation": "Consumer experience is strong enough to justify considering a background long-tail cleanup project."
+  },
+  "harnessState": {
+    "qualitySummaryPath": "output/iherb_score_category_harness_post_category_expansion_wave13_20260316/quality_summary.json",
+    "unknownCategoryRate": 0,
+    "deepContentReadyRate": 100,
+    "scoreV2ReadyRate": 100
+  },
+  "fullCorpusState": {
+    "fullAuditPath": "output/iherb_full_category_census_audit_wave13_20260316/full_category_census_audit.json",
+    "importedRowCount": 26494,
+    "unknownCategoryRate": 14.3,
+    "deepContentReadyRate": 98.0,
+    "highFrequencyUnknownCount": 0
+  },
+  "freezeDecision": {
+    "mainlineFrozen": true,
+    "nextTrack": "background_long_tail_cleanup",
+    "scanProtectedScopeModified": false
+  }
+}

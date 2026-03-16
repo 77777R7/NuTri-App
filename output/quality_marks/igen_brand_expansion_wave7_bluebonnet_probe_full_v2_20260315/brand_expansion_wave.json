@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "igen_brand_expansion_wave.v1",
+  "generatedAt": "2026-03-15T20:37:18.508Z",
+  "inputs": {
+    "batchesPath": "/Users/howard07/NuTriApp/nutri-app/output/quality_marks/_tmp_remaining_igen_batches/bluebonnet_nutrition.json",
+    "stagingPath": "output/sports_research_igen_patch_wave_batch4_retry_20260315/staging_products.official_refreshed.json"
+  },
+  "batch": {
+    "batchLabel": "wave2_brand_batch_bluebonnet_nutrition_probe",
+    "brandName": "Bluebonnet Nutrition"
+  },
+  "summary": {
+    "totalRows": 2,
+    "consumerReadyRows": 2,
+    "patchQueueRows": 0,
+    "otherRows": 0,
+    "missingRows": 0
+  },
+  "consumerReadyRows": [
+    {
+      "key": "web:gtin14:00743715013827:bluebonnet_nutrition:bluebonnet_nutrition_oil_of_oregano_leaf_extract_60_softgels_150_mg_per_softgel",
+      "productId": "10183",
+      "barcode": "00743715013827",
+      "brandName": "Bluebonnet Nutrition",
+      "productName": "Bluebonnet Nutrition, Oil of Oregano, Leaf Extract, 60 Softgels (150 mg per Softgel)",
+      "iherbUrl": "https://www.iherb.com/pr/bluebonnet-nutrition-oil-of-oregano-leaf-extract-60-softgels-150-mg-per-softgel/10183",
+      "officialSignalProgramId": "igen",
+      "officialSignalState": "product_level_official_signal",
+      "officialRegistryEvidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=BBNT0029",
+      "currentStagingStatus": "full_overlay_ready",
+      "currentCoreMissingFields": []
+    },
+    {
+      "key": "web:gtin14:00743715009530:bluebonnet_nutrition:bluebonnet_nutrition_omega_3_salmon_fish_oil_1_000_mg_180_softgels",
+      "productId": "11821",
+      "barcode": "00743715009530",
+      "brandName": "Bluebonnet Nutrition",
+      "productName": "Bluebonnet Nutrition, Omega-3 Salmon Fish Oil, 1,000 mg, 180 Softgels",
+      "iherbUrl": "https://www.iherb.com/pr/bluebonnet-nutrition-omega-3-salmon-fish-oil-1-000-mg-180-softgels/11821",
+      "officialSignalProgramId": "igen",
+      "officialSignalState": "product_level_official_signal",
+      "officialRegistryEvidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=BBNT0033",
+      "currentStagingStatus": "full_overlay_ready",
+      "currentCoreMissingFields": []
+    }
+  ],
+  "patchQueueRows": [],
+  "otherRows": [],
+  "missingRows": []
+}

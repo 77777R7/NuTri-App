@@ -1,0 +1,2315 @@
+{
+  "schemaVersion": "week2_iherb_quality_mark_selection.v1",
+  "generatedAt": "2026-03-15T17:41:31.954Z",
+  "selectionMode": "stale_blocked_repair",
+  "selectedCount": 67,
+  "candidateCount": 67,
+  "programCounts": {
+    "IFOS": 52,
+    "USP Verified": 15
+  },
+  "rows": [
+    {
+      "key": "dsld:dsldlabelid:81709:the_vitamin_shoppe:oil_of_oregano_extra_strength",
+      "productId": null,
+      "barcode": "00766536023684",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Oil of Oregano Extra Strength",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:213798:the_vitamin_shoppe:carnipure_l_carnitine_1000_mg",
+      "productId": null,
+      "barcode": "00766536026050",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Carnipure L-Carnitine 1000 mg",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:213777:the_vitamin_shoppe:multivitamin_mineral_powder_includes_amino_acids",
+      "productId": null,
+      "barcode": "00766536023127",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Multivitamin & Mineral Powder includes Amino Acids",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:66627:the_vitamin_shoppe:red_clover_extract",
+      "productId": null,
+      "barcode": "00766536016044",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Red Clover Extract",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:221485:the_vitamin_shoppe:super_energy_up",
+      "productId": null,
+      "barcode": "00766536012077",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Super Energy Up",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:208212:the_vitamin_shoppe:triple_strength_turmeric_with_curcumin_900_mg",
+      "productId": null,
+      "barcode": "00766536025633",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Triple Strength Turmeric with Curcumin 900 mg",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:33112:the_vitamin_shoppe:vitamin_e_high_gamma_400_iu",
+      "productId": null,
+      "barcode": "00766536018888",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Vitamin E High Gamma 400 IU",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:180721:the_vitamin_shoppe:melatonin_3_mg",
+      "productId": null,
+      "barcode": "00766536013364",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Melatonin 3 mg",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:175632:the_vitamin_shoppe:triple_strength_turmeric_with_curcumin_900_mg",
+      "productId": null,
+      "barcode": "00766536035519",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Triple Strength Turmeric With Curcumin 900 mg",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:26982:the_vitamin_shoppe:ultimate_man_50",
+      "productId": null,
+      "barcode": null,
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Ultimate Man 50+",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:183766:the_vitamin_shoppe:dry_a_non_oily_3000_mcg",
+      "productId": null,
+      "barcode": "00766536012626",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Dry A Non-Oily 3000 mcg",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:208880:the_vitamin_shoppe:super_strength_oil_of_oregano",
+      "productId": null,
+      "barcode": "00766536021086",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Super Strength Oil of Oregano",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:217763:the_vitamin_shoppe:astragalus_500_mg",
+      "productId": null,
+      "barcode": "00766536014996",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Astragalus 500 mg",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:54605:the_vitamin_shoppe:c_1500_complex_1500_mg",
+      "productId": null,
+      "barcode": "00766536010202",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "C-1500 Complex 1500 mg",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:183789:the_vitamin_shoppe:carnipure_l_carnitine_1000_mg",
+      "productId": null,
+      "barcode": "00766536030903",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Carnipure L-Carnitine 1000 mg",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:204636:the_vitamin_shoppe:cat_s_claw_500_mg",
+      "productId": null,
+      "barcode": "00766536021130",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Cat's Claw 500 mg",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:35992:the_vitamin_shoppe:malic_acid_600_mg",
+      "productId": null,
+      "barcode": "00766536019953",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Malic Acid 600 mg",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:79706:the_vitamin_shoppe:calcium_citrate_complex_250_mg",
+      "productId": null,
+      "barcode": "00766536010783",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Calcium Citrate Complex 250 mg",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:55393:the_vitamin_shoppe:bee_propolis_extract",
+      "productId": null,
+      "barcode": "00766536011810",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Bee Propolis Extract",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:55669:the_vitamin_shoppe:vitamin_k1_100_mcg",
+      "productId": null,
+      "barcode": "00766536014439",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Vitamin K1 100 mcg",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:221578:the_vitamin_shoppe:milk_thistle_extract_175_mg",
+      "productId": null,
+      "barcode": "00766536027101",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Milk Thistle Extract 175 mg",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:57204:the_vitamin_shoppe:c_500_complex_500_mg",
+      "productId": null,
+      "barcode": "00766536010073",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "C-500 Complex 500 mg",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:55239:the_vitamin_shoppe:chromax_chromium_picolinate_200_mcg",
+      "productId": null,
+      "barcode": "00766536011308",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Chromax Chromium Picolinate 200 mcg",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:245286:the_vitamin_shoppe:lactase_enzyme_125_mg",
+      "productId": null,
+      "barcode": "00766536015245",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Lactase Enzyme 125 mg",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:221217:the_vitamin_shoppe:l_lysine_500_mg",
+      "productId": null,
+      "barcode": "00766536012008",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "L-Lysine 500 mg",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:60248:the_vitamin_shoppe:ginseng_complex",
+      "productId": null,
+      "barcode": "00766536020775",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Ginseng Complex",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:183635:the_vitamin_shoppe:pycnogenol_50_mg",
+      "productId": null,
+      "barcode": "00766536030613",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Pycnogenol 50 mg",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:208879:the_vitamin_shoppe:ubiquinol_coq_10_100_mg",
+      "productId": null,
+      "barcode": "00766536021802",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Ubiquinol CoQ-10 100 mg",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:204509:the_vitamin_shoppe:methylfolate_800_mcg",
+      "productId": null,
+      "barcode": "00766536034994",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Methylfolate 800 mcg",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:60161:the_vitamin_shoppe:acetyl_l_carnitine_500_mg",
+      "productId": null,
+      "barcode": "00766536015498",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Acetyl-L-Carnitine 500 mg",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:204620:the_vitamin_shoppe:quercetin_with_bromelain",
+      "productId": null,
+      "barcode": "00766536012435",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Quercetin with Bromelain",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:32257:the_vitamin_shoppe:calcium_1000_1000_mg",
+      "productId": null,
+      "barcode": "00766536014156",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Calcium 1000 1000 mg",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:55690:the_vitamin_shoppe:lecithin_411_mg",
+      "productId": null,
+      "barcode": "00766536029686",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Lecithin 411 mg",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:208746:the_vitamin_shoppe:multi_minerals_with_boron_vitamin_d_no_iron",
+      "productId": null,
+      "barcode": "00766536016891",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Multi Minerals with Boron & Vitamin D No Iron",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:201834:the_vitamin_shoppe:magnesium_glycinate_400_mg",
+      "productId": null,
+      "barcode": "00766536037650",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Magnesium Glycinate 400 mg",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:218087:the_vitamin_shoppe:krill_oil_500_mg",
+      "productId": null,
+      "barcode": "00766536026586",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Krill Oil 500 mg",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:12989:the_vitamin_shoppe:super_antioxidant",
+      "productId": null,
+      "barcode": null,
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Super Antioxidant",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:77923:the_vitamin_shoppe:b_complex_50",
+      "productId": null,
+      "barcode": "00766536020485",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "B-Complex 50",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:213761:the_vitamin_shoppe:beta_glucan_200_mg",
+      "productId": null,
+      "barcode": "00766536017553",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Beta Glucan 200 mg",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:221493:the_vitamin_shoppe:c_1000_mg",
+      "productId": null,
+      "barcode": "00766536012473",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "C 1000 mg",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:60136:the_vitamin_shoppe:phosphatidylserine_complex",
+      "productId": null,
+      "barcode": "00766536015399",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Phosphatidylserine Complex",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:208855:the_vitamin_shoppe:ultimate_prostate",
+      "productId": null,
+      "barcode": "00766536032853",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Ultimate Prostate",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:221391:the_vitamin_shoppe:horny_goat_weed_complex",
+      "productId": null,
+      "barcode": "00766536027323",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Horny Goat Weed Complex",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:245195:the_vitamin_shoppe:butcher_s_broom",
+      "productId": null,
+      "barcode": "00766536016679",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Butcher's Broom",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:209252:the_vitamin_shoppe:carnipure_l_carnitine_3000_mg_raspberry",
+      "productId": null,
+      "barcode": "00766536030897",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Carnipure L-Carnitine 3000 mg Raspberry",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:183475:the_vitamin_shoppe:saw_palmetto_pygeum_complex",
+      "productId": null,
+      "barcode": "00766536018611",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Saw Palmetto & Pygeum Complex",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:203576:the_vitamin_shoppe:active_c_with_bioflavonoids_1000_mg",
+      "productId": null,
+      "barcode": "00766536025992",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Active-C with Bioflavonoids 1000 mg",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:183863:the_vitamin_shoppe:carnipure_l_carnitine_1100_mg_vanilla",
+      "productId": null,
+      "barcode": "00766536036950",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "Carnipure L-Carnitine 1100 mg Vanilla",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:31841:the_vitamin_shoppe:from_the_earth",
+      "productId": null,
+      "barcode": "00766536031931",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "From The Earth",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "dsld:dsldlabelid:55653:the_vitamin_shoppe:california_grown_spirulina_500_mg",
+      "productId": null,
+      "barcode": "00766536026760",
+      "brandName": "The Vitamin Shoppe",
+      "productName": "California Grown Spirulina 500 mg",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "brand",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "web:gtin14:00740985213391:21st_century:21st_century_acidophilus_probiotic_blend_100_capsules",
+      "productId": null,
+      "barcode": "00740985213391",
+      "brandName": "21st Century",
+      "productName": "21st Century, Acidophilus Probiotic Blend, 100 Capsules",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "web:gtin14:00740985229286:21st_century:21st_century_acidophilus_probiotic_blend_150_capsules",
+      "productId": null,
+      "barcode": "00740985229286",
+      "brandName": "21st Century",
+      "productName": "21st Century, Acidophilus Probiotic Blend, 150 Capsules",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "web:gtin14:00740985280560:21st_century:21st_century_acidophilus_probiotic_blend_300_capsules",
+      "productId": null,
+      "barcode": "00740985280560",
+      "brandName": "21st Century",
+      "productName": "21st Century, Acidophilus, Probiotic Blend, 300 Capsules",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "web:gtin14:00740985228463:21st_century:21st_century_colon_cleanse_120_vegetarian_capsules",
+      "productId": null,
+      "barcode": "00740985228463",
+      "brandName": "21st Century",
+      "productName": "21st Century, Colon Cleanse, 120 Vegetarian Capsules",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "web:gtin14:00740985278482:21st_century:21st_century_cranberry_plus_probiotic_60_tablets",
+      "productId": null,
+      "barcode": "00740985278482",
+      "brandName": "21st Century",
+      "productName": "21st Century, Cranberry Plus Probiotic, 60 Tablets",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "web:gtin14:00740985280690:21st_century:21st_century_glp_1_60_vegetarian_capsules",
+      "productId": null,
+      "barcode": "00740985280690",
+      "brandName": "21st Century",
+      "productName": "21st Century, GLP-1, 60 Vegetarian Capsules",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "web:gtin14:00740985223529:21st_century:21st_century_herbal_slimming_tea_cranraspberry_caffeine_free_24_tea_bags_1_7_oz_48_g",
+      "productId": null,
+      "barcode": "00740985223529",
+      "brandName": "21st Century",
+      "productName": "21st Century, Herbal Slimming Tea, Cranraspberry, Caffeine Free, 24 Tea Bags, 1.7 oz (48 g)",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "web:gtin14:00740985229088:21st_century:21st_century_red_yeast_rice_600_mg_150_vegetarian_capsules",
+      "productId": null,
+      "barcode": "00740985229088",
+      "brandName": "21st Century",
+      "productName": "21st Century, Red Yeast Rice, 600 mg, 150 Vegetarian Capsules",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "web:gtin14:00740985272855:21st_century:21st_century_resveratrol_red_wine_extract_90_capsules",
+      "productId": null,
+      "barcode": "00740985272855",
+      "brandName": "21st Century",
+      "productName": "21st Century, Resveratrol Red Wine Extract, 90 Capsules",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "web:gtin14:05056555204122:abe:abe_non_stim_pump_pre_workout_blue_raspberry_17_63_oz_500_g",
+      "productId": null,
+      "barcode": "05056555204122",
+      "brandName": "ABE",
+      "productName": "ABE, Non-Stim Pump Pre Workout, Blue Raspberry , 17.63 oz (500 g)",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "web:gtin14:05056555204139:abe:abe_non_stim_pump_pre_workout_sour_gummy_bear_17_63_oz_500_g",
+      "productId": null,
+      "barcode": "05056555204139",
+      "brandName": "ABE",
+      "productName": "ABE, Non-Stim Pump Pre Workout, Sour Gummy Bear, 17.63 oz (500 g)",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "web:gtin14:05056555204146:abe:abe_non_stim_pump_pre_workout_tiger_s_blood_17_63_oz_500_g",
+      "productId": null,
+      "barcode": "05056555204146",
+      "brandName": "ABE",
+      "productName": "ABE, Non-Stim Pump Pre Workout, Tiger's Blood, 17.63 oz (500 g)",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "web:gtin14:05056555202111:abe:abe_pre_workout_baddy_berry_13_75_oz_390_g",
+      "productId": null,
+      "barcode": "05056555202111",
+      "brandName": "ABE",
+      "productName": "ABE, Pre-Workout, Baddy Berry, 13.75 oz (390 g)",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "web:gtin14:05056555201923:abe:abe_pre_workout_sour_apple_13_75_oz_390_g",
+      "productId": null,
+      "barcode": "05056555201923",
+      "brandName": "ABE",
+      "productName": "ABE, Pre-Workout, Sour Apple, 13.75 oz (390 g)",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "web:gtin14:05056555201916:abe:abe_pre_workout_tropical_vibes_13_75_oz_390_g",
+      "productId": null,
+      "barcode": "05056555201916",
+      "brandName": "ABE",
+      "productName": "ABE, Pre-Workout, Tropical Vibes, 13.75 oz (390 g)",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "web:gtin14:05056555201824:abe:abe_shred_x_extreme_thermogenic_powder_lemon_iced_tea_10_58_oz_300_g",
+      "productId": null,
+      "barcode": "05056555201824",
+      "brandName": "ABE",
+      "productName": "ABE, Shred-X, Extreme Thermogenic Powder, Lemon Iced Tea, 10.58 oz (300 g)",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "not_proven",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    },
+    {
+      "key": "web:gtin14:05056555201831:abe:abe_shred_x_extreme_thermogenic_powder_sour_gummy_bear_10_58_oz_300_g",
+      "productId": null,
+      "barcode": "05056555201831",
+      "brandName": "ABE",
+      "productName": "ABE, Shred-X, Extreme Thermogenic Powder, Sour Gummy Bear, 10.58 oz (300 g)",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "not_proven",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair"
+    }
+  ]
+}

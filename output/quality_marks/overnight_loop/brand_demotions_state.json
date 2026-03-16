@@ -1,0 +1,236 @@
+{
+  "updatedAt": "2026-03-15T18:53:14.347Z",
+  "byBrand": {
+    "barlean's": {
+      "brandName": "Barlean's",
+      "attempts": 1,
+      "infraBlockedAttempts": 13,
+      "zeroSafeStreak": 0,
+      "lastSafeMatches": 2,
+      "lastPrograms": [
+        "ifos"
+      ],
+      "lastRun": "2026-03-15T17:31:44.372Z",
+      "lastOutcome": "safe_match",
+      "lastInfraWarnings": [],
+      "lastRunId": "week2-marks-loop-v26-20260315"
+    },
+    "bucked up": {
+      "brandName": "Bucked Up",
+      "attempts": 0,
+      "infraBlockedAttempts": 1,
+      "zeroSafeStreak": 0,
+      "lastSafeMatches": 0,
+      "lastPrograms": [
+        "nsf_certified_for_sport"
+      ],
+      "lastRun": "2026-03-15T08:47:50.893Z",
+      "lastOutcome": "infra_blocked",
+      "lastInfraWarnings": [
+        "curl: (6) Could not resolve host: nsfsport-prod.nsf.org\n"
+      ],
+      "lastRunId": "week2-marks-loop-v13-20260315"
+    },
+    "c4 / cellucor": {
+      "brandName": "C4 / Cellucor",
+      "attempts": 1,
+      "infraBlockedAttempts": 13,
+      "zeroSafeStreak": 0,
+      "lastSafeMatches": 2,
+      "lastPrograms": [
+        "nsf_certified_for_sport"
+      ],
+      "lastRun": "2026-03-15T17:31:44.372Z",
+      "lastOutcome": "safe_match",
+      "lastInfraWarnings": [],
+      "lastRunId": "week2-marks-loop-v26-20260315"
+    },
+    "carlson": {
+      "brandName": "Carlson",
+      "attempts": 1,
+      "infraBlockedAttempts": 13,
+      "zeroSafeStreak": 0,
+      "lastSafeMatches": 4,
+      "lastPrograms": [
+        "ifos"
+      ],
+      "lastRun": "2026-03-15T17:31:44.372Z",
+      "lastOutcome": "safe_match",
+      "lastInfraWarnings": [],
+      "lastRunId": "week2-marks-loop-v26-20260315"
+    },
+    "garden of life": {
+      "brandName": "Garden of Life",
+      "attempts": 1,
+      "infraBlockedAttempts": 13,
+      "zeroSafeStreak": 0,
+      "lastSafeMatches": 2,
+      "lastPrograms": [
+        "nsf_certified_for_sport"
+      ],
+      "lastRun": "2026-03-15T17:31:44.372Z",
+      "lastOutcome": "safe_match",
+      "lastInfraWarnings": [],
+      "lastRunId": "week2-marks-loop-v26-20260315"
+    },
+    "ghost": {
+      "brandName": "Ghost",
+      "attempts": 1,
+      "infraBlockedAttempts": 13,
+      "zeroSafeStreak": 1,
+      "lastSafeMatches": 0,
+      "lastPrograms": [
+        "nsf_certified_for_sport"
+      ],
+      "lastRun": "2026-03-15T17:31:44.372Z",
+      "lastOutcome": "zero_safe",
+      "lastInfraWarnings": [],
+      "lastRunId": "week2-marks-loop-v26-20260315"
+    },
+    "kaged": {
+      "brandName": "Kaged",
+      "attempts": 0,
+      "infraBlockedAttempts": 1,
+      "zeroSafeStreak": 0,
+      "lastSafeMatches": 0,
+      "lastPrograms": [
+        "nsf_certified_for_sport"
+      ],
+      "lastRun": "2026-03-15T08:47:50.893Z",
+      "lastOutcome": "infra_blocked",
+      "lastInfraWarnings": [
+        "curl: (6) Could not resolve host: nsfsport-prod.nsf.org\n"
+      ],
+      "lastRunId": "week2-marks-loop-v13-20260315"
+    },
+    "life extension": {
+      "brandName": "Life Extension",
+      "attempts": 1,
+      "infraBlockedAttempts": 13,
+      "zeroSafeStreak": 0,
+      "lastSafeMatches": 1,
+      "lastPrograms": [
+        "ifos"
+      ],
+      "lastRun": "2026-03-15T17:31:44.372Z",
+      "lastOutcome": "safe_match",
+      "lastInfraWarnings": [],
+      "lastRunId": "week2-marks-loop-v26-20260315"
+    },
+    "metagenics": {
+      "brandName": "Metagenics",
+      "attempts": 1,
+      "infraBlockedAttempts": 13,
+      "zeroSafeStreak": 1,
+      "lastSafeMatches": 0,
+      "lastPrograms": [
+        "ifos"
+      ],
+      "lastRun": "2026-03-15T17:31:44.372Z",
+      "lastOutcome": "zero_safe",
+      "lastInfraWarnings": [],
+      "lastRunId": "week2-marks-loop-v26-20260315"
+    },
+    "natural factors": {
+      "brandName": "Natural Factors",
+      "attempts": 1,
+      "infraBlockedAttempts": 13,
+      "zeroSafeStreak": 0,
+      "lastSafeMatches": 1,
+      "lastPrograms": [
+        "ifos"
+      ],
+      "lastRun": "2026-03-15T17:31:44.372Z",
+      "lastOutcome": "safe_match",
+      "lastInfraWarnings": [],
+      "lastRunId": "week2-marks-loop-v26-20260315"
+    },
+    "nordic naturals": {
+      "brandName": "Nordic Naturals",
+      "attempts": 1,
+      "infraBlockedAttempts": 13,
+      "zeroSafeStreak": 1,
+      "lastSafeMatches": 0,
+      "lastPrograms": [
+        "ifos"
+      ],
+      "lastRun": "2026-03-15T17:31:44.372Z",
+      "lastOutcome": "zero_safe",
+      "lastInfraWarnings": [],
+      "lastRunId": "week2-marks-loop-v26-20260315"
+    },
+    "optimum nutrition": {
+      "brandName": "Optimum Nutrition",
+      "attempts": 1,
+      "infraBlockedAttempts": 13,
+      "zeroSafeStreak": 0,
+      "lastSafeMatches": 1,
+      "lastPrograms": [
+        "nsf_certified_for_sport"
+      ],
+      "lastRun": "2026-03-15T17:31:44.372Z",
+      "lastOutcome": "safe_match",
+      "lastInfraWarnings": [],
+      "lastRunId": "week2-marks-loop-v26-20260315"
+    },
+    "podium nutrition": {
+      "brandName": "Podium Nutrition",
+      "attempts": 1,
+      "infraBlockedAttempts": 13,
+      "zeroSafeStreak": 0,
+      "lastSafeMatches": 2,
+      "lastPrograms": [
+        "nsf_certified_for_sport"
+      ],
+      "lastRun": "2026-03-15T17:31:44.372Z",
+      "lastOutcome": "safe_match",
+      "lastInfraWarnings": [],
+      "lastRunId": "week2-marks-loop-v26-20260315"
+    },
+    "sports research": {
+      "brandName": "Sports Research",
+      "attempts": 1,
+      "infraBlockedAttempts": 13,
+      "zeroSafeStreak": 0,
+      "lastSafeMatches": 4,
+      "lastPrograms": [
+        "ifos",
+        "nsf_certified_for_sport"
+      ],
+      "lastRun": "2026-03-15T17:31:44.372Z",
+      "lastOutcome": "safe_match",
+      "lastInfraWarnings": [],
+      "lastRunId": "week2-marks-loop-v26-20260315"
+    },
+    "sun chlorella": {
+      "brandName": "Sun Chlorella",
+      "attempts": 1,
+      "infraBlockedAttempts": 13,
+      "zeroSafeStreak": 0,
+      "lastSafeMatches": 1,
+      "lastPrograms": [
+        "nsf_certified_for_sport"
+      ],
+      "lastRun": "2026-03-15T17:31:44.372Z",
+      "lastOutcome": "safe_match",
+      "lastInfraWarnings": [],
+      "lastRunId": "week2-marks-loop-v26-20260315"
+    },
+    "thorne": {
+      "brandName": "Thorne",
+      "attempts": 1,
+      "infraBlockedAttempts": 13,
+      "zeroSafeStreak": 0,
+      "lastSafeMatches": 3,
+      "lastPrograms": [
+        "nsf_certified_for_sport"
+      ],
+      "lastRun": "2026-03-15T17:31:44.372Z",
+      "lastOutcome": "safe_match",
+      "lastInfraWarnings": [],
+      "lastRunId": "week2-marks-loop-v26-20260315"
+    }
+  },
+  "demotedBrands": [],
+  "policy": "Demote brands after two consecutive zero-safe-match runs with successful registry query completion; infra failures do not count toward zero-safe streak."
+}

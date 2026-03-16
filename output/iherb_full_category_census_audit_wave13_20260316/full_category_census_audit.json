@@ -1,0 +1,343 @@
+{
+  "schemaVersion": "iherb_full_category_census_audit.v1",
+  "generatedAt": "2026-03-16T16:19:36.602Z",
+  "inputs": {
+    "stagingPath": "output/iherb_header_facts_week2_closure_v2_20260313/staging_products.parser_enriched.json",
+    "mergeReportPath": "output/iherb_overlay_bulk_merge_week2_final_unified_20260313/overlay_merge_coverage_report.json"
+  },
+  "summary": {
+    "importedRowCount": 26494,
+    "unknownCategoryRate": 14.3,
+    "unknownCategoryCount": 3800,
+    "highFrequencyUnknownCount": 0,
+    "scoreV2ReadyRate": 100,
+    "deepContentReadyRate": 98,
+    "categoryCount": 28
+  },
+  "categoryDistribution": {
+    "vitamin_d": 4843,
+    "probiotics": 1265,
+    "fish_oil_omega3": 1526,
+    "antioxidant_cellular_energy": 1399,
+    "magnesium": 2817,
+    "vitamin_mineral_other": 1692,
+    "joint_bone_mobility": 299,
+    "specialty_vitamins_other": 1365,
+    "superfoods_mushrooms_greens": 686,
+    "metabolic_glucose_support": 152,
+    "nootropic_memory_cognition": 456,
+    "digestive_and_gastro_functional": 95,
+    "botanical_herbal_support": 1794,
+    "unknown": 3800,
+    "digestive_fiber_enzymes": 578,
+    "specialty_single_amino_and_neuro": 443,
+    "mens_prostate_and_hormonal": 187,
+    "fatty_acids_specialty_lipids": 260,
+    "sports_performance_amino_acids": 1237,
+    "collagen_connective_support": 481,
+    "sleep_stress_mood_support": 769,
+    "cholesterol_lipid_support": 62,
+    "womens_hormonal_and_lactation": 142,
+    "taxonomy_backlog_hold": 21,
+    "liver_bile_support": 46,
+    "cellular_nucleotide_support": 1,
+    "out_of_scope_non_supplement": 61,
+    "sports_anabolic_support": 17
+  },
+  "topBrandDistribution": {
+    "Swanson": 1077,
+    "Nutricost": 1011,
+    "NOW Foods": 958,
+    "Solaray": 667,
+    "Source Naturals": 601,
+    "Nature's Way": 473,
+    "California Gold Nutrition": 390,
+    "Natural Factors": 388,
+    "Life Extension": 359,
+    "NaturesPlus": 359,
+    "the Vitamin Shoppe": 286,
+    "Carlson": 279,
+    "Solgar": 266,
+    "KAL": 264,
+    "Nature's Truth": 258,
+    "Nature's Craft": 250,
+    "Vitamatic": 247,
+    "21st Century": 242,
+    "Nature's Answer": 240,
+    "Garden of Life": 216
+  },
+  "liveNewCategoryCoverage": [
+    {
+      "categoryId": "metabolic_glucose_support",
+      "count": 152,
+      "avgScore": 70.5,
+      "deepContentReadyRate": 100,
+      "sampleTitles": [
+        "21st Century, Berberine HCI, 60 Vegetarian Capsules (500 mg per Capsule)",
+        "Absolute Nutrition, Berberine, 60 Capsules (600 mg Per Capsule)",
+        "Advance Physician Formulas, Berberine, 500 mg, 90 Vegetable Capsules",
+        "ALLMAX, Essentials, Berberine HCL, 500 mg , 30 Vegan Capsules",
+        "Amazing Nutrition, Amazing Formulas, Quercetin Berberine, 90 Veggie Capsules"
+      ]
+    },
+    {
+      "categoryId": "sports_anabolic_support",
+      "count": 17,
+      "avgScore": 73.5,
+      "deepContentReadyRate": 100,
+      "sampleTitles": [
+        "Force Factor, Anabolic Muscle Builder With AI-Developed PeptiStrong, 150 Vegetable Capsules",
+        "Humanx, Fadogia Agrestis+, 60 Capsules",
+        "Isatori, 17-Beta, Grind Series, Anabolic Testosterone Amplifier, 90 Capsules",
+        "Kaged, Pre-Workout, Crisp Apple, 1.24 lb (564 g)",
+        "Kaged, Pre-Workout, Stim-Free, Fruit Punch, 1.19 lb (538 g)"
+      ]
+    },
+    {
+      "categoryId": "cholesterol_lipid_support",
+      "count": 62,
+      "avgScore": 77.2,
+      "deepContentReadyRate": 100,
+      "sampleTitles": [
+        "21st Century, Red Yeast Rice, 600 mg, 150 Vegetarian Capsules",
+        "Advanced Orthomolecular Research AOR, Met SYN-568R, 60 Capsules",
+        "Best Naturals, Red Yeast Rice, 1,200 mg, 120 Tablets",
+        "Bio Nutrition, Cholesterol Wellness, 60 Vegetarian Capsules",
+        "Bluebonnet Nutrition, CholesteRice®, 90 Vegetable Capsules"
+      ]
+    },
+    {
+      "categoryId": "liver_bile_support",
+      "count": 46,
+      "avgScore": 73,
+      "deepContentReadyRate": 100,
+      "sampleTitles": [
+        "Allergy Research Group, Ox Bile, 125 mg, 180 Vegetarian Capsules",
+        "Allergy Research Group, Ox Bile, 500 mg, 100 Vegetarian Capsules",
+        "ALLMAX, TUDCA+, 250 mg, 60 Capsules",
+        "Best Naturals, TUDCA, 250 mg, 60 Capsules",
+        "Biocidin Botanicals, Liver GB+™, Detox, 60 Capsules"
+      ]
+    }
+  ],
+  "taxonomyCandidateSignals": [
+    {
+      "taxonomyKey": "cholesterol_lipid_support",
+      "rowCount": 55,
+      "avgScore": 77.9,
+      "currentlyUnknownCount": 0,
+      "alreadyResolvedCount": 55,
+      "deepContentReadyRate": 100,
+      "exampleTitles": [
+        "21st Century / 21st Century, Red Yeast Rice, 600 mg, 150 Vegetarian Capsules",
+        "Best Naturals / Best Naturals, Red Yeast Rice, 1,200 mg, 120 Tablets",
+        "Bluebonnet Nutrition / Bluebonnet Nutrition, Red Yeast Rice, 600 mg, 120 Vegetable Capsules",
+        "California Gold Nutrition / California Gold Nutrition, Red Yeast Rice Complex with Organic Red Yeast Rice, N-Acetyl Cysteine, Coenzyme Q10, and Milk Thistle Extract, 120 Veggie Capsules",
+        "California Gold Nutrition / California Gold Nutrition, Red Yeast Rice, 600 mg, 120 Veggie Capsules"
+      ]
+    },
+    {
+      "taxonomyKey": "liver_bile_support",
+      "rowCount": 15,
+      "avgScore": 72.9,
+      "currentlyUnknownCount": 0,
+      "alreadyResolvedCount": 15,
+      "deepContentReadyRate": 100,
+      "exampleTitles": [
+        "ALLMAX / ALLMAX, TUDCA+, 250 mg, 60 Capsules",
+        "Best Naturals / Best Naturals, TUDCA, 250 mg, 60 Capsules",
+        "BodyBio / BodyBio, TUDCA, 60 Capsules (250 mg per Capsule)",
+        "EVLution Nutrition / EVLution Nutrition, TUDCA, 30 Veggie Capsules (250 mg per Capsule)",
+        "Force Factor / Force Factor, Tudca , 250 mg , 60 Vegetable Capsules"
+      ]
+    },
+    {
+      "taxonomyKey": "cellular_nucleotide_support",
+      "rowCount": 1,
+      "avgScore": 62,
+      "currentlyUnknownCount": 0,
+      "alreadyResolvedCount": 1,
+      "deepContentReadyRate": 100,
+      "exampleTitles": [
+        "Bluebonnet Nutrition / Bluebonnet Nutrition, Nucleotide Complex, RNA / DNA, 60 Vegetable Capsules"
+      ]
+    }
+  ],
+  "unknownExamples": [
+    {
+      "productId": "43857",
+      "barcode_gtin14": "00740985213414",
+      "brandName": "21st Century",
+      "title": "21st Century, Co Q-10, 30 mg, 45 Capsules",
+      "overallScore": 69
+    },
+    {
+      "productId": "43873",
+      "barcode_gtin14": "00740985228227",
+      "brandName": "21st Century",
+      "title": "21st Century, Co Q-10, 400 mg, 30 Capsules",
+      "overallScore": 69
+    },
+    {
+      "productId": "3355",
+      "barcode_gtin14": "00740985226636",
+      "brandName": "21st Century",
+      "title": "21st Century, Gelatin, 600 mg, 100 Capsules",
+      "overallScore": 69
+    },
+    {
+      "productId": "41319",
+      "barcode_gtin14": "00740985223994",
+      "brandName": "21st Century",
+      "title": "21st Century, Herbal Slimming Tea, All Natural, Caffeine Free, 24 Tea Bags, 1.7 oz (48 g)",
+      "overallScore": 62
+    },
+    {
+      "productId": "13187",
+      "barcode_gtin14": "00740985223529",
+      "brandName": "21st Century",
+      "title": "21st Century, Herbal Slimming Tea, Cranraspberry, Caffeine Free, 24 Tea Bags, 1.7 oz (48 g)",
+      "overallScore": 73
+    },
+    {
+      "productId": "10227",
+      "barcode_gtin14": "00740985223611",
+      "brandName": "21st Century",
+      "title": "21st Century, Herbal Slimming Tea, Honey Lemon, Caffeine Free, 24 Tea Bags, 1.7 oz (48 g)",
+      "overallScore": 62
+    },
+    {
+      "productId": "41318",
+      "barcode_gtin14": "00740985227916",
+      "brandName": "21st Century",
+      "title": "21st Century, Herbal Slimming Tea, Lemon-Lime, Caffeine Free, 24 Tea Bags, 1.7 oz (48 g)",
+      "overallScore": 62
+    },
+    {
+      "productId": "12689",
+      "barcode_gtin14": "00740985224052",
+      "brandName": "21st Century",
+      "title": "21st Century, Herbal Slimming Tea, Orange Spice, Caffeine Free, 24 Tea Bags, 1.7 oz (48 g)",
+      "overallScore": 62
+    },
+    {
+      "productId": "43885",
+      "barcode_gtin14": "00740985226926",
+      "brandName": "21st Century",
+      "title": "21st Century, Herbal Slimming Tea, Peach-Apricot, Caffeine Free, 24 Tea Bags, 1.7 oz (48 g)",
+      "overallScore": 62
+    },
+    {
+      "productId": "43886",
+      "barcode_gtin14": "00740985226919",
+      "brandName": "21st Century",
+      "title": "21st Century, Herbal Slimming Tea, Peppermint, Caffeine Free, 24 Tea Bags, 1.7 oz (48 g)",
+      "overallScore": 62
+    },
+    {
+      "productId": "13002",
+      "barcode_gtin14": "00740985217818",
+      "brandName": "21st Century",
+      "title": "21st Century, Horse Chestnut Extract, Standardized, 60 Vegetarian Capsules (300 mg per Capsules)",
+      "overallScore": 69
+    },
+    {
+      "productId": "156541",
+      "barcode_gtin14": "00740985280812",
+      "brandName": "21st Century",
+      "title": "21st Century, NAD+, 90 Vegetarian Capsules (100 mg per Capsule)",
+      "overallScore": 57
+    },
+    {
+      "productId": "43897",
+      "barcode_gtin14": "00740985223062",
+      "brandName": "21st Century",
+      "title": "21st Century, Soy Isoflavones Extract, Standardized, 60 Vegetarian Capsules (50 mg per Capsules)",
+      "overallScore": 69
+    },
+    {
+      "productId": "115012",
+      "barcode_gtin14": "00740985280676",
+      "brandName": "21st Century",
+      "title": "21st Century, Vitamin K2, 100 mcg, 110 Vegetarian Capsules",
+      "overallScore": 69
+    },
+    {
+      "productId": "109663",
+      "barcode_gtin14": "00021718412169",
+      "brandName": "A Vogel",
+      "title": "A Vogel, Herbamare®, Herbed Sea Salt, 8.8 oz (250 g)",
+      "overallScore": 73
+    },
+    {
+      "productId": "116029",
+      "barcode_gtin14": "00894612020101",
+      "brandName": "A.C. Grace Company",
+      "title": "A.C. Grace Company, Unique E, Tocotrienol, 125 mg, 60 Easy To Swallow Softgels",
+      "overallScore": 65
+    },
+    {
+      "productId": "148253",
+      "barcode_gtin14": "00894612001568",
+      "brandName": "A.C. Grace Company",
+      "title": "A.C. Grace Company, UNIQUE E-GG 150, 150 mg, 60 Easy To Swallow Softgels",
+      "overallScore": 66
+    },
+    {
+      "productId": "99943",
+      "barcode_gtin14": "00708235089219",
+      "brandName": "Absolute Nutrition",
+      "title": "Absolute Nutrition, Absolutely Full, 60 Capsules",
+      "overallScore": 59
+    },
+    {
+      "productId": "54594",
+      "barcode_gtin14": "00896996000311",
+      "brandName": "Advance Physician Formulas",
+      "title": "Advance Physician Formulas, Beta-Sitosterol, 90 Vegetable Capsules",
+      "overallScore": 72
+    },
+    {
+      "productId": "54564",
+      "barcode_gtin14": "00896996000076",
+      "brandName": "Advance Physician Formulas",
+      "title": "Advance Physician Formulas, Catuaba, 500 mg, 60 Capsules",
+      "overallScore": 83
+    },
+    {
+      "productId": "54565",
+      "barcode_gtin14": "00896996000083",
+      "brandName": "Advance Physician Formulas",
+      "title": "Advance Physician Formulas, Choline Bitartrate, 260 mg, 60 Vegetable Capsules",
+      "overallScore": 72
+    },
+    {
+      "productId": "146349",
+      "barcode_gtin14": "00896996000656",
+      "brandName": "Advance Physician Formulas",
+      "title": "Advance Physician Formulas, Colostrum, 3.5 oz (100 g)",
+      "overallScore": 52
+    },
+    {
+      "productId": "146350",
+      "barcode_gtin14": "00896996000762",
+      "brandName": "Advance Physician Formulas",
+      "title": "Advance Physician Formulas, Colostrum, 8.8 oz (250 g)",
+      "overallScore": 52
+    },
+    {
+      "productId": "54580",
+      "barcode_gtin14": "00896996000229",
+      "brandName": "Advance Physician Formulas",
+      "title": "Advance Physician Formulas, Eggplant Extract, 500 mg, 60 Capsules",
+      "overallScore": 72
+    },
+    {
+      "productId": "54562",
+      "barcode_gtin14": "00896996000052",
+      "brandName": "Advance Physician Formulas",
+      "title": "Advance Physician Formulas, L-Carnosine, 500 mg, 30 Capsules",
+      "overallScore": 65
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "nutrasource_db_brand_seed.v1",
+  "generatedAt": "2026-03-15T19:35:16.775Z",
+  "sourceWarnings": [],
+  "count": 3,
+  "rows": [
+    {
+      "sourceBrandName": "Barlean's",
+      "normalizedBrandKey": "barlean s",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Carlson",
+      "normalizedBrandKey": "carlson",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Sports Research",
+      "normalizedBrandKey": "sports research",
+      "sources": [
+        "brands",
+        "iherb_overlay_products"
+      ]
+    }
+  ]
+}

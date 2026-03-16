@@ -1,0 +1,516 @@
+{
+  "schemaVersion": "third_party_verification_coverage_audit.v1",
+  "generatedAt": "2026-03-15T05:15:11.926Z",
+  "input": {
+    "cachePath": "/Users/howard07/NuTriApp/nutri-app/output/quality_marks/quality_mark_cache.json",
+    "auditPath": "/Users/howard07/NuTriApp/nutri-app/output/quality_marks/quality_mark_audit.json",
+    "cacheUpdatedAt": "2026-03-15T05:15:08.844Z",
+    "auditGeneratedAt": "2026-03-15T05:15:08.852Z",
+    "cacheEntryCount": 53
+  },
+  "totals": {
+    "totalEntries": 53,
+    "checkedEntries": 53,
+    "officialRegistryChecked": 53,
+    "officialRegistryVerified": 0,
+    "productPageClaimDetected": 0,
+    "genericThirdPartyClaimDetected": 0,
+    "brandLevelOfficialProgramDetected": 53
+  },
+  "statusCounts": {
+    "unknown": 53
+  },
+  "summaryStatusCounts": {
+    "ambiguous": 53
+  },
+  "strongestProgramCounts": {
+    "IFOS": 53
+  },
+  "brandCounts": {
+    "the_vitamin_shoppe": 50,
+    "metagenics": 3
+  },
+  "warningCounts": {
+    "brand_level_only_match": 53,
+    "registry_access_blocked": 53,
+    "registry_checked_not_found": 53,
+    "registry_result_ambiguous": 53
+  },
+  "programOutcomeMatrix": {
+    "nsf_certified_for_sport": {
+      "not_found_in_registry": 53
+    },
+    "usp_verified": {
+      "ambiguous_match": 53
+    },
+    "informed_choice": {
+      "not_found_in_registry": 53
+    },
+    "informed_sport": {
+      "not_found_in_registry": 53
+    },
+    "ifos": {
+      "ambiguous_match": 53,
+      "not_found_in_registry": 53
+    }
+  },
+  "cohorts": {
+    "registryAccessBlocked": [
+      {
+        "key": "dsld:dsldlabelid:81709:the_vitamin_shoppe:oil_of_oregano_extra_strength",
+        "brandName": "The Vitamin Shoppe",
+        "productName": "Oil of Oregano Extra Strength",
+        "barcode": "00766536023684",
+        "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=The%20Vitamin%20Shoppe",
+        "strongestProgram": "IFOS",
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ],
+        "sourcesTriedCount": 6
+      },
+      {
+        "key": "dsld:dsldlabelid:213798:the_vitamin_shoppe:carnipure_l_carnitine_1000_mg",
+        "brandName": "The Vitamin Shoppe",
+        "productName": "Carnipure L-Carnitine 1000 mg",
+        "barcode": "00766536026050",
+        "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=The%20Vitamin%20Shoppe",
+        "strongestProgram": "IFOS",
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ],
+        "sourcesTriedCount": 6
+      },
+      {
+        "key": "dsld:dsldlabelid:213777:the_vitamin_shoppe:multivitamin_mineral_powder_includes_amino_acids",
+        "brandName": "The Vitamin Shoppe",
+        "productName": "Multivitamin & Mineral Powder includes Amino Acids",
+        "barcode": "00766536023127",
+        "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=The%20Vitamin%20Shoppe",
+        "strongestProgram": "IFOS",
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ],
+        "sourcesTriedCount": 6
+      },
+      {
+        "key": "dsld:dsldlabelid:66627:the_vitamin_shoppe:red_clover_extract",
+        "brandName": "The Vitamin Shoppe",
+        "productName": "Red Clover Extract",
+        "barcode": "00766536016044",
+        "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=The%20Vitamin%20Shoppe",
+        "strongestProgram": "IFOS",
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ],
+        "sourcesTriedCount": 6
+      },
+      {
+        "key": "dsld:dsldlabelid:221485:the_vitamin_shoppe:super_energy_up",
+        "brandName": "The Vitamin Shoppe",
+        "productName": "Super Energy Up",
+        "barcode": "00766536012077",
+        "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=The%20Vitamin%20Shoppe",
+        "strongestProgram": "IFOS",
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ],
+        "sourcesTriedCount": 6
+      },
+      {
+        "key": "dsld:dsldlabelid:208212:the_vitamin_shoppe:triple_strength_turmeric_with_curcumin_900_mg",
+        "brandName": "The Vitamin Shoppe",
+        "productName": "Triple Strength Turmeric with Curcumin 900 mg",
+        "barcode": "00766536025633",
+        "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=The%20Vitamin%20Shoppe",
+        "strongestProgram": "IFOS",
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ],
+        "sourcesTriedCount": 6
+      },
+      {
+        "key": "dsld:dsldlabelid:33112:the_vitamin_shoppe:vitamin_e_high_gamma_400_iu",
+        "brandName": "The Vitamin Shoppe",
+        "productName": "Vitamin E High Gamma 400 IU",
+        "barcode": "00766536018888",
+        "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=The%20Vitamin%20Shoppe",
+        "strongestProgram": "IFOS",
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ],
+        "sourcesTriedCount": 6
+      },
+      {
+        "key": "dsld:dsldlabelid:180721:the_vitamin_shoppe:melatonin_3_mg",
+        "brandName": "The Vitamin Shoppe",
+        "productName": "Melatonin 3 mg",
+        "barcode": "00766536013364",
+        "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=The%20Vitamin%20Shoppe",
+        "strongestProgram": "IFOS",
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ],
+        "sourcesTriedCount": 6
+      },
+      {
+        "key": "dsld:dsldlabelid:175632:the_vitamin_shoppe:triple_strength_turmeric_with_curcumin_900_mg",
+        "brandName": "The Vitamin Shoppe",
+        "productName": "Triple Strength Turmeric With Curcumin 900 mg",
+        "barcode": "00766536035519",
+        "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=The%20Vitamin%20Shoppe",
+        "strongestProgram": "IFOS",
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ],
+        "sourcesTriedCount": 6
+      },
+      {
+        "key": "dsld:dsldlabelid:26982:the_vitamin_shoppe:ultimate_man_50",
+        "brandName": "The Vitamin Shoppe",
+        "productName": "Ultimate Man 50+",
+        "barcode": null,
+        "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=The%20Vitamin%20Shoppe",
+        "strongestProgram": "IFOS",
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ],
+        "sourcesTriedCount": 6
+      }
+    ],
+    "brandLevelOnly": [
+      {
+        "key": "dsld:dsldlabelid:81709:the_vitamin_shoppe:oil_of_oregano_extra_strength",
+        "brandName": "The Vitamin Shoppe",
+        "productName": "Oil of Oregano Extra Strength",
+        "barcode": "00766536023684",
+        "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=The%20Vitamin%20Shoppe",
+        "strongestProgram": "IFOS",
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ],
+        "sourcesTriedCount": 6
+      },
+      {
+        "key": "dsld:dsldlabelid:213798:the_vitamin_shoppe:carnipure_l_carnitine_1000_mg",
+        "brandName": "The Vitamin Shoppe",
+        "productName": "Carnipure L-Carnitine 1000 mg",
+        "barcode": "00766536026050",
+        "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=The%20Vitamin%20Shoppe",
+        "strongestProgram": "IFOS",
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ],
+        "sourcesTriedCount": 6
+      },
+      {
+        "key": "dsld:dsldlabelid:213777:the_vitamin_shoppe:multivitamin_mineral_powder_includes_amino_acids",
+        "brandName": "The Vitamin Shoppe",
+        "productName": "Multivitamin & Mineral Powder includes Amino Acids",
+        "barcode": "00766536023127",
+        "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=The%20Vitamin%20Shoppe",
+        "strongestProgram": "IFOS",
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ],
+        "sourcesTriedCount": 6
+      },
+      {
+        "key": "dsld:dsldlabelid:66627:the_vitamin_shoppe:red_clover_extract",
+        "brandName": "The Vitamin Shoppe",
+        "productName": "Red Clover Extract",
+        "barcode": "00766536016044",
+        "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=The%20Vitamin%20Shoppe",
+        "strongestProgram": "IFOS",
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ],
+        "sourcesTriedCount": 6
+      },
+      {
+        "key": "dsld:dsldlabelid:221485:the_vitamin_shoppe:super_energy_up",
+        "brandName": "The Vitamin Shoppe",
+        "productName": "Super Energy Up",
+        "barcode": "00766536012077",
+        "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=The%20Vitamin%20Shoppe",
+        "strongestProgram": "IFOS",
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ],
+        "sourcesTriedCount": 6
+      },
+      {
+        "key": "dsld:dsldlabelid:208212:the_vitamin_shoppe:triple_strength_turmeric_with_curcumin_900_mg",
+        "brandName": "The Vitamin Shoppe",
+        "productName": "Triple Strength Turmeric with Curcumin 900 mg",
+        "barcode": "00766536025633",
+        "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=The%20Vitamin%20Shoppe",
+        "strongestProgram": "IFOS",
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ],
+        "sourcesTriedCount": 6
+      },
+      {
+        "key": "dsld:dsldlabelid:33112:the_vitamin_shoppe:vitamin_e_high_gamma_400_iu",
+        "brandName": "The Vitamin Shoppe",
+        "productName": "Vitamin E High Gamma 400 IU",
+        "barcode": "00766536018888",
+        "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=The%20Vitamin%20Shoppe",
+        "strongestProgram": "IFOS",
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ],
+        "sourcesTriedCount": 6
+      },
+      {
+        "key": "dsld:dsldlabelid:180721:the_vitamin_shoppe:melatonin_3_mg",
+        "brandName": "The Vitamin Shoppe",
+        "productName": "Melatonin 3 mg",
+        "barcode": "00766536013364",
+        "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=The%20Vitamin%20Shoppe",
+        "strongestProgram": "IFOS",
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ],
+        "sourcesTriedCount": 6
+      },
+      {
+        "key": "dsld:dsldlabelid:175632:the_vitamin_shoppe:triple_strength_turmeric_with_curcumin_900_mg",
+        "brandName": "The Vitamin Shoppe",
+        "productName": "Triple Strength Turmeric With Curcumin 900 mg",
+        "barcode": "00766536035519",
+        "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=The%20Vitamin%20Shoppe",
+        "strongestProgram": "IFOS",
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ],
+        "sourcesTriedCount": 6
+      },
+      {
+        "key": "dsld:dsldlabelid:26982:the_vitamin_shoppe:ultimate_man_50",
+        "brandName": "The Vitamin Shoppe",
+        "productName": "Ultimate Man 50+",
+        "barcode": null,
+        "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=The%20Vitamin%20Shoppe",
+        "strongestProgram": "IFOS",
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ],
+        "sourcesTriedCount": 6
+      }
+    ],
+    "claimedButNotVerified": [],
+    "registryCheckedNotFound": [
+      {
+        "key": "dsld:dsldlabelid:81709:the_vitamin_shoppe:oil_of_oregano_extra_strength",
+        "brandName": "The Vitamin Shoppe",
+        "productName": "Oil of Oregano Extra Strength",
+        "barcode": "00766536023684",
+        "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=The%20Vitamin%20Shoppe",
+        "strongestProgram": "IFOS",
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ],
+        "sourcesTriedCount": 6
+      },
+      {
+        "key": "dsld:dsldlabelid:213798:the_vitamin_shoppe:carnipure_l_carnitine_1000_mg",
+        "brandName": "The Vitamin Shoppe",
+        "productName": "Carnipure L-Carnitine 1000 mg",
+        "barcode": "00766536026050",
+        "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=The%20Vitamin%20Shoppe",
+        "strongestProgram": "IFOS",
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ],
+        "sourcesTriedCount": 6
+      },
+      {
+        "key": "dsld:dsldlabelid:213777:the_vitamin_shoppe:multivitamin_mineral_powder_includes_amino_acids",
+        "brandName": "The Vitamin Shoppe",
+        "productName": "Multivitamin & Mineral Powder includes Amino Acids",
+        "barcode": "00766536023127",
+        "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=The%20Vitamin%20Shoppe",
+        "strongestProgram": "IFOS",
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ],
+        "sourcesTriedCount": 6
+      },
+      {
+        "key": "dsld:dsldlabelid:66627:the_vitamin_shoppe:red_clover_extract",
+        "brandName": "The Vitamin Shoppe",
+        "productName": "Red Clover Extract",
+        "barcode": "00766536016044",
+        "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=The%20Vitamin%20Shoppe",
+        "strongestProgram": "IFOS",
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ],
+        "sourcesTriedCount": 6
+      },
+      {
+        "key": "dsld:dsldlabelid:221485:the_vitamin_shoppe:super_energy_up",
+        "brandName": "The Vitamin Shoppe",
+        "productName": "Super Energy Up",
+        "barcode": "00766536012077",
+        "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=The%20Vitamin%20Shoppe",
+        "strongestProgram": "IFOS",
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ],
+        "sourcesTriedCount": 6
+      },
+      {
+        "key": "dsld:dsldlabelid:208212:the_vitamin_shoppe:triple_strength_turmeric_with_curcumin_900_mg",
+        "brandName": "The Vitamin Shoppe",
+        "productName": "Triple Strength Turmeric with Curcumin 900 mg",
+        "barcode": "00766536025633",
+        "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=The%20Vitamin%20Shoppe",
+        "strongestProgram": "IFOS",
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ],
+        "sourcesTriedCount": 6
+      },
+      {
+        "key": "dsld:dsldlabelid:33112:the_vitamin_shoppe:vitamin_e_high_gamma_400_iu",
+        "brandName": "The Vitamin Shoppe",
+        "productName": "Vitamin E High Gamma 400 IU",
+        "barcode": "00766536018888",
+        "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=The%20Vitamin%20Shoppe",
+        "strongestProgram": "IFOS",
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ],
+        "sourcesTriedCount": 6
+      },
+      {
+        "key": "dsld:dsldlabelid:180721:the_vitamin_shoppe:melatonin_3_mg",
+        "brandName": "The Vitamin Shoppe",
+        "productName": "Melatonin 3 mg",
+        "barcode": "00766536013364",
+        "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=The%20Vitamin%20Shoppe",
+        "strongestProgram": "IFOS",
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ],
+        "sourcesTriedCount": 6
+      },
+      {
+        "key": "dsld:dsldlabelid:175632:the_vitamin_shoppe:triple_strength_turmeric_with_curcumin_900_mg",
+        "brandName": "The Vitamin Shoppe",
+        "productName": "Triple Strength Turmeric With Curcumin 900 mg",
+        "barcode": "00766536035519",
+        "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=The%20Vitamin%20Shoppe",
+        "strongestProgram": "IFOS",
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ],
+        "sourcesTriedCount": 6
+      },
+      {
+        "key": "dsld:dsldlabelid:26982:the_vitamin_shoppe:ultimate_man_50",
+        "brandName": "The Vitamin Shoppe",
+        "productName": "Ultimate Man 50+",
+        "barcode": null,
+        "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=The%20Vitamin%20Shoppe",
+        "strongestProgram": "IFOS",
+        "warnings": [
+          "registry_checked_not_found",
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "brand_level_only_match"
+        ],
+        "sourcesTriedCount": 6
+      }
+    ]
+  }
+}

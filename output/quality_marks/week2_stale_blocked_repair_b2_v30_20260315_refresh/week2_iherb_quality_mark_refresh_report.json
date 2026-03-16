@@ -1,0 +1,1380 @@
+{
+  "schemaVersion": "week2_iherb_quality_mark_refresh_report.v1",
+  "generatedAt": "2026-03-15T17:47:17.643Z",
+  "refreshedCount": 18,
+  "summaryStatusCounts": {
+    "ambiguous": 15,
+    "not_proven": 3
+  },
+  "warningCounts": {
+    "registry_result_ambiguous": 18,
+    "registry_access_blocked": 15,
+    "brand_level_only_match": 3,
+    "registry_checked_not_found": 3
+  },
+  "rows": [
+    {
+      "key": "dsld:dsldlabelid:216349:metagenics:multi_min_chelate",
+      "productId": null,
+      "barcode": "00755571024541",
+      "brandName": "Metagenics",
+      "productName": "Multi-Min Chelate",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "not_proven",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "brand_level_only_match",
+          "registry_result_ambiguous",
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair",
+      "status": "not_detected",
+      "checked": true,
+      "confidence": 0.88,
+      "confidenceBucket": "high",
+      "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Metagenics",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 2,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Metagenics",
+        "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredProducts?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Multi-Min%20Chelate"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "directRegistryEvidenceUsed": false,
+      "programMatches": [
+        {
+          "programId": "ifos",
+          "programLabel": "IFOS",
+          "registryFamily": "nutrasource",
+          "status": "ambiguous_match",
+          "matchLevel": "brand",
+          "evidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Metagenics",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": true,
+          "productMatched": false,
+          "confidence": 0.68,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry matched the brand but not the product with enough confidence."
+        },
+        {
+          "programId": "ifos",
+          "programLabel": "IFOS",
+          "registryFamily": "nutrasource",
+          "status": "not_found_in_registry",
+          "matchLevel": "product",
+          "evidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredProducts?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Multi-Min%20Chelate",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.9,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry returned no matching results."
+        }
+      ],
+      "note": "Official IFOS results only support a brand-level match so far.",
+      "error": null,
+      "checkedAt": "2026-03-15T17:47:17.563Z",
+      "expiresAt": "2026-04-14T17:47:17.563Z"
+    },
+    {
+      "key": "dsld:dsldlabelid:323365:metagenics:advaclear",
+      "productId": null,
+      "barcode": "00755571930507",
+      "brandName": "Metagenics",
+      "productName": "AdvaClear",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "not_proven",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "brand_level_only_match",
+          "registry_result_ambiguous",
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair",
+      "status": "not_detected",
+      "checked": true,
+      "confidence": 0.88,
+      "confidenceBucket": "high",
+      "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Metagenics",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 2,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Metagenics",
+        "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredProducts?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=AdvaClear"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "directRegistryEvidenceUsed": false,
+      "programMatches": [
+        {
+          "programId": "ifos",
+          "programLabel": "IFOS",
+          "registryFamily": "nutrasource",
+          "status": "ambiguous_match",
+          "matchLevel": "brand",
+          "evidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Metagenics",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": true,
+          "productMatched": false,
+          "confidence": 0.68,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry matched the brand but not the product with enough confidence."
+        },
+        {
+          "programId": "ifos",
+          "programLabel": "IFOS",
+          "registryFamily": "nutrasource",
+          "status": "not_found_in_registry",
+          "matchLevel": "product",
+          "evidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredProducts?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=AdvaClear",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.9,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry returned no matching results."
+        }
+      ],
+      "note": "Official IFOS results only support a brand-level match so far.",
+      "error": null,
+      "checkedAt": "2026-03-15T17:47:17.565Z",
+      "expiresAt": "2026-04-14T17:47:17.565Z"
+    },
+    {
+      "key": "dsld:dsldlabelid:265519:metagenics:ultraclear_renew_vanilla_flavor",
+      "productId": null,
+      "barcode": "00755571943927",
+      "brandName": "Metagenics",
+      "productName": "UltraClear Renew Vanilla Flavor",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "not_proven",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "brand_level_only_match",
+          "registry_result_ambiguous",
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair",
+      "status": "not_detected",
+      "checked": true,
+      "confidence": 0.88,
+      "confidenceBucket": "high",
+      "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Metagenics",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 2,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Metagenics",
+        "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredProducts?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=UltraClear%20Renew%20Vanilla%20Flavor"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "directRegistryEvidenceUsed": false,
+      "programMatches": [
+        {
+          "programId": "ifos",
+          "programLabel": "IFOS",
+          "registryFamily": "nutrasource",
+          "status": "ambiguous_match",
+          "matchLevel": "brand",
+          "evidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Metagenics",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": true,
+          "productMatched": false,
+          "confidence": 0.68,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry matched the brand but not the product with enough confidence."
+        },
+        {
+          "programId": "ifos",
+          "programLabel": "IFOS",
+          "registryFamily": "nutrasource",
+          "status": "not_found_in_registry",
+          "matchLevel": "product",
+          "evidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredProducts?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=UltraClear%20Renew%20Vanilla%20Flavor",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.9,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry returned no matching results."
+        }
+      ],
+      "note": "Official IFOS results only support a brand-level match so far.",
+      "error": null,
+      "checkedAt": "2026-03-15T17:47:17.560Z",
+      "expiresAt": "2026-04-14T17:47:17.560Z"
+    },
+    {
+      "key": "web:gtin14:00740985213391:21st_century:21st_century_acidophilus_probiotic_blend_100_capsules",
+      "productId": null,
+      "barcode": "00740985213391",
+      "brandName": "21st Century",
+      "productName": "21st Century, Acidophilus Probiotic Blend, 100 Capsules",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair",
+      "status": "unknown",
+      "checked": true,
+      "confidence": 0.45,
+      "confidenceBucket": "low",
+      "evidenceRef": "https://www.quality-supplements.org/usp_verified_products",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://www.quality-supplements.org/usp_verified_products"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "directRegistryEvidenceUsed": false,
+      "programMatches": [
+        {
+          "programId": "usp_verified",
+          "programLabel": "USP Verified",
+          "registryFamily": "usp",
+          "status": "ambiguous_match",
+          "matchLevel": "product",
+          "evidenceUrl": "https://www.quality-supplements.org/usp_verified_products",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.45,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry access blocked (http_403)."
+        }
+      ],
+      "note": "Official USP Verified access was blocked, so third-party verification remains unproven.",
+      "error": "http_403",
+      "checkedAt": "2026-03-15T17:47:17.270Z",
+      "expiresAt": "2026-04-14T17:47:17.270Z"
+    },
+    {
+      "key": "web:gtin14:00740985229286:21st_century:21st_century_acidophilus_probiotic_blend_150_capsules",
+      "productId": null,
+      "barcode": "00740985229286",
+      "brandName": "21st Century",
+      "productName": "21st Century, Acidophilus Probiotic Blend, 150 Capsules",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair",
+      "status": "unknown",
+      "checked": true,
+      "confidence": 0.45,
+      "confidenceBucket": "low",
+      "evidenceRef": "https://www.quality-supplements.org/usp_verified_products",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://www.quality-supplements.org/usp_verified_products"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "directRegistryEvidenceUsed": false,
+      "programMatches": [
+        {
+          "programId": "usp_verified",
+          "programLabel": "USP Verified",
+          "registryFamily": "usp",
+          "status": "ambiguous_match",
+          "matchLevel": "product",
+          "evidenceUrl": "https://www.quality-supplements.org/usp_verified_products",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.45,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry access blocked (http_403)."
+        }
+      ],
+      "note": "Official USP Verified access was blocked, so third-party verification remains unproven.",
+      "error": "http_403",
+      "checkedAt": "2026-03-15T17:47:17.306Z",
+      "expiresAt": "2026-04-14T17:47:17.306Z"
+    },
+    {
+      "key": "web:gtin14:00740985280560:21st_century:21st_century_acidophilus_probiotic_blend_300_capsules",
+      "productId": null,
+      "barcode": "00740985280560",
+      "brandName": "21st Century",
+      "productName": "21st Century, Acidophilus, Probiotic Blend, 300 Capsules",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair",
+      "status": "unknown",
+      "checked": true,
+      "confidence": 0.45,
+      "confidenceBucket": "low",
+      "evidenceRef": "https://www.quality-supplements.org/usp_verified_products",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://www.quality-supplements.org/usp_verified_products"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "directRegistryEvidenceUsed": false,
+      "programMatches": [
+        {
+          "programId": "usp_verified",
+          "programLabel": "USP Verified",
+          "registryFamily": "usp",
+          "status": "ambiguous_match",
+          "matchLevel": "product",
+          "evidenceUrl": "https://www.quality-supplements.org/usp_verified_products",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.45,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry access blocked (http_403)."
+        }
+      ],
+      "note": "Official USP Verified access was blocked, so third-party verification remains unproven.",
+      "error": "http_403",
+      "checkedAt": "2026-03-15T17:47:17.337Z",
+      "expiresAt": "2026-04-14T17:47:17.337Z"
+    },
+    {
+      "key": "web:gtin14:00740985228463:21st_century:21st_century_colon_cleanse_120_vegetarian_capsules",
+      "productId": null,
+      "barcode": "00740985228463",
+      "brandName": "21st Century",
+      "productName": "21st Century, Colon Cleanse, 120 Vegetarian Capsules",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair",
+      "status": "unknown",
+      "checked": true,
+      "confidence": 0.45,
+      "confidenceBucket": "low",
+      "evidenceRef": "https://www.quality-supplements.org/usp_verified_products",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://www.quality-supplements.org/usp_verified_products"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "directRegistryEvidenceUsed": false,
+      "programMatches": [
+        {
+          "programId": "usp_verified",
+          "programLabel": "USP Verified",
+          "registryFamily": "usp",
+          "status": "ambiguous_match",
+          "matchLevel": "product",
+          "evidenceUrl": "https://www.quality-supplements.org/usp_verified_products",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.45,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry access blocked (http_403)."
+        }
+      ],
+      "note": "Official USP Verified access was blocked, so third-party verification remains unproven.",
+      "error": "http_403",
+      "checkedAt": "2026-03-15T17:47:17.372Z",
+      "expiresAt": "2026-04-14T17:47:17.372Z"
+    },
+    {
+      "key": "web:gtin14:00740985278482:21st_century:21st_century_cranberry_plus_probiotic_60_tablets",
+      "productId": null,
+      "barcode": "00740985278482",
+      "brandName": "21st Century",
+      "productName": "21st Century, Cranberry Plus Probiotic, 60 Tablets",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair",
+      "status": "unknown",
+      "checked": true,
+      "confidence": 0.45,
+      "confidenceBucket": "low",
+      "evidenceRef": "https://www.quality-supplements.org/usp_verified_products",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://www.quality-supplements.org/usp_verified_products"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "directRegistryEvidenceUsed": false,
+      "programMatches": [
+        {
+          "programId": "usp_verified",
+          "programLabel": "USP Verified",
+          "registryFamily": "usp",
+          "status": "ambiguous_match",
+          "matchLevel": "product",
+          "evidenceUrl": "https://www.quality-supplements.org/usp_verified_products",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.45,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry access blocked (http_403)."
+        }
+      ],
+      "note": "Official USP Verified access was blocked, so third-party verification remains unproven.",
+      "error": "http_403",
+      "checkedAt": "2026-03-15T17:47:17.408Z",
+      "expiresAt": "2026-04-14T17:47:17.408Z"
+    },
+    {
+      "key": "web:gtin14:00740985280690:21st_century:21st_century_glp_1_60_vegetarian_capsules",
+      "productId": null,
+      "barcode": "00740985280690",
+      "brandName": "21st Century",
+      "productName": "21st Century, GLP-1, 60 Vegetarian Capsules",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair",
+      "status": "unknown",
+      "checked": true,
+      "confidence": 0.45,
+      "confidenceBucket": "low",
+      "evidenceRef": "https://www.quality-supplements.org/usp_verified_products",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://www.quality-supplements.org/usp_verified_products"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "directRegistryEvidenceUsed": false,
+      "programMatches": [
+        {
+          "programId": "usp_verified",
+          "programLabel": "USP Verified",
+          "registryFamily": "usp",
+          "status": "ambiguous_match",
+          "matchLevel": "product",
+          "evidenceUrl": "https://www.quality-supplements.org/usp_verified_products",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.45,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry access blocked (http_403)."
+        }
+      ],
+      "note": "Official USP Verified access was blocked, so third-party verification remains unproven.",
+      "error": "http_403",
+      "checkedAt": "2026-03-15T17:47:17.446Z",
+      "expiresAt": "2026-04-14T17:47:17.446Z"
+    },
+    {
+      "key": "web:gtin14:00740985223529:21st_century:21st_century_herbal_slimming_tea_cranraspberry_caffeine_free_24_tea_bags_1_7_oz_48_g",
+      "productId": null,
+      "barcode": "00740985223529",
+      "brandName": "21st Century",
+      "productName": "21st Century, Herbal Slimming Tea, Cranraspberry, Caffeine Free, 24 Tea Bags, 1.7 oz (48 g)",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair",
+      "status": "unknown",
+      "checked": true,
+      "confidence": 0.45,
+      "confidenceBucket": "low",
+      "evidenceRef": "https://www.quality-supplements.org/usp_verified_products",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://www.quality-supplements.org/usp_verified_products"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "directRegistryEvidenceUsed": false,
+      "programMatches": [
+        {
+          "programId": "usp_verified",
+          "programLabel": "USP Verified",
+          "registryFamily": "usp",
+          "status": "ambiguous_match",
+          "matchLevel": "product",
+          "evidenceUrl": "https://www.quality-supplements.org/usp_verified_products",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.45,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry access blocked (http_403)."
+        }
+      ],
+      "note": "Official USP Verified access was blocked, so third-party verification remains unproven.",
+      "error": "http_403",
+      "checkedAt": "2026-03-15T17:47:17.480Z",
+      "expiresAt": "2026-04-14T17:47:17.480Z"
+    },
+    {
+      "key": "web:gtin14:00740985229088:21st_century:21st_century_red_yeast_rice_600_mg_150_vegetarian_capsules",
+      "productId": null,
+      "barcode": "00740985229088",
+      "brandName": "21st Century",
+      "productName": "21st Century, Red Yeast Rice, 600 mg, 150 Vegetarian Capsules",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair",
+      "status": "unknown",
+      "checked": true,
+      "confidence": 0.45,
+      "confidenceBucket": "low",
+      "evidenceRef": "https://www.quality-supplements.org/usp_verified_products",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://www.quality-supplements.org/usp_verified_products"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "directRegistryEvidenceUsed": false,
+      "programMatches": [
+        {
+          "programId": "usp_verified",
+          "programLabel": "USP Verified",
+          "registryFamily": "usp",
+          "status": "ambiguous_match",
+          "matchLevel": "product",
+          "evidenceUrl": "https://www.quality-supplements.org/usp_verified_products",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.45,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry access blocked (http_403)."
+        }
+      ],
+      "note": "Official USP Verified access was blocked, so third-party verification remains unproven.",
+      "error": "http_403",
+      "checkedAt": "2026-03-15T17:47:17.514Z",
+      "expiresAt": "2026-04-14T17:47:17.514Z"
+    },
+    {
+      "key": "web:gtin14:00740985272855:21st_century:21st_century_resveratrol_red_wine_extract_90_capsules",
+      "productId": null,
+      "barcode": "00740985272855",
+      "brandName": "21st Century",
+      "productName": "21st Century, Resveratrol Red Wine Extract, 90 Capsules",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair",
+      "status": "unknown",
+      "checked": true,
+      "confidence": 0.45,
+      "confidenceBucket": "low",
+      "evidenceRef": "https://www.quality-supplements.org/usp_verified_products",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://www.quality-supplements.org/usp_verified_products"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "directRegistryEvidenceUsed": false,
+      "programMatches": [
+        {
+          "programId": "usp_verified",
+          "programLabel": "USP Verified",
+          "registryFamily": "usp",
+          "status": "ambiguous_match",
+          "matchLevel": "product",
+          "evidenceUrl": "https://www.quality-supplements.org/usp_verified_products",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.45,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry access blocked (http_403)."
+        }
+      ],
+      "note": "Official USP Verified access was blocked, so third-party verification remains unproven.",
+      "error": "http_403",
+      "checkedAt": "2026-03-15T17:47:17.546Z",
+      "expiresAt": "2026-04-14T17:47:17.546Z"
+    },
+    {
+      "key": "web:gtin14:05056555204122:abe:abe_non_stim_pump_pre_workout_blue_raspberry_17_63_oz_500_g",
+      "productId": null,
+      "barcode": "05056555204122",
+      "brandName": "ABE",
+      "productName": "ABE, Non-Stim Pump Pre Workout, Blue Raspberry , 17.63 oz (500 g)",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair",
+      "status": "unknown",
+      "checked": true,
+      "confidence": 0.45,
+      "confidenceBucket": "low",
+      "evidenceRef": "https://www.quality-supplements.org/usp_verified_products",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://www.quality-supplements.org/usp_verified_products"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "directRegistryEvidenceUsed": false,
+      "programMatches": [
+        {
+          "programId": "usp_verified",
+          "programLabel": "USP Verified",
+          "registryFamily": "usp",
+          "status": "ambiguous_match",
+          "matchLevel": "product",
+          "evidenceUrl": "https://www.quality-supplements.org/usp_verified_products",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.45,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry access blocked (http_403)."
+        }
+      ],
+      "note": "Official USP Verified access was blocked, so third-party verification remains unproven.",
+      "error": "http_403",
+      "checkedAt": "2026-03-15T17:47:17.584Z",
+      "expiresAt": "2026-04-14T17:47:17.584Z"
+    },
+    {
+      "key": "web:gtin14:05056555204139:abe:abe_non_stim_pump_pre_workout_sour_gummy_bear_17_63_oz_500_g",
+      "productId": null,
+      "barcode": "05056555204139",
+      "brandName": "ABE",
+      "productName": "ABE, Non-Stim Pump Pre Workout, Sour Gummy Bear, 17.63 oz (500 g)",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair",
+      "status": "unknown",
+      "checked": true,
+      "confidence": 0.45,
+      "confidenceBucket": "low",
+      "evidenceRef": "https://www.quality-supplements.org/usp_verified_products",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://www.quality-supplements.org/usp_verified_products"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "directRegistryEvidenceUsed": false,
+      "programMatches": [
+        {
+          "programId": "usp_verified",
+          "programLabel": "USP Verified",
+          "registryFamily": "usp",
+          "status": "ambiguous_match",
+          "matchLevel": "product",
+          "evidenceUrl": "https://www.quality-supplements.org/usp_verified_products",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.45,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry access blocked (http_403)."
+        }
+      ],
+      "note": "Official USP Verified access was blocked, so third-party verification remains unproven.",
+      "error": "http_403",
+      "checkedAt": "2026-03-15T17:47:17.603Z",
+      "expiresAt": "2026-04-14T17:47:17.603Z"
+    },
+    {
+      "key": "web:gtin14:05056555204146:abe:abe_non_stim_pump_pre_workout_tiger_s_blood_17_63_oz_500_g",
+      "productId": null,
+      "barcode": "05056555204146",
+      "brandName": "ABE",
+      "productName": "ABE, Non-Stim Pump Pre Workout, Tiger's Blood, 17.63 oz (500 g)",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair",
+      "status": "unknown",
+      "checked": true,
+      "confidence": 0.45,
+      "confidenceBucket": "low",
+      "evidenceRef": "https://www.quality-supplements.org/usp_verified_products",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://www.quality-supplements.org/usp_verified_products"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "directRegistryEvidenceUsed": false,
+      "programMatches": [
+        {
+          "programId": "usp_verified",
+          "programLabel": "USP Verified",
+          "registryFamily": "usp",
+          "status": "ambiguous_match",
+          "matchLevel": "product",
+          "evidenceUrl": "https://www.quality-supplements.org/usp_verified_products",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.45,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry access blocked (http_403)."
+        }
+      ],
+      "note": "Official USP Verified access was blocked, so third-party verification remains unproven.",
+      "error": "http_403",
+      "checkedAt": "2026-03-15T17:47:17.602Z",
+      "expiresAt": "2026-04-14T17:47:17.602Z"
+    },
+    {
+      "key": "web:gtin14:05056555202111:abe:abe_pre_workout_baddy_berry_13_75_oz_390_g",
+      "productId": null,
+      "barcode": "05056555202111",
+      "brandName": "ABE",
+      "productName": "ABE, Pre-Workout, Baddy Berry, 13.75 oz (390 g)",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair",
+      "status": "unknown",
+      "checked": true,
+      "confidence": 0.45,
+      "confidenceBucket": "low",
+      "evidenceRef": "https://www.quality-supplements.org/usp_verified_products",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://www.quality-supplements.org/usp_verified_products"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "directRegistryEvidenceUsed": false,
+      "programMatches": [
+        {
+          "programId": "usp_verified",
+          "programLabel": "USP Verified",
+          "registryFamily": "usp",
+          "status": "ambiguous_match",
+          "matchLevel": "product",
+          "evidenceUrl": "https://www.quality-supplements.org/usp_verified_products",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.45,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry access blocked (http_403)."
+        }
+      ],
+      "note": "Official USP Verified access was blocked, so third-party verification remains unproven.",
+      "error": "http_403",
+      "checkedAt": "2026-03-15T17:47:17.603Z",
+      "expiresAt": "2026-04-14T17:47:17.603Z"
+    },
+    {
+      "key": "web:gtin14:05056555201923:abe:abe_pre_workout_sour_apple_13_75_oz_390_g",
+      "productId": null,
+      "barcode": "05056555201923",
+      "brandName": "ABE",
+      "productName": "ABE, Pre-Workout, Sour Apple, 13.75 oz (390 g)",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair",
+      "status": "unknown",
+      "checked": true,
+      "confidence": 0.45,
+      "confidenceBucket": "low",
+      "evidenceRef": "https://www.quality-supplements.org/usp_verified_products",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://www.quality-supplements.org/usp_verified_products"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "directRegistryEvidenceUsed": false,
+      "programMatches": [
+        {
+          "programId": "usp_verified",
+          "programLabel": "USP Verified",
+          "registryFamily": "usp",
+          "status": "ambiguous_match",
+          "matchLevel": "product",
+          "evidenceUrl": "https://www.quality-supplements.org/usp_verified_products",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.45,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry access blocked (http_403)."
+        }
+      ],
+      "note": "Official USP Verified access was blocked, so third-party verification remains unproven.",
+      "error": "http_403",
+      "checkedAt": "2026-03-15T17:47:17.625Z",
+      "expiresAt": "2026-04-14T17:47:17.625Z"
+    },
+    {
+      "key": "web:gtin14:05056555201916:abe:abe_pre_workout_tropical_vibes_13_75_oz_390_g",
+      "productId": null,
+      "barcode": "05056555201916",
+      "brandName": "ABE",
+      "productName": "ABE, Pre-Workout, Tropical Vibes, 13.75 oz (390 g)",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "ambiguous",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "stale_blocked_repair",
+      "status": "unknown",
+      "checked": true,
+      "confidence": 0.45,
+      "confidenceBucket": "low",
+      "evidenceRef": "https://www.quality-supplements.org/usp_verified_products",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://www.quality-supplements.org/usp_verified_products"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "directRegistryEvidenceUsed": false,
+      "programMatches": [
+        {
+          "programId": "usp_verified",
+          "programLabel": "USP Verified",
+          "registryFamily": "usp",
+          "status": "ambiguous_match",
+          "matchLevel": "product",
+          "evidenceUrl": "https://www.quality-supplements.org/usp_verified_products",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.45,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry access blocked (http_403)."
+        }
+      ],
+      "note": "Official USP Verified access was blocked, so third-party verification remains unproven.",
+      "error": "http_403",
+      "checkedAt": "2026-03-15T17:47:17.638Z",
+      "expiresAt": "2026-04-14T17:47:17.638Z"
+    }
+  ],
+  "outputs": {
+    "cachePath": "/Users/howard07/NuTriApp/nutri-app/output/quality_marks/quality_mark_cache.json",
+    "auditPath": "/Users/howard07/NuTriApp/nutri-app/output/quality_marks/quality_mark_audit.json"
+  }
+}

@@ -1,0 +1,377 @@
+{
+  "schemaVersion": "iherb_category_experience_validation_pack.v1",
+  "generatedAt": "2026-03-16T19:33:45.677Z",
+  "inputs": {
+    "stagingPath": "output/iherb_header_facts_week2_closure_v2_20260313/staging_products.parser_enriched.json",
+    "mergeReportPath": "output/iherb_overlay_bulk_merge_week2_final_unified_20260313/overlay_merge_coverage_report.json",
+    "fullAuditPath": "output/iherb_full_category_census_audit_wave13_20260316/full_category_census_audit.json"
+  },
+  "summary": {
+    "importedRowCount": 26494,
+    "fullCorpusUnknownCategoryRate": 14.3,
+    "fullCorpusDeepContentReadyRate": 98,
+    "validatedCategories": [
+      "metabolic_glucose_support",
+      "cholesterol_lipid_support",
+      "liver_bile_support",
+      "fish_oil_omega3"
+    ],
+    "recommendation": "Move to category-specific consumer-copy specialization; do not make full-corpus long-tail cleanup the mainline yet."
+  },
+  "categories": [
+    {
+      "categoryId": "metabolic_glucose_support",
+      "type": "new",
+      "whyNow": "We need to know whether berberine / glucose-support products now read like a coherent metabolic lane, not just a resolved taxonomy label.",
+      "count": 152,
+      "avgScore": 70.5,
+      "overviewSpecificityRate": 100,
+      "scienceSpecificityRate": 100,
+      "usageSpecificityRate": 20.4,
+      "safetySpecificityRate": 0,
+      "overviewGenericRate": 0,
+      "scienceGenericRate": 0,
+      "safetyGenericRate": 100,
+      "allSectionsSpecificRate": 0,
+      "examples": [
+        {
+          "productId": "134186",
+          "brandName": "CodeAge",
+          "title": "Codeage, Berberine Phytosome+, 60 Vegetable Capsules",
+          "score": 86,
+          "overviewExcerpt": [
+            "Best for: glucose- or glycemic-support routines where berberine disclosure helps comparisons stay grounded.",
+            "Good if you want: products with clear berberine or glucose-support actives per serving, plus useful meal-timing context."
+          ],
+          "scienceExcerpt": [
+            "Often used for glucose- or glycemic-support goals, especially when shoppers compare berberine strength and meal-timing clarity.",
+            "This product provides Berberine Phytosome Blend 675 mg per serving, but berberine disclosure and product-detail context are both available affects how easy it is to compare.",
+            "Main limitation: no high-impact unresolved disclosure gap was detected from current verified product data. Next step: Compare berberine strength per serving and whether the label gives useful meal-timing guidance."
+          ],
+          "usageExcerpt": [
+            "Adults take 1 capsule daily, or as recommended by your healthcare practitioner, with 8 ounces of water or your favorite beverage. May be taken with or withou...",
+            "Source: official_record."
+          ],
+          "safetyExcerpt": [
+            "As with any dietary supplement, consult your healthcare practitioner before using this product, especially if you are pregnant, nursing, or are otherwise und...",
+            "If you are pregnant, breastfeeding, or using medications, review watch-outs before use."
+          ]
+        },
+        {
+          "productId": "65987",
+          "brandName": "Natural Factors",
+          "title": "Natural Factors, WellBetX® Berberine, 60 Vegetarian Capsules (500 mg per Capsule)",
+          "score": 86,
+          "overviewExcerpt": [
+            "Best for: glucose- or glycemic-support routines where berberine disclosure helps comparisons stay grounded.",
+            "Good if you want: products with clear berberine or glucose-support actives per serving, plus useful meal-timing context."
+          ],
+          "scienceExcerpt": [
+            "Often used for glucose- or glycemic-support goals, especially when shoppers compare berberine strength and meal-timing clarity.",
+            "This product provides Berberine HCl (from Berberis vulgaris extract) (root) 1000 mg per serving, but berberine disclosure and product-detail context are both available affects how easy it is to compare.",
+            "Main limitation: no high-impact unresolved disclosure gap was detected from current verified product data. Next step: Compare berberine strength per serving and whether the label gives useful meal-timing guidance."
+          ],
+          "usageExcerpt": [
+            "1-2 capsules per day or as directed by a health care professional.",
+            "Source: official_record."
+          ],
+          "safetyExcerpt": [
+            "Consult a health care professional before use, especially if you are pregnant or breastfeeding, are taking medication, or have a medical condition. Keep out...",
+            "If you are pregnant, breastfeeding, or using medications, review watch-outs before use."
+          ]
+        },
+        {
+          "productId": "85657",
+          "brandName": "Natural Factors",
+          "title": "Natural Factors, WellBetX®, Berberine, 120 Vegetarian Capsules (500 mg per Capsule)",
+          "score": 86,
+          "overviewExcerpt": [
+            "Best for: glucose- or glycemic-support routines where berberine disclosure helps comparisons stay grounded.",
+            "Good if you want: products with clear berberine or glucose-support actives per serving, plus useful meal-timing context."
+          ],
+          "scienceExcerpt": [
+            "Often used for glucose- or glycemic-support goals, especially when shoppers compare berberine strength and meal-timing clarity.",
+            "This product provides Berberine HCl(from Berberis vulgaris extract) (root) 1000 mg per serving, but berberine disclosure and product-detail context are both available affects how easy it is to compare.",
+            "Main limitation: no high-impact unresolved disclosure gap was detected from current verified product data. Next step: Compare berberine strength per serving and whether the label gives useful meal-timing guidance."
+          ],
+          "usageExcerpt": [
+            "1-2 capsules per day or as directed by a health care professional.",
+            "Source: official_record."
+          ],
+          "safetyExcerpt": [
+            "Consult a health care professional before use, especially if you are pregnant or breastfeeding, are taking medication, or have a medical condition. Keep out...",
+            "If you are pregnant, breastfeeding, or using medications, review watch-outs before use."
+          ]
+        }
+      ]
+    },
+    {
+      "categoryId": "cholesterol_lipid_support",
+      "type": "new",
+      "whyNow": "We need to know whether red-yeast-rice / lipid-support products now read like a dedicated cholesterol lane rather than generic herb copy.",
+      "count": 62,
+      "avgScore": 77.2,
+      "overviewSpecificityRate": 0,
+      "scienceSpecificityRate": 0,
+      "usageSpecificityRate": 24.2,
+      "safetySpecificityRate": 0,
+      "overviewGenericRate": 100,
+      "scienceGenericRate": 100,
+      "safetyGenericRate": 100,
+      "allSectionsSpecificRate": 0,
+      "examples": [
+        {
+          "productId": "129575",
+          "brandName": "California Gold Nutrition",
+          "title": "California Gold Nutrition, Red Yeast Rice, 600 mg, 120 Veggie Capsules",
+          "score": 86,
+          "overviewExcerpt": [
+            "Best for: comparing ingredient support based on clear label disclosure.",
+            "Good if you want: products with clear per-serving disclosure so comparisons are easier."
+          ],
+          "scienceExcerpt": [
+            "Often used for goal-oriented supplement support (general science).",
+            "This product provides Organic Red Yeast Rice (Monascus purpureus) 600 mg per serving, but core disclosure is partly missing affects how easy it is to compare.",
+            "Main limitation: no high-impact unresolved disclosure gap was detected from current verified product data. Next step: Compare key per-serving actives and directions before buying."
+          ],
+          "usageExcerpt": [
+            "Take 1 capsule twice daily, with food. Best when taken as directed by a qualified healthcare professional.",
+            "Source: official_record."
+          ],
+          "safetyExcerpt": [
+            "Keep out of reach of children. Consult with a licensed physician, pharmacist, naturopath or other qualified healthcare professional prior to taking dietary s...",
+            "If you are pregnant, breastfeeding, or using medications, review watch-outs before use."
+          ]
+        },
+        {
+          "productId": "50202",
+          "brandName": "Mason Natural",
+          "title": "Mason Natural, Whole Herb Red Yeast Rice, 60 Capsules (600 mg per Capsule)",
+          "score": 86,
+          "overviewExcerpt": [
+            "Best for: comparing ingredient support based on clear label disclosure.",
+            "Good if you want: products with clear per-serving disclosure so comparisons are easier."
+          ],
+          "scienceExcerpt": [
+            "Often used for goal-oriented supplement support (general science).",
+            "This product provides Red Yeast Rice Complex 1, 200 mg per serving, but core disclosure is partly missing affects how easy it is to compare.",
+            "Main limitation: no high-impact unresolved disclosure gap was detected from current verified product data. Next step: Compare key per-serving actives and directions before buying."
+          ],
+          "usageExcerpt": [
+            "Adults - Take two capsules daily, preferably with food, as a dietary supplement.",
+            "Source: official_record."
+          ],
+          "safetyExcerpt": [
+            "If you are pregnant, nursing, taking any medications or have any medical condition, consult your physician before use. Discontinue use and consult your physi...",
+            "If you are pregnant, breastfeeding, or using medications, review watch-outs before use."
+          ]
+        },
+        {
+          "productId": "145053",
+          "brandName": "Revive",
+          "title": "Revive, Complete Vital, 120 Vegetarian Capsules",
+          "score": 86,
+          "overviewExcerpt": [
+            "Best for: comparing ingredient support based on clear label disclosure.",
+            "Good if you want: products with clear per-serving disclosure so comparisons are easier."
+          ],
+          "scienceExcerpt": [
+            "Often used for goal-oriented supplement support (general science).",
+            "This product provides Red Yeast Rice(Monascus purpureus) [Seed] Powder 600 mg per serving, but core disclosure is partly missing affects how easy it is to compare.",
+            "Main limitation: no high-impact unresolved disclosure gap was detected from current verified product data. Next step: Compare key per-serving actives and directions before buying."
+          ],
+          "usageExcerpt": [
+            "Read the entire label carefully before use. As a dietary supplement, take four (4) capsules once daily, or as recommended by a healthcare practitioner.",
+            "Source: official_record."
+          ],
+          "safetyExcerpt": [
+            "Please consult your physician before use if you are pregnant or nursing, under the age of 18, or are undergoing treatment for a medical condition. If you are...",
+            "If you are pregnant, breastfeeding, or using medications, review watch-outs before use."
+          ]
+        }
+      ]
+    },
+    {
+      "categoryId": "liver_bile_support",
+      "type": "new",
+      "whyNow": "We need to know whether TUDCA / ox-bile products now read like a liver-bile lane rather than a vague digestive catch-all.",
+      "count": 46,
+      "avgScore": 73,
+      "overviewSpecificityRate": 0,
+      "scienceSpecificityRate": 0,
+      "usageSpecificityRate": 17.4,
+      "safetySpecificityRate": 0,
+      "overviewGenericRate": 100,
+      "scienceGenericRate": 100,
+      "safetyGenericRate": 100,
+      "allSectionsSpecificRate": 0,
+      "examples": [
+        {
+          "productId": "103640",
+          "brandName": "California Gold Nutrition",
+          "title": "California Gold Nutrition, SimplyOne®, Complete Enzymes with Betaine HCl, Ox Bile Extract, Full-Spectrum Enzymes, and Bromelain, 90 Capsules",
+          "score": 83,
+          "overviewExcerpt": [
+            "Best for: comparing ingredient support based on clear label disclosure.",
+            "Good if you want: products with clear per-serving disclosure so comparisons are easier."
+          ],
+          "scienceExcerpt": [
+            "Often used for goal-oriented supplement support (general science).",
+            "This product provides Betaine HCl 200 mg per serving, but core disclosure is available affects how easy it is to compare.",
+            "Main limitation: no high-impact unresolved disclosure gap was detected from current verified product data. Next step: Compare key per-serving actives and directions before buying."
+          ],
+          "usageExcerpt": [
+            "Take 1 capsule daily with food.",
+            "Source: official_record."
+          ],
+          "safetyExcerpt": [
+            "For adults only. Keep out of reach of children. Not intended for pregnant/nursing women. Consult with a qualified healthcare professional if you are taking m...",
+            "If you are pregnant, breastfeeding, or using medications, review watch-outs before use."
+          ]
+        },
+        {
+          "productId": "125597",
+          "brandName": "Carlson",
+          "title": "Carlson, Natural Digestive Enzymes , 50 Tablets",
+          "score": 83,
+          "overviewExcerpt": [
+            "Best for: comparing ingredient support based on clear label disclosure.",
+            "Good if you want: products with clear per-serving disclosure so comparisons are easier."
+          ],
+          "scienceExcerpt": [
+            "Often used for goal-oriented supplement support (general science).",
+            "This product provides Calcium (from dicalcium phosphate) 22 mg per serving, but core disclosure is available affects how easy it is to compare.",
+            "Main limitation: no high-impact unresolved disclosure gap was detected from current verified product data. Next step: Compare key per-serving actives and directions before buying."
+          ],
+          "usageExcerpt": [
+            "Adults: Take one tablet one to three times daily at mealtime.",
+            "Source: official_record."
+          ],
+          "safetyExcerpt": [
+            "Do not chew tablets. Keep bottle tightly closed. Store away from heat and moisture.",
+            "If you are pregnant, breastfeeding, or using medications, review watch-outs before use."
+          ]
+        },
+        {
+          "productId": "118442",
+          "brandName": "Carlson",
+          "title": "Carlson, Natural Digestive Enzymes with Protease, Amylase & Lipase, 250 Tablets",
+          "score": 83,
+          "overviewExcerpt": [
+            "Best for: comparing ingredient support based on clear label disclosure.",
+            "Good if you want: products with clear per-serving disclosure so comparisons are easier."
+          ],
+          "scienceExcerpt": [
+            "Often used for goal-oriented supplement support (general science).",
+            "This product provides Calcium (from dicalcium phosphate) 22 mg per serving, but core disclosure is available affects how easy it is to compare.",
+            "Main limitation: no high-impact unresolved disclosure gap was detected from current verified product data. Next step: Compare key per-serving actives and directions before buying."
+          ],
+          "usageExcerpt": [
+            "Adults: take one tablet one to three times daily at mealtime. Do not chew tablets.",
+            "Source: official_record."
+          ],
+          "safetyExcerpt": [
+            "Keep bottle tightly closed. Store away from heat and moisture.",
+            "If you are pregnant, breastfeeding, or using medications, review watch-outs before use."
+          ]
+        }
+      ]
+    },
+    {
+      "categoryId": "fish_oil_omega3",
+      "type": "baseline",
+      "whyNow": "Mature baseline lane used to compare how category-specific a known-good consumer experience looks.",
+      "count": 1526,
+      "avgScore": 73.1,
+      "overviewSpecificityRate": 100,
+      "scienceSpecificityRate": 0,
+      "usageSpecificityRate": 1.8,
+      "safetySpecificityRate": 100,
+      "overviewGenericRate": 0,
+      "scienceGenericRate": 100,
+      "safetyGenericRate": 0,
+      "allSectionsSpecificRate": 0,
+      "examples": [
+        {
+          "productId": "148465",
+          "brandName": "Sports Research",
+          "title": "Sports Research, Omega-3 Fish Oil, Lemon, 8 oz (237 ml)",
+          "score": 92,
+          "overviewExcerpt": [
+            "Best for: increasing omega-3 intake as part of a heart/vascular-support routine.",
+            "Good if you want: products with clear EPA+DHA per serving (easier to compare strength)."
+          ],
+          "scienceExcerpt": [
+            "Often used for Commonly chosen to increase omega-3 intake for heart and blood-vessel support goals (general science).",
+            "This product provides Wild Alaska Pollock Fish Oil Concentrate 4685 mg per serving, but EPA+DHA disclosure is available affects how easy it is to compare.",
+            "Main limitation: no high-impact unresolved disclosure gap was detected from current verified product data. Next step: Compare EPA+DHA per serving with similar products."
+          ],
+          "usageExcerpt": [
+            "Adults take 1 teaspoon (5 mL) daily, or as recommended by a qualified healthcare professional.",
+            "Source: official_record."
+          ],
+          "safetyExcerpt": [
+            "Keep out of reach of children and pets. After opening, refrigerate and consume within 3 months. Consult with a qualified healthcare professional prior to usi...",
+            "If pregnant/nursing or taking blood thinners / preparing for surgery, confirm with a clinician and read label cautions."
+          ]
+        },
+        {
+          "productId": "109321",
+          "brandName": "Sports Research",
+          "title": "Sports Research, Omega-3 Fish Oil, Triple Strength, 60 Softgels",
+          "score": 92,
+          "overviewExcerpt": [
+            "Best for: increasing omega-3 intake as part of a heart/vascular-support routine.",
+            "Good if you want: products with clear EPA+DHA per serving (easier to compare strength)."
+          ],
+          "scienceExcerpt": [
+            "Often used for Commonly chosen to increase omega-3 intake for heart and blood-vessel support goals (general science).",
+            "This product provides Wild Caught Fish Oil Concentrate 1250 mg per serving, but EPA+DHA disclosure is available affects how easy it is to compare.",
+            "Main limitation: no high-impact unresolved disclosure gap was detected from current verified product data. Next step: Compare EPA+DHA per serving with similar products."
+          ],
+          "usageExcerpt": [
+            "Dedicated To Quality -------------------- We believe in using the best ingredients so you can have total peace of mind in the supplements you are taking. ![I...",
+            "Source: official_record."
+          ],
+          "safetyExcerpt": [
+            "Contains Fish (anchovy, sardine, mackerel).",
+            "If pregnant/nursing or taking blood thinners / preparing for surgery, confirm with a clinician and read label cautions."
+          ]
+        },
+        {
+          "productId": "99942",
+          "brandName": "Sports Research",
+          "title": "Sports Research, Vegan Omega-3, 60 Veggie Softgels",
+          "score": 92,
+          "overviewExcerpt": [
+            "Best for: increasing omega-3 intake as part of a heart/vascular-support routine.",
+            "Good if you want: products with clear EPA+DHA per serving (easier to compare strength)."
+          ],
+          "scienceExcerpt": [
+            "Often used for heart and vascular-support goals through omega-3 intake (general science).",
+            "This product provides Vegan Algal Oil Concentrate (Schizochytrium sp.) 1, 400 mg per serving, but EPA+DHA disclosure is available affects how easy it is to compare.",
+            "Main limitation: no high-impact unresolved disclosure gap was detected from current verified product data. Next step: Compare EPA+DHA per serving with similar products."
+          ],
+          "usageExcerpt": [
+            "Adults take 2 veggie softgel daily with food, or as recommended by a qualified healthcare professional.",
+            "Source: official_record."
+          ],
+          "safetyExcerpt": [
+            "Keep out of reach of children and pets. Consult with a qualified healthcare professional prior to using this product, especially if you are pregnant, nursing...",
+            "If pregnant/nursing or taking blood thinners / preparing for surgery, confirm with a clinician and read label cautions."
+          ]
+        }
+      ]
+    }
+  ],
+  "decision": {
+    "mainlineNextStep": "Run a category-specific copy specialization pass for new live categories.",
+    "longTailCleanupDecision": "Do not start full-corpus long-tail cleanup as the next mainline project.",
+    "why": "New live categories still resolve taxonomy better than before, but cholesterol_lipid_support, liver_bile_support remain too generic in overview/science copy. Product experience is the higher-ROI next fix than corpus-wide long-tail cleanup.",
+    "weakExperienceCategories": [
+      "cholesterol_lipid_support",
+      "liver_bile_support"
+    ],
+    "highFrequencyUnknownCount": 0
+  }
+}

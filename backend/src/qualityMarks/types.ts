@@ -68,6 +68,8 @@ export type QualityMarkVerificationSummary = {
   genericThirdPartyClaimDetected: boolean;
   brandLevelOfficialProgramDetected: boolean;
   brandLevelOfficialProgramLabels: string[];
+  blockedProgramIds: QualityMarkProgramId[];
+  blockedProgramLabels: string[];
   warnings: string[];
 };
 
@@ -90,12 +92,16 @@ export type QualityMarkProviderSource = {
     | "informed_choice_search"
     | "informed_sport_search"
     | "nutrasource_brand_search"
+    | "nutrasource_brand_detail"
     | "nutrasource_product_search"
+    | "nutrasource_product_detail"
     | null;
   responseFormat?: "html" | "json";
   brandName?: string | null;
   productName?: string | null;
   queryText?: string | null;
+  brandId?: string | null;
+  productNum?: string | null;
 };
 
 export type QualityMarkAuditEntry = {

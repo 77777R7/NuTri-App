@@ -1,0 +1,531 @@
+{
+  "schemaVersion": "week2_registry_first_positive_control_selection.v1",
+  "generatedAt": "2026-03-15T08:23:44.147Z",
+  "seedSelectionPath": "/Users/howard07/NuTriApp/nutri-app/output/quality_marks/week2_iherb_refresh_ifos_expanded_20260315/week2_iherb_quality_mark_selection.json",
+  "selectedCount": 0,
+  "matchesPerProgram": 16,
+  "seedBrands": {
+    "NSF Certified for Sport": [
+      {
+        "brandName": "Carlson",
+        "seedCount": 11
+      },
+      {
+        "brandName": "Barlean's",
+        "seedCount": 4
+      }
+    ],
+    "Informed Choice": [
+      {
+        "brandName": "ALLMAX",
+        "seedCount": 8
+      },
+      {
+        "brandName": "Sun Chlorella",
+        "seedCount": 1
+      },
+      {
+        "brandName": "Sunwarrior",
+        "seedCount": 1
+      }
+    ],
+    "Informed Sport": [
+      {
+        "brandName": "Sports Research",
+        "seedCount": 4
+      },
+      {
+        "brandName": "ABE",
+        "seedCount": 2
+      },
+      {
+        "brandName": "EFX Sports",
+        "seedCount": 2
+      },
+      {
+        "brandName": "AN Supps",
+        "seedCount": 1
+      },
+      {
+        "brandName": "NOW Foods",
+        "seedCount": 1
+      }
+    ],
+    "IFOS": [
+      {
+        "brandName": "Barlean's",
+        "seedCount": 22
+      },
+      {
+        "brandName": "Life Extension",
+        "seedCount": 6
+      },
+      {
+        "brandName": "Carlson",
+        "seedCount": 2
+      }
+    ]
+  },
+  "registryQuerySummary": [
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "Carlson",
+      "queryBrandName": "Carlson",
+      "seedKind": "primary",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [
+        "curl: (6) Could not resolve host: nsfsport-prod.nsf.org\n"
+      ],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Carlson"
+    },
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "Barlean's",
+      "queryBrandName": "Barlean's",
+      "seedKind": "primary",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [
+        "curl: (6) Could not resolve host: nsfsport-prod.nsf.org\n"
+      ],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Barlean's"
+    },
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "Sports Research",
+      "queryBrandName": "Sports Research",
+      "seedKind": "fallback",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [
+        "curl: (6) Could not resolve host: nsfsport-prod.nsf.org\n"
+      ],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Sports%20Research"
+    },
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "Thorne",
+      "queryBrandName": "Thorne",
+      "seedKind": "fallback",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [
+        "curl: (6) Could not resolve host: nsfsport-prod.nsf.org\n"
+      ],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Thorne"
+    },
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "Garden of Life",
+      "queryBrandName": "Garden of Life",
+      "seedKind": "fallback",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [
+        "curl: (6) Could not resolve host: nsfsport-prod.nsf.org\n"
+      ],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Garden%20of%20Life"
+    },
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "Sun Chlorella",
+      "queryBrandName": "Sun Chlorella",
+      "seedKind": "fallback",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [
+        "curl: (6) Could not resolve host: nsfsport-prod.nsf.org\n"
+      ],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Sun%20Chlorella"
+    },
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "C4 / Cellucor",
+      "queryBrandName": "Cellucor",
+      "seedKind": "fallback",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [
+        "curl: (6) Could not resolve host: nsfsport-prod.nsf.org\n"
+      ],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Cellucor"
+    },
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "Optimum Nutrition",
+      "queryBrandName": "Optimum Nutrition",
+      "seedKind": "fallback",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [
+        "curl: (6) Could not resolve host: nsfsport-prod.nsf.org\n"
+      ],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Optimum%20Nutrition"
+    },
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "Podium Nutrition",
+      "queryBrandName": "Podium Nutrition",
+      "seedKind": "fallback",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [
+        "curl: (6) Could not resolve host: nsfsport-prod.nsf.org\n"
+      ],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Podium%20Nutrition"
+    },
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "Ghost",
+      "queryBrandName": "Ghost",
+      "seedKind": "fallback",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [
+        "curl: (6) Could not resolve host: nsfsport-prod.nsf.org\n"
+      ],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Ghost"
+    },
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "Bucked Up",
+      "queryBrandName": "Bucked Up",
+      "seedKind": "fallback",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [
+        "curl: (6) Could not resolve host: nsfsport-prod.nsf.org\n"
+      ],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Bucked%20Up"
+    },
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "Kaged",
+      "queryBrandName": "Kaged",
+      "seedKind": "fallback",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [
+        "curl: (6) Could not resolve host: nsfsport-prod.nsf.org\n"
+      ],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Kaged"
+    },
+    {
+      "programId": "informed_choice",
+      "programLabel": "Informed Choice",
+      "brandName": "ALLMAX",
+      "queryBrandName": "ALLMAX",
+      "seedKind": "primary",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [
+        "curl: (6) Could not resolve host: choice.wetestyoutrust.com\n"
+      ],
+      "searchEvidenceUrl": "https://choice.wetestyoutrust.com/supplement-search?search=ALLMAX"
+    },
+    {
+      "programId": "informed_choice",
+      "programLabel": "Informed Choice",
+      "brandName": "Sun Chlorella",
+      "queryBrandName": "Sun Chlorella",
+      "seedKind": "primary",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [
+        "curl: (6) Could not resolve host: choice.wetestyoutrust.com\n"
+      ],
+      "searchEvidenceUrl": "https://choice.wetestyoutrust.com/supplement-search?search=Sun%20Chlorella"
+    },
+    {
+      "programId": "informed_choice",
+      "programLabel": "Informed Choice",
+      "brandName": "Sunwarrior",
+      "queryBrandName": "Sunwarrior",
+      "seedKind": "primary",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [
+        "curl: (6) Could not resolve host: choice.wetestyoutrust.com\n"
+      ],
+      "searchEvidenceUrl": "https://choice.wetestyoutrust.com/supplement-search?search=Sunwarrior"
+    },
+    {
+      "programId": "informed_sport",
+      "programLabel": "Informed Sport",
+      "brandName": "Sports Research",
+      "queryBrandName": "Sports Research",
+      "seedKind": "primary",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [
+        "curl: (6) Could not resolve host: sport.wetestyoutrust.com\n"
+      ],
+      "searchEvidenceUrl": "https://sport.wetestyoutrust.com/supplement-search?search=Sports%20Research"
+    },
+    {
+      "programId": "informed_sport",
+      "programLabel": "Informed Sport",
+      "brandName": "ABE",
+      "queryBrandName": "ABE",
+      "seedKind": "primary",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [
+        "curl: (6) Could not resolve host: sport.wetestyoutrust.com\n"
+      ],
+      "searchEvidenceUrl": "https://sport.wetestyoutrust.com/supplement-search?search=ABE"
+    },
+    {
+      "programId": "informed_sport",
+      "programLabel": "Informed Sport",
+      "brandName": "EFX Sports",
+      "queryBrandName": "EFX Sports",
+      "seedKind": "primary",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [
+        "curl: (6) Could not resolve host: sport.wetestyoutrust.com\n"
+      ],
+      "searchEvidenceUrl": "https://sport.wetestyoutrust.com/supplement-search?search=EFX%20Sports"
+    },
+    {
+      "programId": "informed_sport",
+      "programLabel": "Informed Sport",
+      "brandName": "AN Supps",
+      "queryBrandName": "AN Supps",
+      "seedKind": "primary",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [
+        "curl: (6) Could not resolve host: sport.wetestyoutrust.com\n"
+      ],
+      "searchEvidenceUrl": "https://sport.wetestyoutrust.com/supplement-search?search=AN%20Supps"
+    },
+    {
+      "programId": "informed_sport",
+      "programLabel": "Informed Sport",
+      "brandName": "NOW Foods",
+      "queryBrandName": "NOW Foods",
+      "seedKind": "primary",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [
+        "curl: (6) Could not resolve host: sport.wetestyoutrust.com\n"
+      ],
+      "searchEvidenceUrl": "https://sport.wetestyoutrust.com/supplement-search?search=NOW%20Foods"
+    },
+    {
+      "programId": "ifos",
+      "programLabel": "IFOS",
+      "brandName": "Barlean's",
+      "queryBrandName": "Barlean's",
+      "seedKind": "primary",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [
+        "curl: (6) Could not resolve host: certifications.nutrasource.ca\n"
+      ],
+      "searchEvidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's"
+    },
+    {
+      "programId": "ifos",
+      "programLabel": "IFOS",
+      "brandName": "Life Extension",
+      "queryBrandName": "Life Extension",
+      "seedKind": "primary",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [
+        "curl: (6) Could not resolve host: certifications.nutrasource.ca\n"
+      ],
+      "searchEvidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Life%20Extension"
+    },
+    {
+      "programId": "ifos",
+      "programLabel": "IFOS",
+      "brandName": "Carlson",
+      "queryBrandName": "Carlson",
+      "seedKind": "primary",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [
+        "curl: (6) Could not resolve host: certifications.nutrasource.ca\n"
+      ],
+      "searchEvidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Carlson"
+    },
+    {
+      "programId": "ifos",
+      "programLabel": "IFOS",
+      "brandName": "Sports Research",
+      "queryBrandName": "Sports Research",
+      "seedKind": "fallback",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [
+        "curl: (6) Could not resolve host: certifications.nutrasource.ca\n"
+      ],
+      "searchEvidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Sports%20Research"
+    },
+    {
+      "programId": "ifos",
+      "programLabel": "IFOS",
+      "brandName": "Natural Factors",
+      "queryBrandName": "Natural Factors",
+      "seedKind": "fallback",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [
+        "curl: (6) Could not resolve host: certifications.nutrasource.ca\n"
+      ],
+      "searchEvidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Natural%20Factors"
+    },
+    {
+      "programId": "ifos",
+      "programLabel": "IFOS",
+      "brandName": "Metagenics",
+      "queryBrandName": "Metagenics",
+      "seedKind": "fallback",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [
+        "curl: (6) Could not resolve host: certifications.nutrasource.ca\n"
+      ],
+      "searchEvidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Metagenics"
+    },
+    {
+      "programId": "ifos",
+      "programLabel": "IFOS",
+      "brandName": "Nordic Naturals",
+      "queryBrandName": "Nordic Naturals",
+      "seedKind": "fallback",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [
+        "curl: (6) Could not resolve host: certifications.nutrasource.ca\n"
+      ],
+      "searchEvidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Nordic%20Naturals"
+    },
+    {
+      "programId": "ifos",
+      "programLabel": "IFOS",
+      "brandName": "Garden of Life",
+      "queryBrandName": "Garden of Life",
+      "seedKind": "fallback",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [
+        "curl: (6) Could not resolve host: certifications.nutrasource.ca\n"
+      ],
+      "searchEvidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Garden%20of%20Life"
+    }
+  ],
+  "programCounts": {},
+  "nsfFallbackBrands": [
+    {
+      "brandName": "Sports Research",
+      "seedCount": 4,
+      "importedCount": 128,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Thorne",
+      "seedCount": 0,
+      "importedCount": 167,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Garden of Life",
+      "seedCount": 0,
+      "importedCount": 216,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Sun Chlorella",
+      "seedCount": 1,
+      "importedCount": 3,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "C4 / Cellucor",
+      "seedCount": 0,
+      "importedCount": 68,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Optimum Nutrition",
+      "seedCount": 0,
+      "importedCount": 101,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Podium Nutrition",
+      "seedCount": 0,
+      "importedCount": 24,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Ghost",
+      "seedCount": 0,
+      "importedCount": 61,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Bucked Up",
+      "seedCount": 0,
+      "importedCount": 42,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Kaged",
+      "seedCount": 0,
+      "importedCount": 44,
+      "priority": "preferred"
+    }
+  ],
+  "ifosFallbackBrands": [
+    {
+      "brandName": "Sports Research",
+      "seedCount": 4,
+      "importedCount": 128,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Natural Factors",
+      "seedCount": 0,
+      "importedCount": 388,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Metagenics",
+      "seedCount": 0,
+      "importedCount": 197,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Nordic Naturals",
+      "seedCount": 0,
+      "importedCount": 167,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Garden of Life",
+      "seedCount": 0,
+      "importedCount": 216,
+      "priority": "preferred"
+    }
+  ],
+  "rows": []
+}

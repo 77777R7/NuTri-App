@@ -1,0 +1,436 @@
+{
+  "schemaVersion": "week2_registry_first_positive_control_selection.v1",
+  "generatedAt": "2026-03-15T17:50:33.792Z",
+  "seedSelectionPath": "output/quality_marks/overnight_loop/tmp_week2_seed_ifos_nsf_only_v25_20260315.json",
+  "selectedCount": 2,
+  "matchesPerProgram": 120,
+  "seedBrands": {
+    "NSF Certified for Sport": [],
+    "Informed Choice": [],
+    "Informed Sport": [],
+    "IFOS": [
+      {
+        "brandName": "Barlean's",
+        "seedCount": 19
+      },
+      {
+        "brandName": "Life Extension",
+        "seedCount": 5
+      },
+      {
+        "brandName": "Carlson",
+        "seedCount": 2
+      }
+    ]
+  },
+  "registryQuerySummary": [
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "Sports Research",
+      "queryBrandName": "Sports Research",
+      "seedKind": "fallback",
+      "officialRowCount": 1,
+      "matchedCount": 1,
+      "warnings": [],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Sports%20Research"
+    },
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "Thorne",
+      "queryBrandName": "Thorne",
+      "seedKind": "fallback",
+      "officialRowCount": 44,
+      "matchedCount": 29,
+      "warnings": [],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Thorne"
+    },
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "Garden of Life",
+      "queryBrandName": "Garden of Life",
+      "seedKind": "fallback",
+      "officialRowCount": 23,
+      "matchedCount": 5,
+      "warnings": [],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Garden%20of%20Life"
+    },
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "Sun Chlorella",
+      "queryBrandName": "Sun Chlorella",
+      "seedKind": "fallback",
+      "officialRowCount": 1,
+      "matchedCount": 1,
+      "warnings": [],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Sun%20Chlorella"
+    },
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "C4 / Cellucor",
+      "queryBrandName": "Cellucor",
+      "seedKind": "fallback",
+      "officialRowCount": 31,
+      "matchedCount": 2,
+      "warnings": [],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Cellucor"
+    },
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "Optimum Nutrition",
+      "queryBrandName": "Optimum Nutrition",
+      "seedKind": "fallback",
+      "officialRowCount": 1,
+      "matchedCount": 1,
+      "warnings": [],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Optimum%20Nutrition"
+    },
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "Podium Nutrition",
+      "queryBrandName": "Podium Nutrition",
+      "seedKind": "fallback",
+      "officialRowCount": 8,
+      "matchedCount": 6,
+      "warnings": [],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Podium%20Nutrition"
+    },
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "Ghost",
+      "queryBrandName": "Ghost",
+      "seedKind": "fallback",
+      "officialRowCount": 2,
+      "matchedCount": 0,
+      "warnings": [],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Ghost"
+    },
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "Bucked Up",
+      "queryBrandName": "Bucked Up",
+      "seedKind": "fallback",
+      "officialRowCount": 1,
+      "matchedCount": 0,
+      "warnings": [],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Bucked%20Up"
+    },
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "Kaged",
+      "queryBrandName": "Kaged",
+      "seedKind": "fallback",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Kaged"
+    },
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "NOW Foods",
+      "queryBrandName": "NOW Foods",
+      "seedKind": "fallback",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=NOW%20Foods"
+    },
+    {
+      "programId": "nsf_certified_for_sport",
+      "programLabel": "NSF Certified for Sport",
+      "brandName": "Sunwarrior",
+      "queryBrandName": "Sunwarrior",
+      "seedKind": "fallback",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [],
+      "searchEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Sunwarrior"
+    },
+    {
+      "programId": "ifos",
+      "programLabel": "IFOS",
+      "brandName": "Barlean's",
+      "queryBrandName": "Barlean's",
+      "seedKind": "primary",
+      "officialRowCount": 14,
+      "matchedCount": 2,
+      "warnings": [],
+      "searchEvidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's"
+    },
+    {
+      "programId": "ifos",
+      "programLabel": "IFOS",
+      "brandName": "Life Extension",
+      "queryBrandName": "Life Extension",
+      "seedKind": "primary",
+      "officialRowCount": 2,
+      "matchedCount": 1,
+      "warnings": [],
+      "searchEvidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Life%20Extension"
+    },
+    {
+      "programId": "ifos",
+      "programLabel": "IFOS",
+      "brandName": "Carlson",
+      "queryBrandName": "Carlson",
+      "seedKind": "primary",
+      "officialRowCount": 254,
+      "matchedCount": 21,
+      "warnings": [],
+      "searchEvidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Carlson"
+    },
+    {
+      "programId": "ifos",
+      "programLabel": "IFOS",
+      "brandName": "Sports Research",
+      "queryBrandName": "Sports Research",
+      "seedKind": "fallback",
+      "officialRowCount": 150,
+      "matchedCount": 7,
+      "warnings": [],
+      "searchEvidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Sports%20Research"
+    },
+    {
+      "programId": "ifos",
+      "programLabel": "IFOS",
+      "brandName": "Natural Factors",
+      "queryBrandName": "Natural Factors",
+      "seedKind": "fallback",
+      "officialRowCount": 4,
+      "matchedCount": 1,
+      "warnings": [],
+      "searchEvidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Natural%20Factors"
+    },
+    {
+      "programId": "ifos",
+      "programLabel": "IFOS",
+      "brandName": "Metagenics",
+      "queryBrandName": "Metagenics",
+      "seedKind": "fallback",
+      "officialRowCount": 8,
+      "matchedCount": 0,
+      "warnings": [],
+      "searchEvidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Metagenics"
+    },
+    {
+      "programId": "ifos",
+      "programLabel": "IFOS",
+      "brandName": "Nordic Naturals",
+      "queryBrandName": "Nordic Naturals",
+      "seedKind": "fallback",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [],
+      "searchEvidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Nordic%20Naturals"
+    },
+    {
+      "programId": "ifos",
+      "programLabel": "IFOS",
+      "brandName": "Garden of Life",
+      "queryBrandName": "Garden of Life",
+      "seedKind": "fallback",
+      "officialRowCount": 0,
+      "matchedCount": 0,
+      "warnings": [],
+      "searchEvidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Garden%20of%20Life"
+    }
+  ],
+  "programCounts": {
+    "NSF Certified for Sport": 1,
+    "IFOS": 1
+  },
+  "nsfFallbackBrands": [
+    {
+      "brandName": "Sports Research",
+      "seedCount": 0,
+      "importedCount": 128,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Thorne",
+      "seedCount": 0,
+      "importedCount": 167,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Garden of Life",
+      "seedCount": 0,
+      "importedCount": 216,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Sun Chlorella",
+      "seedCount": 0,
+      "importedCount": 3,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "C4 / Cellucor",
+      "seedCount": 0,
+      "importedCount": 68,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Optimum Nutrition",
+      "seedCount": 0,
+      "importedCount": 101,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Podium Nutrition",
+      "seedCount": 0,
+      "importedCount": 24,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Ghost",
+      "seedCount": 0,
+      "importedCount": 61,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Bucked Up",
+      "seedCount": 0,
+      "importedCount": 42,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Kaged",
+      "seedCount": 0,
+      "importedCount": 44,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "NOW Foods",
+      "seedCount": 0,
+      "importedCount": 958,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Sunwarrior",
+      "seedCount": 0,
+      "importedCount": 97,
+      "priority": "preferred"
+    }
+  ],
+  "ifosFallbackBrands": [
+    {
+      "brandName": "Sports Research",
+      "seedCount": 0,
+      "importedCount": 128,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Natural Factors",
+      "seedCount": 0,
+      "importedCount": 388,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Metagenics",
+      "seedCount": 0,
+      "importedCount": 197,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Nordic Naturals",
+      "seedCount": 0,
+      "importedCount": 167,
+      "priority": "preferred"
+    },
+    {
+      "brandName": "Garden of Life",
+      "seedCount": 0,
+      "importedCount": 216,
+      "priority": "preferred"
+    }
+  ],
+  "rows": [
+    {
+      "key": "web:gtin14:00029918015128:sun_chlorella:sun_chlorella_chlorella_supplement_500_mg_600_tablets",
+      "productId": "18697",
+      "barcode": "00029918015128",
+      "brandName": "Sun Chlorella",
+      "productName": "Sun Chlorella, Chlorella Supplement, 500 mg, 600 Tablets",
+      "iherbUrl": "https://www.iherb.com/pr/sun-chlorella-chlorella-supplement-500-mg-600-tablets/18697",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "nsf_certified_for_sport",
+      "strongestProgramLabel": "NSF Certified for Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "verified",
+        "strongestProgramId": "nsf_certified_for_sport",
+        "strongestProgramLabel": "NSF Certified for Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": true,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": []
+      },
+      "selectionReason": "registry_first_positive_control",
+      "officialRegistryProductName": "Sun Chlorella A Powder (Japan)",
+      "officialRegistryBrandName": "Sun Chlorella",
+      "officialRegistryEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/listing-detail.php?id=1539569",
+      "registryQueryBrandName": "Sun Chlorella",
+      "matchScore": 0.875,
+      "officialCoverage": 1,
+      "candidateCoverage": 0.5,
+      "phraseMatch": false
+    },
+    {
+      "key": "web:gtin14:00068958357409:natural_factors:natural_factors_searich_omega_3_delicious_lemon_meringue_6_76_fl_oz_200_ml",
+      "productId": "68244",
+      "barcode": "00068958357409",
+      "brandName": "Natural Factors",
+      "productName": "Natural Factors, SeaRich Omega-3, Delicious Lemon Meringue, 6.76 fl oz (200 ml)",
+      "iherbUrl": "https://www.iherb.com/pr/natural-factors-searich-omega-3-delicious-lemon-meringue-6-76-fl-oz-200-ml/68244",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "verified",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": true,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": []
+      },
+      "selectionReason": "registry_first_positive_control",
+      "officialRegistryProductName": "SeaRich Omega-3 Lemon Meringue",
+      "officialRegistryBrandName": "Natural Factors",
+      "officialRegistryEvidenceUrl": "https://certifications.nutrasource.ca/certified-products/brand?id=NFCT",
+      "registryQueryBrandName": "Natural Factors",
+      "matchScore": 1.0383,
+      "officialCoverage": 1,
+      "candidateCoverage": 0.8333,
+      "phraseMatch": false
+    }
+  ],
+  "selectionMode": "wave_a3_remaining_direct_evidence",
+  "candidateCount": 2
+}

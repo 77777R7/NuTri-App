@@ -1,0 +1,18 @@
+# iGEN Brand Expansion Wave: wave2_brand_batch_1
+
+Generated at: 2026-03-15T20:23:57.281Z
+Batches path: output/quality_marks/igen_consumer_rollout_pack_full_v2_20260315/wave2_brand_expansion_batches.json
+Staging path: output/nordic_naturals_igen_patch_wave_final_20260315/staging_products.official_refreshed.json
+
+## Summary
+
+- brand: Nordic Naturals
+- batch rows: 50
+- consumer-ready rows: 50
+- patch-queue rows: 0
+- other rows: 0
+- missing staging rows: 0
+
+## Patch Queue
+
+

@@ -1,0 +1,4005 @@
+{
+  "schemaVersion": "igen_consumer_surface_handoff.v1",
+  "generatedAt": "2026-03-15T20:42:26.524Z",
+  "inputs": {
+    "deliveryBundlePath": "/Users/howard07/NuTriApp/nutri-app/output/quality_marks/igen_consumer_delivery_bundle_full_v2_20260315/igen_consumer_delivery_bundle.json"
+  },
+  "summary": {
+    "totalSurfaceRows": 137,
+    "wave1Rows": 14,
+    "wave2Rows": 123,
+    "brandCount": 14
+  },
+  "brandCounts": {
+    "Nordic Naturals": 56,
+    "Sports Research": 20,
+    "Carlson": 19,
+    "Country Life": 15,
+    "Garden of Life": 10,
+    "ChildLife Essentials": 4,
+    "Jarrow Formulas": 4,
+    "Bluebonnet Nutrition": 2,
+    "New Chapter": 2,
+    "American Health": 1,
+    "Ddrops": 1,
+    "Great Lakes Wellness": 1,
+    "Onnit": 1,
+    "Vital Proteins": 1
+  },
+  "handoffNote": "This payload is ready for downstream consumer surfaces. It preserves evidence links, delivery priority, and concise display copy without requiring more seed generation.",
+  "rows": [
+    {
+      "productId": "86844",
+      "barcode": "00658010124560",
+      "brandName": "Garden of Life",
+      "productName": "Garden of Life, Grass Fed Collagen, Beauty, Strawberry Lemonade, 9.52 oz (270 g)",
+      "iherbUrl": "https://www.iherb.com/pr/garden-of-life-grass-fed-collagen-beauty-strawberry-lemonade-9-52-oz-270-g/86844",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0002",
+      "deliveryLane": "wave1_high_frequency",
+      "bundleLabel": "wave1_high_frequency",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0002",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+      }
+    },
+    {
+      "productId": "7083",
+      "barcode": "00790011030232",
+      "brandName": "Jarrow Formulas",
+      "productName": "Jarrow Formulas, Beta Glucan, 250 mg, 60 Capsules",
+      "iherbUrl": "https://www.iherb.com/pr/jarrow-formulas-beta-glucan-250-mg-60-capsules/7083",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=JRRW0090",
+      "deliveryLane": "wave1_high_frequency",
+      "bundleLabel": "wave1_high_frequency",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=JRRW0090",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+      }
+    },
+    {
+      "productId": "187",
+      "barcode": "00790011150121",
+      "brandName": "Jarrow Formulas",
+      "productName": "Jarrow Formulas, L-Glutamine, 750 mg, 120 Veggie Capsules",
+      "iherbUrl": "https://www.iherb.com/pr/jarrow-formulas-l-glutamine-750-mg-120-veggie-capsules/187",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/brand?id=JRRW",
+      "deliveryLane": "wave1_high_frequency",
+      "bundleLabel": "wave1_high_frequency",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/brand?id=JRRW",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+      }
+    },
+    {
+      "productId": "105832",
+      "barcode": "00768990018442",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Children's Eye Health Gummies, Zero Sugar, Ages 2-12, Strawberry Lemonade, 30 Gummy Chews",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-children-s-eye-health-gummies-zero-sugar-ages-2-12-strawberry-lemonade-30-gummy-chews/105832",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0005",
+      "deliveryLane": "wave1_high_frequency",
+      "bundleLabel": "wave1_high_frequency",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0005",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+      }
+    },
+    {
+      "productId": "30241",
+      "barcode": "00768990017452",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, DHA Xtra™, Strawberry, 60 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-dha-xtra-strawberry-60-soft-gels/30241",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0008",
+      "deliveryLane": "wave1_high_frequency",
+      "bundleLabel": "wave1_high_frequency",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0008",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+      }
+    },
+    {
+      "productId": "70978",
+      "barcode": "00768990018787",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Memory Support, Omega Blend, 60 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-memory-support-omega-blend-60-soft-gels/70978",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0042",
+      "deliveryLane": "wave1_high_frequency",
+      "bundleLabel": "wave1_high_frequency",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0042",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+      }
+    },
+    {
+      "productId": "70980",
+      "barcode": "00768990301261",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Nordic Berries Multivitamin Gummies, Ages 3+, Cherry Berry, 120 Gummy Berries",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-nordic-berries-multivitamin-gummies-ages-3-cherry-berry-120-gummy-berries/70980",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0132",
+      "deliveryLane": "wave1_high_frequency",
+      "bundleLabel": "wave1_high_frequency",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0132",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+      }
+    },
+    {
+      "productId": "72962",
+      "barcode": "00768990016769",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Nordic Flora Probiotic, Comfort, 15 Billion CFU, 30 Capsules",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-nordic-flora-probiotic-comfort-15-billion-cfu-30-capsules/72962",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0036",
+      "deliveryLane": "wave1_high_frequency",
+      "bundleLabel": "wave1_high_frequency",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0036",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+      }
+    },
+    {
+      "productId": "68018",
+      "barcode": "00768990018756",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Ultimate Omega + Curcumin, 60 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-ultimate-omega-curcumin-60-soft-gels/68018",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0012",
+      "deliveryLane": "wave1_high_frequency",
+      "bundleLabel": "wave1_high_frequency",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0012",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+      }
+    },
+    {
+      "productId": "84975",
+      "barcode": "00023249010975",
+      "brandName": "Sports Research",
+      "productName": "Sports Research, Collagen Peptides, Dark Chocolate, 1.41 lb (640 g)",
+      "iherbUrl": "https://www.iherb.com/pr/sports-research-collagen-peptides-dark-chocolate-1-41-lb-640-g/84975",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0013",
+      "deliveryLane": "wave1_high_frequency",
+      "bundleLabel": "wave1_high_frequency",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0013",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+      }
+    },
+    {
+      "productId": "72043",
+      "barcode": "00023249010302",
+      "brandName": "Sports Research",
+      "productName": "Sports Research, Cranberry Fruit Complex, 90 Softgels",
+      "iherbUrl": "https://www.iherb.com/pr/sports-research-cranberry-fruit-complex-90-softgels/72043",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0021",
+      "deliveryLane": "wave1_high_frequency",
+      "bundleLabel": "wave1_high_frequency",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0021",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+      }
+    },
+    {
+      "productId": "101526",
+      "barcode": "00023249090090",
+      "brandName": "Sports Research",
+      "productName": "Sports Research, Daily Probiotics, 60 Billion CFU, 30 Delayed Release Capsules",
+      "iherbUrl": "https://www.iherb.com/pr/sports-research-daily-probiotics-60-billion-cfu-30-delayed-release-capsules/101526",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0054",
+      "deliveryLane": "wave1_high_frequency",
+      "bundleLabel": "wave1_high_frequency",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0054",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+      }
+    },
+    {
+      "productId": "99939",
+      "barcode": "00023249012825",
+      "brandName": "Sports Research",
+      "productName": "Sports Research, Total Omega-3, 120 Softgels",
+      "iherbUrl": "https://www.iherb.com/pr/sports-research-total-omega-3-120-softgels/99939",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0033",
+      "deliveryLane": "wave1_high_frequency",
+      "bundleLabel": "wave1_high_frequency",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0033",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+      }
+    },
+    {
+      "productId": "72054",
+      "barcode": "00023249000839",
+      "brandName": "Sports Research",
+      "productName": "Sports Research, Turmeric Curcumin, 500 mg, 120 Softgels",
+      "iherbUrl": "https://www.iherb.com/pr/sports-research-turmeric-curcumin-500-mg-120-softgels/72054",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0024",
+      "deliveryLane": "wave1_high_frequency",
+      "bundleLabel": "wave1_high_frequency",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0024",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+      }
+    },
+    {
+      "productId": "91972",
+      "barcode": "00768990016042",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Algae DHA, 60 Soft Gels (250 mg per Soft Gel )",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-algae-dha-60-soft-gels-250-mg-per-soft-gel/91972",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0001",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0001",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "96461",
+      "barcode": "00768990016752",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Baby's Probiotic Powder, Ages 6 Months-3 Years, 30 Packets, 0.05 oz (1.45 g) Each",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-baby-s-probiotic-powder-ages-6-months-3-years-30-packets-0-05-oz-1-45-g-each/96461",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0032",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0032",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "23069",
+      "barcode": "00768990018701",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Blood Sugar Support, Omega Blend, 60 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-blood-sugar-support-omega-blend-60-soft-gels/23069",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0061",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0061",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "29599",
+      "barcode": "00768990018602",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Cholesterol Support, Omega Blend, 60 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-cholesterol-support-omega-blend-60-soft-gels/29599",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0064",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0064",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "114519",
+      "barcode": "00768990015700",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Cognition Mushroom Complex, 60 Capsules",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-cognition-mushroom-complex-60-capsules/114519",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0153",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0153",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "46270",
+      "barcode": "00768990018015",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Complete Omega Xtra, Lemon, 60 Soft Gels (680 mg per Soft Gel)",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-complete-omega-xtra-lemon-60-soft-gels-680-mg-per-soft-gel/46270",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0090",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0090",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "17834",
+      "barcode": "00768990027789",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Complete Omega™-D3, Lemon, 120 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-complete-omega-d3-lemon-120-soft-gels/17834",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0091",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0091",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "73705",
+      "barcode": "00768990301858",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, CoQ10 Gummies, Strawberry, 100 mg, 60 Gummies",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-coq10-gummies-strawberry-100-mg-60-gummies/73705",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0043",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0043",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "29597",
+      "barcode": "00768990018176",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Daily Omega Kids™, Natural Fruit, 30 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-daily-omega-kids-natural-fruit-30-soft-gels/29597",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0034",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0034",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "4186",
+      "barcode": "00768990017513",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, EPA Xtra, Great Lemon, 60 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-epa-xtra-great-lemon-60-soft-gels/4186",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0009",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0009",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "4198",
+      "barcode": "00768990017506",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, EPA, Lemon, 60 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-epa-lemon-60-soft-gels/4198",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0035",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0035",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "132478",
+      "barcode": "00768990301728",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Kids Calm Gummies, Ages 3+, Strawberry Watermelon, 60 Gummies",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-kids-calm-gummies-ages-3-strawberry-watermelon-60-gummies/132478",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0162",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0162",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "68016",
+      "barcode": "00768990301704",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Kids Probiotic Gummies, Great Berry, 60 Gummies",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-kids-probiotic-gummies-great-berry-60-gummies/68016",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0100",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0100",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "79528",
+      "barcode": "00768990016783",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Kids Probiotic Pixies, Ages 3+, Mixed Berry, 30 Packets, 0.035 oz (1 g) Each",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-kids-probiotic-pixies-ages-3-mixed-berry-30-packets-0-035-oz-1-g-each/79528",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0060",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0060",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "100772",
+      "barcode": "00768990015335",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Magnesium Complex, 90 Capsules",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-magnesium-complex-90-capsules/100772",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0052",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0052",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "129124",
+      "barcode": "00768990015519",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Men's Multivitamin, 60 Tablets",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-men-s-multivitamin-60-tablets/129124",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0150",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0150",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "139441",
+      "barcode": "00768990017391",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Menopause Support , 60 Capsules",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-menopause-support-60-capsules/139441",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0167",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0167",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "150421",
+      "barcode": "00768990018596",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Mood Support, Omega Blend, 60 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-mood-support-omega-blend-60-soft-gels/150421",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0180",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0180",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "110274",
+      "barcode": "00768990015380",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Multi Minerals, 90 Capsules",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-multi-minerals-90-capsules/110274",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0130",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0130",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "42487",
+      "barcode": "00768990016653",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Nordic Beauty, Borage Oil, 4 fl oz (119 ml)",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-nordic-beauty-borage-oil-4-fl-oz-119-ml/42487",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0038",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0038",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "110742",
+      "barcode": "00768990016585",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Nordic Beauty, Collagen Peptides, Unflavored, 10.6 oz (300 g)",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-nordic-beauty-collagen-peptides-unflavored-10-6-oz-300-g/110742",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0056",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0056",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "82606",
+      "barcode": "00768990016646",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Nordic Beauty, Marine Collagen with Vitamin C, Strawberry, 5.3 oz (150 g)",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-nordic-beauty-marine-collagen-with-vitamin-c-strawberry-5-3-oz-150-g/82606",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0055",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0055",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "114705",
+      "barcode": "00768990016851",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Nordic Flora Probiotic, Maximum Care, 90 Billion CFU, 30 Capsules",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-nordic-flora-probiotic-maximum-care-90-billion-cfu-30-capsules/114705",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0147",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0147",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "114703",
+      "barcode": "00768990016837",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Nordic Flora Probiotic, Women's Balance, 30 Capsules",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-nordic-flora-probiotic-women-s-balance-30-capsules/114703",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0148",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0148",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "16472",
+      "barcode": "00768990301407",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Nordic Omega-3 Gummy Fish, Tangerine Treats, 124 mg, 30 Gummy Fish",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-nordic-omega-3-gummy-fish-tangerine-treats-124-mg-30-gummy-fish/16472",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0040",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0040",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "4298",
+      "barcode": "00768990017803",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Omega Woman with Evening Primrose Oil, 120 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-omega-woman-with-evening-primrose-oil-120-soft-gels/4298",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0066",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0066",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "45934",
+      "barcode": "00768990311307",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Omega-3 Fishies, Zero Sugar, Ages 3+, Tutti Frutti, 300 mg, 36 Fishies",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-omega-3-fishies-zero-sugar-ages-3-tutti-frutti-300-mg-36-fishies/45934",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0013",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0013",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "61371",
+      "barcode": "00768990016219",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Omega-3 Phospholipids™, 60 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-omega-3-phospholipids-60-soft-gels/61371",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0067",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0067",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "7052",
+      "barcode": "00768990417603",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Omega-3, Lemon, 60 Fish Gelatin Soft Gels (345 mg per Soft Gel)",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-omega-3-lemon-60-fish-gelatin-soft-gels-345-mg-per-soft-gel/7052",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0045",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0045",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "65087",
+      "barcode": "00768990017582",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Postnatal Omega-3, Lemon, 60 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-postnatal-omega-3-lemon-60-soft-gels/65087",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0016",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0016",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "126101",
+      "barcode": "00768990015533",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Prenatal Multivitamin, 60 Tablets",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-prenatal-multivitamin-60-tablets/126101",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0033",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0033",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "70450",
+      "barcode": "00768990070631",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, ProEPA™ Xtra, Lemon, 120 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-proepa-xtra-lemon-120-soft-gels/70450",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0106",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0106",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "83205",
+      "barcode": "00768990121289",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, ProOmega 3-6-9, Lemon, 120 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-proomega-3-6-9-lemon-120-soft-gels/83205",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0116",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0116",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "83207",
+      "barcode": "00768990071256",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, ProOmega® 2000 Jr., Strawberry, 650 mg, 60 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-proomega-2000-jr-strawberry-650-mg-60-soft-gels/83207",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0110",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0110",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "70459",
+      "barcode": "00768990121708",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, ProOmega® Blood Sugar, 60 Softgels",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-proomega-blood-sugar-60-softgels/70459",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0111",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0111",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "80556",
+      "barcode": "00768990131301",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, ProOmega® CoQ10, 120 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-proomega-coq10-120-soft-gels/80556",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0112",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0112",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "72932",
+      "barcode": "00768990031250",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, ProOmega® Curcumin, 90 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-proomega-curcumin-90-soft-gels/72932",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0134",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0134",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "83204",
+      "barcode": "00768990117831",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, ProOmega®-D Xtra, Great Lemon, 8 fl oz (237 ml)",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-proomega-d-xtra-great-lemon-8-fl-oz-237-ml/83204",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0118",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0118",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "70455",
+      "barcode": "00768990121241",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, ProOmega®-D, Lemon, 60 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-proomega-d-lemon-60-soft-gels/70455",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0117",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0117",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "114707",
+      "barcode": "00768990301940",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Stress Relief Gummies, Mixed Berry, 40 Gummies",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-stress-relief-gummies-mixed-berry-40-gummies/114707",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0141",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0141",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "79530",
+      "barcode": "00768990061103",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Teen, Ultimate Omega® Fish Oil, Ages 12+, Strawberry, 60 Mini Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-teen-ultimate-omega-fish-oil-ages-12-strawberry-60-mini-soft-gels/79530",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0119",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0119",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "33656",
+      "barcode": "00768990017988",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Ultimate Omega® Junior, Ages 6+, Strawberry, 90 Mini Soft Gels (340 mg per Soft Gel)",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-ultimate-omega-junior-ages-6-strawberry-90-mini-soft-gels-340-mg-per-soft-gel/33656",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0023",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0023",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "43596",
+      "barcode": "00768990018084",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Ultimate Omega®-D3, Sport, 60 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-ultimate-omega-d3-sport-60-soft-gels/43596",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0048",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0048",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "153596",
+      "barcode": "00768990016134",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Ultimate Omega®, Plant-Based With D3 + K2, Lemon, 60 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-ultimate-omega-plant-based-with-d3-k2-lemon-60-soft-gels/153596",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0189",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0189",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "8935",
+      "barcode": "00768990018404",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Vision Support, Omega Blend, 60 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-vision-support-omega-blend-60-soft-gels/8935",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0065",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0065",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "110276",
+      "barcode": "00768990015304",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Vitamin A + Carotenoids, 30 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-vitamin-a-carotenoids-30-soft-gels/110276",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0135",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0135",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "23079",
+      "barcode": "00768990016004",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Vitamin D3 1000, Orange, 25 mcg (1,000 IU), 120 Mini Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-vitamin-d3-1000-orange-25-mcg-1-000-iu-120-mini-soft-gels/23079",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0027",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0027",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "82359",
+      "barcode": "00768990301865",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Zero Sugar Curcumin Gummies, Mango, 60 Gummies (100 mg per Gummy)",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-zero-sugar-curcumin-gummies-mango-60-gummies-100-mg-per-gummy/82359",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0076",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0076",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "115436",
+      "barcode": "00768990016660",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Zero Sugar Hair & Skin Gummy Chews, Strawberry Lemonade, 27 Gummy Chews",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-zero-sugar-hair-skin-gummy-chews-strawberry-lemonade-27-gummy-chews/115436",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0149",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0149",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "106323",
+      "barcode": "00768990311376",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Zero Sugar Vitamin D3 Gummies, Great Wild Berry, 25 mcg (1,000 IU), 60 Gummies",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-zero-sugar-vitamin-d3-gummies-great-wild-berry-25-mcg-1-000-iu-60-gummies/106323",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0123",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Nordic Naturals",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0123",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "148051",
+      "barcode": "00088395813009",
+      "brandName": "Carlson",
+      "productName": "Carlson, Berberine, 500 mg, 60 Vegetarian Capsules",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-berberine-500-mg-60-vegetarian-capsules/148051",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0216",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Carlson",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0216",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "118440",
+      "barcode": "00088395056116",
+      "brandName": "Carlson",
+      "productName": "Carlson, Chelated Magnesium Glycinate, 200 mg, 90 Tablets",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-chelated-magnesium-glycinate-200-mg-90-tablets/118440",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0202",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Carlson",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0202",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "9783",
+      "barcode": "00088395050817",
+      "brandName": "Carlson",
+      "productName": "Carlson, Chewable Calcium Citrate, Natural Vanilla, 250 mg, 120 Vegetarian Tablets",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-chewable-calcium-citrate-natural-vanilla-250-mg-120-vegetarian-tablets/9783",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0059",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Carlson",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0059",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "125458",
+      "barcode": "00088395169007",
+      "brandName": "Carlson",
+      "productName": "Carlson, Elite DHA Gems, 1,000 mg, 30 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-elite-dha-gems-1-000-mg-30-soft-gels/125458",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0012",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Carlson",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0012",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "13839",
+      "barcode": "00088395016813",
+      "brandName": "Carlson",
+      "productName": "Carlson, Elite EPA Gems, 1,000 mg, 120 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-elite-epa-gems-1-000-mg-120-soft-gels/13839",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0013",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Carlson",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0013",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "153821",
+      "barcode": "00088395706103",
+      "brandName": "Carlson",
+      "productName": "Carlson, Grass-Fed Beef Liver, 180 Capsules",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-grass-fed-beef-liver-180-capsules/153821",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0223",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Carlson",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0223",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "45704",
+      "barcode": "00088395136306",
+      "brandName": "Carlson",
+      "productName": "Carlson, Kid's Wild Norwegian, Cod Liver Oil + Vitamins A & D3, Bubble Gum, 8.4 fl oz (250 ml)",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-kid-s-wild-norwegian-cod-liver-oil-vitamins-a-d3-bubble-gum-8-4-fl-oz-250-ml/45704",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0061",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Carlson",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0061",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "149563",
+      "barcode": "00088395864001",
+      "brandName": "Carlson",
+      "productName": "Carlson, Lion's Mane, 60 Vegetarian Capsules",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-lion-s-mane-60-vegetarian-capsules/149563",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0218",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Carlson",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0218",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "9721",
+      "barcode": "00088395017018",
+      "brandName": "Carlson",
+      "productName": "Carlson, Med Omega, Lemon-Lime, 3.3 fl oz (100 ml)",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-med-omega-lemon-lime-3-3-fl-oz-100-ml/9721",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0019",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Carlson",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0019",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "125570",
+      "barcode": "00088395015601",
+      "brandName": "Carlson",
+      "productName": "Carlson, Mom's DHA, 500 mg, 60 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-mom-s-dha-500-mg-60-soft-gels/125570",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0226",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Carlson",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0226",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "68852",
+      "barcode": "00088395186004",
+      "brandName": "Carlson",
+      "productName": "Carlson, Norwegian Baby's DHA, 2 fl oz (60 ml)",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-norwegian-baby-s-dha-2-fl-oz-60-ml/68852",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0001",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Carlson",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0001",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "127388",
+      "barcode": "00088395045707",
+      "brandName": "Carlson",
+      "productName": "Carlson, Nutra-Support™, Diabetes, 60 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-nutra-support-diabetes-60-soft-gels/127388",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0064",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Carlson",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0064",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "148052",
+      "barcode": "00088395863004",
+      "brandName": "Carlson",
+      "productName": "Carlson, Organic Blend Mushroom Immune, 50 Vegetarian Capsules",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-organic-blend-mushroom-immune-50-vegetarian-capsules/148052",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0217",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Carlson",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0217",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "8480",
+      "barcode": "00088395086816",
+      "brandName": "Carlson",
+      "productName": "Carlson, Right for the Macula, 120 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-right-for-the-macula-120-soft-gels/8480",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0073",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Carlson",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0073",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "125467",
+      "barcode": "00088395184000",
+      "brandName": "Carlson",
+      "productName": "Carlson, Teen's Max Catch Minis, 30 Mini Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-teen-s-max-catch-minis-30-mini-soft-gels/125467",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0209",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Carlson",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0209",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "125501",
+      "barcode": "00088395449604",
+      "brandName": "Carlson",
+      "productName": "Carlson, Vegetarian Prenatal DHA, 60 Vegetarian Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-vegetarian-prenatal-dha-60-vegetarian-soft-gels/125501",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0205",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Carlson",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0205",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "125554",
+      "barcode": "00088395136108",
+      "brandName": "Carlson",
+      "productName": "Carlson, Wild Norwegian Cod Liver Oil, Fruit Splash, 8.4 fl oz (250 ml)",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-wild-norwegian-cod-liver-oil-fruit-splash-8-4-fl-oz-250-ml/125554",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0031",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Carlson",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0031",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "23288",
+      "barcode": "00088395013010",
+      "brandName": "Carlson",
+      "productName": "Carlson, Wild Norwegian, Cod Liver Oil Gems, 1,000 mg, 100 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-wild-norwegian-cod-liver-oil-gems-1-000-mg-100-soft-gels/23288",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0004",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Carlson",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0004",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "14565",
+      "barcode": "00088395013126",
+      "brandName": "Carlson",
+      "productName": "Carlson, Wild Norwegian, Cod Liver Oil Minis, 250 Mini Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-wild-norwegian-cod-liver-oil-minis-250-mini-soft-gels/14565",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0007",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Carlson",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0007",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "6394",
+      "barcode": "00015794010821",
+      "brandName": "Country Life",
+      "productName": "Country Life, Acetyl L-Carnitine Caps, 500 mg, 120 Vegan Capsules",
+      "iherbUrl": "https://www.iherb.com/pr/country-life-acetyl-l-carnitine-caps-500-mg-120-vegan-capsules/6394",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0001",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Country Life",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0001",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "141071",
+      "barcode": "00015794053019",
+      "brandName": "Country Life",
+      "productName": "Country Life, Ageless Theory, Anti-Glycation Support, 60 Vegetarian Capsules",
+      "iherbUrl": "https://www.iherb.com/pr/country-life-ageless-theory-anti-glycation-support-60-vegetarian-capsules/141071",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0043",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Country Life",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0043",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "141072",
+      "barcode": "00015794053026",
+      "brandName": "Country Life",
+      "productName": "Country Life, Ageless Theory, Stem Cell Support, 60 Vegetarian Capsules",
+      "iherbUrl": "https://www.iherb.com/pr/country-life-ageless-theory-stem-cell-support-60-vegetarian-capsules/141072",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0044",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Country Life",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0044",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "141567",
+      "barcode": "00015794053002",
+      "brandName": "Country Life",
+      "productName": "Country Life, Ageless Theory, Telomere Support , 60 Vegetarian Capsule",
+      "iherbUrl": "https://www.iherb.com/pr/country-life-ageless-theory-telomere-support-60-vegetarian-capsule/141567",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0042",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Country Life",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0042",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "51093",
+      "barcode": "00015794060031",
+      "brandName": "Country Life",
+      "productName": "Country Life, Benfotiamine with Thiamin, 150 mg, 60 Vegan Capsules",
+      "iherbUrl": "https://www.iherb.com/pr/country-life-benfotiamine-with-thiamin-150-mg-60-vegan-capsules/51093",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0003",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Country Life",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0003",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "1646",
+      "barcode": "00015794051619",
+      "brandName": "Country Life",
+      "productName": "Country Life, Bromelain, Triple Strength, 60 Tablets",
+      "iherbUrl": "https://www.iherb.com/pr/country-life-bromelain-triple-strength-60-tablets/1646",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0034",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Country Life",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0034",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "141063",
+      "barcode": "00015794026792",
+      "brandName": "Country Life",
+      "productName": "Country Life, Dual Action, High Absorption Magnesium Glycinate, 90 Tablets",
+      "iherbUrl": "https://www.iherb.com/pr/country-life-dual-action-high-absorption-magnesium-glycinate-90-tablets/141063",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0039",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Country Life",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0039",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "1649",
+      "barcode": "00015794010258",
+      "brandName": "Country Life",
+      "productName": "Country Life, L-Arginine, 100 Vegan Capsules",
+      "iherbUrl": "https://www.iherb.com/pr/country-life-l-arginine-100-vegan-capsules/1649",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0016",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Country Life",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0016",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "121732",
+      "barcode": "00015794013150",
+      "brandName": "Country Life",
+      "productName": "Country Life, L-Lysine, Advanced, 180 Vegan Capsules",
+      "iherbUrl": "https://www.iherb.com/pr/country-life-l-lysine-advanced-180-vegan-capsules/121732",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0041",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Country Life",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0041",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "141075",
+      "barcode": "00015794056072",
+      "brandName": "Country Life",
+      "productName": "Country Life, Lutein & Zeaxanthin Gummies, Natural Mango, 60 Gummies",
+      "iherbUrl": "https://www.iherb.com/pr/country-life-lutein-zeaxanthin-gummies-natural-mango-60-gummies/141075",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0040",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Country Life",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0040",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "75757",
+      "barcode": "00015794050704",
+      "brandName": "Country Life",
+      "productName": "Country Life, Maxi-Collagen® 7000 Powder, High Potency, Flavorless, 7.5 oz (213 g)",
+      "iherbUrl": "https://www.iherb.com/pr/country-life-maxi-collagen-7000-powder-high-potency-flavorless-7-5-oz-213-g/75757",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0010",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Country Life",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0010",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "155226",
+      "barcode": "00015794050490",
+      "brandName": "Country Life",
+      "productName": "Country Life, Maxi-Hair® Skin & Nails Gummies with Hyaluronic Acid + Biotin, Berry, 60 Gummies",
+      "iherbUrl": "https://www.iherb.com/pr/country-life-maxi-hair-skin-nails-gummies-with-hyaluronic-acid-biotin-berry-60-gummies/155226",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0018",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Country Life",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0018",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "145400",
+      "barcode": "00015794060093",
+      "brandName": "Country Life",
+      "productName": "Country Life, Omega-3 Honey Gummies, Natural Orange, 60 Gummies",
+      "iherbUrl": "https://www.iherb.com/pr/country-life-omega-3-honey-gummies-natural-orange-60-gummies/145400",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0047",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Country Life",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0047",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "1757",
+      "barcode": "00015794028765",
+      "brandName": "Country Life",
+      "productName": "Country Life, Selenium, 100 mcg, 180 Tablets",
+      "iherbUrl": "https://www.iherb.com/pr/country-life-selenium-100-mcg-180-tablets/1757",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0021",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Country Life",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0021",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "14480",
+      "barcode": "00015794029670",
+      "brandName": "Country Life",
+      "productName": "Country Life, Zinc Picolinate, 25 mg, 100 Tablets",
+      "iherbUrl": "https://www.iherb.com/pr/country-life-zinc-picolinate-25-mg-100-tablets/14480",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0029",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Country Life",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0029",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "148461",
+      "barcode": "00023249092728",
+      "brandName": "Sports Research",
+      "productName": "Sports Research, Alaskan Cod Liver Oil, 120 Softgels",
+      "iherbUrl": "https://www.iherb.com/pr/sports-research-alaskan-cod-liver-oil-120-softgels/148461",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0074",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Sports Research",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0074",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "84964",
+      "barcode": "00023249010296",
+      "brandName": "Sports Research",
+      "productName": "Sports Research, Collagen Peptides, Vanilla , 1.06 lb (480 g)",
+      "iherbUrl": "https://www.iherb.com/pr/sports-research-collagen-peptides-vanilla-1-06-lb-480-g/84964",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0012",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Sports Research",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0012",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "146237",
+      "barcode": "00023249093169",
+      "brandName": "Sports Research",
+      "productName": "Sports Research, Colostrum Powder, Unflavored, 5.29 oz (150 g)",
+      "iherbUrl": "https://www.iherb.com/pr/sports-research-colostrum-powder-unflavored-5-29-oz-150-g/146237",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0073",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Sports Research",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0073",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "146016",
+      "barcode": "00023249092902",
+      "brandName": "Sports Research",
+      "productName": "Sports Research, Flaxseed Oil, 200 Softgels",
+      "iherbUrl": "https://www.iherb.com/pr/sports-research-flaxseed-oil-200-softgels/146016",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0070",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Sports Research",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0070",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "75242",
+      "barcode": "00023249010821",
+      "brandName": "Sports Research",
+      "productName": "Sports Research, Gelatin Powder, Unflavored, 1 lb (454 g)",
+      "iherbUrl": "https://www.iherb.com/pr/sports-research-gelatin-powder-unflavored-1-lb-454-g/75242",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0004",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Sports Research",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0004",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "90288",
+      "barcode": "00023249012337",
+      "brandName": "Sports Research",
+      "productName": "Sports Research, Keto Omega-3 with Salmon Oil, 120 Softgels",
+      "iherbUrl": "https://www.iherb.com/pr/sports-research-keto-omega-3-with-salmon-oil-120-softgels/90288",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0026",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Sports Research",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0026",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "90296",
+      "barcode": "00023249012269",
+      "brandName": "Sports Research",
+      "productName": "Sports Research, L-Theanine & Caffeine, 2-in-1 Formula, 60 Softgels",
+      "iherbUrl": "https://www.iherb.com/pr/sports-research-l-theanine-caffeine-2-in-1-formula-60-softgels/90296",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0025",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Sports Research",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0025",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "146236",
+      "barcode": "00023249092216",
+      "brandName": "Sports Research",
+      "productName": "Sports Research, Magnesium Glycinate, 60 Softgels (80 mg per Softgel)",
+      "iherbUrl": "https://www.iherb.com/pr/sports-research-magnesium-glycinate-60-softgels-80-mg-per-softgel/146236",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0069",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Sports Research",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0069",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "138838",
+      "barcode": "00023249092223",
+      "brandName": "Sports Research",
+      "productName": "Sports Research, Magnesium Oxide, 420 mg, 90 Softgels",
+      "iherbUrl": "https://www.iherb.com/pr/sports-research-magnesium-oxide-420-mg-90-softgels/138838",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0068",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Sports Research",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0068",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "101533",
+      "barcode": "00023249013471",
+      "brandName": "Sports Research",
+      "productName": "Sports Research, Marine Collagen Complex, Unflavored, 5.8 oz (164 g)",
+      "iherbUrl": "https://www.iherb.com/pr/sports-research-marine-collagen-complex-unflavored-5-8-oz-164-g/101533",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0005",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Sports Research",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0005",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "156369",
+      "barcode": "00023249094104",
+      "brandName": "Sports Research",
+      "productName": "Sports Research, Multi Collagen With Biotin, 90 Capsules",
+      "iherbUrl": "https://www.iherb.com/pr/sports-research-multi-collagen-with-biotin-90-capsules/156369",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0091",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Sports Research",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0091",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "100267",
+      "barcode": "00023249013068",
+      "brandName": "Sports Research",
+      "productName": "Sports Research, Multi Collagen, Chocolate, 1.06 lb (480 g)",
+      "iherbUrl": "https://www.iherb.com/pr/sports-research-multi-collagen-chocolate-1-06-lb-480-g/100267",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0037",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Sports Research",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0037",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "156364",
+      "barcode": "00023249093725",
+      "brandName": "Sports Research",
+      "productName": "Sports Research, Oil Of Oregano With Black Cumin, 60 Softgels",
+      "iherbUrl": "https://www.iherb.com/pr/sports-research-oil-of-oregano-with-black-cumin-60-softgels/156364",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0085",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Sports Research",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0085",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "134766",
+      "barcode": "00023249091776",
+      "brandName": "Sports Research",
+      "productName": "Sports Research, Organic Collagen Peptides, Unflavored, 10.58 oz (300 g)",
+      "iherbUrl": "https://www.iherb.com/pr/sports-research-organic-collagen-peptides-unflavored-10-58-oz-300-g/134766",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0060",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Sports Research",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0060",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "117181",
+      "barcode": "00023249091509",
+      "brandName": "Sports Research",
+      "productName": "Sports Research, Quercetin, 120 Softgels",
+      "iherbUrl": "https://www.iherb.com/pr/sports-research-quercetin-120-softgels/117181",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0056",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Sports Research",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0056",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "64437",
+      "barcode": "00658010118293",
+      "brandName": "Garden of Life",
+      "productName": "Garden of Life, Dr. Formulated Probiotics, Once Daily Men's, 50 Billion, 30 Vegetarian Capsules",
+      "iherbUrl": "https://www.iherb.com/pr/garden-of-life-dr-formulated-probiotics-once-daily-men-s-50-billion-30-vegetarian-capsules/64437",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0041",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Garden of Life",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0041",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "64436",
+      "barcode": "00658010118453",
+      "brandName": "Garden of Life",
+      "productName": "Garden of Life, Dr. Formulated Probiotics, Once Daily Ultra, 90 Billion, 30 Vegetarian Capsules",
+      "iherbUrl": "https://www.iherb.com/pr/garden-of-life-dr-formulated-probiotics-once-daily-ultra-90-billion-30-vegetarian-capsules/64436",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0040",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Garden of Life",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0040",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "64442",
+      "barcode": "00658010118323",
+      "brandName": "Garden of Life",
+      "productName": "Garden of Life, Dr. Formulated Probiotics, Once Daily Women's, 50 Billion, 30 Vegetarian Capsules",
+      "iherbUrl": "https://www.iherb.com/pr/garden-of-life-dr-formulated-probiotics-once-daily-women-s-50-billion-30-vegetarian-capsules/64442",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0044",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Garden of Life",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0044",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "86845",
+      "barcode": "00658010124553",
+      "brandName": "Garden of Life",
+      "productName": "Garden of Life, Grass Fed Collagen Beauty, Cranberry Pomegranate, 9.52 oz (270 g)",
+      "iherbUrl": "https://www.iherb.com/pr/garden-of-life-grass-fed-collagen-beauty-cranberry-pomegranate-9-52-oz-270-g/86845",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0001",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Garden of Life",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0001",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "99605",
+      "barcode": "00658010127110",
+      "brandName": "Garden of Life",
+      "productName": "Garden of Life, Grass Fed Collagen, Greens Beauty, Apple, 9.38 oz (266 g)",
+      "iherbUrl": "https://www.iherb.com/pr/garden-of-life-grass-fed-collagen-greens-beauty-apple-9-38-oz-266-g/99605",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0027",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Garden of Life",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0027",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "99610",
+      "barcode": "00658010127172",
+      "brandName": "Garden of Life",
+      "productName": "Garden of Life, Grass Fed Collagen, Super Beauty, Blueberry Acai, 9.52 oz (270 g)",
+      "iherbUrl": "https://www.iherb.com/pr/garden-of-life-grass-fed-collagen-super-beauty-blueberry-acai-9-52-oz-270-g/99610",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0031",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Garden of Life",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0031",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "86843",
+      "barcode": "00658010124607",
+      "brandName": "Garden of Life",
+      "productName": "Garden of Life, Multi-Sourced Collagen Turmeric, Apple Cinnamon, 7.76 oz (220 g)",
+      "iherbUrl": "https://www.iherb.com/pr/garden-of-life-multi-sourced-collagen-turmeric-apple-cinnamon-7-76-oz-220-g/86843",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0003",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Garden of Life",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0003",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "113269",
+      "barcode": "00658010130745",
+      "brandName": "Garden of Life",
+      "productName": "Garden of Life, Wild Caught & Grass Fed Collagen, Hyaluronic Acid, Unflavored, 9.52 oz (270 g)",
+      "iherbUrl": "https://www.iherb.com/pr/garden-of-life-wild-caught-grass-fed-collagen-hyaluronic-acid-unflavored-9-52-oz-270-g/113269",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0021",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Garden of Life",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0021",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "113270",
+      "barcode": "00658010130752",
+      "brandName": "Garden of Life",
+      "productName": "Garden of Life, Wild Caught & Grass Fed Collagen, Multi-Sourced, Unflavored, 9.52 oz (270 g)",
+      "iherbUrl": "https://www.iherb.com/pr/garden-of-life-wild-caught-grass-fed-collagen-multi-sourced-unflavored-9-52-oz-270-g/113270",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0022",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Garden of Life",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0022",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "15259",
+      "barcode": "00608274104501",
+      "brandName": "ChildLife Essentials",
+      "productName": "ChildLife Essentials, Aller-Care, Natural Grape, 4 fl oz (118 ml)",
+      "iherbUrl": "https://www.iherb.com/pr/childlife-essentials-aller-care-natural-grape-4-fl-oz-118-ml/15259",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CHLD0006",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "ChildLife Essentials",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CHLD0006",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "6367",
+      "barcode": "00608274101500",
+      "brandName": "ChildLife Essentials",
+      "productName": "ChildLife Essentials, First Defense™, 4 fl oz (118 ml)",
+      "iherbUrl": "https://www.iherb.com/pr/childlife-essentials-first-defense-4-fl-oz-118-ml/6367",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CHLD0007",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "ChildLife Essentials",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CHLD0007",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "141833",
+      "barcode": "00608274145504",
+      "brandName": "ChildLife Essentials",
+      "productName": "ChildLife Essentials, Multi Vitamin Gummy, Sugar Free, Natural Strawberry Lemon, 90 Gummies",
+      "iherbUrl": "https://www.iherb.com/pr/childlife-essentials-multi-vitamin-gummy-sugar-free-natural-strawberry-lemon-90-gummies/141833",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/brand?id=CHLD",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "ChildLife Essentials",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/brand?id=CHLD",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "12573",
+      "barcode": "00608274105508",
+      "brandName": "ChildLife Essentials",
+      "productName": "ChildLife Essentials, Pure DHA, Natural Berry, 90 Softgels",
+      "iherbUrl": "https://www.iherb.com/pr/childlife-essentials-pure-dha-natural-berry-90-softgels/12573",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CHLD0001",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "ChildLife Essentials",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CHLD0001",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "10183",
+      "barcode": "00743715013827",
+      "brandName": "Bluebonnet Nutrition",
+      "productName": "Bluebonnet Nutrition, Oil of Oregano, Leaf Extract, 60 Softgels (150 mg per Softgel)",
+      "iherbUrl": "https://www.iherb.com/pr/bluebonnet-nutrition-oil-of-oregano-leaf-extract-60-softgels-150-mg-per-softgel/10183",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=BBNT0029",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Bluebonnet Nutrition",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=BBNT0029",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "11821",
+      "barcode": "00743715009530",
+      "brandName": "Bluebonnet Nutrition",
+      "productName": "Bluebonnet Nutrition, Omega-3 Salmon Fish Oil, 1,000 mg, 180 Softgels",
+      "iherbUrl": "https://www.iherb.com/pr/bluebonnet-nutrition-omega-3-salmon-fish-oil-1-000-mg-180-softgels/11821",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=BBNT0033",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Bluebonnet Nutrition",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=BBNT0033",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "117437",
+      "barcode": "00790011210788",
+      "brandName": "Jarrow Formulas",
+      "productName": "Jarrow Formulas, Lactoferrin, Freeze Dried, 250 mg, 30 Capsules",
+      "iherbUrl": "https://www.iherb.com/pr/jarrow-formulas-lactoferrin-freeze-dried-250-mg-30-capsules/117437",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=JRRW0056",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Jarrow Formulas",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=JRRW0056",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "139",
+      "barcode": "00790011120254",
+      "brandName": "Jarrow Formulas",
+      "productName": "Jarrow Formulas, Lutein, 20 mg, 60 Softgels",
+      "iherbUrl": "https://www.iherb.com/pr/jarrow-formulas-lutein-20-mg-60-softgels/139",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=JRRW0033",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Jarrow Formulas",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=JRRW0033",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "85001",
+      "barcode": "00727783901774",
+      "brandName": "New Chapter",
+      "productName": "New Chapter, Wholemega™ Fish Oil, Tiny Caps™, 180 BSE-Free Softgels",
+      "iherbUrl": "https://www.iherb.com/pr/new-chapter-wholemega-fish-oil-tiny-caps-180-bse-free-softgels/85001",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NCHP0006",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "New Chapter",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NCHP0006",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "79",
+      "barcode": "00727783040565",
+      "brandName": "New Chapter",
+      "productName": "New Chapter, Zyflamend™, 180 Mini Softgels",
+      "iherbUrl": "https://www.iherb.com/pr/new-chapter-zyflamend-180-mini-softgels/79",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NCHP0008",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "New Chapter",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NCHP0008",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "5060",
+      "barcode": "00076630503044",
+      "brandName": "American Health",
+      "productName": "American Health, Chewable Papaya Enzyme with Chlorophyll, 250 Chewable Tablets",
+      "iherbUrl": "https://www.iherb.com/pr/american-health-chewable-papaya-enzyme-with-chlorophyll-250-chewable-tablets/5060",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=AMHE0003",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "American Health",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=AMHE0003",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "141030",
+      "barcode": "00814947000333",
+      "brandName": "Ddrops",
+      "productName": "Ddrops, Baby, Probiotic Liquid Drops, For Newborns+, 60 Drops, 0.07 fl oz (2.2 ml)",
+      "iherbUrl": "https://www.iherb.com/pr/ddrops-baby-probiotic-liquid-drops-for-newborns-60-drops-0-07-fl-oz-2-2-ml/141030",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=DDRP0010",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Ddrops",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=DDRP0010",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "141532",
+      "barcode": "00322654002897",
+      "brandName": "Great Lakes Wellness",
+      "productName": "Great Lakes Wellness, Grass-Fed Bovine Collagen Peptides, Chai, 10 oz (284 g)",
+      "iherbUrl": "https://www.iherb.com/pr/great-lakes-wellness-grass-fed-bovine-collagen-peptides-chai-10-oz-284-g/141532",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLGC0004",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Great Lakes Wellness",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLGC0004",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "129275",
+      "barcode": "00819444017662",
+      "brandName": "Onnit",
+      "productName": "Onnit, Alpha BRAIN® Focus Shot, Tropical, 6 Bottles, 2.5 fl oz (75 ml) Each",
+      "iherbUrl": "https://www.iherb.com/pr/onnit-alpha-brain-focus-shot-tropical-6-bottles-2-5-fl-oz-75-ml-each/129275",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=ONNI0012",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Onnit",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=ONNI0012",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    },
+    {
+      "productId": "88347",
+      "barcode": "00850232005058",
+      "brandName": "Vital Proteins",
+      "productName": "Vital Proteins, Collagen Creamer®, Mocha, 11 oz (317 g)",
+      "iherbUrl": "https://www.iherb.com/pr/vital-proteins-collagen-creamer-mocha-11-oz-317-g/88347",
+      "officialSignalProgramId": "igen",
+      "officialSignalProgramLabel": "iGEN",
+      "officialSignalState": "product_level_official_signal",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=VITL0012",
+      "deliveryLane": "wave2_brand_bundle",
+      "bundleLabel": "Vital Proteins",
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product.",
+      "qualityMarkAuditSummary": {
+        "status": "detected",
+        "checked": true,
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=VITL0012",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product."
+      }
+    }
+  ]
+}

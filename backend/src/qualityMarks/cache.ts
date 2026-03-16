@@ -142,6 +142,12 @@ const normalizeVerificationSummary = (raw: unknown): QualityMarkVerificationSumm
     brandLevelOfficialProgramLabels: Array.isArray(row.brandLevelOfficialProgramLabels)
       ? row.brandLevelOfficialProgramLabels.map((value) => normalizeText(value)).filter(Boolean)
       : [],
+    blockedProgramIds: Array.isArray(row.blockedProgramIds)
+      ? row.blockedProgramIds.map((value) => normalizeText(value)).filter(Boolean) as QualityMarkVerificationSummary["blockedProgramIds"]
+      : [],
+    blockedProgramLabels: Array.isArray(row.blockedProgramLabels)
+      ? row.blockedProgramLabels.map((value) => normalizeText(value)).filter(Boolean)
+      : [],
     warnings: Array.isArray(row.warnings) ? row.warnings.map((value) => normalizeText(value)).filter(Boolean) : [],
   };
 };

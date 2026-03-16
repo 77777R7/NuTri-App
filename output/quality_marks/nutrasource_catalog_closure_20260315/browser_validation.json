@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "nutrasource_browser_validation.v1",
+  "generatedAt": "2026-03-15T19:34:09.031Z",
+  "homeUi": {
+    "session": "nutrasource-home-1773603239723",
+    "homeOk": true,
+    "submitResult": "\"submitted\"",
+    "resultOk": true
+  },
+  "brandPages": [
+    {
+      "brandName": "Sports Research",
+      "ok": false,
+      "reason": "brand_not_found"
+    },
+    {
+      "brandName": "Barlean's",
+      "ok": false,
+      "reason": "brand_not_found"
+    },
+    {
+      "brandName": "Carlson",
+      "ok": false,
+      "reason": "brand_not_found"
+    }
+  ],
+  "productPages": [
+    {
+      "brandName": "Sports Research",
+      "ok": false,
+      "reason": "product_not_found"
+    },
+    {
+      "brandName": "Barlean's",
+      "ok": false,
+      "reason": "product_not_found"
+    },
+    {
+      "brandName": "Carlson",
+      "ok": false,
+      "reason": "product_not_found"
+    }
+  ]
+}

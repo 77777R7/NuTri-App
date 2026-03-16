@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "week2_marks_overnight_loop_report.v1",
+  "generatedAt": "2026-03-15T18:53:14.348Z",
+  "runId": "week2-ifos-detail-wave-v1-20260315",
+  "inputs": {
+    "baselineCensusPath": "output/quality_marks/overnight_loop/baseline_census_v12.json",
+    "registrySelectionPath": "output/quality_marks/ifos_same_bucket_detail_wave_v1_20260315/week2_iherb_quality_mark_selection.json",
+    "refreshReportPath": "output/quality_marks/ifos_same_bucket_detail_wave_v1_20260315/week2_iherb_quality_mark_refresh_report.json",
+    "currentCensusPath": "output/iherb_third_party_tested_claim_census_post_ifos_same_bucket_detail_wave_v1_20260315/third_party_tested_claim_census.json"
+  },
+  "deltas": {
+    "cacheEntryCount": {
+      "before": 225,
+      "after": 257,
+      "delta": 32
+    },
+    "cacheSha256": {
+      "before": "08624a4275a212ae0c888f3af8a05e54d71dfd818c538405b966f2805933e5e3",
+      "after": "44c0667ad79ab7bf211cc7fe1f3696f14cd26fbfec7a87a7122382716eb8851b",
+      "changed": true
+    },
+    "censusVerifiedHeadline": {
+      "before": 71,
+      "after": 103,
+      "delta": 32
+    },
+    "censusClaimedHeadline": {
+      "before": 9851,
+      "after": 9833,
+      "delta": -18
+    },
+    "registryChecked": {
+      "before": 172,
+      "after": 204,
+      "delta": 32
+    }
+  },
+  "reconciliation": {
+    "gapBefore": 0,
+    "gapAfter": 0,
+    "hadGap": false,
+    "fixedThisRun": false,
+    "investigation": "No pre-refresh reconciliation gap detected."
+  },
+  "expansion": {
+    "registryFirstRowsSelected": 22,
+    "refreshedRows": 22,
+    "ifosNsfBrandAttempts": 0,
+    "ifosNsfProgramRowsConsidered": 0,
+    "highYieldFilterApplied": true,
+    "directRegistryEvidencePreferred": true
+  },
+  "newlyVerifiedSkus": [
+    {
+      "brandName": "Barlean's",
+      "productName": "Barlean's, Total Omega®, Omega 3-6-9, Orange Creme, 2,400 mg, 16 oz (454 g)",
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's"
+    }
+  ],
+  "unresolvedBlockers": [],
+  "demotions": {
+    "attemptedBrandsThisRun": [],
+    "infraBlockedBrandsThisRun": [],
+    "eligibleZeroSafeBrandsThisRun": [],
+    "safeMatchBrandsThisRun": [],
+    "newlyDemotedBrands": [],
+    "allDemotedBrands": [],
+    "policy": "Demote brands after two consecutive zero-safe-match runs with successful registry query completion; infra failures do not count toward zero-safe streak."
+  },
+  "nextRecommendedAction": "Proceed to expand IFOS omega and NSF sports pools using registry-first direct evidence, then rerun targeted refresh and census."
+}

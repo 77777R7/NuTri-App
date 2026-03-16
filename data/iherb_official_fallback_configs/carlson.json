@@ -18,11 +18,23 @@
   },
   "searchQueryOverrides": {},
   "productPageUrlOverrides": {
+    "148051": "https://www.carlsonlabs.com/products/berberine",
+    "149563": "https://www.carlsonlabs.com/products/lions-mane",
+    "148052": "https://www.carlsonlabs.com/products/mushroom-immune",
     "116231": "https://www.carlsonlabs.com/products/magnesium-soft-chews",
     "12794": "https://www.carlsonlabs.com/products/phosphatidyl-serine"
   },
   "brochureFilenameOverrides": {},
   "manualSectionOverrides": {
+    "148051": {
+      "Warnings": "These statements have not been evaluated by the FDA. This product is not intended to diagnose, treat, cure, or prevent any disease."
+    },
+    "149563": {
+      "Warnings": "These statements have not been evaluated by the FDA. This product is not intended to diagnose, treat, cure, or prevent any disease."
+    },
+    "148052": {
+      "Warnings": "These statements have not been evaluated by the FDA. This product is not intended to diagnose, treat, cure, or prevent any disease."
+    },
     "116231": {
       "Warnings": "These statements have not been evaluated by the FDA. This product is not intended to diagnose, treat, cure, or prevent any disease."
     }

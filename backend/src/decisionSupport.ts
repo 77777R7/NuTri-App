@@ -293,9 +293,32 @@ export type DecisionSupportQualityMark = {
 
 export type DecisionSupportCategoryId =
   | "fish_oil_omega3"
+  | "out_of_scope_non_supplement"
+  | "taxonomy_backlog_hold"
   | "vitamin_d"
   | "magnesium"
   | "probiotics"
+  | "metabolic_glucose_support"
+  | "sports_anabolic_support"
+  | "cholesterol_lipid_support"
+  | "liver_bile_support"
+  | "cellular_nucleotide_support"
+  | "antioxidant_cellular_energy"
+  | "nootropic_memory_cognition"
+  | "specialty_vitamins_other"
+  | "specialty_single_amino_and_neuro"
+  | "fatty_acids_specialty_lipids"
+  | "womens_hormonal_and_lactation"
+  | "mens_prostate_and_hormonal"
+  | "digestive_and_gastro_functional"
+  | "botanical_herbal_support"
+  | "sports_performance_amino_acids"
+  | "sleep_stress_mood_support"
+  | "vitamin_mineral_other"
+  | "joint_bone_mobility"
+  | "collagen_connective_support"
+  | "digestive_fiber_enzymes"
+  | "superfoods_mushrooms_greens"
   | "unknown";
 
 export type DecisionSupportPayload = {
@@ -391,15 +414,38 @@ type DecisionSupportCompileParams = {
 };
 
 export const DECISION_SUPPORT_CONTRACT_VERSION = "dc-v1";
-export const DECISION_SUPPORT_RUBRIC_VERSION = "v1.6.12-r2d-1";
+export const DECISION_SUPPORT_RUBRIC_VERSION = "v1.6.12-r2d-7";
 export const DECISION_SUPPORT_OVERLAY_AUGMENTATION_VERSION = "iherb-overlay-v1";
 export const DECISION_SUPPORT_PATCH_VERSION = "patch-shadow-v1";
 const DECISION_SUPPORT_DIGEST_DELIMITER = "\n|\n";
 const CATEGORY_PROFILE_VERSION: Record<DecisionSupportCategoryId, string> = {
   fish_oil_omega3: "fish-oil-omega3-v1",
+  out_of_scope_non_supplement: "out-of-scope-non-supplement-v1",
+  taxonomy_backlog_hold: "taxonomy-backlog-hold-v1",
   vitamin_d: "vitamin-d-v1",
   magnesium: "magnesium-v1",
   probiotics: "probiotics-v1",
+  metabolic_glucose_support: "metabolic-glucose-support-v1",
+  sports_anabolic_support: "sports-anabolic-support-v1",
+  cholesterol_lipid_support: "cholesterol-lipid-support-v1",
+  liver_bile_support: "liver-bile-support-v1",
+  cellular_nucleotide_support: "cellular-nucleotide-support-v1",
+  antioxidant_cellular_energy: "antioxidant-cellular-energy-v1",
+  nootropic_memory_cognition: "nootropic-memory-cognition-v1",
+  specialty_vitamins_other: "specialty-vitamins-other-v1",
+  specialty_single_amino_and_neuro: "specialty-single-amino-and-neuro-v1",
+  fatty_acids_specialty_lipids: "fatty-acids-specialty-lipids-v1",
+  womens_hormonal_and_lactation: "womens-hormonal-and-lactation-v1",
+  mens_prostate_and_hormonal: "mens-prostate-and-hormonal-v1",
+  digestive_and_gastro_functional: "digestive-and-gastro-functional-v1",
+  botanical_herbal_support: "botanical-herbal-support-v1",
+  sports_performance_amino_acids: "sports-performance-amino-acids-v1",
+  sleep_stress_mood_support: "sleep-stress-mood-support-v1",
+  vitamin_mineral_other: "vitamin-mineral-other-v1",
+  joint_bone_mobility: "joint-bone-mobility-v1",
+  collagen_connective_support: "collagen-connective-support-v1",
+  digestive_fiber_enzymes: "digestive-fiber-enzymes-v1",
+  superfoods_mushrooms_greens: "superfoods-mushrooms-greens-v1",
   unknown: "unknown-v1",
 };
 
@@ -551,6 +597,27 @@ const buildCategoryBestForBullets = (params: {
         : "Not ideal if: you compare only fish-oil mg and ignore EPA+DHA transparency.",
     ];
   }
+  if (categoryId === "metabolic_glucose_support") {
+    return [
+      "Best for: glucose- or glycemic-support routines where berberine disclosure helps comparisons stay grounded.",
+      "Good if you want: products with clear berberine or glucose-support actives per serving, plus useful meal-timing context.",
+      "Not ideal if: meal timing or active disclosure is vague, because that makes glucose-support products harder to compare.",
+    ];
+  }
+  if (categoryId === "cholesterol_lipid_support") {
+    return [
+      "Best for: cholesterol- or lipid-support routines where red-yeast-rice disclosure helps comparisons stay grounded.",
+      "Good if you want: products with clear red-yeast-rice or lipid-support actives per serving, plus useful with-food context.",
+      "Not ideal if: the label leans on broad herb language without clarifying the core lipid-support actives or supporting context.",
+    ];
+  }
+  if (categoryId === "liver_bile_support") {
+    return [
+      "Best for: liver-bile or fat-digestion support routines where TUDCA or ox-bile disclosure helps comparisons stay grounded.",
+      "Good if you want: products with clear bile-support actives per serving, plus useful with-food or with-fat context.",
+      "Not ideal if: the product sounds generically digestive without clarifying the core liver-bile actives or mealtime context.",
+    ];
+  }
 
   const base = dedupeLines(
     [
@@ -597,15 +664,63 @@ const hasWarningsData = (digest: FactsDigest): boolean => {
 };
 
 const PROBIOTIC_CATEGORY_REGEX = /(probiotic|cfu|lactobacillus|bifidobacterium|saccharomyces|florassist|microbiome|gut)/;
+const OUT_OF_SCOPE_NON_SUPPLEMENT_CATEGORY_REGEX =
+  /(\bstroopwafels?\b|\bbetter stevia\b|\bconfectioners\b.*\bsweetener\b|\bxylimelts?\b|\bturbinado sugar cubes?\b|\bhawaiian hula rub\b|\bmanuka honey\b)/;
+const TAXONOMY_BACKLOG_HOLD_CATEGORY_REGEX =
+  /(\bflat tummy\b.*\bshakes?\b|\bcuraphen\b|\borganic spearmint\b.*\btea\b|\bchitosan\b)/;
 const VITAMIN_D_CATEGORY_REGEX = /(vitamin\s*d\b|\bd3\b|\bd2\b|cholecalciferol|ergocalciferol|calcifediol|calcitriol)/;
 const MAGNESIUM_CATEGORY_REGEX = /(\bmagnesium\b|glycinate|citrate|oxide|malate)/;
+const METABOLIC_GLUCOSE_SUPPORT_CATEGORY_REGEX =
+  /(\bberberine\b|\bwellbetx\b|\bglucose support\b|\bblood sugar\b|\bglycemic\b|\binsulin support\b)/;
+const SPORTS_ANABOLIC_SUPPORT_CATEGORY_REGEX =
+  /(\bbeta ecdysterone\b|\becdysterone\b|\banabol\b|\banabolic\b)/;
+const CHOLESTEROL_LIPID_SUPPORT_CATEGORY_REGEX =
+  /(\bred yeast rice\b|\bcholesterol support\b|\blipid support\b)/;
+const LIVER_BILE_SUPPORT_CATEGORY_REGEX =
+  /(\btudca\b|\btauroursodeoxycholic\b|\box bile\b|\bbile support\b|\bbile flow\b)/;
+const CELLULAR_NUCLEOTIDE_SUPPORT_CATEGORY_REGEX =
+  /(\bnucleotide\b|\brna\s*\/\s*dna\b|\bdna\s*\/\s*rna\b)/;
+const COLLAGEN_CATEGORY_REGEX =
+  /(\bcollagen\b|\bcollagen peptides?\b|\bmarine collagen\b|\bbone broth\b|\btype ii collagen\b)/;
+const JOINT_BONE_CATEGORY_REGEX =
+  /(\bglucosamine\b|\bchondroitin\b|\bmsm\b|\bhyaluronic\b|\bjoint\b|\bmobility\b|\bcartilage\b|\bosteo\b)/;
+const SLEEP_STRESS_MOOD_CATEGORY_REGEX =
+  /(\b5-htp\b|\b5[- ]hydroxytryptophan\b|\bmelatonin\b|\bgaba\b|\bl-theanine\b|\btheanine\b|\btryptophan\b|\bmood\b|\bsleep\b|\bstress\b|\bcalm\b|\brelax\b|\badrenal\b)/;
+const SPORTS_AMINO_CATEGORY_REGEX =
+  /(\bamino\b|\bbcaa\b|\beaa\b|\bcreatine\b|\bglutamine\b|\barginine\b|\bcitrulline\b|\bbeta alanine\b|\bcarnitine\b|\bpre[- ]?workout\b|\bpost[- ]?workout\b|\bhydration\b|\belectrolyte\b|\bwhey\b|\bprotein powder\b|\bpump\b)/;
+const DIGESTIVE_FIBER_ENZYME_CATEGORY_REGEX =
+  /(\bpsyllium\b|\bfiber\b|\bdigestive\b|\benzyme\b|\bcolon\b|\bcleanse\b|\bwhole husk\b)/;
+const SUPERFOODS_MUSHROOMS_GREENS_CATEGORY_REGEX =
+  /(\bmushroom\b|\bmushrooms\b|\bmycobotanical\b|\bcordyceps\b|\bcordychi\b|\bgreens?\b|\bsuperfood\b|\bspirulina\b|\bchlorella\b|\bwheatgrass\b|\bbarley grass\b|\bbeet root\b|\bmatcha\b)/;
+const ANTIOXIDANT_CELLULAR_ENERGY_CATEGORY_REGEX =
+  /(\bcoq-?10\b|\bcoenzyme q10\b|\bubiquinol\b|\bubiquinone\b|\balpha lipoic acid\b|\bastaxanthin\b|\blutein\b|\bzeaxanthin\b|\bquercetin\b|\bresveratrol\b|\bfisetin\b|\bpqq\b|\bglutathione\b|\blycopene\b|\bpolicosanol\b|\bcranberry\b|\bpomegranate\b|\bblueberry extract\b)/;
+const NOOTROPIC_MEMORY_COGNITION_CATEGORY_REGEX =
+  /(\bciticoline\b|\bcdp choline\b|\bcognium\b|\bmemory\b|\bcognitive\b|\bbrain\b|\bfocus\b|\bnootropic\b|\bsharpmind\b|\bsame\b|\bginkgo biloba\b|\bgotu kola\b|\bphosphatidylserine\b|\bnicotinamide riboside\b|\bniagen\b|\bnad\+\b|\bnad plus\b|\bcell regenerator\b)/;
+const SPECIALTY_VITAMINS_OTHER_CATEGORY_REGEX =
+  /(\bvitamin b-?12\b|\bcobalamin\b|\bvitamin b-?3\b|\bniacin\b|\bniacinamide\b|\bvitamin a\b|\bbenfotiamine\b|\bvitamin e\b)/;
+const SPECIALTY_SINGLE_AMINO_AND_NEURO_CATEGORY_REGEX =
+  /(\bl-lysine\b|\blysine\b|\btaurine\b|\bl-tyrosine\b|\btyrosine\b|\bn-acetyl l-tyrosine\b|\bn-acetyl cysteine\b|\bnac\b)/;
+const FATTY_ACIDS_SPECIALTY_LIPIDS_CATEGORY_REGEX =
+  /(\bmct oil\b|\bmedium chain triglycerides?\b|\bcoconut oil\b|\bevening primrose\b|\blecithin\b|\bphospholipid complex\b|\bliposomal phospholipid\b)/;
+const WOMENS_HORMONAL_AND_LACTATION_CATEGORY_REGEX =
+  /(\bmeta-balance\b|\bblack cohosh\b|\bmenopause\b|\bperimenopaus\w*\b|\bpms\b|\bchaste tree\b|\bwild yam\b|\blactation\b|\bbreastfeeding\b|\bmore milk\b)/;
+const MENS_PROSTATE_AND_HORMONAL_CATEGORY_REGEX =
+  /(\bsaw palmetto\b|\bdhea\b|\bdehydroepiandrosterone\b)/;
+const DIGESTIVE_AND_GASTRO_FUNCTIONAL_CATEGORY_REGEX =
+  /(\bpapaya\b|\bpapain\b|\bconstipation\b|\bbowel movement\b|\bkeep it movin\b|\bmove things along\b)/;
+const BOTANICAL_HERBAL_CATEGORY_REGEX =
+  /(\bturmeric\b|\bcurcumin\b|\bashwagandha\b|\bvalerian\b|\byellow dock\b|\bblack seed\b|\bmilk thistle\b|\bechinacea\b|\belderberry\b|\bginseng\b|\brhodiola\b|\bmaca\b|\bgarlic\b|\bboswellia\b|\bdevil'?s claw\b|\bgrape seed\b|\bastragalus\b|\bwormwood\b|\bfenugreek\b|\bolive leaf\b|\bshilajit\b|\bbutterbur\b|\bsaffron\b|\bcoleus forskoh?lii\b|\bgrapefruit seed extract\b|\bchanca piedra\b|\bginger\b|\blicorice\b|\bcinnamon\b|\bherb\b|\bbotanical\b)/;
+const VITAMIN_MINERAL_OTHER_CATEGORY_REGEX =
+  /(\bvitamin c\b|\bcomplex c\b|\bpaba\b|\bbiotin\b|\bselenium\b|\bchromium\b|\bboron\b|\bpotassium\b|\bcalcium\b|\biron\b|\bzinc\b|\bcopper\b|\bmanganese\b|\bmolybdenum\b|\biodine\b)/;
 
 const detectCategoryId = (digest: FactsDigest): DecisionSupportCategoryId => {
   const productText = `${normalizeText(digest?.product?.name)} ${normalizeText(digest?.product?.brandDisplay)}`;
   const activeNames = normalizeActiveNames(digest);
   const combined = `${productText} ${activeNames.join(" ")}`;
 
-  if (/(fish\s*oil|omega\s*-?\s*3|epa|dha)/.test(combined)) return "fish_oil_omega3";
+  if (/(fish\s*oil|omega\s*-?\s*3|epa|dha|theromega)/.test(combined)) return "fish_oil_omega3";
+  if (OUT_OF_SCOPE_NON_SUPPLEMENT_CATEGORY_REGEX.test(combined)) return "out_of_scope_non_supplement";
+  if (TAXONOMY_BACKLOG_HOLD_CATEGORY_REGEX.test(combined)) return "taxonomy_backlog_hold";
 
   const probioticInProductName = PROBIOTIC_CATEGORY_REGEX.test(productText);
   const probioticInActives = activeNames.some((name) => PROBIOTIC_CATEGORY_REGEX.test(name));
@@ -623,6 +738,27 @@ const detectCategoryId = (digest: FactsDigest): DecisionSupportCategoryId => {
 
   if (vitaminDInProductName || vitaminDInActives) return "vitamin_d";
   if (MAGNESIUM_CATEGORY_REGEX.test(combined)) return "magnesium";
+  if (METABOLIC_GLUCOSE_SUPPORT_CATEGORY_REGEX.test(combined)) return "metabolic_glucose_support";
+  if (SPORTS_ANABOLIC_SUPPORT_CATEGORY_REGEX.test(combined)) return "sports_anabolic_support";
+  if (CHOLESTEROL_LIPID_SUPPORT_CATEGORY_REGEX.test(combined)) return "cholesterol_lipid_support";
+  if (LIVER_BILE_SUPPORT_CATEGORY_REGEX.test(combined)) return "liver_bile_support";
+  if (CELLULAR_NUCLEOTIDE_SUPPORT_CATEGORY_REGEX.test(combined)) return "cellular_nucleotide_support";
+  if (ANTIOXIDANT_CELLULAR_ENERGY_CATEGORY_REGEX.test(combined)) return "antioxidant_cellular_energy";
+  if (NOOTROPIC_MEMORY_COGNITION_CATEGORY_REGEX.test(combined)) return "nootropic_memory_cognition";
+  if (SPECIALTY_VITAMINS_OTHER_CATEGORY_REGEX.test(combined)) return "specialty_vitamins_other";
+  if (SPECIALTY_SINGLE_AMINO_AND_NEURO_CATEGORY_REGEX.test(combined)) return "specialty_single_amino_and_neuro";
+  if (FATTY_ACIDS_SPECIALTY_LIPIDS_CATEGORY_REGEX.test(combined)) return "fatty_acids_specialty_lipids";
+  if (WOMENS_HORMONAL_AND_LACTATION_CATEGORY_REGEX.test(combined)) return "womens_hormonal_and_lactation";
+  if (MENS_PROSTATE_AND_HORMONAL_CATEGORY_REGEX.test(combined)) return "mens_prostate_and_hormonal";
+  if (DIGESTIVE_AND_GASTRO_FUNCTIONAL_CATEGORY_REGEX.test(combined)) return "digestive_and_gastro_functional";
+  if (COLLAGEN_CATEGORY_REGEX.test(combined)) return "collagen_connective_support";
+  if (SLEEP_STRESS_MOOD_CATEGORY_REGEX.test(combined)) return "sleep_stress_mood_support";
+  if (SPORTS_AMINO_CATEGORY_REGEX.test(combined)) return "sports_performance_amino_acids";
+  if (DIGESTIVE_FIBER_ENZYME_CATEGORY_REGEX.test(combined)) return "digestive_fiber_enzymes";
+  if (SUPERFOODS_MUSHROOMS_GREENS_CATEGORY_REGEX.test(combined)) return "superfoods_mushrooms_greens";
+  if (JOINT_BONE_CATEGORY_REGEX.test(combined)) return "joint_bone_mobility";
+  if (BOTANICAL_HERBAL_CATEGORY_REGEX.test(combined)) return "botanical_herbal_support";
+  if (VITAMIN_MINERAL_OTHER_CATEGORY_REGEX.test(combined)) return "vitamin_mineral_other";
   return "unknown";
 };
 
@@ -2234,6 +2370,15 @@ const buildGeneralUseSentence = (params: {
   overviewBestForBullets: string[];
 }): string => {
   const { categoryId, safeScienceSignals, overviewBestForBullets } = params;
+  if (categoryId === "metabolic_glucose_support") {
+    return "Often used for glucose- or glycemic-support goals, especially when shoppers compare berberine strength and meal-timing clarity.";
+  }
+  if (categoryId === "cholesterol_lipid_support") {
+    return "Often used for cholesterol- or lipid-support goals, especially when shoppers compare red-yeast-rice strength and with-food context.";
+  }
+  if (categoryId === "liver_bile_support") {
+    return "Often used for liver-bile or fat-digestion support goals, especially when shoppers compare TUDCA or ox-bile strength and with-food context.";
+  }
   const overviewKeys = overviewBestForBullets.map((line) => cleanupSentenceFragment(line).toLowerCase());
   const candidates = (safeScienceSignals?.bestForBullets ?? [])
     .map((line) => cleanupSentenceFragment(line))
@@ -2277,6 +2422,28 @@ const buildComparabilityDisclosure = (params: {
     if (hasStrain && hasCfu) return "strain and CFU disclosure are both available";
     if (hasStrain || hasCfu) return "strain or CFU disclosure is only partial";
     return "strain and CFU disclosure are missing";
+  }
+  if (categoryId === "metabolic_glucose_support") {
+    const names = normalizeActiveNames(digest);
+    const hasBerberine = names.some((name) => /\bberberine\b/.test(name));
+    if (hasBerberine && hasChemicalForm) return "berberine disclosure and product-detail context are both available";
+    if (hasBerberine) return "berberine is disclosed, but supporting detail stays partial";
+    return "glucose-support actives are not clearly disclosed";
+  }
+  if (categoryId === "cholesterol_lipid_support") {
+    const names = normalizeActiveNames(digest);
+    const hasRedYeastRice = names.some((name) => /\bred yeast rice\b/.test(name));
+    const hasCoq10 = names.some((name) => /\bcoq-?10\b|\bcoenzyme q10\b/.test(name));
+    if (hasRedYeastRice && hasCoq10) return "red-yeast-rice disclosure and supporting lipid-context actives are both available";
+    if (hasRedYeastRice) return "red-yeast-rice disclosure is available, but supporting lipid context stays partial";
+    return "lipid-support actives are not clearly disclosed";
+  }
+  if (categoryId === "liver_bile_support") {
+    const names = normalizeActiveNames(digest);
+    const hasTudca = names.some((name) => /\btudca\b|\btauroursodeoxycholic\b/.test(name));
+    const hasOxBile = names.some((name) => /\box bile\b|\bbile\b/.test(name));
+    if (hasTudca || hasOxBile) return "liver-bile actives are disclosed, and mealtime context is the next comparison priority";
+    return "liver-bile actives are not clearly disclosed";
   }
   return hasChemicalForm ? "core disclosure is available" : "core disclosure is partly missing";
 };
@@ -2326,6 +2493,15 @@ const buildActionStep = (params: {
   const { code, categoryId, fallbackAction } = params;
   if (categoryId === "fish_oil_omega3" && code === "missing_active_breakdown") {
     return "Check the label for EPA+DHA per serving.";
+  }
+  if (categoryId === "metabolic_glucose_support" && code === "missing_form_high_impact") {
+    return "Confirm the berberine or glucose-support active and whether the label gives useful meal-timing guidance.";
+  }
+  if (categoryId === "cholesterol_lipid_support" && code === "missing_form_high_impact") {
+    return "Confirm the red-yeast-rice or lipid-support active and whether the label gives useful with-food context.";
+  }
+  if (categoryId === "liver_bile_support" && code === "missing_form_high_impact") {
+    return "Confirm the TUDCA or ox-bile active and whether the label gives useful with-food or with-fat context.";
   }
   if (categoryId === "vitamin_d" || code === "missing_form_high_impact") {
     return "Confirm D2 or D3 / chemical form on the label.";
@@ -2417,6 +2593,12 @@ const buildAiSummaryContract = (params: {
     }).replace(/[.]+$/, "")
     : categoryId === "fish_oil_omega3"
     ? "Compare EPA+DHA per serving with similar products"
+    : categoryId === "metabolic_glucose_support"
+    ? "Compare berberine strength per serving and whether the label gives useful meal-timing guidance"
+    : categoryId === "cholesterol_lipid_support"
+    ? "Compare red-yeast-rice strength per serving and whether the label gives useful with-food context"
+    : categoryId === "liver_bile_support"
+    ? "Compare TUDCA or ox-bile strength per serving and whether the label gives useful with-food or with-fat guidance"
     : "Compare key per-serving actives and directions before buying";
   const sentence3 = sanitizeDecisionLine(`Main limitation: ${limitation}. Next step: ${action}`) ??
     "Main limitation: some disclosure details still need label confirmation. Next step: Scan the Directions + Warnings panel on the bottle.";
@@ -2484,6 +2666,21 @@ const buildScienceBlock = (params: {
       ? [
         "For omega-3 products, EPA+DHA per serving is usually the most useful number for comparing strength.",
         "If EPA+DHA is not disclosed, consider strength harder to judge and compare products by label transparency first.",
+      ]
+      : categoryId === "metabolic_glucose_support"
+      ? [
+        "For glucose-support products, berberine or similarly named actives per serving are usually the most useful first comparison point.",
+        "Meal-timing language matters more here than in many generic supplement lanes, because labels often position these products around meals.",
+      ]
+      : categoryId === "cholesterol_lipid_support"
+      ? [
+        "For cholesterol-support products, red-yeast-rice or similarly named lipid-support actives per serving are usually the most useful first comparison point.",
+        "With-food language and supporting lipid-context actives can matter more here than in a generic herb lane.",
+      ]
+      : categoryId === "liver_bile_support"
+      ? [
+        "For liver-bile products, TUDCA or ox-bile per serving are usually the most useful first comparison point.",
+        "With-food or with-fat language matters more here than in a generic digestive lane because labels often position these products around meals containing fat.",
       ]
       : ["Use ingredient-level guidance to compare disclosure quality across products."];
   const aiSummaryContract3 = buildAiSummaryContract({

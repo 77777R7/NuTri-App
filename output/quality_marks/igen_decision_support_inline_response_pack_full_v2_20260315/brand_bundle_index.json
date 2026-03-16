@@ -1,0 +1,1275 @@
+{
+  "generatedAt": "2026-03-15T20:50:43.920Z",
+  "brandBundleIndex": {
+    "Garden of Life": [
+      {
+        "productId": "86844",
+        "barcode": "00658010124560",
+        "productName": "Garden of Life, Grass Fed Collagen, Beauty, Strawberry Lemonade, 9.52 oz (270 g)",
+        "priority": "high",
+        "deliveryLane": "wave1_high_frequency",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0002",
+        "decisionSupportDigest": "7b11c6fb164250d826ce794ed1f8a466af2bdc346402546c8e8b3faabb4cfd7f"
+      },
+      {
+        "productId": "64437",
+        "barcode": "00658010118293",
+        "productName": "Garden of Life, Dr. Formulated Probiotics, Once Daily Men's, 50 Billion, 30 Vegetarian Capsules",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0041",
+        "decisionSupportDigest": "3458c27f02d870365f3975630ca7f310abdbf0399dfe671ce52a076c06e11c47"
+      },
+      {
+        "productId": "64436",
+        "barcode": "00658010118453",
+        "productName": "Garden of Life, Dr. Formulated Probiotics, Once Daily Ultra, 90 Billion, 30 Vegetarian Capsules",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0040",
+        "decisionSupportDigest": "7b932db2f11ab8d803b64cf5bd930bd9262fcdff0c2fab249bcd8381b2ad84e3"
+      },
+      {
+        "productId": "64442",
+        "barcode": "00658010118323",
+        "productName": "Garden of Life, Dr. Formulated Probiotics, Once Daily Women's, 50 Billion, 30 Vegetarian Capsules",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0044",
+        "decisionSupportDigest": "ce38f9f9156ca4c783cc63d603d9aeca83c7827d3fb80b3311c6cadc1ec3ab7d"
+      },
+      {
+        "productId": "86845",
+        "barcode": "00658010124553",
+        "productName": "Garden of Life, Grass Fed Collagen Beauty, Cranberry Pomegranate, 9.52 oz (270 g)",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0001",
+        "decisionSupportDigest": "ae7b5f42adcd1f5b546801ede298ffeb2217359bef3db2787c4a9f5a4b8d1d46"
+      },
+      {
+        "productId": "99605",
+        "barcode": "00658010127110",
+        "productName": "Garden of Life, Grass Fed Collagen, Greens Beauty, Apple, 9.38 oz (266 g)",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0027",
+        "decisionSupportDigest": "e395919b0c24b9483c567148c313fb420eef50423dca1d2751f1855201235dd4"
+      },
+      {
+        "productId": "99610",
+        "barcode": "00658010127172",
+        "productName": "Garden of Life, Grass Fed Collagen, Super Beauty, Blueberry Acai, 9.52 oz (270 g)",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0031",
+        "decisionSupportDigest": "11d48ec48c9534035378ada4e0df4d4322c535caf9592b78fd437dbd4daee39c"
+      },
+      {
+        "productId": "86843",
+        "barcode": "00658010124607",
+        "productName": "Garden of Life, Multi-Sourced Collagen Turmeric, Apple Cinnamon, 7.76 oz (220 g)",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0003",
+        "decisionSupportDigest": "68586a9b39e6b340c0a983be0834f711c96087421007603f6c4369bfd34b694b"
+      },
+      {
+        "productId": "113269",
+        "barcode": "00658010130745",
+        "productName": "Garden of Life, Wild Caught & Grass Fed Collagen, Hyaluronic Acid, Unflavored, 9.52 oz (270 g)",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0021",
+        "decisionSupportDigest": "7c11d17622cc3623459ef105a03e3fb29878eebfded7bcebff6f437d4d1e7f66"
+      },
+      {
+        "productId": "113270",
+        "barcode": "00658010130752",
+        "productName": "Garden of Life, Wild Caught & Grass Fed Collagen, Multi-Sourced, Unflavored, 9.52 oz (270 g)",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0022",
+        "decisionSupportDigest": "32674227d40f8ef29c99b384d6e1fa03914224b7e29df5f1df0d4ecac9909357"
+      }
+    ],
+    "Jarrow Formulas": [
+      {
+        "productId": "7083",
+        "barcode": "00790011030232",
+        "productName": "Jarrow Formulas, Beta Glucan, 250 mg, 60 Capsules",
+        "priority": "high",
+        "deliveryLane": "wave1_high_frequency",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=JRRW0090",
+        "decisionSupportDigest": "d093f04728bf94ffad17db23a2acb9136e6667434d820845216fd6c5beefdfaf"
+      },
+      {
+        "productId": "187",
+        "barcode": "00790011150121",
+        "productName": "Jarrow Formulas, L-Glutamine, 750 mg, 120 Veggie Capsules",
+        "priority": "high",
+        "deliveryLane": "wave1_high_frequency",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/brand?id=JRRW",
+        "decisionSupportDigest": "bacb138667837238aadf1c71748edeb91d6dae0267d94fd6ee845a8173561ecb"
+      },
+      {
+        "productId": "117437",
+        "barcode": "00790011210788",
+        "productName": "Jarrow Formulas, Lactoferrin, Freeze Dried, 250 mg, 30 Capsules",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=JRRW0056",
+        "decisionSupportDigest": "f30aeb69356b3726631d116df8ce6d392818cbd4bec92173ec6b0ce2861a8137"
+      },
+      {
+        "productId": "139",
+        "barcode": "00790011120254",
+        "productName": "Jarrow Formulas, Lutein, 20 mg, 60 Softgels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=JRRW0033",
+        "decisionSupportDigest": "ce173e87fcdbca7d1cdbbaa56a8bade23a7dc2c64a0c138baee465da3fa03eae"
+      }
+    ],
+    "Nordic Naturals": [
+      {
+        "productId": "105832",
+        "barcode": "00768990018442",
+        "productName": "Nordic Naturals, Children's Eye Health Gummies, Zero Sugar, Ages 2-12, Strawberry Lemonade, 30 Gummy Chews",
+        "priority": "high",
+        "deliveryLane": "wave1_high_frequency",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0005",
+        "decisionSupportDigest": "d30b1e1fd5e395d82b755f340db074f9cd225769a03915b6dacc420363b01628"
+      },
+      {
+        "productId": "30241",
+        "barcode": "00768990017452",
+        "productName": "Nordic Naturals, DHA Xtra™, Strawberry, 60 Soft Gels",
+        "priority": "high",
+        "deliveryLane": "wave1_high_frequency",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0008",
+        "decisionSupportDigest": "4e0b0b3bab750992a3ff42c119a1a275b49c49ea7f06e1a7699748b082e5ef8d"
+      },
+      {
+        "productId": "70978",
+        "barcode": "00768990018787",
+        "productName": "Nordic Naturals, Memory Support, Omega Blend, 60 Soft Gels",
+        "priority": "high",
+        "deliveryLane": "wave1_high_frequency",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0042",
+        "decisionSupportDigest": "c5dfef29d1dad4eb7d2315b687a90e226eef3c5ed8c9ca3f570d01876a862566"
+      },
+      {
+        "productId": "70980",
+        "barcode": "00768990301261",
+        "productName": "Nordic Naturals, Nordic Berries Multivitamin Gummies, Ages 3+, Cherry Berry, 120 Gummy Berries",
+        "priority": "high",
+        "deliveryLane": "wave1_high_frequency",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0132",
+        "decisionSupportDigest": "9224c5543d95657532be3346c9ea37766e899da3a90b7636f494263b8a224519"
+      },
+      {
+        "productId": "72962",
+        "barcode": "00768990016769",
+        "productName": "Nordic Naturals, Nordic Flora Probiotic, Comfort, 15 Billion CFU, 30 Capsules",
+        "priority": "high",
+        "deliveryLane": "wave1_high_frequency",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0036",
+        "decisionSupportDigest": "20b4a08cb7d3016e0c9a77e9d71b81d591406f195cfa6e0e7a8dc464331408ea"
+      },
+      {
+        "productId": "68018",
+        "barcode": "00768990018756",
+        "productName": "Nordic Naturals, Ultimate Omega + Curcumin, 60 Soft Gels",
+        "priority": "high",
+        "deliveryLane": "wave1_high_frequency",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0012",
+        "decisionSupportDigest": "c56fe2cf6d5cee2f645c694457624bbd24ef65e1dfd888b4ddbbc90f95e21ff2"
+      },
+      {
+        "productId": "91972",
+        "barcode": "00768990016042",
+        "productName": "Nordic Naturals, Algae DHA, 60 Soft Gels (250 mg per Soft Gel )",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0001",
+        "decisionSupportDigest": "453578b2f993721c08cfcd79d144624881603f2de65edc38400663803dcc5081"
+      },
+      {
+        "productId": "96461",
+        "barcode": "00768990016752",
+        "productName": "Nordic Naturals, Baby's Probiotic Powder, Ages 6 Months-3 Years, 30 Packets, 0.05 oz (1.45 g) Each",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0032",
+        "decisionSupportDigest": "467a5da267434d2f2cc3d3f4afeb64750c67b93ba79c841ca38be91e188e31f5"
+      },
+      {
+        "productId": "23069",
+        "barcode": "00768990018701",
+        "productName": "Nordic Naturals, Blood Sugar Support, Omega Blend, 60 Soft Gels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0061",
+        "decisionSupportDigest": "0bf5c3bb57e91ae8179308bed9851053de1dddea2c56398ff33ae76c078d4f51"
+      },
+      {
+        "productId": "29599",
+        "barcode": "00768990018602",
+        "productName": "Nordic Naturals, Cholesterol Support, Omega Blend, 60 Soft Gels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0064",
+        "decisionSupportDigest": "c82067b89370f4a16e50964480f8f12c850fd469ad7e975242936d1755507ab5"
+      },
+      {
+        "productId": "114519",
+        "barcode": "00768990015700",
+        "productName": "Nordic Naturals, Cognition Mushroom Complex, 60 Capsules",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0153",
+        "decisionSupportDigest": "21a4e79bd494d72754ca79450a6ed2a35a1098cc69d165a38be04f70ebd67b39"
+      },
+      {
+        "productId": "46270",
+        "barcode": "00768990018015",
+        "productName": "Nordic Naturals, Complete Omega Xtra, Lemon, 60 Soft Gels (680 mg per Soft Gel)",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0090",
+        "decisionSupportDigest": "a20289d1ac5fd4c35e1e0e969754b1f04c669edb6d7780b473ac9846047a4776"
+      },
+      {
+        "productId": "17834",
+        "barcode": "00768990027789",
+        "productName": "Nordic Naturals, Complete Omega™-D3, Lemon, 120 Soft Gels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0091",
+        "decisionSupportDigest": "c3979916e8c7282687594d1679ba64f37e564f2ecf3d44dcf1705ebaf9b2c542"
+      },
+      {
+        "productId": "73705",
+        "barcode": "00768990301858",
+        "productName": "Nordic Naturals, CoQ10 Gummies, Strawberry, 100 mg, 60 Gummies",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0043",
+        "decisionSupportDigest": "aaf673589fec0f2a5a736d2915bbc98b32adc62954e0e7e91145fd9c88f9d4c3"
+      },
+      {
+        "productId": "29597",
+        "barcode": "00768990018176",
+        "productName": "Nordic Naturals, Daily Omega Kids™, Natural Fruit, 30 Soft Gels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0034",
+        "decisionSupportDigest": "5e8c99bafce6d773883c5fafc00788793336fecc08bf587853f967751f0e6e28"
+      },
+      {
+        "productId": "4186",
+        "barcode": "00768990017513",
+        "productName": "Nordic Naturals, EPA Xtra, Great Lemon, 60 Soft Gels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0009",
+        "decisionSupportDigest": "0f0fb912492d7d3f9f99331824b8df21c016c3e17fba04ef30c732ae04243f11"
+      },
+      {
+        "productId": "4198",
+        "barcode": "00768990017506",
+        "productName": "Nordic Naturals, EPA, Lemon, 60 Soft Gels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0035",
+        "decisionSupportDigest": "4a150c1a241d1ade1d0cbc09401f8122d52a8fbcdfdc15386236b244921c7e8b"
+      },
+      {
+        "productId": "132478",
+        "barcode": "00768990301728",
+        "productName": "Nordic Naturals, Kids Calm Gummies, Ages 3+, Strawberry Watermelon, 60 Gummies",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0162",
+        "decisionSupportDigest": "b7ab840505428c0487ecec00b2821eef97c1a09f776fcb5817b8c5d925c2b2f4"
+      },
+      {
+        "productId": "68016",
+        "barcode": "00768990301704",
+        "productName": "Nordic Naturals, Kids Probiotic Gummies, Great Berry, 60 Gummies",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0100",
+        "decisionSupportDigest": "14b145d56e59bf170089da2adc49f578df6efd855daa1887567fe79afdb42c90"
+      },
+      {
+        "productId": "79528",
+        "barcode": "00768990016783",
+        "productName": "Nordic Naturals, Kids Probiotic Pixies, Ages 3+, Mixed Berry, 30 Packets, 0.035 oz (1 g) Each",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0060",
+        "decisionSupportDigest": "34e96fdb39fd231f7f89cb11d55aac11e5d4462e705d8d8a85d165406956f79d"
+      },
+      {
+        "productId": "100772",
+        "barcode": "00768990015335",
+        "productName": "Nordic Naturals, Magnesium Complex, 90 Capsules",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0052",
+        "decisionSupportDigest": "7674bbd930b3462457a9cf717c262630b30511b16f8c90242c7e6e46d0d3acbe"
+      },
+      {
+        "productId": "129124",
+        "barcode": "00768990015519",
+        "productName": "Nordic Naturals, Men's Multivitamin, 60 Tablets",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0150",
+        "decisionSupportDigest": "5a0cf9e642839f4de7fb6d87e3ec9daf8d05f85fd5774405d10a38fd2f129f5d"
+      },
+      {
+        "productId": "139441",
+        "barcode": "00768990017391",
+        "productName": "Nordic Naturals, Menopause Support , 60 Capsules",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0167",
+        "decisionSupportDigest": "b7b5f48a33888a8a02f7040f32b83d4fcd9e4e0069bbb716df99bc0f2a7d892e"
+      },
+      {
+        "productId": "150421",
+        "barcode": "00768990018596",
+        "productName": "Nordic Naturals, Mood Support, Omega Blend, 60 Soft Gels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0180",
+        "decisionSupportDigest": "4f57e46374b58e923796aa7cd292222900b3b1ba3d0405f36568e507922cbb87"
+      },
+      {
+        "productId": "110274",
+        "barcode": "00768990015380",
+        "productName": "Nordic Naturals, Multi Minerals, 90 Capsules",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0130",
+        "decisionSupportDigest": "6ce5d510adbd034a3a0c9387bb895425224f946e1f586caac06182efe47d44a4"
+      },
+      {
+        "productId": "42487",
+        "barcode": "00768990016653",
+        "productName": "Nordic Naturals, Nordic Beauty, Borage Oil, 4 fl oz (119 ml)",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0038",
+        "decisionSupportDigest": "e87e2d7dda93aef0df18af4dc6abb5ea3c098fd8a825112845ba6fd319e39f80"
+      },
+      {
+        "productId": "110742",
+        "barcode": "00768990016585",
+        "productName": "Nordic Naturals, Nordic Beauty, Collagen Peptides, Unflavored, 10.6 oz (300 g)",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0056",
+        "decisionSupportDigest": "7757802062d33ccaf578bff8dbcc414c487c2a42c937671ebed50bd54b4220b8"
+      },
+      {
+        "productId": "82606",
+        "barcode": "00768990016646",
+        "productName": "Nordic Naturals, Nordic Beauty, Marine Collagen with Vitamin C, Strawberry, 5.3 oz (150 g)",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0055",
+        "decisionSupportDigest": "99c6db22ea3dcbd23db54d0e5ea0ed20ab02a10308edd7ccadd6a8bf6f45c11d"
+      },
+      {
+        "productId": "114705",
+        "barcode": "00768990016851",
+        "productName": "Nordic Naturals, Nordic Flora Probiotic, Maximum Care, 90 Billion CFU, 30 Capsules",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0147",
+        "decisionSupportDigest": "4d6d9b22baf303bef65427cb2a625b764e74b0bd07fc42de4e5e686545bdcbe1"
+      },
+      {
+        "productId": "114703",
+        "barcode": "00768990016837",
+        "productName": "Nordic Naturals, Nordic Flora Probiotic, Women's Balance, 30 Capsules",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0148",
+        "decisionSupportDigest": "7be5be63786b00ea1e769ad1e83d5c618d4a6bff2d93e3631b9ded980f4b1955"
+      },
+      {
+        "productId": "16472",
+        "barcode": "00768990301407",
+        "productName": "Nordic Naturals, Nordic Omega-3 Gummy Fish, Tangerine Treats, 124 mg, 30 Gummy Fish",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0040",
+        "decisionSupportDigest": "bfc2264952f4452ae2697e44fcc6bb37b2b99896bc98b02aa1d80520e354dcc1"
+      },
+      {
+        "productId": "4298",
+        "barcode": "00768990017803",
+        "productName": "Nordic Naturals, Omega Woman with Evening Primrose Oil, 120 Soft Gels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0066",
+        "decisionSupportDigest": "d1dc50f3574bb0059954088aede93cdec501d874c0c1b0e84b1cb35d6d4ac1fb"
+      },
+      {
+        "productId": "45934",
+        "barcode": "00768990311307",
+        "productName": "Nordic Naturals, Omega-3 Fishies, Zero Sugar, Ages 3+, Tutti Frutti, 300 mg, 36 Fishies",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0013",
+        "decisionSupportDigest": "59a264fc204112554dfe49e48ca6dc592b44a87698ba3002e51583ab9880d578"
+      },
+      {
+        "productId": "61371",
+        "barcode": "00768990016219",
+        "productName": "Nordic Naturals, Omega-3 Phospholipids™, 60 Soft Gels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0067",
+        "decisionSupportDigest": "dca3ccc0217e530d78f4736e11d710a3ff7a542528f0bd9c330ed4c3dbcc587a"
+      },
+      {
+        "productId": "7052",
+        "barcode": "00768990417603",
+        "productName": "Nordic Naturals, Omega-3, Lemon, 60 Fish Gelatin Soft Gels (345 mg per Soft Gel)",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0045",
+        "decisionSupportDigest": "eda4463325909ee95b78b216d87158ebf3c18610a2bf79784e8693360248f5aa"
+      },
+      {
+        "productId": "65087",
+        "barcode": "00768990017582",
+        "productName": "Nordic Naturals, Postnatal Omega-3, Lemon, 60 Soft Gels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0016",
+        "decisionSupportDigest": "a9a274e07c8a4ec7ae9378a005e72b93a12278ea520e3dd0d7bdfeabfb2ac021"
+      },
+      {
+        "productId": "126101",
+        "barcode": "00768990015533",
+        "productName": "Nordic Naturals, Prenatal Multivitamin, 60 Tablets",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0033",
+        "decisionSupportDigest": "8565d8d819ac8af9edc418b8b0ec28370d235134e763ae8cbc19e472d49a33f7"
+      },
+      {
+        "productId": "70450",
+        "barcode": "00768990070631",
+        "productName": "Nordic Naturals, ProEPA™ Xtra, Lemon, 120 Soft Gels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0106",
+        "decisionSupportDigest": "98e1806dda5e4c02511338d1fea89b86067c0593e453a836c004d6f0a5fab5c0"
+      },
+      {
+        "productId": "83205",
+        "barcode": "00768990121289",
+        "productName": "Nordic Naturals, ProOmega 3-6-9, Lemon, 120 Soft Gels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0116",
+        "decisionSupportDigest": "37998f5c61ab363f22bb51dc5ab72034a960bdb31cbffa4293a8ec28751de71d"
+      },
+      {
+        "productId": "83207",
+        "barcode": "00768990071256",
+        "productName": "Nordic Naturals, ProOmega® 2000 Jr., Strawberry, 650 mg, 60 Soft Gels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0110",
+        "decisionSupportDigest": "b4b471517f6f1b080140a72e1e2b250ac51730634a173c5a6d3029ae0b45be5f"
+      },
+      {
+        "productId": "70459",
+        "barcode": "00768990121708",
+        "productName": "Nordic Naturals, ProOmega® Blood Sugar, 60 Softgels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0111",
+        "decisionSupportDigest": "3bb62b1878e701a12e3b179bd999ec4c06197e68b718cfe73c682ffa38b69fe3"
+      },
+      {
+        "productId": "80556",
+        "barcode": "00768990131301",
+        "productName": "Nordic Naturals, ProOmega® CoQ10, 120 Soft Gels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0112",
+        "decisionSupportDigest": "1303a649beda320856c7a21520488969f5364d13fc573f1db4d9f6247edb81f8"
+      },
+      {
+        "productId": "72932",
+        "barcode": "00768990031250",
+        "productName": "Nordic Naturals, ProOmega® Curcumin, 90 Soft Gels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0134",
+        "decisionSupportDigest": "6d41af2a8e4387b07c26d650b7cfeffa027fef209a6c240508aa9fd4f9af4cb3"
+      },
+      {
+        "productId": "83204",
+        "barcode": "00768990117831",
+        "productName": "Nordic Naturals, ProOmega®-D Xtra, Great Lemon, 8 fl oz (237 ml)",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0118",
+        "decisionSupportDigest": "5ae82ffd679260ccbc7a6ebce7915872ae9615f917fc93836a864ff6dd2a4d03"
+      },
+      {
+        "productId": "70455",
+        "barcode": "00768990121241",
+        "productName": "Nordic Naturals, ProOmega®-D, Lemon, 60 Soft Gels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0117",
+        "decisionSupportDigest": "0c0703256c7259be47240ca5815ae7660c861d59a4314cf712300881e4670494"
+      },
+      {
+        "productId": "114707",
+        "barcode": "00768990301940",
+        "productName": "Nordic Naturals, Stress Relief Gummies, Mixed Berry, 40 Gummies",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0141",
+        "decisionSupportDigest": "8359e6c6c7effc99a9add2aaa3cc7f173511734a6083f5948a1ab45d15a2b958"
+      },
+      {
+        "productId": "79530",
+        "barcode": "00768990061103",
+        "productName": "Nordic Naturals, Teen, Ultimate Omega® Fish Oil, Ages 12+, Strawberry, 60 Mini Soft Gels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0119",
+        "decisionSupportDigest": "1bf35aeef18b60d50ad631afc8d85dcbb31495f9a3684bd6ffbf634a37d32b13"
+      },
+      {
+        "productId": "33656",
+        "barcode": "00768990017988",
+        "productName": "Nordic Naturals, Ultimate Omega® Junior, Ages 6+, Strawberry, 90 Mini Soft Gels (340 mg per Soft Gel)",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0023",
+        "decisionSupportDigest": "2adc7fde92fc258f48220183289050e37b4e1472f3323eda16a9120157c1d7cb"
+      },
+      {
+        "productId": "43596",
+        "barcode": "00768990018084",
+        "productName": "Nordic Naturals, Ultimate Omega®-D3, Sport, 60 Soft Gels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0048",
+        "decisionSupportDigest": "1ca1bec66c4112c53e22542484d35c05401e01f544eee5caeab61831db6a7e25"
+      },
+      {
+        "productId": "153596",
+        "barcode": "00768990016134",
+        "productName": "Nordic Naturals, Ultimate Omega®, Plant-Based With D3 + K2, Lemon, 60 Soft Gels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0189",
+        "decisionSupportDigest": "ac21f0c38fd4c60963552f9eeca533da87e8deb98aa705b6f5304f1ffe8a15b9"
+      },
+      {
+        "productId": "8935",
+        "barcode": "00768990018404",
+        "productName": "Nordic Naturals, Vision Support, Omega Blend, 60 Soft Gels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0065",
+        "decisionSupportDigest": "7a3431999d0ae530c47df8554fe860685a6b590867f31c850505dc49be5f2c00"
+      },
+      {
+        "productId": "110276",
+        "barcode": "00768990015304",
+        "productName": "Nordic Naturals, Vitamin A + Carotenoids, 30 Soft Gels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0135",
+        "decisionSupportDigest": "a7ec9e7e4d178dd7912345c35656adbb3a1e785c359ac4876bef5c92a74afdc4"
+      },
+      {
+        "productId": "23079",
+        "barcode": "00768990016004",
+        "productName": "Nordic Naturals, Vitamin D3 1000, Orange, 25 mcg (1,000 IU), 120 Mini Soft Gels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0027",
+        "decisionSupportDigest": "b132db59ad9ee50cf7a2f6b9e50a6aaff1bfeaa35b110dccd3f9acafe9b416a2"
+      },
+      {
+        "productId": "82359",
+        "barcode": "00768990301865",
+        "productName": "Nordic Naturals, Zero Sugar Curcumin Gummies, Mango, 60 Gummies (100 mg per Gummy)",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0076",
+        "decisionSupportDigest": "72f6ae71c23928d4a1db1ab26a442dcf301587f8e17a94e5af682f790decf252"
+      },
+      {
+        "productId": "115436",
+        "barcode": "00768990016660",
+        "productName": "Nordic Naturals, Zero Sugar Hair & Skin Gummy Chews, Strawberry Lemonade, 27 Gummy Chews",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0149",
+        "decisionSupportDigest": "6694404f7e59fc7a91af22d5909ba0b75896618ec54553402cb7533c5c2fcb59"
+      },
+      {
+        "productId": "106323",
+        "barcode": "00768990311376",
+        "productName": "Nordic Naturals, Zero Sugar Vitamin D3 Gummies, Great Wild Berry, 25 mcg (1,000 IU), 60 Gummies",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0123",
+        "decisionSupportDigest": "ec6df8f32f5b628bfdc1961a8ff32cd6d2c8873c8ee1699e58c8323ffcc4cd32"
+      }
+    ],
+    "Sports Research": [
+      {
+        "productId": "84975",
+        "barcode": "00023249010975",
+        "productName": "Sports Research, Collagen Peptides, Dark Chocolate, 1.41 lb (640 g)",
+        "priority": "high",
+        "deliveryLane": "wave1_high_frequency",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0013",
+        "decisionSupportDigest": "1dcae0dd0e58cd62d7f62652b1b8ea597740924cc0ac9810ae275368cacb5766"
+      },
+      {
+        "productId": "72043",
+        "barcode": "00023249010302",
+        "productName": "Sports Research, Cranberry Fruit Complex, 90 Softgels",
+        "priority": "high",
+        "deliveryLane": "wave1_high_frequency",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0021",
+        "decisionSupportDigest": "4a2646d6cc27e0ab30cb641d594e427bd432bfe40527986126e99e34976e6f4f"
+      },
+      {
+        "productId": "101526",
+        "barcode": "00023249090090",
+        "productName": "Sports Research, Daily Probiotics, 60 Billion CFU, 30 Delayed Release Capsules",
+        "priority": "high",
+        "deliveryLane": "wave1_high_frequency",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0054",
+        "decisionSupportDigest": "e7344cdae1ff524baf93cfb6b9d90f6c044d4b9f2e4777921abd5e95ff298f54"
+      },
+      {
+        "productId": "99939",
+        "barcode": "00023249012825",
+        "productName": "Sports Research, Total Omega-3, 120 Softgels",
+        "priority": "high",
+        "deliveryLane": "wave1_high_frequency",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0033",
+        "decisionSupportDigest": "33f13c15693dbae6afab12358bafa22a97b1417b95b33925c46c2dcdde874882"
+      },
+      {
+        "productId": "72054",
+        "barcode": "00023249000839",
+        "productName": "Sports Research, Turmeric Curcumin, 500 mg, 120 Softgels",
+        "priority": "high",
+        "deliveryLane": "wave1_high_frequency",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0024",
+        "decisionSupportDigest": "8977737a086caef12ac99c9edb739f6e35a1b3c8f271fc4a6e3b9222141595a1"
+      },
+      {
+        "productId": "148461",
+        "barcode": "00023249092728",
+        "productName": "Sports Research, Alaskan Cod Liver Oil, 120 Softgels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0074",
+        "decisionSupportDigest": "ad8862957c4602044f2bf8f18991c0ba0765cc8d8bfcd29a61722dcc43b278f2"
+      },
+      {
+        "productId": "84964",
+        "barcode": "00023249010296",
+        "productName": "Sports Research, Collagen Peptides, Vanilla , 1.06 lb (480 g)",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0012",
+        "decisionSupportDigest": "8d2d6576ac4dc1dcc70a46534c96f8870a0b2cc9c269d79c24e5baeb509efb91"
+      },
+      {
+        "productId": "146237",
+        "barcode": "00023249093169",
+        "productName": "Sports Research, Colostrum Powder, Unflavored, 5.29 oz (150 g)",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0073",
+        "decisionSupportDigest": "6770839c94b6ba9159394568af0b613d06fe597603f260254e663d212507d579"
+      },
+      {
+        "productId": "146016",
+        "barcode": "00023249092902",
+        "productName": "Sports Research, Flaxseed Oil, 200 Softgels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0070",
+        "decisionSupportDigest": "bf45cd8b3c533aeaf61c55520e0c3f9ea253f8eb7af586b7e8714346ee196c99"
+      },
+      {
+        "productId": "75242",
+        "barcode": "00023249010821",
+        "productName": "Sports Research, Gelatin Powder, Unflavored, 1 lb (454 g)",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0004",
+        "decisionSupportDigest": "5c5d90841cf0e39b42091fae781fcb09f74a0075c5fdeb631e6685797eacebaa"
+      },
+      {
+        "productId": "90288",
+        "barcode": "00023249012337",
+        "productName": "Sports Research, Keto Omega-3 with Salmon Oil, 120 Softgels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0026",
+        "decisionSupportDigest": "26986abfeca97cdbffa3b4b7e76dfbe4f479e76e6c63dfd9ed7fe44122fd879a"
+      },
+      {
+        "productId": "90296",
+        "barcode": "00023249012269",
+        "productName": "Sports Research, L-Theanine & Caffeine, 2-in-1 Formula, 60 Softgels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0025",
+        "decisionSupportDigest": "f7f75b0be60edd013bfc846eaf82098643deba9ca5e63fab9ddad72aee9b576d"
+      },
+      {
+        "productId": "146236",
+        "barcode": "00023249092216",
+        "productName": "Sports Research, Magnesium Glycinate, 60 Softgels (80 mg per Softgel)",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0069",
+        "decisionSupportDigest": "89e19f299f8709e4ff653667e54d88a400edea2217b9290a3da17fcca6be033b"
+      },
+      {
+        "productId": "138838",
+        "barcode": "00023249092223",
+        "productName": "Sports Research, Magnesium Oxide, 420 mg, 90 Softgels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0068",
+        "decisionSupportDigest": "d3f19b52b8d2de0b52ce6567de88e48cafd1452f4e8f9d89ef367db47b021a5e"
+      },
+      {
+        "productId": "101533",
+        "barcode": "00023249013471",
+        "productName": "Sports Research, Marine Collagen Complex, Unflavored, 5.8 oz (164 g)",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0005",
+        "decisionSupportDigest": "1b1e5a75c5456de4c32b26e9dfc068e6865248110f744c73551ac1604f21bc4e"
+      },
+      {
+        "productId": "156369",
+        "barcode": "00023249094104",
+        "productName": "Sports Research, Multi Collagen With Biotin, 90 Capsules",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0091",
+        "decisionSupportDigest": "c0f57864255e53184912c5d0d9cf1a5d594867d4bf627d032c789fc6bf69b83e"
+      },
+      {
+        "productId": "100267",
+        "barcode": "00023249013068",
+        "productName": "Sports Research, Multi Collagen, Chocolate, 1.06 lb (480 g)",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0037",
+        "decisionSupportDigest": "e29f996c135486213690f287cb4c4611ee3599a3eef1ea9e1420d3f909a354f3"
+      },
+      {
+        "productId": "156364",
+        "barcode": "00023249093725",
+        "productName": "Sports Research, Oil Of Oregano With Black Cumin, 60 Softgels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0085",
+        "decisionSupportDigest": "326675be824af2516084ca4c6c381e825c43b7631d9068b6af795d6626fd3b0f"
+      },
+      {
+        "productId": "134766",
+        "barcode": "00023249091776",
+        "productName": "Sports Research, Organic Collagen Peptides, Unflavored, 10.58 oz (300 g)",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0060",
+        "decisionSupportDigest": "f02699d39be6a65110f1a9a9d897e23190910c2d01483fffdaeb7682ad64e6e0"
+      },
+      {
+        "productId": "117181",
+        "barcode": "00023249091509",
+        "productName": "Sports Research, Quercetin, 120 Softgels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0056",
+        "decisionSupportDigest": "ea6d2bbb4071b622bd775067d925fb16818a74f9b1b30fbba245bcfae5ab90c0"
+      }
+    ],
+    "Carlson": [
+      {
+        "productId": "116231",
+        "barcode": "00088395580604",
+        "productName": "Carlson, Magnesium, Natural Berries & Creme, 125 mg, 40 Vegetarian Soft Chews",
+        "priority": "medium",
+        "deliveryLane": "wave1_recovered_gap_ready",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0203",
+        "decisionSupportDigest": "d9d7eea728f3981d636227ee6f526dd8128942f63d2b97b535ad559b7dac6020"
+      },
+      {
+        "productId": "148051",
+        "barcode": "00088395813009",
+        "productName": "Carlson, Berberine, 500 mg, 60 Vegetarian Capsules",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0216",
+        "decisionSupportDigest": "b6c96d6e113f6e6fa925be03accf8395bb2943477be65008b96a153e9b7c87f1"
+      },
+      {
+        "productId": "118440",
+        "barcode": "00088395056116",
+        "productName": "Carlson, Chelated Magnesium Glycinate, 200 mg, 90 Tablets",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0202",
+        "decisionSupportDigest": "f65e6542a60735e54e720e13a879621dbf152cd22ea5df87433eb8dcedd9daee"
+      },
+      {
+        "productId": "9783",
+        "barcode": "00088395050817",
+        "productName": "Carlson, Chewable Calcium Citrate, Natural Vanilla, 250 mg, 120 Vegetarian Tablets",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0059",
+        "decisionSupportDigest": "a17bbdd583b5034408c71bd18f32653541c51c21bbbd798297c8935a3050edf6"
+      },
+      {
+        "productId": "125458",
+        "barcode": "00088395169007",
+        "productName": "Carlson, Elite DHA Gems, 1,000 mg, 30 Soft Gels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0012",
+        "decisionSupportDigest": "5473884331847dd43497c9e5ad66d4baa402726c647c597aac4d963b32da564b"
+      },
+      {
+        "productId": "13839",
+        "barcode": "00088395016813",
+        "productName": "Carlson, Elite EPA Gems, 1,000 mg, 120 Soft Gels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0013",
+        "decisionSupportDigest": "ab44ad9fb811a3ded405053a0aa8afe348bc5a93d8404b00afff80e2bf8dc4b8"
+      },
+      {
+        "productId": "153821",
+        "barcode": "00088395706103",
+        "productName": "Carlson, Grass-Fed Beef Liver, 180 Capsules",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0223",
+        "decisionSupportDigest": "3d77c4a7f277109d1ad1258b41c01f7851e7343b98c9a58ebf46add16ec17143"
+      },
+      {
+        "productId": "45704",
+        "barcode": "00088395136306",
+        "productName": "Carlson, Kid's Wild Norwegian, Cod Liver Oil + Vitamins A & D3, Bubble Gum, 8.4 fl oz (250 ml)",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0061",
+        "decisionSupportDigest": "6f8014d7c70ac74694ca25a8081255efde7971858dbb11a2e0e607bd0ff47a5f"
+      },
+      {
+        "productId": "149563",
+        "barcode": "00088395864001",
+        "productName": "Carlson, Lion's Mane, 60 Vegetarian Capsules",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0218",
+        "decisionSupportDigest": "e2067401503503d63ce5ba09303ac40a32c880daf13fdd18f1b0ddb8089e41ae"
+      },
+      {
+        "productId": "9721",
+        "barcode": "00088395017018",
+        "productName": "Carlson, Med Omega, Lemon-Lime, 3.3 fl oz (100 ml)",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0019",
+        "decisionSupportDigest": "d16a170d364d88b5b154f14e19c7b9b0acff2bdcbf88f11db7a9f180301c2abe"
+      },
+      {
+        "productId": "125570",
+        "barcode": "00088395015601",
+        "productName": "Carlson, Mom's DHA, 500 mg, 60 Soft Gels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0226",
+        "decisionSupportDigest": "639a00b0e5fa7b5361e69b6b7813a96147d038b67d850467e9b76d9871d56a79"
+      },
+      {
+        "productId": "68852",
+        "barcode": "00088395186004",
+        "productName": "Carlson, Norwegian Baby's DHA, 2 fl oz (60 ml)",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0001",
+        "decisionSupportDigest": "6be7ee99f84325503db49e5dd307c180825e47852a6340947c3b0913b864c21e"
+      },
+      {
+        "productId": "127388",
+        "barcode": "00088395045707",
+        "productName": "Carlson, Nutra-Support™, Diabetes, 60 Soft Gels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0064",
+        "decisionSupportDigest": "b66200315d63bdcbb9976160cf615415f5a7e4afa47f39be4b257907ff15af63"
+      },
+      {
+        "productId": "148052",
+        "barcode": "00088395863004",
+        "productName": "Carlson, Organic Blend Mushroom Immune, 50 Vegetarian Capsules",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0217",
+        "decisionSupportDigest": "75ae65e28ca776fe2c2482f14a906e0540af0e1675b835b8e0784678d3aee7c7"
+      },
+      {
+        "productId": "8480",
+        "barcode": "00088395086816",
+        "productName": "Carlson, Right for the Macula, 120 Soft Gels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0073",
+        "decisionSupportDigest": "80eb3bc5c148593e6a80cd856475a294ca617827102c6e4e6035d9e25d60348a"
+      },
+      {
+        "productId": "125467",
+        "barcode": "00088395184000",
+        "productName": "Carlson, Teen's Max Catch Minis, 30 Mini Soft Gels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0209",
+        "decisionSupportDigest": "e6489917100c30f4bc55e8e69f5299b19b0c2bb79e56fa2221ccef1553611eb7"
+      },
+      {
+        "productId": "125501",
+        "barcode": "00088395449604",
+        "productName": "Carlson, Vegetarian Prenatal DHA, 60 Vegetarian Soft Gels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0205",
+        "decisionSupportDigest": "aa88468aeb49f96914a05084581483208a89a9ec57b90aa11e88d64baa4307e1"
+      },
+      {
+        "productId": "125554",
+        "barcode": "00088395136108",
+        "productName": "Carlson, Wild Norwegian Cod Liver Oil, Fruit Splash, 8.4 fl oz (250 ml)",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0031",
+        "decisionSupportDigest": "655d0960c4d61a5c45308ebb65429d751468649079ef073a9b064fc5980b9707"
+      },
+      {
+        "productId": "23288",
+        "barcode": "00088395013010",
+        "productName": "Carlson, Wild Norwegian, Cod Liver Oil Gems, 1,000 mg, 100 Soft Gels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0004",
+        "decisionSupportDigest": "d6b026920e37e95266b433a38c412dc03db280a8923bf844af3de5234dde4420"
+      },
+      {
+        "productId": "14565",
+        "barcode": "00088395013126",
+        "productName": "Carlson, Wild Norwegian, Cod Liver Oil Minis, 250 Mini Soft Gels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0007",
+        "decisionSupportDigest": "c61646b3eb3d27ea0cf9056d7d6be448a94bf9744f30a2734185fb35b27dc36b"
+      }
+    ],
+    "Country Life": [
+      {
+        "productId": "6394",
+        "barcode": "00015794010821",
+        "productName": "Country Life, Acetyl L-Carnitine Caps, 500 mg, 120 Vegan Capsules",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0001",
+        "decisionSupportDigest": "d18af4dbc5566dc8c98f7fcab81b46784c16b6eb24129d6f3ea0a02d734f6aac"
+      },
+      {
+        "productId": "141071",
+        "barcode": "00015794053019",
+        "productName": "Country Life, Ageless Theory, Anti-Glycation Support, 60 Vegetarian Capsules",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0043",
+        "decisionSupportDigest": "95a3bf7ac5c39e716f6737e1148be0a75b33f8aaf925665719c4426a78dca7dd"
+      },
+      {
+        "productId": "141072",
+        "barcode": "00015794053026",
+        "productName": "Country Life, Ageless Theory, Stem Cell Support, 60 Vegetarian Capsules",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0044",
+        "decisionSupportDigest": "f7d073c59d7f9edf5aef426aa0c8fc692e3fb9a15d068f3f954fb5d3f7a2e87b"
+      },
+      {
+        "productId": "141567",
+        "barcode": "00015794053002",
+        "productName": "Country Life, Ageless Theory, Telomere Support , 60 Vegetarian Capsule",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0042",
+        "decisionSupportDigest": "b35de613de65f39561304551ee41e323edfbb39b573cfd641f4074ea1e8a6509"
+      },
+      {
+        "productId": "51093",
+        "barcode": "00015794060031",
+        "productName": "Country Life, Benfotiamine with Thiamin, 150 mg, 60 Vegan Capsules",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0003",
+        "decisionSupportDigest": "33e367cda47c6404b8be566b2b7f876d319588f5274bd62c6c7994ea565aef43"
+      },
+      {
+        "productId": "1646",
+        "barcode": "00015794051619",
+        "productName": "Country Life, Bromelain, Triple Strength, 60 Tablets",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0034",
+        "decisionSupportDigest": "38fc0653920550cd7b74082bda9863f310ce988801005700251e8b63ff5ee4fe"
+      },
+      {
+        "productId": "141063",
+        "barcode": "00015794026792",
+        "productName": "Country Life, Dual Action, High Absorption Magnesium Glycinate, 90 Tablets",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0039",
+        "decisionSupportDigest": "6aebcbe8b5f2b94eaab22b6d8dbe6276fa1bcc58d4aa0956f8f461eac5db5067"
+      },
+      {
+        "productId": "1649",
+        "barcode": "00015794010258",
+        "productName": "Country Life, L-Arginine, 100 Vegan Capsules",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0016",
+        "decisionSupportDigest": "1694f6ac62c09c4fda99f6219661c205293fd801a92e60bb68b275f470e5acd0"
+      },
+      {
+        "productId": "121732",
+        "barcode": "00015794013150",
+        "productName": "Country Life, L-Lysine, Advanced, 180 Vegan Capsules",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0041",
+        "decisionSupportDigest": "a0e519507824d682b6812c87b700a14ed0fcbd21e0682e1029d699e2386108c7"
+      },
+      {
+        "productId": "141075",
+        "barcode": "00015794056072",
+        "productName": "Country Life, Lutein & Zeaxanthin Gummies, Natural Mango, 60 Gummies",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0040",
+        "decisionSupportDigest": "b43e71bcba8256e8813cd2de900d8e20013193602a2c1dbb151313d21d1ecc81"
+      },
+      {
+        "productId": "75757",
+        "barcode": "00015794050704",
+        "productName": "Country Life, Maxi-Collagen® 7000 Powder, High Potency, Flavorless, 7.5 oz (213 g)",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0010",
+        "decisionSupportDigest": "2bd2ea573a16bce873fb96d70be581709ddfce1de3929e60a9880406d2ac3861"
+      },
+      {
+        "productId": "155226",
+        "barcode": "00015794050490",
+        "productName": "Country Life, Maxi-Hair® Skin & Nails Gummies with Hyaluronic Acid + Biotin, Berry, 60 Gummies",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0018",
+        "decisionSupportDigest": "e327fdaf492925502ba24a7a73e2e4f42c6c5e236f0abdefc589315e752ae58d"
+      },
+      {
+        "productId": "145400",
+        "barcode": "00015794060093",
+        "productName": "Country Life, Omega-3 Honey Gummies, Natural Orange, 60 Gummies",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0047",
+        "decisionSupportDigest": "0fd4a2204b130215fb42f31d485ba55c0694578b93df65f02554abeff1d7d798"
+      },
+      {
+        "productId": "1757",
+        "barcode": "00015794028765",
+        "productName": "Country Life, Selenium, 100 mcg, 180 Tablets",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0021",
+        "decisionSupportDigest": "555fcccfb1f2d4b903726e5ba06f247280f0d361e41621bb19bc744ca07cb207"
+      },
+      {
+        "productId": "14480",
+        "barcode": "00015794029670",
+        "productName": "Country Life, Zinc Picolinate, 25 mg, 100 Tablets",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0029",
+        "decisionSupportDigest": "a33b57de9cbc77c4ad03fd33229e6e2c217e4c5bf79e7a6858f1f3355d13caad"
+      }
+    ],
+    "ChildLife Essentials": [
+      {
+        "productId": "15259",
+        "barcode": "00608274104501",
+        "productName": "ChildLife Essentials, Aller-Care, Natural Grape, 4 fl oz (118 ml)",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CHLD0006",
+        "decisionSupportDigest": "aa116289e1d81185761027efbe221ed24560725fe38042aa232d4683d094238d"
+      },
+      {
+        "productId": "6367",
+        "barcode": "00608274101500",
+        "productName": "ChildLife Essentials, First Defense™, 4 fl oz (118 ml)",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CHLD0007",
+        "decisionSupportDigest": "ad9c7e1cbf9096f376440484ace7ba5b0ee6741e94bffe7acaa57f3992468882"
+      },
+      {
+        "productId": "141833",
+        "barcode": "00608274145504",
+        "productName": "ChildLife Essentials, Multi Vitamin Gummy, Sugar Free, Natural Strawberry Lemon, 90 Gummies",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/brand?id=CHLD",
+        "decisionSupportDigest": "ab5c13e2961f00918b8491ecf5df7989c7d14fdd13c6bc3396c5ca2b022a0bec"
+      },
+      {
+        "productId": "12573",
+        "barcode": "00608274105508",
+        "productName": "ChildLife Essentials, Pure DHA, Natural Berry, 90 Softgels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=CHLD0001",
+        "decisionSupportDigest": "ac1050f1bca16e1478b5dccf06db76bd37cd87a9aa608bd7369735ba3ef95a43"
+      }
+    ],
+    "Bluebonnet Nutrition": [
+      {
+        "productId": "10183",
+        "barcode": "00743715013827",
+        "productName": "Bluebonnet Nutrition, Oil of Oregano, Leaf Extract, 60 Softgels (150 mg per Softgel)",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=BBNT0029",
+        "decisionSupportDigest": "c5ed861d515b4900b5d704df4cf442329c7ba3a3889fc5d64faeef2a9513840d"
+      },
+      {
+        "productId": "11821",
+        "barcode": "00743715009530",
+        "productName": "Bluebonnet Nutrition, Omega-3 Salmon Fish Oil, 1,000 mg, 180 Softgels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=BBNT0033",
+        "decisionSupportDigest": "38b009add352fe18321eb11b19d423a2d543889e40cc28081ea765bf769a7e54"
+      }
+    ],
+    "New Chapter": [
+      {
+        "productId": "85001",
+        "barcode": "00727783901774",
+        "productName": "New Chapter, Wholemega™ Fish Oil, Tiny Caps™, 180 BSE-Free Softgels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NCHP0006",
+        "decisionSupportDigest": "32ae4d997bddb434a8cc2fadd6a9a7e762fb382bb51bfd91764b0ab13be6e035"
+      },
+      {
+        "productId": "79",
+        "barcode": "00727783040565",
+        "productName": "New Chapter, Zyflamend™, 180 Mini Softgels",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NCHP0008",
+        "decisionSupportDigest": "92a038745792db86ffdf750157be969b3abd1a33b658e11084fd8128f6e5172c"
+      }
+    ],
+    "American Health": [
+      {
+        "productId": "5060",
+        "barcode": "00076630503044",
+        "productName": "American Health, Chewable Papaya Enzyme with Chlorophyll, 250 Chewable Tablets",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=AMHE0003",
+        "decisionSupportDigest": "29c62ceac51b8c91d584329f11fc762ec203b0e3d23b7c1d3f42127827eecf7d"
+      }
+    ],
+    "Ddrops": [
+      {
+        "productId": "141030",
+        "barcode": "00814947000333",
+        "productName": "Ddrops, Baby, Probiotic Liquid Drops, For Newborns+, 60 Drops, 0.07 fl oz (2.2 ml)",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=DDRP0010",
+        "decisionSupportDigest": "3e8e122174dff8e289bd59411db07f347fe2f5fd6879480f7daea65d668fce25"
+      }
+    ],
+    "Great Lakes Wellness": [
+      {
+        "productId": "141532",
+        "barcode": "00322654002897",
+        "productName": "Great Lakes Wellness, Grass-Fed Bovine Collagen Peptides, Chai, 10 oz (284 g)",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLGC0004",
+        "decisionSupportDigest": "fdc0f98d8d809f714fff18558b0b039b9e6fa9e518ec78523f1c537bc969265c"
+      }
+    ],
+    "Onnit": [
+      {
+        "productId": "129275",
+        "barcode": "00819444017662",
+        "productName": "Onnit, Alpha BRAIN® Focus Shot, Tropical, 6 Bottles, 2.5 fl oz (75 ml) Each",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=ONNI0012",
+        "decisionSupportDigest": "6e6c8d10ff0bc38ace185a123b31debfaddeb0920b1b506b39488c5bbbe50b0a"
+      }
+    ],
+    "Vital Proteins": [
+      {
+        "productId": "88347",
+        "barcode": "00850232005058",
+        "productName": "Vital Proteins, Collagen Creamer®, Mocha, 11 oz (317 g)",
+        "priority": "normal",
+        "deliveryLane": "wave2_brand_bundle",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=VITL0012",
+        "decisionSupportDigest": "6d2ff8fd8b376345534099beec0a381fb4cbe04ff86536919a58f6e6a780a615"
+      }
+    ]
+  }
+}

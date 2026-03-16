@@ -33,6 +33,7 @@ type OfficialRegistrySignals = {
   hasResults: boolean;
   explicitNoResults: boolean;
   extraWarnings: string[];
+  candidateTexts: string[];
 };
 
 const toBucket = (confidence: number): "high" | "medium" | "low" =>
@@ -66,17 +67,34 @@ const toFetchResult = (input: string | null | QualityMarkFetchResult): QualityMa
       }
     : input;
 
-const parseNutrasourceBody = (body: string | null): { html: string; hasResults: boolean } => {
-  if (!body) return { html: "", hasResults: false };
+const extractAnchorTexts = (html: string): string[] =>
+  Array.from(html.matchAll(/<a\b[^>]*>([\s\S]*?)<\/a>/gi))
+    .map((match) => sanitizeHtml(match[1] ?? ""))
+    .filter(Boolean);
+
+const parseNutrasourceBody = (body: string | null): { html: string; hasResults: boolean; candidateTexts: string[] } => {
+  if (!body) return { html: "", hasResults: false, candidateTexts: [] };
   try {
-    const payload = JSON.parse(body) as { html?: string; success?: boolean };
+    const payload = JSON.parse(body) as {
+      html?: string;
+      success?: boolean;
+      list?: Array<Record<string, unknown>>;
+    };
     const html = typeof payload?.html === "string" ? payload.html : "";
+    const list = Array.isArray(payload?.list) ? payload.list : [];
+    const candidateTexts = list
+      .flatMap((row) => [
+        typeof row?.ProductName === "string" ? row.ProductName : null,
+        typeof row?.Name === "string" ? row.Name : null,
+      ])
+      .filter((value): value is string => Boolean(value && value.trim()));
     return {
       html,
       hasResults: Boolean(payload?.success) && html.trim().length > 0,
+      candidateTexts: [...candidateTexts, ...extractAnchorTexts(html)],
     };
   } catch {
-    return { html: "", hasResults: false };
+    return { html: "", hasResults: false, candidateTexts: [] };
   }
 };
 
@@ -87,6 +105,45 @@ const extractInformedRegistryResultText = (body: string): { registryText: string
   return {
     registryText: sanitizeHtml(resultBlocks.join(" ")),
     resultCount: resultBlocks.length,
+  };
+};
+
+const extractNutrasourceDetailSignals = (body: string): OfficialRegistrySignals => {
+  const registryText = sanitizeHtml(body);
+  const lowerBody = body.toLowerCase();
+  const titleText =
+    body.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]
+      ?.replace(/\| Certifications by Nutrasource/gi, "")
+      ?.split("|")
+      .map((value) => sanitizeHtml(value))
+      .filter(Boolean) ?? [];
+  const headingTexts = Array.from(body.matchAll(/<h[1-3][^>]*>([\s\S]*?)<\/h[1-3]>/gi))
+    .map((match) => sanitizeHtml(match[1] ?? ""))
+    .filter(Boolean);
+  const hasIfosCue = /ifos(?:™)? testing results|certified ifos/i.test(body);
+  return {
+    registryText,
+    hasResults: hasIfosCue && registryText.length > 0,
+    explicitNoResults: /product not found|page not found|404/i.test(lowerBody),
+    extraWarnings: hasIfosCue ? ["nutrasource_detail_page"] : [],
+    candidateTexts: [...titleText, ...headingTexts],
+  };
+};
+
+const extractNutrasourceBrandDetailSignals = (body: string): OfficialRegistrySignals => {
+  const registryText = sanitizeHtml(body);
+  const lowerBody = body.toLowerCase();
+  const candidateTexts = Array.from(
+    body.matchAll(/href="\/certified-products\/product\?id=[^"]+"[^>]*>\s*([^<]+?)\s*<\/a>/gi),
+  )
+    .map((match) => sanitizeHtml(match[1] ?? ""))
+    .filter(Boolean);
+  return {
+    registryText,
+    hasResults: candidateTexts.length > 0,
+    explicitNoResults: /product not found|page not found|404/i.test(lowerBody),
+    extraWarnings: candidateTexts.length > 0 ? ["nutrasource_brand_detail_page"] : [],
+    candidateTexts,
   };
 };
 
@@ -101,6 +158,7 @@ const extractOfficialRegistrySignals = (
       hasResults: parsed.hasResults,
       explicitNoResults: !parsed.hasResults,
       extraWarnings: [],
+      candidateTexts: parsed.candidateTexts,
     };
   }
 
@@ -110,10 +168,15 @@ const extractOfficialRegistrySignals = (
 
   if (source.adapterKind === "nsf_search") {
     const hasResults = /results__product-name|results__company-name/i.test(body);
+    const candidateTexts = Array.from(
+      body.matchAll(/class="results__product-name"[^>]*>([\s\S]*?)<\/[^>]+>/gi),
+    )
+      .map((match) => sanitizeHtml(match[1] ?? ""))
+      .filter(Boolean);
     const explicitNoResults =
       /no results|0 results|sorry, no results|no certified products found/i.test(lowerBody) ||
       (!hasResults && /search-results\.php|search results for/i.test(lowerBody));
-    return { registryText, hasResults, explicitNoResults, extraWarnings: [] };
+    return { registryText, hasResults, explicitNoResults, extraWarnings: [], candidateTexts };
   }
 
   if (source.adapterKind === "informed_choice_search" || source.adapterKind === "informed_sport_search") {
@@ -127,6 +190,7 @@ const extractOfficialRegistrySignals = (
       hasResults,
       explicitNoResults,
       extraWarnings: [],
+      candidateTexts: [],
     };
   }
 
@@ -136,7 +200,16 @@ const extractOfficialRegistrySignals = (
       hasResults: registryText.length > 0,
       explicitNoResults: /no results|no products found/i.test(lowerBody),
       extraWarnings: [],
+      candidateTexts: [],
     };
+  }
+
+  if (source.adapterKind === "nutrasource_product_detail") {
+    return extractNutrasourceDetailSignals(body);
+  }
+
+  if (source.adapterKind === "nutrasource_brand_detail") {
+    return extractNutrasourceBrandDetailSignals(body);
   }
 
   return {
@@ -144,6 +217,7 @@ const extractOfficialRegistrySignals = (
     hasResults: registryText.length > 0,
     explicitNoResults: false,
     extraWarnings: [],
+    candidateTexts: [],
   };
 };
 
@@ -175,35 +249,23 @@ const detectFromOfficialRegistry = (
 
   const blockedByRegistry = [401, 403, 429].includes(fetchResult.statusCode ?? 0);
   if (blockedByRegistry) {
-    const programMatches = buildQualityMarkProgramMatches({
-      programIds: [programId],
-      status: "ambiguous_match",
-      evidenceUrl: source.url,
-      evidenceType: "official_registry",
-      sourceType: "official_registry",
-      confidence: 0.45,
-      matchLevel: "product",
-      brandMatched: false,
-      productMatched: false,
-      note: `Official registry access blocked (${fetchResult.error ?? `http_${fetchResult.statusCode}`}).`,
-    });
     const verificationSummary = summarizeQualityMarkProgramMatches({
-      programMatches,
-      checked: true,
+      programMatches: [],
+      checked: false,
       extraWarnings: ["registry_access_blocked"],
     });
     return {
       status: "unknown",
-      checked: true,
-      confidence: 0.45,
+      checked: false,
+      confidence: null,
       confidenceBucket: "low",
       evidenceRef: source.url,
       evidenceType: "official_registry",
       checkedMode: "page_fetch",
       pagesFetchedCount: 1,
       searchPagesFetchedCount: 0,
-      note: `Official ${programMatches[0]?.programLabel ?? "registry"} access was blocked, so verification remains unproven.`,
-      programMatches,
+      note: `Official ${QUALITY_MARK_PROGRAMS.find((program) => program.id === programId)?.label ?? "registry"} access was blocked, so verification remains unproven.`,
+      programMatches: [],
       verificationSummary,
     };
   }
@@ -234,6 +296,7 @@ const detectFromOfficialRegistry = (
     registryText: signals.registryText,
     brandName: source.brandName,
     productName: source.productName,
+    candidateTexts: signals.candidateTexts,
   });
 
   if (!signals.explicitNoResults && signals.hasResults && matchSignals.productMatched && (matchSignals.brandMatched || !source.brandName)) {
@@ -265,6 +328,46 @@ const detectFromOfficialRegistry = (
       pagesFetchedCount: 1,
       searchPagesFetchedCount: 0,
       note: `Official ${programMatches[0]?.programLabel ?? "registry"} verification matched this product.`,
+      programMatches,
+      verificationSummary,
+    };
+  }
+
+  if (
+    !signals.explicitNoResults &&
+    signals.hasResults &&
+    matchSignals.productMatched &&
+    source.adapterKind === "nutrasource_product_search" &&
+    source.brandName
+  ) {
+    const programMatches = buildQualityMarkProgramMatches({
+      programIds: [programId],
+      status: "ambiguous_match",
+      evidenceUrl: source.url,
+      evidenceType: "official_registry",
+      sourceType: "official_registry",
+      confidence: 0.74,
+      matchLevel: "product",
+      brandMatched: false,
+      productMatched: true,
+      note: "Official registry matched product naming, but brand confirmation still depends on the brand-level result.",
+    });
+    const verificationSummary = summarizeQualityMarkProgramMatches({
+      programMatches,
+      checked: true,
+      extraWarnings: [...signals.extraWarnings, "product_match_without_brand_confirmation"],
+    });
+    return {
+      status: "unknown",
+      checked: true,
+      confidence: 0.74,
+      confidenceBucket: "medium",
+      evidenceRef: source.url,
+      evidenceType: "official_registry",
+      checkedMode: "page_fetch",
+      pagesFetchedCount: 1,
+      searchPagesFetchedCount: 0,
+      note: `Official ${programMatches[0]?.programLabel ?? "registry"} product naming matched, but brand confirmation still needs the brand-level registry result.`,
       programMatches,
       verificationSummary,
     };
