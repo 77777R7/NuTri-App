@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "iherb_official_fallback_config.v1",
+  "brandName": "Sports Research",
+  "priorityLane": "P0_api_fill_us_strong_identity",
+  "siteOrigin": "https://www.sportsresearch.com",
+  "readerPrefix": "https://r.jina.ai/http://",
+  "searchPathTemplate": "/search?q={query}",
+  "enableAgentBrowserFallback": true,
+  "enableImageOcrFallback": true,
+  "enableStagedImageOcr": true,
+  "ocrMaxImages": 6,
+  "searchQueryOverrides": {
+    "109321": [
+      "omega 3 fish oil alaskaomega 1250mg"
+    ],
+    "109322": [
+      "omega 3 fish oil alaskaomega 1250mg"
+    ],
+    "113870": [
+      "omega 3 fish oil alaskaomega 1250mg"
+    ],
+    "113871": [
+      "omega 3 fish oil alaskaomega 1250mg"
+    ]
+  },
+  "productPageUrlOverrides": {
+    "100267": "https://www.sportsresearch.com/products/multi-collagen-complex",
+    "117181": "https://www.sportsresearch.com/products/sports-research-quercetin-with-coconut-mct-oil-500mg-120-softgels",
+    "109321": "https://www.sportsresearch.com/products/omega-3-fish-oil-alaskaomegar-1250mg",
+    "109322": "https://www.sportsresearch.com/products/omega-3-fish-oil-alaskaomegar-1250mg",
+    "113870": "https://www.sportsresearch.com/products/omega-3-fish-oil-alaskaomegar-1250mg",
+    "113871": "https://www.sportsresearch.com/products/omega-3-fish-oil-alaskaomegar-1250mg"
+  },
+  "brochureFilenameOverrides": {},
+  "manualSectionOverrides": {},
+  "manualSupplementFactsOverrides": {}
+}

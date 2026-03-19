@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "week2_iherb_quality_mark_selection.v1",
+  "generatedAt": "2026-03-15T09:02:33.531Z",
+  "selectionMode": "precomputed_input",
+  "selectionInput": "output/quality_marks/week2_iherb_registry_first_positive_controls_v14_20260315/week2_registry_first_positive_control_selection.json",
+  "selectedCount": 0,
+  "candidateCount": 0,
+  "programCounts": {},
+  "rows": [],
+  "brandLevelHintBrands": [
+    "barlean's",
+    "carlson",
+    "life extension",
+    "metagenics",
+    "the vitamin shoppe"
+  ]
+}

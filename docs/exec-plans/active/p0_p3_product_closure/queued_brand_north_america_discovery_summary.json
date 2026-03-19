@@ -1,0 +1,218 @@
+{
+  "generatedAt": "2026-03-17T21:24:00Z",
+  "objective": "Synthesize the top-10 queued/high-frequency target-brand discovery batch across official North America sites, iHerb, Amazon, and current repo-native gap matching.",
+  "globalFindings": {
+    "bestDiscoverySurfaces": [
+      "official_shopify_or_brand_sitemaps",
+      "official_product_json_or_label_assets",
+      "amazon_product_pages"
+    ],
+    "commonBlockers": [
+      "iherb_cloudflare_challenge",
+      "amazon_dom_extraction_flakiness",
+      "selected_official_sites_returning_403_or_maintenance"
+    ],
+    "overallCall": "For this target set, official North America brand sites are the strongest recovery surface. iHerb was frequently blocked from this environment, so it should be treated as supportive evidence rather than the lead discovery lane."
+  },
+  "priorityRanking": [
+    {
+      "rank": 1,
+      "brandName": "Natrol",
+      "currentGapDisposition": "missing_from_staging",
+      "discoveryStrength": "high",
+      "recommendedNextAction": "Open a new official-site-led external discovery and recovery lane using Natrol sitemap/product pages, label assets, and official-site Amazon cross-links.",
+      "whyNow": "Current local recovery attempts processed 41 rows with zero recovery, while the new discovery batch found strong official North America coverage."
+    },
+    {
+      "rank": 2,
+      "brandName": "Codeage",
+      "currentGapDisposition": "absent_from_current_canonical_high_frequency",
+      "discoveryStrength": "high",
+      "recommendedNextAction": "Do fresh queue-presence verification and official-site-led ingestion from the Codeage CA/NA storefront, then re-queue only validated current products.",
+      "whyNow": "The brand is absent from the canonical high-frequency report, but discovery found the cleanest official sitemap/product/label surface in this batch."
+    },
+    {
+      "rank": 3,
+      "brandName": "Nutricost",
+      "currentGapDisposition": "active_queue",
+      "discoveryStrength": "very_high",
+      "recommendedNextAction": "Prioritize a Nutricost official Shopify JSON replay for the current active_queue before weaker retailer-led lanes.",
+      "whyNow": "Discovery found 726 official product pages, barcode-rich `.js` endpoints, and supplement-facts assets."
+    },
+    {
+      "rank": 4,
+      "brandName": "Country Life",
+      "currentGapDisposition": "missing_from_staging",
+      "discoveryStrength": "high",
+      "recommendedNextAction": "Replay a Country Life official-site-led recovery lane using barcode-rich `.js` endpoints and strong multivitamin/hair-category coverage.",
+      "whyNow": "Discovery found 252 official product pages and strong barcode-bearing product JSON."
+    },
+    {
+      "rank": 5,
+      "brandName": "Sports Research",
+      "currentGapDisposition": "missing_from_staging",
+      "discoveryStrength": "high",
+      "recommendedNextAction": "Run a tightly targeted official/iGen replay against the residual missing-from-staging tail.",
+      "whyNow": "Official sitemap and product pages are the cleanest in the batch, and local repo evidence already shows successful brand-specific fallback work."
+    },
+    {
+      "rank": 6,
+      "brandName": "Vital Proteins",
+      "currentGapDisposition": "active_queue",
+      "discoveryStrength": "high",
+      "recommendedNextAction": "Use official collagen/product JSON plus Amazon product coverage to enrich the current active_queue.",
+      "whyNow": "Official coverage is smaller than Nutricost but barcode-rich and Amazon coverage is strong."
+    },
+    {
+      "rank": 7,
+      "brandName": "Schiff",
+      "currentGapDisposition": "active_queue",
+      "discoveryStrength": "high",
+      "recommendedNextAction": "Continue the active_queue lane with sub-brand-focused official recovery across Move Free, MegaRed, Airborne, and Digestive Advantage.",
+      "whyNow": "The official site exposes clean sub-brand collections, product JSON, and barcodes."
+    },
+    {
+      "rank": 8,
+      "brandName": "Life Extension",
+      "currentGapDisposition": "missing_from_staging",
+      "discoveryStrength": "medium_high",
+      "recommendedNextAction": "Use indexed official product pages and label PDFs for targeted known-SKU recovery rather than broad crawl-based expansion.",
+      "whyNow": "Official product-page and PDF evidence is solid, but direct broad crawling was blocked by 403."
+    },
+    {
+      "rank": 9,
+      "brandName": "Garden of Life",
+      "currentGapDisposition": "missing_from_staging",
+      "discoveryStrength": "medium",
+      "recommendedNextAction": "Use retailer-assisted recovery first, with official traceability assets only as support until official-site access is cleaner.",
+      "whyNow": "Amazon and indexed iHerb URLs are strong, but official-site product/PDF access was maintenance/403 limited."
+    },
+    {
+      "rank": 10,
+      "brandName": "Pure Encapsulations",
+      "currentGapDisposition": "active_queue",
+      "discoveryStrength": "medium_high",
+      "recommendedNextAction": "Keep using the proven active_queue fallback lane with official PDFs/product URLs plus Amazon/iHerb cross-checks.",
+      "whyNow": "The current official-fallback lane is already producing uplift, so discovery supports continuation rather than a lane change."
+    }
+  ],
+  "brandSummaries": [
+    {
+      "brandName": "Pure Encapsulations",
+      "bestSources": [
+        "official_pdfs_and_indexed_official_product_urls",
+        "amazon_product_pages",
+        "iherb_product_urls"
+      ],
+      "mainBlocker": "official_pro_site_partial_block_or_temp_unavailable",
+      "currentMatchCall": "active_queue"
+    },
+    {
+      "brandName": "Sports Research",
+      "bestSources": [
+        "official_sitemap",
+        "official_product_pages",
+        "amazon_product_pages",
+        "iherb_product_urls"
+      ],
+      "mainBlocker": "no_clean_first_party_pdf_library_found_in_this_pass",
+      "currentMatchCall": "missing_from_staging"
+    },
+    {
+      "brandName": "Life Extension",
+      "bestSources": [
+        "indexed_official_product_pages",
+        "official_label_pdfs",
+        "amazon_product_pages",
+        "iherb_product_urls"
+      ],
+      "mainBlocker": "official_site_403_on_broad_crawl",
+      "currentMatchCall": "missing_from_staging"
+    },
+    {
+      "brandName": "Garden of Life",
+      "bestSources": [
+        "amazon_product_pages",
+        "indexed_iherb_product_urls",
+        "official_traceability_assets"
+      ],
+      "mainBlocker": "official_site_maintenance_or_akamai_403",
+      "currentMatchCall": "missing_from_staging"
+    },
+    {
+      "brandName": "Codeage",
+      "bestSources": [
+        "official_sitemap",
+        "official_collection_hubs",
+        "official_product_pages",
+        "official_supplement_facts_assets",
+        "amazon_product_pages"
+      ],
+      "mainBlocker": "not_currently_represented_in_canonical_high_frequency",
+      "currentMatchCall": "absent"
+    },
+    {
+      "brandName": "Schiff",
+      "bestSources": [
+        "official_sub_brand_collections",
+        "official_product_json",
+        "official_supplement_facts_assets",
+        "amazon_product_pages"
+      ],
+      "mainBlocker": "iherb_cloudflare_challenge",
+      "currentMatchCall": "active_queue"
+    },
+    {
+      "brandName": "Nutricost",
+      "bestSources": [
+        "official_sitemap",
+        "official_product_json",
+        "official_supplement_facts_assets",
+        "amazon_product_pages"
+      ],
+      "mainBlocker": "iherb_cloudflare_challenge",
+      "currentMatchCall": "active_queue"
+    },
+    {
+      "brandName": "Vital Proteins",
+      "bestSources": [
+        "official_product_json",
+        "official_collagen_assets",
+        "amazon_product_pages"
+      ],
+      "mainBlocker": "iherb_cloudflare_challenge",
+      "currentMatchCall": "active_queue"
+    },
+    {
+      "brandName": "Natrol",
+      "bestSources": [
+        "official_sitemap",
+        "official_category_collections",
+        "official_product_pages",
+        "official_label_assets",
+        "official_site_amazon_cross_links"
+      ],
+      "mainBlocker": "iherb_cloudflare_challenge",
+      "currentMatchCall": "missing_from_staging"
+    },
+    {
+      "brandName": "Country Life",
+      "bestSources": [
+        "official_sitemap",
+        "official_product_json",
+        "official_supplement_facts_assets",
+        "amazon_product_pages",
+        "official_pdf_asset"
+      ],
+      "mainBlocker": "iherb_cloudflare_challenge",
+      "currentMatchCall": "missing_from_staging"
+    }
+  ],
+  "sourceFiles": [
+    "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/queued_brand_target_match_matrix.json",
+    "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/runs/queued_highfreq_matcher_result.md",
+    "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/runs/na_brand_discovery_a_result.md",
+    "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/runs/na_brand_discovery_b_result.md",
+    "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/subagents/runs/na_brand_discovery_c_result.md"
+  ]
+}

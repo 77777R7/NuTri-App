@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "iherb_official_fallback_config.v1",
+  "brandName": "Nutricost",
+  "priorityLane": "deep_gap_header_only_official_wave",
+  "siteOrigin": "https://nutricost.com",
+  "readerPrefix": "https://r.jina.ai/http://",
+  "searchPathTemplate": "/search?q={query}",
+  "enableAgentBrowserFallback": true,
+  "enableImageOcrFallback": true,
+  "enableStagedImageOcr": true,
+  "ocrMaxImages": 6,
+  "catalogApi": {
+    "mode": "shopify_products_json",
+    "pathTemplate": "/products.json?limit=250&page={page}",
+    "pageSize": 250,
+    "maxPages": 4
+  },
+  "searchQueryOverrides": {},
+  "productPageUrlOverrides": {},
+  "brochureFilenameOverrides": {},
+  "manualSectionOverrides": {},
+  "manualSupplementFactsOverrides": {}
+}

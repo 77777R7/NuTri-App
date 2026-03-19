@@ -43,6 +43,7 @@ artifacts/
 output/
 build-preview*.ipa
 build-production*.ipa
+.codex/
 
 # typescript
 *.tsbuildinfo

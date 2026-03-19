@@ -1,3 +1,5 @@
+import { emitAnalyticsEvent } from './transport';
+
 export type OnboardingAnalyticsEvent =
   | 'onboarding_started'
   | 'trust_page_viewed'
@@ -11,6 +13,5 @@ export type OnboardingAnalyticsEvent =
   | 'first_filter_used';
 
 export const trackOnboardingEvent = (event: OnboardingAnalyticsEvent, payload: Record<string, unknown> = {}) => {
-  // Placeholder hook. Swap with PostHog/Segment once analytics SDK is wired in production.
-  console.info('[onboarding-event]', event, payload);
+  emitAnalyticsEvent('onboarding', event, payload);
 };

@@ -1,0 +1,357 @@
+{
+  "generatedAt": "2026-03-18T00:51:41.614Z",
+  "supportedLifeStage": "adult_19_plus",
+  "whitelist": [
+    {
+      "canonicalKey": "magnesium",
+      "displayName": "Magnesium",
+      "launchTier": "tier1",
+      "launchEnabledForUlCompare": true,
+      "aliases": [
+        "magnesium",
+        "magnesium citrate",
+        "magnesium glycinate",
+        "magnesium oxide",
+        "magnesium malate"
+      ]
+    },
+    {
+      "canonicalKey": "vitamin_c",
+      "displayName": "Vitamin C",
+      "launchTier": "tier1",
+      "launchEnabledForUlCompare": true,
+      "aliases": [
+        "vitamin c",
+        "ascorbic acid",
+        "ester c",
+        "sodium ascorbate",
+        "calcium ascorbate"
+      ]
+    },
+    {
+      "canonicalKey": "zinc",
+      "displayName": "Zinc",
+      "launchTier": "tier1",
+      "launchEnabledForUlCompare": true,
+      "aliases": [
+        "zinc",
+        "zinc picolinate",
+        "zinc citrate",
+        "zinc gluconate"
+      ]
+    },
+    {
+      "canonicalKey": "iron",
+      "displayName": "Iron",
+      "launchTier": "tier1",
+      "launchEnabledForUlCompare": true,
+      "aliases": [
+        "iron",
+        "ferrous",
+        "ferric",
+        "ferrous bisglycinate",
+        "ferrous sulfate"
+      ]
+    },
+    {
+      "canonicalKey": "folate",
+      "displayName": "Folate",
+      "launchTier": "tier1",
+      "launchEnabledForUlCompare": true,
+      "aliases": [
+        "folate",
+        "folic acid",
+        "methylfolate",
+        "l-5-methyltetrahydrofolate",
+        "quatrefolic"
+      ]
+    },
+    {
+      "canonicalKey": "vitamin_b12",
+      "displayName": "Vitamin B12",
+      "launchTier": "tier2",
+      "launchEnabledForUlCompare": "fallback_only",
+      "aliases": [
+        "vitamin b12",
+        "b12",
+        "methylcobalamin",
+        "cyanocobalamin",
+        "adenosylcobalamin",
+        "hydroxocobalamin"
+      ]
+    },
+    {
+      "canonicalKey": "omega_3",
+      "displayName": "Omega-3",
+      "launchTier": "tier2",
+      "launchEnabledForUlCompare": "fallback_only",
+      "aliases": [
+        "omega 3",
+        "omega-3",
+        "epa",
+        "dha",
+        "fish oil",
+        "krill oil",
+        "algal oil"
+      ]
+    },
+    {
+      "canonicalKey": "n_acetylcysteine",
+      "displayName": "NAC",
+      "launchTier": "tier2",
+      "launchEnabledForUlCompare": "fallback_only",
+      "aliases": [
+        "nac",
+        "n-acetylcysteine",
+        "n acetylcysteine",
+        "acetyl cysteine"
+      ]
+    }
+  ],
+  "fixtures": [
+    {
+      "fixture": "magnesium_below",
+      "input": {
+        "label": "magnesium_below",
+        "name": "Magnesium glycinate",
+        "amount": 200,
+        "unit": "mg"
+      },
+      "ulGuidanceEntries": [
+        {
+          "ingredientCanonicalKey": "magnesium",
+          "ingredientDisplayName": "Magnesium",
+          "currentDoseText": "200 mg",
+          "ulLimitText": "350 mg",
+          "comparisonStatus": "below",
+          "scope": "supplements_only",
+          "scopeNote": "UL applies to supplemental magnesium (and medications), not naturally occurring food intake.",
+          "sourceLabel": "NIH ODS (Health Professional Fact Sheet)",
+          "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Magnesium-HealthProfessional/",
+          "reasonCode": "ODS_UL_MATCHED",
+          "displayLine": "Magnesium: estimated daily amount 200 mg; adult UL 350 mg; this appears below the UL. UL applies to supplemental magnesium (and medications), not naturally occurring food intake.",
+          "launchTier": "tier1"
+        }
+      ],
+      "fallbackReason": null,
+      "comparedIngredientCount": 1
+    },
+    {
+      "fixture": "magnesium_near",
+      "input": {
+        "label": "magnesium_near",
+        "name": "Magnesium citrate",
+        "amount": 300,
+        "unit": "mg"
+      },
+      "ulGuidanceEntries": [
+        {
+          "ingredientCanonicalKey": "magnesium",
+          "ingredientDisplayName": "Magnesium",
+          "currentDoseText": "300 mg",
+          "ulLimitText": "350 mg",
+          "comparisonStatus": "near",
+          "scope": "supplements_only",
+          "scopeNote": "UL applies to supplemental magnesium (and medications), not naturally occurring food intake.",
+          "sourceLabel": "NIH ODS (Health Professional Fact Sheet)",
+          "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Magnesium-HealthProfessional/",
+          "reasonCode": "ODS_UL_MATCHED",
+          "displayLine": "Magnesium: estimated daily amount 300 mg; adult UL 350 mg; this is close to the UL. UL applies to supplemental magnesium (and medications), not naturally occurring food intake.",
+          "launchTier": "tier1"
+        }
+      ],
+      "fallbackReason": null,
+      "comparedIngredientCount": 1
+    },
+    {
+      "fixture": "magnesium_over",
+      "input": {
+        "label": "magnesium_over",
+        "name": "Magnesium oxide",
+        "amount": 400,
+        "unit": "mg"
+      },
+      "ulGuidanceEntries": [
+        {
+          "ingredientCanonicalKey": "magnesium",
+          "ingredientDisplayName": "Magnesium",
+          "currentDoseText": "400 mg",
+          "ulLimitText": "350 mg",
+          "comparisonStatus": "over",
+          "scope": "supplements_only",
+          "scopeNote": "UL applies to supplemental magnesium (and medications), not naturally occurring food intake.",
+          "sourceLabel": "NIH ODS (Health Professional Fact Sheet)",
+          "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Magnesium-HealthProfessional/",
+          "reasonCode": "ODS_UL_MATCHED",
+          "displayLine": "Magnesium: estimated daily amount 400 mg; adult UL 350 mg; this may exceed the UL. UL applies to supplemental magnesium (and medications), not naturally occurring food intake.",
+          "launchTier": "tier1"
+        }
+      ],
+      "fallbackReason": null,
+      "comparedIngredientCount": 1
+    },
+    {
+      "fixture": "vitamin_c",
+      "input": {
+        "label": "vitamin_c",
+        "name": "Vitamin C",
+        "amount": 1000,
+        "unit": "mg"
+      },
+      "ulGuidanceEntries": [
+        {
+          "ingredientCanonicalKey": "vitamin_c",
+          "ingredientDisplayName": "Vitamin C",
+          "currentDoseText": "1000 mg",
+          "ulLimitText": "2000 mg",
+          "comparisonStatus": "below",
+          "scope": "total_intake",
+          "scopeNote": null,
+          "sourceLabel": "NIH ODS (Health Professional Fact Sheet)",
+          "sourceUrl": "https://ods.od.nih.gov:443/factsheets/VitaminC-HealthProfessional/",
+          "reasonCode": "ODS_UL_MATCHED",
+          "displayLine": "Vitamin C: estimated daily amount 1000 mg; adult UL 2000 mg; this appears below the UL.",
+          "launchTier": "tier1"
+        }
+      ],
+      "fallbackReason": null,
+      "comparedIngredientCount": 1
+    },
+    {
+      "fixture": "zinc_over",
+      "input": {
+        "label": "zinc_over",
+        "name": "Zinc picolinate",
+        "amount": 50,
+        "unit": "mg"
+      },
+      "ulGuidanceEntries": [
+        {
+          "ingredientCanonicalKey": "zinc",
+          "ingredientDisplayName": "Zinc",
+          "currentDoseText": "50 mg",
+          "ulLimitText": "40 mg",
+          "comparisonStatus": "over",
+          "scope": "total_intake",
+          "scopeNote": null,
+          "sourceLabel": "NIH ODS (Health Professional Fact Sheet)",
+          "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Zinc-HealthProfessional/",
+          "reasonCode": "ODS_UL_MATCHED",
+          "displayLine": "Zinc: estimated daily amount 50 mg; adult UL 40 mg; this may exceed the UL.",
+          "launchTier": "tier1"
+        }
+      ],
+      "fallbackReason": null,
+      "comparedIngredientCount": 1
+    },
+    {
+      "fixture": "iron_below",
+      "input": {
+        "label": "iron_below",
+        "name": "Ferrous bisglycinate",
+        "amount": 27,
+        "unit": "mg"
+      },
+      "ulGuidanceEntries": [
+        {
+          "ingredientCanonicalKey": "iron",
+          "ingredientDisplayName": "Iron",
+          "currentDoseText": "27 mg",
+          "ulLimitText": "45 mg",
+          "comparisonStatus": "below",
+          "scope": "total_intake",
+          "scopeNote": null,
+          "sourceLabel": "NIH ODS (Health Professional Fact Sheet)",
+          "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Iron-HealthProfessional/",
+          "reasonCode": "ODS_UL_MATCHED",
+          "displayLine": "Iron: estimated daily amount 27 mg; adult UL 45 mg; this appears below the UL.",
+          "launchTier": "tier1"
+        }
+      ],
+      "fallbackReason": null,
+      "comparedIngredientCount": 1
+    },
+    {
+      "fixture": "folate_dfe_uncertain",
+      "input": {
+        "label": "folate_dfe_uncertain",
+        "name": "Folic Acid",
+        "amount": 400,
+        "unit": "mcg DFE",
+        "amountText": "400 mcg DFE"
+      },
+      "ulGuidanceEntries": [
+        {
+          "ingredientCanonicalKey": "folate",
+          "ingredientDisplayName": "Folate",
+          "currentDoseText": "400 mcg dfe",
+          "ulLimitText": "1000 mcg",
+          "comparisonStatus": "not_comparable",
+          "scope": "supplements_or_fortified_only",
+          "scopeNote": "UL applies to folic acid from supplements or fortified foods, not naturally occurring food folate.",
+          "sourceLabel": "NIH ODS (Health Professional Fact Sheet)",
+          "sourceUrl": "https://ods.od.nih.gov:443/factsheets/Folate-HealthProfessional/",
+          "reasonCode": "DOSE_NOT_COMPARABLE",
+          "displayLine": "Folate: a UL reference exists (1000 mcg), but this product dose could not be safely compared. UL applies to folic acid from supplements or fortified foods, not naturally occurring food folate.",
+          "launchTier": "tier1"
+        }
+      ],
+      "fallbackReason": "ONLY_NOT_COMPARABLE_ENTRIES",
+      "comparedIngredientCount": 1
+    },
+    {
+      "fixture": "omega3_reference_only",
+      "input": {
+        "label": "omega3_reference_only",
+        "name": "Omega-3 Fish Oil",
+        "amount": 1000,
+        "unit": "mg"
+      },
+      "ulGuidanceEntries": [
+        {
+          "ingredientCanonicalKey": "omega_3",
+          "ingredientDisplayName": "Omega-3",
+          "currentDoseText": "1000 mg",
+          "ulLimitText": null,
+          "comparisonStatus": "no_ul_established",
+          "scope": null,
+          "scopeNote": null,
+          "sourceLabel": null,
+          "sourceUrl": null,
+          "reasonCode": "NO_UL_ESTABLISHED",
+          "displayLine": "Omega-3: no NIH ODS upper limit is established for this ingredient.",
+          "launchTier": "tier2"
+        }
+      ],
+      "fallbackReason": "NO_UL_ESTABLISHED",
+      "comparedIngredientCount": 1
+    },
+    {
+      "fixture": "nac_reference_only",
+      "input": {
+        "label": "nac_reference_only",
+        "name": "N-Acetylcysteine",
+        "amount": 600,
+        "unit": "mg"
+      },
+      "ulGuidanceEntries": [
+        {
+          "ingredientCanonicalKey": "n_acetylcysteine",
+          "ingredientDisplayName": "NAC",
+          "currentDoseText": "600 mg",
+          "ulLimitText": null,
+          "comparisonStatus": "no_ul_established",
+          "scope": null,
+          "scopeNote": null,
+          "sourceLabel": null,
+          "sourceUrl": null,
+          "reasonCode": "NO_UL_ESTABLISHED",
+          "displayLine": "NAC: no NIH ODS upper limit is established for this ingredient.",
+          "launchTier": "tier2"
+        }
+      ],
+      "fallbackReason": "NO_UL_ESTABLISHED",
+      "comparedIngredientCount": 1
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "iherb_official_fallback_config.v1",
+  "brandName": "Qunol",
+  "priorityLane": "P0_api_fill_us_strong_identity",
+  "siteOrigin": "https://www.qunol.com",
+  "readerPrefix": "https://r.jina.ai/http://",
+  "searchPathTemplate": "/search?q={query}",
+  "enableAgentBrowserFallback": true,
+  "enableImageOcrFallback": true,
+  "enableStagedImageOcr": true,
+  "ocrMaxImages": 6,
+  "catalogApi": {
+    "mode": "shopify_products_json",
+    "pathTemplate": "/products.json?limit=250&page={page}",
+    "pageSize": 250,
+    "maxPages": 4
+  },
+  "searchQueryOverrides": {
+    "157250": [
+      "coq10 gummies 100mg"
+    ],
+    "126278": [
+      "ubiquinol extra strength 200 mg"
+    ],
+    "157212": [
+      "turmeric gummies 500mg"
+    ]
+  },
+  "productPageUrlOverrides": {
+    "157250": "https://www.qunol.com/products/qunol-coq10-gummies-100mg",
+    "126278": "https://www.qunol.com/products/qunol-ubiquinol-extra-strength-200-mg",
+    "157212": "https://www.qunol.com/products/qunol-turmeric-gummies"
+  },
+  "brochureFilenameOverrides": {},
+  "manualSectionOverrides": {
+    "126278": {
+      "Warnings": "These statements have not been evaluated by the FDA. This product is not intended to diagnose, treat, cure or prevent any diseases."
+    }
+  },
+  "manualSupplementFactsOverrides": {}
+}

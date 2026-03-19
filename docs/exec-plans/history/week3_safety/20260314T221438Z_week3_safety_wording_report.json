@@ -1,0 +1,30 @@
+{
+  "generatedAt": "2026-03-14T22:14:48.659Z",
+  "checks": [
+    {
+      "id": "supplements_only_scope",
+      "pass": true,
+      "detail": "Magnesium: estimated daily amount 200 mg; adult UL 350 mg; this appears below the UL. UL applies to supplemental magnesium (and medications), not naturally occurring food intake."
+    },
+    {
+      "id": "not_comparable_is_not_safe",
+      "pass": true,
+      "detail": "Folate: a UL reference exists (1000 mcg), but this product dose could not be safely compared. UL applies to folic acid from supplements or fortified foods, not naturally occurring food folate."
+    },
+    {
+      "id": "no_ul_established_is_not_no_risk",
+      "pass": true,
+      "detail": "NAC: no NIH ODS upper limit is established for this ingredient."
+    },
+    {
+      "id": "stack_summary_scoped",
+      "pass": true,
+      "detail": [
+        "Estimated total: 620 mg/day.",
+        "Adult supplemental UL: 350 mg/day.",
+        "UL applies to supplemental magnesium (and medications), not naturally occurring food intake."
+      ]
+    }
+  ],
+  "passed": true
+}

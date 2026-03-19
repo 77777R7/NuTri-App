@@ -1,0 +1,20 @@
+{
+  "generatedAt": "2026-03-14T23:15:45.227Z",
+  "totalSavedProductsEvaluated": 1,
+  "countUsingLabelDailyEstimate": 0,
+  "countUsingOneServingFallback": 1,
+  "countSkippedDueToInsufficientIngredientOrDoseData": 1,
+  "topFallbackReasons": [
+    {
+      "reason": "snapshot_only_no_directions",
+      "count": 1,
+      "label": "Cached snapshot data did not include usable label directions."
+    }
+  ],
+  "evaluationCoverage": {
+    "queriedSavedRows": 0,
+    "localSavedRowsDiscovered": 4,
+    "cachedSnapshotRowsEvaluated": 2,
+    "uncachedOrUnusableSavedRows": 2
+  }
+}

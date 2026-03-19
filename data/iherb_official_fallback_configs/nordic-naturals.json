@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "iherb_official_fallback_config.v1",
+  "brandName": "Nordic Naturals",
+  "priorityLane": "P0_api_fill_us_strong_identity",
+  "siteOrigin": "https://www.nordic.com",
+  "readerPrefix": "https://r.jina.ai/http://",
+  "searchPathTemplate": "/search?q={query}",
+  "enableAgentBrowserFallback": true,
+  "enableImageOcrFallback": true,
+  "enableStagedImageOcr": true,
+  "ocrMaxImages": 6,
+  "searchQueryOverrides": {
+    "73705": [
+      "coq10 gummies strawberry 100 mg"
+    ],
+    "61371": [
+      "omega-3 phospholipids 60 soft gels"
+    ],
+    "8935": [
+      "vision support omega blend 60 soft gels"
+    ]
+  },
+  "productPageUrlOverrides": {
+    "73705": "https://www.nordic.com/products/coq10-gummies/",
+    "61371": "https://www.nordic.com/products/omega-3-phospholipids/",
+    "8935": "https://www.nordic.com/products/vision-support/"
+  },
+  "brochureFilenameOverrides": {},
+  "manualSectionOverrides": {
+    "73705": {
+      "Warnings": "These statements have not been evaluated by the Food and Drug Administration. This product is not intended to diagnose, treat, cure or prevent any disease."
+    }
+  },
+  "manualSupplementFactsOverrides": {}
+}

@@ -3,15 +3,22 @@ import ProfileScreen from '@/components/screens/ProfileScreen';
 import { MySupplementView } from '@/components/screens/MySupplement';
 import { ContentFrame } from '@/components/common/ContentFrame';
 import { useDailyCheckIns } from '@/contexts/DailyCheckInContext';
-import { useOnboarding } from '@/contexts/OnboardingContext';
+import { usePersonalization } from '@/contexts/PersonalizationContext';
 import { useSavedSupplements } from '@/contexts/SavedSupplementsContext';
 import { useScanHistory } from '@/contexts/ScanHistoryContext';
 import { useFullBleed } from '@/hooks/useFullBleed';
 import { useScreenTokens } from '@/hooks/useScreenTokens';
 import { apiClient, type NutriTipsData } from '@/lib/api-client';
-import { buildCheckInKey } from '@/lib/check-ins';
+import {
+  buildCheckInSeries,
+  getCurrentPerfectStreakDays,
+  getNextStreakMilestone,
+} from '@/lib/check-in-adherence';
+import { validateCheckInDateForItem } from '@/lib/check-in-eligibility';
+import { buildCheckInKey, getLocalDateKey, isDateKeyAfter } from '@/lib/check-ins';
 import { useTranslation } from '@/lib/i18n';
 import { selectDailyTip, type NutriTipSelection } from '@/lib/nutri-tips';
+import { getGoalDisplayLabel } from '@/lib/personalization/uiLabels';
 import type { RoutinePreferences } from '@/types/saved-supplements';
 import type { ScanHistoryItem } from '@/types/scan-history';
 import { BlurView } from 'expo-blur';
@@ -286,10 +293,12 @@ const SupplementCheckInCard = ({
   item,
   isChecked,
   onCheckIn,
+  disabled = false,
 }: {
   item: SupplementItem;
   isChecked: boolean;
-  onCheckIn: () => void;
+  onCheckIn?: () => void;
+  disabled?: boolean;
 }) => {
   const progress = useSharedValue(isChecked ? 1 : 0);
   const scale = useSharedValue(1);
@@ -341,11 +350,14 @@ const SupplementCheckInCard = ({
     opacity: progress.value,
   }));
 
+  const actionIconColor = disabled && !isChecked ? '#ef4444' : getIconColorHex(item.iconColor);
+
   return (
     <AnimatedPressable
-      onPress={onCheckIn}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
+      disabled={disabled}
+      onPress={disabled ? undefined : onCheckIn}
+      onPressIn={disabled ? undefined : handlePressIn}
+      onPressOut={disabled ? undefined : handlePressOut}
       style={[styles.cardContainer, containerStyle]}
       className={`${item.color} relative overflow-hidden`}
     >
@@ -367,9 +379,13 @@ const SupplementCheckInCard = ({
               <Animated.View entering={ZoomIn.duration(300)} exiting={ZoomOut.duration(200)}>
                 <Check size={18} color="white" strokeWidth={3.5} />
               </Animated.View>
+            ) : disabled ? (
+              <Animated.View entering={ZoomIn.duration(220)} exiting={ZoomOut.duration(180)}>
+                <X size={18} color={actionIconColor} strokeWidth={3} />
+              </Animated.View>
             ) : (
               <Animated.View entering={ZoomIn.rotate('90deg')} exiting={ZoomOut.rotate('90deg')}>
-                <Plus size={18} color={getIconColorHex(item.iconColor)} strokeWidth={3} />
+                <Plus size={18} color={actionIconColor} strokeWidth={3} />
               </Animated.View>
             )}
           </Animated.View>
@@ -392,7 +408,7 @@ const SupplementCheckInCard = ({
 // Weekday Selector
 // -----------------------------------------------------
 
-type DayStatus = 'complete' | 'partial' | 'none' | 'future';
+type DayStatus = 'complete' | 'partial' | 'missed' | 'no_schedule' | 'future';
 
 type WeekdayItem = {
   id: string;
@@ -400,7 +416,7 @@ type WeekdayItem = {
   dayLabel: string;
   dayNumber: number;
   status: DayStatus;
-  isFutureWeek: boolean;
+  isFutureDate: boolean;
 };
 
 type WeekdaySelectorProps = {
@@ -423,18 +439,10 @@ const DAY_ITEM_ROW_INSET = 4;
 const STATUS_DOT_COLORS: Record<DayStatus, string> = {
   complete: '#22c55e',
   partial: '#f59e0b',
-  none: '#ef4444',
+  missed: '#ef4444',
+  no_schedule: 'transparent',
   future: '#ffffff',
 };
-
-const getLocalDateKey = (date: Date) => {
-  const year = date.getFullYear();
-  const month = `${date.getMonth() + 1}`.padStart(2, '0');
-  const day = `${date.getDate()}`.padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
-
-const isDateKeyAfter = (dateKey: string, referenceKey: string) => dateKey > referenceKey;
 
 const buildCalendarDays = (
   baseDate: Date,
@@ -444,9 +452,6 @@ const buildCalendarDays = (
   today.setHours(0, 0, 0, 0);
   const weekStart = new Date(today);
   weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-  const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekStart.getDate() + 6);
-  weekEnd.setHours(23, 59, 59, 999);
 
   const start = new Date(baseDate);
   start.setHours(0, 0, 0, 0);
@@ -464,7 +469,7 @@ const buildCalendarDays = (
       dayLabel: WEEKDAY_LABELS[date.getDay()],
       dayNumber: date.getDate(),
       status: statusForDate(date, dateKey),
-      isFutureWeek: date.getTime() > weekEnd.getTime(),
+      isFutureDate: date.getTime() > today.getTime(),
     };
   });
 };
@@ -503,14 +508,12 @@ const getWeekStartMonday = (baseDate: Date) => {
 
 const buildDailyTrendSeries = ({
   baseDate,
-  expectedCount,
-  expectedKeySet,
   checkInsByDate,
+  resolveExpectedForDate,
 }: {
   baseDate: Date;
-  expectedCount: number;
-  expectedKeySet: Set<string>;
   checkInsByDate: Record<string, string[]>;
+  resolveExpectedForDate: (dateKey: string) => { expectedCount: number; expectedKeySet: Set<string> };
 }) => {
   const startDate = getWeekStartMonday(baseDate);
 
@@ -518,6 +521,7 @@ const buildDailyTrendSeries = ({
     const date = new Date(startDate);
     date.setDate(startDate.getDate() + index);
     const dateKey = getLocalDateKey(date);
+    const { expectedCount, expectedKeySet } = resolveExpectedForDate(dateKey);
     const completed = countCompletedForDate(expectedKeySet, checkInsByDate[dateKey]);
     const total = expectedCount;
     const value = total > 0 ? calcPercent(completed, total) : null;
@@ -540,15 +544,16 @@ type DayItemProps = {
 };
 
 const DayItemComponent = ({ item, isSelected, isToday, onPress, itemWidth }: DayItemProps) => {
-  const isFutureWeek = item.isFutureWeek;
-  const isActive = isSelected && !isFutureWeek;
+  const isFutureDate = item.isFutureDate;
+  const isActive = isSelected && !isFutureDate;
   const progress = useSharedValue(isActive ? 1 : 0);
   const statusColor = STATUS_DOT_COLORS[item.status];
-  const statusBorderColor = item.status === 'future' ? 'rgba(148,163,184,0.6)' : 'transparent';
+  const showStatusDot = isActive && item.status !== 'future' && item.status !== 'no_schedule';
+  const statusBorderColor = item.status === 'future' || item.status === 'no_schedule' ? 'transparent' : 'rgba(255,255,255,0.35)';
   const activeBgColor = isToday ? '#1e40af' : '#0f172a';
-  const dayLabelColor = isFutureWeek ? '#cbd5e1' : '#94a3b8';
-  const dateBaseColor = isFutureWeek ? '#cbd5e1' : '#0f172a';
-  const dateActiveColor = isFutureWeek ? '#cbd5e1' : '#ffffff';
+  const dayLabelColor = isFutureDate ? '#cbd5e1' : '#94a3b8';
+  const dateBaseColor = isFutureDate ? '#cbd5e1' : '#0f172a';
+  const dateActiveColor = isFutureDate ? '#cbd5e1' : '#ffffff';
   const itemRadius = Math.round(itemWidth / 2);
 
   useEffect(() => {
@@ -574,17 +579,17 @@ const DayItemComponent = ({ item, isSelected, isToday, onPress, itemWidth }: Day
   }));
 
   const dotStyle = useAnimatedStyle(() => ({
-    opacity: 0.7 + progress.value * 0.3,
-    transform: [{ scale: 0.9 + progress.value * 0.1 }],
+    opacity: showStatusDot ? 0.82 + progress.value * 0.18 : 0,
+    transform: [{ scale: showStatusDot ? 0.92 + progress.value * 0.08 : 0.9 }],
   }));
 
   return (
     <AnimatedPressable
-      disabled={isFutureWeek}
-      onPress={isFutureWeek ? undefined : onPress}
+      disabled={isFutureDate}
+      onPress={isFutureDate ? undefined : onPress}
       style={({ pressed }) => ({
-        transform: [{ scale: pressed && !isFutureWeek ? 0.95 : 1 }],
-        opacity: isFutureWeek ? 0.65 : 1,
+        transform: [{ scale: pressed && !isFutureDate ? 0.95 : 1 }],
+        opacity: isFutureDate ? 0.65 : 1,
       })}
     >
       <View
@@ -592,7 +597,7 @@ const DayItemComponent = ({ item, isSelected, isToday, onPress, itemWidth }: Day
           styles.dayItemBase,
           { width: itemWidth, height: DAY_ITEM_HEIGHT, borderRadius: itemRadius },
           !isActive && styles.dayItemInactive,
-          isFutureWeek && styles.dayItemFuture,
+          isFutureDate && styles.dayItemFuture,
         ]}
       >
         <Animated.View style={[styles.dayItemActiveBg, bgStyle, { backgroundColor: activeBgColor, borderRadius: itemRadius }]} />
@@ -600,10 +605,8 @@ const DayItemComponent = ({ item, isSelected, isToday, onPress, itemWidth }: Day
 
         <View style={styles.dayDateWrap}>
           <AnimatedText style={[styles.dayDate, dateTextStyle]}>{item.dayNumber}</AnimatedText>
-          {isActive ? (
+          {showStatusDot ? (
             <Animated.View
-              entering={ZoomIn.duration(200)}
-              exiting={ZoomOut.duration(200)}
               style={[
                 styles.dayDot,
                 dotStyle,
@@ -623,7 +626,7 @@ const DayItem = React.memo(DayItemComponent, (prevProps, nextProps) => {
     prevProps.isToday === nextProps.isToday &&
     prevProps.item.id === nextProps.item.id &&
     prevProps.item.status === nextProps.item.status &&
-    prevProps.item.isFutureWeek === nextProps.item.isFutureWeek &&
+    prevProps.item.isFutureDate === nextProps.item.isFutureDate &&
     prevProps.itemWidth === nextProps.itemWidth
   );
 });
@@ -728,17 +731,34 @@ const CHECKIN_THEMES = [
   { color: 'bg-rose-100', iconColor: 'text-rose-700', iconBg: 'bg-rose-100/40' },
 ];
 
-const SavedSupplements = ({ selectedDateKey, pageX }: { selectedDateKey: string; pageX: number }) => {
+const SavedSupplements = ({
+  selectedDateKey,
+  todayDateKey,
+  pageX,
+}: {
+  selectedDateKey: string;
+  todayDateKey: string;
+  pageX: number;
+}) => {
   const { t } = useTranslation();
   const { savedSupplements } = useSavedSupplements();
   const { checkInsByDate, toggleCheckIn } = useDailyCheckIns();
   const scrollProgress = useSharedValue(0);
   const { bleedStyle, contentStyle } = useFullBleed(pageX);
+  const selectedDateIsFuture = isDateKeyAfter(selectedDateKey, todayDateKey);
+  const selectedDateIsPast = selectedDateKey < todayDateKey;
 
-  type CheckInSupplement = SupplementItem & { id: string; supplementId?: string; checkInKey: string };
+  type CheckInSupplement = SupplementItem & {
+    id: string;
+    supplementId?: string;
+    checkInKey: string;
+    createdAt: string;
+  };
 
   const supplements: CheckInSupplement[] = useMemo(() => {
+    const checked = new Set(checkInsByDate[selectedDateKey] ?? []);
     const visible = savedSupplements
+      .filter(item => validateCheckInDateForItem(item, selectedDateKey, todayDateKey).isValid)
       .filter(item => item.syncedToCheckIn)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
@@ -748,16 +768,23 @@ const SavedSupplements = ({ selectedDateKey, pageX }: { selectedDateKey: string;
         id: item.id,
         supplementId: item.supplementId,
         checkInKey: buildCheckInKey({ supplementId: item.supplementId, localId: item.id }),
+        createdAt: item.createdAt,
         name: item.productName,
-        dose: '',
+        dose: checked.has(buildCheckInKey({ supplementId: item.supplementId, localId: item.id }))
+          ? 'Completed'
+          : 'Not checked in',
         ...theme,
       };
     });
-  }, [savedSupplements]);
+  }, [checkInsByDate, savedSupplements, selectedDateKey, todayDateKey]);
 
   const checkedKeys = useMemo(
-    () => new Set(checkInsByDate[selectedDateKey] ?? []),
-    [checkInsByDate, selectedDateKey],
+    () => (selectedDateIsFuture ? new Set<string>() : new Set(checkInsByDate[selectedDateKey] ?? [])),
+    [checkInsByDate, selectedDateIsFuture, selectedDateKey],
+  );
+  const hasAnyCheckInSupplements = useMemo(
+    () => savedSupplements.some(item => item.syncedToCheckIn),
+    [savedSupplements],
   );
 
   const handleScroll = useAnimatedScrollHandler({
@@ -792,8 +819,20 @@ const SavedSupplements = ({ selectedDateKey, pageX }: { selectedDateKey: string;
           <BlurView intensity={28} tint="light" style={StyleSheet.absoluteFill} />
           <View style={styles.checkInEmptyOverlay} />
           <View style={styles.checkInEmptyContent}>
-            <Text style={styles.checkInEmptyTitle}>{t.checkInEmptyTitle}</Text>
-            <Text style={styles.checkInEmptyDescription}>{t.checkInEmptyDescription}</Text>
+            <Text style={styles.checkInEmptyTitle}>
+              {selectedDateIsFuture
+                ? 'Future dates are not available for check-in.'
+                : hasAnyCheckInSupplements
+                  ? 'No supplements were scheduled for this date.'
+                  : t.checkInEmptyTitle}
+            </Text>
+            <Text style={styles.checkInEmptyDescription}>
+              {selectedDateIsFuture
+                ? 'Pick today or an earlier date to log supplements.'
+                : hasAnyCheckInSupplements
+                  ? 'Only supplements scheduled for this date appear here.'
+                  : t.checkInEmptyDescription}
+            </Text>
           </View>
         </View>
       ) : (
@@ -823,7 +862,19 @@ const SavedSupplements = ({ selectedDateKey, pageX }: { selectedDateKey: string;
                 <SupplementCheckInCard
                   item={item}
                   isChecked={checkedKeys.has(item.checkInKey)}
-                  onCheckIn={() => toggleCheckIn(selectedDateKey, item.checkInKey, item.supplementId ?? null)}
+                  disabled={selectedDateIsPast}
+                  onCheckIn={() => {
+                    void toggleCheckIn(
+                      selectedDateKey,
+                      item.checkInKey,
+                      item.supplementId ?? null,
+                      {
+                        createdAt: item.createdAt,
+                        syncedToCheckIn: true,
+                        routine: savedSupplements.find(saved => saved.id === item.id)?.routine ?? undefined,
+                      },
+                    );
+                  }}
                 />
               </View>
             ))}
@@ -848,8 +899,8 @@ const ProgressCard = () => {
   const todayKey = getLocalDateKey(new Date());
   const checkedKeys = useMemo(() => new Set(checkInsByDate[todayKey] ?? []), [checkInsByDate, todayKey]);
   const checkInTargets = useMemo(
-    () => savedSupplements.filter(item => item.syncedToCheckIn),
-    [savedSupplements],
+    () => savedSupplements.filter(item => validateCheckInDateForItem(item, todayKey, todayKey).isValid),
+    [savedSupplements, todayKey],
   );
   const totalCount = checkInTargets.length;
   const takenCount = useMemo(() => {
@@ -1053,7 +1104,7 @@ const NutriTipCard = ({ selection, loading, error, density = 'regular' }: NutriT
   const overlayBodyMaxHeight = Math.max(160, overlayBubbleMaxHeight - 140);
   const tip = selection?.tip;
   const title = loading ? 'Loading daily tip...' : error ? 'Tip unavailable' : tip?.title ?? 'Daily tip';
-  const promptTitle = 'DID YOU KNOW?';
+  const promptTitle = 'Daily Tip';
   const supplementName = loading
     ? 'Loading...'
     : error
@@ -1162,12 +1213,12 @@ const NutriTipCard = ({ selection, loading, error, density = 'regular' }: NutriT
         className="bg-[#EFE2C8] rounded-[2rem] flex-1 flex-col relative overflow-hidden"
         style={{ borderCurve: 'continuous', padding: cardPadding, minHeight: 192 }}
       >
-        <View style={styles.tipHeaderRow}>
-          <View style={styles.tipHeaderLeft}>
+        <View className="flex-row items-center justify-between z-10">
+          <View className="flex-row items-center gap-2">
             <View style={styles.tipLogoBox}>
               <DidYouKnowLogo />
             </View>
-            <Text style={styles.tipHeaderTitle} numberOfLines={1}>
+            <Text style={styles.smallCardTitleDark} numberOfLines={1}>
               {promptTitle}
             </Text>
           </View>
@@ -1255,6 +1306,27 @@ const NutriTipCard = ({ selection, loading, error, density = 'regular' }: NutriT
 const StreakCard = ({ density = 'regular' }: { density?: Density }) => {
   const isCompact = density === 'compact';
   const cardPadding = isCompact ? 20 : 24;
+  const { savedSupplements } = useSavedSupplements();
+  const { checkInsByDate } = useDailyCheckIns();
+  const todayKey = useMemo(() => getLocalDateKey(new Date()), []);
+  const trackedItems = useMemo(
+    () => savedSupplements.filter(item => item.syncedToCheckIn),
+    [savedSupplements],
+  );
+  const currentStreakDays = useMemo(
+    () => getCurrentPerfectStreakDays(trackedItems, checkInsByDate, todayKey),
+    [checkInsByDate, todayKey, trackedItems],
+  );
+  const nextMilestone = useMemo(
+    () => getNextStreakMilestone(currentStreakDays),
+    [currentStreakDays],
+  );
+  const barHeights = useMemo(() => {
+    return buildCheckInSeries(trackedItems, checkInsByDate, todayKey, 7).map(day => {
+      if (!day.expectedCount) return 0.2;
+      return Math.max(0.2, day.completedCount / day.expectedCount);
+    });
+  }, [checkInsByDate, todayKey, trackedItems]);
 
   return (
     <Animated.View
@@ -1277,18 +1349,20 @@ const StreakCard = ({ density = 'regular' }: { density?: Density }) => {
       <View className="z-10 mt-auto flex-row justify-between items-end">
         <View style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
           <View className="flex-row items-baseline gap-1">
-            <Text style={styles.streakValue}>6</Text>
+            <Text style={styles.streakValue}>{currentStreakDays}</Text>
             <Text style={styles.streakUnit}>Days</Text>
           </View>
           <View className="mt-1 bg-slate-900/10 px-2 py-1 rounded-lg" style={{ borderCurve: 'continuous' }}>
             <Text style={styles.streakGoal} numberOfLines={1} ellipsizeMode="tail">
-              Goal: 30 Days
+              {nextMilestone.daysRemaining === 0
+                ? `${nextMilestone.goalDays}-day streak reached`
+                : `Goal: ${nextMilestone.goalDays} Days`}
             </Text>
           </View>
         </View>
 
         <View style={{ flexShrink: 0 }} className="h-10 flex-row items-end gap-1">
-          {[0.4, 0.6, 0.3, 0.7, 0.5, 0.9, 1].map((h, i) => (
+          {barHeights.map((h, i) => (
             <Animated.View
               key={i}
               entering={FadeInUp.delay(600 + i * 100).springify()}
@@ -1497,7 +1571,8 @@ const RecentlyScanned = () => {
       barcode: item.barcode ?? null,
       productName: item.productName,
       brandName: item.brandName,
-      dosageText: '',
+      dosageText: item.dosageText ?? '',
+      imageUrl: item.imageUrl ?? null,
     });
     if (!added) {
       setSavingIds(prev => ({ ...prev, [item.id]: false }));
@@ -2139,7 +2214,7 @@ const HomeTab = () => {
   const frameWidth = tokens.frameWidth ?? tokens.width;
   const contentWidth = Math.max(0, frameWidth - tokens.pageX * 2);
   const twoUpDensity = getTwoUpDensity(contentWidth, STACK_GAP);
-  const { draft } = useOnboarding();
+  const { home } = usePersonalization();
   const { savedSupplements } = useSavedSupplements();
   const { checkInsByDate } = useDailyCheckIns();
   const [baseDate, setBaseDate] = useState(() => new Date());
@@ -2221,19 +2296,22 @@ const HomeTab = () => {
     [savedSupplements],
   );
 
-  const expectedKeys = useMemo(
-    () =>
-      checkInTargets.map(item =>
+  const resolveExpectedForDate = useCallback(
+    (dateKey: string) => {
+      const eligibleItems = checkInTargets.filter(item => validateCheckInDateForItem(item, dateKey, todayId).isValid);
+      const expectedKeys = eligibleItems.map(item =>
         buildCheckInKey({ supplementId: item.supplementId, localId: item.id }),
-      ),
-    [checkInTargets],
+      );
+      return {
+        expectedCount: expectedKeys.length,
+        expectedKeySet: new Set(expectedKeys),
+      };
+    },
+    [checkInTargets, todayId],
   );
 
-  const expectedKeySet = useMemo(() => new Set(expectedKeys), [expectedKeys]);
-  const expectedCount = expectedKeys.length;
-
   const trend = useMemo<TrendData>(() => {
-    const series = buildDailyTrendSeries({ baseDate, expectedCount, expectedKeySet, checkInsByDate });
+    const series = buildDailyTrendSeries({ baseDate, checkInsByDate, resolveExpectedForDate });
     const { average, best, lowest } = summarizeTrendSeries(series);
     return {
       title: '7-Day Trend',
@@ -2243,7 +2321,7 @@ const HomeTab = () => {
         ? `Lowest: ${lowest.k} ${lowest.v}% · Best: ${best.k} ${best.v}%`
         : 'No data yet',
     };
-  }, [baseDate, checkInsByDate, expectedCount, expectedKeySet]);
+  }, [baseDate, checkInsByDate, resolveExpectedForDate]);
 
   const todayStart = useMemo(() => {
     const today = new Date(baseDate);
@@ -2251,26 +2329,17 @@ const HomeTab = () => {
     return today.getTime();
   }, [baseDate]);
 
-  const currentWeekEndKey = useMemo(() => {
-    const today = new Date(baseDate);
-    today.setHours(0, 0, 0, 0);
-    const weekStart = new Date(today);
-    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate() + 6);
-    return getLocalDateKey(weekEnd);
-  }, [baseDate]);
-
   useEffect(() => {
-    if (isDateKeyAfter(selectedDayId, currentWeekEndKey)) {
+    if (isDateKeyAfter(selectedDayId, todayId)) {
       setSelectedDayId(todayId);
     }
-  }, [selectedDayId, currentWeekEndKey, todayId]);
+  }, [selectedDayId, todayId]);
 
   const statusForDate = useCallback(
     (date: Date, dateKey: string): DayStatus => {
       if (date.getTime() > todayStart) return 'future';
-      if (expectedCount === 0) return 'none';
+      const { expectedCount, expectedKeySet } = resolveExpectedForDate(dateKey);
+      if (expectedCount === 0) return 'no_schedule';
 
       const completedSet = new Set(checkInsByDate[dateKey] ?? []);
       let completedCount = 0;
@@ -2280,21 +2349,49 @@ const HomeTab = () => {
         }
       });
 
-      if (completedCount === 0) return 'none';
+      if (completedCount === 0) return 'missed';
       if (completedCount >= expectedCount) return 'complete';
       return 'partial';
     },
-    [checkInsByDate, expectedCount, expectedKeySet, todayStart],
+    [checkInsByDate, resolveExpectedForDate, todayStart],
   );
 
   const weekDays = useMemo(() => buildCalendarDays(baseDate, statusForDate), [baseDate, statusForDate]);
-  const regionHint = draft?.location?.country ?? null;
-  const showOnboardingNudge =
-    draft?.onboardingVersion === 'v2' && savedSupplements.length === 0;
+  const primaryGoalLabel = home.prioritizedGoals[0]
+    ? getGoalDisplayLabel(home.prioritizedGoals[0])
+    : 'your goals';
+  const showOnboardingNudge = savedSupplements.length === 0;
   const tipSelection = useMemo(
-    () => (tipsPayload ? selectDailyTip(tipsPayload, baseDate, regionHint) : null),
-    [tipsPayload, baseDate, regionHint],
+    () => (tipsPayload ? selectDailyTip(tipsPayload, baseDate) : null),
+    [tipsPayload, baseDate],
   );
+  const shouldLeadWithEducation = useMemo(
+    () =>
+      home.emphasizedModules.includes('education') ||
+      home.emphasizedModules.includes('diet_review') ||
+      home.emphasizedModules.includes('plan_preview'),
+    [home.emphasizedModules],
+  );
+  const onboardingNudgeCopy = useMemo(() => {
+    if (home.emphasizedModules.includes('schedule_setup')) {
+      return {
+        title: 'Start your routine',
+        body: `Add your first supplement so we can set up a ${primaryGoalLabel.toLowerCase()}-friendly schedule that fits Daily Check-in.`,
+      };
+    }
+
+    if (home.emphasizedModules.includes('education')) {
+      return {
+        title: 'Start with one supplement',
+        body: `Add your first supplement so NuTri can tailor tips and Smart Filter around ${primaryGoalLabel.toLowerCase()}.`,
+      };
+    }
+
+    return {
+      title: 'Day 0 reminder',
+      body: `Add your first supplement to unlock Smart Filter and start building around ${primaryGoalLabel.toLowerCase()}.`,
+    };
+  }, [home.emphasizedModules, primaryGoalLabel]);
 
   return (
     <View style={styles.screen}>
@@ -2320,10 +2417,8 @@ const HomeTab = () => {
           {showOnboardingNudge ? (
             <View style={styles.sectionBlock}>
               <View style={styles.onboardingNudgeCard}>
-                <Text style={styles.onboardingNudgeTitle}>Day 0 reminder</Text>
-                <Text style={styles.onboardingNudgeBody}>
-                  Add your first supplement to activate Smart Filter and start daily check-ins.
-                </Text>
+                <Text style={styles.onboardingNudgeTitle}>{onboardingNudgeCopy.title}</Text>
+                <Text style={styles.onboardingNudgeBody}>{onboardingNudgeCopy.body}</Text>
               </View>
             </View>
           ) : null}
@@ -2338,15 +2433,24 @@ const HomeTab = () => {
           />
 
           <View style={styles.sectionBlock}>
-            <SavedSupplements selectedDateKey={selectedDayId} pageX={tokens.pageX} />
+            <SavedSupplements selectedDateKey={selectedDayId} todayDateKey={todayId} pageX={tokens.pageX} />
           </View>
 
           <View style={styles.sectionBlock}>
             <View style={styles.stack16}>
               <ProgressCard />
               <View style={styles.row16}>
-                <NutriTipCard selection={tipSelection} loading={tipsLoading} error={tipsError} density={twoUpDensity} />
-                <StreakCard density={twoUpDensity} />
+                {shouldLeadWithEducation ? (
+                  <>
+                    <NutriTipCard selection={tipSelection} loading={tipsLoading} error={tipsError} density={twoUpDensity} />
+                    <StreakCard density={twoUpDensity} />
+                  </>
+                ) : (
+                  <>
+                    <StreakCard density={twoUpDensity} />
+                    <NutriTipCard selection={tipSelection} loading={tipsLoading} error={tipsError} density={twoUpDensity} />
+                  </>
+                )}
               </View>
             </View>
           </View>
@@ -2793,10 +2897,12 @@ const styles = StyleSheet.create({
 
   // ---- Progress card text ----
   cardMeta: {
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: '700',
-    color: 'rgba(219,234,254,0.95)',
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '800',
+    color: 'rgba(239,246,255,0.96)',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
     includeFontPadding: false,
   },
   progressBig: {
@@ -3019,8 +3125,9 @@ const styles = StyleSheet.create({
   },
   tipBody: {
     flex: 1,
-    justifyContent: 'flex-start',
-    marginTop: 10,
+    justifyContent: 'flex-end',
+    marginTop: 0,
+    paddingBottom: 14,
     gap: 10,
   },
   tipSupplementCard: {

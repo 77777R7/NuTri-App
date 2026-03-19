@@ -1,0 +1,14 @@
+{
+  "phase": "week3_safety",
+  "generatedAt": "2026-03-14T22:14:48.659Z",
+  "reports": [
+    "week3_product_ul_fixture_report",
+    "week3_saved_stack_duplicate_report",
+    "week3_safety_wording_report",
+    "week3_daily_dose_basis_audit",
+    "week3_real_sample_qa",
+    "week3_wording_hardening_report",
+    "week3_saved_stack_e2e_qa",
+    "week3_closeout_summary"
+  ]
+}

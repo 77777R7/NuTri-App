@@ -1,0 +1,29 @@
+{
+  "generatedAt": "2026-03-17T19:27:29.155Z",
+  "phase": "P0-B",
+  "phaseOutcomeStatus": "blocker_isolation",
+  "inputs": {
+    "reportPath": "output/p0_p3_highfreq_schiff_healthy_bootstrap_20260317/high_frequency_hit_validation.json",
+    "reportGeneratedAt": "2026-03-17T12:43:08.374Z"
+  },
+  "baseline": {
+    "uniqueCandidates": 1651,
+    "completeHitCount": 688,
+    "completeHitRatePct": 41.7,
+    "anyRecordHitCount": 967,
+    "anyRecordHitRatePct": 58.6,
+    "activeQueueCount": 278,
+    "missingFromStagingCount": 684
+  },
+  "missClassification": {
+    "upstream_missing": 962,
+    "transport_dropped": 0,
+    "consumer_dropped": 0,
+    "weak_but_visible": 0,
+    "identity_unstable": 0
+  },
+  "finalCall": {
+    "productLevelPass": false,
+    "reason": "The current representative/high-frequency set still fails product-level completeness because only 688/1651 candidates are complete hits and 962 remain upstream-missing or still queued."
+  }
+}

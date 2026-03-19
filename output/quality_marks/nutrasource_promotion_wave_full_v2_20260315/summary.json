@@ -1,0 +1,68 @@
+{
+  "schemaVersion": "nutrasource_promotion_wave.v1",
+  "generatedAt": "2026-03-15T20:11:33.759Z",
+  "inputs": {
+    "promotionSeedPath": "output/quality_marks/nutrasource_catalog_closure_full_v2_20260315/promotion_ready_seed.json",
+    "concurrency": 6
+  },
+  "selection": {
+    "selectedCount": 159,
+    "programCounts": {
+      "IFOS": 16,
+      "IGEN": 143
+    },
+    "path": "output/quality_marks/nutrasource_promotion_wave_full_v2_20260315/selection/selection.json"
+  },
+  "refresh": {
+    "refreshedCount": 159,
+    "summaryStatusCounts": {
+      "ambiguous": 144,
+      "verified": 15
+    },
+    "path": "output/quality_marks/nutrasource_promotion_wave_full_v2_20260315/refresh/week2_iherb_quality_mark_refresh_report.json"
+  },
+  "thirdPartyCensus": {
+    "summary": {
+      "importedMatchedTotal": 26494,
+      "errorCount": 0,
+      "officialRegistryChecked": 206
+    },
+    "bucketCounts": {
+      "verified": 104,
+      "claimed": 9833,
+      "brand_level_program_signal_only": 19,
+      "registry_blocked": 20,
+      "not_proven": 16518
+    },
+    "path": "output/quality_marks/nutrasource_promotion_wave_full_v2_20260315/third_party_census/third_party_tested_claim_census.json"
+  },
+  "igenSignalReport": {
+    "summary": {
+      "igenRows": 151,
+      "productLevelOfficialSignalCount": 138,
+      "brandLevelOnlyCount": 13,
+      "checkedNotFoundCount": 0,
+      "registryAmbiguousCount": 0,
+      "seedRowCount": 138
+    },
+    "signalStateCounts": {
+      "product_level_official_signal": 138,
+      "brand_level_only_signal": 13
+    },
+    "path": "output/quality_marks/nutrasource_promotion_wave_full_v2_20260315/igen_official_signal/igen_official_signal_report.json",
+    "seedPath": "output/quality_marks/nutrasource_promotion_wave_full_v2_20260315/igen_official_signal/igen_official_signal_seed.json"
+  },
+  "igenSignalCensus": {
+    "summary": {
+      "importedMatchedTotal": 26494,
+      "errorCount": 0,
+      "igenSignalChecked": 135
+    },
+    "bucketCounts": {
+      "no_official_signal": 26359,
+      "product_level_official_signal": 122,
+      "brand_level_only_signal": 13
+    },
+    "path": "output/quality_marks/nutrasource_promotion_wave_full_v2_20260315/igen_official_signal_census/igen_official_signal_census.json"
+  }
+}

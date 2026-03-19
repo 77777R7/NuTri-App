@@ -1,0 +1,105 @@
+{
+  "generatedAt": "2026-03-17T22:47:25Z",
+  "objective": "Execute the two queued-brand lanes with real multi-subagent work and classify each brand into merge-ready, next-step-ready, or blocker-classified status without touching protected scan surfaces.",
+  "baselineReference": {
+    "highFrequencyReportPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/high_frequency_product_hit_validation.json",
+    "canonicalCompleteHitCount": 725,
+    "canonicalCompleteHitRatePct": 43.9,
+    "canonicalActiveQueueCount": 241,
+    "canonicalMissingFromStagingCount": 684
+  },
+  "spawnedSubagents": [
+    {
+      "agentId": "019cfdf0-ab01-77a0-8601-e3a0c4750b8a",
+      "brandName": "Natrol",
+      "lane": "external_discovery_lane"
+    },
+    {
+      "agentId": "019cfdf0-ab6a-7410-afbf-7fc751b9b8c3",
+      "brandName": "Codeage",
+      "lane": "external_discovery_lane"
+    },
+    {
+      "agentId": "019cfdf0-ab9c-7ef3-9a13-69bd94a9cd1d",
+      "brandName": "Nutricost",
+      "lane": "official_recovery_wave_lane"
+    },
+    {
+      "agentId": "019cfdf0-abd2-7073-927b-00756c009c17",
+      "brandName": "Country Life",
+      "lane": "official_recovery_wave_lane"
+    },
+    {
+      "agentId": "019cfdf0-ac00-7b92-94a0-d7e223f24d38",
+      "brandName": "Sports Research",
+      "lane": "official_recovery_wave_lane"
+    }
+  ],
+  "lanes": [
+    {
+      "laneId": "external_discovery_lane",
+      "status": "execution_success_with_mixed_outcomes",
+      "brands": [
+        {
+          "brandName": "Natrol",
+          "result": "narrow_validated_queue_presence",
+          "validatedCandidateCount": 2,
+          "sourceCatalogProductCount": 42,
+          "currentQueueRowsCompared": 41,
+          "recommendedNextStep": "Run a tightly scoped Natrol replay only for the two exact-barcode melatonin candidates and keep the remaining 39 paused.",
+          "evidencePath": "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_natrol_external_discovery_20260317/validated_queue_candidates.json"
+        },
+        {
+          "brandName": "Codeage",
+          "result": "fresh_supplement_only_queue_rebuild_ready",
+          "validatedCandidateCount": 12,
+          "legacyQueueReuseSafe": false,
+          "recommendedNextStep": "Rebuild Codeage as a fresh supplement-only official queue from the live NA storefront and keep pet/topical rows out of scope.",
+          "evidencePath": "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_codeage_external_discovery_20260317/codeage_official_discovery_evidence.json"
+        }
+      ]
+    },
+    {
+      "laneId": "official_recovery_wave_lane",
+      "status": "execution_success_with_blockers",
+      "brands": [
+        {
+          "brandName": "Nutricost",
+          "result": "incremental_signal_gated_review",
+          "queued": 32,
+          "processed": 32,
+          "improvedRows": 3,
+          "becameFullOverlayReady": 3,
+          "canonicalMergeReady": false,
+          "recommendedNextStep": "Manual spot-check the three OCR-derived rows before any gated canonical merge/high-frequency validation.",
+          "evidencePath": "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_nutricost_official_recovery_20260317/official_fallback_report.json"
+        },
+        {
+          "brandName": "Country Life",
+          "result": "improved_but_partial_overlay",
+          "queued": 14,
+          "processed": 14,
+          "improvedRows": 14,
+          "becameFullOverlayReady": 0,
+          "canonicalMergeReady": false,
+          "recommendedNextStep": "Follow up on warnings and suggested-use completion before re-running canonical merge or high-frequency validation.",
+          "evidencePath": "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_country_life_official_recovery_20260317/official_fallback_report.json"
+        },
+        {
+          "brandName": "Sports Research",
+          "result": "blocker_classified_identity_mismatch",
+          "queued": 6,
+          "processed": 6,
+          "improvedRows": 0,
+          "recommendedNextStep": "Keep the residual six-row tail paused under this exact-barcode lane and do not rerun the same method without a genuinely new identity source.",
+          "evidencePath": "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_sports_research_official_recovery_20260317/exact_barcode_recovery/iherb_search_recovery_report.json"
+        }
+      ]
+    }
+  ],
+  "overallCall": {
+    "canonicalBaselineChanged": false,
+    "whyCanonicalBaselineDidNotChange": "This batch executed discovery and brand-local recovery waves, but only Nutricost produced merge-candidate uplift and those three wins remain under OCR quality review rather than canonical merge.",
+    "highestRoiNextAction": "Run a gated human spot-check on the three Nutricost OCR-derived recovered rows, because this is the only brand in the batch that produced immediate potential canonical uplift."
+  }
+}

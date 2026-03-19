@@ -1,0 +1,142 @@
+{
+  "generatedAt": "2026-03-17T20:35:01Z",
+  "programPhase": "p0_p3_product_closure",
+  "dispatchMode": "parallel_with_gates",
+  "latestParallelExecution": {
+    "executedAt": "2026-03-17T20:22:16Z",
+    "spawnedAgents": [
+      "p0-active-queue-rescuer",
+      "p0-import-quality-auditor",
+      "p0-product-surface-auditor",
+      "week3-regression-guard"
+    ],
+    "combinedOutcome": "completed_with_blockers",
+    "note": "Subagents ran against the canonical active reports. A follow-up Pure Encapsulations active-queue wave then improved P0 from 700/266 to 725/241, while import-quality, product-surface, and Week 3 regression audits remained healthy."
+  },
+  "lanes": [
+    {
+      "subagentId": "p0_active_queue_rescuer",
+      "status": "active",
+      "thisWeekGoal": "Reduce active_queue from 278 to below 50.",
+      "primaryTargetBrands": [
+        "Schiff",
+        "Pure Encapsulations",
+        "Nature's Bounty",
+        "Nutricost",
+        "Vital Proteins",
+        "Nature Made",
+        "Solgar",
+        "Nature's Way",
+        "Healthy Origins"
+      ],
+      "successSignal": "The active_queue shrinks materially and the new complete hits survive through merge and product-surface audit.",
+      "currentProgress": {
+        "baselineCompleteHitCount": 688,
+        "currentCompleteHitCount": 725,
+        "baselineCompleteHitRatePct": 41.7,
+        "currentCompleteHitRatePct": 43.9,
+        "baselineActiveQueueCount": 278,
+        "currentActiveQueueCount": 241,
+        "unresolvedHighFrequencyCount": 925,
+        "confirmedIncrementalWaves": [
+          "Nature's Bounty",
+          "Nature Made",
+          "Pure Encapsulations"
+        ],
+        "brandBlockersObserved": [
+          {
+            "brandName": "Nature's Way",
+            "classification": "rate_limited_no_uplift_sample"
+          },
+          {
+            "brandName": "Solgar",
+            "classification": "executed_no_signal_sample"
+          }
+        ],
+        "nextBestFocus": [
+          "Nutricost",
+          "Vital Proteins",
+          "Schiff"
+        ]
+      }
+    },
+    {
+      "subagentId": "p0_missing_from_staging_rescuer",
+      "status": "active",
+      "thisWeekGoal": "Recover at least 190 new complete hits from the current missing_from_staging pool.",
+      "primaryTargetBrands": [
+        "Natrol",
+        "Country Life",
+        "MegaFood",
+        "Source Naturals",
+        "Centrum",
+        "Bayer One A Day",
+        "Osteo Bi-Flex"
+      ],
+      "successSignal": "Representative complete-hit coverage reaches or exceeds 70.0% without reopening blocked discovery lanes."
+    },
+    {
+      "subagentId": "p0_import_quality_auditor",
+      "status": "completed",
+      "thisWeekGoal": "Eliminate the direct mapping instrumentation gap in import-quality validation.",
+      "primaryTargetBrands": [],
+      "successSignal": "Parse failures and mapping mismatches are directly counted for all five Week 2 fields.",
+      "currentProgress": {
+        "directInstrumentationClosed": true,
+        "reportGeneratedAt": "2026-03-17T20:34:29.859Z",
+        "reportPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/import_quality_validation_report.json",
+        "fieldHighlights": {
+          "ingredient": {
+            "parseFailureCountObserved": 723,
+            "mappingMismatchCountObserved": 27421
+          },
+          "dosage": {
+            "parseFailureCountObserved": 5,
+            "mappingMismatchCountObserved": 9549
+          },
+          "suggested_use": {
+            "parseFailureCountObserved": 0,
+            "mappingMismatchCountObserved": 12137
+          },
+          "warnings": {
+            "parseFailureCountObserved": 0,
+            "mappingMismatchCountObserved": 3739
+          },
+          "product_image": {
+            "parseFailureCountObserved": 0,
+            "mappingMismatchCountObserved": 0
+          }
+        }
+      }
+    },
+    {
+      "subagentId": "p0_product_surface_auditor",
+      "status": "completed",
+      "thisWeekGoal": "Re-run representative product-surface completeness after every rescue wave.",
+      "primaryTargetBrands": [],
+      "successSignal": "Detail, My Saved, save chain, and downstream Saved consumers pass on the representative set.",
+      "currentProgress": {
+        "reportGeneratedAt": "2026-03-17T20:19:56.809Z",
+        "sourceContractPassCount": 6,
+        "auditedSurfacePassCount": 4,
+        "representativeHighFrequencyGatePass": false,
+        "blockingReason": "Product-surface consumers now pass on non-scan surfaces, but representative high-frequency closure is still blocked by 241 active-queue rows and 684 missing-from-staging rows."
+      }
+    },
+    {
+      "subagentId": "week3_regression_guard",
+      "status": "completed",
+      "thisWeekGoal": "Prevent Week 3 regressions while new Week 2 products are rescued.",
+      "primaryTargetBrands": [],
+      "successSignal": "Real-saved duplicate warning remains closed and conservative.",
+      "currentProgress": {
+        "reportGeneratedAt": "2026-03-17T20:19:56.809Z",
+        "realSavedClosurePasses": true,
+        "requiredCaseCoveragePassCount": 3,
+        "realSavedProductsEvaluated": 10,
+        "oneServingFallbackCount": 10,
+        "regressionDetected": false
+      }
+    }
+  ]
+}

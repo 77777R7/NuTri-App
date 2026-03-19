@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "igen_brand_expansion_wave.v1",
+  "generatedAt": "2026-03-15T20:37:37.524Z",
+  "inputs": {
+    "batchesPath": "/Users/howard07/NuTriApp/nutri-app/output/quality_marks/_tmp_remaining_igen_batches/great_lakes_wellness.json",
+    "stagingPath": "output/sports_research_igen_patch_wave_batch4_retry_20260315/staging_products.official_refreshed.json"
+  },
+  "batch": {
+    "batchLabel": "wave2_brand_batch_great_lakes_wellness_probe",
+    "brandName": "Great Lakes Wellness"
+  },
+  "summary": {
+    "totalRows": 1,
+    "consumerReadyRows": 1,
+    "patchQueueRows": 0,
+    "otherRows": 0,
+    "missingRows": 0
+  },
+  "consumerReadyRows": [
+    {
+      "key": "web:gtin14:00322654002897:great_lakes_wellness:great_lakes_wellness_grass_fed_bovine_collagen_peptides_chai_10_oz_284_g",
+      "productId": "141532",
+      "barcode": "00322654002897",
+      "brandName": "Great Lakes Wellness",
+      "productName": "Great Lakes Wellness, Grass-Fed Bovine Collagen Peptides, Chai, 10 oz (284 g)",
+      "iherbUrl": "https://www.iherb.com/pr/great-lakes-wellness-grass-fed-bovine-collagen-peptides-chai-10-oz-284-g/141532",
+      "officialSignalProgramId": "igen",
+      "officialSignalState": "product_level_official_signal",
+      "officialRegistryEvidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=GLGC0004",
+      "currentStagingStatus": "full_overlay_ready",
+      "currentCoreMissingFields": []
+    }
+  ],
+  "patchQueueRows": [],
+  "otherRows": [],
+  "missingRows": []
+}

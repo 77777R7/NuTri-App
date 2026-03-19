@@ -1,0 +1,129 @@
+{
+  "generatedAt": "2026-03-17T20:35:01Z",
+  "objective": "Target queued and high-frequency supplement-brand gaps for North America site discovery and matching, without reopening broad expansion lanes.",
+  "selectionPolicy": {
+    "userPriorityBrandsIncluded": [
+      "Pure Encapsulations",
+      "Sports Research",
+      "Life Extension",
+      "Garden of Life",
+      "Codeage"
+    ],
+    "gapDrivenBrandsIncluded": [
+      "Schiff",
+      "Nutricost",
+      "Vital Proteins",
+      "Natrol",
+      "Country Life"
+    ]
+  },
+  "targetBrands": [
+    {
+      "brandName": "Pure Encapsulations",
+      "reason": "User-priority brand and current active_queue target with proven official-fallback signal.",
+      "currentHighFrequency": {
+        "complete_hit": 37,
+        "active_queue": 13,
+        "missing_from_staging": 0
+      }
+    },
+    {
+      "brandName": "Sports Research",
+      "reason": "User-priority brand with high complete-hit base and a small remaining missing-from-staging tail.",
+      "currentHighFrequency": {
+        "complete_hit": 41,
+        "active_queue": 0,
+        "missing_from_staging": 6
+      }
+    },
+    {
+      "brandName": "Life Extension",
+      "reason": "User-priority brand with meaningful missing-from-staging opportunity.",
+      "currentHighFrequency": {
+        "complete_hit": 29,
+        "active_queue": 0,
+        "missing_from_staging": 18
+      }
+    },
+    {
+      "brandName": "Garden of Life",
+      "reason": "User-priority brand with meaningful missing-from-staging opportunity.",
+      "currentHighFrequency": {
+        "complete_hit": 7,
+        "active_queue": 0,
+        "missing_from_staging": 17
+      }
+    },
+    {
+      "brandName": "Codeage",
+      "reason": "User-priority brand not clearly represented in the current canonical high-frequency report and requires North America discovery + queue presence check.",
+      "currentHighFrequency": null
+    },
+    {
+      "brandName": "Schiff",
+      "reason": "Largest remaining active_queue brand in the canonical high-frequency set.",
+      "currentHighFrequency": {
+        "complete_hit": 6,
+        "active_queue": 41,
+        "missing_from_staging": 0
+      }
+    },
+    {
+      "brandName": "Nutricost",
+      "reason": "Large active_queue brand with strong upside if official signal can be expanded safely.",
+      "currentHighFrequency": {
+        "complete_hit": 17,
+        "active_queue": 32,
+        "missing_from_staging": 0
+      }
+    },
+    {
+      "brandName": "Vital Proteins",
+      "reason": "Large active_queue brand with strong upside if official signal can be expanded safely.",
+      "currentHighFrequency": {
+        "complete_hit": 8,
+        "active_queue": 32,
+        "missing_from_staging": 0
+      }
+    },
+    {
+      "brandName": "Natrol",
+      "reason": "Largest missing-from-staging supplement brand in the canonical high-frequency set.",
+      "currentHighFrequency": {
+        "complete_hit": 5,
+        "active_queue": 0,
+        "missing_from_staging": 41
+      }
+    },
+    {
+      "brandName": "Country Life",
+      "reason": "Large missing-from-staging supplement brand in the canonical high-frequency set.",
+      "currentHighFrequency": {
+        "complete_hit": 13,
+        "active_queue": 0,
+        "missing_from_staging": 34
+      }
+    }
+  ],
+  "agentAssignments": {
+    "na-brand-discovery-a": [
+      "Pure Encapsulations",
+      "Sports Research",
+      "Life Extension"
+    ],
+    "na-brand-discovery-b": [
+      "Garden of Life",
+      "Codeage",
+      "Natrol"
+    ],
+    "na-brand-discovery-c": [
+      "Schiff",
+      "Nutricost",
+      "Vital Proteins",
+      "Country Life"
+    ],
+    "queued-highfreq-matcher": [
+      "all_target_brands"
+    ]
+  }
+}

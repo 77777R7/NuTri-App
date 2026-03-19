@@ -1,0 +1,30 @@
+{
+  "generatedAt": "2026-03-17T20:19:47.137Z",
+  "gates": [
+    {
+      "id": "overlay_image_transport",
+      "pass": true,
+      "description": "backend overlay transport includes iHerb image fields for ensure-overview"
+    },
+    {
+      "id": "overlay_warning_consumption",
+      "pass": true,
+      "description": "overlay warnings are consumed into MySupplement facts payload"
+    },
+    {
+      "id": "saved_image_persistence",
+      "pass": true,
+      "description": "Saved context persists remote image_url into the local model"
+    },
+    {
+      "id": "my_saved_image_surface",
+      "pass": true,
+      "description": "My Saved card/detail surfaces can render product image when available"
+    },
+    {
+      "id": "daily_dose_simple_daily_parse",
+      "pass": true,
+      "description": "daily dose parser covers simple daily and twice-a-day wording"
+    }
+  ]
+}

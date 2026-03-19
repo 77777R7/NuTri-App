@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "iherb_official_fallback_config.v1",
+  "brandName": "Swanson",
+  "priorityLane": "P0_api_fill_us_strong_identity",
+  "siteOrigin": "https://www.swansonvitamins.com",
+  "readerPrefix": "https://r.jina.ai/http://",
+  "searchPathTemplate": "/search?searchTerm={query}",
+  "enableAgentBrowserFallback": true,
+  "enableImageOcrFallback": true,
+  "enableStagedImageOcr": true,
+  "ocrMaxImages": 6,
+  "catalogApi": {
+    "mode": "shopify_products_json",
+    "pathTemplate": "/products.json?limit=250&page={page}",
+    "pageSize": 250,
+    "maxPages": 16
+  },
+  "searchQueryOverrides": {
+    "117580": [
+      "full spectrum japanese ashitaba"
+    ],
+    "116332": [
+      "triple iodine complex high potency"
+    ]
+  },
+  "productPageUrlOverrides": {
+    "117580": "https://www.swansonvitamins.com/products/swanson-premium-full-spectrum-japanese-ashitaba-500-mg-60-caps",
+    "116332": "https://www.swansonvitamins.com/products/swanson-ultra-triple-iodine-complex-12-5-mg-60-veg-caps"
+  },
+  "brochureFilenameOverrides": {},
+  "manualSectionOverrides": {},
+  "manualSupplementFactsOverrides": {}
+}

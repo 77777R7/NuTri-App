@@ -1,0 +1,260 @@
+{
+  "generatedAt": "2026-03-17T20:19:56.989Z",
+  "inputs": {
+    "reportGeneratedAt": "2026-03-13T07:23:51.563Z",
+    "uniqueCandidates": 1651
+  },
+  "coreOutcome": {
+    "uniqueCandidates": 1651,
+    "completeHitCount": 627,
+    "completeHitRatePct": 38,
+    "anyRecordHitCount": 655,
+    "anyRecordHitRatePct": 39.7,
+    "missingFromStagingCount": 996,
+    "activeQueueCount": 28
+  },
+  "topGapBrands": [
+    {
+      "brandName": "Healthy Origins",
+      "total": 50,
+      "completeHit": 0,
+      "missingFromStaging": 50,
+      "activeQueue": 0
+    },
+    {
+      "brandName": "Schiff",
+      "total": 47,
+      "completeHit": 1,
+      "missingFromStaging": 46,
+      "activeQueue": 0
+    },
+    {
+      "brandName": "Natrol",
+      "total": 46,
+      "completeHit": 5,
+      "missingFromStaging": 41,
+      "activeQueue": 0
+    },
+    {
+      "brandName": "Pure Encapsulations",
+      "total": 50,
+      "completeHit": 12,
+      "missingFromStaging": 38,
+      "activeQueue": 0
+    },
+    {
+      "brandName": "Spring Valley",
+      "total": 35,
+      "completeHit": 0,
+      "missingFromStaging": 35,
+      "activeQueue": 0
+    },
+    {
+      "brandName": "Centrum",
+      "total": 36,
+      "completeHit": 2,
+      "missingFromStaging": 34,
+      "activeQueue": 0
+    },
+    {
+      "brandName": "Country Life",
+      "total": 47,
+      "completeHit": 13,
+      "missingFromStaging": 34,
+      "activeQueue": 0
+    },
+    {
+      "brandName": "Nature's Bounty",
+      "total": 48,
+      "completeHit": 13,
+      "missingFromStaging": 33,
+      "activeQueue": 2
+    },
+    {
+      "brandName": "Nutricost",
+      "total": 49,
+      "completeHit": 17,
+      "missingFromStaging": 32,
+      "activeQueue": 0
+    },
+    {
+      "brandName": "Vital Proteins",
+      "total": 40,
+      "completeHit": 8,
+      "missingFromStaging": 32,
+      "activeQueue": 0
+    }
+  ],
+  "completeHitSample": [
+    {
+      "brandName": "Nature Made",
+      "productName": "C 500 mg",
+      "barcodeGtin14": "00031604025090",
+      "status": "full_overlay_ready",
+      "stillMissingFields": []
+    },
+    {
+      "brandName": "Nature Made",
+      "productName": "D3 125 mcg 5000 IU",
+      "barcodeGtin14": "00031604026219",
+      "status": "full_overlay_ready",
+      "stillMissingFields": []
+    },
+    {
+      "brandName": "Nature Made",
+      "productName": "Flaxseed Oil 1400 mg",
+      "barcodeGtin14": "00031604028251",
+      "status": "full_overlay_ready",
+      "stillMissingFields": []
+    },
+    {
+      "brandName": "Nature Made",
+      "productName": "Magnesium 250 mg",
+      "barcodeGtin14": "00031604026844",
+      "status": "full_overlay_ready",
+      "stillMissingFields": []
+    },
+    {
+      "brandName": "Nature Made",
+      "productName": "Melatonin 3 mg",
+      "barcodeGtin14": "00031604027421",
+      "status": "full_overlay_ready",
+      "stillMissingFields": []
+    },
+    {
+      "brandName": "Nature Made",
+      "productName": "Vitamin B12 2500 mcg",
+      "barcodeGtin14": "00031604027186",
+      "status": "full_overlay_ready",
+      "stillMissingFields": []
+    },
+    {
+      "brandName": "California Gold Nutrition",
+      "productName": "5-HTP 100 mg",
+      "barcodeGtin14": "00898220011735",
+      "status": "full_overlay_ready",
+      "stillMissingFields": []
+    },
+    {
+      "brandName": "California Gold Nutrition",
+      "productName": "Alpha Lipoic Acid 600 mg",
+      "barcodeGtin14": "00898220013647",
+      "status": "full_overlay_ready",
+      "stillMissingFields": []
+    },
+    {
+      "brandName": "California Gold Nutrition",
+      "productName": "Antarctic Krill 1000 mg",
+      "barcodeGtin14": "00898220011025",
+      "status": "full_overlay_ready",
+      "stillMissingFields": []
+    },
+    {
+      "brandName": "California Gold Nutrition",
+      "productName": "Astaxanthin 12 mg",
+      "barcodeGtin14": "00898220011049",
+      "status": "full_overlay_ready",
+      "stillMissingFields": []
+    },
+    {
+      "brandName": "California Gold Nutrition",
+      "productName": "Astaxanthin 12 mg",
+      "barcodeGtin14": "00898220011032",
+      "status": "full_overlay_ready",
+      "stillMissingFields": []
+    },
+    {
+      "brandName": "California Gold Nutrition",
+      "productName": "BCAA 500 mg",
+      "barcodeGtin14": "00898220011278",
+      "status": "full_overlay_ready",
+      "stillMissingFields": []
+    }
+  ],
+  "missingSample": [
+    {
+      "brandName": "Nature Made",
+      "productName": "Alpha Lipoic Acid 200 mg",
+      "barcodeGtin14": "00031604029470",
+      "recommendedAction": null,
+      "stillMissingFields": []
+    },
+    {
+      "brandName": "Nature Made",
+      "productName": "Biotin 1000 mcg",
+      "barcodeGtin14": "00031604042738",
+      "recommendedAction": null,
+      "stillMissingFields": []
+    },
+    {
+      "brandName": "Nature Made",
+      "productName": "Burp-less Fish Oil Minis 1400 mg",
+      "barcodeGtin14": "00031604043759",
+      "recommendedAction": null,
+      "stillMissingFields": []
+    },
+    {
+      "brandName": "Nature Made",
+      "productName": "CoQ10 200 mg",
+      "barcodeGtin14": "00031604040901",
+      "recommendedAction": null,
+      "stillMissingFields": []
+    },
+    {
+      "brandName": "Nature Made",
+      "productName": "D3 25 mcg (1000 IU)",
+      "barcodeGtin14": "00031604040703",
+      "recommendedAction": null,
+      "stillMissingFields": []
+    },
+    {
+      "brandName": "Nature Made",
+      "productName": "Diabetes Health Pack",
+      "barcodeGtin14": "00031604017026",
+      "recommendedAction": null,
+      "stillMissingFields": []
+    },
+    {
+      "brandName": "Nature Made",
+      "productName": "Fish Oil 1000 mg 300 mg Omega-3",
+      "barcodeGtin14": "00031604027575",
+      "recommendedAction": null,
+      "stillMissingFields": []
+    },
+    {
+      "brandName": "Nature Made",
+      "productName": "Fish Oil 1200 mg",
+      "barcodeGtin14": "00031604014162",
+      "recommendedAction": null,
+      "stillMissingFields": []
+    },
+    {
+      "brandName": "Nature Made",
+      "productName": "Hair-Skin-Nails Adult Gummies",
+      "barcodeGtin14": "00031604041328",
+      "recommendedAction": null,
+      "stillMissingFields": []
+    },
+    {
+      "brandName": "Nature Made",
+      "productName": "Hair, Skin, & Nails",
+      "barcodeGtin14": "00031604042714",
+      "recommendedAction": null,
+      "stillMissingFields": []
+    },
+    {
+      "brandName": "Nature Made",
+      "productName": "High Potency Biotin 2500 mcg",
+      "barcodeGtin14": "00031604040338",
+      "recommendedAction": null,
+      "stillMissingFields": []
+    },
+    {
+      "brandName": "Nature Made",
+      "productName": "Iron 65 mg",
+      "barcodeGtin14": "00031604012212",
+      "recommendedAction": null,
+      "stillMissingFields": []
+    }
+  ]
+}

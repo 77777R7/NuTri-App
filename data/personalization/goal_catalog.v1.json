@@ -1,0 +1,101 @@
+{
+  "version": "v1",
+  "goals": [
+    {
+      "key": "sleep",
+      "goalKey": "sleep",
+      "label": "Sleep",
+      "onboardingLabel": "Sleep",
+      "aliases": ["sleep", "sleep support", "better sleep", "improve sleep", "bedtime"],
+      "defaultPriority": 100,
+      "summary": "Highlight sleep-support products and bedtime-friendly guidance first.",
+      "active": true,
+      "defaultVisible": true,
+      "allowedTypes": ["mineral", "herb"]
+    },
+    {
+      "key": "energy",
+      "goalKey": "energy",
+      "label": "Energy",
+      "onboardingLabel": "Energy",
+      "aliases": ["energy", "boost energy", "daytime energy", "steady energy"],
+      "defaultPriority": 90,
+      "summary": "Prioritize energy-support products and daytime anchors.",
+      "active": true,
+      "defaultVisible": true,
+      "allowedTypes": ["vitamin", "mineral", "protein"]
+    },
+    {
+      "key": "immunity",
+      "goalKey": "immunity",
+      "label": "Immunity",
+      "onboardingLabel": "Immunity",
+      "aliases": ["immunity", "immune support", "support immunity", "daily immunity"],
+      "defaultPriority": 80,
+      "summary": "Show immunity-support products and simple review lanes first.",
+      "active": true,
+      "defaultVisible": true,
+      "allowedTypes": ["vitamin", "mineral", "probiotic", "herb"]
+    },
+    {
+      "key": "recovery",
+      "goalKey": "recovery",
+      "label": "Recovery",
+      "onboardingLabel": "Recovery",
+      "aliases": ["recovery", "muscle recovery", "general wellness", "post workout"],
+      "defaultPriority": 70,
+      "summary": "Emphasize post-workout recovery and foundation support products.",
+      "active": true,
+      "defaultVisible": true,
+      "allowedTypes": ["protein", "mineral", "vitamin"]
+    },
+    {
+      "key": "focus",
+      "goalKey": "focus",
+      "label": "Focus",
+      "onboardingLabel": "Focus",
+      "aliases": ["focus", "enhance focus", "concentration", "mental clarity"],
+      "defaultPriority": 60,
+      "summary": "Prioritize focus-support products and simple daytime routines.",
+      "active": true,
+      "defaultVisible": true,
+      "allowedTypes": ["herb", "vitamin", "probiotic"]
+    },
+    {
+      "key": "stress_support",
+      "goalKey": "stress_support",
+      "label": "Stress Support",
+      "onboardingLabel": "Stress Support",
+      "aliases": ["stress support", "manage stress", "stress", "calm"],
+      "defaultPriority": 50,
+      "summary": "Surface calming support and lower-friction routines.",
+      "active": true,
+      "defaultVisible": true,
+      "allowedTypes": ["herb", "mineral"]
+    },
+    {
+      "key": "weight_management",
+      "goalKey": "weight_management",
+      "label": "Weight Management",
+      "onboardingLabel": "Weight Management",
+      "aliases": ["weight management", "weight", "metabolic support", "appetite support"],
+      "defaultPriority": 40,
+      "summary": "Keep weight-management review conservative and evidence-aware.",
+      "active": true,
+      "defaultVisible": true,
+      "allowedTypes": ["protein", "vitamin", "herb"]
+    },
+    {
+      "key": "libido_enhancement",
+      "goalKey": "libido_enhancement",
+      "label": "Libido Enhancement",
+      "onboardingLabel": "Libido Enhancement",
+      "aliases": ["libido enhancement", "libido", "sexual wellness", "adult vitality"],
+      "defaultPriority": 30,
+      "summary": "Keep libido-related products on a conservative review path.",
+      "active": true,
+      "defaultVisible": true,
+      "allowedTypes": ["herb", "mineral"]
+    }
+  ]
+}

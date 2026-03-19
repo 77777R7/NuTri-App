@@ -1,0 +1,77 @@
+{
+  "p3:science/omega3_fallback_only": {
+    "blockerClass": "science_whitelist_not_product_ready",
+    "lane": "P3",
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/science_whitelist_readiness_matrix.json",
+    "unpauseCondition": "Add verified form/bioavailability evidence for EPA/DHA/omega-3 differentiation before promoting beyond fallback-only.",
+    "status": "hold",
+    "canonicalPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/blocker_registry.json"
+  },
+  "p0:high_frequency/product_surface_incomplete": {
+    "blockerClass": "representative_product_set_not_complete",
+    "lane": "P0",
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/high_frequency_product_hit_validation.json",
+    "unpauseCondition": "Reduce upstream-missing + active-queue high-frequency products enough for the representative set to pass product-surface completeness.",
+    "status": "active",
+    "canonicalPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/blocker_registry.json"
+  },
+  "p0:natrol/current_catalog_legacy_tail_mismatch": {
+    "blockerClass": "current_catalog_mismatch",
+    "lane": "P0_external_discovery_lane",
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_natrol_external_discovery_20260317/unmatched_queue_rows_with_name_hints.json",
+    "unpauseCondition": "Only replay the two validated melatonin rows under strict barcode proof; keep the remaining 39 Natrol rows paused unless a reformulation-mapping lane is explicitly approved.",
+    "status": "hold",
+    "canonicalPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/blocker_registry.json"
+  },
+  "p0:codeage/stale_mixed_legacy_queue": {
+    "blockerClass": "mixed_category_legacy_queue",
+    "lane": "P0_external_discovery_lane",
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/codeage_queue_rebuild_execution_result.md",
+    "unpauseCondition": "Rebuild Codeage as a fresh supplement-only official queue from the current `/en-ca` storefront and keep pet/topical rows out of scope.",
+    "status": "resolved",
+    "canonicalPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/blocker_registry.json",
+    "resolution": "Fresh supplement-only Codeage queue rebuilt from current official discovery and iHerb zip evidence."
+  },
+  "p0:nutricost/ocr_review_gate_before_merge": {
+    "blockerClass": "ocr_quality_review_failed_manual_merge_gate",
+    "lane": "P0_official_recovery_wave_lane",
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/nutricost_gated_review_20260317.md",
+    "unpauseCondition": "Produce cleaner Suggested Use / Warnings extraction and stable front-of-pack image selection for the three recovered Nutricost rows before any canonical merge/high-frequency validation.",
+    "status": "active",
+    "canonicalPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/blocker_registry.json"
+  },
+  "p0:country_life/partial_overlay_not_merge_ready": {
+    "blockerClass": "partial_overlay_residue",
+    "lane": "P0_official_recovery_wave_lane",
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_country_life_official_recovery_20260317/official_fallback_report.json",
+    "unpauseCondition": "Fill the residual warnings/suggested_use gaps on the 14-row strong-identity subset before canonical merge or high-frequency validation.",
+    "status": "active",
+    "canonicalPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/blocker_registry.json"
+  },
+  "p0:sports_research/residual_tail_identity_mismatch": {
+    "blockerClass": "identity_mismatch_under_current_method",
+    "lane": "P0_official_recovery_wave_lane",
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_sports_research_official_recovery_20260317/exact_barcode_recovery/iherb_search_recovery_report.json",
+    "unpauseCondition": "Do not rerun the same six-row exact-barcode lane unless a genuinely new identity source is found for the residual tail.",
+    "status": "hold",
+    "canonicalPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/blocker_registry.json"
+  },
+  "p0:codeage/ambiguous_crossmatch_subset": {
+    "blockerClass": "ambiguous_identity_subset",
+    "lane": "P0_external_discovery_lane",
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/codeage_urolithin_and_gated_tail_20260317.md",
+    "unpauseCondition": "Residual ambiguous Codeage queue-rebuild rows now exclude the cleanly recovered Urolithin A path; keep the remaining ambiguous subset gated until tighter title/UPC proof is available.",
+    "status": "active",
+    "canonicalPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/blocker_registry.json",
+    "note": "The six-item ingestible tail has been closed. Any remaining ambiguous Codeage items are separate discovery candidates, not part of the previous gated ingestible closure slice."
+  },
+  "p0:codeage/gated_ingestible_tail": {
+    "blockerClass": "gated_ingestible_tail",
+    "lane": "P0_external_discovery_lane",
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/codeage_remaining_six_closure_20260317.md",
+    "unpauseCondition": "Only reopen individual rows after current live-match proof is refreshed and the missing fields can be filled without noisy OCR or category drift.",
+    "status": "resolved",
+    "canonicalPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/blocker_registry.json",
+    "resolution": "All six remaining ingestible Codeage tail products were closed through a shared-config unified wave plus deterministic final sanitization where raw page extraction still appended page-tail text."
+  }
+}

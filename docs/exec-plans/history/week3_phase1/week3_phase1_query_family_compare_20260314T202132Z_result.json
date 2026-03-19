@@ -1,0 +1,32 @@
+{
+  "waveId": "week3_phase1_query_family_compare_20260314T202132Z",
+  "lane": "kpi",
+  "pathKey": "official_fetch_unresolved:iherb_discovery_query_family_compare",
+  "attempted": 8,
+  "recoveredComplete": 0,
+  "recoveredPartial": 0,
+  "kpiDelta": {
+    "completeHitCount": 0,
+    "completeHitRate": 0,
+    "activeQueueCount": 0
+  },
+  "mergeDelta": {
+    "strictMergeReady": 0,
+    "queued": 0
+  },
+  "blockerBreakdown": {
+    "iherb_reader_search": 4
+  },
+  "decision": "retarget",
+  "outcomeClass": "diagnostic_success",
+  "evidencePath": "/Users/howard07/NuTriApp/nutri-app/output/discovery_query_family_comparison.json",
+  "executionHealth": {
+    "requests": 127,
+    "fetchSuccess": 32,
+    "http429": 76,
+    "aborted": 19,
+    "cacheHits": 0,
+    "retryCount": 51
+  },
+  "executed": true
+}

@@ -1,0 +1,188 @@
+{
+  "generatedAt": "2026-03-17T08:59:36.000Z",
+  "phase": "P1",
+  "phaseOutcomeStatus": "blocker_isolation",
+  "tier1Ingredients": [
+    "Magnesium",
+    "Vitamin C",
+    "Zinc",
+    "Iron",
+    "Folate"
+  ],
+  "realVsControlled": {
+    "realSavedEnvironment": {
+      "enoughCoverage": false,
+      "totalCandidateRows": 1,
+      "environmentDecision": "Week 3 not yet fully closed",
+      "blockers": [
+        "local + remote audit sources still cannot form all 3 required real-stack cases"
+      ]
+    },
+    "controlledQa": {
+      "label": "controlled_from_real_imported_products_and_existing_week3_fixtures",
+      "tier1SampleCoveragePassed": true,
+      "week3RealSampleQaPassed": true,
+      "week3SavedStackE2ePassed": true,
+      "week3WordingChecksPassed": true
+    }
+  },
+  "requiredCaseCoverage": {
+    "simple_duplicate": {
+      "pass": true,
+      "evidence": "week3_saved_stack_e2e_qa.json -> magnesium_over_ul"
+    },
+    "multi_product_stack": {
+      "pass": true,
+      "evidence": "week3_saved_stack_e2e_qa.json -> mixed_stack_with_skipped_product"
+    },
+    "edge_weak_input": {
+      "pass": true,
+      "evidence": "week3_saved_stack_e2e_qa.json -> folate_uncertain"
+    }
+  },
+  "controlledTier1Stacks": [
+    {
+      "ingredient": "Magnesium",
+      "sampleSource": "controlled_real_imported_pair",
+      "duplicatedProducts": [
+        "Magnesium L-Threonate 2000 mg",
+        "Magnesium Glycinate 400 mg"
+      ],
+      "duplicatedIngredient": "Magnesium",
+      "totalApproxDose": {
+        "value": 544,
+        "unit": "mg",
+        "text": "544 mg/day"
+      },
+      "ul": {
+        "value": 350,
+        "unit": "mg",
+        "text": "350 mg/day"
+      },
+      "dailyDoseBasis": [
+        "one_serving_fallback",
+        "one_serving_fallback"
+      ],
+      "pass": true
+    },
+    {
+      "ingredient": "Vitamin C",
+      "sampleSource": "controlled_real_imported_pair",
+      "duplicatedProducts": [
+        "Vitamin C 1000 mg",
+        "Ester-C"
+      ],
+      "duplicatedIngredient": "Vitamin C",
+      "totalApproxDose": {
+        "value": 2000,
+        "unit": "mg",
+        "text": "2000 mg/day"
+      },
+      "ul": {
+        "value": 2000,
+        "unit": "mg",
+        "text": "2000 mg/day"
+      },
+      "dailyDoseBasis": [
+        "one_serving_fallback",
+        "one_serving_fallback"
+      ],
+      "pass": true
+    },
+    {
+      "ingredient": "Zinc",
+      "sampleSource": "controlled_real_imported_pair",
+      "duplicatedProducts": [
+        "Ester-C",
+        "Zinc 10 mg"
+      ],
+      "duplicatedIngredient": "Zinc",
+      "totalApproxDose": {
+        "value": 14,
+        "unit": "mg",
+        "text": "14 mg/day"
+      },
+      "ul": {
+        "value": 40,
+        "unit": "mg",
+        "text": "40 mg/day"
+      },
+      "dailyDoseBasis": [
+        "one_serving_fallback",
+        "one_serving_fallback"
+      ],
+      "pass": true
+    },
+    {
+      "ingredient": "Iron",
+      "sampleSource": "controlled_real_imported_pair",
+      "duplicatedProducts": [
+        "Iron",
+        "Whole Food Women's One Daily"
+      ],
+      "duplicatedIngredient": "Iron",
+      "totalApproxDose": {
+        "value": 43,
+        "unit": "mg",
+        "text": "43 mg/day"
+      },
+      "ul": {
+        "value": 45,
+        "unit": "mg",
+        "text": "45 mg/day"
+      },
+      "dailyDoseBasis": [
+        "one_serving_fallback",
+        "one_serving_fallback"
+      ],
+      "pass": true
+    },
+    {
+      "ingredient": "Folate",
+      "sampleSource": "controlled_real_imported_pair",
+      "duplicatedProducts": [
+        "Whole Food Women's One Daily",
+        "Ultimate Man"
+      ],
+      "duplicatedIngredient": "Folate",
+      "totalApproxDose": {
+        "value": 1467,
+        "unit": "mcg",
+        "text": "1467 mcg/day"
+      },
+      "ul": {
+        "value": 1000,
+        "unit": "mcg",
+        "text": "1000 mcg/day"
+      },
+      "dailyDoseBasis": [
+        "one_serving_fallback",
+        "one_serving_fallback"
+      ],
+      "pass": true
+    }
+  ],
+  "wordingValidation": [
+    {
+      "id": "supplements_only_scope",
+      "pass": true
+    },
+    {
+      "id": "not_comparable_is_not_safe",
+      "pass": true
+    },
+    {
+      "id": "no_ul_established_is_not_no_risk",
+      "pass": true
+    },
+    {
+      "id": "stack_summary_scoped",
+      "pass": true
+    }
+  ],
+  "finalCall": {
+    "controlledTier1ClosurePasses": true,
+    "realSavedClosurePasses": false,
+    "closureVerdict": "Tier-1 duplicate reminder is closed on clearly labeled controlled QA, with real-saved residue still blocker-classified."
+  }
+}

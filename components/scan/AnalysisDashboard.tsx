@@ -1155,13 +1155,196 @@ const resolveChecklistChip = (item: DecisionScoreCardV2ChecklistItem): ScoreChec
     return 'Detected';
 };
 
+const ScoreLearnMoreModal: React.FC<{
+    visible: boolean;
+    onClose: () => void;
+}> = ({ visible, onClose }) => {
+    const { t } = useTranslation();
+    const weightRows = [
+        { label: 'Ingredient Safety', value: '20%' },
+        { label: 'Formula Transparency', value: '25%' },
+        { label: 'Label Clarity', value: '15%' },
+        { label: 'Manufacturing Standards', value: '10%' },
+        { label: 'Testing & Verification', value: '20%' },
+        { label: 'Product Quality Signals', value: '10%' },
+    ];
+    const badgeRows: Array<{ chip: ScoreChecklistChip; body: string }> = [
+        { chip: 'Verified', body: t.analysisLearnMoreBadgeVerified },
+        { chip: 'Detected', body: t.analysisLearnMoreBadgeDetected },
+        { chip: 'Not verified', body: t.analysisLearnMoreBadgeNotVerified },
+        { chip: 'Not shown', body: t.analysisLearnMoreBadgeNotShown },
+    ];
+    const ratingRows = [
+        { label: 'Excellent', body: t.analysisLearnMoreConfidenceGuideExcellent },
+        { label: 'Strong', body: t.analysisLearnMoreConfidenceGuideStrong },
+        { label: 'Good', body: t.analysisLearnMoreConfidenceGuideGood },
+        { label: 'Conservative', body: t.analysisLearnMoreConfidenceGuideConservative },
+    ];
+
+    if (!visible) return null;
+
+    return (
+        <Modal
+            visible={visible}
+            transparent
+            animationType="none"
+            onRequestClose={onClose}
+            statusBarTranslucent
+        >
+            <View style={styles.modalOverlayGlass}>
+                <Pressable style={StyleSheet.absoluteFill} onPress={onClose}>
+                    <DashboardBlur intensity={22} tint="dark" style={StyleSheet.absoluteFill} />
+                    <View style={styles.modalBackdropTint} />
+                </Pressable>
+
+                <Animated.View
+                    entering={FadeInUp.duration(240).easing(Easing.out(Easing.cubic))}
+                    exiting={FadeOutDown.duration(180).easing(Easing.in(Easing.cubic))}
+                    style={[styles.modalSheet, styles.learnMoreSheet]}
+                >
+                    <DashboardBlur intensity={26} tint="light" style={StyleSheet.absoluteFill} />
+
+                    <View style={styles.modalHandle} />
+
+                    <View style={styles.modalHeaderNew}>
+                        <View style={styles.modalHeaderLeftNew}>
+                            <View
+                                style={[
+                                    styles.modalIconBubble,
+                                    styles.learnMoreIconBubble,
+                                ]}
+                            >
+                                <BarChart3 size={18} color="#2563EB" />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.modalTitleNew}>NuTri Score</Text>
+                                <Text style={styles.modalSubtitleNew} numberOfLines={2}>
+                                    {t.analysisLearnMoreModalSubtitle}
+                                </Text>
+                            </View>
+                        </View>
+
+                        <Pressable style={styles.modalCloseButtonNew} onPress={onClose} accessibilityLabel="Close">
+                            <DashboardBlur intensity={18} tint="light" style={StyleSheet.absoluteFill} />
+                            <X size={18} color="#111827" />
+                        </Pressable>
+                    </View>
+
+                    <ScrollView
+                        style={styles.modalScrollNew}
+                        contentContainerStyle={styles.learnMoreScrollContent}
+                        showsVerticalScrollIndicator={false}
+                    >
+                        <GlassCard
+                            title={t.analysisLearnMoreWhatIsTitle}
+                            subtitle="At a glance"
+                            accentColor="#2563EB"
+                            style={styles.learnMoreIntroCard}
+                        >
+                            <Text style={styles.detailBodyText}>{t.analysisLearnMoreWhatIsBody}</Text>
+                        </GlassCard>
+
+                        <GlassCard
+                            title={t.analysisLearnMoreHowWorksTitle}
+                            subtitle="Scoring logic"
+                            accentColor="#0F766E"
+                        >
+                            <View style={styles.learnMoreSectionStack}>
+                                <Text style={styles.detailBodyText}>{t.analysisLearnMoreHowWorksBody}</Text>
+                                <View style={styles.learnMoreMiniCard}>
+                                    <Text style={styles.learnMoreMiniCardTitle}>{t.analysisLearnMoreWeightsTitle}</Text>
+                                    <View style={styles.learnMoreMetricList}>
+                                        {weightRows.map((row) => (
+                                            <View key={row.label} style={styles.learnMoreMetricRow}>
+                                                <Text style={styles.learnMoreMetricLabel}>{row.label}</Text>
+                                                <Text style={styles.learnMoreMetricValue}>{row.value}</Text>
+                                            </View>
+                                        ))}
+                                    </View>
+                                    <Text style={styles.learnMoreFootnote}>{t.analysisLearnMoreWeightsFootnote}</Text>
+                                </View>
+                            </View>
+                        </GlassCard>
+
+                        <GlassCard
+                            title={t.analysisLearnMoreBadgesTitle}
+                            subtitle="Evidence labels"
+                            accentColor="#7C3AED"
+                        >
+                            <View style={styles.learnMoreSectionStack}>
+                                <Text style={styles.detailBodyText}>{t.analysisLearnMoreBadgesBody}</Text>
+                                {badgeRows.map((row) => (
+                                    <View key={row.chip} style={styles.learnMoreBadgeRow}>
+                                        <View
+                                            style={[
+                                                styles.scoreV2ChecklistChip,
+                                                styles.learnMoreBadgeChip,
+                                                row.chip === 'Verified' ? styles.scoreV2ChipVerified : null,
+                                                row.chip === 'Detected' ? styles.scoreV2ChipDetected : null,
+                                                row.chip === 'Not verified' ? styles.scoreV2ChipNotVerified : null,
+                                                row.chip === 'Not shown' ? styles.scoreV2ChipNotShown : null,
+                                            ]}
+                                        >
+                                            <Text style={styles.scoreV2ChecklistChipText}>{row.chip}</Text>
+                                        </View>
+                                        <Text style={styles.learnMoreBadgeBody}>{row.body}</Text>
+                                    </View>
+                                ))}
+                            </View>
+                        </GlassCard>
+
+                        <GlassCard
+                            title={t.analysisLearnMoreConfidenceTitle}
+                            subtitle="Evidence and rating gates"
+                            accentColor="#EA580C"
+                        >
+                            <View style={styles.learnMoreSectionStack}>
+                                <Text style={styles.detailBodyText}>{t.analysisLearnMoreConfidenceBody}</Text>
+                                <View style={styles.learnMoreMiniCard}>
+                                    <Text style={styles.learnMoreMiniCardTitle}>{t.analysisLearnMoreConfidenceGuideTitle}</Text>
+                                    <View style={styles.learnMoreRatingList}>
+                                        {ratingRows.map((row) => (
+                                            <View key={row.label} style={styles.learnMoreRatingRow}>
+                                                <Text style={styles.learnMoreRatingLabel}>{row.label}</Text>
+                                                <Text style={styles.learnMoreRatingBody}>{row.body}</Text>
+                                            </View>
+                                        ))}
+                                    </View>
+                                </View>
+                            </View>
+                        </GlassCard>
+
+                        <GlassCard
+                            title={t.analysisLearnMoreConservativeTitle}
+                            subtitle="Conservative by design"
+                            accentColor="#B45309"
+                        >
+                            <Text style={styles.detailBodyText}>{t.analysisLearnMoreConservativeBody}</Text>
+                        </GlassCard>
+
+                        <GlassCard
+                            title={t.analysisLearnMoreDoesNotMeanTitle}
+                            subtitle="Important limits"
+                            accentColor="#6B7280"
+                        >
+                            <Text style={styles.detailBodyText}>{t.analysisLearnMoreDoesNotMeanBody}</Text>
+                        </GlassCard>
+                    </ScrollView>
+                </Animated.View>
+            </View>
+        </Modal>
+    );
+};
+
 const NutriScoreCardV2: React.FC<{
     overallScore: number;
     overallBand?: string | null;
     modules: DecisionScoreCardV2Module[];
     muted: boolean;
 }> = ({ overallScore, overallBand, modules, muted }) => {
+    const { t } = useTranslation();
     const [expandedId, setExpandedId] = useState<DecisionScoreCardV2Module['id'] | null>(null);
+    const [learnMoreVisible, setLearnMoreVisible] = useState(false);
     const safeModules = Array.isArray(modules) ? modules : [];
     if (safeModules.length === 0) return null;
     const resolvedOverallBand = getOverallBandLabel(overallScore, overallBand);
@@ -1180,6 +1363,15 @@ const NutriScoreCardV2: React.FC<{
                         {resolvedOverallBand}
                     </Text>
                 </View>
+                <Pressable
+                    style={styles.scoreV2LearnMoreButton}
+                    onPress={() => setLearnMoreVisible(true)}
+                    accessibilityRole="button"
+                    accessibilityLabel={t.analysisLearnMoreCta}
+                >
+                    <Text style={styles.scoreV2LearnMoreText}>{t.analysisLearnMoreCta}</Text>
+                    <ChevronRight size={14} color="#1D4ED8" />
+                </Pressable>
             </View>
 
             <View style={styles.scoreV2Modules}>
@@ -1236,6 +1428,7 @@ const NutriScoreCardV2: React.FC<{
                     );
                 })}
             </View>
+            <ScoreLearnMoreModal visible={learnMoreVisible} onClose={() => setLearnMoreVisible(false)} />
         </View>
     );
 };
@@ -7223,7 +7416,6 @@ const AnalysisBundleDashboard: React.FC<{
                                 )}
 
                                 <View style={styles.heroTextBlock}>
-                                    <Text style={styles.heroEyebrow}>{t.analysisHeaderEyebrow}</Text>
                                     <Text style={styles.heroTitle} numberOfLines={2}>
                                         {productTitle}
                                     </Text>
@@ -7232,12 +7424,16 @@ const AnalysisBundleDashboard: React.FC<{
                                             {productSubtitle}
                                         </Text>
                                     )}
+                                    <View style={styles.heroMetaRow}>
+                                        <GlassPill label={sourceBadgeLabel} />
+                                        {scoreBadge ? (
+                                            <GlassPill
+                                                label={scoreBadge}
+                                                accentColor={ringMuted ? '#9CA3AF' : '#111827'}
+                                            />
+                                        ) : null}
+                                    </View>
                                 </View>
-                            </View>
-
-                            <View style={styles.heroPillsRow}>
-                                <GlassPill label={sourceBadgeLabel} />
-                                {scoreBadge ? <GlassPill label={scoreBadge} accentColor={ringMuted ? '#9CA3AF' : '#111827'} /> : null}
                             </View>
                         </LinearGradient>
                     </View>
@@ -8626,7 +8822,7 @@ const styles = StyleSheet.create({
 
     // ---------- Hero header ----------
     heroHeader: {
-        marginTop: 10,
+        marginTop: 8,
         marginBottom: 14,
         paddingHorizontal: 20,
     },
@@ -8635,25 +8831,25 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.26)',
-        padding: 16,
+        padding: 18,
     },
     heroTopRow: {
         flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
+        alignItems: 'flex-start',
+        gap: 14,
     },
     heroImage: {
-        width: 54,
-        height: 54,
-        borderRadius: 16,
+        width: 68,
+        height: 68,
+        borderRadius: 18,
         backgroundColor: 'rgba(255,255,255,0.25)',
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.35)',
     },
     heroImagePlaceholder: {
-        width: 54,
-        height: 54,
-        borderRadius: 16,
+        width: 68,
+        height: 68,
+        borderRadius: 18,
         backgroundColor: 'rgba(255,255,255,0.32)',
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.35)',
@@ -8662,32 +8858,26 @@ const styles = StyleSheet.create({
     },
     heroTextBlock: {
         flex: 1,
-    },
-    heroEyebrow: {
-        fontSize: 12,
-        color: 'rgba(17,24,39,0.55)',
-        fontWeight: '700',
-        letterSpacing: 0.6,
-        textTransform: 'uppercase',
+        minHeight: 68,
+        justifyContent: 'center',
     },
     heroTitle: {
-        marginTop: 4,
-        fontSize: 20,
+        fontSize: 21,
         fontWeight: '800',
         color: '#111827',
-        lineHeight: 24,
+        lineHeight: 26,
     },
     heroSubtitle: {
-        marginTop: 6,
+        marginTop: 5,
         fontSize: 13,
         color: 'rgba(17,24,39,0.60)',
         lineHeight: 18,
     },
-    heroPillsRow: {
-        marginTop: 12,
+    heroMetaRow: {
+        marginTop: 10,
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 10,
+        gap: 8,
     },
 
     // ---------- Score hero + mini header ----------
@@ -8784,6 +8974,22 @@ const styles = StyleSheet.create({
     scoreV2HeaderLeft: {
         flex: 1,
         gap: 3,
+    },
+    scoreV2LearnMoreButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 3,
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: 'rgba(37,99,235,0.18)',
+        backgroundColor: 'rgba(37,99,235,0.08)',
+        paddingHorizontal: 10,
+        paddingVertical: 7,
+    },
+    scoreV2LearnMoreText: {
+        fontSize: 12,
+        fontWeight: '800',
+        color: '#1D4ED8',
     },
     scoreV2Eyebrow: {
         fontSize: 11,
@@ -8912,6 +9118,99 @@ const styles = StyleSheet.create({
     scoreV2ChipNotShown: {
         backgroundColor: 'rgba(220,38,38,0.12)',
         borderColor: 'rgba(220,38,38,0.45)',
+    },
+    learnMoreSheet: {
+        height: '84%',
+        maxHeight: '84%',
+    },
+    learnMoreIconBubble: {
+        backgroundColor: 'rgba(37,99,235,0.12)',
+        borderColor: 'rgba(37,99,235,0.24)',
+    },
+    learnMoreScrollContent: {
+        paddingHorizontal: 16,
+        paddingBottom: 22,
+        gap: 12,
+    },
+    learnMoreIntroCard: {
+        marginTop: 2,
+    },
+    learnMoreSectionStack: {
+        gap: 12,
+    },
+    learnMoreMiniCard: {
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(148,163,184,0.25)',
+        backgroundColor: 'rgba(248,250,252,0.78)',
+        padding: 12,
+        gap: 10,
+    },
+    learnMoreMiniCardTitle: {
+        fontSize: 12,
+        fontWeight: '800',
+        color: '#111827',
+    },
+    learnMoreMetricList: {
+        gap: 8,
+    },
+    learnMoreMetricRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+    },
+    learnMoreMetricLabel: {
+        flex: 1,
+        fontSize: 13,
+        lineHeight: 18,
+        color: '#374151',
+        fontWeight: '600',
+    },
+    learnMoreMetricValue: {
+        fontSize: 13,
+        fontWeight: '800',
+        color: '#111827',
+    },
+    learnMoreFootnote: {
+        fontSize: 12,
+        lineHeight: 17,
+        color: 'rgba(17,24,39,0.58)',
+    },
+    learnMoreBadgeRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 10,
+    },
+    learnMoreBadgeChip: {
+        minWidth: 86,
+        justifyContent: 'center',
+    },
+    learnMoreBadgeBody: {
+        flex: 1,
+        fontSize: 13,
+        lineHeight: 19,
+        color: '#374151',
+        fontWeight: '600',
+    },
+    learnMoreRatingList: {
+        gap: 10,
+    },
+    learnMoreRatingRow: {
+        gap: 4,
+    },
+    learnMoreRatingLabel: {
+        fontSize: 12,
+        fontWeight: '800',
+        color: '#111827',
+        textTransform: 'uppercase',
+        letterSpacing: 0.4,
+    },
+    learnMoreRatingBody: {
+        fontSize: 13,
+        lineHeight: 19,
+        color: '#374151',
+        fontWeight: '600',
     },
 
     miniHeader: {

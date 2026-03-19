@@ -1,0 +1,839 @@
+{
+  "schemaVersion": "week2_iherb_quality_mark_refresh_report.v1",
+  "generatedAt": "2026-03-15T18:10:28.913Z",
+  "refreshedCount": 10,
+  "summaryStatusCounts": {
+    "not_proven": 10
+  },
+  "warningCounts": {
+    "registry_checked_not_found": 10,
+    "brand_level_only_match": 7,
+    "registry_result_ambiguous": 7
+  },
+  "rows": [
+    {
+      "key": "web:gtin14:00705875610193:barlean_s:barlean_s_ideal_omega_3_orange_60_softgels",
+      "productId": null,
+      "barcode": "00705875610193",
+      "brandName": "Barlean's",
+      "productName": "Barlean's, Ideal Omega 3, Orange, 60 Softgels",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "not_proven",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "brand_level_only_match",
+          "registry_result_ambiguous",
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "r1_ifos_false_negative_canary",
+      "status": "not_detected",
+      "checked": true,
+      "confidence": 0.88,
+      "confidenceBucket": "high",
+      "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 2,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's",
+        "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredProducts?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's%2C%20Ideal%20Omega%203%2C%20Orange%2C%2060%20Softgels"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "directRegistryEvidenceUsed": false,
+      "programMatches": [
+        {
+          "programId": "ifos",
+          "programLabel": "IFOS",
+          "registryFamily": "nutrasource",
+          "status": "ambiguous_match",
+          "matchLevel": "brand",
+          "evidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": true,
+          "productMatched": false,
+          "confidence": 0.68,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry matched the brand but not the product with enough confidence."
+        },
+        {
+          "programId": "ifos",
+          "programLabel": "IFOS",
+          "registryFamily": "nutrasource",
+          "status": "not_found_in_registry",
+          "matchLevel": "product",
+          "evidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredProducts?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's%2C%20Ideal%20Omega%203%2C%20Orange%2C%2060%20Softgels",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.9,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry returned no matching results."
+        }
+      ],
+      "note": "Official IFOS results only support a brand-level match so far.",
+      "error": null,
+      "checkedAt": "2026-03-15T18:10:27.983Z",
+      "expiresAt": "2026-04-14T18:10:27.983Z"
+    },
+    {
+      "key": "web:gtin14:00088395018145:carlson:carlson_ecosmart_dha_natural_lemon_500_mg_60_soft_gels_20_soft_gels",
+      "productId": null,
+      "barcode": "00088395018145",
+      "brandName": "Carlson",
+      "productName": "Carlson, EcoSmart® DHA, Natural Lemon, 500 mg, 60 Soft Gels + 20 Soft Gels",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "not_proven",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "brand_level_only_match",
+          "registry_result_ambiguous",
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "r1_ifos_false_negative_canary",
+      "status": "not_detected",
+      "checked": true,
+      "confidence": 0.88,
+      "confidenceBucket": "high",
+      "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Carlson",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 2,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Carlson",
+        "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredProducts?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Carlson%2C%20EcoSmart%C2%AE%20DHA%2C%20Natural%20Lemon%2C%20500%20mg%2C%2060%20Soft%20Gels%20%2B%2020%20Soft%20Gels"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "directRegistryEvidenceUsed": false,
+      "programMatches": [
+        {
+          "programId": "ifos",
+          "programLabel": "IFOS",
+          "registryFamily": "nutrasource",
+          "status": "ambiguous_match",
+          "matchLevel": "brand",
+          "evidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Carlson",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": true,
+          "productMatched": false,
+          "confidence": 0.68,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry matched the brand but not the product with enough confidence."
+        },
+        {
+          "programId": "ifos",
+          "programLabel": "IFOS",
+          "registryFamily": "nutrasource",
+          "status": "not_found_in_registry",
+          "matchLevel": "product",
+          "evidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredProducts?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Carlson%2C%20EcoSmart%C2%AE%20DHA%2C%20Natural%20Lemon%2C%20500%20mg%2C%2060%20Soft%20Gels%20%2B%2020%20Soft%20Gels",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.9,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry returned no matching results."
+        }
+      ],
+      "note": "Official IFOS results only support a brand-level match so far.",
+      "error": null,
+      "checkedAt": "2026-03-15T18:10:27.973Z",
+      "expiresAt": "2026-04-14T18:10:27.973Z"
+    },
+    {
+      "key": "web:gtin14:00737870198215:life_extension:life_extension_super_omega_3_120_softgels",
+      "productId": null,
+      "barcode": "00737870198215",
+      "brandName": "Life Extension",
+      "productName": "Life Extension, Super Omega-3, 120 Softgels",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "not_proven",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "brand_level_only_match",
+          "registry_result_ambiguous",
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "r1_ifos_false_negative_canary",
+      "status": "not_detected",
+      "checked": true,
+      "confidence": 0.88,
+      "confidenceBucket": "high",
+      "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Life%20Extension",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 2,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Life%20Extension",
+        "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredProducts?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Life%20Extension%2C%20Super%20Omega-3%2C%20120%20Softgels"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "directRegistryEvidenceUsed": false,
+      "programMatches": [
+        {
+          "programId": "ifos",
+          "programLabel": "IFOS",
+          "registryFamily": "nutrasource",
+          "status": "ambiguous_match",
+          "matchLevel": "brand",
+          "evidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Life%20Extension",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": true,
+          "productMatched": false,
+          "confidence": 0.68,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry matched the brand but not the product with enough confidence."
+        },
+        {
+          "programId": "ifos",
+          "programLabel": "IFOS",
+          "registryFamily": "nutrasource",
+          "status": "not_found_in_registry",
+          "matchLevel": "product",
+          "evidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredProducts?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Life%20Extension%2C%20Super%20Omega-3%2C%20120%20Softgels",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.9,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry returned no matching results."
+        }
+      ],
+      "note": "Official IFOS results only support a brand-level match so far.",
+      "error": null,
+      "checkedAt": "2026-03-15T18:10:27.978Z",
+      "expiresAt": "2026-04-14T18:10:27.978Z"
+    },
+    {
+      "key": "web:gtin14:00737870198628:life_extension:life_extension_super_omega_3_240_softgels",
+      "productId": null,
+      "barcode": "00737870198628",
+      "brandName": "Life Extension",
+      "productName": "Life Extension, Super Omega-3, 240 Softgels",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "not_proven",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "brand_level_only_match",
+          "registry_result_ambiguous",
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "r1_ifos_false_negative_canary",
+      "status": "not_detected",
+      "checked": true,
+      "confidence": 0.88,
+      "confidenceBucket": "high",
+      "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Life%20Extension",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 2,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Life%20Extension",
+        "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredProducts?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Life%20Extension%2C%20Super%20Omega-3%2C%20240%20Softgels"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "directRegistryEvidenceUsed": false,
+      "programMatches": [
+        {
+          "programId": "ifos",
+          "programLabel": "IFOS",
+          "registryFamily": "nutrasource",
+          "status": "ambiguous_match",
+          "matchLevel": "brand",
+          "evidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Life%20Extension",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": true,
+          "productMatched": false,
+          "confidence": 0.68,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry matched the brand but not the product with enough confidence."
+        },
+        {
+          "programId": "ifos",
+          "programLabel": "IFOS",
+          "registryFamily": "nutrasource",
+          "status": "not_found_in_registry",
+          "matchLevel": "product",
+          "evidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredProducts?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Life%20Extension%2C%20Super%20Omega-3%2C%20240%20Softgels",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.9,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry returned no matching results."
+        }
+      ],
+      "note": "Official IFOS results only support a brand-level match so far.",
+      "error": null,
+      "checkedAt": "2026-03-15T18:10:27.981Z",
+      "expiresAt": "2026-04-14T18:10:27.981Z"
+    },
+    {
+      "key": "web:gtin14:00737870198413:life_extension:life_extension_super_omega_3_epa_dha_fish_oil_sesame_lignans_olive_extract_120_enteric_coated_softgels",
+      "productId": null,
+      "barcode": "00737870198413",
+      "brandName": "Life Extension",
+      "productName": "Life Extension, Super Omega-3, EPA/DHA Fish Oil, Sesame Lignans & Olive Extract, 120 Enteric Coated Softgels",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "not_proven",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "brand_level_only_match",
+          "registry_result_ambiguous",
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "r1_ifos_false_negative_canary",
+      "status": "not_detected",
+      "checked": true,
+      "confidence": 0.88,
+      "confidenceBucket": "high",
+      "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Life%20Extension",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 2,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Life%20Extension",
+        "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredProducts?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Life%20Extension%2C%20Super%20Omega-3%2C%20EPA%2FDHA%20Fish%20Oil%2C%20Sesame%20Lignans%20%26%20Olive%20Extract%2C%20120%20Enteric%20Coated%20Softgels"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "directRegistryEvidenceUsed": false,
+      "programMatches": [
+        {
+          "programId": "ifos",
+          "programLabel": "IFOS",
+          "registryFamily": "nutrasource",
+          "status": "ambiguous_match",
+          "matchLevel": "brand",
+          "evidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Life%20Extension",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": true,
+          "productMatched": false,
+          "confidence": 0.68,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry matched the brand but not the product with enough confidence."
+        },
+        {
+          "programId": "ifos",
+          "programLabel": "IFOS",
+          "registryFamily": "nutrasource",
+          "status": "not_found_in_registry",
+          "matchLevel": "product",
+          "evidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredProducts?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Life%20Extension%2C%20Super%20Omega-3%2C%20EPA%2FDHA%20Fish%20Oil%2C%20Sesame%20Lignans%20%26%20Olive%20Extract%2C%20120%20Enteric%20Coated%20Softgels",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.9,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry returned no matching results."
+        }
+      ],
+      "note": "Official IFOS results only support a brand-level match so far.",
+      "error": null,
+      "checkedAt": "2026-03-15T18:10:28.335Z",
+      "expiresAt": "2026-04-14T18:10:28.335Z"
+    },
+    {
+      "key": "web:gtin14:00705875610070:barlean_s:barlean_s_fresh_catch_fish_oil_omega_3_epa_dha_orange_100_softgels_300_mg_per_softgel",
+      "productId": null,
+      "barcode": "00705875610070",
+      "brandName": "Barlean's",
+      "productName": "Barlean's, Fresh Catch®, Fish Oil, Omega-3 EPA/DHA, Orange, 100 Softgels (300 mg per Softgel)",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "nsf_certified_for_sport",
+      "strongestProgramLabel": "NSF Certified for Sport",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "not_proven",
+        "strongestProgramId": "nsf_certified_for_sport",
+        "strongestProgramLabel": "NSF Certified for Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "r1_ifos_false_negative_canary",
+      "status": "not_detected",
+      "checked": true,
+      "confidence": 0.9,
+      "confidenceBucket": "high",
+      "evidenceRef": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Barlean's%20Barlean's%2C%20Fresh%20Catch%C2%AE%2C%20Fish%20Oil%2C%20Omega-3%20EPA%2FDHA%2C%20Orange%2C%20100%20Softgels%20(300%20mg%20per%20Softgel)",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Barlean's%20Barlean's%2C%20Fresh%20Catch%C2%AE%2C%20Fish%20Oil%2C%20Omega-3%20EPA%2FDHA%2C%20Orange%2C%20100%20Softgels%20(300%20mg%20per%20Softgel)"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "directRegistryEvidenceUsed": false,
+      "programMatches": [
+        {
+          "programId": "nsf_certified_for_sport",
+          "programLabel": "NSF Certified for Sport",
+          "registryFamily": "nsf",
+          "status": "not_found_in_registry",
+          "matchLevel": "product",
+          "evidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Barlean's%20Barlean's%2C%20Fresh%20Catch%C2%AE%2C%20Fish%20Oil%2C%20Omega-3%20EPA%2FDHA%2C%20Orange%2C%20100%20Softgels%20(300%20mg%20per%20Softgel)",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.9,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry returned no matching results."
+        }
+      ],
+      "note": "Official NSF Certified for Sport verification was checked and no product-level match was found.",
+      "error": null,
+      "checkedAt": "2026-03-15T18:10:28.584Z",
+      "expiresAt": "2026-04-14T18:10:28.584Z"
+    },
+    {
+      "key": "web:gtin14:00705875610087:barlean_s:barlean_s_fresh_catch_fish_oil_omega_3_epa_dha_orange_250_softgels_300_mg_per_softgel",
+      "productId": null,
+      "barcode": "00705875610087",
+      "brandName": "Barlean's",
+      "productName": "Barlean's, Fresh Catch®, Fish Oil, Omega-3 EPA/DHA, Orange, 250 Softgels (300 mg per Softgel)",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "nsf_certified_for_sport",
+      "strongestProgramLabel": "NSF Certified for Sport",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "not_proven",
+        "strongestProgramId": "nsf_certified_for_sport",
+        "strongestProgramLabel": "NSF Certified for Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "r1_ifos_false_negative_canary",
+      "status": "not_detected",
+      "checked": true,
+      "confidence": 0.9,
+      "confidenceBucket": "high",
+      "evidenceRef": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Barlean's%20Barlean's%2C%20Fresh%20Catch%C2%AE%2C%20Fish%20Oil%2C%20Omega-3%20EPA%2FDHA%2C%20Orange%2C%20250%20Softgels%20(300%20mg%20per%20Softgel)",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Barlean's%20Barlean's%2C%20Fresh%20Catch%C2%AE%2C%20Fish%20Oil%2C%20Omega-3%20EPA%2FDHA%2C%20Orange%2C%20250%20Softgels%20(300%20mg%20per%20Softgel)"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "directRegistryEvidenceUsed": false,
+      "programMatches": [
+        {
+          "programId": "nsf_certified_for_sport",
+          "programLabel": "NSF Certified for Sport",
+          "registryFamily": "nsf",
+          "status": "not_found_in_registry",
+          "matchLevel": "product",
+          "evidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Barlean's%20Barlean's%2C%20Fresh%20Catch%C2%AE%2C%20Fish%20Oil%2C%20Omega-3%20EPA%2FDHA%2C%20Orange%2C%20250%20Softgels%20(300%20mg%20per%20Softgel)",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.9,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry returned no matching results."
+        }
+      ],
+      "note": "Official NSF Certified for Sport verification was checked and no product-level match was found.",
+      "error": null,
+      "checkedAt": "2026-03-15T18:10:28.613Z",
+      "expiresAt": "2026-04-14T18:10:28.613Z"
+    },
+    {
+      "key": "web:gtin14:00705875610063:barlean_s:barlean_s_fresh_catch_ultra_epa_dha_fish_oil_orange_60_softgels_650_mg_per_softgel",
+      "productId": null,
+      "barcode": "00705875610063",
+      "brandName": "Barlean's",
+      "productName": "Barlean's, Fresh Catch®, Ultra EPA/DHA Fish Oil, Orange, 60 Softgels (650 mg per Softgel)",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "not_proven",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "brand_level_only_match",
+          "registry_result_ambiguous",
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "r1_ifos_false_negative_canary",
+      "status": "not_detected",
+      "checked": true,
+      "confidence": 0.88,
+      "confidenceBucket": "high",
+      "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 2,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's",
+        "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredProducts?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's%2C%20Fresh%20Catch%C2%AE%2C%20Ultra%20EPA%2FDHA%20Fish%20Oil%2C%20Orange%2C%2060%20Softgels%20(650%20mg%20per%20Softgel)"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "directRegistryEvidenceUsed": false,
+      "programMatches": [
+        {
+          "programId": "ifos",
+          "programLabel": "IFOS",
+          "registryFamily": "nutrasource",
+          "status": "ambiguous_match",
+          "matchLevel": "brand",
+          "evidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": true,
+          "productMatched": false,
+          "confidence": 0.68,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry matched the brand but not the product with enough confidence."
+        },
+        {
+          "programId": "ifos",
+          "programLabel": "IFOS",
+          "registryFamily": "nutrasource",
+          "status": "not_found_in_registry",
+          "matchLevel": "product",
+          "evidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredProducts?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's%2C%20Fresh%20Catch%C2%AE%2C%20Ultra%20EPA%2FDHA%20Fish%20Oil%2C%20Orange%2C%2060%20Softgels%20(650%20mg%20per%20Softgel)",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.9,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry returned no matching results."
+        }
+      ],
+      "note": "Official IFOS results only support a brand-level match so far.",
+      "error": null,
+      "checkedAt": "2026-03-15T18:10:28.321Z",
+      "expiresAt": "2026-04-14T18:10:28.321Z"
+    },
+    {
+      "key": "web:gtin14:00705875100083:barlean_s:barlean_s_lignan_flax_oil_250_softgels",
+      "productId": null,
+      "barcode": "00705875100083",
+      "brandName": "Barlean's",
+      "productName": "Barlean's, Lignan Flax Oil, 250 Softgels",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "not_proven",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "brand_level_only_match",
+          "registry_result_ambiguous",
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "r1_ifos_false_negative_canary",
+      "status": "not_detected",
+      "checked": true,
+      "confidence": 0.88,
+      "confidenceBucket": "high",
+      "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 2,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's",
+        "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredProducts?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's%2C%20Lignan%20Flax%20Oil%2C%20250%20Softgels"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "directRegistryEvidenceUsed": false,
+      "programMatches": [
+        {
+          "programId": "ifos",
+          "programLabel": "IFOS",
+          "registryFamily": "nutrasource",
+          "status": "ambiguous_match",
+          "matchLevel": "brand",
+          "evidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": true,
+          "productMatched": false,
+          "confidence": 0.68,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry matched the brand but not the product with enough confidence."
+        },
+        {
+          "programId": "ifos",
+          "programLabel": "IFOS",
+          "registryFamily": "nutrasource",
+          "status": "not_found_in_registry",
+          "matchLevel": "product",
+          "evidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredProducts?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's%2C%20Lignan%20Flax%20Oil%2C%20250%20Softgels",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.9,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry returned no matching results."
+        }
+      ],
+      "note": "Official IFOS results only support a brand-level match so far.",
+      "error": null,
+      "checkedAt": "2026-03-15T18:10:28.687Z",
+      "expiresAt": "2026-04-14T18:10:28.687Z"
+    },
+    {
+      "key": "web:gtin14:00088395175206:carlson:carlson_elite_omega_3_plus_d_k_natural_lemon_180_soft_gels",
+      "productId": null,
+      "barcode": "00088395175206",
+      "brandName": "Carlson",
+      "productName": "Carlson, Elite Omega-3 Plus D & K, Natural Lemon, 180 Soft Gels",
+      "iherbUrl": null,
+      "categoryId": null,
+      "strongestProgramId": "nsf_certified_for_sport",
+      "strongestProgramLabel": "NSF Certified for Sport",
+      "thirdPartyChecklistState": null,
+      "verificationSummary": {
+        "overallStatus": "not_proven",
+        "strongestProgramId": "nsf_certified_for_sport",
+        "strongestProgramLabel": "NSF Certified for Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "r1_ifos_false_negative_canary",
+      "status": "not_detected",
+      "checked": true,
+      "confidence": 0.9,
+      "confidenceBucket": "high",
+      "evidenceRef": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Carlson%20Carlson%2C%20Elite%20Omega-3%20Plus%20D%20%26%20K%2C%20Natural%20Lemon%2C%20180%20Soft%20Gels",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Carlson%20Carlson%2C%20Elite%20Omega-3%20Plus%20D%20%26%20K%2C%20Natural%20Lemon%2C%20180%20Soft%20Gels"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "directRegistryEvidenceUsed": false,
+      "programMatches": [
+        {
+          "programId": "nsf_certified_for_sport",
+          "programLabel": "NSF Certified for Sport",
+          "registryFamily": "nsf",
+          "status": "not_found_in_registry",
+          "matchLevel": "product",
+          "evidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/search-results.php?keyword=Carlson%20Carlson%2C%20Elite%20Omega-3%20Plus%20D%20%26%20K%2C%20Natural%20Lemon%2C%20180%20Soft%20Gels",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.9,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry returned no matching results."
+        }
+      ],
+      "note": "Official NSF Certified for Sport verification was checked and no product-level match was found.",
+      "error": null,
+      "checkedAt": "2026-03-15T18:10:28.905Z",
+      "expiresAt": "2026-04-14T18:10:28.905Z"
+    }
+  ],
+  "outputs": {
+    "cachePath": "/Users/howard07/NuTriApp/nutri-app/output/quality_marks/quality_mark_cache.json",
+    "auditPath": "/Users/howard07/NuTriApp/nutri-app/output/quality_marks/quality_mark_audit.json"
+  }
+}

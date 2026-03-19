@@ -1,0 +1,38 @@
+{
+  "waveId": "week2_5_identity_positive_control_debug_20260314T092639Z",
+  "lane": "kpi",
+  "pathKey": "official_fetch_unresolved:iherb_identity_v2_positive_control_debug",
+  "cohortSource": "/Users/howard07/NuTriApp/nutri-app/output/week2_5_root_cause/identity_positive_control_debug_queue.json",
+  "brands": [
+    "Healthy Origins",
+    "Pure Encapsulations",
+    "Nature's Bounty",
+    "Schiff"
+  ],
+  "queryStrategy": "iherb_identity_v2_debug",
+  "sourcePriority": [
+    "brand_specific_queries",
+    "iherb_search",
+    "search_engine_fallback",
+    "expected_page_trace"
+  ],
+  "stopRules": [
+    "Micro-canary only runs when controlValidity is fixed or redefined."
+  ],
+  "successMetric": "repair or redefine the positive control before unresolved execution",
+  "newMethod": true,
+  "unpauseRationale": "This step debugs discovery and expected-page acceptance separately.",
+  "baselineRef": {
+    "strictMergeReady": 26635,
+    "queued": 23983,
+    "completeHitCount": 666,
+    "completeHitRate": 40.3,
+    "activeQueueCount": 0
+  },
+  "touchedBrandPaths": [
+    "official_fetch_unresolved:iherb_identity_v2_positive_control_debug"
+  ],
+  "touchedBlockerKeys": [
+    "kpi:official_fetch_unresolved/iherb_identity_v2"
+  ]
+}

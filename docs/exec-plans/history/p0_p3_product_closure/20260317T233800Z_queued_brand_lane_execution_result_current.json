@@ -1,0 +1,112 @@
+{
+  "generatedAt": "2026-03-17T22:47:25Z",
+  "objective": "Execute the two queued-brand lanes with real multi-subagent work and classify each brand into merge-ready, next-step-ready, or blocker-classified status without touching protected scan surfaces.",
+  "baselineReference": {
+    "highFrequencyReportPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/high_frequency_product_hit_validation.json",
+    "canonicalCompleteHitCount": 725,
+    "canonicalCompleteHitRatePct": 43.9,
+    "canonicalActiveQueueCount": 241,
+    "canonicalMissingFromStagingCount": 684
+  },
+  "spawnedSubagents": [
+    {
+      "agentId": "019cfdf0-ab01-77a0-8601-e3a0c4750b8a",
+      "brandName": "Natrol",
+      "lane": "external_discovery_lane"
+    },
+    {
+      "agentId": "019cfdf0-ab6a-7410-afbf-7fc751b9b8c3",
+      "brandName": "Codeage",
+      "lane": "external_discovery_lane"
+    },
+    {
+      "agentId": "019cfdf0-ab9c-7ef3-9a13-69bd94a9cd1d",
+      "brandName": "Nutricost",
+      "lane": "official_recovery_wave_lane"
+    },
+    {
+      "agentId": "019cfdf0-abd2-7073-927b-00756c009c17",
+      "brandName": "Country Life",
+      "lane": "official_recovery_wave_lane"
+    },
+    {
+      "agentId": "019cfdf0-ac00-7b92-94a0-d7e223f24d38",
+      "brandName": "Sports Research",
+      "lane": "official_recovery_wave_lane"
+    }
+  ],
+  "lanes": [
+    {
+      "laneId": "external_discovery_lane",
+      "status": "execution_success_with_mixed_outcomes",
+      "brands": [
+        {
+          "brandName": "Natrol",
+          "result": "narrow_validated_queue_presence",
+          "validatedCandidateCount": 2,
+          "sourceCatalogProductCount": 42,
+          "currentQueueRowsCompared": 41,
+          "recommendedNextStep": "Run a tightly scoped Natrol replay only for the two exact-barcode melatonin candidates and keep the remaining 39 paused.",
+          "evidencePath": "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_natrol_external_discovery_20260317/validated_queue_candidates.json"
+        },
+        {
+          "brandName": "Codeage",
+          "result": "urolithin_a_clean_recovery_tail_gated",
+          "validatedCandidateCount": 12,
+          "legacyQueueReuseSafe": false,
+          "recommendedNextStep": "Keep Glutathione+ and the other five ingestible Codeage tail rows gated; do not broaden the Codeage lane beyond the clean Urolithin A recovery without tighter live-match proof.",
+          "evidencePath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/codeage_urolithin_and_gated_tail_20260317.md",
+          "stableIherbCrossmatchCount": 6,
+          "ambiguousIherbCrossmatchCount": 5,
+          "officialOnlyCandidateCount": 1,
+          "immediateRecoveredCount": 1,
+          "immediateRecoveredProductId": "126291",
+          "immediateRecoveredTitle": "Codeage, Liposomal Urolithin A, Eternal, 60 Capsules",
+          "gatedIngestibleTailCount": 6
+        }
+      ]
+    },
+    {
+      "laneId": "official_recovery_wave_lane",
+      "status": "execution_success_with_blockers",
+      "brands": [
+        {
+          "brandName": "Nutricost",
+          "result": "human_review_completed_not_merge_ready",
+          "queued": 32,
+          "processed": 32,
+          "improvedRows": 3,
+          "becameFullOverlayReady": 3,
+          "canonicalMergeReady": false,
+          "recommendedNextStep": "Keep these three rows out of canonical merge until a follow-up pass produces cleaner Suggested Use / Warnings text and more stable primary image selection.",
+          "evidencePath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/p0_p3_product_closure/nutricost_gated_review_20260317.md"
+        },
+        {
+          "brandName": "Country Life",
+          "result": "improved_but_partial_overlay",
+          "queued": 14,
+          "processed": 14,
+          "improvedRows": 14,
+          "becameFullOverlayReady": 0,
+          "canonicalMergeReady": false,
+          "recommendedNextStep": "Follow up on warnings and suggested-use completion before re-running canonical merge or high-frequency validation.",
+          "evidencePath": "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_country_life_official_recovery_20260317/official_fallback_report.json"
+        },
+        {
+          "brandName": "Sports Research",
+          "result": "blocker_classified_identity_mismatch",
+          "queued": 6,
+          "processed": 6,
+          "improvedRows": 0,
+          "recommendedNextStep": "Keep the residual six-row tail paused under this exact-barcode lane and do not rerun the same method without a genuinely new identity source.",
+          "evidencePath": "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_sports_research_official_recovery_20260317/exact_barcode_recovery/iherb_search_recovery_report.json"
+        }
+      ]
+    }
+  ],
+  "overallCall": {
+    "canonicalBaselineChanged": false,
+    "whyCanonicalBaselineDidNotChange": "This follow-up executed a clean single-product Codeage recovery for Urolithin A and classified the remaining ingestible tail as gated, but Codeage is still outside the canonical high-frequency set so the representative baseline did not move.",
+    "highestRoiNextAction": "Keep the remaining Codeage ingestible tail gated and do not broaden this lane beyond the clean Urolithin A recovery without tighter live-match proof."
+  }
+}

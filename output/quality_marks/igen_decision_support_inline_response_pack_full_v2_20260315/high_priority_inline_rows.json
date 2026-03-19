@@ -1,0 +1,2886 @@
+[
+  {
+    "identity": {
+      "productId": "86844",
+      "barcode": "00658010124560"
+    },
+    "product": {
+      "brandName": "Garden of Life",
+      "productName": "Garden of Life, Grass Fed Collagen, Beauty, Strawberry Lemonade, 9.52 oz (270 g)",
+      "iherbUrl": "https://www.iherb.com/pr/garden-of-life-grass-fed-collagen-beauty-strawberry-lemonade-9-52-oz-270-g/86844"
+    },
+    "priority": "high",
+    "deliveryLane": "wave1_high_frequency",
+    "surfaceSignal": {
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+    },
+    "qualityMarkAuditSummary": {
+      "status": "detected",
+      "checked": true,
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0002",
+      "sourcesTried": [
+        "official_registry"
+      ],
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "evidenceType": "official_registry",
+      "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+    },
+    "apiResponse": {
+      "status": "ok",
+      "barcode": "00658010124560",
+      "decisionSupportDigest": "7b11c6fb164250d826ce794ed1f8a466af2bdc346402546c8e8b3faabb4cfd7f",
+      "decisionInputsHash": "972638db094c7e5cb00cce71fcc3ef446be936b2e68cf63063ddef8324e8adc6",
+      "decisionContractVersion": "fixture.igen_quality_mark_inline.v1",
+      "viewMode": "details",
+      "verdict": "reasonable_but_incomplete",
+      "extraTrustSignals": [],
+      "qualityMark": {
+        "code": "quality_mark_status",
+        "status": "detected",
+        "checked": true,
+        "confidence": 0.95,
+        "confidenceBucket": "high",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0002",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "lastCheckedAt": null,
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+        "programMatches": [
+          {
+            "programId": "igen",
+            "programLabel": "iGEN",
+            "registryFamily": "nutrasource",
+            "status": "verified_registry_match",
+            "matchLevel": "product",
+            "evidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0002",
+            "evidenceType": "official_registry",
+            "lotNumber": null,
+            "brandMatched": true,
+            "productMatched": true,
+            "confidence": 0.95,
+            "mapsToGenericThirdPartyClaim": false,
+            "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+          }
+        ],
+        "verificationSummary": {
+          "overallStatus": "ambiguous",
+          "strongestProgramId": "igen",
+          "strongestProgramLabel": "iGEN",
+          "strongestMatchLevel": "product",
+          "officialRegistryChecked": true,
+          "officialRegistryVerified": false,
+          "productPageClaimDetected": false,
+          "catalogClaimDetected": false,
+          "genericThirdPartyClaimDetected": false,
+          "brandLevelOfficialProgramDetected": false,
+          "brandLevelOfficialProgramLabels": [],
+          "blockedProgramIds": [],
+          "blockedProgramLabels": [],
+          "warnings": [
+            "program_not_equivalent_to_generic_third_party"
+          ]
+        }
+      },
+      "decisionSupportInline": {
+        "verdict": "reasonable_but_incomplete",
+        "subscores": [],
+        "topBlockers": [],
+        "overviewBlock": {
+          "sourceStrip": [
+            "Official Nutrasource registry evidence",
+            "Quality-mark focused fixture"
+          ],
+          "bestForBullets": [],
+          "providesVerified": {
+            "servingSize": null,
+            "servingsPerContainer": null,
+            "keyIngredients": [],
+            "dosageForm": null,
+            "count": null
+          },
+          "missingInfo": [
+            "This fixture focuses on official iGEN trust evidence only.",
+            "Use runtime decision support if you need full formula, usage, or safety scoring."
+          ],
+          "singleCta": null
+        },
+        "scienceBlock": {
+          "ingredientSourceTier": "official_record",
+          "ingredientRows": [],
+          "ingredientSnapshotNames": [],
+          "formMatters": {
+            "ingredientChemicalForm": null,
+            "dosageForm": null
+          },
+          "odsGeneralScienceBullets": [],
+          "aiSummaryContract3": [
+            "Official iGEN registry evidence was matched to this product.",
+            "This fixture is intended for trust-signal integration, not formula evaluation.",
+            "Combine with the runtime decision-support payload when deeper scoring is required."
+          ]
+        },
+        "usageBlock": {
+          "directions": {
+            "text": "",
+            "lines": [],
+            "sourceTier": "missing",
+            "hasDirectionsTextVisible": false
+          },
+          "timingTip": "Refer to the product label for directions.",
+          "conservativeGuidance": "Treat this as an official trust signal, not a dosage recommendation."
+        },
+        "safetyBlock": {
+          "labelWarnings": [],
+          "ulGuidance": [],
+          "generalWatchouts": [
+            "This fixture does not add new label warnings or dosage safety guidance."
+          ],
+          "dataStatusRef": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+        },
+        "qualityMark": {
+          "code": "quality_mark_status",
+          "status": "detected",
+          "checked": true,
+          "confidence": 0.95,
+          "confidenceBucket": "high",
+          "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0002",
+          "sourcesTried": [
+            "official_registry"
+          ],
+          "lastCheckedAt": null,
+          "checkedMode": "page_fetch",
+          "pagesFetchedCount": 1,
+          "searchPagesFetchedCount": 0,
+          "evidenceType": "official_registry",
+          "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+          "programMatches": [
+            {
+              "programId": "igen",
+              "programLabel": "iGEN",
+              "registryFamily": "nutrasource",
+              "status": "verified_registry_match",
+              "matchLevel": "product",
+              "evidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0002",
+              "evidenceType": "official_registry",
+              "lotNumber": null,
+              "brandMatched": true,
+              "productMatched": true,
+              "confidence": 0.95,
+              "mapsToGenericThirdPartyClaim": false,
+              "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+            }
+          ],
+          "verificationSummary": {
+            "overallStatus": "ambiguous",
+            "strongestProgramId": "igen",
+            "strongestProgramLabel": "iGEN",
+            "strongestMatchLevel": "product",
+            "officialRegistryChecked": true,
+            "officialRegistryVerified": false,
+            "productPageClaimDetected": false,
+            "catalogClaimDetected": false,
+            "genericThirdPartyClaimDetected": false,
+            "brandLevelOfficialProgramDetected": false,
+            "brandLevelOfficialProgramLabels": [],
+            "blockedProgramIds": [],
+            "blockedProgramLabels": [],
+            "warnings": [
+              "program_not_equivalent_to_generic_third_party"
+            ]
+          }
+        }
+      },
+      "fixtureMeta": {
+        "scope": "quality_mark_focused",
+        "program": "iGEN"
+      }
+    }
+  },
+  {
+    "identity": {
+      "productId": "7083",
+      "barcode": "00790011030232"
+    },
+    "product": {
+      "brandName": "Jarrow Formulas",
+      "productName": "Jarrow Formulas, Beta Glucan, 250 mg, 60 Capsules",
+      "iherbUrl": "https://www.iherb.com/pr/jarrow-formulas-beta-glucan-250-mg-60-capsules/7083"
+    },
+    "priority": "high",
+    "deliveryLane": "wave1_high_frequency",
+    "surfaceSignal": {
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+    },
+    "qualityMarkAuditSummary": {
+      "status": "detected",
+      "checked": true,
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=JRRW0090",
+      "sourcesTried": [
+        "official_registry"
+      ],
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "evidenceType": "official_registry",
+      "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+    },
+    "apiResponse": {
+      "status": "ok",
+      "barcode": "00790011030232",
+      "decisionSupportDigest": "d093f04728bf94ffad17db23a2acb9136e6667434d820845216fd6c5beefdfaf",
+      "decisionInputsHash": "855b9b2558bb3eae264e5cadcb09f642cb7b7bcc99f15dd1d8f653b1c0b1a426",
+      "decisionContractVersion": "fixture.igen_quality_mark_inline.v1",
+      "viewMode": "details",
+      "verdict": "reasonable_but_incomplete",
+      "extraTrustSignals": [],
+      "qualityMark": {
+        "code": "quality_mark_status",
+        "status": "detected",
+        "checked": true,
+        "confidence": 0.95,
+        "confidenceBucket": "high",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=JRRW0090",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "lastCheckedAt": null,
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+        "programMatches": [
+          {
+            "programId": "igen",
+            "programLabel": "iGEN",
+            "registryFamily": "nutrasource",
+            "status": "verified_registry_match",
+            "matchLevel": "product",
+            "evidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=JRRW0090",
+            "evidenceType": "official_registry",
+            "lotNumber": null,
+            "brandMatched": true,
+            "productMatched": true,
+            "confidence": 0.95,
+            "mapsToGenericThirdPartyClaim": false,
+            "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+          }
+        ],
+        "verificationSummary": {
+          "overallStatus": "ambiguous",
+          "strongestProgramId": "igen",
+          "strongestProgramLabel": "iGEN",
+          "strongestMatchLevel": "product",
+          "officialRegistryChecked": true,
+          "officialRegistryVerified": false,
+          "productPageClaimDetected": false,
+          "catalogClaimDetected": false,
+          "genericThirdPartyClaimDetected": false,
+          "brandLevelOfficialProgramDetected": false,
+          "brandLevelOfficialProgramLabels": [],
+          "blockedProgramIds": [],
+          "blockedProgramLabels": [],
+          "warnings": [
+            "program_not_equivalent_to_generic_third_party"
+          ]
+        }
+      },
+      "decisionSupportInline": {
+        "verdict": "reasonable_but_incomplete",
+        "subscores": [],
+        "topBlockers": [],
+        "overviewBlock": {
+          "sourceStrip": [
+            "Official Nutrasource registry evidence",
+            "Quality-mark focused fixture"
+          ],
+          "bestForBullets": [],
+          "providesVerified": {
+            "servingSize": null,
+            "servingsPerContainer": null,
+            "keyIngredients": [],
+            "dosageForm": null,
+            "count": null
+          },
+          "missingInfo": [
+            "This fixture focuses on official iGEN trust evidence only.",
+            "Use runtime decision support if you need full formula, usage, or safety scoring."
+          ],
+          "singleCta": null
+        },
+        "scienceBlock": {
+          "ingredientSourceTier": "official_record",
+          "ingredientRows": [],
+          "ingredientSnapshotNames": [],
+          "formMatters": {
+            "ingredientChemicalForm": null,
+            "dosageForm": null
+          },
+          "odsGeneralScienceBullets": [],
+          "aiSummaryContract3": [
+            "Official iGEN registry evidence was matched to this product.",
+            "This fixture is intended for trust-signal integration, not formula evaluation.",
+            "Combine with the runtime decision-support payload when deeper scoring is required."
+          ]
+        },
+        "usageBlock": {
+          "directions": {
+            "text": "",
+            "lines": [],
+            "sourceTier": "missing",
+            "hasDirectionsTextVisible": false
+          },
+          "timingTip": "Refer to the product label for directions.",
+          "conservativeGuidance": "Treat this as an official trust signal, not a dosage recommendation."
+        },
+        "safetyBlock": {
+          "labelWarnings": [],
+          "ulGuidance": [],
+          "generalWatchouts": [
+            "This fixture does not add new label warnings or dosage safety guidance."
+          ],
+          "dataStatusRef": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+        },
+        "qualityMark": {
+          "code": "quality_mark_status",
+          "status": "detected",
+          "checked": true,
+          "confidence": 0.95,
+          "confidenceBucket": "high",
+          "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=JRRW0090",
+          "sourcesTried": [
+            "official_registry"
+          ],
+          "lastCheckedAt": null,
+          "checkedMode": "page_fetch",
+          "pagesFetchedCount": 1,
+          "searchPagesFetchedCount": 0,
+          "evidenceType": "official_registry",
+          "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+          "programMatches": [
+            {
+              "programId": "igen",
+              "programLabel": "iGEN",
+              "registryFamily": "nutrasource",
+              "status": "verified_registry_match",
+              "matchLevel": "product",
+              "evidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=JRRW0090",
+              "evidenceType": "official_registry",
+              "lotNumber": null,
+              "brandMatched": true,
+              "productMatched": true,
+              "confidence": 0.95,
+              "mapsToGenericThirdPartyClaim": false,
+              "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+            }
+          ],
+          "verificationSummary": {
+            "overallStatus": "ambiguous",
+            "strongestProgramId": "igen",
+            "strongestProgramLabel": "iGEN",
+            "strongestMatchLevel": "product",
+            "officialRegistryChecked": true,
+            "officialRegistryVerified": false,
+            "productPageClaimDetected": false,
+            "catalogClaimDetected": false,
+            "genericThirdPartyClaimDetected": false,
+            "brandLevelOfficialProgramDetected": false,
+            "brandLevelOfficialProgramLabels": [],
+            "blockedProgramIds": [],
+            "blockedProgramLabels": [],
+            "warnings": [
+              "program_not_equivalent_to_generic_third_party"
+            ]
+          }
+        }
+      },
+      "fixtureMeta": {
+        "scope": "quality_mark_focused",
+        "program": "iGEN"
+      }
+    }
+  },
+  {
+    "identity": {
+      "productId": "187",
+      "barcode": "00790011150121"
+    },
+    "product": {
+      "brandName": "Jarrow Formulas",
+      "productName": "Jarrow Formulas, L-Glutamine, 750 mg, 120 Veggie Capsules",
+      "iherbUrl": "https://www.iherb.com/pr/jarrow-formulas-l-glutamine-750-mg-120-veggie-capsules/187"
+    },
+    "priority": "high",
+    "deliveryLane": "wave1_high_frequency",
+    "surfaceSignal": {
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+    },
+    "qualityMarkAuditSummary": {
+      "status": "detected",
+      "checked": true,
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/brand?id=JRRW",
+      "sourcesTried": [
+        "official_registry"
+      ],
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "evidenceType": "official_registry",
+      "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+    },
+    "apiResponse": {
+      "status": "ok",
+      "barcode": "00790011150121",
+      "decisionSupportDigest": "bacb138667837238aadf1c71748edeb91d6dae0267d94fd6ee845a8173561ecb",
+      "decisionInputsHash": "26b69da8f6003afa3a78ebddf520d24440bb390505b983805a6f64d91f3afe18",
+      "decisionContractVersion": "fixture.igen_quality_mark_inline.v1",
+      "viewMode": "details",
+      "verdict": "reasonable_but_incomplete",
+      "extraTrustSignals": [],
+      "qualityMark": {
+        "code": "quality_mark_status",
+        "status": "detected",
+        "checked": true,
+        "confidence": 0.95,
+        "confidenceBucket": "high",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/brand?id=JRRW",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "lastCheckedAt": null,
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+        "programMatches": [
+          {
+            "programId": "igen",
+            "programLabel": "iGEN",
+            "registryFamily": "nutrasource",
+            "status": "verified_registry_match",
+            "matchLevel": "product",
+            "evidenceUrl": "https://certifications.nutrasource.ca/certified-products/brand?id=JRRW",
+            "evidenceType": "official_registry",
+            "lotNumber": null,
+            "brandMatched": true,
+            "productMatched": true,
+            "confidence": 0.95,
+            "mapsToGenericThirdPartyClaim": false,
+            "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+          }
+        ],
+        "verificationSummary": {
+          "overallStatus": "ambiguous",
+          "strongestProgramId": "igen",
+          "strongestProgramLabel": "iGEN",
+          "strongestMatchLevel": "product",
+          "officialRegistryChecked": true,
+          "officialRegistryVerified": false,
+          "productPageClaimDetected": false,
+          "catalogClaimDetected": false,
+          "genericThirdPartyClaimDetected": false,
+          "brandLevelOfficialProgramDetected": false,
+          "brandLevelOfficialProgramLabels": [],
+          "blockedProgramIds": [],
+          "blockedProgramLabels": [],
+          "warnings": [
+            "program_not_equivalent_to_generic_third_party"
+          ]
+        }
+      },
+      "decisionSupportInline": {
+        "verdict": "reasonable_but_incomplete",
+        "subscores": [],
+        "topBlockers": [],
+        "overviewBlock": {
+          "sourceStrip": [
+            "Official Nutrasource registry evidence",
+            "Quality-mark focused fixture"
+          ],
+          "bestForBullets": [],
+          "providesVerified": {
+            "servingSize": null,
+            "servingsPerContainer": null,
+            "keyIngredients": [],
+            "dosageForm": null,
+            "count": null
+          },
+          "missingInfo": [
+            "This fixture focuses on official iGEN trust evidence only.",
+            "Use runtime decision support if you need full formula, usage, or safety scoring."
+          ],
+          "singleCta": null
+        },
+        "scienceBlock": {
+          "ingredientSourceTier": "official_record",
+          "ingredientRows": [],
+          "ingredientSnapshotNames": [],
+          "formMatters": {
+            "ingredientChemicalForm": null,
+            "dosageForm": null
+          },
+          "odsGeneralScienceBullets": [],
+          "aiSummaryContract3": [
+            "Official iGEN registry evidence was matched to this product.",
+            "This fixture is intended for trust-signal integration, not formula evaluation.",
+            "Combine with the runtime decision-support payload when deeper scoring is required."
+          ]
+        },
+        "usageBlock": {
+          "directions": {
+            "text": "",
+            "lines": [],
+            "sourceTier": "missing",
+            "hasDirectionsTextVisible": false
+          },
+          "timingTip": "Refer to the product label for directions.",
+          "conservativeGuidance": "Treat this as an official trust signal, not a dosage recommendation."
+        },
+        "safetyBlock": {
+          "labelWarnings": [],
+          "ulGuidance": [],
+          "generalWatchouts": [
+            "This fixture does not add new label warnings or dosage safety guidance."
+          ],
+          "dataStatusRef": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+        },
+        "qualityMark": {
+          "code": "quality_mark_status",
+          "status": "detected",
+          "checked": true,
+          "confidence": 0.95,
+          "confidenceBucket": "high",
+          "evidenceRef": "https://certifications.nutrasource.ca/certified-products/brand?id=JRRW",
+          "sourcesTried": [
+            "official_registry"
+          ],
+          "lastCheckedAt": null,
+          "checkedMode": "page_fetch",
+          "pagesFetchedCount": 1,
+          "searchPagesFetchedCount": 0,
+          "evidenceType": "official_registry",
+          "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+          "programMatches": [
+            {
+              "programId": "igen",
+              "programLabel": "iGEN",
+              "registryFamily": "nutrasource",
+              "status": "verified_registry_match",
+              "matchLevel": "product",
+              "evidenceUrl": "https://certifications.nutrasource.ca/certified-products/brand?id=JRRW",
+              "evidenceType": "official_registry",
+              "lotNumber": null,
+              "brandMatched": true,
+              "productMatched": true,
+              "confidence": 0.95,
+              "mapsToGenericThirdPartyClaim": false,
+              "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+            }
+          ],
+          "verificationSummary": {
+            "overallStatus": "ambiguous",
+            "strongestProgramId": "igen",
+            "strongestProgramLabel": "iGEN",
+            "strongestMatchLevel": "product",
+            "officialRegistryChecked": true,
+            "officialRegistryVerified": false,
+            "productPageClaimDetected": false,
+            "catalogClaimDetected": false,
+            "genericThirdPartyClaimDetected": false,
+            "brandLevelOfficialProgramDetected": false,
+            "brandLevelOfficialProgramLabels": [],
+            "blockedProgramIds": [],
+            "blockedProgramLabels": [],
+            "warnings": [
+              "program_not_equivalent_to_generic_third_party"
+            ]
+          }
+        }
+      },
+      "fixtureMeta": {
+        "scope": "quality_mark_focused",
+        "program": "iGEN"
+      }
+    }
+  },
+  {
+    "identity": {
+      "productId": "105832",
+      "barcode": "00768990018442"
+    },
+    "product": {
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Children's Eye Health Gummies, Zero Sugar, Ages 2-12, Strawberry Lemonade, 30 Gummy Chews",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-children-s-eye-health-gummies-zero-sugar-ages-2-12-strawberry-lemonade-30-gummy-chews/105832"
+    },
+    "priority": "high",
+    "deliveryLane": "wave1_high_frequency",
+    "surfaceSignal": {
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+    },
+    "qualityMarkAuditSummary": {
+      "status": "detected",
+      "checked": true,
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0005",
+      "sourcesTried": [
+        "official_registry"
+      ],
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "evidenceType": "official_registry",
+      "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+    },
+    "apiResponse": {
+      "status": "ok",
+      "barcode": "00768990018442",
+      "decisionSupportDigest": "d30b1e1fd5e395d82b755f340db074f9cd225769a03915b6dacc420363b01628",
+      "decisionInputsHash": "fc383d896a32295da02614621005321d271764affd9139e0688566a241ba5297",
+      "decisionContractVersion": "fixture.igen_quality_mark_inline.v1",
+      "viewMode": "details",
+      "verdict": "reasonable_but_incomplete",
+      "extraTrustSignals": [],
+      "qualityMark": {
+        "code": "quality_mark_status",
+        "status": "detected",
+        "checked": true,
+        "confidence": 0.95,
+        "confidenceBucket": "high",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0005",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "lastCheckedAt": null,
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+        "programMatches": [
+          {
+            "programId": "igen",
+            "programLabel": "iGEN",
+            "registryFamily": "nutrasource",
+            "status": "verified_registry_match",
+            "matchLevel": "product",
+            "evidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0005",
+            "evidenceType": "official_registry",
+            "lotNumber": null,
+            "brandMatched": true,
+            "productMatched": true,
+            "confidence": 0.95,
+            "mapsToGenericThirdPartyClaim": false,
+            "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+          }
+        ],
+        "verificationSummary": {
+          "overallStatus": "ambiguous",
+          "strongestProgramId": "igen",
+          "strongestProgramLabel": "iGEN",
+          "strongestMatchLevel": "product",
+          "officialRegistryChecked": true,
+          "officialRegistryVerified": false,
+          "productPageClaimDetected": false,
+          "catalogClaimDetected": false,
+          "genericThirdPartyClaimDetected": false,
+          "brandLevelOfficialProgramDetected": false,
+          "brandLevelOfficialProgramLabels": [],
+          "blockedProgramIds": [],
+          "blockedProgramLabels": [],
+          "warnings": [
+            "program_not_equivalent_to_generic_third_party"
+          ]
+        }
+      },
+      "decisionSupportInline": {
+        "verdict": "reasonable_but_incomplete",
+        "subscores": [],
+        "topBlockers": [],
+        "overviewBlock": {
+          "sourceStrip": [
+            "Official Nutrasource registry evidence",
+            "Quality-mark focused fixture"
+          ],
+          "bestForBullets": [],
+          "providesVerified": {
+            "servingSize": null,
+            "servingsPerContainer": null,
+            "keyIngredients": [],
+            "dosageForm": null,
+            "count": null
+          },
+          "missingInfo": [
+            "This fixture focuses on official iGEN trust evidence only.",
+            "Use runtime decision support if you need full formula, usage, or safety scoring."
+          ],
+          "singleCta": null
+        },
+        "scienceBlock": {
+          "ingredientSourceTier": "official_record",
+          "ingredientRows": [],
+          "ingredientSnapshotNames": [],
+          "formMatters": {
+            "ingredientChemicalForm": null,
+            "dosageForm": null
+          },
+          "odsGeneralScienceBullets": [],
+          "aiSummaryContract3": [
+            "Official iGEN registry evidence was matched to this product.",
+            "This fixture is intended for trust-signal integration, not formula evaluation.",
+            "Combine with the runtime decision-support payload when deeper scoring is required."
+          ]
+        },
+        "usageBlock": {
+          "directions": {
+            "text": "",
+            "lines": [],
+            "sourceTier": "missing",
+            "hasDirectionsTextVisible": false
+          },
+          "timingTip": "Refer to the product label for directions.",
+          "conservativeGuidance": "Treat this as an official trust signal, not a dosage recommendation."
+        },
+        "safetyBlock": {
+          "labelWarnings": [],
+          "ulGuidance": [],
+          "generalWatchouts": [
+            "This fixture does not add new label warnings or dosage safety guidance."
+          ],
+          "dataStatusRef": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+        },
+        "qualityMark": {
+          "code": "quality_mark_status",
+          "status": "detected",
+          "checked": true,
+          "confidence": 0.95,
+          "confidenceBucket": "high",
+          "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0005",
+          "sourcesTried": [
+            "official_registry"
+          ],
+          "lastCheckedAt": null,
+          "checkedMode": "page_fetch",
+          "pagesFetchedCount": 1,
+          "searchPagesFetchedCount": 0,
+          "evidenceType": "official_registry",
+          "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+          "programMatches": [
+            {
+              "programId": "igen",
+              "programLabel": "iGEN",
+              "registryFamily": "nutrasource",
+              "status": "verified_registry_match",
+              "matchLevel": "product",
+              "evidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0005",
+              "evidenceType": "official_registry",
+              "lotNumber": null,
+              "brandMatched": true,
+              "productMatched": true,
+              "confidence": 0.95,
+              "mapsToGenericThirdPartyClaim": false,
+              "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+            }
+          ],
+          "verificationSummary": {
+            "overallStatus": "ambiguous",
+            "strongestProgramId": "igen",
+            "strongestProgramLabel": "iGEN",
+            "strongestMatchLevel": "product",
+            "officialRegistryChecked": true,
+            "officialRegistryVerified": false,
+            "productPageClaimDetected": false,
+            "catalogClaimDetected": false,
+            "genericThirdPartyClaimDetected": false,
+            "brandLevelOfficialProgramDetected": false,
+            "brandLevelOfficialProgramLabels": [],
+            "blockedProgramIds": [],
+            "blockedProgramLabels": [],
+            "warnings": [
+              "program_not_equivalent_to_generic_third_party"
+            ]
+          }
+        }
+      },
+      "fixtureMeta": {
+        "scope": "quality_mark_focused",
+        "program": "iGEN"
+      }
+    }
+  },
+  {
+    "identity": {
+      "productId": "30241",
+      "barcode": "00768990017452"
+    },
+    "product": {
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, DHA Xtra™, Strawberry, 60 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-dha-xtra-strawberry-60-soft-gels/30241"
+    },
+    "priority": "high",
+    "deliveryLane": "wave1_high_frequency",
+    "surfaceSignal": {
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+    },
+    "qualityMarkAuditSummary": {
+      "status": "detected",
+      "checked": true,
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0008",
+      "sourcesTried": [
+        "official_registry"
+      ],
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "evidenceType": "official_registry",
+      "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+    },
+    "apiResponse": {
+      "status": "ok",
+      "barcode": "00768990017452",
+      "decisionSupportDigest": "4e0b0b3bab750992a3ff42c119a1a275b49c49ea7f06e1a7699748b082e5ef8d",
+      "decisionInputsHash": "3673d8d332a37fb8164bd5466a6d0ac523f0bded97d11432bf66556cbaa307ab",
+      "decisionContractVersion": "fixture.igen_quality_mark_inline.v1",
+      "viewMode": "details",
+      "verdict": "reasonable_but_incomplete",
+      "extraTrustSignals": [],
+      "qualityMark": {
+        "code": "quality_mark_status",
+        "status": "detected",
+        "checked": true,
+        "confidence": 0.95,
+        "confidenceBucket": "high",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0008",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "lastCheckedAt": null,
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+        "programMatches": [
+          {
+            "programId": "igen",
+            "programLabel": "iGEN",
+            "registryFamily": "nutrasource",
+            "status": "verified_registry_match",
+            "matchLevel": "product",
+            "evidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0008",
+            "evidenceType": "official_registry",
+            "lotNumber": null,
+            "brandMatched": true,
+            "productMatched": true,
+            "confidence": 0.95,
+            "mapsToGenericThirdPartyClaim": false,
+            "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+          }
+        ],
+        "verificationSummary": {
+          "overallStatus": "ambiguous",
+          "strongestProgramId": "igen",
+          "strongestProgramLabel": "iGEN",
+          "strongestMatchLevel": "product",
+          "officialRegistryChecked": true,
+          "officialRegistryVerified": false,
+          "productPageClaimDetected": false,
+          "catalogClaimDetected": false,
+          "genericThirdPartyClaimDetected": false,
+          "brandLevelOfficialProgramDetected": false,
+          "brandLevelOfficialProgramLabels": [],
+          "blockedProgramIds": [],
+          "blockedProgramLabels": [],
+          "warnings": [
+            "program_not_equivalent_to_generic_third_party"
+          ]
+        }
+      },
+      "decisionSupportInline": {
+        "verdict": "reasonable_but_incomplete",
+        "subscores": [],
+        "topBlockers": [],
+        "overviewBlock": {
+          "sourceStrip": [
+            "Official Nutrasource registry evidence",
+            "Quality-mark focused fixture"
+          ],
+          "bestForBullets": [],
+          "providesVerified": {
+            "servingSize": null,
+            "servingsPerContainer": null,
+            "keyIngredients": [],
+            "dosageForm": null,
+            "count": null
+          },
+          "missingInfo": [
+            "This fixture focuses on official iGEN trust evidence only.",
+            "Use runtime decision support if you need full formula, usage, or safety scoring."
+          ],
+          "singleCta": null
+        },
+        "scienceBlock": {
+          "ingredientSourceTier": "official_record",
+          "ingredientRows": [],
+          "ingredientSnapshotNames": [],
+          "formMatters": {
+            "ingredientChemicalForm": null,
+            "dosageForm": null
+          },
+          "odsGeneralScienceBullets": [],
+          "aiSummaryContract3": [
+            "Official iGEN registry evidence was matched to this product.",
+            "This fixture is intended for trust-signal integration, not formula evaluation.",
+            "Combine with the runtime decision-support payload when deeper scoring is required."
+          ]
+        },
+        "usageBlock": {
+          "directions": {
+            "text": "",
+            "lines": [],
+            "sourceTier": "missing",
+            "hasDirectionsTextVisible": false
+          },
+          "timingTip": "Refer to the product label for directions.",
+          "conservativeGuidance": "Treat this as an official trust signal, not a dosage recommendation."
+        },
+        "safetyBlock": {
+          "labelWarnings": [],
+          "ulGuidance": [],
+          "generalWatchouts": [
+            "This fixture does not add new label warnings or dosage safety guidance."
+          ],
+          "dataStatusRef": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+        },
+        "qualityMark": {
+          "code": "quality_mark_status",
+          "status": "detected",
+          "checked": true,
+          "confidence": 0.95,
+          "confidenceBucket": "high",
+          "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0008",
+          "sourcesTried": [
+            "official_registry"
+          ],
+          "lastCheckedAt": null,
+          "checkedMode": "page_fetch",
+          "pagesFetchedCount": 1,
+          "searchPagesFetchedCount": 0,
+          "evidenceType": "official_registry",
+          "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+          "programMatches": [
+            {
+              "programId": "igen",
+              "programLabel": "iGEN",
+              "registryFamily": "nutrasource",
+              "status": "verified_registry_match",
+              "matchLevel": "product",
+              "evidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0008",
+              "evidenceType": "official_registry",
+              "lotNumber": null,
+              "brandMatched": true,
+              "productMatched": true,
+              "confidence": 0.95,
+              "mapsToGenericThirdPartyClaim": false,
+              "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+            }
+          ],
+          "verificationSummary": {
+            "overallStatus": "ambiguous",
+            "strongestProgramId": "igen",
+            "strongestProgramLabel": "iGEN",
+            "strongestMatchLevel": "product",
+            "officialRegistryChecked": true,
+            "officialRegistryVerified": false,
+            "productPageClaimDetected": false,
+            "catalogClaimDetected": false,
+            "genericThirdPartyClaimDetected": false,
+            "brandLevelOfficialProgramDetected": false,
+            "brandLevelOfficialProgramLabels": [],
+            "blockedProgramIds": [],
+            "blockedProgramLabels": [],
+            "warnings": [
+              "program_not_equivalent_to_generic_third_party"
+            ]
+          }
+        }
+      },
+      "fixtureMeta": {
+        "scope": "quality_mark_focused",
+        "program": "iGEN"
+      }
+    }
+  },
+  {
+    "identity": {
+      "productId": "70978",
+      "barcode": "00768990018787"
+    },
+    "product": {
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Memory Support, Omega Blend, 60 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-memory-support-omega-blend-60-soft-gels/70978"
+    },
+    "priority": "high",
+    "deliveryLane": "wave1_high_frequency",
+    "surfaceSignal": {
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+    },
+    "qualityMarkAuditSummary": {
+      "status": "detected",
+      "checked": true,
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0042",
+      "sourcesTried": [
+        "official_registry"
+      ],
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "evidenceType": "official_registry",
+      "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+    },
+    "apiResponse": {
+      "status": "ok",
+      "barcode": "00768990018787",
+      "decisionSupportDigest": "c5dfef29d1dad4eb7d2315b687a90e226eef3c5ed8c9ca3f570d01876a862566",
+      "decisionInputsHash": "6f77fa8c16d7d33e6b4ad259283a29a8cb2e3506260a43b42995a5430a54e3d0",
+      "decisionContractVersion": "fixture.igen_quality_mark_inline.v1",
+      "viewMode": "details",
+      "verdict": "reasonable_but_incomplete",
+      "extraTrustSignals": [],
+      "qualityMark": {
+        "code": "quality_mark_status",
+        "status": "detected",
+        "checked": true,
+        "confidence": 0.95,
+        "confidenceBucket": "high",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0042",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "lastCheckedAt": null,
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+        "programMatches": [
+          {
+            "programId": "igen",
+            "programLabel": "iGEN",
+            "registryFamily": "nutrasource",
+            "status": "verified_registry_match",
+            "matchLevel": "product",
+            "evidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0042",
+            "evidenceType": "official_registry",
+            "lotNumber": null,
+            "brandMatched": true,
+            "productMatched": true,
+            "confidence": 0.95,
+            "mapsToGenericThirdPartyClaim": false,
+            "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+          }
+        ],
+        "verificationSummary": {
+          "overallStatus": "ambiguous",
+          "strongestProgramId": "igen",
+          "strongestProgramLabel": "iGEN",
+          "strongestMatchLevel": "product",
+          "officialRegistryChecked": true,
+          "officialRegistryVerified": false,
+          "productPageClaimDetected": false,
+          "catalogClaimDetected": false,
+          "genericThirdPartyClaimDetected": false,
+          "brandLevelOfficialProgramDetected": false,
+          "brandLevelOfficialProgramLabels": [],
+          "blockedProgramIds": [],
+          "blockedProgramLabels": [],
+          "warnings": [
+            "program_not_equivalent_to_generic_third_party"
+          ]
+        }
+      },
+      "decisionSupportInline": {
+        "verdict": "reasonable_but_incomplete",
+        "subscores": [],
+        "topBlockers": [],
+        "overviewBlock": {
+          "sourceStrip": [
+            "Official Nutrasource registry evidence",
+            "Quality-mark focused fixture"
+          ],
+          "bestForBullets": [],
+          "providesVerified": {
+            "servingSize": null,
+            "servingsPerContainer": null,
+            "keyIngredients": [],
+            "dosageForm": null,
+            "count": null
+          },
+          "missingInfo": [
+            "This fixture focuses on official iGEN trust evidence only.",
+            "Use runtime decision support if you need full formula, usage, or safety scoring."
+          ],
+          "singleCta": null
+        },
+        "scienceBlock": {
+          "ingredientSourceTier": "official_record",
+          "ingredientRows": [],
+          "ingredientSnapshotNames": [],
+          "formMatters": {
+            "ingredientChemicalForm": null,
+            "dosageForm": null
+          },
+          "odsGeneralScienceBullets": [],
+          "aiSummaryContract3": [
+            "Official iGEN registry evidence was matched to this product.",
+            "This fixture is intended for trust-signal integration, not formula evaluation.",
+            "Combine with the runtime decision-support payload when deeper scoring is required."
+          ]
+        },
+        "usageBlock": {
+          "directions": {
+            "text": "",
+            "lines": [],
+            "sourceTier": "missing",
+            "hasDirectionsTextVisible": false
+          },
+          "timingTip": "Refer to the product label for directions.",
+          "conservativeGuidance": "Treat this as an official trust signal, not a dosage recommendation."
+        },
+        "safetyBlock": {
+          "labelWarnings": [],
+          "ulGuidance": [],
+          "generalWatchouts": [
+            "This fixture does not add new label warnings or dosage safety guidance."
+          ],
+          "dataStatusRef": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+        },
+        "qualityMark": {
+          "code": "quality_mark_status",
+          "status": "detected",
+          "checked": true,
+          "confidence": 0.95,
+          "confidenceBucket": "high",
+          "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0042",
+          "sourcesTried": [
+            "official_registry"
+          ],
+          "lastCheckedAt": null,
+          "checkedMode": "page_fetch",
+          "pagesFetchedCount": 1,
+          "searchPagesFetchedCount": 0,
+          "evidenceType": "official_registry",
+          "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+          "programMatches": [
+            {
+              "programId": "igen",
+              "programLabel": "iGEN",
+              "registryFamily": "nutrasource",
+              "status": "verified_registry_match",
+              "matchLevel": "product",
+              "evidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0042",
+              "evidenceType": "official_registry",
+              "lotNumber": null,
+              "brandMatched": true,
+              "productMatched": true,
+              "confidence": 0.95,
+              "mapsToGenericThirdPartyClaim": false,
+              "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+            }
+          ],
+          "verificationSummary": {
+            "overallStatus": "ambiguous",
+            "strongestProgramId": "igen",
+            "strongestProgramLabel": "iGEN",
+            "strongestMatchLevel": "product",
+            "officialRegistryChecked": true,
+            "officialRegistryVerified": false,
+            "productPageClaimDetected": false,
+            "catalogClaimDetected": false,
+            "genericThirdPartyClaimDetected": false,
+            "brandLevelOfficialProgramDetected": false,
+            "brandLevelOfficialProgramLabels": [],
+            "blockedProgramIds": [],
+            "blockedProgramLabels": [],
+            "warnings": [
+              "program_not_equivalent_to_generic_third_party"
+            ]
+          }
+        }
+      },
+      "fixtureMeta": {
+        "scope": "quality_mark_focused",
+        "program": "iGEN"
+      }
+    }
+  },
+  {
+    "identity": {
+      "productId": "70980",
+      "barcode": "00768990301261"
+    },
+    "product": {
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Nordic Berries Multivitamin Gummies, Ages 3+, Cherry Berry, 120 Gummy Berries",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-nordic-berries-multivitamin-gummies-ages-3-cherry-berry-120-gummy-berries/70980"
+    },
+    "priority": "high",
+    "deliveryLane": "wave1_high_frequency",
+    "surfaceSignal": {
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+    },
+    "qualityMarkAuditSummary": {
+      "status": "detected",
+      "checked": true,
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0132",
+      "sourcesTried": [
+        "official_registry"
+      ],
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "evidenceType": "official_registry",
+      "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+    },
+    "apiResponse": {
+      "status": "ok",
+      "barcode": "00768990301261",
+      "decisionSupportDigest": "9224c5543d95657532be3346c9ea37766e899da3a90b7636f494263b8a224519",
+      "decisionInputsHash": "915e69d065a78a9a0ca0e8566a99f25e0fcc72df2c71071ad6b9b7a7dd4d7047",
+      "decisionContractVersion": "fixture.igen_quality_mark_inline.v1",
+      "viewMode": "details",
+      "verdict": "reasonable_but_incomplete",
+      "extraTrustSignals": [],
+      "qualityMark": {
+        "code": "quality_mark_status",
+        "status": "detected",
+        "checked": true,
+        "confidence": 0.95,
+        "confidenceBucket": "high",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0132",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "lastCheckedAt": null,
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+        "programMatches": [
+          {
+            "programId": "igen",
+            "programLabel": "iGEN",
+            "registryFamily": "nutrasource",
+            "status": "verified_registry_match",
+            "matchLevel": "product",
+            "evidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0132",
+            "evidenceType": "official_registry",
+            "lotNumber": null,
+            "brandMatched": true,
+            "productMatched": true,
+            "confidence": 0.95,
+            "mapsToGenericThirdPartyClaim": false,
+            "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+          }
+        ],
+        "verificationSummary": {
+          "overallStatus": "ambiguous",
+          "strongestProgramId": "igen",
+          "strongestProgramLabel": "iGEN",
+          "strongestMatchLevel": "product",
+          "officialRegistryChecked": true,
+          "officialRegistryVerified": false,
+          "productPageClaimDetected": false,
+          "catalogClaimDetected": false,
+          "genericThirdPartyClaimDetected": false,
+          "brandLevelOfficialProgramDetected": false,
+          "brandLevelOfficialProgramLabels": [],
+          "blockedProgramIds": [],
+          "blockedProgramLabels": [],
+          "warnings": [
+            "program_not_equivalent_to_generic_third_party"
+          ]
+        }
+      },
+      "decisionSupportInline": {
+        "verdict": "reasonable_but_incomplete",
+        "subscores": [],
+        "topBlockers": [],
+        "overviewBlock": {
+          "sourceStrip": [
+            "Official Nutrasource registry evidence",
+            "Quality-mark focused fixture"
+          ],
+          "bestForBullets": [],
+          "providesVerified": {
+            "servingSize": null,
+            "servingsPerContainer": null,
+            "keyIngredients": [],
+            "dosageForm": null,
+            "count": null
+          },
+          "missingInfo": [
+            "This fixture focuses on official iGEN trust evidence only.",
+            "Use runtime decision support if you need full formula, usage, or safety scoring."
+          ],
+          "singleCta": null
+        },
+        "scienceBlock": {
+          "ingredientSourceTier": "official_record",
+          "ingredientRows": [],
+          "ingredientSnapshotNames": [],
+          "formMatters": {
+            "ingredientChemicalForm": null,
+            "dosageForm": null
+          },
+          "odsGeneralScienceBullets": [],
+          "aiSummaryContract3": [
+            "Official iGEN registry evidence was matched to this product.",
+            "This fixture is intended for trust-signal integration, not formula evaluation.",
+            "Combine with the runtime decision-support payload when deeper scoring is required."
+          ]
+        },
+        "usageBlock": {
+          "directions": {
+            "text": "",
+            "lines": [],
+            "sourceTier": "missing",
+            "hasDirectionsTextVisible": false
+          },
+          "timingTip": "Refer to the product label for directions.",
+          "conservativeGuidance": "Treat this as an official trust signal, not a dosage recommendation."
+        },
+        "safetyBlock": {
+          "labelWarnings": [],
+          "ulGuidance": [],
+          "generalWatchouts": [
+            "This fixture does not add new label warnings or dosage safety guidance."
+          ],
+          "dataStatusRef": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+        },
+        "qualityMark": {
+          "code": "quality_mark_status",
+          "status": "detected",
+          "checked": true,
+          "confidence": 0.95,
+          "confidenceBucket": "high",
+          "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0132",
+          "sourcesTried": [
+            "official_registry"
+          ],
+          "lastCheckedAt": null,
+          "checkedMode": "page_fetch",
+          "pagesFetchedCount": 1,
+          "searchPagesFetchedCount": 0,
+          "evidenceType": "official_registry",
+          "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+          "programMatches": [
+            {
+              "programId": "igen",
+              "programLabel": "iGEN",
+              "registryFamily": "nutrasource",
+              "status": "verified_registry_match",
+              "matchLevel": "product",
+              "evidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0132",
+              "evidenceType": "official_registry",
+              "lotNumber": null,
+              "brandMatched": true,
+              "productMatched": true,
+              "confidence": 0.95,
+              "mapsToGenericThirdPartyClaim": false,
+              "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+            }
+          ],
+          "verificationSummary": {
+            "overallStatus": "ambiguous",
+            "strongestProgramId": "igen",
+            "strongestProgramLabel": "iGEN",
+            "strongestMatchLevel": "product",
+            "officialRegistryChecked": true,
+            "officialRegistryVerified": false,
+            "productPageClaimDetected": false,
+            "catalogClaimDetected": false,
+            "genericThirdPartyClaimDetected": false,
+            "brandLevelOfficialProgramDetected": false,
+            "brandLevelOfficialProgramLabels": [],
+            "blockedProgramIds": [],
+            "blockedProgramLabels": [],
+            "warnings": [
+              "program_not_equivalent_to_generic_third_party"
+            ]
+          }
+        }
+      },
+      "fixtureMeta": {
+        "scope": "quality_mark_focused",
+        "program": "iGEN"
+      }
+    }
+  },
+  {
+    "identity": {
+      "productId": "72962",
+      "barcode": "00768990016769"
+    },
+    "product": {
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Nordic Flora Probiotic, Comfort, 15 Billion CFU, 30 Capsules",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-nordic-flora-probiotic-comfort-15-billion-cfu-30-capsules/72962"
+    },
+    "priority": "high",
+    "deliveryLane": "wave1_high_frequency",
+    "surfaceSignal": {
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+    },
+    "qualityMarkAuditSummary": {
+      "status": "detected",
+      "checked": true,
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0036",
+      "sourcesTried": [
+        "official_registry"
+      ],
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "evidenceType": "official_registry",
+      "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+    },
+    "apiResponse": {
+      "status": "ok",
+      "barcode": "00768990016769",
+      "decisionSupportDigest": "20b4a08cb7d3016e0c9a77e9d71b81d591406f195cfa6e0e7a8dc464331408ea",
+      "decisionInputsHash": "e28b57400ef77cc84823964418464025ee06bb9a103ff4206af2f92e83bd2288",
+      "decisionContractVersion": "fixture.igen_quality_mark_inline.v1",
+      "viewMode": "details",
+      "verdict": "reasonable_but_incomplete",
+      "extraTrustSignals": [],
+      "qualityMark": {
+        "code": "quality_mark_status",
+        "status": "detected",
+        "checked": true,
+        "confidence": 0.95,
+        "confidenceBucket": "high",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0036",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "lastCheckedAt": null,
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+        "programMatches": [
+          {
+            "programId": "igen",
+            "programLabel": "iGEN",
+            "registryFamily": "nutrasource",
+            "status": "verified_registry_match",
+            "matchLevel": "product",
+            "evidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0036",
+            "evidenceType": "official_registry",
+            "lotNumber": null,
+            "brandMatched": true,
+            "productMatched": true,
+            "confidence": 0.95,
+            "mapsToGenericThirdPartyClaim": false,
+            "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+          }
+        ],
+        "verificationSummary": {
+          "overallStatus": "ambiguous",
+          "strongestProgramId": "igen",
+          "strongestProgramLabel": "iGEN",
+          "strongestMatchLevel": "product",
+          "officialRegistryChecked": true,
+          "officialRegistryVerified": false,
+          "productPageClaimDetected": false,
+          "catalogClaimDetected": false,
+          "genericThirdPartyClaimDetected": false,
+          "brandLevelOfficialProgramDetected": false,
+          "brandLevelOfficialProgramLabels": [],
+          "blockedProgramIds": [],
+          "blockedProgramLabels": [],
+          "warnings": [
+            "program_not_equivalent_to_generic_third_party"
+          ]
+        }
+      },
+      "decisionSupportInline": {
+        "verdict": "reasonable_but_incomplete",
+        "subscores": [],
+        "topBlockers": [],
+        "overviewBlock": {
+          "sourceStrip": [
+            "Official Nutrasource registry evidence",
+            "Quality-mark focused fixture"
+          ],
+          "bestForBullets": [],
+          "providesVerified": {
+            "servingSize": null,
+            "servingsPerContainer": null,
+            "keyIngredients": [],
+            "dosageForm": null,
+            "count": null
+          },
+          "missingInfo": [
+            "This fixture focuses on official iGEN trust evidence only.",
+            "Use runtime decision support if you need full formula, usage, or safety scoring."
+          ],
+          "singleCta": null
+        },
+        "scienceBlock": {
+          "ingredientSourceTier": "official_record",
+          "ingredientRows": [],
+          "ingredientSnapshotNames": [],
+          "formMatters": {
+            "ingredientChemicalForm": null,
+            "dosageForm": null
+          },
+          "odsGeneralScienceBullets": [],
+          "aiSummaryContract3": [
+            "Official iGEN registry evidence was matched to this product.",
+            "This fixture is intended for trust-signal integration, not formula evaluation.",
+            "Combine with the runtime decision-support payload when deeper scoring is required."
+          ]
+        },
+        "usageBlock": {
+          "directions": {
+            "text": "",
+            "lines": [],
+            "sourceTier": "missing",
+            "hasDirectionsTextVisible": false
+          },
+          "timingTip": "Refer to the product label for directions.",
+          "conservativeGuidance": "Treat this as an official trust signal, not a dosage recommendation."
+        },
+        "safetyBlock": {
+          "labelWarnings": [],
+          "ulGuidance": [],
+          "generalWatchouts": [
+            "This fixture does not add new label warnings or dosage safety guidance."
+          ],
+          "dataStatusRef": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+        },
+        "qualityMark": {
+          "code": "quality_mark_status",
+          "status": "detected",
+          "checked": true,
+          "confidence": 0.95,
+          "confidenceBucket": "high",
+          "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0036",
+          "sourcesTried": [
+            "official_registry"
+          ],
+          "lastCheckedAt": null,
+          "checkedMode": "page_fetch",
+          "pagesFetchedCount": 1,
+          "searchPagesFetchedCount": 0,
+          "evidenceType": "official_registry",
+          "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+          "programMatches": [
+            {
+              "programId": "igen",
+              "programLabel": "iGEN",
+              "registryFamily": "nutrasource",
+              "status": "verified_registry_match",
+              "matchLevel": "product",
+              "evidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0036",
+              "evidenceType": "official_registry",
+              "lotNumber": null,
+              "brandMatched": true,
+              "productMatched": true,
+              "confidence": 0.95,
+              "mapsToGenericThirdPartyClaim": false,
+              "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+            }
+          ],
+          "verificationSummary": {
+            "overallStatus": "ambiguous",
+            "strongestProgramId": "igen",
+            "strongestProgramLabel": "iGEN",
+            "strongestMatchLevel": "product",
+            "officialRegistryChecked": true,
+            "officialRegistryVerified": false,
+            "productPageClaimDetected": false,
+            "catalogClaimDetected": false,
+            "genericThirdPartyClaimDetected": false,
+            "brandLevelOfficialProgramDetected": false,
+            "brandLevelOfficialProgramLabels": [],
+            "blockedProgramIds": [],
+            "blockedProgramLabels": [],
+            "warnings": [
+              "program_not_equivalent_to_generic_third_party"
+            ]
+          }
+        }
+      },
+      "fixtureMeta": {
+        "scope": "quality_mark_focused",
+        "program": "iGEN"
+      }
+    }
+  },
+  {
+    "identity": {
+      "productId": "68018",
+      "barcode": "00768990018756"
+    },
+    "product": {
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Naturals, Ultimate Omega + Curcumin, 60 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/nordic-naturals-ultimate-omega-curcumin-60-soft-gels/68018"
+    },
+    "priority": "high",
+    "deliveryLane": "wave1_high_frequency",
+    "surfaceSignal": {
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+    },
+    "qualityMarkAuditSummary": {
+      "status": "detected",
+      "checked": true,
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0012",
+      "sourcesTried": [
+        "official_registry"
+      ],
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "evidenceType": "official_registry",
+      "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+    },
+    "apiResponse": {
+      "status": "ok",
+      "barcode": "00768990018756",
+      "decisionSupportDigest": "c56fe2cf6d5cee2f645c694457624bbd24ef65e1dfd888b4ddbbc90f95e21ff2",
+      "decisionInputsHash": "5f770d185ac7d258531a587d6901c5e7bdc14074b666e774af3a3adcf1efd6d7",
+      "decisionContractVersion": "fixture.igen_quality_mark_inline.v1",
+      "viewMode": "details",
+      "verdict": "reasonable_but_incomplete",
+      "extraTrustSignals": [],
+      "qualityMark": {
+        "code": "quality_mark_status",
+        "status": "detected",
+        "checked": true,
+        "confidence": 0.95,
+        "confidenceBucket": "high",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0012",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "lastCheckedAt": null,
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+        "programMatches": [
+          {
+            "programId": "igen",
+            "programLabel": "iGEN",
+            "registryFamily": "nutrasource",
+            "status": "verified_registry_match",
+            "matchLevel": "product",
+            "evidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0012",
+            "evidenceType": "official_registry",
+            "lotNumber": null,
+            "brandMatched": true,
+            "productMatched": true,
+            "confidence": 0.95,
+            "mapsToGenericThirdPartyClaim": false,
+            "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+          }
+        ],
+        "verificationSummary": {
+          "overallStatus": "ambiguous",
+          "strongestProgramId": "igen",
+          "strongestProgramLabel": "iGEN",
+          "strongestMatchLevel": "product",
+          "officialRegistryChecked": true,
+          "officialRegistryVerified": false,
+          "productPageClaimDetected": false,
+          "catalogClaimDetected": false,
+          "genericThirdPartyClaimDetected": false,
+          "brandLevelOfficialProgramDetected": false,
+          "brandLevelOfficialProgramLabels": [],
+          "blockedProgramIds": [],
+          "blockedProgramLabels": [],
+          "warnings": [
+            "program_not_equivalent_to_generic_third_party"
+          ]
+        }
+      },
+      "decisionSupportInline": {
+        "verdict": "reasonable_but_incomplete",
+        "subscores": [],
+        "topBlockers": [],
+        "overviewBlock": {
+          "sourceStrip": [
+            "Official Nutrasource registry evidence",
+            "Quality-mark focused fixture"
+          ],
+          "bestForBullets": [],
+          "providesVerified": {
+            "servingSize": null,
+            "servingsPerContainer": null,
+            "keyIngredients": [],
+            "dosageForm": null,
+            "count": null
+          },
+          "missingInfo": [
+            "This fixture focuses on official iGEN trust evidence only.",
+            "Use runtime decision support if you need full formula, usage, or safety scoring."
+          ],
+          "singleCta": null
+        },
+        "scienceBlock": {
+          "ingredientSourceTier": "official_record",
+          "ingredientRows": [],
+          "ingredientSnapshotNames": [],
+          "formMatters": {
+            "ingredientChemicalForm": null,
+            "dosageForm": null
+          },
+          "odsGeneralScienceBullets": [],
+          "aiSummaryContract3": [
+            "Official iGEN registry evidence was matched to this product.",
+            "This fixture is intended for trust-signal integration, not formula evaluation.",
+            "Combine with the runtime decision-support payload when deeper scoring is required."
+          ]
+        },
+        "usageBlock": {
+          "directions": {
+            "text": "",
+            "lines": [],
+            "sourceTier": "missing",
+            "hasDirectionsTextVisible": false
+          },
+          "timingTip": "Refer to the product label for directions.",
+          "conservativeGuidance": "Treat this as an official trust signal, not a dosage recommendation."
+        },
+        "safetyBlock": {
+          "labelWarnings": [],
+          "ulGuidance": [],
+          "generalWatchouts": [
+            "This fixture does not add new label warnings or dosage safety guidance."
+          ],
+          "dataStatusRef": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+        },
+        "qualityMark": {
+          "code": "quality_mark_status",
+          "status": "detected",
+          "checked": true,
+          "confidence": 0.95,
+          "confidenceBucket": "high",
+          "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0012",
+          "sourcesTried": [
+            "official_registry"
+          ],
+          "lastCheckedAt": null,
+          "checkedMode": "page_fetch",
+          "pagesFetchedCount": 1,
+          "searchPagesFetchedCount": 0,
+          "evidenceType": "official_registry",
+          "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+          "programMatches": [
+            {
+              "programId": "igen",
+              "programLabel": "iGEN",
+              "registryFamily": "nutrasource",
+              "status": "verified_registry_match",
+              "matchLevel": "product",
+              "evidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0012",
+              "evidenceType": "official_registry",
+              "lotNumber": null,
+              "brandMatched": true,
+              "productMatched": true,
+              "confidence": 0.95,
+              "mapsToGenericThirdPartyClaim": false,
+              "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+            }
+          ],
+          "verificationSummary": {
+            "overallStatus": "ambiguous",
+            "strongestProgramId": "igen",
+            "strongestProgramLabel": "iGEN",
+            "strongestMatchLevel": "product",
+            "officialRegistryChecked": true,
+            "officialRegistryVerified": false,
+            "productPageClaimDetected": false,
+            "catalogClaimDetected": false,
+            "genericThirdPartyClaimDetected": false,
+            "brandLevelOfficialProgramDetected": false,
+            "brandLevelOfficialProgramLabels": [],
+            "blockedProgramIds": [],
+            "blockedProgramLabels": [],
+            "warnings": [
+              "program_not_equivalent_to_generic_third_party"
+            ]
+          }
+        }
+      },
+      "fixtureMeta": {
+        "scope": "quality_mark_focused",
+        "program": "iGEN"
+      }
+    }
+  },
+  {
+    "identity": {
+      "productId": "84975",
+      "barcode": "00023249010975"
+    },
+    "product": {
+      "brandName": "Sports Research",
+      "productName": "Sports Research, Collagen Peptides, Dark Chocolate, 1.41 lb (640 g)",
+      "iherbUrl": "https://www.iherb.com/pr/sports-research-collagen-peptides-dark-chocolate-1-41-lb-640-g/84975"
+    },
+    "priority": "high",
+    "deliveryLane": "wave1_high_frequency",
+    "surfaceSignal": {
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+    },
+    "qualityMarkAuditSummary": {
+      "status": "detected",
+      "checked": true,
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0013",
+      "sourcesTried": [
+        "official_registry"
+      ],
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "evidenceType": "official_registry",
+      "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+    },
+    "apiResponse": {
+      "status": "ok",
+      "barcode": "00023249010975",
+      "decisionSupportDigest": "1dcae0dd0e58cd62d7f62652b1b8ea597740924cc0ac9810ae275368cacb5766",
+      "decisionInputsHash": "1c3a7bb8b12507933edfb6c9659419ae768120bb1ef8b40d91124e061e01ebd0",
+      "decisionContractVersion": "fixture.igen_quality_mark_inline.v1",
+      "viewMode": "details",
+      "verdict": "reasonable_but_incomplete",
+      "extraTrustSignals": [],
+      "qualityMark": {
+        "code": "quality_mark_status",
+        "status": "detected",
+        "checked": true,
+        "confidence": 0.95,
+        "confidenceBucket": "high",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0013",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "lastCheckedAt": null,
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+        "programMatches": [
+          {
+            "programId": "igen",
+            "programLabel": "iGEN",
+            "registryFamily": "nutrasource",
+            "status": "verified_registry_match",
+            "matchLevel": "product",
+            "evidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0013",
+            "evidenceType": "official_registry",
+            "lotNumber": null,
+            "brandMatched": true,
+            "productMatched": true,
+            "confidence": 0.95,
+            "mapsToGenericThirdPartyClaim": false,
+            "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+          }
+        ],
+        "verificationSummary": {
+          "overallStatus": "ambiguous",
+          "strongestProgramId": "igen",
+          "strongestProgramLabel": "iGEN",
+          "strongestMatchLevel": "product",
+          "officialRegistryChecked": true,
+          "officialRegistryVerified": false,
+          "productPageClaimDetected": false,
+          "catalogClaimDetected": false,
+          "genericThirdPartyClaimDetected": false,
+          "brandLevelOfficialProgramDetected": false,
+          "brandLevelOfficialProgramLabels": [],
+          "blockedProgramIds": [],
+          "blockedProgramLabels": [],
+          "warnings": [
+            "program_not_equivalent_to_generic_third_party"
+          ]
+        }
+      },
+      "decisionSupportInline": {
+        "verdict": "reasonable_but_incomplete",
+        "subscores": [],
+        "topBlockers": [],
+        "overviewBlock": {
+          "sourceStrip": [
+            "Official Nutrasource registry evidence",
+            "Quality-mark focused fixture"
+          ],
+          "bestForBullets": [],
+          "providesVerified": {
+            "servingSize": null,
+            "servingsPerContainer": null,
+            "keyIngredients": [],
+            "dosageForm": null,
+            "count": null
+          },
+          "missingInfo": [
+            "This fixture focuses on official iGEN trust evidence only.",
+            "Use runtime decision support if you need full formula, usage, or safety scoring."
+          ],
+          "singleCta": null
+        },
+        "scienceBlock": {
+          "ingredientSourceTier": "official_record",
+          "ingredientRows": [],
+          "ingredientSnapshotNames": [],
+          "formMatters": {
+            "ingredientChemicalForm": null,
+            "dosageForm": null
+          },
+          "odsGeneralScienceBullets": [],
+          "aiSummaryContract3": [
+            "Official iGEN registry evidence was matched to this product.",
+            "This fixture is intended for trust-signal integration, not formula evaluation.",
+            "Combine with the runtime decision-support payload when deeper scoring is required."
+          ]
+        },
+        "usageBlock": {
+          "directions": {
+            "text": "",
+            "lines": [],
+            "sourceTier": "missing",
+            "hasDirectionsTextVisible": false
+          },
+          "timingTip": "Refer to the product label for directions.",
+          "conservativeGuidance": "Treat this as an official trust signal, not a dosage recommendation."
+        },
+        "safetyBlock": {
+          "labelWarnings": [],
+          "ulGuidance": [],
+          "generalWatchouts": [
+            "This fixture does not add new label warnings or dosage safety guidance."
+          ],
+          "dataStatusRef": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+        },
+        "qualityMark": {
+          "code": "quality_mark_status",
+          "status": "detected",
+          "checked": true,
+          "confidence": 0.95,
+          "confidenceBucket": "high",
+          "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0013",
+          "sourcesTried": [
+            "official_registry"
+          ],
+          "lastCheckedAt": null,
+          "checkedMode": "page_fetch",
+          "pagesFetchedCount": 1,
+          "searchPagesFetchedCount": 0,
+          "evidenceType": "official_registry",
+          "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+          "programMatches": [
+            {
+              "programId": "igen",
+              "programLabel": "iGEN",
+              "registryFamily": "nutrasource",
+              "status": "verified_registry_match",
+              "matchLevel": "product",
+              "evidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0013",
+              "evidenceType": "official_registry",
+              "lotNumber": null,
+              "brandMatched": true,
+              "productMatched": true,
+              "confidence": 0.95,
+              "mapsToGenericThirdPartyClaim": false,
+              "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+            }
+          ],
+          "verificationSummary": {
+            "overallStatus": "ambiguous",
+            "strongestProgramId": "igen",
+            "strongestProgramLabel": "iGEN",
+            "strongestMatchLevel": "product",
+            "officialRegistryChecked": true,
+            "officialRegistryVerified": false,
+            "productPageClaimDetected": false,
+            "catalogClaimDetected": false,
+            "genericThirdPartyClaimDetected": false,
+            "brandLevelOfficialProgramDetected": false,
+            "brandLevelOfficialProgramLabels": [],
+            "blockedProgramIds": [],
+            "blockedProgramLabels": [],
+            "warnings": [
+              "program_not_equivalent_to_generic_third_party"
+            ]
+          }
+        }
+      },
+      "fixtureMeta": {
+        "scope": "quality_mark_focused",
+        "program": "iGEN"
+      }
+    }
+  },
+  {
+    "identity": {
+      "productId": "72043",
+      "barcode": "00023249010302"
+    },
+    "product": {
+      "brandName": "Sports Research",
+      "productName": "Sports Research, Cranberry Fruit Complex, 90 Softgels",
+      "iherbUrl": "https://www.iherb.com/pr/sports-research-cranberry-fruit-complex-90-softgels/72043"
+    },
+    "priority": "high",
+    "deliveryLane": "wave1_high_frequency",
+    "surfaceSignal": {
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+    },
+    "qualityMarkAuditSummary": {
+      "status": "detected",
+      "checked": true,
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0021",
+      "sourcesTried": [
+        "official_registry"
+      ],
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "evidenceType": "official_registry",
+      "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+    },
+    "apiResponse": {
+      "status": "ok",
+      "barcode": "00023249010302",
+      "decisionSupportDigest": "4a2646d6cc27e0ab30cb641d594e427bd432bfe40527986126e99e34976e6f4f",
+      "decisionInputsHash": "d8beb6c53195a81b03b8817996c6b8905aa278f31cbcb31a56837f9e4fcf2cdd",
+      "decisionContractVersion": "fixture.igen_quality_mark_inline.v1",
+      "viewMode": "details",
+      "verdict": "reasonable_but_incomplete",
+      "extraTrustSignals": [],
+      "qualityMark": {
+        "code": "quality_mark_status",
+        "status": "detected",
+        "checked": true,
+        "confidence": 0.95,
+        "confidenceBucket": "high",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0021",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "lastCheckedAt": null,
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+        "programMatches": [
+          {
+            "programId": "igen",
+            "programLabel": "iGEN",
+            "registryFamily": "nutrasource",
+            "status": "verified_registry_match",
+            "matchLevel": "product",
+            "evidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0021",
+            "evidenceType": "official_registry",
+            "lotNumber": null,
+            "brandMatched": true,
+            "productMatched": true,
+            "confidence": 0.95,
+            "mapsToGenericThirdPartyClaim": false,
+            "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+          }
+        ],
+        "verificationSummary": {
+          "overallStatus": "ambiguous",
+          "strongestProgramId": "igen",
+          "strongestProgramLabel": "iGEN",
+          "strongestMatchLevel": "product",
+          "officialRegistryChecked": true,
+          "officialRegistryVerified": false,
+          "productPageClaimDetected": false,
+          "catalogClaimDetected": false,
+          "genericThirdPartyClaimDetected": false,
+          "brandLevelOfficialProgramDetected": false,
+          "brandLevelOfficialProgramLabels": [],
+          "blockedProgramIds": [],
+          "blockedProgramLabels": [],
+          "warnings": [
+            "program_not_equivalent_to_generic_third_party"
+          ]
+        }
+      },
+      "decisionSupportInline": {
+        "verdict": "reasonable_but_incomplete",
+        "subscores": [],
+        "topBlockers": [],
+        "overviewBlock": {
+          "sourceStrip": [
+            "Official Nutrasource registry evidence",
+            "Quality-mark focused fixture"
+          ],
+          "bestForBullets": [],
+          "providesVerified": {
+            "servingSize": null,
+            "servingsPerContainer": null,
+            "keyIngredients": [],
+            "dosageForm": null,
+            "count": null
+          },
+          "missingInfo": [
+            "This fixture focuses on official iGEN trust evidence only.",
+            "Use runtime decision support if you need full formula, usage, or safety scoring."
+          ],
+          "singleCta": null
+        },
+        "scienceBlock": {
+          "ingredientSourceTier": "official_record",
+          "ingredientRows": [],
+          "ingredientSnapshotNames": [],
+          "formMatters": {
+            "ingredientChemicalForm": null,
+            "dosageForm": null
+          },
+          "odsGeneralScienceBullets": [],
+          "aiSummaryContract3": [
+            "Official iGEN registry evidence was matched to this product.",
+            "This fixture is intended for trust-signal integration, not formula evaluation.",
+            "Combine with the runtime decision-support payload when deeper scoring is required."
+          ]
+        },
+        "usageBlock": {
+          "directions": {
+            "text": "",
+            "lines": [],
+            "sourceTier": "missing",
+            "hasDirectionsTextVisible": false
+          },
+          "timingTip": "Refer to the product label for directions.",
+          "conservativeGuidance": "Treat this as an official trust signal, not a dosage recommendation."
+        },
+        "safetyBlock": {
+          "labelWarnings": [],
+          "ulGuidance": [],
+          "generalWatchouts": [
+            "This fixture does not add new label warnings or dosage safety guidance."
+          ],
+          "dataStatusRef": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+        },
+        "qualityMark": {
+          "code": "quality_mark_status",
+          "status": "detected",
+          "checked": true,
+          "confidence": 0.95,
+          "confidenceBucket": "high",
+          "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0021",
+          "sourcesTried": [
+            "official_registry"
+          ],
+          "lastCheckedAt": null,
+          "checkedMode": "page_fetch",
+          "pagesFetchedCount": 1,
+          "searchPagesFetchedCount": 0,
+          "evidenceType": "official_registry",
+          "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+          "programMatches": [
+            {
+              "programId": "igen",
+              "programLabel": "iGEN",
+              "registryFamily": "nutrasource",
+              "status": "verified_registry_match",
+              "matchLevel": "product",
+              "evidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0021",
+              "evidenceType": "official_registry",
+              "lotNumber": null,
+              "brandMatched": true,
+              "productMatched": true,
+              "confidence": 0.95,
+              "mapsToGenericThirdPartyClaim": false,
+              "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+            }
+          ],
+          "verificationSummary": {
+            "overallStatus": "ambiguous",
+            "strongestProgramId": "igen",
+            "strongestProgramLabel": "iGEN",
+            "strongestMatchLevel": "product",
+            "officialRegistryChecked": true,
+            "officialRegistryVerified": false,
+            "productPageClaimDetected": false,
+            "catalogClaimDetected": false,
+            "genericThirdPartyClaimDetected": false,
+            "brandLevelOfficialProgramDetected": false,
+            "brandLevelOfficialProgramLabels": [],
+            "blockedProgramIds": [],
+            "blockedProgramLabels": [],
+            "warnings": [
+              "program_not_equivalent_to_generic_third_party"
+            ]
+          }
+        }
+      },
+      "fixtureMeta": {
+        "scope": "quality_mark_focused",
+        "program": "iGEN"
+      }
+    }
+  },
+  {
+    "identity": {
+      "productId": "101526",
+      "barcode": "00023249090090"
+    },
+    "product": {
+      "brandName": "Sports Research",
+      "productName": "Sports Research, Daily Probiotics, 60 Billion CFU, 30 Delayed Release Capsules",
+      "iherbUrl": "https://www.iherb.com/pr/sports-research-daily-probiotics-60-billion-cfu-30-delayed-release-capsules/101526"
+    },
+    "priority": "high",
+    "deliveryLane": "wave1_high_frequency",
+    "surfaceSignal": {
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+    },
+    "qualityMarkAuditSummary": {
+      "status": "detected",
+      "checked": true,
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0054",
+      "sourcesTried": [
+        "official_registry"
+      ],
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "evidenceType": "official_registry",
+      "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+    },
+    "apiResponse": {
+      "status": "ok",
+      "barcode": "00023249090090",
+      "decisionSupportDigest": "e7344cdae1ff524baf93cfb6b9d90f6c044d4b9f2e4777921abd5e95ff298f54",
+      "decisionInputsHash": "8ba8a58f9606573ff134a27c50eeaa59c1458c7f48708a84d99194b241be85ff",
+      "decisionContractVersion": "fixture.igen_quality_mark_inline.v1",
+      "viewMode": "details",
+      "verdict": "reasonable_but_incomplete",
+      "extraTrustSignals": [],
+      "qualityMark": {
+        "code": "quality_mark_status",
+        "status": "detected",
+        "checked": true,
+        "confidence": 0.95,
+        "confidenceBucket": "high",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0054",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "lastCheckedAt": null,
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+        "programMatches": [
+          {
+            "programId": "igen",
+            "programLabel": "iGEN",
+            "registryFamily": "nutrasource",
+            "status": "verified_registry_match",
+            "matchLevel": "product",
+            "evidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0054",
+            "evidenceType": "official_registry",
+            "lotNumber": null,
+            "brandMatched": true,
+            "productMatched": true,
+            "confidence": 0.95,
+            "mapsToGenericThirdPartyClaim": false,
+            "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+          }
+        ],
+        "verificationSummary": {
+          "overallStatus": "ambiguous",
+          "strongestProgramId": "igen",
+          "strongestProgramLabel": "iGEN",
+          "strongestMatchLevel": "product",
+          "officialRegistryChecked": true,
+          "officialRegistryVerified": false,
+          "productPageClaimDetected": false,
+          "catalogClaimDetected": false,
+          "genericThirdPartyClaimDetected": false,
+          "brandLevelOfficialProgramDetected": false,
+          "brandLevelOfficialProgramLabels": [],
+          "blockedProgramIds": [],
+          "blockedProgramLabels": [],
+          "warnings": [
+            "program_not_equivalent_to_generic_third_party"
+          ]
+        }
+      },
+      "decisionSupportInline": {
+        "verdict": "reasonable_but_incomplete",
+        "subscores": [],
+        "topBlockers": [],
+        "overviewBlock": {
+          "sourceStrip": [
+            "Official Nutrasource registry evidence",
+            "Quality-mark focused fixture"
+          ],
+          "bestForBullets": [],
+          "providesVerified": {
+            "servingSize": null,
+            "servingsPerContainer": null,
+            "keyIngredients": [],
+            "dosageForm": null,
+            "count": null
+          },
+          "missingInfo": [
+            "This fixture focuses on official iGEN trust evidence only.",
+            "Use runtime decision support if you need full formula, usage, or safety scoring."
+          ],
+          "singleCta": null
+        },
+        "scienceBlock": {
+          "ingredientSourceTier": "official_record",
+          "ingredientRows": [],
+          "ingredientSnapshotNames": [],
+          "formMatters": {
+            "ingredientChemicalForm": null,
+            "dosageForm": null
+          },
+          "odsGeneralScienceBullets": [],
+          "aiSummaryContract3": [
+            "Official iGEN registry evidence was matched to this product.",
+            "This fixture is intended for trust-signal integration, not formula evaluation.",
+            "Combine with the runtime decision-support payload when deeper scoring is required."
+          ]
+        },
+        "usageBlock": {
+          "directions": {
+            "text": "",
+            "lines": [],
+            "sourceTier": "missing",
+            "hasDirectionsTextVisible": false
+          },
+          "timingTip": "Refer to the product label for directions.",
+          "conservativeGuidance": "Treat this as an official trust signal, not a dosage recommendation."
+        },
+        "safetyBlock": {
+          "labelWarnings": [],
+          "ulGuidance": [],
+          "generalWatchouts": [
+            "This fixture does not add new label warnings or dosage safety guidance."
+          ],
+          "dataStatusRef": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+        },
+        "qualityMark": {
+          "code": "quality_mark_status",
+          "status": "detected",
+          "checked": true,
+          "confidence": 0.95,
+          "confidenceBucket": "high",
+          "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0054",
+          "sourcesTried": [
+            "official_registry"
+          ],
+          "lastCheckedAt": null,
+          "checkedMode": "page_fetch",
+          "pagesFetchedCount": 1,
+          "searchPagesFetchedCount": 0,
+          "evidenceType": "official_registry",
+          "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+          "programMatches": [
+            {
+              "programId": "igen",
+              "programLabel": "iGEN",
+              "registryFamily": "nutrasource",
+              "status": "verified_registry_match",
+              "matchLevel": "product",
+              "evidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0054",
+              "evidenceType": "official_registry",
+              "lotNumber": null,
+              "brandMatched": true,
+              "productMatched": true,
+              "confidence": 0.95,
+              "mapsToGenericThirdPartyClaim": false,
+              "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+            }
+          ],
+          "verificationSummary": {
+            "overallStatus": "ambiguous",
+            "strongestProgramId": "igen",
+            "strongestProgramLabel": "iGEN",
+            "strongestMatchLevel": "product",
+            "officialRegistryChecked": true,
+            "officialRegistryVerified": false,
+            "productPageClaimDetected": false,
+            "catalogClaimDetected": false,
+            "genericThirdPartyClaimDetected": false,
+            "brandLevelOfficialProgramDetected": false,
+            "brandLevelOfficialProgramLabels": [],
+            "blockedProgramIds": [],
+            "blockedProgramLabels": [],
+            "warnings": [
+              "program_not_equivalent_to_generic_third_party"
+            ]
+          }
+        }
+      },
+      "fixtureMeta": {
+        "scope": "quality_mark_focused",
+        "program": "iGEN"
+      }
+    }
+  },
+  {
+    "identity": {
+      "productId": "99939",
+      "barcode": "00023249012825"
+    },
+    "product": {
+      "brandName": "Sports Research",
+      "productName": "Sports Research, Total Omega-3, 120 Softgels",
+      "iherbUrl": "https://www.iherb.com/pr/sports-research-total-omega-3-120-softgels/99939"
+    },
+    "priority": "high",
+    "deliveryLane": "wave1_high_frequency",
+    "surfaceSignal": {
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+    },
+    "qualityMarkAuditSummary": {
+      "status": "detected",
+      "checked": true,
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0033",
+      "sourcesTried": [
+        "official_registry"
+      ],
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "evidenceType": "official_registry",
+      "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+    },
+    "apiResponse": {
+      "status": "ok",
+      "barcode": "00023249012825",
+      "decisionSupportDigest": "33f13c15693dbae6afab12358bafa22a97b1417b95b33925c46c2dcdde874882",
+      "decisionInputsHash": "ea8af70c53016fb06c27d6fb7def35bb76cf8d2a94a3f764a2fefb54c57c1398",
+      "decisionContractVersion": "fixture.igen_quality_mark_inline.v1",
+      "viewMode": "details",
+      "verdict": "reasonable_but_incomplete",
+      "extraTrustSignals": [],
+      "qualityMark": {
+        "code": "quality_mark_status",
+        "status": "detected",
+        "checked": true,
+        "confidence": 0.95,
+        "confidenceBucket": "high",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0033",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "lastCheckedAt": null,
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+        "programMatches": [
+          {
+            "programId": "igen",
+            "programLabel": "iGEN",
+            "registryFamily": "nutrasource",
+            "status": "verified_registry_match",
+            "matchLevel": "product",
+            "evidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0033",
+            "evidenceType": "official_registry",
+            "lotNumber": null,
+            "brandMatched": true,
+            "productMatched": true,
+            "confidence": 0.95,
+            "mapsToGenericThirdPartyClaim": false,
+            "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+          }
+        ],
+        "verificationSummary": {
+          "overallStatus": "ambiguous",
+          "strongestProgramId": "igen",
+          "strongestProgramLabel": "iGEN",
+          "strongestMatchLevel": "product",
+          "officialRegistryChecked": true,
+          "officialRegistryVerified": false,
+          "productPageClaimDetected": false,
+          "catalogClaimDetected": false,
+          "genericThirdPartyClaimDetected": false,
+          "brandLevelOfficialProgramDetected": false,
+          "brandLevelOfficialProgramLabels": [],
+          "blockedProgramIds": [],
+          "blockedProgramLabels": [],
+          "warnings": [
+            "program_not_equivalent_to_generic_third_party"
+          ]
+        }
+      },
+      "decisionSupportInline": {
+        "verdict": "reasonable_but_incomplete",
+        "subscores": [],
+        "topBlockers": [],
+        "overviewBlock": {
+          "sourceStrip": [
+            "Official Nutrasource registry evidence",
+            "Quality-mark focused fixture"
+          ],
+          "bestForBullets": [],
+          "providesVerified": {
+            "servingSize": null,
+            "servingsPerContainer": null,
+            "keyIngredients": [],
+            "dosageForm": null,
+            "count": null
+          },
+          "missingInfo": [
+            "This fixture focuses on official iGEN trust evidence only.",
+            "Use runtime decision support if you need full formula, usage, or safety scoring."
+          ],
+          "singleCta": null
+        },
+        "scienceBlock": {
+          "ingredientSourceTier": "official_record",
+          "ingredientRows": [],
+          "ingredientSnapshotNames": [],
+          "formMatters": {
+            "ingredientChemicalForm": null,
+            "dosageForm": null
+          },
+          "odsGeneralScienceBullets": [],
+          "aiSummaryContract3": [
+            "Official iGEN registry evidence was matched to this product.",
+            "This fixture is intended for trust-signal integration, not formula evaluation.",
+            "Combine with the runtime decision-support payload when deeper scoring is required."
+          ]
+        },
+        "usageBlock": {
+          "directions": {
+            "text": "",
+            "lines": [],
+            "sourceTier": "missing",
+            "hasDirectionsTextVisible": false
+          },
+          "timingTip": "Refer to the product label for directions.",
+          "conservativeGuidance": "Treat this as an official trust signal, not a dosage recommendation."
+        },
+        "safetyBlock": {
+          "labelWarnings": [],
+          "ulGuidance": [],
+          "generalWatchouts": [
+            "This fixture does not add new label warnings or dosage safety guidance."
+          ],
+          "dataStatusRef": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+        },
+        "qualityMark": {
+          "code": "quality_mark_status",
+          "status": "detected",
+          "checked": true,
+          "confidence": 0.95,
+          "confidenceBucket": "high",
+          "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0033",
+          "sourcesTried": [
+            "official_registry"
+          ],
+          "lastCheckedAt": null,
+          "checkedMode": "page_fetch",
+          "pagesFetchedCount": 1,
+          "searchPagesFetchedCount": 0,
+          "evidenceType": "official_registry",
+          "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+          "programMatches": [
+            {
+              "programId": "igen",
+              "programLabel": "iGEN",
+              "registryFamily": "nutrasource",
+              "status": "verified_registry_match",
+              "matchLevel": "product",
+              "evidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0033",
+              "evidenceType": "official_registry",
+              "lotNumber": null,
+              "brandMatched": true,
+              "productMatched": true,
+              "confidence": 0.95,
+              "mapsToGenericThirdPartyClaim": false,
+              "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+            }
+          ],
+          "verificationSummary": {
+            "overallStatus": "ambiguous",
+            "strongestProgramId": "igen",
+            "strongestProgramLabel": "iGEN",
+            "strongestMatchLevel": "product",
+            "officialRegistryChecked": true,
+            "officialRegistryVerified": false,
+            "productPageClaimDetected": false,
+            "catalogClaimDetected": false,
+            "genericThirdPartyClaimDetected": false,
+            "brandLevelOfficialProgramDetected": false,
+            "brandLevelOfficialProgramLabels": [],
+            "blockedProgramIds": [],
+            "blockedProgramLabels": [],
+            "warnings": [
+              "program_not_equivalent_to_generic_third_party"
+            ]
+          }
+        }
+      },
+      "fixtureMeta": {
+        "scope": "quality_mark_focused",
+        "program": "iGEN"
+      }
+    }
+  },
+  {
+    "identity": {
+      "productId": "72054",
+      "barcode": "00023249000839"
+    },
+    "product": {
+      "brandName": "Sports Research",
+      "productName": "Sports Research, Turmeric Curcumin, 500 mg, 120 Softgels",
+      "iherbUrl": "https://www.iherb.com/pr/sports-research-turmeric-curcumin-500-mg-120-softgels/72054"
+    },
+    "priority": "high",
+    "deliveryLane": "wave1_high_frequency",
+    "surfaceSignal": {
+      "displayLabel": "Official iGEN signal",
+      "displayBadge": "Official iGEN Non-GMO Tested",
+      "consumerNote": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+    },
+    "qualityMarkAuditSummary": {
+      "status": "detected",
+      "checked": true,
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0024",
+      "sourcesTried": [
+        "official_registry"
+      ],
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "evidenceType": "official_registry",
+      "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+    },
+    "apiResponse": {
+      "status": "ok",
+      "barcode": "00023249000839",
+      "decisionSupportDigest": "8977737a086caef12ac99c9edb739f6e35a1b3c8f271fc4a6e3b9222141595a1",
+      "decisionInputsHash": "037ebafe126aea0ee5b1d9dd402bf365254ae75e621312ee0dfe0d5a926f219d",
+      "decisionContractVersion": "fixture.igen_quality_mark_inline.v1",
+      "viewMode": "details",
+      "verdict": "reasonable_but_incomplete",
+      "extraTrustSignals": [],
+      "qualityMark": {
+        "code": "quality_mark_status",
+        "status": "detected",
+        "checked": true,
+        "confidence": 0.95,
+        "confidenceBucket": "high",
+        "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0024",
+        "sourcesTried": [
+          "official_registry"
+        ],
+        "lastCheckedAt": null,
+        "checkedMode": "page_fetch",
+        "pagesFetchedCount": 1,
+        "searchPagesFetchedCount": 0,
+        "evidenceType": "official_registry",
+        "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+        "programMatches": [
+          {
+            "programId": "igen",
+            "programLabel": "iGEN",
+            "registryFamily": "nutrasource",
+            "status": "verified_registry_match",
+            "matchLevel": "product",
+            "evidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0024",
+            "evidenceType": "official_registry",
+            "lotNumber": null,
+            "brandMatched": true,
+            "productMatched": true,
+            "confidence": 0.95,
+            "mapsToGenericThirdPartyClaim": false,
+            "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+          }
+        ],
+        "verificationSummary": {
+          "overallStatus": "ambiguous",
+          "strongestProgramId": "igen",
+          "strongestProgramLabel": "iGEN",
+          "strongestMatchLevel": "product",
+          "officialRegistryChecked": true,
+          "officialRegistryVerified": false,
+          "productPageClaimDetected": false,
+          "catalogClaimDetected": false,
+          "genericThirdPartyClaimDetected": false,
+          "brandLevelOfficialProgramDetected": false,
+          "brandLevelOfficialProgramLabels": [],
+          "blockedProgramIds": [],
+          "blockedProgramLabels": [],
+          "warnings": [
+            "program_not_equivalent_to_generic_third_party"
+          ]
+        }
+      },
+      "decisionSupportInline": {
+        "verdict": "reasonable_but_incomplete",
+        "subscores": [],
+        "topBlockers": [],
+        "overviewBlock": {
+          "sourceStrip": [
+            "Official Nutrasource registry evidence",
+            "Quality-mark focused fixture"
+          ],
+          "bestForBullets": [],
+          "providesVerified": {
+            "servingSize": null,
+            "servingsPerContainer": null,
+            "keyIngredients": [],
+            "dosageForm": null,
+            "count": null
+          },
+          "missingInfo": [
+            "This fixture focuses on official iGEN trust evidence only.",
+            "Use runtime decision support if you need full formula, usage, or safety scoring."
+          ],
+          "singleCta": null
+        },
+        "scienceBlock": {
+          "ingredientSourceTier": "official_record",
+          "ingredientRows": [],
+          "ingredientSnapshotNames": [],
+          "formMatters": {
+            "ingredientChemicalForm": null,
+            "dosageForm": null
+          },
+          "odsGeneralScienceBullets": [],
+          "aiSummaryContract3": [
+            "Official iGEN registry evidence was matched to this product.",
+            "This fixture is intended for trust-signal integration, not formula evaluation.",
+            "Combine with the runtime decision-support payload when deeper scoring is required."
+          ]
+        },
+        "usageBlock": {
+          "directions": {
+            "text": "",
+            "lines": [],
+            "sourceTier": "missing",
+            "hasDirectionsTextVisible": false
+          },
+          "timingTip": "Refer to the product label for directions.",
+          "conservativeGuidance": "Treat this as an official trust signal, not a dosage recommendation."
+        },
+        "safetyBlock": {
+          "labelWarnings": [],
+          "ulGuidance": [],
+          "generalWatchouts": [
+            "This fixture does not add new label warnings or dosage safety guidance."
+          ],
+          "dataStatusRef": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+        },
+        "qualityMark": {
+          "code": "quality_mark_status",
+          "status": "detected",
+          "checked": true,
+          "confidence": 0.95,
+          "confidenceBucket": "high",
+          "evidenceRef": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0024",
+          "sourcesTried": [
+            "official_registry"
+          ],
+          "lastCheckedAt": null,
+          "checkedMode": "page_fetch",
+          "pagesFetchedCount": 1,
+          "searchPagesFetchedCount": 0,
+          "evidenceType": "official_registry",
+          "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first.",
+          "programMatches": [
+            {
+              "programId": "igen",
+              "programLabel": "iGEN",
+              "registryFamily": "nutrasource",
+              "status": "verified_registry_match",
+              "matchLevel": "product",
+              "evidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0024",
+              "evidenceType": "official_registry",
+              "lotNumber": null,
+              "brandMatched": true,
+              "productMatched": true,
+              "confidence": 0.95,
+              "mapsToGenericThirdPartyClaim": false,
+              "note": "Official iGEN registry evidence matched this product. Prioritize this in high-frequency consumer surfaces first."
+            }
+          ],
+          "verificationSummary": {
+            "overallStatus": "ambiguous",
+            "strongestProgramId": "igen",
+            "strongestProgramLabel": "iGEN",
+            "strongestMatchLevel": "product",
+            "officialRegistryChecked": true,
+            "officialRegistryVerified": false,
+            "productPageClaimDetected": false,
+            "catalogClaimDetected": false,
+            "genericThirdPartyClaimDetected": false,
+            "brandLevelOfficialProgramDetected": false,
+            "brandLevelOfficialProgramLabels": [],
+            "blockedProgramIds": [],
+            "blockedProgramLabels": [],
+            "warnings": [
+              "program_not_equivalent_to_generic_third_party"
+            ]
+          }
+        }
+      },
+      "fixtureMeta": {
+        "scope": "quality_mark_focused",
+        "program": "iGEN"
+      }
+    }
+  }
+]

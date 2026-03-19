@@ -1,0 +1,101 @@
+{
+  "kpi:official_fetch_unresolved/iherb_identity_v1": {
+    "blockerClass": "strict_identity_not_proven",
+    "lane": "kpi",
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/output/iherb_search_recovery_week2_remaining_kpi_shard1_v2_20260313/iherb_search_recovery_report.json",
+    "unpauseCondition": "Only retry with a new identity method and a passing positive-control check.",
+    "status": "hold",
+    "lastReviewedWaveId": "week2_remaining_kpi_shard1_v2",
+    "canonicalPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/week2_5/blocker_registry.json"
+  },
+  "kpi:official_fetch_unresolved/iherb_identity_v2": {
+    "blockerClass": "current_strict_iherb_discovery_exhausted",
+    "lane": "kpi",
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/output/discovery_path_proof.json",
+    "unpauseCondition": "Require a genuinely new discovery source or non-iHerb source expansion.",
+    "status": "exhausted",
+    "lastReviewedWaveId": "week3_phase1_discovery_path_proof_20260314T202132Z",
+    "canonicalPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/week3_phase1/blocker_registry.json"
+  },
+  "coverage:now_foods/official_warnings": {
+    "blockerClass": "path_exhausted_on_current_filter",
+    "lane": "coverage",
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/output/now_foods_week2_remaining_batch2_20260313/official_fallback_report.json",
+    "unpauseCondition": "Retarget to a narrower cohort with a genuinely new filter.",
+    "status": "paused",
+    "lastReviewedWaveId": "week2_remaining_now_batch2",
+    "canonicalPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/week2_5/blocker_registry.json"
+  },
+  "coverage:now_foods/official_warnings_retarget": {
+    "blockerClass": "proven_retargeted_path",
+    "lane": "coverage",
+    "evidencePath": "output/week2_5_root_cause/now_retarget_20260314T082518Z/official_fallback_report.json",
+    "unpauseCondition": "Retain the narrower cohort and continue only while uplift stays positive.",
+    "status": "proven",
+    "lastReviewedWaveId": "week2_5_coverage_now_warnings_retarget_20260314T082518Z",
+    "canonicalPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/week2_5/blocker_registry.json"
+  },
+  "coverage:wet_n_wild/stable_cohort": {
+    "blockerClass": "stable_warning_extraction_not_proven",
+    "lane": "coverage",
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/output/post_close_blockers_20260313.md",
+    "unpauseCondition": "Only reopen with a new stable shade-level identity or page-level warning path.",
+    "status": "paused",
+    "lastReviewedWaveId": "post_close_wet_n_wild_stable_micro",
+    "canonicalPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/week2_5/blocker_registry.json"
+  },
+  "coverage:boiron/ocr": {
+    "blockerClass": "structured_conversion_missing",
+    "lane": "coverage",
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/output/post_close_blockers_20260313.md",
+    "unpauseCondition": "Only reopen when OCR converts to structured fields reliably.",
+    "status": "paused",
+    "lastReviewedWaveId": "week2_locked",
+    "canonicalPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/week2_5/blocker_registry.json"
+  },
+  "coverage:aura_cacia/ocr": {
+    "blockerClass": "structured_conversion_missing",
+    "lane": "coverage",
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/output/post_close_blockers_20260313.md",
+    "unpauseCondition": "Only reopen with a new non-OCR structured conversion path.",
+    "status": "paused",
+    "lastReviewedWaveId": "week2_locked",
+    "canonicalPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/week2_5/blocker_registry.json"
+  },
+  "coverage:frontier/broad_scale": {
+    "blockerClass": "broad_scale_low_yield",
+    "lane": "coverage",
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/output/post_close_blockers_20260313.md",
+    "unpauseCondition": "Only reopen with a narrower or newly proven cohort.",
+    "status": "hold",
+    "lastReviewedWaveId": "post_close_frontier",
+    "canonicalPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/week2_5/blocker_registry.json"
+  },
+  "partial:21st_century/rapidapi_exact_identity": {
+    "blockerClass": "identity_hits_without_closure_uplift",
+    "lane": "partial",
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/output/post_close_blockers_20260313.md",
+    "unpauseCondition": "Only reopen if RapidAPI begins recovering ingredient or dosage on exact-identity rows.",
+    "status": "paused",
+    "lastReviewedWaveId": "post_close_21st_century_rapidapi_5",
+    "canonicalPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/week2_5/blocker_registry.json"
+  },
+  "deep_gap:category_stage1": {
+    "blockerClass": "no_executable_category_cohort",
+    "lane": "deep_gap",
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/output/week2_remaining_blockers_20260313.md",
+    "unpauseCondition": "Only reopen when a real target-category cohort reappears on the latest merged line.",
+    "status": "hold",
+    "lastReviewedWaveId": "week2_remaining_deep_gap_stage1",
+    "canonicalPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/week2_5/blocker_registry.json"
+  },
+  "coverage:now_foods/official_warnings_path_light_retarget": {
+    "blockerClass": "no_executable_coverage_path",
+    "lane": "coverage",
+    "evidencePath": "/Users/howard07/NuTriApp/nutri-app/output/no_executable_coverage_batch.md",
+    "unpauseCondition": "Only reopen if a fresh non-exhausted proven path appears in the ROI registry.",
+    "status": "paused",
+    "lastReviewedWaveId": "week3_phase1_discovery_path_proof_20260314T202132Z",
+    "canonicalPath": "/Users/howard07/NuTriApp/nutri-app/docs/exec-plans/active/week3_phase1/blocker_registry.json"
+  }
+}

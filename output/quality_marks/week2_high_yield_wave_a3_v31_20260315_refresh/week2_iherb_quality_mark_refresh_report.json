@@ -1,0 +1,163 @@
+{
+  "schemaVersion": "week2_iherb_quality_mark_refresh_report.v1",
+  "generatedAt": "2026-03-15T17:50:44.163Z",
+  "refreshedCount": 2,
+  "summaryStatusCounts": {
+    "verified": 2
+  },
+  "warningCounts": {},
+  "rows": [
+    {
+      "key": "web:gtin14:00029918015128:sun_chlorella:sun_chlorella_chlorella_supplement_500_mg_600_tablets",
+      "productId": "18697",
+      "barcode": "00029918015128",
+      "brandName": "Sun Chlorella",
+      "productName": "Sun Chlorella, Chlorella Supplement, 500 mg, 600 Tablets",
+      "iherbUrl": "https://www.iherb.com/pr/sun-chlorella-chlorella-supplement-500-mg-600-tablets/18697",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "nsf_certified_for_sport",
+      "strongestProgramLabel": "NSF Certified for Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "verified",
+        "strongestProgramId": "nsf_certified_for_sport",
+        "strongestProgramLabel": "NSF Certified for Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": true,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": []
+      },
+      "selectionReason": "registry_first_positive_control",
+      "officialRegistryProductName": "Sun Chlorella A Powder (Japan)",
+      "officialRegistryBrandName": "Sun Chlorella",
+      "officialRegistryEvidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/listing-detail.php?id=1539569",
+      "registryQueryBrandName": "Sun Chlorella",
+      "matchScore": 0.875,
+      "officialCoverage": 1,
+      "candidateCoverage": 0.5,
+      "phraseMatch": false,
+      "status": "detected",
+      "checked": true,
+      "confidence": 0.97,
+      "confidenceBucket": "high",
+      "evidenceRef": "https://nsfsport-prod.nsf.org/certified-products/listing-detail.php?id=1539569",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://nsfsport-prod.nsf.org/certified-products/listing-detail.php?id=1539569"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "directRegistryEvidenceUsed": true,
+      "programMatches": [
+        {
+          "programId": "nsf_certified_for_sport",
+          "programLabel": "NSF Certified for Sport",
+          "registryFamily": "nsf",
+          "status": "verified_registry_match",
+          "matchLevel": "product",
+          "evidenceUrl": "https://nsfsport-prod.nsf.org/certified-products/listing-detail.php?id=1539569",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": true,
+          "productMatched": true,
+          "confidence": 0.97,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry returned a product-level match."
+        }
+      ],
+      "note": "Official NSF Certified for Sport verification matched this product.",
+      "error": null,
+      "checkedAt": "2026-03-15T17:50:43.571Z",
+      "expiresAt": "2026-04-14T17:50:43.571Z"
+    },
+    {
+      "key": "web:gtin14:00068958357409:natural_factors:natural_factors_searich_omega_3_delicious_lemon_meringue_6_76_fl_oz_200_ml",
+      "productId": "68244",
+      "barcode": "00068958357409",
+      "brandName": "Natural Factors",
+      "productName": "Natural Factors, SeaRich Omega-3, Delicious Lemon Meringue, 6.76 fl oz (200 ml)",
+      "iherbUrl": "https://www.iherb.com/pr/natural-factors-searich-omega-3-delicious-lemon-meringue-6-76-fl-oz-200-ml/68244",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "verified",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": true,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": []
+      },
+      "selectionReason": "registry_first_positive_control",
+      "officialRegistryProductName": "SeaRich Omega-3 Lemon Meringue",
+      "officialRegistryBrandName": "Natural Factors",
+      "officialRegistryEvidenceUrl": "https://certifications.nutrasource.ca/certified-products/brand?id=NFCT",
+      "registryQueryBrandName": "Natural Factors",
+      "matchScore": 1.0383,
+      "officialCoverage": 1,
+      "candidateCoverage": 0.8333,
+      "phraseMatch": false,
+      "status": "detected",
+      "checked": true,
+      "confidence": 0.97,
+      "confidenceBucket": "high",
+      "evidenceRef": "https://certifications.nutrasource.ca/certified-products/brand?id=NFCT",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://certifications.nutrasource.ca/certified-products/brand?id=NFCT"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "directRegistryEvidenceUsed": true,
+      "programMatches": [
+        {
+          "programId": "ifos",
+          "programLabel": "IFOS",
+          "registryFamily": "nutrasource",
+          "status": "verified_registry_match",
+          "matchLevel": "product",
+          "evidenceUrl": "https://certifications.nutrasource.ca/certified-products/brand?id=NFCT",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": true,
+          "productMatched": true,
+          "confidence": 0.97,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry returned a product-level match."
+        }
+      ],
+      "note": "Official IFOS verification matched this product.",
+      "error": null,
+      "checkedAt": "2026-03-15T17:50:44.153Z",
+      "expiresAt": "2026-04-14T17:50:44.153Z"
+    }
+  ],
+  "outputs": {
+    "cachePath": "/Users/howard07/NuTriApp/nutri-app/output/quality_marks/quality_mark_cache.json",
+    "auditPath": "/Users/howard07/NuTriApp/nutri-app/output/quality_marks/quality_mark_audit.json"
+  }
+}

@@ -6,12 +6,14 @@ import type {
   QualityMarkAuditEntry,
   QualityMarkCacheFile,
   QualityMarkLookupInput,
+  QualityMarkProgramMatch,
+  QualityMarkVerificationSummary,
 } from "./types.js";
 
 const DEFAULT_TTL_DAYS = Number(process.env.QUALITY_MARK_CACHE_TTL_DAYS ?? 30);
 const DEFAULT_CACHE_PATH = path.join(process.cwd(), "output", "quality_marks", "quality_mark_cache.json");
 const DEFAULT_AUDIT_PATH = path.join(process.cwd(), "output", "quality_marks", "quality_mark_audit.json");
-const CACHE_SCHEMA_VERSION = "quality_mark_cache.v1";
+const CACHE_SCHEMA_VERSION = "quality_mark_cache.v2";
 
 let memoized: { mtimeMs: number; payload: QualityMarkCacheFile } | null = null;
 
@@ -58,6 +60,98 @@ const isValidStatus = (value: string): value is QualityMarkAuditEntry["status"] 
 const isValidBucket = (value: string): value is QualityMarkAuditEntry["confidenceBucket"] =>
   value === "high" || value === "medium" || value === "low";
 
+const isValidEvidenceType = (value: string): value is NonNullable<QualityMarkAuditEntry["evidenceType"]> =>
+  value === "page" || value === "search" || value === "official_registry";
+
+const isValidCheckedMode = (value: string): value is QualityMarkAuditEntry["checkedMode"] =>
+  value === "page_fetch" || value === "search_only";
+
+const normalizeProgramMatch = (raw: unknown): QualityMarkProgramMatch | null => {
+  if (!raw || typeof raw !== "object") return null;
+  const row = raw as Record<string, unknown>;
+  const programId = normalizeText(row.programId);
+  const programLabel = normalizeText(row.programLabel);
+  const registryFamily = normalizeText(row.registryFamily);
+  const status = normalizeText(row.status);
+  const matchLevel = normalizeText(row.matchLevel);
+  const evidenceType = normalizeText(row.evidenceType);
+  if (
+    !programId ||
+    !programLabel ||
+    !(
+      registryFamily === "nsf" ||
+      registryFamily === "usp" ||
+      registryFamily === "lgc_informed" ||
+      registryFamily === "nutrasource" ||
+      registryFamily === "bscg" ||
+      registryFamily === "secondary_reference"
+    ) ||
+    !(
+      status === "verified_registry_match" ||
+      status === "claimed_on_product_page" ||
+      status === "claimed_in_catalog" ||
+      status === "not_found_in_registry" ||
+      status === "not_checked" ||
+      status === "ambiguous_match"
+    ) ||
+    !(matchLevel === "lot" || matchLevel === "product" || matchLevel === "brand") ||
+    !isValidEvidenceType(evidenceType)
+  ) {
+    return null;
+  }
+  return {
+    programId: programId as QualityMarkProgramMatch["programId"],
+    programLabel,
+    registryFamily: registryFamily as QualityMarkProgramMatch["registryFamily"],
+    status: status as QualityMarkProgramMatch["status"],
+    matchLevel: matchLevel as QualityMarkProgramMatch["matchLevel"],
+    evidenceUrl: normalizeText(row.evidenceUrl) || null,
+    evidenceType,
+    lotNumber: normalizeText(row.lotNumber) || null,
+    brandMatched: Boolean(row.brandMatched),
+    productMatched: Boolean(row.productMatched),
+    confidence: typeof row.confidence === "number" && Number.isFinite(row.confidence) ? row.confidence : null,
+    mapsToGenericThirdPartyClaim: Boolean(row.mapsToGenericThirdPartyClaim),
+    note: normalizeText(row.note) || null,
+  };
+};
+
+const normalizeVerificationSummary = (raw: unknown): QualityMarkVerificationSummary | null => {
+  if (!raw || typeof raw !== "object") return null;
+  const row = raw as Record<string, unknown>;
+  const overallStatus = normalizeText(row.overallStatus);
+  if (!(overallStatus === "verified" || overallStatus === "claimed" || overallStatus === "not_proven" || overallStatus === "ambiguous")) {
+    return null;
+  }
+  const strongestMatchLevel = normalizeText(row.strongestMatchLevel);
+  return {
+    overallStatus: overallStatus as QualityMarkVerificationSummary["overallStatus"],
+    strongestProgramId:
+      (normalizeText(row.strongestProgramId) || null) as QualityMarkVerificationSummary["strongestProgramId"],
+    strongestProgramLabel: normalizeText(row.strongestProgramLabel) || null,
+    strongestMatchLevel:
+      strongestMatchLevel === "lot" || strongestMatchLevel === "product" || strongestMatchLevel === "brand"
+        ? (strongestMatchLevel as QualityMarkVerificationSummary["strongestMatchLevel"])
+        : null,
+    officialRegistryChecked: Boolean(row.officialRegistryChecked),
+    officialRegistryVerified: Boolean(row.officialRegistryVerified),
+    productPageClaimDetected: Boolean(row.productPageClaimDetected),
+    catalogClaimDetected: Boolean(row.catalogClaimDetected),
+    genericThirdPartyClaimDetected: Boolean(row.genericThirdPartyClaimDetected),
+    brandLevelOfficialProgramDetected: Boolean(row.brandLevelOfficialProgramDetected),
+    brandLevelOfficialProgramLabels: Array.isArray(row.brandLevelOfficialProgramLabels)
+      ? row.brandLevelOfficialProgramLabels.map((value) => normalizeText(value)).filter(Boolean)
+      : [],
+    blockedProgramIds: Array.isArray(row.blockedProgramIds)
+      ? row.blockedProgramIds.map((value) => normalizeText(value)).filter(Boolean) as QualityMarkVerificationSummary["blockedProgramIds"]
+      : [],
+    blockedProgramLabels: Array.isArray(row.blockedProgramLabels)
+      ? row.blockedProgramLabels.map((value) => normalizeText(value)).filter(Boolean)
+      : [],
+    warnings: Array.isArray(row.warnings) ? row.warnings.map((value) => normalizeText(value)).filter(Boolean) : [],
+  };
+};
+
 const defaultCachePayload = (): QualityMarkCacheFile => ({
   schemaVersion: CACHE_SCHEMA_VERSION,
   ttlDays: Number.isFinite(DEFAULT_TTL_DAYS) ? Math.max(1, Math.round(DEFAULT_TTL_DAYS)) : 30,
@@ -84,13 +178,8 @@ const normalizeEntry = (raw: unknown): QualityMarkAuditEntry | null => {
     confidence: typeof row.confidence === "number" && Number.isFinite(row.confidence) ? row.confidence : null,
     confidenceBucket,
     evidenceRef: normalizeText(row.evidenceRef) || null,
-    evidenceType:
-      normalizeText(row.evidenceType) === "page"
-        ? "page"
-        : normalizeText(row.evidenceType) === "search"
-          ? "search"
-          : null,
-    checkedMode: normalizeText(row.checkedMode) === "page_fetch" ? "page_fetch" : "search_only",
+    evidenceType: isValidEvidenceType(normalizeText(row.evidenceType)) ? normalizeText(row.evidenceType) as NonNullable<QualityMarkAuditEntry["evidenceType"]> : null,
+    checkedMode: isValidCheckedMode(normalizeText(row.checkedMode)) ? normalizeText(row.checkedMode) as QualityMarkAuditEntry["checkedMode"] : "search_only",
     pagesFetchedCount:
       typeof row.pagesFetchedCount === "number" && Number.isFinite(row.pagesFetchedCount)
         ? Math.max(0, Math.floor(row.pagesFetchedCount))
@@ -106,9 +195,16 @@ const normalizeEntry = (raw: unknown): QualityMarkAuditEntry | null => {
       ? row.sourcePriority
           .map((value) => normalizeText(value))
           .filter((value): value is QualityMarkAuditEntry["sourcePriority"][number] =>
-            value === "brand_official" || value === "retailer_marketplace" || value === "retailer_other",
+            value === "brand_official" ||
+            value === "retailer_marketplace" ||
+            value === "retailer_other" ||
+            value === "official_registry",
           )
-      : ["brand_official", "retailer_marketplace", "retailer_other"],
+      : ["brand_official", "official_registry", "retailer_marketplace", "retailer_other"],
+    programMatches: Array.isArray(row.programMatches)
+      ? row.programMatches.map((value) => normalizeProgramMatch(value)).filter(Boolean) as QualityMarkProgramMatch[]
+      : [],
+    verificationSummary: normalizeVerificationSummary(row.verificationSummary),
     checkedAt: normalizeText(row.checkedAt) || nowIso(),
     expiresAt: normalizeText(row.expiresAt) || nowIso(),
     error: normalizeText(row.error) || null,

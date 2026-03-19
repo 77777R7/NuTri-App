@@ -1,0 +1,29 @@
+{
+  "generatedAt": "2026-03-17T20:34:29.859Z",
+  "phase": "P0-B",
+  "phaseOutcomeStatus": "blocker_isolation",
+  "inputs": {
+    "reportPath": "output/p0_p3_highfreq_schiff_healthy_natures_bounty_nature_made_pure_encapsulations_20260317/high_frequency_hit_validation.json",
+    "reportGeneratedAt": "2026-03-17T20:34:20.668Z"
+  },
+  "baseline": {
+    "uniqueCandidates": 1651,
+    "completeHitCount": 725,
+    "completeHitRatePct": 43.9,
+    "anyRecordHitCount": 967,
+    "anyRecordHitRatePct": 58.6,
+    "activeQueueCount": 241,
+    "missingFromStagingCount": 684
+  },
+  "missClassification": {
+    "upstream_missing": 925,
+    "transport_dropped": 0,
+    "consumer_dropped": 0,
+    "weak_but_visible": 0,
+    "identity_unstable": 0
+  },
+  "finalCall": {
+    "productLevelPass": false,
+    "reason": "The current representative/high-frequency set still fails product-level completeness because only 725/1651 candidates are complete hits and 925 remain upstream-missing or still queued."
+  }
+}

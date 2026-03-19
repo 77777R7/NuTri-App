@@ -1,0 +1,239 @@
+{
+  "generatedAt": "2026-03-18T00:51:41.614Z",
+  "scenarios": [
+    {
+      "scenario": "magnesium_over_ul",
+      "duplicateGroupsFound": 1,
+      "surfacedWarningGroups": [
+        "magnesium"
+      ],
+      "perProductContribution": [
+        {
+          "supplementId": "e2e-mag-1",
+          "productName": "Magnesium Product A",
+          "ingredientCanonicalKey": "magnesium",
+          "ingredientDisplayName": "Magnesium",
+          "rawDoseText": "200 mg",
+          "dailyEstimatedDoseText": "400 mg",
+          "dailyEstimatedDoseValue": 400,
+          "dailyEstimatedDoseUnit": "mg",
+          "dailyDoseBasis": "label_daily_estimate",
+          "dailyDoseBasisReason": "parsed_label_directions",
+          "dailyDoseBasisLabel": "estimated from label directions",
+          "comparisonStatus": "over",
+          "comparableToUl": true
+        },
+        {
+          "supplementId": "e2e-mag-2",
+          "productName": "Magnesium Product B",
+          "ingredientCanonicalKey": "magnesium",
+          "ingredientDisplayName": "Magnesium",
+          "rawDoseText": "220 mg",
+          "dailyEstimatedDoseText": "220 mg",
+          "dailyEstimatedDoseValue": 220,
+          "dailyEstimatedDoseUnit": "mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisReason": "snapshot_only_no_directions",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day",
+          "comparisonStatus": "below",
+          "comparableToUl": true
+        }
+      ],
+      "totalEstimatedDose": "620 mg",
+      "ulValue": "350 mg",
+      "scopeNote": "UL applies to supplemental magnesium (and medications), not naturally occurring food intake.",
+      "skippedProductCount": 0,
+      "pass": true,
+      "failureReason": null
+    },
+    {
+      "scenario": "zinc_over_ul",
+      "duplicateGroupsFound": 1,
+      "surfacedWarningGroups": [
+        "zinc"
+      ],
+      "perProductContribution": [
+        {
+          "supplementId": "e2e-zn-1",
+          "productName": "Zinc Product A",
+          "ingredientCanonicalKey": "zinc",
+          "ingredientDisplayName": "Zinc",
+          "rawDoseText": "25 mg",
+          "dailyEstimatedDoseText": "25 mg",
+          "dailyEstimatedDoseValue": 25,
+          "dailyEstimatedDoseUnit": "mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisReason": "missing_directions",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day",
+          "comparisonStatus": "below",
+          "comparableToUl": true
+        },
+        {
+          "supplementId": "e2e-zn-2",
+          "productName": "Zinc Product B",
+          "ingredientCanonicalKey": "zinc",
+          "ingredientDisplayName": "Zinc",
+          "rawDoseText": "25 mg",
+          "dailyEstimatedDoseText": "25 mg",
+          "dailyEstimatedDoseValue": 25,
+          "dailyEstimatedDoseUnit": "mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisReason": "missing_directions",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day",
+          "comparisonStatus": "below",
+          "comparableToUl": true
+        }
+      ],
+      "totalEstimatedDose": "50 mg",
+      "ulValue": "40 mg",
+      "scopeNote": null,
+      "skippedProductCount": 0,
+      "pass": true,
+      "failureReason": null
+    },
+    {
+      "scenario": "folate_uncertain",
+      "duplicateGroupsFound": 1,
+      "surfacedWarningGroups": [],
+      "perProductContribution": [
+        {
+          "supplementId": "e2e-fol-1",
+          "productName": "Folate A",
+          "ingredientCanonicalKey": "folate",
+          "ingredientDisplayName": "Folate",
+          "rawDoseText": "400 mcg DFE",
+          "dailyEstimatedDoseText": "400 mcg dfe",
+          "dailyEstimatedDoseValue": 400,
+          "dailyEstimatedDoseUnit": "mcg dfe",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisReason": "missing_directions",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day",
+          "comparisonStatus": "not_comparable",
+          "comparableToUl": false
+        },
+        {
+          "supplementId": "e2e-fol-2",
+          "productName": "Folate B",
+          "ingredientCanonicalKey": "folate",
+          "ingredientDisplayName": "Folate",
+          "rawDoseText": "400 mcg DFE",
+          "dailyEstimatedDoseText": "400 mcg dfe",
+          "dailyEstimatedDoseValue": 400,
+          "dailyEstimatedDoseUnit": "mcg dfe",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisReason": "missing_directions",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day",
+          "comparisonStatus": "not_comparable",
+          "comparableToUl": false
+        }
+      ],
+      "totalEstimatedDose": null,
+      "ulValue": "1000 mcg",
+      "scopeNote": "UL applies to folic acid from supplements or fortified foods, not naturally occurring food folate.",
+      "skippedProductCount": 0,
+      "pass": true,
+      "failureReason": null
+    },
+    {
+      "scenario": "tier2_not_surfaced",
+      "duplicateGroupsFound": 1,
+      "surfacedWarningGroups": [],
+      "perProductContribution": [
+        {
+          "supplementId": "e2e-om-1",
+          "productName": "Omega A",
+          "ingredientCanonicalKey": "omega_3",
+          "ingredientDisplayName": "Omega-3",
+          "rawDoseText": "1000 mg",
+          "dailyEstimatedDoseText": "1000 mg",
+          "dailyEstimatedDoseValue": 1000,
+          "dailyEstimatedDoseUnit": "mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisReason": "missing_directions",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day",
+          "comparisonStatus": "no_ul_established",
+          "comparableToUl": false
+        },
+        {
+          "supplementId": "e2e-om-2",
+          "productName": "Omega B",
+          "ingredientCanonicalKey": "omega_3",
+          "ingredientDisplayName": "Omega-3",
+          "rawDoseText": "1000 mg",
+          "dailyEstimatedDoseText": "1000 mg",
+          "dailyEstimatedDoseValue": 1000,
+          "dailyEstimatedDoseUnit": "mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisReason": "missing_directions",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day",
+          "comparisonStatus": "no_ul_established",
+          "comparableToUl": false
+        }
+      ],
+      "totalEstimatedDose": null,
+      "ulValue": null,
+      "scopeNote": null,
+      "skippedProductCount": 0,
+      "pass": true,
+      "failureReason": null
+    },
+    {
+      "scenario": "mixed_stack_with_skipped_product",
+      "duplicateGroupsFound": 1,
+      "surfacedWarningGroups": [
+        "magnesium"
+      ],
+      "perProductContribution": [
+        {
+          "supplementId": "e2e-mix-1",
+          "productName": "Magnesium A",
+          "ingredientCanonicalKey": "magnesium",
+          "ingredientDisplayName": "Magnesium",
+          "rawDoseText": "200 mg",
+          "dailyEstimatedDoseText": "200 mg",
+          "dailyEstimatedDoseValue": 200,
+          "dailyEstimatedDoseUnit": "mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisReason": "missing_directions",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day",
+          "comparisonStatus": "below",
+          "comparableToUl": true
+        },
+        {
+          "supplementId": "e2e-mix-2",
+          "productName": "Magnesium B",
+          "ingredientCanonicalKey": "magnesium",
+          "ingredientDisplayName": "Magnesium",
+          "rawDoseText": "200 mg",
+          "dailyEstimatedDoseText": "200 mg",
+          "dailyEstimatedDoseValue": 200,
+          "dailyEstimatedDoseUnit": "mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisReason": "missing_directions",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day",
+          "comparisonStatus": "below",
+          "comparableToUl": true
+        }
+      ],
+      "totalEstimatedDose": "400 mg",
+      "ulValue": "350 mg",
+      "scopeNote": "UL applies to supplemental magnesium (and medications), not naturally occurring food intake.",
+      "skippedProductCount": 1,
+      "pass": true,
+      "failureReason": null
+    },
+    {
+      "scenario": "no_primary_warning_card",
+      "duplicateGroupsFound": 0,
+      "surfacedWarningGroups": [],
+      "perProductContribution": [],
+      "totalEstimatedDose": null,
+      "ulValue": null,
+      "scopeNote": null,
+      "skippedProductCount": 0,
+      "pass": true,
+      "failureReason": null
+    }
+  ],
+  "passed": true
+}

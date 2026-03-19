@@ -1,0 +1,3117 @@
+{
+  "schemaVersion": "nutrasource_promotion_ready_seed.v1",
+  "generatedAt": "2026-03-15T19:48:11.511Z",
+  "rows": [
+    {
+      "productNum": "AMHE0003",
+      "brandId": "AMHE",
+      "brandName": "American Health",
+      "productName": "Papaya Enzyme with Chlorophyll",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=AMHE0003",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "5060",
+        "barcode_gtin14": "00076630503044",
+        "link": "https://www.iherb.com/pr/american-health-chewable-papaya-enzyme-with-chlorophyll-250-chewable-tablets/5060"
+      }
+    },
+    {
+      "productNum": "ANNU0031",
+      "brandId": "ANNU",
+      "brandName": "Ancient Nutrition",
+      "productName": "SBO Probiotics Gummies Berry",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=ANNU0031",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "105815",
+        "barcode_gtin14": "00816401024756",
+        "link": "https://www.iherb.com/pr/ancient-nutrition-sbo-probiotics-ultimate-50-billion-cfu-60-capsules/105815"
+      }
+    },
+    {
+      "productNum": "BBNT0029",
+      "brandId": "BBNT",
+      "brandName": "Bluebonnet Nutrition Corp",
+      "productName": "Oil of Oregano Leaf Extract",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=BBNT0029",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "10183",
+        "barcode_gtin14": "00743715013827",
+        "link": "https://www.iherb.com/pr/bluebonnet-nutrition-oil-of-oregano-leaf-extract-60-softgels-150-mg-per-softgel/10183"
+      }
+    },
+    {
+      "productNum": "BBNT0033",
+      "brandId": "BBNT",
+      "brandName": "Bluebonnet Nutrition Corp",
+      "productName": "Omega-3 Salmon Oil",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=BBNT0033",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "11821",
+        "barcode_gtin14": "00743715009530",
+        "link": "https://www.iherb.com/pr/bluebonnet-nutrition-omega-3-salmon-fish-oil-1-000-mg-180-softgels/11821"
+      }
+    },
+    {
+      "productNum": "CRLL0001",
+      "brandId": "CRLL",
+      "brandName": "Carlson Nutritional Supplements",
+      "productName": "Baby&#39;s DHA",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0001",
+      "programsEffective": [
+        "ifos",
+        "igen"
+      ],
+      "lotOptions": [
+        {
+          "programRaw": "ifos",
+          "value": "Carlson Nutritional Supplements 0051024 32803 Baby&#39;s DHA Report.pdf",
+          "label": "Lot #: 0051024 32803 (Oct 31, 2027)"
+        }
+      ],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "68852",
+        "barcode_gtin14": "00088395186004",
+        "link": "https://www.iherb.com/pr/carlson-norwegian-baby-s-dha-2-fl-oz-60-ml/68852"
+      }
+    },
+    {
+      "productNum": "CRLL0216",
+      "brandId": "CRLL",
+      "brandName": "Carlson Nutritional Supplements",
+      "productName": "Berberine",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0216",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "148051",
+        "barcode_gtin14": "00088395813009",
+        "link": "https://www.iherb.com/pr/carlson-berberine-500-mg-60-vegetarian-capsules/148051"
+      }
+    },
+    {
+      "productNum": "CRLL0202",
+      "brandId": "CRLL",
+      "brandName": "Carlson Nutritional Supplements",
+      "productName": "Chelated Magnesium Glycinate 200 mg",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0202",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "118440",
+        "barcode_gtin14": "00088395056116",
+        "link": "https://www.iherb.com/pr/carlson-chelated-magnesium-glycinate-200-mg-90-tablets/118440"
+      }
+    },
+    {
+      "productNum": "CRLL0059",
+      "brandId": "CRLL",
+      "brandName": "Carlson Nutritional Supplements",
+      "productName": "Chewable Calcium Citrate",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0059",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "9783",
+        "barcode_gtin14": "00088395050817",
+        "link": "https://www.iherb.com/pr/carlson-chewable-calcium-citrate-natural-vanilla-250-mg-120-vegetarian-tablets/9783"
+      }
+    },
+    {
+      "productNum": "CRLL0004",
+      "brandId": "CRLL",
+      "brandName": "Carlson Nutritional Supplements",
+      "productName": "Cod Liver Oil Gems, Super 1,000 mg",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0004",
+      "programsEffective": [
+        "ifos",
+        "igen"
+      ],
+      "lotOptions": [
+        {
+          "programRaw": "ifos",
+          "value": "Carlson Nutritional Supplements 2411052 Cod Liver Oil Gems, Super 1,000 mg Report.pdf",
+          "label": "Lot #: 2411052 (Oct 31, 2027)"
+        },
+        {
+          "programRaw": "ifos",
+          "value": "IFOS Report Cod Liver Oil Gems Super 1000mg, lot 2401078.pdf",
+          "label": "Lot #: 2401078 (Feb 28, 2027)"
+        },
+        {
+          "programRaw": "ifos",
+          "value": "IFOS Report super omega 3 gems super 1000mg, lot 2304007.pdf",
+          "label": "Lot #: 2304007 (Mar 31, 2026)"
+        }
+      ],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "23288",
+        "barcode_gtin14": "00088395013010",
+        "link": "https://www.iherb.com/pr/carlson-wild-norwegian-cod-liver-oil-gems-1-000-mg-100-soft-gels/23288"
+      }
+    },
+    {
+      "productNum": "CRLL0007",
+      "brandId": "CRLL",
+      "brandName": "Carlson Nutritional Supplements",
+      "productName": "Cod Liver Oil Minis",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0007",
+      "programsEffective": [
+        "ifos",
+        "igen"
+      ],
+      "lotOptions": [
+        {
+          "programRaw": "ifos",
+          "value": "Carlson Nutritional Supplements 2503047 34478 Cod Liver Oil Minis.pdf",
+          "label": "Lot #: 2503047 (Mar 31, 2028)"
+        },
+        {
+          "programRaw": "ifos",
+          "value": "IFOS Report Carlson Cod Liver Oil mini lot 2310033.pdf",
+          "label": "Lot #: 2310033 (Oct 31, 2026)"
+        }
+      ],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "14565",
+        "barcode_gtin14": "00088395013126",
+        "link": "https://www.iherb.com/pr/carlson-wild-norwegian-cod-liver-oil-minis-250-mini-soft-gels/14565"
+      }
+    },
+    {
+      "productNum": "CRLL0031",
+      "brandId": "CRLL",
+      "brandName": "Carlson Nutritional Supplements",
+      "productName": "Cod Liver Oil, Fruit Splash",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0031",
+      "programsEffective": [
+        "ifos",
+        "igen"
+      ],
+      "lotOptions": [
+        {
+          "programRaw": "ifos",
+          "value": "Carlson Nutritional Supplements 45152565 34079 Cod Liver Oil, Fruit Splash Report.pdf",
+          "label": "Lot #: 45152565 (Dec 31, 2028)"
+        },
+        {
+          "programRaw": "ifos",
+          "value": "IFOS report cod liver oil fruit splash, lot 31820655.pdf",
+          "label": "Lot #: 31820655 (May 31, 2027)"
+        },
+        {
+          "programRaw": "ifos",
+          "value": "IFOS report cod liver oil fruit splash, lot 23441665.pdf",
+          "label": "Lot #: 23441665 (Aug 31, 2026)"
+        }
+      ],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "125554",
+        "barcode_gtin14": "00088395136108",
+        "link": "https://www.iherb.com/pr/carlson-wild-norwegian-cod-liver-oil-fruit-splash-8-4-fl-oz-250-ml/125554"
+      }
+    },
+    {
+      "productNum": "CRLL0012",
+      "brandId": "CRLL",
+      "brandName": "Carlson Nutritional Supplements",
+      "productName": "Elite DHA Gems",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0012",
+      "programsEffective": [
+        "ifos",
+        "igen"
+      ],
+      "lotOptions": [
+        {
+          "programRaw": "ifos",
+          "value": "Carlson Nutritional Supplements 2501087 33480 Elite DHA Gems Report rev1.pdf",
+          "label": "Lot #: 2501087 33480 (Jan 31, 2029)"
+        },
+        {
+          "programRaw": "ifos",
+          "value": "IFOS Report Elite DHA Gem, lot 2401021.pdf",
+          "label": "Lot #: 2401021 (Jan 31, 2028)"
+        }
+      ],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "125458",
+        "barcode_gtin14": "00088395169007",
+        "link": "https://www.iherb.com/pr/carlson-elite-dha-gems-1-000-mg-30-soft-gels/125458"
+      }
+    },
+    {
+      "productNum": "CRLL0013",
+      "brandId": "CRLL",
+      "brandName": "Carlson Nutritional Supplements",
+      "productName": "Elite EPA Gems",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0013",
+      "programsEffective": [
+        "ifos",
+        "igen"
+      ],
+      "lotOptions": [
+        {
+          "programRaw": "ifos",
+          "value": "IFOS report Elite EPA 1000mg, lot 2311050.pdf",
+          "label": "Lot #: 2311050 (Nov 30, 2026)"
+        }
+      ],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "13839",
+        "barcode_gtin14": "00088395016813",
+        "link": "https://www.iherb.com/pr/carlson-elite-epa-gems-1-000-mg-120-soft-gels/13839"
+      }
+    },
+    {
+      "productNum": "CRLL0110",
+      "brandId": "CRLL",
+      "brandName": "Carlson Nutritional Supplements",
+      "productName": "Glycine Powder",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0110",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "14817",
+        "barcode_gtin14": "00088395068355",
+        "link": "https://www.iherb.com/pr/carlson-glycine-powder-free-form-amino-acid-3-53-oz-100-g/14817"
+      }
+    },
+    {
+      "productNum": "CRLL0223",
+      "brandId": "CRLL",
+      "brandName": "Carlson Nutritional Supplements",
+      "productName": "Grass-Fed Beef Liver",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0223",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "153821",
+        "barcode_gtin14": "00088395706103",
+        "link": "https://www.iherb.com/pr/carlson-grass-fed-beef-liver-180-capsules/153821"
+      }
+    },
+    {
+      "productNum": "CRLL0061",
+      "brandId": "CRLL",
+      "brandName": "Carlson Nutritional Supplements",
+      "productName": "Kid&#39;s Cod Liver Oil, Bubble Gum",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0061",
+      "programsEffective": [
+        "ifos",
+        "igen"
+      ],
+      "lotOptions": [
+        {
+          "programRaw": "ifos",
+          "value": "IFOS report Kid&#39;s Cod Liver Oil, Bubble Gum, lot 31820655.pdf",
+          "label": "Lot #: 31820655 (May 31, 2027)"
+        }
+      ],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "45704",
+        "barcode_gtin14": "00088395136306",
+        "link": "https://www.iherb.com/pr/carlson-kid-s-wild-norwegian-cod-liver-oil-vitamins-a-d3-bubble-gum-8-4-fl-oz-250-ml/45704"
+      }
+    },
+    {
+      "productNum": "CRLL0102",
+      "brandId": "CRLL",
+      "brandName": "Carlson Nutritional Supplements",
+      "productName": "Kid&#39;s Cod Liver Oil, Green Apple",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0102",
+      "programsEffective": [
+        "ifos"
+      ],
+      "lotOptions": [
+        {
+          "programRaw": "ifos",
+          "value": "IFOS Report cod liver oil apple 250ml kids, lot 24312105.pdf",
+          "label": "Lot #: 24312105 (Oct 31, 2026)"
+        }
+      ],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "114555",
+        "barcode_gtin14": "00088395137303",
+        "link": "https://www.iherb.com/pr/carlson-kid-s-norwegian-cod-liver-oil-natural-green-apple-8-4-fl-oz-250-ml/114555"
+      }
+    },
+    {
+      "productNum": "CRLL0218",
+      "brandId": "CRLL",
+      "brandName": "Carlson Nutritional Supplements",
+      "productName": "Lion&#39;s Mane",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0218",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "149563",
+        "barcode_gtin14": "00088395864001",
+        "link": "https://www.iherb.com/pr/carlson-lion-s-mane-60-vegetarian-capsules/149563"
+      }
+    },
+    {
+      "productNum": "CRLL0203",
+      "brandId": "CRLL",
+      "brandName": "Carlson Nutritional Supplements",
+      "productName": "Magnesium Soft Chews",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0203",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "116231",
+        "barcode_gtin14": "00088395580604",
+        "link": "https://www.iherb.com/pr/carlson-magnesium-natural-berries-creme-125-mg-40-vegetarian-soft-chews/116231"
+      }
+    },
+    {
+      "productNum": "CRLL0019",
+      "brandId": "CRLL",
+      "brandName": "Carlson Nutritional Supplements",
+      "productName": "Med Omega™",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0019",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "9721",
+        "barcode_gtin14": "00088395017018",
+        "link": "https://www.iherb.com/pr/carlson-med-omega-lemon-lime-3-3-fl-oz-100-ml/9721"
+      }
+    },
+    {
+      "productNum": "CRLL0226",
+      "brandId": "CRLL",
+      "brandName": "Carlson Nutritional Supplements",
+      "productName": "Mom’s DHA",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0226",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "125570",
+        "barcode_gtin14": "00088395015601",
+        "link": "https://www.iherb.com/pr/carlson-mom-s-dha-500-mg-60-soft-gels/125570"
+      }
+    },
+    {
+      "productNum": "CRLL0217",
+      "brandId": "CRLL",
+      "brandName": "Carlson Nutritional Supplements",
+      "productName": "Mushroom Immune",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0217",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "148052",
+        "barcode_gtin14": "00088395863004",
+        "link": "https://www.iherb.com/pr/carlson-organic-blend-mushroom-immune-50-vegetarian-capsules/148052"
+      }
+    },
+    {
+      "productNum": "CRLL0064",
+      "brandId": "CRLL",
+      "brandName": "Carlson Nutritional Supplements",
+      "productName": "Nutra-Support Diabetes",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0064",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "127388",
+        "barcode_gtin14": "00088395045707",
+        "link": "https://www.iherb.com/pr/carlson-nutra-support-diabetes-60-soft-gels/127388"
+      }
+    },
+    {
+      "productNum": "CRLL0073",
+      "brandId": "CRLL",
+      "brandName": "Carlson Nutritional Supplements",
+      "productName": "Right for the Macula",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0073",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "8480",
+        "barcode_gtin14": "00088395086816",
+        "link": "https://www.iherb.com/pr/carlson-right-for-the-macula-120-soft-gels/8480"
+      }
+    },
+    {
+      "productNum": "CRLL0209",
+      "brandId": "CRLL",
+      "brandName": "Carlson Nutritional Supplements",
+      "productName": "Teen&#39;s Max Catch Minis",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0209",
+      "programsEffective": [
+        "ifos",
+        "igen"
+      ],
+      "lotOptions": [
+        {
+          "programRaw": "ifos",
+          "value": "IFOS report Teens Max Catch Mini, lot 2403059.pdf",
+          "label": "Lot #: 2403059 (Feb 29, 2028)"
+        },
+        {
+          "programRaw": "ifos",
+          "value": "IFOS report Teens Max Catch Mini, lot 2310087.pdf",
+          "label": "Lot #: 2310087 (Oct 31, 2027)"
+        }
+      ],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "125467",
+        "barcode_gtin14": "00088395184000",
+        "link": "https://www.iherb.com/pr/carlson-teen-s-max-catch-minis-30-mini-soft-gels/125467"
+      }
+    },
+    {
+      "productNum": "CRLL0205",
+      "brandId": "CRLL",
+      "brandName": "Carlson Nutritional Supplements",
+      "productName": "Vegetarian Prenatal DHA",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CRLL0205",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "125501",
+        "barcode_gtin14": "00088395449604",
+        "link": "https://www.iherb.com/pr/carlson-vegetarian-prenatal-dha-60-vegetarian-soft-gels/125501"
+      }
+    },
+    {
+      "productNum": "CHLD0006",
+      "brandId": "CHLD",
+      "brandName": "ChildLife Essentials",
+      "productName": "ChildLife Essentials Aller-Care",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CHLD0006",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "15259",
+        "barcode_gtin14": "00608274104501",
+        "link": "https://www.iherb.com/pr/childlife-essentials-aller-care-natural-grape-4-fl-oz-118-ml/15259"
+      }
+    },
+    {
+      "productNum": "CHLD0007",
+      "brandId": "CHLD",
+      "brandName": "ChildLife Essentials",
+      "productName": "ChildLife Essentials First Defense",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CHLD0007",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "6367",
+        "barcode_gtin14": "00608274101500",
+        "link": "https://www.iherb.com/pr/childlife-essentials-first-defense-4-fl-oz-118-ml/6367"
+      }
+    },
+    {
+      "productNum": "CHLD0003",
+      "brandId": "CHLD",
+      "brandName": "ChildLife Essentials",
+      "productName": "Immune & Digestive Support",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CHLD0003",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "102923",
+        "barcode_gtin14": "00608274104006",
+        "link": "https://www.iherb.com/pr/childlife-essentials-childbiotics-immune-digestive-support-natural-berry-5-billion-cfu-30-chewable-tablets/102923"
+      }
+    },
+    {
+      "productNum": "CHLD0005",
+      "brandId": "CHLD",
+      "brandName": "ChildLife Essentials",
+      "productName": "Multi Vitamin Gummy",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CHLD0005",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "141833",
+        "barcode_gtin14": "00608274145504",
+        "link": "https://www.iherb.com/pr/childlife-essentials-multi-vitamin-gummy-sugar-free-natural-strawberry-lemon-90-gummies/141833"
+      }
+    },
+    {
+      "productNum": "CHLD0001",
+      "brandId": "CHLD",
+      "brandName": "ChildLife Essentials",
+      "productName": "Pure DHA",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CHLD0001",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "12573",
+        "barcode_gtin14": "00608274105508",
+        "link": "https://www.iherb.com/pr/childlife-essentials-pure-dha-natural-berry-90-softgels/12573"
+      }
+    },
+    {
+      "productNum": "CLIF0001",
+      "brandId": "CLIF",
+      "brandName": "Country Life, LLC.",
+      "productName": "Acetyl L-Carnitine Caps 500 mg",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0001",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "6394",
+        "barcode_gtin14": "00015794010821",
+        "link": "https://www.iherb.com/pr/country-life-acetyl-l-carnitine-caps-500-mg-120-vegan-capsules/6394"
+      }
+    },
+    {
+      "productNum": "CLIF0043",
+      "brandId": "CLIF",
+      "brandName": "Country Life, LLC.",
+      "productName": "Ageless Theory™ Anti-Glycation Support™",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0043",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "141071",
+        "barcode_gtin14": "00015794053019",
+        "link": "https://www.iherb.com/pr/country-life-ageless-theory-anti-glycation-support-60-vegetarian-capsules/141071"
+      }
+    },
+    {
+      "productNum": "CLIF0044",
+      "brandId": "CLIF",
+      "brandName": "Country Life, LLC.",
+      "productName": "Ageless Theory™ Stem Cell Support™",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0044",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "141072",
+        "barcode_gtin14": "00015794053026",
+        "link": "https://www.iherb.com/pr/country-life-ageless-theory-stem-cell-support-60-vegetarian-capsules/141072"
+      }
+    },
+    {
+      "productNum": "CLIF0042",
+      "brandId": "CLIF",
+      "brandName": "Country Life, LLC.",
+      "productName": "Ageless Theory™ Telomere Support™",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0042",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "141567",
+        "barcode_gtin14": "00015794053002",
+        "link": "https://www.iherb.com/pr/country-life-ageless-theory-telomere-support-60-vegetarian-capsule/141567"
+      }
+    },
+    {
+      "productNum": "CLIF0003",
+      "brandId": "CLIF",
+      "brandName": "Country Life, LLC.",
+      "productName": "Benfotiamine with Thiamin",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0003",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "51093",
+        "barcode_gtin14": "00015794060031",
+        "link": "https://www.iherb.com/pr/country-life-benfotiamine-with-thiamin-150-mg-60-vegan-capsules/51093"
+      }
+    },
+    {
+      "productNum": "CLIF0039",
+      "brandId": "CLIF",
+      "brandName": "Country Life, LLC.",
+      "productName": "Dual Action Magnesium Glycinate",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0039",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "141063",
+        "barcode_gtin14": "00015794026792",
+        "link": "https://www.iherb.com/pr/country-life-dual-action-high-absorption-magnesium-glycinate-90-tablets/141063"
+      }
+    },
+    {
+      "productNum": "CLIF0016",
+      "brandId": "CLIF",
+      "brandName": "Country Life, LLC.",
+      "productName": "L-Arginine 500 mg",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0016",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "1649",
+        "barcode_gtin14": "00015794010258",
+        "link": "https://www.iherb.com/pr/country-life-l-arginine-100-vegan-capsules/1649"
+      }
+    },
+    {
+      "productNum": "CLIF0041",
+      "brandId": "CLIF",
+      "brandName": "Country Life, LLC.",
+      "productName": "L-Lysine Advanced",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0041",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "121732",
+        "barcode_gtin14": "00015794013150",
+        "link": "https://www.iherb.com/pr/country-life-l-lysine-advanced-180-vegan-capsules/121732"
+      }
+    },
+    {
+      "productNum": "CLIF0040",
+      "brandId": "CLIF",
+      "brandName": "Country Life, LLC.",
+      "productName": "Lutein & Zeaxanthin",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0040",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "141075",
+        "barcode_gtin14": "00015794056072",
+        "link": "https://www.iherb.com/pr/country-life-lutein-zeaxanthin-gummies-natural-mango-60-gummies/141075"
+      }
+    },
+    {
+      "productNum": "CLIF0010",
+      "brandId": "CLIF",
+      "brandName": "Country Life, LLC.",
+      "productName": "Maxi-Collagen 7000",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0010",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "75757",
+        "barcode_gtin14": "00015794050704",
+        "link": "https://www.iherb.com/pr/country-life-maxi-collagen-7000-powder-high-potency-flavorless-7-5-oz-213-g/75757"
+      }
+    },
+    {
+      "productNum": "CLIF0018",
+      "brandId": "CLIF",
+      "brandName": "Country Life, LLC.",
+      "productName": "Maxi-Hair Plus Biotin",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0018",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "155226",
+        "barcode_gtin14": "00015794050490",
+        "link": "https://www.iherb.com/pr/country-life-maxi-hair-skin-nails-gummies-with-hyaluronic-acid-biotin-berry-60-gummies/155226"
+      }
+    },
+    {
+      "productNum": "CLIF0047",
+      "brandId": "CLIF",
+      "brandName": "Country Life, LLC.",
+      "productName": "Omega-3 Honey Gummies",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0047",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "145400",
+        "barcode_gtin14": "00015794060093",
+        "link": "https://www.iherb.com/pr/country-life-omega-3-honey-gummies-natural-orange-60-gummies/145400"
+      }
+    },
+    {
+      "productNum": "CLIF0021",
+      "brandId": "CLIF",
+      "brandName": "Country Life, LLC.",
+      "productName": "Selenium 100 mcg",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0021",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "1757",
+        "barcode_gtin14": "00015794028765",
+        "link": "https://www.iherb.com/pr/country-life-selenium-100-mcg-180-tablets/1757"
+      }
+    },
+    {
+      "productNum": "CLIF0034",
+      "brandId": "CLIF",
+      "brandName": "Country Life, LLC.",
+      "productName": "Triple Strength Bromelain",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0034",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "1646",
+        "barcode_gtin14": "00015794051619",
+        "link": "https://www.iherb.com/pr/country-life-bromelain-triple-strength-60-tablets/1646"
+      }
+    },
+    {
+      "productNum": "CLIF0049",
+      "brandId": "CLIF",
+      "brandName": "Country Life, LLC.",
+      "productName": "Vegan D3 Gummies",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0049",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "70545",
+        "barcode_gtin14": "00015794058229",
+        "link": "https://www.iherb.com/pr/country-life-vegan-d3-gummies-lemon-strawberry-orange-flavors-25-mcg-1-000-iu-60-gummies/70545"
+      }
+    },
+    {
+      "productNum": "CLIF0029",
+      "brandId": "CLIF",
+      "brandName": "Country Life, LLC.",
+      "productName": "Zinc Picolinate",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=CLIF0029",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "14480",
+        "barcode_gtin14": "00015794029670",
+        "link": "https://www.iherb.com/pr/country-life-zinc-picolinate-25-mg-100-tablets/14480"
+      }
+    },
+    {
+      "productNum": "DVCI0001",
+      "brandId": "DVCI",
+      "brandName": "DaVinci Laboratories",
+      "productName": "Omega-3 1000",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=DVCI0001",
+      "programsEffective": [
+        "ifos"
+      ],
+      "lotOptions": [
+        {
+          "programRaw": "ifos",
+          "value": "00569067001, 00569316001, 00571187001_FFISO035bc(UC240404)_Omega-3_1000_DaVinci_IFOS.pdf",
+          "label": "Lot #: 00569067001, 00569316001, 00571187001 (Aug 31, 2027)"
+        },
+        {
+          "programRaw": "ifos",
+          "value": "00559892001,00560308001,00562191001,00562989001_FFISO035bc(UC230133)_Omega-3_1000_DaVinci_IFOS.pdf",
+          "label": "Lot #: 00559892001,00560308001,00562191001,0056 (Mar 31, 2026)"
+        },
+        {
+          "programRaw": "ifos",
+          "value": "00564244001,00563864001,00563532001,00562859001,00565500001,00566402001_FFISO035bc(UC230133)_Omega-3_1000_DaVinci_IFOS.pdf",
+          "label": "Lot #: 00564244001,00563864001,00563532001,0056 (Mar 31, 2026)"
+        },
+        {
+          "programRaw": "ifos",
+          "value": "00567038001,00566732001,00567266001,00568181001_FFISO035bc(UC230133)_Omega-3_1000_DaVinci_IFOS.pdf",
+          "label": "Lot #: 00567038001,00566732001,00567266001,0056 (Mar 31, 2026)"
+        }
+      ],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "33674",
+        "barcode_gtin14": "00026664236890",
+        "link": "https://www.iherb.com/pr/davinci-laboratories-omega-3-1000-90-enteric-coated-softgels/33674"
+      }
+    },
+    {
+      "productNum": "DVCI0002",
+      "brandId": "DVCI",
+      "brandName": "DaVinci Laboratories",
+      "productName": "Supreme Omega",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=DVCI0002",
+      "programsEffective": [
+        "ifos"
+      ],
+      "lotOptions": [
+        {
+          "programRaw": "ifos",
+          "value": "00563529001;00569284001;00573972001_FO369010b(UC240388)_OmegaSupreme_DaVinci_IFOS.pdf",
+          "label": "Lot #: 00563529001,00569284001,00573972001 (Jul 31, 2027)"
+        },
+        {
+          "programRaw": "ifos",
+          "value": "00563239001,00556738001,00562395001_FO369010b(UC240069)_OmegaSupreme_DaVinci_IFOS.pdf",
+          "label": "Lot #: 00563239001,00556738001,00562395001 (Jan 31, 2027)"
+        },
+        {
+          "programRaw": "ifos",
+          "value": "00553177001_FO369010b(UC230429)_OmegaSupreme_DaVinci_IFOS.pdf",
+          "label": "Lot #: 00553177001 (Oct 31, 2026)"
+        },
+        {
+          "programRaw": "ifos",
+          "value": "00553177001,00561191001_FO369010b(UC230429)_OmegaSupreme_DaVinci_IFOS.pdf",
+          "label": "Lot #: 00553177001,00561191001 (Oct 31, 2026)"
+        }
+      ],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "45444",
+        "barcode_gtin14": "00026664236791",
+        "link": "https://www.iherb.com/pr/davinci-laboratories-supreme-omega-90-softgels/45444"
+      }
+    },
+    {
+      "productNum": "DDRP0010",
+      "brandId": "DDRP",
+      "brandName": "Ddrops Company",
+      "productName": "Baby Ddrops Probiotic",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=DDRP0010",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "141030",
+        "barcode_gtin14": "00814947000333",
+        "link": "https://www.iherb.com/pr/ddrops-baby-probiotic-liquid-drops-for-newborns-60-drops-0-07-fl-oz-2-2-ml/141030"
+      }
+    },
+    {
+      "productNum": "GLIF0041",
+      "brandId": "GLIF",
+      "brandName": "Garden of Life",
+      "productName": "Dr. Formulated Probiotics Once Daily Men&#39;s",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0041",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "64437",
+        "barcode_gtin14": "00658010118293",
+        "link": "https://www.iherb.com/pr/garden-of-life-dr-formulated-probiotics-once-daily-men-s-50-billion-30-vegetarian-capsules/64437"
+      }
+    },
+    {
+      "productNum": "GLIF0040",
+      "brandId": "GLIF",
+      "brandName": "Garden of Life",
+      "productName": "Dr. Formulated Probiotics Once Daily Ultra",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0040",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "64436",
+        "barcode_gtin14": "00658010118453",
+        "link": "https://www.iherb.com/pr/garden-of-life-dr-formulated-probiotics-once-daily-ultra-90-billion-30-vegetarian-capsules/64436"
+      }
+    },
+    {
+      "productNum": "GLIF0044",
+      "brandId": "GLIF",
+      "brandName": "Garden of Life",
+      "productName": "Dr. Formulated Probiotics Once Daily Women&#39;s Shelf-Stable 30 Capsules",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0044",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "64442",
+        "barcode_gtin14": "00658010118323",
+        "link": "https://www.iherb.com/pr/garden-of-life-dr-formulated-probiotics-once-daily-women-s-50-billion-30-vegetarian-capsules/64442"
+      }
+    },
+    {
+      "productNum": "GLIF0001",
+      "brandId": "GLIF",
+      "brandName": "Garden of Life",
+      "productName": "Grass Fed Collagen Beauty Cranberry Pomegranate",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0001",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "86845",
+        "barcode_gtin14": "00658010124553",
+        "link": "https://www.iherb.com/pr/garden-of-life-grass-fed-collagen-beauty-cranberry-pomegranate-9-52-oz-270-g/86845"
+      }
+    },
+    {
+      "productNum": "GLIF0002",
+      "brandId": "GLIF",
+      "brandName": "Garden of Life",
+      "productName": "Grass Fed Collagen Beauty Strawberry Lemonade",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0002",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "86844",
+        "barcode_gtin14": "00658010124560",
+        "link": "https://www.iherb.com/pr/garden-of-life-grass-fed-collagen-beauty-strawberry-lemonade-9-52-oz-270-g/86844"
+      }
+    },
+    {
+      "productNum": "GLIF0027",
+      "brandId": "GLIF",
+      "brandName": "Garden of Life",
+      "productName": "Grass Fed Collagen Greens Beauty Apple",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0027",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "99605",
+        "barcode_gtin14": "00658010127110",
+        "link": "https://www.iherb.com/pr/garden-of-life-grass-fed-collagen-greens-beauty-apple-9-38-oz-266-g/99605"
+      }
+    },
+    {
+      "productNum": "GLIF0020",
+      "brandId": "GLIF",
+      "brandName": "Garden of Life",
+      "productName": "Grass Fed Collagen Protein Chocolate",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0020",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "77995",
+        "barcode_gtin14": "00658010121224",
+        "link": "https://www.iherb.com/pr/garden-of-life-organic-whey-protein-grass-fed-chocolate-cacao-13-96-oz-396-g/77995"
+      }
+    },
+    {
+      "productNum": "GLIF0031",
+      "brandId": "GLIF",
+      "brandName": "Garden of Life",
+      "productName": "Grass Fed Collagen Super Beauty Blueberry Acai",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0031",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "99610",
+        "barcode_gtin14": "00658010127172",
+        "link": "https://www.iherb.com/pr/garden-of-life-grass-fed-collagen-super-beauty-blueberry-acai-9-52-oz-270-g/99610"
+      }
+    },
+    {
+      "productNum": "GLIF0003",
+      "brandId": "GLIF",
+      "brandName": "Garden of Life",
+      "productName": "Multi-Sourced Collagen Turmeric Apple Cinnamon",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0003",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "86843",
+        "barcode_gtin14": "00658010124607",
+        "link": "https://www.iherb.com/pr/garden-of-life-multi-sourced-collagen-turmeric-apple-cinnamon-7-76-oz-220-g/86843"
+      }
+    },
+    {
+      "productNum": "GLIF0021",
+      "brandId": "GLIF",
+      "brandName": "Garden of Life",
+      "productName": "Wild Caught & Grass-Fed Collagen Hyaluronic Acid",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0021",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "113269",
+        "barcode_gtin14": "00658010130745",
+        "link": "https://www.iherb.com/pr/garden-of-life-wild-caught-grass-fed-collagen-hyaluronic-acid-unflavored-9-52-oz-270-g/113269"
+      }
+    },
+    {
+      "productNum": "GLIF0022",
+      "brandId": "GLIF",
+      "brandName": "Garden of Life",
+      "productName": "Wild Caught & Grass-Fed Collagen Multi-Sourced",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=GLIF0022",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "113270",
+        "barcode_gtin14": "00658010130752",
+        "link": "https://www.iherb.com/pr/garden-of-life-wild-caught-grass-fed-collagen-multi-sourced-unflavored-9-52-oz-270-g/113270"
+      }
+    },
+    {
+      "productNum": "GLGC0004",
+      "brandId": "GLGC",
+      "brandName": "Great Lakes Wellness Company LLC",
+      "productName": "Grass-Fed Bovine Collagen Peptides Chai",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=GLGC0004",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "141532",
+        "barcode_gtin14": "00322654002897",
+        "link": "https://www.iherb.com/pr/great-lakes-wellness-grass-fed-bovine-collagen-peptides-chai-10-oz-284-g/141532"
+      }
+    },
+    {
+      "productNum": "JRRW0090",
+      "brandId": "JRRW",
+      "brandName": "Jarrow Formulas Inc.",
+      "productName": "Beta Glucan",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=JRRW0090",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "7083",
+        "barcode_gtin14": "00790011030232",
+        "link": "https://www.iherb.com/pr/jarrow-formulas-beta-glucan-250-mg-60-capsules/7083"
+      }
+    },
+    {
+      "productNum": "JRRW0100",
+      "brandId": "JRRW",
+      "brandName": "Jarrow Formulas Inc.",
+      "productName": "L-Glutamine Powder",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=JRRW0100",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "187",
+        "barcode_gtin14": "00790011150121",
+        "link": "https://www.iherb.com/pr/jarrow-formulas-l-glutamine-750-mg-120-veggie-capsules/187"
+      }
+    },
+    {
+      "productNum": "JRRW0056",
+      "brandId": "JRRW",
+      "brandName": "Jarrow Formulas Inc.",
+      "productName": "Lactoferrin",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=JRRW0056",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "117437",
+        "barcode_gtin14": "00790011210788",
+        "link": "https://www.iherb.com/pr/jarrow-formulas-lactoferrin-freeze-dried-250-mg-30-capsules/117437"
+      }
+    },
+    {
+      "productNum": "JRRW0033",
+      "brandId": "JRRW",
+      "brandName": "Jarrow Formulas Inc.",
+      "productName": "Lutein",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=JRRW0033",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "139",
+        "barcode_gtin14": "00790011120254",
+        "link": "https://www.iherb.com/pr/jarrow-formulas-lutein-20-mg-60-softgels/139"
+      }
+    },
+    {
+      "productNum": "NCHP0006",
+      "brandId": "NCHP",
+      "brandName": "New Chapter Inc",
+      "productName": "Wholemega™ Fish Oil Tiny Caps™",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NCHP0006",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "85001",
+        "barcode_gtin14": "00727783901774",
+        "link": "https://www.iherb.com/pr/new-chapter-wholemega-fish-oil-tiny-caps-180-bse-free-softgels/85001"
+      }
+    },
+    {
+      "productNum": "NCHP0008",
+      "brandId": "NCHP",
+      "brandName": "New Chapter Inc",
+      "productName": "Zyflamend™ Mini Softgels",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NCHP0008",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "79",
+        "barcode_gtin14": "00727783040565",
+        "link": "https://www.iherb.com/pr/new-chapter-zyflamend-180-mini-softgels/79"
+      }
+    },
+    {
+      "productNum": "NRDN0001",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Algae DHA",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0001",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "91972",
+        "barcode_gtin14": "00768990016042",
+        "link": "https://www.iherb.com/pr/nordic-naturals-algae-dha-60-soft-gels-250-mg-per-soft-gel/91972"
+      }
+    },
+    {
+      "productNum": "NRDN0032",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Baby&#39;s Nordic Flora Probiotic Powder",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0032",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "96461",
+        "barcode_gtin14": "00768990016752",
+        "link": "https://www.iherb.com/pr/nordic-naturals-baby-s-probiotic-powder-ages-6-months-3-years-30-packets-0-05-oz-1-45-g-each/96461"
+      }
+    },
+    {
+      "productNum": "NRDN0061",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Blood Sugar Support",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0061",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "23069",
+        "barcode_gtin14": "00768990018701",
+        "link": "https://www.iherb.com/pr/nordic-naturals-blood-sugar-support-omega-blend-60-soft-gels/23069"
+      }
+    },
+    {
+      "productNum": "NRDN0064",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Cholesterol Support",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0064",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "29599",
+        "barcode_gtin14": "00768990018602",
+        "link": "https://www.iherb.com/pr/nordic-naturals-cholesterol-support-omega-blend-60-soft-gels/29599"
+      }
+    },
+    {
+      "productNum": "NRDN0153",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Cognition Mushroom Complex",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0153",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "114519",
+        "barcode_gtin14": "00768990015700",
+        "link": "https://www.iherb.com/pr/nordic-naturals-cognition-mushroom-complex-60-capsules/114519"
+      }
+    },
+    {
+      "productNum": "NRDN0090",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Complete Omega Xtra",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0090",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "46270",
+        "barcode_gtin14": "00768990018015",
+        "link": "https://www.iherb.com/pr/nordic-naturals-complete-omega-xtra-lemon-60-soft-gels-680-mg-per-soft-gel/46270"
+      }
+    },
+    {
+      "productNum": "NRDN0091",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Complete Omega-D3",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0091",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "17834",
+        "barcode_gtin14": "00768990027789",
+        "link": "https://www.iherb.com/pr/nordic-naturals-complete-omega-d3-lemon-120-soft-gels/17834"
+      }
+    },
+    {
+      "productNum": "NRDN0043",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "CoQ10 Gummies",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0043",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "73705",
+        "barcode_gtin14": "00768990301858",
+        "link": "https://www.iherb.com/pr/nordic-naturals-coq10-gummies-strawberry-100-mg-60-gummies/73705"
+      }
+    },
+    {
+      "productNum": "NRDN0034",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Daily Omega Kids",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0034",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "29597",
+        "barcode_gtin14": "00768990018176",
+        "link": "https://www.iherb.com/pr/nordic-naturals-daily-omega-kids-natural-fruit-30-soft-gels/29597"
+      }
+    },
+    {
+      "productNum": "NRDN0008",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "DHA Xtra",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0008",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "30241",
+        "barcode_gtin14": "00768990017452",
+        "link": "https://www.iherb.com/pr/nordic-naturals-dha-xtra-strawberry-60-soft-gels/30241"
+      }
+    },
+    {
+      "productNum": "NRDN0035",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "EPA",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0035",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "4198",
+        "barcode_gtin14": "00768990017506",
+        "link": "https://www.iherb.com/pr/nordic-naturals-epa-lemon-60-soft-gels/4198"
+      }
+    },
+    {
+      "productNum": "NRDN0009",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "EPA Xtra",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0009",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "4186",
+        "barcode_gtin14": "00768990017513",
+        "link": "https://www.iherb.com/pr/nordic-naturals-epa-xtra-great-lemon-60-soft-gels/4186"
+      }
+    },
+    {
+      "productNum": "NRDN0162",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Kids Calm Gummies",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0162",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "132478",
+        "barcode_gtin14": "00768990301728",
+        "link": "https://www.iherb.com/pr/nordic-naturals-kids-calm-gummies-ages-3-strawberry-watermelon-60-gummies/132478"
+      }
+    },
+    {
+      "productNum": "NRDN0100",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Kids Nordic Flora Probiotic Gummies",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0100",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "68016",
+        "barcode_gtin14": "00768990301704",
+        "link": "https://www.iherb.com/pr/nordic-naturals-kids-probiotic-gummies-great-berry-60-gummies/68016"
+      }
+    },
+    {
+      "productNum": "NRDN0060",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Kids Nordic Flora Probiotic Pixies",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0060",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "79528",
+        "barcode_gtin14": "00768990016783",
+        "link": "https://www.iherb.com/pr/nordic-naturals-kids-probiotic-pixies-ages-3-mixed-berry-30-packets-0-035-oz-1-g-each/79528"
+      }
+    },
+    {
+      "productNum": "NRDN0052",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Magnesium Complex",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0052",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "100772",
+        "barcode_gtin14": "00768990015335",
+        "link": "https://www.iherb.com/pr/nordic-naturals-magnesium-complex-90-capsules/100772"
+      }
+    },
+    {
+      "productNum": "NRDN0042",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Memory Support",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0042",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "70978",
+        "barcode_gtin14": "00768990018787",
+        "link": "https://www.iherb.com/pr/nordic-naturals-memory-support-omega-blend-60-soft-gels/70978"
+      }
+    },
+    {
+      "productNum": "NRDN0150",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Men&#39;s Multivitamin Gummies",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0150",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "129124",
+        "barcode_gtin14": "00768990015519",
+        "link": "https://www.iherb.com/pr/nordic-naturals-men-s-multivitamin-60-tablets/129124"
+      }
+    },
+    {
+      "productNum": "NRDN0167",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Menopause Support",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0167",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "139441",
+        "barcode_gtin14": "00768990017391",
+        "link": "https://www.iherb.com/pr/nordic-naturals-menopause-support-60-capsules/139441"
+      }
+    },
+    {
+      "productNum": "NRDN0180",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Mood Support Omega Blend",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0180",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "150421",
+        "barcode_gtin14": "00768990018596",
+        "link": "https://www.iherb.com/pr/nordic-naturals-mood-support-omega-blend-60-soft-gels/150421"
+      }
+    },
+    {
+      "productNum": "NRDN0130",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Multi Minerals",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0130",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "110274",
+        "barcode_gtin14": "00768990015380",
+        "link": "https://www.iherb.com/pr/nordic-naturals-multi-minerals-90-capsules/110274"
+      }
+    },
+    {
+      "productNum": "NRDN0038",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Beauty Borage Oil",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0038",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "42487",
+        "barcode_gtin14": "00768990016653",
+        "link": "https://www.iherb.com/pr/nordic-naturals-nordic-beauty-borage-oil-4-fl-oz-119-ml/42487"
+      }
+    },
+    {
+      "productNum": "NRDN0056",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Beauty Collagen Peptides",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0056",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "110742",
+        "barcode_gtin14": "00768990016585",
+        "link": "https://www.iherb.com/pr/nordic-naturals-nordic-beauty-collagen-peptides-unflavored-10-6-oz-300-g/110742"
+      }
+    },
+    {
+      "productNum": "NRDN0055",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Beauty Marine Collagen",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0055",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "82606",
+        "barcode_gtin14": "00768990016646",
+        "link": "https://www.iherb.com/pr/nordic-naturals-nordic-beauty-marine-collagen-with-vitamin-c-strawberry-5-3-oz-150-g/82606"
+      }
+    },
+    {
+      "productNum": "NRDN0132",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Berries Cherry Berry",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0132",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "70980",
+        "barcode_gtin14": "00768990301261",
+        "link": "https://www.iherb.com/pr/nordic-naturals-nordic-berries-multivitamin-gummies-ages-3-cherry-berry-120-gummy-berries/70980"
+      }
+    },
+    {
+      "productNum": "NRDN0036",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Flora Probiotic Comfort",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0036",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "72962",
+        "barcode_gtin14": "00768990016769",
+        "link": "https://www.iherb.com/pr/nordic-naturals-nordic-flora-probiotic-comfort-15-billion-cfu-30-capsules/72962"
+      }
+    },
+    {
+      "productNum": "NRDN0147",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Flora Probiotic Maximum Care",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0147",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "114705",
+        "barcode_gtin14": "00768990016851",
+        "link": "https://www.iherb.com/pr/nordic-naturals-nordic-flora-probiotic-maximum-care-90-billion-cfu-30-capsules/114705"
+      }
+    },
+    {
+      "productNum": "NRDN0148",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Flora Probiotic Women&#39;s Balance",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0148",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "114703",
+        "barcode_gtin14": "00768990016837",
+        "link": "https://www.iherb.com/pr/nordic-naturals-nordic-flora-probiotic-women-s-balance-30-capsules/114703"
+      }
+    },
+    {
+      "productNum": "NRDN0040",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Nordic Omega-3 Gummy Fish",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0040",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "16472",
+        "barcode_gtin14": "00768990301407",
+        "link": "https://www.iherb.com/pr/nordic-naturals-nordic-omega-3-gummy-fish-tangerine-treats-124-mg-30-gummy-fish/16472"
+      }
+    },
+    {
+      "productNum": "NRDN0066",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Omega Woman",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0066",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "4298",
+        "barcode_gtin14": "00768990017803",
+        "link": "https://www.iherb.com/pr/nordic-naturals-omega-woman-with-evening-primrose-oil-120-soft-gels/4298"
+      }
+    },
+    {
+      "productNum": "NRDN0045",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Omega-3 in Fish Gelatin",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0045",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "7052",
+        "barcode_gtin14": "00768990417603",
+        "link": "https://www.iherb.com/pr/nordic-naturals-omega-3-lemon-60-fish-gelatin-soft-gels-345-mg-per-soft-gel/7052"
+      }
+    },
+    {
+      "productNum": "NRDN0067",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Omega-3 Phospholipids",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0067",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "61371",
+        "barcode_gtin14": "00768990016219",
+        "link": "https://www.iherb.com/pr/nordic-naturals-omega-3-phospholipids-60-soft-gels/61371"
+      }
+    },
+    {
+      "productNum": "NRDN0074",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Plant-Based Vitamin D3 Liquid",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0074",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "46272",
+        "barcode_gtin14": "00768990016806",
+        "link": "https://www.iherb.com/pr/nordic-naturals-plant-based-vitamin-d3-liquid-great-apple-25-mcg-1-000-iu-1-fl-oz-30-ml/46272"
+      }
+    },
+    {
+      "productNum": "NRDN0016",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Postnatal Omega-3",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0016",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "65087",
+        "barcode_gtin14": "00768990017582",
+        "link": "https://www.iherb.com/pr/nordic-naturals-postnatal-omega-3-lemon-60-soft-gels/65087"
+      }
+    },
+    {
+      "productNum": "NRDN0033",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Prenatal Multivitamin",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0033",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "126101",
+        "barcode_gtin14": "00768990015533",
+        "link": "https://www.iherb.com/pr/nordic-naturals-prenatal-multivitamin-60-tablets/126101"
+      }
+    },
+    {
+      "productNum": "NRDN0106",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "ProEPA Xtra",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0106",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "70450",
+        "barcode_gtin14": "00768990070631",
+        "link": "https://www.iherb.com/pr/nordic-naturals-proepa-xtra-lemon-120-soft-gels/70450"
+      }
+    },
+    {
+      "productNum": "NRDN0110",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "ProOmega 2000 Jr.",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0110",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "83207",
+        "barcode_gtin14": "00768990071256",
+        "link": "https://www.iherb.com/pr/nordic-naturals-proomega-2000-jr-strawberry-650-mg-60-soft-gels/83207"
+      }
+    },
+    {
+      "productNum": "NRDN0111",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "ProOmega Blood Sugar",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0111",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "70459",
+        "barcode_gtin14": "00768990121708",
+        "link": "https://www.iherb.com/pr/nordic-naturals-proomega-blood-sugar-60-softgels/70459"
+      }
+    },
+    {
+      "productNum": "NRDN0112",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "ProOmega CoQ10",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0112",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "80556",
+        "barcode_gtin14": "00768990131301",
+        "link": "https://www.iherb.com/pr/nordic-naturals-proomega-coq10-120-soft-gels/80556"
+      }
+    },
+    {
+      "productNum": "NRDN0134",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "ProOmega Curcumin",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0134",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "72932",
+        "barcode_gtin14": "00768990031250",
+        "link": "https://www.iherb.com/pr/nordic-naturals-proomega-curcumin-90-soft-gels/72932"
+      }
+    },
+    {
+      "productNum": "NRDN0047",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "ProOmega Junior",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0047",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "83206",
+        "barcode_gtin14": "00768990071003",
+        "link": "https://www.iherb.com/pr/nordic-naturals-proomega-junior-ages-5-strawberry-90-soft-gels-340-mg-per-softgel/83206"
+      }
+    },
+    {
+      "productNum": "NRDN0116",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "ProOmega-3.6.9",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0116",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "83205",
+        "barcode_gtin14": "00768990121289",
+        "link": "https://www.iherb.com/pr/nordic-naturals-proomega-3-6-9-lemon-120-soft-gels/83205"
+      }
+    },
+    {
+      "productNum": "NRDN0117",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "ProOmega-D",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0117",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "70455",
+        "barcode_gtin14": "00768990121241",
+        "link": "https://www.iherb.com/pr/nordic-naturals-proomega-d-lemon-60-soft-gels/70455"
+      }
+    },
+    {
+      "productNum": "NRDN0118",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "ProOmega-D Xtra",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0118",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "83204",
+        "barcode_gtin14": "00768990117831",
+        "link": "https://www.iherb.com/pr/nordic-naturals-proomega-d-xtra-great-lemon-8-fl-oz-237-ml/83204"
+      }
+    },
+    {
+      "productNum": "NRDN0141",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Stress Relief Gummies",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0141",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "114707",
+        "barcode_gtin14": "00768990301940",
+        "link": "https://www.iherb.com/pr/nordic-naturals-stress-relief-gummies-mixed-berry-40-gummies/114707"
+      }
+    },
+    {
+      "productNum": "NRDN0012",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Ultimate Omega + Curcumin",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0012",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "68018",
+        "barcode_gtin14": "00768990018756",
+        "link": "https://www.iherb.com/pr/nordic-naturals-ultimate-omega-curcumin-60-soft-gels/68018"
+      }
+    },
+    {
+      "productNum": "NRDN0119",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Ultimate Omega 2X TEEN",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0119",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "79530",
+        "barcode_gtin14": "00768990061103",
+        "link": "https://www.iherb.com/pr/nordic-naturals-teen-ultimate-omega-fish-oil-ages-12-strawberry-60-mini-soft-gels/79530"
+      }
+    },
+    {
+      "productNum": "NRDN0145",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Ultimate Omega Gummy Chews",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0145",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "114517",
+        "barcode_gtin14": "00768990018039",
+        "link": "https://www.iherb.com/pr/nordic-naturals-ultimate-omega-gummy-chews-tropical-fruit-1-200-mg-54-gummy-chews-600-mg-per-gummy/114517"
+      }
+    },
+    {
+      "productNum": "NRDN0023",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Ultimate Omega Junior",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0023",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "33656",
+        "barcode_gtin14": "00768990017988",
+        "link": "https://www.iherb.com/pr/nordic-naturals-ultimate-omega-junior-ages-6-strawberry-90-mini-soft-gels-340-mg-per-soft-gel/33656"
+      }
+    },
+    {
+      "productNum": "NRDN0189",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Ultimate Omega Plant-Based",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0189",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "153596",
+        "barcode_gtin14": "00768990016134",
+        "link": "https://www.iherb.com/pr/nordic-naturals-ultimate-omega-plant-based-with-d3-k2-lemon-60-soft-gels/153596"
+      }
+    },
+    {
+      "productNum": "NRDN0048",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Ultimate Omega-D3 Sport",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0048",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "43596",
+        "barcode_gtin14": "00768990018084",
+        "link": "https://www.iherb.com/pr/nordic-naturals-ultimate-omega-d3-sport-60-soft-gels/43596"
+      }
+    },
+    {
+      "productNum": "NRDN0065",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Vision Support",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0065",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "8935",
+        "barcode_gtin14": "00768990018404",
+        "link": "https://www.iherb.com/pr/nordic-naturals-vision-support-omega-blend-60-soft-gels/8935"
+      }
+    },
+    {
+      "productNum": "NRDN0135",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Vitamin A +Carotenoids",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0135",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "110276",
+        "barcode_gtin14": "00768990015304",
+        "link": "https://www.iherb.com/pr/nordic-naturals-vitamin-a-carotenoids-30-soft-gels/110276"
+      }
+    },
+    {
+      "productNum": "NRDN0027",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Vitamin D3 1000",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0027",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "23079",
+        "barcode_gtin14": "00768990016004",
+        "link": "https://www.iherb.com/pr/nordic-naturals-vitamin-d3-1000-orange-25-mcg-1-000-iu-120-mini-soft-gels/23079"
+      }
+    },
+    {
+      "productNum": "NRDN0005",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Zero Sugar Children&#39;s Eye Health Gummy Chews",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0005",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "105832",
+        "barcode_gtin14": "00768990018442",
+        "link": "https://www.iherb.com/pr/nordic-naturals-children-s-eye-health-gummies-zero-sugar-ages-2-12-strawberry-lemonade-30-gummy-chews/105832"
+      }
+    },
+    {
+      "productNum": "NRDN0076",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Zero Sugar Curcumin Gummies",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0076",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "82359",
+        "barcode_gtin14": "00768990301865",
+        "link": "https://www.iherb.com/pr/nordic-naturals-zero-sugar-curcumin-gummies-mango-60-gummies-100-mg-per-gummy/82359"
+      }
+    },
+    {
+      "productNum": "NRDN0149",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Zero Sugar Hair and Skin Gummy Chews",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0149",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "115436",
+        "barcode_gtin14": "00768990016660",
+        "link": "https://www.iherb.com/pr/nordic-naturals-zero-sugar-hair-skin-gummy-chews-strawberry-lemonade-27-gummy-chews/115436"
+      }
+    },
+    {
+      "productNum": "NRDN0013",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Zero Sugar Omega-3 Fishies",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0013",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "45934",
+        "barcode_gtin14": "00768990311307",
+        "link": "https://www.iherb.com/pr/nordic-naturals-omega-3-fishies-zero-sugar-ages-3-tutti-frutti-300-mg-36-fishies/45934"
+      }
+    },
+    {
+      "productNum": "NRDN0123",
+      "brandId": "NRDN",
+      "brandName": "Nordic Naturals",
+      "productName": "Zero Sugar Vitamin D3 Gummies",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=NRDN0123",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "106323",
+        "barcode_gtin14": "00768990311376",
+        "link": "https://www.iherb.com/pr/nordic-naturals-zero-sugar-vitamin-d3-gummies-great-wild-berry-25-mcg-1-000-iu-60-gummies/106323"
+      }
+    },
+    {
+      "productNum": "OVIA0004",
+      "brandId": "OVIA",
+      "brandName": "OmegaVia",
+      "productName": "KIDS OMEGA-3",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=OVIA0004",
+      "programsEffective": [
+        "ifos"
+      ],
+      "lotOptions": [
+        {
+          "programRaw": "ifos",
+          "value": "Innovix Pharma Inc. 44004916 KIDS OMEGA-3 Report Rev2.pdf",
+          "label": "Lot #: 44004916 (Aug 04, 2027)"
+        },
+        {
+          "programRaw": "rtcp",
+          "value": "RTCP certificate_  Omega-3 Chewies 30ct 44004916.pdf",
+          "label": "Lot #: 44004916 (Aug 04, 2027)"
+        },
+        {
+          "programRaw": "rtcp",
+          "value": "RTCP certificate_  Omega3 Chewies Lot 44004556_rev1.pdf",
+          "label": "Lot #: 44004556 (Feb 02, 2027)"
+        }
+      ],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "147861",
+        "barcode_gtin14": "00691835889948",
+        "link": "https://www.iherb.com/pr/omegavia-kids-omega-3-chewies-age-3-natural-fruit-30-chewies/147861"
+      }
+    },
+    {
+      "productNum": "OVIA0003",
+      "brandId": "OVIA",
+      "brandName": "OmegaVia",
+      "productName": "OmegaVia EPA 500",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=OVIA0003",
+      "programsEffective": [
+        "ifos"
+      ],
+      "lotOptions": [
+        {
+          "programRaw": "ifos",
+          "value": "Innovix Pharma Inc. OV240353 OmegaVia EPA 500 Report.pdf",
+          "label": "Lot #: OV240353 (Jul 03, 2027)"
+        },
+        {
+          "programRaw": "ifos",
+          "value": "Innovix Pharma Inc. OV240255 OmegaVia EPA 500 Report.pdf",
+          "label": "Lot #: OV240255 (May 10, 2027)"
+        },
+        {
+          "programRaw": "ifos",
+          "value": "IFOS Report Omegavia EPA 500, lot OV240071.pdf",
+          "label": "Lot #: OV240071 (Feb 03, 2027)"
+        },
+        {
+          "programRaw": "ifos",
+          "value": "IFOS Report Omegavia EPA 500, lot OV230299.pdf",
+          "label": "Lot #: OV230299 (Jul 24, 2026)"
+        },
+        {
+          "programRaw": "rtcp",
+          "value": "RTCP certificate_  OmegaVia EPA 500 Omega-3 Lot OV240353.pdf",
+          "label": "Lot #: OV240353 (Jul 03, 2027)"
+        },
+        {
+          "programRaw": "rtcp",
+          "value": "RTCP certificate_  OmegaVia EPA 500 Omega-3 Lot OV240255.pdf",
+          "label": "Lot #: OV240255 (May 10, 2027)"
+        }
+      ],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "94909",
+        "barcode_gtin14": "00736211581785",
+        "link": "https://www.iherb.com/pr/omegavia-epa-500-omega-3-500-mg-120-softgels/94909"
+      }
+    },
+    {
+      "productNum": "OVIA0001",
+      "brandId": "OVIA",
+      "brandName": "OmegaVia",
+      "productName": "OmegaVia Ultra Concentrated Omega-3",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=OVIA0001",
+      "programsEffective": [
+        "ifos"
+      ],
+      "lotOptions": [
+        {
+          "programRaw": "ifos",
+          "value": "Innovix Pharma Inc. OV240380 OmegaVia Ultra Concentrated Omega-3 Report.pdf",
+          "label": "Lot #: OV240380 (Jul 31, 2027)"
+        },
+        {
+          "programRaw": "ifos",
+          "value": "Innovix Pharma Inc. OV240380 OmegaVia Ultra Concentrated Omega-3 Report.pdf",
+          "label": "Lot #: OV240380 (Jul 31, 2027)"
+        },
+        {
+          "programRaw": "ifos",
+          "value": "IFOS Report Innovix Omegavia Ultra Concentrated, lot OV240131.pdf",
+          "label": "Lot #: OV240131 (Mar 07, 2027)"
+        },
+        {
+          "programRaw": "ifos",
+          "value": "Innovix Pharma Inc. OV240403 OmegaVia Ultra Concentrated Omega-3 Report.pdf",
+          "label": "Lot #: OV240403 (Jan 08, 2027)"
+        },
+        {
+          "programRaw": "ifos",
+          "value": "IFOS Report Innovix Omegavia Ultra Concentrated, lot OV230487.pdf",
+          "label": "Lot #: OV230487 (Nov 07, 2026)"
+        },
+        {
+          "programRaw": "ifos",
+          "value": "IFOS Report Innovix Omegavia Ultra Concentrated, lot OV230261.pdf",
+          "label": "Lot #: OV230261 (Jun 12, 2026)"
+        }
+      ],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "94911",
+        "barcode_gtin14": "00736211581280",
+        "link": "https://www.iherb.com/pr/omegavia-ultra-concentrated-omega-3-1-135-mg-60-softgels/94911"
+      }
+    },
+    {
+      "productNum": "OVIA0005",
+      "brandId": "OVIA",
+      "brandName": "OmegaVia",
+      "productName": "Omegavia Vegan Omega-3",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=OVIA0005",
+      "programsEffective": [
+        "ifos"
+      ],
+      "lotOptions": [
+        {
+          "programRaw": "ifos",
+          "value": "IFOS Report omegavia vegan omega-3, lot OV230353.pdf",
+          "label": "Lot #: OV230353 (Aug 31, 2026)"
+        },
+        {
+          "programRaw": "iaos",
+          "value": "IAOS omegavia vegan omega 3, lot OV230353Rev1.pdf",
+          "label": "Lot #: OV230353 (Aug 31, 2026)"
+        }
+      ],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "141923",
+        "barcode_gtin14": "00794504998139",
+        "link": "https://www.iherb.com/pr/omegavia-vegan-omega-3-60-softgels/141923"
+      }
+    },
+    {
+      "productNum": "ONNI0012",
+      "brandId": "ONNI",
+      "brandName": "Onnit Labs, LLC",
+      "productName": "Alpha BRAIN Focus Shot - Tropical",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=ONNI0012",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "129275",
+        "barcode_gtin14": "00819444017662",
+        "link": "https://www.iherb.com/pr/onnit-alpha-brain-focus-shot-tropical-6-bottles-2-5-fl-oz-75-ml-each/129275"
+      }
+    },
+    {
+      "productNum": "ONNI0035",
+      "brandId": "ONNI",
+      "brandName": "Onnit Labs, LLC",
+      "productName": "Creatine",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=ONNI0035",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "122859",
+        "barcode_gtin14": "00819444015620",
+        "link": "https://www.iherb.com/pr/onnit-creatine-monohydrate-5-29-oz-150-g/122859"
+      }
+    },
+    {
+      "productNum": "ONNI0009",
+      "brandId": "ONNI",
+      "brandName": "Onnit Labs, LLC",
+      "productName": "Total Nitric Oxide",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=ONNI0009",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "102875",
+        "barcode_gtin14": "00819444016023",
+        "link": "https://www.iherb.com/pr/onnit-total-nitric-oxide-with-citrulline-arginine-beet-harvest-fruit-punch-8-32-oz-236-g/102875"
+      }
+    },
+    {
+      "productNum": "RERE0001",
+      "brandId": "RERE",
+      "brandName": "Redd Remedies, Inc.",
+      "productName": "Gouch!™",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=RERE0001",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "49446",
+        "barcode_gtin14": "00855735001224",
+        "link": "https://www.iherb.com/pr/redd-remedies-gouch-tart-cherry-quercetin-120-vegan-capsules/49446"
+      }
+    },
+    {
+      "productNum": "SPRT0074",
+      "brandId": "SPRT",
+      "brandName": "Sports Research",
+      "productName": "Cod Liver Oil 1000mg",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0074",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "148461",
+        "barcode_gtin14": "00023249092728",
+        "link": "https://www.iherb.com/pr/sports-research-alaskan-cod-liver-oil-120-softgels/148461"
+      }
+    },
+    {
+      "productNum": "SPRT0013",
+      "brandId": "SPRT",
+      "brandName": "Sports Research",
+      "productName": "Collagen Peptides Dark Chocolate",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0013",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "84975",
+        "barcode_gtin14": "00023249010975",
+        "link": "https://www.iherb.com/pr/sports-research-collagen-peptides-dark-chocolate-1-41-lb-640-g/84975"
+      }
+    },
+    {
+      "productNum": "SPRT0012",
+      "brandId": "SPRT",
+      "brandName": "Sports Research",
+      "productName": "Collagen Peptides Vanilla Bean",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0012",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "84964",
+        "barcode_gtin14": "00023249010296",
+        "link": "https://www.iherb.com/pr/sports-research-collagen-peptides-vanilla-1-06-lb-480-g/84964"
+      }
+    },
+    {
+      "productNum": "SPRT0073",
+      "brandId": "SPRT",
+      "brandName": "Sports Research",
+      "productName": "Colostrum Powder",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0073",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "146237",
+        "barcode_gtin14": "00023249093169",
+        "link": "https://www.iherb.com/pr/sports-research-colostrum-powder-unflavored-5-29-oz-150-g/146237"
+      }
+    },
+    {
+      "productNum": "SPRT0021",
+      "brandId": "SPRT",
+      "brandName": "Sports Research",
+      "productName": "Cranberry Fruit Complex",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0021",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "72043",
+        "barcode_gtin14": "00023249010302",
+        "link": "https://www.iherb.com/pr/sports-research-cranberry-fruit-complex-90-softgels/72043"
+      }
+    },
+    {
+      "productNum": "SPRT0054",
+      "brandId": "SPRT",
+      "brandName": "Sports Research",
+      "productName": "Daily Probiotics",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0054",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "101526",
+        "barcode_gtin14": "00023249090090",
+        "link": "https://www.iherb.com/pr/sports-research-daily-probiotics-60-billion-cfu-30-delayed-release-capsules/101526"
+      }
+    },
+    {
+      "productNum": "SPRT0070",
+      "brandId": "SPRT",
+      "brandName": "Sports Research",
+      "productName": "Flaxseed Oil",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0070",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "146016",
+        "barcode_gtin14": "00023249092902",
+        "link": "https://www.iherb.com/pr/sports-research-flaxseed-oil-200-softgels/146016"
+      }
+    },
+    {
+      "productNum": "SPRT0004",
+      "brandId": "SPRT",
+      "brandName": "Sports Research",
+      "productName": "Gelatin Powder",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0004",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "75242",
+        "barcode_gtin14": "00023249010821",
+        "link": "https://www.iherb.com/pr/sports-research-gelatin-powder-unflavored-1-lb-454-g/75242"
+      }
+    },
+    {
+      "productNum": "SPRT0026",
+      "brandId": "SPRT",
+      "brandName": "Sports Research",
+      "productName": "Keto Omega-3",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0026",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "90288",
+        "barcode_gtin14": "00023249012337",
+        "link": "https://www.iherb.com/pr/sports-research-keto-omega-3-with-salmon-oil-120-softgels/90288"
+      }
+    },
+    {
+      "productNum": "SPRT0025",
+      "brandId": "SPRT",
+      "brandName": "Sports Research",
+      "productName": "L-Theanine + Caffeine",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0025",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "90296",
+        "barcode_gtin14": "00023249012269",
+        "link": "https://www.iherb.com/pr/sports-research-l-theanine-caffeine-2-in-1-formula-60-softgels/90296"
+      }
+    },
+    {
+      "productNum": "SPRT0069",
+      "brandId": "SPRT",
+      "brandName": "Sports Research",
+      "productName": "Magnesium Glycinate",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0069",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "146236",
+        "barcode_gtin14": "00023249092216",
+        "link": "https://www.iherb.com/pr/sports-research-magnesium-glycinate-60-softgels-80-mg-per-softgel/146236"
+      }
+    },
+    {
+      "productNum": "SPRT0068",
+      "brandId": "SPRT",
+      "brandName": "Sports Research",
+      "productName": "Magnesium Oxide",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0068",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "138838",
+        "barcode_gtin14": "00023249092223",
+        "link": "https://www.iherb.com/pr/sports-research-magnesium-oxide-420-mg-90-softgels/138838"
+      }
+    },
+    {
+      "productNum": "SPRT0005",
+      "brandId": "SPRT",
+      "brandName": "Sports Research",
+      "productName": "Marine Collagen Complex Unflavored",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0005",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "101533",
+        "barcode_gtin14": "00023249013471",
+        "link": "https://www.iherb.com/pr/sports-research-marine-collagen-complex-unflavored-5-8-oz-164-g/101533"
+      }
+    },
+    {
+      "productNum": "SPRT0091",
+      "brandId": "SPRT",
+      "brandName": "Sports Research",
+      "productName": "Multi Collagen Complex + Biotin",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0091",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "156369",
+        "barcode_gtin14": "00023249094104",
+        "link": "https://www.iherb.com/pr/sports-research-multi-collagen-with-biotin-90-capsules/156369"
+      }
+    },
+    {
+      "productNum": "SPRT0037",
+      "brandId": "SPRT",
+      "brandName": "Sports Research",
+      "productName": "Multi Collagen Complex Chocolate",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0037",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "100267",
+        "barcode_gtin14": "00023249013068",
+        "link": "https://www.iherb.com/pr/sports-research-multi-collagen-chocolate-1-06-lb-480-g/100267"
+      }
+    },
+    {
+      "productNum": "SPRT0085",
+      "brandId": "SPRT",
+      "brandName": "Sports Research",
+      "productName": "Oil of Oregano with Black Cumin",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0085",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "156364",
+        "barcode_gtin14": "00023249093725",
+        "link": "https://www.iherb.com/pr/sports-research-oil-of-oregano-with-black-cumin-60-softgels/156364"
+      }
+    },
+    {
+      "productNum": "SPRT0080",
+      "brandId": "SPRT",
+      "brandName": "Sports Research",
+      "productName": "Omega-3 Fish Oil Lemon Flavor",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0080",
+      "programsEffective": [
+        "ifos"
+      ],
+      "lotOptions": [
+        {
+          "programRaw": "ifos",
+          "value": "Sports Research SR177297C 2582026 Report.pdf",
+          "label": "Lot #: SR177297C (Nov 30, 2027)"
+        },
+        {
+          "programRaw": "ifos",
+          "value": "Sports Research SR177297B 2592026 Report.pdf",
+          "label": "Lot #: SR177297B (Nov 30, 2027)"
+        },
+        {
+          "programRaw": "ifos",
+          "value": "Sports Research SR177297A 2602026 Report.pdf",
+          "label": "Lot #: SR177297A (Nov 30, 2027)"
+        },
+        {
+          "programRaw": "ifos",
+          "value": "Sports Research 170940A, B Omega 3 fish oil lemon Alaskomega MSC-C-55162.pdf",
+          "label": "Lot #: 170940A, 170940B (Aug 31, 2026)"
+        }
+      ],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "148465",
+        "barcode_gtin14": "00023249093084",
+        "link": "https://www.iherb.com/pr/sports-research-omega-3-fish-oil-lemon-8-oz-237-ml/148465"
+      }
+    },
+    {
+      "productNum": "SPRT0060",
+      "brandId": "SPRT",
+      "brandName": "Sports Research",
+      "productName": "Organic Collagen Peptides Unflavored",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0060",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "134766",
+        "barcode_gtin14": "00023249091776",
+        "link": "https://www.iherb.com/pr/sports-research-organic-collagen-peptides-unflavored-10-58-oz-300-g/134766"
+      }
+    },
+    {
+      "productNum": "SPRT0056",
+      "brandId": "SPRT",
+      "brandName": "Sports Research",
+      "productName": "Quercetin",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0056",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "117181",
+        "barcode_gtin14": "00023249091509",
+        "link": "https://www.iherb.com/pr/sports-research-quercetin-120-softgels/117181"
+      }
+    },
+    {
+      "productNum": "SPRT0033",
+      "brandId": "SPRT",
+      "brandName": "Sports Research",
+      "productName": "Total Omega-3",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0033",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "99939",
+        "barcode_gtin14": "00023249012825",
+        "link": "https://www.iherb.com/pr/sports-research-total-omega-3-120-softgels/99939"
+      }
+    },
+    {
+      "productNum": "SPRT0024",
+      "brandId": "SPRT",
+      "brandName": "Sports Research",
+      "productName": "Turmeric Curcumin",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0024",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "exact",
+      "matchedRecord": {
+        "product_id": "72054",
+        "barcode_gtin14": "00023249000839",
+        "link": "https://www.iherb.com/pr/sports-research-turmeric-curcumin-500-mg-120-softgels/72054"
+      }
+    },
+    {
+      "productNum": "VIBH0004",
+      "brandId": "VIBH",
+      "brandName": "Vibrant Health",
+      "productName": "Digestive Vibrance",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=VIBH0004",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "133585",
+        "barcode_gtin14": "00074306802514",
+        "link": "https://www.iherb.com/pr/vibrant-health-digestive-vibrance-version-1-0-mandarin-orange-7-2-oz-204-4-g/133585"
+      }
+    },
+    {
+      "productNum": "VIBH0001",
+      "brandId": "VIBH",
+      "brandName": "Vibrant Health",
+      "productName": "Joint Vibrance",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=VIBH0001",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "5035",
+        "barcode_gtin14": "00074306800084",
+        "link": "https://www.iherb.com/pr/vibrant-health-joint-vibrance-version-5-0-orange-pineapple-13-7-oz-388-5-g/5035"
+      }
+    },
+    {
+      "productNum": "VITL0012",
+      "brandId": "VITL",
+      "brandName": "Vital Proteins LLC",
+      "productName": "Collagen Creamer - Mocha",
+      "detailUrl": "https://certifications.nutrasource.ca/certified-products/product?id=VITL0012",
+      "programsEffective": [
+        "igen"
+      ],
+      "lotOptions": [],
+      "matchTarget": "iherb_overlay",
+      "matchOutcome": "high_confidence",
+      "matchedRecord": {
+        "product_id": "88347",
+        "barcode_gtin14": "00850232005058",
+        "link": "https://www.iherb.com/pr/vital-proteins-collagen-creamer-mocha-11-oz-317-g/88347"
+      }
+    }
+  ]
+}

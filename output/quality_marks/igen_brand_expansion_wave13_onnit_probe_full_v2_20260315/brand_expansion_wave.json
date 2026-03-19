@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "igen_brand_expansion_wave.v1",
+  "generatedAt": "2026-03-15T20:37:37.643Z",
+  "inputs": {
+    "batchesPath": "/Users/howard07/NuTriApp/nutri-app/output/quality_marks/_tmp_remaining_igen_batches/onnit.json",
+    "stagingPath": "output/sports_research_igen_patch_wave_batch4_retry_20260315/staging_products.official_refreshed.json"
+  },
+  "batch": {
+    "batchLabel": "wave2_brand_batch_onnit_probe",
+    "brandName": "Onnit"
+  },
+  "summary": {
+    "totalRows": 1,
+    "consumerReadyRows": 1,
+    "patchQueueRows": 0,
+    "otherRows": 0,
+    "missingRows": 0
+  },
+  "consumerReadyRows": [
+    {
+      "key": "web:gtin14:00819444017662:onnit:onnit_alpha_brain_focus_shot_tropical_6_bottles_2_5_fl_oz_75_ml_each",
+      "productId": "129275",
+      "barcode": "00819444017662",
+      "brandName": "Onnit",
+      "productName": "Onnit, Alpha BRAIN® Focus Shot, Tropical, 6 Bottles, 2.5 fl oz (75 ml) Each",
+      "iherbUrl": "https://www.iherb.com/pr/onnit-alpha-brain-focus-shot-tropical-6-bottles-2-5-fl-oz-75-ml-each/129275",
+      "officialSignalProgramId": "igen",
+      "officialSignalState": "product_level_official_signal",
+      "officialRegistryEvidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=ONNI0012",
+      "currentStagingStatus": "full_overlay_ready",
+      "currentCoreMissingFields": []
+    }
+  ],
+  "patchQueueRows": [],
+  "otherRows": [],
+  "missingRows": []
+}

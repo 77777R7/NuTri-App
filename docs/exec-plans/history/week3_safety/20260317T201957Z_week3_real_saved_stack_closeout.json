@@ -1,0 +1,1331 @@
+{
+  "generatedAt": "2026-03-17T20:20:08.335Z",
+  "auditSourceLabel": "local_saved_products",
+  "priorityUserId": null,
+  "priorityAuditSourceId": "local_saved:native:CB15D242-7E36-4B00-A676-AD20387F3AE9:F6B1B7D0-0BA0-4BB4-81A1-D7C458B83D51",
+  "environmentHadEnoughRealSavedProducts": true,
+  "cases": {
+    "case1": {
+      "caseId": "case1",
+      "sourceUserLabel": "user:local_saved:native:CB15D242-7E36-4B00-A676-AD20387F3AE9:F6B1B7D0-0BA0-4BB4-81A1-D7C458B83D51",
+      "sourceUserId": "local_saved:native:CB15D242-7E36-4B00-A676-AD20387F3AE9:F6B1B7D0-0BA0-4BB4-81A1-D7C458B83D51",
+      "pass": true,
+      "failureReason": null,
+      "duplicatedIngredient": "Zinc",
+      "estimatedTotal": "40 mg",
+      "ul": "40 mg",
+      "scopeNote": null,
+      "status": "over",
+      "payloadShapeCorrect": true,
+      "conservativeBehaviorOk": true,
+      "productsUsed": [
+        {
+          "productName": "Zinc Picolinate 15 mg",
+          "supplementId": "2b4fa372-90f6-4804-97db-b54e40e81c2f",
+          "userId": "local_saved:native:CB15D242-7E36-4B00-A676-AD20387F3AE9:F6B1B7D0-0BA0-4BB4-81A1-D7C458B83D51",
+          "sourceUserLabel": "local-native:CB15D2:F6B1B7",
+          "barcodeGtin14": "00693749210023",
+          "savedAt": "2026-03-17T11:03:34.044Z",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisReason": "snapshot_only_no_directions"
+        },
+        {
+          "productName": "Zinc 25 mg",
+          "supplementId": "cd292f48-71a0-4bb4-b67e-e1754b2e2626",
+          "userId": "local_saved:native:CB15D242-7E36-4B00-A676-AD20387F3AE9:F6B1B7D0-0BA0-4BB4-81A1-D7C458B83D51",
+          "sourceUserLabel": "local-native:CB15D2:F6B1B7",
+          "barcodeGtin14": "00064642021915",
+          "savedAt": "2026-03-17T11:03:33.044Z",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisReason": "snapshot_only_no_directions"
+        }
+      ],
+      "duplicateGroupsFound": [
+        {
+          "ingredientCanonicalKey": "zinc",
+          "ingredientDisplayName": "Zinc",
+          "status": "over",
+          "surfaced": true,
+          "productCount": 2
+        }
+      ],
+      "surfacedGroups": [
+        "zinc"
+      ],
+      "hiddenGroups": [],
+      "perProductContribution": [
+        {
+          "ingredientCanonicalKey": "zinc",
+          "productName": "Zinc 25 mg",
+          "supplementId": "cd292f48-71a0-4bb4-b67e-e1754b2e2626",
+          "dailyEstimatedDoseText": "25 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "zinc",
+          "productName": "Zinc Picolinate 15 mg",
+          "supplementId": "2b4fa372-90f6-4804-97db-b54e40e81c2f",
+          "dailyEstimatedDoseText": "15 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        }
+      ],
+      "totalEstimatedDosePerSurfacedGroup": [
+        {
+          "ingredientCanonicalKey": "zinc",
+          "estimatedTotalDose": "40 mg",
+          "ul": "40 mg",
+          "scopeNote": null,
+          "status": "over"
+        }
+      ],
+      "skippedCount": 0
+    },
+    "case2": {
+      "caseId": "case2",
+      "sourceUserLabel": "user:local_saved:native:CB15D242-7E36-4B00-A676-AD20387F3AE9:F6B1B7D0-0BA0-4BB4-81A1-D7C458B83D51",
+      "sourceUserId": "local_saved:native:CB15D242-7E36-4B00-A676-AD20387F3AE9:F6B1B7D0-0BA0-4BB4-81A1-D7C458B83D51",
+      "pass": true,
+      "failureReason": null,
+      "payloadShapeCorrect": true,
+      "conservativeBehaviorOk": true,
+      "productsUsed": [
+        {
+          "productName": "Zinc Picolinate 15 mg",
+          "supplementId": "2b4fa372-90f6-4804-97db-b54e40e81c2f",
+          "userId": "local_saved:native:CB15D242-7E36-4B00-A676-AD20387F3AE9:F6B1B7D0-0BA0-4BB4-81A1-D7C458B83D51",
+          "sourceUserLabel": "local-native:CB15D2:F6B1B7",
+          "barcodeGtin14": "00693749210023",
+          "savedAt": "2026-03-17T11:03:34.044Z",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisReason": "snapshot_only_no_directions"
+        },
+        {
+          "productName": "Zinc 25 mg",
+          "supplementId": "cd292f48-71a0-4bb4-b67e-e1754b2e2626",
+          "userId": "local_saved:native:CB15D242-7E36-4B00-A676-AD20387F3AE9:F6B1B7D0-0BA0-4BB4-81A1-D7C458B83D51",
+          "sourceUserLabel": "local-native:CB15D2:F6B1B7",
+          "barcodeGtin14": "00064642021915",
+          "savedAt": "2026-03-17T11:03:33.044Z",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisReason": "snapshot_only_no_directions"
+        },
+        {
+          "productName": "Ester-C",
+          "supplementId": "87b6cdf7-2838-4c12-a760-3dfe9de43740",
+          "userId": "local_saved:native:CB15D242-7E36-4B00-A676-AD20387F3AE9:F6B1B7D0-0BA0-4BB4-81A1-D7C458B83D51",
+          "sourceUserLabel": "local-native:CB15D2:F6B1B7",
+          "barcodeGtin14": "00029537001069",
+          "savedAt": "2026-03-17T11:03:32.044Z",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisReason": "snapshot_only_no_directions"
+        },
+        {
+          "productName": "Iron",
+          "supplementId": "48445848-5f9f-4e28-8d50-9124edc8952e",
+          "userId": "local_saved:native:CB15D242-7E36-4B00-A676-AD20387F3AE9:F6B1B7D0-0BA0-4BB4-81A1-D7C458B83D51",
+          "sourceUserLabel": "local-native:CB15D2:F6B1B7",
+          "barcodeGtin14": "00883196112500",
+          "savedAt": "2026-03-17T11:03:30.044Z",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisReason": "snapshot_only_no_directions"
+        },
+        {
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "userId": "local_saved:native:CB15D242-7E36-4B00-A676-AD20387F3AE9:F6B1B7D0-0BA0-4BB4-81A1-D7C458B83D51",
+          "sourceUserLabel": "local-native:CB15D2:F6B1B7",
+          "barcodeGtin14": "00766536027491",
+          "savedAt": "2026-03-17T11:03:29.044Z",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisReason": "snapshot_only_no_directions"
+        },
+        {
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "userId": "local_saved:native:CB15D242-7E36-4B00-A676-AD20387F3AE9:F6B1B7D0-0BA0-4BB4-81A1-D7C458B83D51",
+          "sourceUserLabel": "local-native:CB15D2:F6B1B7",
+          "barcodeGtin14": "00766536025848",
+          "savedAt": "2026-03-17T11:03:28.044Z",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisReason": "snapshot_only_no_directions"
+        }
+      ],
+      "duplicateGroupsFound": [
+        {
+          "ingredientCanonicalKey": "zinc",
+          "ingredientDisplayName": "Zinc",
+          "status": "over",
+          "surfaced": true,
+          "productCount": 5
+        },
+        {
+          "ingredientCanonicalKey": "folate",
+          "ingredientDisplayName": "Folate",
+          "status": "over",
+          "surfaced": true,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "niacin",
+          "ingredientDisplayName": "Niacin",
+          "status": "over",
+          "surfaced": false,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "iron",
+          "ingredientDisplayName": "Iron",
+          "status": "near",
+          "surfaced": true,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_c",
+          "ingredientDisplayName": "Vitamin C",
+          "status": "below",
+          "surfaced": true,
+          "productCount": 3
+        },
+        {
+          "ingredientCanonicalKey": "calcium",
+          "ingredientDisplayName": "Calcium",
+          "status": "below",
+          "surfaced": false,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "copper",
+          "ingredientDisplayName": "Copper",
+          "status": "below",
+          "surfaced": false,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "iodine",
+          "ingredientDisplayName": "Iodine",
+          "status": "below",
+          "surfaced": false,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "magnesium",
+          "ingredientDisplayName": "Magnesium",
+          "status": "below",
+          "surfaced": true,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "manganese",
+          "ingredientDisplayName": "Manganese",
+          "status": "below",
+          "surfaced": false,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "molybdenum",
+          "ingredientDisplayName": "Molybdenum",
+          "status": "below",
+          "surfaced": false,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "selenium",
+          "ingredientDisplayName": "Selenium",
+          "status": "below",
+          "surfaced": false,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_a",
+          "ingredientDisplayName": "Vitamin A and Carotenoids",
+          "status": "below",
+          "surfaced": false,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_b6",
+          "ingredientDisplayName": "Vitamin B6",
+          "status": "below",
+          "surfaced": false,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_e",
+          "ingredientDisplayName": "Vitamin E",
+          "status": "below",
+          "surfaced": false,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "biotin",
+          "ingredientDisplayName": "Biotin",
+          "status": "no_ul_established",
+          "surfaced": false,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "chromium",
+          "ingredientDisplayName": "Chromium",
+          "status": "no_ul_established",
+          "surfaced": false,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "pantothenic_acid",
+          "ingredientDisplayName": "Pantothenic Acid",
+          "status": "no_ul_established",
+          "surfaced": false,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "riboflavin",
+          "ingredientDisplayName": "Riboflavin",
+          "status": "no_ul_established",
+          "surfaced": false,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_b12",
+          "ingredientDisplayName": "Vitamin B12",
+          "status": "no_ul_established",
+          "surfaced": false,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_k1",
+          "ingredientDisplayName": "Vitamin K",
+          "status": "no_ul_established",
+          "surfaced": false,
+          "productCount": 2
+        }
+      ],
+      "surfacedGroups": [
+        "zinc",
+        "folate",
+        "iron",
+        "vitamin_c",
+        "magnesium"
+      ],
+      "hiddenGroups": [
+        "niacin",
+        "calcium",
+        "copper",
+        "iodine",
+        "manganese",
+        "molybdenum",
+        "selenium",
+        "vitamin_a",
+        "vitamin_b6",
+        "vitamin_e",
+        "biotin",
+        "chromium",
+        "pantothenic_acid",
+        "riboflavin",
+        "vitamin_b12",
+        "vitamin_k1"
+      ],
+      "perProductContribution": [
+        {
+          "ingredientCanonicalKey": "zinc",
+          "productName": "Ester-C",
+          "supplementId": "87b6cdf7-2838-4c12-a760-3dfe9de43740",
+          "dailyEstimatedDoseText": "4 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "zinc",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "25 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "zinc",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "15 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "zinc",
+          "productName": "Zinc 25 mg",
+          "supplementId": "cd292f48-71a0-4bb4-b67e-e1754b2e2626",
+          "dailyEstimatedDoseText": "25 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "zinc",
+          "productName": "Zinc Picolinate 15 mg",
+          "supplementId": "2b4fa372-90f6-4804-97db-b54e40e81c2f",
+          "dailyEstimatedDoseText": "15 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "folate",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "667 mcg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "folate",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "800 mcg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "niacin",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "50 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "niacin",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "20 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "iron",
+          "productName": "Iron",
+          "supplementId": "48445848-5f9f-4e28-8d50-9124edc8952e",
+          "dailyEstimatedDoseText": "40 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "iron",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "3 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_c",
+          "productName": "Ester-C",
+          "supplementId": "87b6cdf7-2838-4c12-a760-3dfe9de43740",
+          "dailyEstimatedDoseText": "1000 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_c",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "300 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_c",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "70 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "calcium",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "200 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "calcium",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "10 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "copper",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "2000 mcg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "copper",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "2000 mcg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "iodine",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "150 mcg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "iodine",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "150 mcg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "magnesium",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "25 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "magnesium",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "10 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "manganese",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "2 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "manganese",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "1 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "molybdenum",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "75 mcg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "molybdenum",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "75 mcg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "selenium",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "200 mcg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "selenium",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "70 mcg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_a",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "1500 mcg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_a",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "5000 IU",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_b6",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "50 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_b6",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "2 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_e",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "25 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_e",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "35 IU",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "biotin",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "0.3 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "biotin",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "0.3 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "chromium",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "0.12 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "chromium",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "0.12 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "pantothenic_acid",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "50 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "pantothenic_acid",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "10 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "riboflavin",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "50 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "riboflavin",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "1.7 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_b12",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "0.05 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_b12",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "0.012 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_k1",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "0.08 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_k1",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "0.08 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        }
+      ],
+      "totalEstimatedDosePerSurfacedGroup": [
+        {
+          "ingredientCanonicalKey": "zinc",
+          "estimatedTotalDose": "84 mg",
+          "ul": "40 mg",
+          "scopeNote": null,
+          "status": "over"
+        },
+        {
+          "ingredientCanonicalKey": "folate",
+          "estimatedTotalDose": "1467 mcg",
+          "ul": "1000 mcg",
+          "scopeNote": "UL applies to folic acid from supplements or fortified foods, not naturally occurring food folate.",
+          "status": "over"
+        },
+        {
+          "ingredientCanonicalKey": "iron",
+          "estimatedTotalDose": "43 mg",
+          "ul": "45 mg",
+          "scopeNote": null,
+          "status": "near"
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_c",
+          "estimatedTotalDose": "1370 mg",
+          "ul": "2000 mg",
+          "scopeNote": null,
+          "status": "below"
+        },
+        {
+          "ingredientCanonicalKey": "magnesium",
+          "estimatedTotalDose": "35 mg",
+          "ul": "350 mg",
+          "scopeNote": "UL applies to supplemental magnesium (and medications), not naturally occurring food intake.",
+          "status": "below"
+        }
+      ],
+      "skippedCount": 0
+    },
+    "case3": {
+      "caseId": "case3",
+      "sourceUserLabel": "user:local_saved:native:CB15D242-7E36-4B00-A676-AD20387F3AE9:F6B1B7D0-0BA0-4BB4-81A1-D7C458B83D51",
+      "sourceUserId": "local_saved:native:CB15D242-7E36-4B00-A676-AD20387F3AE9:F6B1B7D0-0BA0-4BB4-81A1-D7C458B83D51",
+      "edgeConditionType": "skipped_products_disclosed",
+      "pass": true,
+      "failureReason": null,
+      "payloadShapeCorrect": true,
+      "conservativeBehaviorOk": true,
+      "estimateBasisLabels": [
+        "estimated from 1 serving/day"
+      ],
+      "scopeNotes": [
+        "UL applies to folic acid from supplements or fortified foods, not naturally occurring food folate.",
+        "UL applies to supplemental magnesium (and medications), not naturally occurring food intake.",
+        "UL applies to supplements and fortified-food sources."
+      ],
+      "productsUsed": [
+        {
+          "productName": "Zinc Picolinate 15 mg",
+          "supplementId": "2b4fa372-90f6-4804-97db-b54e40e81c2f",
+          "userId": "local_saved:native:CB15D242-7E36-4B00-A676-AD20387F3AE9:F6B1B7D0-0BA0-4BB4-81A1-D7C458B83D51",
+          "sourceUserLabel": "local-native:CB15D2:F6B1B7",
+          "barcodeGtin14": "00693749210023",
+          "savedAt": "2026-03-17T11:03:34.044Z",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisReason": "snapshot_only_no_directions"
+        },
+        {
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "userId": "local_saved:native:CB15D242-7E36-4B00-A676-AD20387F3AE9:F6B1B7D0-0BA0-4BB4-81A1-D7C458B83D51",
+          "sourceUserLabel": "local-native:CB15D2:F6B1B7",
+          "barcodeGtin14": "00766536027491",
+          "savedAt": "2026-03-17T11:03:29.044Z",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisReason": "snapshot_only_no_directions"
+        },
+        {
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "userId": "local_saved:native:CB15D242-7E36-4B00-A676-AD20387F3AE9:F6B1B7D0-0BA0-4BB4-81A1-D7C458B83D51",
+          "sourceUserLabel": "local-native:CB15D2:F6B1B7",
+          "barcodeGtin14": "00766536025848",
+          "savedAt": "2026-03-17T11:03:28.044Z",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisReason": "snapshot_only_no_directions"
+        },
+        {
+          "productName": "Clean Cut Elite Athletic Performance | Opelika AL",
+          "supplementId": "77a76ad5-d2d0-40ec-9629-e807a100d7b9",
+          "userId": "local_saved:native:CB15D242-7E36-4B00-A676-AD20387F3AE9:F6B1B7D0-0BA0-4BB4-81A1-D7C458B83D51",
+          "sourceUserLabel": "local-native:CB15D2:F6B1B7",
+          "barcodeGtin14": "00000017381521",
+          "savedAt": "2026-03-17T11:03:35.044Z",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisReason": "insufficient_active_dose"
+        }
+      ],
+      "duplicateGroupsFound": [
+        {
+          "ingredientCanonicalKey": "zinc",
+          "ingredientDisplayName": "Zinc",
+          "status": "over",
+          "surfaced": true,
+          "productCount": 3
+        },
+        {
+          "ingredientCanonicalKey": "folate",
+          "ingredientDisplayName": "Folate",
+          "status": "over",
+          "surfaced": true,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "niacin",
+          "ingredientDisplayName": "Niacin",
+          "status": "over",
+          "surfaced": false,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "calcium",
+          "ingredientDisplayName": "Calcium",
+          "status": "below",
+          "surfaced": false,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "copper",
+          "ingredientDisplayName": "Copper",
+          "status": "below",
+          "surfaced": false,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "iodine",
+          "ingredientDisplayName": "Iodine",
+          "status": "below",
+          "surfaced": false,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "magnesium",
+          "ingredientDisplayName": "Magnesium",
+          "status": "below",
+          "surfaced": true,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "manganese",
+          "ingredientDisplayName": "Manganese",
+          "status": "below",
+          "surfaced": false,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "molybdenum",
+          "ingredientDisplayName": "Molybdenum",
+          "status": "below",
+          "surfaced": false,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "selenium",
+          "ingredientDisplayName": "Selenium",
+          "status": "below",
+          "surfaced": false,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_a",
+          "ingredientDisplayName": "Vitamin A and Carotenoids",
+          "status": "below",
+          "surfaced": false,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_b6",
+          "ingredientDisplayName": "Vitamin B6",
+          "status": "below",
+          "surfaced": false,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_c",
+          "ingredientDisplayName": "Vitamin C",
+          "status": "below",
+          "surfaced": true,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_e",
+          "ingredientDisplayName": "Vitamin E",
+          "status": "below",
+          "surfaced": false,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "biotin",
+          "ingredientDisplayName": "Biotin",
+          "status": "no_ul_established",
+          "surfaced": false,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "chromium",
+          "ingredientDisplayName": "Chromium",
+          "status": "no_ul_established",
+          "surfaced": false,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "pantothenic_acid",
+          "ingredientDisplayName": "Pantothenic Acid",
+          "status": "no_ul_established",
+          "surfaced": false,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "riboflavin",
+          "ingredientDisplayName": "Riboflavin",
+          "status": "no_ul_established",
+          "surfaced": false,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_b12",
+          "ingredientDisplayName": "Vitamin B12",
+          "status": "no_ul_established",
+          "surfaced": false,
+          "productCount": 2
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_k1",
+          "ingredientDisplayName": "Vitamin K",
+          "status": "no_ul_established",
+          "surfaced": false,
+          "productCount": 2
+        }
+      ],
+      "surfacedGroups": [
+        "zinc",
+        "folate",
+        "magnesium",
+        "vitamin_c"
+      ],
+      "hiddenGroups": [
+        "niacin",
+        "calcium",
+        "copper",
+        "iodine",
+        "manganese",
+        "molybdenum",
+        "selenium",
+        "vitamin_a",
+        "vitamin_b6",
+        "vitamin_e",
+        "biotin",
+        "chromium",
+        "pantothenic_acid",
+        "riboflavin",
+        "vitamin_b12",
+        "vitamin_k1"
+      ],
+      "perProductContribution": [
+        {
+          "ingredientCanonicalKey": "zinc",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "25 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "zinc",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "15 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "zinc",
+          "productName": "Zinc Picolinate 15 mg",
+          "supplementId": "2b4fa372-90f6-4804-97db-b54e40e81c2f",
+          "dailyEstimatedDoseText": "15 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "folate",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "667 mcg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "folate",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "800 mcg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "niacin",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "50 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "niacin",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "20 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "calcium",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "200 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "calcium",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "10 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "copper",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "2000 mcg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "copper",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "2000 mcg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "iodine",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "150 mcg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "iodine",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "150 mcg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "magnesium",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "25 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "magnesium",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "10 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "manganese",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "2 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "manganese",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "1 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "molybdenum",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "75 mcg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "molybdenum",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "75 mcg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "selenium",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "200 mcg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "selenium",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "70 mcg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_a",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "1500 mcg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_a",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "5000 IU",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_b6",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "50 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_b6",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "2 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_c",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "300 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_c",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "70 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_e",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "25 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_e",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "35 IU",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "biotin",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "0.3 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "biotin",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "0.3 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "chromium",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "0.12 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "chromium",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "0.12 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "pantothenic_acid",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "50 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "pantothenic_acid",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "10 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "riboflavin",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "50 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "riboflavin",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "1.7 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_b12",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "0.05 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_b12",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "0.012 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_k1",
+          "productName": "Ultimate Man",
+          "supplementId": "snapshot_gtin14_00766536027491",
+          "dailyEstimatedDoseText": "0.08 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_k1",
+          "productName": "Whole Food Women's One Daily",
+          "supplementId": "snapshot_gtin14_00766536025848",
+          "dailyEstimatedDoseText": "0.08 mg",
+          "dailyDoseBasis": "one_serving_fallback",
+          "dailyDoseBasisLabel": "estimated from 1 serving/day"
+        }
+      ],
+      "totalEstimatedDosePerSurfacedGroup": [
+        {
+          "ingredientCanonicalKey": "zinc",
+          "estimatedTotalDose": "55 mg",
+          "ul": "40 mg",
+          "scopeNote": null,
+          "status": "over"
+        },
+        {
+          "ingredientCanonicalKey": "folate",
+          "estimatedTotalDose": "1467 mcg",
+          "ul": "1000 mcg",
+          "scopeNote": "UL applies to folic acid from supplements or fortified foods, not naturally occurring food folate.",
+          "status": "over"
+        },
+        {
+          "ingredientCanonicalKey": "magnesium",
+          "estimatedTotalDose": "35 mg",
+          "ul": "350 mg",
+          "scopeNote": "UL applies to supplemental magnesium (and medications), not naturally occurring food intake.",
+          "status": "below"
+        },
+        {
+          "ingredientCanonicalKey": "vitamin_c",
+          "estimatedTotalDose": "370 mg",
+          "ul": "2000 mg",
+          "scopeNote": null,
+          "status": "below"
+        }
+      ],
+      "skippedCount": 1
+    }
+  },
+  "payloadShapeCorrect": true,
+  "mySavedBehaviorConservative": true,
+  "currentWeek3OutputsRegressed": false,
+  "finalDecision": "Week 3 fully closed",
+  "blockers": []
+}

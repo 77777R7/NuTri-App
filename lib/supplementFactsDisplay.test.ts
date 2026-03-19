@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { buildWhatsInsideDisplay } from './supplementFactsDisplay';
+import { buildWhatsInsideDisplay, collectDisplayableFactDoses, derivePrimaryDoseFromFacts } from './supplementFactsDisplay';
 
 test('buildWhatsInsideDisplay: combines EPA + DHA into one omega-3 line', () => {
   const out = buildWhatsInsideDisplay({
@@ -217,4 +217,38 @@ test('buildWhatsInsideDisplay: can disable dose-only fallback when ingredient ro
   assert.equal(out.source, 'none');
   assert.deepEqual(out.lines, []);
   assert.equal(out.previewLimit, 0);
+});
+
+test('derivePrimaryDoseFromFacts: prefers first non-nutrition overlay ingredient dose', () => {
+  const primary = derivePrimaryDoseFromFacts({
+    overlayIngredients: [
+      { name: 'Calories', dose: '15 cal' },
+      { name: 'Wild Alaska Pollock Fish Oil Concentrate', dose: '1,250 mg' },
+      { name: 'Total Omega-3 Fatty Acids as TG', dose: '1,040 mg' },
+      { name: 'EPA (Eicosapentaenoic Acid)', dose: '690 mg' },
+    ],
+    actives: [
+      { name: 'Calories', amount: 15, unit: 'cal' },
+      { name: 'Wild Alaska Pollock Fish Oil Concentrate', amount: 1250, unit: 'mg' },
+    ],
+  });
+
+  assert.equal(primary, '1250 mg');
+});
+
+test('collectDisplayableFactDoses: filters nutrition rows and dedupes display variants', () => {
+  const doses = collectDisplayableFactDoses({
+    overlayIngredients: [
+      { name: 'Calories', dose: '15 cal' },
+      { name: 'Wild Alaska Pollock Fish Oil Concentrate', dose: '1,250 mg' },
+      { name: 'Total Omega-3 Fatty Acids as TG', dose: '1,040 mg' },
+    ],
+    actives: [
+      { name: 'Total Fat', amount: 1.5, unit: 'g' },
+      { name: 'Wild Alaska Pollock Fish Oil Concentrate', amount: 1250, unit: 'mg' },
+      { name: 'EPA (Eicosapentaenoic Acid)', amount: 690, unit: 'mg' },
+    ],
+  });
+
+  assert.deepEqual(doses, ['1250 mg', '1040 mg', '690 mg']);
 });

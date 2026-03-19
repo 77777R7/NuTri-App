@@ -1,0 +1,25 @@
+{
+  "waveId": "week2_5_coverage_now_warnings_retarget_20260314T082518Z",
+  "lane": "coverage",
+  "pathKey": "NOW Foods:official_warnings_path_retarget",
+  "attempted": 8,
+  "recoveredComplete": 1,
+  "recoveredPartial": 0,
+  "kpiDelta": {
+    "completeHitCount": 0,
+    "completeHitRate": 0,
+    "activeQueueCount": 0
+  },
+  "mergeDelta": {
+    "strictMergeReady": 1,
+    "queued": -1
+  },
+  "blockerBreakdown": {
+    "improvedRows": 1,
+    "stillMissingWarnings": 7,
+    "stillMissingSuggestedUse": 0
+  },
+  "decision": "retarget",
+  "outcomeClass": "strategy_proof",
+  "evidencePath": "/Users/howard07/NuTriApp/nutri-app/output/week2_5_root_cause/now_retarget_20260314T082518Z/official_fallback_report.json"
+}

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "iherb_official_fallback_config.v1",
+  "brandName": "California Gold Nutrition",
+  "priorityLane": "P0_api_fill_us_strong_identity",
+  "siteOrigin": "https://www.californiagoldnutrition.com",
+  "readerPrefix": "https://r.jina.ai/http://",
+  "searchPathTemplate": "/search?q={query}",
+  "enableAgentBrowserFallback": true,
+  "enableImageOcrFallback": true,
+  "enableStagedImageOcr": true,
+  "ocrMaxImages": 6,
+  "searchQueryOverrides": {
+    "69309": [
+      "folinic acid alcohol free"
+    ]
+  },
+  "productPageUrlOverrides": {
+    "69309": "https://www.californiagoldnutrition.com/products/california-gold-nutrition-folinic-acid-alcohol-free-1-fl-oz-30-ml-69309"
+  },
+  "brochureFilenameOverrides": {},
+  "manualSectionOverrides": {
+    "69309": {
+      "Suggested use": "Take 1 drop daily. Best when taken as directed by a qualified healthcare professional. Shake well before using."
+    }
+  },
+  "manualSupplementFactsOverrides": {}
+}

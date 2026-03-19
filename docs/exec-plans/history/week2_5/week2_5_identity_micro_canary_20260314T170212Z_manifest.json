@@ -1,0 +1,39 @@
+{
+  "waveId": "week2_5_identity_micro_canary_20260314T170212Z",
+  "lane": "kpi",
+  "pathKey": "official_fetch_unresolved:iherb_identity_v2_micro_canary",
+  "cohortSource": "/Users/howard07/NuTriApp/nutri-app/output/week2_5_root_cause/official_fetch_unresolved_micro_canary_queue.json",
+  "brands": [
+    "Healthy Origins",
+    "Pure Encapsulations",
+    "Nature's Bounty",
+    "Schiff"
+  ],
+  "queryStrategy": "iherb_identity_v2_debug_retarget",
+  "sourcePriority": [
+    "brand_specific_queries",
+    "iherb_search",
+    "search_engine_fallback",
+    "strict_page_acceptance"
+  ],
+  "stopRules": [
+    "Scale only on >=2 safe recoveries.",
+    "Skip entirely when controlValidity is invalid."
+  ],
+  "successMetric": "safe recoveries on the repaired discovery sub-cause",
+  "newMethod": true,
+  "unpauseRationale": "Micro-canary uses the repaired discovery method and is stage-gated by positive control validity.",
+  "baselineRef": {
+    "strictMergeReady": 26635,
+    "queued": 23983,
+    "completeHitCount": 666,
+    "completeHitRate": 40.3,
+    "activeQueueCount": 0
+  },
+  "touchedBrandPaths": [
+    "official_fetch_unresolved:iherb_identity_v2_micro_canary"
+  ],
+  "touchedBlockerKeys": [
+    "kpi:official_fetch_unresolved/iherb_identity_v2"
+  ]
+}

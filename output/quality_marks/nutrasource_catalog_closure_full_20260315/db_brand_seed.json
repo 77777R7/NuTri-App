@@ -1,0 +1,7704 @@
+{
+  "schemaVersion": "nutrasource_db_brand_seed.v1",
+  "generatedAt": "2026-03-15T19:42:18.525Z",
+  "sourceWarnings": [],
+  "count": 1098,
+  "rows": [
+    {
+      "sourceBrandName": "21st Century",
+      "normalizedBrandKey": "21st century",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "4th & Heart",
+      "normalizedBrandKey": "4th heart",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "999",
+      "normalizedBrandKey": "999",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "A Taste Of Thai",
+      "normalizedBrandKey": "a taste of thai",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "A Vogel",
+      "normalizedBrandKey": "a vogel",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "A.C. Grace Company",
+      "normalizedBrandKey": "a c grace",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "AB American Biologics",
+      "normalizedBrandKey": "ab american biologics",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "ABE",
+      "normalizedBrandKey": "abe",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Absolute Nutrition",
+      "normalizedBrandKey": "absolute",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Act",
+      "normalizedBrandKey": "act",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Action Labs",
+      "normalizedBrandKey": "action",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Advance Physician Formulas",
+      "normalizedBrandKey": "advance physician formulas",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Advanced Naturals",
+      "normalizedBrandKey": "advanced naturals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Advanced Orthomolecular Research AOR",
+      "normalizedBrandKey": "advanced orthomolecular research aor",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Ageless Foundation Laboratories",
+      "normalizedBrandKey": "ageless foundation",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "AirBorne",
+      "normalizedBrandKey": "airborne",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "AiWaWa",
+      "normalizedBrandKey": "aiwawa",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "Akasha Superfoods",
+      "normalizedBrandKey": "akasha superfoods",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Alani Nu",
+      "normalizedBrandKey": "alani nu",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Alessi",
+      "normalizedBrandKey": "alessi",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Algae Cooking Club",
+      "normalizedBrandKey": "algae cooking club",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Align Probiotics",
+      "normalizedBrandKey": "align probiotics",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Alkalife",
+      "normalizedBrandKey": "alkalife",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "All One, Nutritech",
+      "normalizedBrandKey": "all one nutritech",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Allergy Research Group",
+      "normalizedBrandKey": "allergy research group",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Allimax",
+      "normalizedBrandKey": "allimax",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "ALLMAX",
+      "normalizedBrandKey": "allmax",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "ALLMAX ESSENTIALS",
+      "normalizedBrandKey": "allmax essentials",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "Aloha Bay",
+      "normalizedBrandKey": "aloha bay",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "ALPHA LION",
+      "normalizedBrandKey": "alpha lion",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "ALR Industries",
+      "normalizedBrandKey": "alr industries",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Alta Health",
+      "normalizedBrandKey": "alta",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Alter Eco",
+      "normalizedBrandKey": "alter eco",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Amazing Grass",
+      "normalizedBrandKey": "amazing grass",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Amazing Herbs",
+      "normalizedBrandKey": "amazing herbs",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Amazing India",
+      "normalizedBrandKey": "amazing india",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Amazing Nutrition",
+      "normalizedBrandKey": "amazing",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Amazon Therapeutics",
+      "normalizedBrandKey": "amazon therapeutics",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "American Biosciences",
+      "normalizedBrandKey": "american biosciences",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "American Biotech Labs",
+      "normalizedBrandKey": "american biotech",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "American Health",
+      "normalizedBrandKey": "american",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Amish Country Popcorn",
+      "normalizedBrandKey": "amish country popcorn",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Amore",
+      "normalizedBrandKey": "amore",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Amy's",
+      "normalizedBrandKey": "amy s",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "AN Amazing Nutrition Amazing Omega",
+      "normalizedBrandKey": "an amazing amazing omega",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "AN Supps",
+      "normalizedBrandKey": "an supps",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Ancient Harvest",
+      "normalizedBrandKey": "ancient harvest",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Ancient Nutrition",
+      "normalizedBrandKey": "ancient",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Animal",
+      "normalizedBrandKey": "animal",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Annie Chun's",
+      "normalizedBrandKey": "annie chun s",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Annie's Homegrown",
+      "normalizedBrandKey": "annie s homegrown",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Annie's Naturals",
+      "normalizedBrandKey": "annie s naturals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Applied Nutrition",
+      "normalizedBrandKey": "applied",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "APS",
+      "normalizedBrandKey": "aps",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Arizona Natural",
+      "normalizedBrandKey": "arizona natural",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Arrowhead Mills",
+      "normalizedBrandKey": "arrowhead mills",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Arthur Andrew Medical",
+      "normalizedBrandKey": "arthur andrew medical",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Artisana",
+      "normalizedBrandKey": "artisana",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "artnaturals",
+      "normalizedBrandKey": "artnaturals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "AshaPops",
+      "normalizedBrandKey": "ashapops",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Atkins",
+      "normalizedBrandKey": "atkins",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Aurora Nutrascience",
+      "normalizedBrandKey": "aurora nutrascience",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Aussie Bubs",
+      "normalizedBrandKey": "aussie bubs",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Azo",
+      "normalizedBrandKey": "azo",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Bach",
+      "normalizedBrandKey": "bach",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Bachan's",
+      "normalizedBrandKey": "bachan s",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Back to Nature",
+      "normalizedBrandKey": "back to nature",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Baja Gold Salt Co.",
+      "normalizedBrandKey": "baja gold salt co",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Balanceuticals",
+      "normalizedBrandKey": "balanceuticals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Banyan Botanicals",
+      "normalizedBrandKey": "banyan botanicals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Bar Harbor",
+      "normalizedBrandKey": "bar harbor",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Barebells",
+      "normalizedBrandKey": "barebells",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "BareOrganics",
+      "normalizedBrandKey": "bareorganics",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Bariatric Advantage",
+      "normalizedBrandKey": "bariatric advantage",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Bariatric Fusion",
+      "normalizedBrandKey": "bariatric fusion",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "BariatricPal",
+      "normalizedBrandKey": "bariatricpal",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Barker Wellness Co",
+      "normalizedBrandKey": "barker wellness co",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Barlean's",
+      "normalizedBrandKey": "barlean s",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Barnana",
+      "normalizedBrandKey": "barnana",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Barney Butter",
+      "normalizedBrandKey": "barney butter",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Batch",
+      "normalizedBrandKey": "batch",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "BB Company",
+      "normalizedBrandKey": "bb",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Beam",
+      "normalizedBrandKey": "beam",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Beano",
+      "normalizedBrandKey": "beano",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Beauty Without Cruelty",
+      "normalizedBrandKey": "beauty without cruelty",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Bee & You",
+      "normalizedBrandKey": "bee you",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Beech-Nut",
+      "normalizedBrandKey": "beech nut",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Beekeeper's Naturals",
+      "normalizedBrandKey": "beekeeper s naturals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Begin Health",
+      "normalizedBrandKey": "begin",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Bell Lifestyle",
+      "normalizedBrandKey": "bell lifestyle",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Belle+Bella",
+      "normalizedBrandKey": "belle bella",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Benfotiamine Inc.",
+      "normalizedBrandKey": "benfotiamine",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Bergin Fruit and Nut Company",
+      "normalizedBrandKey": "bergin fruit and nut",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Best Naturals",
+      "normalizedBrandKey": "best naturals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Better Than Bouillon",
+      "normalizedBrandKey": "better than bouillon",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Better with Buckwheat",
+      "normalizedBrandKey": "better with buckwheat",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "BetterBody Foods",
+      "normalizedBrandKey": "betterbody foods",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "BHU Foods",
+      "normalizedBrandKey": "bhu foods",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Bibigo",
+      "normalizedBrandKey": "bibigo",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "BIENA",
+      "normalizedBrandKey": "biena",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Big Tree Farms",
+      "normalizedBrandKey": "big tree farms",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Binggrae",
+      "normalizedBrandKey": "binggrae",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Bio Nutrition",
+      "normalizedBrandKey": "bio",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Bio-Actif Inc.",
+      "normalizedBrandKey": "bio actif",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "Bio-K+",
+      "normalizedBrandKey": "bio k",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Bio-Strath",
+      "normalizedBrandKey": "bio strath",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Biochem",
+      "normalizedBrandKey": "biochem",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Biocidin Botanicals",
+      "normalizedBrandKey": "biocidin botanicals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "BioEmblem",
+      "normalizedBrandKey": "bioemblem",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "BioGaia",
+      "normalizedBrandKey": "biogaia",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Biomed International Products Corp.",
+      "normalizedBrandKey": "biomed international products",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "Bionaturae",
+      "normalizedBrandKey": "bionaturae",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Bionorica",
+      "normalizedBrandKey": "bionorica",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "BiOptimizers",
+      "normalizedBrandKey": "bioptimizers",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Bioray",
+      "normalizedBrandKey": "bioray",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "BioSchwartz",
+      "normalizedBrandKey": "bioschwartz",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "BioSil",
+      "normalizedBrandKey": "biosil",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Biostime",
+      "normalizedBrandKey": "biostime",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Biotivia",
+      "normalizedBrandKey": "biotivia",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "BioTRUST",
+      "normalizedBrandKey": "biotrust",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "BIOVEA",
+      "normalizedBrandKey": "biovea",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "Birch Benders",
+      "normalizedBrandKey": "birch benders",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Biscoff",
+      "normalizedBrandKey": "biscoff",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Blackmores",
+      "normalizedBrandKey": "blackmores",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Blessed",
+      "normalizedBrandKey": "blessed",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Bloom",
+      "normalizedBrandKey": "bloom",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Blue Diamond",
+      "normalizedBrandKey": "blue diamond",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Bluebonnet Nutrition",
+      "normalizedBrandKey": "bluebonnet",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Blume",
+      "normalizedBrandKey": "blume",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "BNRG",
+      "normalizedBrandKey": "bnrg",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Bob Snail",
+      "normalizedBrandKey": "bob snail",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Bob's Red Mill",
+      "normalizedBrandKey": "bob s red mill",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Body Fortress",
+      "normalizedBrandKey": "body fortress",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "BodyBio",
+      "normalizedBrandKey": "bodybio",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "BodyGold",
+      "normalizedBrandKey": "bodygold",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "BodyHealth",
+      "normalizedBrandKey": "bodyhealth",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "BodyTech",
+      "normalizedBrandKey": "bodytech",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Bonk Breaker",
+      "normalizedBrandKey": "bonk breaker",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Bonne Maman",
+      "normalizedBrandKey": "bonne maman",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "BPI Sports",
+      "normalizedBrandKey": "bpi sports",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "BPN",
+      "normalizedBrandKey": "bpn",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Bragg",
+      "normalizedBrandKey": "bragg",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "BrainMD",
+      "normalizedBrandKey": "brainmd",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Breton Original Crackers",
+      "normalizedBrandKey": "breton original crackers",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Briannas",
+      "normalizedBrandKey": "briannas",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Brooklyn Delhi",
+      "normalizedBrandKey": "brooklyn delhi",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Brothers-All-Natural",
+      "normalizedBrandKey": "brothers all natural",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "BSN",
+      "normalizedBrandKey": "bsn",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "BUBS Naturals",
+      "normalizedBrandKey": "bubs naturals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Bucked Up",
+      "normalizedBrandKey": "bucked up",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Buddha Teas",
+      "normalizedBrandKey": "buddha teas",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Buddy Fruits",
+      "normalizedBrandKey": "buddy fruits",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Buldak",
+      "normalizedBrandKey": "buldak",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "BulletProof",
+      "normalizedBrandKey": "bulletproof",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Buried Treasure",
+      "normalizedBrandKey": "buried treasure",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "C4 / Cellucor",
+      "normalizedBrandKey": "c4 cellucor",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Cafix",
+      "normalizedBrandKey": "cafix",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Caleb Treeze Organic Farm",
+      "normalizedBrandKey": "caleb treeze organic farm",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "California Gold Nutrition",
+      "normalizedBrandKey": "california gold",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "California Natural",
+      "normalizedBrandKey": "california natural",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "California Olive Ranch",
+      "normalizedBrandKey": "california olive ranch",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Carlson",
+      "normalizedBrandKey": "carlson",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Carnation Milk",
+      "normalizedBrandKey": "carnation milk",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Carrington Farms",
+      "normalizedBrandKey": "carrington farms",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Cascadian Farm",
+      "normalizedBrandKey": "cascadian farm",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Cat-Man-Doo",
+      "normalizedBrandKey": "cat man doo",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Catalina Crunch",
+      "normalizedBrandKey": "catalina crunch",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "CATALO",
+      "normalizedBrandKey": "catalo",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Cederberg Tea Co",
+      "normalizedBrandKey": "cederberg tea co",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Celestial Seasonings",
+      "normalizedBrandKey": "celestial seasonings",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Cellfood",
+      "normalizedBrandKey": "cellfood",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Celsius",
+      "normalizedBrandKey": "celsius",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Celtic Sea Salt",
+      "normalizedBrandKey": "celtic sea salt",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Centrum",
+      "normalizedBrandKey": "centrum",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Cerebelly",
+      "normalizedBrandKey": "cerebelly",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Chamberlain Coffee",
+      "normalizedBrandKey": "chamberlain coffee",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Chapter One",
+      "normalizedBrandKey": "chapter one",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Chapter Six",
+      "normalizedBrandKey": "chapter six",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Chew + Heal",
+      "normalizedBrandKey": "chew heal",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Chickapea",
+      "normalizedBrandKey": "chickapea",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Chicken of the Sea",
+      "normalizedBrandKey": "chicken of the sea",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Chike Nutrition",
+      "normalizedBrandKey": "chike",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "ChildLife Clinicals",
+      "normalizedBrandKey": "childlife clinicals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "ChildLife Essentials",
+      "normalizedBrandKey": "childlife essentials",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Chimes",
+      "normalizedBrandKey": "chimes",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Chocolove",
+      "normalizedBrandKey": "chocolove",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "ChocZero",
+      "normalizedBrandKey": "choczero",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Cholula",
+      "normalizedBrandKey": "cholula",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Chomps",
+      "normalizedBrandKey": "chomps",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Chosen Foods",
+      "normalizedBrandKey": "chosen foods",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Christopher's Original Formulas",
+      "normalizedBrandKey": "christopher s original formulas",
+      "sources": [
+        "brands",
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Chu Kiang Brand",
+      "normalizedBrandKey": "chu kiang brand",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Chuao Chocolatier",
+      "normalizedBrandKey": "chuao chocolatier",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Church & Dwight Canada Corp.",
+      "normalizedBrandKey": "church dwight canada",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "Citracal",
+      "normalizedBrandKey": "citracal",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Classical Remedia Ltd.",
+      "normalizedBrandKey": "classical remedia",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "Cocomels",
+      "normalizedBrandKey": "cocomels",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Coconut Cloud",
+      "normalizedBrandKey": "coconut cloud",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Coconut Secret",
+      "normalizedBrandKey": "coconut secret",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "CodeAge",
+      "normalizedBrandKey": "codeage",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Coffee Mate",
+      "normalizedBrandKey": "coffee mate",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Colic Calm",
+      "normalizedBrandKey": "colic calm",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Colman's",
+      "normalizedBrandKey": "colman s",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Columbia Laboratories Canada Inc.",
+      "normalizedBrandKey": "columbia canada",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "Comvita",
+      "normalizedBrandKey": "comvita",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Con-Cret",
+      "normalizedBrandKey": "con cret",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Conceive Plus",
+      "normalizedBrandKey": "conceive plus",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Controlled Labs",
+      "normalizedBrandKey": "controlled",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Coombs Family Farms",
+      "normalizedBrandKey": "coombs family farms",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Country Archer Jerky",
+      "normalizedBrandKey": "country archer jerky",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Country Farms",
+      "normalizedBrandKey": "country farms",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Country House",
+      "normalizedBrandKey": "country house",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Country Life",
+      "normalizedBrandKey": "country life",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Craftmix",
+      "normalizedBrandKey": "craftmix",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Craize",
+      "normalizedBrandKey": "craize",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Creekside Natural Therapeutics",
+      "normalizedBrandKey": "creekside natural therapeutics",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Crisp Power",
+      "normalizedBrandKey": "crisp power",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Crispy Green",
+      "normalizedBrandKey": "crispy green",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Crofter's Organic",
+      "normalizedBrandKey": "crofter s organic",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Crown Prince Natural",
+      "normalizedBrandKey": "crown prince natural",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Crystal Star",
+      "normalizedBrandKey": "crystal star",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Culturelle",
+      "normalizedBrandKey": "culturelle",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Cultures for Health",
+      "normalizedBrandKey": "cultures for",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "CuraLife",
+      "normalizedBrandKey": "curalife",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Cure Hydration",
+      "normalizedBrandKey": "cure hydration",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Cutler Nutrition",
+      "normalizedBrandKey": "cutler",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Cymbiotika",
+      "normalizedBrandKey": "cymbiotika",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "D'adamo",
+      "normalizedBrandKey": "d adamo",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Daelmans",
+      "normalizedBrandKey": "daelmans",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Daily Crunch",
+      "normalizedBrandKey": "daily crunch",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Daily Wellness Company",
+      "normalizedBrandKey": "daily wellness",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Dairyland Ginseng",
+      "normalizedBrandKey": "dairyland ginseng",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Dandy Blend",
+      "normalizedBrandKey": "dandy blend",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Dang Foods",
+      "normalizedBrandKey": "dang foods",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Dastony",
+      "normalizedBrandKey": "dastony",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Date Better Snacks",
+      "normalizedBrandKey": "date better snacks",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Date Lady",
+      "normalizedBrandKey": "date lady",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "DaVinci Laboratories",
+      "normalizedBrandKey": "davinci",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Ddrops",
+      "normalizedBrandKey": "ddrops",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "DelighTeas",
+      "normalizedBrandKey": "delighteas",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Designer Wellness",
+      "normalizedBrandKey": "designer wellness",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Designs For Health",
+      "normalizedBrandKey": "designs for",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Deva",
+      "normalizedBrandKey": "deva",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "DietWorks",
+      "normalizedBrandKey": "dietworks",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Diso",
+      "normalizedBrandKey": "diso",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Divina",
+      "normalizedBrandKey": "divina",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Divine Health",
+      "normalizedBrandKey": "divine",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Doctor's Best",
+      "normalizedBrandKey": "doctor s best",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Doctor's Finest",
+      "normalizedBrandKey": "doctor s finest",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Double Wood Supplements",
+      "normalizedBrandKey": "double wood",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Dr. Barton's",
+      "normalizedBrandKey": "dr barton s",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Dr. Brad",
+      "normalizedBrandKey": "dr brad",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Dr. Emil Nutrition",
+      "normalizedBrandKey": "dr emil",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Dr. John's Healthy Sweets",
+      "normalizedBrandKey": "dr john s healthy sweets",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Dr. McDougall's",
+      "normalizedBrandKey": "dr mcdougall s",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Dr. Mercola",
+      "normalizedBrandKey": "dr mercola",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Dr. Murray's",
+      "normalizedBrandKey": "dr murray s",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Dr. Ohhira's",
+      "normalizedBrandKey": "dr ohhira s",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Dr. Talbot's",
+      "normalizedBrandKey": "dr talbot s",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Dr. Tobias",
+      "normalizedBrandKey": "dr tobias",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Dragon Herbs",
+      "normalizedBrandKey": "dragon herbs",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Dramamine",
+      "normalizedBrandKey": "dramamine",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Dream Water",
+      "normalizedBrandKey": "dream water",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "DrKids",
+      "normalizedBrandKey": "drkids",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "DURELIFE",
+      "normalizedBrandKey": "durelife",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Dymatize",
+      "normalizedBrandKey": "dymatize",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Dynamic Health",
+      "normalizedBrandKey": "dynamic",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Earth Circle Organics",
+      "normalizedBrandKey": "earth circle organics",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Earth Mama",
+      "normalizedBrandKey": "earth mama",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Earth Therapeutics",
+      "normalizedBrandKey": "earth therapeutics",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Earth's Best",
+      "normalizedBrandKey": "earth s best",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Earth's Bounty",
+      "normalizedBrandKey": "earth s bounty",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Earthrise",
+      "normalizedBrandKey": "earthrise",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Earthtone Foods",
+      "normalizedBrandKey": "earthtone foods",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "EAS",
+      "normalizedBrandKey": "eas",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Eclectic Herb",
+      "normalizedBrandKey": "eclectic herb",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Econugenics",
+      "normalizedBrandKey": "econugenics",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "EcoTeas",
+      "normalizedBrandKey": "ecoteas",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Eden Foods",
+      "normalizedBrandKey": "eden foods",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Ediya",
+      "normalizedBrandKey": "ediya",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Edward & Sons",
+      "normalizedBrandKey": "edward sons",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "EFX Sports",
+      "normalizedBrandKey": "efx sports",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Egmont Honey",
+      "normalizedBrandKey": "egmont honey",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "EHPlabs",
+      "normalizedBrandKey": "ehplabs",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Eidon Ionic Minerals",
+      "normalizedBrandKey": "eidon ionic minerals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Elan",
+      "normalizedBrandKey": "elan",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Ella's Flats",
+      "normalizedBrandKey": "ella s flats",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Else",
+      "normalizedBrandKey": "else",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Elysium",
+      "normalizedBrandKey": "elysium",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Emerald Laboratories",
+      "normalizedBrandKey": "emerald",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Emergen-C",
+      "normalizedBrandKey": "emergen c",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Emerita",
+      "normalizedBrandKey": "emerita",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Emmy's Organic Cookies",
+      "normalizedBrandKey": "emmy s organic cookies",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "ENADA",
+      "normalizedBrandKey": "enada",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Ener-C",
+      "normalizedBrandKey": "ener c",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Enfamil",
+      "normalizedBrandKey": "enfamil",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Enzymedica",
+      "normalizedBrandKey": "enzymedica",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "EPI",
+      "normalizedBrandKey": "epi",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Epic Bar",
+      "normalizedBrandKey": "epic bar",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Epic Dental",
+      "normalizedBrandKey": "epic dental",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Equal",
+      "normalizedBrandKey": "equal",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Equal Exchange",
+      "normalizedBrandKey": "equal exchange",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "EsterC",
+      "normalizedBrandKey": "esterc",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Estroven",
+      "normalizedBrandKey": "estroven",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Eu Natural",
+      "normalizedBrandKey": "eu natural",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "EuroMedica",
+      "normalizedBrandKey": "euromedica",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Everydaze",
+      "normalizedBrandKey": "everydaze",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Everyone",
+      "normalizedBrandKey": "everyone",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "EVLution Nutrition",
+      "normalizedBrandKey": "evlution",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Fairhaven Health",
+      "normalizedBrandKey": "fairhaven",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Familia",
+      "normalizedBrandKey": "familia",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Fearn Natural Foods",
+      "normalizedBrandKey": "fearn natural foods",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Fiber Gourmet",
+      "normalizedBrandKey": "fiber gourmet",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Finn Crisp",
+      "normalizedBrandKey": "finn crisp",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Fiorella",
+      "normalizedBrandKey": "fiorella",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Fit & Lean",
+      "normalizedBrandKey": "fit lean",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "FITCODE",
+      "normalizedBrandKey": "fitcode",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Flackers",
+      "normalizedBrandKey": "flackers",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "FlapJacked",
+      "normalizedBrandKey": "flapjacked",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Flat Tummy",
+      "normalizedBrandKey": "flat tummy",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Flintstones",
+      "normalizedBrandKey": "flintstones",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Flora",
+      "normalizedBrandKey": "flora",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Flora Manufacturing & Distributing Ltd",
+      "normalizedBrandKey": "flora manufacturing distributing",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "Floradix",
+      "normalizedBrandKey": "floradix",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Flower Essence Services",
+      "normalizedBrandKey": "flower essence services",
+      "sources": [
+        "brands",
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Focus Factor",
+      "normalizedBrandKey": "focus factor",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "FOND Bone Broth",
+      "normalizedBrandKey": "fond bone broth",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Food For Life",
+      "normalizedBrandKey": "food for life",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Foods Alive",
+      "normalizedBrandKey": "foods alive",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Force Factor",
+      "normalizedBrandKey": "force factor",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Forest Leaf",
+      "normalizedBrandKey": "forest leaf",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Four Sigmatic",
+      "normalizedBrandKey": "four sigmatic",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Frankie's Organic",
+      "normalizedBrandKey": "frankie s organic",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Frontier Co-op",
+      "normalizedBrandKey": "frontier co op",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Fungies",
+      "normalizedBrandKey": "fungies",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Further Food",
+      "normalizedBrandKey": "further food",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "FutureBiotics",
+      "normalizedBrandKey": "futurebiotics",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "G FUEL",
+      "normalizedBrandKey": "g fuel",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "G Hughes",
+      "normalizedBrandKey": "g hughes",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Gaea",
+      "normalizedBrandKey": "gaea",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Gaia Herbs",
+      "normalizedBrandKey": "gaia herbs",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Garden of Eatin'",
+      "normalizedBrandKey": "garden of eatin",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Garden of Life",
+      "normalizedBrandKey": "garden of life",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Gaspari Nutrition",
+      "normalizedBrandKey": "gaspari",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "GAT",
+      "normalizedBrandKey": "gat",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Genceutic Naturals",
+      "normalizedBrandKey": "genceutic naturals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Genestra Brands",
+      "normalizedBrandKey": "genestra brands",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "Genexa",
+      "normalizedBrandKey": "genexa",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Genova",
+      "normalizedBrandKey": "genova",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Gerber",
+      "normalizedBrandKey": "gerber",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Geritol",
+      "normalizedBrandKey": "geritol",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Ghost",
+      "normalizedBrandKey": "ghost",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "gimMe",
+      "normalizedBrandKey": "gimme",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Global Healing",
+      "normalizedBrandKey": "global healing",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Go Raw",
+      "normalizedBrandKey": "go raw",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Golden Flower",
+      "normalizedBrandKey": "golden flower",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Golden Throat",
+      "normalizedBrandKey": "golden throat",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Goli Nutrition",
+      "normalizedBrandKey": "goli",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Good Day Chocolate",
+      "normalizedBrandKey": "good day chocolate",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Good Earth Teas",
+      "normalizedBrandKey": "good earth teas",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "GOOD GOOD",
+      "normalizedBrandKey": "good good",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Good Sense",
+      "normalizedBrandKey": "good sense",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Goodles",
+      "normalizedBrandKey": "goodles",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "GoodSam",
+      "normalizedBrandKey": "goodsam",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Gorilla Mind",
+      "normalizedBrandKey": "gorilla mind",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Gravol",
+      "normalizedBrandKey": "gravol",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Great Lakes Wellness",
+      "normalizedBrandKey": "great lakes wellness",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Great Wall Brand",
+      "normalizedBrandKey": "great wall brand",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Green Foods",
+      "normalizedBrandKey": "green foods",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "GreenPeach",
+      "normalizedBrandKey": "greenpeach",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Greens First",
+      "normalizedBrandKey": "greens first",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Grether's Pastilles",
+      "normalizedBrandKey": "grether s pastilles",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "GummiKing",
+      "normalizedBrandKey": "gummiking",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "GuruNanda",
+      "normalizedBrandKey": "gurunanda",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "HAIRtamin",
+      "normalizedBrandKey": "hairtamin",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Happy Family Organics",
+      "normalizedBrandKey": "happy family organics",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Happy Healthy Hippie",
+      "normalizedBrandKey": "happy healthy hippie",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Havasu Nutrition",
+      "normalizedBrandKey": "havasu",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "HBAF",
+      "normalizedBrandKey": "hbaf",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Healfast",
+      "normalizedBrandKey": "healfast",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Health and Her",
+      "normalizedBrandKey": "and her",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Health Direct",
+      "normalizedBrandKey": "direct",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Health Garden",
+      "normalizedBrandKey": "garden",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Health Plus",
+      "normalizedBrandKey": "plus",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "HealthForce Superfoods",
+      "normalizedBrandKey": "healthforce superfoods",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Healths Harmony",
+      "normalizedBrandKey": "healths harmony",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Healthy Heights",
+      "normalizedBrandKey": "healthy heights",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Healthy Origins",
+      "normalizedBrandKey": "healthy origins",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "HealthyCell",
+      "normalizedBrandKey": "healthycell",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Heavenly Organics",
+      "normalizedBrandKey": "heavenly organics",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Hello! I'm Ugly",
+      "normalizedBrandKey": "hello i m ugly",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Her Own",
+      "normalizedBrandKey": "her own",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Herb Pharm",
+      "normalizedBrandKey": "herb pharm",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Herbal Answers",
+      "normalizedBrandKey": "herbal answers",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Herbal Secrets",
+      "normalizedBrandKey": "herbal secrets",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Herbion Naturals",
+      "normalizedBrandKey": "herbion naturals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Herbs Etc.",
+      "normalizedBrandKey": "herbs etc",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Heritage Store",
+      "normalizedBrandKey": "heritage store",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Hi Tech Pharmaceuticals",
+      "normalizedBrandKey": "hi tech pharmaceuticals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "HighKey",
+      "normalizedBrandKey": "highkey",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Himalania",
+      "normalizedBrandKey": "himalania",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Himalaya",
+      "normalizedBrandKey": "himalaya",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Himalayan Institute",
+      "normalizedBrandKey": "himalayan institute",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Hippeas",
+      "normalizedBrandKey": "hippeas",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Holle",
+      "normalizedBrandKey": "holle",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Honees",
+      "normalizedBrandKey": "honees",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Honey Gardens",
+      "normalizedBrandKey": "honey gardens",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Honey Stinger",
+      "normalizedBrandKey": "honey stinger",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Host Defense",
+      "normalizedBrandKey": "host defense",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Hot Kid",
+      "normalizedBrandKey": "hot kid",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Houston Enzymes",
+      "normalizedBrandKey": "houston enzymes",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Hu",
+      "normalizedBrandKey": "hu",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "HUM Nutrition",
+      "normalizedBrandKey": "hum",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Human Beanz",
+      "normalizedBrandKey": "human beanz",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Humanx",
+      "normalizedBrandKey": "humanx",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Hyalogic",
+      "normalizedBrandKey": "hyalogic",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Hydralyte",
+      "normalizedBrandKey": "hydralyte",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Hydroxycut",
+      "normalizedBrandKey": "hydroxycut",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Hyland's Naturals",
+      "normalizedBrandKey": "hyland s naturals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Hyleys Tea",
+      "normalizedBrandKey": "hyleys tea",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Hyperbiotics",
+      "normalizedBrandKey": "hyperbiotics",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Iberogast",
+      "normalizedBrandKey": "iberogast",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "iHerb Exclusive",
+      "normalizedBrandKey": "iherb exclusive",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Ilhwa",
+      "normalizedBrandKey": "ilhwa",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Immi",
+      "normalizedBrandKey": "immi",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Imperial Elixir",
+      "normalizedBrandKey": "imperial elixir",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "In the Raw",
+      "normalizedBrandKey": "in the raw",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Innate Response Formulas",
+      "normalizedBrandKey": "innate response formulas",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "InnovixLabs",
+      "normalizedBrandKey": "innovixlabs",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Intelligent Labs",
+      "normalizedBrandKey": "intelligent",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "InterPlexus",
+      "normalizedBrandKey": "interplexus",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "ION Intelligence of Nature",
+      "normalizedBrandKey": "ion intelligence of nature",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "IP-6 International",
+      "normalizedBrandKey": "ip 6 international",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "IQBAR",
+      "normalizedBrandKey": "iqbar",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Irwin Naturals",
+      "normalizedBrandKey": "irwin naturals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Isatori",
+      "normalizedBrandKey": "isatori",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Isopure",
+      "normalizedBrandKey": "isopure",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Jacked Factory",
+      "normalizedBrandKey": "jacked factory",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Jade Leaf Matcha",
+      "normalizedBrandKey": "jade leaf matcha",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Jamieson",
+      "normalizedBrandKey": "jamieson",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "Jamieson Laboratories Ltd./ Nutricorp International",
+      "normalizedBrandKey": "jamieson nutricorp international",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "JAMP Pharma Corporation",
+      "normalizedBrandKey": "jamp pharma",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "Jane's Krazy",
+      "normalizedBrandKey": "jane s krazy",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Jarrow Formulas",
+      "normalizedBrandKey": "jarrow formulas",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Jasberry",
+      "normalizedBrandKey": "jasberry",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Jayone",
+      "normalizedBrandKey": "jayone",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Jesse's WAKEUP!",
+      "normalizedBrandKey": "jesse s wakeup",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Jigsaw Health",
+      "normalizedBrandKey": "jigsaw",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "JiMMY!",
+      "normalizedBrandKey": "jimmy",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "JNX Sports",
+      "normalizedBrandKey": "jnx sports",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "JOI",
+      "normalizedBrandKey": "joi",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Joolies",
+      "normalizedBrandKey": "joolies",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Jovial",
+      "normalizedBrandKey": "jovial",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "JoySpring",
+      "normalizedBrandKey": "joyspring",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Jules Destrooper",
+      "normalizedBrandKey": "jules destrooper",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Julian Bakery",
+      "normalizedBrandKey": "julian bakery",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "JungKwanJang",
+      "normalizedBrandKey": "jungkwanjang",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "JUNP Hydration",
+      "normalizedBrandKey": "junp hydration",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Just Hemp Foods",
+      "normalizedBrandKey": "just hemp foods",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Justin's Nut Butter",
+      "normalizedBrandKey": "justin s nut butter",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "JYM Supplement Science",
+      "normalizedBrandKey": "jym supplement science",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "KA-ME",
+      "normalizedBrandKey": "ka me",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Kabrita",
+      "normalizedBrandKey": "kabrita",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "KaChava",
+      "normalizedBrandKey": "kachava",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Kaffree Roma",
+      "normalizedBrandKey": "kaffree roma",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Kaged",
+      "normalizedBrandKey": "kaged",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Kaizen",
+      "normalizedBrandKey": "kaizen",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "KAL",
+      "normalizedBrandKey": "kal",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Karen's Naturals",
+      "normalizedBrandKey": "karen s naturals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Kekoa",
+      "normalizedBrandKey": "kekoa",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Keto Science",
+      "normalizedBrandKey": "keto science",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "KetoLogic",
+      "normalizedBrandKey": "ketologic",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Ketone-IQ",
+      "normalizedBrandKey": "ketone iq",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Kettle & Fire",
+      "normalizedBrandKey": "kettle fire",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Kettle Foods",
+      "normalizedBrandKey": "kettle foods",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Kevala",
+      "normalizedBrandKey": "kevala",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Kevin's Natural Foods",
+      "normalizedBrandKey": "kevin s natural foods",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Kids Smart",
+      "normalizedBrandKey": "kids smart",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Kiki Milk",
+      "normalizedBrandKey": "kiki milk",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "KIND Bars",
+      "normalizedBrandKey": "kind bars",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "KINDER'S",
+      "normalizedBrandKey": "kinder s",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "KinderFarms",
+      "normalizedBrandKey": "kinderfarms",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "King Arthur Baking Company",
+      "normalizedBrandKey": "king arthur baking",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "King Oscar",
+      "normalizedBrandKey": "king oscar",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Kion",
+      "normalizedBrandKey": "kion",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "Kirkman Labs",
+      "normalizedBrandKey": "kirkman",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Kiss My Keto",
+      "normalizedBrandKey": "kiss my keto",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Kitchens of India",
+      "normalizedBrandKey": "kitchens of india",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "KiZE Life Changing Bar",
+      "normalizedBrandKey": "kize life changing bar",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Knorr",
+      "normalizedBrandKey": "knorr",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Kodiak Cakes",
+      "normalizedBrandKey": "kodiak cakes",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Kolorex",
+      "normalizedBrandKey": "kolorex",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Kori",
+      "normalizedBrandKey": "kori",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "KOS",
+      "normalizedBrandKey": "kos",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Kroeger Herb Co",
+      "normalizedBrandKey": "kroeger herb co",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Kuli Kuli",
+      "normalizedBrandKey": "kuli kuli",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Kyolic",
+      "normalizedBrandKey": "kyolic",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "L'il Critters",
+      "normalizedBrandKey": "l il critters",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "La Panzanella",
+      "normalizedBrandKey": "la panzanella",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "LA Republica",
+      "normalizedBrandKey": "la republica",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "La Tourangelle",
+      "normalizedBrandKey": "la tourangelle",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Labrada Nutrition",
+      "normalizedBrandKey": "labrada",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Lactofit",
+      "normalizedBrandKey": "lactofit",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Laird Superfood",
+      "normalizedBrandKey": "laird superfood",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Lakanto",
+      "normalizedBrandKey": "lakanto",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Lake Avenue Nutrition",
+      "normalizedBrandKey": "lake avenue",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Larabar",
+      "normalizedBrandKey": "larabar",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Late July",
+      "normalizedBrandKey": "late july",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Lawry's",
+      "normalizedBrandKey": "lawry s",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Lee Kum Kee",
+      "normalizedBrandKey": "lee kum kee",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Left Coast Performance",
+      "normalizedBrandKey": "left coast performance",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Legendairy Milk",
+      "normalizedBrandKey": "legendairy milk",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Legendary Foods",
+      "normalizedBrandKey": "legendary foods",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Legion Athletics",
+      "normalizedBrandKey": "legion athletics",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Lemme",
+      "normalizedBrandKey": "lemme",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Lenny & Larry's",
+      "normalizedBrandKey": "lenny larry s",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Let's Date",
+      "normalizedBrandKey": "let s date",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Levels",
+      "normalizedBrandKey": "levels",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Lewis Labs",
+      "normalizedBrandKey": "lewis",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Li Chung Shing Tong",
+      "normalizedBrandKey": "li chung shing tong",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Life Enhancement",
+      "normalizedBrandKey": "life enhancement",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Life Extension",
+      "normalizedBrandKey": "life extension",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Life Extension Florassist",
+      "normalizedBrandKey": "life extension florassist",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "Life Source Basics (WGP Beta Glucan)",
+      "normalizedBrandKey": "life source basics wgp beta glucan",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Life-flo",
+      "normalizedBrandKey": "life flo",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Lifeable",
+      "normalizedBrandKey": "lifeable",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "LifeSeasons",
+      "normalizedBrandKey": "lifeseasons",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "LifeTime Vitamins",
+      "normalizedBrandKey": "lifetime vitamins",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Lily of the Desert",
+      "normalizedBrandKey": "lily of the desert",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Lily's Sweets",
+      "normalizedBrandKey": "lily s sweets",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Lipo Naturals",
+      "normalizedBrandKey": "lipo naturals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "LIPO-FLAVONOID",
+      "normalizedBrandKey": "lipo flavonoid",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Liquid I.V.",
+      "normalizedBrandKey": "liquid i v",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Little Bellies",
+      "normalizedBrandKey": "little bellies",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Little DaVinci",
+      "normalizedBrandKey": "little davinci",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Little Remedies",
+      "normalizedBrandKey": "little remedies",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Live Conscious",
+      "normalizedBrandKey": "live conscious",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "LIVIVA",
+      "normalizedBrandKey": "liviva",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Livlo",
+      "normalizedBrandKey": "livlo",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Llama Naturals",
+      "normalizedBrandKey": "llama naturals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Loco Bebe",
+      "normalizedBrandKey": "loco bebe",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Longreen",
+      "normalizedBrandKey": "longreen",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Lonolife",
+      "normalizedBrandKey": "lonolife",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Lotus Foods",
+      "normalizedBrandKey": "lotus foods",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Louisville Vegan Jerky Co",
+      "normalizedBrandKey": "louisville vegan jerky co",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Love Child Organics",
+      "normalizedBrandKey": "love child organics",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Love Corn",
+      "normalizedBrandKey": "love corn",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Lovebird",
+      "normalizedBrandKey": "lovebird",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "LoveBug Probiotics",
+      "normalizedBrandKey": "lovebug probiotics",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Lucini",
+      "normalizedBrandKey": "lucini",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Lundberg",
+      "normalizedBrandKey": "lundberg",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Maca Magic",
+      "normalizedBrandKey": "maca magic",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Macrolife Naturals",
+      "normalizedBrandKey": "macrolife naturals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Made in Nature",
+      "normalizedBrandKey": "made in nature",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Madhava",
+      "normalizedBrandKey": "madhava",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Maine Coast Sea Vegetables",
+      "normalizedBrandKey": "maine coast sea vegetables",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Maju Superfoods",
+      "normalizedBrandKey": "maju superfoods",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Mamma Chia",
+      "normalizedBrandKey": "mamma chia",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Manitoba Harvest",
+      "normalizedBrandKey": "manitoba harvest",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Manuka Doctor",
+      "normalizedBrandKey": "manuka doctor",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Manuka Health",
+      "normalizedBrandKey": "manuka",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "ManukaGuard",
+      "normalizedBrandKey": "manukaguard",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "MaraNatha",
+      "normalizedBrandKey": "maranatha",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Mariani",
+      "normalizedBrandKey": "mariani",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Martha Stewart Wellness",
+      "normalizedBrandKey": "martha stewart wellness",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Mary's Gone Crackers",
+      "normalizedBrandKey": "mary s gone crackers",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "MaryRuth's",
+      "normalizedBrandKey": "maryruth s",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Mason Natural",
+      "normalizedBrandKey": "mason natural",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Master Supplements",
+      "normalizedBrandKey": "master",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Maty's",
+      "normalizedBrandKey": "maty s",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Mauna Loa",
+      "normalizedBrandKey": "mauna loa",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "MAV Nutrition",
+      "normalizedBrandKey": "mav",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Maxi Health",
+      "normalizedBrandKey": "maxi",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Maya Kaimal",
+      "normalizedBrandKey": "maya kaimal",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "McCann's Irish Oatmeal",
+      "normalizedBrandKey": "mccann s irish oatmeal",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "McCormick",
+      "normalizedBrandKey": "mccormick",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "McCormick Gourmet Global Selects",
+      "normalizedBrandKey": "mccormick gourmet global selects",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "McCormick Grill Mates",
+      "normalizedBrandKey": "mccormick grill mates",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "MegaFood",
+      "normalizedBrandKey": "megafood",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "MET-Rx",
+      "normalizedBrandKey": "met rx",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Metabolic Maintenance",
+      "normalizedBrandKey": "metabolic maintenance",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Metabolic Nutrition",
+      "normalizedBrandKey": "metabolic",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Metabolife",
+      "normalizedBrandKey": "metabolife",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Metagenics",
+      "normalizedBrandKey": "metagenics",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Metamucil",
+      "normalizedBrandKey": "metamucil",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Meyenberg Goat Milk",
+      "normalizedBrandKey": "meyenberg goat milk",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "MHP",
+      "normalizedBrandKey": "mhp",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Michael's Health",
+      "normalizedBrandKey": "michael s",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Micro Ingredients",
+      "normalizedBrandKey": "micro ingredients",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "MidNite",
+      "normalizedBrandKey": "midnite",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Mike's Hot Honey",
+      "normalizedBrandKey": "mike s hot honey",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Mike's Mighty Good",
+      "normalizedBrandKey": "mike s mighty good",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "MIKUNA",
+      "normalizedBrandKey": "mikuna",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Mina",
+      "normalizedBrandKey": "mina",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Minami Nutrition",
+      "normalizedBrandKey": "minami",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Mindhoney",
+      "normalizedBrandKey": "mindhoney",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Miracle Noodle",
+      "normalizedBrandKey": "miracle noodle",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "MiraLAX",
+      "normalizedBrandKey": "miralax",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Miss Jones Baking Co",
+      "normalizedBrandKey": "miss jones baking co",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Mission MightyMe",
+      "normalizedBrandKey": "mission mightyme",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Mommy Knows Best",
+      "normalizedBrandKey": "mommy knows best",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Mommy's Bliss",
+      "normalizedBrandKey": "mommy s bliss",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Momofuku",
+      "normalizedBrandKey": "momofuku",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Montebello",
+      "normalizedBrandKey": "montebello",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Morning Made",
+      "normalizedBrandKey": "morning made",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Morningstar Minerals",
+      "normalizedBrandKey": "morningstar minerals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Motherlove",
+      "normalizedBrandKey": "motherlove",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "MRM Nutrition",
+      "normalizedBrandKey": "mrm",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Mt. Capra",
+      "normalizedBrandKey": "mt capra",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Munk Pack",
+      "normalizedBrandKey": "munk pack",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "MuscleMeds",
+      "normalizedBrandKey": "musclemeds",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "MusclePharm",
+      "normalizedBrandKey": "musclepharm",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "MuscleSport",
+      "normalizedBrandKey": "musclesport",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "MuscleTech",
+      "normalizedBrandKey": "muscletech",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Mushroom Wisdom",
+      "normalizedBrandKey": "mushroom wisdom",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Mylabs",
+      "normalizedBrandKey": "mylabs",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Mylicon",
+      "normalizedBrandKey": "mylicon",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nairn's",
+      "normalizedBrandKey": "nairn s",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "NANDO'S",
+      "normalizedBrandKey": "nando s",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Napa Valley Naturals",
+      "normalizedBrandKey": "napa valley naturals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Natierra",
+      "normalizedBrandKey": "natierra",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Natrol",
+      "normalizedBrandKey": "natrol",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Natura Health Products",
+      "normalizedBrandKey": "natura products",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Naturade",
+      "normalizedBrandKey": "naturade",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Natural Balance",
+      "normalizedBrandKey": "natural balance",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Natural Delights",
+      "normalizedBrandKey": "natural delights",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Natural Dog Company",
+      "normalizedBrandKey": "natural dog",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Natural Dynamix (NDX)",
+      "normalizedBrandKey": "natural dynamix ndx",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Natural Factors",
+      "normalizedBrandKey": "natural factors",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Natural Heaven",
+      "normalizedBrandKey": "natural heaven",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Natural Outcome",
+      "normalizedBrandKey": "natural outcome",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Natural Path Silver Wings",
+      "normalizedBrandKey": "natural path silver wings",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Natural Simply Delish",
+      "normalizedBrandKey": "natural simply delish",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Natural Stacks",
+      "normalizedBrandKey": "natural stacks",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Natural Vitality",
+      "normalizedBrandKey": "natural vitality",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Naturally Vitamins",
+      "normalizedBrandKey": "naturally vitamins",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "NaturaNectar",
+      "normalizedBrandKey": "naturanectar",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nature Made",
+      "normalizedBrandKey": "nature made",
+      "sources": [
+        "brands",
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nature's Answer",
+      "normalizedBrandKey": "nature s answer",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nature's Bounty",
+      "normalizedBrandKey": "nature s bounty",
+      "sources": [
+        "brands",
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nature's Charm",
+      "normalizedBrandKey": "nature s charm",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nature's Craft",
+      "normalizedBrandKey": "nature s craft",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nature's Life",
+      "normalizedBrandKey": "nature s life",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nature's Path",
+      "normalizedBrandKey": "nature s path",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nature's Secret",
+      "normalizedBrandKey": "nature s secret",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nature's Truth",
+      "normalizedBrandKey": "nature s truth",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nature's Turn",
+      "normalizedBrandKey": "nature s turn",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nature's Way",
+      "normalizedBrandKey": "nature s way",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "NATURELO",
+      "normalizedBrandKey": "naturelo",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "NaturesPlus",
+      "normalizedBrandKey": "naturesplus",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "NatureWise",
+      "normalizedBrandKey": "naturewise",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Navitas Organics",
+      "normalizedBrandKey": "navitas organics",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "NB Pure",
+      "normalizedBrandKey": "nb pure",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "NBI",
+      "normalizedBrandKey": "nbi",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "NeemAura",
+      "normalizedBrandKey": "neemaura",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Neocell",
+      "normalizedBrandKey": "neocell",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nervive",
+      "normalizedBrandKey": "nervive",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nesquik",
+      "normalizedBrandKey": "nesquik",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nested Naturals",
+      "normalizedBrandKey": "nested naturals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nestle Canada Inc dba Atrium Innovations Genestra Brands Pure Encapsulations Garden of Life Canada Trophic Canada SISU Wobenzym Bountiful Canada Vitamins Nature's Bounty Vital Proteins Canada",
+      "normalizedBrandKey": "nestle canada dba atrium innovations genestra brands pure encapsulations garden of life canada trophic canada sisu wobenzym bountiful canada vitamins nature s bounty vital proteins canada",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "Nestle Hot Cocoa Mix",
+      "normalizedBrandKey": "nestle hot cocoa mix",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Neurogan Health",
+      "normalizedBrandKey": "neurogan",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "NeuroGum",
+      "normalizedBrandKey": "neurogum",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "New Chapter",
+      "normalizedBrandKey": "new chapter",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "New Nordic",
+      "normalizedBrandKey": "new nordic",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "New Roots Herbal Inc.",
+      "normalizedBrandKey": "new roots herbal",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "New York Seed + Mill",
+      "normalizedBrandKey": "new york seed mill",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Newman's Own Organics",
+      "normalizedBrandKey": "newman s own organics",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nick's Sticks",
+      "normalizedBrandKey": "nick s sticks",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nivea",
+      "normalizedBrandKey": "nivea",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "No Sugar Company",
+      "normalizedBrandKey": "no sugar",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nobi Nutrition",
+      "normalizedBrandKey": "nobi",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "NOH Foods of Hawaii",
+      "normalizedBrandKey": "noh foods of hawaii",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Noka",
+      "normalizedBrandKey": "noka",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nongshim",
+      "normalizedBrandKey": "nongshim",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Noor Vitamins",
+      "normalizedBrandKey": "noor vitamins",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nora Snacks",
+      "normalizedBrandKey": "nora snacks",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nordic Naturals",
+      "normalizedBrandKey": "nordic naturals",
+      "sources": [
+        "brands",
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Norigami",
+      "normalizedBrandKey": "norigami",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "North American Herb & Spice",
+      "normalizedBrandKey": "north american herb spice",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "NOVOS",
+      "normalizedBrandKey": "novos",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "NOW Foods",
+      "normalizedBrandKey": "now foods",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "NOW Health Group, Inc.",
+      "normalizedBrandKey": "now group",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "NuBest",
+      "normalizedBrandKey": "nubest",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "NUCO",
+      "normalizedBrandKey": "nuco",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "NuGo Nutrition",
+      "normalizedBrandKey": "nugo",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Numbuzin",
+      "normalizedBrandKey": "numbuzin",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Numi Tea",
+      "normalizedBrandKey": "numi tea",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "NuNaturals",
+      "normalizedBrandKey": "nunaturals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nurished",
+      "normalizedBrandKey": "nurished",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "NuStrips",
+      "normalizedBrandKey": "nustrips",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nutiva",
+      "normalizedBrandKey": "nutiva",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nutra BioGenesis",
+      "normalizedBrandKey": "nutra biogenesis",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "NutraBio",
+      "normalizedBrandKey": "nutrabio",
+      "sources": [
+        "brands",
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "NutraBlast",
+      "normalizedBrandKey": "nutrablast",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "NutraChamps",
+      "normalizedBrandKey": "nutrachamps",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "NuTrail",
+      "normalizedBrandKey": "nutrail",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "NutraLife",
+      "normalizedBrandKey": "nutralife",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "NutraMedix",
+      "normalizedBrandKey": "nutramedix",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nutrex Hawaii",
+      "normalizedBrandKey": "nutrex hawaii",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nutrex Research",
+      "normalizedBrandKey": "nutrex research",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nutri",
+      "normalizedBrandKey": "nutri",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "NutriBiotic",
+      "normalizedBrandKey": "nutribiotic",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nutricology",
+      "normalizedBrandKey": "nutricology",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nutricost",
+      "normalizedBrandKey": "nutricost",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nutrikel",
+      "normalizedBrandKey": "nutrikel",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nutrition Now",
+      "normalizedBrandKey": "now",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nuttzo",
+      "normalizedBrandKey": "nuttzo",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nuun",
+      "normalizedBrandKey": "nuun",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Nuzest",
+      "normalizedBrandKey": "nuzest",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Oat Mama",
+      "normalizedBrandKey": "oat mama",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Obvi",
+      "normalizedBrandKey": "obvi",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Ocean's Balance",
+      "normalizedBrandKey": "ocean s balance",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "OceanBlue",
+      "normalizedBrandKey": "oceanblue",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Ocuvite",
+      "normalizedBrandKey": "ocuvite",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Olbas",
+      "normalizedBrandKey": "olbas",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Old Bay",
+      "normalizedBrandKey": "old bay",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "OLLY",
+      "normalizedBrandKey": "olly",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Olympian Labs",
+      "normalizedBrandKey": "olympian",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Olyra",
+      "normalizedBrandKey": "olyra",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Om Mushrooms",
+      "normalizedBrandKey": "om mushrooms",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Omega Alpha Pharmaceuticals Inc.",
+      "normalizedBrandKey": "omega alpha pharmaceuticals",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "OmegaVia",
+      "normalizedBrandKey": "omegavia",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Once Upon A Farm",
+      "normalizedBrandKey": "once upon a farm",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "One Of One",
+      "normalizedBrandKey": "one of one",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "One-A-Day",
+      "normalizedBrandKey": "one a day",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Onnit",
+      "normalizedBrandKey": "onnit",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Optimox",
+      "normalizedBrandKey": "optimox",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Optimum Nutrition",
+      "normalizedBrandKey": "optimum",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Ora",
+      "normalizedBrandKey": "ora",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "OraCoat",
+      "normalizedBrandKey": "oracoat",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Oraticx",
+      "normalizedBrandKey": "oraticx",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Oregon's Wild Harvest",
+      "normalizedBrandKey": "oregon s wild harvest",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Orgain",
+      "normalizedBrandKey": "orgain",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Organic India",
+      "normalizedBrandKey": "organic india",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Organic Traditions",
+      "normalizedBrandKey": "organic traditions",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Organic Valley",
+      "normalizedBrandKey": "organic valley",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Organifi",
+      "normalizedBrandKey": "organifi",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Organika",
+      "normalizedBrandKey": "organika",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Organika Health Products Inc",
+      "normalizedBrandKey": "organika products",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "Organix South",
+      "normalizedBrandKey": "organix south",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Organixx",
+      "normalizedBrandKey": "organixx",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "Original Natural Sweets",
+      "normalizedBrandKey": "original natural sweets",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Orion",
+      "normalizedBrandKey": "orion",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Osteo Bi-Flex",
+      "normalizedBrandKey": "osteo bi flex",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Otto's Naturals",
+      "normalizedBrandKey": "otto s naturals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Ovaltine",
+      "normalizedBrandKey": "ovaltine",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Palmini",
+      "normalizedBrandKey": "palmini",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Paradise Herbs",
+      "normalizedBrandKey": "paradise herbs",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Patagonia Provisions",
+      "normalizedBrandKey": "patagonia provisions",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "PatchAid",
+      "normalizedBrandKey": "patchaid",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "PB2 Foods",
+      "normalizedBrandKey": "pb2 foods",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "PBfit",
+      "normalizedBrandKey": "pbfit",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Peach Perfect",
+      "normalizedBrandKey": "peach perfect",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Peanut Butter & Co.",
+      "normalizedBrandKey": "peanut butter co",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Pendulum",
+      "normalizedBrandKey": "pendulum",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Perfect Sports",
+      "normalizedBrandKey": "perfect sports",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Perk Energy",
+      "normalizedBrandKey": "perk energy",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Pero",
+      "normalizedBrandKey": "pero",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "PEScience",
+      "normalizedBrandKey": "pescience",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "pH-D Feminine Health",
+      "normalizedBrandKey": "ph d feminine",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Phillip's",
+      "normalizedBrandKey": "phillip s",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Physician's Choice",
+      "normalizedBrandKey": "physician s choice",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Phytoral",
+      "normalizedBrandKey": "phytoral",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Pickle Juice",
+      "normalizedBrandKey": "pickle juice",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Pillsbury",
+      "normalizedBrandKey": "pillsbury",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Pines International",
+      "normalizedBrandKey": "pines international",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Pink",
+      "normalizedBrandKey": "pink",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Pink Stork",
+      "normalizedBrandKey": "pink stork",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Planetary Herbals",
+      "normalizedBrandKey": "planetary herbals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Plant People",
+      "normalizedBrandKey": "plant people",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "PlantFusion",
+      "normalizedBrandKey": "plantfusion",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Plnt",
+      "normalizedBrandKey": "plnt",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Plum Organics",
+      "normalizedBrandKey": "plum organics",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Podium Nutrition",
+      "normalizedBrandKey": "podium",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Pork King Good",
+      "normalizedBrandKey": "pork king good",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Poshi",
+      "normalizedBrandKey": "poshi",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Postum",
+      "normalizedBrandKey": "postum",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Power Up",
+      "normalizedBrandKey": "power up",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Preggie",
+      "normalizedBrandKey": "preggie",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Premier Protein",
+      "normalizedBrandKey": "premier protein",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Premom",
+      "normalizedBrandKey": "premom",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "PrePrimal",
+      "normalizedBrandKey": "preprimal",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "PreserVision",
+      "normalizedBrandKey": "preservision",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Primaforce",
+      "normalizedBrandKey": "primaforce",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Primal Kitchen",
+      "normalizedBrandKey": "primal kitchen",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Prime Hydration",
+      "normalizedBrandKey": "prime hydration",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Prince of Peace",
+      "normalizedBrandKey": "prince of peace",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Probase Nutrition",
+      "normalizedBrandKey": "probase",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "ProBioCare",
+      "normalizedBrandKey": "probiocare",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Probulin",
+      "normalizedBrandKey": "probulin",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "ProHealth Longevity",
+      "normalizedBrandKey": "prohealth longevity",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Project 1 Nutrition",
+      "normalizedBrandKey": "project 1",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Promensil",
+      "normalizedBrandKey": "promensil",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Promino",
+      "normalizedBrandKey": "promino",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Proper Good",
+      "normalizedBrandKey": "proper good",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "ProSupps",
+      "normalizedBrandKey": "prosupps",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Protocol for Life Balance",
+      "normalizedBrandKey": "protocol for life balance",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Pumpkin Tree Organics",
+      "normalizedBrandKey": "pumpkin tree organics",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Pure",
+      "normalizedBrandKey": "pure",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "Pure Co.",
+      "normalizedBrandKey": "pure co",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Pure Encapsulations",
+      "normalizedBrandKey": "pure encapsulations",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Pure Essence",
+      "normalizedBrandKey": "pure essence",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Pure Indian Foods",
+      "normalizedBrandKey": "pure indian foods",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Pure Living",
+      "normalizedBrandKey": "pure living",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Pure Planet",
+      "normalizedBrandKey": "pure planet",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Pure Protein",
+      "normalizedBrandKey": "pure protein",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Pure Synergy",
+      "normalizedBrandKey": "pure synergy",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Purely Elizabeth",
+      "normalizedBrandKey": "purely elizabeth",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Purely Inspired",
+      "normalizedBrandKey": "purely inspired",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Purity Products",
+      "normalizedBrandKey": "purity products",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Pyure",
+      "normalizedBrandKey": "pyure",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Qualia",
+      "normalizedBrandKey": "qualia",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Quality of Life",
+      "normalizedBrandKey": "quality of life",
+      "sources": [
+        "brands",
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "QUANTUM ENERGY SQUARE",
+      "normalizedBrandKey": "quantum energy square",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Quantum Health",
+      "normalizedBrandKey": "quantum",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Quest Nutrition",
+      "normalizedBrandKey": "quest",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Quinn Snacks",
+      "normalizedBrandKey": "quinn snacks",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Qunol",
+      "normalizedBrandKey": "qunol",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Racked",
+      "normalizedBrandKey": "racked",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "RADIUS",
+      "normalizedBrandKey": "radius",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Rainbo",
+      "normalizedBrandKey": "rainbo",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Rainbow Light",
+      "normalizedBrandKey": "rainbow light",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "RAPIDFIRE",
+      "normalizedBrandKey": "rapidfire",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Rasa",
+      "normalizedBrandKey": "rasa",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Raw Nutrition",
+      "normalizedBrandKey": "raw",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Raw Rev",
+      "normalizedBrandKey": "raw rev",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Rawmio",
+      "normalizedBrandKey": "rawmio",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Ready",
+      "normalizedBrandKey": "ready",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Real Aloe",
+      "normalizedBrandKey": "real aloe",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Real Health",
+      "normalizedBrandKey": "real",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Real Ketones",
+      "normalizedBrandKey": "real ketones",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Real Mushrooms",
+      "normalizedBrandKey": "real mushrooms",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Really Raw Honey",
+      "normalizedBrandKey": "really raw honey",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Redcon1",
+      "normalizedBrandKey": "redcon1",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Redd Remedies",
+      "normalizedBrandKey": "redd remedies",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Redmond",
+      "normalizedBrandKey": "redmond",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Reese",
+      "normalizedBrandKey": "reese",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Rejuvicare",
+      "normalizedBrandKey": "rejuvicare",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Relaxium",
+      "normalizedBrandKey": "relaxium",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Renew Life",
+      "normalizedBrandKey": "renew life",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Rephresh",
+      "normalizedBrandKey": "rephresh",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Replesta",
+      "normalizedBrandKey": "replesta",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Reserveage Beauty",
+      "normalizedBrandKey": "reserveage beauty",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Revive",
+      "normalizedBrandKey": "revive",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Revolution Nutrition",
+      "normalizedBrandKey": "revolution",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "RICOLA Ltd.",
+      "normalizedBrandKey": "ricola",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "Ricqlès",
+      "normalizedBrandKey": "ricql s",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "RidgeCrest Herbals",
+      "normalizedBrandKey": "ridgecrest herbals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Rise Bar",
+      "normalizedBrandKey": "rise bar",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Rishi Tea",
+      "normalizedBrandKey": "rishi tea",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Ritual",
+      "normalizedBrandKey": "ritual",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Ronnie Coleman",
+      "normalizedBrandKey": "ronnie coleman",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "RSP Nutrition",
+      "normalizedBrandKey": "rsp",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Rule One Proteins",
+      "normalizedBrandKey": "rule one proteins",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "RXBAR",
+      "normalizedBrandKey": "rxbar",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "RxSugar",
+      "normalizedBrandKey": "rxsugar",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "RYSE",
+      "normalizedBrandKey": "ryse",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Ryukakusan",
+      "normalizedBrandKey": "ryukakusan",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Safe Catch",
+      "normalizedBrandKey": "safe catch",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Sahale Snacks",
+      "normalizedBrandKey": "sahale snacks",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Salad Pizazz!",
+      "normalizedBrandKey": "salad pizazz",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "SaltStick",
+      "normalizedBrandKey": "saltstick",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Sambucol",
+      "normalizedBrandKey": "sambucol",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Samyang",
+      "normalizedBrandKey": "samyang",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "San-J",
+      "normalizedBrandKey": "san j",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Sanjin",
+      "normalizedBrandKey": "sanjin",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Sanofi Consumer Health Inc. Sanofi Santé Grand Public Inc",
+      "normalizedBrandKey": "sanofi consumer sanofi sant grand public",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "Schiff",
+      "normalizedBrandKey": "schiff",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Scholl's Wellness Company",
+      "normalizedBrandKey": "scholl s wellness",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "Sea Tangle Noodle Company",
+      "normalizedBrandKey": "sea tangle noodle",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "SeaBuckWonders",
+      "normalizedBrandKey": "seabuckwonders",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Seagate",
+      "normalizedBrandKey": "seagate",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Seapoint Farms",
+      "normalizedBrandKey": "seapoint farms",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "SeaSnax",
+      "normalizedBrandKey": "seasnax",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Secrets of Tea",
+      "normalizedBrandKey": "secrets of tea",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Seeds of Change",
+      "normalizedBrandKey": "seeds of change",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Seeking Health",
+      "normalizedBrandKey": "seeking",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Sempio",
+      "normalizedBrandKey": "sempio",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Sencha Naturals",
+      "normalizedBrandKey": "sencha naturals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Serenity Kids",
+      "normalizedBrandKey": "serenity kids",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Seven Sundays",
+      "normalizedBrandKey": "seven sundays",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Shameless Snacks",
+      "normalizedBrandKey": "shameless snacks",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Sheila G's",
+      "normalizedBrandKey": "sheila g s",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Shiloh Farms",
+      "normalizedBrandKey": "shiloh farms",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Sibu Beauty",
+      "normalizedBrandKey": "sibu beauty",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Siete",
+      "normalizedBrandKey": "siete",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Silicium Laboratories",
+      "normalizedBrandKey": "silicium",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Simple Mills",
+      "normalizedBrandKey": "simple mills",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Simply Organic",
+      "normalizedBrandKey": "simply organic",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Simply Protein",
+      "normalizedBrandKey": "simply protein",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Simply Tera's",
+      "normalizedBrandKey": "simply tera s",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Sir Kensington's",
+      "normalizedBrandKey": "sir kensington s",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "SIXSTAR",
+      "normalizedBrandKey": "sixstar",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Skinny Pasta",
+      "normalizedBrandKey": "skinny pasta",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "SkinnyDipped",
+      "normalizedBrandKey": "skinnydipped",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "SkinnyPop",
+      "normalizedBrandKey": "skinnypop",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Skout Organic",
+      "normalizedBrandKey": "skout organic",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Sky Organics",
+      "normalizedBrandKey": "sky organics",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "SlimFast",
+      "normalizedBrandKey": "slimfast",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "SmartyPants",
+      "normalizedBrandKey": "smartypants",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Smash Foods",
+      "normalizedBrandKey": "smash foods",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "SMNutrition",
+      "normalizedBrandKey": "smnutrition",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Snack Factory",
+      "normalizedBrandKey": "snack factory",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Snap Dynasty",
+      "normalizedBrandKey": "snap dynasty",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Snap Supplements",
+      "normalizedBrandKey": "snap",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Snapdragon Foods",
+      "normalizedBrandKey": "snapdragon foods",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Solaray",
+      "normalizedBrandKey": "solaray",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Solely",
+      "normalizedBrandKey": "solely",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Solgar",
+      "normalizedBrandKey": "solgar",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Somos",
+      "normalizedBrandKey": "somos",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Song Shu Pai",
+      "normalizedBrandKey": "song shu pai",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Source Naturals",
+      "normalizedBrandKey": "source naturals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Sovereign Silver",
+      "normalizedBrandKey": "sovereign silver",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Spectrum Culinary",
+      "normalizedBrandKey": "spectrum culinary",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Spectrum Essentials",
+      "normalizedBrandKey": "spectrum essentials",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Spike",
+      "normalizedBrandKey": "spike",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Sports Research",
+      "normalizedBrandKey": "sports research",
+      "sources": [
+        "brands",
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Spread The Love",
+      "normalizedBrandKey": "spread the love",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Spring & Mulberry",
+      "normalizedBrandKey": "spring mulberry",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Sprout Living",
+      "normalizedBrandKey": "sprout living",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Sprout Organics",
+      "normalizedBrandKey": "sprout organics",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "St. Dalfour",
+      "normalizedBrandKey": "st dalfour",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "SteelFit",
+      "normalizedBrandKey": "steelfit",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Stevita Naturals",
+      "normalizedBrandKey": "stevita naturals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Stonewall Kitchen",
+      "normalizedBrandKey": "stonewall kitchen",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Stur",
+      "normalizedBrandKey": "stur",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Sufficient C",
+      "normalizedBrandKey": "sufficient c",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "SugarbearPro",
+      "normalizedBrandKey": "sugarbearpro",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Sun Chlorella",
+      "normalizedBrandKey": "sun chlorella",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Sun-Maid",
+      "normalizedBrandKey": "sun maid",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Sunbiotics",
+      "normalizedBrandKey": "sunbiotics",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Suncore Foods",
+      "normalizedBrandKey": "suncore foods",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Sundance Vitamins",
+      "normalizedBrandKey": "sundance vitamins",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Sunergetic",
+      "normalizedBrandKey": "sunergetic",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Sunfood",
+      "normalizedBrandKey": "sunfood",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "SunLipid",
+      "normalizedBrandKey": "sunlipid",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Sunny Fruit",
+      "normalizedBrandKey": "sunny fruit",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "SunUp",
+      "normalizedBrandKey": "sunup",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Sunwarrior",
+      "normalizedBrandKey": "sunwarrior",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Super Nutrition",
+      "normalizedBrandKey": "super",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Superior Source",
+      "normalizedBrandKey": "superior source",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Sustainable Seas",
+      "normalizedBrandKey": "sustainable seas",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Swanson",
+      "normalizedBrandKey": "swanson",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Swanson WIO",
+      "normalizedBrandKey": "swanson wio",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Sweet Loren's",
+      "normalizedBrandKey": "sweet loren s",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "SweetLeaf Stevia",
+      "normalizedBrandKey": "sweetleaf stevia",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Swerve",
+      "normalizedBrandKey": "swerve",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Swisse",
+      "normalizedBrandKey": "swisse",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Swolverine",
+      "normalizedBrandKey": "swolverine",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Symbiotics",
+      "normalizedBrandKey": "symbiotics",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "T-RQ",
+      "normalizedBrandKey": "t rq",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Tabasco",
+      "normalizedBrandKey": "tabasco",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Tao Kae Noi",
+      "normalizedBrandKey": "tao kae noi",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Tasty Bite",
+      "normalizedBrandKey": "tasty bite",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "TAZO",
+      "normalizedBrandKey": "tazo",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "TC Nutrition",
+      "normalizedBrandKey": "tc",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "TCHO",
+      "normalizedBrandKey": "tcho",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Teeccino",
+      "normalizedBrandKey": "teeccino",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Terra",
+      "normalizedBrandKey": "terra",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Terra Origin",
+      "normalizedBrandKey": "terra origin",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "TerraVita",
+      "normalizedBrandKey": "terravita",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "TerraVita Premium Collection",
+      "normalizedBrandKey": "terravita premium collection",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "Terry Naturally",
+      "normalizedBrandKey": "terry naturally",
+      "sources": [
+        "brands",
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Tessemae's",
+      "normalizedBrandKey": "tessemae s",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Thai Kitchen",
+      "normalizedBrandKey": "thai kitchen",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "That's It",
+      "normalizedBrandKey": "that s it",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "The Akkermansia Company",
+      "normalizedBrandKey": "the akkermansia",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "The Anabar",
+      "normalizedBrandKey": "the anabar",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "The Feel Bar",
+      "normalizedBrandKey": "the feel bar",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "The Froot Thief",
+      "normalizedBrandKey": "the froot thief",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "The Genius Brand",
+      "normalizedBrandKey": "the genius brand",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "The GFB",
+      "normalizedBrandKey": "the gfb",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "The Ginger People",
+      "normalizedBrandKey": "the ginger people",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "The New Primal",
+      "normalizedBrandKey": "the new primal",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "The Real Cereal Co",
+      "normalizedBrandKey": "the real cereal co",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "The Smurfs",
+      "normalizedBrandKey": "the smurfs",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "The Spice Lab",
+      "normalizedBrandKey": "the spice lab",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "The Tao of Tea",
+      "normalizedBrandKey": "the tao of tea",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "the Vitamin Shoppe",
+      "normalizedBrandKey": "the vitamin shoppe",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "TheraBreath",
+      "normalizedBrandKey": "therabreath",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Theralogix",
+      "normalizedBrandKey": "theralogix",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "TheraNeem",
+      "normalizedBrandKey": "theraneem",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "Thinbi",
+      "normalizedBrandKey": "thinbi",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Think !",
+      "normalizedBrandKey": "think",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Thompson",
+      "normalizedBrandKey": "thompson",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Thorne",
+      "normalizedBrandKey": "thorne",
+      "sources": [
+        "brands",
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Three Wishes",
+      "normalizedBrandKey": "three wishes",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Tong Ren Tang",
+      "normalizedBrandKey": "tong ren tang",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Toniiq",
+      "normalizedBrandKey": "toniiq",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Tony Chachere's",
+      "normalizedBrandKey": "tony chachere s",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "TPCS",
+      "normalizedBrandKey": "tpcs",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Trace",
+      "normalizedBrandKey": "trace",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Traditional Medicinals",
+      "normalizedBrandKey": "traditional medicinals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "TransformHQ",
+      "normalizedBrandKey": "transformhq",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Tribe Organics",
+      "normalizedBrandKey": "tribe organics",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Triple Leaf Tea",
+      "normalizedBrandKey": "triple leaf tea",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Triquetra Health",
+      "normalizedBrandKey": "triquetra",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Troomy Nootropics",
+      "normalizedBrandKey": "troomy nootropics",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Trophic Canada",
+      "normalizedBrandKey": "trophic canada",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "Tropical Oasis",
+      "normalizedBrandKey": "tropical oasis",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Tru Niagen",
+      "normalizedBrandKey": "tru niagen",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "TruBiotics",
+      "normalizedBrandKey": "trubiotics",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "True Athlete",
+      "normalizedBrandKey": "true athlete",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "True Citrus",
+      "normalizedBrandKey": "true citrus",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "True Grace",
+      "normalizedBrandKey": "true grace",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "True Sea Moss",
+      "normalizedBrandKey": "true sea moss",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Truff",
+      "normalizedBrandKey": "truff",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "TruHeight",
+      "normalizedBrandKey": "truheight",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Truvani",
+      "normalizedBrandKey": "truvani",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Tukol",
+      "normalizedBrandKey": "tukol",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Tummydrops",
+      "normalizedBrandKey": "tummydrops",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Twin Peaks Ingredients",
+      "normalizedBrandKey": "twin peaks ingredients",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Twinings",
+      "normalizedBrandKey": "twinings",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Twinlab",
+      "normalizedBrandKey": "twinlab",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "TypeZero",
+      "normalizedBrandKey": "typezero",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Ultima Replenisher",
+      "normalizedBrandKey": "ultima replenisher",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Uncle Lee's Tea",
+      "normalizedBrandKey": "uncle lee s tea",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Unisom",
+      "normalizedBrandKey": "unisom",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Universal U",
+      "normalizedBrandKey": "universal u",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Unknown brand",
+      "normalizedBrandKey": "unknown brand",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "Unreal",
+      "normalizedBrandKey": "unreal",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "up4",
+      "normalizedBrandKey": "up4",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "UPC",
+      "normalizedBrandKey": "upc",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "UpSpring",
+      "normalizedBrandKey": "upspring",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Urban Accents",
+      "normalizedBrandKey": "urban accents",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "USimplySeason",
+      "normalizedBrandKey": "usimplyseason",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "VAHDAM India",
+      "normalizedBrandKey": "vahdam india",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Valor",
+      "normalizedBrandKey": "valor",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Vega",
+      "normalizedBrandKey": "vega",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "VeganSmart",
+      "normalizedBrandKey": "vegansmart",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Venture Pal",
+      "normalizedBrandKey": "venture pal",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Viactiv",
+      "normalizedBrandKey": "viactiv",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Vibrant Health",
+      "normalizedBrandKey": "vibrant",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Vitacost",
+      "normalizedBrandKey": "vitacost",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "VitaCup",
+      "normalizedBrandKey": "vitacup",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "VitaFusion",
+      "normalizedBrandKey": "vitafusion",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "VitaHustle",
+      "normalizedBrandKey": "vitahustle",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Vital Earth Minerals",
+      "normalizedBrandKey": "vital earth minerals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Vital Nutrients",
+      "normalizedBrandKey": "vital nutrients",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Vital Proteins",
+      "normalizedBrandKey": "vital proteins",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Vitality Works",
+      "normalizedBrandKey": "vitality works",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Vitamatic",
+      "normalizedBrandKey": "vitamatic",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Vitanica",
+      "normalizedBrandKey": "vitanica",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Vitassium",
+      "normalizedBrandKey": "vitassium",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Vitauthority",
+      "normalizedBrandKey": "vitauthority",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "VitaWorks",
+      "normalizedBrandKey": "vitaworks",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Viva Naturals",
+      "normalizedBrandKey": "viva naturals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Viviscal",
+      "normalizedBrandKey": "viviscal",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "VMI Sports",
+      "normalizedBrandKey": "vmi sports",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Vplab",
+      "normalizedBrandKey": "vplab",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Vthrive",
+      "normalizedBrandKey": "vthrive",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Walden Farms",
+      "normalizedBrandKey": "walden farms",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Wampole, Division of Jamp Pharma Corporation",
+      "normalizedBrandKey": "wampole division of jamp pharma",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "Want-Want",
+      "normalizedBrandKey": "want want",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Waterboy",
+      "normalizedBrandKey": "waterboy",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Wedderspoon",
+      "normalizedBrandKey": "wedderspoon",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Wellah",
+      "normalizedBrandKey": "wellah",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Whisps",
+      "normalizedBrandKey": "whisps",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Whole Earth",
+      "normalizedBrandKey": "whole earth",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Whole World Botanicals",
+      "normalizedBrandKey": "whole world botanicals",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Wholesome Story",
+      "normalizedBrandKey": "wholesome story",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Wholesome Sweeteners",
+      "normalizedBrandKey": "wholesome sweeteners",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Wholesome Yum",
+      "normalizedBrandKey": "wholesome yum",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Wild Planet",
+      "normalizedBrandKey": "wild planet",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Wilderness Poets",
+      "normalizedBrandKey": "wilderness poets",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Wildly Organic",
+      "normalizedBrandKey": "wildly organic",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Wiley's Finest",
+      "normalizedBrandKey": "wiley s finest",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Windmill Rx Premium vitamins",
+      "normalizedBrandKey": "windmill rx premium vitamins",
+      "sources": [
+        "brands"
+      ]
+    },
+    {
+      "sourceBrandName": "Wisdom Of The Ancients",
+      "normalizedBrandKey": "wisdom of the ancients",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "WishGarden Herbs",
+      "normalizedBrandKey": "wishgarden herbs",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Wondercow",
+      "normalizedBrandKey": "wondercow",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Wonderful Pistachios",
+      "normalizedBrandKey": "wonderful pistachios",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "World Organic",
+      "normalizedBrandKey": "world organic",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Xlear",
+      "normalizedBrandKey": "xlear",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Xtend",
+      "normalizedBrandKey": "xtend",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "XyliDENT",
+      "normalizedBrandKey": "xylident",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Xyloburst",
+      "normalizedBrandKey": "xyloburst",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "YDY",
+      "normalizedBrandKey": "ydy",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Yeouth",
+      "normalizedBrandKey": "yeouth",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Yerba Prima",
+      "normalizedBrandKey": "yerba prima",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Yes Bar",
+      "normalizedBrandKey": "yes bar",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Yeti Dog Chew",
+      "normalizedBrandKey": "yeti dog chew",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Yogi Tea",
+      "normalizedBrandKey": "yogi tea",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Youtheory",
+      "normalizedBrandKey": "youtheory",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Yu Lam Brand",
+      "normalizedBrandKey": "yu lam brand",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "YumEarth",
+      "normalizedBrandKey": "yumearth",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Yumi",
+      "normalizedBrandKey": "yumi",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "YumVs",
+      "normalizedBrandKey": "yumvs",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Yunnan Baiyao",
+      "normalizedBrandKey": "yunnan baiyao",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Zahler",
+      "normalizedBrandKey": "zahler",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Zand",
+      "normalizedBrandKey": "zand",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Zen Nutrients",
+      "normalizedBrandKey": "zen nutrients",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Zesty Paws",
+      "normalizedBrandKey": "zesty paws",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Zhou Nutrition",
+      "normalizedBrandKey": "zhou",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Zint",
+      "normalizedBrandKey": "zint",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Zipfizz",
+      "normalizedBrandKey": "zipfizz",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    },
+    {
+      "sourceBrandName": "Zollipops",
+      "normalizedBrandKey": "zollipops",
+      "sources": [
+        "iherb_overlay_products"
+      ]
+    }
+  ]
+}

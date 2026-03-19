@@ -1,0 +1,604 @@
+{
+  "schemaVersion": "week2_iherb_quality_mark_refresh_report.v1",
+  "generatedAt": "2026-03-15T07:16:09.389Z",
+  "refreshedCount": 7,
+  "summaryStatusCounts": {
+    "not_proven": 7
+  },
+  "warningCounts": {
+    "registry_checked_not_found": 7,
+    "brand_level_only_match": 3,
+    "registry_result_ambiguous": 3
+  },
+  "rows": [
+    {
+      "key": "web:gtin14:00029918015128:sun_chlorella:sun_chlorella_chlorella_supplement_500_mg_600_tablets",
+      "productId": "18697",
+      "barcode": "00029918015128",
+      "brandName": "Sun Chlorella",
+      "productName": "Sun Chlorella, Chlorella Supplement, 500 mg, 600 Tablets",
+      "iherbUrl": "https://www.iherb.com/pr/sun-chlorella-chlorella-supplement-500-mg-600-tablets/18697",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "informed_choice",
+      "strongestProgramLabel": "Informed Choice",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "not_proven",
+        "strongestProgramId": "informed_choice",
+        "strongestProgramLabel": "Informed Choice",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "registry_first_positive_control",
+      "officialRegistryProductName": "Sun Chlorella A",
+      "officialRegistryBrandName": "Sun Chlorella",
+      "officialRegistryEvidenceUrl": "https://choice.wetestyoutrust.com/supplement-search?search=Sun%20Chlorella",
+      "registryQueryBrandName": "Sun Chlorella",
+      "matchScore": 0.8,
+      "officialCoverage": 1,
+      "candidateCoverage": 0.2,
+      "phraseMatch": false,
+      "status": "not_detected",
+      "checked": true,
+      "confidence": 0.9,
+      "confidenceBucket": "high",
+      "evidenceRef": "https://choice.wetestyoutrust.com/supplement-search?search=Sun%20Chlorella%20Sun%20Chlorella%2C%20Chlorella%20Supplement%2C%20500%20mg%2C%20600%20Tablets",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://choice.wetestyoutrust.com/supplement-search?search=Sun%20Chlorella%20Sun%20Chlorella%2C%20Chlorella%20Supplement%2C%20500%20mg%2C%20600%20Tablets"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "programMatches": [
+        {
+          "programId": "informed_choice",
+          "programLabel": "Informed Choice",
+          "registryFamily": "lgc_informed",
+          "status": "not_found_in_registry",
+          "matchLevel": "product",
+          "evidenceUrl": "https://choice.wetestyoutrust.com/supplement-search?search=Sun%20Chlorella%20Sun%20Chlorella%2C%20Chlorella%20Supplement%2C%20500%20mg%2C%20600%20Tablets",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.9,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry returned no matching results."
+        }
+      ],
+      "note": "Official Informed Choice verification was checked and no product-level match was found.",
+      "error": null,
+      "checkedAt": "2026-03-15T07:16:07.414Z",
+      "expiresAt": "2026-04-14T07:16:07.414Z"
+    },
+    {
+      "key": "web:gtin14:00023249093367:sports_research:sports_research_creatine_monohydrate_unflavored_2_2_lb_1_kg",
+      "productId": "156362",
+      "barcode": "00023249093367",
+      "brandName": "Sports Research",
+      "productName": "Sports Research, Creatine Monohydrate, Unflavored, 2.2 lb (1 kg)",
+      "iherbUrl": "https://www.iherb.com/pr/sports-research-creatine-monohydrate-unflavored-2-2-lb-1-kg/156362",
+      "categoryId": "unknown",
+      "strongestProgramId": "informed_sport",
+      "strongestProgramLabel": "Informed Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "not_proven",
+        "strongestProgramId": "informed_sport",
+        "strongestProgramLabel": "Informed Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "registry_first_positive_control",
+      "officialRegistryProductName": "Creatine Monohydrate",
+      "officialRegistryBrandName": "Sports Research",
+      "officialRegistryEvidenceUrl": "https://sport.wetestyoutrust.com/supplement-search?search=Sports%20Research",
+      "registryQueryBrandName": "Sports Research",
+      "matchScore": 1,
+      "officialCoverage": 1,
+      "candidateCoverage": 1,
+      "phraseMatch": false,
+      "status": "not_detected",
+      "checked": true,
+      "confidence": 0.9,
+      "confidenceBucket": "high",
+      "evidenceRef": "https://sport.wetestyoutrust.com/supplement-search?search=Sports%20Research%20Sports%20Research%2C%20Creatine%20Monohydrate%2C%20Unflavored%2C%202.2%20lb%20(1%20kg)",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://sport.wetestyoutrust.com/supplement-search?search=Sports%20Research%20Sports%20Research%2C%20Creatine%20Monohydrate%2C%20Unflavored%2C%202.2%20lb%20(1%20kg)"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "programMatches": [
+        {
+          "programId": "informed_sport",
+          "programLabel": "Informed Sport",
+          "registryFamily": "lgc_informed",
+          "status": "not_found_in_registry",
+          "matchLevel": "product",
+          "evidenceUrl": "https://sport.wetestyoutrust.com/supplement-search?search=Sports%20Research%20Sports%20Research%2C%20Creatine%20Monohydrate%2C%20Unflavored%2C%202.2%20lb%20(1%20kg)",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.9,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry returned no matching results."
+        }
+      ],
+      "note": "Official Informed Sport verification was checked and no product-level match was found.",
+      "error": null,
+      "checkedAt": "2026-03-15T07:16:07.640Z",
+      "expiresAt": "2026-04-14T07:16:07.640Z"
+    },
+    {
+      "key": "web:gtin14:00023249093411:sports_research:sports_research_creatine_monohydrate_micronized_120_veggie_capsules_1_25_g_per_capsule",
+      "productId": "156363",
+      "barcode": "00023249093411",
+      "brandName": "Sports Research",
+      "productName": "Sports Research, Creatine Monohydrate, Micronized, 120 Veggie Capsules (1.25 g per Capsule)",
+      "iherbUrl": "https://www.iherb.com/pr/sports-research-creatine-monohydrate-micronized-120-veggie-capsules-1-25-g-per-capsule/156363",
+      "categoryId": "unknown",
+      "strongestProgramId": "informed_sport",
+      "strongestProgramLabel": "Informed Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "not_proven",
+        "strongestProgramId": "informed_sport",
+        "strongestProgramLabel": "Informed Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "registry_first_positive_control",
+      "officialRegistryProductName": "Creatine Monohydrate Capsules",
+      "officialRegistryBrandName": "Sports Research",
+      "officialRegistryEvidenceUrl": "https://sport.wetestyoutrust.com/supplement-search?search=Sports%20Research",
+      "registryQueryBrandName": "Sports Research",
+      "matchScore": 1,
+      "officialCoverage": 1,
+      "candidateCoverage": 1,
+      "phraseMatch": false,
+      "status": "not_detected",
+      "checked": true,
+      "confidence": 0.9,
+      "confidenceBucket": "high",
+      "evidenceRef": "https://sport.wetestyoutrust.com/supplement-search?search=Sports%20Research%20Sports%20Research%2C%20Creatine%20Monohydrate%2C%20Micronized%2C%20120%20Veggie%20Capsules%20(1.25%20g%20per%20Capsule)",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://sport.wetestyoutrust.com/supplement-search?search=Sports%20Research%20Sports%20Research%2C%20Creatine%20Monohydrate%2C%20Micronized%2C%20120%20Veggie%20Capsules%20(1.25%20g%20per%20Capsule)"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "programMatches": [
+        {
+          "programId": "informed_sport",
+          "programLabel": "Informed Sport",
+          "registryFamily": "lgc_informed",
+          "status": "not_found_in_registry",
+          "matchLevel": "product",
+          "evidenceUrl": "https://sport.wetestyoutrust.com/supplement-search?search=Sports%20Research%20Sports%20Research%2C%20Creatine%20Monohydrate%2C%20Micronized%2C%20120%20Veggie%20Capsules%20(1.25%20g%20per%20Capsule)",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.9,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry returned no matching results."
+        }
+      ],
+      "note": "Official Informed Sport verification was checked and no product-level match was found.",
+      "error": null,
+      "checkedAt": "2026-03-15T07:16:08.641Z",
+      "expiresAt": "2026-04-14T07:16:08.641Z"
+    },
+    {
+      "key": "web:gtin14:00023249091394:sports_research:sports_research_hydrate_electrolytes_cherry_pomegranate_15_87_oz_450_g",
+      "productId": "148456",
+      "barcode": "00023249091394",
+      "brandName": "Sports Research",
+      "productName": "Sports Research, Hydrate Electrolytes, Cherry Pomegranate, 15.87 oz (450 g)",
+      "iherbUrl": "https://www.iherb.com/pr/sports-research-hydrate-electrolytes-cherry-pomegranate-15-87-oz-450-g/148456",
+      "categoryId": "magnesium",
+      "strongestProgramId": "informed_sport",
+      "strongestProgramLabel": "Informed Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "not_proven",
+        "strongestProgramId": "informed_sport",
+        "strongestProgramLabel": "Informed Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "registry_first_positive_control",
+      "officialRegistryProductName": "Hydrate",
+      "officialRegistryBrandName": "Sports Research",
+      "officialRegistryEvidenceUrl": "https://sport.wetestyoutrust.com/supplement-search?search=Sports%20Research",
+      "registryQueryBrandName": "Sports Research",
+      "matchScore": 1.2,
+      "officialCoverage": 1,
+      "candidateCoverage": 1,
+      "phraseMatch": true,
+      "status": "not_detected",
+      "checked": true,
+      "confidence": 0.9,
+      "confidenceBucket": "high",
+      "evidenceRef": "https://sport.wetestyoutrust.com/supplement-search?search=Sports%20Research%20Sports%20Research%2C%20Hydrate%20Electrolytes%2C%20Cherry%20Pomegranate%2C%2015.87%20oz%20(450%20g)",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 1,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://sport.wetestyoutrust.com/supplement-search?search=Sports%20Research%20Sports%20Research%2C%20Hydrate%20Electrolytes%2C%20Cherry%20Pomegranate%2C%2015.87%20oz%20(450%20g)"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "programMatches": [
+        {
+          "programId": "informed_sport",
+          "programLabel": "Informed Sport",
+          "registryFamily": "lgc_informed",
+          "status": "not_found_in_registry",
+          "matchLevel": "product",
+          "evidenceUrl": "https://sport.wetestyoutrust.com/supplement-search?search=Sports%20Research%20Sports%20Research%2C%20Hydrate%20Electrolytes%2C%20Cherry%20Pomegranate%2C%2015.87%20oz%20(450%20g)",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.9,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry returned no matching results."
+        }
+      ],
+      "note": "Official Informed Sport verification was checked and no product-level match was found.",
+      "error": null,
+      "checkedAt": "2026-03-15T07:16:08.924Z",
+      "expiresAt": "2026-04-14T07:16:08.924Z"
+    },
+    {
+      "key": "web:gtin14:00705875802208:barlean_s:barlean_s_seriously_delicious_plant_based_omega_3_from_algae_oil_ginger_peach_630_mg_16_oz_454_g",
+      "productId": "147437",
+      "barcode": "00705875802208",
+      "brandName": "Barlean's",
+      "productName": "Barlean's, Seriously Delicious®, Plant Based Omega-3 From Algae Oil, Ginger Peach, 630 mg, 16 oz (454 g)",
+      "iherbUrl": "https://www.iherb.com/pr/barlean-s-seriously-delicious-plant-based-omega-3-from-algae-oil-ginger-peach-630-mg-16-oz-454-g/147437",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": "unknown",
+      "verificationSummary": {
+        "overallStatus": "not_proven",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "brand_level_only_match",
+          "registry_result_ambiguous",
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "registry_first_positive_control",
+      "officialRegistryProductName": "Ginger Peach Swirl Algae Oil",
+      "officialRegistryBrandName": "Barlean's",
+      "officialRegistryEvidenceUrl": "https://certifications.nutrasource.ca/certified-products/brand?id=BARL",
+      "registryQueryBrandName": "Barlean's",
+      "matchScore": 0.88,
+      "officialCoverage": 0.8,
+      "candidateCoverage": 0.8,
+      "phraseMatch": false,
+      "status": "not_detected",
+      "checked": true,
+      "confidence": 0.88,
+      "confidenceBucket": "high",
+      "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 2,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's",
+        "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredProducts?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's%2C%20Seriously%20Delicious%C2%AE%2C%20Plant%20Based%20Omega-3%20From%20Algae%20Oil%2C%20Ginger%20Peach%2C%20630%20mg%2C%2016%20oz%20(454%20g)"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "programMatches": [
+        {
+          "programId": "ifos",
+          "programLabel": "IFOS",
+          "registryFamily": "nutrasource",
+          "status": "ambiguous_match",
+          "matchLevel": "brand",
+          "evidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": true,
+          "productMatched": false,
+          "confidence": 0.68,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry matched the brand but not the product with enough confidence."
+        },
+        {
+          "programId": "ifos",
+          "programLabel": "IFOS",
+          "registryFamily": "nutrasource",
+          "status": "not_found_in_registry",
+          "matchLevel": "product",
+          "evidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredProducts?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's%2C%20Seriously%20Delicious%C2%AE%2C%20Plant%20Based%20Omega-3%20From%20Algae%20Oil%2C%20Ginger%20Peach%2C%20630%20mg%2C%2016%20oz%20(454%20g)",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.9,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry returned no matching results."
+        }
+      ],
+      "note": "Official IFOS results only support a brand-level match so far.",
+      "error": null,
+      "checkedAt": "2026-03-15T07:16:09.011Z",
+      "expiresAt": "2026-04-14T07:16:09.011Z"
+    },
+    {
+      "key": "web:gtin14:00705875610209:barlean_s:barlean_s_ideal_omega_3_orange_30_softgels",
+      "productId": "122252",
+      "barcode": "00705875610209",
+      "brandName": "Barlean's",
+      "productName": "Barlean's, Ideal Omega 3, Orange, 30 Softgels",
+      "iherbUrl": "https://www.iherb.com/pr/barlean-s-ideal-omega-3-orange-30-softgels/122252",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "not_proven",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "brand_level_only_match",
+          "registry_result_ambiguous",
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "registry_first_positive_control",
+      "officialRegistryProductName": "Ideal Omega 3",
+      "officialRegistryBrandName": "Barlean's",
+      "officialRegistryEvidenceUrl": "https://certifications.nutrasource.ca/certified-products/brand?id=BARL",
+      "registryQueryBrandName": "Barlean's",
+      "matchScore": 1.08,
+      "officialCoverage": 1,
+      "candidateCoverage": 1,
+      "phraseMatch": false,
+      "status": "not_detected",
+      "checked": true,
+      "confidence": 0.88,
+      "confidenceBucket": "high",
+      "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 2,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's",
+        "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredProducts?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's%2C%20Ideal%20Omega%203%2C%20Orange%2C%2030%20Softgels"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "programMatches": [
+        {
+          "programId": "ifos",
+          "programLabel": "IFOS",
+          "registryFamily": "nutrasource",
+          "status": "ambiguous_match",
+          "matchLevel": "brand",
+          "evidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": true,
+          "productMatched": false,
+          "confidence": 0.68,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry matched the brand but not the product with enough confidence."
+        },
+        {
+          "programId": "ifos",
+          "programLabel": "IFOS",
+          "registryFamily": "nutrasource",
+          "status": "not_found_in_registry",
+          "matchLevel": "product",
+          "evidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredProducts?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's%2C%20Ideal%20Omega%203%2C%20Orange%2C%2030%20Softgels",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.9,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry returned no matching results."
+        }
+      ],
+      "note": "Official IFOS results only support a brand-level match so far.",
+      "error": null,
+      "checkedAt": "2026-03-15T07:16:09.277Z",
+      "expiresAt": "2026-04-14T07:16:09.277Z"
+    },
+    {
+      "key": "web:gtin14:00705875802222:barlean_s:barlean_s_seriously_delicious_plant_based_omega_3_from_algae_oil_pink_lemonade_630_mg_16_oz_454_g",
+      "productId": "147436",
+      "barcode": "00705875802222",
+      "brandName": "Barlean's",
+      "productName": "Barlean's, Seriously Delicious®, Plant Based Omega-3 From Algae Oil, Pink Lemonade, 630 mg, 16 oz (454 g)",
+      "iherbUrl": "https://www.iherb.com/pr/barlean-s-seriously-delicious-plant-based-omega-3-from-algae-oil-pink-lemonade-630-mg-16-oz-454-g/147436",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": "unknown",
+      "verificationSummary": {
+        "overallStatus": "not_proven",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": false,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "brand_level_only_match",
+          "registry_result_ambiguous",
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "registry_first_positive_control",
+      "officialRegistryProductName": "Pink Lemonade Swirl Algae Oil",
+      "officialRegistryBrandName": "Barlean's",
+      "officialRegistryEvidenceUrl": "https://certifications.nutrasource.ca/certified-products/brand?id=BARL",
+      "registryQueryBrandName": "Barlean's",
+      "matchScore": 0.88,
+      "officialCoverage": 0.8,
+      "candidateCoverage": 0.8,
+      "phraseMatch": false,
+      "status": "not_detected",
+      "checked": true,
+      "confidence": 0.88,
+      "confidenceBucket": "high",
+      "evidenceRef": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's",
+      "evidenceType": "official_registry",
+      "checkedMode": "page_fetch",
+      "pagesFetchedCount": 2,
+      "searchPagesFetchedCount": 0,
+      "sourcesTried": [
+        "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's",
+        "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredProducts?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's%2C%20Seriously%20Delicious%C2%AE%2C%20Plant%20Based%20Omega-3%20From%20Algae%20Oil%2C%20Pink%20Lemonade%2C%20630%20mg%2C%2016%20oz%20(454%20g)"
+      ],
+      "sourcePriority": [
+        "official_registry"
+      ],
+      "programMatches": [
+        {
+          "programId": "ifos",
+          "programLabel": "IFOS",
+          "registryFamily": "nutrasource",
+          "status": "ambiguous_match",
+          "matchLevel": "brand",
+          "evidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredBrands?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": true,
+          "productMatched": false,
+          "confidence": 0.68,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry matched the brand but not the product with enough confidence."
+        },
+        {
+          "programId": "ifos",
+          "programLabel": "IFOS",
+          "registryFamily": "nutrasource",
+          "status": "not_found_in_registry",
+          "matchLevel": "product",
+          "evidenceUrl": "https://certifications.nutrasource.ca/umbraco/surface/NutrasourceContent/GetFilteredProducts?pageNumber=1&pageSize=12&forCertification=IFOS&forInterest=&forCategory=&byName=Barlean's%2C%20Seriously%20Delicious%C2%AE%2C%20Plant%20Based%20Omega-3%20From%20Algae%20Oil%2C%20Pink%20Lemonade%2C%20630%20mg%2C%2016%20oz%20(454%20g)",
+          "evidenceType": "official_registry",
+          "lotNumber": null,
+          "brandMatched": false,
+          "productMatched": false,
+          "confidence": 0.9,
+          "mapsToGenericThirdPartyClaim": true,
+          "note": "Official registry returned no matching results."
+        }
+      ],
+      "note": "Official IFOS results only support a brand-level match so far.",
+      "error": null,
+      "checkedAt": "2026-03-15T07:16:09.382Z",
+      "expiresAt": "2026-04-14T07:16:09.382Z"
+    }
+  ],
+  "outputs": {
+    "cachePath": "/Users/howard07/NuTriApp/nutri-app/output/quality_marks/quality_mark_cache.json",
+    "auditPath": "/Users/howard07/NuTriApp/nutri-app/output/quality_marks/quality_mark_audit.json"
+  }
+}

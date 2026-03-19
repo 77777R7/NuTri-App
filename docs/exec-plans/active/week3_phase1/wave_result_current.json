@@ -1,0 +1,33 @@
+{
+  "waveId": "week3_phase1_discovery_path_proof_20260314T202132Z",
+  "lane": "kpi",
+  "pathKey": "official_fetch_unresolved:iherb_discovery_path_proof",
+  "attempted": 8,
+  "recoveredComplete": 0,
+  "recoveredPartial": 0,
+  "kpiDelta": {
+    "completeHitCount": 0,
+    "completeHitRate": 0,
+    "activeQueueCount": 0
+  },
+  "mergeDelta": {
+    "strictMergeReady": 0,
+    "queued": 0
+  },
+  "blockerBreakdown": {
+    "discoveryHits": 5,
+    "falsePositiveRisk": 0
+  },
+  "decision": "pause",
+  "outcomeClass": "diagnostic_success",
+  "evidencePath": "/Users/howard07/NuTriApp/nutri-app/output/discovery_path_proof.json",
+  "executionHealth": {
+    "requests": 16,
+    "fetchSuccess": 10,
+    "http429": 6,
+    "aborted": 0,
+    "cacheHits": 0,
+    "retryCount": 3
+  },
+  "executed": true
+}

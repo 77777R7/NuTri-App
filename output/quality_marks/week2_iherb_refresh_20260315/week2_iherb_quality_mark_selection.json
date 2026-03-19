@@ -1,0 +1,1754 @@
+{
+  "schemaVersion": "week2_iherb_quality_mark_selection.v1",
+  "generatedAt": "2026-03-15T13:01:08.080Z",
+  "selectionMode": "claim_and_ifos_targeted",
+  "selectionInput": null,
+  "selectedCount": 50,
+  "candidateCount": 9821,
+  "programCounts": {
+    "NSF Certified for Sport": 15,
+    "USP Verified": 15,
+    "Informed Choice": 8,
+    "IFOS": 6,
+    "Informed Sport": 6
+  },
+  "rows": [
+    {
+      "key": "web:gtin14:00705875801034:barlean_s:barlean_s_omega_pals_essential_nutrition_for_kids_sensational_straw_nana_8_oz_227_g",
+      "productId": "89985",
+      "barcode": "00705875801034",
+      "brandName": "Barlean's",
+      "productName": "Barlean's, Omega Pals, Essential Nutrition For Kids, Sensational Straw-Nana, 8 oz (227 g)",
+      "iherbUrl": "https://www.iherb.com/pr/barlean-s-omega-pals-essential-nutrition-for-kids-sensational-straw-nana-8-oz-227-g/89985",
+      "categoryId": "unknown",
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": true
+    },
+    {
+      "key": "web:gtin14:00705875801058:barlean_s:barlean_s_omega_pals_hooty_fruity_tangerine_8_oz_227_g",
+      "productId": "89986",
+      "barcode": "00705875801058",
+      "brandName": "Barlean's",
+      "productName": "Barlean's, Omega Pals, Hooty Fruity Tangerine, 8 oz (227 g)",
+      "iherbUrl": "https://www.iherb.com/pr/barlean-s-omega-pals-hooty-fruity-tangerine-8-oz-227-g/89986",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous",
+          "program_not_equivalent_to_generic_third_party"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": true
+    },
+    {
+      "key": "web:gtin14:00705875000291:barlean_s:barlean_s_seriously_delicious_plant_based_omega_3_from_flax_oil_strawberry_banana_smoothie_2_968_mg_8_oz_227_g",
+      "productId": "122257",
+      "barcode": "00705875000291",
+      "brandName": "Barlean's",
+      "productName": "Barlean's, Seriously Delicious®, Plant Based Omega-3 from Flax Oil, Strawberry Banana Smoothie, 2,968 mg, 8 oz (227 g)",
+      "iherbUrl": "https://www.iherb.com/pr/barlean-s-seriously-delicious-plant-based-omega-3-from-flax-oil-strawberry-banana-smoothie-2-968-mg-8-oz-227-g/122257",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": true
+    },
+    {
+      "key": "web:gtin14:00737870239765:life_extension:life_extension_cognitex_elite_pregnenolone_60_vegetarian_tablets",
+      "productId": "86461",
+      "barcode": "00737870239765",
+      "brandName": "Life Extension",
+      "productName": "Life Extension, Cognitex Elite Pregnenolone, 60 Vegetarian Tablets",
+      "iherbUrl": "https://www.iherb.com/pr/life-extension-cognitex-elite-pregnenolone-60-vegetarian-tablets/86461",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": false
+    },
+    {
+      "key": "web:gtin14:00737870239666:life_extension:life_extension_cognitex_elite_60_vegetarian_tablets",
+      "productId": "86460",
+      "barcode": "00737870239666",
+      "brandName": "Life Extension",
+      "productName": "Life Extension, Cognitex Elite, 60 Vegetarian Tablets",
+      "iherbUrl": "https://www.iherb.com/pr/life-extension-cognitex-elite-60-vegetarian-tablets/86460",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": false
+    },
+    {
+      "key": "web:gtin14:00737870160038:life_extension:life_extension_krill_healthy_joint_formula_30_softgels",
+      "productId": "38526",
+      "barcode": "00737870160038",
+      "brandName": "Life Extension",
+      "productName": "Life Extension, Krill Healthy Joint Formula, 30 Softgels",
+      "iherbUrl": "https://www.iherb.com/pr/life-extension-krill-healthy-joint-formula-30-softgels/38526",
+      "categoryId": "unknown",
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": true
+    },
+    {
+      "key": "web:gtin14:00737870198819:life_extension:life_extension_super_omega_3_plus_120_softgels",
+      "productId": "67022",
+      "barcode": "00737870198819",
+      "brandName": "Life Extension",
+      "productName": "Life Extension, Super Omega-3 Plus, 120 Softgels",
+      "iherbUrl": "https://www.iherb.com/pr/life-extension-super-omega-3-plus-120-softgels/67022",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": true
+    },
+    {
+      "key": "web:gtin14:00705875100274:barlean_s:barlean_s_flax_chia_coconut_blend_12_oz_340_g",
+      "productId": "58147",
+      "barcode": "00705875100274",
+      "brandName": "Barlean's",
+      "productName": "Barlean's, Flax-Chia-Coconut Blend, 12 oz (340 g)",
+      "iherbUrl": "https://www.iherb.com/pr/barlean-s-flax-chia-coconut-blend-12-oz-340-g/58147",
+      "categoryId": "vitamin_d",
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": false,
+      "omegaLikeTitle": false
+    },
+    {
+      "key": "web:gtin14:00088395004414:carlson:carlson_e_gems_plus_100_soft_gels",
+      "productId": "125514",
+      "barcode": "00088395004414",
+      "brandName": "Carlson",
+      "productName": "Carlson, E-Gems® Plus, 100 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-e-gems-plus-100-soft-gels/125514",
+      "categoryId": "unknown",
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": false,
+      "omegaLikeTitle": false
+    },
+    {
+      "key": "web:gtin14:00088395004490:carlson:carlson_e_gems_plus_140_soft_gels",
+      "productId": "125516",
+      "barcode": "00088395004490",
+      "brandName": "Carlson",
+      "productName": "Carlson, E-Gems® Plus, 140 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-e-gems-plus-140-soft-gels/125516",
+      "categoryId": "unknown",
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": false,
+      "omegaLikeTitle": false
+    },
+    {
+      "key": "web:gtin14:00088395004421:carlson:carlson_e_gems_plus_250_soft_gels",
+      "productId": "125515",
+      "barcode": "00088395004421",
+      "brandName": "Carlson",
+      "productName": "Carlson, E-Gems® Plus, 250 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-e-gems-plus-250-soft-gels/125515",
+      "categoryId": "unknown",
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": false,
+      "omegaLikeTitle": false
+    },
+    {
+      "key": "web:gtin14:00088395004407:carlson:carlson_e_gems_plus_50_soft_gels",
+      "productId": "125513",
+      "barcode": "00088395004407",
+      "brandName": "Carlson",
+      "productName": "Carlson, E-Gems® Plus, 50 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-e-gems-plus-50-soft-gels/125513",
+      "categoryId": "unknown",
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": false,
+      "omegaLikeTitle": false
+    },
+    {
+      "key": "web:gtin14:00088395066405:carlson:carlson_natural_digestive_enzymes_50_tablets",
+      "productId": "125597",
+      "barcode": "00088395066405",
+      "brandName": "Carlson",
+      "productName": "Carlson, Natural Digestive Enzymes , 50 Tablets",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-natural-digestive-enzymes-50-tablets/125597",
+      "categoryId": "unknown",
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": false,
+      "omegaLikeTitle": false
+    },
+    {
+      "key": "web:gtin14:00088395066429:carlson:carlson_natural_digestive_enzymes_with_protease_amylase_lipase_250_tablets",
+      "productId": "118442",
+      "barcode": "00088395066429",
+      "brandName": "Carlson",
+      "productName": "Carlson, Natural Digestive Enzymes with Protease, Amylase & Lipase, 250 Tablets",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-natural-digestive-enzymes-with-protease-amylase-lipase-250-tablets/118442",
+      "categoryId": "unknown",
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": false,
+      "omegaLikeTitle": false
+    },
+    {
+      "key": "web:gtin14:00088395066412:carlson:carlson_natural_digestive_enzymes_100_tablets",
+      "productId": "118441",
+      "barcode": "00088395066412",
+      "brandName": "Carlson",
+      "productName": "Carlson, Natural Digestive Enzymes, 100 Tablets",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-natural-digestive-enzymes-100-tablets/118441",
+      "categoryId": "unknown",
+      "strongestProgramId": "usp_verified",
+      "strongestProgramLabel": "USP Verified",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "usp_verified",
+        "strongestProgramLabel": "USP Verified",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [
+          "usp_verified"
+        ],
+        "blockedProgramLabels": [
+          "USP Verified"
+        ],
+        "warnings": [
+          "registry_access_blocked",
+          "registry_result_ambiguous"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": false,
+      "omegaLikeTitle": false
+    },
+    {
+      "key": "web:gtin14:00705875610070:barlean_s:barlean_s_fresh_catch_fish_oil_omega_3_epa_dha_orange_100_softgels_300_mg_per_softgel",
+      "productId": "37309",
+      "barcode": "00705875610070",
+      "brandName": "Barlean's",
+      "productName": "Barlean's, Fresh Catch®, Fish Oil, Omega-3 EPA/DHA, Orange, 100 Softgels (300 mg per Softgel)",
+      "iherbUrl": "https://www.iherb.com/pr/barlean-s-fresh-catch-fish-oil-omega-3-epa-dha-orange-100-softgels-300-mg-per-softgel/37309",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "nsf_certified_for_sport",
+      "strongestProgramLabel": "NSF Certified for Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "nsf_certified_for_sport",
+        "strongestProgramLabel": "NSF Certified for Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": true
+    },
+    {
+      "key": "web:gtin14:00705875610087:barlean_s:barlean_s_fresh_catch_fish_oil_omega_3_epa_dha_orange_250_softgels_300_mg_per_softgel",
+      "productId": "10734",
+      "barcode": "00705875610087",
+      "brandName": "Barlean's",
+      "productName": "Barlean's, Fresh Catch®, Fish Oil, Omega-3 EPA/DHA, Orange, 250 Softgels (300 mg per Softgel)",
+      "iherbUrl": "https://www.iherb.com/pr/barlean-s-fresh-catch-fish-oil-omega-3-epa-dha-orange-250-softgels-300-mg-per-softgel/10734",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "nsf_certified_for_sport",
+      "strongestProgramLabel": "NSF Certified for Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "nsf_certified_for_sport",
+        "strongestProgramLabel": "NSF Certified for Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": true
+    },
+    {
+      "key": "web:gtin14:00705875000055:barlean_s:barlean_s_organic_lignan_flax_oil_12_fl_oz_355_ml",
+      "productId": "48907",
+      "barcode": "00705875000055",
+      "brandName": "Barlean's",
+      "productName": "Barlean's, Organic Lignan Flax Oil, 12 fl oz (355 ml)",
+      "iherbUrl": "https://www.iherb.com/pr/barlean-s-organic-lignan-flax-oil-12-fl-oz-355-ml/48907",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "nsf_certified_for_sport",
+      "strongestProgramLabel": "NSF Certified for Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "nsf_certified_for_sport",
+        "strongestProgramLabel": "NSF Certified for Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": false
+    },
+    {
+      "key": "web:gtin14:00705875000062:barlean_s:barlean_s_organic_lignan_flax_oil_32_fl_oz_946_ml",
+      "productId": "14798",
+      "barcode": "00705875000062",
+      "brandName": "Barlean's",
+      "productName": "Barlean's, Organic Lignan Flax Oil, 32 fl oz (946 ml)",
+      "iherbUrl": "https://www.iherb.com/pr/barlean-s-organic-lignan-flax-oil-32-fl-oz-946-ml/14798",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "nsf_certified_for_sport",
+      "strongestProgramLabel": "NSF Certified for Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "nsf_certified_for_sport",
+        "strongestProgramLabel": "NSF Certified for Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": false
+    },
+    {
+      "key": "web:gtin14:00088395444203:carlson:carlson_aces_omega_180_soft_gels",
+      "productId": "119535",
+      "barcode": "00088395444203",
+      "brandName": "Carlson",
+      "productName": "Carlson, ACES® + Omega, 180 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-aces-omega-180-soft-gels/119535",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "nsf_certified_for_sport",
+      "strongestProgramLabel": "NSF Certified for Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "nsf_certified_for_sport",
+        "strongestProgramLabel": "NSF Certified for Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_checked_not_found",
+          "program_not_equivalent_to_generic_third_party"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": true
+    },
+    {
+      "key": "web:gtin14:00088395444005:carlson:carlson_aces_omega_60_soft_gels",
+      "productId": "119533",
+      "barcode": "00088395444005",
+      "brandName": "Carlson",
+      "productName": "Carlson, ACES® + Omega, 60 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-aces-omega-60-soft-gels/119533",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "nsf_certified_for_sport",
+      "strongestProgramLabel": "NSF Certified for Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "nsf_certified_for_sport",
+        "strongestProgramLabel": "NSF Certified for Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_checked_not_found",
+          "program_not_equivalent_to_generic_third_party"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": true
+    },
+    {
+      "key": "web:gtin14:00088395214004:carlson:carlson_caviar_spms_60_soft_gels",
+      "productId": "119531",
+      "barcode": "00088395214004",
+      "brandName": "Carlson",
+      "productName": "Carlson, Caviar SPMs, 60 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-caviar-spms-60-soft-gels/119531",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "nsf_certified_for_sport",
+      "strongestProgramLabel": "NSF Certified for Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "nsf_certified_for_sport",
+        "strongestProgramLabel": "NSF Certified for Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": false
+    },
+    {
+      "key": "web:gtin14:00088395160103:carlson:carlson_elite_dha_natural_orange_3_3_fl_oz_100_ml",
+      "productId": "78646",
+      "barcode": "00088395160103",
+      "brandName": "Carlson",
+      "productName": "Carlson, Elite DHA, Natural Orange, 3.3 fl oz (100 ml)",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-elite-dha-natural-orange-3-3-fl-oz-100-ml/78646",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "nsf_certified_for_sport",
+      "strongestProgramLabel": "NSF Certified for Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "nsf_certified_for_sport",
+        "strongestProgramLabel": "NSF Certified for Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_checked_not_found",
+          "program_not_equivalent_to_generic_third_party"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": true
+    },
+    {
+      "key": "web:gtin14:00088395175206:carlson:carlson_elite_omega_3_plus_d_k_natural_lemon_180_soft_gels",
+      "productId": "84835",
+      "barcode": "00088395175206",
+      "brandName": "Carlson",
+      "productName": "Carlson, Elite Omega-3 Plus D & K, Natural Lemon, 180 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-elite-omega-3-plus-d-k-natural-lemon-180-soft-gels/84835",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "nsf_certified_for_sport",
+      "strongestProgramLabel": "NSF Certified for Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "nsf_certified_for_sport",
+        "strongestProgramLabel": "NSF Certified for Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_checked_not_found",
+          "program_not_equivalent_to_generic_third_party"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": true
+    },
+    {
+      "key": "web:gtin14:00088395175404:carlson:carlson_elite_omega_3_plus_d_k_natural_lemon_90_soft_gels",
+      "productId": "84836",
+      "barcode": "00088395175404",
+      "brandName": "Carlson",
+      "productName": "Carlson, Elite Omega-3 Plus D & K, Natural Lemon, 90 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-elite-omega-3-plus-d-k-natural-lemon-90-soft-gels/84836",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "nsf_certified_for_sport",
+      "strongestProgramLabel": "NSF Certified for Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "nsf_certified_for_sport",
+        "strongestProgramLabel": "NSF Certified for Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_checked_not_found",
+          "program_not_equivalent_to_generic_third_party"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": true
+    },
+    {
+      "key": "web:gtin14:00088395045325:carlson:carlson_inflammation_balance_natural_lemon_180_soft_gels",
+      "productId": "125503",
+      "barcode": "00088395045325",
+      "brandName": "Carlson",
+      "productName": "Carlson, Inflammation Balance®, Natural Lemon, 180 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-inflammation-balance-natural-lemon-180-soft-gels/125503",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "nsf_certified_for_sport",
+      "strongestProgramLabel": "NSF Certified for Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "nsf_certified_for_sport",
+        "strongestProgramLabel": "NSF Certified for Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": false
+    },
+    {
+      "key": "web:gtin14:00088395045318:carlson:carlson_inflammation_balance_natural_lemon_90_soft_gels",
+      "productId": "125502",
+      "barcode": "00088395045318",
+      "brandName": "Carlson",
+      "productName": "Carlson, Inflammation Balance®, Natural Lemon, 90 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-inflammation-balance-natural-lemon-90-soft-gels/125502",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "nsf_certified_for_sport",
+      "strongestProgramLabel": "NSF Certified for Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "nsf_certified_for_sport",
+        "strongestProgramLabel": "NSF Certified for Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": false,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_not_checked"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": false
+    },
+    {
+      "key": "web:gtin14:00088395157202:carlson:carlson_kid_s_chewable_dha_bursting_orange_100_mg_180_soft_gels",
+      "productId": "125452",
+      "barcode": "00088395157202",
+      "brandName": "Carlson",
+      "productName": "Carlson, Kid's Chewable DHA, Bursting Orange, 100 mg, 180 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-kid-s-chewable-dha-bursting-orange-100-mg-180-soft-gels/125452",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "nsf_certified_for_sport",
+      "strongestProgramLabel": "NSF Certified for Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "nsf_certified_for_sport",
+        "strongestProgramLabel": "NSF Certified for Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": false,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "program_not_equivalent_to_generic_third_party",
+          "registry_not_checked"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": true
+    },
+    {
+      "key": "web:gtin14:00088395015717:carlson:carlson_kid_s_chewable_dha_bursting_orange_120_soft_gels",
+      "productId": "13109",
+      "barcode": "00088395015717",
+      "brandName": "Carlson",
+      "productName": "Carlson, Kid's Chewable DHA, Bursting Orange, 120 Soft Gels",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-kid-s-chewable-dha-bursting-orange-120-soft-gels/13109",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "nsf_certified_for_sport",
+      "strongestProgramLabel": "NSF Certified for Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "nsf_certified_for_sport",
+        "strongestProgramLabel": "NSF Certified for Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": false,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "program_not_equivalent_to_generic_third_party",
+          "registry_not_checked"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": true
+    },
+    {
+      "key": "web:gtin14:00088395194306:carlson:carlson_kid_s_norwegian_the_very_finest_fish_oil_just_peachie_800_mg_6_7_fl_oz_200_ml",
+      "productId": "114552",
+      "barcode": "00088395194306",
+      "brandName": "Carlson",
+      "productName": "Carlson, Kid's, Norwegian, The Very Finest Fish Oil, Just Peachie, 800 mg, 6.7 fl oz (200 ml)",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-kid-s-norwegian-the-very-finest-fish-oil-just-peachie-800-mg-6-7-fl-oz-200-ml/114552",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "nsf_certified_for_sport",
+      "strongestProgramLabel": "NSF Certified for Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "nsf_certified_for_sport",
+        "strongestProgramLabel": "NSF Certified for Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": false,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "program_not_equivalent_to_generic_third_party",
+          "registry_not_checked"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": true
+    },
+    {
+      "key": "web:gtin14:00810100920890:sunwarrior:sunwarrior_sport_active_creatine_for_her_raspberry_elderberry_lemonade_14_1_oz_400_g",
+      "productId": "138993",
+      "barcode": "00810100920890",
+      "brandName": "Sunwarrior",
+      "productName": "Sunwarrior, Sport, Active Creatine For Her, Raspberry Elderberry Lemonade, 14.1 oz (400 g)",
+      "iherbUrl": "https://www.iherb.com/pr/sunwarrior-sport-active-creatine-for-her-raspberry-elderberry-lemonade-14-1-oz-400-g/138993",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "informed_choice",
+      "strongestProgramLabel": "Informed Choice",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "verified",
+        "strongestProgramId": "informed_choice",
+        "strongestProgramLabel": "Informed Choice",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": true,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": []
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": false
+    },
+    {
+      "key": "web:gtin14:00665553226590:allmax:allmax_acuts_amino_charged_energy_blue_raspberry_7_4_oz_210_g",
+      "productId": "72907",
+      "barcode": "00665553226590",
+      "brandName": "ALLMAX",
+      "productName": "ALLMAX, ACUTS™, Amino-Charged Energy, Blue Raspberry, 7.4 oz (210 g)",
+      "iherbUrl": "https://www.iherb.com/pr/allmax-acuts-amino-charged-energy-blue-raspberry-7-4-oz-210-g/72907",
+      "categoryId": "unknown",
+      "strongestProgramId": "informed_choice",
+      "strongestProgramLabel": "Informed Choice",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "informed_choice",
+        "strongestProgramLabel": "Informed Choice",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": false,
+      "omegaLikeTitle": false
+    },
+    {
+      "key": "web:gtin14:00665553224800:allmax:allmax_acuts_amino_charged_energy_goji_berry_7_4_oz_210_g",
+      "productId": "67718",
+      "barcode": "00665553224800",
+      "brandName": "ALLMAX",
+      "productName": "ALLMAX, ACUTS™, Amino-Charged Energy, Goji Berry, 7.4 oz (210 g)",
+      "iherbUrl": "https://www.iherb.com/pr/allmax-acuts-amino-charged-energy-goji-berry-7-4-oz-210-g/67718",
+      "categoryId": "unknown",
+      "strongestProgramId": "informed_choice",
+      "strongestProgramLabel": "Informed Choice",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "informed_choice",
+        "strongestProgramLabel": "Informed Choice",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": false,
+      "omegaLikeTitle": false
+    },
+    {
+      "key": "web:gtin14:00665553229157:allmax:allmax_acuts_amino_charged_energy_peach_mango_7_4_oz_210_g",
+      "productId": "119968",
+      "barcode": "00665553229157",
+      "brandName": "ALLMAX",
+      "productName": "ALLMAX, ACUTS™, Amino-Charged Energy, Peach Mango, 7.4 oz (210 g)",
+      "iherbUrl": "https://www.iherb.com/pr/allmax-acuts-amino-charged-energy-peach-mango-7-4-oz-210-g/119968",
+      "categoryId": "unknown",
+      "strongestProgramId": "informed_choice",
+      "strongestProgramLabel": "Informed Choice",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "informed_choice",
+        "strongestProgramLabel": "Informed Choice",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": false,
+      "omegaLikeTitle": false
+    },
+    {
+      "key": "web:gtin14:00665553225357:allmax:allmax_acuts_amino_charged_energy_pink_lemonade_7_4_oz_210_g",
+      "productId": "67720",
+      "barcode": "00665553225357",
+      "brandName": "ALLMAX",
+      "productName": "ALLMAX, ACUTS™, Amino-Charged Energy, Pink Lemonade, 7.4 oz (210 g)",
+      "iherbUrl": "https://www.iherb.com/pr/allmax-acuts-amino-charged-energy-pink-lemonade-7-4-oz-210-g/67720",
+      "categoryId": "unknown",
+      "strongestProgramId": "informed_choice",
+      "strongestProgramLabel": "Informed Choice",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "informed_choice",
+        "strongestProgramLabel": "Informed Choice",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": false,
+      "omegaLikeTitle": false
+    },
+    {
+      "key": "web:gtin14:00665553228709:allmax:allmax_acuts_amino_charged_energy_sweet_tea_7_4_oz_210_g",
+      "productId": "97200",
+      "barcode": "00665553228709",
+      "brandName": "ALLMAX",
+      "productName": "ALLMAX, ACUTS™, Amino-Charged Energy, Sweet Tea, 7.4 oz (210 g)",
+      "iherbUrl": "https://www.iherb.com/pr/allmax-acuts-amino-charged-energy-sweet-tea-7-4-oz-210-g/97200",
+      "categoryId": "unknown",
+      "strongestProgramId": "informed_choice",
+      "strongestProgramLabel": "Informed Choice",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "informed_choice",
+        "strongestProgramLabel": "Informed Choice",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": false,
+      "omegaLikeTitle": false
+    },
+    {
+      "key": "web:gtin14:00665553226859:allmax:allmax_acuts_amino_charged_energy_watermelon_7_4_oz_210_g",
+      "productId": "72906",
+      "barcode": "00665553226859",
+      "brandName": "ALLMAX",
+      "productName": "ALLMAX, ACUTS™, Amino-Charged Energy, Watermelon, 7.4 oz (210 g)",
+      "iherbUrl": "https://www.iherb.com/pr/allmax-acuts-amino-charged-energy-watermelon-7-4-oz-210-g/72906",
+      "categoryId": "unknown",
+      "strongestProgramId": "informed_choice",
+      "strongestProgramLabel": "Informed Choice",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "informed_choice",
+        "strongestProgramLabel": "Informed Choice",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": false,
+      "omegaLikeTitle": false
+    },
+    {
+      "key": "web:gtin14:00665553228235:allmax:allmax_carbion_with_electrolytes_blue_ice_25_6_oz_725_g",
+      "productId": "85243",
+      "barcode": "00665553228235",
+      "brandName": "ALLMAX",
+      "productName": "ALLMAX, CARBION+™ With Electrolytes, Blue Ice, 25.6 oz (725 g)",
+      "iherbUrl": "https://www.iherb.com/pr/allmax-carbion-with-electrolytes-blue-ice-25-6-oz-725-g/85243",
+      "categoryId": "magnesium",
+      "strongestProgramId": "informed_choice",
+      "strongestProgramLabel": "Informed Choice",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "informed_choice",
+        "strongestProgramLabel": "Informed Choice",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": false,
+      "omegaLikeTitle": false
+    },
+    {
+      "key": "web:gtin14:00733739022257:now_foods:now_foods_rest_repair_90_veg_capsules",
+      "productId": "117485",
+      "barcode": "00733739022257",
+      "brandName": "NOW Foods",
+      "productName": "NOW Foods, Rest & Repair, 90 Veg Capsules",
+      "iherbUrl": "https://www.iherb.com/pr/now-foods-rest-repair-90-veg-capsules/117485",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "informed_sport",
+      "strongestProgramLabel": "Informed Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "informed_sport",
+        "strongestProgramLabel": "Informed Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": false
+    },
+    {
+      "key": "web:gtin14:00023249092018:sports_research:sports_research_greens_organic_pineapple_coconut_7_76_oz_220_g",
+      "productId": "148460",
+      "barcode": "00023249092018",
+      "brandName": "Sports Research",
+      "productName": "Sports Research, Greens Organic, Pineapple Coconut, 7.76 oz (220 g)",
+      "iherbUrl": "https://www.iherb.com/pr/sports-research-greens-organic-pineapple-coconut-7-76-oz-220-g/148460",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "informed_sport",
+      "strongestProgramLabel": "Informed Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "informed_sport",
+        "strongestProgramLabel": "Informed Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": false
+    },
+    {
+      "key": "web:gtin14:00023249093305:sports_research:sports_research_organic_greens_original_10_58_oz_300_g",
+      "productId": "148464",
+      "barcode": "00023249093305",
+      "brandName": "Sports Research",
+      "productName": "Sports Research, Organic Greens, Original , 10.58 oz (300 g)",
+      "iherbUrl": "https://www.iherb.com/pr/sports-research-organic-greens-original-10-58-oz-300-g/148464",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "informed_sport",
+      "strongestProgramLabel": "Informed Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "informed_sport",
+        "strongestProgramLabel": "Informed Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": false
+    },
+    {
+      "key": "web:gtin14:00023249092001:sports_research:sports_research_organic_greens_original_7_05_oz_200_g",
+      "productId": "148459",
+      "barcode": "00023249092001",
+      "brandName": "Sports Research",
+      "productName": "Sports Research, Organic Greens, Original, 7.05 oz (200 g)",
+      "iherbUrl": "https://www.iherb.com/pr/sports-research-organic-greens-original-7-05-oz-200-g/148459",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "informed_sport",
+      "strongestProgramLabel": "Informed Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "verified",
+        "strongestProgramId": "informed_sport",
+        "strongestProgramLabel": "Informed Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": true,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": []
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": false
+    },
+    {
+      "key": "web:gtin14:00023249093312:sports_research:sports_research_organic_greens_pineapple_coconut_11_64_oz_330_g",
+      "productId": "148466",
+      "barcode": "00023249093312",
+      "brandName": "Sports Research",
+      "productName": "Sports Research, Organic Greens, Pineapple Coconut, 11.64 oz (330 g)",
+      "iherbUrl": "https://www.iherb.com/pr/sports-research-organic-greens-pineapple-coconut-11-64-oz-330-g/148466",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "informed_sport",
+      "strongestProgramLabel": "Informed Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "informed_sport",
+        "strongestProgramLabel": "Informed Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": false
+    },
+    {
+      "key": "web:gtin14:05056555204153:abe:abe_creatine_monohydrate_micronized_powder_blue_raspberry_10_58_oz_300_g",
+      "productId": "134139",
+      "barcode": "05056555204153",
+      "brandName": "ABE",
+      "productName": "ABE, Creatine Monohydrate, Micronized Powder, Blue Raspberry, 10.58 oz (300 g)",
+      "iherbUrl": "https://www.iherb.com/pr/abe-creatine-monohydrate-micronized-powder-blue-raspberry-10-58-oz-300-g/134139",
+      "categoryId": "unknown",
+      "strongestProgramId": "informed_sport",
+      "strongestProgramLabel": "Informed Sport",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "informed_sport",
+        "strongestProgramLabel": "Informed Sport",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": false,
+      "omegaLikeTitle": false
+    },
+    {
+      "key": "web:gtin14:00705875610209:barlean_s:barlean_s_ideal_omega_3_orange_30_softgels",
+      "productId": "122252",
+      "barcode": "00705875610209",
+      "brandName": "Barlean's",
+      "productName": "Barlean's, Ideal Omega 3, Orange, 30 Softgels",
+      "iherbUrl": "https://www.iherb.com/pr/barlean-s-ideal-omega-3-orange-30-softgels/122252",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "verified",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": true,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": []
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": true
+    },
+    {
+      "key": "web:gtin14:00705875610193:barlean_s:barlean_s_ideal_omega_3_orange_60_softgels",
+      "productId": "106163",
+      "barcode": "00705875610193",
+      "brandName": "Barlean's",
+      "productName": "Barlean's, Ideal Omega 3, Orange, 60 Softgels",
+      "iherbUrl": "https://www.iherb.com/pr/barlean-s-ideal-omega-3-orange-60-softgels/106163",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "claimed",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": false,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": true,
+        "brandLevelOfficialProgramLabels": [
+          "IFOS"
+        ],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "brand_level_only_match",
+          "registry_result_ambiguous",
+          "registry_checked_not_found"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": true
+    },
+    {
+      "key": "web:gtin14:00705875002776:barlean_s:barlean_s_plant_based_total_omega_3_6_9_pomegranate_blueberry_smoothie_3_980_mg_16_oz_454_g",
+      "productId": "15850",
+      "barcode": "00705875002776",
+      "brandName": "Barlean's",
+      "productName": "Barlean's, Plant Based Total Omega 3 · 6 · 9, Pomegranate Blueberry Smoothie, 3,980 mg, 16 oz (454 g)",
+      "iherbUrl": "https://www.iherb.com/pr/barlean-s-plant-based-total-omega-3-6-9-pomegranate-blueberry-smoothie-3-980-mg-16-oz-454-g/15850",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "verified",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": true,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": []
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": true
+    },
+    {
+      "key": "web:gtin14:00705875802208:barlean_s:barlean_s_seriously_delicious_plant_based_omega_3_from_algae_oil_ginger_peach_630_mg_16_oz_454_g",
+      "productId": "147437",
+      "barcode": "00705875802208",
+      "brandName": "Barlean's",
+      "productName": "Barlean's, Seriously Delicious®, Plant Based Omega-3 From Algae Oil, Ginger Peach, 630 mg, 16 oz (454 g)",
+      "iherbUrl": "https://www.iherb.com/pr/barlean-s-seriously-delicious-plant-based-omega-3-from-algae-oil-ginger-peach-630-mg-16-oz-454-g/147437",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "verified",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": true,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "program_not_equivalent_to_generic_third_party"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": true
+    },
+    {
+      "key": "web:gtin14:00705875802222:barlean_s:barlean_s_seriously_delicious_plant_based_omega_3_from_algae_oil_pink_lemonade_630_mg_16_oz_454_g",
+      "productId": "147436",
+      "barcode": "00705875802222",
+      "brandName": "Barlean's",
+      "productName": "Barlean's, Seriously Delicious®, Plant Based Omega-3 From Algae Oil, Pink Lemonade, 630 mg, 16 oz (454 g)",
+      "iherbUrl": "https://www.iherb.com/pr/barlean-s-seriously-delicious-plant-based-omega-3-from-algae-oil-pink-lemonade-630-mg-16-oz-454-g/147436",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "verified",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": true,
+        "productPageClaimDetected": false,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "program_not_equivalent_to_generic_third_party"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": true
+    },
+    {
+      "key": "web:gtin14:00088395137105:carlson:carlson_cod_liver_oil_natural_green_apple_1_100_mg_8_4_fl_oz_250_ml",
+      "productId": "114553",
+      "barcode": "00088395137105",
+      "brandName": "Carlson",
+      "productName": "Carlson, Cod Liver Oil, Natural Green Apple , 1,100 mg, 8.4 fl oz (250 ml)",
+      "iherbUrl": "https://www.iherb.com/pr/carlson-cod-liver-oil-natural-green-apple-1-100-mg-8-4-fl-oz-250-ml/114553",
+      "categoryId": "fish_oil_omega3",
+      "strongestProgramId": "ifos",
+      "strongestProgramLabel": "IFOS",
+      "thirdPartyChecklistState": "verified",
+      "verificationSummary": {
+        "overallStatus": "verified",
+        "strongestProgramId": "ifos",
+        "strongestProgramLabel": "IFOS",
+        "strongestMatchLevel": "product",
+        "officialRegistryChecked": true,
+        "officialRegistryVerified": true,
+        "productPageClaimDetected": true,
+        "catalogClaimDetected": false,
+        "genericThirdPartyClaimDetected": true,
+        "brandLevelOfficialProgramDetected": false,
+        "brandLevelOfficialProgramLabels": [],
+        "blockedProgramIds": [],
+        "blockedProgramLabels": [],
+        "warnings": [
+          "program_not_equivalent_to_generic_third_party"
+        ]
+      },
+      "selectionReason": "claim_backed_program",
+      "ifosProbeEligible": true,
+      "omegaLikeTitle": true
+    }
+  ],
+  "brandLevelHintBrands": [
+    "barlean's",
+    "carlson",
+    "life extension",
+    "metagenics",
+    "the vitamin shoppe"
+  ]
+}

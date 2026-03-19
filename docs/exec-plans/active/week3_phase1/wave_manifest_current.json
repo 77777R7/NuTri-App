@@ -1,0 +1,36 @@
+{
+  "waveId": "week3_phase1_discovery_path_proof_20260314T202132Z",
+  "lane": "kpi",
+  "pathKey": "official_fetch_unresolved:iherb_discovery_path_proof",
+  "cohortSource": "/Users/howard07/NuTriApp/nutri-app/output/week3_phase1_discovery/positive_control_set.json",
+  "brands": [
+    "Healthy Origins",
+    "Pure Encapsulations",
+    "Nature's Bounty",
+    "Schiff"
+  ],
+  "queryStrategy": "one_new_discovery_path_proof",
+  "sourcePriority": [
+    "mechanically_selected_from_source_and_query_comparison"
+  ],
+  "stopRules": [
+    "Positive controls only.",
+    "No unresolved micro-canary in this phase.",
+    "No staging mutation by default."
+  ],
+  "successMetric": "raise discoveryHits above 0 with zero falsePositiveRisk",
+  "newMethod": true,
+  "baselineRef": {
+    "strictMergeReady": 26635,
+    "queued": 23983,
+    "completeHitCount": 666,
+    "completeHitRate": 40.3,
+    "activeQueueCount": 0
+  },
+  "touchedBrandPaths": [
+    "official_fetch_unresolved:iherb_discovery_path_proof"
+  ],
+  "touchedBlockerKeys": [
+    "kpi:official_fetch_unresolved/iherb_identity_v2"
+  ]
+}

@@ -1,0 +1,138 @@
+{
+  "official_fetch_unresolved:iherb_identity_v1": {
+    "totalBatchesRun": 1,
+    "totalCompleteUplift": 0,
+    "lastBatchUplift": 0,
+    "lastTwoBatchPattern": "single_zero",
+    "currentDecision": "pause",
+    "lastWaveId": "week2_remaining_kpi_shard1_v2"
+  },
+  "official_fetch_unresolved:iherb_identity_v2": {
+    "totalBatchesRun": 1,
+    "totalCompleteUplift": 0,
+    "lastBatchUplift": 0,
+    "lastTwoBatchPattern": "single_zero",
+    "currentDecision": "pause",
+    "lastWaveId": "week2_5_identity_iherb_identity_v2_20260314T082518Z"
+  },
+  "NOW Foods:official_warnings_path": {
+    "totalBatchesRun": 2,
+    "totalCompleteUplift": 10,
+    "lastBatchUplift": 0,
+    "lastTwoBatchPattern": "positive_then_zero",
+    "currentDecision": "pause",
+    "lastWaveId": "week2_remaining_now_batch2"
+  },
+  "NOW Foods:official_warnings_path_retarget": {
+    "totalBatchesRun": 1,
+    "totalCompleteUplift": 1,
+    "lastBatchUplift": 1,
+    "lastTwoBatchPattern": "single_positive",
+    "currentDecision": "retarget",
+    "lastWaveId": "week2_5_coverage_now_warnings_retarget_20260314T082518Z"
+  },
+  "Carlson:official_ocr_warning": {
+    "totalBatchesRun": 5,
+    "totalCompleteUplift": 35,
+    "lastBatchUplift": 8,
+    "lastTwoBatchPattern": "positive_then_positive",
+    "currentDecision": "close",
+    "lastWaveId": "post_close_carlson_facts_remaining_10"
+  },
+  "Wet n Wild:stable_cohort": {
+    "totalBatchesRun": 1,
+    "totalCompleteUplift": 0,
+    "lastBatchUplift": 0,
+    "lastTwoBatchPattern": "single_zero",
+    "currentDecision": "pause",
+    "lastWaveId": "post_close_wet_n_wild_stable_micro_1"
+  },
+  "21st Century:rapidapi_exact_identity": {
+    "totalBatchesRun": 1,
+    "totalCompleteUplift": 0,
+    "lastBatchUplift": 0,
+    "lastTwoBatchPattern": "single_zero",
+    "currentDecision": "pause",
+    "lastWaveId": "post_close_21st_century_rapidapi_5"
+  },
+  "deep_gap:category_stage1": {
+    "totalBatchesRun": 1,
+    "totalCompleteUplift": 0,
+    "lastBatchUplift": 0,
+    "lastTwoBatchPattern": "single_zero",
+    "currentDecision": "close",
+    "lastWaveId": "week2_remaining_deep_gap_stage1"
+  },
+  "official_fetch_unresolved:iherb_identity_v2_positive_control_debug": {
+    "totalBatchesRun": 7,
+    "totalCompleteUplift": 0,
+    "lastBatchUplift": 0,
+    "lastTwoBatchPattern": "zero_then_zero",
+    "currentDecision": "pause",
+    "lastWaveId": "week2_5_identity_positive_control_debug_20260314T170212Z"
+  },
+  "official_fetch_unresolved:iherb_identity_v2_micro_canary": {
+    "totalBatchesRun": 10,
+    "totalCompleteUplift": 0,
+    "lastBatchUplift": 0,
+    "lastTwoBatchPattern": "zero_then_zero",
+    "currentDecision": "pause",
+    "lastWaveId": "week2_5_identity_micro_canary_20260314T182905Z"
+  },
+  "NOW Foods:official_warnings_path_light_retarget": {
+    "totalBatchesRun": 2,
+    "totalCompleteUplift": 0,
+    "lastBatchUplift": 0,
+    "lastTwoBatchPattern": "zero_then_zero",
+    "currentDecision": "pause",
+    "lastWaveId": "week2_5_coverage_now_light_20260314T170212Z"
+  },
+  "official_fetch_unresolved:iherb_identity_v2_positive_control_rerun": {
+    "totalBatchesRun": 4,
+    "totalCompleteUplift": 0,
+    "lastBatchUplift": 0,
+    "lastTwoBatchPattern": "zero_then_zero",
+    "currentDecision": "pause",
+    "lastWaveId": "week2_5_identity_positive_control_rerun_20260314T170212Z"
+  },
+  "official_fetch_unresolved:iherb_identity_v2_discovery_compare": {
+    "totalBatchesRun": 3,
+    "totalCompleteUplift": 0,
+    "lastBatchUplift": 0,
+    "lastTwoBatchPattern": "zero_then_zero",
+    "currentDecision": "pause",
+    "lastWaveId": "week2_5_discovery_source_compare_20260314T182905Z"
+  },
+  "official_fetch_unresolved:iherb_identity_v2_discovery_rerun": {
+    "totalBatchesRun": 3,
+    "totalCompleteUplift": 0,
+    "lastBatchUplift": 0,
+    "lastTwoBatchPattern": "zero_then_zero",
+    "currentDecision": "pause",
+    "lastWaveId": "week2_5_discovery_positive_control_rerun_20260314T182905Z"
+  },
+  "official_fetch_unresolved:iherb_discovery_source_family_compare": {
+    "totalBatchesRun": 6,
+    "totalCompleteUplift": 0,
+    "lastBatchUplift": 0,
+    "lastTwoBatchPattern": "zero_then_zero",
+    "currentDecision": "pause",
+    "lastWaveId": "week3_phase1_source_family_compare_20260314T202132Z"
+  },
+  "official_fetch_unresolved:iherb_discovery_query_family_compare": {
+    "totalBatchesRun": 6,
+    "totalCompleteUplift": 0,
+    "lastBatchUplift": 0,
+    "lastTwoBatchPattern": "zero_then_zero",
+    "currentDecision": "pause",
+    "lastWaveId": "week3_phase1_query_family_compare_20260314T202132Z"
+  },
+  "official_fetch_unresolved:iherb_discovery_path_proof": {
+    "totalBatchesRun": 6,
+    "totalCompleteUplift": 0,
+    "lastBatchUplift": 0,
+    "lastTwoBatchPattern": "zero_then_zero",
+    "currentDecision": "pause",
+    "lastWaveId": "week3_phase1_discovery_path_proof_20260314T202132Z"
+  }
+}

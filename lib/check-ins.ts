@@ -8,3 +8,12 @@ export const buildCheckInKey = (input: { supplementId?: string | null; localId: 
   input.supplementId ? buildSupplementCheckInKey(input.supplementId) : `${LOCAL_CHECKIN_PREFIX}${input.localId}`;
 
 export const isSupplementCheckInKey = (key: string) => key.startsWith(SUPPLEMENT_CHECKIN_PREFIX);
+
+export const getLocalDateKey = (date: Date) => {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, '0');
+  const day = `${date.getDate()}`.padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+export const isDateKeyAfter = (dateKey: string, referenceKey: string) => dateKey > referenceKey;

@@ -1,6 +1,11 @@
 import { ENV } from './env';
 import { getAccessToken } from './auth-token';
 import { AUTH_DISABLED } from './auth-mode';
+import type {
+  ExplanationResult,
+  ExplanationSurface,
+  PersonalizationSnapshot,
+} from '@/types/personalization';
 
 export type AuthenticatedRequestOptions = RequestInit & { token?: string | null };
 
@@ -220,6 +225,83 @@ export type NutriTipsResponse = {
   message?: string;
 };
 
+export type PersonalizationExplainResponse = {
+  payload: {
+    snapshotId: string;
+    rulesVersion: string;
+    surface: ExplanationSurface;
+    selectedGoals: string[];
+    selectedTypes: string[];
+    facts: Array<{
+      factId: string;
+      code: string;
+      params?: Record<string, string | number | boolean>;
+    }>;
+  };
+  result: ExplanationResult;
+};
+
+export type EnsureOverviewFactActive = {
+  name: string;
+  amount: number | null;
+  unit: string | null;
+  amountText: string | null;
+  source: 'label' | 'dsld' | 'lnhpd' | 'web';
+  confidence: number | null;
+};
+
+export type EnsureOverviewFacts = {
+  version: 'facts_v1';
+  factsDigestHash: string;
+  factsSourceVersion: string;
+  product: {
+    name: string | null;
+    brandDisplay: string | null;
+    dosageForm: string | null;
+  };
+  actives: EnsureOverviewFactActive[];
+  directions: {
+    rawText: string | null;
+  };
+  overlay: {
+    provider: 'iherb';
+    brandName: string | null;
+    title: string | null;
+    description: string | null;
+    link: string | null;
+    imageUrl: string | null;
+    suggestedUse: string | null;
+    warningsText: string | null;
+    ingredients: Array<{
+      name: string;
+      dose: string | null;
+    }>;
+  } | null;
+};
+
+export type EnsureOverviewRequest = {
+  supplementId?: string | null;
+  barcode?: string | null;
+  brandName?: string | null;
+  productName: string;
+  dosageText?: string | null;
+  userSupplementId?: string | null;
+};
+
+export type EnsureOverviewResponse = {
+  supplementId: string;
+  analysisReady: boolean;
+  source?: 'deepseek' | 'rule' | 'cache' | 'none';
+  analysisData?: unknown | null;
+  facts?: EnsureOverviewFacts | null;
+  factsStatus?: 'full' | 'partial' | 'none';
+  factsDigestHash?: string | null;
+  factsSourceVersion?: string | null;
+  aiStatus?: 'ready' | 'pending' | 'blocked' | 'none';
+  aiRetryAfterSec?: number | null;
+  aiBlockedReason?: string | null;
+};
+
 export const apiClient = {
   search: (payload: SearchRequest, options?: AuthenticatedRequestOptions) =>
     request<SearchAPIResponse>(`/api/search?${new URLSearchParams({
@@ -287,4 +369,24 @@ export const apiClient = {
 
   nutriTips: (options?: AuthenticatedRequestOptions) =>
     request<NutriTipsResponse>('/api/nutri-tips', { method: 'GET', ...options }),
+
+  explainPersonalization: (
+    payload: {
+      snapshot: PersonalizationSnapshot;
+      surface: ExplanationSurface;
+    },
+    options?: AuthenticatedRequestOptions,
+  ) =>
+    request<PersonalizationExplainResponse>('/api/personalization/explain', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      ...options,
+    }),
+
+  ensureOverview: (payload: EnsureOverviewRequest, options?: AuthenticatedRequestOptions) =>
+    request<EnsureOverviewResponse>('/api/ensure-overview', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      ...options,
+    }),
 };

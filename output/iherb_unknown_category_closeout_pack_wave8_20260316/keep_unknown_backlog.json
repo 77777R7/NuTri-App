@@ -1,0 +1,62 @@
+[
+  {
+    "sampleId": "sample_0497",
+    "productId": "151804",
+    "barcode_gtin14": "00811909031381",
+    "brandName": "Flat Tummy",
+    "title": "Flat Tummy, Shakes, Natural Chocolate, 1.6 lb (720 g)",
+    "overallScore": 80,
+    "isHighFrequency": false,
+    "truthDisposition": "keep_unknown_for_now",
+    "suggestedCategoryId": null,
+    "proposedTaxonomyKey": null,
+    "rationale": "This is a hybrid functional-food/weight-management concept and is safer to keep unknown until a broader taxonomy decision is made.",
+    "manualLabel": null,
+    "reviewerNotes": null
+  },
+  {
+    "sampleId": "sample_0295",
+    "productId": "155021",
+    "barcode_gtin14": "00367703602208",
+    "brandName": "EuroMedica",
+    "title": "EuroMedica, Curaphen®, 120 Capsules",
+    "overallScore": 68,
+    "isHighFrequency": false,
+    "truthDisposition": "keep_unknown_for_now",
+    "suggestedCategoryId": null,
+    "proposedTaxonomyKey": null,
+    "rationale": "This row remains mixed enough that forcing a taxonomy label would likely add noise.",
+    "manualLabel": null,
+    "reviewerNotes": null
+  },
+  {
+    "sampleId": "sample_0262",
+    "productId": "63390",
+    "barcode_gtin14": "00032917001634",
+    "brandName": "Traditional Medicinals",
+    "title": "Traditional Medicinals, Organic Spearmint, Caffeine Free, 16 Wrapped Tea Bags, 0.85 oz (24 g)",
+    "overallScore": 62,
+    "isHighFrequency": false,
+    "truthDisposition": "keep_unknown_for_now",
+    "suggestedCategoryId": null,
+    "proposedTaxonomyKey": null,
+    "rationale": "This row remains mixed enough that forcing a taxonomy label would likely add noise.",
+    "manualLabel": null,
+    "reviewerNotes": null
+  },
+  {
+    "sampleId": "sample_0228",
+    "productId": "4599",
+    "barcode_gtin14": "00047868212602",
+    "brandName": "Natural Balance",
+    "title": "Natural Balance, Chitosan, 120 Vegcaps (250 mg per Capsule)",
+    "overallScore": 59,
+    "isHighFrequency": false,
+    "truthDisposition": "keep_unknown_for_now",
+    "suggestedCategoryId": null,
+    "proposedTaxonomyKey": null,
+    "rationale": "This row remains mixed enough that forcing a taxonomy label would likely add noise.",
+    "manualLabel": null,
+    "reviewerNotes": null
+  }
+]

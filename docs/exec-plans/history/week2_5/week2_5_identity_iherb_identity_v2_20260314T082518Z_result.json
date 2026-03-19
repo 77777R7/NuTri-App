@@ -1,0 +1,28 @@
+{
+  "waveId": "week2_5_identity_iherb_identity_v2_20260314T082518Z",
+  "lane": "kpi",
+  "pathKey": "official_fetch_unresolved:iherb_identity_v2",
+  "attempted": 16,
+  "recoveredComplete": 0,
+  "recoveredPartial": 0,
+  "kpiDelta": {
+    "completeHitCount": 0,
+    "completeHitRate": 0,
+    "activeQueueCount": 0
+  },
+  "mergeDelta": {
+    "strictMergeReady": 0,
+    "queued": 0
+  },
+  "blockerBreakdown": {
+    "no_iherb_candidate_found": 37,
+    "no_iherb_page_match_after_fetch": 70,
+    "not_proven_on_iherb_us_current_methods": 7,
+    "likely_variant_mismatch": 0,
+    "query_generation_gap": 0,
+    "other": 244
+  },
+  "decision": "pause",
+  "outcomeClass": "no_signal",
+  "evidencePath": "/Users/howard07/NuTriApp/nutri-app/output/identity_recovery_root_cause_report.json"
+}

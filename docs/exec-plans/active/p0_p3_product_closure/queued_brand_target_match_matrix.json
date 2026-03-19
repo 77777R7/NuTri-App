@@ -1,0 +1,438 @@
+{
+  "generatedAt": "2026-03-17T21:20:00Z",
+  "objective": "Match queued brand targets against the current canonical high-frequency gaps and existing queued/discovery evidence, then recommend the strongest recovery lane without inventing matches.",
+  "inputs": {
+    "roleFile": ".codex/agents/queued-highfreq-matcher.toml",
+    "targetingFile": "docs/exec-plans/active/p0_p3_product_closure/queued_brand_targeting_current.json",
+    "canonicalHighFrequencyStatusFile": "docs/exec-plans/active/p0_p3_product_closure/high_frequency_recovery_wave_status.json",
+    "canonicalHighFrequencyValidationFile": "docs/exec-plans/active/p0_p3_product_closure/high_frequency_product_hit_validation.json",
+    "canonicalHighFrequencyDetailFile": "output/p0_p3_highfreq_schiff_healthy_natures_bounty_nature_made_pure_encapsulations_20260317/high_frequency_hit_validation.json",
+    "canonicalHighFrequencyRowDetailFile": "output/p0_p3_highfreq_schiff_healthy_natures_bounty_nature_made_pure_encapsulations_20260317/high_frequency_hit_details.json",
+    "exactBarcodeEvidenceFile": "docs/exec-plans/active/p0_p3_product_closure/high_frequency_exact_barcode_evidence.json",
+    "discoveryAgentResultFilesRead": []
+  },
+  "baseline": {
+    "completeHitCount": 725,
+    "activeQueueCount": 241,
+    "missingFromStagingCount": 684
+  },
+  "summary": {
+    "targetBrandCount": 10,
+    "brandsMatchedInCanonicalHighFrequency": 9,
+    "brandsClassifiedActiveQueue": 4,
+    "brandsClassifiedMissingFromStaging": 5,
+    "brandsClassifiedBoth": 0,
+    "brandsClassifiedAbsent": 1,
+    "brandsLikelyNeedingExternalDiscovery": 2
+  },
+  "brands": [
+    {
+      "brandName": "Pure Encapsulations",
+      "highFrequencyStatus": {
+        "presentInCanonicalReport": true,
+        "total": 50,
+        "completeHit": 37,
+        "activeQueue": 13,
+        "missingFromStaging": 0,
+        "statusSummary": "Residual active_queue remains after the March 17 official-fallback wave converted a large share of the brand.",
+        "canonicalEvidencePath": "output/p0_p3_highfreq_schiff_healthy_natures_bounty_nature_made_pure_encapsulations_20260317/high_frequency_hit_validation.json"
+      },
+      "queuedStatus": {
+        "present": true,
+        "queueType": "current_official_fallback_wave",
+        "queueCount": 38,
+        "priorityLane": "P0_api_fill_us_strong_identity",
+        "recommendedAction": "official_fill_usage_and_warnings",
+        "statusSummary": "Current March 17 run processed 38 rows and improved 26.",
+        "evidencePath": "output/p0_p3_official_bootstrap_pure_encapsulations_active38_20260317/official_fallback_report.json"
+      },
+      "gapDisposition": "active_queue",
+      "strongestRecoveryLaneRecommendation": {
+        "lane": "Continue the current official-fallback active_queue lane.",
+        "evidenceLevel": "evidence_backed",
+        "rationale": "The active_queue lane is already proven on the current wave: 38 processed, 26 improved, 25 became full-overlay-ready."
+      },
+      "externalDiscoveryLikelyRequired": false,
+      "supportingEvidence": [
+        {
+          "path": "docs/exec-plans/active/p0_p3_product_closure/high_frequency_recovery_wave_status.json",
+          "note": "Brand recovery wave explicitly shows positive incremental signal for the current active queue."
+        },
+        {
+          "path": "output/p0_p3_official_bootstrap_pure_encapsulations_active38_20260317/official_fallback_report.json",
+          "note": "Current official-fallback run improved 26 rows."
+        },
+        {
+          "path": "docs/exec-plans/active/p0_p3_product_closure/high_frequency_exact_barcode_evidence.json",
+          "note": "Exact-barcode path showed zero matches, so the official-fallback lane remains the best local option."
+        }
+      ]
+    },
+    {
+      "brandName": "Sports Research",
+      "highFrequencyStatus": {
+        "presentInCanonicalReport": true,
+        "total": 47,
+        "completeHit": 41,
+        "activeQueue": 0,
+        "missingFromStaging": 6,
+        "statusSummary": "Mostly recovered already, with a small missing-from-staging tail still open.",
+        "canonicalEvidencePath": "output/p0_p3_highfreq_schiff_healthy_natures_bounty_nature_made_pure_encapsulations_20260317/high_frequency_hit_validation.json"
+      },
+      "queuedStatus": {
+        "present": true,
+        "queueType": "official_brand_queue",
+        "queueCount": 46,
+        "priorityLane": "P0_api_fill_us_strong_identity",
+        "recommendedAction": "official_fill_usage_and_warnings",
+        "statusSummary": "Older queue artifacts still show a deep official-fill candidate set, and March 15 fallback work improved sampled rows.",
+        "evidencePath": "output/iherb_partial_wave_plan_week2_remaining_now_batch2_20260313/official_brand_queues/sports-research.json"
+      },
+      "gapDisposition": "missing_from_staging",
+      "strongestRecoveryLaneRecommendation": {
+        "lane": "Re-run a tightly targeted official/iGen lane against the residual missing-from-staging tail.",
+        "evidenceLevel": "evidence_backed",
+        "rationale": "Local evidence already shows brand-specific success: the sampled official-fallback run improved 2 of 2 rows, and the March 15 quality-marks final wave produced 15 consumer-ready rows."
+      },
+      "externalDiscoveryLikelyRequired": false,
+      "supportingEvidence": [
+        {
+          "path": "output/sports_research_igen_patch_wave_batch4_retry_20260315/official_fallback_report.json",
+          "note": "Sampled brand-specific fallback improved 2 of 2 rows."
+        },
+        {
+          "path": "output/quality_marks/igen_brand_expansion_wave4_sports_research_final_full_v2_20260315/brand_expansion_wave.json",
+          "note": "Brand-expansion wave produced 15 consumer-ready rows."
+        },
+        {
+          "path": "output/iherb_partial_wave_plan_week2_remaining_now_batch2_20260313/official_brand_queues/sports-research.json",
+          "note": "Existing official queue still points to the P0 US strong-identity lane."
+        }
+      ]
+    },
+    {
+      "brandName": "Life Extension",
+      "highFrequencyStatus": {
+        "presentInCanonicalReport": true,
+        "total": 47,
+        "completeHit": 29,
+        "activeQueue": 0,
+        "missingFromStaging": 18,
+        "statusSummary": "Material missing-from-staging tail remains, but the brand is already well represented in complete hits.",
+        "canonicalEvidencePath": "output/p0_p3_highfreq_schiff_healthy_natures_bounty_nature_made_pure_encapsulations_20260317/high_frequency_hit_validation.json"
+      },
+      "queuedStatus": {
+        "present": true,
+        "queueType": "rapidapi_brand_queue",
+        "queueCount": 9,
+        "priorityLane": "P0_api_fill_us_strong_identity",
+        "recommendedAction": "official_fill_core_fields",
+        "statusSummary": "Older queued evidence exists, but there is no fresh brand-specific March 17 execution artifact for the current missing tail.",
+        "evidencePath": "output/iherb_partial_wave_plan_week2_remaining_now_batch2_20260313/rapidapi_brand_queues/life-extension.json"
+      },
+      "gapDisposition": "missing_from_staging",
+      "strongestRecoveryLaneRecommendation": {
+        "lane": "Re-materialize a current queue from prior strong-identity RapidAPI candidates, then run targeted official_fill_core_fields.",
+        "evidenceLevel": "inferred_from_prior_queue",
+        "rationale": "There is local queue evidence and the brand already achieves 29 complete hits, but no current direct-run proof for the remaining 18 missing rows."
+      },
+      "externalDiscoveryLikelyRequired": false,
+      "supportingEvidence": [
+        {
+          "path": "output/iherb_partial_wave_plan_week2_remaining_now_batch2_20260313/rapidapi_brand_queues/life-extension.json",
+          "note": "Existing queue artifact still classifies Life Extension as P0 US strong identity."
+        },
+        {
+          "path": "output/p0_p3_highfreq_schiff_healthy_natures_bounty_nature_made_pure_encapsulations_20260317/high_frequency_hit_validation.json",
+          "note": "Canonical rollup shows 29 complete hits already in place."
+        }
+      ]
+    },
+    {
+      "brandName": "Garden of Life",
+      "highFrequencyStatus": {
+        "presentInCanonicalReport": true,
+        "total": 24,
+        "completeHit": 7,
+        "activeQueue": 0,
+        "missingFromStaging": 17,
+        "statusSummary": "Still missing from staging for most target rows, but strong local queue and brand-expansion evidence exists.",
+        "canonicalEvidencePath": "output/p0_p3_highfreq_schiff_healthy_natures_bounty_nature_made_pure_encapsulations_20260317/high_frequency_hit_validation.json"
+      },
+      "queuedStatus": {
+        "present": true,
+        "queueType": "official_brand_queue",
+        "queueCount": 22,
+        "priorityLane": "P0_api_fill_us_strong_identity",
+        "recommendedAction": "official_fill_core_fields",
+        "statusSummary": "Older official queue is deep and marks the first row as high-confidence US product-page ready.",
+        "evidencePath": "output/iherb_partial_wave_plan_week2_remaining_now_batch2_20260313/official_brand_queues/garden-of-life.json"
+      },
+      "gapDisposition": "missing_from_staging",
+      "strongestRecoveryLaneRecommendation": {
+        "lane": "Use the existing official/iGen discovery lane before attempting new external discovery.",
+        "evidenceLevel": "evidence_backed",
+        "rationale": "Local work already succeeded twice: the sampled official-fallback report improved 2 of 2 rows, and the March 15 brand-expansion probe produced 9 consumer-ready rows."
+      },
+      "externalDiscoveryLikelyRequired": false,
+      "supportingEvidence": [
+        {
+          "path": "output/garden_of_life_kpi_wave_20260313/official_fallback_report.json",
+          "note": "Sampled official-fallback run improved 2 of 2 rows."
+        },
+        {
+          "path": "output/quality_marks/igen_brand_expansion_wave5_garden_of_life_probe_full_v2_20260315/brand_expansion_wave.json",
+          "note": "Probe wave produced 9 consumer-ready rows."
+        },
+        {
+          "path": "output/iherb_partial_wave_plan_week2_remaining_now_batch2_20260313/official_brand_queues/garden-of-life.json",
+          "note": "Existing queue points to the P0 US strong-identity lane."
+        }
+      ]
+    },
+    {
+      "brandName": "Codeage",
+      "highFrequencyStatus": {
+        "presentInCanonicalReport": false,
+        "total": 0,
+        "completeHit": 0,
+        "activeQueue": 0,
+        "missingFromStaging": 0,
+        "statusSummary": "Not represented in the current canonical high-frequency report.",
+        "canonicalEvidencePath": "output/p0_p3_highfreq_schiff_healthy_natures_bounty_nature_made_pure_encapsulations_20260317/high_frequency_hit_validation.json"
+      },
+      "queuedStatus": {
+        "present": true,
+        "queueType": "rapidapi_brand_queue",
+        "queueCount": 19,
+        "priorityLane": "P0_api_fill_us_strong_identity",
+        "recommendedAction": "official_fill_core_fields",
+        "statusSummary": "Only older queue artifacts are available; there is no current canonical high-frequency presence to match against.",
+        "evidencePath": "output/iherb_partial_wave_plan_week2_remaining_now_batch2_20260313/rapidapi_brand_queues/codeage.json"
+      },
+      "gapDisposition": "absent",
+      "strongestRecoveryLaneRecommendation": {
+        "lane": "Do fresh North America discovery and queue-presence verification first, then re-queue only if the current signal is confirmed.",
+        "evidenceLevel": "inferred_from_prior_queue",
+        "rationale": "The repo has older queue and demo artifacts, but no current canonical high-frequency match and no fresh brand-specific recovery output."
+      },
+      "externalDiscoveryLikelyRequired": true,
+      "supportingEvidence": [
+        {
+          "path": "output/iherb_partial_wave_plan_week2_remaining_now_batch2_20260313/rapidapi_brand_queues/codeage.json",
+          "note": "Older RapidAPI queue shows prior strong-identity candidates."
+        },
+        {
+          "path": "output/demo5/codeage_adk/demo_decision_support_codeage_00853919008236.json",
+          "note": "Local demo output exists, but it is not canonical recovery evidence for the current queued/high-frequency set."
+        }
+      ]
+    },
+    {
+      "brandName": "Schiff",
+      "highFrequencyStatus": {
+        "presentInCanonicalReport": true,
+        "total": 47,
+        "completeHit": 6,
+        "activeQueue": 41,
+        "missingFromStaging": 0,
+        "statusSummary": "Largest active_queue brand in the target set, with modest but real March 17 official-fallback uplift.",
+        "canonicalEvidencePath": "output/p0_p3_highfreq_schiff_healthy_natures_bounty_nature_made_pure_encapsulations_20260317/high_frequency_hit_validation.json"
+      },
+      "queuedStatus": {
+        "present": true,
+        "queueType": "current_official_fallback_wave",
+        "queueCount": 46,
+        "priorityLane": "P0_api_fill_us_strong_identity",
+        "recommendedAction": "official_fill_usage_and_warnings",
+        "statusSummary": "Current March 17 official-bootstrap run processed 46 rows and improved 5.",
+        "evidencePath": "output/p0_p3_official_bootstrap_schiff_20260317/official_fallback_report.json"
+      },
+      "gapDisposition": "active_queue",
+      "strongestRecoveryLaneRecommendation": {
+        "lane": "Keep Schiff on the official-fallback active_queue lane; do not switch to exact-barcode recovery as the lead lane.",
+        "evidenceLevel": "evidence_backed",
+        "rationale": "The official lane still produces some uplift, while the exact-barcode lane produced zero matches on the March 17 evidence run."
+      },
+      "externalDiscoveryLikelyRequired": false,
+      "supportingEvidence": [
+        {
+          "path": "output/p0_p3_official_bootstrap_schiff_20260317/official_fallback_report.json",
+          "note": "Current run improved 5 of 46 processed rows."
+        },
+        {
+          "path": "docs/exec-plans/active/p0_p3_product_closure/high_frequency_recovery_wave_status.json",
+          "note": "Program-level call keeps Schiff in the next-best active brand focus."
+        },
+        {
+          "path": "output/p0_p3_exact_barcode_schiff_20260317/iherb_search_recovery_report.json",
+          "note": "Exact-barcode recovery produced no matches."
+        }
+      ]
+    },
+    {
+      "brandName": "Nutricost",
+      "highFrequencyStatus": {
+        "presentInCanonicalReport": true,
+        "total": 49,
+        "completeHit": 17,
+        "activeQueue": 32,
+        "missingFromStaging": 0,
+        "statusSummary": "Large active_queue backlog with the canonical detail file already tagging unresolved rows to the P0 US strong-identity lane.",
+        "canonicalEvidencePath": "output/p0_p3_highfreq_schiff_healthy_natures_bounty_nature_made_pure_encapsulations_20260317/high_frequency_hit_validation.json"
+      },
+      "queuedStatus": {
+        "present": true,
+        "queueType": "official_brand_queue",
+        "queueCount": 41,
+        "priorityLane": "P0_api_fill_us_strong_identity",
+        "recommendedAction": "official_fill_usage_and_warnings",
+        "statusSummary": "Older official queue remains large and aligned with the current active_queue classification.",
+        "evidencePath": "output/iherb_partial_wave_plan_week2_remaining_now_batch2_20260313/official_brand_queues/nutricost.json"
+      },
+      "gapDisposition": "active_queue",
+      "strongestRecoveryLaneRecommendation": {
+        "lane": "Promote Nutricost into the same official-fallback active_queue wave that just worked for Pure Encapsulations.",
+        "evidenceLevel": "inferred_from_queue",
+        "rationale": "Current canonical details already mark 32 unresolved rows with the P0 US strong-identity lane, and the program-level recovery status names Nutricost as one of the next best active brands."
+      },
+      "externalDiscoveryLikelyRequired": false,
+      "supportingEvidence": [
+        {
+          "path": "output/iherb_partial_wave_plan_week2_remaining_now_batch2_20260313/official_brand_queues/nutricost.json",
+          "note": "Existing official queue is large and points to official_fill_usage_and_warnings."
+        },
+        {
+          "path": "docs/exec-plans/active/p0_p3_product_closure/high_frequency_recovery_wave_status.json",
+          "note": "Program-level call explicitly cites Nutricost as a next-best remaining active brand."
+        }
+      ]
+    },
+    {
+      "brandName": "Vital Proteins",
+      "highFrequencyStatus": {
+        "presentInCanonicalReport": true,
+        "total": 40,
+        "completeHit": 8,
+        "activeQueue": 32,
+        "missingFromStaging": 0,
+        "statusSummary": "Large active_queue backlog with a positive but very small brand-specific proof sample already recorded locally.",
+        "canonicalEvidencePath": "output/p0_p3_highfreq_schiff_healthy_natures_bounty_nature_made_pure_encapsulations_20260317/high_frequency_hit_validation.json"
+      },
+      "queuedStatus": {
+        "present": true,
+        "queueType": "rapidapi_brand_queue",
+        "queueCount": 1,
+        "priorityLane": "P0_api_fill_us_strong_identity",
+        "recommendedAction": "official_fill_core_fields",
+        "statusSummary": "Older queue depth is small, but the canonical details still classify 32 unresolved rows into the P0 active lane.",
+        "evidencePath": "output/iherb_partial_wave_plan_week2_remaining_now_batch2_20260313/rapidapi_brand_queues/vital-proteins.json"
+      },
+      "gapDisposition": "active_queue",
+      "strongestRecoveryLaneRecommendation": {
+        "lane": "Use the official-fallback active_queue lane, with iGen/quality-marks outputs as supporting evidence rather than exact-barcode discovery.",
+        "evidenceLevel": "evidence_backed",
+        "rationale": "Local brand outputs already show a 1-of-1 improvement on official fallback and a 1-row consumer-ready quality-marks final, while exact-barcode testing found zero matches."
+      },
+      "externalDiscoveryLikelyRequired": false,
+      "supportingEvidence": [
+        {
+          "path": "output/vital_proteins_igen_patch_wave_20260315/official_fallback_report.json",
+          "note": "Brand-specific fallback improved 1 of 1 rows."
+        },
+        {
+          "path": "output/quality_marks/igen_brand_expansion_wave14_vital_proteins_final_full_v2_20260315/brand_expansion_wave.json",
+          "note": "Brand-expansion final produced 1 consumer-ready row."
+        },
+        {
+          "path": "docs/exec-plans/active/p0_p3_product_closure/high_frequency_exact_barcode_evidence.json",
+          "note": "Exact-barcode lane produced zero matches for 32 unresolved rows."
+        }
+      ]
+    },
+    {
+      "brandName": "Natrol",
+      "highFrequencyStatus": {
+        "presentInCanonicalReport": true,
+        "total": 46,
+        "completeHit": 5,
+        "activeQueue": 0,
+        "missingFromStaging": 41,
+        "statusSummary": "Largest missing-from-staging brand in the target set and the local recovery lanes are currently exhausted.",
+        "canonicalEvidencePath": "output/p0_p3_highfreq_schiff_healthy_natures_bounty_nature_made_pure_encapsulations_20260317/high_frequency_hit_validation.json"
+      },
+      "queuedStatus": {
+        "present": false,
+        "queueType": "none",
+        "queueCount": 0,
+        "priorityLane": null,
+        "recommendedAction": null,
+        "statusSummary": "No brand queue artifact was found for the current run window.",
+        "evidencePath": null
+      },
+      "gapDisposition": "missing_from_staging",
+      "strongestRecoveryLaneRecommendation": {
+        "lane": "Do not keep scaling the current exact-barcode or missing-recovery lanes; open a new discovery lane.",
+        "evidenceLevel": "evidence_backed",
+        "rationale": "Both March 17 Natrol recovery reports processed 41 rows and recovered zero, and the broader exact-barcode evidence file also recorded zero exact matches."
+      },
+      "externalDiscoveryLikelyRequired": true,
+      "supportingEvidence": [
+        {
+          "path": "output/p0_p3_missing_recovery_natrol_20260317/iherb_search_recovery_report.json",
+          "note": "Processed 41 rows with 41 no-path-found."
+        },
+        {
+          "path": "output/p0_p3_exact_barcode_natrol_20260317/iherb_search_recovery_report.json",
+          "note": "Exact-barcode run also processed 41 rows with zero recovery."
+        },
+        {
+          "path": "docs/exec-plans/active/p0_p3_product_closure/high_frequency_exact_barcode_evidence.json",
+          "note": "Browser-assisted discovery remained challenge-blocked."
+        }
+      ]
+    },
+    {
+      "brandName": "Country Life",
+      "highFrequencyStatus": {
+        "presentInCanonicalReport": true,
+        "total": 47,
+        "completeHit": 13,
+        "activeQueue": 0,
+        "missingFromStaging": 34,
+        "statusSummary": "Large missing-from-staging tail remains, but there is non-canonical local brand-expansion evidence worth replaying before new external discovery.",
+        "canonicalEvidencePath": "output/p0_p3_highfreq_schiff_healthy_natures_bounty_nature_made_pure_encapsulations_20260317/high_frequency_hit_validation.json"
+      },
+      "queuedStatus": {
+        "present": true,
+        "queueType": "rapidapi_brand_queue",
+        "queueCount": 1,
+        "priorityLane": "P0_api_fill_us_strong_identity",
+        "recommendedAction": "official_fill_core_fields",
+        "statusSummary": "Only a thin older queue artifact exists, but the brand-expansion probe found broader consumer-ready output.",
+        "evidencePath": "output/iherb_partial_wave_plan_week2_remaining_now_batch2_20260313/rapidapi_brand_queues/country-life.json"
+      },
+      "gapDisposition": "missing_from_staging",
+      "strongestRecoveryLaneRecommendation": {
+        "lane": "Replay the local iGen/brand-expansion path against the current missing rows before opening fresh external discovery.",
+        "evidenceLevel": "inferred_from_adjacent_local_outputs",
+        "rationale": "The March 15 Country Life probe produced 15 consumer-ready rows, which is stronger than the zero-match exact-barcode evidence for the current missing-from-staging lane."
+      },
+      "externalDiscoveryLikelyRequired": false,
+      "supportingEvidence": [
+        {
+          "path": "output/quality_marks/igen_brand_expansion_wave3_country_life_probe_full_v2_20260315/brand_expansion_wave.json",
+          "note": "Probe produced 15 consumer-ready rows."
+        },
+        {
+          "path": "docs/exec-plans/active/p0_p3_product_closure/high_frequency_exact_barcode_evidence.json",
+          "note": "Exact-barcode testing on 34 unresolved rows found zero exact matches."
+        },
+        {
+          "path": "output/iherb_partial_wave_plan_week2_remaining_now_batch2_20260313/rapidapi_brand_queues/country-life.json",
+          "note": "Older queue artifact still marks the brand as P0 US strong identity."
+        }
+      ]
+    }
+  ]
+}

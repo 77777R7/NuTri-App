@@ -97,6 +97,8 @@ export const OnboardingContainer = ({
     onSkip?.();
   }, [onSkip, setDirection]);
 
+  const scrollBottomPadding = Math.max(insets.bottom, 16) + 112;
+
   return (
     <View style={[styles.root, { paddingTop: insets.top + 16, paddingBottom: Math.max(insets.bottom, 16) + 24 }]}>
       <View style={styles.header}>
@@ -117,7 +119,7 @@ export const OnboardingContainer = ({
         {scrollable ? (
           <ScrollView
             style={styles.content}
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={[styles.scrollContent, { paddingBottom: scrollBottomPadding }]}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >

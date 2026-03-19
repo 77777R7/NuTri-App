@@ -1,0 +1,100 @@
+{
+  "schemaVersion": "p0_p3_high_frequency_exact_barcode_evidence.v1",
+  "generatedAt": "2026-03-17T18:25:00Z",
+  "phase": "P0-B-exact-barcode-availability",
+  "phaseOutcomeStatus": "blocker_isolation",
+  "currentHighFrequencyBaseline": {
+    "validationPath": "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_highfreq_after_carlson_20260317/high_frequency_hit_validation.json",
+    "completeHitCount": 665,
+    "completeHitRatePct": 40.3,
+    "missingFromStagingCount": 985
+  },
+  "browserDiscoverySignals": {
+    "directIherbSearch": "cloudflare_security_verification",
+    "braveSearch": "captcha_challenge",
+    "duckduckgoHtml": "anomaly_or_botnet_challenge",
+    "interpretation": "Browser-assisted search did not unlock a scalable, low-risk exact-product discovery lane for current P0 closure."
+  },
+  "exactBarcodeEvidence": {
+    "testedUnresolvedRows": 304,
+    "testedShareOfMissingFromStagingPct": 30.9,
+    "totalExactBarcodeMatches": 0,
+    "brands": [
+      {
+        "brandName": "Nature Made",
+        "unresolvedRowsTested": 29,
+        "sitemapBrandUrlCount": 69,
+        "exactBarcodeMatches": 0,
+        "evidenceMode": "ad_hoc_brand_page_upc_scan"
+      },
+      {
+        "brandName": "Schiff",
+        "unresolvedRowsTested": 46,
+        "sitemapBrandUrlCount": 25,
+        "exactBarcodeMatches": 0,
+        "evidenceMode": "recover_script_exact_barcode_index",
+        "reportPath": "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_exact_barcode_schiff_20260317/iherb_search_recovery_report.json"
+      },
+      {
+        "brandName": "Pure Encapsulations",
+        "unresolvedRowsTested": 38,
+        "sitemapBrandUrlCount": 207,
+        "exactBarcodeMatches": 0,
+        "evidenceMode": "recover_script_exact_barcode_index",
+        "note": "Exact barcode index logged zero matches before the run hit disk-pressure while writing the large staging copy."
+      },
+      {
+        "brandName": "Natrol",
+        "unresolvedRowsTested": 41,
+        "sitemapBrandUrlCount": 54,
+        "exactBarcodeMatches": 0,
+        "evidenceMode": "recover_script_exact_barcode_index",
+        "reportPath": "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_exact_barcode_natrol_20260317/iherb_search_recovery_report.json"
+      },
+      {
+        "brandName": "Vital Proteins",
+        "unresolvedRowsTested": 32,
+        "sitemapBrandUrlCount": 17,
+        "exactBarcodeMatches": 0,
+        "evidenceMode": "recover_script_exact_barcode_index",
+        "reportPath": "/Users/howard07/NuTriApp/nutri-app/output/p0_p3_exact_barcode_vital_proteins_20260317/iherb_search_recovery_report.json"
+      },
+      {
+        "brandName": "Nature's Bounty",
+        "unresolvedRowsTested": 33,
+        "sitemapBrandUrlCount": 151,
+        "exactBarcodeMatches": 0,
+        "evidenceMode": "recover_script_exact_barcode_index",
+        "note": "Exact barcode index logged zero matches before row-by-row candidate fetch continued."
+      },
+      {
+        "brandName": "MegaFood",
+        "unresolvedRowsTested": 31,
+        "sitemapBrandUrlCount": 108,
+        "exactBarcodeMatches": 0,
+        "evidenceMode": "recover_script_exact_barcode_index",
+        "note": "Exact barcode index logged zero matches before row-by-row candidate fetch continued."
+      },
+      {
+        "brandName": "Country Life",
+        "unresolvedRowsTested": 34,
+        "sitemapBrandUrlCount": 184,
+        "exactBarcodeMatches": 0,
+        "evidenceMode": "recover_script_exact_barcode_index",
+        "note": "Exact barcode index logged zero matches before the run hit disk-pressure while writing the large staging copy."
+      },
+      {
+        "brandName": "Doctor's Best",
+        "unresolvedRowsTested": 20,
+        "sitemapBrandUrlCount": 189,
+        "exactBarcodeMatches": 0,
+        "evidenceMode": "recover_script_exact_barcode_index",
+        "note": "Exact barcode index logged zero matches before the run hit disk-pressure while writing the large staging copy."
+      }
+    ]
+  },
+  "finalCall": {
+    "canClaim70PctNow": false,
+    "reason": "The current browser-search lane is challenge-blocked, and the exact-barcode iHerb sitemap/page lane produced zero exact matches across 304 unresolved high-frequency rows spanning 9 major brands. Without a new exact-identity acquisition source, continuing to scale the current lane would not be product-grade."
+  }
+}

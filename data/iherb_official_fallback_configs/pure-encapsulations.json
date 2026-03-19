@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "iherb_official_fallback_config.v1",
+  "brandName": "Pure Encapsulations",
+  "priorityLane": "P0_api_fill_us_strong_identity",
+  "siteOrigin": "https://www.pureencapsulationspro.com",
+  "readerPrefix": "https://r.jina.ai/http://",
+  "enableAgentBrowserFallback": true,
+  "searchQueryOverrides": {
+    "158083": ["Acai 600"],
+    "158023": ["Ascorbyl Palmitate"],
+    "158061": ["Beta-Sitosterol"],
+    "158046": ["Black Cohosh 2.5"],
+    "158024": ["Black Currant Seed Oil"],
+    "158085": ["Borage Oil"],
+    "158090": ["PureDefense with NAC"],
+    "158078": ["Chaste Tree Vitex"]
+  },
+  "productPageUrlOverrides": {
+    "158022": "https://www.pureencapsulationspro.com/boron.html",
+    "158067": "https://www.pureencapsulationspro.com/calcium-with-vit-d3.html",
+    "158082": "https://www.pureencapsulationspro.com/caprylic-acid.html",
+    "158064": "https://www.pureencapsulationspro.com/cat-s-claw.html",
+    "158078": "https://www.pureencapsulationspro.com/chaste-tree-vitex.html"
+  },
+  "brochureFilenameOverrides": {
+    "158022": ["Pure_PIS_BoronGlycinate_final.pdf"],
+    "158067": ["PIS_CalciumVitaminD3.pdf"],
+    "158082": ["Pure_PIS_CaprylicAcid.pdf"],
+    "158064": ["Pure_PIS_CatsClaw_final.pdf"],
+    "158078": ["Pure_PIS_ChasteTree_final.pdf"],
+    "158090": ["Pure_PIS_PureDefenseNAC.pdf"]
+  },
+  "manualSectionOverrides": {
+    "158082": {
+      "Suggested use": "As a dietary supplement, take 2 capsules, 30 minutes before each meal, or as directed by a health professional."
+    }
+  }
+}

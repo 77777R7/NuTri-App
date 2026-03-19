@@ -1,0 +1,65 @@
+{
+  "version": "v1",
+  "templates": [
+    {
+      "code": "goal_supported_by_ingredient",
+      "template": "{ingredientLabel} is one of the ingredients we review for your {goalLabel} goal.",
+      "placeholders": ["ingredientLabel", "goalLabel"]
+    },
+    {
+      "code": "dose_meets_effective_floor",
+      "template": "The disclosed dose meets the current review floor we track for {ingredientLabel}.",
+      "placeholders": ["ingredientLabel"]
+    },
+    {
+      "code": "dose_below_effective_floor",
+      "template": "The disclosed dose is below the current review floor we track for {ingredientLabel}.",
+      "placeholders": ["ingredientLabel"]
+    },
+    {
+      "code": "dose_not_disclosed",
+      "template": "The label does not disclose enough dose detail for a stronger review outcome.",
+      "placeholders": []
+    },
+    {
+      "code": "low_disclosure_caps_strong_match",
+      "template": "We found a possible fit, but disclosure is too limited to keep it at a strong match.",
+      "placeholders": []
+    },
+    {
+      "code": "proprietary_blend_caps_goal_match",
+      "template": "The blend does not clearly disclose active amounts, so the match stays capped.",
+      "placeholders": []
+    },
+    {
+      "code": "ingredient_requires_generic_safety_path",
+      "template": "This ingredient stays on a general safety-review path before ranking.",
+      "placeholders": []
+    },
+    {
+      "code": "duplicate_overlap_downgrade",
+      "template": "Possible overlap with your current stack needs review before ranking similar products.",
+      "placeholders": []
+    },
+    {
+      "code": "busy_day_blocker_mealtime_anchor",
+      "template": "Because busy days are your main blocker, meal-time anchors are a safer default than a complex schedule.",
+      "placeholders": []
+    },
+    {
+      "code": "routine_changes_schedule_guided",
+      "template": "Because your routine changes day to day, we guide timing setup instead of assuming the same daily pattern.",
+      "placeholders": []
+    },
+    {
+      "code": "vegan_lane_b12_review",
+      "template": "Because you follow a vegan-style diet, B12 is a reasonable first review lane.",
+      "placeholders": []
+    },
+    {
+      "code": "activity_recovery_direction",
+      "template": "Based on your activity pattern, recovery-support products should be reviewed before narrower goal claims.",
+      "placeholders": []
+    }
+  ]
+}

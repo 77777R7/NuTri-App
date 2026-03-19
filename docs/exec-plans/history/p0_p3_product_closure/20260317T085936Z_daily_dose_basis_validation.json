@@ -1,0 +1,30 @@
+{
+  "generatedAt": "2026-03-17T08:59:36.000Z",
+  "phase": "P1-daily-dose-basis",
+  "phaseOutcomeStatus": "execution_success",
+  "parserCoverage": {
+    "simpleDaily": true,
+    "rangedDaily": true,
+    "twiceDaily": true
+  },
+  "controlledValidation": {
+    "labelDailyEstimateObserved": true,
+    "conservativeFallbackObserved": true,
+    "evidence": [
+      "week3_saved_stack_duplicate_report.json -> magnesium_over_stack",
+      "backend/tests/mySupplementFacts.test.mjs",
+      "backend/tests/week3-product-ul-fixtures.test.mjs"
+    ]
+  },
+  "realImportedSampleValidation": {
+    "allCurrentSamplesFallbackOnly": true,
+    "note": "Current imported sample pool still skews toward snapshot-only fallback dose basis, so runtime reruns should continue to expose the distinction explicitly."
+  },
+  "executionResidue": [
+    {
+      "blockerId": "runtime.node_validation_pending",
+      "blockerClass": "environment_validation_gap",
+      "detail": "The current shell is not Node-capable, so JS tests and maintainer harness reruns still need a separate environment."
+    }
+  ]
+}

@@ -1,4 +1,6 @@
 import { normalizeHumanTextForMatch } from "./textNormalization.js";
+import { buildSavedStackSummary, type SavedStackSupplementInput } from "./safety/stackAggregation.js";
+import type { SavedStackSummary } from "./safety/types.js";
 
 type StackOverlapWhitelistKey =
   | "vitamin d"
@@ -63,10 +65,27 @@ const canonicalizeStackIngredientKey = (rawName: string): StackOverlapWhitelistK
   return null;
 };
 
+export type StackOverlapSupplementIngredientRow = {
+  name: string;
+  amount: number | null;
+  unit: string | null;
+  amountText?: string | null;
+  chemicalForm?: string | null;
+};
+
 export type StackOverlapSupplementInput = {
   supplementId: string;
   productName: string;
-  ingredientNames: string[];
+  ingredientNames?: string[];
+  ingredientRows?: StackOverlapSupplementIngredientRow[];
+  dailyMultiplier?: number | null;
+  dailyDoseBasis?: "label_daily_estimate" | "one_serving_fallback";
+  dailyDoseBasisReason?:
+    | "parsed_label_directions"
+    | "missing_directions"
+    | "ambiguous_frequency"
+    | "snapshot_only_no_directions"
+    | "insufficient_active_dose";
 };
 
 export type StackOverlapSupplementRef = {
@@ -81,10 +100,18 @@ export type StackOverlapItem = {
   supplements: StackOverlapSupplementRef[];
 };
 
-export type StackOverlapBuildResult = {
+export type StackOverlapBuildResult = SavedStackSummary & {
   overlaps: StackOverlapItem[];
   overlapCount: number;
   hiddenOverlapCount: number;
+};
+
+const collectIngredientNames = (supplement: StackOverlapSupplementInput): string[] => {
+  const names = Array.isArray(supplement.ingredientNames) ? supplement.ingredientNames : [];
+  if (names.length > 0) return names;
+  return (supplement.ingredientRows ?? [])
+    .map((row) => row.name)
+    .filter((name): name is string => typeof name === "string" && name.trim().length > 0);
 };
 
 export const extractStackOverlapIngredientKeys = (
@@ -113,18 +140,21 @@ export const buildStackOverlapResult = (
   options?: {
     maxPerSupplement?: number;
     maxOverlaps?: number;
+    skippedSupplements?: number;
   },
 ): StackOverlapBuildResult => {
   const maxPerSupplement = Math.max(1, options?.maxPerSupplement ?? 6);
   const maxOverlaps = Math.max(1, options?.maxOverlaps ?? 5);
-
   const byIngredient = new Map<StackOverlapWhitelistKey, Map<string, string>>();
 
   for (const supplement of supplements) {
     const supplementId = supplement.supplementId?.trim();
     if (!supplementId) continue;
     const productName = supplement.productName?.trim() || "Unknown supplement";
-    const ingredientKeys = extractStackOverlapIngredientKeys(supplement.ingredientNames, maxPerSupplement);
+    const ingredientKeys = extractStackOverlapIngredientKeys(
+      collectIngredientNames(supplement),
+      maxPerSupplement,
+    );
     if (ingredientKeys.length === 0) continue;
 
     for (const key of ingredientKeys) {
@@ -155,10 +185,26 @@ export const buildStackOverlapResult = (
     });
 
   const overlaps = all.slice(0, maxOverlaps);
+  const safetySupplements: SavedStackSupplementInput[] = supplements
+    .filter((supplement) => Array.isArray(supplement.ingredientRows) && supplement.ingredientRows.length > 0)
+    .map((supplement) => ({
+      supplementId: supplement.supplementId,
+      productName: supplement.productName,
+      ingredientRows: supplement.ingredientRows ?? [],
+      dailyMultiplier: supplement.dailyMultiplier ?? 1,
+      dailyDoseBasis: supplement.dailyDoseBasis ?? "one_serving_fallback",
+      dailyDoseBasisReason: supplement.dailyDoseBasisReason ?? "missing_directions",
+    }));
+
+  const safetySummary = buildSavedStackSummary({
+    supplements: safetySupplements,
+    skippedSupplements: Math.max(0, supplements.length - safetySupplements.length) + Math.max(0, options?.skippedSupplements ?? 0),
+  });
 
   return {
     overlaps,
     overlapCount: all.length,
     hiddenOverlapCount: Math.max(0, all.length - overlaps.length),
+    ...safetySummary,
   };
 };

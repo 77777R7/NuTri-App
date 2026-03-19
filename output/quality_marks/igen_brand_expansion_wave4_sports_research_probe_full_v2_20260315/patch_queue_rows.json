@@ -1,0 +1,30 @@
+[
+  {
+    "priorityLane": "P0_api_fill_us_strong_identity",
+    "productId": "100267",
+    "brandName": "Sports Research",
+    "title": "Sports Research, Multi Collagen, Chocolate, 1.06 lb (480 g)",
+    "barcode": "00023249013068",
+    "link": "https://www.iherb.com/pr/sports-research-multi-collagen-chocolate-1-06-lb-480-g/100267",
+    "coreMissingFields": [
+      "suggested_use",
+      "warnings"
+    ],
+    "officialSignalProgramId": "igen",
+    "officialRegistryEvidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0037"
+  },
+  {
+    "priorityLane": "P0_api_fill_us_strong_identity",
+    "productId": "117181",
+    "brandName": "Sports Research",
+    "title": "Sports Research, Quercetin, 120 Softgels",
+    "barcode": "00023249091509",
+    "link": "https://www.iherb.com/pr/sports-research-quercetin-120-softgels/117181",
+    "coreMissingFields": [
+      "suggested_use",
+      "warnings"
+    ],
+    "officialSignalProgramId": "igen",
+    "officialRegistryEvidenceUrl": "https://certifications.nutrasource.ca/certified-products/product?id=SPRT0056"
+  }
+]

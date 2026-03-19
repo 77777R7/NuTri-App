@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "nutrasource_catalog_closure_summary.v1",
+  "generatedAt": "2026-03-15T19:34:09.031Z",
+  "inputs": {
+    "outputDir": "/Users/howard07/NuTriApp/nutri-app/output/quality_marks/nutrasource_catalog_closure_20260315",
+    "brandLimit": 10,
+    "brandConcurrency": 3,
+    "detailConcurrency": 4
+  },
+  "inputBrandCount": 10,
+  "foundBrandCount": 1,
+  "crawledBrandPageCount": 1,
+  "productCatalogCount": 1,
+  "productDetailFetchedCount": 1,
+  "iherbOverlayMatchCounts": {
+    "unmatched": 1
+  },
+  "supabaseCatalogMatchCounts": {
+    "unmatched": 1
+  },
+  "promotionReadyCount": 0,
+  "rawOnlyCount": 0,
+  "browserValidation": {
+    "homeUiOk": true,
+    "brandPagePassCount": 0,
+    "productPagePassCount": 0
+  },
+  "outputs": {
+    "dbBrandSeedPath": "/Users/howard07/NuTriApp/nutri-app/output/quality_marks/nutrasource_catalog_closure_20260315/db_brand_seed.json",
+    "brandResultsPath": "/Users/howard07/NuTriApp/nutri-app/output/quality_marks/nutrasource_catalog_closure_20260315/nutrasource_brand_results.json",
+    "productCatalogPath": "/Users/howard07/NuTriApp/nutri-app/output/quality_marks/nutrasource_catalog_closure_20260315/nutrasource_product_catalog.json",
+    "productDetailsPath": "/Users/howard07/NuTriApp/nutri-app/output/quality_marks/nutrasource_catalog_closure_20260315/nutrasource_product_details.json",
+    "matchIherbOverlayPath": "/Users/howard07/NuTriApp/nutri-app/output/quality_marks/nutrasource_catalog_closure_20260315/match_iherb_overlay.json",
+    "matchSupabaseCatalogPath": "/Users/howard07/NuTriApp/nutri-app/output/quality_marks/nutrasource_catalog_closure_20260315/match_supabase_catalog.json",
+    "promotionReadySeedPath": "/Users/howard07/NuTriApp/nutri-app/output/quality_marks/nutrasource_catalog_closure_20260315/promotion_ready_seed.json",
+    "browserValidationPath": "/Users/howard07/NuTriApp/nutri-app/output/quality_marks/nutrasource_catalog_closure_20260315/browser_validation.json"
+  }
+}
